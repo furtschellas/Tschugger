@@ -22,3 +22,27 @@
 .a2b button{font:inherit;font-size:16px;padding:12px;border-radius:10px;border:1px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer}
 .a2b .pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
 .a2b .lnk{border:0;color:var(--muted);font-size:14px;padding:6px}
+.gate{overflow-y:auto;align-items:flex-start;padding-top:max(48px,env(safe-area-inset-top,0px))}
+.gbox{margin:auto 0}
+.gtitle{color:var(--ink);font-weight:600;font-size:17px;margin:0}
+.gok{color:#7fe0a8;min-height:1.2em;margin:0;font-size:14px}
+.glink{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;padding:6px 0;text-align:left;cursor:pointer}
+.gbtn{font:inherit;font-weight:600;font-size:16px;padding:12px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.acbox{max-height:calc(100vh - 32px);overflow-y:auto}
+.acbox details{border-top:1px solid var(--rule);padding:10px 0}
+.acbox summary{cursor:pointer;color:var(--ink);font-weight:600;padding:4px 0}
+.acbox form{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.acbox label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.acbox input{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.acbox form button{font:inherit;font-weight:600;padding:10px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.amsg{margin:0;font-size:14px;color:#ff8a8a;min-height:1em}.amsg.ok{color:#7fe0a8}
+.adm .ahint{color:var(--muted);font-size:14px;margin:6px 0 12px}
+.aform{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px}
+.aform input{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink)}
+.aform button,.abtn{font:inherit;font-weight:600;padding:10px 14px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.abtn{width:100%;margin-bottom:10px;background:transparent;border:1px solid var(--accent);color:var(--ink)}
+.astats{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin:4px 0 0}
+.ust{font-family:var(--f-mono);font-size:11px;padding:2px 7px;border-radius:99px;margin-left:auto}
+.ust.ok{background:rgba(127,224,168,.15);color:#7fe0a8}.ust.off{background:rgba(255,138,138,.15);color:#ff8a8a}.ust.wait{background:var(--rule);color:var(--muted)}
+.aacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.aacts a,.aacts button{font:inherit;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--rule);background:transparent;color:var(--ink);text-decoration:none;cursor:pointer}
