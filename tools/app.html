@@ -1,0 +1,881 @@
+<title>Tschugger Tigerblood Crew</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="gf" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Permanent+Marker&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script>(function(){var l=document.getElementById("gf");function on(){l.media="all"}if(l.sheet)on();else{l.addEventListener("load",on);setTimeout(on,3000)}})();</script>
+<style>
+/* Layout: phone-first call sheet — sticky header, day strip, timeline; tab bar pinned to the bottom */
+/* Look: "Tschugger" night poster — dusk sky over the Valais, cream stencil type, neon pink spray, gold chains */
+:root{
+  --paper:#110d1c; --sheet:#1b1529; --ink:#f4ead6; --muted:#a79cbb; --rule:#2f2644;
+  --accent:#ff2e8a; --accent-ink:#1a0712; --accent-soft:rgba(255,46,138,.16);
+  --gold:#f2b33d;
+  --day:#f2c94c; --eve:#f08a3c; --night:#8b7cff; --morn:#ff79b8;
+  --off:#161124; --warn:#ff8f4a;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-marker:"Permanent Marker","Barlow Condensed",cursive;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:760px;margin:0 auto}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header.top{padding-block:14px 10px;border-bottom:1px solid var(--rule);position:relative}
+header.top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--accent),transparent 70%)}
+.eyebrow span{white-space:nowrap}
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px}
+.eyebrow{flex:1;min-width:0;line-height:1.35;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{white-space:nowrap;font-family:var(--f-display);font-weight:800;font-size:clamp(23px,7.8vw,30px);line-height:.95;margin:4px 0 0;letter-spacing:.02em;text-transform:uppercase;color:var(--ink);text-shadow:0 2px 0 rgba(0,0,0,.35)}
+h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-transform:none;font-size:.87em;color:var(--accent);transform:rotate(-4deg) translateY(-1px);margin-left:4px;text-shadow:0 0 18px rgba(255,46,138,.45)}
+.stand{font-size:11px;color:var(--muted);margin-top:4px}
+.standrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.refresh{flex:0 0 auto;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;color:var(--muted);background:transparent;border-radius:50%;font-size:17px;line-height:1;cursor:pointer;position:relative}
+.refresh::after{content:"";position:absolute;inset:-8px}
+.refresh.spin{animation:rot 1s linear infinite;color:var(--accent)}
+@keyframes rot{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.refresh.spin{animation:none}}
+.refresh:disabled{opacity:.55;cursor:default}
+.refmsg{font-size:12px;color:var(--muted);margin-top:4px}
+.stand b{font-weight:500;color:var(--ink)}
+
+/* day strip */
+.strip{display:flex;gap:4px;overflow-x:auto;padding-block:6px;scrollbar-width:none;position:sticky;top:env(safe-area-inset-top,0px);z-index:4;background:var(--paper);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--rule);scroll-padding-inline:16px}
+.strip::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;min-width:0;border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:3px 7px;line-height:1.15;text-align:center;cursor:pointer}
+.chip .cw{font-family:var(--f-mono);font-size:9px;font-weight:400;text-transform:uppercase;color:var(--muted);margin-right:3px}
+.chip .dd{white-space:nowrap;font-family:var(--f-display);font-size:16px;font-weight:600;line-height:1.05}
+.chip .lb{font-family:var(--f-mono);font-size:9px;color:var(--muted)}
+.chip.off{background:var(--off)}
+.chip.off .dd{color:var(--muted)}
+.chip.today{border-color:var(--accent)}
+.chip[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip[aria-selected="true"] .cw,.chip[aria-selected="true"] .lb,.chip[aria-selected="true"] .dd{color:var(--accent-ink)}
+
+/* day header */
+.dayhead{margin-top:12px;display:grid;gap:8px}
+.dayhead h2{font-family:var(--f-display);font-size:28px;font-weight:700;margin:0;line-height:1}
+.dayhead .date{font-size:14px;color:var(--muted)}
+.facts{display:flex;flex-wrap:wrap;gap:6px}
+.fact{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding:4px 8px;display:flex;align-items:baseline;gap:6px}
+.fact .k{font-family:var(--f-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.fact .v{font-family:var(--f-mono);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
+.notes{display:grid;gap:6px}
+.note{font-size:13px;padding:8px 10px;border-radius:6px;background:var(--accent-soft)}
+.note.warn{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+
+.units{display:flex;gap:0;border:1px solid var(--rule);border-radius:8px;overflow:hidden;width:max-content;margin-top:16px}
+.units button{border:0;background:var(--sheet);padding:7px 14px;cursor:pointer;font-size:13px;font-weight:500}
+.units button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.unitfacts{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:8px}
+
+/* timeline */
+ol.tl{list-style:none;margin:12px 0 0;padding:0;display:grid}
+.row{display:grid;grid-template-columns:52px 1fr;gap:10px;padding-block:6px}
+.row .t{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--muted);padding-top:3px}
+.row.ev .what{font-size:13px;color:var(--muted);border-left:2px solid var(--rule);padding-left:10px}
+.row.ev .what b{color:var(--ink);font-weight:500}
+.sc{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;min-width:0;display:grid;gap:6px}
+.sc .l1{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.scn{font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1}
+.ie{font-family:var(--f-mono);font-size:11px;font-weight:500;padding:2px 6px;border-radius:4px;color:#16202a;background:var(--day)}
+.ie.ev{background:var(--eve)} .ie.n{background:var(--night);color:#120d1c} .ie.mo{background:var(--morn)}
+.set{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.02em;text-transform:uppercase;min-width:0}
+.desc{font-size:14px}
+.meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted)}
+.meta .m{font-family:var(--f-mono)}
+.loc{font-size:13px}
+.cast{display:flex;flex-wrap:wrap;gap:4px}
+.cast span{font-size:12px;border:1px solid var(--rule);border-radius:99px;padding:1px 8px;background:var(--paper)}
+.cast span i{font-style:normal;font-family:var(--f-mono);color:var(--muted);margin-right:4px}
+.offday{margin-top:18px;padding:22px;border:1px dashed var(--rule);border-radius:8px;text-align:center;color:var(--muted)}
+.offday b{display:block;font-family:var(--f-display);font-size:26px;color:var(--ink)}
+
+/* lists */
+.search{width:100%;margin-top:12px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:4;box-shadow:0 0 0 8px var(--paper);padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);font:inherit}
+section.dept{margin-top:20px}
+h3.dh{font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px;color:var(--accent)}
+.people{background:var(--sheet);border:1px solid var(--rule);border-radius:8px}
+.p{padding:8px 12px;display:grid;gap:1px;border-top:1px solid var(--rule)}
+.p:first-child{border-top:0}
+.p .role{font-size:12px;color:var(--muted)}
+.p .nm{font-weight:600}
+.p .ct{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;align-items:center;margin-top:2px}
+.p .hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px}
+.p .ct .em{font-family:var(--f-body);font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.p .ct span{font-family:var(--f-mono);font-size:14px;user-select:all}
+.p .ct a{padding-block:4px}
+.copy{border:1px solid var(--rule);background:var(--paper);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer}
+
+.lc{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:14px;display:grid;gap:8px;margin-top:16px}
+.lc h4{margin:0;font-family:var(--f-display);font-size:19px;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+.lc .addr{font-size:14px;white-space:pre-line}
+.lc .scs{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.lc .days{display:flex;flex-wrap:wrap;gap:4px}
+.lc .days button{border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:99px;padding:1px 9px;font-size:12px;cursor:pointer}
+
+
+.scbar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.scbar>*{justify-content:center;min-height:42px;font-size:13px!important;padding:4px 6px!important;white-space:nowrap;min-width:0;border-radius:10px!important}
+.scbar .scall{gap:5px}
+.mapbtn{display:flex;align-items:center;gap:5px;border-radius:99px;background:var(--sheet);color:var(--accent);border:1px solid var(--accent);text-decoration:none;font-weight:600;padding:6px 14px}
+.scall{border:1px solid var(--accent);color:var(--accent);background:var(--sheet);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;min-height:36px}
+.scall{display:inline-flex;align-items:center;gap:8px}
+.scall::before{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
+.scall.on::before{transform:rotate(45deg)}
+.scall.on{background:var(--accent);color:var(--accent-ink)}
+.lch{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;width:100%;padding:0;border:0;background:transparent;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.lch h4{grid-column:1}
+.lch .lcm{grid-column:1;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.lch::after{content:"";grid-column:2;grid-row:1/span 2;width:9px;height:9px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);transition:transform .15s;margin-right:4px}
+.lc.open .lch::after{transform:rotate(-135deg)}
+.ubs{display:inline-flex;gap:4px;margin-left:8px;vertical-align:3px}
+.ub{font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:0;text-transform:none;padding:1px 6px;border-radius:4px;background:var(--gold);color:#1a1206;white-space:nowrap}
+.ub.u2{background:var(--accent-soft);color:var(--accent)}
+
+.uf{min-height:42px;border:1px solid var(--rule);background:var(--sheet);border-radius:99px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer}
+.uf[aria-pressed="true"]{background:var(--gold);color:#1a1206;border-color:var(--gold)}
+.uf.u2[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.lang{flex:none;display:flex;gap:2px;background:var(--sheet);border:1px solid var(--rule);border-radius:99px;padding:2px;z-index:2}
+.lang button{border:0;background:transparent;color:var(--muted);font-family:var(--f-mono);font-size:11px;font-weight:500;padding:3px 8px;border-radius:99px;cursor:pointer;min-height:26px;min-width:32px}
+.lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.hbtns{display:flex;gap:2px;align-items:center}
+.gsearch{position:fixed;inset:0;z-index:20;background:var(--paper);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.gsearch[hidden]{display:none!important}
+.sh{display:flex;gap:8px;align-items:center;padding-block:12px;border-bottom:1px solid var(--rule);max-width:760px;width:100%;margin:0 auto}
+.sh input{flex:1;min-width:0;padding:11px 14px;border:1px solid var(--accent);border-radius:99px;background:var(--sheet);color:var(--ink);font:inherit;font-size:16px}
+.sclose{border:0;background:transparent;color:var(--accent);font-weight:600;font-size:14px;cursor:pointer;padding:8px 4px}
+.sres{flex:1;overflow-y:auto;max-width:760px;width:100%;margin:0 auto;padding-bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+.sres h3{margin:18px 0 6px}
+.sr{display:grid;gap:2px;width:100%;text-align:left;background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:9px 12px;margin-top:6px;cursor:pointer;font:inherit;color:var(--ink)}
+.sr .t1{font-weight:600;font-size:14px}
+.sr .t2{font-size:12px;color:var(--muted)}
+.sr mark{background:var(--accent-soft);color:var(--accent);border-radius:3px;padding:0 1px}
+.shint{color:var(--muted);font-size:14px;margin-top:20px}
+.sc.hit{outline:2px solid var(--accent);outline-offset:2px;transition:outline-color 1s}
+.adl{display:grid;gap:2px;font-size:13px}
+.adl a{font-size:12px;margin-left:4px}
+.scb .mot{margin-top:0}
+.lc.scd{margin-top:16px}
+.lc .scb{border-top:1px solid var(--rule);padding-top:4px}
+.lc .scb>.plot{margin-top:8px}
+.scd{margin-top:4px;border-top:1px solid var(--rule)}
+
+
+
+
+.scd .plot{margin-top:6px}
+.mot .scd{border-top:0}
+.plot{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:4px;font-size:13px}
+.plot li{line-height:1.4}
+.plot .pdesc{display:block;margin-top:2px}
+.plot{gap:10px!important}
+.plot b{font-family:var(--f-display);font-size:16px;margin-right:6px}
+.mot .pd,.plot .pd{font-family:var(--f-mono);font-size:11px;line-height:1.7;color:var(--accent);background:var(--accent-soft);border:0;border-radius:4px;padding:0 5px;margin-right:5px;cursor:pointer;vertical-align:1px;white-space:nowrap}
+.pd i{font-style:normal;margin-left:4px;padding-left:4px;border-left:1px solid currentColor}
+.plot .ie{font-size:10px;padding:1px 5px;margin-right:2px;vertical-align:1px}
+.mot{display:grid;gap:0;border-top:1px solid var(--rule);margin-top:4px}
+.mot>div{display:grid;gap:3px;padding-block:14px}
+.mot>div+div{border-top:1px dashed var(--rule)}
+.mot>div:last-child{padding-bottom:4px}
+.mot b{font-weight:600;font-size:14px}
+
+
+
+
+.bigbtn{display:block;text-align:center;margin-top:12px;padding:12px;border-radius:8px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.04em;text-transform:uppercase}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.chip.nodispo .dd{opacity:.55}
+.dtitle{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.dlink{border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:99px;padding:4px 12px;font-size:13px;font-weight:600;cursor:pointer;min-height:32px}
+.dlink.on{background:var(--accent);color:var(--accent-ink)}
+.dsp-empty{margin-top:16px;padding:22px 18px;border:1px dashed var(--rule);border-radius:10px;background:var(--sheet);display:grid;gap:8px;justify-items:start}
+.dsp-empty .eh{font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.dsp-empty b{font-family:var(--f-display);font-size:26px}
+.dsp-empty p{margin:0;color:var(--muted);font-size:14px}
+.dsp-empty .m{font-family:var(--f-mono);font-size:12px}
+.dsp-head{margin-top:12px}
+.dsp-head h2{font-family:var(--f-display);font-size:28px;font-weight:700;margin:0;line-height:1}
+.dsp-head .date{font-size:14px;color:var(--muted)}
+.dtiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin-top:12px}
+.dt{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:8px 10px}
+.dt.big{grid-column:1/-1;background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.dt .k{font-family:var(--f-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.75}
+.dt .v{font-family:var(--f-mono);font-size:13px;font-weight:500}
+.dt.big .v{font-family:var(--f-display);font-size:40px;font-weight:700;line-height:1}
+.dsec{margin-top:20px}
+.dgrid{display:grid;gap:8px}
+.dbox{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;display:grid;gap:2px;font-size:14px}
+.dk{font-family:var(--f-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.dn{font-weight:600}
+.ds{font-size:12px;color:var(--muted)}
+.what.meal{color:var(--ink)}
+.tblw{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--sheet)}
+.dtbl{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
+.dtbl th{font-family:var(--f-mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule)}
+.dtbl td{padding:8px 10px;border-top:1px solid var(--rule);font-variant-numeric:tabular-nums}
+.dtbl tr:first-child td{border-top:0}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.empty{margin-top:30px;padding:24px;border:1px dashed var(--rule);border-radius:8px;color:var(--muted);text-align:center}
+.src{margin-top:28px;font-size:12px;color:var(--muted);display:grid;gap:2px}
+.src span{font-family:var(--f-mono)}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--sheet);border-top:1px solid var(--rule);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.tabs .in{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+nav.tabs button{border:0;background:transparent;padding:6px 2px 8px;min-height:58px;cursor:pointer;display:grid;justify-items:center;align-content:center;gap:3px;color:var(--muted);-webkit-tap-highlight-color:transparent}
+nav.tabs .ico{display:grid;place-items:center;width:46px;height:30px;border-radius:99px}
+nav.tabs svg{width:22px;height:22px}
+nav.tabs .lbl{font-family:var(--f-body);font-size:10.5px;font-weight:500;letter-spacing:.01em}
+nav.tabs button[aria-selected="true"]{color:var(--accent)}
+nav.tabs button[aria-selected="true"] .ico{background:var(--accent-soft)}
+nav.tabs button[aria-selected="true"] .lbl{font-weight:600}
+nav.tabs button:active .ico{background:var(--accent-soft)}
+@media (prefers-reduced-motion:no-preference){.chip,.units button,nav.tabs button{transition:background .15s,color .15s}}
+
+/* poster accents */
+h3.dh{font-weight:800;letter-spacing:.08em;color:var(--ink);display:flex;align-items:center;gap:10px}
+h3.dh::after{content:"";flex:1;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.dayhead h2,.dsp-head h2{text-transform:uppercase;font-weight:800;letter-spacing:.02em}
+.lc,.sc,.people,.dbox,.fact,.dt,.chip{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.lc h4,.lch h4{font-weight:800;letter-spacing:.03em}
+.dt.big{background:linear-gradient(135deg,var(--accent),#c4126a);border:0;box-shadow:0 10px 30px rgba(255,46,138,.28)}
+.dt.big .v{font-family:var(--f-marker);font-weight:400;font-size:44px;letter-spacing:.02em}
+.chip[aria-selected="true"]{box-shadow:0 6px 18px rgba(255,46,138,.35)}
+.scn{color:var(--ink)}
+.plot b{color:var(--ink)}
+.mapbtn{border-color:var(--accent)!important}
+nav.tabs{background:rgba(22,17,36,.97)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(120% 60% at 80% -10%,rgba(255,46,138,.22),transparent 60%),radial-gradient(90% 50% at 0% 0%,rgba(139,124,255,.18),transparent 60%)}
+
+.bigbtn{background:linear-gradient(135deg,var(--accent),#c4126a)}
+.note{background:var(--accent-soft)}
+
+
+.empty,.offday,.dsp-empty{background:var(--sheet)}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="toprow"><div class="eyebrow" id="sub">Planung · Crew · Locations</div>
+    <div class="lang" role="group" aria-label="Sprache / Langue / Language"><button data-lang="de">DE</button><button data-lang="fr">FR</button><button data-lang="en">EN</button></div></div>
+    <h1>Tschugger <span>Tigerblood</span></h1>
+    <div class="standrow"><div class="stand" id="stand" data-i18n="Daten werden geladen …">Daten werden geladen …</div><div class="hbtns"><button class="refresh" id="searchBtn" aria-label="Suchen" title="Suchen" data-i18n-al="Suchen"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button><button class="refresh" id="refresh" hidden aria-label="Aktualisieren" title="Aktualisieren" data-i18n-al="Aktualisieren">↻</button></div></div>
+    <div class="refmsg" id="refmsg" hidden></div>
+  </header>
+  <main id="view"></main>
+</div>
+<div class="gsearch" id="search" hidden role="dialog" aria-label="Suche">
+  <div class="sh"><input id="gq" type="search" placeholder="Szene, Ort, Person, Cast …" data-i18n-ph="Szene, Ort, Person, Cast …" autocomplete="off" aria-label="Suchbegriff"><button id="sclose" class="sclose" data-i18n="Schliessen">Schliessen</button></div>
+  <div class="sres" id="gres"></div>
+</div>
+<nav class="tabs" aria-label="Bereiche"><div class="in" role="tablist">
+  <button role="tab" data-tab="plan" aria-selected="true"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><span class="lbl" >Schedule</span></button>
+  <button role="tab" data-tab="dispo" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9zM8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></span><span class="lbl" >Callsheet</span></button>
+  <button role="tab" data-tab="loc" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.4"/></svg></span><span class="lbl" >Locations</span></button>
+  <button role="tab" data-tab="crew" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.4 0 4.2 1.6 4.7 4.3"/></svg></span><span class="lbl" >Crew</span></button>
+  <button role="tab" data-tab="info" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.1"/></svg></span><span class="lbl" >Info</span></button>
+</div></nav>
+
+<script>
+const I18N={"Planung": {"fr": "Planning", "en": "Schedule"}, "Callsheet": {"fr": "Callsheet", "en": "Callsheet"}, "Locations": {"fr": "Lieux", "en": "Locations"}, "Crew": {"fr": "Équipe", "en": "Crew"}, "Infos": {"fr": "Infos", "en": "Info"}, "Suchen": {"fr": "Rechercher", "en": "Search"}, "Aktualisieren": {"fr": "Actualiser", "en": "Refresh"}, "Schliessen": {"fr": "Fermer", "en": "Close"}, "Szene, Ort, Person, Cast …": {"fr": "Scène, lieu, personne, rôle …", "en": "Scene, place, person, cast …"}, "Daten werden geladen …": {"fr": "Chargement des données …", "en": "Loading data …"}, "Regie": {"fr": "Réal.", "en": "Dir."}, "Kompars.": {"fr": "figur.", "en": "extras"}, "Ort: TBA": {"fr": "Lieu : à définir", "en": "Location: TBA"}, "Szene": {"fr": "scène", "en": "scene"}, "Szenen": {"fr": "scènes", "en": "scenes"}, "Motive": {"fr": "décors", "en": "sets"}, "Ort": {"fr": "lieu", "en": "place"}, "Orte": {"fr": "lieux", "en": "places"}, "Reise": {"fr": "Voyage", "en": "Travel"}, "Frei": {"fr": "Libre", "en": "Off"}, "Reisetag": {"fr": "Jour de voyage", "en": "Travel day"}, "Drehfrei": {"fr": "Pas de tournage", "en": "Day off"}, "Callsheet folgt": {"fr": "Callsheet à venir", "en": "Callsheet to follow"}, "heute": {"fr": "aujourd’hui", "en": "today"}, "Dreh": {"fr": "Tournage", "en": "Shoot"}, "Länge": {"fr": "Durée", "en": "Length"}, "Seiten": {"fr": "Pages", "en": "Pages"}, "Sonne": {"fr": "Soleil", "en": "Sun"}, "Komparsen": {"fr": "Figurants", "en": "Extras"}, "Crew suchen": {"fr": "Rechercher l’équipe", "en": "Search crew"}, "Niemand gefunden für": {"fr": "Personne trouvé pour", "en": "Nobody found for"}, "Kopieren": {"fr": "Copier", "en": "Copy"}, "Kopiert": {"fr": "Copié", "en": "Copied"}, "Adressen im Dorf": {"fr": "adresses au village", "en": "addresses in the village"}, "Keine Locations für diese Unit.": {"fr": "Aucun lieu pour cette unité.", "en": "No locations for this unit."}, "Bitte mindestens eine Unit wählen.": {"fr": "Choisissez au moins une unité.", "en": "Please select at least one unit."}, "Alle Szenen auf- oder zuklappen": {"fr": "Ouvrir ou fermer toutes les scènes", "en": "Expand or collapse all scenes"}, "Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.": {"fr": "Le callsheet apparaît ici automatiquement dès qu’il se trouve dans le dossier Dropbox 06_Callsheets, en général la veille.", "en": "The callsheet appears here automatically as soon as it is in the Dropbox folder 06_Callsheets, usually the evening before."}, "Laut Planung: Drehzeit": {"fr": "Selon le planning : tournage", "en": "Per schedule: shooting"}, "Planung ansehen": {"fr": "Voir le planning", "en": "View schedule"}, "Drehbeginn": {"fr": "Début tournage", "en": "First shot"}, "Wetter": {"fr": "Météo", "en": "Weather"}, "Parken": {"fr": "Parking", "en": "Parking"}, "Treffpunkt & Orte": {"fr": "Rendez-vous & lieux", "en": "Meeting point & locations"}, "Base / Treffpunkt": {"fr": "Base / rendez-vous", "en": "Base / meeting point"}, "Drehort": {"fr": "Lieu de tournage", "en": "Location"}, "Zeiten": {"fr": "Horaires", "en": "Times"}, "Rolle": {"fr": "Rôle", "en": "Role"}, "Darsteller": {"fr": "Comédien", "en": "Actor"}, "Maske": {"fr": "Maquillage", "en": "Make-up"}, "Kostüm": {"fr": "Costume", "en": "Costume"}, "Notfall & Kontakte": {"fr": "Urgences & contacts", "en": "Emergency & contacts"}, "Nächstes Spital": {"fr": "Hôpital le plus proche", "en": "Nearest hospital"}, "Spital": {"fr": "Hôpital", "en": "Hospital"}, "Original-Callsheet öffnen": {"fr": "Ouvrir le callsheet original", "en": "Open original callsheet"}, "ist noch leer. Die Daten kommen automatisch aus der Dropbox der Produktion.": {"fr": "est encore vide. Les données arrivent automatiquement depuis la Dropbox de la production.", "en": "is still empty. Data comes in automatically from the production Dropbox."}, "Lade": {"fr": "Chargement", "en": "Loading"}, "Quellen (Dropbox, nur gelesen):": {"fr": "Sources (Dropbox, lecture seule) :", "en": "Sources (Dropbox, read-only):"}, "geprüft": {"fr": "vérifié", "en": "checked"}, "Noch keine Daten eingespielt.": {"fr": "Pas encore de données.", "en": "No data yet."}, "Suche nach Szenennummer (z. B. 186), Drehtag (D5, Day 5, 26.10., Montag, heute, morgen), Motiv, Adresse, Rolle (z. B. Regina), Crew-Name, Funktion oder Telefonnummer.": {"fr": "Recherchez un numéro de scène (p. ex. 186), un jour de tournage (D5, jour 5, 26.10., lundi, aujourd’hui, demain), un décor, une adresse, un rôle (p. ex. Regina), un nom, une fonction ou un numéro de téléphone.", "en": "Search for a scene number (e.g. 186), shooting day (D5, Day 5, 26.10., Monday, today, tomorrow), set, address, role (e.g. Regina), crew name, job or phone number."}, "Drehtage": {"fr": "Jours de tournage", "en": "Shooting days"}, "Salgesch, mehrere Adressen": {"fr": "Salgesch, plusieurs adresses", "en": "Salgesch, several addresses"}, "Tagesdispo": {"fr": "Callsheet", "en": "Callsheet"}, "Nichts gefunden für": {"fr": "Aucun résultat pour", "en": "Nothing found for"}, "Datenbank nicht erreichbar. Bitte mit einem Claude-Konto anmelden.": {"fr": "Base de données inaccessible. Veuillez vous connecter avec un compte Claude.", "en": "Database unavailable. Please sign in with a Claude account."}, "Neueste Daten geladen.": {"fr": "Données les plus récentes chargées.", "en": "Latest data loaded."}, "Dropbox zuletzt geprüft": {"fr": "Dropbox vérifiée le", "en": "Dropbox last checked"}, "Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen.": {"fr": "Impossible de charger les données. Vérifiez la connexion internet.", "en": "Could not load data. Please check your internet connection."}, "Dropbox wird geprüft. Das dauert 1–3 Minuten, die App aktualisiert sich danach von selbst.": {"fr": "Vérification de la Dropbox. Cela prend 1 à 3 minutes, l’app se met ensuite à jour toute seule.", "en": "Checking Dropbox. This takes 1–3 minutes; the app updates itself afterwards."}, "Zugriff nicht erlaubt. Bitte die Berechtigung der App erlauben und erneut tippen.": {"fr": "Accès refusé. Autorisez l’app puis réessayez.", "en": "Access not allowed. Please allow the app's permission and tap again."}, "Aktualisierung konnte nicht gestartet werden": {"fr": "Impossible de lancer la mise à jour", "en": "Could not start the update"}, "Die Aktualisierung braucht länger als üblich. Die App übernimmt die Daten automatisch, sobald sie fertig ist.": {"fr": "La mise à jour prend plus de temps que d’habitude. L’app reprendra les données automatiquement.", "en": "The update is taking longer than usual. The app will pick up the data automatically when it's done."}, "Geprüft: keine neuen Dateien in der Dropbox.": {"fr": "Vérifié : aucun nouveau fichier dans la Dropbox.", "en": "Checked: no new files in Dropbox."}, "Aktualisiert.": {"fr": "Mis à jour.", "en": "Updated."}, "Vorheriger Song": {"fr": "Morceau précédent", "en": "Previous song"}, "Nächster Song": {"fr": "Morceau suivant", "en": "Next song"}, "Abspielen": {"fr": "Lecture", "en": "Play"}, "Pause": {"fr": "Pause", "en": "Pause"}, "Drehtage-Leiste": {"fr": "Jours", "en": "Days"}, "Unit filtern": {"fr": "Filtrer l’unité", "en": "Filter unit"}, "Position": {"fr": "Position", "en": "Position"}, "Diese Ansicht konnte nicht angezeigt werden.": {"fr": "Cette vue n’a pas pu être affichée.", "en": "This view could not be displayed."}};
+let LANG=(()=>{try{const l=localStorage.getItem("lang");if(l)return l}catch(_){}const n=(navigator.language||"de").slice(0,2);return ["de","fr","en"].includes(n)?n:"de"})();
+const TX=(o,f)=>(o&&o[f+"_"+LANG])||(o&&o[f])||"";
+const TXA=(o,f)=>{const t=o&&o[f+"_"+LANG];return Array.isArray(t)&&t.length?t:((o&&o[f])||[])};
+const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
+const L=k=>LANG==="de"?k:((I18N[k]&&I18N[k][LANG])||k);
+const WDS={de:["So","Mo","Di","Mi","Do","Fr","Sa"],fr:["Di","Lu","Ma","Me","Je","Ve","Sa"],en:["Su","Mo","Tu","We","Th","Fr","Sa"]};
+const LOC={de:"de-CH",fr:"fr-CH",en:"en-GB"};
+function applyStatic(){
+  document.documentElement.lang=LANG;
+  document.querySelectorAll("[data-i18n]").forEach(e=>e.textContent=L(e.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(e=>e.placeholder=L(e.dataset.i18nPh));
+  document.querySelectorAll("[data-i18n-al]").forEach(e=>{e.setAttribute("aria-label",L(e.dataset.i18nAl));if(e.title)e.title=L(e.dataset.i18nAl)});
+  document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===LANG));
+}
+const S={tab:"plan",day:null,unit:"1",dday:null,q:"",uf:{"1":true,"2":true},openSc:{},meta:null,days:[],crew:[],locs:[],places:[],dispos:[],loaded:false};
+const MYMAP="https://www.google.com/maps/d/viewer?mid=18C7O5jJQPoQq4iwJmoi2iEUkvHg4wXs";
+const slug=s=>String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+let DB=null; /* set once the store is available */
+const TRIGGER="trig_012y5E4DpYezCjFFzPbbKiJW";let REF={busy:false,since:null};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const WD=new Proxy([],{get:(t,k)=>k==="length"?7:(WDS[LANG]||WDS.de)[k]});
+const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const fmtDate=iso=>{const d=new Date(iso+"T12:00:00");return WD[d.getDay()]+" "+d.getDate()+"."+(d.getMonth()+1)+"."+d.getFullYear()};
+const maps=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
+const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};
+const norm=s=>String(s).toLowerCase().replace(/\s+/g,"");
+/* derived-data cache: cleared whenever data changes, so lookups run once per data version */
+const MEMO=new Map();
+const memo=(k,f)=>{if(MEMO.has(k))return MEMO.get(k);const v=f();MEMO.set(k,v);return v};
+try{const t=localStorage.getItem("tab");if(t)S.tab=({map:"loc",music:"plan"})[t]||t}catch(e){}
+
+function castChips(ids){
+  const m=(S.meta&&S.meta.cast)||{};
+  if(!ids||!ids.length)return"";
+  return '<div class="cast">'+ids.map(i=>'<span><i>'+esc(i)+'</i>'+esc(m[i]||"")+'</span>').join("")+'</div>';
+}
+function itemHTML(it){
+  if(!it.sc){
+    return '<li class="row ev"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+'</div></li>';
+  }
+  const meta=[];
+  if(it.pg)meta.push('<span class="m">'+esc(it.pg)+' pgs</span>');
+  if(it.dur)meta.push('<span class="m">'+esc(it.dur)+'</span>');
+  if(it.dir)meta.push('<span>'+L('Regie')+' '+esc(it.dir)+'</span>');
+  if(it.fx)meta.push('<span>'+esc(it.fx)+' FX</span>');
+  if(it.xx)meta.push('<span>'+esc(it.xx)+' '+L('Kompars.')+'</span>');
+  return '<li class="row"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+
+    '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
+    (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+
+    (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener">'+esc(ad)+'</a>')+'</div>'})():'')+
+    castChips(it.cast)+'<div class="meta">'+meta.join("")+'</div></div></li>';
+}
+function pickDay(){
+  if(S.day&&S.days.some(d=>d.id===S.day))return;
+  const t=todayISO();
+  const next=S.days.find(d=>d.date>=t);
+  S.day=(next||S.days[S.days.length-1]||{}).id||null;
+}
+function townOf(ad){const p=String(ad).split(",").map(x=>x.trim()).filter(Boolean);const last=p[p.length-1]||"";return last.replace(/^\d{4}\s*/,"").replace(/\s*\(.*\)$/,"")}
+function dayPlaces(d){
+  const out=[];
+  for(const it of [...(d.items||[]),...((d.unit2&&d.unit2.items)||[])]){if(!it.sc||!it.loc)continue;const ad=addrForItem(it);if(/^tba$/i.test(ad))continue;const t=townOf(ad);if(t&&!out.includes(t))out.push(t)}
+  return out;
+}
+function renderPlan(){
+  if(!S.days.length)return emptyHTML("Planung");
+  pickDay();
+  const t=todayISO();
+  let h='<div class="strip" role="tablist" aria-label="Tage">';
+  for(const d of S.days){
+    const dt=new Date(d.date+"T12:00:00");
+    const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?L("Reise"):L("Frei"));
+    h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.date===t?" today":"")+'" role="tab" data-day="'+esc(d.id)+'" aria-selected="'+(d.id===S.day)+'">'+
+       '<div class="dd"><span class="cw">'+WD[dt.getDay()]+'</span>'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div><div class="lb">'+esc(lb)+'</div></button>';
+  }
+  h+='</div>';
+  const d=S.days.find(x=>x.id===S.day);
+  const hasD=S.dispos.some(x=>x.date===d.date);
+  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?'<button class="dlink'+(hasD?' on':'')+'" data-todispo="'+esc(d.date)+'">'+(hasD?L('Callsheet'):L('Callsheet folgt'))+' ›</button>':'')+'</div><div class="date">'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</div></div>';
+  if(d.kind==="shoot"){
+    const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
+    if(d.extras)f.push([L("Komparsen"),d.extras]);
+    h+='<div class="facts">'+f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>').join("")+'</div>';
+  }
+  if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
+  h+='</div>';
+  if(d.kind!=="shoot"){
+    h+='<div class="offday"><b>'+(d.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(d,"info"))+'</div>';
+    return h;
+  }
+  const has2=d.unit2&&d.unit2.items&&d.unit2.items.length;
+  if(!has2)S.unit="1";
+  if(has2){
+    h+='<div class="units"><button data-unit="1" aria-pressed="'+(S.unit==="1")+'">1st Unit</button><button data-unit="2" aria-pressed="'+(S.unit==="2")+'">2nd Unit</button></div>';
+    if(S.unit==="2"){
+      const u=d.unit2;
+      h+='<div class="unitfacts">'+[u.hours,u.length,u.pages&&u.pages+" pgs",u.extras&&u.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+'</div>';
+      if(TXA(u,"notes").length)h+='<div class="notes" style="margin-top:8px">'+TXA(u,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
+    }
+  }
+  const items=(S.unit==="2"&&has2)?d.unit2.items:(d.items||[]);
+  h+='<ol class="tl">'+items.map(itemHTML).join("")+'</ol>';
+  return h;
+}
+function renderCrew(){
+  if(!S.crew.length)return emptyHTML("Crewliste");
+  const q=S.q.trim().toLowerCase();
+  let h='<input class="search" id="q" type="search" placeholder="'+L("Crew suchen")+'" value="'+esc(S.q)+'" aria-label="Crew durchsuchen">';
+  let n=0;
+  for(const g of S.crew){
+    const ppl=(g.people||[]).filter(p=>!q||[p.name,p.role,TX(p,"role"),g.dept,TX(g,"dept")].join(" ").toLowerCase().includes(q));
+    if(!ppl.length)continue;n+=ppl.length;
+    h+='<section class="dept"><h3 class="dh">'+esc(TX(g,"dept"))+'</h3><div class="people">'+ppl.map(p=>{
+      let ct='';
+      if(p.phone)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a><button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>';
+      if(p.email)ct+='<span class="em">'+esc(p.email)+'</span>';
+      if(p.note)ct+='<span>'+esc(p.note)+'</span>';
+      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span></div>'+(ct?'<div class="ct">'+ct+'</div>':'')+'</div>';
+    }).join("")+'</div></section>';
+  }
+  if(!n)h+='<div class="empty">'+L('Niemand gefunden für')+' «'+esc(S.q)+'».</div>';
+  return h;
+}
+const addrKey=l=>norm(String(l.address||"").replace(/[–-]/g,"").replace(/strasse/gi,"str").replace(/[.,]/g,""));
+const isS5=sc=>/^5(pt\d+|)$/.test(norm(sc))||norm(sc)==="185";
+function scene5Parts(){
+  const out=[];
+  for(const d of S.days){
+    for(const [u,list] of [["1st",d.items||[]],["2nd",(d.unit2&&d.unit2.items)||[]]])
+      for(const it of list)if(it.sc&&isS5(it.sc))out.push({it,d,u});
+  }
+  return out;
+}
+const BUNDLES=[{key:"pfyn",title:"Pfynwald",re:/pfyn/i},{key:"svr",title:"Side Valley Road",re:/rte de martigny/i}];
+const TITLES=[{re:/bahnhofstr(asse)?\s*40\b.*salgesch/i,title:"Aunt's House – Police Station – Hospital – Villa Biffiger – INT"},{re:/grand-champsec\s*22\b.*sion/i,title:"Police Station EXT"},{re:/vercorin\s*46\b.*chalais/i,title:"Aunt's House EXT"},{re:/^1922 salvan$/i,title:"Simplon"}];
+const bundleOf=l=>BUNDLES.find(b=>b.re.test([l.name,l.venue,l.address].join(" ")));
+function groupLocs(){return memo("groups",buildGroups)}
+function buildGroups(){
+  const g=[],idx={};
+  const s5locs=[];let s5at=-1;
+  for(const l of S.locs){
+    const scs=(l.sets||[]).flatMap(s=>s.scenes||[]);
+    if(scs.length&&scs.every(isS5)){if(!s5locs.length)s5at=g.length;s5locs.push(l);continue}
+    const b=bundleOf(l);
+    const k=b?"b:"+b.key:(addrKey(l)||slug(l.name));
+    if(idx[k]===undefined){idx[k]=g.length;g.push({key:k,items:[]})}
+    g[idx[k]].items.push(l);
+  }
+  for(const x of g){
+    const f=x.items[0];
+    x.address=f.address;x.venue=(x.items.find(l=>l.venue)||{}).venue;
+    const b=x.key.startsWith("b:")?BUNDLES.find(y=>"b:"+y.key===x.key):null;
+    x.mixed=new Set(x.items.map(addrKey)).size>1;
+    const tt=TITLES.find(t=>t.re.test(String(f.address||"")));
+    x.title=tt?tt.title:b&&x.items.length>1?b.title:(x.items.length===1?f.name:(x.venue||String(f.address||"").split(",")[0]));
+  }
+  const parts=scene5Parts();
+  if(parts.length||s5locs.length){
+    const SPLIT=[{key:"leytron",title:"Salgesch Establisher",re:/leytron/i}];
+    const extra=SPLIT.map(x=>({key:x.key,s5:true,items:[],title:x.title,parts:parts.filter(p=>x.re.test(fullAddr(p.it.loc)))})).filter(x=>x.parts.length);
+    const main=parts.filter(p=>!SPLIT.some(x=>x.re.test(fullAddr(p.it.loc))));
+    const grp={key:"szene-5",s5:true,parts:main,items:s5locs,title:"Salgesch",address:"3970 Salgesch und Umgebung"};
+    g.splice(s5at<0?g.length:s5at,0,grp,...extra);
+  }
+  return g;
+}
+const S5ADDR={
+  "salgeschbahnhofstr40":"Bahnhofstrasse 40, 3970 Salgesch",
+  "salgeschdorfstr2":"Dorfstrasse 2, 3970 Salgesch",
+  "pfynwaldkieswerkvolkene":"Pfynwald, Kieswerk Volken (Ost), 3970 Salgesch",
+  "pfynwaldkieswerkvolkenw":"Pfynwald, Kieswerk Volken (West), 3970 Salgesch",
+  "pfynwaldpfyndenkmal":"Pfynwalddenkmal, Pfynstrasse 68, 3952 Susten",
+  "collombey-muratetangdechauderet":"Étang de Chauderet, Rte du Cornet, 1893 Collombey-Muraz",
+  "collombey-muratetangdechauderetrteducornet":"Étang de Chauderet, Rte du Cornet, 1893 Collombey-Muraz",
+  "saxonpontdelapierreavoir":"Pont de la Pierre à Voir, 1907 Saxon",
+  "nearsionpontdesiles(tba)":"Nähe Autobahnbrücke Pont des Iles, 1950 Sion (TBA)",
+  "tba":"TBA",
+  "martignyversiliasports(tbc)":"Versilia Sports, 1920 Martigny (TBC)",
+  "salgeschrundkurs":"Rundkurs Dorfstr. – Kirchstr. – Klareistr. – Karrenstr. – Mulingstr., 3970 Salgesch",
+  "salgeschbahnhofstr21":"Bahnhofstrasse 21, 3970 Salgesch",
+  "salgeschfrohheim":"Ehem. Rest. Frohheim, Unterdorfstrasse 12, 3970 Salgesch",
+  "salgeschpaschienstr12/22":"Pachienstrasse 12/22, 3970 Salgesch",
+  "salgeschbahnhofstr44":"Bahnhofstrasse 44, 3970 Salgesch",
+  "salgeschdorfstr10":"Dorfstrasse 10, 3970 Salgesch",
+  "salgeschdorfstr5":"Dorfstrasse 5 / Sennereigasse 1, 3970 Salgesch",
+  "salgeschdorfstr22":"Dorfstrasse 22, 3970 Salgesch",
+  "salgeschschulhausplatz":"Schulhausplatz 4, 3970 Salgesch",
+  "leytronchemdescarrieres":"Chem. des Carrières, 1912 Leytron"
+};
+const fullAddr=loc=>S5ADDR[norm(loc)]||loc;
+function addrForItem(it){
+  const a=S5ADDR[norm(it.loc||"")];if(a)return a;
+  return memo("ad|"+(it.sc||"")+"|"+(it.loc||""),()=>{
+    const n=norm(it.sc||"");
+    for(const l of S.locs)for(const st of (l.sets||[]))for(const w of (st.scenes||[]).map(norm))
+      if(n===w||n.startsWith(w+"pt"))return [l.venue,l.address].filter(Boolean).join(", ");
+    return it.loc||"";
+  });
+}
+function s5Addresses(g){
+  const m=new Map();
+  for(const p of g.parts){const a=fullAddr(p.it.loc);if(!m.has(a))m.set(a,[]);m.get(a).push(p)}
+  return [...m.entries()];
+}
+function ufOn(){return !(S.uf["1"]&&S.uf["2"])}
+function rawUnits(sc){return sceneTexts(sc,null).map(x=>x.u)}
+function unitBadges(us){
+  const has1=us.includes("1"),has2=us.includes("2");
+  return '<span class="ubs">'+(has1?'<span class="ub">1st Unit</span>':'')+(has2?'<span class="ub u2">2nd Unit</span>':'')+'</span>';
+}
+function cardWrap(key,head,addrHTML,body){
+  const op=!!S.openSc[key];
+  return '<div class="lc scd'+(op?' open':'')+'"><button class="lch" data-sckey="'+esc(key)+'" aria-expanded="'+op+'">'+head+'</button>'+addrHTML+'<div class="scb"'+(op?'':' hidden')+'>'+body+'</div></div>';
+}
+function s5Card(g0){
+  const g=Object.assign({},g0,{parts:ufOn()?g0.parts.filter(p=>S.uf[p.u==="2nd"?"2":"1"]):g0.parts});
+  const al=s5Addresses(g);
+  const tc=x=>String(x).toLowerCase().replace(/(^|[\s–\-\/])(\p{L})/gu,(m,a,c)=>a+c.toUpperCase());
+  const motName=ps=>[...new Set(ps.map(p=>tc(String(p.it.set||"").replace(/^VALAIS – /,""))))].join(" / ");
+  const li=p=>'<li><b>'+esc(p.it.sc)+'</b><button class="pd" data-goto="'+esc(p.d.id)+'">'+esc(p.d.short||p.d.label)+' '+fmtDate(p.d.date).slice(3,-5)+'.'+(p.u==="2nd"?'<i>2U</i>':'')+'</button><span class="ie '+ieClass(p.it.ie)+'">'+esc(p.it.ie||"")+'</span><span class="pdesc">'+esc(TX(p.it,"d"))+'</span></li>';
+  const body='<div class="mot">'+al.map(([ad,ps])=>'<div><b>'+esc(motName(ps))+'</b><span class="addr" style="font-size:13px">'+esc(ad)+' · <a href="'+maps(ad)+'" target="_blank" rel="noopener">Maps</a></span><ul class="plot">'+ps.map(li).join("")+'</ul></div>').join("")+'</div>';
+  const days=[...new Map(g.parts.map(p=>[p.d.id,p.d])).values()].sort((x,y)=>x.date<y.date?-1:1).map(d=>d.short||d.label).join(" · ");
+  const n=g.parts.length;
+  const head='<h4>'+esc(g.title)+unitBadges(g0.parts.map(p=>p.u==="2nd"?"2":"1"))+'</h4><span class="lcm">'+(al.length>1?al.length+' '+L('Motive')+' · ':'')+n+' '+(n===1?L('Szene'):L('Szenen'))+(days?' · '+esc(days):'')+'</span>';
+  const one=al.length===1?al[0][0]:null;
+  const top='<div class="adl"><div><span class="addr">'+esc(one||'3970 Salgesch · '+al.length+' '+L('Adressen im Dorf'))+'</span> <a href="'+maps(one||"3970 Salgesch")+'" target="_blank" rel="noopener">Maps</a></div></div>';
+  return cardWrap("card:"+(g.key==="szene-5"?"s5":g.key),head,top,body);
+}
+/* every scene with a synopsis, first occurrence only, in schedule order */
+const allScenes=()=>memo("allsc",()=>{
+  const seen=new Set(),out=[];
+  for(const d of S.days)for(const [u,list] of [["1",d.items||[]],["2",(d.unit2&&d.unit2.items)||[]]])for(const it of list){
+    if(!it.sc||!it.d)continue;const n=norm(it.sc);
+    if(seen.has(n))continue;seen.add(n);out.push({it,d,u,n});
+  }
+  return out;
+});
+function sceneTexts(scenes,uf){
+  if(uf===undefined)uf=ufOn()?S.uf:null;
+  const uk=uf?(uf["1"]?"1":"")+(uf["2"]?"2":""):"*";
+  return memo("st|"+uk+"|"+scenes.join(","),()=>{
+    const want=scenes.map(norm);
+    const out=allScenes().filter(x=>want.some(w=>x.n===w||x.n.startsWith(w+"pt")));
+    return uf?out.filter(x=>uf[x.u]):out;
+  });
+}
+function plotHTML(scenes){
+  const t=sceneTexts(scenes);if(!t.length)return"";
+  return '<ul class="plot">'+t.map(({it,d,u})=>'<li><b>'+esc(it.sc)+'</b><button class="pd" data-goto="'+esc(d.id)+'">'+esc(d.short||d.label)+' '+fmtDate(d.date).slice(3,-5)+'.'+(u==="2"?'<i>2U</i>':'')+'</button><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="pdesc">'+esc(TX(it,"d"))+'</span></li>').join("")+'</ul>';
+}
+function locCard(g0){
+  if(g0.s5)return s5Card(g0);
+  const g=ufOn()?Object.assign({},g0,{items:g0.items.filter(l=>sceneTexts((l.sets||[]).flatMap(x=>x.scenes||[])).length)}):g0;
+  const addr=[g.venue,g.address].filter(Boolean);
+  const multi=g.items.length>1;
+  const sets=l=>(l.sets||[]).map(s=>esc(s.ie)+': '+esc((s.scenes||[]).join(", "))).join(" · ");
+  const body=multi
+    ?'<div class="mot">'+g.items.map(l=>{const ad=[l.venue,l.address].filter(Boolean).join(", ");return '<div><b>'+esc(l.name)+'</b>'+(g.mixed?'<span class="addr" style="font-size:13px">'+esc(ad)+'</span>':'')+(plotHTML((l.sets||[]).flatMap(x=>x.scenes||[]))||'<span class="scs">'+sets(l)+'</span>')+'</div>'}).join("")+'</div>'
+    :(()=>{const pl=plotHTML((g.items[0].sets||[]).flatMap(x=>x.scenes||[]));return pl||'<div class="scs">'+sets(g.items[0])+'</div>'})();
+  const allSc=g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]));
+  const nSc=sceneTexts(allSc).length;
+  const dlist=[...new Map(sceneTexts(allSc).map(x=>[x.d.id,x.d])).values()].sort((a,b)=>a.date<b.date?-1:1).map(d=>d.short||d.label).join(" · ");
+  const head='<h4>'+esc(g.title)+unitBadges(rawUnits(g0.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))))+'</h4><span class="lcm">'+(multi?g.items.length+' '+L('Motive')+' · ':'')+nSc+' '+(nSc===1?L('Szene'):L('Szenen'))+(dlist?' · '+esc(dlist):'')+'</span>';
+  const addrHTML=g.mixed
+    ?'<div class="adl">'+g.items.map(l=>{const ad=[l.venue,l.address].filter(Boolean).join(", ");return '<div><span class="addr">'+esc(ad)+'</span> <a href="'+maps(ad)+'" target="_blank" rel="noopener">Maps</a></div>'}).join("")+'</div>'
+    :(addr.length?'<div class="adl"><div><span class="addr">'+esc(addr.join(", "))+'</span> <a href="'+maps(addr.join(", "))+'" target="_blank" rel="noopener">Maps</a></div></div>':'<div class="adl"><div><span class="addr">'+L('Ort: TBA')+'</span></div></div>');
+  return cardWrap("card:"+g.key,head,addrHTML,body);
+}
+function renderLoc(){
+  if(!S.locs.length)return emptyHTML("Motivliste");
+  const gs=groupLocs().filter(g=>{if(!ufOn())return true;if(g.s5)return g.parts.some(p=>S.uf[p.u==="2nd"?"2":"1"]);return sceneTexts(g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))).length>0});
+  return '<div class="scbar"><a class="mapbtn" href="'+MYMAP+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>Map</a><button class="scall" id="scall" data-scall="1" aria-expanded="false" aria-label="'+L("Alle Szenen auf- oder zuklappen")+'">'+cap(L("Szenen"))+'</button><button class="uf" data-uf="1" aria-pressed="'+!!S.uf["1"]+'" aria-label="1st Unit">1st</button><button class="uf u2" data-uf="2" aria-pressed="'+!!S.uf["2"]+'" aria-label="2nd Unit">2nd</button></div>'+
+    (gs.length?gs.map(locCard).join(""):'<div class="empty">'+(S.uf["1"]||S.uf["2"]?L('Keine Locations für diese Unit.'):L('Bitte mindestens eine Unit wählen.'))+'</div>');
+}
+function renderDispo(){
+  if(!S.days.length)return emptyHTML("Callsheet");
+  const t=todayISO(),shoot=S.days.filter(d=>d.kind==="shoot");
+  const by={};S.dispos.forEach(x=>by[x.date]=x);
+  if(!S.dday||!shoot.some(d=>d.date===S.dday)){
+    S.dday=((shoot.find(d=>d.date>=t)||shoot[shoot.length-1]||{}).date)||null;
+  }
+  let h='<div class="strip" role="tablist" aria-label="Drehtage">';
+  for(const d of shoot){
+    const dt=new Date(d.date+"T12:00:00"),has=!!by[d.date];
+    h+='<button class="chip'+(has?' has':' nodispo')+(d.date===t?' today':'')+'" role="tab" data-dday="'+esc(d.date)+'" aria-selected="'+(d.date===S.dday)+'"><div class="dd"><span class="cw">'+WD[dt.getDay()]+'</span>'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div><div class="lb">'+esc(d.short||d.label)+(has?' ●':'')+'</div></button>';
+  }
+  h+='</div>';
+  const day=S.days.find(d=>d.date===S.dday)||{},x=by[S.dday];
+  if(!x){
+    return h+'<div class="dsp-empty"><div class="eh">'+esc(day.label||"")+' · '+(day.date?fmtDate(day.date):'')+'</div><b>'+L('Callsheet folgt')+'</b><p>'+L('Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.')+'</p>'+
+      (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>';
+  }
+  const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>':'';
+  h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date">'+fmtDate(x.date)+(x.version?' · '+esc(x.version):'')+'</div></div></div>';
+  h+='<div class="dtiles">'+tile("Crew Call",x.crewCall||x.generalCall,true)+tile(L("Drehbeginn"),x.shootCall)+tile("Wrap",x.wrap)+tile(L("Sonne"),x.sr&&x.ss?x.sr+"–"+x.ss:"")+tile(L("Wetter"),x.weather)+'</div>';
+  if(TXA(x,"notes").length)h+='<div class="notes">'+TXA(x,"notes").map(n=>'<div class="note warn">'+esc(n)+'</div>').join("")+'</div>';
+  const place=(lbl,p)=>p&&(p.name||p.address)?'<div class="dbox"><div class="dk">'+lbl+'</div><div class="dn">'+esc(p.name||"")+'</div>'+(p.address?'<a href="'+maps([p.name,p.address].filter(Boolean).join(", "))+'" target="_blank" rel="noopener">'+esc(p.address)+'</a>':'')+(p.parking?'<div class="ds">'+L('Parken')+': '+esc(p.parking)+'</div>':'')+(p.note?'<div class="ds">'+esc(p.note)+'</div>':'')+'</div>':'';
+  h+='<section class="dsec"><h3 class="dh">'+L('Treffpunkt & Orte')+'</h3><div class="dgrid">'+place(L("Base / Treffpunkt"),x.base)+(x.locations||[]).map(l=>place(L("Drehort"),l)).join("")+'</div></section>';
+  if((x.meals||[]).length||(x.calls||[]).length){
+    const tl=[...(x.meals||[]).map(m=>({t:m.t,n:m.what+(m.where?' · '+m.where:''),k:"meal"})),...(x.calls||[]).map(c=>({t:c.t,n:c.dept+(c.note?' · '+c.note:''),k:"call"}))].sort((a,b)=>String(a.t).localeCompare(String(b.t)));
+    h+='<section class="dsec"><h3 class="dh">'+L('Zeiten')+'</h3><ol class="tl">'+tl.map(r=>'<li class="row ev"><div class="t">'+esc(r.t||"")+'</div><div class="what'+(r.k==="meal"?' meal':'')+'">'+esc(r.n)+'</div></li>').join("")+'</ol></section>';
+  }
+  if((x.scenes||[]).length){
+    h+='<section class="dsec"><h3 class="dh">'+cap(L('Szenen'))+'</h3><ul class="plot">'+x.scenes.map(sc=>'<li><b>'+esc(sc.sc)+'</b><span class="ie '+ieClass(sc.ie)+'">'+esc(sc.ie||"")+'</span> <span class="ds">'+esc(sc.set||"")+(sc.pg?' · '+esc(sc.pg)+' pgs':'')+'</span><span class="pdesc">'+esc(TX(sc,"d"))+'</span>'+(sc.cast&&sc.cast.length?castChips(sc.cast):'')+'</li>').join("")+'</ul></section>';
+  }
+  if((x.cast||[]).length){
+    h+='<section class="dsec"><h3 class="dh">Cast</h3><div class="tblw"><table class="dtbl"><thead><tr><th>#</th><th>'+L('Rolle')+'</th><th>'+L('Darsteller')+'</th><th>Pickup</th><th>'+L('Maske')+'</th><th>'+L('Kostüm')+'</th><th>Set</th></tr></thead><tbody>'+
+      x.cast.map(c=>'<tr><td>'+esc(c.no||"")+'</td><td>'+esc(c.role||"")+'</td><td>'+esc(c.actor||"")+'</td><td>'+esc(c.pickup||"")+'</td><td>'+esc(c.makeup||"")+'</td><td>'+esc(c.costume||"")+'</td><td><b>'+esc(c.onset||"")+'</b></td></tr>').join("")+'</tbody></table></div></section>';
+  }
+  if(x.hospital||(x.contacts||[]).length){
+    h+='<section class="dsec"><h3 class="dh">'+L('Notfall & Kontakte')+'</h3><div class="people">'+
+      (x.hospital?'<div class="p"><div class="hd"><span class="nm">'+esc(x.hospital.name||L("Spital"))+'</span><span class="role">'+L('Nächstes Spital')+'</span></div>'+(x.hospital.address?'<div class="ct"><a href="'+maps([x.hospital.name,x.hospital.address].filter(Boolean).join(", "))+'" target="_blank" rel="noopener">'+esc(x.hospital.address)+'</a></div>':'')+(x.hospital.phone?'<div class="ct"><a href="tel:'+esc(x.hospital.phone.replace(/\s/g,""))+'"><span>'+esc(x.hospital.phone)+'</span></a></div>':'')+'</div>':'')+
+      (x.contacts||[]).map(c=>'<div class="p"><div class="hd"><span class="nm">'+esc(c.name||"")+'</span><span class="role">'+esc(c.role||"")+'</span></div>'+(c.phone?'<div class="ct"><a href="tel:'+esc(c.phone.replace(/\s/g,""))+'"><span>'+esc(c.phone)+'</span></a></div>':'')+'</div>').join("")+'</div></section>';
+  }
+  if(x.link)h+='<p><a class="bigbtn" href="'+esc(x.link)+'" target="_blank" rel="noopener">'+L('Original-Callsheet öffnen')+'</a></p>';
+  return h;
+}
+function renderInfo(){
+  if(!S.places.length)return emptyHTML("Infos");
+  let h='';
+  for(const g of S.places){
+    h+='<section class="dept"><h3 class="dh">'+esc(TX(g,"cat"))+'</h3><div class="people">'+(g.items||[]).map(p=>
+      '<div class="p"><div class="nm">'+esc(p.name)+'</div>'+(p.address?'<div class="role"><a href="'+maps(p.name+", "+p.address)+'" target="_blank" rel="noopener">'+esc(p.address)+'</a></div>':'')+(p.note?'<div class="role">'+esc(TX(p,"note"))+'</div>':'')+(p.phone?'<div class="ct"><span>'+esc(p.phone)+'</span></div>':'')+'</div>'
+    ).join("")+'</div></section>';
+  }
+  return h;
+}
+function emptyHTML(what){
+  return '<div class="empty">'+(S.loaded?L(what)+' '+L('ist noch leer. Die Daten kommen automatisch aus der Dropbox der Produktion.'):L('Lade')+' '+L(what)+' …')+'</div>';
+}
+function srcHTML(){
+  const m=S.meta;if(!m||!m.sources)return"";
+  return '<div class="src"><div>'+L('Quellen (Dropbox, nur gelesen):')+'</div>'+m.sources.map(s=>'<span>'+esc(s.name)+'</span>').join("")+'</div>';
+}
+/* ---------- render ---------- */
+const VIEWS={plan:()=>renderPlan(),dispo:()=>renderDispo(),loc:()=>renderLoc(),crew:()=>renderCrew(),info:()=>renderInfo()};
+function fmtStamp(iso){try{return new Date(iso).toLocaleString(LOC[LANG],{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}catch(_){return ""}}
+function lastCheck(m){return m?[m.checkedAt,m.updatedAt].filter(Boolean).sort().pop()||null:null}
+function subT(m){
+  const t=TX(m,"subtitle");if(LANG==="de"||t!==m.subtitle)return t;
+  return t.replace(/^Dreh\s+(?:im\s+)?Wallis/i,LANG==="fr"?"Tournage en Valais":"Shooting in Valais").replace(/^Dreh\b/i,LANG==="fr"?"Tournage":"Shoot");
+}
+function renderHeader(){
+  const m=S.meta;
+  if(m){
+    const c=lastCheck(m);
+    $("#stand").innerHTML='<b>'+esc(m.scheduleVersion||"–")+'</b>'+(c?' · '+L('geprüft')+' '+esc(fmtStamp(c)):'');
+    if(m.subtitle)$("#sub").innerHTML=subT(m).split(" · ").map(x=>"<span>"+esc(x)+"</span>").join(" · ");
+  }else if(S.loaded){$("#stand").textContent=L("Noch keine Daten eingespielt.")}
+}
+function render(){
+  if(!VIEWS[S.tab])S.tab="plan";
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===S.tab));
+  const v=$("#view");
+  const focusQ=document.activeElement&&document.activeElement.id==="q";
+  let html;
+  try{html=VIEWS[S.tab]()+srcHTML()}
+  catch(err){console.error(err);html='<div class="empty">'+esc(L("Diese Ansicht konnte nicht angezeigt werden."))+'<br><small>'+esc(err&&err.message||err)+'</small></div>'}
+  v.innerHTML=html;
+  if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  scallLabel();
+  const sel=v.querySelector('.chip[aria-selected="true"]');
+  if(sel)sel.scrollIntoView({block:"nearest",inline:"center"});
+  try{renderHeader()}catch(err){console.error(err)}
+}
+
+/* ---------- interaction (one delegated click handler) ---------- */
+function setOpen(btn,open){
+  const k=btn.dataset.sckey;S.openSc[k]=open;btn.setAttribute("aria-expanded",open);
+  const c=btn.closest(".scd");if(!c)return;c.classList.toggle("open",open);const body=c.querySelector(".scb");if(body)body.hidden=!open;
+}
+function scallLabel(){const b=document.getElementById("scall");if(!b)return;const ks=[...document.querySelectorAll("[data-sckey]")].map(x=>x.dataset.sckey);const all=ks.length>0&&ks.every(k=>S.openSc[k]);b.setAttribute("aria-expanded",all);b.classList.toggle("on",all)}
+function goTab(tab){S.tab=tab;if(tab==="plan"){S.day=null;S.unit="1"}if(tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
+function store(k,v){try{localStorage.setItem(k,v)}catch(_){}}
+const ACTIONS=[
+  ["[data-lang]",b=>{LANG=b.dataset.lang;store("lang",LANG);applyStatic();render();if(!$("#search").hidden)renderSearch()}],
+  ["[data-sckey]",b=>{setOpen(b,!S.openSc[b.dataset.sckey]);scallLabel()}],
+  ["[data-scall]",()=>{const bs=[...document.querySelectorAll("[data-sckey]")];const open=!bs.every(x=>S.openSc[x.dataset.sckey]);bs.forEach(x=>setOpen(x,open));scallLabel()}],
+  ["[data-uf]",b=>{S.uf[b.dataset.uf]=!S.uf[b.dataset.uf];render()}],
+  ["[data-copy]",b=>{const txt=b.dataset.copy;const ok=()=>{b.textContent=L("Kopiert");setTimeout(()=>b.textContent=L("Kopieren"),1500)};try{navigator.clipboard.writeText(txt).then(ok,()=>{b.textContent=txt})}catch(_){b.textContent=txt}}],
+  ["[data-tab]",b=>{goTab(b.dataset.tab);render()}],
+  ["[data-todispo]",b=>{S.dday=b.dataset.todispo;S.tab="dispo";window.scrollTo(0,0);render()}],
+  ["[data-dday]",b=>{S.dday=b.dataset.dday;render()}],
+  ["[data-day]",b=>{S.day=b.dataset.day;S.unit="1";render()}],
+  ["[data-unit]",b=>{S.unit=b.dataset.unit;render()}],
+  ["[data-goto]",b=>{S.day=b.dataset.goto;S.tab="plan";S.unit="1";window.scrollTo(0,0);render()}],
+];
+document.addEventListener("click",e=>{
+  if(e.target.closest("#search"))return; /* search overlay has its own handler */
+  for(const [sel,fn] of ACTIONS){const b=e.target.closest(sel);if(b){if(b.disabled)return;try{fn(b)}catch(err){console.error(err)}return}}
+});
+document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;render()}});
+let LASTDAY=todayISO();
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&todayISO()!==LASTDAY){LASTDAY=todayISO();S.day=null;S.dday=null;render()}});
+
+/* ---------- global search ---------- */
+const nrm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function hl(text,terms){let h=esc(text);for(const t of terms){if(!t)continue;const re=new RegExp("("+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig");h=h.replace(re,"<mark>$1</mark>")}return h}
+function searchAll(q){
+  let qq=nrm(q).replace(/[,;]/g," ").trim();
+  const iso=d=>d.getDate()+"."+(d.getMonth()+1)+".";
+  const now=new Date(),tmr=new Date(Date.now()+864e5);
+  qq=qq.replace(/\b(heute|today|aujourd'?hui)\b/g,iso(now)).replace(/\b(morgen|tomorrow|demain)\b/g,iso(tmr));
+  qq=qq.replace(/\b(drehtag|day|tag|dt|jour|j)\s*#?\s*(\d{1,2})\b/g,"d$2").replace(/#(\d{1,2})\b/g,"d$1");
+  qq=qq.replace(/\b(\d{1,2})[./](\d{1,2})\.?(?:\d{2,4})?\b/g,(m,a,b)=>(+a)+"."+(+b)+".");
+  const terms=qq.split(/\s+/).filter(Boolean);if(!terms.length)return null;
+  const isNum=t=>/^\d+[a-z]*$/.test(t)&&!/^\d+(st|nd|rd|th)$/.test(t);
+  const digits=x=>String(x||"").replace(/\D/g,"");
+  const phoneVars=ph=>{const d=digits(ph);if(!d)return "";const loc=d.startsWith("41")?"0"+d.slice(2):d;return d+" "+loc};
+  const dshort=d=>{const x=new Date(d.date+"T12:00:00");return x.getDate()+"."+(x.getMonth()+1)+". "+String(x.getDate()).padStart(2,"0")+"."+String(x.getMonth()+1).padStart(2,"0")+". "+WD[x.getDay()]};
+  const cast=(S.meta&&S.meta.cast)||{};
+  /* text terms: substring anywhere; numeric terms: only scene numbers, day codes, dates, phone numbers */
+  const qd=terms.every(t=>/^\+?\d+$/.test(t))?terms.join("").replace(/\D/g,""):"";
+  const match=(text,nums,phone)=>{const T=nrm(text),N=nrm(nums);if(phone&&qd.length>=3&&N.replace(/\s+/g," ").split(" ").some(w=>w.includes(qd)))return true;return terms.every(t=>isNum(t)?N.split(/\s+/).some(w=>w.startsWith(t)):(T.includes(t)||N.includes(t)))};
+  const R={day:[],sc:[],loc:[],crew:[],dispo:[],info:[]};
+  const WDL=[["sonntag","sunday","dimanche"],["montag","monday","lundi"],["dienstag","tuesday","mardi"],["mittwoch","wednesday","mercredi"],["donnerstag","thursday","jeudi"],["freitag","friday","vendredi"],["samstag","saturday","samedi"]];
+  for(const d of S.days){
+    const x=new Date(d.date+"T12:00:00");
+    const sc1=(d.items||[]).filter(i=>i.sc).length,sc2=((d.unit2&&d.unit2.items)||[]).filter(i=>i.sc).length;
+    const kindw=d.kind==="shoot"?"drehtag shooting day tournage":d.kind==="off"?"drehfrei frei day off off-day libre":"reise reisetag travel voyage";
+    const text=[d.label,d.short,kindw,WDL[x.getDay()].join(" "),WD[x.getDay()],dshort(d),(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info"),dayPlaces(d).join(" "),sc2?"2nd unit":"",sc1?"1st unit":""].join(" ");
+    if(match(text,nrm(d.short||"")+" "+dshort(d)))R.day.push({k:"day",d,sc1,sc2});
+  }
+  for(const d of S.days)for(const [u,list] of [["1",d.items||[]],["2",(d.unit2&&d.unit2.items)||[]]])for(const it of list){
+    if(!it.sc)continue;const ad=addrForItem(it);
+    const sc=nrm(it.sc).replace(/\s+/g,"");
+    const text=[it.set,it.d,it.d_de,it.d_fr,ad,it.loc,(it.cast||[]).map(c=>cast[c]||"").join(" "),d.label,d.short,u==="2"?"2nd unit":"1st unit","szene scene"].join(" ");
+    const nums=[sc,nrm(it.sc),(it.cast||[]).join(" "),nrm(d.short||""),dshort(d)].join(" ");
+    if(!match(text,nums))continue;
+    let score=0;for(const t of terms){if(sc===t)score+=100;else if(sc.startsWith(t))score+=40}
+    R.sc.push({k:"sc",d,u,it,ad,score});
+  }
+  R.sc.sort((x,y)=>y.score-x.score||(x.d.date<y.d.date?-1:x.d.date>y.d.date?1:String(x.it.t).localeCompare(String(y.it.t))));
+  for(const g of groupLocs()){
+    const text=g.s5?[g.title,...g.parts.map(p=>fullAddr(p.it.loc)+" "+p.it.set)].join(" "):[g.title,g.venue,g.address,...g.items.map(l=>[l.name,l.venue,l.address].join(" "))].join(" ");
+    const nums=g.s5?g.parts.map(p=>nrm(p.it.sc).replace(/\s+/g,"")).join(" "):g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[])).map(x=>nrm(x).replace(/\s+/g,"")).join(" ");
+    if(match(text,nums+" "+nrm(text).replace(/[^0-9a-z ]/g," ")))R.loc.push({k:"loc",g});
+  }
+  for(const dep of S.crew)for(const pp of (dep.people||[]))if(match([pp.name,pp.role,pp.role_fr,pp.role_en,dep.dept,dep.dept_fr,dep.dept_en,pp.email,pp.note].join(" "),phoneVars(pp.phone),true))R.crew.push({k:"crew",p:pp,dep});
+  for(const x of S.dispos){const vals=JSON.stringify(x).replace(/"[a-zA-Z]+":/g," ");if(match(vals,nrm(x.label||"")+" "+dshort(x)))R.dispo.push({k:"dispo",x})}
+  for(const c of S.places)for(const it of (c.items||[]))if(match([it.name,it.address,it.note,TX(it,"note"),c.cat,TX(c,"cat")].join(" "),phoneVars(it.phone),true))R.info.push({k:"info",it,c});
+  return {R,terms};
+}
+let SR=[],LASTQ="";
+function renderSearch(){
+  const q=$("#gq").value,res=searchAll(q),box=$("#gres");SR=[];
+  if(!res){box.innerHTML='<p class="shint">'+L('Suche nach Szenennummer (z. B. 186), Drehtag (D5, Day 5, 26.10., Montag, heute, morgen), Motiv, Adresse, Rolle (z. B. Regina), Crew-Name, Funktion oder Telefonnummer.')+'</p>';return}
+  const {R,terms}=res;let h="",n=0;
+  const add=(o,t1,t2)=>{SR.push(o);h+='<button class="sr" data-sr="'+(SR.length-1)+'"><span class="t1">'+t1+'</span>'+(t2?'<span class="t2">'+t2+'</span>':'')+'</button>';n++};
+  const sec=(title,arr,fn)=>{if(!arr.length)return;h+='<h3 class="dh">'+title+' · '+arr.length+'</h3>';arr.slice(0,40).forEach(fn)};
+  sec(L("Drehtage"),R.day,r=>add(r,'<b>'+esc(r.d.label)+'</b> · '+esc(fmtDate(r.d.date)),esc([r.d.hours,dayPlaces(r.d).join(", "),r.d.kind==="shoot"?(r.sc1+r.sc2)+" "+L("Szenen")+(r.sc2?" · 2nd Unit":""):(r.d.kind==="off"?L("Drehfrei"):(TX(r.d,"info")||L("Reisetag")))].filter(Boolean).join(" · "))));
+  sec(cap(L("Szenen")),R.sc,r=>add(r,'<b>'+hl(r.it.sc,terms)+'</b> · '+hl(r.it.set||"",terms),esc((r.d.short||r.d.label)+' '+fmtDate(r.d.date).slice(0,-5)+' · '+(r.it.t||"")+(r.u==="2"?' · 2nd Unit':''))+'<br>'+hl(TX(r.it,"d"),terms)+'<br>'+hl(r.ad||"",terms)));
+  sec("Locations",R.loc,r=>add(r,hl(r.g.title,terms),hl(r.g.s5?L("Salgesch, mehrere Adressen"):[r.g.venue,r.g.address].filter(Boolean).join(", "),terms)));
+  sec("Crew",R.crew,r=>add(r,hl(r.p.name,terms),hl([TX(r.p,"role"),TX(r.dep,"dept"),r.p.phone].filter(Boolean).join(" · "),terms)));
+  sec("Callsheet",R.dispo,r=>add(r,esc((r.x.label||"Callsheet")+' · '+fmtDate(r.x.date)),'Callsheet'));
+  sec("Info",R.info,r=>add(r,hl(r.it.name,terms),hl([TX(r.c,"cat"),r.it.address].filter(Boolean).join(" · "),terms)));
+  box.innerHTML=n?h:'<p class="shint">'+L('Nichts gefunden für')+' «'+esc(q)+'».</p>';
+}
+function openSearch(){$("#search").hidden=false;document.body.style.overflow="hidden";const i=$("#gq");i.focus();i.select();renderSearch()}
+function closeSearch(){$("#search").hidden=true;document.body.style.overflow=""}
+$("#searchBtn").addEventListener("click",openSearch);
+$("#sclose").addEventListener("click",closeSearch);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#search").hidden)closeSearch()});
+let gqT=null;$("#gq").addEventListener("input",()=>{clearTimeout(gqT);gqT=setTimeout(renderSearch,120)});
+$("#gq").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clearTimeout(gqT);renderSearch();const f=document.querySelector("#gres [data-sr]");if(f)f.click()}});
+$("#gres").addEventListener("click",e=>{
+  const b=e.target.closest("[data-sr]");if(!b)return;const r=SR[+b.dataset.sr];if(!r)return;LASTQ=$("#gq").value;closeSearch();
+  let scrollSel=null;
+  if(r.k==="day"){S.tab="plan";S.day=r.d.id;const qv=nrm(LASTQ);S.unit=(/\b(2nd|2u|second|zweite|2\.)\b|2nd ?unit|unit ?2/.test(qv)&&r.d.unit2&&(r.d.unit2.items||[]).length)?"2":"1"}
+  else if(r.k==="sc"){S.tab="plan";S.day=r.d.id;S.unit=r.u}
+  else if(r.k==="loc"){S.tab="loc";S.uf={"1":true,"2":true};const key="card:"+(r.g.key==="szene-5"?"s5":r.g.key);S.openSc[key]=true;scrollSel='[data-sckey="'+key+'"]'}
+  else if(r.k==="crew"){S.tab="crew";S.q=r.p.name}
+  else if(r.k==="dispo"){S.tab="dispo";S.dday=r.x.date}
+  else if(r.k==="info"){S.tab="info"}
+  window.scrollTo(0,0);render();
+  if(r.k==="sc"){const want=norm(r.it.sc);const el=[...document.querySelectorAll(".sc .scn")].find(x=>norm(x.textContent)===want);if(el){el.closest(".sc").scrollIntoView({block:"center"});el.closest(".sc").classList.add("hit");setTimeout(()=>el.closest(".sc").classList.remove("hit"),1800)}}
+  if(scrollSel){const el=document.querySelector(scrollSel);if(el)el.scrollIntoView({block:"start"})}
+});
+
+
+/* ---------- data ---------- */
+const arr=x=>Array.isArray(x)?x:[];
+function cleanDay(d){
+  const o=Object.assign({},d);o.items=arr(o.items).filter(x=>x&&typeof x==="object");o.notes=arr(o.notes).filter(x=>typeof x==="string");for(const l of ["fr","en"])if(o["notes_"+l]!==undefined)o["notes_"+l]=arr(o["notes_"+l]).filter(x=>typeof x==="string");
+  if(o.unit2&&typeof o.unit2==="object")o.unit2=Object.assign({},o.unit2,{items:arr(o.unit2.items).filter(x=>x&&typeof x==="object"),notes:arr(o.unit2.notes)});else delete o.unit2;
+  return o;
+}
+const CLEAN={
+  days:list=>list.filter(d=>d&&typeof d.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d.date)).map(cleanDay).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0),
+  crew:list=>list.map(c=>Object.assign({},c,{people:arr(c.people)})),
+  locs:list=>list.map(l=>Object.assign({},l,{sets:arr(l.sets).map(x=>Object.assign({},x,{scenes:arr(x.scenes).map(String)}))})),
+  places:list=>list.map(c=>Object.assign({},c,{items:arr(c.items)})),
+  dispos:list=>list.filter(x=>x&&typeof x.date==="string"),
+};
+const rows=snap=>snap.docs.map(d=>Object.assign({id:d.id},d.data()));
+const SOURCES=[["days","days","date"],["crew","crew","order"],["locations","locs","order"],["places","places","order"],["dispos","dispos","date"]];
+function setData(key,list){S[key]=(CLEAN[key]||(x=>x))(list);MEMO.clear();saveCache()}
+/* last data kept in this browser so the app opens instantly; the live database replaces it a moment later */
+const CACHE_KEY="crewcache:v1";let cacheT=null;
+function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>{try{localStorage.setItem(CACHE_KEY,JSON.stringify({meta:S.meta,days:S.days,crew:S.crew,locs:S.locs,places:S.places,dispos:S.dispos}))}catch(_){}},1500)}
+function loadCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(!c||!Array.isArray(c.days))return false;S.meta=c.meta||null;for(const k of ["days","crew","locs","places","dispos"])S[k]=(CLEAN[k]||(x=>x))(arr(c[k]));MEMO.clear();return true}catch(_){return false}}
+/* several snapshots arrive together on start: draw once per frame */
+let RQ=0;function scheduleRender(){if(RQ)return;RQ=1;const go=()=>{if(!RQ)return;RQ=0;render()};requestAnimationFrame(go);setTimeout(go,120)}
+async function reloadAll(db){
+  const [mt,...lists]=await Promise.all([db.doc("meta/info").get(),...SOURCES.map(([col,,ord])=>db.collection(col).orderBy(ord).get())]);
+  if(mt.exists)S.meta=mt.data();
+  SOURCES.forEach(([,key],i)=>setData(key,rows(lists[i])));
+  MEMO.clear();render();
+}
+function showMsg(text,ms){const m=$("#refmsg");m.hidden=false;m.textContent=text;if(ms)setTimeout(()=>{m.hidden=true},ms)}
+
+applyStatic();
+loadCache();
+render();
+
+(async()=>{
+  const db=await claude.use("db");
+  if(!db){S.loaded=true;$("#stand").textContent=L("Datenbank nicht erreichbar. Bitte mit einem Claude-Konto anmelden.");render();return}
+  DB=db;
+  let pending=SOURCES.length+1;const first={};
+  const arrived=k=>{if(!first[k]){first[k]=1;if(--pending<=0)S.loaded=true}scheduleRender()};
+  const fail=k=>err=>{console.error(k,err);S.loaded=true;showMsg(L("Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen."));scheduleRender()};
+  SOURCES.forEach(([col,key,ord])=>db.collection(col).orderBy(ord).onSnapshot(sn=>{setData(key,rows(sn));arrived(col)},fail(col)));
+  db.doc("meta/info").onSnapshot(sn=>{
+    S.meta=sn.exists?sn.data():null;saveCache();
+    if(REF.busy&&S.meta&&((S.meta.checkedAt||"")+"|"+(S.meta.updatedAt||""))!==REF.since){
+      REF.busy=false;const b=$("#refresh");b.disabled=false;b.classList.remove("spin");
+      showMsg((S.meta.updatedAt&&S.meta.checkedAt&&S.meta.updatedAt<S.meta.checkedAt)?L("Geprüft: keine neuen Dateien in der Dropbox."):L("Aktualisiert."),4000);
+    }
+    arrived("meta");
+  },fail("meta"));
+
+  /* refresh button: owner triggers the Dropbox check, everyone else reloads the latest stored data */
+  const [u,m]=await Promise.all([claude.use("user"),claude.use("mcp")]);
+  let own=false;try{own=u?await u.isOwner():false}catch(_){}
+  const b=$("#refresh");b.hidden=false;
+  if(!own||!m){
+    b.addEventListener("click",async()=>{
+      if(b.classList.contains("spin"))return;b.classList.add("spin");
+      try{await reloadAll(db);const c=lastCheck(S.meta);showMsg(L("Neueste Daten geladen.")+(c?" "+L("Dropbox zuletzt geprüft")+" "+fmtStamp(c)+".":""),5000)}
+      catch(err){console.error(err);showMsg(L("Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen."),5000)}
+      setTimeout(()=>b.classList.remove("spin"),400);
+    });
+    return;
+  }
+  b.addEventListener("click",async()=>{
+    if(REF.busy)return;REF.busy=true;REF.since=S.meta?(S.meta.checkedAt||"")+"|"+(S.meta.updatedAt||""):"";b.disabled=true;b.classList.add("spin");
+    showMsg(L("Dropbox wird geprüft. Das dauert 1–3 Minuten, die App aktualisiert sich danach von selbst."));
+    try{await m.callTool("Claude Code Remote","fire_trigger",{trigger_id:TRIGGER,text:"Manuell aus der App ausgelöst."},{cache:false})}
+    catch(e){REF.busy=false;b.disabled=false;b.classList.remove("spin");showMsg((e&&(e.code==="permission_denied"||e.code==="not_granted"))?L("Zugriff nicht erlaubt. Bitte die Berechtigung der App erlauben und erneut tippen."):L("Aktualisierung konnte nicht gestartet werden")+" ("+((e&&(e.message||e.code))||"Fehler")+").");return}
+    setTimeout(()=>{if(REF.busy){REF.busy=false;b.disabled=false;b.classList.remove("spin");showMsg(L("Die Aktualisierung braucht länger als üblich. Die App übernimmt die Daten automatisch, sobald sie fertig ist."))}},5*60*1000);
+  });
+})();
+</script>
