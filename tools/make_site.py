@@ -4,7 +4,7 @@ import pathlib,re
 T=pathlib.Path(__file__).resolve().parent;R=T.parent
 src=(T/"app.html").read_text()
 i=src.index("\napplyStatic();\nloadCache();\nrender();\n");j=src.rindex("</script>")
-boot=(T/"web_boot.js").read_text()
+boot=(T/"a2hs.js").read_text()+"\n"+(T/"web_boot.js").read_text()
 body=src[:i]+"\n"+boot+"\n"+src[j:]
 body=body.replace("</style>",(T/"web_style.css").read_text()+"\n</style>\n</head>\n<body>",1)
 assert "claude.use" not in body.split("<script>",2)[-1].split("/* ---------- web boot")[1]
