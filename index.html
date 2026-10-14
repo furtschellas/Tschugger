@@ -1025,7 +1025,8 @@ async function getDataKey(){
   if(DATAKEY)return DATAKEY;
   const {F,db}=await fb();const s=await F.getDoc(F.doc(db,"secret","key"));
   if(!s.exists())throw new Error("no key");
-  DATAKEY=await crypto.subtle.importKey("raw",b64(s.data().k),{name:"AES-GCM"},false,["decrypt"]);
+  const kv=String(s.data().k||"").trim().replace(/^["'“”«]+|["'“”»]+$/g,"");
+  DATAKEY=await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["decrypt"]);
   return DATAKEY;
 }
 function applyData(d){
@@ -1040,6 +1041,16 @@ async function load(force){
   const key=await getDataKey();
   const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct));
   LASTSTAMP=enc.stamp||null;applyData(JSON.parse(new TextDecoder().decode(pt)));scheduleRender();return true;
+}
+function loadErr(err){
+  const c=(err&&(err.code||err.name))||"",m=(err&&err.message)||String(err);
+  let why;
+  if(/permission/.test(c)||/permission/i.test(m))why="Kein Zugriff auf den Schlüssel (Firebase-Regeln prüfen)";
+  else if(m==="no key")why="Schlüssel fehlt in Firebase (Sammlung secret, Dokument key, Feld k)";
+  else if(c==="OperationError"||/decrypt|InvalidAccessError|DataError/i.test(c+m))why="Schlüssel passt nicht zu den Daten (Wert von secret/key prüfen)";
+  else if(/^HTTP/.test(m))why="Datendatei nicht gefunden ("+m+")";
+  else why=m;
+  return L("Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen.")+" ["+why+"]";
 }
 /* ---- membership: invited addresses join once (members/{uid}); blocked = active:false ---- */
 async function checkMember(){
@@ -1124,7 +1135,7 @@ async function afterSignIn(u){
   let st;try{st=await checkMember()}catch(err){console.error(err);showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
   hideGate();acctButton(true);
-  try{await load(true)}catch(err){console.error(err);showMsg(L("Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen."),6000)}
+  try{await load(true)}catch(err){console.error(err);showMsg(loadErr(err),15000)}
   if(window.__justSignedIn){window.__justSignedIn=false;maybeOfferA2hs(true)}else maybeOfferA2hs(false);
 }
 /* ---- account sheet: own password, own email, sign out; admin entry ---- */
