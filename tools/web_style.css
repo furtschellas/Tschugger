@@ -1,0 +1,12 @@
+.gate{position:fixed;inset:0;z-index:50;background:var(--paper) radial-gradient(120% 60% at 80% -10%,rgba(255,46,138,.22),transparent 60%);display:flex;align-items:center;justify-content:center;padding:24px}
+.gate[hidden]{display:none}
+.gbox{width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px}
+.gbox h2{font-family:var(--f-display);font-weight:800;font-size:32px;text-transform:uppercase;margin:0 0 14px;color:var(--ink);white-space:nowrap}
+.gbox h2 span{font-family:var(--f-marker);font-weight:400;text-transform:none;font-size:.87em;color:var(--accent);display:inline-block;transform:rotate(-4deg);margin-left:4px}
+.gbox label{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.gbox input{font:inherit;font-size:17px;padding:12px 14px;border-radius:10px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink)}
+.gbox button[type=submit]{font:inherit;font-weight:600;font-size:16px;padding:12px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.gbox button[disabled]{opacity:.6}
+.gerr{color:#ff8a8a;min-height:1.2em;margin:0;font-size:14px}
+.ghint{color:var(--muted);font-size:13px;margin:0}
+.glang{position:static;align-self:flex-start;margin-top:8px}
