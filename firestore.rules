@@ -4,7 +4,12 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function verified() { return signedIn() && request.auth.token.email_verified == true; }
     function myEmail() { return request.auth.token.email.lower(); }
-    function isAdmin() { return verified() && myEmail() in ['furtschellas@gmail.com']; }
+    // Haupt-Admin (fest) und weitere Admins, die der Haupt-Admin unter admins/{email} einträgt
+    function isOwner() { return verified() && myEmail() in ['furtschellas@gmail.com']; }
+    function isAdmin() {
+      return isOwner()
+        || (verified() && exists(/databases/$(database)/documents/admins/$(myEmail())));
+    }
     function isMember() {
       return signedIn()
         && exists(/databases/$(database)/documents/members/$(request.auth.uid))
@@ -17,17 +22,25 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
+    // Weitere Admins: nur der Haupt-Admin verwaltet sie
+    match /admins/{email} {
+      allow read: if isAdmin();
+      allow get: if verified() && myEmail() == email;
+      allow write: if isOwner();
+    }
+
     // Einladungen (E-Mail-Adresse = Dokument-ID): verwaltet nur der Admin
     match /invites/{email} {
       allow read, write: if isAdmin();
       allow get: if verified() && myEmail() == email;
     }
 
-    // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren kann nur der Admin
+    // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren und entfernen kann nur der Haupt-Admin
     match /members/{uid} {
-      allow read, update, delete: if isAdmin();
+      allow read: if isAdmin();
+      allow update, delete: if isOwner();
       allow get: if signedIn() && request.auth.uid == uid;
-      allow create: if isAdmin() || (verified() && request.auth.uid == uid
+      allow create: if isOwner() || (isAdmin() && request.auth.uid == uid) || (verified() && request.auth.uid == uid
         && exists(/databases/$(database)/documents/invites/$(myEmail()))
         && request.resource.data.keys().hasOnly(['active', 'email', 'name', 'joinedAt', 'firstName', 'lastName', 'lang', 'birthday', 'diet', 'intol', 'allergies'])
         && request.resource.data.active == true
