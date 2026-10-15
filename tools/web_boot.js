@@ -545,11 +545,11 @@ async function onGateSubmit(e){
   e.preventDefault();const f=e.target;const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;gateMsg("",true);
   try{
     const {A,auth}=await fb();const em=f.querySelector("#gem")?f.querySelector("#gem").value.trim():"";const pw=f.querySelector("#gpw")?f.querySelector("#gpw").value:"";
-    if(f.dataset.f==="login"){window.__justSignedIn=true;if(window.resetViewState)resetViewState();await A.signInWithEmailAndPassword(auth,em,pw)}
+    if(f.dataset.f==="login"){window.__justSignedIn=true;if(window.resetViewState)window.resetViewState();await A.signInWithEmailAndPassword(auth,em,pw)}
     else if(f.dataset.f==="register"){
       if(pw.length<8)throw {code:"weak-password"};
       if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
-      window.__justSignedIn=true;if(window.resetViewState)resetViewState();const c=await A.createUserWithEmailAndPassword(auth,em,pw);
+      window.__justSignedIn=true;if(window.resetViewState)window.resetViewState();const c=await A.createUserWithEmailAndPassword(auth,em,pw);
       await sendVerify(c.user)
     }
     else if(f.dataset.f==="reset"){try{await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),em)}catch(err){if(!/user-not-found/.test(err.code||""))throw err}gateMsg(L("Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen."),false)}
@@ -645,7 +645,7 @@ async function onGateClick(e){
   else if(a.dataset.gact==="request"){a.disabled=true;await sendRequest()}
   else if(a.dataset.gact==="google"){
     const prov=new A.GoogleAuthProvider();prov.setCustomParameters({prompt:"select_account"});window.__justSignedIn=true;
-    if(window.resetViewState)resetViewState();
+    if(window.resetViewState)window.resetViewState();
     try{if(isStandalone())await A.signInWithRedirect(auth,prov);else await A.signInWithPopup(auth,prov)}
     catch(err){const c=err.code||"";
       if(/popup-blocked|operation-not-supported|web-storage/.test(c)){try{await A.signInWithRedirect(auth,prov)}catch(e2){gateMsg(errText(e2),true)}}
@@ -1322,10 +1322,10 @@ render();
     if(typeof A.isSignInWithEmailLink==="function"&&A.isSignInWithEmailLink(auth,location.href)){
       const q=new URLSearchParams(location.search);let em=q.get("em")||"";try{em=em||localStorage.getItem("emailForSignIn")||""}catch(_){}
       if(!em)em=(prompt(L("Bitte bestätige deine E-Mail-Adresse:"))||"").trim();
-      if(em){window.__justSignedIn=true;if(window.resetViewState)resetViewState();A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(null,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
+      if(em){window.__justSignedIn=true;if(window.resetViewState)window.resetViewState();A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(null,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
     }
     A.onAuthStateChanged(auth,u=>{
-      if(!u){ME=null;MYPERMS=[];acctButton(false);clearLocal();if(window.resetViewState)resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
+      if(!u){ME=null;MYPERMS=[];acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
         /* the sign-in screen may already be open (person switched to «create account» while Firebase was starting): keep it and what was typed */
         const g=document.getElementById("gate");if(g&&!g.hidden&&["login","register","reset"].includes(AUTHMODE)&&g.querySelector("form"))return;
         showGate("login");return}

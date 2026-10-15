@@ -584,14 +584,14 @@ html body :is(.myhead,.mcpick) .pillbtn{font-size:calc(14px*var(--bs,1));padding
 html body .fpls>:is(.scbtn,.fpl){height:calc(28px*var(--bs,1));font-size:calc(12.5px*var(--bs,1))}html body .fpls>.fpl.scp{padding:0 calc(11px*var(--bs,1))}html body .fpls>.scbtn{padding:0 calc(12px*var(--bs,1))}html body .fpls>.fpl.blk{width:calc(28px*var(--bs,1))}
 html body .hbtns>.refresh{width:calc(28px*var(--bs,1));height:calc(28px*var(--bs,1))}
 .fromapp{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:99px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);margin-left:2px}
-#blkgal .galbox{max-width:min(980px,96vw);max-height:calc(100dvh - 24px);overflow:auto}
-.galgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:12px 0}
+#blkgal{padding:12px}#blkgal .galbox{width:96vw;max-width:1500px;height:calc(100dvh - 24px);max-height:none;overflow:auto;display:flex;flex-direction:column}#blkgal .galview .galstage{flex:1}
+.galgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(46%,220px),1fr));gap:8px;margin:12px 0}
 .galth{position:relative;aspect-ratio:3/2;padding:0;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:color-mix(in srgb,var(--ink) 6%,transparent);cursor:pointer}
 .galth img{width:100%;height:100%;object-fit:cover;display:block}.galth:hover{border-color:var(--accent)}
 .galplay{position:absolute;inset:auto auto 8px 8px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
 .galerr::after{content:"–";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .galstage{position:relative;display:flex;align-items:center;justify-content:center;background:#000;border-radius:12px;overflow:hidden;min-height:200px;margin-top:10px}
-.galstage img{max-width:100%;max-height:calc(100dvh - 220px);object-fit:contain;display:block}
+.galstage img{max-width:100%;max-height:calc(100dvh - 190px);object-fit:contain;display:block}
 .galnav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;font-size:26px;line-height:1;cursor:pointer}.galnav.prev{left:8px}.galnav.next{right:8px}
 .galcap{font-size:12.5px;color:var(--muted);margin:6px 0;overflow-wrap:anywhere}.galview h3 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .fpl.blk.hasm{background:color-mix(in srgb,#e0457b 12%,transparent)}
