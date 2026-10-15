@@ -86,3 +86,4 @@
 .arow small{color:var(--muted)}
 .arow button{font:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;color:var(--ink);cursor:pointer}
 .ust.adm{background:var(--gold);color:#1a1206}
+.admv .foodtog.ico{width:42px;height:42px;padding:0;justify-content:center;gap:0}
