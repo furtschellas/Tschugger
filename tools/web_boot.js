@@ -1257,7 +1257,7 @@ const BLKIMG=new Map();
 window.blkImg=function(f){
   if(!BLKIMG.has(f))BLKIMG.set(f,(async()=>{const key=await getDataKey();const r=await fetch(f,{cache:"force-cache"});if(!r.ok)throw new Error("HTTP "+r.status);
     const buf=new Uint8Array(await r.arrayBuffer());const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:buf.slice(0,12)},key,buf.slice(12));
-    return URL.createObjectURL(new Blob([pt],{type:"image/jpeg"}))})().catch(err=>{BLKIMG.delete(f);throw err}));
+    return URL.createObjectURL(new Blob([pt],{type:/\.mp4\.bin$/.test(f)?"video/mp4":"image/jpeg"}))})().catch(err=>{BLKIMG.delete(f);throw err}));
   return BLKIMG.get(f);
 };
 /* crew list: phone / e-mail from the app profile when the crew list has none (people allowed to see contacts outside the crew list) */

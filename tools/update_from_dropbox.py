@@ -416,7 +416,26 @@ def main():
                     except Exception as ex:
                         log("Vorschau fehlt:", e["name"], str(ex)[:80]); want_files.discard(fn); continue
                 vid = bool(re.search(r"\.(mov|mp4|m4v)$", e["name"], re.I))
-                items.append({"n": e["name"], "t": "vid" if vid else "img", "f": fn,
+                vf = None
+                if vid:  # playable copy: 720p H.264 MP4, encrypted like the previews
+                    vf = "blk/" + key + ".mp4.bin"; want_files.add(vf)
+                    if not os.path.exists(vf):
+                        try:
+                            import shutil
+                            ff = shutil.which("ffmpeg")
+                            if not ff: raise RuntimeError("ffmpeg fehlt")
+                            with tempfile.TemporaryDirectory() as td:
+                                src = os.path.join(td, "in" + os.path.splitext(e["name"])[1].lower()); dst = os.path.join(td, "out.mp4")
+                                open(src, "wb").write(dbx.download(e["id"]))
+                                subprocess.run([ff, "-y", "-loglevel", "error", "-i", src, "-vf", "scale=-2:'min(720,ih)'", "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
+                                                "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", dst], check=True, timeout=900)
+                                data = open(dst, "rb").read()
+                            if len(data) > 45e6: raise RuntimeError("zu gross")
+                            iv = secrets.token_bytes(12)
+                            open(vf, "wb").write(iv + AESGCM(KEY).encrypt(iv, data, None)); changed = True
+                        except Exception as ex:
+                            log("Film nicht umgewandelt:", e["name"], str(ex)[:120]); want_files.discard(vf); vf = None
+                items.append({"n": e["name"], "t": "vid" if vid else "img", "f": fn, **({"v": vf} if vf else {}),
                               "u": folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder})
             if items != (b.get("media") or []):
                 b["media"] = items; changed = True
