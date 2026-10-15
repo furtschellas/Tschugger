@@ -43,6 +43,11 @@ Object.assign(I18N,{
  "Benutzer-Anfragen":{fr:"Demandes d’utilisateurs",it:"Richieste utenti",en:"User requests"},
  "Keine offenen Anfragen.":{fr:"Aucune demande en attente.",it:"Nessuna richiesta in sospeso.",en:"No open requests."},
  "Anfragen nicht lesbar":{fr:"Demandes illisibles",it:"Richieste non leggibili",en:"Requests not readable"},
+ "Mail wird gesendet …":{fr:"Envoi du mail …",it:"Invio della mail …",en:"Sending mail …"},
+ "Mail gesendet um":{fr:"Mail envoyé à",it:"Mail inviata alle",en:"Mail sent at"},
+ "Zu viele Versuche – bitte in ein paar Minuten nochmals.":{fr:"Trop de tentatives – réessaie dans quelques minutes.",it:"Troppi tentativi – riprova tra qualche minuto.",en:"Too many attempts – please try again in a few minutes."},
+ "Gmail-Adresse? Dann geht es ohne Bestätigungs-Mail:":{fr:"Adresse Gmail ? Alors sans mail de confirmation :",it:"Indirizzo Gmail? Allora senza mail di conferma:",en:"Gmail address? Then no confirmation mail is needed:"},
+ "Absender: noreply@tschugger-83692.firebaseapp.com – bitte auch im Spam- bzw. Junk-Ordner nachsehen und die Mail als «Kein Spam» markieren.":{fr:"Expéditeur : noreply@tschugger-83692.firebaseapp.com – regarde aussi dans les spams et marque le mail comme « non spam ».",it:"Mittente: noreply@tschugger-83692.firebaseapp.com – controlla anche lo spam e segna la mail come «non spam».",en:"Sender: noreply@tschugger-83692.firebaseapp.com – please also check your spam/junk folder and mark the mail as “not spam”."},
  "Zugangsanfragen":{fr:"Demandes d’accès",it:"Richieste di accesso",en:"Access requests"},
  "Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».":{fr:"Ces personnes ne sont pas sur la liste et demandent l’accès. « Autoriser » les invite ; elles touchent ensuite « Actualiser ».",it:"Queste persone non sono nella lista e chiedono l’accesso. «Autorizza» le invita; poi toccano «Aggiorna».",en:"These people are not on the list and ask for access. “Approve” invites them; they then tap “Refresh”."},
  "Freischalten":{fr:"Autoriser",it:"Autorizza",en:"Approve"},
@@ -389,7 +394,7 @@ function showGate(mode,msg,isErr){
   if(AUTHMODE==="login")f='<form class="gbox" data-f="login">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die auf der Crewliste steht – diese ist bereits freigeschaltet.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="current-password" required><button type="submit">'+L("Anmelden")+'</button>'+note+'<button type="button" class="glink" data-gmode="reset">'+L("Passwort vergessen?")+'</button><button type="button" class="glink" data-gmode="register">'+L("Erstes Mal hier? Konto erstellen")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="register")f='<form class="gbox" data-f="register">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die auf der Crewliste steht – diese ist bereits freigeschaltet.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><p class="ghint">'+L("Mindestens 8 Zeichen.")+'</p><button type="submit">'+L("Konto erstellen")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Schon ein Konto? Anmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="reset")f='<form class="gbox" data-f="reset">'+head+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><button type="submit">'+L("Link zum Zurücksetzen senden")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Zurück")+'</button>'+langs+'</form>';
-  else if(AUTHMODE==="verify")f='<form class="gbox" data-f="verify">'+head+'<p class="gtitle">'+L("Bitte bestätige zuerst deine E-Mail-Adresse.")+'</p><p class="ghint">'+L("Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.")+'</p><p class="ghint"><b>'+em+'</b></p><button type="submit">'+L("Ich habe bestätigt")+'</button>'+note+'<button type="button" class="glink" data-gact="resend">'+L("Mail nochmals senden")+'</button><button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="verify")f='<form class="gbox" data-f="verify">'+head+'<p class="gtitle">'+L("Bitte bestätige zuerst deine E-Mail-Adresse.")+'</p><p class="ghint">'+L("Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.")+'</p><p class="ghint"><b>'+em+'</b></p>'+vmStatus()+'<p class="ghint gtip">'+L("Absender: noreply@tschugger-83692.firebaseapp.com – bitte auch im Spam- bzw. Junk-Ordner nachsehen und die Mail als «Kein Spam» markieren.")+'</p><button type="submit">'+L("Ich habe bestätigt")+'</button>'+note+'<button type="button" class="glink" data-gact="resend">'+L("Mail nochmals senden")+'</button>'+(GBTN()?'<p class="ghint">'+L("Gmail-Adresse? Dann geht es ohne Bestätigungs-Mail:")+'</p>'+GBTN():'')+'<button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="denied"||AUTHMODE==="blocked")f='<div class="gbox">'+head+'<p class="gtitle">'+L("Kein Zugang")+'</p><p class="ghint">'+(AUTHMODE==="blocked"?L("Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion."):L("Diese E-Mail-Adresse ist nicht für die Crew-App freigeschaltet."))+'</p><p class="ghint"><b>'+em+'</b></p>'+(AUTHMODE==="blocked"?'':'<p class="ghint gtip">'+L("Bitte melde dich ab und wieder an – mit der E-Mail-Adresse, die auf der Crewliste steht. Diese ist bereits freigeschaltet. Bei Google: das Google-Konto mit dieser Adresse wählen. Stimmt die Adresse auf der Crewliste nicht, melde dich bei der Produktion.")+'</p>'+reqBox())+'<button type="button" class="gbtn" data-gact="signout">'+L("Abmelden und mit Crewliste-Adresse anmelden")+'</button><button type="button" class="glink" data-gact="retry">'+L("Aktualisieren")+'</button>'+langs+'</div>';
   else if(AUTHMODE==="wait")f='<div class="gbox">'+head+'<p class="ghint">'+L("Bitte warten …")+'</p></div>';
   verifyPoll(AUTHMODE==="verify");
@@ -412,7 +417,7 @@ async function onGateSubmit(e){
       if(pw.length<8)throw {code:"weak-password"};
       if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
       window.__justSignedIn=true;const c=await A.createUserWithEmailAndPassword(auth,em,pw);
-      try{await sendMailSafe(A.sendEmailVerification,c.user)}catch(err){console.error(err);gateMsg(L("Bestätigungs-Mail konnte nicht gesendet werden:")+" "+errText(err),true)}
+      await sendVerify(c.user)
     }
     else if(f.dataset.f==="reset"){try{await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),em)}catch(err){if(!/user-not-found/.test(err.code||""))throw err}gateMsg(L("Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen."),false)}
     else if(f.dataset.f==="verify"){await ME.reload();if(auth.currentUser.emailVerified){await ME.getIdToken(true);await afterSignIn(auth.currentUser)}else gateMsg(L("Noch nicht bestätigt. Schau auch im Spam-Ordner nach."),true)}
@@ -464,6 +469,27 @@ async function sendRequest(){
 }
 /* Firebase mails (confirmation, password reset): in the app language; if the return link to this site is not
    allowed in Firebase (authorised domains), send the mail without return link instead of failing silently */
+/* confirmation mail: status survives gate re-renders; sent automatically when an unconfirmed account
+   signs in and no mail went out in the last 10 minutes (accounts from before had never received one) */
+const VM={at:0,err:"",busy:false};
+function vmKey(u){return "vm:"+(u&&u.uid||"")}
+function vmStatus(){
+  if(VM.busy)return '<p class="gok">'+L("Mail wird gesendet …")+'</p>';
+  if(VM.err)return '<p class="gerr">'+L("Bestätigungs-Mail konnte nicht gesendet werden:")+' '+esc(VM.err)+'</p>';
+  if(VM.at)return '<p class="gok">'+L("Mail gesendet um")+' '+new Date(VM.at).toLocaleTimeString(LANG==="en"?"en-GB":LANG+"-CH",{hour:"2-digit",minute:"2-digit"})+'.</p>';
+  return '';
+}
+async function sendVerify(u,manual){
+  if(!u||VM.busy)return;VM.busy=true;VM.err="";if(AUTHMODE==="verify")showGate("verify");
+  try{const {A}=await fb();await sendMailSafe(A.sendEmailVerification,u);VM.at=Date.now();try{localStorage.setItem(vmKey(u),String(VM.at))}catch(_){}}
+  catch(err){console.error("verify mail",err);VM.err=/too-many/.test(err&&err.code||"")?L("Zu viele Versuche – bitte in ein paar Minuten nochmals."):errText(err)}
+  finally{VM.busy=false;if(AUTHMODE==="verify")showGate("verify")}
+}
+function autoVerify(u){
+  let last=0;try{last=+localStorage.getItem(vmKey(u))||0}catch(_){}
+  if(!VM.at&&last)VM.at=last;
+  if(Date.now()-Math.max(last,VM.at)>600000)sendVerify(u);
+}
 async function sendMailSafe(fn,target){
   const {auth}=await fb();auth.languageCode=LANG;
   try{return await fn(target,{url:location.origin+location.pathname})}
@@ -475,7 +501,7 @@ async function onGateClick(e){
   const a=e.target.closest("[data-gact]");if(!a)return;
   const {A,auth}=await fb();
   if(a.dataset.gact==="signout"){REQ={sent:false,err:""};await A.signOut(auth)}
-  else if(a.dataset.gact==="resend"){try{await sendMailSafe(A.sendEmailVerification,auth.currentUser);gateMsg(L("Mail gesendet.")+" "+L("Schau auch im Spam-Ordner nach."),false)}catch(err){gateMsg(errText(err),true)}}
+  else if(a.dataset.gact==="resend"){a.disabled=true;await sendVerify(auth.currentUser,true);a.disabled=false}
   else if(a.dataset.gact==="retry"){if(auth.currentUser)afterSignIn(auth.currentUser)}
   else if(a.dataset.gact==="request"){a.disabled=true;await sendRequest()}
   else if(a.dataset.gact==="google"){
@@ -515,7 +541,7 @@ async function loadPrefs(){
 }
 async function afterSignIn(u){
   ME=u;
-  if(!u.emailVerified){showGate("verify");return}
+  if(!u.emailVerified){showGate("verify");autoVerify(u);return}
   let st;try{st=await checkMember()}catch(err){console.error(err);
     if(isOffline(err)&&S.days.length){hideGate();acctButton(true);showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
