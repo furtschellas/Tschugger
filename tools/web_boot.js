@@ -371,8 +371,15 @@ function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(cons
 const SECS={};try{for(const k of ["cater","bcal"])SECS[k]=localStorage.getItem("sec:"+k)!=="0"}catch(_){SECS.cater=SECS.bcal=true}
 const secOpen=(k,title,body)=>'<details class="asec '+k+'" data-sec="'+k+'"'+(SECS[k]!==false?' open':'')+'><summary>'+esc(title)+'</summary><div class="asb">'+body+'</div></details>';
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
+/* departments that are not fed on set: left out of the catering count */
+const NO_CATER=/^(catering|postprod|verleih)/i;
+function crewDeptOf(m){
+  const e=lc(m.email),k=nkey([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);
+  for(const g of S.crew)for(const p of (g.people||[]))if((e&&lc(p.email)===e)||(k&&nkey(p.name)===k))return g.dept||"";
+  return "";
+}
 function cateringHTML(){
-  const act=ADM.mem.filter(m=>m.active===true).map(normDiet);if(!act.length)return"";
+  const act=ADM.mem.filter(m=>m.active===true&&!NO_CATER.test(crewDeptOf(m))).map(normDiet);if(!act.length)return"";
   const c={};act.forEach(m=>{if(m.diet&&m.diet!=="none")c["d:"+m.diet]=(c["d:"+m.diet]||0)+1;m.intol.forEach(k=>c["i:"+k]=(c["i:"+k]||0)+1)});
   const parts=[...DIETS.filter(d=>c["d:"+d[0]]).map(d=>c["d:"+d[0]]+" "+L(d[1])),...INTOL.filter(i=>c["i:"+i[0]]).map(i=>c["i:"+i[0]]+" "+L(i[1]))];
   const al=act.filter(m=>String(m.allergies||"").trim()).map(m=>([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email)+": "+m.allergies.trim());
