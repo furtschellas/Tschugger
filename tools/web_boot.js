@@ -78,6 +78,9 @@ Object.assign(I18N,{
  "Startpasswort erzeugen":{fr:"Créer un mot de passe initial",it:"Crea password iniziale",en:"Create start password"},
  "Anzeigen":{fr:"Afficher",it:"Mostra",en:"Show"},
  "Keine Berechtigung – bitte die neuen Firestore-Regeln in Firebase veröffentlichen.":{fr:"Pas d’autorisation – publie les nouvelles règles Firestore dans Firebase.",it:"Nessuna autorizzazione – pubblica le nuove regole Firestore in Firebase.",en:"No permission – please publish the new Firestore rules in Firebase."},
+ "Ohne Bestätigungs-Mail freischalten":{fr:"Autoriser sans mail de confirmation",it:"Abilita senza mail di conferma",en:"Approve without confirmation mail"},
+ "{e} ohne Bestätigungs-Mail freischalten? Nur machen, wenn die Adresse sicher dieser Person gehört.":{fr:"Autoriser {e} sans mail de confirmation ? Seulement si l’adresse appartient bien à cette personne.",it:"Abilitare {e} senza mail di conferma? Solo se l’indirizzo appartiene sicuramente a questa persona.",en:"Approve {e} without a confirmation mail? Only do this if the address surely belongs to this person."},
+ "ist freigeschaltet. Die Person meldet sich einfach an – oder tippt auf «Ich habe bestätigt».":{fr:"est autorisé·e. La personne se connecte simplement – ou touche « J’ai confirmé ».",it:"è abilitato/a. La persona accede semplicemente – oppure tocca «Ho confermato».",en:"is approved. The person simply signs in – or taps “I have confirmed”."},
  "Startpasswort":{fr:"Mot de passe initial",it:"Password iniziale",en:"Start password"},
  "Für {e} ein Konto mit Startpasswort anlegen? Beim ersten Anmelden muss die Person ein eigenes Passwort festlegen.":{fr:"Créer un compte avec mot de passe initial pour {e} ? À la première connexion, la personne devra choisir son propre mot de passe.",it:"Creare per {e} un account con password iniziale? Al primo accesso la persona dovrà scegliere una propria password.",en:"Create an account with a start password for {e}? On first sign-in the person must set their own password."},
  "hat schon ein Konto – dafür «Passwort-Link senden» verwenden.":{fr:"a déjà un compte – utilise « Envoyer un lien de mot de passe ».",it:"ha già un account – usa «Invia link password».",en:"already has an account – use “Send password link”."},
@@ -455,7 +458,10 @@ function showGate(mode,msg,isErr){
 let VERIFYT=null;
 function verifyPoll(on){clearInterval(VERIFYT);VERIFYT=null;if(!on)return;
   VERIFYT=setInterval(async()=>{try{const {auth}=await fb();const u=auth.currentUser;if(!u){verifyPoll(false);return}
-    await u.reload();if(auth.currentUser.emailVerified){verifyPoll(false);await auth.currentUser.getIdToken(true);afterSignIn(auth.currentUser)}}catch(_){}},5000)}
+    await u.reload();if(auth.currentUser.emailVerified){verifyPoll(false);await auth.currentUser.getIdToken(true);afterSignIn(auth.currentUser);return}
+    if((VERIFYN=(VERIFYN||0)+1)%3===0&&await startExists(u)){verifyPoll(false);afterSignIn(auth.currentUser)}}catch(_){}},5000)}
+let VERIFYN=0;
+async function startExists(u){try{const {F,db}=await fb();return (await F.getDoc(F.doc(db,"starts",lc(u.email)))).exists()}catch(_){return false}}
 function hideGate(){verifyPoll(false);const g=document.getElementById("gate");if(g){g.hidden=true;g.innerHTML=""}document.body.style.overflow=""}
 function gateMsg(t,isErr){const p=document.querySelector("#gate .gerr,#gate .gok");if(p){p.className=isErr?"gerr":"gok";p.textContent=t}}
 async function onGateSubmit(e){
@@ -476,7 +482,7 @@ async function onGateSubmit(e){
       const {F,db}=await fb();await A.updatePassword(auth.currentUser,pw);
       await F.updateDoc(F.doc(db,"starts",lc(auth.currentUser.email)),{mustChange:false});START={mustChange:false};
       showMsg(L("Passwort gespeichert."),3000);await afterSignIn(auth.currentUser)}
-    else if(f.dataset.f==="verify"){await ME.reload();if(auth.currentUser.emailVerified){await ME.getIdToken(true);await afterSignIn(auth.currentUser)}else gateMsg(L("Noch nicht bestätigt. Schau auch im Spam-Ordner nach."),true)}
+    else if(f.dataset.f==="verify"){await ME.reload();if(auth.currentUser.emailVerified){await ME.getIdToken(true);await afterSignIn(auth.currentUser)}else if(await startExists(auth.currentUser))await afterSignIn(auth.currentUser);else gateMsg(L("Noch nicht bestätigt. Schau auch im Spam-Ordner nach."),true)}
   }catch(err){console.error(err);gateMsg(errText(err),true)}
   if(btn)btn.disabled=false;
 }
@@ -881,6 +887,7 @@ VIEWS.admin=function(){
     '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">'+L("Admin")+'</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div>'+(own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+(own&&ADM.edit===r.email?editForm(r):'')+'<div class="aacts">'+
       (own?'<button data-adm="edit" data-em="'+esc(r.email)+'">'+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'')+
       (own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'')+
+      (own&&!r.m&&!ADMINS.includes(r.email)?'<button data-adm="nomail" data-em="'+esc(r.email)+'">'+L("Ohne Bestätigungs-Mail freischalten")+'</button>':'')+
       (own&&!r.m&&!ADMINS.includes(r.email)?'<button data-adm="startpw" data-em="'+esc(r.email)+'" data-nm="'+esc(r.name||"")+'">'+L("Startpasswort erzeugen")+'</button>':'')+
       (!r.m?'<a href="'+mail(r)+'">'+L("Einladungsmail")+'</a>':'')+
       (own&&!ADMINS.includes(r.email)?(ADM.adm.includes(r.email)?'<button data-adm="rmadmin" data-em="'+esc(r.email)+'">'+L("Admin entfernen")+'</button>':'<button data-adm="mkadmin" data-em="'+esc(r.email)+'">'+L("Zum Admin machen")+'</button>'):'')+
@@ -929,6 +936,11 @@ document.addEventListener("click",async e=>{
       b.disabled=true;try{const pw=await createStartAccount(em,b.dataset.nm||"");ADM.pw=ADM.pw||{};ADM.pw[em]=pw;showStartPw(em,b.dataset.nm||"",pw);await admLoad()}
       catch(err){b.disabled=false;const c=err&&err.code||"";showMsg(/email-already-in-use/.test(c)?em+" "+L("hat schon ein Konto – dafür «Passwort-Link senden» verwenden."):/permission/.test(c)?L("Keine Berechtigung – bitte die neuen Firestore-Regeln in Firebase veröffentlichen."):L("Fehler:")+" "+errText(err),9000)}
       return}
+    if(a==="nomail"){ADM.busy=false;if(!isOwner())return;const em=lc(b.dataset.em);
+      if(!confirmSafe(L("{e} ohne Bestätigungs-Mail freischalten? Nur machen, wenn die Adresse sicher dieser Person gehört.").replace("{e}",em)))return;
+      await F.setDoc(F.doc(db,"starts",em),{mustChange:false,at:F.serverTimestamp()});
+      if(!ADM.inv.some(i=>i.id===em))await F.setDoc(F.doc(db,"invites",em),{name:"",role:"",addedAt:F.serverTimestamp()});
+      showMsg(em+" "+L("ist freigeschaltet. Die Person meldet sich einfach an – oder tippt auf «Ich habe bestätigt»."),7000);await admLoad();return}
     if(a==="pwreset"){ADM.busy=false;if(!isOwner())return;const em=b.dataset.em;
       if(!confirmSafe(L("{e} einen Link schicken, mit dem die Person ein neues Passwort festlegt?").replace("{e}",em)))return;
       const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),em);
