@@ -61,7 +61,7 @@ Object.assign(I18N,{
  "Profil gespeichert.":{fr:"Profil enregistré.",it:"Profilo salvato.",en:"Profile saved."},
  "Bitte ergänze dein Profil.":{fr:"Complète ton profil.",it:"Completa il tuo profilo.",en:"Please complete your profile."},
  "Essen":{fr:"Repas",it:"Pasti",en:"Food"},
- "Keine":{fr:"Aucune",it:"Nessuna",en:"None"},
+ "Ich esse alles":{fr:"Je mange de tout",it:"Mangio di tutto",en:"I eat everything"},
  "Vegetarisch":{fr:"Végétarien",it:"Vegetariano",en:"Vegetarian"},
  "Vegan":{fr:"Végan",it:"Vegano",en:"Vegan"},
  "Keine Milchprodukte":{fr:"Sans produits laitiers",it:"Senza latticini",en:"No dairy"},
@@ -72,7 +72,7 @@ Object.assign(I18N,{
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
 const langSel=(name,v)=>'<select name="'+name+'" id="'+name+'">'+LANGS.map(([k,t])=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+t+'</option>').join("")+'</select>';
 const clean=v=>String(v||"").trim().slice(0,80);
-const DIETS=[["none","Keine"],["vegetarian","Vegetarisch"],["vegan","Vegan"],["nodairy","Keine Milchprodukte"]];
+const DIETS=[["none","Ich esse alles"],["vegetarian","Vegetarisch"],["vegan","Vegan"],["nodairy","Keine Milchprodukte"]];
 const dietSel=(name,v)=>'<select name="'+name+'" id="'+name+'">'+DIETS.map(([k,t])=>'<option value="'+k+'"'+(k===(v||"none")?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
 const dietText=m=>{if(!m)return"";const d=DIETS.find(x=>x[0]===m.diet);const a=String(m.allergies||"").trim();return [d&&d[0]!=="none"?L(d[1]):"",a?L("Allergien")+": "+a:""].filter(Boolean).join(" · ")};
 const PENDING_KEY="crewprofile:pending";
