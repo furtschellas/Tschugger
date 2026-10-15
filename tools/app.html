@@ -541,6 +541,7 @@ html[data-theme="light"] .a2box{box-shadow:0 18px 50px -20px rgba(26,22,34,.35)}
 .calbtn:active,.pvbtn:active,.refresh:active{transform:scale(.94)}
 html[data-theme="light"] .ppi,html[data-theme="light"] .mci{background:#fff}
 .a2box{position:relative}.a2box>.xclose{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:2}.a2box>.xclose:hover{border-color:var(--accent);color:var(--accent)}.a2box>h3{padding-right:42px}
+.fpls{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.fpl{font-size:12.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--rule);color:var(--ink);text-decoration:none;background:transparent}.fpl:hover{border-color:var(--accent);color:var(--accent)}.fpl.blk{color:var(--muted)}
 </style>
 
 <div class="wrap">
@@ -681,7 +682,7 @@ function itemHTML(it){
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
     (it.d?'<div class="desc">'+esc(TX(it,"d"))+' '+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>':'<div class="desc">'+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>')+
     castChips(it.cast)+
-    (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+
+    (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it)+
     '</div></li>';
 }
 const padD=x=>String(x).replace(/^D(\d)$/,"D0$1");
@@ -727,7 +728,7 @@ function dayNav(PD,isSel,attr,key,extra,pre){
 /* PREP: preparation / rehearsal week before the first shooting day (data "prepro": one entry per date; meta.prepro: source, contacts) */
 function ppWhere(w,m){if(!w)return'';const q=m||(/\d{4}\s+\S/.test(w)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(w.replace(/^On location:\s*/i,"")):"");return '<div class="ppl">'+(q?'<a href="'+esc(q)+'" target="_blank" rel="noopener">'+esc(w)+'</a>':esc(w))+'</div>'}
 function ppItem(i,date,grp,k){return '<div class="ppi'+(i.hl?' hl':'')+'">'+(date&&(i.crew||i.cast)?'<button type="button" class="calbtn mailbtn" data-ppmail="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("E-Mail-Verteiler"))+'" title="'+esc(L("E-Mail-Verteiler"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></button>':'')+(date?'<button type="button" class="calbtn" data-cal="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("In den Kalender"))+'" title="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>':'')+'<div class="ppt">'+esc(i.t||"")+(i.end?'<br>'+esc(i.end):'')+'</div><div class="ppb"><div class="ppn">'+esc(TX(i,"n")||"")+'</div>'+
-  ppParts(i)+(i.who?'<div class="ppw">'+esc(i.who)+'</div>':'')+ppWhere(i.where,i.map)+(TX(i,"note")?'<div class="ppx">'+esc(TX(i,"note"))+'</div>':'')+'</div></div>'}
+  ppParts(i)+(i.who?'<div class="ppw">'+esc(i.who)+'</div>':'')+ppWhere(i.where,i.map)+fpLinks(fpFor(i.n,i.where),[])+(TX(i,"note")?'<div class="ppx">'+esc(TX(i,"note"))+'</div>':'')+'</div></div>'}
 /* participants: collapsible; people with phone or e-mail open a contact card */
 function ppNames(t){return String(t||"").split(",").map(x=>x.trim()).filter(Boolean)}
 function ppChip(n,people){
@@ -1182,7 +1183,8 @@ function locCard(g0){
   const addrHTML=g.mixed
     ?'<div class="adl">'+g.items.map(l=>{const ad=[l.venue,l.address].filter(Boolean).join(", ");return '<div><span class="addr">'+esc(ad)+'</span> <a href="'+esc(locHref(l,ad))+'" target="_blank" rel="noopener noreferrer">Maps</a></div>'}).join("")+'</div>'
     :(addr.length?'<div class="adl"><div><span class="addr">'+esc(addr.join(", "))+'</span> <a href="'+esc(locHref(g.items.find(l=>/^https:/.test(l.map||""))||g.items[0],addr.join(", ")))+'" target="_blank" rel="noopener noreferrer">Maps</a></div></div>':g.items.some(l=>/^https:/.test(l.map||""))?'<div class="adl"><div><span class="addr">'+L('Ort: TBA')+'</span> <a href="'+esc(g.items.find(l=>/^https:/.test(l.map||"")).map)+'" target="_blank" rel="noopener noreferrer">Maps</a></div></div>':'<div class="adl"><div><span class="addr">'+L('Ort: TBA')+'</span></div></div>');
-  return cardWrap("card:"+g.key,head,addrHTML,body);
+  const fps=[...new Map(g.items.flatMap(l=>fpFor(l.name,[l.venue,l.address].filter(Boolean).join(", "))).map(f=>[f.url,f])).values()];
+  return cardWrap("card:"+g.key,head,addrHTML,body+fpLinks(fps,[]));
 }
 function renderLoc(){
   if(!S.locs.length)return emptyHTML("Motivliste");
@@ -1254,9 +1256,10 @@ function emptyHTML(what){
 }
 function srcHTML(){
   const m=S.meta;if(!m||!m.sources)return"";
-  const KIND={schedule:"Drehplan",crew:"Crewliste",locations:"Motivliste",info:"Infos",script:"Drehbuch",callsheet:"Callsheet",dispo:"Callsheet",prep:"Prep-Wochenplanung"};
+  const KIND={schedule:"Drehplan",crew:"Crewliste",locations:"Motivliste",info:"Infos",script:"Drehbuch",callsheet:"Callsheet",dispo:"Callsheet",prep:"Prep-Wochenplanung",fp:"Floorplans"};
   const when=iso=>{const t=new Date(iso);return isNaN(t)?"":pad2(t.getDate())+"."+pad2(t.getMonth()+1)+". "+pad2(t.getHours())+":"+pad2(t.getMinutes())};
   const pm=m.prepro;const srcs=m.sources.slice();
+  if(arr(m.floorplans).length&&!srcs.some(x=>x.kind==="fp"))srcs.push({kind:"fp",name:"3D/0_BlockingFloorplans/floorplans locations",stand:arr(m.floorplans).length+" PDF · "+arr(m.blocking).length+" Blocking"});
   if(pm&&pm.source&&!srcs.some(x=>x.kind==="prep"))srcs.push({kind:"prep",name:"3D/11_Planning Prep Rehearsals/"+pm.source,stand:pm.issued});
   const rows=srcs.map(x=>{
     const raw=String(x.name||""),gs=/google sheet/i.test(raw);
@@ -1464,6 +1467,12 @@ function sceneFacts(reqSc,x,list){
   const exact=hits.filter(h=>String(h.it.sc).toLowerCase().replace(/\s+/g,"")===want);
   return factsHTML(exact.length?exact:hits);
 }
+/* floorplans (PDF) and blocking photos from the 3D folder, matched to sets, places and scene numbers */
+function fpFor(set,loc){const st=fold(set),lc=fold(loc);return arr(S.meta&&S.meta.floorplans).filter(f=>{const r=f.rule||{},ws=arr(r.set),wl=arr(r.loc);
+  return (ws.length||wl.length)&&ws.every(w=>st.includes(w))&&(!wl.length||wl.some(w=>lc.includes(w)))&&!arr(r.not).some(w=>st.includes(w)||lc.includes(w))})}
+function blkFor(sc){const n=String(sc||"").toLowerCase().replace(/\s+/g,"");return n?arr(S.meta&&S.meta.blocking).filter(b=>arr(b.sc).some(x=>{x=String(x).toLowerCase();return x===n||(n.startsWith(x+"pt")&&!/pt/.test(x))})):[]}
+function fpLinks(fps,blk){const l=arr(fps).map(f=>'<a class="fpl" href="'+esc(f.url)+'" target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat(arr(blk).map(b=>'<a class="fpl blk" href="'+esc(b.url)+'" target="_blank" rel="noopener noreferrer">📷 Blocking</a>'));return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
+function itemFp(it){return fpLinks(fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")),blkFor(it.sc))}
 function factsHTML(hits){
   const show=hits.slice().sort((a,b)=>a.d.date<b.d.date?-1:a.d.date>b.d.date?1:String(a.it.t).localeCompare(String(b.it.t)));
   if(!show.length)return"";
@@ -1475,7 +1484,7 @@ function factsHTML(hits){
       '<div class="spfk">'+kv.map(k=>'<span><i>'+esc(cap(String(k[0])))+'</i>'+esc(k[1])+'</span>').join("")+'</div>'+
       (it.d?'<div class="spfx">'+esc(TX(it,"d"))+'</div>':'')+
       (it.cast&&it.cast.length?'<div class="spfc">'+castChips(it.cast)+'</div>':'')+
-      (it.loc?(()=>{const ad=addrForItem(it);return '<div class="spfa">'+(/^tba$/i.test(ad)?esc(L('Ort: TBA')):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+'</div>';
+      (it.loc?(()=>{const ad=addrForItem(it);return '<div class="spfa">'+(/^tba$/i.test(ad)?esc(L('Ort: TBA')):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it)+'</div>';
   }).join("")+'</div>';
 }
 const TOD_RE=/[-–]\s*(DAY|NIGHT|EVENING|MORNING|DAWN|DUSK|CONTINUOUS|LATER|SAME|NOON|MIDDAY|AFTERNOON|SUNSET|SUNRISE|TAG|NACHT|ABEND|MORGEN)\b/i;
