@@ -71,6 +71,10 @@ h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-tr
 .pub button.u2[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .pub button.none{opacity:.45}
 body.no-u2 .pub,body.no-u2 button.uf{display:none!important}
+.pub button.u3[aria-pressed="true"],.uf.u3[aria-pressed="true"]{background:var(--u3);border-color:var(--u3);color:#140c24}
+.uh.u3{color:var(--u3)}
+.ub.u3{background:rgba(180,140,255,.16);color:var(--u3)}
+:root{--u3:#b48cff}
 @media (max-width:600px){.pub{gap:2px;padding-right:4px}.pub button{width:30px;font-size:12px;letter-spacing:-.02em}}
 .chip{flex:0 0 auto;min-width:0;border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:3px 5px;line-height:1.15;text-align:center;cursor:pointer}
 .chip .cw{font-family:var(--f-mono);font-size:9px;font-weight:400;text-transform:uppercase;color:var(--muted);margin-right:3px}
@@ -471,7 +475,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 </div></nav>
 
 <script>
-const I18N={"Planung": {"fr": "Planning", "en": "Schedule", "it": "Programma"}, "Callsheet": {"fr": "Callsheet", "en": "Callsheet", "it": "Callsheet"}, "Locations": {"fr": "Lieux", "en": "Locations", "it": "Locations"}, "Crew": {"fr": "Équipe", "en": "Crew", "it": "Crew"}, "Infos": {"fr": "Infos", "en": "Info", "it": "Info"}, "Suchen": {"fr": "Rechercher", "en": "Search", "it": "Cerca"}, "Aktualisieren": {"fr": "Actualiser", "en": "Refresh", "it": "Aggiorna"}, "Schliessen": {"fr": "Fermer", "en": "Close", "it": "Chiudi"}, "Szene, Ort, Person, Cast …": {"fr": "Scène, lieu, personne, rôle …", "en": "Scene, place, person, cast …", "it": "Scena, luogo, persona, cast …"}, "Daten werden geladen …": {"fr": "Chargement des données …", "en": "Loading data …", "it": "Caricamento dati …"}, "Regie": {"fr": "Réal.", "en": "Dir.", "it": "Regia"}, "Kompars.": {"fr": "figur.", "en": "extras", "it": "comparse"}, "Ort: TBA": {"fr": "Lieu : à définir", "en": "Location: TBA", "it": "Luogo: da definire"}, "Szene": {"fr": "scène", "en": "scene", "it": "scena"}, "Szenen": {"fr": "scènes", "en": "scenes", "it": "scene"}, "Motive": {"fr": "décors", "en": "sets", "it": "set"}, "Ort": {"fr": "lieu", "en": "place", "it": "luogo"}, "Orte": {"fr": "lieux", "en": "places", "it": "luoghi"}, "Reise": {"fr": "Voyage", "en": "Travel", "it": "Viaggio"}, "Frei": {"fr": "Libre", "en": "Off", "it": "Off"}, "Reisetag": {"fr": "Jour de voyage", "en": "Travel day", "it": "Giorno di viaggio"}, "Drehfrei": {"fr": "Pas de tournage", "en": "Day off", "it": "Giorno libero"}, "Callsheet folgt": {"fr": "Callsheet à venir", "en": "Callsheet to follow", "it": "Callsheet in arrivo"}, "heute": {"fr": "aujourd’hui", "en": "today", "it": "oggi"}, "Dreh": {"fr": "Tournage", "en": "Shoot", "it": "Riprese"}, "Länge": {"fr": "Durée", "en": "Length", "it": "Durata"}, "Seiten": {"fr": "Pages", "en": "Pages", "it": "Pagine"}, "Sonne": {"fr": "Soleil", "en": "Sun", "it": "Sole"}, "Komparsen": {"fr": "Figurants", "en": "Extras", "it": "Comparse"}, "Crew suchen": {"fr": "Rechercher l’équipe", "en": "Search crew", "it": "Cerca nella crew"}, "Niemand gefunden für": {"fr": "Personne trouvé pour", "en": "Nobody found for", "it": "Nessuno trovato per"}, "Kopieren": {"fr": "Copier", "en": "Copy", "it": "Copia"}, "Kopiert": {"fr": "Copié", "en": "Copied", "it": "Copiato"}, "Kontakt ins Telefon übernehmen": {"fr": "Ajouter le contact au téléphone", "en": "Add contact to phone", "it": "Aggiungi il contatto al telefono"}, "Adressen im Dorf": {"fr": "adresses au village", "en": "addresses in the village", "it": "indirizzi nel paese"}, "Keine Locations für diese Unit.": {"fr": "Aucun lieu pour cette unité.", "en": "No locations for this unit.", "it": "Nessuna location per questa unit."}, "Keine 2nd Unit an diesem Tag.": {"fr": "Pas de 2nd unit ce jour-là.", "en": "No 2nd unit on this day.", "it": "Nessuna 2nd unit in questo giorno."}, "Bitte mindestens eine Unit wählen.": {"fr": "Choisissez au moins une unité.", "en": "Please select at least one unit.", "it": "Seleziona almeno una unit."}, "Alle Szenen auf- oder zuklappen": {"fr": "Ouvrir ou fermer toutes les scènes", "en": "Expand or collapse all scenes", "it": "Apri o chiudi tutte le scene"}, "Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.": {"fr": "Le callsheet apparaît ici automatiquement dès qu’il se trouve dans le dossier Dropbox 06_Callsheets, en général la veille.", "en": "The callsheet appears here automatically as soon as it is in the Dropbox folder 06_Callsheets, usually the evening before.", "it": "Il callsheet appare qui automaticamente non appena si trova nella cartella Dropbox 06_Callsheets, di solito la sera prima."}, "Laut Planung: Drehzeit": {"fr": "Selon le planning : tournage", "en": "Per schedule: shooting", "it": "Secondo il programma: riprese"}, "Planung ansehen": {"fr": "Voir le planning", "en": "View schedule", "it": "Vedi programma"}, "Drehbeginn": {"fr": "Début tournage", "en": "First shot", "it": "Primo ciak"}, "Wetter": {"fr": "Météo", "en": "Weather", "it": "Meteo"}, "Parken": {"fr": "Parking", "en": "Parking", "it": "Parcheggio"}, "Treffpunkt & Orte": {"fr": "Rendez-vous & lieux", "en": "Meeting point & locations", "it": "Punto d’incontro & luoghi"}, "Base / Treffpunkt": {"fr": "Base / rendez-vous", "en": "Base / meeting point", "it": "Base / punto d’incontro"}, "Drehort": {"fr": "Lieu de tournage", "en": "Location", "it": "Location"}, "Zeiten": {"fr": "Horaires", "en": "Times", "it": "Orari"}, "Rolle": {"fr": "Rôle", "en": "Role", "it": "Ruolo"}, "Darsteller": {"fr": "Comédien", "en": "Actor", "it": "Attore"}, "Maske": {"fr": "Maquillage", "en": "Make-up", "it": "Trucco"}, "Kostüm": {"fr": "Costume", "en": "Costume", "it": "Costumi"}, "Notfall & Kontakte": {"fr": "Urgences & contacts", "en": "Emergency & contacts", "it": "Emergenze & contatti"}, "Nächstes Spital": {"fr": "Hôpital le plus proche", "en": "Nearest hospital", "it": "Ospedale più vicino"}, "Spital": {"fr": "Hôpital", "en": "Hospital", "it": "Ospedale"}, "Original-Callsheet öffnen": {"fr": "Ouvrir le callsheet original", "en": "Open original callsheet", "it": "Apri il callsheet originale"}, "ist noch leer. Die Daten kommen automatisch aus der Dropbox der Produktion.": {"fr": "est encore vide. Les données arrivent automatiquement depuis la Dropbox de la production.", "en": "is still empty. Data comes in automatically from the production Dropbox.", "it": "è ancora vuoto. I dati arrivano automaticamente dalla Dropbox della produzione."}, "Lade": {"fr": "Chargement", "en": "Loading", "it": "Caricamento"}, "Quellen (Dropbox, nur gelesen):": {"fr": "Sources (Dropbox, lecture seule) :", "en": "Sources (Dropbox, read-only):", "it": "Fonti (Dropbox, solo lettura):"}, "geprüft": {"fr": "vérifié", "en": "checked", "it": "verificato"}, "Noch keine Daten eingespielt.": {"fr": "Pas encore de données.", "en": "No data yet.", "it": "Ancora nessun dato."}, "Suche nach Szenennummer (z. B. 186), Drehtag (D5, Day 5, 26.10., Montag, heute, morgen), Motiv, Adresse, Rolle (z. B. Regina), Crew-Name, Funktion oder Telefonnummer.": {"fr": "Recherchez un numéro de scène (p. ex. 186), un jour de tournage (D5, jour 5, 26.10., lundi, aujourd’hui, demain), un décor, une adresse, un rôle (p. ex. Regina), un nom, une fonction ou un numéro de téléphone.", "en": "Search for a scene number (e.g. 186), shooting day (D5, Day 5, 26.10., Monday, today, tomorrow), set, address, role (e.g. Regina), crew name, job or phone number.", "it": "Cerca per numero di scena (es. 186), giorno di riprese (D5, Day 5, 26.10., lunedì, oggi, domani), set, indirizzo, ruolo (es. Regina), nome, funzione o numero di telefono."}, "Drehtage": {"fr": "Jours de tournage", "en": "Shooting days", "it": "Giorni di riprese"}, "Salgesch, mehrere Adressen": {"fr": "Salgesch, plusieurs adresses", "en": "Salgesch, several addresses", "it": "Salgesch, più indirizzi"}, "Tagesdispo": {"fr": "Callsheet", "en": "Callsheet", "it": "Callsheet"}, "Nichts gefunden für": {"fr": "Aucun résultat pour", "en": "Nothing found for", "it": "Nessun risultato per"}, "Datenbank nicht erreichbar. Bitte mit einem Claude-Konto anmelden.": {"fr": "Base de données inaccessible. Veuillez vous connecter avec un compte Claude.", "en": "Database unavailable. Please sign in with a Claude account.", "it": "Database non raggiungibile. Accedi con un account Claude."}, "Neueste Daten geladen.": {"fr": "Données les plus récentes chargées.", "en": "Latest data loaded.", "it": "Dati più recenti caricati."}, "Dropbox zuletzt geprüft": {"fr": "Dropbox vérifiée le", "en": "Dropbox last checked", "it": "Dropbox verificata il"}, "Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen.": {"fr": "Impossible de charger les données. Vérifiez la connexion internet.", "en": "Could not load data. Please check your internet connection.", "it": "Impossibile caricare i dati. Controlla la connessione internet."}, "Dropbox wird geprüft. Das dauert 1–3 Minuten, die App aktualisiert sich danach von selbst.": {"fr": "Vérification de la Dropbox. Cela prend 1 à 3 minutes, l’app se met ensuite à jour toute seule.", "en": "Checking Dropbox. This takes 1–3 minutes; the app updates itself afterwards.", "it": "Verifica della Dropbox in corso. Ci vogliono 1–3 minuti, poi l’app si aggiorna da sola."}, "Zugriff nicht erlaubt. Bitte die Berechtigung der App erlauben und erneut tippen.": {"fr": "Accès refusé. Autorisez l’app puis réessayez.", "en": "Access not allowed. Please allow the app's permission and tap again.", "it": "Accesso non consentito. Autorizza l’app e tocca di nuovo."}, "Aktualisierung konnte nicht gestartet werden": {"fr": "Impossible de lancer la mise à jour", "en": "Could not start the update", "it": "Impossibile avviare l’aggiornamento"}, "Die Aktualisierung braucht länger als üblich. Die App übernimmt die Daten automatisch, sobald sie fertig ist.": {"fr": "La mise à jour prend plus de temps que d’habitude. L’app reprendra les données automatiquement.", "en": "The update is taking longer than usual. The app will pick up the data automatically when it's done.", "it": "L’aggiornamento richiede più tempo del solito. L’app caricherà i dati automaticamente appena pronto."}, "Geprüft: keine neuen Dateien in der Dropbox.": {"fr": "Vérifié : aucun nouveau fichier dans la Dropbox.", "en": "Checked: no new files in Dropbox.", "it": "Verificato: nessun nuovo file nella Dropbox."}, "Aktualisiert.": {"fr": "Mis à jour.", "en": "Updated.", "it": "Aggiornato."}, "Vorheriger Song": {"fr": "Morceau précédent", "en": "Previous song", "it": "Brano precedente"}, "Nächster Song": {"fr": "Morceau suivant", "en": "Next song", "it": "Brano successivo"}, "Abspielen": {"fr": "Lecture", "en": "Play", "it": "Riproduci"}, "Pause": {"fr": "Pause", "en": "Pause", "it": "Pausa"}, "Drehtage-Leiste": {"fr": "Jours", "en": "Days", "it": "Giorni"}, "Unit filtern": {"fr": "Filtrer l’unité", "en": "Filter unit", "it": "Filtra unit"}, "Position": {"fr": "Position", "en": "Position", "it": "Posizione"}, "Diese Ansicht konnte nicht angezeigt werden.": {"fr": "Cette vue n’a pas pu être affichée.", "en": "This view could not be displayed.", "it": "Impossibile mostrare questa vista."}};
+const I18N={"Planung": {"fr": "Planning", "en": "Schedule", "it": "Programma"}, "Callsheet": {"fr": "Callsheet", "en": "Callsheet", "it": "Callsheet"}, "Locations": {"fr": "Lieux", "en": "Locations", "it": "Locations"}, "Crew": {"fr": "Équipe", "en": "Crew", "it": "Crew"}, "Infos": {"fr": "Infos", "en": "Info", "it": "Info"}, "Suchen": {"fr": "Rechercher", "en": "Search", "it": "Cerca"}, "Aktualisieren": {"fr": "Actualiser", "en": "Refresh", "it": "Aggiorna"}, "Schliessen": {"fr": "Fermer", "en": "Close", "it": "Chiudi"}, "Szene, Ort, Person, Cast …": {"fr": "Scène, lieu, personne, rôle …", "en": "Scene, place, person, cast …", "it": "Scena, luogo, persona, cast …"}, "Daten werden geladen …": {"fr": "Chargement des données …", "en": "Loading data …", "it": "Caricamento dati …"}, "Regie": {"fr": "Réal.", "en": "Dir.", "it": "Regia"}, "Kompars.": {"fr": "figur.", "en": "extras", "it": "comparse"}, "Ort: TBA": {"fr": "Lieu : à définir", "en": "Location: TBA", "it": "Luogo: da definire"}, "Szene": {"fr": "scène", "en": "scene", "it": "scena"}, "Szenen": {"fr": "scènes", "en": "scenes", "it": "scene"}, "Motive": {"fr": "décors", "en": "sets", "it": "set"}, "Ort": {"fr": "lieu", "en": "place", "it": "luogo"}, "Orte": {"fr": "lieux", "en": "places", "it": "luoghi"}, "Reise": {"fr": "Voyage", "en": "Travel", "it": "Viaggio"}, "Frei": {"fr": "Libre", "en": "Off", "it": "Off"}, "Reisetag": {"fr": "Jour de voyage", "en": "Travel day", "it": "Giorno di viaggio"}, "Drehfrei": {"fr": "Pas de tournage", "en": "Day off", "it": "Giorno libero"}, "Callsheet folgt": {"fr": "Callsheet à venir", "en": "Callsheet to follow", "it": "Callsheet in arrivo"}, "heute": {"fr": "aujourd’hui", "en": "today", "it": "oggi"}, "Dreh": {"fr": "Tournage", "en": "Shoot", "it": "Riprese"}, "Länge": {"fr": "Durée", "en": "Length", "it": "Durata"}, "Seiten": {"fr": "Pages", "en": "Pages", "it": "Pagine"}, "Sonne": {"fr": "Soleil", "en": "Sun", "it": "Sole"}, "Komparsen": {"fr": "Figurants", "en": "Extras", "it": "Comparse"}, "Crew suchen": {"fr": "Rechercher l’équipe", "en": "Search crew", "it": "Cerca nella crew"}, "Niemand gefunden für": {"fr": "Personne trouvé pour", "en": "Nobody found for", "it": "Nessuno trovato per"}, "Kopieren": {"fr": "Copier", "en": "Copy", "it": "Copia"}, "Kopiert": {"fr": "Copié", "en": "Copied", "it": "Copiato"}, "Kontakt ins Telefon übernehmen": {"fr": "Ajouter le contact au téléphone", "en": "Add contact to phone", "it": "Aggiungi il contatto al telefono"}, "Adressen im Dorf": {"fr": "adresses au village", "en": "addresses in the village", "it": "indirizzi nel paese"}, "Keine Locations für diese Unit.": {"fr": "Aucun lieu pour cette unité.", "en": "No locations for this unit.", "it": "Nessuna location per questa unit."}, "Keine 2nd Unit an diesem Tag.": {"fr": "Pas de 2nd unit ce jour-là.", "en": "No 2nd unit on this day.", "it": "Nessuna 2nd unit in questo giorno."}, "Keine 3rd Unit an diesem Tag.": {"fr": "Pas de 3rd unit ce jour-là.", "en": "No 3rd unit on this day.", "it": "Nessuna 3rd unit in questo giorno."}, "Bitte mindestens eine Unit wählen.": {"fr": "Choisissez au moins une unité.", "en": "Please select at least one unit.", "it": "Seleziona almeno una unit."}, "Alle Szenen auf- oder zuklappen": {"fr": "Ouvrir ou fermer toutes les scènes", "en": "Expand or collapse all scenes", "it": "Apri o chiudi tutte le scene"}, "Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.": {"fr": "Le callsheet apparaît ici automatiquement dès qu’il se trouve dans le dossier Dropbox 06_Callsheets, en général la veille.", "en": "The callsheet appears here automatically as soon as it is in the Dropbox folder 06_Callsheets, usually the evening before.", "it": "Il callsheet appare qui automaticamente non appena si trova nella cartella Dropbox 06_Callsheets, di solito la sera prima."}, "Laut Planung: Drehzeit": {"fr": "Selon le planning : tournage", "en": "Per schedule: shooting", "it": "Secondo il programma: riprese"}, "Planung ansehen": {"fr": "Voir le planning", "en": "View schedule", "it": "Vedi programma"}, "Drehbeginn": {"fr": "Début tournage", "en": "First shot", "it": "Primo ciak"}, "Wetter": {"fr": "Météo", "en": "Weather", "it": "Meteo"}, "Parken": {"fr": "Parking", "en": "Parking", "it": "Parcheggio"}, "Treffpunkt & Orte": {"fr": "Rendez-vous & lieux", "en": "Meeting point & locations", "it": "Punto d’incontro & luoghi"}, "Base / Treffpunkt": {"fr": "Base / rendez-vous", "en": "Base / meeting point", "it": "Base / punto d’incontro"}, "Drehort": {"fr": "Lieu de tournage", "en": "Location", "it": "Location"}, "Zeiten": {"fr": "Horaires", "en": "Times", "it": "Orari"}, "Rolle": {"fr": "Rôle", "en": "Role", "it": "Ruolo"}, "Darsteller": {"fr": "Comédien", "en": "Actor", "it": "Attore"}, "Maske": {"fr": "Maquillage", "en": "Make-up", "it": "Trucco"}, "Kostüm": {"fr": "Costume", "en": "Costume", "it": "Costumi"}, "Notfall & Kontakte": {"fr": "Urgences & contacts", "en": "Emergency & contacts", "it": "Emergenze & contatti"}, "Nächstes Spital": {"fr": "Hôpital le plus proche", "en": "Nearest hospital", "it": "Ospedale più vicino"}, "Spital": {"fr": "Hôpital", "en": "Hospital", "it": "Ospedale"}, "Original-Callsheet öffnen": {"fr": "Ouvrir le callsheet original", "en": "Open original callsheet", "it": "Apri il callsheet originale"}, "ist noch leer. Die Daten kommen automatisch aus der Dropbox der Produktion.": {"fr": "est encore vide. Les données arrivent automatiquement depuis la Dropbox de la production.", "en": "is still empty. Data comes in automatically from the production Dropbox.", "it": "è ancora vuoto. I dati arrivano automaticamente dalla Dropbox della produzione."}, "Lade": {"fr": "Chargement", "en": "Loading", "it": "Caricamento"}, "Quellen (Dropbox, nur gelesen):": {"fr": "Sources (Dropbox, lecture seule) :", "en": "Sources (Dropbox, read-only):", "it": "Fonti (Dropbox, solo lettura):"}, "geprüft": {"fr": "vérifié", "en": "checked", "it": "verificato"}, "Noch keine Daten eingespielt.": {"fr": "Pas encore de données.", "en": "No data yet.", "it": "Ancora nessun dato."}, "Suche nach Szenennummer (z. B. 186), Drehtag (D5, Day 5, 26.10., Montag, heute, morgen), Motiv, Adresse, Rolle (z. B. Regina), Crew-Name, Funktion oder Telefonnummer.": {"fr": "Recherchez un numéro de scène (p. ex. 186), un jour de tournage (D5, jour 5, 26.10., lundi, aujourd’hui, demain), un décor, une adresse, un rôle (p. ex. Regina), un nom, une fonction ou un numéro de téléphone.", "en": "Search for a scene number (e.g. 186), shooting day (D5, Day 5, 26.10., Monday, today, tomorrow), set, address, role (e.g. Regina), crew name, job or phone number.", "it": "Cerca per numero di scena (es. 186), giorno di riprese (D5, Day 5, 26.10., lunedì, oggi, domani), set, indirizzo, ruolo (es. Regina), nome, funzione o numero di telefono."}, "Drehtage": {"fr": "Jours de tournage", "en": "Shooting days", "it": "Giorni di riprese"}, "Salgesch, mehrere Adressen": {"fr": "Salgesch, plusieurs adresses", "en": "Salgesch, several addresses", "it": "Salgesch, più indirizzi"}, "Tagesdispo": {"fr": "Callsheet", "en": "Callsheet", "it": "Callsheet"}, "Nichts gefunden für": {"fr": "Aucun résultat pour", "en": "Nothing found for", "it": "Nessun risultato per"}, "Datenbank nicht erreichbar. Bitte mit einem Claude-Konto anmelden.": {"fr": "Base de données inaccessible. Veuillez vous connecter avec un compte Claude.", "en": "Database unavailable. Please sign in with a Claude account.", "it": "Database non raggiungibile. Accedi con un account Claude."}, "Neueste Daten geladen.": {"fr": "Données les plus récentes chargées.", "en": "Latest data loaded.", "it": "Dati più recenti caricati."}, "Dropbox zuletzt geprüft": {"fr": "Dropbox vérifiée le", "en": "Dropbox last checked", "it": "Dropbox verificata il"}, "Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen.": {"fr": "Impossible de charger les données. Vérifiez la connexion internet.", "en": "Could not load data. Please check your internet connection.", "it": "Impossibile caricare i dati. Controlla la connessione internet."}, "Dropbox wird geprüft. Das dauert 1–3 Minuten, die App aktualisiert sich danach von selbst.": {"fr": "Vérification de la Dropbox. Cela prend 1 à 3 minutes, l’app se met ensuite à jour toute seule.", "en": "Checking Dropbox. This takes 1–3 minutes; the app updates itself afterwards.", "it": "Verifica della Dropbox in corso. Ci vogliono 1–3 minuti, poi l’app si aggiorna da sola."}, "Zugriff nicht erlaubt. Bitte die Berechtigung der App erlauben und erneut tippen.": {"fr": "Accès refusé. Autorisez l’app puis réessayez.", "en": "Access not allowed. Please allow the app's permission and tap again.", "it": "Accesso non consentito. Autorizza l’app e tocca di nuovo."}, "Aktualisierung konnte nicht gestartet werden": {"fr": "Impossible de lancer la mise à jour", "en": "Could not start the update", "it": "Impossibile avviare l’aggiornamento"}, "Die Aktualisierung braucht länger als üblich. Die App übernimmt die Daten automatisch, sobald sie fertig ist.": {"fr": "La mise à jour prend plus de temps que d’habitude. L’app reprendra les données automatiquement.", "en": "The update is taking longer than usual. The app will pick up the data automatically when it's done.", "it": "L’aggiornamento richiede più tempo del solito. L’app caricherà i dati automaticamente appena pronto."}, "Geprüft: keine neuen Dateien in der Dropbox.": {"fr": "Vérifié : aucun nouveau fichier dans la Dropbox.", "en": "Checked: no new files in Dropbox.", "it": "Verificato: nessun nuovo file nella Dropbox."}, "Aktualisiert.": {"fr": "Mis à jour.", "en": "Updated.", "it": "Aggiornato."}, "Vorheriger Song": {"fr": "Morceau précédent", "en": "Previous song", "it": "Brano precedente"}, "Nächster Song": {"fr": "Morceau suivant", "en": "Next song", "it": "Brano successivo"}, "Abspielen": {"fr": "Lecture", "en": "Play", "it": "Riproduci"}, "Pause": {"fr": "Pause", "en": "Pause", "it": "Pausa"}, "Drehtage-Leiste": {"fr": "Jours", "en": "Days", "it": "Giorni"}, "Unit filtern": {"fr": "Filtrer l’unité", "en": "Filter unit", "it": "Filtra unit"}, "Position": {"fr": "Position", "en": "Position", "it": "Posizione"}, "Diese Ansicht konnte nicht angezeigt werden.": {"fr": "Cette vue n’a pas pu être affichée.", "en": "This view could not be displayed.", "it": "Impossibile mostrare questa vista."}};
 let LANG=(()=>{try{const l=localStorage.getItem("lang");if(l)return l}catch(_){}const n=(navigator.language||"de").slice(0,2);return ["de","fr","it","en"].includes(n)?n:"de"})();
 const TX=(o,f)=>(o&&o[f+"_"+LANG])||(o&&o[f])||"";
 const TXA=(o,f)=>{const t=o&&o[f+"_"+LANG];return Array.isArray(t)&&t.length?t:((o&&o[f])||[])};
@@ -486,7 +490,7 @@ function applyStatic(){
   document.querySelectorAll("[data-i18n-al]").forEach(e=>{e.setAttribute("aria-label",L(e.dataset.i18nAl));if(e.title)e.title=L(e.dataset.i18nAl)});
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===LANG));
 }
-const S={tab:"plan",day:null,pu:{"1":true,"2":false},dday:null,q:"",uf:{"1":true,"2":true},openSc:{},meta:null,days:[],crew:[],locs:[],places:[],dispos:[],loaded:false};
+const S={tab:"plan",day:null,pu:{"1":true,"2":false,"3":false},dday:null,q:"",uf:{"1":true,"2":true,"3":true},openSc:{},meta:null,days:[],crew:[],locs:[],places:[],dispos:[],loaded:false};
 const MYMAP="https://www.google.com/maps/d/viewer?mid=18C7O5jJQPoQq4iwJmoi2iEUkvHg4wXs";
 const slug=s=>String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 let DB=null; /* set once the store is available */
@@ -503,7 +507,7 @@ const norm=s=>String(s).toLowerCase().replace(/\s+/g,"");
 /* derived-data cache: cleared whenever data changes, so lookups run once per data version */
 const MEMO=new Map();
 const memo=(k,f)=>{if(MEMO.has(k))return MEMO.get(k);const v=f();MEMO.set(k,v);return v};
-try{const pu=JSON.parse(localStorage.getItem("pu")||"null");if(pu&&typeof pu==="object")S.pu={"1":!!pu["1"],"2":!!pu["2"]}}catch(e){}
+try{const pu=JSON.parse(localStorage.getItem("pu")||"null");if(pu&&typeof pu==="object")S.pu={"1":!!pu["1"],"2":!!pu["2"],"3":!!pu["3"]}}catch(e){}
 try{const t=localStorage.getItem("tab");if(t)S.tab=({map:"loc",music:"plan"})[t]||t}catch(e){}
 
 function castChips(ids){
@@ -536,20 +540,28 @@ function pickDay(list){
   S.day=(next||list[list.length-1]||{}).id||null;
 }
 /* days shown in the schedule strip: 1st = the main calendar (incl. days off / travel), 2nd = days with a 2nd unit */
-const has2nd=d=>!!(d.unit2&&d.unit2.items&&d.unit2.items.length);
-function planDays(){return S.days.filter(d=>(S.pu["1"]&&(d.kind!=="shoot"||(d.items||[]).some(i=>i.sc)))||(S.pu["2"]&&has2nd(d)))}
+/* units: "1" = main schedule (d.items), "2" = d.unit2, "3" = d.unit3 (same structure as unit2) */
+const UNAME={"1":"1st","2":"2nd","3":"3rd"};
+const unitOf=(d,u)=>u==="1"?d:(d["unit"+u]||null);
+const hasU=(d,u)=>{const x=d["unit"+u];return !!(x&&x.items&&x.items.length)};
+const has2nd=d=>hasU(d,"2");
+const unitLists=d=>[["1",d.items||[]],["2",(d.unit2&&d.unit2.items)||[]],["3",(d.unit3&&d.unit3.items)||[]]];
+/* units offered: 2nd unless the main admin switched it off; 3rd when switched on (website) or, in the Claude app, when the schedule has one */
+function unitsOn(){const u=["1"];if(window.UNIT2!==false)u.push("2");if(window.UNIT3===true||(window.UNIT3===undefined&&S.days.some(d=>hasU(d,"3"))))u.push("3");return u}
+function planDays(){return S.days.filter(d=>(S.pu["1"]&&(d.kind!=="shoot"||(d.items||[]).some(i=>i.sc)))||(S.pu["2"]&&hasU(d,"2"))||(S.pu["3"]&&hasU(d,"3")))}
 function townOf(ad){const p=String(ad).split(",").map(x=>x.trim()).filter(Boolean);const last=p[p.length-1]||"";return last.replace(/^\d{4}\s*/,"").replace(/\s*\(.*\)$/,"")}
 function dayPlaces(d){
   const out=[];
-  for(const it of [...(d.items||[]),...((d.unit2&&d.unit2.items)||[])]){if(!it.sc||!it.loc)continue;const ad=addrForItem(it);if(/^tba$/i.test(ad))continue;const t=townOf(ad);if(t&&!out.includes(t))out.push(t)}
+  for(const it of unitLists(d).flatMap(x=>x[1])){if(!it.sc||!it.loc)continue;const ad=addrForItem(it);if(/^tba$/i.test(ad))continue;const t=townOf(ad);if(t&&!out.includes(t))out.push(t)}
   return out;
 }
 /* shared day navigation (Schedule + Callsheet): unit filter fixed on the left, days scroll beside it; OFF days are shown but inactive */
 function dayNav(PD,isSel,attr,key,extra){
   const t=todayISO();
   const sel=PD.find(isSel)||{};
-  const selHas2=has2nd(sel);
-  let h='<div class="stripwrap"><div class="pub" role="group" aria-label="'+L("Unit filtern")+'"><button data-pu="1" aria-pressed="'+!!S.pu["1"]+'" aria-label="1st Unit">1st</button><button data-pu="2" class="u2'+(selHas2?'':' none')+'" aria-pressed="'+!!S.pu["2"]+'" aria-label="2nd Unit"'+(selHas2?'':' title="'+esc(L("Keine 2nd Unit an diesem Tag."))+'"')+'>2nd</button></div><div class="strip in" role="tablist" aria-label="Tage">';
+  const ub=u=>{if(u==="1")return '<button data-pu="1" aria-pressed="'+!!S.pu["1"]+'" aria-label="1st Unit">1st</button>';const has=hasU(sel,u);return '<button data-pu="'+u+'" class="u'+u+(has?'':' none')+'" aria-pressed="'+!!S.pu[u]+'" aria-label="'+UNAME[u]+' Unit"'+(has?'':' title="'+esc(L("Keine "+UNAME[u]+" Unit an diesem Tag."))+'"')+'>'+UNAME[u]+'</button>'};
+  const uo=unitsOn();
+  let h='<div class="stripwrap">'+(uo.length>1?'<div class="pub" role="group" aria-label="'+L("Unit filtern")+'">'+uo.map(ub).join("")+'</div>':'')+'<div class="strip in" role="tablist" aria-label="Tage">';
   for(const d of PD){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
@@ -580,21 +592,19 @@ function renderPlan(){
     h+='<div class="offday"><b>'+(d.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(d,"info"))+'</div>';
     return h;
   }
-  const has2=!!(d.unit2&&d.unit2.items&&d.unit2.items.length);
-  const p1=!!S.pu["1"],p2=!!S.pu["2"];
-  if(!p1&&!p2)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
-  if(p1){
-    if(p2&&has2)h+='<h3 class="uh">1st Unit</h3>';
-    h+='<ol class="tl">'+(d.items||[]).map(itemHTML).join("")+'</ol>';
-  }
-  if(p2){
-    if(has2){
-      const u=d.unit2;
-      if(p1)h+='<h3 class="uh u2">2nd Unit</h3>';
-      h+='<div class="unitfacts">'+[u.hours,u.length,u.pages&&u.pages+" pgs",u.extras&&u.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+'</div>';
-      if(TXA(u,"notes").length)h+='<div class="notes" style="margin-top:8px">'+TXA(u,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
-      h+='<ol class="tl">'+u.items.map(itemHTML).join("")+'</ol>';
-    }else if(!p1)h+='<div class="empty">'+L('Keine 2nd Unit an diesem Tag.')+'</div>';
+  const sel=["1","2","3"].filter(u=>S.pu[u]);
+  if(!sel.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
+  const shown=sel.filter(u=>u==="1"||hasU(d,u));
+  const heads=shown.length>1;
+  for(const u of sel){
+    if(u==="1"){if(heads)h+='<h3 class="uh">1st Unit</h3>';h+='<ol class="tl">'+(d.items||[]).map(itemHTML).join("")+'</ol>';continue}
+    if(hasU(d,u)){
+      const x=d["unit"+u];
+      if(heads)h+='<h3 class="uh u'+u+'">'+UNAME[u]+' Unit</h3>';
+      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+'</div>';
+      if(TXA(x,"notes").length)h+='<div class="notes" style="margin-top:8px">'+TXA(x,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
+      h+='<ol class="tl">'+x.items.map(itemHTML).join("")+'</ol>';
+    }else if(!shown.length)h+='<div class="empty">'+L('Keine '+UNAME[u]+' Unit an diesem Tag.')+'</div>';
   }
   return h;
 }
@@ -655,7 +665,7 @@ const isS5=sc=>/^5(pt\d+|)$/.test(norm(sc))||norm(sc)==="185";
 function scene5Parts(){
   const out=[];
   for(const d of S.days){
-    for(const [u,list] of [["1st",d.items||[]],["2nd",(d.unit2&&d.unit2.items)||[]]])
+    for(const [u,list] of unitLists(d))
       for(const it of list)if(it.sc&&isS5(it.sc))out.push({it,d,u});
   }
   return out;
@@ -731,26 +741,25 @@ function s5Addresses(g){
   for(const p of g.parts){const a=fullAddr(p.it.loc);if(!m.has(a))m.set(a,[]);m.get(a).push(p)}
   return [...m.entries()];
 }
-function ufOn(){return !(S.uf["1"]&&S.uf["2"])}
+function ufOn(){return !unitsOn().every(u=>S.uf[u])}
 function rawUnits(sc){return sceneTexts(sc,null).map(x=>x.u)}
 function unitBadges(us){
-  const has1=us.includes("1"),has2=us.includes("2");
-  return '<span class="ubs">'+(has1?'<span class="ub">1st Unit</span>':'')+(has2?'<span class="ub u2">2nd Unit</span>':'')+'</span>';
+  return '<span class="ubs">'+["1","2","3"].filter(u=>us.includes(u)).map(u=>'<span class="ub'+(u==="1"?'':' u'+u)+'">'+UNAME[u]+' Unit</span>').join("")+'</span>';
 }
 function cardWrap(key,head,addrHTML,body){
   const op=!!S.openSc[key];
   return '<div class="lc scd'+(op?' open':'')+'"><button class="lch" data-sckey="'+esc(key)+'" aria-expanded="'+op+'">'+head+'</button>'+addrHTML+'<div class="scb"'+(op?'':' hidden')+'>'+body+'</div></div>';
 }
 function s5Card(g0){
-  const g=Object.assign({},g0,{parts:ufOn()?g0.parts.filter(p=>S.uf[p.u==="2nd"?"2":"1"]):g0.parts});
+  const g=Object.assign({},g0,{parts:ufOn()?g0.parts.filter(p=>S.uf[p.u]):g0.parts});
   const al=s5Addresses(g);
   const tc=x=>String(x).toLowerCase().replace(/(^|[\s–\-\/])(\p{L})/gu,(m,a,c)=>a+c.toUpperCase());
   const motName=ps=>[...new Set(ps.map(p=>tc(String(p.it.set||"").replace(/^VALAIS – /,""))))].join(" / ");
-  const li=p=>'<li><b>'+esc(p.it.sc)+'</b><button class="pd" data-goto="'+esc(p.d.id)+'">'+esc(p.d.short||p.d.label)+' '+fmtDate(p.d.date).slice(3,-5)+'.'+(p.u==="2nd"?'<i>2U</i>':'')+'</button><span class="ie '+ieClass(p.it.ie)+'">'+esc(p.it.ie||"")+'</span><span class="pdesc">'+esc(TX(p.it,"d"))+'</span></li>';
+  const li=p=>'<li><b>'+esc(p.it.sc)+'</b><button class="pd" data-goto="'+esc(p.d.id)+'">'+esc(p.d.short||p.d.label)+' '+fmtDate(p.d.date).slice(3,-5)+'.'+(p.u!=="1"?'<i>'+p.u+'U</i>':'')+'</button><span class="ie '+ieClass(p.it.ie)+'">'+esc(p.it.ie||"")+'</span><span class="pdesc">'+esc(TX(p.it,"d"))+'</span></li>';
   const body='<div class="mot">'+al.map(([ad,ps])=>'<div><b>'+esc(motName(ps))+'</b><span class="addr" style="font-size:13px">'+esc(ad)+' · <a href="'+maps(ad)+'" target="_blank" rel="noopener">Maps</a></span><ul class="plot">'+ps.map(li).join("")+'</ul></div>').join("")+'</div>';
   const days=[...new Map(g.parts.map(p=>[p.d.id,p.d])).values()].sort((x,y)=>x.date<y.date?-1:1).map(d=>d.short||d.label).join(" · ");
   const n=g.parts.length;
-  const head='<h4>'+esc(g.title)+unitBadges(g0.parts.map(p=>p.u==="2nd"?"2":"1"))+'</h4><span class="lcm">'+(al.length>1?al.length+' '+L('Motive')+' · ':'')+n+' '+(n===1?L('Szene'):L('Szenen'))+(days?' · '+esc(days):'')+'</span>';
+  const head='<h4>'+esc(g.title)+unitBadges(g0.parts.map(p=>p.u))+'</h4><span class="lcm">'+(al.length>1?al.length+' '+L('Motive')+' · ':'')+n+' '+(n===1?L('Szene'):L('Szenen'))+(days?' · '+esc(days):'')+'</span>';
   const one=al.length===1?al[0][0]:null;
   const top='<div class="adl"><div><span class="addr">'+esc(one||'3970 Salgesch · '+al.length+' '+L('Adressen im Dorf'))+'</span> <a href="'+maps(one||"3970 Salgesch")+'" target="_blank" rel="noopener">Maps</a></div></div>';
   return cardWrap("card:"+(g.key==="szene-5"?"s5":g.key),head,top,body);
@@ -758,7 +767,7 @@ function s5Card(g0){
 /* every scene with a synopsis, first occurrence only, in schedule order */
 const allScenes=()=>memo("allsc",()=>{
   const seen=new Set(),out=[];
-  for(const d of S.days)for(const [u,list] of [["1",d.items||[]],["2",(d.unit2&&d.unit2.items)||[]]])for(const it of list){
+  for(const d of S.days)for(const [u,list] of unitLists(d))for(const it of list){
     if(!it.sc||!it.d)continue;const n=norm(it.sc);
     if(seen.has(n))continue;seen.add(n);out.push({it,d,u,n});
   }
@@ -766,7 +775,7 @@ const allScenes=()=>memo("allsc",()=>{
 });
 function sceneTexts(scenes,uf){
   if(uf===undefined)uf=ufOn()?S.uf:null;
-  const uk=uf?(uf["1"]?"1":"")+(uf["2"]?"2":""):"*";
+  const uk=uf?["1","2","3"].filter(u=>uf[u]).join(""):"*";
   return memo("st|"+uk+"|"+scenes.join(","),()=>{
     const want=scenes.map(norm);
     const out=allScenes().filter(x=>want.some(w=>x.n===w||x.n.startsWith(w+"pt")));
@@ -775,7 +784,7 @@ function sceneTexts(scenes,uf){
 }
 function plotHTML(scenes){
   const t=sceneTexts(scenes);if(!t.length)return"";
-  return '<ul class="plot">'+t.map(({it,d,u})=>'<li><b>'+esc(it.sc)+'</b><button class="pd" data-goto="'+esc(d.id)+'">'+esc(d.short||d.label)+' '+fmtDate(d.date).slice(3,-5)+'.'+(u==="2"?'<i>2U</i>':'')+'</button><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="pdesc">'+esc(TX(it,"d"))+'</span></li>').join("")+'</ul>';
+  return '<ul class="plot">'+t.map(({it,d,u})=>'<li><b>'+esc(it.sc)+'</b><button class="pd" data-goto="'+esc(d.id)+'">'+esc(d.short||d.label)+' '+fmtDate(d.date).slice(3,-5)+'.'+(u!=="1"?'<i>'+u+'U</i>':'')+'</button><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="pdesc">'+esc(TX(it,"d"))+'</span></li>').join("")+'</ul>';
 }
 function locCard(g0){
   if(g0.s5)return s5Card(g0);
@@ -797,9 +806,9 @@ function locCard(g0){
 }
 function renderLoc(){
   if(!S.locs.length)return emptyHTML("Motivliste");
-  const gs=groupLocs().filter(g=>{if(!ufOn())return true;if(g.s5)return g.parts.some(p=>S.uf[p.u==="2nd"?"2":"1"]);return sceneTexts(g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))).length>0});
-  return '<div class="scbar"><a class="mapbtn" href="'+esc(/^https:\/\//.test(window.MAPURL||"")?window.MAPURL:MYMAP)+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>Map</a><button class="scall" id="scall" data-scall="1" aria-expanded="false" aria-label="'+L("Alle Szenen auf- oder zuklappen")+'">'+cap(L("Szenen"))+'</button><button class="uf" data-uf="1" aria-pressed="'+!!S.uf["1"]+'" aria-label="1st Unit">1st</button><button class="uf u2" data-uf="2" aria-pressed="'+!!S.uf["2"]+'" aria-label="2nd Unit">2nd</button></div>'+
-    (gs.length?gs.map(locCard).join(""):'<div class="empty">'+(S.uf["1"]||S.uf["2"]?L('Keine Locations für diese Unit.'):L('Bitte mindestens eine Unit wählen.'))+'</div>');
+  const gs=groupLocs().filter(g=>{if(!ufOn())return true;if(g.s5)return g.parts.some(p=>S.uf[p.u]);return sceneTexts(g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))).length>0});
+  return '<div class="scbar"><a class="mapbtn" href="'+esc(/^https:\/\//.test(window.MAPURL||"")?window.MAPURL:MYMAP)+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>Map</a><button class="scall" id="scall" data-scall="1" aria-expanded="false" aria-label="'+L("Alle Szenen auf- oder zuklappen")+'">'+cap(L("Szenen"))+'</button>'+(unitsOn().length>1?unitsOn().map(u=>'<button class="uf'+(u==="1"?'':' u'+u)+'" data-uf="'+u+'" aria-pressed="'+!!S.uf[u]+'" aria-label="'+UNAME[u]+' Unit">'+UNAME[u]+'</button>').join(""):'')+'</div>'+
+    (gs.length?gs.map(locCard).join(""):'<div class="empty">'+(S.uf["1"]||S.uf["2"]||S.uf["3"]?L('Keine Locations für diese Unit.'):L('Bitte mindestens eine Unit wählen.'))+'</div>');
 }
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
@@ -878,8 +887,10 @@ function renderHeader(){
 /* the main admin can switch the 2nd unit off (website: window.UNIT2=false); then only the 1st unit is shown and the unit buttons disappear */
 function render(){
   if(!VIEWS[S.tab])S.tab="plan";
-  const u2off=window.UNIT2===false;document.body.classList.toggle("no-u2",u2off);
-  if(u2off){if(!S.pu["1"]||S.pu["2"])S.pu={"1":true,"2":false};if(!S.uf["1"]||S.uf["2"])S.uf={"1":true,"2":false}}
+  const uo=unitsOn();document.body.classList.toggle("no-u2",uo.length<2);
+  for(const u of ["2","3"])if(!uo.includes(u)){if(S.pu[u])S.pu=Object.assign({},S.pu,{[u]:false});if(S.uf[u])S.uf=Object.assign({},S.uf,{[u]:false})}
+  if(!uo.some(u=>S.pu[u]))S.pu=Object.assign({},S.pu,{"1":true});
+  if(uo.length<2&&!S.uf["1"])S.uf=Object.assign({},S.uf,{"1":true});
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===S.tab));
   const v=$("#view");
   const focusQ=document.activeElement&&document.activeElement.id==="q";
@@ -914,7 +925,7 @@ const ACTIONS=[
   ["[data-dday]",b=>{S.dday=b.dataset.dday;render()}],
   ["[data-day]",b=>{S.day=b.dataset.day;render()}],
   ["[data-pu]",b=>{const k=b.dataset.pu;S.pu=Object.assign({},S.pu,{[k]:!S.pu[k]});store("pu",JSON.stringify(S.pu));render()}],
-  ["[data-goto]",b=>{S.day=b.dataset.goto;S.tab="plan";S.pu={"1":true,"2":true};window.scrollTo(0,0);render()}],
+  ["[data-goto]",b=>{S.day=b.dataset.goto;S.tab="plan";S.pu={"1":true,"2":true,"3":true};window.scrollTo(0,0);render()}],
 ];
 document.addEventListener("click",e=>{
   if(e.target.closest("#search"))return; /* search overlay has its own handler */
@@ -947,15 +958,15 @@ function searchAll(q){
   const WDL=[["sonntag","sunday","dimanche","domenica"],["montag","monday","lundi","lunedi"],["dienstag","tuesday","mardi","martedi"],["mittwoch","wednesday","mercredi","mercoledi"],["donnerstag","thursday","jeudi","giovedi"],["freitag","friday","vendredi","venerdi"],["samstag","saturday","samedi","sabato"]];
   for(const d of S.days){
     const x=new Date(d.date+"T12:00:00");
-    const sc1=(d.items||[]).filter(i=>i.sc).length,sc2=((d.unit2&&d.unit2.items)||[]).filter(i=>i.sc).length;
+    const sc1=(d.items||[]).filter(i=>i.sc).length,sc2=((d.unit2&&d.unit2.items)||[]).filter(i=>i.sc).length,sc3=((d.unit3&&d.unit3.items)||[]).filter(i=>i.sc).length;
     const kindw=d.kind==="shoot"?"drehtag shooting day tournage riprese":d.kind==="off"?"drehfrei frei day off off-day libre libero":"reise reisetag travel voyage viaggio";
-    const text=[d.label,d.short,kindw,WDL[x.getDay()].join(" "),WD[x.getDay()],dshort(d),(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info"),dayPlaces(d).join(" "),sc2?"2nd unit":"",sc1?"1st unit":""].join(" ");
+    const text=[d.label,d.short,kindw,WDL[x.getDay()].join(" "),WD[x.getDay()],dshort(d),(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info"),dayPlaces(d).join(" "),sc2?"2nd unit":"",sc3?"3rd unit":"",sc1?"1st unit":""].join(" ");
     if(match(text,nrm(d.short||"")+" "+dshort(d)))R.day.push({k:"day",d,sc1,sc2});
   }
-  for(const d of S.days)for(const [u,list] of [["1",d.items||[]],["2",(d.unit2&&d.unit2.items)||[]]])for(const it of list){
-    if(!it.sc)continue;const ad=addrForItem(it);
+  for(const d of S.days)for(const [u,list] of unitLists(d))for(const it of list){
+    if(!it.sc)continue;if(!unitsOn().includes(u))continue;const ad=addrForItem(it);
     const sc=nrm(it.sc).replace(/\s+/g,"");
-    const text=[it.set,it.d,it.d_de,it.d_fr,ad,it.loc,(it.cast||[]).map(c=>cast[c]||"").join(" "),d.label,d.short,u==="2"?"2nd unit":"1st unit","szene scene"].join(" ");
+    const text=[it.set,it.d,it.d_de,it.d_fr,ad,it.loc,(it.cast||[]).map(c=>cast[c]||"").join(" "),d.label,d.short,UNAME[u]+" unit","szene scene"].join(" ");
     const nums=[sc,nrm(it.sc),(it.cast||[]).join(" "),nrm(d.short||""),dshort(d)].join(" ");
     if(!match(text,nums))continue;
     let score=0;for(const t of terms){if(sc===t)score+=100;else if(sc.startsWith(t))score+=40}
@@ -997,9 +1008,9 @@ $("#gq").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();c
 $("#gres").addEventListener("click",e=>{
   const b=e.target.closest("[data-sr]");if(!b)return;const r=SR[+b.dataset.sr];if(!r)return;LASTQ=$("#gq").value;closeSearch();
   let scrollSel=null;
-  if(r.k==="day"){S.tab="plan";S.day=r.d.id;const qv=nrm(LASTQ);S.pu=(/\b(2nd|2u|second|zweite|2\.)\b|2nd ?unit|unit ?2/.test(qv)&&r.d.unit2&&(r.d.unit2.items||[]).length)?{"1":false,"2":true}:{"1":true,"2":false}}
-  else if(r.k==="sc"){S.tab="plan";S.day=r.d.id;S.pu=r.u==="2"?{"1":false,"2":true}:{"1":true,"2":false}}
-  else if(r.k==="loc"){S.tab="loc";S.uf={"1":true,"2":true};const key="card:"+(r.g.key==="szene-5"?"s5":r.g.key);S.openSc[key]=true;scrollSel='[data-sckey="'+key+'"]'}
+  if(r.k==="day"){S.tab="plan";S.day=r.d.id;const qv=nrm(LASTQ);S.pu=(/\b(3rd|3u|third|dritte|3\.)\b|3rd ?unit|unit ?3/.test(qv)&&hasU(r.d,"3"))?{"1":false,"2":false,"3":true}:(/\b(2nd|2u|second|zweite|2\.)\b|2nd ?unit|unit ?2/.test(qv)&&hasU(r.d,"2"))?{"1":false,"2":true,"3":false}:{"1":true,"2":false,"3":false}}
+  else if(r.k==="sc"){S.tab="plan";S.day=r.d.id;S.pu={"1":r.u==="1","2":r.u==="2","3":r.u==="3"}}
+  else if(r.k==="loc"){S.tab="loc";S.uf={"1":true,"2":true,"3":true};const key="card:"+(r.g.key==="szene-5"?"s5":r.g.key);S.openSc[key]=true;scrollSel='[data-sckey="'+key+'"]'}
   else if(r.k==="crew"){S.tab="crew";S.q=r.p.name}
   else if(r.k==="dispo"){S.tab="dispo";S.dday=r.x.date}
   else if(r.k==="info"){S.tab="info"}
@@ -1013,7 +1024,7 @@ $("#gres").addEventListener("click",e=>{
 const arr=x=>Array.isArray(x)?x:[];
 function cleanDay(d){
   const o=Object.assign({},d);o.items=arr(o.items).filter(x=>x&&typeof x==="object");o.notes=arr(o.notes).filter(x=>typeof x==="string");for(const l of ["fr","en"])if(o["notes_"+l]!==undefined)o["notes_"+l]=arr(o["notes_"+l]).filter(x=>typeof x==="string");
-  if(o.unit2&&typeof o.unit2==="object")o.unit2=Object.assign({},o.unit2,{items:arr(o.unit2.items).filter(x=>x&&typeof x==="object"),notes:arr(o.unit2.notes)});else delete o.unit2;
+  for(const k of ["unit2","unit3"]){if(o[k]&&typeof o[k]==="object")o[k]=Object.assign({},o[k],{items:arr(o[k].items).filter(x=>x&&typeof x==="object"),notes:arr(o[k].notes)});else delete o[k];}
   return o;
 }
 const CLEAN={
@@ -1221,6 +1232,8 @@ Object.assign(I18N,{
  "Einstellungen der App":{fr:"Réglages de l’app",it:"Impostazioni dell’app",en:"App settings"},
  "Sprachen":{fr:"Langues",it:"Lingue",en:"Languages"},
  "Ausgeschaltet zeigt die App nur die 1st Unit, ohne die Knöpfe 1st/2nd.":{fr:"Désactivée, l’app n’affiche que la 1st unit, sans les boutons 1st/2nd.",it:"Se disattivata, l’app mostra solo la 1st unit, senza i pulsanti 1st/2nd.",en:"When off, the app shows only the 1st unit, without the 1st/2nd buttons."},
+ "3rd Unit anzeigen":{fr:"Afficher la 3rd unit",it:"Mostra la 3rd unit",en:"Show 3rd unit"},
+ "Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.":{fr:"Les unités désactivées disparaissent du planning, du callsheet et des lieux. Si seule la 1st unit est active, les boutons d’unité disparaissent.",it:"Le unit disattivate spariscono da Schedule, Callsheet e Locations. Se è attiva solo la 1st unit, i pulsanti delle unit spariscono.",en:"Units that are switched off disappear from Schedule, Callsheet and Locations. If only the 1st unit is on, the unit buttons disappear."},
  "2nd Unit anzeigen":{fr:"Afficher la 2nd unit",it:"Mostra la 2nd unit",en:"Show 2nd unit"},
  "Einstellungen gespeichert.":{fr:"Réglages enregistrés.",it:"Impostazioni salvate.",en:"Settings saved."},
  "Benutzer einladen":{fr:"Inviter des utilisateurs",it:"Invita utenti",en:"Invite users"},
@@ -1259,7 +1272,7 @@ Object.assign(I18N,{
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
 /* languages offered in the app; the main admin picks them (Firestore config/app.langs), cached for the sign-in screen */
-let APPLANGS=["de","fr","it","en"];try{const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
+let APPLANGS=["de","fr","it","en"];window.UNIT3=false;try{const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";window.UNIT3=localStorage.getItem("appunit3")==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
 try{const x=JSON.parse(localStorage.getItem("applangs")||"null");if(Array.isArray(x)&&x.length)APPLANGS=x.filter(l=>LANGS.some(z=>z[0]===l))}catch(_){}
 function applyLangs(){
   if(!APPLANGS.length)APPLANGS=["de"];
@@ -1271,6 +1284,7 @@ async function loadLangs(){
   try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));const l=d.exists()&&d.data().langs;
     if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}
     const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
+    const u3=d.exists()&&d.data().unit3===true;if(window.UNIT3!==u3){window.UNIT3=u3;try{localStorage.setItem("appunit3",u3?"1":"0")}catch(_){}render()}
     const mu=(d.exists()&&typeof d.data().mapUrl==="string")?d.data().mapUrl:"";if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
   }catch(err){console.warn("langs",err)}
   applyLangs();
@@ -1576,7 +1590,7 @@ VIEWS.admin=function(){
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
     '</div>'+
     '<details class="admins asetd" data-sec="appset"'+(SECS.appset?' open':'')+'><summary>'+L("Einstellungen der App")+'</summary><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
-    '<p class="ahint"><b>2nd Unit</b> – '+L("Ausgeschaltet zeigt die App nur die 1st Unit, ohne die Knöpfe 1st/2nd.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label></div>'+
+    '<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
   let h='<section class="adm"><h2 class="dh">'+L("Benutzer verwalten")+'</h2>'+
     admSec+
@@ -1598,9 +1612,9 @@ document.addEventListener("submit",async e=>{
   const fl=e.target.closest('[data-adm="langs"]');
   if(fl){e.preventDefault();if(!isOwner())return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
-    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
+    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked,u3=!!fl.querySelector('input[name=u3]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
     if(mu&&!/^https:\/\/\S+$/.test(mu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
-    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,mapUrl:mu},{merge:true});APPLANGS=l;window.UNIT2=u2;window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu},{merge:true});APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const fa=e.target.closest('[data-adm="addadmin"]');
   if(fa){e.preventDefault();if(!isOwner())return;const em=lc(fa.em.value);if(!/@/.test(em))return;
@@ -1678,7 +1692,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="d6cb674c79";
+const APP_VER="1e35f0e980";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
