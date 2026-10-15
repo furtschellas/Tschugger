@@ -81,6 +81,7 @@ Object.assign(I18N,{
  "Ohne Bestätigungs-Mail freischalten":{fr:"Autoriser sans mail de confirmation",it:"Abilita senza mail di conferma",en:"Approve without confirmation mail"},
  "{e} ohne Bestätigungs-Mail freischalten? Nur machen, wenn die Adresse sicher dieser Person gehört.":{fr:"Autoriser {e} sans mail de confirmation ? Seulement si l’adresse appartient bien à cette personne.",it:"Abilitare {e} senza mail di conferma? Solo se l’indirizzo appartiene sicuramente a questa persona.",en:"Approve {e} without a confirmation mail? Only do this if the address surely belongs to this person."},
  "ist freigeschaltet. Die Person meldet sich einfach an – oder tippt auf «Ich habe bestätigt».":{fr:"est autorisé·e. La personne se connecte simplement – ou touche « J’ai confirmé ».",it:"è abilitato/a. La persona accede semplicemente – oppure tocca «Ho confermato».",en:"is approved. The person simply signs in – or taps “I have confirmed”."},
+ "Kontoinfos":{fr:"Infos de compte",it:"Info account",en:"Account info"},
  "Startpasswort":{fr:"Mot de passe initial",it:"Password iniziale",en:"Start password"},
  "Für {e} ein Konto mit Startpasswort anlegen? Beim ersten Anmelden muss die Person ein eigenes Passwort festlegen.":{fr:"Créer un compte avec mot de passe initial pour {e} ? À la première connexion, la personne devra choisir son propre mot de passe.",it:"Creare per {e} un account con password iniziale? Al primo accesso la persona dovrà scegliere una propria password.",en:"Create an account with a start password for {e}? On first sign-in the person must set their own password."},
  "hat schon ein Konto – dafür «Passwort-Link senden» verwenden.":{fr:"a déjà un compte – utilise « Envoyer un lien de mot de passe ».",it:"ha già un account – usa «Invia link password».",en:"already has an account – use “Send password link”."},
@@ -1025,7 +1026,7 @@ const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'"
 window.crewHead=function(){
   if(!isAdmin()){if(!window.BDAYPUB||!ME)return"";if(!PUBB.loaded)loadPubBdays();return PUBB.loaded?bdayHTML():""}
   ensureAdm();
-  return '<div class="admv">'+togBtn("food","Essen")+(ADM.err?'<span class="admerr">'+L("Benutzerdaten nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+togBtn("bday","Geburtstage")+togBtn("acct","Kontostatus")+'<button type="button" class="foodtog ico vcall" data-vcall aria-label="'+esc(L("Alle Kontakte als VCF"))+'" title="'+esc(L("Alle Kontakte als VCF"))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>'+'</div>'+(ADM.loaded?bdayHTML()+cateringHTML():"");
+  return '<div class="admv">'+togBtn("food","Essen")+(ADM.err?'<span class="admerr">'+L("Benutzerdaten nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+togBtn("bday","Geburtstage")+(isOwner()?togBtn("acct","Kontoinfos"):"")+'<button type="button" class="foodtog ico vcall" data-vcall aria-label="'+esc(L("Alle Kontakte als VCF"))+'" title="'+esc(L("Alle Kontakte als VCF"))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>'+'</div>'+(ADM.loaded?bdayHTML()+cateringHTML():"");
 };
 document.addEventListener("click",e=>{if(!e.target.closest("[data-vcall]")||!isAdmin())return;const {text,n}=allVCards();if(!n)return;saveVcf(text,"TSCHUGGER Tigerblood Crew");showMsg(n+" "+L("Kontakte als VCF gespeichert."),4000)});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";if(ADMV[k]&&!ADM.loading&&Date.now()-(ADM.at||0)>60000)ADM.loaded=false;try{localStorage.setItem("admv2:"+k,ADMV[k]?"1":"0")}catch(_){}render()});
@@ -1044,10 +1045,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-cmail]");i
     L("So geht's:")+"\n1. "+app+"\n2. "+L("«Konto erstellen» mit genau dieser E-Mail-Adresse:")+" "+em+"\n   "+L("(Gmail-Adresse: einfach «Mit Google anmelden»)")+"\n3. "+L("Bestätigungs-Mail öffnen und auf den Link tippen – bitte auch im Spam-Ordner nachsehen.")+"\n\n"+L("Bis bald am Set!");
   location.href="mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(body)},true);
 window.crewExtra=function(p){
-  if(!isAdmin()||!(ADMV.food||ADMV.bday||ADMV.acct)||!p)return"";
+  const ACC=ADMV.acct&&isOwner();
+  if(!isAdmin()||!(ADMV.food||ADMV.bday||ACC)||!p)return"";
   if(!ADM.loaded){ensureAdm();return ADM.err?"":'<div class="pinfo"><span class="na">…</span></div>'}
   const m=memberFor(p),ch=[],na=t=>'<span class="na">'+esc(t)+'</span>';
-  if(ADMV.acct){
+  if(ACC){
     if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
       if(inv&&isAdmin())ch.push('<button type="button" class="cinv" data-cmail="'+esc(e)+'" data-nm="'+esc(p.name||"")+'">✉ '+esc(L("Einladungs-Mail schicken"))+'</button>');
       if(!inv&&isOwner()&&e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))ch.push('<button type="button" class="cinv" data-cinv="'+esc(e)+'" data-nm="'+esc(p.name||"")+'" data-rl="'+esc(p.role||"")+'">+ '+esc(L("Als Benutzer einladen"))+'</button>')}
@@ -1056,8 +1058,8 @@ window.crewExtra=function(p){
     if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Besitzer"))+'</span>');
     else if(ems.some(e=>ADM.adm.includes(e)))ch.push('<span class="adm">'+esc(L("Admin"))+'</span>');
   }
-  if(m&&ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ADMV.acct?na(L("Geburtstag")+": –"):""))}
-  if(m&&ADMV.food){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?"":(ADMV.acct?na(L("Essen")+": "+L("keine Angaben")):"")))}
+  if(m&&ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ACC?na(L("Geburtstag")+": –"):""))}
+  if(m&&ADMV.food){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?"":(ACC?na(L("Essen")+": "+L("keine Angaben")):"")))}
   const h=ch.filter(Boolean).join("");return h?'<div class="pinfo">'+h+'</div>':"";
 };
 
