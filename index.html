@@ -399,12 +399,6 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .admv .foodtog{margin:0}
 .ct.bday span{color:var(--gold)}
 .bcal{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:14px}
-.bgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0}
-.bgrid .bw{font-size:11px;text-align:center;color:var(--muted);text-transform:uppercase}
-.bgrid .bd{position:relative;text-align:center;font-size:12px;font-variant-numeric:tabular-nums;padding:7px 0;border-radius:6px;background:var(--paper);border:1px solid var(--rule)}
-.bgrid .bd.out{opacity:.3}
-.bgrid .bd.hit{background:var(--gold);border-color:var(--gold);color:#1a1206;font-weight:700}
-.bgrid .bd i{position:absolute;top:-5px;right:-3px;font-style:normal;font-size:10px;background:var(--accent);color:var(--accent-ink);border-radius:99px;min-width:15px;line-height:15px}
 .bl{display:flex;gap:10px;padding:5px 0;border-top:1px solid var(--rule)}
 .bl span{flex:none;min-width:72px;color:var(--gold);font-variant-numeric:tabular-nums}
 .admv{margin-top:12px}
@@ -1544,7 +1538,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="2e23c74026";
+const APP_VER="bd9fdd3ec7";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
