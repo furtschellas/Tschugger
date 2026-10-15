@@ -13,9 +13,25 @@ import requests
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 R = pathlib.Path(__file__).resolve().parent.parent
+
+def status(state, msg, **extra):
+    """status.json (public, no crew data): lets the app show whether the GitHub update runs. Rewritten only when the
+    state changes or the last entry is older than 6 h, so an idle hour does not create a commit of its own."""
+    p = R / "status.json"; now = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+    try: old = json.loads(p.read_text())
+    except Exception: old = {}
+    new = {"state": state, "msg": msg, **extra}
+    same = all(old.get(k) == v for k, v in new.items())
+    try: age = (now - datetime.datetime.fromisoformat(old.get("at", "").replace("Z", "+00:00"))).total_seconds()
+    except Exception: age = 1e9
+    if same and age < 6 * 3600: return
+    new["at"] = now.isoformat().replace("+00:00", "Z")
+    p.write_text(json.dumps(new, ensure_ascii=False, indent=1) + "\n")
+
 _missing = [k for k in ("CREW_KEY", "ANTHROPIC_API_KEY", "DROPBOX_APP_KEY", "DROPBOX_REFRESH_TOKEN") if not os.environ.get(k, "").strip()]
 if _missing and __name__ == "__main__":
-    print("• Noch nicht eingerichtet – fehlende Secrets:", ", ".join(_missing)); sys.exit(0)
+    print("• Noch nicht eingerichtet – fehlende Secrets:", ", ".join(_missing))
+    status("setup", "Noch nicht eingerichtet", missing=_missing); sys.exit(0)
 KEY = base64.b64decode(os.environ["CREW_KEY"].strip())
 ROOT = (os.environ.get("DROPBOX_ROOT") or "ns:14935064499").rstrip("/")
 MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
@@ -222,7 +238,7 @@ def main():
         cfg = {k: list(v.values())[0] for k, v in f.items()}
     except Exception: log("App-Einstellungen nicht lesbar – Standard wird verwendet")
     if cfg.get("autoUpdate") is False and EVENT == "schedule":
-        log("Automatische Aktualisierung ist in den App-Einstellungen ausgeschaltet."); return
+        log("Automatische Aktualisierung ist in den App-Einstellungen ausgeschaltet."); status("off", "In den App-Einstellungen ausgeschaltet"); return
 
     data = dec_file(R / "data.enc.json") or {}
     scr = (dec_file(R / "script.enc.json") or {}).get("script", [])
@@ -343,6 +359,14 @@ def main():
     w1 = enc_file(R / "data.enc.json", data)
     w2 = enc_file(R / "script.enc.json", {"script": [{k: d[k] for k in ("sc", "head", "text") if k in d} for d in scr]}) if scr else False
     log("Daten:", "geändert" if changed else "unverändert", "· Datei:", "neu geschrieben" if (w1 or w2) else "gleich")
+    status("ok", "Läuft", updatedAt=meta.get("updatedAt") or "", version=meta.get("scheduleVersion") or "")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit as e:
+        if e.code not in (None, 0): status("error", str(e.code)[:160])
+        raise
+    except Exception as e:
+        # only the error type and a short text – never file contents (public repository)
+        status("error", (type(e).__name__ + ": " + str(e))[:160]); raise
