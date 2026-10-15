@@ -477,8 +477,10 @@ function vCardText(p,g){
   L1.push("NOTE:"+vEsc("TSCHUGGER Tigerblood"+(p.role?" – "+p.role:"")),"END:VCARD");
   return L1.join("\r\n")+"\r\n";
 }
-function saveVCard(p,g){
-  const v=vCardText(p,g),fn=(String(p.name||"").replace(/[\\/:*?"<>|]/g,"").trim()||"Kontakt")+".vcf";
+function saveVCard(p,g){saveVcf(vCardText(p,g),String(p.name||"").replace(/[\\/:*?"<>|]/g,"").trim()||"Kontakt")}
+function allVCards(){let out="",n=0;for(const g of S.crew)for(const p of (g.people||[]))if(p.name&&(p.phone||p.email)){out+=vCardText(p,g);n++}return {text:out,n}}
+function saveVcf(v,name){
+  const fn=name+".vcf";
   const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
   if(ios){location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(v);return}
   try{const u=URL.createObjectURL(new Blob([v],{type:"text/vcard;charset=utf-8"}));const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
@@ -495,8 +497,9 @@ function renderCrew(){
     if(!ppl.length)continue;n+=ppl.length;
     const gi=S.crew.indexOf(g);
     h+='<section class="dept"><h3 class="dh">'+esc(TX(g,"dept"))+'</h3><div class="people">'+ppl.map(p=>{
-      let ct='';const vc=(p.phone||p.email)?'<button class="copy vcbtn" data-vc="'+gi+':'+g.people.indexOf(p)+'" aria-label="'+esc(L("Kontakt ins Telefon übernehmen"))+'" title="'+esc(L("Kontakt ins Telefon übernehmen"))+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard</button>':'';
-      if(p.phone)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+vc;
+      /* vCard only on the website: the Claude viewer cannot save .vcf files, so there the copy button stays */
+      let ct='';const web=typeof window.crewHead==="function";const vc=!web?'':(p.phone||p.email)?'<button class="copy vcbtn" data-vc="'+gi+':'+g.people.indexOf(p)+'" aria-label="'+esc(L("Kontakt ins Telefon übernehmen"))+'" title="'+esc(L("Kontakt ins Telefon übernehmen"))+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard</button>':'';
+      if(p.phone)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vc:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
       if(p.email)ct+='<span class="em">'+esc(p.email)+'</span>'+(p.phone?'':vc);
       if(p.note)ct+='<span>'+esc(p.note)+'</span>';
       return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span></div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';

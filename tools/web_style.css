@@ -95,3 +95,5 @@
 .pinfo .na{background:var(--rule);color:var(--muted)}
 .pinfo{margin:8px 0 2px}
 .bcal>b{display:block;margin-bottom:6px}
+.admv .foodtog.vcall{width:auto;padding:0 12px;gap:5px;margin-left:auto}
+.admv .vcall b{font-size:12px;font-weight:700;letter-spacing:.03em}

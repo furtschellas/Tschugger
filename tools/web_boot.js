@@ -71,6 +71,8 @@ Object.assign(I18N,{
  "aktiv":{fr:"actifs",it:"attivi",en:"active"},
  "Noch kein Konto":{fr:"Pas encore de compte",it:"Ancora nessun account",en:"No account yet"},
  "keine Angaben":{fr:"pas d'indication",it:"nessuna indicazione",en:"not specified"},
+ "Alle Kontakte als VCF":{fr:"Tous les contacts en VCF",it:"Tutti i contatti in VCF",en:"All contacts as VCF"},
+ "Kontakte als VCF gespeichert.":{fr:"contacts enregistrés en VCF.",it:"contatti salvati in VCF.",en:"contacts saved as VCF."},
  "Geburtstag":{fr:"Anniversaire",it:"Compleanno",en:"Birthday"},
  "Geburtstagskalender":{fr:"Calendrier des anniversaires",it:"Calendario compleanni",en:"Birthday calendar"},
  "Geburtstage":{fr:"Anniversaires",it:"Compleanni",en:"Birthdays"},
@@ -454,8 +456,9 @@ const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'"
 window.crewHead=function(){
   if(!isAdmin())return"";
   if(ADMV.food||ADMV.bday||ADMV.bcal)ensureAdm();
-  return '<div class="admv">'+togBtn("food","Essen")+(ADM.err&&(ADMV.food||ADMV.bday||ADMV.bcal)?'<span class="admerr">Benutzerdaten nicht lesbar ('+esc(ADM.err)+') – Firestore-Regeln prüfen.</span>':'')+togBtn("bday","Geburtstage")+togBtn("bcal","Geburtstagskalender")+'</div>'+(ADM.loaded?(ADMV.bcal?bdayHTML():"")+(ADMV.food?cateringHTML():""):"");
+  return '<div class="admv">'+togBtn("food","Essen")+(ADM.err&&(ADMV.food||ADMV.bday||ADMV.bcal)?'<span class="admerr">Benutzerdaten nicht lesbar ('+esc(ADM.err)+') – Firestore-Regeln prüfen.</span>':'')+togBtn("bday","Geburtstage")+togBtn("bcal","Geburtstagskalender")+'<button type="button" class="foodtog ico vcall" data-vcall aria-label="'+esc(L("Alle Kontakte als VCF"))+'" title="'+esc(L("Alle Kontakte als VCF"))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>'+'</div>'+(ADM.loaded?(ADMV.bcal?bdayHTML():"")+(ADMV.food?cateringHTML():""):"");
 };
+document.addEventListener("click",e=>{if(!e.target.closest("[data-vcall]")||!isAdmin())return;const {text,n}=allVCards();if(!n)return;saveVcf(text,"TSCHUGGER Tigerblood Crew");showMsg(n+" "+L("Kontakte als VCF gespeichert."),4000)});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";try{localStorage.setItem("admv2:"+k,ADMV[k]?"1":"0")}catch(_){}render()});
 window.crewExtra=function(p){
   if(!isAdmin()||!(ADMV.food||ADMV.bday)||!p)return"";
