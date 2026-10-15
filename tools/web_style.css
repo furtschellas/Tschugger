@@ -189,3 +189,19 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .umore{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--rule);background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.umore[aria-expanded="true"] svg{transform:rotate(180deg)}.umore:hover{color:var(--accent);border-color:var(--accent)}
 .ubody{margin-top:10px;padding-top:10px;border-top:1px dashed var(--rule)}.ubody .aacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.ubody .aacts button,.ubody .aacts .abtnl{font:inherit;font-size:13px;padding:6px 11px;border-radius:8px;border:1px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer;text-decoration:none}.ubody .aacts .warn{color:#e5484d;border-color:color-mix(in srgb,#e5484d 45%,transparent)}
 .unm b{overflow-wrap:anywhere}.ulist .search{position:static;margin:8px 0 0;box-shadow:none}
+#refresh.admhide{display:none!important}
+.setbar{display:flex;justify-content:flex-end;margin:-6px 0 10px}
+.acpage .myhead{align-items:center}.acwho{font-size:13px;color:var(--muted);margin:2px 0 10px}
+.acpage form[data-af=pf]{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:6px}
+.acpage form[data-af=pf]>:is(.pname,.ghint,.chk,.full,button,.amsg){grid-column:1/-1}
+.acpage form[data-af=pf] label{font-size:12px;gap:3px}
+.acpage form[data-af=pf] :is(input,select){font-size:15px;padding:8px 10px}
+.acpage form[data-af=pf] .chk{display:flex;flex-wrap:wrap;gap:6px}
+.acpage form[data-af=pf] .chk label.ck{flex-direction:row;align-items:center;gap:6px;font-size:13px;color:var(--ink);padding:5px 10px;border:1px solid var(--rule);border-radius:99px}
+.acpage form[data-af=pf] .chk input{padding:0;width:auto}
+.acpage form[data-af=pf] .ghint{margin:0;font-size:12px}
+.acpage .psec{margin:10px 0}.acpage .psec h4{margin:0 0 4px}
+.acpage details{padding:8px 0}
+.acpage form[data-af=pf]{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.acpage form[data-af=pf] :is(input:not([type=checkbox]),select){width:100%;box-sizing:border-box;min-width:0}
+.acpage form[data-af=pf] .chk label.ck{max-width:100%;box-sizing:border-box}
