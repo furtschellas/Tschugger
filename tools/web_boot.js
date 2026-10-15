@@ -128,6 +128,9 @@ Object.assign(I18N,{
  "2nd Unit anzeigen":{fr:"Afficher la 2nd unit",it:"Mostra la 2nd unit",en:"Show 2nd unit"},
  "Einstellungen gespeichert.":{fr:"Réglages enregistrés.",it:"Impostazioni salvate.",en:"Settings saved."},
  "Benutzer einladen":{fr:"Inviter des utilisateurs",it:"Invita utenti",en:"Invite users"},
+ "Motivliste":{fr:"Liste des lieux",it:"Lista delle location",en:"Location list"},
+ "Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.":{fr:"Lien vers le Google Sheet des lieux (colonnes SCRIPT NAME, ADRESSE, SCENES, LINK ; « Tous les utilisateurs disposant du lien peuvent consulter »). Repris lors de la prochaine mise à jour horaire. Vide = liste actuelle.",it:"Link al Google Sheet delle location (colonne SCRIPT NAME, ADRESSE, SCENES, LINK; «Chiunque abbia il link può visualizzare»). Viene ripreso al prossimo aggiornamento orario. Vuoto = lista attuale.",en:"Link to the Google Sheet with the locations (columns SCRIPT NAME, ADRESSE, SCENES, LINK; “Anyone with the link can view”). Picked up at the next hourly update. Empty = current list."},
+ "Bitte einen Google-Sheets-Link eingeben.":{fr:"Saisis un lien Google Sheets.",it:"Inserisci un link Google Sheets.",en:"Please enter a Google Sheets link."},
  "Karte":{fr:"Carte",it:"Mappa",en:"Map"},
  "Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.":{fr:"Lien vers la carte du bouton « Map » dans Lieux (p. ex. Google My Maps). Vide = carte par défaut.",it:"Link alla mappa per il pulsante «Map» in Locations (es. Google My Maps). Vuoto = mappa predefinita.",en:"Link to the map for the “Map” button in Locations (e.g. Google My Maps). Empty = default map."},
  "Bitte einen Link mit https:// eingeben.":{fr:"Saisis un lien commençant par https://.",it:"Inserisci un link che inizia con https://.",en:"Please enter a link starting with https://."},
@@ -177,6 +180,7 @@ async function loadLangs(){
     const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
     const bp=d.exists()&&d.data().bdayPublic===true;if(window.BDAYPUB!==bp){window.BDAYPUB=bp;try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}render()}
     const u3=d.exists()&&d.data().unit3===true;if(window.UNIT3!==u3){window.UNIT3=u3;try{localStorage.setItem("appunit3",u3?"1":"0")}catch(_){}render()}
+    window.LOCSHEET=(d.exists()&&typeof d.data().locSheet==="string")?d.data().locSheet:"";
     const mu=(d.exists()&&typeof d.data().mapUrl==="string")?d.data().mapUrl:"";if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
   }catch(err){console.warn("langs",err)}
   applyLangs();
@@ -484,6 +488,7 @@ VIEWS.admin=function(){
     '<details class="admins asetd" data-sec="appset"'+(SECS.appset?' open':'')+'><summary>'+L("Einstellungen der App")+'</summary><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
     '<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
+    '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
   let h='<section class="adm"><h2 class="dh">'+L("Benutzer verwalten")+'</h2>'+
     admSec+
@@ -507,7 +512,9 @@ document.addEventListener("submit",async e=>{
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
     try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked,u3=!!fl.querySelector('input[name=u3]').checked,bp=!!fl.querySelector('input[name=bp]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
     if(mu&&!/^https:\/\/\S+$/.test(mu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
-    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp},{merge:true});APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    const sh=String(fl.querySelector('input[name=sheet]').value||"").trim();
+    if(sh&&!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(sh)){showMsg(L("Bitte einen Google-Sheets-Link eingeben."),4000);return}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,locSheet:sh},{merge:true});window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const f=e.target.closest('[data-adm="add"]');if(!f)return;e.preventDefault();
   const em=lc(f.em.value),nm=f.nm.value.trim();if(!/@/.test(em))return;
