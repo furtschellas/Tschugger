@@ -12,7 +12,8 @@ Object.assign(I18N,{
  "So geht's:":{fr:"Comment faire :",en:"How to:"},
  "1. Browser-Menü ⋮ öffnen":{fr:"1. Ouvre le menu ⋮ du navigateur",en:"1. Open the browser menu ⋮"},
  "2. «Zum Startbildschirm hinzufügen» oder «App installieren» wählen":{fr:"2. Choisis « Ajouter à l’écran d’accueil » ou « Installer l’app »",en:"2. Choose “Add to Home screen” or “Install app”"},
- "Fertig":{fr:"OK",en:"Done"}
+ "Fertig":{fr:"OK",en:"Done"},
+ "Danach die App vom Startbildschirm öffnen und dort einmal anmelden.":{fr:"Ouvre ensuite l’app depuis l’écran d’accueil et connecte-toi une fois.",en:"Then open the app from the home screen and sign in there once."}
 });
 const A2HS_KEY="a2hs:v1";let DEFERRED=null;
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();DEFERRED=e});
@@ -48,7 +49,7 @@ function showA2hs(steps){
   const share='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg>';
   const body=steps
     ?(isIOS()
-      ?'<p class="a2t">'+L("So geht's auf dem iPhone:")+'</p><ol class="a2steps"><li>'+L("1. Unten auf Teilen tippen").replace(/^1\. /,"")+' '+share+'</li><li>'+L("2. «Zum Home-Bildschirm» wählen").replace(/^2\. /,"")+'</li><li>'+L("3. Oben rechts «Hinzufügen» tippen").replace(/^3\. /,"")+'</li></ol><div class="a2b"><button class="pri" data-a2="ok">'+L("Fertig")+'</button></div>'
+      ?'<p class="a2t">'+L("So geht's auf dem iPhone:")+'</p><ol class="a2steps"><li>'+L("1. Unten auf Teilen tippen").replace(/^1\. /,"")+' '+share+'</li><li>'+L("2. «Zum Home-Bildschirm» wählen").replace(/^2\. /,"")+'</li><li>'+L("3. Oben rechts «Hinzufügen» tippen").replace(/^3\. /,"")+'</li></ol><p>'+L("Danach die App vom Startbildschirm öffnen und dort einmal anmelden.")+'</p><div class="a2b"><button class="pri" data-a2="ok">'+L("Fertig")+'</button></div>'
       :'<p class="a2t">'+L("So geht's:")+'</p><ol class="a2steps"><li>'+L("1. Browser-Menü ⋮ öffnen").replace(/^1\. /,"")+'</li><li>'+L("2. «Zum Startbildschirm hinzufügen» oder «App installieren» wählen").replace(/^2\. /,"")+'</li></ol><div class="a2b"><button class="pri" data-a2="ok">'+L("Fertig")+'</button></div>')
     :'<p>'+L("Dann öffnest du die Crew-App wie eine normale App, ohne Link.")+'</p><div class="a2b"><button class="pri" data-a2="yes">'+L("Ja, hinzufügen")+'</button><button data-a2="later">'+L("Später")+'</button><button class="lnk" data-a2="done">'+L("Ist schon drauf")+'</button></div>';
   s.innerHTML='<div class="a2box"><img src="icon-192.png" alt="" width="56" height="56"><h3>'+L("Zum Startbildschirm hinzufügen?")+'</h3>'+body+'</div>';
