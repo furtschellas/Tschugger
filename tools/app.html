@@ -377,8 +377,10 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .spfk{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;margin:4px 0}
 .spfk i{font-style:normal;color:var(--muted);margin-right:5px;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 .sp-page{--sp-bg:#1d1729;--sp-ink:#ece4d4;--sp-mut:#b4a9c6;--sp-note:#ff8cbd;--sp-rule:#3a3052;background:var(--sp-bg);color:var(--sp-ink);border:1px solid var(--sp-rule);border-radius:8px;padding:24px 22px 30px;font-family:"Courier Prime","Courier New",Courier,monospace;font-size:15px;line-height:1.55;box-shadow:0 2px 14px rgba(0,0,0,.35);max-width:640px;margin:0 auto}
-.sp-head{display:flex;gap:10px;justify-content:space-between;align-items:baseline;font:700 15px/1.35 "Courier Prime","Courier New",monospace;text-transform:uppercase;margin:0 0 20px;padding-bottom:10px;border-bottom:1px solid var(--sp-rule);letter-spacing:.02em}
-.sp-head span{flex:none;color:var(--sp-mut)}
+.sp-head{display:grid;grid-template-columns:auto 1fr auto;column-gap:14px;align-items:baseline;text-align:left;font:700 15px/1.35 "Courier Prime","Courier New",monospace;text-transform:uppercase;margin:0 0 20px;padding-bottom:10px;border-bottom:1px solid var(--sp-rule);letter-spacing:.02em}
+.sp-head .spn{color:var(--sp-mut);min-width:2.5ch}
+.sp-head .spn:last-child{text-align:right}
+.sp-head .sps{min-width:0;overflow-wrap:anywhere}
 .sp-act{margin:0 0 16px}
 .sp-dlg{width:fit-content;max-width:min(36ch,88%);margin:0 auto 18px;text-align:left}
 .sp-cue{font-weight:700;text-transform:uppercase;text-align:center;letter-spacing:.03em;margin-bottom:2px}
@@ -1005,7 +1007,16 @@ function sceneFacts(reqSc,x,list){
       (it.loc?(()=>{const ad=addrForItem(it);return '<div class="spfa">'+(/^tba$/i.test(ad)?esc(L('Ort: TBA')):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+'</div>';
   }).join("")+'</div>';
 }
-function spPage(x,ctx,list,reqSc){return '<div class="sp-scene">'+sceneFacts(reqSc||x.sc,x,list)+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span>'+esc(x.sc)+'</span>'+esc(x.head||"")+'<span>'+esc(x.sc)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
+const TOD_RE=/[-–]\s*(DAY|NIGHT|EVENING|MORNING|DAWN|DUSK|CONTINUOUS|LATER|SAME|NOON|MIDDAY|AFTERNOON|SUNSET|SUNRISE|TAG|NACHT|ABEND|MORGEN)\b/i;
+/* slugline as in the script; if it has no time of day, add it from the schedule (D/N/Ev/Mo) */
+function spHead(x){
+  const h=String(x.head||"").trim();if(!h||TOD_RE.test(h))return h;
+  const want=norm(x.sc);let ie="";
+  for(const d of S.days){for(const [,its] of unitLists(d)){const it=its.find(i=>i.sc&&norm(i.sc)===want&&i.ie);if(it){ie=it.ie;break}}if(ie)break}
+  const t=(ie.split("/")[1]||"");const tod=/^N/i.test(t)?"NIGHT":/^Ev/i.test(t)?"EVENING":/^Mo/i.test(t)?"MORNING":/^D/i.test(t)?"DAY":"";
+  return tod?h+" - "+tod:h;
+}
+function spPage(x,ctx,list,reqSc){return '<div class="sp-scene">'+sceneFacts(reqSc||x.sc,x,list)+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+esc(spHead(x))+'</span><span class="spn">'+esc(x.sc)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
 function spMore(dir,list,j){
   const y=list[j];if(!y)return'';
   return '<button type="button" class="sp-more" data-spmore="'+dir+'" data-spi="'+j+'">'+(dir==="prev"?'▲ ':'')+esc(L(dir==="prev"?"Vorherige Szene lesen":"Folgende Szene lesen"))+' · '+esc(y.sc)+(dir==="next"?' ▼':'')+'</button>';
