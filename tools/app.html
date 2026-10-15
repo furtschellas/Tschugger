@@ -48,7 +48,7 @@ h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-tr
 .stand b{font-weight:500;color:var(--ink)}
 
 /* day strip */
-.strip{display:flex;gap:4px;overflow-x:auto;padding-block:6px;scrollbar-width:none;position:sticky;top:env(safe-area-inset-top,0px);z-index:4;background:var(--paper);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--rule);scroll-padding-inline:16px}
+.strip{display:flex;gap:3px;overflow-x:auto;padding-block:6px;scrollbar-width:none;position:sticky;top:env(safe-area-inset-top,0px);z-index:4;background:var(--paper);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--rule);scroll-padding-inline:16px}
 .strip::-webkit-scrollbar{display:none}
 .stripwrap{display:flex;align-items:stretch;gap:6px;position:sticky;top:env(safe-area-inset-top,0px);z-index:4;background:var(--paper);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:6px 0 6px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--rule)}
 .strip.in{position:static;flex:1;min-width:0;margin:0;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 0;border:0;background:transparent;scroll-padding-inline:8px}
@@ -57,10 +57,10 @@ h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-tr
 .pub button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#1a1206}
 .pub button.u2[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .pub button.none{opacity:.45}
-.chip{flex:0 0 auto;min-width:0;border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:3px 7px;line-height:1.15;text-align:center;cursor:pointer}
+.chip{flex:0 0 auto;min-width:0;border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:3px 5px;line-height:1.15;text-align:center;cursor:pointer}
 .chip .cw{font-family:var(--f-mono);font-size:9px;font-weight:400;text-transform:uppercase;color:var(--muted);margin-right:3px}
-.chip .dd{white-space:nowrap;font-family:var(--f-display);font-size:16px;font-weight:600;line-height:1.05}
-.chip .lb{font-family:var(--f-mono);font-size:9px;color:var(--muted)}
+.chip .dd{white-space:nowrap;font-family:var(--f-display);font-size:18px;font-weight:600;line-height:1.05}
+.chip .lb{font-family:var(--f-mono);font-size:10.5px;letter-spacing:-.02em;white-space:nowrap;text-transform:uppercase;color:var(--muted)}
 .chip.off{background:var(--off)}
 .chip.off .dd{color:var(--muted)}
 .chip.free{background:rgba(64,132,255,.18);border-color:#4f8cff}
@@ -422,7 +422,7 @@ function renderPlan(){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?L("Reise"):L("Frei"));
     h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.date===t?" today":"")+'" role="tab" data-day="'+esc(d.id)+'" aria-selected="'+(d.id===S.day)+'">'+
-       '<div class="lb">'+esc(padD(lb))+' / '+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div></button>';
+       '<div class="lb">'+esc(padD(lb))+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div></button>';
   }
   h+='</div></div>';
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
@@ -638,7 +638,7 @@ function renderDispo(){
   let h='<div class="strip" role="tablist" aria-label="Drehtage">';
   for(const d of shoot){
     const dt=new Date(d.date+"T12:00:00"),has=!!by[d.date];
-    h+='<button class="chip'+(has?' has':' nodispo')+(d.date===t?' today':'')+'" role="tab" data-dday="'+esc(d.date)+'" aria-selected="'+(d.date===S.dday)+'"><div class="lb">'+esc(padD(d.short||d.label))+' / '+WD[dt.getDay()].toUpperCase()+(has?' ●':'')+'</div><div class="dd">'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div></button>';
+    h+='<button class="chip'+(has?' has':' nodispo')+(d.date===t?' today':'')+'" role="tab" data-dday="'+esc(d.date)+'" aria-selected="'+(d.date===S.dday)+'"><div class="lb">'+esc(padD(d.short||d.label))+'/'+WD[dt.getDay()].toUpperCase()+(has?' ●':'')+'</div><div class="dd">'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div></button>';
   }
   h+='</div>';
   const day=S.days.find(d=>d.date===S.dday)||{},x=by[S.dday];
