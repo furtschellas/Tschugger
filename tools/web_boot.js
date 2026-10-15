@@ -48,6 +48,12 @@ Object.assign(I18N,{
  "Anfrage abgelehnt.":{fr:"Demande refusée.",it:"Richiesta rifiutata.",en:"Request declined."},
  "offene Zugangsanfrage – siehe App-Verwaltung.":{fr:"demande d’accès en attente – voir Gestion de l’app.",it:"richiesta di accesso in sospeso – vedi Gestione app.",en:"open access request – see App management."},
  "offene Zugangsanfragen – siehe App-Verwaltung.":{fr:"demandes d’accès en attente – voir Gestion de l’app.",it:"richieste di accesso in sospeso – vedi Gestione app.",en:"open access requests – see App management."},
+ "E-Mail mit Anmelde-Link gesendet an":{fr:"E-mail avec lien de connexion envoyé à",it:"E-mail con link di accesso inviata a",en:"E-mail with sign-in link sent to"},
+ "Dein Zugang zur TSCHUGGER Crew-App ist freigeschaltet":{fr:"Ton accès à l’app de l’équipe TSCHUGGER est activé",it:"Il tuo accesso all’app della crew TSCHUGGER è attivo",en:"Your access to the TSCHUGGER crew app is approved"},
+ "Hallo":{fr:"Bonjour",it:"Ciao",en:"Hello"},
+ "dein Zugang zur Crew-App von TSCHUGGER Tigerblood ist freigeschaltet. Melde dich hier mit dieser E-Mail-Adresse an:":{fr:"ton accès à l’app de l’équipe de TSCHUGGER Tigerblood est activé. Connecte-toi ici avec cette adresse e-mail :",it:"il tuo accesso all’app della crew di TSCHUGGER Tigerblood è attivo. Accedi qui con questo indirizzo e-mail:",en:"your access to the TSCHUGGER Tigerblood crew app is approved. Sign in here with this e-mail address:"},
+ "Bis bald am Set!":{fr:"À bientôt sur le tournage !",it:"A presto sul set!",en:"See you on set!"},
+ "Bitte bestätige deine E-Mail-Adresse:":{fr:"Confirme ton adresse e-mail :",it:"Conferma il tuo indirizzo e-mail:",en:"Please confirm your e-mail address:"},
  "Kein Zugang":{it:"Nessun accesso",fr:"Pas d’accès",en:"No access"},
  "Deine Adresse ist (noch) nicht für die Crew-App freigeschaltet. Bitte melde dich bei der Produktion.":{it:"Il tuo indirizzo non è (ancora) abilitato per l’app. Contatta la produzione.",fr:"Ton adresse n’est pas (encore) autorisée pour l’app. Contacte la production.",en:"Your address is not (yet) enabled for the crew app. Please contact the production."},
  "Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion.":{it:"Il tuo accesso è stato bloccato. Contatta la produzione.",fr:"Ton accès a été bloqué. Contacte la production.",en:"Your access has been blocked. Please contact the production."},
@@ -419,6 +425,23 @@ function reqBox(){
     '<label for="rqt">'+L("Nachricht (optional)")+'</label><textarea id="rqt" maxlength="280" rows="2"></textarea>'+
     '<button type="button" class="gbtn" data-gact="request">'+L("Anfrage senden")+'</button>'+(REQ.err?'<p class="gerr">'+esc(REQ.err)+'</p>':'')+'</details>';
 }
+/* after approval: Firebase sends the person an e-mail with a one-tap sign-in link (needs "E-Mail-Link" sign-in enabled in Firebase);
+   if that is not possible, a prepared e-mail opens in the admin's mail app */
+async function notifyApproved(em,q){
+  const url=location.origin+location.pathname+"?approved=1&em="+encodeURIComponent(em);
+  try{
+    const {A,auth}=await fb();if(typeof A.sendSignInLinkToEmail!=="function")throw new Error("no email link");
+    const keep=auth.languageCode;auth.languageCode=LANG;
+    try{await A.sendSignInLinkToEmail(auth,em,{url,handleCodeInApp:true})}finally{auth.languageCode=keep}
+    showMsg(L("E-Mail mit Anmelde-Link gesendet an")+" "+em,6000);return true;
+  }catch(err){
+    console.warn("mail link",err&&err.code||err);
+    const sub=L("Dein Zugang zur TSCHUGGER Crew-App ist freigeschaltet");
+    const body=L("Hallo")+" "+((q&&q.name)||"")+",\n\n"+L("dein Zugang zur Crew-App von TSCHUGGER Tigerblood ist freigeschaltet. Melde dich hier mit dieser E-Mail-Adresse an:")+"\n"+location.origin+location.pathname+"\n\n"+L("Bis bald am Set!");
+    location.href="mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(body);
+    return false;
+  }
+}
 async function checkRequests(){
   try{const {F,db}=await fb();const r=await F.getDocs(F.collection(db,"requests"));const n=r.size||r.docs.length;
     const b=document.getElementById("acctBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||""}
@@ -723,7 +746,7 @@ document.addEventListener("click",async e=>{
   try{
     const {F,db}=await fb();const a=b.dataset.adm;
     if(a==="reqok"||a==="reqno"){const em=b.dataset.em,q=(ADM.req||[]).find(x=>x.id===em)||{};
-      if(a==="reqok")await F.setDoc(F.doc(db,"invites",em),{name:String(q.name||"").slice(0,80),role:String(q.role||"").slice(0,80),addedAt:F.serverTimestamp()});
+      if(a==="reqok"){await F.setDoc(F.doc(db,"invites",em),{name:String(q.name||"").slice(0,80),role:String(q.role||"").slice(0,80),addedAt:F.serverTimestamp()});await notifyApproved(em,q)}
       await F.deleteDoc(F.doc(db,"requests",em));ADM.req=(ADM.req||[]).filter(x=>x.id!==em);
       showMsg(a==="reqok"?L("Freigeschaltet:")+" "+(q.name||em):L("Anfrage abgelehnt."),4000);ADM.busy=false;await admLoad();return}
     if(a==="crew"){const list=crewEmails().filter(c=>!ADM.inv.some(i=>i.id===c.email)&&!ADM.mem.some(m=>m.email===c.email));
@@ -862,6 +885,11 @@ render();
     const {A,auth}=await fb();
     await A.setPersistence(auth,A.browserLocalPersistence).catch(()=>{});
     A.getRedirectResult(auth).catch(err=>{console.error(err);showGate("login",errText(err),true)});
+    if(typeof A.isSignInWithEmailLink==="function"&&A.isSignInWithEmailLink(auth,location.href)){
+      const q=new URLSearchParams(location.search);let em=q.get("em")||"";try{em=em||localStorage.getItem("emailForSignIn")||""}catch(_){}
+      if(!em)em=(prompt(L("Bitte bestätige deine E-Mail-Adresse:"))||"").trim();
+      if(em){window.__justSignedIn=true;A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(null,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
+    }
     A.onAuthStateChanged(auth,u=>{
       if(!u){ME=null;acctButton(false);clearLocal();if(S.tab==="admin")S.tab="plan";render();showGate("login");return}
       afterSignIn(u);
