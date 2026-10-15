@@ -121,6 +121,8 @@ Object.assign(I18N,{
  "Einstellungen der App":{fr:"Réglages de l’app",it:"Impostazioni dell’app",en:"App settings"},
  "Sprachen":{fr:"Langues",it:"Lingue",en:"Languages"},
  "Ausgeschaltet zeigt die App nur die 1st Unit, ohne die Knöpfe 1st/2nd.":{fr:"Désactivée, l’app n’affiche que la 1st unit, sans les boutons 1st/2nd.",it:"Se disattivata, l’app mostra solo la 1st unit, senza i pulsanti 1st/2nd.",en:"When off, the app shows only the 1st unit, without the 1st/2nd buttons."},
+ "Geburtstagsliste allen anzeigen":{fr:"Montrer la liste des anniversaires à tous",it:"Mostra a tutti la lista dei compleanni",en:"Show the birthday list to everyone"},
+ "Eingeschaltet sehen alle Benutzer in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).":{fr:"Activée, tous les utilisateurs voient dans l’équipe la liste des anniversaires pendant le tournage (jour et mois seulement, sans l’année).",it:"Se attiva, tutti gli utenti vedono nella crew la lista dei compleanni durante le riprese (solo giorno e mese, senza anno).",en:"When on, all users see the birthday list for the shoot in the crew tab (day and month only, no year)."},
  "3rd Unit anzeigen":{fr:"Afficher la 3rd unit",it:"Mostra la 3rd unit",en:"Show 3rd unit"},
  "Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.":{fr:"Les unités désactivées disparaissent du planning, du callsheet et des lieux. Si seule la 1st unit est active, les boutons d’unité disparaissent.",it:"Le unit disattivate spariscono da Schedule, Callsheet e Locations. Se è attiva solo la 1st unit, i pulsanti delle unit spariscono.",en:"Units that are switched off disappear from Schedule, Callsheet and Locations. If only the 1st unit is on, the unit buttons disappear."},
  "2nd Unit anzeigen":{fr:"Afficher la 2nd unit",it:"Mostra la 2nd unit",en:"Show 2nd unit"},
@@ -161,7 +163,7 @@ Object.assign(I18N,{
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
 /* languages offered in the app; the main admin picks them (Firestore config/app.langs), cached for the sign-in screen */
-let APPLANGS=["de","fr","it","en"];window.UNIT3=false;try{const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";window.UNIT3=localStorage.getItem("appunit3")==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
+let APPLANGS=["de","fr","it","en"];window.UNIT3=false;window.BDAYPUB=false;try{window.BDAYPUB=localStorage.getItem("appbdaypub")==="1";const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";window.UNIT3=localStorage.getItem("appunit3")==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
 try{const x=JSON.parse(localStorage.getItem("applangs")||"null");if(Array.isArray(x)&&x.length)APPLANGS=x.filter(l=>LANGS.some(z=>z[0]===l))}catch(_){}
 function applyLangs(){
   if(!APPLANGS.length)APPLANGS=["de"];
@@ -173,6 +175,7 @@ async function loadLangs(){
   try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));const l=d.exists()&&d.data().langs;
     if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}
     const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
+    const bp=d.exists()&&d.data().bdayPublic===true;if(window.BDAYPUB!==bp){window.BDAYPUB=bp;try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}render()}
     const u3=d.exists()&&d.data().unit3===true;if(window.UNIT3!==u3){window.UNIT3=u3;try{localStorage.setItem("appunit3",u3?"1":"0")}catch(_){}render()}
     const mu=(d.exists()&&typeof d.data().mapUrl==="string")?d.data().mapUrl:"";if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
   }catch(err){console.warn("langs",err)}
@@ -346,7 +349,7 @@ async function afterSignIn(u){
     if(isOffline(err)&&S.days.length){hideGate();acctButton(true);showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
-  hideGate();acctButton(true);
+  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];
   const prof=MEMBER||{};
   let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}
   if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){LANG=prof.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
@@ -416,6 +419,7 @@ async function onAcctSubmit(e){
       const ref=F.doc(db,"members",u.uid);
       if(MEMBER)await F.updateDoc(ref,upd);else await F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
       MEMBER=Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd);
+      writeOwnBday(upd.name,upd.birthday);
       if(upd.lang!==LANG&&WDS[upd.lang]){LANG=upd.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
       if(ONBOARD){ONBOARD=false;document.getElementById("acct").hidden=true;showMsg(L("Profil gespeichert."),3000);btn.disabled=false;return}
       msg.classList.add("ok");msg.textContent=L("Profil gespeichert.");btn.disabled=false;return;
@@ -436,7 +440,7 @@ const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false};
 async function admLoad(){
   const {F,db}=await fb();
   const [i,m,a]=await Promise.all([F.getDocs(F.collection(db,"invites")),F.getDocs(F.collection(db,"members")),F.getDocs(F.collection(db,"admins")).catch(()=>({docs:[]}))]);
-  ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.loaded=true;render();
+  ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.loaded=true;render();syncBdays();
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
@@ -480,6 +484,7 @@ VIEWS.admin=function(){
     '</div>'+
     '<details class="admins asetd" data-sec="appset"'+(SECS.appset?' open':'')+'><summary>'+L("Einstellungen der App")+'</summary><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
     '<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+
+    '<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
   let h='<section class="adm"><h2 class="dh">'+L("Benutzer verwalten")+'</h2>'+
     admSec+
@@ -501,9 +506,9 @@ document.addEventListener("submit",async e=>{
   const fl=e.target.closest('[data-adm="langs"]');
   if(fl){e.preventDefault();if(!isOwner())return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
-    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked,u3=!!fl.querySelector('input[name=u3]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
+    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked,u3=!!fl.querySelector('input[name=u3]').checked,bp=!!fl.querySelector('input[name=bp]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
     if(mu&&!/^https:\/\/\S+$/.test(mu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
-    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu},{merge:true});APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp},{merge:true});APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const fa=e.target.closest('[data-adm="addadmin"]');
   if(fa){e.preventDefault();if(!isOwner())return;const em=lc(fa.em.value);if(!/@/.test(em))return;
@@ -545,17 +550,47 @@ function memberFor(p){
   return ADM.mem.find(x=>nkey([x.firstName,x.lastName].filter(Boolean).join(" "))===k||nkey(x.name)===k)||null;
 }
 const bdShort=iso=>{const m=/^\d{4}-(\d\d)-(\d\d)$/.exec(iso||"");return m?m[2]+"."+m[1]+".":""};
+function bdayEntries(){
+  const name=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
+  if(isAdmin()&&ADM.loaded)return ADM.mem.filter(m=>m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||"")).map(m=>({name:name(m),md:m.birthday.slice(5)}));
+  return PUBB.list;
+}
 function bdayHTML(){
   const ds=S.days.map(d=>d.date).filter(Boolean).sort();if(!ds.length)return"";
-  const name=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
   const y=ds[0].slice(0,4),from=ds[0].slice(5),to=ds[ds.length-1].slice(5);
-  const hits=ADM.mem.filter(m=>m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||"")).map(m=>({m,md:m.birthday.slice(5)})).filter(x=>x.md>=from&&x.md<=to).sort((a,b)=>a.md<b.md?-1:a.md>b.md?1:name(a.m).localeCompare(name(b.m)));
-  return secOpen("bcal",L("Geburtstage während des Drehs")+(hits.length?" · "+hits.length:""),(hits.length?hits.map(x=>{const d=new Date(y+"-"+x.md+"T12:00:00");return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+pad2(d.getDate())+"."+pad2(d.getMonth()+1)+".")+'</span><b>'+esc(name(x.m))+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>'));
+  const hits=bdayEntries().filter(x=>/^\d\d-\d\d$/.test(x.md||"")&&x.md>=from&&x.md<=to).sort((a,b)=>a.md<b.md?-1:a.md>b.md?1:String(a.name).localeCompare(String(b.name)));
+  return secOpen("bcal",L("Geburtstage während des Drehs")+(hits.length?" · "+hits.length:""),(hits.length?hits.map(x=>{const d=new Date(y+"-"+x.md+"T12:00:00");return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+pad2(d.getDate())+"."+pad2(d.getMonth()+1)+".")+'</span><b>'+esc(x.name)+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>'));
+}
+/* birthday list for everyone (when the main admin allows it): bdays/{uid} = {name, md "MM-DD"}; no year, no other data */
+const PUBB={list:[],loaded:false,loading:false};
+async function loadPubBdays(){
+  if(PUBB.loading)return;PUBB.loading=true;
+  try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"bdays"));PUBB.list=q.docs.map(d=>d.data()).filter(x=>x&&x.md);PUBB.loaded=true;render()}
+  catch(err){console.warn("bdays",err);PUBB.loaded=true;setTimeout(()=>{PUBB.loaded=false},60000)}
+  PUBB.loading=false;
+}
+async function writeOwnBday(name,birthday){
+  try{const {F,db}=await fb();const ref=F.doc(db,"bdays",ME.uid);
+    if(/^\d{4}-\d\d-\d\d$/.test(birthday||""))await F.setDoc(ref,{name:name||"",md:birthday.slice(5)});else await F.deleteDoc(ref).catch(()=>{});
+    PUBB.loaded=false;
+  }catch(err){console.warn("bday write",err)}
+}
+/* main admin: keep bdays/ in line with active members (also fills it for people who registered earlier) */
+let BSYNC=0;
+async function syncBdays(force){
+  if(!isOwner()||!ADM.loaded||(!force&&Date.now()-BSYNC<10*60*1000))return;BSYNC=Date.now();
+  try{const {F,db}=await fb();const cur=await F.getDocs(F.collection(db,"bdays"));const have={};cur.docs.forEach(d=>have[d.id]=d.data());
+    const name=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||"";
+    const want={};ADM.mem.forEach(m=>{if(m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||""))want[m.uid]={name:name(m),md:m.birthday.slice(5)}});
+    const ops=[];for(const id in want)if(!have[id]||have[id].name!==want[id].name||have[id].md!==want[id].md)ops.push(["set",id,want[id]]);
+    for(const id in have)if(!want[id])ops.push(["del",id]);
+    for(let i=0;i<ops.length;i+=400){const b=F.writeBatch(db);ops.slice(i,i+400).forEach(o=>o[0]==="set"?b.set(F.doc(db,"bdays",o[1]),o[2]):b.delete(F.doc(db,"bdays",o[1])));await b.commit()}
+  }catch(err){console.warn("bday sync",err)}
 }
 const ICO={acct:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6 1.6 0 3 .5 4.1 1.3M15.5 17.5l2 2 4-4.5"/>',bcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13.5c-.7-.7-.7-1.6 0-2.3.7.7.7 1.6 0 2.3zM12 14v3"/>',food:'<path d="M7 2v8M4 2v5a3 3 0 0 0 6 0V2M7 10v12M17 2c-2 1.5-3 4-3 7h3v13"/>',bday:'<path d="M4 21h16M5 21v-8h14v8M12 13V9M12 6.5c-1-1-1-2.5 0-3.5 1 1 1 2.5 0 3.5zM5 16c2.3 1.5 4.7 1.5 7 0s4.7-1.5 7 0"/>'};
 const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'" aria-pressed="'+ADMV[k]+'" aria-label="'+esc(L(t))+'" title="'+esc(L(t))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICO[k]+'</svg></button>';
 window.crewHead=function(){
-  if(!isAdmin())return"";
+  if(!isAdmin()){if(!window.BDAYPUB||!ME)return"";if(!PUBB.loaded)loadPubBdays();return PUBB.loaded?bdayHTML():""}
   ensureAdm();
   return '<div class="admv">'+togBtn("food","Essen")+(ADM.err?'<span class="admerr">'+L("Benutzerdaten nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+togBtn("bday","Geburtstage")+togBtn("acct","Kontostatus")+'<button type="button" class="foodtog ico vcall" data-vcall aria-label="'+esc(L("Alle Kontakte als VCF"))+'" title="'+esc(L("Alle Kontakte als VCF"))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>'+'</div>'+(ADM.loaded?bdayHTML()+cateringHTML():"");
 };

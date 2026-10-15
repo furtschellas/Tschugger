@@ -28,6 +28,15 @@ service cloud.firestore {
       allow write: if isOwner();
     }
 
+    // Geburtstagsliste (nur Name + Tag/Monat): jede Person pflegt ihren eigenen Eintrag, der Haupt-Admin gleicht ab;
+    // lesen dürfen Admins immer, alle anderen Mitglieder nur, wenn der Haupt-Admin sie freigegeben hat
+    match /bdays/{uid} {
+      allow read: if isAdmin()
+        || (isMember() && get(/databases/$(database)/documents/config/app).data.get('bdayPublic', false) == true);
+      allow write: if isOwner() || (verified() && request.auth.uid == uid
+        && (request.resource == null || request.resource.data.keys().hasOnly(['name', 'md'])));
+    }
+
     // Weitere Admins: nur der Haupt-Admin verwaltet sie
     match /admins/{email} {
       allow read: if isAdmin();
