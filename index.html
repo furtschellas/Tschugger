@@ -258,7 +258,7 @@ h3.dh{font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing
 .dtitle h2{white-space:nowrap}
 .dtitle .dlink{white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;padding:4px 10px}
 .dtitle .pvb{flex:none;gap:5px;margin-left:auto}
-@media (max-width:400px){.dayhead .dtitle h2{font-size:24px}.dtitle .pvbtn{width:30px;height:30px}.dtitle .dlink{font-size:12.5px}}
+@media (max-width:400px){.dayhead .dtitle h2{font-size:24px}.dtitle .pvb{gap:4px}.dtitle .pvbtn{width:28px;height:28px}.dtitle .dlink{font-size:12.5px}}
 .dlink{border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:99px;padding:4px 12px;font-size:13px;font-weight:600;cursor:pointer;min-height:32px}
 .dlink.on{background:var(--accent);color:var(--accent-ink)}
 .pvb{display:inline-flex;gap:6px}
@@ -653,10 +653,10 @@ function castChips(ids){
   return '<div class="cast">'+ids.map(i=>'<span><i>'+esc(i)+'</i>'+esc(m[i]||"")+'</span>').join("")+'</div>';
 }
 /* schedule view options (scene description, address, cast) – all on by default, remembered per device */
-S.pv={d:true,a:true,c:true};try{const x=JSON.parse(localStorage.getItem("pv")||"null");if(x&&typeof x==="object")for(const k of ["d","a","c"])if(typeof x[k]==="boolean")S.pv[k]=x[k]}catch(_){}
-const PVICO={d:'<path d="M4 6h16M4 10h16M4 14h10M4 18h7"/>',a:'<path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/>',c:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.6c3 .1 5.5 2 5.5 5.4"/>'};
-const PVLBL={d:"Szenenbeschrieb",a:"Adresse",c:"Cast"};
-function pvButtons(){return '<span class="pvb">'+["d","a","c"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" aria-label="'+esc(L(PVLBL[k]))+'" title="'+esc(L(PVLBL[k]))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+'</span>'}
+S.pv={i:true,d:true,a:true,c:true};try{const x=JSON.parse(localStorage.getItem("pv")||"null");if(x&&typeof x==="object")for(const k of ["i","d","a","c"])if(typeof x[k]==="boolean")S.pv[k]=x[k]}catch(_){}
+const PVICO={i:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/>',d:'<path d="M4 6h16M4 10h16M4 14h10M4 18h7"/>',a:'<path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/>',c:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.6c3 .1 5.5 2 5.5 5.4"/>'};
+const PVLBL={i:"Info",d:"Szenenbeschrieb",a:"Adresse",c:"Cast"};
+function pvButtons(){return '<span class="pvb">'+["i","d","c","a"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" aria-label="'+esc(L(PVLBL[k]))+'" title="'+esc(L(PVLBL[k]))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+'</span>'}
 function itemHTML(it){
   if(!it.sc){
     return '<li class="row ev"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+'</div></li>';
@@ -669,8 +669,9 @@ function itemHTML(it){
   if(it.xx)meta.push('<span>'+esc(it.xx)+' '+L('Kompars.')+'</span>');
   return '<li class="row"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
+    (S.pv.i&&meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
     (!S.pv.d?'':it.d?'<div class="desc">'+esc(TX(it,"d"))+' '+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>':'<div class="desc">'+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>')+
-    (S.pv.c?castChips(it.cast):'')+'<div class="meta">'+meta.join("")+'</div>'+
+    (S.pv.c?castChips(it.cast):'')+
     (it.loc&&S.pv.a?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+
     '</div></li>';
 }
@@ -2034,7 +2035,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="61e81473b8";
+const APP_VER="70650cf7d0";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
