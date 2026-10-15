@@ -90,5 +90,6 @@
 .pinfo{display:flex;flex-wrap:wrap;gap:4px 6px;margin:4px 0 2px}
 .pinfo span{font-size:13px;line-height:1.3;padding:3px 9px;border-radius:99px}
 .pinfo .bday{background:rgba(240,180,60,.16);color:var(--gold)}
+.pinfo .none{background:rgba(255,255,255,.06);color:var(--muted)}
 .pinfo .diet{background:rgba(127,224,168,.13);color:#7fe0a8}
 .admerr{flex-basis:100%;font-size:13px;color:#ff8a8a}
