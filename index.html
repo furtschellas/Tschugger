@@ -1503,8 +1503,8 @@ VIEWS.admin=function(){
     '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">Admin</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div><div class="aacts">'+
       (!r.m?'<a href="'+mail(r)+'">Einladungsmail</a>':'')+
       (own&&!ADMINS.includes(r.email)?(ADM.adm.includes(r.email)?'<button data-adm="rmadmin" data-em="'+esc(r.email)+'">Admin entfernen</button>':'<button data-adm="mkadmin" data-em="'+esc(r.email)+'">Zum Admin machen</button>'):'')+
-      (own&&r.m?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">Sperren</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">Entsperren</button>'):'')+
-      (own&&r.m?'<button data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">Entfernen</button>':(r.inv&&!r.m?'<button data-adm="uninvite" data-em="'+esc(r.email)+'">Einladung löschen</button>':''))+
+      (own&&r.m&&!ADMINS.includes(r.email)?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">Sperren</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">Entsperren</button>'):'')+
+      (ADMINS.includes(r.email)?'':own&&r.m?'<button data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">Entfernen</button>':(r.inv&&!r.m?'<button data-adm="uninvite" data-em="'+esc(r.email)+'">Einladung löschen</button>':''))+
       '</div></div>').join("")+'</div></section>';
   return h;
 };
@@ -1526,6 +1526,7 @@ document.addEventListener("click",async e=>{
       if(confirmSafe(list.length+" Adressen aus der Crewliste einladen?")){
         for(let i=0;i<list.length;i+=400){const batch=F.writeBatch(db);list.slice(i,i+400).forEach(c=>batch.set(F.doc(db,"invites",c.email),{name:c.name,role:c.role,addedAt:F.serverTimestamp()}));await batch.commit()}
         showMsg(list.length+" Adressen eingeladen.",4000)}}
+    else if((a==="block"||a==="remove"||a==="uninvite")&&ADMINS.includes(b.dataset.em||(ADM.mem.find(m=>m.uid===b.dataset.uid)||{}).email)){showMsg("Der Haupt-Admin kann nicht gesperrt oder entfernt werden.",4000)}
     else if(a==="block"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:false});showMsg("Gesperrt.",3000)}
     else if(a==="unblock"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:true});showMsg("Entsperrt.",3000)}
     else if(a==="remove"){if(confirmSafe(b.dataset.em+" entfernen? Die Person kommt danach nicht mehr in die App.")){await F.deleteDoc(F.doc(db,"invites",b.dataset.em)).catch(()=>{});await F.deleteDoc(F.doc(db,"members",b.dataset.uid));showMsg("Entfernt.",3000)}}
@@ -1585,7 +1586,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="9a21aa71f6";
+const APP_VER="f9cb1c30f5";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;

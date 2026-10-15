@@ -38,7 +38,8 @@ service cloud.firestore {
     // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren und entfernen kann nur der Haupt-Admin
     match /members/{uid} {
       allow read: if isAdmin();
-      allow update, delete: if isOwner();
+      // der Haupt-Admin selbst kann nicht gesperrt oder gelöscht werden
+      allow update, delete: if isOwner() && resource.data.email != 'furtschellas@gmail.com';
       allow get: if signedIn() && request.auth.uid == uid;
       allow create: if isOwner() || (isAdmin() && request.auth.uid == uid) || (verified() && request.auth.uid == uid
         && exists(/databases/$(database)/documents/invites/$(myEmail()))
