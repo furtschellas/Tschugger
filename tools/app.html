@@ -361,7 +361,8 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const WD=new Proxy([],{get:(t,k)=>k==="length"?7:(WDS[LANG]||WDS.de)[k]});
 const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
-const fmtDate=iso=>{const d=new Date(iso+"T12:00:00");return WD[d.getDay()]+" "+d.getDate()+"."+(d.getMonth()+1)+"."+d.getFullYear()};
+const pad2=n=>String(n).padStart(2,"0");
+const fmtDate=iso=>{const d=new Date(iso+"T12:00:00");return WD[d.getDay()]+" "+pad2(d.getDate())+"."+pad2(d.getMonth()+1)+"."+d.getFullYear()};
 const maps=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
 const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};
 const norm=s=>String(s).toLowerCase().replace(/\s+/g,"");
@@ -409,21 +410,27 @@ function dayPlaces(d){
   for(const it of [...(d.items||[]),...((d.unit2&&d.unit2.items)||[])]){if(!it.sc||!it.loc)continue;const ad=addrForItem(it);if(/^tba$/i.test(ad))continue;const t=townOf(ad);if(t&&!out.includes(t))out.push(t)}
   return out;
 }
+/* shared day navigation (Schedule + Callsheet): unit filter fixed on the left, days scroll beside it; OFF days are shown but inactive */
+function dayNav(PD,isSel,attr,key,extra){
+  const t=todayISO();
+  const sel=PD.find(isSel)||{};
+  const selHas2=has2nd(sel);
+  let h='<div class="stripwrap"><div class="pub" role="group" aria-label="'+L("Unit filtern")+'"><button data-pu="1" aria-pressed="'+!!S.pu["1"]+'" aria-label="1st Unit">1st</button><button data-pu="2" class="u2'+(selHas2?'':' none')+'" aria-pressed="'+!!S.pu["2"]+'" aria-label="2nd Unit"'+(selHas2?'':' title="'+esc(L("Keine 2nd Unit an diesem Tag."))+'"')+'>2nd</button></div><div class="strip in" role="tablist" aria-label="Tage">';
+  for(const d of PD){
+    const dt=new Date(d.date+"T12:00:00");
+    const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
+    const ex=extra?extra(d):{cls:"",mark:""};
+    h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.date===t?" today":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"?' disabled aria-disabled="true"':'')+'>'+
+       '<div class="lb">'+esc(padD(lb))+'/'+WD[dt.getDay()].toUpperCase()+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
+  }
+  return h+'</div></div>';
+}
 function renderPlan(){
   if(!S.days.length)return emptyHTML("Planung");
   const PD=planDays();
   pickDay(PD);
   const t=todayISO();
-  const sel=S.days.find(x=>x.id===S.day)||{};
-  const selHas2=!!(sel.unit2&&sel.unit2.items&&sel.unit2.items.length);
-  let h='<div class="stripwrap"><div class="pub" role="group" aria-label="'+L("Unit filtern")+'"><button data-pu="1" aria-pressed="'+!!S.pu["1"]+'" aria-label="1st Unit">1st</button><button data-pu="2" class="u2'+(selHas2?'':' none')+'" aria-pressed="'+!!S.pu["2"]+'" aria-label="2nd Unit"'+(selHas2?'':' title="'+esc(L("Keine 2nd Unit an diesem Tag."))+'"')+'>2nd</button></div><div class="strip in" role="tablist" aria-label="Tage">';
-  for(const d of PD){
-    const dt=new Date(d.date+"T12:00:00");
-    const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
-    h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.date===t?" today":"")+'" role="tab" data-day="'+esc(d.id)+'" aria-selected="'+(d.id===S.day)+'"'+(d.kind==="off"?' disabled aria-disabled="true"':'')+'>'+
-       '<div class="lb">'+esc(padD(lb))+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div></button>';
-  }
-  h+='</div></div>';
+  let h=dayNav(PD,d=>d.id===S.day,"data-day","id");
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const d=S.days.find(x=>x.id===S.day);
   const hasD=S.dispos.some(x=>x.date===d.date);
@@ -629,18 +636,16 @@ function renderLoc(){
 }
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
-  const t=todayISO(),shoot=S.days.filter(d=>d.kind==="shoot");
+  const t=todayISO(),PD=planDays();
   const by={};S.dispos.forEach(x=>by[x.date]=x);
-  if(!S.dday||!shoot.some(d=>d.date===S.dday)){
-    S.dday=((shoot.find(d=>d.date>=t)||shoot[shoot.length-1]||{}).date)||null;
+  const pick=PD.filter(d=>d.kind!=="off");
+  if(!S.dday||!pick.some(d=>d.date===S.dday)){
+    S.dday=((pick.find(d=>d.date>=t)||pick[pick.length-1]||{}).date)||null;
   }
-  let h='<div class="strip" role="tablist" aria-label="Drehtage">';
-  for(const d of shoot){
-    const dt=new Date(d.date+"T12:00:00"),has=!!by[d.date];
-    h+='<button class="chip'+(has?' has':' nodispo')+(d.date===t?' today':'')+'" role="tab" data-dday="'+esc(d.date)+'" aria-selected="'+(d.date===S.dday)+'"><div class="lb">'+esc(padD(d.short||d.label))+'/'+WD[dt.getDay()].toUpperCase()+(has?' ●':'')+'</div><div class="dd">'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div></button>';
-  }
-  h+='</div>';
+  let h=dayNav(PD,d=>d.date===S.dday,"data-dday","date",d=>d.kind!=="shoot"?{cls:"",mark:""}:(by[d.date]?{cls:" has",mark:" ●"}:{cls:" nodispo",mark:""}));
+  if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const day=S.days.find(d=>d.date===S.dday)||{},x=by[S.dday];
+  if(day.kind&&day.kind!=="shoot")return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date">'+fmtDate(day.date)+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
   if(!x){
     return h+'<div class="dsp-empty"><div class="eh">'+esc(day.label||"")+' · '+(day.date?fmtDate(day.date):'')+'</div><b>'+L('Callsheet folgt')+'</b><p>'+L('Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.')+'</p>'+
       (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>';
