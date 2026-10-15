@@ -40,7 +40,7 @@ Object.assign(I18N,{
  "Anfrage senden":{fr:"Envoyer la demande",it:"Invia richiesta",en:"Send request"},
  "Bitte Vor- und Nachname angeben.":{fr:"Indique ton prénom et ton nom.",it:"Indica nome e cognome.",en:"Please enter your first and last name."},
  "Anfrage gesendet. Du bekommst Zugang, sobald die Produktion sie freigibt – du erhältst dann eine E-Mail, oder tippe hier auf «Aktualisieren».":{fr:"Demande envoyée. Tu auras accès dès que la production l’aura validée – tu recevras alors un e-mail, ou touche « Actualiser » ici.",it:"Richiesta inviata. Avrai accesso appena la produzione la approva – riceverai un’e-mail, oppure tocca «Aggiorna» qui.",en:"Request sent. You get access as soon as the production approves it – you will get an e-mail, or tap “Refresh” here."},
- "Benutzer-Anfragen":{fr:"Demandes d’utilisateurs",it:"Richieste utenti",en:"User requests"},
+ "Anfragen von Benutzer:innen":{fr:"Demandes d’utilisateur·rices",it:"Richieste utenti",en:"User requests"},
  "Keine offenen Anfragen.":{fr:"Aucune demande en attente.",it:"Nessuna richiesta in sospeso.",en:"No open requests."},
  "Anfragen nicht lesbar":{fr:"Demandes illisibles",it:"Richieste non leggibili",en:"Requests not readable"},
  "Mail wird gesendet …":{fr:"Envoi du mail …",it:"Invio della mail …",en:"Sending mail …"},
@@ -64,8 +64,8 @@ Object.assign(I18N,{
  "Alle vier in GitHub eintragen:":{fr:"Saisir les quatre dans GitHub :",it:"Inserire tutte e quattro in GitHub:",en:"Enter all four in GitHub:"},
  "Ersten Lauf starten:":{fr:"Lancer le premier passage :",it:"Avviare la prima esecuzione:",en:"Start the first run:"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
- "Als Benutzer einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
- "ist jetzt als Benutzer freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé·e et peut créer un compte.",it:"è ora abilitato/a e può creare un account.",en:"is now approved and can create an account."},
+ "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur·rice",it:"Invita come utente",en:"Invite as user"},
+ "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé·e et peut créer un compte.",it:"è ora abilitato/a e può creare un account.",en:"is now approved and can create an account."},
  "Einladungs-Mail schicken":{fr:"Envoyer l’invitation",it:"Invia l’invito",en:"Send invitation mail"},
  "Dein Zugang zur TSCHUGGER Crew-App":{fr:"Ton accès à l’app d’équipe TSCHUGGER",it:"Il tuo accesso all’app crew TSCHUGGER",en:"Your access to the TSCHUGGER crew app"},
  "du bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet. Dort findest du Drehplan, Dispos, Crewliste, Locations und das Drehbuch.":{fr:"tu as accès à l’app d’équipe de TSCHUGGER Tigerblood. Tu y trouves le plan de tournage, les feuilles de service, la liste d’équipe, les lieux et le scénario.",it:"sei abilitato/a all’app crew di TSCHUGGER Tigerblood. Lì trovi piano di lavorazione, ordini del giorno, lista crew, location e sceneggiatura.",en:"you now have access to the TSCHUGGER Tigerblood crew app. It has the schedule, call sheets, crew list, locations and the script."},
@@ -124,7 +124,7 @@ Object.assign(I18N,{
  "Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.":{fr:"Activé, chaque scène affiche le bouton « Script » qui ouvre la scène dans le scénario.",it:"Se attivo, ogni scena mostra il pulsante «Script» che apre la scena nella sceneggiatura.",en:"When on, every scene shows the “Script” button that opens the scene in the script."},
  "Drehbuch anzeigen":{fr:"Afficher le scénario",it:"Mostra la sceneggiatura",en:"Show script"},
  "Backup":{fr:"Sauvegarde",it:"Backup",en:"Backup"},
- "Sichert Benutzer, Einladungen, Administratoren, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.":{fr:"Sauvegarde les utilisateurs, invitations, administrateurs, réglages de l’app et anniversaires dans un fichier. Les données de tournage viennent de la Dropbox et n’ont pas besoin de sauvegarde.",it:"Salva utenti, inviti, amministratori, impostazioni dell’app e compleanni in un file. I dati delle riprese arrivano dalla Dropbox e non serve un backup.",en:"Saves users, invitations, admins, app settings and birthdays to a file. The shooting data comes from Dropbox and needs no backup."},
+ "Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.":{fr:"Sauvegarde les utilisateur·rices, invitations, administrateur·rices, réglages de l’app et anniversaires dans un fichier. Les données de tournage viennent de la Dropbox et n’ont pas besoin de sauvegarde.",it:"Salva utenti, inviti, amministratrici e amministratori, impostazioni dell’app e compleanni in un file. I dati delle riprese arrivano dalla Dropbox e non serve un backup.",en:"Saves users, invitations, admins, app settings and birthdays to a file. The shooting data comes from Dropbox and needs no backup."},
  "Letztes Backup auf diesem Gerät":{fr:"Dernière sauvegarde sur cet appareil",it:"Ultimo backup su questo dispositivo",en:"Last backup on this device"},
  "Backup herunterladen":{fr:"Télécharger la sauvegarde",it:"Scarica il backup",en:"Download backup"},
  "Backup wiederherstellen":{fr:"Restaurer une sauvegarde",it:"Ripristina il backup",en:"Restore backup"},
@@ -184,24 +184,24 @@ Object.assign(I18N,{
  "keine Angaben":{fr:"non indiqué",it:"non indicato",en:"not given"},
  "Alle Kontakte als VCF":{fr:"Tous les contacts en VCF",it:"Tutti i contatti in VCF",en:"All contacts as VCF"},
  "Kontakte als VCF gespeichert.":{fr:"contacts enregistrés en VCF.",it:"contatti salvati in VCF.",en:"contacts saved as VCF."},
- "Besitzer":{fr:"Propriétaire",it:"Proprietario",en:"Owner"},
+ "Besitzer:in":{fr:"Propriétaire",it:"Proprietario/a",en:"Owner"},
  "Admin":{fr:"Admin",it:"Admin",en:"Admin"},
- "Benutzerliste konnte nicht geladen werden:":{fr:"Impossible de charger la liste des utilisateurs :",it:"Impossibile caricare l’elenco utenti:",en:"Could not load the user list:"},
- "Lade Benutzer …":{fr:"Chargement des utilisateurs …",it:"Caricamento utenti …",en:"Loading users …"},
+ "Liste der Benutzer:innen konnte nicht geladen werden:":{fr:"Impossible de charger la liste des utilisateur·rices :",it:"Impossibile caricare l’elenco utenti:",en:"Could not load the user list:"},
+ "Lade Benutzer:innen …":{fr:"Chargement des utilisateur·rices …",it:"Caricamento utenti …",en:"Loading users …"},
  "aktiv_1":{fr:"actif",it:"attivo",en:"active"},
  "gesperrt":{fr:"bloqué",it:"bloccato",en:"blocked"},
  "eingeladen":{fr:"invité",it:"invitato",en:"invited"},
- "Administratoren":{fr:"Administrateurs",it:"Amministratori",en:"Administrators"},
- "Administratoren können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».":{fr:"Les administrateurs peuvent inviter des personnes et voient les repas et anniversaires dans l’équipe. Toi seul peux bloquer et supprimer. Tu nommes des admins plus bas avec « Nommer admin ».",it:"Gli amministratori possono invitare persone e vedono pasti e compleanni nella crew. Solo tu puoi bloccare e rimuovere. Nomini gli admin più sotto con «Rendi admin».",en:"Administrators can invite people and see food and birthdays in the crew list. Only you can block and remove. Appoint admins below with “Make admin”."},
+ "Administrator:innen":{fr:"Administrateur·rices",it:"Amministratrici e amministratrici e amministratori",en:"Administrators"},
+ "Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».":{fr:"Les administrateur·rices peuvent inviter des personnes et voient les repas et anniversaires dans l’équipe. Toi seul peux bloquer et supprimer. Tu nommes des admins plus bas avec « Nommer admin ».",it:"Gli amministratrici e amministratori possono invitare persone e vedono pasti e compleanni nella crew. Solo tu puoi bloccare e rimuovere. Nomini gli admin più sotto con «Rendi admin».",en:"Administrators can invite people and see food and birthdays in the crew list. Only you can block and remove. Appoint admins below with “Make admin”."},
  "Entfernen":{fr:"Supprimer",it:"Rimuovi",en:"Remove"},
  "Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.":{fr:"Seules les adresses invitées peuvent créer un compte (e-mail/mot de passe ou Google). Les personnes bloquées ou supprimées perdent immédiatement l’accès. Chacun gère lui-même son mot de passe et son adresse e-mail.",it:"Solo gli indirizzi invitati possono creare un account (e-mail/password o Google). Le persone bloccate o rimosse perdono subito l’accesso. Ognuno gestisce da sé password e indirizzo e-mail.",en:"Only invited addresses can create an account (email/password or Google). Blocked or removed people lose access immediately. Everyone manages their own password and email address."},
  "E-Mail-Adresse":{fr:"Adresse e-mail",it:"Indirizzo e-mail",en:"Email address"},
  "Name (optional)":{fr:"Nom (facultatif)",it:"Nome (facoltativo)",en:"Name (optional)"},
  "Einladen":{fr:"Inviter",it:"Invita",en:"Invite"},
  "Alle {n} Adressen aus der Crewliste einladen":{fr:"Inviter les {n} adresses de la liste de l’équipe",it:"Invita tutti i {n} indirizzi della lista crew",en:"Invite all {n} addresses from the crew list"},
- "Benutzer":{fr:"utilisateurs",it:"utenti",en:"users"},
+ "Benutzer:innen":{fr:"utilisateur·rices",it:"utenti",en:"users"},
  "noch nicht registriert":{fr:"pas encore inscrits",it:"non ancora registrati",en:"not yet registered"},
- "Benutzer suchen":{fr:"Rechercher un utilisateur",it:"Cerca utente",en:"Search users"},
+ "Benutzer:innen suchen":{fr:"Rechercher un utilisateur",it:"Cerca utente",en:"Search users"},
  "Einladungsmail":{fr:"E-mail d’invitation",it:"E-mail d’invito",en:"Invitation email"},
  "Admin entfernen":{fr:"Retirer admin",it:"Rimuovi admin",en:"Remove admin"},
  "Zum Admin machen":{fr:"Nommer admin",it:"Rendi admin",en:"Make admin"},
@@ -213,7 +213,7 @@ Object.assign(I18N,{
  "eingeladen.":{fr:"invité·e.",it:"invitato/a.",en:"invited."},
  "{n} Adressen aus der Crewliste einladen?":{fr:"Inviter {n} adresses de la liste de l’équipe ?",it:"Invitare {n} indirizzi dalla lista crew?",en:"Invite {n} addresses from the crew list?"},
  "{n} Adressen eingeladen.":{fr:"{n} adresses invitées.",it:"{n} indirizzi invitati.",en:"{n} addresses invited."},
- "Der Besitzer kann nicht gesperrt oder entfernt werden.":{fr:"Le propriétaire ne peut être ni bloqué ni supprimé.",it:"Il proprietario non può essere bloccato né rimosso.",en:"The ownerdmin cannot be blocked or removed."},
+ "Die Besitzerin oder der Besitzer kann nicht gesperrt oder entfernt werden.":{fr:"La·le propriétaire ne peut être ni bloqué ni supprimé.",it:"La/il proprietaria/o non può essere bloccato né rimosso.",en:"The ownerdmin cannot be blocked or removed."},
  "Gesperrt.":{fr:"Bloqué.",it:"Bloccato.",en:"Blocked."},
  "Entsperrt.":{fr:"Débloqué.",it:"Sbloccato.",en:"Unblocked."},
  "{e} entfernen? Die Person kommt danach nicht mehr in die App.":{fr:"Supprimer {e} ? La personne n’aura plus accès à l’app.",it:"Rimuovere {e}? La persona non potrà più accedere all’app.",en:"Remove {e}? The person will no longer get into the app."},
@@ -221,7 +221,7 @@ Object.assign(I18N,{
  "{e} die Admin-Rechte entziehen?":{fr:"Retirer les droits admin à {e} ?",it:"Togliere i diritti admin a {e}?",en:"Remove admin rights from {e}?"},
  "Admin-Rechte entzogen.":{fr:"Droits admin retirés.",it:"Diritti admin revocati.",en:"Admin rights removed."},
  "Einladung gelöscht.":{fr:"Invitation supprimée.",it:"Invito eliminato.",en:"Invitation deleted."},
- "Benutzerdaten nicht lesbar":{fr:"Données utilisateurs illisibles",it:"Dati utenti non leggibili",en:"User data not readable"},
+ "Daten der Benutzer:innen nicht lesbar":{fr:"Données utilisateur·rices illisibles",it:"Dati utenti non leggibili",en:"User data not readable"},
  "Firestore-Regeln prüfen.":{fr:"vérifier les règles Firestore.",it:"controllare le regole Firestore.",en:"check the Firestore rules."},
  "Crew-App":{fr:"app de l’équipe",it:"app della crew",en:"crew app"},
  "MAIL_BODY":{de:"Hallo{n}\n\nDu bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet:\n{site}\n\nBeim ersten Mal auf «Erstes Mal hier? Konto erstellen» tippen, mit dieser Adresse ({e}) ein eigenes Passwort wählen und die Bestätigungsmail antippen.\n\nBis bald im Wallis!",fr:"Bonjour{n}\n\nTu as accès à l’app de l’équipe de TSCHUGGER Tigerblood :\n{site}\n\nLa première fois, tape sur « Première fois ici ? Créer un compte », choisis ton propre mot de passe avec cette adresse ({e}) et confirme l’e-mail de vérification.\n\nÀ bientôt en Valais !",it:"Ciao{n}\n\nHai accesso all’app della crew di TSCHUGGER Tigerblood:\n{site}\n\nLa prima volta tocca «Prima volta qui? Crea account», scegli una password con questo indirizzo ({e}) e conferma l’e-mail di verifica.\n\nA presto in Vallese!",en:"Hi{n}\n\nYou now have access to the TSCHUGGER Tigerblood crew app:\n{site}\n\nThe first time, tap “First time here? Create account”, choose your own password with this address ({e}) and confirm the verification email.\n\nSee you in Valais!"},
@@ -233,14 +233,14 @@ Object.assign(I18N,{
  "Sprachen":{fr:"Langues",it:"Lingue",en:"Languages"},
  "Ausgeschaltet zeigt die App nur die 1st Unit, ohne die Knöpfe 1st/2nd.":{fr:"Désactivée, l’app n’affiche que la 1st unit, sans les boutons 1st/2nd.",it:"Se disattivata, l’app mostra solo la 1st unit, senza i pulsanti 1st/2nd.",en:"When off, the app shows only the 1st unit, without the 1st/2nd buttons."},
  "Geburtstagsliste allen anzeigen":{fr:"Montrer la liste des anniversaires à tous",it:"Mostra a tutti la lista dei compleanni",en:"Show the birthday list to everyone"},
- "Eingeschaltet sehen alle Benutzer in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).":{fr:"Activée, tous les utilisateurs voient dans l’équipe la liste des anniversaires pendant le tournage (jour et mois seulement, sans l’année).",it:"Se attiva, tutti gli utenti vedono nella crew la lista dei compleanni durante le riprese (solo giorno e mese, senza anno).",en:"When on, all users see the birthday list for the shoot in the crew tab (day and month only, no year)."},
+ "Eingeschaltet sehen alle Benutzer:innen in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).":{fr:"Activée, tous les utilisateur·rices voient dans l’équipe la liste des anniversaires pendant le tournage (jour et mois seulement, sans l’année).",it:"Se attiva, tutti gli utenti vedono nella crew la lista dei compleanni durante le riprese (solo giorno e mese, senza anno).",en:"When on, all users see the birthday list for the shoot in the crew tab (day and month only, no year)."},
  "3rd Unit anzeigen":{fr:"Afficher la 3rd unit",it:"Mostra la 3rd unit",en:"Show 3rd unit"},
  "Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.":{fr:"Les unités désactivées disparaissent du planning, du callsheet et des lieux. Si seule la 1st unit est active, les boutons d’unité disparaissent.",it:"Le unit disattivate spariscono da Schedule, Callsheet e Locations. Se è attiva solo la 1st unit, i pulsanti delle unit spariscono.",en:"Units that are switched off disappear from Schedule, Callsheet and Locations. If only the 1st unit is on, the unit buttons disappear."},
  "2nd Unit anzeigen":{fr:"Afficher la 2nd unit",it:"Mostra la 2nd unit",en:"Show 2nd unit"},
  "Einstellungen gespeichert.":{fr:"Réglages enregistrés.",it:"Impostazioni salvate.",en:"Settings saved."},
- "Benutzer einladen":{fr:"Inviter des utilisateurs",it:"Invita utenti",en:"Invite users"},
+ "Benutzer:innen einladen":{fr:"Inviter des utilisateur·rices",it:"Invita utenti",en:"Invite users"},
  "Motivliste":{fr:"Liste des lieux",it:"Lista delle location",en:"Location list"},
- "Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.":{fr:"Lien vers le Google Sheet des lieux (colonnes SCRIPT NAME, ADRESSE, SCENES, LINK ; « Tous les utilisateurs disposant du lien peuvent consulter »). Repris lors de la prochaine mise à jour horaire. Vide = liste actuelle.",it:"Link al Google Sheet delle location (colonne SCRIPT NAME, ADRESSE, SCENES, LINK; «Chiunque abbia il link può visualizzare»). Viene ripreso al prossimo aggiornamento orario. Vuoto = lista attuale.",en:"Link to the Google Sheet with the locations (columns SCRIPT NAME, ADRESSE, SCENES, LINK; “Anyone with the link can view”). Picked up at the next hourly update. Empty = current list."},
+ "Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.":{fr:"Lien vers le Google Sheet des lieux (colonnes SCRIPT NAME, ADRESSE, SCENES, LINK ; « Tous les utilisateur·rices disposant du lien peuvent consulter »). Repris lors de la prochaine mise à jour horaire. Vide = liste actuelle.",it:"Link al Google Sheet delle location (colonne SCRIPT NAME, ADRESSE, SCENES, LINK; «Chiunque abbia il link può visualizzare»). Viene ripreso al prossimo aggiornamento orario. Vuoto = lista attuale.",en:"Link to the Google Sheet with the locations (columns SCRIPT NAME, ADRESSE, SCENES, LINK; “Anyone with the link can view”). Picked up at the next hourly update. Empty = current list."},
  "Bitte einen Google-Sheets-Link eingeben.":{fr:"Saisis un lien Google Sheets.",it:"Inserisci un link Google Sheets.",en:"Please enter a Google Sheets link."},
  "Karte":{fr:"Carte",it:"Mappa",en:"Map"},
  "Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.":{fr:"Lien vers la carte du bouton « Map » dans Lieux (p. ex. Google My Maps). Vide = carte par défaut.",it:"Link alla mappa per il pulsante «Map» in Locations (es. Google My Maps). Vuoto = mappa predefinita.",en:"Link to the map for the “Map” button in Locations (e.g. Google My Maps). Empty = default map."},
@@ -736,7 +736,7 @@ const BK={busy:false,msg:"",ok:false};
 function bkSec(){
   let last="";try{last=localStorage.getItem("bk:last")||""}catch(_){}
   return '<details class="admins asetd" data-sec="backup"'+(SECS.backup?' open':'')+'><summary>'+L("Backup")+'</summary><div class="bk">'+
-    '<p class="ahint">'+L("Sichert Benutzer, Einladungen, Administratoren, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.")+'</p>'+
+    '<p class="ahint">'+L("Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.")+'</p>'+
     (last?'<p class="ahint">'+L("Letztes Backup auf diesem Gerät")+': '+esc(fmtStamp(last))+'</p>':'')+
     '<div class="bkb"><button type="button" class="abtn" data-bk="dl"'+(BK.busy?' disabled':'')+'>'+L("Backup herunterladen")+'</button>'+
     '<label class="abtn bkup">'+L("Backup wiederherstellen")+'<input type="file" accept="application/json,.json" data-bk="up" hidden></label></div>'+
@@ -756,7 +756,7 @@ async function bkDownload(){
   const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:"application/json"}));
   const a=document.createElement("a");a.href=url;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
   try{localStorage.setItem("bk:last",t.toISOString())}catch(_){}
-  return L("Backup gespeichert")+": "+data.members.length+" "+L("Benutzer")+", "+data.invites.length+" "+L("Einladungen")+".";
+  return L("Backup gespeichert")+": "+data.members.length+" "+L("Benutzer:innen")+", "+data.invites.length+" "+L("Einladungen")+".";
 }
 async function bkRestore(file){
   if(file.size>5e6)throw new Error(L("Datei ist zu gross."));
@@ -842,7 +842,7 @@ function editForm(r){
 }
 function reqSec(){
   const r=(ADM.req||[]).slice().sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),LANG));
-  return '<div class="admins areq" id="areq"><h3>'+L("Benutzer-Anfragen")+' <span class="ust '+(r.length?'adm':'')+'">'+r.length+'</span></h3>'+
+  return '<div class="admins areq" id="areq"><h3>'+L("Anfragen von Benutzer:innen")+' <span class="ust '+(r.length?'adm':'')+'">'+r.length+'</span></h3>'+
     (ADM.reqErr?'<p class="admerr">'+L("Anfragen nicht lesbar")+' ('+esc(ADM.reqErr)+') – '+L("Firestore-Regeln prüfen.")+'</p>':
      r.length?'<p class="ahint">'+L("Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».")+'</p>':'<p class="ahint">'+L("Keine offenen Anfragen.")+'</p>')+
     r.map(q=>'<div class="arow"><span><b>'+esc(q.name||"")+'</b> · '+esc(q.id)+(q.role?'<br><small>'+esc(q.role)+'</small>':'')+(q.note?'<br><small>«'+esc(q.note)+'»</small>':'')+'</span>'+
@@ -851,7 +851,7 @@ function reqSec(){
 VIEWS.admin=function(){
   if(!isAdmin())return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>60000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
-  if(!ADM.loaded){admLoad().catch(err=>{console.error(err);showMsg(L("Benutzerliste konnte nicht geladen werden:")+" "+(err.message||err),6000)});return '<div class="empty">'+L("Lade Benutzer …")+'</div>'}
+  if(!ADM.loaded){admLoad().catch(err=>{console.error(err);showMsg(L("Liste der Benutzer:innen konnte nicht geladen werden:")+" "+(err.message||err),6000)});return '<div class="empty">'+L("Lade Benutzer:innen …")+'</div>'}
   const memBy={};ADM.mem.forEach(m=>memBy[m.email]=m);
   const invBy={};ADM.inv.forEach(i=>invBy[i.id]=i);
   const rows=[];const seen=new Set();
@@ -866,25 +866,25 @@ VIEWS.admin=function(){
   const site=location.origin+location.pathname;
   const mail=r=>"mailto:"+encodeURIComponent(r.email)+"?subject="+encodeURIComponent("TSCHUGGER Tigerblood – "+(LANG==="de"?"Crew-App":L("Crew-App")))+"&body="+encodeURIComponent((I18N.MAIL_BODY[LANG]||I18N.MAIL_BODY.de).replace("{n}",r.name?" "+r.name.split(" ")[0]:"").replace("{site}",site).replace("{e}",r.email));
   const own=isOwner();const isAdm=e=>ADMINS.includes(e)||ADM.adm.includes(e);
-  const admSec=own?'<div class="admins"><h3>'+L("Administratoren")+'</h3><p class="ahint">'+L("Administratoren können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».")+'</p>'+
-    '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">'+L("Besitzer")+'</span></div>'+
+  const admSec=own?'<div class="admins"><h3>'+L("Administrator:innen")+'</h3><p class="ahint">'+L("Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».")+'</p>'+
+    '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">'+L("Besitzer:in")+'</span></div>'+
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
     '</div>'+
     '<details class="admins asetd" data-sec="appset"'+(SECS.appset?' open':'')+'><summary>'+L("Einstellungen der App")+'</summary><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
     '<p class="ahint"><b>'+L("Bereiche")+'</b> – '+L("Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.")+' '+L("Reihenfolge mit ▲ ▼ ändern.")+'</p><div class="tbord">'+tabOrder().map(k=>[k,{plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",info:"Info"}[k]]).map(([k,t])=>'<div class="tbrow"><label class="ck"><input type="checkbox" name="tb" value="'+k+'"'+(!Array.isArray(window.TABSON)||window.TABSON.includes(k)?' checked':'')+'> '+t+'</label><span class="tbmv"><button type="button" data-tmv="up" aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-tmv="down" aria-label="'+esc(L("Nach unten"))+'">▼</button></span></div>').join("")+'</div>'+
     '<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+
-    '<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
+    '<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer:innen in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
     '<p class="ahint"><b>Dropbox</b> – '+L("Eingeschaltet werden Drehplan, Drehbuch, Crewliste, Callsheets und Motivliste jede Stunde automatisch neu geladen (nur gelesen).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="au"'+(window.AUTOUPD!==false?' checked':'')+'> '+L("Daten aus der Dropbox automatisch laden")+'</label></div>'+
     '<p class="ahint"><b>'+L("Drehbuch")+'</b> – '+L("Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="so"'+(window.SCRIPTON!==false?' checked':'')+'> '+L("Drehbuch anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+
     admSec+(own?upSec()+bkSec():'')+
-    '<div class="admins"><h3>'+L("Benutzer einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
+    '<div class="admins"><h3>'+L("Benutzer:innen einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>'+
-    '<div class="astats">'+rows.length+' '+L("Benutzer")+' · '+rows.filter(r=>r.m&&r.m.active===true).length+' '+L("aktiv")+' · '+rows.filter(r=>!r.m).length+' '+L("noch nicht registriert")+''+((ADM.req||[]).length?' · <a href="#areq" class="reqlnk">'+ADM.req.length+' '+L("Benutzer-Anfragen")+'</a>':'')+'</div>'+
-    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Benutzer suchen"))+'" value="'+esc(ADM.q)+'">'+
+    '<div class="astats">'+rows.length+' '+L("Benutzer:innen")+' · '+rows.filter(r=>r.m&&r.m.active===true).length+' '+L("aktiv")+' · '+rows.filter(r=>!r.m).length+' '+L("noch nicht registriert")+''+((ADM.req||[]).length?' · <a href="#areq" class="reqlnk">'+ADM.req.length+' '+L("Anfragen von Benutzer:innen")+'</a>':'')+'</div>'+
+    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Benutzer:innen suchen"))+'" value="'+esc(ADM.q)+'">'+
     '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">'+L("Admin")+'</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div>'+(own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+(own&&ADM.edit===r.email?editForm(r):'')+'<div class="aacts">'+
       (own?'<button data-adm="edit" data-em="'+esc(r.email)+'">'+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'')+
       (own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'')+
@@ -954,7 +954,7 @@ document.addEventListener("click",async e=>{
       if(confirmSafe(L("{n} Adressen aus der Crewliste einladen?").replace("{n}",list.length))){
         for(let i=0;i<list.length;i+=400){const batch=F.writeBatch(db);list.slice(i,i+400).forEach(c=>batch.set(F.doc(db,"invites",c.email),{name:c.name,role:c.role,addedAt:F.serverTimestamp()}));await batch.commit()}
         showMsg(L("{n} Adressen eingeladen.").replace("{n}",list.length),4000)}}
-    else if((a==="block"||a==="remove"||a==="uninvite")&&ADMINS.includes(b.dataset.em||(ADM.mem.find(m=>m.uid===b.dataset.uid)||{}).email)){showMsg(L("Der Besitzer kann nicht gesperrt oder entfernt werden."),4000)}
+    else if((a==="block"||a==="remove"||a==="uninvite")&&ADMINS.includes(b.dataset.em||(ADM.mem.find(m=>m.uid===b.dataset.uid)||{}).email)){showMsg(L("Die Besitzerin oder der Besitzer kann nicht gesperrt oder entfernt werden."),4000)}
     else if(a==="block"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:false});showMsg(L("Gesperrt."),3000)}
     else if(a==="unblock"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:true});showMsg(L("Entsperrt."),3000)}
     else if(a==="remove"){if(confirmSafe(L("{e} entfernen? Die Person kommt danach nicht mehr in die App.").replace("{e}",b.dataset.em))){await F.deleteDoc(F.doc(db,"invites",b.dataset.em)).catch(()=>{});await F.deleteDoc(F.doc(db,"members",b.dataset.uid));showMsg(L("Entfernt."),3000)}}
@@ -1026,7 +1026,7 @@ const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'"
 window.crewHead=function(){
   if(!isAdmin()){if(!window.BDAYPUB||!ME)return"";if(!PUBB.loaded)loadPubBdays();return PUBB.loaded?bdayHTML():""}
   ensureAdm();
-  return '<div class="admv">'+togBtn("food","Essen")+(ADM.err?'<span class="admerr">'+L("Benutzerdaten nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+togBtn("bday","Geburtstage")+(isOwner()?togBtn("acct","Kontoinfos"):"")+'<button type="button" class="foodtog ico vcall" data-vcall aria-label="'+esc(L("Alle Kontakte als VCF"))+'" title="'+esc(L("Alle Kontakte als VCF"))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>'+'</div>'+(ADM.loaded?bdayHTML()+cateringHTML():"");
+  return '<div class="admv">'+togBtn("food","Essen")+(ADM.err?'<span class="admerr">'+L("Daten der Benutzer:innen nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+togBtn("bday","Geburtstage")+(isOwner()?togBtn("acct","Kontoinfos"):"")+'<button type="button" class="foodtog ico vcall" data-vcall aria-label="'+esc(L("Alle Kontakte als VCF"))+'" title="'+esc(L("Alle Kontakte als VCF"))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>'+'</div>'+(ADM.loaded?bdayHTML()+cateringHTML():"");
 };
 document.addEventListener("click",e=>{if(!e.target.closest("[data-vcall]")||!isAdmin())return;const {text,n}=allVCards();if(!n)return;saveVcf(text,"TSCHUGGER Tigerblood Crew");showMsg(n+" "+L("Kontakte als VCF gespeichert."),4000)});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";if(ADMV[k]&&!ADM.loading&&Date.now()-(ADM.at||0)>60000)ADM.loaded=false;try{localStorage.setItem("admv2:"+k,ADMV[k]?"1":"0")}catch(_){}render()});
@@ -1035,7 +1035,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-cinv
   const em=lc(b.dataset.cinv);b.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"invites",em),{name:String(b.dataset.nm||"").slice(0,80),role:String(b.dataset.rl||"").slice(0,80),addedAt:F.serverTimestamp()});
     if(!ADM.inv.some(i=>i.id===em))ADM.inv.push({id:em,name:b.dataset.nm||""});admIndex();render();
-    showMsg((b.dataset.nm||em)+" "+L("ist jetzt als Benutzer freigeschaltet und kann ein Konto erstellen."),4000)}
+    showMsg((b.dataset.nm||em)+" "+L("ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen."),4000)}
   catch(err){b.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}},true);
 /* invitation mail to an invited crew member, from the admin's own mail program (arrives more reliably than system mail) */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-cmail]");if(!b||!isAdmin())return;e.preventDefault();e.stopPropagation();
@@ -1052,10 +1052,10 @@ window.crewExtra=function(p){
   if(ACC){
     if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
       if(inv&&isAdmin())ch.push('<button type="button" class="cinv" data-cmail="'+esc(e)+'" data-nm="'+esc(p.name||"")+'">✉ '+esc(L("Einladungs-Mail schicken"))+'</button>');
-      if(!inv&&isOwner()&&e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))ch.push('<button type="button" class="cinv" data-cinv="'+esc(e)+'" data-nm="'+esc(p.name||"")+'" data-rl="'+esc(p.role||"")+'">+ '+esc(L("Als Benutzer einladen"))+'</button>')}
+      if(!inv&&isOwner()&&e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))ch.push('<button type="button" class="cinv" data-cinv="'+esc(e)+'" data-nm="'+esc(p.name||"")+'" data-rl="'+esc(p.role||"")+'">+ '+esc(L("Als Benutzer:in einladen"))+'</button>')}
     else ch.push(m.active===true?'<span class="ok">'+esc(L("Konto aktiv"))+'</span>':'<span class="off">'+esc(L("Gesperrt"))+'</span>');
     const ems=[lc(p.email),m&&m.email].filter(Boolean);
-    if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Besitzer"))+'</span>');
+    if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Besitzer:in"))+'</span>');
     else if(ems.some(e=>ADM.adm.includes(e)))ch.push('<span class="adm">'+esc(L("Admin"))+'</span>');
   }
   if(m&&ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ACC?na(L("Geburtstag")+": –"):""))}
