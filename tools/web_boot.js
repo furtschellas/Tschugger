@@ -445,19 +445,9 @@ const bdShort=iso=>{const m=/^\d{4}-(\d\d)-(\d\d)$/.exec(iso||"");return m?m[2]+
 function bdayHTML(){
   const ds=S.days.map(d=>d.date).filter(Boolean).sort();if(!ds.length)return"";
   const name=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
-  const by={};ADM.mem.filter(m=>m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||"")).forEach(m=>(by[m.birthday.slice(5)]=by[m.birthday.slice(5)]||[]).push(m));
-  const start=new Date(ds[0]+"T12:00:00"),end=new Date(ds[ds.length-1]+"T12:00:00");
-  const g=new Date(start);g.setDate(g.getDate()-((g.getDay()+6)%7));
-  const wd=[1,2,3,4,5,6,0].map(i=>WD[i]);
-  let h='<div class="bcal"><b>'+esc(L("Geburtstage während des Drehs"))+'</b><div class="bgrid">'+wd.map(w=>'<span class="bw">'+esc(w)+'</span>').join("");
-  const list=[];
-  for(const d=new Date(g);d<=end||d.getDay()!==1;d.setDate(d.getDate()+1)){
-    const md=pad2(d.getMonth()+1)+"-"+pad2(d.getDate()),inR=d>=start&&d<=end,hit=inR&&by[md];
-    if(hit)list.push([new Date(d),by[md]]);
-    h+='<span class="bd'+(inR?"":" out")+(hit?" hit":"")+'">'+pad2(d.getDate())+'.'+pad2(d.getMonth()+1)+(hit?'<i>'+hit.length+'</i>':'')+'</span>';
-  }
-  h+='</div>'+(list.length?list.map(([d,ms])=>'<div class="bl"><span>'+esc(WD[d.getDay()]+" "+pad2(d.getDate())+"."+pad2(d.getMonth()+1)+".")+'</span><b>'+ms.map(m=>esc(name(m))).join(", ")+'</b></div>').join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>')+'</div>';
-  return h;
+  const y=ds[0].slice(0,4),from=ds[0].slice(5),to=ds[ds.length-1].slice(5);
+  const hits=ADM.mem.filter(m=>m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||"")).map(m=>({m,md:m.birthday.slice(5)})).filter(x=>x.md>=from&&x.md<=to).sort((a,b)=>a.md<b.md?-1:a.md>b.md?1:name(a.m).localeCompare(name(b.m)));
+  return '<div class="bcal"><b>'+esc(L("Geburtstage während des Drehs"))+'</b>'+(hits.length?hits.map(x=>{const d=new Date(y+"-"+x.md+"T12:00:00");return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+pad2(d.getDate())+"."+pad2(d.getMonth()+1)+".")+'</span><b>'+esc(name(x.m))+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>')+'</div>';
 }
 const ICO={bcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13.5c-.7-.7-.7-1.6 0-2.3.7.7.7 1.6 0 2.3zM12 14v3"/>',food:'<path d="M7 2v8M4 2v5a3 3 0 0 0 6 0V2M7 10v12M17 2c-2 1.5-3 4-3 7h3v13"/>',bday:'<path d="M4 21h16M5 21v-8h14v8M12 13V9M12 6.5c-1-1-1-2.5 0-3.5 1 1 1 2.5 0 3.5zM5 16c2.3 1.5 4.7 1.5 7 0s4.7-1.5 7 0"/>'};
 const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'" aria-pressed="'+ADMV[k]+'" aria-label="'+esc(L(t))+'" title="'+esc(L(t))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICO[k]+'</svg></button>';

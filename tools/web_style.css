@@ -94,3 +94,4 @@
 .admerr{flex-basis:100%;font-size:13px;color:#ff8a8a}
 .pinfo .na{background:var(--rule);color:var(--muted)}
 .pinfo{margin:8px 0 2px}
+.bcal>b{display:block;margin-bottom:6px}
