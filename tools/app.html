@@ -540,6 +540,7 @@ html[data-theme="light"] .a2box{box-shadow:0 18px 50px -20px rgba(26,22,34,.35)}
 .calbtn,.pvbtn,.refresh{transition:transform .12s ease,background-color .15s ease,border-color .15s ease}
 .calbtn:active,.pvbtn:active,.refresh:active{transform:scale(.94)}
 html[data-theme="light"] .ppi,html[data-theme="light"] .mci{background:#fff}
+.a2box{position:relative}.a2box>.xclose{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:2}.a2box>.xclose:hover{border-color:var(--accent);color:var(--accent)}.a2box>h3{padding-right:42px}
 </style>
 
 <div class="wrap">
@@ -1650,6 +1651,13 @@ function openSearch(){$("#search").hidden=false;document.body.style.overflow="hi
 function closeSearch(){$("#search").hidden=true;document.body.style.overflow=""}
 $("#searchBtn").addEventListener("click",openSearch);
 $("#myCalBtn").addEventListener("click",()=>openMyCal());
+/* every pop-up: × at the top right, Esc closes the topmost one (the first-start profile form stays until it is filled in) */
+const onboarding=()=>{try{return typeof ONBOARD!=="undefined"&&ONBOARD}catch(_){return false}};
+function closeDialog(d){if(!d)return;if(d.id==="acct"){if(onboarding())return;d.hidden=true;return}if(d.id==="a2hs"){d.hidden=true;return}d.remove()}
+function addX(d){const box=d.querySelector(".a2box");if(!box||box.querySelector(":scope>.xclose")||(d.id==="acct"&&onboarding()))return;
+  const b=document.createElement("button");b.type="button";b.className="xclose";b.setAttribute("aria-label",L("Schliessen"));b.title=L("Schliessen");b.textContent="×";b.addEventListener("click",()=>closeDialog(d));box.prepend(b)}
+new MutationObserver(()=>{for(const d of document.querySelectorAll(".a2hs:not([hidden])"))addX(d)}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});
+document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;const ds=[...document.querySelectorAll(".a2hs:not([hidden])")];if(ds.length){e.preventDefault();closeDialog(ds[ds.length-1])}});
 $("#sclose").addEventListener("click",closeSearch);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#search").hidden)closeSearch()});
 let gqT=null;$("#gq").addEventListener("input",()=>{clearTimeout(gqT);gqT=setTimeout(renderSearch,120)});
