@@ -1419,8 +1419,8 @@ VIEWS.admin=function(){
   const own=isOwner();const isAdm=e=>ADMINS.includes(e)||ADM.adm.includes(e);
   const admSec=own?'<div class="admins"><h3>Administratoren</h3><p class="ahint">Administratoren können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du.</p>'+
     '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">Haupt-Admin</span></div>'+
-    ADM.adm.slice().sort().map(e=>'<div class="arow"><span>'+esc(nm(memBy[e])||e)+(nm(memBy[e])?' <small>'+esc(e)+'</small>':'')+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">Entfernen</button></div>').join("")+
-    '<form class="aform" data-adm="addadmin"><input name="em" type="email" placeholder="E-Mail-Adresse neuer Admin" required><button type="submit">Als Admin hinzufügen</button></form></div>':'';
+    ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],"de")).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">Entfernen</button></div>').join("")+
+    '<form class="aform" data-adm="addadmin"><select name="em" required><option value="">Person auswählen …</option>'+rows.filter(r=>!isAdm(r.email)).map(r=>'<option value="'+esc(r.email)+'">'+esc(r.name||r.email)+'</option>').join("")+'</select><button type="submit">Als Admin hinzufügen</button></form></div>':'';
   let h='<section class="adm"><h2 class="dh">Benutzer verwalten</h2><p class="ahint">Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.</p>'+
     admSec+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="E-Mail-Adresse" required><input name="nm" type="text" placeholder="Name (optional)"><button type="submit">Einladen</button></form>'+
