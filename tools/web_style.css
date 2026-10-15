@@ -92,3 +92,4 @@
 .pinfo .bday{background:rgba(240,180,60,.16);color:var(--gold)}
 .pinfo .diet{background:rgba(127,224,168,.13);color:#7fe0a8}
 .admerr{flex-basis:100%;font-size:13px;color:#ff8a8a}
+.pinfo .na{background:var(--rule);color:var(--muted)}

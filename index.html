@@ -420,6 +420,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .pinfo .bday{background:rgba(240,180,60,.16);color:var(--gold)}
 .pinfo .diet{background:rgba(127,224,168,.13);color:#7fe0a8}
 .admerr{flex-basis:100%;font-size:13px;color:#ff8a8a}
+.pinfo .na{background:var(--rule);color:var(--muted)}
 
 </style>
 </head>
@@ -1110,6 +1111,8 @@ Object.assign(I18N,{
  "Weiter":{fr:"Continuer",it:"Avanti",en:"Continue"},
  "Essen":{fr:"Repas",it:"Pasti",en:"Food"},
  "aktiv":{fr:"actifs",it:"attivi",en:"active"},
+ "Noch kein Konto":{fr:"Pas encore de compte",it:"Ancora nessun account",en:"No account yet"},
+ "keine Angaben":{fr:"pas d'indication",it:"nessuna indicazione",en:"not specified"},
  "Geburtstag":{fr:"Anniversaire",it:"Compleanno",en:"Birthday"},
  "Geburtstagskalender":{fr:"Calendrier des anniversaires",it:"Calendario compleanni",en:"Birthday calendar"},
  "Geburtstage":{fr:"Anniversaires",it:"Compleanni",en:"Birthdays"},
@@ -1507,11 +1510,15 @@ window.crewHead=function(){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";try{localStorage.setItem(k,ADMV[k]?"1":"0")}catch(_){}render()});
 window.crewExtra=function(p){
   if(!isAdmin()||!(ADMV.food||ADMV.bday)||!p)return"";
-  if(!ADM.loaded){ensureAdm();return""}
-  const m=memberFor(p);if(!m)return"";
-  const t=ADMV.food?dietText(m):"",b=ADMV.bday?bdShort(m.birthday):"";
-  return (b||t)?'<div class="pinfo">'+(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':'')+(t?'<span class="diet">'+esc(t)+'</span>':'')+'</div>':'';
+  if(!ADM.loaded){ensureAdm();return ADM.err?"":'<div class="pinfo"><span class="na">…</span></div>'}
+  const m=memberFor(p);
+  if(!m)return '<div class="pinfo"><span class="na">'+esc(L("Noch kein Konto"))+'</span></div>';
+  const ch=[];
+  if(ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':'<span class="na">'+esc(L("Geburtstag"))+': –</span>')}
+  if(ADMV.food){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?'<span class="diet">'+esc(L("Ich esse alles"))+'</span>':'<span class="na">'+esc(L("Essen"))+': '+esc(L("keine Angaben"))+'</span>'))}
+  return '<div class="pinfo">'+ch.join("")+'</div>';
 };
+
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- start ---------- */
