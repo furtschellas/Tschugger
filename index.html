@@ -392,6 +392,28 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .pname b{font-weight:600;color:var(--ink)}
 .psec{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:10px 0 4px;margin:10px 0}
 .psec h4{margin:0 0 6px;font-size:15px;font-weight:600;color:var(--ink)}
+.foodtog{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:14px;font-weight:600;margin:0 0 10px;padding:7px 14px;border:1px solid var(--rule);border-radius:99px;background:var(--sheet);color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.foodtog[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.admv{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.admv .foodtog{margin:0}
+.ct.bday span{color:var(--gold)}
+.bcal{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:14px}
+.bgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0}
+.bgrid .bw{font-size:11px;text-align:center;color:var(--muted);text-transform:uppercase}
+.bgrid .bd{position:relative;text-align:center;font-size:12px;font-variant-numeric:tabular-nums;padding:7px 0;border-radius:6px;background:var(--paper);border:1px solid var(--rule)}
+.bgrid .bd.out{opacity:.3}
+.bgrid .bd.hit{background:var(--gold);border-color:var(--gold);color:#1a1206;font-weight:700}
+.bgrid .bd i{position:absolute;top:-5px;right:-3px;font-style:normal;font-size:10px;background:var(--accent);color:var(--accent-ink);border-radius:99px;min-width:15px;line-height:15px}
+.bl{display:flex;gap:10px;padding:5px 0;border-top:1px solid var(--rule)}
+.bl span{flex:none;min-width:72px;color:var(--gold);font-variant-numeric:tabular-nums}
+.admv{margin-top:12px}
+.admv .foodtog{font-size:13px;padding:6px 12px}
+.admins{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;margin:10px 0}
+.admins h3{margin:0 0 4px;font-size:15px}
+.arow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--rule);font-size:14px}
+.arow small{color:var(--muted)}
+.arow button{font:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;color:var(--ink);cursor:pointer}
+.ust.adm{background:var(--gold);color:#1a1206}
 
 </style>
 </head>
@@ -551,6 +573,7 @@ function renderCrew(){
   if(!S.crew.length)return emptyHTML("Crewliste");
   const q=S.q.trim().toLowerCase();
   let h='<input class="search" id="q" type="search" placeholder="'+L("Crew suchen")+'" value="'+esc(S.q)+'" aria-label="Crew durchsuchen">';
+  if(typeof window.crewHead==="function")h+=window.crewHead();
   let n=0;
   for(const g of S.crew){
     const ppl=(g.people||[]).filter(p=>!q||[p.name,p.role,TX(p,"role"),g.dept,TX(g,"dept")].join(" ").toLowerCase().includes(q));
@@ -1080,6 +1103,12 @@ Object.assign(I18N,{
  "Aus der Crewliste übernommen.":{fr:"Repris de la liste de l'équipe.",it:"Ripreso dalla lista della troupe.",en:"Taken from the crew list."},
  "Weiter":{fr:"Continuer",it:"Avanti",en:"Continue"},
  "Essen":{fr:"Repas",it:"Pasti",en:"Food"},
+ "aktiv":{fr:"actifs",it:"attivi",en:"active"},
+ "Geburtstag":{fr:"Anniversaire",it:"Compleanno",en:"Birthday"},
+ "Kalender":{fr:"Calendrier",it:"Calendario",en:"Calendar"},
+ "Geburtstage":{fr:"Anniversaires",it:"Compleanni",en:"Birthdays"},
+ "Geburtstage während des Drehs":{fr:"Anniversaires pendant le tournage",it:"Compleanni durante le riprese",en:"Birthdays during the shoot"},
+ "Keine Geburtstage während des Drehs.":{fr:"Aucun anniversaire pendant le tournage.",it:"Nessun compleanno durante le riprese.",en:"No birthdays during the shoot."},
  "Ich esse alles":{fr:"Je mange de tout",it:"Mangio di tutto",en:"I eat everything"},
  "Vegetarisch":{fr:"Végétarien",it:"Vegetariano",en:"Vegetarian"},
  "Vegan":{fr:"Végan",it:"Vegano",en:"Vegan"},
@@ -1119,7 +1148,10 @@ function crewPerson(email){const e=lc(email);if(!e)return null;for(const g of S.
 let FB=null,ME=null,MEMBER=null,DATAKEY=null,LASTSTAMP=null;
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const lc=s=>String(s||"").trim().toLowerCase();
-const isAdmin=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
+/* main admin is fixed; further admins are listed by the main admin in Firestore admins/{email} */
+let COADMIN=false;
+const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
+const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
 async function fb(){
   if(FB)return FB;
   const base="https://www.gstatic.com/firebasejs/"+FB_V+"/";
@@ -1166,6 +1198,7 @@ const isOffline=err=>!navigator.onLine||/unavailable|network|offline|failed to f
 /* ---- membership: invited addresses join once (members/{uid}); blocked = active:false ---- */
 async function checkMember(){
   const {F,db}=await fb();const u=ME;
+  if(!isOwner()&&u.emailVerified){try{COADMIN=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(_){COADMIN=false}}
   const ref=F.doc(db,"members",u.uid);let s=await F.getDoc(ref);
   if(!s.exists()){
     let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
@@ -1182,7 +1215,7 @@ async function checkMember(){
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
   MEMBER=m;return "ok";
 }
-function clearLocal(){try{localStorage.removeItem(CACHE_KEY)}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null}
+function clearLocal(){try{localStorage.removeItem(CACHE_KEY)}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
 /* ---- sign-in screen ---- */
 let AUTHMODE="login";
 const errText=e=>{const c=(e&&e.code)||"";
@@ -1352,19 +1385,19 @@ async function onAcctSubmit(e){
   btn.disabled=false;
 }
 /* ---- admin: invitations and members (German only; visible to admins) ---- */
-const ADM={inv:[],mem:[],q:"",loaded:false,busy:false};
+const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false};
 async function admLoad(){
   const {F,db}=await fb();
-  const [i,m]=await Promise.all([F.getDocs(F.collection(db,"invites")),F.getDocs(F.collection(db,"members"))]);
-  ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.loaded=true;render();
+  const [i,m,a]=await Promise.all([F.getDocs(F.collection(db,"invites")),F.getDocs(F.collection(db,"members")),F.getDocs(F.collection(db,"admins")).catch(()=>({docs:[]}))]);
+  ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.loaded=true;render();
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 function cateringHTML(){
   const act=ADM.mem.filter(m=>m.active===true).map(normDiet);if(!act.length)return"";
   const c={};act.forEach(m=>{if(m.diet&&m.diet!=="none")c["d:"+m.diet]=(c["d:"+m.diet]||0)+1;m.intol.forEach(k=>c["i:"+k]=(c["i:"+k]||0)+1)});
   const parts=[...DIETS.filter(d=>c["d:"+d[0]]).map(d=>c["d:"+d[0]]+" "+L(d[1])),...INTOL.filter(i=>c["i:"+i[0]]).map(i=>c["i:"+i[0]]+" "+L(i[1]))];
-  const al=act.filter(m=>String(m.allergies||"").trim()).map(m=>([m.firstName,m.lastName].filter(Boolean).join(" ")||m.email)+": "+m.allergies.trim());
-  return '<div class="cater"><b>Catering</b> · '+act.length+' aktiv · '+act.filter(m=>!m.diet||m.diet==="none").length+' '+esc(L("Ich esse alles"))+(parts.length?'<br>'+esc(parts.join(" · ")):'')+(al.length?'<br><span>'+esc(L("Allergien"))+': '+esc(al.join(" · "))+'</span>':'')+'</div>';
+  const al=act.filter(m=>String(m.allergies||"").trim()).map(m=>([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email)+": "+m.allergies.trim());
+  return '<div class="cater"><b>Catering</b> · '+act.length+' '+esc(L("aktiv"))+' · '+act.filter(m=>!m.diet||m.diet==="none").length+' '+esc(L("Ich esse alles"))+(parts.length?'<br>'+esc(parts.join(" · ")):'')+(al.length?'<br><span>'+esc(L("Allergien"))+': '+esc(al.join(" · "))+'</span>':'')+'</div>';
 }
 VIEWS.admin=function(){
   if(!isAdmin())return '<div class="empty">'+L("Kein Zugang")+'</div>';
@@ -1381,21 +1414,31 @@ VIEWS.admin=function(){
   const st=r=>r.m?(r.m.active===true?'<span class="ust ok">aktiv</span>':'<span class="ust off">gesperrt</span>'):'<span class="ust wait">eingeladen</span>';
   const site=location.origin+location.pathname;
   const mail=r=>"mailto:"+encodeURIComponent(r.email)+"?subject="+encodeURIComponent("TSCHUGGER Tigerblood – Crew-App")+"&body="+encodeURIComponent("Hallo"+(r.name?" "+r.name.split(" ")[0]:"")+"\n\nDu bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet:\n"+site+"\n\nBeim ersten Mal auf «Erstes Mal hier? Konto erstellen» tippen, mit dieser Adresse ("+r.email+") ein eigenes Passwort wählen und die Bestätigungsmail antippen.\n\nBis bald im Wallis!");
+  const own=isOwner();const isAdm=e=>ADMINS.includes(e)||ADM.adm.includes(e);
+  const admSec=own?'<div class="admins"><h3>Administratoren</h3><p class="ahint">Administratoren können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du.</p>'+
+    '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">Haupt-Admin</span></div>'+
+    ADM.adm.slice().sort().map(e=>'<div class="arow"><span>'+esc(nm(memBy[e])||e)+(nm(memBy[e])?' <small>'+esc(e)+'</small>':'')+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">Entfernen</button></div>').join("")+
+    '<form class="aform" data-adm="addadmin"><input name="em" type="email" placeholder="E-Mail-Adresse neuer Admin" required><button type="submit">Als Admin hinzufügen</button></form></div>':'';
   let h='<section class="adm"><h2 class="dh">Benutzer verwalten</h2><p class="ahint">Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.</p>'+
+    admSec+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="E-Mail-Adresse" required><input name="nm" type="text" placeholder="Name (optional)"><button type="submit">Einladen</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">Alle '+newCrew.length+' Adressen aus der Crewliste einladen</button>':'')+
-    cateringHTML()+
     '<div class="astats">'+rows.length+' Benutzer · '+rows.filter(r=>r.m&&r.m.active===true).length+' aktiv · '+rows.filter(r=>!r.m).length+' noch nicht registriert</div>'+
     '<input class="search" id="aq" type="search" placeholder="Benutzer suchen" value="'+esc(ADM.q)+'">'+
-    '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+(r.m&&r.m.birthday?'<span>*'+esc(fmtDate(r.m.birthday).slice(3))+'</span>':'')+'</div>'+(dietText(r.m)?'<div class="ct diet"><span>'+esc(dietText(r.m))+'</span></div>':'')+'<div class="aacts">'+
+    '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">Admin</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div><div class="aacts">'+
       (!r.m?'<a href="'+mail(r)+'">Einladungsmail</a>':'')+
-      (r.m?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">Sperren</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">Entsperren</button>'):'')+
-      (r.m?'<button data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">Entfernen</button>':(r.inv?'<button data-adm="uninvite" data-em="'+esc(r.email)+'">Einladung löschen</button>':''))+
+      (own&&!ADMINS.includes(r.email)?(ADM.adm.includes(r.email)?'<button data-adm="rmadmin" data-em="'+esc(r.email)+'">Admin entfernen</button>':'<button data-adm="mkadmin" data-em="'+esc(r.email)+'">Zum Admin machen</button>'):'')+
+      (own&&r.m?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">Sperren</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">Entsperren</button>'):'')+
+      (own&&r.m?'<button data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">Entfernen</button>':(r.inv&&!r.m?'<button data-adm="uninvite" data-em="'+esc(r.email)+'">Einladung löschen</button>':''))+
       '</div></div>').join("")+'</div></section>';
   return h;
 };
 document.addEventListener("input",e=>{if(e.target.id==="aq"){ADM.q=e.target.value;const p=e.target.selectionStart;render();const i=$("#aq");if(i){i.focus();i.setSelectionRange(p,p)}}});
 document.addEventListener("submit",async e=>{
+  const fa=e.target.closest('[data-adm="addadmin"]');
+  if(fa){e.preventDefault();if(!isOwner())return;const em=lc(fa.em.value);if(!/@/.test(em))return;
+    try{const {F,db}=await fb();await F.setDoc(F.doc(db,"admins",em),{addedAt:F.serverTimestamp()});if(!ADM.inv.some(i=>i.id===em)&&!ADM.mem.some(m=>m.email===em)){const cp=crewPerson(em);await F.setDoc(F.doc(db,"invites",em),{name:(cp&&cp.name)||"",addedAt:F.serverTimestamp()})}showMsg(em+" ist jetzt Admin.",3000);await admLoad()}catch(err){showMsg("Fehler: "+(err.message||err),6000)}
+    return}
   const f=e.target.closest('[data-adm="add"]');if(!f)return;e.preventDefault();
   const em=lc(f.em.value),nm=f.nm.value.trim();if(!/@/.test(em))return;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"invites",em),{name:nm,addedAt:F.serverTimestamp()});showMsg(em+" eingeladen.",3000);await admLoad()}catch(err){showMsg("Fehler: "+(err.message||err),6000)}
@@ -1411,17 +1454,49 @@ document.addEventListener("click",async e=>{
     else if(a==="block"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:false});showMsg("Gesperrt.",3000)}
     else if(a==="unblock"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:true});showMsg("Entsperrt.",3000)}
     else if(a==="remove"){if(confirmSafe(b.dataset.em+" entfernen? Die Person kommt danach nicht mehr in die App.")){await F.deleteDoc(F.doc(db,"invites",b.dataset.em)).catch(()=>{});await F.deleteDoc(F.doc(db,"members",b.dataset.uid));showMsg("Entfernt.",3000)}}
+    else if(a==="mkadmin"&&isOwner()){await F.setDoc(F.doc(db,"admins",b.dataset.em),{addedAt:F.serverTimestamp()});showMsg(b.dataset.em+" ist jetzt Admin.",3000)}
+    else if(a==="rmadmin"&&isOwner()){if(confirmSafe(b.dataset.em+" die Admin-Rechte entziehen?")){await F.deleteDoc(F.doc(db,"admins",b.dataset.em));showMsg("Admin-Rechte entzogen.",3000)}}
     else if(a==="uninvite"){await F.deleteDoc(F.doc(db,"invites",b.dataset.em));showMsg("Einladung gelöscht.",3000)}
     await admLoad();
   }catch(err){console.error(err);showMsg("Fehler: "+(err.message||err),6000)}
   ADM.busy=false;
 });
 /* Crew tab: admins see food preferences next to each person (matched by e-mail) */
+/* Crew tab (admins only): toggles for food preferences and birthdays */
+const ADMV={food:false,bday:false,bcal:false};try{for(const k in ADMV)ADMV[k]=localStorage.getItem(k)==="1"}catch(_){}
+const ensureAdm=()=>{if(!ADM.loaded&&!ADM.busy&&!ADM.loading){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}};
+const bdShort=iso=>{const m=/^\d{4}-(\d\d)-(\d\d)$/.exec(iso||"");return m?m[2]+"."+m[1]+".":""};
+function bdayHTML(){
+  const ds=S.days.map(d=>d.date).filter(Boolean).sort();if(!ds.length)return"";
+  const name=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
+  const by={};ADM.mem.filter(m=>m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||"")).forEach(m=>(by[m.birthday.slice(5)]=by[m.birthday.slice(5)]||[]).push(m));
+  const start=new Date(ds[0]+"T12:00:00"),end=new Date(ds[ds.length-1]+"T12:00:00");
+  const g=new Date(start);g.setDate(g.getDate()-((g.getDay()+6)%7));
+  const wd=[1,2,3,4,5,6,0].map(i=>WD[i]);
+  let h='<div class="bcal"><b>'+esc(L("Geburtstage während des Drehs"))+'</b><div class="bgrid">'+wd.map(w=>'<span class="bw">'+esc(w)+'</span>').join("");
+  const list=[];
+  for(const d=new Date(g);d<=end||d.getDay()!==1;d.setDate(d.getDate()+1)){
+    const md=pad2(d.getMonth()+1)+"-"+pad2(d.getDate()),inR=d>=start&&d<=end,hit=inR&&by[md];
+    if(hit)list.push([new Date(d),by[md]]);
+    h+='<span class="bd'+(inR?"":" out")+(hit?" hit":"")+'">'+pad2(d.getDate())+'.'+pad2(d.getMonth()+1)+(hit?'<i>'+hit.length+'</i>':'')+'</span>';
+  }
+  h+='</div>'+(list.length?list.map(([d,ms])=>'<div class="bl"><span>'+esc(WD[d.getDay()]+" "+pad2(d.getDate())+"."+pad2(d.getMonth()+1)+".")+'</span><b>'+ms.map(m=>esc(name(m))).join(", ")+'</b></div>').join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>')+'</div>';
+  return h;
+}
+const ICO={bcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13.5c-.7-.7-.7-1.6 0-2.3.7.7.7 1.6 0 2.3zM12 14v3"/>',food:'<path d="M7 2v8M4 2v5a3 3 0 0 0 6 0V2M7 10v12M17 2c-2 1.5-3 4-3 7h3v13"/>',bday:'<path d="M4 21h16M5 21v-8h14v8M12 13V9M12 6.5c-1-1-1-2.5 0-3.5 1 1 1 2.5 0 3.5zM5 16c2.3 1.5 4.7 1.5 7 0s4.7-1.5 7 0"/>'};
+const togBtn=(k,t)=>'<button type="button" class="foodtog" data-admv="'+k+'" aria-pressed="'+ADMV[k]+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICO[k]+'</svg>'+L(t)+'</button>';
+window.crewHead=function(){
+  if(!isAdmin())return"";
+  if(ADMV.food||ADMV.bday||ADMV.bcal)ensureAdm();
+  return '<div class="admv">'+togBtn("food","Essen")+togBtn("bday","Geburtstage")+togBtn("bcal","Kalender")+'</div>'+(ADM.loaded?(ADMV.bcal?bdayHTML():"")+(ADMV.food?cateringHTML():""):"");
+};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];try{localStorage.setItem(k,ADMV[k]?"1":"0")}catch(_){}render()});
 window.crewExtra=function(p){
-  if(!isAdmin()||!p||!p.email)return"";
-  if(!ADM.loaded){if(!ADM.busy&&!ADM.loading){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}return""}
-  const m=ADM.mem.find(x=>x.email===lc(p.email));const t=dietText(m);
-  return t?'<div class="ct diet"><span>'+esc(t)+'</span></div>':"";
+  if(!isAdmin()||!(ADMV.food||ADMV.bday)||!p||!p.email)return"";
+  if(!ADM.loaded){ensureAdm();return""}
+  const m=ADM.mem.find(x=>x.email===lc(p.email));if(!m)return"";
+  const t=ADMV.food?dietText(m):"",b=ADMV.bday?bdShort(m.birthday):"";
+  return (b?'<div class="ct bday"><span>'+esc(L("Geburtstag"))+' '+esc(b)+'</span></div>':'')+(t?'<div class="ct diet"><span>'+esc(t)+'</span></div>':'');
 };
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 

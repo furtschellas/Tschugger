@@ -469,6 +469,7 @@ function renderCrew(){
   if(!S.crew.length)return emptyHTML("Crewliste");
   const q=S.q.trim().toLowerCase();
   let h='<input class="search" id="q" type="search" placeholder="'+L("Crew suchen")+'" value="'+esc(S.q)+'" aria-label="Crew durchsuchen">';
+  if(typeof window.crewHead==="function")h+=window.crewHead();
   let n=0;
   for(const g of S.crew){
     const ppl=(g.people||[]).filter(p=>!q||[p.name,p.role,TX(p,"role"),g.dept,TX(g,"dept")].join(" ").toLowerCase().includes(q));
