@@ -541,7 +541,7 @@ html[data-theme="light"] .a2box{box-shadow:0 18px 50px -20px rgba(26,22,34,.35)}
 .calbtn:active,.pvbtn:active,.refresh:active{transform:scale(.94)}
 html[data-theme="light"] .ppi,html[data-theme="light"] .mci{background:#fff}
 .a2box{position:relative}.a2box>.xclose{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:2}.a2box>.xclose:hover{border-color:var(--accent);color:var(--accent)}.a2box>h3{padding-right:42px}
-.fpls{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.fpl{font-size:12.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--rule);color:var(--ink);text-decoration:none;background:transparent}.fpl:hover{border-color:var(--accent);color:var(--accent)}.fpl.blk{color:#e0457b;border-color:transparent;padding:3px 4px;display:inline-flex;align-items:center}.fpl.blk:hover{color:#c2185b;border-color:transparent}.fpl.scp{padding:3px 16px;min-width:56px;text-align:center;font-variant-numeric:tabular-nums;border-color:#e0457b66}.fpl.scp:hover{border-color:#e0457b;color:#c2185b}
+.fpls{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.fpl{font-size:12.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--rule);color:var(--ink);text-decoration:none;background:transparent}.fpl:hover{border-color:var(--accent);color:var(--accent)}.fpl.blk{color:#e0457b;border-color:transparent;padding:3px 4px;display:inline-flex;align-items:center}.fpl.blk:hover{color:#c2185b;border-color:transparent}.fpl.scp{padding:3px 11px;min-width:0;width:auto;white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums;border-color:#e0457b66}.fpl.scp:hover{border-color:#e0457b;color:#c2185b}
 </style>
 
 <div class="wrap">
@@ -829,7 +829,7 @@ function ppMail(key){
 }
 /* ---------- «Meine Termine»: every event of all documents (shooting schedule, callsheets, weekly schedule, transport) the signed-in person takes part in ---------- */
 const NOSET=/^(postprod|verleih|buchhalt|autor|casting)/i;
-const myAdmin=()=>{try{return typeof isAdmin!=="function"||isAdmin()}catch(_){return false}};
+const myAdmin=()=>{try{return typeof window.canPerm!=="function"||window.canPerm("mycal.all")}catch(_){return false}};
 function myIdentity(){
   const people=mailPeople();let nm="",em="";
   try{if(typeof ME!=="undefined"&&ME&&ME.email)em=String(ME.email).toLowerCase()}catch(_){}
@@ -1364,7 +1364,7 @@ function fitRows(root){
 }
 window.addEventListener("resize",()=>{clearTimeout(window.__fitT);window.__fitT=setTimeout(()=>{fitRows();const sc=document.getElementById("scn");if(sc)fitRows(sc)},120)});
 function render(){
-  {const ae=document.activeElement;if(ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)&&ae.closest(".acpage,form.aedit"))return} /* never wipe a form someone is typing in */
+  {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form"))return} /* never wipe a form someone is typing in */
   const tOn=tabsOn();if(!VIEWS[S.tab]||(ALLTABS.includes(S.tab)&&!tOn.includes(S.tab)))S.tab=tOn[0];
   const nb=document.querySelectorAll("nav.tabs button[data-tab]");nb.forEach(b=>{b.hidden=!tOn.includes(b.dataset.tab);b.style.order=String(tOn.indexOf(b.dataset.tab))});
   const nin=document.querySelector("nav.tabs .in");if(nin)nin.style.setProperty("--ntabs",tOn.length);
@@ -1386,6 +1386,7 @@ function render(){
   try{renderHeader()}catch(err){console.error(err)}
   for(const [id,t] of [["myCalBtn","my"],["acctBtn","acct"],["admBtn","admin"]]){const hb=document.getElementById(id);if(hb){hb.classList.toggle("on",S.tab===t);hb.setAttribute("aria-current",S.tab===t?"page":"false")}}
   try{pvApply();fitRows(v)}catch(_){}
+  saveView();
 }
 
 /* ---------- interaction (one delegated click handler) ---------- */
@@ -1394,7 +1395,15 @@ function setOpen(btn,open){
   const c=btn.closest(".scd");if(!c)return;c.classList.toggle("open",open);const body=c.querySelector(".scb");if(body)body.hidden=!open;
 }
 function scallLabel(){const b=document.getElementById("scall");if(!b)return;const ks=[...document.querySelectorAll("[data-sckey]")].map(x=>x.dataset.sckey);const all=ks.length>0&&ks.every(k=>S.openSc[k]);b.setAttribute("aria-expanded",all);b.classList.toggle("on",all)}
-function goTab(tab){S.tab=tab;S.srcOpen=false;if(tab==="plan"){S.day=null}if(tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
+/* tapping the tab you are already on jumps back to today; switching tabs keeps the last chosen day */
+function goTab(tab){const again=S.tab===tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;if(again&&tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
+/* last chosen day (Schedule, Callsheet), page and open scenes are remembered; after 2 hours without use or a new sign-in it starts at today again */
+const VS_TTL=2*3600*1000;let VS_AT=Date.now();
+try{const v=JSON.parse(localStorage.getItem("viewstate")||"null");if(v&&Date.now()-(+v.at||0)<VS_TTL){if(v.day)S.day=v.day;if(v.dday)S.dday=v.dday;if(v.openSc&&typeof v.openSc==="object")S.openSc=v.openSc;if(v.tab)S.tab=v.tab;VS_AT=+v.at}}catch(_){}
+document.addEventListener("pointerdown",()=>{VS_AT=Date.now()},true);document.addEventListener("keydown",()=>{VS_AT=Date.now()},true);
+function saveView(){try{localStorage.setItem("viewstate",JSON.stringify({at:VS_AT,tab:S.tab,day:S.day,dday:S.dday,openSc:S.openSc}))}catch(_){}}
+window.resetViewState=()=>{try{localStorage.removeItem("viewstate")}catch(_){}S.day=null;S.dday=null;S.openSc={}};
+window.addEventListener("pagehide",saveView);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveView();else if(Date.now()-VS_AT>VS_TTL){S.day=null;S.dday=null;VS_AT=Date.now();render()}});
 function store(k,v){try{localStorage.setItem(k,v)}catch(_){}}
 /* ---------- screenplay: tapping a scene description shows that scene from the script (original text, not translated) ---------- */
 let SCRIPT=null,SCRIPTP=null;
