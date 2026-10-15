@@ -53,3 +53,9 @@
 .acbox select{border-radius:8px;background:var(--paper);padding:10px 12px}
 .gbox input[type=date],.acbox input[type=date]{min-height:46px}
 .ct.diet span{color:var(--gold);font-size:13px}
+.chk{display:grid;grid-template-columns:1fr;gap:6px;margin:2px 0 4px}
+.ck{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;font-size:15px!important;color:var(--ink)!important;text-transform:none!important;letter-spacing:0!important;font-family:var(--f-body)!important}
+.ck input{width:20px;height:20px;accent-color:var(--accent);margin:0}
+.cater{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:14px;line-height:1.5}
+.cater span{color:var(--gold)}
+#acct input.ro{background:transparent;border-style:dashed;color:var(--ink);opacity:.85}
