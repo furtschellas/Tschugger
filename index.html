@@ -510,8 +510,13 @@ const pad2=n=>String(n).padStart(2,"0");
 const fmtDate=iso=>{const d=new Date(iso+"T12:00:00");return WD[d.getDay()]+" "+pad2(d.getDate())+"."+pad2(d.getMonth()+1)+"."+d.getFullYear()};
 /* Maps search: abbreviations written out only in the link ("Rte" → "Route"), the address shown stays as in the list */
 /* a link stored on the address in the location list (field "map") wins over a generated search link */
-const locMapIndex=()=>memo("locmap",()=>{const m=new Map();for(const l of S.locs){if(!/^https:\/\//.test(l.map||""))continue;for(const k of [[l.venue,l.address].filter(Boolean).join(", "),l.address])if(k)m.set(norm(k),l.map)}return m});
+const locMapIndex=()=>memo("locmap",()=>{const m=new Map();for(const l of S.locs){if(!/^https:\/\//.test(l.map||""))continue;for(const k of [[l.venue,l.address].filter(Boolean).join(", "),l.venue?"":l.address])if(k&&!m.has(norm(k)))m.set(norm(k),l.map)}return m});
+/* scene number → location row with its own map link (used for the scene-5 cards, whose addresses come from the schedule) */
+const sceneMap=()=>memo("scmap",()=>{const m=new Map();for(const l of S.locs){if(!/^https:\/\//.test(l.map||""))continue;for(const st of (l.sets||[]))for(const w of (st.scenes||[]))if(!m.has(norm(w)))m.set(norm(w),l.map)}return m});
+const partsHref=(ps,ad)=>{const m=sceneMap();for(const p of ps){const u=m.get(norm(p.it.sc||""));if(u)return u}return maps(ad)};
 const maps=q=>locMapIndex().get(norm(q))||mapsSearch(q);
+/* a location's own link first (two motifs can share an address but have different pins) */
+const locHref=(l,ad)=>(l&&/^https:\/\//.test(l.map||""))?l.map:maps(ad);
 const mapsSearch=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
 const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};
 const norm=s=>String(s).toLowerCase().replace(/\s+/g,"");
@@ -767,12 +772,12 @@ function s5Card(g0){
   const tc=x=>String(x).toLowerCase().replace(/(^|[\s–\-\/])(\p{L})/gu,(m,a,c)=>a+c.toUpperCase());
   const motName=ps=>[...new Set(ps.map(p=>tc(String(p.it.set||"").replace(/^VALAIS – /,""))))].join(" / ");
   const li=p=>'<li><b>'+esc(p.it.sc)+'</b><button class="pd" data-goto="'+esc(p.d.id)+'">'+esc(p.d.short||p.d.label)+' '+fmtDate(p.d.date).slice(3,-5)+'.'+(p.u!=="1"?'<i>'+p.u+'U</i>':'')+'</button><span class="ie '+ieClass(p.it.ie)+'">'+esc(p.it.ie||"")+'</span><span class="pdesc">'+esc(TX(p.it,"d"))+'</span></li>';
-  const body='<div class="mot">'+al.map(([ad,ps])=>'<div><b>'+esc(motName(ps))+'</b><span class="addr" style="font-size:13px">'+esc(ad)+' · <a href="'+maps(ad)+'" target="_blank" rel="noopener">Maps</a></span><ul class="plot">'+ps.map(li).join("")+'</ul></div>').join("")+'</div>';
+  const body='<div class="mot">'+al.map(([ad,ps])=>'<div><b>'+esc(motName(ps))+'</b><span class="addr" style="font-size:13px">'+esc(ad)+' · <a href="'+esc(partsHref(ps,ad))+'" target="_blank" rel="noopener">Maps</a></span><ul class="plot">'+ps.map(li).join("")+'</ul></div>').join("")+'</div>';
   const days=[...new Map(g.parts.map(p=>[p.d.id,p.d])).values()].sort((x,y)=>x.date<y.date?-1:1).map(d=>d.short||d.label).join(" · ");
   const n=g.parts.length;
   const head='<h4>'+esc(g.title)+unitBadges(g0.parts.map(p=>p.u))+'</h4><span class="lcm">'+(al.length>1?al.length+' '+L('Motive')+' · ':'')+n+' '+(n===1?L('Szene'):L('Szenen'))+(days?' · '+esc(days):'')+'</span>';
   const one=al.length===1?al[0][0]:null;
-  const top='<div class="adl"><div><span class="addr">'+esc(one||'3970 Salgesch · '+al.length+' '+L('Adressen im Dorf'))+'</span> <a href="'+maps(one||"3970 Salgesch")+'" target="_blank" rel="noopener">Maps</a></div></div>';
+  const top='<div class="adl"><div><span class="addr">'+esc(one||'3970 Salgesch · '+al.length+' '+L('Adressen im Dorf'))+'</span> <a href="'+esc(one?partsHref(al[0][1],one):maps("3970 Salgesch"))+'" target="_blank" rel="noopener">Maps</a></div></div>';
   return cardWrap("card:"+(g.key==="szene-5"?"s5":g.key),head,top,body);
 }
 /* every scene with a synopsis, first occurrence only, in schedule order */
@@ -811,8 +816,8 @@ function locCard(g0){
   const dlist=[...new Map(sceneTexts(allSc).map(x=>[x.d.id,x.d])).values()].sort((a,b)=>a.date<b.date?-1:1).map(d=>d.short||d.label).join(" · ");
   const head='<h4>'+esc(g.title)+unitBadges(rawUnits(g0.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))))+'</h4><span class="lcm">'+(multi?g.items.length+' '+L('Motive')+' · ':'')+nSc+' '+(nSc===1?L('Szene'):L('Szenen'))+(dlist?' · '+esc(dlist):'')+'</span>';
   const addrHTML=g.mixed
-    ?'<div class="adl">'+g.items.map(l=>{const ad=[l.venue,l.address].filter(Boolean).join(", ");return '<div><span class="addr">'+esc(ad)+'</span> <a href="'+maps(ad)+'" target="_blank" rel="noopener">Maps</a></div>'}).join("")+'</div>'
-    :(addr.length?'<div class="adl"><div><span class="addr">'+esc(addr.join(", "))+'</span> <a href="'+maps(addr.join(", "))+'" target="_blank" rel="noopener">Maps</a></div></div>':'<div class="adl"><div><span class="addr">'+L('Ort: TBA')+'</span></div></div>');
+    ?'<div class="adl">'+g.items.map(l=>{const ad=[l.venue,l.address].filter(Boolean).join(", ");return '<div><span class="addr">'+esc(ad)+'</span> <a href="'+esc(locHref(l,ad))+'" target="_blank" rel="noopener">Maps</a></div>'}).join("")+'</div>'
+    :(addr.length?'<div class="adl"><div><span class="addr">'+esc(addr.join(", "))+'</span> <a href="'+esc(locHref(g.items.find(l=>/^https:/.test(l.map||""))||g.items[0],addr.join(", ")))+'" target="_blank" rel="noopener">Maps</a></div></div>':g.items.some(l=>/^https:/.test(l.map||""))?'<div class="adl"><div><span class="addr">'+L('Ort: TBA')+'</span> <a href="'+esc(g.items.find(l=>/^https:/.test(l.map||"")).map)+'" target="_blank" rel="noopener">Maps</a></div></div>':'<div class="adl"><div><span class="addr">'+L('Ort: TBA')+'</span></div></div>');
   return cardWrap("card:"+g.key,head,addrHTML,body);
 }
 function renderLoc(){
@@ -1739,7 +1744,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="790716193c";
+const APP_VER="2c1644d9d5";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
