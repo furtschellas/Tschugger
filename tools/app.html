@@ -1299,7 +1299,7 @@ function setOpen(btn,open){
   const c=btn.closest(".scd");if(!c)return;c.classList.toggle("open",open);const body=c.querySelector(".scb");if(body)body.hidden=!open;
 }
 function scallLabel(){const b=document.getElementById("scall");if(!b)return;const ks=[...document.querySelectorAll("[data-sckey]")].map(x=>x.dataset.sckey);const all=ks.length>0&&ks.every(k=>S.openSc[k]);b.setAttribute("aria-expanded",all);b.classList.toggle("on",all)}
-function goTab(tab){S.tab=tab;if(tab==="plan"){S.day=null}if(tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
+function goTab(tab){S.tab=tab;S.srcOpen=false;if(tab==="plan"){S.day=null}if(tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
 function store(k,v){try{localStorage.setItem(k,v)}catch(_){}}
 /* ---------- screenplay: tapping a scene description shows that scene from the script (original text, not translated) ---------- */
 let SCRIPT=null,SCRIPTP=null;
