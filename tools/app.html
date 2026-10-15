@@ -75,6 +75,7 @@ body.no-u2 .pub,body.no-u2 button.uf{display:none!important}
 .chip.free .dd,.chip.free .lb,.chip.free .cw{color:#a9c8ff}
 .dsub{color:var(--muted);font-size:14px;margin-top:2px}.chip.pre{border-style:dashed}.chip.pre .lb{letter-spacing:.04em}
 .ppday{margin:10px 0 14px}.ppd{font-size:15px;margin:0 0 6px;color:var(--accent)}.pplist{display:flex;flex-direction:column;gap:6px}.ppi{display:flex;gap:10px;padding:8px 10px;border:1px solid var(--rule);border-radius:10px}.ppt{min-width:84px;font-variant-numeric:tabular-nums;font-weight:600}.ppn{font-weight:600}.ppw,.ppl,.ppx{font-size:13px;color:var(--muted);margin-top:2px}.ppi.hl .ppn{color:var(--accent)}.pph{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 6px}.pphot{font-size:13px;margin-bottom:6px;display:grid;gap:4px}.pphot .ppl{display:inline}.ppa{font-weight:400;color:var(--muted);font-size:12px}.ppsrc{font-size:12px;color:var(--muted);margin-top:10px}details.src>summary{list-style:none;cursor:pointer}details.src>summary::-webkit-details-marker{display:none}details.src>summary h4{display:inline}details.src>summary::before{content:"▸ ";color:var(--muted)}details.src[open]>summary::before{content:"▾ "}
+.wkemb{margin-top:26px;padding-top:14px;border-top:2px dashed var(--rule)}.wkh{margin:0;font-family:var(--f-display);font-size:18px;letter-spacing:.04em;text-transform:uppercase}
 .ppi{position:relative}.ppgrp{border-left:3px solid var(--accent);padding-left:8px;display:flex;flex-direction:column;gap:6px}.ppgh .ppl{font-size:13px;font-weight:600;color:var(--ink);margin:0 0 2px}.ppgh .ppl::before{content:"📍 "}.ppi .calbtn{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;border:1px solid var(--rule);background:transparent;color:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.ppi .calbtn:active{transform:scale(.94)}.ppi .mailbtn{top:48px}.ppi:has(.calbtn) .ppb{padding-right:38px}.ppi:has(.mailbtn){min-height:90px}
 .ppparts{margin-top:4px;font-size:13px}.ppparts summary{cursor:pointer;color:var(--muted);font-weight:600;list-style:none}.ppparts summary::-webkit-details-marker{display:none}.ppparts summary::before{content:"▸ "}.ppparts[open] summary::before{content:"▾ "}.pprow{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:baseline;margin-top:6px;line-height:1.5}.pprow b{font-size:12px;color:var(--muted);margin-right:2px}.ppc{font:inherit;font-size:13px;padding:0;border:0;background:none;color:var(--muted)}.ppc:not(:last-child)::after{content:",";color:var(--muted);display:inline-block;text-decoration:none}.ppc.link{color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px;cursor:pointer}.ppc.grp{font-style:italic}.ppcl{display:flex;flex-direction:column;gap:8px;margin:12px 0}.ppcl .gbtn{display:block;text-align:center;text-decoration:none;padding:11px 14px;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;word-break:break-all}.ppcl .gbtn.sec{background:transparent;border:1px solid var(--rule);color:var(--ink)}
 #mailbox .mbox{max-height:85vh;overflow:auto;width:100%;max-width:520px}#mailbox .mbt{margin:4px 0 8px}#mailbox .mbg{font-size:12px;color:var(--muted)}.mbl{display:flex;flex-direction:column;gap:4px;margin:8px 0}.mbr{display:flex;justify-content:space-between;gap:8px;font-size:13px;border-bottom:1px solid var(--rule);padding:5px 0;flex-wrap:wrap}.mbr small{color:var(--muted)}.mbr a{color:var(--accent);word-break:break-all}.mbmiss{margin:10px 0;padding:8px 10px;border:1px solid #e5484d;border-radius:10px;font-size:13px}.mbmiss b{color:#e5484d}.mbmiss.nm{border-color:#e0a43a}.mbmiss.nm b{color:#e0a43a}.mbmiss ul{margin:6px 0 0;padding-left:18px}
@@ -817,14 +818,15 @@ function addToCalendar(key){
   try{const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
   catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}
 }
-function renderPrePro(one){PPPEOPLE=null;
+function renderPrePro(one,embedded){PPPEOPLE=null;
   /* admins: also use the app's user database (people not on the crew list); loads once, then re-renders */
   try{if(typeof isAdmin==="function"&&isAdmin()&&typeof ADM!=="undefined"&&!ADM.loaded&&typeof ensureAdm==="function")ensureAdm()}catch(_){}
   const first=S.days.find(d=>d.kind==="shoot"),pm=(S.meta&&S.meta.prepro)||{};
-  let h='<div class="dayhead"><div><div class="dtitle"><h2>Prep</h2><span class="pvb"><button class="pvbtn" data-ppo aria-pressed="'+!!S.ppo+'" aria-label="'+esc(L("Teilnehmende ein-/ausblenden"))+'" title="'+esc(L("Teilnehmende ein-/ausblenden"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.8.2 5 2 5 4.9"/></svg></button></span></div></div></div>';
+  const ppoBtn='<span class="pvb"><button class="pvbtn" data-ppo aria-pressed="'+!!S.ppo+'" aria-label="'+esc(L("Teilnehmende ein-/ausblenden"))+'" title="'+esc(L("Teilnehmende ein-/ausblenden"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.8.2 5 2 5 4.9"/></svg></button></span>';
+  let h=embedded?'<section class="wkemb"><div class="dtitle"><h3 class="wkh">Weekly Schedule</h3>'+ppoBtn+'</div>':'<div class="dayhead"><div><div class="dtitle"><h2>Prep</h2>'+ppoBtn+'</div></div></div>';
   if(S.prepro.length){
     for(const d of (one?[one]:S.prepro)){const dt=new Date(d.date+"T12:00:00");
-      h+='<section class="ppday"><h3 class="ppd">'+WDL(dt)+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'.'+(d.label?' · '+esc(TX(d,"label")):'')+'</h3>'+
+      h+='<section class="ppday">'+(embedded?'':'<h3 class="ppd">'+WDL(dt)+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'.'+(d.label?' · '+esc(TX(d,"label")):'')+'</h3>')+
         (TXA(d,"notes").length?'<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>':'')+ppItems(d.items,d.date,'i');
       if(arr(d.parallel).length)h+='<h4 class="pph">'+L("Parallel")+'</h4>'+ppItems(arr(d.parallel),d.date,'p');
       const tr=d.transport;
@@ -834,6 +836,7 @@ function renderPrePro(one){PPPEOPLE=null;
     const pl=(lbl,o)=>o?'<div class="ppi"><div class="ppt">'+esc(lbl)+'</div><div class="ppb"><div class="ppn">'+esc(o.name||"")+'</div>'+ppWhere(o.address,o.map)+'</div></div>':'';
     if(false&&(pm.base||arr(pm.hotels).length))h+='<section class="ppday"><h4 class="pph">'+L("Basis & Unterkünfte")+'</h4><div class="pplist">'+pl("Base",pm.base)+arr(pm.hotels).map(x=>pl(x.who||"Hotel",x)).join("")+'</div></section>';
     if(false&&arr(pm.contacts).length)h+='<section class="ppday"><h4 class="pph">'+L("Kontakte")+'</h4><div class="pplist">'+arr(pm.contacts).map(c=>'<div class="ppi"><div class="ppt">'+esc(c.role||"")+'</div><div class="ppb"><div class="ppn">'+esc(c.name||"")+'</div>'+(c.phone?'<div class="ppw"><a href="tel:'+esc(String(c.phone).replace(/[^\d+]/g,""))+'">'+esc(c.phone)+'</a></div>':'')+'</div></div>').join("")+'</div></section>';
+    if(embedded){if(pm.source)h+='<p class="ppsrc">'+L("Quelle")+': '+esc(pm.source)+(pm.issued?' · '+L("Stand")+' '+esc(pm.issued):'')+'</p>';return h+'</section>'}
     if(pm.company)h+='<p class="ppsrc"><b>'+esc(pm.company.name||"")+'</b> · '+esc(pm.company.address||"")+'</p>';
     if(pm.distribution)h+='<details class="ppdist"><summary>'+L("Verteiler")+'</summary><p>'+esc(pm.distribution)+'</p></details>';
     if(pm.note)h+='<p class="ppsrc">'+esc(TX(pm,"note"))+'</p>';
@@ -851,7 +854,9 @@ function renderPlan(){
   const PD=planDays();
   const t=todayISO();
   /* one PREP button per prep day from today on; past prep days disappear */
-  const PP=S.prepro.filter(d=>d.date>=t);
+  /* weekly-schedule days that fall on a shooting day get no PREP button; they appear below that day's schedule */
+  const shootDates=new Set(S.days.filter(d=>d.kind==="shoot").map(d=>d.date));
+  const PP=S.prepro.filter(d=>d.date>=t&&!shootDates.has(d.date));
   /* prep days without any programme (only "Rest") are shown as OFF and cannot be selected */
   const ppOff=d=>d.off===true||!d.items.length||d.items.every(i=>/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n||"").trim()));
   const PPA=PP.filter(d=>!ppOff(d));
@@ -895,6 +900,7 @@ function renderPlan(){
       h+='<ol class="tl">'+x.items.map(itemHTML).join("")+'</ol>';
     }else if(!shown.length)h+='<div class="empty">'+L('Keine '+UNAME[u]+' Unit an diesem Tag.')+'</div>';
   }
+  const wk=S.prepro.find(x=>x.date===d.date);if(wk)h+=renderPrePro(wk,true);
   return h;
 }
 /* vCard 3.0 for one crew member, so it can be added to the phone's contacts */
