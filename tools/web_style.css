@@ -210,3 +210,14 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .arl{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}.arl input{font:inherit;font-size:15px;font-weight:600;padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
 .arolef .perms{display:flex;flex-direction:column;gap:6px}.arolef .perms label{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--ink)}
 .arolef .arb{display:flex;gap:12px;align-items:center}.arolef .arb button[type=submit]{font:inherit;font-weight:600;padding:8px 14px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink,#fff);cursor:pointer}.arolef .arb .lnk{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;font-size:13px}
+.miss{border-color:#e5484d!important;box-shadow:0 0 0 2px color-mix(in srgb,#e5484d 25%,transparent)}
+/* profile (first start dialog and «Mein Konto»): one column on phones, two columns on wider screens; dialog grows with the screen */
+#acct .acbox{max-width:min(760px,94vw);max-height:calc(100dvh - 32px)}
+:is(#acct,.acpage) form[data-af=pf]{display:grid;grid-template-columns:minmax(0,1fr);gap:8px 12px}
+:is(#acct,.acpage) form[data-af=pf]>:is(.pname,.ghint,.chk,.full,button,.amsg){grid-column:1/-1}
+:is(#acct,.acpage) form[data-af=pf] :is(input:not([type=checkbox]),select){width:100%;box-sizing:border-box;min-width:0}
+#acct form[data-af=pf] .chk{display:flex;flex-wrap:wrap;gap:6px}
+#acct form[data-af=pf] .chk label.ck{flex-direction:row;align-items:center;gap:6px;font-size:13px;color:var(--ink);padding:5px 10px;border:1px solid var(--rule);border-radius:99px}
+#acct form[data-af=pf] .chk input{width:auto;padding:0}
+@media (min-width:560px){:is(#acct,.acpage) form[data-af=pf]{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.acpage{max-width:880px}

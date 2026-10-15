@@ -44,11 +44,11 @@ jobs:
       - name: Veröffentlichen
         if: always()
         run: |
-          git add -N status.json 2>/dev/null || true
-          if git diff --quiet -- data.enc.json script.enc.json status.json; then echo "nichts zu veröffentlichen"; exit 0; fi
+          git add -N status.json blk 2>/dev/null || true
+          if git diff --quiet -- data.enc.json script.enc.json status.json blk; then echo "nichts zu veröffentlichen"; exit 0; fi
           git config user.name "Crew-App Aktualisierung"
           git config user.email "actions@users.noreply.github.com"
-          git add data.enc.json script.enc.json status.json
+          git add -A data.enc.json script.enc.json status.json blk
           git commit -q -m "Daten aktualisiert (Dropbox)"
           for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
           exit 1

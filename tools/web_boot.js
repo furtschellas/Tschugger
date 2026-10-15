@@ -107,6 +107,8 @@ Object.assign(I18N,{
  "Geschlecht":{fr:"Genre",it:"Genere",en:"Gender"},
  "bitte wählen":{fr:"choisir",it:"scegli",en:"please choose"},
  "Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln).":{fr:"Pas d'autorisation – publie d'abord les nouvelles règles Firestore (console Firebase → Firestore → Règles).",it:"Nessuna autorizzazione – pubblica prima le nuove regole Firestore (console Firebase → Firestore → Regole).",en:"No permission – please publish the new Firestore rules first (Firebase console → Firestore → Rules)."},
+ "Bitte ausfüllen:":{fr:"À remplir :",it:"Da compilare:",en:"Please fill in:"},
+ "Profil gespeichert. Geschlecht, Telefon und E-Mail konnten noch nicht gespeichert werden – die Produktion muss die neuen App-Regeln aktivieren.":{fr:"Profil enregistré. Genre, téléphone et e-mail n'ont pas encore pu être enregistrés – la production doit activer les nouvelles règles.",it:"Profilo salvato. Genere, telefono ed e-mail non sono ancora stati salvati – la produzione deve attivare le nuove regole.",en:"Profile saved. Gender, phone and email could not be saved yet – the production has to activate the new app rules."},
  "Telefon":{fr:"Téléphone",it:"Telefono",en:"Phone"},
  "Rollen":{fr:"Rôles",it:"Ruoli",en:"Roles"},
  "Rolle":{fr:"Rôle",it:"Ruolo",en:"Role"},
@@ -695,7 +697,9 @@ async function afterSignIn(u){
   try{await load(true)}catch(err){console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),isOffline(err)?6000:15000)}
   await fillNamesFromCrew();
   /* first start, and whenever gender, phone or e-mail is missing: the profile form must be filled in */
-  if(MEMBER&&(!MEMBER.diet||!MEMBER.gender||!String(MEMBER.phone||"").trim()||!String(MEMBER.contactEmail||"").trim()))setTimeout(()=>showAcct(true),400);
+  let partialAt=0;try{partialAt=+localStorage.getItem("profPartial:"+ME.uid)||0}catch(_){}
+  const needExtra=(!MEMBER||!MEMBER.gender||!String(MEMBER.phone||"").trim()||!String(MEMBER.contactEmail||"").trim())&&Date.now()-partialAt>12*3600e3;
+  if(MEMBER&&(!MEMBER.diet||needExtra))setTimeout(()=>showAcct(true),400);
   if(window.__justSignedIn){window.__justSignedIn=false;maybeOfferA2hs(true)}else maybeOfferA2hs(false);
 }
 /* names come from the crew list (matched by e-mail) when the profile has none yet */
@@ -726,7 +730,7 @@ const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password
 let ONBOARD=false;
 /* phone + contact e-mail (required); prefilled from the crew list / sign-in address */
 function contactFields(m,pre){const cp=(typeof crewPerson==="function"&&ME&&crewPerson(lc(ME.email)))||{};pre=pre||"";
-  return '<label>'+L("Telefon")+'<input type="tel" name="'+pre+'ph" autocomplete="tel" inputmode="tel" required pattern="[+0-9 ()/.-]{6,}" placeholder="+41 79 123 45 67" value="'+esc((m&&m.phone)||(!pre&&cp.phone)||"")+'"></label>'+
+  return '<label>'+L("Telefon")+'<input type="tel" name="'+pre+'ph" autocomplete="tel" inputmode="tel" required placeholder="+41 79 123 45 67" value="'+esc((m&&m.phone)||(!pre&&cp.phone)||"")+'"></label>'+
     '<label>'+L("E-Mail")+'<input type="email" name="'+pre+'ce" autocomplete="email" required value="'+esc((m&&m.contactEmail)||(!pre&&ME&&ME.email)||(m&&m.email)||"")+'"></label>';}
 function nameFields(){
   const cn=crewNames();
@@ -736,7 +740,7 @@ function nameFields(){
 const GENDERS=[["m","Männlich"],["w","Weiblich"],["d","Divers"]];
 const genderSel=(n,v,req)=>'<select name="'+n+'"'+(req?' required':'')+'><option value="">–</option>'+GENDERS.map(([k,t])=>'<option value="'+k+'"'+(v===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
 function profileForm(onb){
-  return '<form data-af="pf">'+nameFields()+contactFields(MEMBER)+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Geschlecht")+genderSel("gd",(MEMBER&&MEMBER.gender)||"",true)+'</label><label>'+L("Ernährung")+dietSel("dt",(MEMBER&&MEMBER.diet)?normDiet(MEMBER).diet:"",true)+'</label><label class="full">'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label class="full">'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><button type="submit">'+L(onb?"Weiter":"Speichern")+'</button><p class="amsg" role="alert"></p></form>';
+  return '<form data-af="pf" novalidate>'+nameFields()+contactFields(MEMBER)+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Geschlecht")+genderSel("gd",(MEMBER&&MEMBER.gender)||"",true)+'</label><label>'+L("Ernährung")+dietSel("dt",(MEMBER&&MEMBER.diet)?normDiet(MEMBER).diet:"",true)+'</label><label class="full">'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label class="full">'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form>';
 }
 function acctInner(){
   return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b></p>'+
@@ -773,22 +777,30 @@ async function onAcctClick(e){
   else if(b.dataset.ac==="signout"){s.hidden=true;if(S.tab==="acct")S.tab="plan";const {A,auth}=await fb();await A.signOut(auth)}
 }
 async function onAcctSubmit(e){
-  e.preventDefault();const f=e.target,msg=f.querySelector(".amsg"),btn=f.querySelector("button");btn.disabled=true;msg.className="amsg";msg.textContent="";
+  e.preventDefault();const f=e.target,msg=f.querySelector(".amsg"),btn=f.querySelector("button[type=submit]")||f.querySelector("button");msg.className="amsg";msg.textContent="";
+  /* own check of the required fields with a clear message (the browser's own hint is easy to miss on phones) */
+  if(f.dataset.af==="pf"){const miss=[];f.querySelectorAll(".miss").forEach(x=>x.classList.remove("miss"));
+    f.querySelectorAll("input[required],select[required]").forEach(el=>{const v=String(el.value||"").trim();const bad=!v||(el.type==="email"&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))||(el.type==="tel"&&v.replace(/\D/g,"").length<6);
+      if(bad){el.classList.add("miss");const lb=el.closest("label");miss.push(lb?lb.childNodes[0].textContent.trim():el.name)}});
+    if(miss.length){msg.textContent=L("Bitte ausfüllen:")+" "+miss.join(", ");const first=f.querySelector(".miss");if(first){first.scrollIntoView({block:"center"});try{first.focus()}catch(_){}}return}}
+  btn.disabled=true;
   try{
     const {A,auth,F,db}=await fb();const u=auth.currentUser;
     if(f.dataset.af==="pf"){
       const cn=crewNames();
+      let PARTIAL=false;
       const upd={firstName:cn?cn.firstName:clean(f.fn.value),lastName:cn?cn.lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",gender:f.gd?f.gd.value:"",phone:String(f.ph.value||"").trim().slice(0,40),contactEmail:lc(String(f.ce.value||"").trim()).slice(0,120),diet:f.dt.value,intol:readBoxes(f,"pint"),allergies:String(f.al.value||"").trim().slice(0,200)};
       upd.name=[upd.firstName,upd.lastName].filter(Boolean).join(" ");
       const ref=F.doc(db,"members",u.uid);
       const wr=()=>MEMBER?F.updateDoc(ref,upd):F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
       try{await wr()}catch(err){if(!/permission/.test(err&&err.code||""))throw err;await u.reload().catch(()=>{});await u.getIdToken(true);
-        try{await wr()}catch(e2){if(!/permission/.test(e2&&e2.code||"")||!("gender" in upd))throw e2;delete upd.gender;delete upd.phone;delete upd.contactEmail;await wr()}} /* until the Firestore rules allow «gender», save the rest */
+        try{await wr()}catch(e2){if(!/permission/.test(e2&&e2.code||"")||!("gender" in upd))throw e2;delete upd.gender;delete upd.phone;delete upd.contactEmail;await wr();PARTIAL=true}} /* until the Firestore rules allow «gender», save the rest */
       MEMBER=Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd);
       writeOwnBday(upd.name,upd.birthday);
       if(isAdmin())ADM.loaded=false;
       if(upd.lang!==LANG&&WDS[upd.lang]){LANG=upd.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
-      if(ONBOARD){ONBOARD=false;document.getElementById("acct").hidden=true;showMsg(L("Profil gespeichert."),3000);btn.disabled=false;return}
+      if(PARTIAL){try{localStorage.setItem("profPartial:"+u.uid,String(Date.now()))}catch(_){}console.warn("profile: gender/phone/e-mail not saved – Firestore rules not published yet");showMsg(L("Profil gespeichert. Geschlecht, Telefon und E-Mail konnten noch nicht gespeichert werden – die Produktion muss die neuen App-Regeln aktivieren."),9000)}
+      if(ONBOARD){ONBOARD=false;document.getElementById("acct").hidden=true;if(!PARTIAL)showMsg(L("Profil gespeichert."),3000);btn.disabled=false;return}
       msg.classList.add("ok");msg.textContent=L("Profil gespeichert.");btn.disabled=false;return;
     }
     await A.reauthenticateWithCredential(u,A.EmailAuthProvider.credential(u.email,f.cur.value)).catch(err=>{throw /invalid-credential|wrong-password/.test(err.code||"")?{code:"x",message:L("Aktuelles Passwort falsch.")}:err});
@@ -799,7 +811,7 @@ async function onAcctSubmit(e){
     }else{
       await A.verifyBeforeUpdateEmail(u,f.em.value.trim(),{url:location.origin+location.pathname});msg.classList.add("ok");msg.textContent=L("Bestätigungslink an die neue Adresse gesendet. Die Änderung gilt, sobald du ihn antippst.");f.reset();
     }
-  }catch(err){console.error(err);msg.textContent=err&&err.code==="x"?err.message:(/email-already-in-use/.test(err.code||"")?L("Diese Adresse wird schon verwendet."):errText(err))}
+  }catch(err){console.error(err);msg.textContent=(err&&err.code==="x"?err.message:(/email-already-in-use/.test(err.code||"")?L("Diese Adresse wird schon verwendet."):errText(err)))+(err&&err.code&&err.code!=="x"?" ["+err.code+"]":"")}
   btn.disabled=false;
 }
 /* ---- admin: invitations and members (German only; visible to admins) ---- */
