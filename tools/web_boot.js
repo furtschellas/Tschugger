@@ -40,7 +40,7 @@ Object.assign(I18N,{
  "Anfrage senden":{fr:"Envoyer la demande",it:"Invia richiesta",en:"Send request"},
  "Bitte Vor- und Nachname angeben.":{fr:"Indique ton prénom et ton nom.",it:"Indica nome e cognome.",en:"Please enter your first and last name."},
  "Anfrage gesendet. Du bekommst Zugang, sobald die Produktion sie freigibt – du erhältst dann eine E-Mail, oder tippe hier auf «Aktualisieren».":{fr:"Demande envoyée. Tu auras accès dès que la production l’aura validée – tu recevras alors un e-mail, ou touche « Actualiser » ici.",it:"Richiesta inviata. Avrai accesso appena la produzione la approva – riceverai un’e-mail, oppure tocca «Aggiorna» qui.",en:"Request sent. You get access as soon as the production approves it – you will get an e-mail, or tap “Refresh” here."},
- "Anfragen von Benutzer:innen":{fr:"Demandes d’utilisateur·rices",it:"Richieste utenti",en:"User requests"},
+ "Anfragen von Benutzer:innen":{fr:"Demandes d’utilisateurs",it:"Richieste utenti",en:"User requests"},
  "Keine offenen Anfragen.":{fr:"Aucune demande en attente.",it:"Nessuna richiesta in sospeso.",en:"No open requests."},
  "Anfragen nicht lesbar":{fr:"Demandes illisibles",it:"Richieste non leggibili",en:"Requests not readable"},
  "Mail wird gesendet …":{fr:"Envoi du mail …",it:"Invio della mail …",en:"Sending mail …"},
@@ -64,11 +64,11 @@ Object.assign(I18N,{
  "Alle vier in GitHub eintragen:":{fr:"Saisir les quatre dans GitHub :",it:"Inserire tutte e quattro in GitHub:",en:"Enter all four in GitHub:"},
  "Ersten Lauf starten:":{fr:"Lancer le premier passage :",it:"Avviare la prima esecuzione:",en:"Start the first run:"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
- "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur·rice",it:"Invita come utente",en:"Invite as user"},
- "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé·e et peut créer un compte.",it:"è ora abilitato/a e può creare un account.",en:"is now approved and can create an account."},
+ "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
+ "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
  "Einladungs-Mail schicken":{fr:"Envoyer l’invitation",it:"Invia l’invito",en:"Send invitation mail"},
  "Dein Zugang zur TSCHUGGER Crew-App":{fr:"Ton accès à l’app d’équipe TSCHUGGER",it:"Il tuo accesso all’app crew TSCHUGGER",en:"Your access to the TSCHUGGER crew app"},
- "du bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet. Dort findest du Drehplan, Dispos, Crewliste, Locations und das Drehbuch.":{fr:"tu as accès à l’app d’équipe de TSCHUGGER Tigerblood. Tu y trouves le plan de tournage, les feuilles de service, la liste d’équipe, les lieux et le scénario.",it:"sei abilitato/a all’app crew di TSCHUGGER Tigerblood. Lì trovi piano di lavorazione, ordini del giorno, lista crew, location e sceneggiatura.",en:"you now have access to the TSCHUGGER Tigerblood crew app. It has the schedule, call sheets, crew list, locations and the script."},
+ "du bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet. Dort findest du Drehplan, Dispos, Crewliste, Locations und das Drehbuch.":{fr:"tu as accès à l’app d’équipe de TSCHUGGER Tigerblood. Tu y trouves le plan de tournage, les feuilles de service, la liste d’équipe, les lieux et le scénario.",it:"sei abilitato all’app crew di TSCHUGGER Tigerblood. Lì trovi piano di lavorazione, ordini del giorno, lista crew, location e sceneggiatura.",en:"you now have access to the TSCHUGGER Tigerblood crew app. It has the schedule, call sheets, crew list, locations and the script."},
  "So geht's:":{fr:"Comment faire :",it:"Come fare:",en:"How it works:"},
  "«Konto erstellen» mit genau dieser E-Mail-Adresse:":{fr:"« Créer un compte » avec exactement cette adresse :",it:"«Crea account» con esattamente questo indirizzo:",en:"“Create account” with exactly this e-mail address:"},
  "(Gmail-Adresse: einfach «Mit Google anmelden»)":{fr:"(adresse Gmail : simplement « Se connecter avec Google »)",it:"(indirizzo Gmail: semplicemente «Accedi con Google»)",en:"(Gmail address: simply “Sign in with Google”)"},
@@ -80,7 +80,7 @@ Object.assign(I18N,{
  "Keine Berechtigung – bitte die neuen Firestore-Regeln in Firebase veröffentlichen.":{fr:"Pas d’autorisation – publie les nouvelles règles Firestore dans Firebase.",it:"Nessuna autorizzazione – pubblica le nuove regole Firestore in Firebase.",en:"No permission – please publish the new Firestore rules in Firebase."},
  "Ohne Bestätigungs-Mail freischalten":{fr:"Autoriser sans mail de confirmation",it:"Abilita senza mail di conferma",en:"Approve without confirmation mail"},
  "{e} ohne Bestätigungs-Mail freischalten? Nur machen, wenn die Adresse sicher dieser Person gehört.":{fr:"Autoriser {e} sans mail de confirmation ? Seulement si l’adresse appartient bien à cette personne.",it:"Abilitare {e} senza mail di conferma? Solo se l’indirizzo appartiene sicuramente a questa persona.",en:"Approve {e} without a confirmation mail? Only do this if the address surely belongs to this person."},
- "ist freigeschaltet. Die Person meldet sich einfach an – oder tippt auf «Ich habe bestätigt».":{fr:"est autorisé·e. La personne se connecte simplement – ou touche « J’ai confirmé ».",it:"è abilitato/a. La persona accede semplicemente – oppure tocca «Ho confermato».",en:"is approved. The person simply signs in – or taps “I have confirmed”."},
+ "ist freigeschaltet. Die Person meldet sich einfach an – oder tippt auf «Ich habe bestätigt».":{fr:"est autorisé. La personne se connecte simplement – ou touche « J’ai confirmé ».",it:"è abilitato. La persona accede semplicemente – oppure tocca «Ho confermato».",en:"is approved. The person simply signs in – or taps “I have confirmed”."},
  "Kontoinfos":{fr:"Infos de compte",it:"Info account",en:"Account info"},
  "Startpasswort":{fr:"Mot de passe initial",it:"Password iniziale",en:"Start password"},
  "Für {e} ein Konto mit Startpasswort anlegen? Beim ersten Anmelden muss die Person ein eigenes Passwort festlegen.":{fr:"Créer un compte avec mot de passe initial pour {e} ? À la première connexion, la personne devra choisir son propre mot de passe.",it:"Creare per {e} un account con password iniziale? Al primo accesso la persona dovrà scegliere una propria password.",en:"Create an account with a start password for {e}? On first sign-in the person must set their own password."},
@@ -90,7 +90,7 @@ Object.assign(I18N,{
  "Gilt nur für die erste Anmeldung. Danach muss die Person ein eigenes Passwort festlegen. Das Startpasswort wird nirgends gespeichert – jetzt weitergeben.":{fr:"Valable uniquement pour la première connexion. Ensuite, la personne doit choisir son propre mot de passe. Le mot de passe initial n’est enregistré nulle part – transmets-le maintenant.",it:"Vale solo per il primo accesso. Poi la persona deve scegliere una propria password. La password iniziale non viene salvata – inoltrala ora.",en:"Valid for the first sign-in only. Then the person must set their own password. The start password isn’t stored anywhere – pass it on now."},
  "Per Mail schicken":{fr:"Envoyer par mail",it:"Invia per mail",en:"Send by mail"},
  "Bitte lege jetzt dein eigenes Passwort fest.":{fr:"Choisis maintenant ton propre mot de passe.",it:"Scegli ora una tua password.",en:"Please set your own password now."},
- "Du hast dich mit einem Startpasswort angemeldet. Es gilt nur einmal.":{fr:"Tu t’es connecté·e avec un mot de passe initial. Il n’est valable qu’une fois.",it:"Hai effettuato l’accesso con una password iniziale. Vale una sola volta.",en:"You signed in with a start password. It only works once."},
+ "Du hast dich mit einem Startpasswort angemeldet. Es gilt nur einmal.":{fr:"Tu t’es connecté avec un mot de passe initial. Il n’est valable qu’une fois.",it:"Hai effettuato l’accesso con una password iniziale. Vale una sola volta.",en:"You signed in with a start password. It only works once."},
  "Neues Passwort (mind. 8 Zeichen)":{fr:"Nouveau mot de passe (8 caractères min.)",it:"Nuova password (min. 8 caratteri)",en:"New password (min. 8 characters)"},
  "Neues Passwort wiederholen":{fr:"Répéter le nouveau mot de passe",it:"Ripeti la nuova password",en:"Repeat new password"},
  "Passwort speichern":{fr:"Enregistrer le mot de passe",it:"Salva password",en:"Save password"},
@@ -98,7 +98,6 @@ Object.assign(I18N,{
  "{e} einen Link schicken, mit dem die Person ein neues Passwort festlegt?":{fr:"Envoyer à {e} un lien pour choisir un nouveau mot de passe ?",it:"Inviare a {e} un link per scegliere una nuova password?",en:"Send {e} a link to set a new password?"},
  "Link für ein neues Passwort gesendet an":{fr:"Lien pour un nouveau mot de passe envoyé à",it:"Link per una nuova password inviato a",en:"New-password link sent to"},
  "Bearbeiten":{fr:"Modifier",it:"Modifica",en:"Edit"},
- "Schliessen":{fr:"Fermer",it:"Chiudi",en:"Close"},
  "Funktion":{fr:"Fonction",it:"Funzione",en:"Role"},
  "Die E-Mail-Adresse kann nicht geändert werden – dafür die Person entfernen und mit der neuen Adresse einladen.":{fr:"L’adresse e-mail ne peut pas être modifiée – supprime la personne et invite-la avec la nouvelle adresse.",it:"L’indirizzo e-mail non si può modificare – rimuovi la persona e invitala con il nuovo indirizzo.",en:"The e-mail address can’t be changed – remove the person and invite the new address."},
  "Zugangsanfragen":{fr:"Demandes d’accès",it:"Richieste di accesso",en:"Access requests"},
@@ -124,7 +123,7 @@ Object.assign(I18N,{
  "Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.":{fr:"Activé, chaque scène affiche le bouton « Script » qui ouvre la scène dans le scénario.",it:"Se attivo, ogni scena mostra il pulsante «Script» che apre la scena nella sceneggiatura.",en:"When on, every scene shows the “Script” button that opens the scene in the script."},
  "Drehbuch anzeigen":{fr:"Afficher le scénario",it:"Mostra la sceneggiatura",en:"Show script"},
  "Backup":{fr:"Sauvegarde",it:"Backup",en:"Backup"},
- "Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.":{fr:"Sauvegarde les utilisateur·rices, invitations, administrateur·rices, réglages de l’app et anniversaires dans un fichier. Les données de tournage viennent de la Dropbox et n’ont pas besoin de sauvegarde.",it:"Salva utenti, inviti, amministratrici e amministratori, impostazioni dell’app e compleanni in un file. I dati delle riprese arrivano dalla Dropbox e non serve un backup.",en:"Saves users, invitations, admins, app settings and birthdays to a file. The shooting data comes from Dropbox and needs no backup."},
+ "Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.":{fr:"Sauvegarde les utilisateurs, invitations, administrateurs, réglages de l’app et anniversaires dans un fichier. Les données de tournage viennent de la Dropbox et n’ont pas besoin de sauvegarde.",it:"Salva utenti, inviti, amministratori, impostazioni dell’app e compleanni in un file. I dati delle riprese arrivano dalla Dropbox e non serve un backup.",en:"Saves users, invitations, admins, app settings and birthdays to a file. The shooting data comes from Dropbox and needs no backup."},
  "Letztes Backup auf diesem Gerät":{fr:"Dernière sauvegarde sur cet appareil",it:"Ultimo backup su questo dispositivo",en:"Last backup on this device"},
  "Backup herunterladen":{fr:"Télécharger la sauvegarde",it:"Scarica il backup",en:"Download backup"},
  "Backup wiederherstellen":{fr:"Restaurer une sauvegarde",it:"Ripristina il backup",en:"Restore backup"},
@@ -145,7 +144,7 @@ Object.assign(I18N,{
  "Daten aus der Dropbox automatisch laden":{fr:"Charger automatiquement les données de la Dropbox",it:"Carica automaticamente i dati dalla Dropbox",en:"Load data from Dropbox automatically"},
  "Nach oben":{fr:"Monter",it:"Sposta su",en:"Move up"},"Nach unten":{fr:"Descendre",it:"Sposta giù",en:"Move down"},"Reihenfolge mit ▲ ▼ ändern.":{fr:"Change l’ordre avec ▲ ▼.",it:"Cambia l’ordine con ▲ ▼.",en:"Change the order with ▲ ▼."},
  "Mein Konto":{it:"Il mio account",fr:"Mon compte",en:"My account"},
- "Angemeldet als":{it:"Connesso come",fr:"Connecté·e en tant que",en:"Signed in as"},
+ "Angemeldet als":{it:"Connesso come",fr:"Connecté en tant que",en:"Signed in as"},
  "Passwort ändern":{it:"Cambia password",fr:"Changer le mot de passe",en:"Change password"},
  "E-Mail-Adresse ändern":{it:"Cambia indirizzo e-mail",fr:"Changer l’adresse e-mail",en:"Change email address"},
  "Speichern":{it:"Salva",fr:"Enregistrer",en:"Save"},
@@ -159,7 +158,7 @@ Object.assign(I18N,{
  "Bitte warten …":{it:"Attendere …",fr:"Un instant …",en:"Please wait …"},
  "Mit Google anmelden":{it:"Accedi con Google",fr:"Se connecter avec Google",en:"Sign in with Google"},
  "oder":{it:"oppure",fr:"ou",en:"or"},
- "Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.":{it:"Sei connesso con Google. Password e indirizzo si gestiscono nel tuo account Google.",fr:"Tu es connecté·e avec Google. Mot de passe et adresse se gèrent dans ton compte Google.",en:"You are signed in with Google. Manage password and address in your Google account."},
+ "Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.":{it:"Sei connesso con Google. Password e indirizzo si gestiscono nel tuo account Google.",fr:"Tu es connecté avec Google. Mot de passe et adresse se gèrent dans ton compte Google.",en:"You are signed in with Google. Manage password and address in your Google account."},
  "Google-Anmeldung abgebrochen.":{it:"Accesso Google annullato.",fr:"Connexion Google annulée.",en:"Google sign-in cancelled."},
  "Offline – du siehst den zuletzt geladenen Stand.":{it:"Offline – stai vedendo gli ultimi dati caricati.",fr:"Hors ligne – tu vois les dernières données chargées.",en:"Offline – you are seeing the last loaded data."}
 });
@@ -173,7 +172,7 @@ Object.assign(I18N,{
  "Bitte ergänze dein Profil.":{fr:"Complète ton profil.",it:"Completa il tuo profilo.",en:"Please complete your profile."},
  "Link zum Zurücksetzen gesendet an":{fr:"Lien de réinitialisation envoyé à",it:"Link per reimpostare inviato a",en:"Reset link sent to"},
  "Schau auch im Spam-Ordner nach.":{fr:"Vérifie aussi tes spams.",it:"Controlla anche lo spam.",en:"Check your spam folder too."},
- "Willkommen!":{fr:"Bienvenue !",it:"Benvenuto/a!",en:"Welcome!"},
+ "Willkommen!":{fr:"Bienvenue !",it:"Benvenuto!",en:"Welcome!"},
  "Bitte fülle vor dem ersten Start dein Profil aus.":{fr:"Avant de commencer, remplis ton profil.",it:"Prima di iniziare, compila il tuo profilo.",en:"Please fill in your profile before you start."},
  "Name":{fr:"Nom",it:"Nome",en:"Name"},
  "Aus der Crewliste übernommen.":{fr:"Repris de la liste de l’équipe.",it:"Ripreso dalla lista della crew.",en:"Taken from the crew list."},
@@ -184,22 +183,22 @@ Object.assign(I18N,{
  "keine Angaben":{fr:"non indiqué",it:"non indicato",en:"not given"},
  "Alle Kontakte als VCF":{fr:"Tous les contacts en VCF",it:"Tutti i contatti in VCF",en:"All contacts as VCF"},
  "Kontakte als VCF gespeichert.":{fr:"contacts enregistrés en VCF.",it:"contatti salvati in VCF.",en:"contacts saved as VCF."},
- "Besitzer:in":{fr:"Propriétaire",it:"Proprietario/a",en:"Owner"},
+ "Besitzer:in":{fr:"Propriétaire",it:"Proprietario",en:"Owner"},
  "Admin":{fr:"Admin",it:"Admin",en:"Admin"},
- "Liste der Benutzer:innen konnte nicht geladen werden:":{fr:"Impossible de charger la liste des utilisateur·rices :",it:"Impossibile caricare l’elenco utenti:",en:"Could not load the user list:"},
- "Lade Benutzer:innen …":{fr:"Chargement des utilisateur·rices …",it:"Caricamento utenti …",en:"Loading users …"},
+ "Liste der Benutzer:innen konnte nicht geladen werden:":{fr:"Impossible de charger la liste des utilisateurs :",it:"Impossibile caricare l’elenco utenti:",en:"Could not load the user list:"},
+ "Lade Benutzer:innen …":{fr:"Chargement des utilisateurs …",it:"Caricamento utenti …",en:"Loading users …"},
  "aktiv_1":{fr:"actif",it:"attivo",en:"active"},
  "gesperrt":{fr:"bloqué",it:"bloccato",en:"blocked"},
  "eingeladen":{fr:"invité",it:"invitato",en:"invited"},
- "Administrator:innen":{fr:"Administrateur·rices",it:"Amministratrici e amministratrici e amministratori",en:"Administrators"},
- "Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».":{fr:"Les administrateur·rices peuvent inviter des personnes et voient les repas et anniversaires dans l’équipe. Toi seul peux bloquer et supprimer. Tu nommes des admins plus bas avec « Nommer admin ».",it:"Gli amministratrici e amministratori possono invitare persone e vedono pasti e compleanni nella crew. Solo tu puoi bloccare e rimuovere. Nomini gli admin più sotto con «Rendi admin».",en:"Administrators can invite people and see food and birthdays in the crew list. Only you can block and remove. Appoint admins below with “Make admin”."},
+ "Administrator:innen":{fr:"Administrateurs",it:"Amministratrici e amministratori",en:"Administrators"},
+ "Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».":{fr:"Les administrateurs peuvent inviter des personnes et voient les repas et anniversaires dans l’équipe. Toi seul peux bloquer et supprimer. Tu nommes des admins plus bas avec « Nommer admin ».",it:"Gli amministratori possono invitare persone e vedono pasti e compleanni nella crew. Solo tu puoi bloccare e rimuovere. Nomini gli admin più sotto con «Rendi admin».",en:"Administrators can invite people and see food and birthdays in the crew list. Only you can block and remove. Appoint admins below with “Make admin”."},
  "Entfernen":{fr:"Supprimer",it:"Rimuovi",en:"Remove"},
  "Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.":{fr:"Seules les adresses invitées peuvent créer un compte (e-mail/mot de passe ou Google). Les personnes bloquées ou supprimées perdent immédiatement l’accès. Chacun gère lui-même son mot de passe et son adresse e-mail.",it:"Solo gli indirizzi invitati possono creare un account (e-mail/password o Google). Le persone bloccate o rimosse perdono subito l’accesso. Ognuno gestisce da sé password e indirizzo e-mail.",en:"Only invited addresses can create an account (email/password or Google). Blocked or removed people lose access immediately. Everyone manages their own password and email address."},
  "E-Mail-Adresse":{fr:"Adresse e-mail",it:"Indirizzo e-mail",en:"Email address"},
  "Name (optional)":{fr:"Nom (facultatif)",it:"Nome (facoltativo)",en:"Name (optional)"},
  "Einladen":{fr:"Inviter",it:"Invita",en:"Invite"},
  "Alle {n} Adressen aus der Crewliste einladen":{fr:"Inviter les {n} adresses de la liste de l’équipe",it:"Invita tutti i {n} indirizzi della lista crew",en:"Invite all {n} addresses from the crew list"},
- "Benutzer:innen":{fr:"utilisateur·rices",it:"utenti",en:"users"},
+ "Benutzer:innen":{fr:"utilisateurs",it:"utenti",en:"users"},
  "noch nicht registriert":{fr:"pas encore inscrits",it:"non ancora registrati",en:"not yet registered"},
  "Benutzer:innen suchen":{fr:"Rechercher un utilisateur",it:"Cerca utente",en:"Search users"},
  "Einladungsmail":{fr:"E-mail d’invitation",it:"E-mail d’invito",en:"Invitation email"},
@@ -210,10 +209,10 @@ Object.assign(I18N,{
  "Einladung löschen":{fr:"Supprimer l’invitation",it:"Elimina invito",en:"Delete invitation"},
  "ist jetzt Admin.":{fr:"est maintenant admin.",it:"ora è admin.",en:"is now admin."},
  "Fehler:":{fr:"Erreur :",it:"Errore:",en:"Error:"},
- "eingeladen.":{fr:"invité·e.",it:"invitato/a.",en:"invited."},
+ "eingeladen.":{fr:"invité.",it:"invitato.",en:"invited."},
  "{n} Adressen aus der Crewliste einladen?":{fr:"Inviter {n} adresses de la liste de l’équipe ?",it:"Invitare {n} indirizzi dalla lista crew?",en:"Invite {n} addresses from the crew list?"},
  "{n} Adressen eingeladen.":{fr:"{n} adresses invitées.",it:"{n} indirizzi invitati.",en:"{n} addresses invited."},
- "Die Besitzerin oder der Besitzer kann nicht gesperrt oder entfernt werden.":{fr:"La·le propriétaire ne peut être ni bloqué ni supprimé.",it:"La/il proprietaria/o non può essere bloccato né rimosso.",en:"The ownerdmin cannot be blocked or removed."},
+ "Die Besitzerin oder der Besitzer kann nicht gesperrt oder entfernt werden.":{fr:"Le propriétaire ne peut être ni bloqué ni supprimé.",it:"Il proprietario non può essere bloccato né rimosso.",en:"The ownerdmin cannot be blocked or removed."},
  "Gesperrt.":{fr:"Bloqué.",it:"Bloccato.",en:"Blocked."},
  "Entsperrt.":{fr:"Débloqué.",it:"Sbloccato.",en:"Unblocked."},
  "{e} entfernen? Die Person kommt danach nicht mehr in die App.":{fr:"Supprimer {e} ? La personne n’aura plus accès à l’app.",it:"Rimuovere {e}? La persona non potrà più accedere all’app.",en:"Remove {e}? The person will no longer get into the app."},
@@ -221,7 +220,7 @@ Object.assign(I18N,{
  "{e} die Admin-Rechte entziehen?":{fr:"Retirer les droits admin à {e} ?",it:"Togliere i diritti admin a {e}?",en:"Remove admin rights from {e}?"},
  "Admin-Rechte entzogen.":{fr:"Droits admin retirés.",it:"Diritti admin revocati.",en:"Admin rights removed."},
  "Einladung gelöscht.":{fr:"Invitation supprimée.",it:"Invito eliminato.",en:"Invitation deleted."},
- "Daten der Benutzer:innen nicht lesbar":{fr:"Données utilisateur·rices illisibles",it:"Dati utenti non leggibili",en:"User data not readable"},
+ "Daten der Benutzer:innen nicht lesbar":{fr:"Données utilisateurs illisibles",it:"Dati utenti non leggibili",en:"User data not readable"},
  "Firestore-Regeln prüfen.":{fr:"vérifier les règles Firestore.",it:"controllare le regole Firestore.",en:"check the Firestore rules."},
  "Crew-App":{fr:"app de l’équipe",it:"app della crew",en:"crew app"},
  "MAIL_BODY":{de:"Hallo{n}\n\nDu bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet:\n{site}\n\nBeim ersten Mal auf «Erstes Mal hier? Konto erstellen» tippen, mit dieser Adresse ({e}) ein eigenes Passwort wählen und die Bestätigungsmail antippen.\n\nBis bald im Wallis!",fr:"Bonjour{n}\n\nTu as accès à l’app de l’équipe de TSCHUGGER Tigerblood :\n{site}\n\nLa première fois, tape sur « Première fois ici ? Créer un compte », choisis ton propre mot de passe avec cette adresse ({e}) et confirme l’e-mail de vérification.\n\nÀ bientôt en Valais !",it:"Ciao{n}\n\nHai accesso all’app della crew di TSCHUGGER Tigerblood:\n{site}\n\nLa prima volta tocca «Prima volta qui? Crea account», scegli una password con questo indirizzo ({e}) e conferma l’e-mail di verifica.\n\nA presto in Vallese!",en:"Hi{n}\n\nYou now have access to the TSCHUGGER Tigerblood crew app:\n{site}\n\nThe first time, tap “First time here? Create account”, choose your own password with this address ({e}) and confirm the verification email.\n\nSee you in Valais!"},
@@ -233,14 +232,14 @@ Object.assign(I18N,{
  "Sprachen":{fr:"Langues",it:"Lingue",en:"Languages"},
  "Ausgeschaltet zeigt die App nur die 1st Unit, ohne die Knöpfe 1st/2nd.":{fr:"Désactivée, l’app n’affiche que la 1st unit, sans les boutons 1st/2nd.",it:"Se disattivata, l’app mostra solo la 1st unit, senza i pulsanti 1st/2nd.",en:"When off, the app shows only the 1st unit, without the 1st/2nd buttons."},
  "Geburtstagsliste allen anzeigen":{fr:"Montrer la liste des anniversaires à tous",it:"Mostra a tutti la lista dei compleanni",en:"Show the birthday list to everyone"},
- "Eingeschaltet sehen alle Benutzer:innen in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).":{fr:"Activée, tous les utilisateur·rices voient dans l’équipe la liste des anniversaires pendant le tournage (jour et mois seulement, sans l’année).",it:"Se attiva, tutti gli utenti vedono nella crew la lista dei compleanni durante le riprese (solo giorno e mese, senza anno).",en:"When on, all users see the birthday list for the shoot in the crew tab (day and month only, no year)."},
+ "Eingeschaltet sehen alle Benutzer:innen in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).":{fr:"Activée, tous les utilisateurs voient dans l’équipe la liste des anniversaires pendant le tournage (jour et mois seulement, sans l’année).",it:"Se attiva, tutti gli utenti vedono nella crew la lista dei compleanni durante le riprese (solo giorno e mese, senza anno).",en:"When on, all users see the birthday list for the shoot in the crew tab (day and month only, no year)."},
  "3rd Unit anzeigen":{fr:"Afficher la 3rd unit",it:"Mostra la 3rd unit",en:"Show 3rd unit"},
  "Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.":{fr:"Les unités désactivées disparaissent du planning, du callsheet et des lieux. Si seule la 1st unit est active, les boutons d’unité disparaissent.",it:"Le unit disattivate spariscono da Schedule, Callsheet e Locations. Se è attiva solo la 1st unit, i pulsanti delle unit spariscono.",en:"Units that are switched off disappear from Schedule, Callsheet and Locations. If only the 1st unit is on, the unit buttons disappear."},
  "2nd Unit anzeigen":{fr:"Afficher la 2nd unit",it:"Mostra la 2nd unit",en:"Show 2nd unit"},
  "Einstellungen gespeichert.":{fr:"Réglages enregistrés.",it:"Impostazioni salvate.",en:"Settings saved."},
- "Benutzer:innen einladen":{fr:"Inviter des utilisateur·rices",it:"Invita utenti",en:"Invite users"},
+ "Benutzer:innen einladen":{fr:"Inviter des utilisateurs",it:"Invita utenti",en:"Invite users"},
  "Motivliste":{fr:"Liste des lieux",it:"Lista delle location",en:"Location list"},
- "Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.":{fr:"Lien vers le Google Sheet des lieux (colonnes SCRIPT NAME, ADRESSE, SCENES, LINK ; « Tous les utilisateur·rices disposant du lien peuvent consulter »). Repris lors de la prochaine mise à jour horaire. Vide = liste actuelle.",it:"Link al Google Sheet delle location (colonne SCRIPT NAME, ADRESSE, SCENES, LINK; «Chiunque abbia il link può visualizzare»). Viene ripreso al prossimo aggiornamento orario. Vuoto = lista attuale.",en:"Link to the Google Sheet with the locations (columns SCRIPT NAME, ADRESSE, SCENES, LINK; “Anyone with the link can view”). Picked up at the next hourly update. Empty = current list."},
+ "Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.":{fr:"Lien vers le Google Sheet des lieux (colonnes SCRIPT NAME, ADRESSE, SCENES, LINK ; « Tous les utilisateurs disposant du lien peuvent consulter »). Repris lors de la prochaine mise à jour horaire. Vide = liste actuelle.",it:"Link al Google Sheet delle location (colonne SCRIPT NAME, ADRESSE, SCENES, LINK; «Chiunque abbia il link può visualizzare»). Viene ripreso al prossimo aggiornamento orario. Vuoto = lista attuale.",en:"Link to the Google Sheet with the locations (columns SCRIPT NAME, ADRESSE, SCENES, LINK; “Anyone with the link can view”). Picked up at the next hourly update. Empty = current list."},
  "Bitte einen Google-Sheets-Link eingeben.":{fr:"Saisis un lien Google Sheets.",it:"Inserisci un link Google Sheets.",en:"Please enter a Google Sheets link."},
  "Karte":{fr:"Carte",it:"Mappa",en:"Map"},
  "Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.":{fr:"Lien vers la carte du bouton « Map » dans Lieux (p. ex. Google My Maps). Vide = carte par défaut.",it:"Link alla mappa per il pulsante «Map» in Locations (es. Google My Maps). Vuoto = mappa predefinita.",en:"Link to the map for the “Map” button in Locations (e.g. Google My Maps). Empty = default map."},
@@ -248,7 +247,7 @@ Object.assign(I18N,{
  "Kontostatus":{fr:"Statut du compte",it:"Stato account",en:"Account status"},
  "Konto aktiv":{fr:"Compte actif",it:"Account attivo",en:"Account active"},
  "Gesperrt":{fr:"Bloqué",it:"Bloccato",en:"Blocked"},
- "Eingeladen, noch kein Konto":{fr:"Invité·e, pas encore de compte",it:"Invitato/a, ancora nessun account",en:"Invited, no account yet"},
+ "Eingeladen, noch kein Konto":{fr:"Invité, pas encore de compte",it:"Invitato, ancora nessun account",en:"Invited, no account yet"},
  "Geburtstag":{fr:"Anniversaire",it:"Compleanno",en:"Birthday"},
  "Geburtstagskalender":{fr:"Calendrier des anniversaires",it:"Calendario compleanni",en:"Birthday calendar"},
  "Geburtstage":{fr:"Anniversaires",it:"Compleanni",en:"Birthdays"},
@@ -338,7 +337,9 @@ async function fbInit(){
   return FB;
 }
 /* ---- data: fetch encrypted file, decrypt with the key from Firestore ---- */
-async function fetchEnc(){const ac=typeof AbortController==="function"?new AbortController():null;const tm=setTimeout(()=>ac&&ac.abort(),25000);let r;try{r=await fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store",signal:ac?ac.signal:undefined})}catch(err){throw Object.assign(new Error("network: "+(err&&err.name||err)),{code:"unavailable"})}finally{clearTimeout(tm)}if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
+/* the encrypted data file is requested right at start, in parallel with the sign-in check; the first load uses that answer */
+let PREENC=null;try{if(navigator.onLine!==false)PREENC=fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)}catch(_){}
+async function fetchEnc(){if(PREENC){const p=PREENC;PREENC=null;const j=await p;if(j&&j.ct)return j}const ac=typeof AbortController==="function"?new AbortController():null;const tm=setTimeout(()=>ac&&ac.abort(),25000);let r;try{r=await fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store",signal:ac?ac.signal:undefined})}catch(err){throw Object.assign(new Error("network: "+(err&&err.name||err)),{code:"unavailable"})}finally{clearTimeout(tm)}if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
 async function getDataKey(){
   if(DATAKEY)return DATAKEY;
   const {F,db}=await fb();const s=await withTimeout(F.getDoc(F.doc(db,"secret","key")),20000,"key");
@@ -1109,7 +1110,10 @@ render();
       if(em){window.__justSignedIn=true;A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(null,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
     }
     A.onAuthStateChanged(auth,u=>{
-      if(!u){ME=null;acctButton(false);clearLocal();if(S.tab==="admin")S.tab="plan";render();showGate("login");return}
+      if(!u){ME=null;acctButton(false);clearLocal();if(S.tab==="admin")S.tab="plan";render();
+        /* the sign-in screen may already be open (person switched to «create account» while Firebase was starting): keep it and what was typed */
+        const g=document.getElementById("gate");if(g&&!g.hidden&&["login","register","reset"].includes(AUTHMODE)&&g.querySelector("form"))return;
+        showGate("login");return}
       afterSignIn(u);
     });
   }catch(err){console.error(err);if(!S.days.length)showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);else{hideGate();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000)}}
