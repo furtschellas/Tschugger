@@ -93,3 +93,4 @@
 .pinfo .diet{background:rgba(127,224,168,.13);color:#7fe0a8}
 .admerr{flex-basis:100%;font-size:13px;color:#ff8a8a}
 .pinfo .na{background:var(--rule);color:var(--muted)}
+.pinfo{margin:8px 0 2px}
