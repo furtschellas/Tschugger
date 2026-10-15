@@ -62,3 +62,5 @@
 .pname{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:baseline;margin:6px 0 2px;font-size:16px}
 .pname span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .pname b{font-weight:600;color:var(--ink)}
+.psec{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:10px 0 4px;margin:10px 0}
+.psec h4{margin:0 0 6px;font-size:15px;font-weight:600;color:var(--ink)}
