@@ -132,7 +132,10 @@ def claude(parts, task, max_tokens=32000):
                     if ev.get("type") == "error": raise RuntimeError("Claude-API Fehler: %s" % ev.get("error"))
             t = "".join(text).strip()
             t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
-            return json.loads(t)
+            v = json.loads(t)
+            # accept {"crew": [...]} style wrappers where a plain array was asked for
+            if isinstance(v, dict) and "Array" in task and len(v) == 1 and isinstance(next(iter(v.values())), list): v = next(iter(v.values()))
+            return v
         except Exception as e:
             log("Claude-Versuch", attempt + 1, "fehlgeschlagen:", str(e)[:160])
             time.sleep(10 * (attempt + 1))
