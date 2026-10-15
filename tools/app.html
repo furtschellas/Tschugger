@@ -418,7 +418,7 @@ function renderPlan(){
   let h='<div class="stripwrap"><div class="pub" role="group" aria-label="'+L("Unit filtern")+'"><button data-pu="1" aria-pressed="'+!!S.pu["1"]+'" aria-label="1st Unit">1st</button><button data-pu="2" class="u2'+(selHas2?'':' none')+'" aria-pressed="'+!!S.pu["2"]+'" aria-label="2nd Unit"'+(selHas2?'':' title="'+esc(L("Keine 2nd Unit an diesem Tag."))+'"')+'>2nd</button></div><div class="strip in" role="tablist" aria-label="Tage">';
   for(const d of PD){
     const dt=new Date(d.date+"T12:00:00");
-    const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?L("Reise"):L("Frei"));
+    const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?L("Reise"):"OFF");
     h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.date===t?" today":"")+'" role="tab" data-day="'+esc(d.id)+'" aria-selected="'+(d.id===S.day)+'">'+
        '<div class="lb">'+esc(padD(lb))+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div></button>';
   }
