@@ -477,7 +477,15 @@ function vCardText(p,g){
   L1.push("NOTE:"+vEsc("TSCHUGGER Tigerblood"+(p.role?" – "+p.role:"")),"END:VCARD");
   return L1.join("\r\n")+"\r\n";
 }
-function saveVCard(p,g){saveVcf(vCardText(p,g),String(p.name||"").replace(/[\\/:*?"<>|]/g,"").trim()||"Kontakt")}
+/* one contact: Android opens the phone's "new contact" screen pre-filled (intent), iPhone shows the contact card; elsewhere a .vcf file */
+function saveVCard(p,g){
+  if(/Android/i.test(navigator.userAgent)){
+    const x=(k,v)=>v?"S."+k+"="+encodeURIComponent(String(v).trim())+";":"";
+    location.href="intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;"+x("name",p.name)+x("phone",p.phone&&String(p.phone).replace(/[^\d+]/g,""))+"i.phone_type=2;"+x("email",p.email)+x("job_title",p.role)+x("company","TSCHUGGER Tigerblood")+"end";
+    return;
+  }
+  saveVcf(vCardText(p,g),String(p.name||"").replace(/[\\/:*?"<>|]/g,"").trim()||"Kontakt");
+}
 function allVCards(){let out="",n=0;for(const g of S.crew)for(const p of (g.people||[]))if(p.name&&(p.phone||p.email)){out+=vCardText(p,g);n++}return {text:out,n}}
 function saveVcf(v,name){
   const fn=name+".vcf";
