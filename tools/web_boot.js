@@ -70,7 +70,7 @@ Object.assign(I18N,{
  "Essen":{fr:"Repas",it:"Pasti",en:"Food"},
  "aktiv":{fr:"actifs",it:"attivi",en:"active"},
  "Geburtstag":{fr:"Anniversaire",it:"Compleanno",en:"Birthday"},
- "Kalender":{fr:"Calendrier",it:"Calendario",en:"Calendar"},
+ "Geburtstagskalender":{fr:"Calendrier des anniversaires",it:"Calendario compleanni",en:"Birthday calendar"},
  "Geburtstage":{fr:"Anniversaires",it:"Compleanni",en:"Birthdays"},
  "Geburtstage während des Drehs":{fr:"Anniversaires pendant le tournage",it:"Compleanni durante le riprese",en:"Birthdays during the shoot"},
  "Keine Geburtstage während des Drehs.":{fr:"Aucun anniversaire pendant le tournage.",it:"Nessun compleanno durante le riprese.",en:"No birthdays during the shoot."},
@@ -450,11 +450,11 @@ function bdayHTML(){
   return h;
 }
 const ICO={bcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13.5c-.7-.7-.7-1.6 0-2.3.7.7.7 1.6 0 2.3zM12 14v3"/>',food:'<path d="M7 2v8M4 2v5a3 3 0 0 0 6 0V2M7 10v12M17 2c-2 1.5-3 4-3 7h3v13"/>',bday:'<path d="M4 21h16M5 21v-8h14v8M12 13V9M12 6.5c-1-1-1-2.5 0-3.5 1 1 1 2.5 0 3.5zM5 16c2.3 1.5 4.7 1.5 7 0s4.7-1.5 7 0"/>'};
-const togBtn=(k,t)=>'<button type="button" class="foodtog" data-admv="'+k+'" aria-pressed="'+ADMV[k]+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICO[k]+'</svg>'+L(t)+'</button>';
+const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'" aria-pressed="'+ADMV[k]+'" aria-label="'+esc(L(t))+'" title="'+esc(L(t))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICO[k]+'</svg></button>';
 window.crewHead=function(){
   if(!isAdmin())return"";
   if(ADMV.food||ADMV.bday||ADMV.bcal)ensureAdm();
-  return '<div class="admv">'+togBtn("food","Essen")+togBtn("bday","Geburtstage")+togBtn("bcal","Kalender")+'</div>'+(ADM.loaded?(ADMV.bcal?bdayHTML():"")+(ADMV.food?cateringHTML():""):"");
+  return '<div class="admv">'+togBtn("food","Essen")+togBtn("bday","Geburtstage")+togBtn("bcal","Geburtstagskalender")+'</div>'+(ADM.loaded?(ADMV.bcal?bdayHTML():"")+(ADMV.food?cateringHTML():""):"");
 };
 document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];try{localStorage.setItem(k,ADMV[k]?"1":"0")}catch(_){}render()});
 window.crewExtra=function(p){
