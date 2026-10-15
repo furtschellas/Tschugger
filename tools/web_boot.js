@@ -34,6 +34,24 @@ Object.assign(I18N,{
  "Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion.":{it:"Il tuo accesso è stato bloccato. Contatta la produzione.",fr:"Ton accès a été bloqué. Contacte la production.",en:"Your access has been blocked. Please contact the production."},
  "Abmelden":{it:"Esci",fr:"Se déconnecter",en:"Sign out"},
  "Darstellung":{fr:"Affichage",it:"Aspetto",en:"Appearance"},"Dunkel":{fr:"Sombre",it:"Scuro",en:"Dark"},"Hell (gut lesbar)":{fr:"Clair (bonne lisibilité)",it:"Chiaro (ben leggibile)",en:"Light (easy to read)"},
+ "Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.":{fr:"Activé, chaque scène affiche le bouton « Script » qui ouvre la scène dans le scénario.",it:"Se attivo, ogni scena mostra il pulsante «Script» che apre la scena nella sceneggiatura.",en:"When on, every scene shows the “Script” button that opens the scene in the script."},
+ "Drehbuch anzeigen":{fr:"Afficher le scénario",it:"Mostra la sceneggiatura",en:"Show script"},
+ "Backup":{fr:"Sauvegarde",it:"Backup",en:"Backup"},
+ "Sichert Benutzer, Einladungen, Administratoren, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.":{fr:"Sauvegarde les utilisateurs, invitations, administrateurs, réglages de l’app et anniversaires dans un fichier. Les données de tournage viennent de la Dropbox et n’ont pas besoin de sauvegarde.",it:"Salva utenti, inviti, amministratori, impostazioni dell’app e compleanni in un file. I dati delle riprese arrivano dalla Dropbox e non serve un backup.",en:"Saves users, invitations, admins, app settings and birthdays to a file. The shooting data comes from Dropbox and needs no backup."},
+ "Letztes Backup auf diesem Gerät":{fr:"Dernière sauvegarde sur cet appareil",it:"Ultimo backup su questo dispositivo",en:"Last backup on this device"},
+ "Backup herunterladen":{fr:"Télécharger la sauvegarde",it:"Scarica il backup",en:"Download backup"},
+ "Backup wiederherstellen":{fr:"Restaurer une sauvegarde",it:"Ripristina il backup",en:"Restore backup"},
+ "Beim Wiederherstellen werden die Einträge aus der Datei ergänzt oder überschrieben. Nichts wird gelöscht.":{fr:"La restauration ajoute ou remplace les entrées du fichier. Rien n’est supprimé.",it:"Il ripristino aggiunge o sovrascrive le voci del file. Non viene eliminato nulla.",en:"Restoring adds or overwrites the entries from the file. Nothing is deleted."},
+ "Backup gespeichert":{fr:"Sauvegarde enregistrée",it:"Backup salvato",en:"Backup saved"},
+ "Einladungen":{fr:"invitations",it:"inviti",en:"invitations"},
+ "Datei ist zu gross.":{fr:"Le fichier est trop volumineux.",it:"Il file è troppo grande.",en:"The file is too large."},
+ "Datei ist kein gültiges Backup.":{fr:"Ce fichier n’est pas une sauvegarde valide.",it:"Il file non è un backup valido.",en:"The file is not a valid backup."},
+ "Backup vom {d} wiederherstellen? Vorhandene Einträge werden ergänzt oder überschrieben.":{fr:"Restaurer la sauvegarde du {d} ? Les entrées existantes seront complétées ou remplacées.",it:"Ripristinare il backup del {d}? Le voci esistenti saranno integrate o sovrascritte.",en:"Restore the backup from {d}? Existing entries will be added to or overwritten."},
+ "Wiederhergestellt":{fr:"Restauré",it:"Ripristinato",en:"Restored"},
+ "fehlgeschlagen":{fr:"échoué",it:"non riuscito",en:"failed"},
+ "Bereiche":{fr:"Rubriques",it:"Sezioni",en:"Sections"},
+ "Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.":{fr:"Seules les rubriques choisies apparaissent en bas de l’app. Au moins une.",it:"Solo le sezioni scelte appaiono in basso nell’app. Almeno una.",en:"Only the selected sections appear at the bottom of the app. At least one."},
+ "Bitte mindestens einen Bereich wählen.":{fr:"Choisis au moins une rubrique.",it:"Scegli almeno una sezione.",en:"Please select at least one section."},
  "Mein Konto":{it:"Il mio account",fr:"Mon compte",en:"My account"},
  "Angemeldet als":{it:"Connesso come",fr:"Connecté·e en tant que",en:"Signed in as"},
  "Passwort ändern":{it:"Cambia password",fr:"Changer le mot de passe",en:"Change password"},
@@ -44,7 +62,7 @@ Object.assign(I18N,{
  "Aktuelles Passwort falsch.":{it:"Password attuale errata.",fr:"Mot de passe actuel incorrect.",en:"Current password is wrong."},
  "Bestätigungslink an die neue Adresse gesendet. Die Änderung gilt, sobald du ihn antippst.":{it:"Link di conferma inviato al nuovo indirizzo. La modifica vale appena lo tocchi.",fr:"Lien de confirmation envoyé à la nouvelle adresse. Le changement s’applique dès que tu le touches.",en:"Confirmation link sent to the new address. The change applies once you tap it."},
  "Diese Adresse wird schon verwendet.":{it:"Questo indirizzo è già in uso.",fr:"Cette adresse est déjà utilisée.",en:"This address is already in use."},
- "Benutzer verwalten":{it:"Gestisci utenti",fr:"Gérer les utilisateurs",en:"Manage users"},
+ "App-Verwaltung":{it:"Gestione app",fr:"Gestion de l’app",en:"App management"},
  "Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen.":{it:"Accesso non raggiungibile. Controlla la connessione internet.",fr:"Connexion impossible. Vérifie la connexion internet.",en:"Sign-in unavailable. Please check your internet connection."},
  "Bitte warten …":{it:"Attendere …",fr:"Un instant …",en:"Please wait …"},
  "Mit Google anmelden":{it:"Accedi con Google",fr:"Se connecter avec Google",en:"Sign in with Google"},
@@ -167,7 +185,7 @@ Object.assign(I18N,{
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
 /* languages offered in the app; the main admin picks them (Firestore config/app.langs), cached for the sign-in screen */
-let APPLANGS=["de","fr","it","en"];window.UNIT3=false;window.BDAYPUB=false;try{window.BDAYPUB=localStorage.getItem("appbdaypub")==="1";const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";window.UNIT3=localStorage.getItem("appunit3")==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
+let APPLANGS=["de","fr","it","en"];window.UNIT3=false;window.BDAYPUB=false;window.SCRIPTON=true;window.TABSON=null;try{try{const t=JSON.parse(localStorage.getItem("apptabs")||"null");if(Array.isArray(t)&&t.length)window.TABSON=t}catch(_){}window.SCRIPTON=localStorage.getItem("appscript")!=="0";window.BDAYPUB=localStorage.getItem("appbdaypub")==="1";const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";window.UNIT3=localStorage.getItem("appunit3")==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
 try{const x=JSON.parse(localStorage.getItem("applangs")||"null");if(Array.isArray(x)&&x.length)APPLANGS=x.filter(l=>LANGS.some(z=>z[0]===l))}catch(_){}
 function applyLangs(){
   if(!APPLANGS.length)APPLANGS=["de"];
@@ -180,6 +198,8 @@ async function loadLangs(){
     if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}
     const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
     const bp=d.exists()&&d.data().bdayPublic===true;if(window.BDAYPUB!==bp){window.BDAYPUB=bp;try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}render()}
+    const tb=d.exists()&&Array.isArray(d.data().tabs)&&d.data().tabs.length?d.data().tabs:null;if(JSON.stringify(window.TABSON)!==JSON.stringify(tb)){window.TABSON=tb;try{tb?localStorage.setItem("apptabs",JSON.stringify(tb)):localStorage.removeItem("apptabs")}catch(_){}render()}
+    const so=d.exists()?d.data().script!==false:true;if(window.SCRIPTON!==so){window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}render()}
     const u3=d.exists()&&d.data().unit3===true;if(window.UNIT3!==u3){window.UNIT3=u3;try{localStorage.setItem("appunit3",u3?"1":"0")}catch(_){}render()}
     window.LOCSHEET=(d.exists()&&typeof d.data().locSheet==="string")?d.data().locSheet:"";
     const mu=(d.exists()&&typeof d.data().mapUrl==="string")?d.data().mapUrl:"";if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
@@ -429,7 +449,7 @@ function showAcct(needProfile){
   ONBOARD=needProfile===true&&!!MEMBER;
   if(ONBOARD){s.innerHTML='<div class="a2box acbox"><h3>'+L("Willkommen!")+'</h3><p>'+L("Bitte fülle vor dem ersten Start dein Profil aus.")+'</p><p class="ghint">'+esc(ME.email)+'</p>'+profileForm(true)+'<div class="a2b"><button class="lnk" data-ac="signout">'+L("Abmelden")+'</button></div></div>';s.hidden=false;return}
   s.innerHTML='<div class="a2box acbox"><h3>'+L("Mein Konto")+'</h3><p>'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b></p>'+
-    (isAdmin()?'<div class="a2b"><button class="pri" data-ac="admin">'+L("Benutzer verwalten")+'</button></div>':'')+
+    (isAdmin()?'<div class="a2b"><button class="pri" data-ac="admin">'+L("App-Verwaltung")+'</button></div>':'')+
     (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
     '<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
@@ -501,6 +521,53 @@ function cateringHTML(){
   const al=act.filter(m=>String(m.allergies||"").trim()).map(m=>([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email)+": "+m.allergies.trim());
   return secOpen("cater",'Catering · '+act.length+' '+L("aktiv"),esc(act.filter(m=>!m.diet||m.diet==="none").length+' '+L("Ich esse alles"))+(parts.length?'<br>'+esc(parts.join(" · ")):'')+(al.length?'<br><span>'+esc(L("Allergien"))+': '+esc(al.join(" · "))+'</span>':''));
 }
+/* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */
+const BK={busy:false,msg:"",ok:false};
+function bkSec(){
+  let last="";try{last=localStorage.getItem("bk:last")||""}catch(_){}
+  return '<details class="admins asetd" data-sec="backup"'+(SECS.backup?' open':'')+'><summary>'+L("Backup")+'</summary><div class="bk">'+
+    '<p class="ahint">'+L("Sichert Benutzer, Einladungen, Administratoren, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.")+'</p>'+
+    (last?'<p class="ahint">'+L("Letztes Backup auf diesem Gerät")+': '+esc(fmtStamp(last))+'</p>':'')+
+    '<div class="bkb"><button type="button" class="abtn" data-bk="dl"'+(BK.busy?' disabled':'')+'>'+L("Backup herunterladen")+'</button>'+
+    '<label class="abtn bkup">'+L("Backup wiederherstellen")+'<input type="file" accept="application/json,.json" data-bk="up" hidden></label></div>'+
+    '<p class="ahint">'+L("Beim Wiederherstellen werden die Einträge aus der Datei ergänzt oder überschrieben. Nichts wird gelöscht.")+'</p>'+
+    (BK.msg?'<p class="amsg'+(BK.ok?' ok':'')+'" role="status">'+esc(BK.msg)+'</p>':'')+'</div></details>';
+}
+async function bkCollect(){
+  const {F,db}=await fb();
+  const col=async n=>{const q=await F.getDocs(F.collection(db,n));return q.docs.map(d=>({id:d.id,data:d.data()}))};
+  const [members,invites,admins,bdays,cfg]=await Promise.all([col("members"),col("invites"),col("admins"),col("bdays").catch(()=>[]),F.getDoc(F.doc(db,"config","app"))]);
+  const plain=v=>JSON.parse(JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&typeof x.toDate==="function"?{__ts:x.toDate().toISOString()}:x));
+  return plain({app:"tschugger-crew",version:1,createdAt:new Date().toISOString(),by:ME&&ME.email,config:cfg.exists()?cfg.data():null,members,invites,admins,bdays});
+}
+async function bkDownload(){
+  const data=await bkCollect();const t=new Date();
+  const name="tschugger-backup-"+t.getFullYear()+"-"+pad2(t.getMonth()+1)+"-"+pad2(t.getDate())+"-"+pad2(t.getHours())+pad2(t.getMinutes())+".json";
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:"application/json"}));
+  const a=document.createElement("a");a.href=url;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
+  try{localStorage.setItem("bk:last",t.toISOString())}catch(_){}
+  return L("Backup gespeichert")+": "+data.members.length+" "+L("Benutzer")+", "+data.invites.length+" "+L("Einladungen")+".";
+}
+async function bkRestore(file){
+  if(file.size>5e6)throw new Error(L("Datei ist zu gross."));
+  let d;try{d=JSON.parse(await file.text())}catch(_){throw new Error(L("Datei ist kein gültiges Backup."))}
+  if(!d||d.app!=="tschugger-crew"||!Array.isArray(d.members)||!Array.isArray(d.invites))throw new Error(L("Datei ist kein gültiges Backup."));
+  if(!confirmSafe(L("Backup vom {d} wiederherstellen? Vorhandene Einträge werden ergänzt oder überschrieben.").replace("{d}",fmtStamp(d.createdAt||""))))return "";
+  const {F,db}=await fb();const back=v=>JSON.parse(JSON.stringify(v),(k,x)=>x&&typeof x==="object"&&typeof x.__ts==="string"?F.Timestamp&&F.Timestamp.fromDate?F.Timestamp.fromDate(new Date(x.__ts)):x.__ts:x);
+  const own=lc(ME&&ME.email),ok=/^[^/]{1,200}$/;const ops=[];
+  if(d.config&&typeof d.config==="object")ops.push(["config","app",d.config]);
+  for(const [n,list] of [["admins",d.admins],["invites",d.invites],["members",d.members],["bdays",d.bdays]])
+    for(const r of (Array.isArray(list)?list:[]))if(r&&ok.test(String(r.id))&&r.data&&typeof r.data==="object"&&!(n==="members"&&lc(r.data.email)===own))ops.push([n,String(r.id),r.data]);
+  let done=0,fail=0;
+  for(let i=0;i<ops.length;i+=300){const batch=F.writeBatch(db);ops.slice(i,i+300).forEach(([n,id,v])=>batch.set(F.doc(db,n,id),back(v),{merge:true}));
+    try{await batch.commit();done+=Math.min(300,ops.length-i)}catch(err){console.error(err);fail+=Math.min(300,ops.length-i)}}
+  ADM.loaded=false;
+  return L("Wiederhergestellt")+": "+done+(fail?" · "+L("fehlgeschlagen")+": "+fail:"");
+}
+document.addEventListener("click",async e=>{const b=e.target.closest('[data-bk="dl"]');if(!b||BK.busy||!isOwner())return;
+  BK.busy=true;BK.msg="";render();try{BK.msg=await bkDownload();BK.ok=true}catch(err){console.error(err);BK.msg=errText(err);BK.ok=false}BK.busy=false;render()});
+document.addEventListener("change",async e=>{const i=e.target.closest('[data-bk="up"]');if(!i||BK.busy||!isOwner())return;const f=i.files&&i.files[0];i.value="";if(!f)return;
+  BK.busy=true;BK.msg="";render();try{const m=await bkRestore(f);if(m){BK.msg=m;BK.ok=!/fehlgeschlagen|échoué|non riuscit|failed/i.test(m)}}catch(err){console.error(err);BK.msg=err.message||String(err);BK.ok=false}BK.busy=false;render()});
 VIEWS.admin=function(){
   if(!isAdmin())return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>60000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
@@ -524,12 +591,14 @@ VIEWS.admin=function(){
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
     '</div>'+
     '<details class="admins asetd" data-sec="appset"'+(SECS.appset?' open':'')+'><summary>'+L("Einstellungen der App")+'</summary><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
+    '<p class="ahint"><b>'+L("Bereiche")+'</b> – '+L("Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.")+'</p><div class="chk">'+[["plan","Schedule"],["dispo","Callsheet"],["loc","Locations"],["crew","Crew"],["script","Script"],["info","Info"]].map(([k,t])=>'<label class="ck"><input type="checkbox" name="tb" value="'+k+'"'+(!Array.isArray(window.TABSON)||window.TABSON.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
     '<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
+    '<p class="ahint"><b>'+L("Drehbuch")+'</b> – '+L("Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="so"'+(window.SCRIPTON!==false?' checked':'')+'> '+L("Drehbuch anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
-  let h='<section class="adm"><h2 class="dh">'+L("Benutzer verwalten")+'</h2>'+
-    admSec+
+  let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+
+    admSec+(own?bkSec():'')+
     '<div class="admins"><h3>'+L("Benutzer einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>'+
@@ -548,11 +617,13 @@ document.addEventListener("submit",async e=>{
   const fl=e.target.closest('[data-adm="langs"]');
   if(fl){e.preventDefault();if(!isOwner())return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
-    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked,u3=!!fl.querySelector('input[name=u3]').checked,bp=!!fl.querySelector('input[name=bp]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
+    const tb=[...fl.querySelectorAll('input[name=tb]:checked')].map(x=>x.value);
+    if(!tb.length){showMsg(L("Bitte mindestens einen Bereich wählen."),4000);return}
+    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked,u3=!!fl.querySelector('input[name=u3]').checked,bp=!!fl.querySelector('input[name=bp]').checked,so=!!fl.querySelector('input[name=so]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
     if(mu&&!/^https:\/\/\S+$/.test(mu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
     const sh=String(fl.querySelector('input[name=sheet]').value||"").trim();
     if(sh&&!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(sh)){showMsg(L("Bitte einen Google-Sheets-Link eingeben."),4000);return}
-    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,locSheet:sh},{merge:true});window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,locSheet:sh,script:so,tabs:tb},{merge:true});window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const f=e.target.closest('[data-adm="add"]');if(!f)return;e.preventDefault();
   const em=lc(f.em.value),nm=f.nm.value.trim();if(!/@/.test(em))return;

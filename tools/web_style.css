@@ -132,3 +132,9 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .thm{display:flex;gap:8px;margin-top:6px}
 .thm button{flex:1;font:inherit;font-weight:600;padding:10px;border-radius:10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .thm button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.bk .bkb{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.bk .bkup{display:inline-flex;align-items:center;cursor:pointer;background:transparent!important;border:1px solid var(--accent)!important;color:var(--accent)!important}
+.bk .amsg{margin-top:6px}
+.bk .bkb{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.bk .bkup{display:inline-flex;align-items:center;cursor:pointer;background:transparent!important;border:1px solid var(--accent)!important;color:var(--accent)!important}
+.bk .amsg{margin-top:6px}
