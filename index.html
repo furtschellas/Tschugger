@@ -1474,7 +1474,8 @@ document.addEventListener("click",async e=>{
 });
 /* Crew tab: admins see food preferences next to each person (matched by e-mail) */
 /* Crew tab (admins only): toggles for food preferences and birthdays */
-const ADMV={food:false,bday:false,bcal:false};try{for(const k in ADMV)ADMV[k]=localStorage.getItem(k)==="1"}catch(_){}
+/* food + birthdays are on by default for admins; the choice is remembered (v2 keys reset older "off" states) */
+const ADMV={food:true,bday:true,bcal:false};try{for(const k in ADMV){const v=localStorage.getItem("admv2:"+k);if(v!==null)ADMV[k]=v==="1"}}catch(_){}
 const ensureAdm=()=>{if(!ADM.loaded&&!ADM.busy&&!ADM.loading&&!ADM.err){ADM.loading=true;admLoad().then(()=>{ADM.err=""}).catch(err=>{console.error(err);ADM.err=String((err&&(err.code||err.message))||err);render()}).finally(()=>{ADM.loading=false})}};
 /* crew entry -> member: same e-mail, otherwise same first + last name */
 const nkey=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z]+/g," ").trim();
@@ -1508,7 +1509,7 @@ window.crewHead=function(){
   if(ADMV.food||ADMV.bday||ADMV.bcal)ensureAdm();
   return '<div class="admv">'+togBtn("food","Essen")+(ADM.err&&(ADMV.food||ADMV.bday||ADMV.bcal)?'<span class="admerr">Benutzerdaten nicht lesbar ('+esc(ADM.err)+') – Firestore-Regeln prüfen.</span>':'')+togBtn("bday","Geburtstage")+togBtn("bcal","Geburtstagskalender")+'</div>'+(ADM.loaded?(ADMV.bcal?bdayHTML():"")+(ADMV.food?cateringHTML():""):"");
 };
-document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";try{localStorage.setItem(k,ADMV[k]?"1":"0")}catch(_){}render()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";try{localStorage.setItem("admv2:"+k,ADMV[k]?"1":"0")}catch(_){}render()});
 window.crewExtra=function(p){
   if(!isAdmin()||!(ADMV.food||ADMV.bday)||!p)return"";
   if(!ADM.loaded){ensureAdm();return ADM.err?"":'<div class="pinfo"><span class="na">…</span></div>'}
