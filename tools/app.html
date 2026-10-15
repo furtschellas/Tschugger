@@ -837,7 +837,7 @@ function renderPrePro(one,embedded){PPPEOPLE=null;
     if(false&&(pm.base||arr(pm.hotels).length))h+='<section class="ppday"><h4 class="pph">'+L("Basis & Unterkünfte")+'</h4><div class="pplist">'+pl("Base",pm.base)+arr(pm.hotels).map(x=>pl(x.who||"Hotel",x)).join("")+'</div></section>';
     if(false&&arr(pm.contacts).length)h+='<section class="ppday"><h4 class="pph">'+L("Kontakte")+'</h4><div class="pplist">'+arr(pm.contacts).map(c=>'<div class="ppi"><div class="ppt">'+esc(c.role||"")+'</div><div class="ppb"><div class="ppn">'+esc(c.name||"")+'</div>'+(c.phone?'<div class="ppw"><a href="tel:'+esc(String(c.phone).replace(/[^\d+]/g,""))+'">'+esc(c.phone)+'</a></div>':'')+'</div></div>').join("")+'</div></section>';
     if(embedded){if(pm.source)h+='<p class="ppsrc">'+L("Quelle")+': '+esc(pm.source)+(pm.issued?' · '+L("Stand")+' '+esc(pm.issued):'')+'</p>';return h+'</section>'}
-    if(pm.company)h+='<p class="ppsrc"><b>'+esc(pm.company.name||"")+'</b> · '+esc(pm.company.address||"")+'</p>';
+    if(false&&pm.company)h+='<p class="ppsrc"><b>'+esc(pm.company.name||"")+'</b> · '+esc(pm.company.address||"")+'</p>';
     if(pm.distribution)h+='<details class="ppdist"><summary>'+L("Verteiler")+'</summary><p>'+esc(pm.distribution)+'</p></details>';
     if(pm.note)h+='<p class="ppsrc">'+esc(TX(pm,"note"))+'</p>';
     if(pm.source)h+='<p class="ppsrc">'+L("Quelle")+': '+esc(pm.source)+(pm.issued?' · '+L("Stand")+' '+esc(pm.issued):'')+'</p>';
