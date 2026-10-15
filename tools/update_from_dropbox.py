@@ -393,6 +393,36 @@ def main():
             sc = [re.sub(r"^0+", "", p) for p in e["name"][6:].replace(" CAR", "").split("_") if p]
             blk.append({"name": e["name"], "sc": sc, "url": bdir})
         def plabel(n): return re.sub(r"(?<![0-9A-Za-z])0+(?=\d)", "", re.sub(r"(?i)^scene[\s_]*", "", n[:-4]))
+        # blocking photos and videos: encrypted preview images in blk/ (binary: 12-byte IV + AES-GCM), shown in the app's gallery
+        bmed = {}
+        for e in allb:
+            pp = e["path"].split("/")
+            if e["tag"] == "file" and len(pp) >= 2 and pp[-2].lower().startswith("scene_") and re.search(r"\.(jpe?g|png|heic|mov|mp4|m4v)$", e["name"], re.I):
+                bmed.setdefault(pp[-2], []).append(e)
+        os.makedirs("blk", exist_ok=True)
+        want_files = set()
+        for b in blk:
+            items = []
+            folder = b.get("url") or bdir
+            for e in sorted(bmed.get(b["name"], []), key=lambda e: e["name"].lower()):
+                key = hashlib.sha1((str(e.get("id")) + "|" + str(e.get("modified"))).encode()).hexdigest()[:20]
+                fn = "blk/" + key + ".bin"; want_files.add(fn)
+                if not os.path.exists(fn):
+                    try:
+                        r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps({"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
+                        r.raise_for_status()
+                        iv = secrets.token_bytes(12)
+                        open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, r.content, None)); changed = True
+                    except Exception as ex:
+                        log("Vorschau fehlt:", e["name"], str(ex)[:80]); want_files.discard(fn); continue
+                vid = bool(re.search(r"\.(mov|mp4|m4v)$", e["name"], re.I))
+                items.append({"n": e["name"], "t": "vid" if vid else "img", "f": fn,
+                              "u": folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder})
+            if items != (b.get("media") or []):
+                b["media"] = items; changed = True
+        for old in os.listdir("blk"):
+            if "blk/" + old not in want_files and old.endswith(".bin"):
+                os.remove("blk/" + old); changed = True
         for b in blk:  # every scene PDF as its own button (preview inside the shared scene folder)
             names = sorted(bpdf.get(b["name"], []))
             if not names: continue
