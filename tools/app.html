@@ -816,7 +816,7 @@ function addToCalendar(key){
 }
 function renderPrePro(one){PPPEOPLE=null;
   const first=S.days.find(d=>d.kind==="shoot"),pm=(S.meta&&S.meta.prepro)||{};
-  let h='<div class="dayhead"><div><div class="dtitle"><h2>Prep</h2></div><div class="dsub">'+L("Vorbereitung & Proben")+(pm.range?' · '+esc(pm.range):'')+'</div></div></div>';
+  let h='<div class="dayhead"><div><div class="dtitle"><h2>Prep</h2></div></div></div>';
   if(S.prepro.length){
     for(const d of (one?[one]:S.prepro)){const dt=new Date(d.date+"T12:00:00");
       h+='<section class="ppday"><h3 class="ppd">'+WDL(dt)+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'.'+(d.label?' · '+esc(TX(d,"label")):'')+'</h3>'+
