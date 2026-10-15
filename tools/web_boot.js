@@ -73,6 +73,8 @@ Object.assign(I18N,{
  "keine Angaben":{fr:"pas d'indication",it:"nessuna indicazione",en:"not specified"},
  "Alle Kontakte als VCF":{fr:"Tous les contacts en VCF",it:"Tutti i contatti in VCF",en:"All contacts as VCF"},
  "Kontakte als VCF gespeichert.":{fr:"contacts enregistrés en VCF.",it:"contatti salvati in VCF.",en:"contacts saved as VCF."},
+ "Haupt-Admin":{fr:"Admin principal",it:"Admin principale",en:"Main admin"},
+ "Admin":{fr:"Admin",it:"Admin",en:"Admin"},
  "Kontostatus":{fr:"Statut du compte",it:"Stato account",en:"Account status"},
  "Konto aktiv":{fr:"Compte actif",it:"Account attivo",en:"Account active"},
  "Gesperrt":{fr:"Bloqué",it:"Bloccato",en:"Blocked"},
@@ -475,6 +477,9 @@ window.crewExtra=function(p){
   if(ADMV.acct){
     if(!m){const e=lc(p.email);ch.push(na(L(e&&ADM.inv.some(i=>i.id===e)?"Eingeladen, noch kein Konto":"Noch kein Konto")))}
     else ch.push(m.active===true?'<span class="ok">'+esc(L("Konto aktiv"))+'</span>':'<span class="off">'+esc(L("Gesperrt"))+'</span>');
+    const ems=[lc(p.email),m&&m.email].filter(Boolean);
+    if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Haupt-Admin"))+'</span>');
+    else if(ems.some(e=>ADM.adm.includes(e)))ch.push('<span class="adm">'+esc(L("Admin"))+'</span>');
   }
   if(m&&ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ADMV.acct?na(L("Geburtstag")+": –"):""))}
   if(m&&ADMV.food){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?'<span class="diet">'+esc(L("Ich esse alles"))+'</span>':(ADMV.acct?na(L("Essen")+": "+L("keine Angaben")):"")))}

@@ -327,6 +327,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 
 .empty,.offday,.dsp-empty{background:var(--sheet)}
 .vcbtn{display:inline-flex;align-items:center;gap:5px}
+.vc-wide{display:none!important}
+@media (min-width:768px){.vc-wide{display:inline-flex!important}.vc-narrow{display:none!important}}
 .gate{position:fixed;inset:0;z-index:50;background:var(--paper) radial-gradient(120% 60% at 80% -10%,rgba(255,46,138,.22),transparent 60%);display:flex;align-items:center;justify-content:center;padding:24px}
 .gate[hidden]{display:none}
 .gbox{width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px}
@@ -431,6 +433,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .asec .asb span{color:var(--gold)}
 .asec.bcal .asb .bl span{color:var(--gold)}
 .asec.cater,.asec.bcal{padding:0}
+.pinfo .adm{background:var(--gold);color:#1a1206;font-weight:600}
 
 </style>
 </head>
@@ -627,10 +630,12 @@ function renderCrew(){
     h+='<section class="dept"><h3 class="dh">'+esc(TX(g,"dept"))+'</h3><div class="people">'+ppl.map(p=>{
       /* vCard only on the website: the Claude viewer cannot save .vcf files, so there the copy button stays */
       let ct='';const web=typeof window.crewHead==="function";const vc=!web?'':(p.phone||p.email)?'<button class="copy vcbtn" data-vc="'+gi+':'+g.people.indexOf(p)+'" aria-label="'+esc(L("Kontakt ins Telefon übernehmen"))+'" title="'+esc(L("Kontakt ins Telefon übernehmen"))+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard</button>':'';
-      if(p.phone)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vc:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
-      if(p.email)ct+='<span class="em">'+esc(p.email)+'</span>'+(p.phone?'':vc);
+      /* wide screens: vCard after the job title; phones: next to the phone number */
+      const vcW=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-wide"'),vcN=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-narrow"');
+      if(p.phone)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vcN:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
+      if(p.email)ct+='<span class="em">'+esc(p.email)+'</span>'+(p.phone?'':vcN);
       if(p.note)ct+='<span>'+esc(p.note)+'</span>';
-      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span></div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';
+      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span>'+vcW+'</div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';
     }).join("")+'</div></section>';
   }
   if(!n)h+='<div class="empty">'+L('Niemand gefunden für')+' «'+esc(S.q)+'».</div>';
@@ -1156,6 +1161,8 @@ Object.assign(I18N,{
  "keine Angaben":{fr:"pas d'indication",it:"nessuna indicazione",en:"not specified"},
  "Alle Kontakte als VCF":{fr:"Tous les contacts en VCF",it:"Tutti i contatti in VCF",en:"All contacts as VCF"},
  "Kontakte als VCF gespeichert.":{fr:"contacts enregistrés en VCF.",it:"contatti salvati in VCF.",en:"contacts saved as VCF."},
+ "Haupt-Admin":{fr:"Admin principal",it:"Admin principale",en:"Main admin"},
+ "Admin":{fr:"Admin",it:"Admin",en:"Admin"},
  "Kontostatus":{fr:"Statut du compte",it:"Stato account",en:"Account status"},
  "Konto aktiv":{fr:"Compte actif",it:"Account attivo",en:"Account active"},
  "Gesperrt":{fr:"Bloqué",it:"Bloccato",en:"Blocked"},
@@ -1558,6 +1565,9 @@ window.crewExtra=function(p){
   if(ADMV.acct){
     if(!m){const e=lc(p.email);ch.push(na(L(e&&ADM.inv.some(i=>i.id===e)?"Eingeladen, noch kein Konto":"Noch kein Konto")))}
     else ch.push(m.active===true?'<span class="ok">'+esc(L("Konto aktiv"))+'</span>':'<span class="off">'+esc(L("Gesperrt"))+'</span>');
+    const ems=[lc(p.email),m&&m.email].filter(Boolean);
+    if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Haupt-Admin"))+'</span>');
+    else if(ems.some(e=>ADM.adm.includes(e)))ch.push('<span class="adm">'+esc(L("Admin"))+'</span>');
   }
   if(m&&ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ADMV.acct?na(L("Geburtstag")+": –"):""))}
   if(m&&ADMV.food){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?'<span class="diet">'+esc(L("Ich esse alles"))+'</span>':(ADMV.acct?na(L("Essen")+": "+L("keine Angaben")):"")))}
@@ -1568,7 +1578,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="81468773bb";
+const APP_VER="0e1d826647";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
