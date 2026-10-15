@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://api.dropboxapi.com; form-action https://www.dropbox.com; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Dropbox-Verbindung</title>
+<style>
+:root{--bg:#110d1c;--card:#1b1529;--ink:#f4ead6;--mut:#a79cbb;--rule:#2f2644;--acc:#ff2e8a}
+@media (prefers-color-scheme:light){:root{--bg:#f4f2ee;--card:#fff;--ink:#15121c;--mut:#4f4a5a;--rule:#d3cddc;--acc:#b80d5f}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px 16px}
+main{max-width:560px;margin:0 auto;background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:20px}
+h1{font-size:22px;margin:0 0 6px}p,li{color:var(--mut)}ol{padding-left:20px}
+label{display:block;font-size:13px;color:var(--mut);margin-top:12px}
+input,textarea{width:100%;font:inherit;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);background:var(--bg);color:var(--ink)}
+textarea{font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:90px}
+button{margin-top:14px;font:inherit;font-weight:600;padding:10px 16px;border:0;border-radius:99px;background:var(--acc);color:#fff;cursor:pointer}
+code{background:var(--bg);padding:1px 5px;border-radius:4px}.err{color:#ff6b6b}.ok{color:#3fbf7f}
+</style>
+</head>
+<body>
+<main>
+<h1>Dropbox-Verbindung für die Crew-App</h1>
+<p>Diese Seite erzeugt einmalig einen <b>nur lesenden</b> Dropbox-Zugang für die stündliche Aktualisierung auf GitHub. Es wird nichts gespeichert und nichts an andere Server geschickt ausser an Dropbox.</p>
+<ol>
+<li>Auf <b>dropbox.com/developers/apps</b> eine App erstellen: «Scoped access», «Full Dropbox».</li>
+<li>Unter <b>Permissions</b> nur <code>files.metadata.read</code> und <code>files.content.read</code> ankreuzen und speichern.</li>
+<li>Unter <b>Settings → OAuth 2 → Redirect URIs</b> genau diese Adresse eintragen: <code id="ru"></code></li>
+<li>Den <b>App key</b> unten einfügen und verbinden.</li>
+</ol>
+<div id="step1">
+<label for="k">App key</label><input id="k" autocomplete="off" spellcheck="false">
+<button id="go" type="button">Mit Dropbox verbinden</button>
+</div>
+<div id="step2" hidden>
+<p class="ok">Verbunden. Diese zwei Werte in GitHub unter <b>Settings → Secrets and variables → Actions → New repository secret</b> eintragen:</p>
+<label>Name: <code>DROPBOX_APP_KEY</code></label><textarea id="ak" readonly></textarea>
+<label>Name: <code>DROPBOX_REFRESH_TOKEN</code></label><textarea id="rt" readonly></textarea>
+<p>Danach diese Seite schliessen. Den Refresh-Token niemandem weitergeben.</p>
+</div>
+<p id="msg" class="err" role="alert"></p>
+</main>
+<script>
+const RU=location.origin+location.pathname;document.getElementById("ru").textContent=RU;
+const b64u=a=>btoa(String.fromCharCode(...new Uint8Array(a))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const msg=t=>document.getElementById("msg").textContent=t;
+document.getElementById("go").onclick=async()=>{
+  const key=document.getElementById("k").value.trim();if(!/^[a-z0-9]{8,32}$/i.test(key)){msg("Bitte einen gültigen App key einfügen.");return}
+  const ver=b64u(crypto.getRandomValues(new Uint8Array(48)));const ch=b64u(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(ver)));
+  const st=b64u(crypto.getRandomValues(new Uint8Array(16)));
+  sessionStorage.setItem("dbx",JSON.stringify({key,ver,st}));
+  location.href="https://www.dropbox.com/oauth2/authorize?"+new URLSearchParams({client_id:key,response_type:"code",code_challenge:ch,code_challenge_method:"S256",token_access_type:"offline",redirect_uri:RU,state:st,scope:"files.metadata.read files.content.read"});
+};
+(async()=>{
+  const q=new URLSearchParams(location.search);if(!q.get("code")&&!q.get("error"))return;
+  history.replaceState(null,"",RU);
+  if(q.get("error")){msg("Dropbox hat abgelehnt: "+(q.get("error_description")||q.get("error")));return}
+  let s;try{s=JSON.parse(sessionStorage.getItem("dbx")||"null")}catch(_){}
+  if(!s||s.st!==q.get("state")){msg("Sitzung abgelaufen – bitte nochmals verbinden.");return}
+  try{
+    const r=await fetch("https://api.dropboxapi.com/oauth2/token",{method:"POST",body:new URLSearchParams({grant_type:"authorization_code",code:q.get("code"),client_id:s.key,code_verifier:s.ver,redirect_uri:RU})});
+    const j=await r.json();if(!r.ok||!j.refresh_token)throw new Error(j.error_description||j.error||("HTTP "+r.status));
+    sessionStorage.removeItem("dbx");
+    document.getElementById("ak").value=s.key;document.getElementById("rt").value=j.refresh_token;
+    document.getElementById("step1").hidden=true;document.getElementById("step2").hidden=false;
+  }catch(e){msg("Fehler beim Verbinden: "+e.message)}
+})();
+</script>
+</body>
+</html>
