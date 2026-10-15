@@ -81,6 +81,7 @@ Object.assign(I18N,{
  "Ohne Bestätigungs-Mail freischalten":{fr:"Autoriser sans mail de confirmation",it:"Abilita senza mail di conferma",en:"Approve without confirmation mail"},
  "{e} ohne Bestätigungs-Mail freischalten? Nur machen, wenn die Adresse sicher dieser Person gehört.":{fr:"Autoriser {e} sans mail de confirmation ? Seulement si l’adresse appartient bien à cette personne.",it:"Abilitare {e} senza mail di conferma? Solo se l’indirizzo appartiene sicuramente a questa persona.",en:"Approve {e} without a confirmation mail? Only do this if the address surely belongs to this person."},
  "ist freigeschaltet. Die Person meldet sich einfach an – oder tippt auf «Ich habe bestätigt».":{fr:"est autorisé. La personne se connecte simplement – ou touche « J’ai confirmé ».",it:"è abilitato. La persona accede semplicemente – oppure tocca «Ho confermato».",en:"is approved. The person simply signs in – or taps “I have confirmed”."},
+ "Benutzerdaten bearbeiten":{fr:"Modifier les données utilisateur",it:"Modifica dati utente",en:"Edit user data"},
  "Kontoinfos":{fr:"Infos de compte",it:"Info account",en:"Account info"},
  "Startpasswort":{fr:"Mot de passe initial",it:"Password iniziale",en:"Start password"},
  "Für {e} ein Konto mit Startpasswort anlegen? Beim ersten Anmelden muss die Person ein eigenes Passwort festlegen.":{fr:"Créer un compte avec mot de passe initial pour {e} ? À la première connexion, la personne devra choisir son propre mot de passe.",it:"Creare per {e} un account con password iniziale? Al primo accesso la persona dovrà scegliere una propria password.",en:"Create an account with a start password for {e}? On first sign-in the person must set their own password."},
@@ -865,8 +866,8 @@ function editForm(r){
     (m?'<label>'+L("Vorname")+'<input name="fn" maxlength="60" value="'+v(m.firstName)+'"></label><label>'+L("Nachname")+'<input name="ln" maxlength="60" value="'+v(m.lastName)+'"></label>'+
        '<label>'+L("Sprache der App")+langSel("lg",m.lang||"de")+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" value="'+v(m.birthday)+'"></label><label>'+L("Geschlecht (optional)")+genderSel("gd",m.gender||"")+'</label>'+
        '<label>'+L("Ernährung")+dietSel("edt",normDiet(m).diet)+'</label><label>'+L("Verträglichkeiten")+'</label>'+intolBoxes("eint",normDiet(m).intol)+'<label>'+L("Weitere Allergien (optional)")+'<input name="eal" maxlength="200" value="'+v(m.allergies)+'"></label>'
-     :'<label>'+L("Name")+'<input name="nm" maxlength="80" value="'+v(i.name)+'"></label>')+
-    '<label>'+L("Funktion")+'<input name="rl" maxlength="80" value="'+v(i.role)+'"></label>'+
+     :'<label>'+L("Name")+'<input name="nm" maxlength="80" value="'+v(i.name||r.name)+'"></label>')+
+    '<label>'+L("Funktion")+'<input name="rl" maxlength="80" value="'+v(i.role||r.role)+'"></label>'+
     '<p class="ahint">'+L("Die E-Mail-Adresse kann nicht geändert werden – dafür die Person entfernen und mit der neuen Adresse einladen.")+'</p>'+
     '<button type="submit">'+L("Speichern")+'</button></form>';
 }
@@ -938,7 +939,7 @@ document.addEventListener("submit",async e=>{
       if(inv||!m){const d={name:(m?[g("fn"),g("ln")].filter(Boolean).join(" "):g("nm"))||"",role:g("rl")||""};
         if(inv)await F.updateDoc(F.doc(db,"invites",em),d);else await F.setDoc(F.doc(db,"invites",em),Object.assign(d,{addedAt:F.serverTimestamp()}))}
       else if(g("rl"))await F.setDoc(F.doc(db,"invites",em),{name:[g("fn"),g("ln")].filter(Boolean).join(" "),role:g("rl"),addedAt:F.serverTimestamp()});
-      ADM.edit="";showMsg(L("Gespeichert."),3000);await admLoad()}
+      ADM.edit="";ADM.cedit="";showMsg(L("Gespeichert."),3000);await admLoad();render()}
     catch(err){console.error(err);if(btn)btn.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const fl=e.target.closest('[data-adm="langs"]');
@@ -1076,9 +1077,14 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-cmail]");i
   location.href="mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(body)},true);
 window.crewExtra=function(p){
   const ACC=ADMV.acct&&isOwner();
-  if(!isAdmin()||!(ADMV.food||ADMV.bday||ACC)||!p)return"";
-  if(!ADM.loaded){ensureAdm();return ADM.err?"":'<div class="pinfo"><span class="na">…</span></div>'}
+  if(!isAdmin()||!p)return"";
+  if(!ADM.loaded){ensureAdm();return ADM.err||!(ADMV.food||ADMV.bday||ACC)?"":'<div class="pinfo"><span class="na">…</span></div>'}
   const m=memberFor(p),ch=[],na=t=>'<span class="na">'+esc(t)+'</span>';
+  /* admins edit the person's user data right here (same form as in App-Verwaltung) */
+  const ue=m?m.email:lc(p.email),uinv=ue&&ADM.inv.some(i=>i.id===ue),canEd=(m||uinv)&&(isOwner()||!ADMINS.includes(ue));
+  const edBtn=canEd?'<button type="button" class="cinv ced" data-ced="'+esc(ue)+'" aria-expanded="'+(ADM.cedit===ue)+'">✎ '+esc(L(ADM.cedit===ue?"Schliessen":"Benutzerdaten bearbeiten"))+'</button>':"";
+  const edForm=canEd&&ADM.cedit===ue?editForm({email:ue,m,name:p.name,role:p.role}):"";
+  if(!(ADMV.food||ADMV.bday||ACC))return edBtn?'<div class="pinfo">'+edBtn+'</div>'+edForm:"";
   if(ACC){
     if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
       if(inv&&isAdmin())ch.push('<button type="button" class="cinv" data-cmail="'+esc(e)+'" data-nm="'+esc(p.name||"")+'">✉ '+esc(L("Einladungs-Mail schicken"))+'</button>');
@@ -1090,8 +1096,10 @@ window.crewExtra=function(p){
   }
   if(m&&ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ACC?na(L("Geburtstag")+": –"):""))}
   if(m&&ADMV.food){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?"":(ACC?na(L("Essen")+": "+L("keine Angaben")):"")))}
-  const h=ch.filter(Boolean).join("");return h?'<div class="pinfo">'+h+'</div>':"";
+  if(edBtn)ch.push(edBtn);
+  const h=ch.filter(Boolean).join("");return (h?'<div class="pinfo">'+h+'</div>':"")+edForm;
 };
+document.addEventListener("click",e=>{const b=e.target.closest("[data-ced]");if(!b||!isAdmin())return;e.preventDefault();e.stopPropagation();ADM.cedit=ADM.cedit===b.dataset.ced?"":b.dataset.ced;render()},true);
 
 
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}

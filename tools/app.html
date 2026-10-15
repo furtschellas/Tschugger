@@ -1364,7 +1364,7 @@ function fitRows(root){
 }
 window.addEventListener("resize",()=>{clearTimeout(window.__fitT);window.__fitT=setTimeout(()=>{fitRows();const sc=document.getElementById("scn");if(sc)fitRows(sc)},120)});
 function render(){
-  {const ae=document.activeElement;if(S.tab==="acct"&&ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)&&ae.closest(".acpage"))return} /* never wipe a form someone is typing in */
+  {const ae=document.activeElement;if(ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)&&ae.closest(".acpage,form.aedit"))return} /* never wipe a form someone is typing in */
   const tOn=tabsOn();if(!VIEWS[S.tab]||(ALLTABS.includes(S.tab)&&!tOn.includes(S.tab)))S.tab=tOn[0];
   const nb=document.querySelectorAll("nav.tabs button[data-tab]");nb.forEach(b=>{b.hidden=!tOn.includes(b.dataset.tab);b.style.order=String(tOn.indexOf(b.dataset.tab))});
   const nin=document.querySelector("nav.tabs .in");if(nin)nin.style.setProperty("--ntabs",tOn.length);
