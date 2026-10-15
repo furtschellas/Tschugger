@@ -1,0 +1,11 @@
+{
+ "state": "setup",
+ "msg": "Noch nicht eingerichtet",
+ "missing": [
+  "CREW_KEY",
+  "ANTHROPIC_API_KEY",
+  "DROPBOX_APP_KEY",
+  "DROPBOX_REFRESH_TOKEN"
+ ],
+ "at": "2026-10-15T16:26:36Z"
+}

@@ -48,6 +48,22 @@ Object.assign(I18N,{
  "Zu viele Versuche – bitte in ein paar Minuten nochmals.":{fr:"Trop de tentatives – réessaie dans quelques minutes.",it:"Troppi tentativi – riprova tra qualche minuto.",en:"Too many attempts – please try again in a few minutes."},
  "Gmail-Adresse? Dann geht es ohne Bestätigungs-Mail:":{fr:"Adresse Gmail ? Alors sans mail de confirmation :",it:"Indirizzo Gmail? Allora senza mail di conferma:",en:"Gmail address? Then no confirmation mail is needed:"},
  "Absender: noreply@tschugger-83692.firebaseapp.com – bitte auch im Spam- bzw. Junk-Ordner nachsehen und die Mail als «Kein Spam» markieren.":{fr:"Expéditeur : noreply@tschugger-83692.firebaseapp.com – regarde aussi dans les spams et marque le mail comme « non spam ».",it:"Mittente: noreply@tschugger-83692.firebaseapp.com – controlla anche lo spam e segna la mail come «non spam».",en:"Sender: noreply@tschugger-83692.firebaseapp.com – please also check your spam/junk folder and mark the mail as “not spam”."},
+ "Automatische Aktualisierung (Dropbox → Webseite)":{fr:"Mise à jour automatique (Dropbox → site)",it:"Aggiornamento automatico (Dropbox → sito)",en:"Automatic update (Dropbox → website)"},
+ "Läuft":{fr:"Actif",it:"Attivo",en:"Running"},
+ "zuletzt geprüft":{fr:"dernier contrôle",it:"ultimo controllo",en:"last checked"},
+ "Daten vom":{fr:"données du",it:"dati del",en:"data from"},
+ "In den App-Einstellungen ausgeschaltet":{fr:"Désactivée dans les réglages de l’app",it:"Disattivato nelle impostazioni dell’app",en:"Switched off in the app settings"},
+ "Fehler beim letzten Lauf":{fr:"Erreur lors du dernier passage",it:"Errore nell’ultima esecuzione",en:"Error in the last run"},
+ "Noch nicht eingerichtet":{fr:"Pas encore configurée",it:"Non ancora configurato",en:"Not set up yet"},
+ "es fehlen":{fr:"il manque",it:"mancano",en:"missing"},
+ "Lade …":{fr:"Chargement …",it:"Caricamento …",en:"Loading …"},
+ "GitHub liest die Dropbox zweimal pro Stunde (nur lesend), wandelt neue Drehpläne, Crewlisten, Dispos und das Drehbuch um und veröffentlicht sie verschlüsselt auf der Webseite – ohne dass ein Computer laufen muss.":{fr:"GitHub lit la Dropbox deux fois par heure (lecture seule), convertit les nouveaux plans de tournage, listes d’équipe, feuilles de service et le scénario et les publie chiffrés sur le site – sans qu’un ordinateur doive tourner.",it:"GitHub legge la Dropbox due volte all’ora (solo lettura), converte nuovi piani di lavorazione, liste crew, ordini del giorno e la sceneggiatura e li pubblica criptati sul sito – senza che un computer debba essere acceso.",en:"GitHub reads the Dropbox twice an hour (read-only), converts new schedules, crew lists, call sheets and the script and publishes them encrypted on the website – no computer needs to be running."},
+ "Dropbox-Zugang (nur lesend) erzeugen:":{fr:"Créer l’accès Dropbox (lecture seule) :",it:"Creare l’accesso Dropbox (solo lettura):",en:"Create the Dropbox access (read-only):"},
+ "Claude-API-Schlüssel erstellen:":{fr:"Créer la clé API Claude :",it:"Creare la chiave API Claude:",en:"Create the Claude API key:"},
+ "den Schlüssel der Crew-Daten bekommst du von Claude im Chat.":{fr:"la clé des données d’équipe, tu la reçois de Claude dans le chat.",it:"la chiave dei dati crew te la dà Claude nella chat.",en:"you get the crew data key from Claude in the chat."},
+ "Alle vier in GitHub eintragen:":{fr:"Saisir les quatre dans GitHub :",it:"Inserire tutte e quattro in GitHub:",en:"Enter all four in GitHub:"},
+ "Ersten Lauf starten:":{fr:"Lancer le premier passage :",it:"Avviare la prima esecuzione:",en:"Start the first run:"},
+ "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Zugangsanfragen":{fr:"Demandes d’accès",it:"Richieste di accesso",en:"Access requests"},
  "Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».":{fr:"Ces personnes ne sont pas sur la liste et demandent l’accès. « Autoriser » les invite ; elles touchent ensuite « Actualiser ».",it:"Queste persone non sono nella lista e chiedono l’accesso. «Autorizza» le invita; poi toccano «Aggiorna».",en:"These people are not on the list and ask for access. “Approve” invites them; they then tap “Refresh”."},
  "Freischalten":{fr:"Autoriser",it:"Autorizza",en:"Approve"},
@@ -647,7 +663,7 @@ async function admLoad(){
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
-const SECS={};try{for(const k of ["cater","bcal"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1"}catch(_){SECS.cater=SECS.bcal=true}
+const SECS={};try{for(const k of ["cater","bcal"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
 const secOpen=(k,title,body)=>'<details class="asec '+k+'" data-sec="'+k+'"'+(SECS[k]!==false?' open':'')+'><summary>'+esc(title)+'</summary><div class="asb">'+body+'</div></details>';
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
 /* departments that are not fed on set: left out of the catering count */
@@ -714,6 +730,28 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-tmv]");if(
   if(b.dataset.tmv==="up"&&r.previousElementSibling)p.insertBefore(r,r.previousElementSibling);
   else if(b.dataset.tmv==="down"&&r.nextElementSibling)p.insertBefore(r.nextElementSibling,r);
   b.focus()});
+/* status of the hourly GitHub update (Dropbox → website), read from status.json in the repository */
+const UPST={d:null,at:0,busy:false};
+function upLoad(){if(UPST.busy||Date.now()-UPST.at<120000)return;UPST.busy=true;
+  fetch("status.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null).then(d=>{UPST.d=d||{state:"none"};UPST.at=Date.now();UPST.busy=false;if(S.tab==="admin")render()})}
+function upSec(){
+  upLoad();const d=UPST.d;const GH="https://github.com/furtschellas/Tschugger";
+  const when=t=>{try{return new Date(t).toLocaleString(LANG==="en"?"en-GB":LANG+"-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(_){return t||""}};
+  let st;if(!d)st='<p class="ahint">'+L("Lade …")+'</p>';
+  else if(d.state==="ok")st='<p class="upst ok">● '+L("Läuft")+' – '+L("zuletzt geprüft")+' '+esc(when(d.at))+(d.updatedAt?' · '+L("Daten vom")+' '+esc(when(d.updatedAt)):'')+(d.version?' · '+esc(d.version):'')+'</p>';
+  else if(d.state==="off")st='<p class="upst warn">● '+L("In den App-Einstellungen ausgeschaltet")+'</p>';
+  else if(d.state==="error")st='<p class="upst err">● '+L("Fehler beim letzten Lauf")+' ('+esc(when(d.at))+'): '+esc(d.msg||"")+'</p>';
+  else st='<p class="upst warn">● '+L("Noch nicht eingerichtet")+(d.missing&&d.missing.length?' – '+L("es fehlen")+': '+d.missing.map(m=>'<code>'+esc(m)+'</code>').join(", "):'')+'</p>';
+  const ok=d&&d.state==="ok";
+  return '<details class="admins asetd upsec" data-sec="upsec"'+(SECS.upsec||!ok?' open':'')+'><summary>'+L("Automatische Aktualisierung (Dropbox → Webseite)")+'</summary>'+st+
+    '<p class="ahint">'+L("GitHub liest die Dropbox zweimal pro Stunde (nur lesend), wandelt neue Drehpläne, Crewlisten, Dispos und das Drehbuch um und veröffentlicht sie verschlüsselt auf der Webseite – ohne dass ein Computer laufen muss.")+'</p>'+
+    (ok?'':'<ol class="upsteps"><li>'+L("Dropbox-Zugang (nur lesend) erzeugen:")+' <a href="dropbox-setup.html" target="_blank" rel="noopener">dropbox-setup.html</a> → <code>DROPBOX_APP_KEY</code>, <code>DROPBOX_REFRESH_TOKEN</code></li>'+
+      '<li>'+L("Claude-API-Schlüssel erstellen:")+' <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> → <code>ANTHROPIC_API_KEY</code></li>'+
+      '<li><code>CREW_KEY</code> – '+L("den Schlüssel der Crew-Daten bekommst du von Claude im Chat.")+'</li>'+
+      '<li>'+L("Alle vier in GitHub eintragen:")+' <a href="'+GH+'/settings/secrets/actions" target="_blank" rel="noopener">Settings → Secrets → Actions</a></li>'+
+      '<li>'+L("Ersten Lauf starten:")+' <a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">Actions → «Run workflow»</a></li></ol>')+
+    '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p></details>';
+}
 function reqSec(){
   const r=(ADM.req||[]).slice().sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),LANG));
   return '<div class="admins areq" id="areq"><h3>'+L("Benutzer-Anfragen")+' <span class="ust '+(r.length?'adm':'')+'">'+r.length+'</span></h3>'+
@@ -753,7 +791,7 @@ VIEWS.admin=function(){
     '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+
-    admSec+(own?bkSec():'')+
+    admSec+(own?upSec()+bkSec():'')+
     '<div class="admins"><h3>'+L("Benutzer einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>'+
