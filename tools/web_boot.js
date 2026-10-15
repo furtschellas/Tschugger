@@ -281,7 +281,7 @@ const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password
 let ONBOARD=false;
 function nameFields(){
   const cn=crewNames();
-  if(cn)return '<label>'+L("Name")+'<input type="text" value="'+esc([cn.firstName,cn.lastName].filter(Boolean).join(" "))+'" readonly tabindex="-1" class="ro"></label><p class="ghint">'+L("Aus der Crewliste übernommen.")+'</p>';
+  if(cn)return '<div class="pname"><span>'+L("Vorname")+'</span><b>'+esc(cn.firstName)+'</b><span>'+L("Nachname")+'</span><b>'+esc(cn.lastName||"–")+'</b></div><p class="ghint">'+L("Aus der Crewliste übernommen.")+'</p>';
   return '<label>'+L("Vorname")+'<input type="text" name="fn" autocomplete="given-name" required value="'+esc((MEMBER&&MEMBER.firstName)||"")+'"></label><label>'+L("Nachname")+'<input type="text" name="ln" autocomplete="family-name" required value="'+esc((MEMBER&&MEMBER.lastName)||"")+'"></label>';
 }
 function profileForm(onb){
