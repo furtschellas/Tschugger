@@ -751,18 +751,22 @@ function acctInner(){
     '';
 }
 /* «Mein Konto» is its own page; only the first-start profile (onboarding) stays a dialog */
-VIEWS.acct=function(){return ME?'<section class="mypage acpage">'+acctInner()+'</section>':'<div class="empty">'+L("Kein Zugang")+'</div>'};
+VIEWS.acct=function(){if(ME)setTimeout(()=>{const v=document.getElementById("view");if(v&&S.tab==="acct")markNeed(v)},0);return ME?'<section class="mypage acpage">'+acctInner()+'</section>':'<div class="empty">'+L("Kein Zugang")+'</div>'};
 let ACCTWIRED=false;
 function wireAcctPage(){if(ACCTWIRED)return;ACCTWIRED=true;
   document.addEventListener("click",e=>{if(e.target.closest(".acpage"))onAcctClick(e)});
   document.addEventListener("submit",e=>{if(e.target.closest(".acpage"))onAcctSubmit(e)})}
+/* required profile fields that are still empty get a pink outline right away; it disappears as soon as they are filled in */
+function markNeed(root){const f=root.querySelector('form[data-af="pf"]');if(!f)return;
+  const upd=()=>f.querySelectorAll("input[required],select[required]").forEach(el=>el.classList.toggle("need",!String(el.value||"").trim()));
+  upd();if(!f.dataset.need){f.dataset.need="1";f.addEventListener("input",upd);f.addEventListener("change",upd)}}
 function showAcct(needProfile){
   ONBOARD=needProfile===true&&!!MEMBER;
   if(ONBOARD){
     let s=document.getElementById("acct");
     if(!s){s=document.createElement("div");s.id="acct";s.className="a2hs";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
       s.addEventListener("click",onAcctClick);s.addEventListener("submit",onAcctSubmit)}
-    s.innerHTML='<div class="a2box acbox"><h3>'+L("Willkommen!")+'</h3><p>'+L("Bitte fülle vor dem ersten Start dein Profil aus.")+'</p><p class="ghint">'+esc(ME.email)+'</p>'+profileForm(true)+'<div class="a2b"><button class="lnk" data-ac="signout">'+L("Abmelden")+'</button></div></div>';s.hidden=false;return}
+    s.innerHTML='<div class="a2box acbox"><h3>'+L("Willkommen!")+'</h3><p>'+L("Bitte fülle vor dem ersten Start dein Profil aus.")+'</p><p class="ghint">'+esc(ME.email)+'</p>'+profileForm(true)+'<div class="a2b"><button class="lnk" data-ac="signout">'+L("Abmelden")+'</button></div></div>';s.hidden=false;markNeed(s);return}
   wireAcctPage();S.tab="acct";S.srcOpen=false;window.scrollTo(0,0);render();
 }
 async function onAcctClick(e){
