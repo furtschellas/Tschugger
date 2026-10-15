@@ -118,3 +118,17 @@
 .alangs button[type=submit]{margin-top:14px}
 .alangs .ahint{padding-top:16px;border-top:1px solid var(--rule)}
 .alangs .ahint:first-child{padding-top:0;border-top:0}
+/* heller Modus */
+html[data-theme="light"] .gate{background:var(--paper) radial-gradient(120% 60% at 80% -10%,rgba(184,13,95,.10),transparent 60%)}
+html[data-theme="light"] .a2box{box-shadow:0 14px 40px rgba(20,16,30,.18)}
+html[data-theme="light"] .gerr,html[data-theme="light"] .amsg,html[data-theme="light"] .admerr{color:#b42318}
+html[data-theme="light"] .gok,html[data-theme="light"] .amsg.ok{color:#18794e}
+html[data-theme="light"] .ust.ok,html[data-theme="light"] .pinfo .ok{background:#e3f6ec;color:#18794e;border-color:#9fd8b8}
+html[data-theme="light"] .ust.off,html[data-theme="light"] .pinfo .off{background:#fde8e6;color:#b42318}
+html[data-theme="light"] .pinfo .diet{background:#e3f6ec;color:#18794e}
+html[data-theme="light"] .pinfo .bday{background:#fbefd6;color:#7d5200}
+html[data-theme="light"] .ust.adm,html[data-theme="light"] .pinfo .adm{background:#f2b33d;color:#1a1206}
+html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
+.thm{display:flex;gap:8px;margin-top:6px}
+.thm button{flex:1;font:inherit;font-weight:600;padding:10px;border-radius:10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.thm button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
