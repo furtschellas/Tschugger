@@ -423,6 +423,10 @@ def main():
                         try:
                             import shutil
                             ff = shutil.which("ffmpeg")
+                            if not ff:
+                                try:
+                                    import imageio_ffmpeg; ff = imageio_ffmpeg.get_ffmpeg_exe()
+                                except Exception: ff = None
                             if not ff: raise RuntimeError("ffmpeg fehlt")
                             with tempfile.TemporaryDirectory() as td:
                                 src = os.path.join(td, "in" + os.path.splitext(e["name"])[1].lower()); dst = os.path.join(td, "out.mp4")
