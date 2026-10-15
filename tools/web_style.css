@@ -110,3 +110,4 @@
 .asetd[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .asetd form{margin-top:8px}
 .admins .aform{margin-top:8px}
+.alangs .amap{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);margin:2px 0 4px}
