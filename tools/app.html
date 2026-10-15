@@ -595,6 +595,7 @@ html body .hbtns>.refresh{width:calc(28px*var(--bs,1));height:calc(28px*var(--bs
 .galnav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;font-size:26px;line-height:1;cursor:pointer}.galnav.prev{left:8px}.galnav.next{right:8px}
 .galcap{font-size:12.5px;color:var(--muted);margin:6px 0;overflow-wrap:anywhere}.galview h3 small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
 .fpl.blk.hasm{background:color-mix(in srgb,#e0457b 12%,transparent)}
+html body .smodes{justify-content:center;flex-wrap:wrap;overflow:visible}
 </style>
 
 <div class="wrap">
@@ -1445,7 +1446,7 @@ function fitRows(root){
   (root||document).querySelectorAll(".smodes,.asub,.hbtns,.myhead,.mcpick,.fpls").forEach(r=>{
     r.style.removeProperty("--bs");
     if(!r.offsetParent)return;
-    const over=()=>r.scrollWidth>r.clientWidth+1||[...r.children].some(c=>c.scrollWidth>c.clientWidth+1&&c.tagName==="BUTTON");
+    const kids=r.children,over=()=>r.scrollWidth>r.clientWidth+1||[...kids].some(c=>c.scrollWidth>c.clientWidth+1&&c.tagName==="BUTTON")||(r.classList.contains("smodes")&&kids.length>1&&kids[kids.length-1].offsetTop>kids[0].offsetTop+2);
     let b=1;while(b>0.72&&over()){b=Math.round((b-0.04)*100)/100;r.style.setProperty("--bs",b)}
   });
 }
