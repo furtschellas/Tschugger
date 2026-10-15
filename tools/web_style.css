@@ -104,3 +104,9 @@
 .asec.cater,.asec.bcal{padding:0}
 .pinfo .adm{background:var(--gold);color:#1a1206;font-weight:600}
 .alangs button[type=submit]{font:inherit;font-weight:600;font-size:15px;margin-top:8px;padding:9px 18px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.asetd>summary{cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center}
+.asetd>summary::-webkit-details-marker{display:none}
+.asetd>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 10px;transition:transform .15s}
+.asetd[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+.asetd form{margin-top:8px}
+.admins .aform{margin-top:8px}
