@@ -257,7 +257,7 @@ h3.dh{font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing
 .dtitle{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-width:0}
 .dtitle h2{white-space:nowrap}
 .dtitle .dlink{white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;padding:4px 10px}
-.dtitle .pvb{flex:none;gap:5px}
+.dtitle .pvb{flex:none;gap:5px;margin-left:auto}
 @media (max-width:400px){.dayhead .dtitle h2{font-size:24px}.dtitle .pvbtn{width:30px;height:30px}.dtitle .dlink{font-size:12.5px}}
 .dlink{border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:99px;padding:4px 12px;font-size:13px;font-weight:600;cursor:pointer;min-height:32px}
 .dlink.on{background:var(--accent);color:var(--accent-ink)}
@@ -2002,7 +2002,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="b4f54ae62e";
+const APP_VER="1e450a2c34";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
