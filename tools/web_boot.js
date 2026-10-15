@@ -82,6 +82,37 @@ Object.assign(I18N,{
  "{e} ohne Bestätigungs-Mail freischalten? Nur machen, wenn die Adresse sicher dieser Person gehört.":{fr:"Autoriser {e} sans mail de confirmation ? Seulement si l’adresse appartient bien à cette personne.",it:"Abilitare {e} senza mail di conferma? Solo se l’indirizzo appartiene sicuramente a questa persona.",en:"Approve {e} without a confirmation mail? Only do this if the address surely belongs to this person."},
  "ist freigeschaltet. Die Person meldet sich einfach an – oder tippt auf «Ich habe bestätigt».":{fr:"est autorisé. La personne se connecte simplement – ou touche « J’ai confirmé ».",it:"è abilitato. La persona accede semplicemente – oppure tocca «Ho confermato».",en:"is approved. The person simply signs in – or taps “I have confirmed”."},
  "Benutzerdaten bearbeiten":{fr:"Modifier les données utilisateur",it:"Modifica dati utente",en:"Edit user data"},
+ "Alle":{fr:"Tous",it:"Tutti",en:"All"},
+ "Aktiv":{fr:"Actifs",it:"Attivi",en:"Active"},
+ "Eingeladen":{fr:"Invités",it:"Invitati",en:"Invited"},
+ "Mit Rolle":{fr:"Avec rôle",it:"Con ruolo",en:"With role"},
+ "Aktionen":{fr:"Actions",it:"Azioni",en:"Actions"},
+ "Keine Treffer.":{fr:"Aucun résultat.",it:"Nessun risultato.",en:"No matches."},
+ "Name, E-Mail oder Funktion suchen":{fr:"Chercher nom, e-mail ou fonction",it:"Cerca nome, e-mail o funzione",en:"Search name, email or role"},
+ "Rollen":{fr:"Rôles",it:"Ruoli",en:"Roles"},
+ "Rolle":{fr:"Rôle",it:"Ruolo",en:"Role"},
+ "Benutzer:in":{fr:"Utilisateur",it:"Utente",en:"User"},
+ "Neue Rolle":{fr:"Nouveau rôle",it:"Nuovo ruolo",en:"New role"},
+ "Rolle erstellen":{fr:"Créer le rôle",it:"Crea ruolo",en:"Create role"},
+ "Rolle löschen":{fr:"Supprimer le rôle",it:"Elimina ruolo",en:"Delete role"},
+ "Rolle gespeichert.":{fr:"Rôle enregistré.",it:"Ruolo salvato.",en:"Role saved."},
+ "Rolle gelöscht.":{fr:"Rôle supprimé.",it:"Ruolo eliminato.",en:"Role deleted."},
+ "Name der Rolle":{fr:"Nom du rôle",it:"Nome del ruolo",en:"Role name"},
+ "Name der Rolle, z. B. Catering":{fr:"Nom du rôle, p. ex. Catering",it:"Nome del ruolo, ad es. Catering",en:"Role name, e.g. Catering"},
+ "Person":{fr:"personne",it:"persona",en:"person"},
+ "Personen":{fr:"personnes",it:"persone",en:"people"},
+ "Benutzerdaten sehen":{fr:"Voir les données des utilisateurs",it:"Vedere i dati utente",en:"See user data"},
+ "Benutzerdaten ändern":{fr:"Modifier les données des utilisateurs",it:"Modificare i dati utente",en:"Change user data"},
+ "Benutzer:innen einladen und Anfragen freischalten":{fr:"Inviter des utilisateurs et approuver les demandes",it:"Invitare utenti e approvare richieste",en:"Invite users and approve requests"},
+ "Essen und Allergien in der Crew sehen":{fr:"Voir repas et allergies dans l'équipe",it:"Vedere pasti e allergie nella crew",en:"See food and allergies in the crew list"},
+ "Geburtstage in der Crew sehen":{fr:"Voir les anniversaires dans l'équipe",it:"Vedere i compleanni nella crew",en:"See birthdays in the crew list"},
+ "Alle Kontakte als VCF exportieren":{fr:"Exporter tous les contacts en VCF",it:"Esportare tutti i contatti come VCF",en:"Export all contacts as VCF"},
+ "Termine aller Personen ansehen":{fr:"Voir les rendez-vous de tout le monde",it:"Vedere gli appuntamenti di tutti",en:"See everyone's appointments"},
+ "Einstellungen der App ändern":{fr:"Modifier les paramètres de l'app",it:"Modificare le impostazioni dell'app",en:"Change app settings"},
+ "Alles, auch Rollen, Admins, Sperren und Backup":{fr:"Tout, y compris rôles, admins, blocage et sauvegarde",it:"Tutto, anche ruoli, admin, blocco e backup",en:"Everything, including roles, admins, blocking and backup"},
+ "Alle Berechtigungen ausser «Einstellungen der App ändern»":{fr:"Tous les droits sauf « Modifier les paramètres de l'app »",it:"Tutti i permessi tranne «Modificare le impostazioni dell'app»",en:"All permissions except “Change app settings”"},
+ "Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person nur die Drehdaten.":{fr:"Un rôle regroupe des droits. Attribue-le dans la gestion des utilisateurs, sous « Rôle ». Sans rôle, une personne ne voit que les données de tournage.",it:"Un ruolo raggruppa dei permessi. Assegnalo nella gestione utenti alla voce «Ruolo». Senza ruolo una persona vede solo i dati delle riprese.",en:"A role bundles permissions. Assign it in user management under “Role”. Without a role a person only sees the shooting data."},
+ "Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.":{fr:"Supprimer le rôle « {r} » ? Les personnes ayant ce rôle perdent leurs droits.",it:"Eliminare il ruolo «{r}»? Le persone con questo ruolo perdono i permessi.",en:"Delete role “{r}”? People with this role lose its permissions."},
  "Benutzerverwaltung":{fr:"Gestion des utilisateurs",it:"Gestione utenti",en:"User management"},
  "Einstellungen":{fr:"Paramètres",it:"Impostazioni",en:"Settings"},
  "Kontoinfos":{fr:"Infos de compte",it:"Info account",en:"Account info"},
@@ -194,7 +225,7 @@ Object.assign(I18N,{
  "gesperrt":{fr:"bloqué",it:"bloccato",en:"blocked"},
  "eingeladen":{fr:"invité",it:"invitato",en:"invited"},
  "Administrator:innen":{fr:"Administrateurs",it:"Amministratrici e amministratori",en:"Administrators"},
- "Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».":{fr:"Les administrateurs peuvent inviter des personnes et voient les repas et anniversaires dans l’équipe. Toi seul peux bloquer et supprimer. Tu nommes des admins plus bas avec « Nommer admin ».",it:"Gli amministratori possono invitare persone e vedono pasti e compleanni nella crew. Solo tu puoi bloccare e rimuovere. Nomini gli admin più sotto con «Rendi admin».",en:"Administrators can invite people and see food and birthdays in the crew list. Only you can block and remove. Appoint admins below with “Make admin”."},
+ "Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins und andere Rollen weist du unten bei der Person unter «Rolle» zu.":{fr:"Les administrateurs peuvent inviter des personnes et voient les repas et anniversaires dans l’équipe. Toi seul peux bloquer et supprimer. Tu attribues admins et autres rôles plus bas, sous « Rôle » de la personne.",it:"Gli amministratori possono invitare persone e vedono pasti e compleanni nella crew. Solo tu puoi bloccare e rimuovere. Admin e altri ruoli li assegni più sotto alla voce «Ruolo» della persona.",en:"Administrators can invite people and see food and birthdays in the crew list. Only you can block and remove. Assign admins and other roles below under “Role” on the person."},
  "Entfernen":{fr:"Supprimer",it:"Rimuovi",en:"Remove"},
  "Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.":{fr:"Seules les adresses invitées peuvent créer un compte (e-mail/mot de passe ou Google). Les personnes bloquées ou supprimées perdent immédiatement l’accès. Chacun gère lui-même son mot de passe et son adresse e-mail.",it:"Solo gli indirizzi invitati possono creare un account (e-mail/password o Google). Le persone bloccate o rimosse perdono subito l’accesso. Ognuno gestisce da sé password e indirizzo e-mail.",en:"Only invited addresses can create an account (email/password or Google). Blocked or removed people lose access immediately. Everyone manages their own password and email address."},
  "E-Mail-Adresse":{fr:"Adresse e-mail",it:"Indirizzo e-mail",en:"Email address"},
@@ -328,6 +359,12 @@ const lc=s=>String(s||"").trim().toLowerCase();
 let COADMIN=false;
 const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
+/* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
+const PERMS=[["users.view","Benutzerdaten sehen"],["users.edit","Benutzerdaten ändern"],["users.invite","Benutzer:innen einladen und Anfragen freischalten"],["crew.food","Essen und Allergien in der Crew sehen"],["crew.bday","Geburtstage in der Crew sehen"],["crew.vcf","Alle Kontakte als VCF exportieren"],["mycal.all","Termine aller Personen ansehen"],["settings","Einstellungen der App ändern"]];
+let MYPERMS=[],MYROLE="";
+const can=p=>isOwner()||(isAdmin()&&p!=="settings")||MYPERMS.includes(p);
+const canAdm=()=>isAdmin()||["users.view","users.invite","users.edit","settings"].some(p=>MYPERMS.includes(p));
+window.canPerm=can;
 /* stability: never wait forever on the network (film sets often have weak reception) */
 const withTimeout=(p,ms,what)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error((what||"request")+" timeout"),{code:"unavailable"})),ms))]);
 let FBP=null;
@@ -410,6 +447,8 @@ const isOffline=err=>!navigator.onLine||/unavailable|network|offline|failed to f
 async function checkMember(){
   const {F,db}=await fb();const u=ME;
   if(!isOwner()&&u.emailVerified){try{COADMIN=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(_){COADMIN=false}}
+  MYPERMS=[];MYROLE="";
+  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){MYROLE=String(ur.data().role||"");const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())MYPERMS=(rd.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}}catch(_){}}
   const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){
     let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
@@ -478,11 +517,11 @@ async function onGateSubmit(e){
   e.preventDefault();const f=e.target;const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;gateMsg("",true);
   try{
     const {A,auth}=await fb();const em=f.querySelector("#gem")?f.querySelector("#gem").value.trim():"";const pw=f.querySelector("#gpw")?f.querySelector("#gpw").value:"";
-    if(f.dataset.f==="login"){window.__justSignedIn=true;await A.signInWithEmailAndPassword(auth,em,pw)}
+    if(f.dataset.f==="login"){window.__justSignedIn=true;if(window.resetViewState)resetViewState();await A.signInWithEmailAndPassword(auth,em,pw)}
     else if(f.dataset.f==="register"){
       if(pw.length<8)throw {code:"weak-password"};
       if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
-      window.__justSignedIn=true;const c=await A.createUserWithEmailAndPassword(auth,em,pw);
+      window.__justSignedIn=true;if(window.resetViewState)resetViewState();const c=await A.createUserWithEmailAndPassword(auth,em,pw);
       await sendVerify(c.user)
     }
     else if(f.dataset.f==="reset"){try{await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),em)}catch(err){if(!/user-not-found/.test(err.code||""))throw err}gateMsg(L("Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen."),false)}
@@ -525,7 +564,7 @@ async function notifyApproved(em,q){
 }
 /* check again every 5 minutes and when the app comes back to the foreground */
 setInterval(()=>{if(ME&&isAdmin()&&document.visibilityState==="visible")checkRequests()},300000);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&isAdmin())checkRequests()});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&can("users.invite"))checkRequests()});
 async function checkRequests(){
   try{const {F,db}=await fb();const r=await F.getDocs(F.collection(db,"requests"));const n=r.size||r.docs.length;
     const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||"";b.setAttribute("aria-label",L("App-Verwaltung")+(n?" · "+n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."):""))}
@@ -578,6 +617,7 @@ async function onGateClick(e){
   else if(a.dataset.gact==="request"){a.disabled=true;await sendRequest()}
   else if(a.dataset.gact==="google"){
     const prov=new A.GoogleAuthProvider();prov.setCustomParameters({prompt:"select_account"});window.__justSignedIn=true;
+    if(window.resetViewState)resetViewState();
     try{if(isStandalone())await A.signInWithRedirect(auth,prov);else await A.signInWithPopup(auth,prov)}
     catch(err){const c=err.code||"";
       if(/popup-blocked|operation-not-supported|web-storage/.test(c)){try{await A.signInWithRedirect(auth,prov)}catch(e2){gateMsg(errText(e2),true)}}
@@ -651,8 +691,8 @@ function acctButton(on){
   if(!g){g=document.createElement("button");g.id="admBtn";g.className="refresh";g.type="button";
     g.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="reqdot" aria-hidden="true"></span>';
     const r=$("#refresh");r.parentNode.insertBefore(g,r);g.addEventListener("click",()=>{S.tab="admin";S.srcOpen=false;window.scrollTo(0,0);render()})}
-  g.setAttribute("aria-label",L("App-Verwaltung"));g.title=L("App-Verwaltung");g.hidden=!(on&&isAdmin());
-  if(on&&isAdmin())checkRequests();
+  g.setAttribute("aria-label",L("App-Verwaltung"));g.title=L("App-Verwaltung");g.hidden=!(on&&canAdm());
+  if(on&&can("users.invite"))checkRequests();
 }
 const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password'));
 let ONBOARD=false;
@@ -734,8 +774,10 @@ async function onAcctSubmit(e){
 const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false};
 async function admLoad(){
   const {F,db}=await fb();
-  const [i,m,a]=await Promise.all([F.getDocs(F.collection(db,"invites")),F.getDocs(F.collection(db,"members")),F.getDocs(F.collection(db,"admins")).catch(()=>({docs:[]}))]);
-  try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.reqErr=""}catch(err){ADM.req=[];ADM.reqErr=(err&&err.code)||String(err)}
+  const none=()=>({docs:[]}),opt=(ok,pr)=>ok?pr:pr.catch(none);
+  const [i,m,a,ro,ur]=await Promise.all([opt(isAdmin(),F.getDocs(F.collection(db,"invites"))),opt(isAdmin(),F.getDocs(F.collection(db,"members"))),F.getDocs(F.collection(db,"admins")).catch(none),F.getDocs(F.collection(db,"roles")).catch(none),F.getDocs(F.collection(db,"userroles")).catch(none)]);
+  ADM.roles=ro.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.ur={};ur.docs.forEach(d=>{ADM.ur[d.id]=String((d.data()||{}).role||"")});
+  if(can("users.invite")){try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.reqErr=""}catch(err){ADM.req=[];ADM.reqErr=(err&&err.code)||String(err)}}else{ADM.req=[];ADM.reqErr=""}
   {const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",ADM.req.length>0);b.dataset.n=ADM.req.length||""}}
   ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();
 }
@@ -857,7 +899,7 @@ function showStartPw(em,nm,pw){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pwshow]");if(!b||!isOwner()||!ADM.pw)return;const em=b.dataset.pwshow;const m=ADM.mem.find(x=>x.email===em),i=ADM.inv.find(x=>x.id===em);showStartPw(em,(m&&m.name)||(i&&i.name)||"",ADM.pw[em])});
 /* admins: see and change a user's details (registered: profile incl. food; invited: name, role) */
 function userInfo(r){
-  const m=r.m;if(!m||!isAdmin())return"";
+  const m=r.m;if(!m||!(isAdmin()||can("users.view")))return"";
   const g=(GENDERS.find(x=>x[0]===m.gender)||[])[1];
   const bits=[m.birthday?L("Geburtsdatum")+": "+m.birthday.split("-").reverse().join("."):"",g?L(g):"",dietText(m)].filter(Boolean);
   return bits.length?'<div class="uinf">'+bits.map(esc).join(" · ")+'</div>':"";
@@ -879,12 +921,69 @@ function reqSec(){
     (ADM.reqErr?'<p class="admerr">'+L("Anfragen nicht lesbar")+' ('+esc(ADM.reqErr)+') – '+L("Firestore-Regeln prüfen.")+'</p>':
      r.length?'<p class="ahint">'+L("Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».")+'</p>':'<p class="ahint">'+L("Keine offenen Anfragen.")+'</p>')+
     r.map(q=>'<div class="arow"><span><b>'+esc(q.name||"")+'</b> · '+esc(q.id)+(q.role?'<br><small>'+esc(q.role)+'</small>':'')+(q.note?'<br><small>«'+esc(q.note)+'»</small>':'')+'</span>'+
-      (isAdmin()?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
+      (can("users.invite")?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
 }
+const permBoxes=sel=>'<div class="chk perms">'+PERMS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>';
+function rolesSec(){
+  const cnt=id=>Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e)).length;
+  const roles=(ADM.roles||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG));
+  return '<div class="admins"><h3>'+L("Rollen")+'</h3><p class="ahint">'+L("Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person nur die Drehdaten.")+'</p>'+
+    '<div class="arow rfix"><span><b>'+L("Besitzer:in")+'</b><br><small>'+L("Alles, auch Rollen, Admins, Sperren und Backup")+'</small></span></div>'+
+    '<div class="arow rfix"><span><b>'+L("Admin")+'</b><br><small>'+L("Alle Berechtigungen ausser «Einstellungen der App ändern»")+'</small></span><span class="ust adm">'+ADM.adm.length+'</span></div>'+
+    roles.map(ro=>'<form class="arole" data-role="'+esc(ro.id)+'"><div class="arh"><input name="rn" maxlength="40" required value="'+esc(ro.name||"")+'" aria-label="'+esc(L("Name der Rolle"))+'"><span class="ust">'+cnt(ro.id)+' '+L(cnt(ro.id)===1?"Person":"Personen")+'</span></div>'+permBoxes(ro.perms)+'<div class="arb"><button type="submit">'+L("Speichern")+'</button><button type="button" class="lnk" data-rdel="'+esc(ro.id)+'">'+L("Rolle löschen")+'</button></div></form>').join("")+
+    '<form class="arole new" data-role=""><h4>'+L("Neue Rolle")+'</h4><input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'">'+permBoxes([])+'<div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button></div></form></div>';
+}
+document.addEventListener("submit",async e=>{const f=e.target.closest("form.arole");if(!f)return;e.preventDefault();if(!isOwner())return;
+  const name=String(f.rn.value||"").trim().slice(0,40),perms=readBoxes(f,"rp").filter(p=>PERMS.some(x=>x[0]===p));if(!name)return;
+  let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
+  const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});showMsg(L("Rolle gespeichert."),2500);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();await admLoad()}
+  catch(err){if(btn)btn.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!isOwner())return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
+  if(!confirmSafe(L("Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.").replace("{r}",ro.name||id)))return;
+  try{const {F,db}=await fb();for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)await F.deleteDoc(F.doc(db,"userroles",em));await F.deleteDoc(F.doc(db,"roles",id));showMsg(L("Rolle gelöscht."),2500);await admLoad()}
+  catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
+document.addEventListener("change",async e=>{const sl=e.target.closest("select[data-urole]");if(!sl||!isOwner())return;const em=sl.dataset.urole,v=sl.value;if(ADMINS.includes(em))return;sl.disabled=true;
+  try{const {F,db}=await fb();
+    if(v==="admin"){await F.setDoc(F.doc(db,"admins",em),{addedAt:F.serverTimestamp()});if(ADM.ur[em])await F.deleteDoc(F.doc(db,"userroles",em))}
+    else{if(ADM.adm.includes(em))await F.deleteDoc(F.doc(db,"admins",em));if(v)await F.setDoc(F.doc(db,"userroles",em),{role:v,at:F.serverTimestamp()});else if(ADM.ur[em])await F.deleteDoc(F.doc(db,"userroles",em))}
+    showMsg(L("Rolle gespeichert."),2500);await admLoad()}
+  catch(err){sl.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
+/* user list: one compact card per person, filter chips with counts, actions folded away */
+const initials=n=>String(n||"?").split(/[\s@._-]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
+function userList(rows,vis,o){
+  const F=[["all","Alle"],["act","Aktiv"],["inv","Eingeladen"],["off","Gesperrt"],["adm","Mit Rolle"]];
+  const chips='<div class="ufil" role="group">'+F.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>'<button type="button" data-uf="'+k+'" aria-pressed="'+(ADM.uf===k)+'">'+L(t)+' <span>'+ADM.cnt[k]+'</span></button>').join("")+'</div>';
+  const card=r=>{
+    const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.act===r.email,nm=r.name||cp.name||"";
+    const badge=o.isAdm(r.email)?'<span class="ust adm">'+L(isOwn?"Besitzer:in":"Admin")+'</span>':(o.roleOf(r.email)?'<span class="ust role">'+esc(o.roleName(o.roleOf(r.email)))+'</span>':'');
+    const acts=[
+      o.cEd&&(own||!isOwn)?'<button data-adm="edit" data-em="'+esc(r.email)+'">✎ '+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'',
+      own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'',
+      own&&!r.m&&!isOwn?'<button data-adm="nomail" data-em="'+esc(r.email)+'">'+L("Ohne Bestätigungs-Mail freischalten")+'</button>':'',
+      own&&!r.m&&!isOwn?'<button data-adm="startpw" data-em="'+esc(r.email)+'" data-nm="'+esc(r.name||"")+'">'+L("Startpasswort erzeugen")+'</button>':'',
+      !r.m&&o.cInv?'<a class="abtnl" href="'+o.mail(r)+'">✉ '+L("Einladungsmail")+'</a>':'',
+      own&&r.m&&!isOwn?(r.m.active===true?'<button class="warn" data-adm="block" data-uid="'+esc(r.m.uid)+'">'+L("Sperren")+'</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">'+L("Entsperren")+'</button>'):'',
+      isOwn?'':own&&r.m?'<button class="warn" data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">'+L("Entfernen")+'</button>':(r.inv&&!r.m&&o.cInv?'<button class="warn" data-adm="uninvite" data-em="'+esc(r.email)+'">'+L("Einladung löschen")+'</button>':'')
+    ].filter(Boolean);
+    const hasActs=acts.length||(own&&!isOwn);
+    return '<div class="ucard'+(r.m&&r.m.active!==true?' blocked':'')+(open?' open':'')+'">'+
+      '<div class="uhd"><span class="uav" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b>'+badge+o.st(r)+'</div>'+
+      '<div class="usub">'+(cp.role?esc(cp.role)+' · ':'')+'<span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?' · '+esc(r.m.lang.toUpperCase()):'')+'</div>'+userInfo(r)+'</div>'+
+      (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" aria-label="'+esc(L("Aktionen"))+'" title="'+esc(L("Aktionen"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
+      (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
+      (open?'<div class="ubody">'+(own&&!isOwn?o.roleSel(r):'')+(o.cEd&&ADM.edit===r.email?editForm(r):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
+    '</div>'};
+  return '<div class="admins ulist"><h3>'+L("Benutzer:innen")+' <span class="ust">'+rows.length+'</span></h3>'+
+    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+chips+
+    (vis.length?'<div class="ucards">'+vis.map(card).join("")+'</div>':'<p class="ahint">'+L("Keine Treffer.")+'</p>')+'</div>';
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-uf]");if(b){ADM.uf=b.dataset.uf;render();return}
+  const t=e.target.closest("[data-uact]");if(t){const em=t.dataset.uact;const was=ADM.act===em||ADM.edit===em;ADM.act=was?"":em;if(was)ADM.edit="";render()}});
 try{ADM.sub=localStorage.getItem("admsub")||"users"}catch(_){ADM.sub="users"}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
 VIEWS.admin=function(){
-  if(!isAdmin())return '<div class="empty">'+L("Kein Zugang")+'</div>';
+  if(!canAdm())return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>60000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
   if(!ADM.loaded){admLoad().catch(err=>{console.error(err);showMsg(L("Liste der Benutzer:innen konnte nicht geladen werden:")+" "+(err.message||err),6000)});return '<div class="empty">'+L("Lade Benutzer:innen …")+'</div>'}
   const memBy={};ADM.mem.forEach(m=>memBy[m.email]=m);
@@ -895,17 +994,20 @@ VIEWS.admin=function(){
   for(const i of ADM.inv){const m=memBy[i.id];rows.push({email:i.id,name:nm(m)||i.name||"",inv:true,m});seen.add(i.id)}
   for(const m of ADM.mem)if(!seen.has(m.email))rows.push({email:m.email,name:nm(m),inv:false,m});
   rows.sort((a,b)=>(a.name||a.email).localeCompare(b.name||b.email,LANG));
-  const q=lc(ADM.q);const vis=rows.filter(r=>!q||(r.email+" "+r.name).toLowerCase().includes(q));
+  const q=lc(ADM.q);const UF={all:()=>true,act:r=>r.m&&r.m.active===true,inv:r=>!r.m,off:r=>r.m&&r.m.active!==true,adm:r=>ADMINS.includes(r.email)||ADM.adm.includes(r.email)||!!ADM.ur[r.email]};
+  if(!UF[ADM.uf])ADM.uf="all";
+  const vis=rows.filter(r=>(!q||(r.email+" "+r.name+" "+((crewPerson(r.email)||{}).role||"")).toLowerCase().includes(q))&&UF[ADM.uf](r));
+  ADM.cnt=Object.fromEntries(Object.keys(UF).map(k=>[k,rows.filter(UF[k]).length]));
   const newCrew=crewEmails().filter(c=>!invBy[c.email]&&!memBy[c.email]);
   const st=r=>r.m?(r.m.active===true?'<span class="ust ok">'+(LANG==="de"?"aktiv":L("aktiv_1"))+'</span>':'<span class="ust off">'+L("gesperrt")+'</span>'):'<span class="ust wait">'+L("eingeladen")+'</span>';
   const site=location.origin+location.pathname;
   const mail=r=>"mailto:"+encodeURIComponent(r.email)+"?subject="+encodeURIComponent("TSCHUGGER Tigerblood – "+(LANG==="de"?"Crew-App":L("Crew-App")))+"&body="+encodeURIComponent((I18N.MAIL_BODY[LANG]||I18N.MAIL_BODY.de).replace("{n}",r.name?" "+r.name.split(" ")[0]:"").replace("{site}",site).replace("{e}",r.email));
   const own=isOwner();const isAdm=e=>ADMINS.includes(e)||ADM.adm.includes(e);
-  const admSec=own?'<div class="admins"><h3>'+L("Administrator:innen")+'</h3><p class="ahint">'+L("Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».")+'</p>'+
+  const admSec=own?'<div class="admins"><h3>'+L("Administrator:innen")+'</h3><p class="ahint">'+L("Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins und andere Rollen weist du unten bei der Person unter «Rolle» zu.")+'</p>'+
     '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">'+L("Besitzer:in")+'</span></div>'+
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
     '</div>':'';
-  const setSec=own?'<div class="admins asetd"><h3>'+L("Einstellungen der App")+'</h3><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
+  const setSec=can("settings")?'<div class="admins asetd"><h3>'+L("Einstellungen der App")+'</h3><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
     '<p class="ahint"><b>'+L("Bereiche")+'</b> – '+L("Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.")+' '+L("Reihenfolge mit ▲ ▼ ändern.")+'</p><div class="tbord">'+tabOrder().map(k=>[k,{plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",info:"Info"}[k]]).map(([k,t])=>'<div class="tbrow"><label class="ck"><input type="checkbox" name="tb" value="'+k+'"'+(!Array.isArray(window.TABSON)||window.TABSON.includes(k)?' checked':'')+'> '+t+'</label><span class="tbmv"><button type="button" data-tmv="up" aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-tmv="down" aria-label="'+esc(L("Nach unten"))+'">▼</button></span></div>').join("")+'</div>'+
     '<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer:innen in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
@@ -913,33 +1015,27 @@ VIEWS.admin=function(){
     '<p class="ahint"><b>'+L("Drehbuch")+'</b> – '+L("Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="so"'+(window.SCRIPTON!==false?' checked':'')+'> '+L("Drehbuch anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></div>':'';
-  const SUBS=own?[["users","Benutzerverwaltung"],["set","Einstellungen"],["bk","Backup"]]:[["users","Benutzerverwaltung"]];
-  if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub="users";
+  const SUBS=[];if(isAdmin()||can("users.view")||can("users.invite"))SUBS.push(["users","Benutzerverwaltung"]);if(can("settings"))SUBS.push(["set","Einstellungen"]);if(own)SUBS.push(["roles","Rollen"],["bk","Backup"]);
+  if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
+  if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
   const subNav=SUBS.length>1?'<nav class="asub" role="tablist">'+SUBS.map(([k,t])=>'<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'">'+(t==="Benutzerverwaltung"&&LANG==="de"?"Benutzer&shy;verwaltung":esc(L(t)))+'</button>').join("")+'</nav>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+subNav;
-  if(ADM.sub==="set")return h+setSec+upSec()+'</section>';
+  if(ADM.sub==="set")return h+(own?upSec().replace(/<details([^>]*data-sec="upsec")(?![^>]*\bopen)/,'<details$1 open'):'')+setSec+'</section>';
+  if(ADM.sub==="roles")return h+rolesSec()+'</section>';
   if(ADM.sub==="bk")return h+bkSec().replace(' data-sec="backup"',' data-sec="backup" open')+'</section>';
-  h+=admSec+
+  const cInv=can("users.invite"),cView=isAdmin()||can("users.view"),cEd=can("users.edit");
+  const roleOf=e=>{if(ADMINS.includes(e))return "";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
+  const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).name||"");
+  const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Benutzer:in")+'</option><option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>'+ADM.roles.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(x=>'<option value="'+esc(x.id)+'"'+(roleOf(r.email)===x.id?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join("")+'</select></label>';
+  h+=(cInv?reqSec():'')+admSec+(!cInv?'':
     '<div class="admins"><h3>'+L("Benutzer:innen einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
-    (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>'+
-    '<div class="astats">'+rows.length+' '+L("Benutzer:innen")+' · '+rows.filter(r=>r.m&&r.m.active===true).length+' '+L("aktiv")+' · '+rows.filter(r=>!r.m).length+' '+L("noch nicht registriert")+''+((ADM.req||[]).length?' · <a href="#areq" class="reqlnk">'+ADM.req.length+' '+L("Anfragen von Benutzer:innen")+'</a>':'')+'</div>'+
-    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Benutzer:innen suchen"))+'" value="'+esc(ADM.q)+'">'+
-    '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">'+L("Admin")+'</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div>'+(own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+userInfo(r)+(isAdmin()&&ADM.edit===r.email?editForm(r):'')+'<div class="aacts">'+
-      (isAdmin()&&(own||!ADMINS.includes(r.email))?'<button data-adm="edit" data-em="'+esc(r.email)+'">'+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'')+
-      (own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'')+
-      (own&&!r.m&&!ADMINS.includes(r.email)?'<button data-adm="nomail" data-em="'+esc(r.email)+'">'+L("Ohne Bestätigungs-Mail freischalten")+'</button>':'')+
-      (own&&!r.m&&!ADMINS.includes(r.email)?'<button data-adm="startpw" data-em="'+esc(r.email)+'" data-nm="'+esc(r.name||"")+'">'+L("Startpasswort erzeugen")+'</button>':'')+
-      (!r.m?'<a href="'+mail(r)+'">'+L("Einladungsmail")+'</a>':'')+
-      (own&&!ADMINS.includes(r.email)?(ADM.adm.includes(r.email)?'<button data-adm="rmadmin" data-em="'+esc(r.email)+'">'+L("Admin entfernen")+'</button>':'<button data-adm="mkadmin" data-em="'+esc(r.email)+'">'+L("Zum Admin machen")+'</button>'):'')+
-      (own&&r.m&&!ADMINS.includes(r.email)?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">'+L("Sperren")+'</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">'+L("Entsperren")+'</button>'):'')+
-      (ADMINS.includes(r.email)?'':own&&r.m?'<button data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">'+L("Entfernen")+'</button>':(r.inv&&!r.m?'<button data-adm="uninvite" data-em="'+esc(r.email)+'">'+L("Einladung löschen")+'</button>':''))+
-      '</div></div>').join("")+'</div>'+reqSec()+'</section>';
+    (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>')+(!cView?'':userList(rows,vis,{own,cInv,cEd,isAdm,roleOf,roleName,roleSel,st,mail}))+'</section>';
   return h;
 };
 document.addEventListener("input",e=>{if(e.target.id==="aq"){ADM.q=e.target.value;const p=e.target.selectionStart;render();const i=$("#aq");if(i){i.focus();i.setSelectionRange(p,p)}}});
 document.addEventListener("submit",async e=>{
-  const sf=e.target.closest('[data-adm="save"]');if(sf){e.preventDefault();if(!isAdmin())return;
+  const sf=e.target.closest('[data-adm="save"]');if(sf){e.preventDefault();if(!can("users.edit"))return;
     const em=sf.dataset.em,g=n=>{const x=sf.querySelector('[name="'+n+'"]');return x?String(x.value||"").trim():null};
     const m=ADM.mem.find(x=>x.email===em),inv=ADM.inv.find(x=>x.id===em),btn=sf.querySelector("button");if(btn)btn.disabled=true;
     try{const {F,db}=await fb();
@@ -952,7 +1048,7 @@ document.addEventListener("submit",async e=>{
     catch(err){console.error(err);if(btn)btn.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const fl=e.target.closest('[data-adm="langs"]');
-  if(fl){e.preventDefault();if(!isOwner())return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
+  if(fl){e.preventDefault();if(!can("settings"))return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
     const tb=[...fl.querySelectorAll('input[name=tb]:checked')].map(x=>x.value),tord=[...fl.querySelectorAll('input[name=tb]')].map(x=>x.value);
     if(!tb.length){showMsg(L("Bitte mindestens einen Bereich wählen."),4000);return}
@@ -1063,12 +1159,13 @@ async function syncBdays(force){
 }
 const ICO={acct:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6 1.6 0 3 .5 4.1 1.3M15.5 17.5l2 2 4-4.5"/>',bcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13.5c-.7-.7-.7-1.6 0-2.3.7.7.7 1.6 0 2.3zM12 14v3"/>',food:'<path d="M7 2v8M4 2v5a3 3 0 0 0 6 0V2M7 10v12M17 2c-2 1.5-3 4-3 7h3v13"/>',bday:'<path d="M4 21h16M5 21v-8h14v8M12 13V9M12 6.5c-1-1-1-2.5 0-3.5 1 1 1 2.5 0 3.5zM5 16c2.3 1.5 4.7 1.5 7 0s4.7-1.5 7 0"/>'};
 const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'" aria-pressed="'+ADMV[k]+'" aria-label="'+esc(L(t))+'" title="'+esc(L(t))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICO[k]+'</svg></button>';
+const AV=k=>!!ADMV[k]&&can(k==="food"?"crew.food":k==="bday"?"crew.bday":"users.view");
 window.crewHead=function(){
-  if(!isAdmin()){if(!window.BDAYPUB||!ME)return"";if(!PUBB.loaded)loadPubBdays();return PUBB.loaded?bdayHTML():""}
+  if(!(can("crew.food")||can("crew.bday")||can("crew.vcf")||can("users.edit"))){if(!window.BDAYPUB||!ME)return"";if(!PUBB.loaded)loadPubBdays();return PUBB.loaded?bdayHTML():""}
   ensureAdm();
-  return '<div class="admv">'+togBtn("food","Essen")+(ADM.err?'<span class="admerr">'+L("Daten der Benutzer:innen nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+togBtn("bday","Geburtstage")+(isOwner()?togBtn("acct","Kontoinfos"):"")+'<button type="button" class="foodtog ico vcall" data-vcall aria-label="'+esc(L("Alle Kontakte als VCF"))+'" title="'+esc(L("Alle Kontakte als VCF"))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>'+'</div>'+(ADM.loaded?bdayHTML()+cateringHTML():"");
+  return '<div class="admv">'+(can("crew.food")?togBtn("food","Essen"):"")+(ADM.err?'<span class="admerr">'+L("Daten der Benutzer:innen nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+(can("crew.bday")?togBtn("bday","Geburtstage"):"")+(isOwner()?togBtn("acct","Kontoinfos"):"")+(!can("crew.vcf")?"":'<button type="button" class="foodtog ico vcall" data-vcall aria-label="'+esc(L("Alle Kontakte als VCF"))+'" title="'+esc(L("Alle Kontakte als VCF"))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>')+'</div>'+(ADM.loaded?(can("crew.bday")?bdayHTML():"")+(can("crew.food")?cateringHTML():""):"");
 };
-document.addEventListener("click",e=>{if(!e.target.closest("[data-vcall]")||!isAdmin())return;const {text,n}=allVCards();if(!n)return;saveVcf(text,"TSCHUGGER Tigerblood Crew");showMsg(n+" "+L("Kontakte als VCF gespeichert."),4000)});
+document.addEventListener("click",e=>{if(!e.target.closest("[data-vcall]")||!can("crew.vcf"))return;const {text,n}=allVCards();if(!n)return;saveVcf(text,"TSCHUGGER Tigerblood Crew");showMsg(n+" "+L("Kontakte als VCF gespeichert."),4000)});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";if(ADMV[k]&&!ADM.loading&&Date.now()-(ADM.at||0)>60000)ADM.loaded=false;try{localStorage.setItem("admv2:"+k,ADMV[k]?"1":"0")}catch(_){}render()});
 /* main admin: invite a crew member as app user straight from the crew list (shown with «Kontostatus») */
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-cinv]");if(!b||!isOwner())return;e.preventDefault();e.stopPropagation();
@@ -1086,14 +1183,14 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-cmail]");i
   location.href="mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(body)},true);
 window.crewExtra=function(p){
   const ACC=ADMV.acct&&isOwner();
-  if(!isAdmin()||!p)return"";
-  if(!ADM.loaded){ensureAdm();return ADM.err||!(ADMV.food||ADMV.bday||ACC)?"":'<div class="pinfo"><span class="na">…</span></div>'}
+  if(!p||!(can("crew.food")||can("crew.bday")||can("users.edit")))return"";
+  if(!ADM.loaded){ensureAdm();return ADM.err||!(AV("food")||AV("bday")||ACC)?"":'<div class="pinfo"><span class="na">…</span></div>'}
   const m=memberFor(p),ch=[],na=t=>'<span class="na">'+esc(t)+'</span>';
   /* admins edit the person's user data right here (same form as in App-Verwaltung) */
-  const ue=m?m.email:lc(p.email),uinv=ue&&ADM.inv.some(i=>i.id===ue),canEd=(m||uinv)&&(isOwner()||!ADMINS.includes(ue));
+  const ue=m?m.email:lc(p.email),uinv=ue&&ADM.inv.some(i=>i.id===ue),canEd=can("users.edit")&&(m||uinv)&&(isOwner()||!ADMINS.includes(ue));
   const edBtn=canEd?'<button type="button" class="cinv ced" data-ced="'+esc(ue)+'" aria-expanded="'+(ADM.cedit===ue)+'">✎ '+esc(L(ADM.cedit===ue?"Schliessen":"Benutzerdaten bearbeiten"))+'</button>':"";
   const edForm=canEd&&ADM.cedit===ue?editForm({email:ue,m,name:p.name,role:p.role}):"";
-  if(!(ADMV.food||ADMV.bday||ACC))return edBtn?'<div class="pinfo">'+edBtn+'</div>'+edForm:"";
+  if(!(AV("food")||AV("bday")||ACC))return edBtn?'<div class="pinfo">'+edBtn+'</div>'+edForm:"";
   if(ACC){
     if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
       if(inv&&isAdmin())ch.push('<button type="button" class="cinv" data-cmail="'+esc(e)+'" data-nm="'+esc(p.name||"")+'">✉ '+esc(L("Einladungs-Mail schicken"))+'</button>');
@@ -1103,12 +1200,12 @@ window.crewExtra=function(p){
     if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Besitzer:in"))+'</span>');
     else if(ems.some(e=>ADM.adm.includes(e)))ch.push('<span class="adm">'+esc(L("Admin"))+'</span>');
   }
-  if(m&&ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ACC?na(L("Geburtstag")+": –"):""))}
-  if(m&&ADMV.food){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?"":(ACC?na(L("Essen")+": "+L("keine Angaben")):"")))}
+  if(m&&AV("bday")){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ACC?na(L("Geburtstag")+": –"):""))}
+  if(m&&AV("food")){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?"":(ACC?na(L("Essen")+": "+L("keine Angaben")):"")))}
   if(edBtn)ch.push(edBtn);
   const h=ch.filter(Boolean).join("");return (h?'<div class="pinfo">'+h+'</div>':"")+edForm;
 };
-document.addEventListener("click",e=>{const b=e.target.closest("[data-ced]");if(!b||!isAdmin())return;e.preventDefault();e.stopPropagation();ADM.cedit=ADM.cedit===b.dataset.ced?"":b.dataset.ced;render()},true);
+document.addEventListener("click",e=>{const b=e.target.closest("[data-ced]");if(!b||!can("users.edit"))return;e.preventDefault();e.stopPropagation();ADM.cedit=ADM.cedit===b.dataset.ced?"":b.dataset.ced;render()},true);
 
 
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
@@ -1153,10 +1250,10 @@ render();
     if(typeof A.isSignInWithEmailLink==="function"&&A.isSignInWithEmailLink(auth,location.href)){
       const q=new URLSearchParams(location.search);let em=q.get("em")||"";try{em=em||localStorage.getItem("emailForSignIn")||""}catch(_){}
       if(!em)em=(prompt(L("Bitte bestätige deine E-Mail-Adresse:"))||"").trim();
-      if(em){window.__justSignedIn=true;A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(null,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
+      if(em){window.__justSignedIn=true;if(window.resetViewState)resetViewState();A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(null,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
     }
     A.onAuthStateChanged(auth,u=>{
-      if(!u){ME=null;acctButton(false);clearLocal();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
+      if(!u){ME=null;MYPERMS=[];acctButton(false);clearLocal();if(window.resetViewState)resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
         /* the sign-in screen may already be open (person switched to «create account» while Firebase was starting): keep it and what was typed */
         const g=document.getElementById("gate");if(g&&!g.hidden&&["login","register","reset"].includes(AUTHMODE)&&g.querySelector("form"))return;
         showGate("login");return}

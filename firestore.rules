@@ -12,6 +12,15 @@ service cloud.firestore {
       return isOwner()
         || (verified() && exists(/databases/$(database)/documents/admins/$(myEmail())));
     }
+    // Rollen: der Besitzer legt roles/{id} (name, perms) an und weist sie unter userroles/{email} zu.
+    // can(p): Besitzer alles; Admins alles ausser 'settings'; sonst die Berechtigungen der eigenen Rolle
+    function rolePerms() {
+      return get(/databases/$(database)/documents/roles/$(get(/databases/$(database)/documents/userroles/$(myEmail())).data.role)).data.perms;
+    }
+    function can(p) {
+      return isOwner() || (isAdmin() && p != 'settings')
+        || (verified() && exists(/databases/$(database)/documents/userroles/$(myEmail())) && p in rolePerms());
+    }
     function isMember() {
       return signedIn()
         && exists(/databases/$(database)/documents/members/$(request.auth.uid))
@@ -27,13 +36,27 @@ service cloud.firestore {
     // App-Einstellungen (z. B. angebotene Sprachen): alle lesen, nur der Haupt-Admin ändert
     match /config/{doc} {
       allow read: if true;
-      allow write: if isOwner() && doc == 'app';
+      allow write: if can('settings') && doc == 'app';
+    }
+
+    match /roles/{id} {
+      allow read: if signedIn();
+      allow write: if isOwner()
+        && (request.resource == null || (request.resource.data.keys().hasOnly(['name', 'perms', 'at'])
+            && request.resource.data.name is string && request.resource.data.name.size() <= 40
+            && request.resource.data.perms is list && request.resource.data.perms.size() <= 20));
+    }
+    match /userroles/{email} {
+      allow get: if (verified() && myEmail() == email) || isAdmin();
+      allow list: if isAdmin();
+      allow write: if isOwner() && email != 'furtschellas@gmail.com'
+        && (request.resource == null || request.resource.data.keys().hasOnly(['role', 'at']));
     }
 
     // Geburtstagsliste (nur Name + Tag/Monat): jede Person pflegt ihren eigenen Eintrag, der Haupt-Admin gleicht ab;
     // lesen dürfen Admins immer, alle anderen Mitglieder nur, wenn der Haupt-Admin sie freigegeben hat
     match /bdays/{uid} {
-      allow read: if isAdmin()
+      allow read: if can('crew.bday')
         || (isMember() && get(/databases/$(database)/documents/config/app).data.get('bdayPublic', false) == true);
       allow write: if isOwner() || (verified() && request.auth.uid == uid
         && (request.resource == null || request.resource.data.keys().hasOnly(['name', 'md'])));
@@ -49,8 +72,10 @@ service cloud.firestore {
 
     // Einladungen (E-Mail-Adresse = Dokument-ID): verwalten alle Admins
     match /invites/{email} {
-      allow read, delete: if isAdmin();
-      allow create, update: if isAdmin() && request.resource.data.keys().hasOnly(['name', 'role', 'addedAt']);
+      allow read: if can('users.view') || can('users.invite');
+      allow delete: if can('users.invite');
+      allow create: if can('users.invite') && request.resource.data.keys().hasOnly(['name', 'role', 'addedAt']);
+      allow update: if (can('users.invite') || can('users.edit')) && request.resource.data.keys().hasOnly(['name', 'role', 'addedAt']);
       allow get: if verified() && myEmail() == email;
     }
 
@@ -61,7 +86,7 @@ service cloud.firestore {
         && request.resource.data.name is string && request.resource.data.name.size() <= 80
         && (!('note' in request.resource.data) || request.resource.data.note.size() <= 280);
       allow get: if (verified() && myEmail() == email) || isAdmin();
-      allow list, delete: if isAdmin();
+      allow list, delete: if can('users.invite');
     }
 
     // Startpasswort-Konten: nur der Besitzer legt sie an; die Person setzt nach dem ersten Login mustChange auf false
@@ -82,11 +107,11 @@ service cloud.firestore {
 
     // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren und entfernen kann nur der Haupt-Admin
     match /members/{uid} {
-      allow read: if isAdmin();
+      allow read: if can('users.view') || can('users.edit') || can('crew.food') || can('crew.bday');
       // der Haupt-Admin selbst kann nicht gesperrt oder gelöscht werden
       allow update, delete: if isOwner() && resource.data.email != 'furtschellas@gmail.com';
       // alle Admins dürfen die Profildaten der Benutzer:innen ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
-      allow update: if isAdmin() && resource.data.email != 'furtschellas@gmail.com'
+      allow update: if can('users.edit') && resource.data.email != 'furtschellas@gmail.com'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'diet', 'intol', 'allergies']);
       allow get: if signedIn() && request.auth.uid == uid;
       allow create: if isOwner() || (isAdmin() && request.auth.uid == uid) || (verified() && request.auth.uid == uid
