@@ -173,3 +173,7 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .upsteps{margin:6px 0 8px;padding-left:20px;font-size:14px;line-height:1.5}.upsteps li{margin:3px 0}.upsec code{font-size:12px}
 .pinfo .cinv{font:inherit;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
 .pinfo .cinv:disabled{opacity:.5}
+.aedit{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin:8px 0;padding:10px;border:1px solid var(--rule);border-radius:10px}
+.aedit label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}.aedit input,.aedit select{font:inherit;font-size:14px;padding:7px 9px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.aedit .ahint,.aedit button{grid-column:1/-1}
+@media (max-width:420px){.aedit{grid-template-columns:1fr}}

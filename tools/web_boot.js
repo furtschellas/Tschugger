@@ -73,6 +73,11 @@ Object.assign(I18N,{
  "«Konto erstellen» mit genau dieser E-Mail-Adresse:":{fr:"« Créer un compte » avec exactement cette adresse :",it:"«Crea account» con esattamente questo indirizzo:",en:"“Create account” with exactly this e-mail address:"},
  "(Gmail-Adresse: einfach «Mit Google anmelden»)":{fr:"(adresse Gmail : simplement « Se connecter avec Google »)",it:"(indirizzo Gmail: semplicemente «Accedi con Google»)",en:"(Gmail address: simply “Sign in with Google”)"},
  "Bestätigungs-Mail öffnen und auf den Link tippen – bitte auch im Spam-Ordner nachsehen.":{fr:"Ouvrir le mail de confirmation et toucher le lien – regarde aussi dans les spams.",it:"Apri la mail di conferma e tocca il link – controlla anche lo spam.",en:"Open the confirmation mail and tap the link – please also check your spam folder."},
+ "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
+ "Bearbeiten":{fr:"Modifier",it:"Modifica",en:"Edit"},
+ "Schliessen":{fr:"Fermer",it:"Chiudi",en:"Close"},
+ "Funktion":{fr:"Fonction",it:"Funzione",en:"Role"},
+ "Die E-Mail-Adresse kann nicht geändert werden – dafür die Person entfernen und mit der neuen Adresse einladen.":{fr:"L’adresse e-mail ne peut pas être modifiée – supprime la personne et invite-la avec la nouvelle adresse.",it:"L’indirizzo e-mail non si può modificare – rimuovi la persona e invitala con il nuovo indirizzo.",en:"The e-mail address can’t be changed – remove the person and invite the new address."},
  "Zugangsanfragen":{fr:"Demandes d’accès",it:"Richieste di accesso",en:"Access requests"},
  "Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».":{fr:"Ces personnes ne sont pas sur la liste et demandent l’accès. « Autoriser » les invite ; elles touchent ensuite « Actualiser ».",it:"Queste persone non sono nella lista e chiedono l’accesso. «Autorizza» le invita; poi toccano «Aggiorna».",en:"These people are not on the list and ask for access. “Approve” invites them; they then tap “Refresh”."},
  "Freischalten":{fr:"Autoriser",it:"Autorizza",en:"Approve"},
@@ -156,7 +161,7 @@ Object.assign(I18N,{
  "keine Angaben":{fr:"non indiqué",it:"non indicato",en:"not given"},
  "Alle Kontakte als VCF":{fr:"Tous les contacts en VCF",it:"Tutti i contatti in VCF",en:"All contacts as VCF"},
  "Kontakte als VCF gespeichert.":{fr:"contacts enregistrés en VCF.",it:"contatti salvati in VCF.",en:"contacts saved as VCF."},
- "Haupt-Admin":{fr:"Admin principal",it:"Admin principale",en:"Main admin"},
+ "Besitzer":{fr:"Propriétaire",it:"Proprietario",en:"Owner"},
  "Admin":{fr:"Admin",it:"Admin",en:"Admin"},
  "Benutzerliste konnte nicht geladen werden:":{fr:"Impossible de charger la liste des utilisateurs :",it:"Impossibile caricare l’elenco utenti:",en:"Could not load the user list:"},
  "Lade Benutzer …":{fr:"Chargement des utilisateurs …",it:"Caricamento utenti …",en:"Loading users …"},
@@ -185,7 +190,7 @@ Object.assign(I18N,{
  "eingeladen.":{fr:"invité·e.",it:"invitato/a.",en:"invited."},
  "{n} Adressen aus der Crewliste einladen?":{fr:"Inviter {n} adresses de la liste de l’équipe ?",it:"Invitare {n} indirizzi dalla lista crew?",en:"Invite {n} addresses from the crew list?"},
  "{n} Adressen eingeladen.":{fr:"{n} adresses invitées.",it:"{n} indirizzi invitati.",en:"{n} addresses invited."},
- "Der Haupt-Admin kann nicht gesperrt oder entfernt werden.":{fr:"L’admin principal ne peut être ni bloqué ni supprimé.",it:"L’admin principale non può essere bloccato né rimosso.",en:"The main admin cannot be blocked or removed."},
+ "Der Besitzer kann nicht gesperrt oder entfernt werden.":{fr:"Le propriétaire ne peut être ni bloqué ni supprimé.",it:"Il proprietario non può essere bloccato né rimosso.",en:"The ownerdmin cannot be blocked or removed."},
  "Gesperrt.":{fr:"Bloqué.",it:"Bloccato.",en:"Blocked."},
  "Entsperrt.":{fr:"Débloqué.",it:"Sbloccato.",en:"Unblocked."},
  "{e} entfernen? Die Person kommt danach nicht mehr in die App.":{fr:"Supprimer {e} ? La personne n’aura plus accès à l’app.",it:"Rimuovere {e}? La persona non potrà più accedere all’app.",en:"Remove {e}? The person will no longer get into the app."},
@@ -761,6 +766,17 @@ function upSec(){
       '<li>'+L("Ersten Lauf starten:")+' <a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">Actions → «Run workflow»</a></li></ol>')+
     '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p></details>';
 }
+/* owner only: change a user's details (registered: name, language, birthday; invited: name, role) */
+function editForm(r){
+  const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
+  return '<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
+    (m?'<label>'+L("Vorname")+'<input name="fn" maxlength="60" value="'+v(m.firstName)+'"></label><label>'+L("Nachname")+'<input name="ln" maxlength="60" value="'+v(m.lastName)+'"></label>'+
+       '<label>'+L("Sprache der App")+langSel("lg",m.lang||"de")+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" value="'+v(m.birthday)+'"></label>'
+     :'<label>'+L("Name")+'<input name="nm" maxlength="80" value="'+v(i.name)+'"></label>')+
+    '<label>'+L("Funktion")+'<input name="rl" maxlength="80" value="'+v(i.role)+'"></label>'+
+    '<p class="ahint">'+L("Die E-Mail-Adresse kann nicht geändert werden – dafür die Person entfernen und mit der neuen Adresse einladen.")+'</p>'+
+    '<button type="submit">'+L("Speichern")+'</button></form>';
+}
 function reqSec(){
   const r=(ADM.req||[]).slice().sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),LANG));
   return '<div class="admins areq" id="areq"><h3>'+L("Benutzer-Anfragen")+' <span class="ust '+(r.length?'adm':'')+'">'+r.length+'</span></h3>'+
@@ -788,7 +804,7 @@ VIEWS.admin=function(){
   const mail=r=>"mailto:"+encodeURIComponent(r.email)+"?subject="+encodeURIComponent("TSCHUGGER Tigerblood – "+(LANG==="de"?"Crew-App":L("Crew-App")))+"&body="+encodeURIComponent((I18N.MAIL_BODY[LANG]||I18N.MAIL_BODY.de).replace("{n}",r.name?" "+r.name.split(" ")[0]:"").replace("{site}",site).replace("{e}",r.email));
   const own=isOwner();const isAdm=e=>ADMINS.includes(e)||ADM.adm.includes(e);
   const admSec=own?'<div class="admins"><h3>'+L("Administratoren")+'</h3><p class="ahint">'+L("Administratoren können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».")+'</p>'+
-    '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">'+L("Haupt-Admin")+'</span></div>'+
+    '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">'+L("Besitzer")+'</span></div>'+
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
     '</div>'+
     '<details class="admins asetd" data-sec="appset"'+(SECS.appset?' open':'')+'><summary>'+L("Einstellungen der App")+'</summary><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
@@ -806,7 +822,8 @@ VIEWS.admin=function(){
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>'+
     '<div class="astats">'+rows.length+' '+L("Benutzer")+' · '+rows.filter(r=>r.m&&r.m.active===true).length+' '+L("aktiv")+' · '+rows.filter(r=>!r.m).length+' '+L("noch nicht registriert")+''+((ADM.req||[]).length?' · <a href="#areq" class="reqlnk">'+ADM.req.length+' '+L("Benutzer-Anfragen")+'</a>':'')+'</div>'+
     '<input class="search" id="aq" type="search" placeholder="'+esc(L("Benutzer suchen"))+'" value="'+esc(ADM.q)+'">'+
-    '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">'+L("Admin")+'</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div><div class="aacts">'+
+    '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">'+L("Admin")+'</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div>'+(own&&ADM.edit===r.email?editForm(r):'')+'<div class="aacts">'+
+      (own?'<button data-adm="edit" data-em="'+esc(r.email)+'">'+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'')+
       (!r.m?'<a href="'+mail(r)+'">'+L("Einladungsmail")+'</a>':'')+
       (own&&!ADMINS.includes(r.email)?(ADM.adm.includes(r.email)?'<button data-adm="rmadmin" data-em="'+esc(r.email)+'">'+L("Admin entfernen")+'</button>':'<button data-adm="mkadmin" data-em="'+esc(r.email)+'">'+L("Zum Admin machen")+'</button>'):'')+
       (own&&r.m&&!ADMINS.includes(r.email)?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">'+L("Sperren")+'</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">'+L("Entsperren")+'</button>'):'')+
@@ -816,6 +833,18 @@ VIEWS.admin=function(){
 };
 document.addEventListener("input",e=>{if(e.target.id==="aq"){ADM.q=e.target.value;const p=e.target.selectionStart;render();const i=$("#aq");if(i){i.focus();i.setSelectionRange(p,p)}}});
 document.addEventListener("submit",async e=>{
+  const sf=e.target.closest('[data-adm="save"]');if(sf){e.preventDefault();if(!isOwner())return;
+    const em=sf.dataset.em,g=n=>{const x=sf.querySelector('[name="'+n+'"]');return x?String(x.value||"").trim():null};
+    const m=ADM.mem.find(x=>x.email===em),inv=ADM.inv.find(x=>x.id===em),btn=sf.querySelector("button");if(btn)btn.disabled=true;
+    try{const {F,db}=await fb();
+      if(m){const fn=g("fn"),ln=g("ln"),d={firstName:fn,lastName:ln,name:[fn,ln].filter(Boolean).join(" ")||m.name||"",lang:g("lg")||m.lang||"de",birthday:g("bd")||""};
+        await F.updateDoc(F.doc(db,"members",m.uid),d)}
+      if(inv||!m){const d={name:(m?[g("fn"),g("ln")].filter(Boolean).join(" "):g("nm"))||"",role:g("rl")||""};
+        if(inv)await F.updateDoc(F.doc(db,"invites",em),d);else await F.setDoc(F.doc(db,"invites",em),Object.assign(d,{addedAt:F.serverTimestamp()}))}
+      else if(g("rl"))await F.setDoc(F.doc(db,"invites",em),{name:[g("fn"),g("ln")].filter(Boolean).join(" "),role:g("rl"),addedAt:F.serverTimestamp()});
+      ADM.edit="";showMsg(L("Gespeichert."),3000);await admLoad()}
+    catch(err){console.error(err);if(btn)btn.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    return}
   const fl=e.target.closest('[data-adm="langs"]');
   if(fl){e.preventDefault();if(!isOwner())return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
@@ -835,6 +864,7 @@ document.addEventListener("click",async e=>{
   const b=e.target.closest("button[data-adm]");if(!b||ADM.busy)return;ADM.busy=true;
   try{
     const {F,db}=await fb();const a=b.dataset.adm;
+    if(a==="edit"){ADM.edit=ADM.edit===b.dataset.em?"":b.dataset.em;ADM.busy=false;render();return}
     if(a==="reqok"||a==="reqno"){const em=b.dataset.em,q=(ADM.req||[]).find(x=>x.id===em)||{};
       if(a==="reqok"){await F.setDoc(F.doc(db,"invites",em),{name:String(q.name||"").slice(0,80),role:String(q.role||"").slice(0,80),addedAt:F.serverTimestamp()});await notifyApproved(em,q)}
       await F.deleteDoc(F.doc(db,"requests",em));ADM.req=(ADM.req||[]).filter(x=>x.id!==em);
@@ -843,7 +873,7 @@ document.addEventListener("click",async e=>{
       if(confirmSafe(L("{n} Adressen aus der Crewliste einladen?").replace("{n}",list.length))){
         for(let i=0;i<list.length;i+=400){const batch=F.writeBatch(db);list.slice(i,i+400).forEach(c=>batch.set(F.doc(db,"invites",c.email),{name:c.name,role:c.role,addedAt:F.serverTimestamp()}));await batch.commit()}
         showMsg(L("{n} Adressen eingeladen.").replace("{n}",list.length),4000)}}
-    else if((a==="block"||a==="remove"||a==="uninvite")&&ADMINS.includes(b.dataset.em||(ADM.mem.find(m=>m.uid===b.dataset.uid)||{}).email)){showMsg(L("Der Haupt-Admin kann nicht gesperrt oder entfernt werden."),4000)}
+    else if((a==="block"||a==="remove"||a==="uninvite")&&ADMINS.includes(b.dataset.em||(ADM.mem.find(m=>m.uid===b.dataset.uid)||{}).email)){showMsg(L("Der Besitzer kann nicht gesperrt oder entfernt werden."),4000)}
     else if(a==="block"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:false});showMsg(L("Gesperrt."),3000)}
     else if(a==="unblock"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:true});showMsg(L("Entsperrt."),3000)}
     else if(a==="remove"){if(confirmSafe(L("{e} entfernen? Die Person kommt danach nicht mehr in die App.").replace("{e}",b.dataset.em))){await F.deleteDoc(F.doc(db,"invites",b.dataset.em)).catch(()=>{});await F.deleteDoc(F.doc(db,"members",b.dataset.uid));showMsg(L("Entfernt."),3000)}}
@@ -943,7 +973,7 @@ window.crewExtra=function(p){
       if(!inv&&isOwner()&&e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))ch.push('<button type="button" class="cinv" data-cinv="'+esc(e)+'" data-nm="'+esc(p.name||"")+'" data-rl="'+esc(p.role||"")+'">+ '+esc(L("Als Benutzer einladen"))+'</button>')}
     else ch.push(m.active===true?'<span class="ok">'+esc(L("Konto aktiv"))+'</span>':'<span class="off">'+esc(L("Gesperrt"))+'</span>');
     const ems=[lc(p.email),m&&m.email].filter(Boolean);
-    if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Haupt-Admin"))+'</span>');
+    if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Besitzer"))+'</span>');
     else if(ems.some(e=>ADM.adm.includes(e)))ch.push('<span class="adm">'+esc(L("Admin"))+'</span>');
   }
   if(m&&ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ADMV.acct?na(L("Geburtstag")+": –"):""))}
