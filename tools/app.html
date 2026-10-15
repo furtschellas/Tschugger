@@ -578,6 +578,7 @@ html body :is(.ppi,.mci) :is(.calbtn,.mailbtn){position:absolute}
 html body :is(button,a.pillbtn,.abtnl):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 html body button:disabled{opacity:.5;cursor:default;filter:none}
 .spblk{margin:6px 0 8px}.sv-no-b .spblk{display:none}
+.plot li>.fpls{grid-column:1/-1;flex-basis:100%;width:100%;margin:6px 0 2px}
 </style>
 
 <div class="wrap">
@@ -1204,7 +1205,7 @@ function sceneTexts(scenes,uf){
 }
 function plotHTML(scenes){
   const t=sceneTexts(scenes);if(!t.length)return"";
-  return '<ul class="plot">'+t.map(({it,d,u})=>'<li><b>'+esc(it.sc)+'</b><button class="pd" data-goto="'+esc(d.id)+'">'+esc(d.short||d.label)+' '+fmtDate(d.date).slice(3,-5)+'.'+(u!=="1"?'<i>'+u+'U</i>':'')+'</button><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="pdesc">'+esc(TX(it,"d"))+' <button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button></span></li>').join("")+'</ul>';
+  return '<ul class="plot">'+t.map(({it,d,u})=>'<li><b>'+esc(it.sc)+'</b><button class="pd" data-goto="'+esc(d.id)+'">'+esc(d.short||d.label)+' '+fmtDate(d.date).slice(3,-5)+'.'+(u!=="1"?'<i>'+u+'U</i>':'')+'</button><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="pdesc">'+esc(TX(it,"d"))+'</span>'+fpLinks([],blkFor(it.sc),'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+'</li>').join("")+'</ul>';
 }
 function locCard(g0){
   if(g0.s5)return s5Card(g0);
