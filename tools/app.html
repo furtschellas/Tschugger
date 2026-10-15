@@ -733,13 +733,16 @@ function renderPlan(){
   const t=todayISO();
   /* one PREP button per prep day from today on; past prep days disappear */
   const PP=S.prepro.filter(d=>d.date>=t);
-  const ppSel=String(S.day||"").startsWith("prep:")&&PP.some(d=>"prep:"+d.date===S.day);
+  /* prep days without any programme (only "Rest") are shown as OFF and cannot be selected */
+  const ppOff=d=>d.off===true||!d.items.length||d.items.every(i=>/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n||"").trim()));
+  const PPA=PP.filter(d=>!ppOff(d));
+  const ppSel=String(S.day||"").startsWith("prep:")&&PPA.some(d=>"prep:"+d.date===S.day);
   if(!ppSel){
     const shootOk=S.day&&PD.some(d=>d.id===S.day);
-    if(!shootOk){S.day=null;pickDay(PD);const nx=S.days.find(d=>d.id===S.day);if(PP.length&&(!nx||PP[0].date<nx.date))S.day="prep:"+PP[0].date}
+    if(!shootOk){S.day=null;pickDay(PD);const nx=S.days.find(d=>d.id===S.day);if(PPA.length&&(!nx||PPA[0].date<nx.date))S.day="prep:"+PPA[0].date}
   }
-  const ppDay=String(S.day||"").startsWith("prep:")?PP.find(d=>"prep:"+d.date===S.day):null;
-  const ppChips=PP.map(d=>{const dt=new Date(d.date+"T12:00:00");return '<button class="chip pre'+(d.date===t?" today":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"><div class="lb">PREP/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");
+  const ppDay=String(S.day||"").startsWith("prep:")?PPA.find(d=>"prep:"+d.date===S.day):null;
+  const ppChips=PP.map(d=>{const dt=new Date(d.date+"T12:00:00"),off=ppOff(d);return '<button class="chip pre'+(off?" off free":"")+(d.date===t?" today":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(off?'OFF':'PREP')+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");
   let h=dayNav(PD,d=>d.id===S.day,"data-day","id",null,ppChips);
   if(ppDay)return h+renderPrePro(ppDay);
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
