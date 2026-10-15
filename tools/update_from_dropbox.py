@@ -90,14 +90,14 @@ class Dbx:
             files.append({"name": p, "id": e["id"], "modified": e.get("server_modified") or e.get("client_modified"), "size": e.get("size", 0)})
         return files
 
-    def list_path(self, path):
-        """direct children of a folder (files and folders); [] if the folder cannot be read"""
-        r = requests.post("https://api.dropboxapi.com/2/files/list_folder", headers=self.h, timeout=60, json={"path": path, "recursive": False})
+    def list_path(self, path, recursive=False):
+        """children of a folder (files and folders, with path_lower); [] if the folder cannot be read"""
+        r = requests.post("https://api.dropboxapi.com/2/files/list_folder", headers=self.h, timeout=60, json={"path": path, "recursive": recursive})
         if r.status_code != 200: return []
         j = r.json(); out = j["entries"]
         while j.get("has_more"):
             j = requests.post("https://api.dropboxapi.com/2/files/list_folder/continue", headers=self.h, timeout=60, json={"cursor": j["cursor"]}).json(); out += j["entries"]
-        return [{"name": e["name"], "tag": e[".tag"], "id": e.get("id"), "modified": e.get("server_modified") or e.get("client_modified")} for e in out]
+        return [{"name": e["name"], "tag": e[".tag"], "id": e.get("id"), "modified": e.get("server_modified") or e.get("client_modified"), "path": e.get("path_display") or ""} for e in out]
 
     def download(self, fid):
         r = requests.post("https://content.dropboxapi.com/2/files/download", timeout=180,
@@ -369,8 +369,13 @@ def main():
     # floorplans (PDF) and blocking photo folders (shared folder «3D» → 0_BlockingFloorplans)
     try:
         fl = [e for e in dbx.list_path(ROOT3D + "/0_BlockingFloorplans/floorplans locations") if e["tag"] == "file" and re.search(r"\.(pdf|png|jpe?g)$", e["name"], re.I)]
-        bl = [e for e in dbx.list_path(ROOT3D + "/0_BlockingFloorplans") if e["tag"] == "folder" and e["name"].lower().startswith("scene_")]
-    except Exception: fl = bl = []
+        allb = dbx.list_path(ROOT3D + "/0_BlockingFloorplans", True)
+        bl = [e for e in allb if e["tag"] == "folder" and e["name"].lower().startswith("scene_") and e["path"].count("/") <= 3]
+        bpdf = {}  # scene folder name → PDFs directly inside it
+        for e in allb:
+            pp = e["path"].split("/")
+            if e["tag"] == "file" and e["name"].lower().endswith(".pdf") and len(pp) >= 2 and pp[-2].lower().startswith("scene_"): bpdf.setdefault(pp[-2], []).append(e["name"])
+    except Exception: fl = bl = []; bpdf = {}
     if fl or bl:
         known = {x.get("file"): x for x in meta.get("floorplans") or []}
         kb = {x.get("name"): x for x in meta.get("blocking") or []}
@@ -387,6 +392,14 @@ def main():
             if e["name"] in kb: blk.append(kb[e["name"]]); continue
             sc = [re.sub(r"^0+", "", p) for p in e["name"][6:].replace(" CAR", "").split("_") if p]
             blk.append({"name": e["name"], "sc": sc, "url": bdir})
+        def plabel(n): return re.sub(r"(?<![0-9A-Za-z])0+(?=\d)", "", re.sub(r"(?i)^scene[\s_]*", "", n[:-4]))
+        for b in blk:  # every scene PDF as its own button (preview inside the shared scene folder)
+            names = sorted(bpdf.get(b["name"], []))
+            if not names: continue
+            old_pdfs = b.get("pdfs") or []
+            folder = b.get("url") or bdir
+            pdfs = [{"l": plabel(n), "u": folder.replace("&dl=0", "&preview=" + requests.utils.quote(n.replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder} for n in names]
+            if pdfs != old_pdfs: b["pdfs"] = pdfs; changed = True
         if [x.get("file") for x in fps] != [x.get("file") for x in meta.get("floorplans") or []] or [x.get("name") for x in blk] != [x.get("name") for x in meta.get("blocking") or []]:
             meta["floorplans"], meta["blocking"] = fps, blk; changed = True; log("Floorplans:", len(fps), "· Blocking:", len(blk))
 

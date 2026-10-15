@@ -28,13 +28,7 @@
 .gok{color:#7fe0a8;min-height:1.2em;margin:0;font-size:14px}
 .glink{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;padding:6px 0;text-align:left;cursor:pointer}
 .gbtn{font:inherit;font-weight:600;font-size:16px;padding:12px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
-.acbox{max-height:calc(100vh - 32px);overflow-y:auto}
-.acbox details{border-top:1px solid var(--rule);padding:10px 0}
-.acbox summary{cursor:pointer;color:var(--ink);font-weight:600;padding:4px 0}
-.acbox form{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.acbox label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-.acbox input{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
-.acbox form button{font:inherit;font-weight:600;padding:10px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.acbox{max-height:calc(100vh - 32px);overflow-y:auto}.acbox details,.acpage details{border-top:1px solid var(--rule);padding:10px 0}.acbox summary,.acpage summary{cursor:pointer;color:var(--ink);font-weight:600;padding:4px 0}.acbox form,.acpage form{display:flex;flex-direction:column;gap:8px;margin-top:10px}.acbox label,.acpage label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}.acbox input,.acpage input{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}.acbox form button,.acpage form button{font:inherit;font-weight:600;padding:10px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
 .amsg{margin:0;font-size:14px;color:#ff8a8a;min-height:1em}.amsg.ok{color:#7fe0a8}
 .adm .ahint{color:var(--muted);font-size:14px;margin:6px 0 12px}
 .aform{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px}
@@ -48,10 +42,7 @@
 .aacts a,.aacts button{font:inherit;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--rule);background:transparent;color:var(--ink);text-decoration:none;cursor:pointer}
 .ggoogle{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff!important;color:#1f1f1f!important;font-weight:600}
 .gor{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin:4px 0}
-.gor::before,.gor::after{content:"";flex:1;height:1px;background:var(--rule)}
-.gbox select,.acbox select{font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink)}
-.acbox select{border-radius:8px;background:var(--paper);padding:10px 12px}
-.gbox input[type=date],.acbox input[type=date]{min-height:46px}
+.gor::before,.gor::after{content:"";flex:1;height:1px;background:var(--rule)}.gbox select,.acbox select,.acpage select{font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink)}.acbox select,.acpage select{border-radius:8px;background:var(--paper);padding:10px 12px}.gbox input[type=date],.acbox input[type=date],.acpage input[type=date]{min-height:46px}
 .ct.diet span{color:var(--gold);font-size:13px}
 .chk{display:grid;grid-template-columns:1fr;gap:6px;margin:2px 0 4px}
 .ck{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;font-size:15px!important;color:var(--ink)!important;text-transform:none!important;letter-spacing:0!important;font-family:var(--f-body)!important}
@@ -164,9 +155,9 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .greq label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
 .greq input,.greq textarea{width:100%;box-sizing:border-box;font:inherit;padding:9px 11px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
 .greq .gbtn{margin-top:10px;width:100%}
-#acctBtn.hasreq{position:relative!important;overflow:visible}
-#acctBtn .reqdot{position:absolute;top:1px;right:1px;width:9px;height:9px;border-radius:50%;background:#e5484d;box-shadow:0 0 0 2px var(--paper);pointer-events:none}
-#acctBtn:not(.hasreq) .reqdot{display:none}
+#admBtn.hasreq{position:relative!important;overflow:visible}
+#admBtn .reqdot{position:absolute;top:1px;right:1px;width:9px;height:9px;border-radius:50%;background:#e5484d;box-shadow:0 0 0 2px var(--paper);pointer-events:none}
+#admBtn:not(.hasreq) .reqdot{display:none}
 .areq{border-color:var(--accent)!important}
 .areq{scroll-margin-top:70px}.astats .reqlnk{color:#e5484d;font-weight:600}
 .upst{margin:6px 0;font-weight:600}.upst.ok{color:#3fbf7f}.upst.warn{color:#e0a43a}.upst.err{color:#e5484d}
@@ -179,3 +170,6 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 @media (max-width:420px){.aedit{grid-template-columns:1fr}}
 #pwbox .pwshow{font:600 24px/1.3 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;text-align:center;padding:12px;border:1px dashed var(--accent);border-radius:10px;margin:10px 0;user-select:all}
 .pwrow{margin:6px 0;font-size:13px}.pwrow .pwshow2{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;letter-spacing:.05em;user-select:all}.pwrow button{font:inherit;font-size:12px;margin-left:6px;padding:2px 8px;border-radius:99px;border:1px solid var(--rule);background:transparent;color:inherit;cursor:pointer}
+
+.acpage .a2b{display:flex;gap:10px;margin-top:16px}.acpage .a2b button{font:inherit;padding:10px 16px;border-radius:8px;border:1px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer}
+.acpage .psec{margin:14px 0}

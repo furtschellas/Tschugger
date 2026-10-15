@@ -520,7 +520,7 @@ setInterval(()=>{if(ME&&isAdmin()&&document.visibilityState==="visible")checkReq
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&isAdmin())checkRequests()});
 async function checkRequests(){
   try{const {F,db}=await fb();const r=await F.getDocs(F.collection(db,"requests"));const n=r.size||r.docs.length;
-    const b=document.getElementById("acctBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||"";b.setAttribute("aria-label",L("Mein Konto")+(n?" · "+n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."):""))}
+    const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||"";b.setAttribute("aria-label",L("App-Verwaltung")+(n?" · "+n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."):""))}
     if(n&&!checkRequests.told){checkRequests.told=true;showMsg(n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."),7000)}}catch(_){}
 }
 async function sendRequest(){
@@ -635,9 +635,15 @@ async function fillNamesFromCrew(){
 function acctButton(on){
   let b=document.getElementById("acctBtn");
   if(!b){b=document.createElement("button");b.id="acctBtn";b.className="refresh";b.type="button";
-    b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg><span class="reqdot" aria-hidden="true"></span>';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
     const r=$("#refresh");r.parentNode.insertBefore(b,r);b.addEventListener("click",showAcct)}
   b.setAttribute("aria-label",L("Mein Konto"));b.title=L("Mein Konto");b.hidden=!on;
+  /* gear (admins): App-Verwaltung, between account and refresh */
+  let g=document.getElementById("admBtn");
+  if(!g){g=document.createElement("button");g.id="admBtn";g.className="refresh";g.type="button";
+    g.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="reqdot" aria-hidden="true"></span>';
+    const r=$("#refresh");r.parentNode.insertBefore(g,r);g.addEventListener("click",()=>{S.tab="admin";S.srcOpen=false;window.scrollTo(0,0);render()})}
+  g.setAttribute("aria-label",L("App-Verwaltung"));g.title=L("App-Verwaltung");g.hidden=!(on&&isAdmin());
   if(on&&isAdmin())checkRequests();
 }
 const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password'));
@@ -650,23 +656,31 @@ function nameFields(){
 function profileForm(onb){
   return '<form data-af="pf">'+nameFields()+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Ernährung")+dietSel("dt",normDiet(MEMBER).diet)+'</label><label>'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label>'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><button type="submit">'+L(onb?"Weiter":"Speichern")+'</button><p class="amsg" role="alert"></p></form>';
 }
-function showAcct(needProfile){
-  let s=document.getElementById("acct");
-  if(!s){s=document.createElement("div");s.id="acct";s.className="a2hs";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
-    s.addEventListener("click",onAcctClick);s.addEventListener("submit",onAcctSubmit)}
-  ONBOARD=needProfile===true&&!!MEMBER;
-  if(ONBOARD){s.innerHTML='<div class="a2box acbox"><h3>'+L("Willkommen!")+'</h3><p>'+L("Bitte fülle vor dem ersten Start dein Profil aus.")+'</p><p class="ghint">'+esc(ME.email)+'</p>'+profileForm(true)+'<div class="a2b"><button class="lnk" data-ac="signout">'+L("Abmelden")+'</button></div></div>';s.hidden=false;return}
-  s.innerHTML='<div class="a2box acbox"><h3>'+L("Mein Konto")+'</h3><p>'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b></p>'+
-    (isAdmin()?'<div class="a2b"><button class="pri" data-ac="admin">'+L("App-Verwaltung")+'</button></div>':'')+
+function acctInner(){
+  return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2></div><p>'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b></p>'+
     (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
     '<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
-    '<div class="a2b"><button data-ac="signout">'+L("Abmelden")+'</button><button class="lnk" data-ac="close">'+L("Schliessen")+'</button></div></div>';
-  s.hidden=false;
+    '<div class="a2b"><button data-ac="signout">'+L("Abmelden")+'</button></div>';
+}
+/* «Mein Konto» is its own page; only the first-start profile (onboarding) stays a dialog */
+VIEWS.acct=function(){return ME?'<section class="mypage acpage">'+acctInner()+'</section>':'<div class="empty">'+L("Kein Zugang")+'</div>'};
+let ACCTWIRED=false;
+function wireAcctPage(){if(ACCTWIRED)return;ACCTWIRED=true;
+  document.addEventListener("click",e=>{if(e.target.closest(".acpage"))onAcctClick(e)});
+  document.addEventListener("submit",e=>{if(e.target.closest(".acpage"))onAcctSubmit(e)})}
+function showAcct(needProfile){
+  ONBOARD=needProfile===true&&!!MEMBER;
+  if(ONBOARD){
+    let s=document.getElementById("acct");
+    if(!s){s=document.createElement("div");s.id="acct";s.className="a2hs";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
+      s.addEventListener("click",onAcctClick);s.addEventListener("submit",onAcctSubmit)}
+    s.innerHTML='<div class="a2box acbox"><h3>'+L("Willkommen!")+'</h3><p>'+L("Bitte fülle vor dem ersten Start dein Profil aus.")+'</p><p class="ghint">'+esc(ME.email)+'</p>'+profileForm(true)+'<div class="a2b"><button class="lnk" data-ac="signout">'+L("Abmelden")+'</button></div></div>';s.hidden=false;return}
+  wireAcctPage();S.tab="acct";S.srcOpen=false;window.scrollTo(0,0);render();
 }
 async function onAcctClick(e){
-  const s=document.getElementById("acct");if(e.target===s){if(!ONBOARD)s.hidden=true;return}
+  const s=document.getElementById("acct")||{};if(e.target===s){if(!ONBOARD)s.hidden=true;return}
   const b=e.target.closest("[data-ac]");if(!b)return;
   if(b.dataset.ac==="close")s.hidden=true;
   else if(b.dataset.ac==="theme")setTheme(b.dataset.thset);
@@ -674,7 +688,7 @@ async function onAcctClick(e){
     try{const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),auth.currentUser.email);msg.classList.add("ok");msg.textContent=L("Link zum Zurücksetzen gesendet an")+" "+auth.currentUser.email+". "+L("Schau auch im Spam-Ordner nach.")}
     catch(err){console.error(err);msg.textContent=errText(err)}b.disabled=false}
   else if(b.dataset.ac==="admin"){s.hidden=true;S.tab="admin";window.scrollTo(0,0);render()}
-  else if(b.dataset.ac==="signout"){s.hidden=true;const {A,auth}=await fb();await A.signOut(auth)}
+  else if(b.dataset.ac==="signout"){s.hidden=true;if(S.tab==="acct")S.tab="plan";const {A,auth}=await fb();await A.signOut(auth)}
 }
 async function onAcctSubmit(e){
   e.preventDefault();const f=e.target,msg=f.querySelector(".amsg"),btn=f.querySelector("button");btn.disabled=true;msg.className="amsg";msg.textContent="";
@@ -711,7 +725,7 @@ async function admLoad(){
   const {F,db}=await fb();
   const [i,m,a]=await Promise.all([F.getDocs(F.collection(db,"invites")),F.getDocs(F.collection(db,"members")),F.getDocs(F.collection(db,"admins")).catch(()=>({docs:[]}))]);
   try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.reqErr=""}catch(err){ADM.req=[];ADM.reqErr=(err&&err.code)||String(err)}
-  {const b=document.getElementById("acctBtn");if(b){b.classList.toggle("hasreq",ADM.req.length>0);b.dataset.n=ADM.req.length||""}}
+  {const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",ADM.req.length>0);b.dataset.n=ADM.req.length||""}}
   ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
@@ -1110,7 +1124,7 @@ render();
       if(em){window.__justSignedIn=true;A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(null,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
     }
     A.onAuthStateChanged(auth,u=>{
-      if(!u){ME=null;acctButton(false);clearLocal();if(S.tab==="admin")S.tab="plan";render();
+      if(!u){ME=null;acctButton(false);clearLocal();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
         /* the sign-in screen may already be open (person switched to «create account» while Firebase was starting): keep it and what was typed */
         const g=document.getElementById("gate");if(g&&!g.hidden&&["login","register","reset"].includes(AUTHMODE)&&g.querySelector("form"))return;
         showGate("login");return}
