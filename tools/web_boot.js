@@ -90,6 +90,10 @@ Object.assign(I18N,{
  "Keine Treffer.":{fr:"Aucun résultat.",it:"Nessun risultato.",en:"No matches."},
  "Name, E-Mail oder Funktion suchen":{fr:"Chercher nom, e-mail ou fonction",it:"Cerca nome, e-mail o funzione",en:"Search name, email or role"},
  "Daten jetzt aktualisieren":{fr:"Actualiser les données",it:"Aggiorna i dati ora",en:"Refresh data now"},
+ "Drehplan sehen":{fr:"Voir le plan de tournage",it:"Vedere il piano di lavorazione",en:"See schedule"},
+ "Callsheet sehen":{fr:"Voir la callsheet",it:"Vedere il callsheet",en:"See call sheet"},
+ "Kontakte (Telefon, E-Mail) sehen":{fr:"Voir les contacts (téléphone, e-mail)",it:"Vedere i contatti (telefono, e-mail)",en:"See contacts (phone, email)"},
+ "Meine Termine sehen":{fr:"Voir mes rendez-vous",it:"Vedere i miei appuntamenti",en:"See my appointments"},
  "Crewliste sehen":{fr:"Voir la liste de l'équipe",it:"Vedere la lista crew",en:"See crew list"},
  "Drehbuch (Script) sehen":{fr:"Voir le scénario (script)",it:"Vedere la sceneggiatura (script)",en:"See script"},
  "Blocking und Blocking-PDFs sehen":{fr:"Voir le blocking et ses PDF",it:"Vedere blocking e PDF di blocking",en:"See blocking and blocking PDFs"},
@@ -375,7 +379,7 @@ let COADMIN=false;
 const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
-const PERMS=[["view.crew","Crewliste sehen"],["view.script","Drehbuch (Script) sehen"],["view.blocking","Blocking und Blocking-PDFs sehen"],["contacts.extra","Telefon und E-Mail von Personen ausserhalb der Crewliste sehen"],
+const PERMS=[["view.plan","Drehplan sehen"],["view.dispo","Callsheet sehen"],["view.crew","Crewliste sehen"],["view.contacts","Kontakte (Telefon, E-Mail) sehen"],["view.mycal","Meine Termine sehen"],["view.script","Drehbuch (Script) sehen"],["view.blocking","Blocking und Blocking-PDFs sehen"],["contacts.extra","Telefon und E-Mail von Personen ausserhalb der Crewliste sehen"],
   ["users.view","Benutzerdaten sehen"],["users.edit","Benutzerdaten ändern"],["users.invite","Benutzer:innen einladen"],["users.requests","Zugangsanfragen freischalten"],
   ["crew.food","Essen und Allergien in der Crew sehen"],["crew.bday","Geburtstage in der Crew sehen"],["crew.vcf","Alle Kontakte als VCF exportieren"],["mycal.all","Termine aller Personen ansehen"],["settings","Einstellungen der App ändern"]];
 const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
@@ -959,12 +963,12 @@ function rolesSec(){
   const row=(id,name,perms,fixedName)=>{const open=ADM.redit===id;
     return '<div class="arole'+(open?' open':'')+'"><div class="arh"><div class="arn"><b>'+esc(name)+'</b><small>'+(perms.length?perms.length+' '+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+' · '+pplLbl(id)+'</small></div><button type="button" class="pillbtn" data-redit="'+esc(id)+'">'+L(open?"Schliessen":"Bearbeiten")+'</button></div>'+
       (open?'<form class="arolef" data-role="'+esc(id)+'">'+(fixedName?'<input type="hidden" name="rn" value="'+esc(name)+'">':'<label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required value="'+esc(name)+'"></label>')+permBoxes(perms)+
-        '<div class="arb"><button type="submit">'+L("Speichern")+'</button>'+(id==="admin"?'<button type="button" class="lnk" data-rreset>'+L("Standard wiederherstellen")+'</button>':'<button type="button" class="lnk" data-rdel="'+esc(id)+'">'+L("Rolle löschen")+'</button>')+'</div></form>':'')+'</div>'};
+        '<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Speichern")+'</button>'+(id==="admin"?'<button type="button" class="lnk" data-rreset>'+L("Standard wiederherstellen")+'</button>':'<button type="button" class="lnk" data-rdel="'+esc(id)+'">'+L("Rolle löschen")+'</button>')+'</div></form>':'')+'</div>'};
   return '<div class="admins"><h3>'+L("Rollen")+'</h3><p class="ahint">'+L("Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person alle Drehdaten, die Crewliste, das Drehbuch und das Blocking, aber keine Verwaltung. Mit Rolle sieht sie nur die Bereiche, die die Rolle erlaubt.")+'</p>'+
     '<div class="arole fixed"><div class="arh"><div class="arn"><b>'+L("Besitzer:in")+'</b><small>'+L("Alles, auch Rollen, Admins, Sperren und Backup")+'</small></div></div></div>'+
     row("admin",L("Admin"),ADM.adminPerms||ADMIN_DEFAULT,true)+
     roles.map(ro=>row(ro.id,ro.name||ro.id,arr(ro.perms),false)).join("")+
-    (ADM.redit==="new"?'<form class="arolef new" data-role=""><h4>'+L("Neue Rolle")+'</h4><label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'"></label>'+permBoxes(VIEWPERMS)+'<div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button><button type="button" class="lnk" data-redit="new">'+L("Abbrechen")+'</button></div></form>':
+    (ADM.redit==="new"?'<form class="arolef new" data-role=""><h4>'+L("Neue Rolle")+'</h4><label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'"></label>'+permBoxes(VIEWPERMS)+'<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button><button type="button" class="lnk" data-redit="new">'+L("Abbrechen")+'</button></div></form>':
       '<button type="button" class="abtn" data-redit="new">+ '+L("Neue Rolle")+'</button>')+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&isOwner()){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
@@ -974,7 +978,7 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form.arol
   let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
   const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});ADM.redit="";showMsg(L("Rolle gespeichert."),2500);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();await admLoad()}
-  catch(err){if(btn)btn.disabled=false;showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),9000)}});
+  catch(err){if(btn)btn.disabled=false;console.error(err);{const m=f.querySelector(".amsg");if(m){m.className="amsg";m.textContent=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}}showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),9000)}});
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!isOwner())return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
   if(!confirmSafe(L("Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.").replace("{r}",ro.name||id)))return;
   try{const {F,db}=await fb();for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)await F.deleteDoc(F.doc(db,"userroles",em));await F.deleteDoc(F.doc(db,"roles",id));showMsg(L("Rolle gelöscht."),2500);await admLoad()}

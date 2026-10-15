@@ -19,9 +19,8 @@ service cloud.firestore {
     }
     // Admin-Rechte: Standard alles ausser 'settings'; der Besitzer kann sie unter roles/admin anpassen
     function adminHas(p) {
-      return exists(/databases/$(database)/documents/roles/admin)
-        ? p in get(/databases/$(database)/documents/roles/admin).data.perms
-        : p != 'settings';
+      return (!exists(/databases/$(database)/documents/roles/admin) && p != 'settings')
+        || (exists(/databases/$(database)/documents/roles/admin) && p in get(/databases/$(database)/documents/roles/admin).data.perms);
     }
     function can(p) {
       return isOwner() || (isAdmin() && adminHas(p))
@@ -50,7 +49,7 @@ service cloud.firestore {
       allow write: if isOwner()
         && (request.resource == null || (request.resource.data.keys().hasOnly(['name', 'perms', 'at'])
             && request.resource.data.name is string && request.resource.data.name.size() <= 40
-            && request.resource.data.perms is list && request.resource.data.perms.size() <= 20));
+            && request.resource.data.perms is list && request.resource.data.perms.size() <= 40));
     }
     match /userroles/{email} {
       allow get: if (verified() && myEmail() == email) || isAdmin();
