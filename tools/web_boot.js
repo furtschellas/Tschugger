@@ -430,7 +430,14 @@ document.addEventListener("click",async e=>{
 /* Crew tab: admins see food preferences next to each person (matched by e-mail) */
 /* Crew tab (admins only): toggles for food preferences and birthdays */
 const ADMV={food:false,bday:false,bcal:false};try{for(const k in ADMV)ADMV[k]=localStorage.getItem(k)==="1"}catch(_){}
-const ensureAdm=()=>{if(!ADM.loaded&&!ADM.busy&&!ADM.loading){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}};
+const ensureAdm=()=>{if(!ADM.loaded&&!ADM.busy&&!ADM.loading&&!ADM.err){ADM.loading=true;admLoad().then(()=>{ADM.err=""}).catch(err=>{console.error(err);ADM.err=String((err&&(err.code||err.message))||err);render()}).finally(()=>{ADM.loading=false})}};
+/* crew entry -> member: same e-mail, otherwise same first + last name */
+const nkey=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z]+/g," ").trim();
+function memberFor(p){
+  const e=lc(p.email);let m=e&&ADM.mem.find(x=>x.email===e);if(m)return m;
+  const k=nkey(p.name);if(!k)return null;
+  return ADM.mem.find(x=>nkey([x.firstName,x.lastName].filter(Boolean).join(" "))===k||nkey(x.name)===k)||null;
+}
 const bdShort=iso=>{const m=/^\d{4}-(\d\d)-(\d\d)$/.exec(iso||"");return m?m[2]+"."+m[1]+".":""};
 function bdayHTML(){
   const ds=S.days.map(d=>d.date).filter(Boolean).sort();if(!ds.length)return"";
@@ -454,15 +461,15 @@ const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'"
 window.crewHead=function(){
   if(!isAdmin())return"";
   if(ADMV.food||ADMV.bday||ADMV.bcal)ensureAdm();
-  return '<div class="admv">'+togBtn("food","Essen")+togBtn("bday","Geburtstage")+togBtn("bcal","Geburtstagskalender")+'</div>'+(ADM.loaded?(ADMV.bcal?bdayHTML():"")+(ADMV.food?cateringHTML():""):"");
+  return '<div class="admv">'+togBtn("food","Essen")+(ADM.err&&(ADMV.food||ADMV.bday||ADMV.bcal)?'<span class="admerr">Benutzerdaten nicht lesbar ('+esc(ADM.err)+') – Firestore-Regeln prüfen.</span>':'')+togBtn("bday","Geburtstage")+togBtn("bcal","Geburtstagskalender")+'</div>'+(ADM.loaded?(ADMV.bcal?bdayHTML():"")+(ADMV.food?cateringHTML():""):"");
 };
-document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];try{localStorage.setItem(k,ADMV[k]?"1":"0")}catch(_){}render()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";try{localStorage.setItem(k,ADMV[k]?"1":"0")}catch(_){}render()});
 window.crewExtra=function(p){
-  if(!isAdmin()||!(ADMV.food||ADMV.bday)||!p||!p.email)return"";
+  if(!isAdmin()||!(ADMV.food||ADMV.bday)||!p)return"";
   if(!ADM.loaded){ensureAdm();return""}
-  const m=ADM.mem.find(x=>x.email===lc(p.email));if(!m)return"";
+  const m=memberFor(p);if(!m)return"";
   const t=ADMV.food?dietText(m):"",b=ADMV.bday?bdShort(m.birthday):"";
-  return (b?'<div class="ct bday"><span>'+esc(L("Geburtstag"))+' '+esc(b)+'</span></div>':'')+(t?'<div class="ct diet"><span>'+esc(t)+'</span></div>':'');
+  return (b||t)?'<div class="pinfo">'+(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':'')+(t?'<span class="diet">'+esc(t)+'</span>':'')+'</div>':'';
 };
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 

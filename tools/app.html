@@ -479,7 +479,7 @@ function renderCrew(){
       if(p.phone)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a><button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>';
       if(p.email)ct+='<span class="em">'+esc(p.email)+'</span>';
       if(p.note)ct+='<span>'+esc(p.note)+'</span>';
-      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span></div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';
+      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span></div>'+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+(ct?'<div class="ct">'+ct+'</div>':'')+'</div>';
     }).join("")+'</div></section>';
   }
   if(!n)h+='<div class="empty">'+L('Niemand gefunden für')+' «'+esc(S.q)+'».</div>';
