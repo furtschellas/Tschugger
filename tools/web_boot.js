@@ -93,7 +93,11 @@ Object.assign(I18N,{
  "Weitere Allergien (optional)":{fr:"Autres allergies (facultatif)",it:"Altre allergie (facoltativo)",en:"Other allergies (optional)"},
  "Allergien / Unverträglichkeiten (optional)":{fr:"Allergies / intolérances (facultatif)",it:"Allergie / intolleranze (facoltativo)",en:"Allergies / intolerances (optional)"},
  "Nur für die Produktion sichtbar.":{fr:"Visible uniquement par la production.",it:"Visibile solo alla produzione.",en:"Only visible to the production."},
- "Allergien":{fr:"Allergies",it:"Allergie",en:"Allergies"}
+ "Allergien":{fr:"Allergies",it:"Allergie",en:"Allergies"},
+ "Noch kein Konto":{fr:"Pas encore de compte",it:"Nessun account ancora",en:"No account yet"},
+ "Isst alles":{fr:"Mange de tout",it:"Mangia di tutto",en:"Eats everything"},
+ "Essen nicht angegeben":{fr:"Repas non indiqué",it:"Pasti non indicati",en:"Food not given"},
+ "Geburtstag nicht angegeben":{fr:"Anniversaire non indiqué",it:"Compleanno non indicato",en:"Birthday not given"}
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
 const langSel=(name,v)=>'<select name="'+name+'" id="'+name+'">'+LANGS.map(([k,t])=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+t+'</option>').join("")+'</select>';
@@ -463,13 +467,17 @@ window.crewHead=function(){
   if(ADMV.food||ADMV.bday||ADMV.bcal)ensureAdm();
   return '<div class="admv">'+togBtn("food","Essen")+(ADM.err&&(ADMV.food||ADMV.bday||ADMV.bcal)?'<span class="admerr">Benutzerdaten nicht lesbar ('+esc(ADM.err)+') – Firestore-Regeln prüfen.</span>':'')+togBtn("bday","Geburtstage")+togBtn("bcal","Geburtstagskalender")+'</div>'+(ADM.loaded?(ADMV.bcal?bdayHTML():"")+(ADMV.food?cateringHTML():""):"");
 };
-document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";try{localStorage.setItem(k,ADMV[k]?"1":"0")}catch(_){}render()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";if(ADMV[k]&&!ADM.loading)ADM.loaded=false;try{localStorage.setItem(k,ADMV[k]?"1":"0")}catch(_){}render()});
 window.crewExtra=function(p){
   if(!isAdmin()||!(ADMV.food||ADMV.bday)||!p)return"";
   if(!ADM.loaded){ensureAdm();return""}
-  const m=memberFor(p);if(!m)return"";
-  const t=ADMV.food?dietText(m):"",b=ADMV.bday?bdShort(m.birthday):"";
-  return (b||t)?'<div class="pinfo">'+(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':'')+(t?'<span class="diet">'+esc(t)+'</span>':'')+'</div>':'';
+  const m=memberFor(p),chip=(c,t)=>'<span class="'+c+'">'+esc(t)+'</span>';
+  /* say why nothing is shown: no account yet, or nothing filled in */
+  if(!m)return '<div class="pinfo">'+chip("none",L("Noch kein Konto"))+'</div>';
+  let h="";
+  if(ADMV.bday){const b=bdShort(m.birthday);h+=b?chip("bday",L("Geburtstag")+" "+b):chip("none",L("Geburtstag nicht angegeben"))}
+  if(ADMV.food){const t=dietText(m);h+=t?chip("diet",t):m.diet?chip("diet",L("Isst alles")):chip("none",L("Essen nicht angegeben"))}
+  return '<div class="pinfo">'+h+'</div>';
 };
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
