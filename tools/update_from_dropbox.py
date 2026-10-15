@@ -443,9 +443,9 @@ def main():
                               "u": folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder})
             if items != (b.get("media") or []):
                 b["media"] = items; changed = True
-        for old in os.listdir("blk"):
-            if "blk/" + old not in want_files and old.endswith(".bin"):
-                os.remove("blk/" + old); changed = True
+        for bf in os.listdir("blk"):
+            if "blk/" + bf not in want_files and bf.endswith(".bin"):
+                os.remove("blk/" + bf); changed = True
         for b in blk:  # every scene PDF as its own button (preview inside the shared scene folder)
             names = sorted(bpdf.get(b["name"], []))
             if not names: continue
