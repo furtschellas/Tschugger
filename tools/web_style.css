@@ -91,3 +91,5 @@
 .bcal>b{display:block;margin-bottom:6px}
 .admv .foodtog.vcall{width:auto;padding:0 12px;gap:5px;margin-left:auto}
 .admv .vcall b{font-size:12px;font-weight:700;letter-spacing:.03em}
+.pinfo .ok{background:rgba(127,224,168,.10);color:#7fe0a8;border:1px solid rgba(127,224,168,.3)}
+.pinfo .off{background:rgba(255,138,138,.15);color:#ff8a8a}
