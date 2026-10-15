@@ -110,6 +110,10 @@ Object.assign(I18N,{
  "Bitte ausfüllen:":{fr:"À remplir :",it:"Da compilare:",en:"Please fill in:"},
  "Profil gespeichert. Geschlecht, Telefon und E-Mail konnten noch nicht gespeichert werden – die Produktion muss die neuen App-Regeln aktivieren.":{fr:"Profil enregistré. Genre, téléphone et e-mail n'ont pas encore pu être enregistrés – la production doit activer les nouvelles règles.",it:"Profilo salvato. Genere, telefono ed e-mail non sono ancora stati salvati – la produzione deve attivare le nuove regole.",en:"Profile saved. Gender, phone and email could not be saved yet – the production has to activate the new app rules."},
  "Telefon":{fr:"Téléphone",it:"Telefono",en:"Phone"},
+ "Sortieren":{fr:"Trier",it:"Ordina",en:"Sort"},
+ "Abteilung":{fr:"Département",it:"Reparto",en:"Department"},
+ "Status":{fr:"Statut",it:"Stato",en:"Status"},
+ "Neueste zuerst":{fr:"Plus récents d'abord",it:"Più recenti prima",en:"Newest first"},
  "Rollen":{fr:"Rôles",it:"Ruoli",en:"Roles"},
  "Rolle":{fr:"Rôle",it:"Ruolo",en:"Role"},
  "Benutzer:in":{fr:"Utilisateur",it:"Utente",en:"User"},
@@ -1030,13 +1034,17 @@ function userList(rows,vis,o){
       (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
       (open?'<div class="ubody">'+(own&&!isOwn?o.roleSel(r):'')+(o.cEd&&ADM.edit===r.email?editForm(r):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
     '</div>'};
+  const SORTS=[["first","Vorname"],["name","Nachname"],["dept","Abteilung"],["status","Status"],["role","Rolle"],["new","Neueste zuerst"],["email","E-Mail"]];
+  const sortSel='<label class="usort">'+L("Sortieren")+' <select data-usort>'+SORTS.map(([k,t])=>'<option value="'+k+'"'+((ADM.sort||"first")===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>';
   return '<div class="admins ulist"><h3>'+L("Benutzer:innen")+' <span class="ust">'+rows.length+'</span></h3>'+
-    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+chips+
+    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'</div>'+
     (vis.length?'<div class="ucards">'+vis.map(card).join("")+'</div>':'<p class="ahint">'+L("Keine Treffer.")+'</p>')+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-uf]");if(b){ADM.uf=b.dataset.uf;render();return}
   const t=e.target.closest("[data-uact]");if(t){const em=t.dataset.uact;const was=ADM.act===em||ADM.edit===em;ADM.act=was?"":em;if(was)ADM.edit="";render()}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dorefresh]");if(!b)return;const r=$("#refresh");if(r)r.click()});
+try{ADM.sort=localStorage.getItem("usort")||"first"}catch(_){ADM.sort="first"}
+document.addEventListener("change",e=>{const sl=e.target.closest("select[data-usort]");if(!sl)return;ADM.sort=sl.value;try{localStorage.setItem("usort",ADM.sort)}catch(_){}render()});
 try{ADM.sub=localStorage.getItem("admsub")||"users"}catch(_){ADM.sub="users"}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
 VIEWS.admin=function(){
@@ -1050,7 +1058,13 @@ VIEWS.admin=function(){
   const nm=m=>{if(!m)return"";const cp=crewPerson(m.email);return (cp&&cp.name)||[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||""};
   for(const i of ADM.inv){const m=memBy[i.id];rows.push({email:i.id,name:nm(m)||i.name||"",inv:true,m});seen.add(i.id)}
   for(const m of ADM.mem)if(!seen.has(m.email))rows.push({email:m.email,name:nm(m),inv:false,m});
-  rows.sort((a,b)=>(a.name||a.email).localeCompare(b.name||b.email,LANG));
+  /* sortable: name, first name, status, role, newest, department (crew list), e-mail */
+  {const nmOf=r=>r.name||(crewPerson(r.email)||{}).name||r.email,last=r=>{const w=String(nmOf(r)).trim().split(/\s+/);return w.length>1?w[w.length-1]:w[0]};
+   const stOf=r=>r.m?(r.m.active===true?0:2):1,rk=r=>ADMINS.includes(r.email)?0:ADM.adm.includes(r.email)?1:ADM.ur[r.email]?2:3;
+   const ts=r=>{const j=r.m&&r.m.joinedAt;return j?(j.seconds?j.seconds*1000:Date.parse(j)||0):0};
+   const dep=r=>{for(const g of S.crew)for(const p of arr(g.people))if(lc(p.email)===r.email)return g.dept||"";return "~"};
+   const by={name:(a,b)=>String(last(a)).localeCompare(last(b),LANG)||String(nmOf(a)).localeCompare(nmOf(b),LANG),first:(a,b)=>String(nmOf(a)).localeCompare(nmOf(b),LANG),status:(a,b)=>stOf(a)-stOf(b),role:(a,b)=>rk(a)-rk(b),new:(a,b)=>ts(b)-ts(a),dept:(a,b)=>dep(a).localeCompare(dep(b),LANG),email:(a,b)=>a.email.localeCompare(b.email)};
+   const f=by[ADM.sort]||by.first;rows.sort((a,b)=>f(a,b)||by.first(a,b))}
   const q=lc(ADM.q);const UF={all:()=>true,act:r=>r.m&&r.m.active===true,inv:r=>!r.m,off:r=>r.m&&r.m.active!==true,adm:r=>ADMINS.includes(r.email)||ADM.adm.includes(r.email)||!!ADM.ur[r.email]};
   if(!UF[ADM.uf])ADM.uf="all";
   const vis=rows.filter(r=>(!q||(r.email+" "+r.name+" "+((crewPerson(r.email)||{}).role||"")).toLowerCase().includes(q))&&UF[ADM.uf](r));
