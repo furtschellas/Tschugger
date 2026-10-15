@@ -737,8 +737,8 @@ function ppContact(v){
 const ppKey=w=>String(w||"").toLowerCase().replace(/basis|base|wallis|[\s–\-,]/g,"");
 function ppItems(list,date,grp){let h='<div class="pplist">',k=0;
   while(k<list.length){const w=list[k].where;let e=k+1;while(w&&e<list.length&&ppKey(list[e].where)===ppKey(w))e++;
-    if(e-k>1){h+='<div class="ppgrp"><div class="ppgh">'+ppWhere(w,list.slice(k,e).map(x=>x.map).find(Boolean))+'</div>';for(let n=k;n<e;n++)h+=ppItem(list[n],date,grp,n,true);h+='</div>'}
-    else h+=ppItem(list[k],date,grp,k,false);
+    if(false&&e-k>1){h+='<div class="ppgrp"><div class="ppgh">'+ppWhere(w,list.slice(k,e).map(x=>x.map).find(Boolean))+'</div>';for(let n=k;n<e;n++)h+=ppItem(list[n],date,grp,n,true);h+='</div>'}
+    else for(let n=k;n<e;n++)h+=ppItem(list[n],date,grp,n,false);
     k=e}
   return h+'</div>'}
 /* calendar entry for one PREP appointment: an .ics file the phone opens straight in its calendar app */
