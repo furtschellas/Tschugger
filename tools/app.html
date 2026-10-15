@@ -456,6 +456,7 @@ html[data-theme="light"] .scbar .uf.u3[aria-pressed="true"],html[data-theme="lig
 .drow .pub.dpub{border:0;padding:0;margin-left:auto}
 .dayhead>div,.dsp-head>div{flex:1;min-width:0}
 .dsp-units{margin-top:12px}
+.pv-no-i .sc>.meta,.pv-no-d .sc>.desc,.pv-no-c .sc>.cast,.pv-no-a .sc>.loc{display:none}
 .pvb .pub.dpub{display:inline-flex;gap:inherit;border:0;padding:0}
 .pvsep{width:1px;height:20px;background:var(--rule);margin:0 2px;align-self:center}
 @media (max-width:374px){:root{--circ:28px}}
@@ -627,6 +628,8 @@ function svToggles(){
 }
 function svApply(){document.querySelectorAll(".svwrap").forEach(w=>w.className="svwrap "+svClasses());document.querySelectorAll(".svwrap [data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const s=document.getElementById("scn");if(!s)return;s.className="scrn "+svClasses();s.querySelectorAll("[data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const t=s.querySelector("[data-spt]");if(t)t.setAttribute("aria-pressed",String(spTheme()==="light"))}
 const PVLBL={i:"Info",d:"Szenenbeschrieb",a:"Adresse",c:"Cast"};
+/* schedule display options only toggle CSS classes: no re-render, no scroll jump */
+function pvApply(){const b=document.body;for(const k of ["i","d","c","a"])b.classList.toggle("pv-no-"+k,!S.pv[k]);document.querySelectorAll("[data-pv]").forEach(x=>x.setAttribute("aria-pressed",String(!!S.pv[x.dataset.pv])))}
 function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","a"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" aria-label="'+esc(L(PVLBL[k]))+'" title="'+esc(L(PVLBL[k]))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+(post?'<span class="pvsep"></span>'+post:'')+'</span>'}
 function itemHTML(it){
   if(!it.sc){
@@ -640,10 +643,10 @@ function itemHTML(it){
   if(it.xx)meta.push('<span>'+esc(it.xx)+' '+L('Kompars.')+'</span>');
   return '<li class="row"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
-    (S.pv.i&&meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
-    (!S.pv.d?'':it.d?'<div class="desc">'+esc(TX(it,"d"))+' '+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>':'<div class="desc">'+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>')+
-    (S.pv.c?castChips(it.cast):'')+
-    (it.loc&&S.pv.a?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+
+    (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
+    (it.d?'<div class="desc">'+esc(TX(it,"d"))+' '+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>':'<div class="desc">'+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>')+
+    castChips(it.cast)+
+    (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+
     '</div></li>';
 }
 const padD=x=>String(x).replace(/^D(\d)$/,"D0$1");
@@ -1018,7 +1021,7 @@ function renderScript(){
     if(!SCRIPTERR)scriptData().then(l=>{if(!l.length)SCRIPTERR=true;if(S.tab==="script")render()},()=>{SCRIPTERR=true;if(S.tab==="script")render()});
     return '<h3 class="dh">'+esc(L("Drehbuch"))+'</h3><div class="empty">'+(SCRIPTERR?esc(L("Drehbuch konnte nicht geladen werden."))+' <button class="copy" data-scretry>'+esc(L("Aktualisieren"))+'</button>':esc(L("Lade"))+' '+esc(L("Drehbuch"))+' …')+'</div>';
   }
-  const sched=memo("scsched",()=>{const m={};for(const d of S.days)for(const [u,its] of unitLists(d))for(const it of its){if(!it.sc)continue;const k=norm(it.sc);(m[k]=m[k]||[]).push({d,u,it})}return m});
+  const sched=schedIndex();
   const q=norm(S.sq||"");
   const uo=unitsOn(),sel=uo.filter(u=>S.uf[u]),allU=!sel.length||sel.length===uo.length;
   const hitsOf=x=>(sched[norm(x.sc)]||[]).filter(h=>allU||sel.includes(h.u));
@@ -1054,8 +1057,10 @@ function fitRows(root){
   (root||document).querySelectorAll(".svb,.dtitle,.lvb,.admv").forEach(r=>{
     r.style.removeProperty("--circ");
     if(!r.offsetParent||r.scrollWidth<=r.clientWidth+1)return;
-    let c=parseFloat(getComputedStyle(r).getPropertyValue("--circ"))||30;
-    while(c>20&&r.scrollWidth>r.clientWidth+1){c-=1;r.style.setProperty("--circ",c+"px")}
+    const c=parseFloat(getComputedStyle(r).getPropertyValue("--circ"))||30;
+    const n=r.querySelectorAll(".pvbtn,.thmb,.uf,.pub button,.foodtog.ico").length||1;
+    let v=Math.max(20,Math.floor(c-(r.scrollWidth-r.clientWidth)/n)-0);r.style.setProperty("--circ",v+"px");
+    while(v>20&&r.scrollWidth>r.clientWidth+1){v-=1;r.style.setProperty("--circ",v+"px")}
   });
 }
 window.addEventListener("resize",()=>{clearTimeout(window.__fitT);window.__fitT=setTimeout(()=>{fitRows();const sc=document.getElementById("scn");if(sc)fitRows(sc)},120)});
@@ -1079,7 +1084,7 @@ function render(){
   const sel=v.querySelector('.chip[aria-selected="true"]');
   if(sel)sel.scrollIntoView({block:"nearest",inline:"center"});
   try{renderHeader()}catch(err){console.error(err)}
-  try{fitRows(v)}catch(_){}
+  try{pvApply();fitRows(v)}catch(_){}
 }
 
 /* ---------- interaction (one delegated click handler) ---------- */
@@ -1150,8 +1155,11 @@ function endTime(t,dur){
   const a=/^(\d{1,2})[:.](\d{2})/.exec(t||""),b=/^(\d+)\s*h\s*(\d{1,2})?$/i.exec(String(dur||"").trim())||(/^(\d+)\s*min$/i.exec(String(dur||"").trim())?[0,0,/^(\d+)/.exec(dur)[1]]:null);
   if(!a||!b)return"";const m=(+a[1]*60+ +a[2]+(+b[1]||0)*60+(+b[2]||0))%1440;return pad2(Math.floor(m/60))+":"+pad2(m%60);
 }
+function schedIndex(){return memo("scsched",()=>{const m={};for(const d of S.days)for(const [u,its] of unitLists(d))for(const it of its){if(!it.sc)continue;const k=norm(it.sc);(m[k]=m[k]||[]).push({d,u,it})}return m})}
 function sceneFacts(reqSc,x,list){
-  const want=String(reqSc||"").toLowerCase().replace(/\s+/g,"");const hits=[];
+  const want=String(reqSc||"").toLowerCase().replace(/\s+/g,"");
+  const ex=schedIndex()[want];if(ex&&ex.length)return factsHTML(ex); /* fast path: exact scene number */
+  const hits=[];
   for(const d of S.days)for(const [u,its] of unitLists(d))for(const it of its){
     if(!it.sc)continue;const n=String(it.sc).toLowerCase().replace(/\s+/g,"");
     if(n===want||(x&&findScene(list,it.sc)===x))hits.push({d,u,it});
@@ -1248,7 +1256,7 @@ const ACTIONS=[
   ["[data-spt]",()=>{const nx=spTheme()==="light"?"dark":"light";SPT=nx===getTheme()?null:nx;try{SPT?localStorage.setItem("spt",SPT):localStorage.removeItem("spt")}catch(_){}svApply()}],
   ["[data-lv]",b=>{const k=b.dataset.lv;S.lv=Object.assign({},S.lv,{[k]:!S.lv[k]});store("lv",JSON.stringify(S.lv));document.querySelectorAll(".lvwrap").forEach(w=>w.className="lvwrap "+lvClasses());document.querySelectorAll("[data-lv]").forEach(x=>x.setAttribute("aria-pressed",String(S.lv[x.dataset.lv])))}],
   ["[data-sv]",b=>{const k=b.dataset.sv;S.sv=Object.assign({},S.sv,{[k]:!S.sv[k]});store("sv",JSON.stringify(S.sv));svApply()}],
-  ["[data-pv]",b=>{const k=b.dataset.pv;S.pv=Object.assign({},S.pv,{[k]:!S.pv[k]});store("pv",JSON.stringify(S.pv));const y=window.scrollY;render();window.scrollTo(0,y)}],
+  ["[data-pv]",b=>{const k=b.dataset.pv;S.pv=Object.assign({},S.pv,{[k]:!S.pv[k]});store("pv",JSON.stringify(S.pv));pvApply()}],
   ["[data-goto]",b=>{S.day=b.dataset.goto;S.tab="plan";S.pu={"1":true,"2":true,"3":true};window.scrollTo(0,0);render()}],
 ];
 document.addEventListener("click",e=>{
