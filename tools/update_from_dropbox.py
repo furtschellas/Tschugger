@@ -34,6 +34,7 @@ if _missing and __name__ == "__main__":
     status("setup", "Noch nicht eingerichtet", missing=_missing); sys.exit(0)
 KEY = base64.b64decode(os.environ["CREW_KEY"].strip())
 ROOT = (os.environ.get("DROPBOX_ROOT") or "ns:14935064499").rstrip("/")
+ROOT3D = (os.environ.get("DROPBOX_ROOT_3D") or "ns:13132709057").rstrip("/")   # shared folder «3D» (weekly prep schedule, floorplans)
 MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
 FORCE = os.environ.get("FORCE", "").lower() in ("ja", "yes", "true", "1")
 EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
@@ -88,6 +89,15 @@ class Dbx:
             p = re.sub(r"^TSCHUGGER Tigerblood - DISTRO/", "", p)
             files.append({"name": p, "id": e["id"], "modified": e.get("server_modified") or e.get("client_modified"), "size": e.get("size", 0)})
         return files
+
+    def list_path(self, path):
+        """direct children of a folder (files and folders); [] if the folder cannot be read"""
+        r = requests.post("https://api.dropboxapi.com/2/files/list_folder", headers=self.h, timeout=60, json={"path": path, "recursive": False})
+        if r.status_code != 200: return []
+        j = r.json(); out = j["entries"]
+        while j.get("has_more"):
+            j = requests.post("https://api.dropboxapi.com/2/files/list_folder/continue", headers=self.h, timeout=60, json={"cursor": j["cursor"]}).json(); out += j["entries"]
+        return [{"name": e["name"], "tag": e[".tag"], "id": e.get("id"), "modified": e.get("server_modified") or e.get("client_modified")} for e in out]
 
     def download(self, fid):
         r = requests.post("https://content.dropboxapi.com/2/files/download", timeout=180,
@@ -326,6 +336,59 @@ def main():
                 scr = sc; changed = True; log("Drehbuch:", len(sc), "Szenen")
             else:
                 log("Drehbuch: zu wenige Szenen erkannt (%d) – bisheriges bleibt" % len(sc)); sources[-1] = oldkind.get("script") or sources[-1]
+
+    # weekly prep / rehearsal schedule (shared folder «3D» → 11_Planning Prep Rehearsals): newest PDF, outside «z OLD»
+    try:
+        pf = [e for e in dbx.list_path(ROOT3D + "/11_Planning Prep Rehearsals") if e["tag"] == "file" and e["name"].lower().endswith(".pdf")]
+    except Exception: pf = []
+    if pf:
+        f = max(pf, key=lambda e: e["modified"] or "")
+        name = "3D/11_Planning Prep Rehearsals/" + f["name"]
+        sources.append({"kind": "prep", "name": name, "modified": f["modified"]})
+        if FORCE or old.get(("prep", base(name))) != f["modified"]:
+            log("Prep-Wochenplanung: neu, wird ausgelesen")
+            ex = {"days": (data.get("prepro") or [])[:2], "meta": {k: v for k, v in (meta.get("prepro") or {}).items() if k in ("title", "range", "issued", "distribution", "note")}}
+            try:
+                res = claude([pdf_block(dbx.download(f["id"]))],
+                    "Erzeuge aus dieser Wochenplanung (Weekly Schedule, Vorbereitung & Proben) ein JSON-Objekt {\"days\": [...], \"meta\": {...}} genau in der Struktur dieses Beispiels: %s\n"
+                    "Regeln: ein Eintrag pro Kalendertag (id = date = YYYY-MM-DD; der Wochentag im PDF ist massgebend, falsche Datumsangaben korrigieren und in meta.note auf Deutsch erwähnen, mit note_fr, note_it, note_en). "
+                    "items: {t \"HH:MM\" oder \"TBA\"/\"All Day\"/\"N.A\", end, n (Titel wie im PDF, nicht übersetzen), crew, cast (Namen kommagetrennt wie im PDF), where (Ort mit Adresse), map (Link aus dem PDF), hl true für farbig hervorgehobene Zeilen}. "
+                    "VERBUNDENE ZELLEN beachten: gilt ein Ort für mehrere Zeilen, bei jeder dieser Zeilen eintragen. Parallele Termine in parallel[], Transporte in transport {cast, castMap, crew, crewMap, rows:[{driver, name, from, fromMap, at, to, toMap, arr}]}. "
+                    "meta: {source: \"%s\", title, range, issued (Ausgabedatum/Zeit im PDF), distribution (Verteiler), note…}." % (json.dumps(ex, ensure_ascii=False)[:20000], f["name"]), 32000)
+                days = res.get("days") if isinstance(res, dict) else None
+                if isinstance(days, list) and days:
+                    for d in days: d["id"] = d.get("date") or d.get("id")
+                    data["prepro"] = sorted(days, key=lambda d: d.get("date", ""))
+                    pm = res.get("meta") or {}; pm["source"] = f["name"]; meta["prepro"] = pm
+                    changed = True; log("Prep-Wochenplanung:", len(days), "Tage")
+                else:
+                    log("Prep-Wochenplanung: Ergebnis unvollständig – bisherige bleibt"); sources[-1] = oldkind.get("prep") or sources[-1]
+            except Exception as e:
+                log("Prep-Wochenplanung nicht lesbar:", str(e)[:120]); sources[-1] = oldkind.get("prep") or sources[-1]
+
+    # floorplans (PDF) and blocking photo folders (shared folder «3D» → 0_BlockingFloorplans)
+    try:
+        fl = [e for e in dbx.list_path(ROOT3D + "/0_BlockingFloorplans/floorplans locations") if e["tag"] == "file" and re.search(r"\.(pdf|png|jpe?g)$", e["name"], re.I)]
+        bl = [e for e in dbx.list_path(ROOT3D + "/0_BlockingFloorplans") if e["tag"] == "folder" and e["name"].lower().startswith("scene_")]
+    except Exception: fl = bl = []
+    if fl or bl:
+        known = {x.get("file"): x for x in meta.get("floorplans") or []}
+        kb = {x.get("name"): x for x in meta.get("blocking") or []}
+        fpdir = meta.get("fpFolderUrl") or ""; bdir = meta.get("blkFolderUrl") or ""
+        TOWNS = ("salgesch", "martigny", "sion", "chalais", "saxon", "salvan", "vernayaz", "collombey", "leytron", "saint-maurice")
+        fps = []
+        for e in sorted(fl, key=lambda e: e["name"].lower()):
+            if e["name"] in known: fps.append(known[e["name"]]); continue
+            stem = re.sub(r"\.[^.]+$", "", e["name"]); words = [w.lower() for w in re.split(r"[\s_]+", stem) if w]
+            fps.append({"name": stem.title(), "file": e["name"], "url": fpdir, "kind": "pdf" if e["name"].lower().endswith(".pdf") else "img",
+                        "rule": {"set": [w for w in words if w not in TOWNS], "loc": [w for w in words if w in TOWNS]}})
+        blk = []
+        for e in sorted(bl, key=lambda e: e["name"]):
+            if e["name"] in kb: blk.append(kb[e["name"]]); continue
+            sc = [re.sub(r"^0+", "", p) for p in e["name"][6:].replace(" CAR", "").split("_") if p]
+            blk.append({"name": e["name"], "sc": sc, "url": bdir})
+        if [x.get("file") for x in fps] != [x.get("file") for x in meta.get("floorplans") or []] or [x.get("name") for x in blk] != [x.get("name") for x in meta.get("blocking") or []]:
+            meta["floorplans"], meta["blocking"] = fps, blk; changed = True; log("Floorplans:", len(fps), "· Blocking:", len(blk))
 
     # location list (Google Sheet chosen by the main admin)
     sheet = cfg.get("locSheet") or DEFAULT_SHEET

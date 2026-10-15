@@ -1468,8 +1468,9 @@ function sceneFacts(reqSc,x,list){
   return factsHTML(exact.length?exact:hits);
 }
 /* floorplans (PDF) and blocking photos from the 3D folder, matched to sets, places and scene numbers */
-function fpFor(set,loc){const st=fold(set),lc=fold(loc);return arr(S.meta&&S.meta.floorplans).filter(f=>{const r=f.rule||{},ws=arr(r.set),wl=arr(r.loc);
-  return (ws.length||wl.length)&&ws.every(w=>st.includes(w))&&(!wl.length||wl.some(w=>lc.includes(w)))&&!arr(r.not).some(w=>st.includes(w)||lc.includes(w))})}
+const fpk=t=>fold(t).replace(/[^a-z0-9]/g,"");
+function fpFor(set,loc){const st=fpk(set),lc=fpk(loc);return arr(S.meta&&S.meta.floorplans).filter(f=>{const r=f.rule||{},ws=arr(r.set).map(fpk),wl=arr(r.loc).map(fpk);
+  return (ws.length||wl.length)&&ws.every(w=>st.includes(w))&&(!wl.length||wl.some(w=>lc.includes(w)))&&!arr(r.not).map(fpk).some(w=>st.includes(w)||lc.includes(w))})}
 function blkFor(sc){const n=String(sc||"").toLowerCase().replace(/\s+/g,"");return n?arr(S.meta&&S.meta.blocking).filter(b=>arr(b.sc).some(x=>{x=String(x).toLowerCase();return x===n||(n.startsWith(x+"pt")&&!/pt/.test(x))})):[]}
 function fpLinks(fps,blk){const l=arr(fps).map(f=>'<a class="fpl" href="'+esc(f.url)+'" target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat(arr(blk).map(b=>'<a class="fpl blk" href="'+esc(b.url)+'" target="_blank" rel="noopener noreferrer">📷 Blocking</a>'));return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
 function itemFp(it){return fpLinks(fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")),blkFor(it.sc))}
