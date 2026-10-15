@@ -424,6 +424,7 @@ async function onAcctSubmit(e){
       if(MEMBER)await F.updateDoc(ref,upd);else await F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
       MEMBER=Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd);
       writeOwnBday(upd.name,upd.birthday);
+      if(isAdmin())ADM.loaded=false;
       if(upd.lang!==LANG&&WDS[upd.lang]){LANG=upd.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
       if(ONBOARD){ONBOARD=false;document.getElementById("acct").hidden=true;showMsg(L("Profil gespeichert."),3000);btn.disabled=false;return}
       msg.classList.add("ok");msg.textContent=L("Profil gespeichert.");btn.disabled=false;return;
@@ -466,6 +467,7 @@ function cateringHTML(){
 }
 VIEWS.admin=function(){
   if(!isAdmin())return '<div class="empty">'+L("Kein Zugang")+'</div>';
+  if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>60000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
   if(!ADM.loaded){admLoad().catch(err=>{console.error(err);showMsg(L("Benutzerliste konnte nicht geladen werden:")+" "+(err.message||err),6000)});return '<div class="empty">'+L("Lade Benutzer …")+'</div>'}
   const memBy={};ADM.mem.forEach(m=>memBy[m.email]=m);
   const invBy={};ADM.inv.forEach(i=>invBy[i.id]=i);
