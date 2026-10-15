@@ -407,6 +407,32 @@ async function onGateClick(e){
       else gateMsg(errText(err),true)}
   }
 }
+/* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
+const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu"];let PREFT=null,PREFAPPLY=false;
+{const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k))savePrefsSoon()}}
+function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
+async function savePrefs(){
+  if(!ME||!ME.uid)return;const p={};
+  try{for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null)p[k]=String(v).slice(0,400)}}catch(_){return}
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"prefs",ME.uid),Object.assign(p,{at:F.serverTimestamp()}))}catch(err){console.warn("prefs",err&&err.code||err)}
+}
+function applyPrefs(p){
+  if(!p||typeof p!=="object")return;PREFAPPLY=true;
+  try{
+    for(const k of PREFKEYS)if(typeof p[k]==="string")try{localStorage.setItem(k,p[k])}catch(_){}
+    const js=k=>{try{return JSON.parse(p[k])}catch(_){return null}};
+    for(const [k,o] of [["pv",S.pv],["sv",S.sv],["lv",S.lv]]){const x=js(k);if(x&&typeof x==="object")for(const i in o)if(typeof x[i]==="boolean")o[i]=x[i]}
+    for(const k of ["uf","pu"]){const x=js(k);if(x&&typeof x==="object")S[k]=Object.assign({},S[k],...["1","2","3"].filter(u=>typeof x[u]==="boolean").map(u=>({[u]:x[u]})))}
+    if(typeof p.spt==="string")SPT=p.spt==="light"||p.spt==="dark"?p.spt:null;
+    if(p.theme==="light"||p.theme==="dark")setTheme(p.theme);
+  }finally{PREFAPPLY=false}
+  render();
+}
+async function loadPrefs(){
+  if(!ME||!ME.uid)return;
+  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),10000,"prefs");
+    if(d.exists())applyPrefs(d.data());else savePrefs()}catch(err){console.warn("prefs",err&&err.code||err)}
+}
 async function afterSignIn(u){
   ME=u;
   if(!u.emailVerified){showGate("verify");return}
@@ -414,7 +440,7 @@ async function afterSignIn(u){
     if(isOffline(err)&&S.days.length){hideGate();acctButton(true);showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
-  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];
+  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();
   const prof=MEMBER||{};
   let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}
   if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){LANG=prof.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
