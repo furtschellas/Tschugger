@@ -29,6 +29,25 @@ Object.assign(I18N,{
  "Mail gesendet.":{it:"E-mail inviata.",fr:"E-mail envoyé.",en:"Email sent."},
  "Noch nicht bestätigt. Schau auch im Spam-Ordner nach.":{it:"Non ancora confermato. Controlla anche lo spam.",fr:"Pas encore confirmé. Regarde aussi dans les spams.",en:"Not confirmed yet. Also check your spam folder."},
  "Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen.":{it:"Se esiste un account per questo indirizzo, riceverai a breve un’e-mail per reimpostare.",fr:"S’il existe un compte pour cette adresse, un e-mail de réinitialisation arrive.",en:"If there is an account for this address, a reset email is on its way."},
+ "Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die auf der Crewliste steht – diese ist bereits freigeschaltet.":{fr:"Réservé à l’équipe de TSCHUGGER Tigerblood. Connecte-toi avec l’adresse e-mail qui figure sur la liste de l’équipe – elle est déjà autorisée.",it:"Solo per la crew di TSCHUGGER Tigerblood. Accedi con l’indirizzo e-mail che figura nella lista crew – è già autorizzato.",en:"For the TSCHUGGER Tigerblood crew only. Sign in with the email address on the crew list – it is already authorised."},
+ "Diese E-Mail-Adresse ist nicht für die Crew-App freigeschaltet.":{fr:"Cette adresse e-mail n’est pas autorisée pour l’app de l’équipe.",it:"Questo indirizzo e-mail non è autorizzato per l’app della crew.",en:"This email address is not authorised for the crew app."},
+ "Bitte melde dich ab und wieder an – mit der E-Mail-Adresse, die auf der Crewliste steht. Diese ist bereits freigeschaltet. Bei Google: das Google-Konto mit dieser Adresse wählen. Stimmt die Adresse auf der Crewliste nicht, melde dich bei der Produktion.":{fr:"Déconnecte-toi puis reconnecte-toi avec l’adresse e-mail qui figure sur la liste de l’équipe. Elle est déjà autorisée. Avec Google : choisis le compte Google qui a cette adresse. Si l’adresse sur la liste n’est pas correcte, contacte la production.",it:"Esci e accedi di nuovo con l’indirizzo e-mail che figura nella lista crew. È già autorizzato. Con Google: scegli l’account Google con questo indirizzo. Se l’indirizzo nella lista non è corretto, contatta la produzione.",en:"Please sign out and sign in again with the email address on the crew list. It is already authorised. With Google: choose the Google account with that address. If the address on the crew list is wrong, contact the production."},
+ "Abmelden und mit Crewliste-Adresse anmelden":{fr:"Se déconnecter et utiliser l’adresse de la liste",it:"Esci e accedi con l’indirizzo della lista",en:"Sign out and use the crew-list address"},
+ "Zugang beim Hauptadministrator anfragen":{fr:"Demander l’accès à l’administrateur principal",it:"Chiedi l’accesso all’amministratore principale",en:"Request access from the main admin"},
+ "Vor- und Nachname":{fr:"Prénom et nom",it:"Nome e cognome",en:"First and last name"},
+ "Funktion / Department":{fr:"Fonction / département",it:"Funzione / reparto",en:"Job / department"},
+ "Nachricht (optional)":{fr:"Message (facultatif)",it:"Messaggio (facoltativo)",en:"Message (optional)"},
+ "Anfrage senden":{fr:"Envoyer la demande",it:"Invia richiesta",en:"Send request"},
+ "Bitte Vor- und Nachname angeben.":{fr:"Indique ton prénom et ton nom.",it:"Indica nome e cognome.",en:"Please enter your first and last name."},
+ "Anfrage gesendet. Du bekommst Zugang, sobald der Hauptadministrator sie freigibt – danach hier auf «Aktualisieren» tippen.":{fr:"Demande envoyée. Tu auras accès dès que l’administrateur principal l’aura validée – touche ensuite « Actualiser » ici.",it:"Richiesta inviata. Avrai accesso appena l’amministratore principale la approva – poi tocca «Aggiorna» qui.",en:"Request sent. You get access as soon as the main admin approves it – then tap “Refresh” here."},
+ "Zugangsanfragen":{fr:"Demandes d’accès",it:"Richieste di accesso",en:"Access requests"},
+ "Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».":{fr:"Ces personnes ne sont pas sur la liste et demandent l’accès. « Autoriser » les invite ; elles touchent ensuite « Actualiser ».",it:"Queste persone non sono nella lista e chiedono l’accesso. «Autorizza» le invita; poi toccano «Aggiorna».",en:"These people are not on the list and ask for access. “Approve” invites them; they then tap “Refresh”."},
+ "Freischalten":{fr:"Autoriser",it:"Autorizza",en:"Approve"},
+ "Ablehnen":{fr:"Refuser",it:"Rifiuta",en:"Decline"},
+ "Freigeschaltet:":{fr:"Autorisé :",it:"Autorizzato:",en:"Approved:"},
+ "Anfrage abgelehnt.":{fr:"Demande refusée.",it:"Richiesta rifiutata.",en:"Request declined."},
+ "offene Zugangsanfrage – siehe App-Verwaltung.":{fr:"demande d’accès en attente – voir Gestion de l’app.",it:"richiesta di accesso in sospeso – vedi Gestione app.",en:"open access request – see App management."},
+ "offene Zugangsanfragen – siehe App-Verwaltung.":{fr:"demandes d’accès en attente – voir Gestion de l’app.",it:"richieste di accesso in sospeso – vedi Gestione app.",en:"open access requests – see App management."},
  "Kein Zugang":{it:"Nessun accesso",fr:"Pas d’accès",en:"No access"},
  "Deine Adresse ist (noch) nicht für die Crew-App freigeschaltet. Bitte melde dich bei der Produktion.":{it:"Il tuo indirizzo non è (ancora) abilitato per l’app. Contatta la produzione.",fr:"Ton adresse n’est pas (encore) autorisée pour l’app. Contacte la production.",en:"Your address is not (yet) enabled for the crew app. Please contact the production."},
  "Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion.":{it:"Il tuo accesso è stato bloccato. Contatta la produzione.",fr:"Ton accès a été bloqué. Contacte la production.",en:"Your access has been blocked. Please contact the production."},
@@ -357,11 +376,11 @@ function showGate(mode,msg,isErr){
   const langs='<div class="lang glang"><button type="button" data-glang="de">DE</button><button type="button" data-glang="fr">FR</button><button type="button" data-glang="it">IT</button><button type="button" data-glang="en">EN</button></div>';
   const note=msg?'<p class="'+(isErr?'gerr':'gok')+'" role="alert">'+esc(msg)+'</p>':'<p class="gerr" role="alert"></p>';
   let f="";
-  if(AUTHMODE==="login")f='<form class="gbox" data-f="login">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="current-password" required><button type="submit">'+L("Anmelden")+'</button>'+note+'<button type="button" class="glink" data-gmode="reset">'+L("Passwort vergessen?")+'</button><button type="button" class="glink" data-gmode="register">'+L("Erstes Mal hier? Konto erstellen")+'</button>'+langs+'</form>';
-  else if(AUTHMODE==="register")f='<form class="gbox" data-f="register">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><p class="ghint">'+L("Mindestens 8 Zeichen.")+'</p><button type="submit">'+L("Konto erstellen")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Schon ein Konto? Anmelden")+'</button>'+langs+'</form>';
+  if(AUTHMODE==="login")f='<form class="gbox" data-f="login">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die auf der Crewliste steht – diese ist bereits freigeschaltet.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="current-password" required><button type="submit">'+L("Anmelden")+'</button>'+note+'<button type="button" class="glink" data-gmode="reset">'+L("Passwort vergessen?")+'</button><button type="button" class="glink" data-gmode="register">'+L("Erstes Mal hier? Konto erstellen")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="register")f='<form class="gbox" data-f="register">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die auf der Crewliste steht – diese ist bereits freigeschaltet.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><p class="ghint">'+L("Mindestens 8 Zeichen.")+'</p><button type="submit">'+L("Konto erstellen")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Schon ein Konto? Anmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="reset")f='<form class="gbox" data-f="reset">'+head+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><button type="submit">'+L("Link zum Zurücksetzen senden")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Zurück")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="verify")f='<form class="gbox" data-f="verify">'+head+'<p class="gtitle">'+L("Bitte bestätige zuerst deine E-Mail-Adresse.")+'</p><p class="ghint">'+L("Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.")+'</p><p class="ghint"><b>'+em+'</b></p><button type="submit">'+L("Ich habe bestätigt")+'</button>'+note+'<button type="button" class="glink" data-gact="resend">'+L("Mail nochmals senden")+'</button><button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
-  else if(AUTHMODE==="denied"||AUTHMODE==="blocked")f='<div class="gbox">'+head+'<p class="gtitle">'+L("Kein Zugang")+'</p><p class="ghint">'+(AUTHMODE==="blocked"?L("Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion."):L("Deine Adresse ist (noch) nicht für die Crew-App freigeschaltet. Bitte melde dich bei der Produktion."))+'</p><p class="ghint"><b>'+em+'</b></p><button type="button" class="gbtn" data-gact="retry">'+L("Aktualisieren")+'</button><button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</div>';
+  else if(AUTHMODE==="denied"||AUTHMODE==="blocked")f='<div class="gbox">'+head+'<p class="gtitle">'+L("Kein Zugang")+'</p><p class="ghint">'+(AUTHMODE==="blocked"?L("Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion."):L("Diese E-Mail-Adresse ist nicht für die Crew-App freigeschaltet."))+'</p><p class="ghint"><b>'+em+'</b></p>'+(AUTHMODE==="blocked"?'':'<p class="ghint gtip">'+L("Bitte melde dich ab und wieder an – mit der E-Mail-Adresse, die auf der Crewliste steht. Diese ist bereits freigeschaltet. Bei Google: das Google-Konto mit dieser Adresse wählen. Stimmt die Adresse auf der Crewliste nicht, melde dich bei der Produktion.")+'</p>'+reqBox())+'<button type="button" class="gbtn" data-gact="signout">'+L("Abmelden und mit Crewliste-Adresse anmelden")+'</button><button type="button" class="glink" data-gact="retry">'+L("Aktualisieren")+'</button>'+langs+'</div>';
   else if(AUTHMODE==="wait")f='<div class="gbox">'+head+'<p class="ghint">'+L("Bitte warten …")+'</p></div>';
   verifyPoll(AUTHMODE==="verify");
   g.innerHTML=f;applyLangs();g.querySelectorAll("[data-glang]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.glang===LANG));
@@ -390,14 +409,38 @@ async function onGateSubmit(e){
   }catch(err){console.error(err);gateMsg(errText(err),true)}
   if(btn)btn.disabled=false;
 }
+/* ---- access request: someone not on the list asks the main admin for access ---- */
+let REQ={sent:false,err:""};
+function reqBox(){
+  if(REQ.sent)return '<p class="gok">'+L("Anfrage gesendet. Du bekommst Zugang, sobald der Hauptadministrator sie freigibt – danach hier auf «Aktualisieren» tippen.")+'</p>';
+  return '<details class="greq"><summary>'+L("Zugang beim Hauptadministrator anfragen")+'</summary>'+
+    '<label for="rqn">'+L("Vor- und Nachname")+'</label><input id="rqn" maxlength="80" autocomplete="name">'+
+    '<label for="rqf">'+L("Funktion / Department")+'</label><input id="rqf" maxlength="80">'+
+    '<label for="rqt">'+L("Nachricht (optional)")+'</label><textarea id="rqt" maxlength="280" rows="2"></textarea>'+
+    '<button type="button" class="gbtn" data-gact="request">'+L("Anfrage senden")+'</button>'+(REQ.err?'<p class="gerr">'+esc(REQ.err)+'</p>':'')+'</details>';
+}
+async function checkRequests(){
+  try{const {F,db}=await fb();const r=await F.getDocs(F.collection(db,"requests"));const n=r.size||r.docs.length;
+    const b=document.getElementById("acctBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||""}
+    if(n&&!checkRequests.told){checkRequests.told=true;showMsg(n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."),7000)}}catch(_){}
+}
+async function sendRequest(){
+  const n=String(($("#rqn")||{}).value||"").trim(),f=String(($("#rqf")||{}).value||"").trim(),t=String(($("#rqt")||{}).value||"").trim();
+  if(n.length<3){REQ.err=L("Bitte Vor- und Nachname angeben.");showGate(AUTHMODE);return}
+  try{const {F,db,auth}=await fb();const em=lc(auth.currentUser&&auth.currentUser.email);if(!em)throw new Error("not signed in");
+    await F.setDoc(F.doc(db,"requests",em),{name:n.slice(0,80),role:f.slice(0,80),note:t.slice(0,280),at:F.serverTimestamp()});
+    REQ={sent:true,err:""}}catch(err){console.error(err);REQ.err=errText(err)}
+  showGate(AUTHMODE);
+}
 async function onGateClick(e){
   const lb=e.target.closest("[data-glang]");if(lb){LANG=lb.dataset.glang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;showGate(AUTHMODE);render();return}
   const m=e.target.closest("[data-gmode]");if(m){showGate(m.dataset.gmode);return}
   const a=e.target.closest("[data-gact]");if(!a)return;
   const {A,auth}=await fb();
-  if(a.dataset.gact==="signout"){await A.signOut(auth)}
+  if(a.dataset.gact==="signout"){REQ={sent:false,err:""};await A.signOut(auth)}
   else if(a.dataset.gact==="resend"){try{await A.sendEmailVerification(auth.currentUser,{url:location.origin+location.pathname});gateMsg(L("Mail gesendet."),false)}catch(err){gateMsg(errText(err),true)}}
   else if(a.dataset.gact==="retry"){if(auth.currentUser)afterSignIn(auth.currentUser)}
+  else if(a.dataset.gact==="request"){a.disabled=true;await sendRequest()}
   else if(a.dataset.gact==="google"){
     const prov=new A.GoogleAuthProvider();prov.setCustomParameters({prompt:"select_account"});window.__justSignedIn=true;
     try{if(isStandalone())await A.signInWithRedirect(auth,prov);else await A.signInWithPopup(auth,prov)}
@@ -464,6 +507,7 @@ function acctButton(on){
     b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
     const r=$("#refresh");r.parentNode.insertBefore(b,r);b.addEventListener("click",showAcct)}
   b.setAttribute("aria-label",L("Mein Konto"));b.title=L("Mein Konto");b.hidden=!on;
+  if(on&&isOwner())checkRequests();
 }
 const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password'));
 let ONBOARD=false;
@@ -534,6 +578,7 @@ const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false};
 async function admLoad(){
   const {F,db}=await fb();
   const [i,m,a]=await Promise.all([F.getDocs(F.collection(db,"invites")),F.getDocs(F.collection(db,"members")),F.getDocs(F.collection(db,"admins")).catch(()=>({docs:[]}))]);
+  try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()))}catch(_){ADM.req=[]}
   ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
@@ -605,6 +650,12 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-tmv]");if(
   if(b.dataset.tmv==="up"&&r.previousElementSibling)p.insertBefore(r,r.previousElementSibling);
   else if(b.dataset.tmv==="down"&&r.nextElementSibling)p.insertBefore(r.nextElementSibling,r);
   b.focus()});
+function reqSec(){
+  const r=(ADM.req||[]).slice().sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),LANG));if(!r.length)return"";
+  return '<div class="admins areq"><h3>'+L("Zugangsanfragen")+' <span class="ust adm">'+r.length+'</span></h3><p class="ahint">'+L("Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».")+'</p>'+
+    r.map(q=>'<div class="arow"><span><b>'+esc(q.name||"")+'</b> · '+esc(q.id)+(q.role?'<br><small>'+esc(q.role)+'</small>':'')+(q.note?'<br><small>«'+esc(q.note)+'»</small>':'')+'</span>'+
+      (isOwner()?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
+}
 VIEWS.admin=function(){
   if(!isAdmin())return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>60000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
@@ -636,7 +687,7 @@ VIEWS.admin=function(){
     '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+
-    admSec+(own?bkSec():'')+
+    reqSec()+admSec+(own?bkSec():'')+
     '<div class="admins"><h3>'+L("Benutzer einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>'+
@@ -671,6 +722,10 @@ document.addEventListener("click",async e=>{
   const b=e.target.closest("button[data-adm]");if(!b||ADM.busy)return;ADM.busy=true;
   try{
     const {F,db}=await fb();const a=b.dataset.adm;
+    if(a==="reqok"||a==="reqno"){const em=b.dataset.em,q=(ADM.req||[]).find(x=>x.id===em)||{};
+      if(a==="reqok")await F.setDoc(F.doc(db,"invites",em),{name:String(q.name||"").slice(0,80),role:String(q.role||"").slice(0,80),addedAt:F.serverTimestamp()});
+      await F.deleteDoc(F.doc(db,"requests",em));ADM.req=(ADM.req||[]).filter(x=>x.id!==em);
+      showMsg(a==="reqok"?L("Freigeschaltet:")+" "+(q.name||em):L("Anfrage abgelehnt."),4000);ADM.busy=false;await admLoad();return}
     if(a==="crew"){const list=crewEmails().filter(c=>!ADM.inv.some(i=>i.id===c.email)&&!ADM.mem.some(m=>m.email===c.email));
       if(confirmSafe(L("{n} Adressen aus der Crewliste einladen?").replace("{n}",list.length))){
         for(let i=0;i<list.length;i+=400){const batch=F.writeBatch(db);list.slice(i,i+400).forEach(c=>batch.set(F.doc(db,"invites",c.email),{name:c.name,role:c.role,addedAt:F.serverTimestamp()}));await batch.commit()}
