@@ -442,6 +442,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .asetd[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 .asetd form{margin-top:8px}
 .admins .aform{margin-top:8px}
+.alangs .amap{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);margin:2px 0 4px}
 
 </style>
 </head>
@@ -797,7 +798,7 @@ function locCard(g0){
 function renderLoc(){
   if(!S.locs.length)return emptyHTML("Motivliste");
   const gs=groupLocs().filter(g=>{if(!ufOn())return true;if(g.s5)return g.parts.some(p=>S.uf[p.u==="2nd"?"2":"1"]);return sceneTexts(g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))).length>0});
-  return '<div class="scbar"><a class="mapbtn" href="'+MYMAP+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>Map</a><button class="scall" id="scall" data-scall="1" aria-expanded="false" aria-label="'+L("Alle Szenen auf- oder zuklappen")+'">'+cap(L("Szenen"))+'</button><button class="uf" data-uf="1" aria-pressed="'+!!S.uf["1"]+'" aria-label="1st Unit">1st</button><button class="uf u2" data-uf="2" aria-pressed="'+!!S.uf["2"]+'" aria-label="2nd Unit">2nd</button></div>'+
+  return '<div class="scbar"><a class="mapbtn" href="'+esc(/^https:\/\//.test(window.MAPURL||"")?window.MAPURL:MYMAP)+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>Map</a><button class="scall" id="scall" data-scall="1" aria-expanded="false" aria-label="'+L("Alle Szenen auf- oder zuklappen")+'">'+cap(L("Szenen"))+'</button><button class="uf" data-uf="1" aria-pressed="'+!!S.uf["1"]+'" aria-label="1st Unit">1st</button><button class="uf u2" data-uf="2" aria-pressed="'+!!S.uf["2"]+'" aria-label="2nd Unit">2nd</button></div>'+
     (gs.length?gs.map(locCard).join(""):'<div class="empty">'+(S.uf["1"]||S.uf["2"]?L('Keine Locations für diese Unit.'):L('Bitte mindestens eine Unit wählen.'))+'</div>');
 }
 function renderDispo(){
@@ -1223,6 +1224,9 @@ Object.assign(I18N,{
  "2nd Unit anzeigen":{fr:"Afficher la 2nd unit",it:"Mostra la 2nd unit",en:"Show 2nd unit"},
  "Einstellungen gespeichert.":{fr:"Réglages enregistrés.",it:"Impostazioni salvate.",en:"Settings saved."},
  "Benutzer einladen":{fr:"Inviter des utilisateurs",it:"Invita utenti",en:"Invite users"},
+ "Karte":{fr:"Carte",it:"Mappa",en:"Map"},
+ "Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.":{fr:"Lien vers la carte du bouton « Map » dans Lieux (p. ex. Google My Maps). Vide = carte par défaut.",it:"Link alla mappa per il pulsante «Map» in Locations (es. Google My Maps). Vuoto = mappa predefinita.",en:"Link to the map for the “Map” button in Locations (e.g. Google My Maps). Empty = default map."},
+ "Bitte einen Link mit https:// eingeben.":{fr:"Saisis un lien commençant par https://.",it:"Inserisci un link che inizia con https://.",en:"Please enter a link starting with https://."},
  "Kontostatus":{fr:"Statut du compte",it:"Stato account",en:"Account status"},
  "Konto aktiv":{fr:"Compte actif",it:"Account attivo",en:"Account active"},
  "Gesperrt":{fr:"Bloqué",it:"Bloccato",en:"Blocked"},
@@ -1255,7 +1259,7 @@ Object.assign(I18N,{
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
 /* languages offered in the app; the main admin picks them (Firestore config/app.langs), cached for the sign-in screen */
-let APPLANGS=["de","fr","it","en"];try{const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1"}catch(_){}
+let APPLANGS=["de","fr","it","en"];try{const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
 try{const x=JSON.parse(localStorage.getItem("applangs")||"null");if(Array.isArray(x)&&x.length)APPLANGS=x.filter(l=>LANGS.some(z=>z[0]===l))}catch(_){}
 function applyLangs(){
   if(!APPLANGS.length)APPLANGS=["de"];
@@ -1267,6 +1271,7 @@ async function loadLangs(){
   try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));const l=d.exists()&&d.data().langs;
     if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}
     const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
+    const mu=(d.exists()&&typeof d.data().mapUrl==="string")?d.data().mapUrl:"";if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
   }catch(err){console.warn("langs",err)}
   applyLangs();
 }
@@ -1571,7 +1576,8 @@ VIEWS.admin=function(){
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
     '</div>'+
     '<details class="admins asetd" data-sec="appset"'+(SECS.appset?' open':'')+'><summary>'+L("Einstellungen der App")+'</summary><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
-    '<p class="ahint"><b>2nd Unit</b> – '+L("Ausgeschaltet zeigt die App nur die 1st Unit, ohne die Knöpfe 1st/2nd.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label></div><button type="submit">'+L("Speichern")+'</button></form></details>':'';
+    '<p class="ahint"><b>2nd Unit</b> – '+L("Ausgeschaltet zeigt die App nur die 1st Unit, ohne die Knöpfe 1st/2nd.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label></div>'+
+    '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
   let h='<section class="adm"><h2 class="dh">'+L("Benutzer verwalten")+'</h2>'+
     admSec+
     '<div class="admins"><h3>'+L("Benutzer einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
@@ -1592,7 +1598,9 @@ document.addEventListener("submit",async e=>{
   const fl=e.target.closest('[data-adm="langs"]');
   if(fl){e.preventDefault();if(!isOwner())return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
-    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked;await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2},{merge:true});APPLANGS=l;window.UNIT2=u2;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
+    if(mu&&!/^https:\/\/\S+$/.test(mu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,mapUrl:mu},{merge:true});APPLANGS=l;window.UNIT2=u2;window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const fa=e.target.closest('[data-adm="addadmin"]');
   if(fa){e.preventDefault();if(!isOwner())return;const em=lc(fa.em.value);if(!/@/.test(em))return;
@@ -1662,7 +1670,7 @@ window.crewExtra=function(p){
     else if(ems.some(e=>ADM.adm.includes(e)))ch.push('<span class="adm">'+esc(L("Admin"))+'</span>');
   }
   if(m&&ADMV.bday){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ADMV.acct?na(L("Geburtstag")+": –"):""))}
-  if(m&&ADMV.food){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?'<span class="diet">'+esc(L("Ich esse alles"))+'</span>':(ADMV.acct?na(L("Essen")+": "+L("keine Angaben")):"")))}
+  if(m&&ADMV.food){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?"":(ADMV.acct?na(L("Essen")+": "+L("keine Angaben")):"")))}
   const h=ch.filter(Boolean).join("");return h?'<div class="pinfo">'+h+'</div>':"";
 };
 
@@ -1670,7 +1678,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="9a7772cb15";
+const APP_VER="d6cb674c79";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
