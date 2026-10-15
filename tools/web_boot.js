@@ -64,6 +64,15 @@ Object.assign(I18N,{
  "Alle vier in GitHub eintragen:":{fr:"Saisir les quatre dans GitHub :",it:"Inserire tutte e quattro in GitHub:",en:"Enter all four in GitHub:"},
  "Ersten Lauf starten:":{fr:"Lancer le premier passage :",it:"Avviare la prima esecuzione:",en:"Start the first run:"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
+ "Als Benutzer einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
+ "ist jetzt als Benutzer freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé·e et peut créer un compte.",it:"è ora abilitato/a e può creare un account.",en:"is now approved and can create an account."},
+ "Einladungs-Mail schicken":{fr:"Envoyer l’invitation",it:"Invia l’invito",en:"Send invitation mail"},
+ "Dein Zugang zur TSCHUGGER Crew-App":{fr:"Ton accès à l’app d’équipe TSCHUGGER",it:"Il tuo accesso all’app crew TSCHUGGER",en:"Your access to the TSCHUGGER crew app"},
+ "du bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet. Dort findest du Drehplan, Dispos, Crewliste, Locations und das Drehbuch.":{fr:"tu as accès à l’app d’équipe de TSCHUGGER Tigerblood. Tu y trouves le plan de tournage, les feuilles de service, la liste d’équipe, les lieux et le scénario.",it:"sei abilitato/a all’app crew di TSCHUGGER Tigerblood. Lì trovi piano di lavorazione, ordini del giorno, lista crew, location e sceneggiatura.",en:"you now have access to the TSCHUGGER Tigerblood crew app. It has the schedule, call sheets, crew list, locations and the script."},
+ "So geht's:":{fr:"Comment faire :",it:"Come fare:",en:"How it works:"},
+ "«Konto erstellen» mit genau dieser E-Mail-Adresse:":{fr:"« Créer un compte » avec exactement cette adresse :",it:"«Crea account» con esattamente questo indirizzo:",en:"“Create account” with exactly this e-mail address:"},
+ "(Gmail-Adresse: einfach «Mit Google anmelden»)":{fr:"(adresse Gmail : simplement « Se connecter avec Google »)",it:"(indirizzo Gmail: semplicemente «Accedi con Google»)",en:"(Gmail address: simply “Sign in with Google”)"},
+ "Bestätigungs-Mail öffnen und auf den Link tippen – bitte auch im Spam-Ordner nachsehen.":{fr:"Ouvrir le mail de confirmation et toucher le lien – regarde aussi dans les spams.",it:"Apri la mail di conferma e tocca il link – controlla anche lo spam.",en:"Open the confirmation mail and tap the link – please also check your spam folder."},
  "Zugangsanfragen":{fr:"Demandes d’accès",it:"Richieste di accesso",en:"Access requests"},
  "Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».":{fr:"Ces personnes ne sont pas sur la liste et demandent l’accès. « Autoriser » les invite ; elles touchent ensuite « Actualiser ».",it:"Queste persone non sono nella lista e chiedono l’accesso. «Autorizza» le invita; poi toccano «Aggiorna».",en:"These people are not on the list and ask for access. “Approve” invites them; they then tap “Refresh”."},
  "Freischalten":{fr:"Autoriser",it:"Autorizza",en:"Approve"},
@@ -910,12 +919,28 @@ window.crewHead=function(){
 };
 document.addEventListener("click",e=>{if(!e.target.closest("[data-vcall]")||!isAdmin())return;const {text,n}=allVCards();if(!n)return;saveVcf(text,"TSCHUGGER Tigerblood Crew");showMsg(n+" "+L("Kontakte als VCF gespeichert."),4000)});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";if(ADMV[k]&&!ADM.loading&&Date.now()-(ADM.at||0)>60000)ADM.loaded=false;try{localStorage.setItem("admv2:"+k,ADMV[k]?"1":"0")}catch(_){}render()});
+/* main admin: invite a crew member as app user straight from the crew list (shown with «Kontostatus») */
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-cinv]");if(!b||!isOwner())return;e.preventDefault();e.stopPropagation();
+  const em=lc(b.dataset.cinv);b.disabled=true;
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"invites",em),{name:String(b.dataset.nm||"").slice(0,80),role:String(b.dataset.rl||"").slice(0,80),addedAt:F.serverTimestamp()});
+    if(!ADM.inv.some(i=>i.id===em))ADM.inv.push({id:em,name:b.dataset.nm||""});admIndex();render();
+    showMsg((b.dataset.nm||em)+" "+L("ist jetzt als Benutzer freigeschaltet und kann ein Konto erstellen."),4000)}
+  catch(err){b.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}},true);
+/* invitation mail to an invited crew member, from the admin's own mail program (arrives more reliably than system mail) */
+document.addEventListener("click",e=>{const b=e.target.closest("[data-cmail]");if(!b||!isAdmin())return;e.preventDefault();e.stopPropagation();
+  const em=b.dataset.cmail,nm=(b.dataset.nm||"").split(/\s+/)[0],app=location.origin+location.pathname;
+  const sub=L("Dein Zugang zur TSCHUGGER Crew-App");
+  const body=L("Hallo")+" "+nm+",\n\n"+L("du bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet. Dort findest du Drehplan, Dispos, Crewliste, Locations und das Drehbuch.")+"\n\n"+
+    L("So geht's:")+"\n1. "+app+"\n2. "+L("«Konto erstellen» mit genau dieser E-Mail-Adresse:")+" "+em+"\n   "+L("(Gmail-Adresse: einfach «Mit Google anmelden»)")+"\n3. "+L("Bestätigungs-Mail öffnen und auf den Link tippen – bitte auch im Spam-Ordner nachsehen.")+"\n\n"+L("Bis bald am Set!");
+  location.href="mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(body)},true);
 window.crewExtra=function(p){
   if(!isAdmin()||!(ADMV.food||ADMV.bday||ADMV.acct)||!p)return"";
   if(!ADM.loaded){ensureAdm();return ADM.err?"":'<div class="pinfo"><span class="na">…</span></div>'}
   const m=memberFor(p),ch=[],na=t=>'<span class="na">'+esc(t)+'</span>';
   if(ADMV.acct){
-    if(!m){const e=lc(p.email);ch.push(na(L(e&&ADM.inv.some(i=>i.id===e)?"Eingeladen, noch kein Konto":"Noch kein Konto")))}
+    if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
+      if(inv&&isAdmin())ch.push('<button type="button" class="cinv" data-cmail="'+esc(e)+'" data-nm="'+esc(p.name||"")+'">✉ '+esc(L("Einladungs-Mail schicken"))+'</button>');
+      if(!inv&&isOwner()&&e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))ch.push('<button type="button" class="cinv" data-cinv="'+esc(e)+'" data-nm="'+esc(p.name||"")+'" data-rl="'+esc(p.role||"")+'">+ '+esc(L("Als Benutzer einladen"))+'</button>')}
     else ch.push(m.active===true?'<span class="ok">'+esc(L("Konto aktiv"))+'</span>':'<span class="off">'+esc(L("Gesperrt"))+'</span>');
     const ems=[lc(p.email),m&&m.email].filter(Boolean);
     if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Haupt-Admin"))+'</span>');
