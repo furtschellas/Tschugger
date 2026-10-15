@@ -1116,7 +1116,7 @@ render();
   /* back online after starting without connection: start sign-in again */
   window.addEventListener("online",()=>{if(!FB&&!FBP)location.reload();else if(ME)tick()});
   const tick=async()=>{
-    if(document.visibilityState!=="visible"||!ME||!ME.emailVerified)return;
+    if(document.visibilityState!=="visible"||!ME||!(ME.emailVerified||START))return;
     try{const st=await checkMember();if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}}catch(_){return}
     load(false).catch(()=>{});
   };
