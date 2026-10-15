@@ -2,9 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    // bestätigt = E-Mail bestätigt ODER Konto vom Besitzer mit Startpasswort angelegt (starts/{email})
+    function verified() { return signedIn() && (request.auth.token.email_verified == true
+      || exists(/databases/$(database)/documents/starts/$(request.auth.token.email.lower()))); }
     function myEmail() { return request.auth.token.email.lower(); }
-    // Haupt-Admin (fest) und weitere Admins, die der Haupt-Admin unter admins/{email} einträgt
+    // Besitzer (fest) und weitere Admins, die der Besitzer unter admins/{email} einträgt
     function isOwner() { return verified() && myEmail() in ['furtschellas@gmail.com']; }
     function isAdmin() {
       return isOwner()
@@ -60,6 +62,16 @@ service cloud.firestore {
         && (!('note' in request.resource.data) || request.resource.data.note.size() <= 280);
       allow get: if (verified() && myEmail() == email) || isAdmin();
       allow list, delete: if isAdmin();
+    }
+
+    // Startpasswort-Konten: nur der Besitzer legt sie an; die Person setzt nach dem ersten Login mustChange auf false
+    match /starts/{email} {
+      allow get: if isOwner() || (signedIn() && request.auth.token.email.lower() == email);
+      allow list, delete: if isOwner();
+      allow create: if isOwner() && request.resource.data.keys().hasOnly(['mustChange', 'at']);
+      allow update: if isOwner() || (signedIn() && request.auth.token.email.lower() == email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange'])
+        && request.resource.data.mustChange == false);
     }
 
     // Ansichts-Einstellungen pro Benutzer (Thema, Anzeige-Knöpfe, Units): jede Person nur ihre eigenen

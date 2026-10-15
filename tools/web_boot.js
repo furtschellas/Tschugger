@@ -74,6 +74,23 @@ Object.assign(I18N,{
  "(Gmail-Adresse: einfach «Mit Google anmelden»)":{fr:"(adresse Gmail : simplement « Se connecter avec Google »)",it:"(indirizzo Gmail: semplicemente «Accedi con Google»)",en:"(Gmail address: simply “Sign in with Google”)"},
  "Bestätigungs-Mail öffnen und auf den Link tippen – bitte auch im Spam-Ordner nachsehen.":{fr:"Ouvrir le mail de confirmation et toucher le lien – regarde aussi dans les spams.",it:"Apri la mail di conferma e tocca il link – controlla anche lo spam.",en:"Open the confirmation mail and tap the link – please also check your spam folder."},
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
+ "Passwort-Link senden":{fr:"Envoyer un lien de mot de passe",it:"Invia link password",en:"Send password link"},
+ "Startpasswort erzeugen":{fr:"Créer un mot de passe initial",it:"Crea password iniziale",en:"Create start password"},
+ "Startpasswort":{fr:"Mot de passe initial",it:"Password iniziale",en:"Start password"},
+ "Für {e} ein Konto mit Startpasswort anlegen? Beim ersten Anmelden muss die Person ein eigenes Passwort festlegen.":{fr:"Créer un compte avec mot de passe initial pour {e} ? À la première connexion, la personne devra choisir son propre mot de passe.",it:"Creare per {e} un account con password iniziale? Al primo accesso la persona dovrà scegliere una propria password.",en:"Create an account with a start password for {e}? On first sign-in the person must set their own password."},
+ "hat schon ein Konto – dafür «Passwort-Link senden» verwenden.":{fr:"a déjà un compte – utilise « Envoyer un lien de mot de passe ».",it:"ha già un account – usa «Invia link password».",en:"already has an account – use “Send password link”."},
+ "dein Konto für die Crew-App von TSCHUGGER Tigerblood ist bereit:":{fr:"ton compte pour l’app d’équipe de TSCHUGGER Tigerblood est prêt :",it:"il tuo account per l’app crew di TSCHUGGER Tigerblood è pronto:",en:"your account for the TSCHUGGER Tigerblood crew app is ready:"},
+ "Beim ersten Anmelden legst du ein eigenes Passwort fest.":{fr:"À la première connexion, tu choisis ton propre mot de passe.",it:"Al primo accesso scegli una tua password.",en:"On first sign-in you set your own password."},
+ "Gilt nur für die erste Anmeldung. Danach muss die Person ein eigenes Passwort festlegen. Das Startpasswort wird nirgends gespeichert – jetzt weitergeben.":{fr:"Valable uniquement pour la première connexion. Ensuite, la personne doit choisir son propre mot de passe. Le mot de passe initial n’est enregistré nulle part – transmets-le maintenant.",it:"Vale solo per il primo accesso. Poi la persona deve scegliere una propria password. La password iniziale non viene salvata – inoltrala ora.",en:"Valid for the first sign-in only. Then the person must set their own password. The start password isn’t stored anywhere – pass it on now."},
+ "Per Mail schicken":{fr:"Envoyer par mail",it:"Invia per mail",en:"Send by mail"},
+ "Bitte lege jetzt dein eigenes Passwort fest.":{fr:"Choisis maintenant ton propre mot de passe.",it:"Scegli ora una tua password.",en:"Please set your own password now."},
+ "Du hast dich mit einem Startpasswort angemeldet. Es gilt nur einmal.":{fr:"Tu t’es connecté·e avec un mot de passe initial. Il n’est valable qu’une fois.",it:"Hai effettuato l’accesso con una password iniziale. Vale una sola volta.",en:"You signed in with a start password. It only works once."},
+ "Neues Passwort (mind. 8 Zeichen)":{fr:"Nouveau mot de passe (8 caractères min.)",it:"Nuova password (min. 8 caratteri)",en:"New password (min. 8 characters)"},
+ "Neues Passwort wiederholen":{fr:"Répéter le nouveau mot de passe",it:"Ripeti la nuova password",en:"Repeat new password"},
+ "Passwort speichern":{fr:"Enregistrer le mot de passe",it:"Salva password",en:"Save password"},
+ "Passwort gespeichert.":{fr:"Mot de passe enregistré.",it:"Password salvata.",en:"Password saved."},
+ "{e} einen Link schicken, mit dem die Person ein neues Passwort festlegt?":{fr:"Envoyer à {e} un lien pour choisir un nouveau mot de passe ?",it:"Inviare a {e} un link per scegliere una nuova password?",en:"Send {e} a link to set a new password?"},
+ "Link für ein neues Passwort gesendet an":{fr:"Lien pour un nouveau mot de passe envoyé à",it:"Link per una nuova password inviato a",en:"New-password link sent to"},
  "Bearbeiten":{fr:"Modifier",it:"Modifica",en:"Edit"},
  "Schliessen":{fr:"Fermer",it:"Chiudi",en:"Close"},
  "Funktion":{fr:"Fonction",it:"Funzione",en:"Role"},
@@ -310,7 +327,7 @@ async function fbInit(){
   const base="https://www.gstatic.com/firebasejs/"+FB_V+"/";
   const [app,auth,fs]=await withTimeout(Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]),20000,"firebase");
   const a=app.initializeApp(FB_CONFIG);
-  FB={app:a,A:auth,F:fs,auth:auth.getAuth(a),db:fs.getFirestore(a)};
+  FB={app:a,AP:app,A:auth,F:fs,auth:auth.getAuth(a),db:fs.getFirestore(a)};
   FB.auth.languageCode=LANG;
   return FB;
 }
@@ -423,6 +440,7 @@ function showGate(mode,msg,isErr){
   let f="";
   if(AUTHMODE==="login")f='<form class="gbox" data-f="login">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die auf der Crewliste steht – diese ist bereits freigeschaltet.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="current-password" required><button type="submit">'+L("Anmelden")+'</button>'+note+'<button type="button" class="glink" data-gmode="reset">'+L("Passwort vergessen?")+'</button><button type="button" class="glink" data-gmode="register">'+L("Erstes Mal hier? Konto erstellen")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="register")f='<form class="gbox" data-f="register">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die auf der Crewliste steht – diese ist bereits freigeschaltet.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><p class="ghint">'+L("Mindestens 8 Zeichen.")+'</p><button type="submit">'+L("Konto erstellen")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Schon ein Konto? Anmelden")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="newpw")f='<form class="gbox" data-f="newpw">'+head+'<p class="gtitle">'+L("Bitte lege jetzt dein eigenes Passwort fest.")+'</p><p class="ghint">'+L("Du hast dich mit einem Startpasswort angemeldet. Es gilt nur einmal.")+'</p><p class="ghint"><b>'+em+'</b></p><label for="gpw">'+L("Neues Passwort (mind. 8 Zeichen)")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Neues Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><button type="submit">'+L("Passwort speichern")+'</button>'+note+'<button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="reset")f='<form class="gbox" data-f="reset">'+head+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><button type="submit">'+L("Link zum Zurücksetzen senden")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Zurück")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="verify")f='<form class="gbox" data-f="verify">'+head+'<p class="gtitle">'+L("Bitte bestätige zuerst deine E-Mail-Adresse.")+'</p><p class="ghint">'+L("Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.")+'</p><p class="ghint"><b>'+em+'</b></p>'+vmStatus()+'<p class="ghint gtip">'+L("Absender: noreply@tschugger-83692.firebaseapp.com – bitte auch im Spam- bzw. Junk-Ordner nachsehen und die Mail als «Kein Spam» markieren.")+'</p><button type="submit">'+L("Ich habe bestätigt")+'</button>'+note+'<button type="button" class="glink" data-gact="resend">'+L("Mail nochmals senden")+'</button>'+(GBTN()?'<p class="ghint">'+L("Gmail-Adresse? Dann geht es ohne Bestätigungs-Mail:")+'</p>'+GBTN():'')+'<button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="denied"||AUTHMODE==="blocked")f='<div class="gbox">'+head+'<p class="gtitle">'+L("Kein Zugang")+'</p><p class="ghint">'+(AUTHMODE==="blocked"?L("Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion."):L("Diese E-Mail-Adresse ist nicht für die Crew-App freigeschaltet."))+'</p><p class="ghint"><b>'+em+'</b></p>'+(AUTHMODE==="blocked"?'':'<p class="ghint gtip">'+L("Bitte melde dich ab und wieder an – mit der E-Mail-Adresse, die auf der Crewliste steht. Diese ist bereits freigeschaltet. Bei Google: das Google-Konto mit dieser Adresse wählen. Stimmt die Adresse auf der Crewliste nicht, melde dich bei der Produktion.")+'</p>'+reqBox())+'<button type="button" class="gbtn" data-gact="signout">'+L("Abmelden und mit Crewliste-Adresse anmelden")+'</button><button type="button" class="glink" data-gact="retry">'+L("Aktualisieren")+'</button>'+langs+'</div>';
@@ -450,6 +468,12 @@ async function onGateSubmit(e){
       await sendVerify(c.user)
     }
     else if(f.dataset.f==="reset"){try{await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),em)}catch(err){if(!/user-not-found/.test(err.code||""))throw err}gateMsg(L("Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen."),false)}
+    else if(f.dataset.f==="newpw"){
+      if(pw.length<8)throw {code:"weak-password"};
+      if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
+      const {F,db}=await fb();await A.updatePassword(auth.currentUser,pw);
+      await F.updateDoc(F.doc(db,"starts",lc(auth.currentUser.email)),{mustChange:false});START={mustChange:false};
+      showMsg(L("Passwort gespeichert."),3000);await afterSignIn(auth.currentUser)}
     else if(f.dataset.f==="verify"){await ME.reload();if(auth.currentUser.emailVerified){await ME.getIdToken(true);await afterSignIn(auth.currentUser)}else gateMsg(L("Noch nicht bestätigt. Schau auch im Spam-Ordner nach."),true)}
   }catch(err){console.error(err);gateMsg(errText(err),true)}
   if(btn)btn.disabled=false;
@@ -569,9 +593,13 @@ async function loadPrefs(){
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),10000,"prefs");
     if(d.exists())applyPrefs(d.data());else savePrefs()}catch(err){console.warn("prefs",err&&err.code||err)}
 }
+let START=null;
 async function afterSignIn(u){
   ME=u;
-  if(!u.emailVerified){showGate("verify");autoVerify(u);return}
+  /* account created by the owner with a start password: counts as confirmed, but a new password must be set first */
+  START=null;if(!u.emailVerified||window.__checkStart){try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"starts",lc(u.email))),10000,"start");if(d.exists())START=d.data()}catch(_){}}
+  if(START&&START.mustChange){showGate("newpw");return}
+  if(!u.emailVerified&&!START){showGate("verify");autoVerify(u);return}
   let st;try{st=await checkMember()}catch(err){console.error(err);
     if(isOffline(err)&&S.days.length){hideGate();acctButton(true);showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
@@ -766,6 +794,30 @@ function upSec(){
       '<li>'+L("Ersten Lauf starten:")+' <a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">Actions → «Run workflow»</a></li></ol>')+
     '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p></details>';
 }
+/* owner only: account with a one-time start password, created in a second Firebase instance so the owner stays signed in */
+function genPw(){const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=new Uint32Array(12);crypto.getRandomValues(r);
+  const x=[...r].map(v=>c[v%c.length]).join("");return x.slice(0,4)+"-"+x.slice(4,8)+"-"+x.slice(8)}
+async function createStartAccount(em,nm){
+  em=lc(em);const {AP,A,F,db}=await fb();const pw=genPw();
+  await F.setDoc(F.doc(db,"starts",em),{mustChange:true,at:F.serverTimestamp()});
+  if(!ADM.inv.some(i=>i.id===em))await F.setDoc(F.doc(db,"invites",em),{name:String(nm||"").slice(0,80),role:"",addedAt:F.serverTimestamp()});
+  const a2=AP.initializeApp(FB_CONFIG,"start"+Date.now());
+  try{const au=typeof A.initializeAuth==="function"&&A.inMemoryPersistence?A.initializeAuth(a2,{persistence:A.inMemoryPersistence}):A.getAuth(a2);
+    await A.createUserWithEmailAndPassword(au,em,pw);try{await A.signOut(au)}catch(_){}}
+  catch(err){try{await F.deleteDoc(F.doc(db,"starts",em))}catch(_){}throw err}
+  finally{try{AP.deleteApp&&await AP.deleteApp(a2)}catch(_){}}
+  return pw;
+}
+function showStartPw(em,nm,pw){
+  let d=document.getElementById("pwbox");if(d)d.remove();d=document.createElement("div");d.id="pwbox";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  const app=location.origin+location.pathname;
+  const body=L("Hallo")+" "+String(nm||"").split(/\s+/)[0]+",\n\n"+L("dein Konto für die Crew-App von TSCHUGGER Tigerblood ist bereit:")+"\n"+app+"\n\n"+L("E-Mail")+": "+em+"\n"+L("Startpasswort")+": "+pw+"\n\n"+L("Beim ersten Anmelden legst du ein eigenes Passwort fest.")+"\n\n"+L("Bis bald am Set!");
+  d.innerHTML='<div class="a2box acbox"><h3>'+L("Startpasswort")+'</h3><p>'+esc(nm||em)+'<br><small>'+esc(em)+'</small></p><p class="pwshow">'+esc(pw)+'</p><p class="ahint">'+L("Gilt nur für die erste Anmeldung. Danach muss die Person ein eigenes Passwort festlegen. Das Startpasswort wird nirgends gespeichert – jetzt weitergeben.")+'</p>'+
+    '<div class="a2b"><button type="button" data-pw="copy">'+L("Kopieren")+'</button><a class="lnk" href="mailto:'+encodeURIComponent(em)+'?subject='+encodeURIComponent(L("Dein Zugang zur TSCHUGGER Crew-App"))+'&body='+encodeURIComponent(body)+'">'+L("Per Mail schicken")+'</a><button type="button" class="lnk" data-pw="close">'+L("Schliessen")+'</button></div></div>';
+  d.addEventListener("click",async e=>{const b=e.target.closest("[data-pw]");if(e.target===d||(b&&b.dataset.pw==="close")){d.remove();return}
+    if(b&&b.dataset.pw==="copy"){try{await navigator.clipboard.writeText(pw);showMsg(L("Kopiert"),2000)}catch(_){showMsg(pw,8000)}}});
+  document.body.appendChild(d);
+}
 /* owner only: change a user's details (registered: name, language, birthday; invited: name, role) */
 function editForm(r){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
@@ -824,6 +876,8 @@ VIEWS.admin=function(){
     '<input class="search" id="aq" type="search" placeholder="'+esc(L("Benutzer suchen"))+'" value="'+esc(ADM.q)+'">'+
     '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">'+L("Admin")+'</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div>'+(own&&ADM.edit===r.email?editForm(r):'')+'<div class="aacts">'+
       (own?'<button data-adm="edit" data-em="'+esc(r.email)+'">'+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'')+
+      (own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'')+
+      (own&&!r.m&&!ADMINS.includes(r.email)?'<button data-adm="startpw" data-em="'+esc(r.email)+'" data-nm="'+esc(r.name||"")+'">'+L("Startpasswort erzeugen")+'</button>':'')+
       (!r.m?'<a href="'+mail(r)+'">'+L("Einladungsmail")+'</a>':'')+
       (own&&!ADMINS.includes(r.email)?(ADM.adm.includes(r.email)?'<button data-adm="rmadmin" data-em="'+esc(r.email)+'">'+L("Admin entfernen")+'</button>':'<button data-adm="mkadmin" data-em="'+esc(r.email)+'">'+L("Zum Admin machen")+'</button>'):'')+
       (own&&r.m&&!ADMINS.includes(r.email)?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">'+L("Sperren")+'</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">'+L("Entsperren")+'</button>'):'')+
@@ -865,6 +919,16 @@ document.addEventListener("click",async e=>{
   try{
     const {F,db}=await fb();const a=b.dataset.adm;
     if(a==="edit"){ADM.edit=ADM.edit===b.dataset.em?"":b.dataset.em;ADM.busy=false;render();return}
+    /* passwords can only be set by the person: send Firebase's reset link, which lets them choose a new one */
+    if(a==="startpw"){ADM.busy=false;if(!isOwner())return;const em=b.dataset.em;
+      if(!confirmSafe(L("Für {e} ein Konto mit Startpasswort anlegen? Beim ersten Anmelden muss die Person ein eigenes Passwort festlegen.").replace("{e}",em)))return;
+      b.disabled=true;try{const pw=await createStartAccount(em,b.dataset.nm||"");showStartPw(em,b.dataset.nm||"",pw);await admLoad()}
+      catch(err){b.disabled=false;showMsg(/email-already-in-use/.test(err&&err.code||"")?em+" "+L("hat schon ein Konto – dafür «Passwort-Link senden» verwenden."):L("Fehler:")+" "+errText(err),7000)}
+      return}
+    if(a==="pwreset"){ADM.busy=false;if(!isOwner())return;const em=b.dataset.em;
+      if(!confirmSafe(L("{e} einen Link schicken, mit dem die Person ein neues Passwort festlegt?").replace("{e}",em)))return;
+      const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),em);
+      showMsg(L("Link für ein neues Passwort gesendet an")+" "+em+". "+L("Schau auch im Spam-Ordner nach."),6000);return}
     if(a==="reqok"||a==="reqno"){const em=b.dataset.em,q=(ADM.req||[]).find(x=>x.id===em)||{};
       if(a==="reqok"){await F.setDoc(F.doc(db,"invites",em),{name:String(q.name||"").slice(0,80),role:String(q.role||"").slice(0,80),addedAt:F.serverTimestamp()});await notifyApproved(em,q)}
       await F.deleteDoc(F.doc(db,"requests",em));ADM.req=(ADM.req||[]).filter(x=>x.id!==em);
