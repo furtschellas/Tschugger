@@ -370,7 +370,8 @@ VIEWS.admin=function(){
   const memBy={};ADM.mem.forEach(m=>memBy[m.email]=m);
   const invBy={};ADM.inv.forEach(i=>invBy[i.id]=i);
   const rows=[];const seen=new Set();
-  const nm=m=>m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name)||"";
+  /* display name: crew list first, otherwise the first/last name the person entered */
+  const nm=m=>{if(!m)return"";const cp=crewPerson(m.email);return (cp&&cp.name)||[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||""};
   for(const i of ADM.inv){const m=memBy[i.id];rows.push({email:i.id,name:nm(m)||i.name||"",inv:true,m});seen.add(i.id)}
   for(const m of ADM.mem)if(!seen.has(m.email))rows.push({email:m.email,name:nm(m),inv:false,m});
   rows.sort((a,b)=>(a.name||a.email).localeCompare(b.name||b.email,"de"));
