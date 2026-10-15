@@ -470,6 +470,19 @@ window.crewExtra=function(p){
 
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
+/* ---------- new app version: reload once when the published version differs ---------- */
+const APP_VER="__APP_VER__";
+async function checkVersion(){
+  try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
+    if(!v||v===APP_VER)return;
+    let done="";try{done=sessionStorage.getItem("reloadedFor")||""}catch(_){}
+    if(done===v)return;try{sessionStorage.setItem("reloadedFor",v)}catch(_){}
+    if(document.querySelector("#acct:not([hidden]) form input:focus,#gate:not([hidden]) input:focus"))return;
+    location.reload();
+  }catch(_){}
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkVersion()});
+setTimeout(checkVersion,1500);
 /* ---------- start ---------- */
 applyStatic();
 loadCache();
