@@ -2,56 +2,80 @@
 const FB_CONFIG={apiKey:"AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ",authDomain:"tschugger-83692.firebaseapp.com",projectId:"tschugger-83692",storageBucket:"tschugger-83692.firebasestorage.app",messagingSenderId:"786764568575",appId:"1:786764568575:web:552eeefa77c44f5d24b9ca"};
 const FB_V="10.12.2",ADMINS=["furtschellas@gmail.com"],DATA_URL="data.enc.json",POLL_MS=3*60*1000;
 Object.assign(I18N,{
- "Anmelden":{fr:"Se connecter",en:"Sign in"},
- "E-Mail":{fr:"E-mail",en:"Email"},
- "Passwort":{fr:"Mot de passe",en:"Password"},
- "Passwort wiederholen":{fr:"Répéter le mot de passe",en:"Repeat password"},
- "Neues Passwort":{fr:"Nouveau mot de passe",en:"New password"},
- "Aktuelles Passwort":{fr:"Mot de passe actuel",en:"Current password"},
- "Neue E-Mail-Adresse":{fr:"Nouvelle adresse e-mail",en:"New email address"},
- "Konto erstellen":{fr:"Créer un compte",en:"Create account"},
- "Erstes Mal hier? Konto erstellen":{fr:"Première fois ? Créer un compte",en:"First time here? Create an account"},
- "Schon ein Konto? Anmelden":{fr:"Déjà un compte ? Se connecter",en:"Already have an account? Sign in"},
- "Passwort vergessen?":{fr:"Mot de passe oublié ?",en:"Forgot password?"},
- "Link zum Zurücksetzen senden":{fr:"Envoyer le lien de réinitialisation",en:"Send reset link"},
- "Zurück":{fr:"Retour",en:"Back"},
- "Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.":{fr:"Réservé à l’équipe de TSCHUGGER Tigerblood. Connecte-toi avec l’adresse e-mail que tu as donnée à la production.",en:"For the TSCHUGGER Tigerblood crew only. Sign in with the email address you gave the production."},
- "Mindestens 8 Zeichen.":{fr:"Au moins 8 caractères.",en:"At least 8 characters."},
- "Die Passwörter stimmen nicht überein.":{fr:"Les mots de passe ne correspondent pas.",en:"The passwords don’t match."},
- "E-Mail oder Passwort falsch.":{fr:"E-mail ou mot de passe incorrect.",en:"Wrong email or password."},
- "Für diese Adresse gibt es schon ein Konto. Bitte anmelden.":{fr:"Un compte existe déjà pour cette adresse. Connecte-toi.",en:"There is already an account for this address. Please sign in."},
- "Ungültige E-Mail-Adresse.":{fr:"Adresse e-mail invalide.",en:"Invalid email address."},
- "Zu viele Versuche. Bitte kurz warten.":{fr:"Trop de tentatives. Patiente un instant.",en:"Too many attempts. Please wait a moment."},
- "Bitte bestätige zuerst deine E-Mail-Adresse.":{fr:"Confirme d’abord ton adresse e-mail.",en:"Please confirm your email address first."},
- "Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.":{fr:"Nous t’avons envoyé un e-mail avec un lien de confirmation. Touche le lien puis reviens ici.",en:"We sent you an email with a confirmation link. Tap the link, then come back here."},
- "Ich habe bestätigt":{fr:"J’ai confirmé",en:"I’ve confirmed"},
- "Mail nochmals senden":{fr:"Renvoyer l’e-mail",en:"Send the email again"},
- "Mail gesendet.":{fr:"E-mail envoyé.",en:"Email sent."},
- "Noch nicht bestätigt. Schau auch im Spam-Ordner nach.":{fr:"Pas encore confirmé. Regarde aussi dans les spams.",en:"Not confirmed yet. Also check your spam folder."},
- "Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen.":{fr:"S’il existe un compte pour cette adresse, un e-mail de réinitialisation arrive.",en:"If there is an account for this address, a reset email is on its way."},
- "Kein Zugang":{fr:"Pas d’accès",en:"No access"},
- "Deine Adresse ist (noch) nicht für die Crew-App freigeschaltet. Bitte melde dich bei der Produktion.":{fr:"Ton adresse n’est pas (encore) autorisée pour l’app. Contacte la production.",en:"Your address is not (yet) enabled for the crew app. Please contact the production."},
- "Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion.":{fr:"Ton accès a été bloqué. Contacte la production.",en:"Your access has been blocked. Please contact the production."},
- "Abmelden":{fr:"Se déconnecter",en:"Sign out"},
- "Mein Konto":{fr:"Mon compte",en:"My account"},
- "Angemeldet als":{fr:"Connecté·e en tant que",en:"Signed in as"},
- "Passwort ändern":{fr:"Changer le mot de passe",en:"Change password"},
- "E-Mail-Adresse ändern":{fr:"Changer l’adresse e-mail",en:"Change email address"},
- "Speichern":{fr:"Enregistrer",en:"Save"},
- "Schliessen":{fr:"Fermer",en:"Close"},
- "Passwort geändert.":{fr:"Mot de passe modifié.",en:"Password changed."},
- "Aktuelles Passwort falsch.":{fr:"Mot de passe actuel incorrect.",en:"Current password is wrong."},
- "Bestätigungslink an die neue Adresse gesendet. Die Änderung gilt, sobald du ihn antippst.":{fr:"Lien de confirmation envoyé à la nouvelle adresse. Le changement s’applique dès que tu le touches.",en:"Confirmation link sent to the new address. The change applies once you tap it."},
- "Diese Adresse wird schon verwendet.":{fr:"Cette adresse est déjà utilisée.",en:"This address is already in use."},
- "Benutzer verwalten":{fr:"Gérer les utilisateurs",en:"Manage users"},
- "Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen.":{fr:"Connexion impossible. Vérifie la connexion internet.",en:"Sign-in unavailable. Please check your internet connection."},
- "Bitte warten …":{fr:"Un instant …",en:"Please wait …"},
- "Mit Google anmelden":{fr:"Se connecter avec Google",en:"Sign in with Google"},
- "oder":{fr:"ou",en:"or"},
- "Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.":{fr:"Tu es connecté·e avec Google. Mot de passe et adresse se gèrent dans ton compte Google.",en:"You are signed in with Google. Manage password and address in your Google account."},
- "Google-Anmeldung abgebrochen.":{fr:"Connexion Google annulée.",en:"Google sign-in cancelled."},
- "Offline – du siehst den zuletzt geladenen Stand.":{fr:"Hors ligne – tu vois les dernières données chargées.",en:"Offline – you are seeing the last loaded data."}
+ "Anmelden":{it:"Accedi",fr:"Se connecter",en:"Sign in"},
+ "E-Mail":{it:"E-mail",fr:"E-mail",en:"Email"},
+ "Passwort":{it:"Password",fr:"Mot de passe",en:"Password"},
+ "Passwort wiederholen":{it:"Ripeti la password",fr:"Répéter le mot de passe",en:"Repeat password"},
+ "Neues Passwort":{it:"Nuova password",fr:"Nouveau mot de passe",en:"New password"},
+ "Aktuelles Passwort":{it:"Password attuale",fr:"Mot de passe actuel",en:"Current password"},
+ "Neue E-Mail-Adresse":{it:"Nuovo indirizzo e-mail",fr:"Nouvelle adresse e-mail",en:"New email address"},
+ "Konto erstellen":{it:"Crea account",fr:"Créer un compte",en:"Create account"},
+ "Erstes Mal hier? Konto erstellen":{it:"Prima volta qui? Crea un account",fr:"Première fois ? Créer un compte",en:"First time here? Create an account"},
+ "Schon ein Konto? Anmelden":{it:"Hai già un account? Accedi",fr:"Déjà un compte ? Se connecter",en:"Already have an account? Sign in"},
+ "Passwort vergessen?":{it:"Password dimenticata?",fr:"Mot de passe oublié ?",en:"Forgot password?"},
+ "Link zum Zurücksetzen senden":{it:"Invia link per reimpostare",fr:"Envoyer le lien de réinitialisation",en:"Send reset link"},
+ "Zurück":{it:"Indietro",fr:"Retour",en:"Back"},
+ "Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.":{it:"Solo per la crew di TSCHUGGER Tigerblood. Accedi con l’indirizzo e-mail che hai dato alla produzione.",fr:"Réservé à l’équipe de TSCHUGGER Tigerblood. Connecte-toi avec l’adresse e-mail que tu as donnée à la production.",en:"For the TSCHUGGER Tigerblood crew only. Sign in with the email address you gave the production."},
+ "Mindestens 8 Zeichen.":{it:"Almeno 8 caratteri.",fr:"Au moins 8 caractères.",en:"At least 8 characters."},
+ "Die Passwörter stimmen nicht überein.":{it:"Le password non coincidono.",fr:"Les mots de passe ne correspondent pas.",en:"The passwords don’t match."},
+ "E-Mail oder Passwort falsch.":{it:"E-mail o password errata.",fr:"E-mail ou mot de passe incorrect.",en:"Wrong email or password."},
+ "Für diese Adresse gibt es schon ein Konto. Bitte anmelden.":{it:"Esiste già un account per questo indirizzo. Accedi.",fr:"Un compte existe déjà pour cette adresse. Connecte-toi.",en:"There is already an account for this address. Please sign in."},
+ "Ungültige E-Mail-Adresse.":{it:"Indirizzo e-mail non valido.",fr:"Adresse e-mail invalide.",en:"Invalid email address."},
+ "Zu viele Versuche. Bitte kurz warten.":{it:"Troppi tentativi. Attendi un momento.",fr:"Trop de tentatives. Patiente un instant.",en:"Too many attempts. Please wait a moment."},
+ "Bitte bestätige zuerst deine E-Mail-Adresse.":{it:"Conferma prima il tuo indirizzo e-mail.",fr:"Confirme d’abord ton adresse e-mail.",en:"Please confirm your email address first."},
+ "Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.":{it:"Ti abbiamo inviato un’e-mail con un link di conferma. Tocca il link e poi torna qui.",fr:"Nous t’avons envoyé un e-mail avec un lien de confirmation. Touche le lien puis reviens ici.",en:"We sent you an email with a confirmation link. Tap the link, then come back here."},
+ "Ich habe bestätigt":{it:"Ho confermato",fr:"J’ai confirmé",en:"I’ve confirmed"},
+ "Mail nochmals senden":{it:"Invia di nuovo l’e-mail",fr:"Renvoyer l’e-mail",en:"Send the email again"},
+ "Mail gesendet.":{it:"E-mail inviata.",fr:"E-mail envoyé.",en:"Email sent."},
+ "Noch nicht bestätigt. Schau auch im Spam-Ordner nach.":{it:"Non ancora confermato. Controlla anche lo spam.",fr:"Pas encore confirmé. Regarde aussi dans les spams.",en:"Not confirmed yet. Also check your spam folder."},
+ "Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen.":{it:"Se esiste un account per questo indirizzo, riceverai a breve un’e-mail per reimpostare.",fr:"S’il existe un compte pour cette adresse, un e-mail de réinitialisation arrive.",en:"If there is an account for this address, a reset email is on its way."},
+ "Kein Zugang":{it:"Nessun accesso",fr:"Pas d’accès",en:"No access"},
+ "Deine Adresse ist (noch) nicht für die Crew-App freigeschaltet. Bitte melde dich bei der Produktion.":{it:"Il tuo indirizzo non è (ancora) abilitato per l’app. Contatta la produzione.",fr:"Ton adresse n’est pas (encore) autorisée pour l’app. Contacte la production.",en:"Your address is not (yet) enabled for the crew app. Please contact the production."},
+ "Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion.":{it:"Il tuo accesso è stato bloccato. Contatta la produzione.",fr:"Ton accès a été bloqué. Contacte la production.",en:"Your access has been blocked. Please contact the production."},
+ "Abmelden":{it:"Esci",fr:"Se déconnecter",en:"Sign out"},
+ "Mein Konto":{it:"Il mio account",fr:"Mon compte",en:"My account"},
+ "Angemeldet als":{it:"Connesso come",fr:"Connecté·e en tant que",en:"Signed in as"},
+ "Passwort ändern":{it:"Cambia password",fr:"Changer le mot de passe",en:"Change password"},
+ "E-Mail-Adresse ändern":{it:"Cambia indirizzo e-mail",fr:"Changer l’adresse e-mail",en:"Change email address"},
+ "Speichern":{it:"Salva",fr:"Enregistrer",en:"Save"},
+ "Schliessen":{it:"Chiudi",fr:"Fermer",en:"Close"},
+ "Passwort geändert.":{it:"Password modificata.",fr:"Mot de passe modifié.",en:"Password changed."},
+ "Aktuelles Passwort falsch.":{it:"Password attuale errata.",fr:"Mot de passe actuel incorrect.",en:"Current password is wrong."},
+ "Bestätigungslink an die neue Adresse gesendet. Die Änderung gilt, sobald du ihn antippst.":{it:"Link di conferma inviato al nuovo indirizzo. La modifica vale appena lo tocchi.",fr:"Lien de confirmation envoyé à la nouvelle adresse. Le changement s’applique dès que tu le touches.",en:"Confirmation link sent to the new address. The change applies once you tap it."},
+ "Diese Adresse wird schon verwendet.":{it:"Questo indirizzo è già in uso.",fr:"Cette adresse est déjà utilisée.",en:"This address is already in use."},
+ "Benutzer verwalten":{it:"Gestisci utenti",fr:"Gérer les utilisateurs",en:"Manage users"},
+ "Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen.":{it:"Accesso non raggiungibile. Controlla la connessione internet.",fr:"Connexion impossible. Vérifie la connexion internet.",en:"Sign-in unavailable. Please check your internet connection."},
+ "Bitte warten …":{it:"Attendere …",fr:"Un instant …",en:"Please wait …"},
+ "Mit Google anmelden":{it:"Accedi con Google",fr:"Se connecter avec Google",en:"Sign in with Google"},
+ "oder":{it:"oppure",fr:"ou",en:"or"},
+ "Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.":{it:"Sei connesso con Google. Password e indirizzo si gestiscono nel tuo account Google.",fr:"Tu es connecté·e avec Google. Mot de passe et adresse se gèrent dans ton compte Google.",en:"You are signed in with Google. Manage password and address in your Google account."},
+ "Google-Anmeldung abgebrochen.":{it:"Accesso Google annullato.",fr:"Connexion Google annulée.",en:"Google sign-in cancelled."},
+ "Offline – du siehst den zuletzt geladenen Stand.":{it:"Offline – stai vedendo gli ultimi dati caricati.",fr:"Hors ligne – tu vois les dernières données chargées.",en:"Offline – you are seeing the last loaded data."}
 });
+Object.assign(I18N,{
+ "Vorname":{fr:"Prénom",it:"Nome",en:"First name"},
+ "Nachname":{fr:"Nom",it:"Cognome",en:"Last name"},
+ "Sprache der App":{fr:"Langue de l’app",it:"Lingua dell’app",en:"App language"},
+ "Geburtsdatum (optional)":{fr:"Date de naissance (facultatif)",it:"Data di nascita (facoltativa)",en:"Date of birth (optional)"},
+ "Profil":{fr:"Profil",it:"Profilo",en:"Profile"},
+ "Profil gespeichert.":{fr:"Profil enregistré.",it:"Profilo salvato.",en:"Profile saved."},
+ "Bitte ergänze dein Profil.":{fr:"Complète ton profil.",it:"Completa il tuo profilo.",en:"Please complete your profile."},
+ "Essen":{fr:"Repas",it:"Pasti",en:"Food"},
+ "Keine":{fr:"Aucune",it:"Nessuna",en:"None"},
+ "Vegetarisch":{fr:"Végétarien",it:"Vegetariano",en:"Vegetarian"},
+ "Vegan":{fr:"Végan",it:"Vegano",en:"Vegan"},
+ "Keine Milchprodukte":{fr:"Sans produits laitiers",it:"Senza latticini",en:"No dairy"},
+ "Allergien / Unverträglichkeiten (optional)":{fr:"Allergies / intolérances (facultatif)",it:"Allergie / intolleranze (facoltativo)",en:"Allergies / intolerances (optional)"},
+ "Nur für die Produktion sichtbar.":{fr:"Visible uniquement par la production.",it:"Visibile solo alla produzione.",en:"Only visible to the production."},
+ "Allergien":{fr:"Allergies",it:"Allergie",en:"Allergies"}
+});
+const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
+const langSel=(name,v)=>'<select name="'+name+'" id="'+name+'">'+LANGS.map(([k,t])=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+t+'</option>').join("")+'</select>';
+const clean=v=>String(v||"").trim().slice(0,80);
+const DIETS=[["none","Keine"],["vegetarian","Vegetarisch"],["vegan","Vegan"],["nodairy","Keine Milchprodukte"]];
+const dietSel=(name,v)=>'<select name="'+name+'" id="'+name+'">'+DIETS.map(([k,t])=>'<option value="'+k+'"'+(k===(v||"none")?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
+const dietText=m=>{if(!m)return"";const d=DIETS.find(x=>x[0]===m.diet);const a=String(m.allergies||"").trim();return [d&&d[0]!=="none"?L(d[1]):"",a?L("Allergien")+": "+a:""].filter(Boolean).join(" · ")};
+const PENDING_KEY="crewprofile:pending";
 let FB=null,ME=null,MEMBER=null,DATAKEY=null,LASTSTAMP=null;
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const lc=s=>String(s||"").trim().toLowerCase();
@@ -105,8 +129,11 @@ async function checkMember(){
   const ref=F.doc(db,"members",u.uid);let s=await F.getDoc(ref);
   if(!s.exists()){
     let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
-    if(!inv||!inv.exists())return isAdmin()?"ok":"none";
-    await F.setDoc(ref,{active:true,email:lc(u.email),name:inv.data().name||"",joinedAt:F.serverTimestamp()});
+    if(!inv||!inv.exists()){if(isAdmin()){MEMBER=null;return "ok"}return "none"}
+    let pf={};try{const x=JSON.parse(localStorage.getItem(PENDING_KEY)||"null");if(x&&x.email===lc(u.email))pf=x}catch(_){}
+    const doc={active:true,email:lc(u.email),name:[pf.firstName,pf.lastName].filter(Boolean).join(" ")||inv.data().name||"",joinedAt:F.serverTimestamp()};
+    for(const k of ["firstName","lastName","lang","birthday","diet","allergies"])if(pf[k])doc[k]=pf[k];
+    await F.setDoc(ref,doc);try{localStorage.removeItem(PENDING_KEY)}catch(_){}
     s=await F.getDoc(ref);
   }
   const m=s.data();if(m.active!==true)return isAdmin()?"ok":"blocked";
@@ -137,11 +164,11 @@ function showGate(mode,msg,isErr){
   AUTHMODE=mode||AUTHMODE;const g=gateEl();
   const em=ME?esc(ME.email):(g.querySelector("#gem")?esc(g.querySelector("#gem").value):"");
   const head='<h2>Tschugger <span>Tigerblood</span></h2>';
-  const langs='<div class="lang glang"><button type="button" data-glang="de">DE</button><button type="button" data-glang="fr">FR</button><button type="button" data-glang="en">EN</button></div>';
+  const langs='<div class="lang glang"><button type="button" data-glang="de">DE</button><button type="button" data-glang="fr">FR</button><button type="button" data-glang="it">IT</button><button type="button" data-glang="en">EN</button></div>';
   const note=msg?'<p class="'+(isErr?'gerr':'gok')+'" role="alert">'+esc(msg)+'</p>':'<p class="gerr" role="alert"></p>';
   let f="";
   if(AUTHMODE==="login")f='<form class="gbox" data-f="login">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="current-password" required><button type="submit">'+L("Anmelden")+'</button>'+note+'<button type="button" class="glink" data-gmode="reset">'+L("Passwort vergessen?")+'</button><button type="button" class="glink" data-gmode="register">'+L("Erstes Mal hier? Konto erstellen")+'</button>'+langs+'</form>';
-  else if(AUTHMODE==="register")f='<form class="gbox" data-f="register">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><p class="ghint">'+L("Mindestens 8 Zeichen.")+'</p><button type="submit">'+L("Konto erstellen")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Schon ein Konto? Anmelden")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="register")f='<form class="gbox" data-f="register">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gfn">'+L("Vorname")+'</label><input id="gfn" type="text" autocomplete="given-name" required><label for="gln">'+L("Nachname")+'</label><input id="gln" type="text" autocomplete="family-name" required><label for="glang">'+L("Sprache der App")+'</label>'+langSel("glang",LANG)+'<label for="gbd">'+L("Geburtsdatum (optional)")+'</label><input id="gbd" type="date" autocomplete="bday"><label for="gdiet">'+L("Essen")+'</label>'+dietSel("gdiet","none")+'<label for="gall">'+L("Allergien / Unverträglichkeiten (optional)")+'</label><input id="gall" type="text" maxlength="200"><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><p class="ghint">'+L("Mindestens 8 Zeichen.")+'</p><button type="submit">'+L("Konto erstellen")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Schon ein Konto? Anmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="reset")f='<form class="gbox" data-f="reset">'+head+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><button type="submit">'+L("Link zum Zurücksetzen senden")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Zurück")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="verify")f='<form class="gbox" data-f="verify">'+head+'<p class="gtitle">'+L("Bitte bestätige zuerst deine E-Mail-Adresse.")+'</p><p class="ghint">'+L("Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.")+'</p><p class="ghint"><b>'+em+'</b></p><button type="submit">'+L("Ich habe bestätigt")+'</button>'+note+'<button type="button" class="glink" data-gact="resend">'+L("Mail nochmals senden")+'</button><button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="denied"||AUTHMODE==="blocked")f='<div class="gbox">'+head+'<p class="gtitle">'+L("Kein Zugang")+'</p><p class="ghint">'+(AUTHMODE==="blocked"?L("Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion."):L("Deine Adresse ist (noch) nicht für die Crew-App freigeschaltet. Bitte melde dich bei der Produktion."))+'</p><p class="ghint"><b>'+em+'</b></p><button type="button" class="gbtn" data-gact="retry">'+L("Aktualisieren")+'</button><button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</div>';
@@ -165,6 +192,7 @@ async function onGateSubmit(e){
     else if(f.dataset.f==="register"){
       if(pw.length<8)throw {code:"weak-password"};
       if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
+      try{localStorage.setItem(PENDING_KEY,JSON.stringify({email:lc(em),firstName:clean(f.querySelector("#gfn").value),lastName:clean(f.querySelector("#gln").value),lang:f.querySelector("#glang").value,birthday:f.querySelector("#gbd").value||"",diet:f.querySelector("#gdiet").value,allergies:String(f.querySelector("#gall").value||"").trim().slice(0,200)}))}catch(_){}
       window.__justSignedIn=true;const c=await A.createUserWithEmailAndPassword(auth,em,pw);
       try{await A.sendEmailVerification(c.user,{url:location.origin+location.pathname})}catch(_){}
     }
@@ -198,6 +226,10 @@ async function afterSignIn(u){
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
   hideGate();acctButton(true);
+  const prof=MEMBER||{};
+  let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}
+  if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){LANG=prof.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
+  if(MEMBER&&!MEMBER.firstName)setTimeout(()=>showAcct(true),600);
   try{await load(true)}catch(err){console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),isOffline(err)?6000:15000)}
   if(window.__justSignedIn){window.__justSignedIn=false;maybeOfferA2hs(true)}else maybeOfferA2hs(false);
 }
@@ -210,12 +242,13 @@ function acctButton(on){
   b.setAttribute("aria-label",L("Mein Konto"));b.title=L("Mein Konto");b.hidden=!on;
 }
 const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password'));
-function showAcct(){
+function showAcct(needProfile){
   let s=document.getElementById("acct");
   if(!s){s=document.createElement("div");s.id="acct";s.className="a2hs";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
     s.addEventListener("click",onAcctClick);s.addEventListener("submit",onAcctSubmit)}
   s.innerHTML='<div class="a2box acbox"><h3>'+L("Mein Konto")+'</h3><p>'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b></p>'+
     (isAdmin()?'<div class="a2b"><button class="pri" data-ac="admin">'+L("Benutzer verwalten")+'</button></div>':'')+
+    (MEMBER||isAdmin()?'<details'+(needProfile===true?' open':'')+'><summary>'+L("Profil")+'</summary><form data-af="pf">'+(needProfile===true?'<p class="ghint">'+L("Bitte ergänze dein Profil.")+'</p>':'')+'<label>'+L("Vorname")+'<input type="text" name="fn" autocomplete="given-name" required value="'+esc((MEMBER&&MEMBER.firstName)||"")+'"></label><label>'+L("Nachname")+'<input type="text" name="ln" autocomplete="family-name" required value="'+esc((MEMBER&&MEMBER.lastName)||"")+'"></label><label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Essen")+dietSel("dt",MEMBER&&MEMBER.diet)+'</label><label>'+L("Allergien / Unverträglichkeiten (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>':'')+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '<div class="a2b"><button data-ac="signout">'+L("Abmelden")+'</button><button class="lnk" data-ac="close">'+L("Schliessen")+'</button></div></div>';
@@ -231,7 +264,16 @@ async function onAcctClick(e){
 async function onAcctSubmit(e){
   e.preventDefault();const f=e.target,msg=f.querySelector(".amsg"),btn=f.querySelector("button");btn.disabled=true;msg.className="amsg";msg.textContent="";
   try{
-    const {A,auth}=await fb();const u=auth.currentUser;
+    const {A,auth,F,db}=await fb();const u=auth.currentUser;
+    if(f.dataset.af==="pf"){
+      const upd={firstName:clean(f.fn.value),lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",diet:f.dt.value,allergies:String(f.al.value||"").trim().slice(0,200)};
+      upd.name=[upd.firstName,upd.lastName].filter(Boolean).join(" ");
+      const ref=F.doc(db,"members",u.uid);
+      if(MEMBER)await F.updateDoc(ref,upd);else await F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
+      MEMBER=Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd);
+      if(upd.lang!==LANG&&WDS[upd.lang]){LANG=upd.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
+      msg.classList.add("ok");msg.textContent=L("Profil gespeichert.");btn.disabled=false;return;
+    }
     await A.reauthenticateWithCredential(u,A.EmailAuthProvider.credential(u.email,f.cur.value)).catch(err=>{throw /invalid-credential|wrong-password/.test(err.code||"")?{code:"x",message:L("Aktuelles Passwort falsch.")}:err});
     if(f.dataset.af==="pw"){
       if(f.pw.value.length<8)throw {code:"weak-password"};
@@ -257,8 +299,9 @@ VIEWS.admin=function(){
   const memBy={};ADM.mem.forEach(m=>memBy[m.email]=m);
   const invBy={};ADM.inv.forEach(i=>invBy[i.id]=i);
   const rows=[];const seen=new Set();
-  for(const i of ADM.inv){const m=memBy[i.id];rows.push({email:i.id,name:i.name||(m&&m.name)||"",inv:true,m});seen.add(i.id)}
-  for(const m of ADM.mem)if(!seen.has(m.email))rows.push({email:m.email,name:m.name||"",inv:false,m});
+  const nm=m=>m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name)||"";
+  for(const i of ADM.inv){const m=memBy[i.id];rows.push({email:i.id,name:nm(m)||i.name||"",inv:true,m});seen.add(i.id)}
+  for(const m of ADM.mem)if(!seen.has(m.email))rows.push({email:m.email,name:nm(m),inv:false,m});
   rows.sort((a,b)=>(a.name||a.email).localeCompare(b.name||b.email,"de"));
   const q=lc(ADM.q);const vis=rows.filter(r=>!q||(r.email+" "+r.name).toLowerCase().includes(q));
   const newCrew=crewEmails().filter(c=>!invBy[c.email]&&!memBy[c.email]);
@@ -270,7 +313,7 @@ VIEWS.admin=function(){
     (newCrew.length?'<button class="abtn" data-adm="crew">Alle '+newCrew.length+' Adressen aus der Crewliste einladen</button>':'')+
     '<div class="astats">'+rows.length+' Benutzer · '+rows.filter(r=>r.m&&r.m.active===true).length+' aktiv · '+rows.filter(r=>!r.m).length+' noch nicht registriert</div>'+
     '<input class="search" id="aq" type="search" placeholder="Benutzer suchen" value="'+esc(ADM.q)+'">'+
-    '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span></div><div class="aacts">'+
+    '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+(r.m&&r.m.birthday?'<span>*'+esc(fmtDate(r.m.birthday).slice(3))+'</span>':'')+'</div>'+(dietText(r.m)?'<div class="ct diet"><span>'+esc(dietText(r.m))+'</span></div>':'')+'<div class="aacts">'+
       (!r.m?'<a href="'+mail(r)+'">Einladungsmail</a>':'')+
       (r.m?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">Sperren</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">Entsperren</button>'):'')+
       (r.m?'<button data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">Entfernen</button>':(r.inv?'<button data-adm="uninvite" data-em="'+esc(r.email)+'">Einladung löschen</button>':''))+
@@ -299,6 +342,13 @@ document.addEventListener("click",async e=>{
   }catch(err){console.error(err);showMsg("Fehler: "+(err.message||err),6000)}
   ADM.busy=false;
 });
+/* Crew tab: admins see food preferences next to each person (matched by e-mail) */
+window.crewExtra=function(p){
+  if(!isAdmin()||!p||!p.email)return"";
+  if(!ADM.loaded){if(!ADM.busy&&!ADM.loading){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}return""}
+  const m=ADM.mem.find(x=>x.email===lc(p.email));const t=dietText(m);
+  return t?'<div class="ct diet"><span>'+esc(t)+'</span></div>':"";
+};
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- start ---------- */

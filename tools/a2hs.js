@@ -1,19 +1,19 @@
 /* ---------- home screen: offer to add the app after signing in (only when opened in the browser) ---------- */
 Object.assign(I18N,{
- "Zum Startbildschirm hinzufügen?":{fr:"Ajouter à l’écran d’accueil ?",en:"Add to home screen?"},
- "Dann öffnest du die Crew-App wie eine normale App, ohne Link.":{fr:"Tu ouvriras l’app de l’équipe comme une app normale, sans lien.",en:"Then you open the crew app like a normal app, no link needed."},
- "Ja, hinzufügen":{fr:"Oui, ajouter",en:"Yes, add it"},
- "Später":{fr:"Plus tard",en:"Later"},
- "Ist schon drauf":{fr:"C’est déjà fait",en:"Already there"},
- "So geht's auf dem iPhone:":{fr:"Sur iPhone :",en:"On iPhone:"},
- "1. Unten auf Teilen tippen":{fr:"1. Touche Partager en bas",en:"1. Tap Share at the bottom"},
- "2. «Zum Home-Bildschirm» wählen":{fr:"2. Choisis « Sur l’écran d’accueil »",en:"2. Choose “Add to Home Screen”"},
- "3. Oben rechts «Hinzufügen» tippen":{fr:"3. Touche « Ajouter » en haut à droite",en:"3. Tap “Add” top right"},
- "So geht's:":{fr:"Comment faire :",en:"How to:"},
- "1. Browser-Menü ⋮ öffnen":{fr:"1. Ouvre le menu ⋮ du navigateur",en:"1. Open the browser menu ⋮"},
- "2. «Zum Startbildschirm hinzufügen» oder «App installieren» wählen":{fr:"2. Choisis « Ajouter à l’écran d’accueil » ou « Installer l’app »",en:"2. Choose “Add to Home screen” or “Install app”"},
- "Fertig":{fr:"OK",en:"Done"},
- "Danach die App vom Startbildschirm öffnen und dort einmal anmelden.":{fr:"Ouvre ensuite l’app depuis l’écran d’accueil et connecte-toi une fois.",en:"Then open the app from the home screen and sign in there once."}
+ "Zum Startbildschirm hinzufügen?":{it:"Aggiungere alla schermata Home?",fr:"Ajouter à l’écran d’accueil ?",en:"Add to home screen?"},
+ "Dann öffnest du die Crew-App wie eine normale App, ohne Link.":{it:"Così apri l’app della crew come una normale app, senza link.",fr:"Tu ouvriras l’app de l’équipe comme une app normale, sans lien.",en:"Then you open the crew app like a normal app, no link needed."},
+ "Ja, hinzufügen":{it:"Sì, aggiungi",fr:"Oui, ajouter",en:"Yes, add it"},
+ "Später":{it:"Più tardi",fr:"Plus tard",en:"Later"},
+ "Ist schon drauf":{it:"C’è già",fr:"C’est déjà fait",en:"Already there"},
+ "So geht's auf dem iPhone:":{it:"Su iPhone:",fr:"Sur iPhone :",en:"On iPhone:"},
+ "1. Unten auf Teilen tippen":{it:"1. Tocca Condividi in basso",fr:"1. Touche Partager en bas",en:"1. Tap Share at the bottom"},
+ "2. «Zum Home-Bildschirm» wählen":{it:"2. Scegli «Aggiungi alla schermata Home»",fr:"2. Choisis « Sur l’écran d’accueil »",en:"2. Choose “Add to Home Screen”"},
+ "3. Oben rechts «Hinzufügen» tippen":{it:"3. Tocca «Aggiungi» in alto a destra",fr:"3. Touche « Ajouter » en haut à droite",en:"3. Tap “Add” top right"},
+ "So geht's:":{it:"Come fare:",fr:"Comment faire :",en:"How to:"},
+ "1. Browser-Menü ⋮ öffnen":{it:"1. Apri il menu ⋮ del browser",fr:"1. Ouvre le menu ⋮ du navigateur",en:"1. Open the browser menu ⋮"},
+ "2. «Zum Startbildschirm hinzufügen» oder «App installieren» wählen":{it:"2. Scegli «Aggiungi a schermata Home» o «Installa app»",fr:"2. Choisis « Ajouter à l’écran d’accueil » ou « Installer l’app »",en:"2. Choose “Add to Home screen” or “Install app”"},
+ "Fertig":{it:"Fatto",fr:"OK",en:"Done"},
+ "Danach die App vom Startbildschirm öffnen und dort einmal anmelden.":{it:"Poi apri l’app dalla schermata Home e accedi una volta.",fr:"Ouvre ensuite l’app depuis l’écran d’accueil et connecte-toi une fois.",en:"Then open the app from the home screen and sign in there once."}
 });
 const A2HS_KEY="a2hs:v1";let DEFERRED=null;
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();DEFERRED=e});

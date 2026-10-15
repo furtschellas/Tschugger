@@ -29,13 +29,14 @@ service cloud.firestore {
       allow get: if signedIn() && request.auth.uid == uid;
       allow create: if isAdmin() || (verified() && request.auth.uid == uid
         && exists(/databases/$(database)/documents/invites/$(myEmail()))
-        && request.resource.data.keys().hasOnly(['active', 'email', 'name', 'joinedAt'])
+        && request.resource.data.keys().hasOnly(['active', 'email', 'name', 'joinedAt', 'firstName', 'lastName', 'lang', 'birthday', 'diet', 'allergies'])
         && request.resource.data.active == true
         && request.resource.data.email == myEmail());
       allow update: if verified() && request.auth.uid == uid
         && resource.data.active == true
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email'])
-        && request.resource.data.email == myEmail();
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'name', 'firstName', 'lastName', 'lang', 'birthday', 'diet', 'allergies'])
+        && request.resource.data.email == myEmail()
+        && request.resource.data.active == true;
     }
 
     match /{document=**} {
