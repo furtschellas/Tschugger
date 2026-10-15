@@ -393,12 +393,16 @@ function itemHTML(it){
     (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener">'+esc(ad)+'</a>')+'</div>'})():'')+
     castChips(it.cast)+'<div class="meta">'+meta.join("")+'</div></div></li>';
 }
-function pickDay(){
-  if(S.day&&S.days.some(d=>d.id===S.day))return;
+function pickDay(list){
+  list=list||S.days;
+  if(S.day&&list.some(d=>d.id===S.day))return;
   const t=todayISO();
-  const next=S.days.find(d=>d.date>=t);
-  S.day=(next||S.days[S.days.length-1]||{}).id||null;
+  const next=list.find(d=>d.date>=t);
+  S.day=(next||list[list.length-1]||{}).id||null;
 }
+/* days shown in the schedule strip: 1st = the main calendar (incl. days off / travel), 2nd = days with a 2nd unit */
+const has2nd=d=>!!(d.unit2&&d.unit2.items&&d.unit2.items.length);
+function planDays(){return S.days.filter(d=>(S.pu["1"]&&(d.kind!=="shoot"||(d.items||[]).some(i=>i.sc)))||(S.pu["2"]&&has2nd(d)))}
 function townOf(ad){const p=String(ad).split(",").map(x=>x.trim()).filter(Boolean);const last=p[p.length-1]||"";return last.replace(/^\d{4}\s*/,"").replace(/\s*\(.*\)$/,"")}
 function dayPlaces(d){
   const out=[];
@@ -407,18 +411,20 @@ function dayPlaces(d){
 }
 function renderPlan(){
   if(!S.days.length)return emptyHTML("Planung");
-  pickDay();
+  const PD=planDays();
+  pickDay(PD);
   const t=todayISO();
   const sel=S.days.find(x=>x.id===S.day)||{};
   const selHas2=!!(sel.unit2&&sel.unit2.items&&sel.unit2.items.length);
   let h='<div class="stripwrap"><div class="pub" role="group" aria-label="'+L("Unit filtern")+'"><button data-pu="1" aria-pressed="'+!!S.pu["1"]+'" aria-label="1st Unit">1st</button><button data-pu="2" class="u2'+(selHas2?'':' none')+'" aria-pressed="'+!!S.pu["2"]+'" aria-label="2nd Unit"'+(selHas2?'':' title="'+esc(L("Keine 2nd Unit an diesem Tag."))+'"')+'>2nd</button></div><div class="strip in" role="tablist" aria-label="Tage">';
-  for(const d of S.days){
+  for(const d of PD){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?L("Reise"):L("Frei"));
     h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.date===t?" today":"")+'" role="tab" data-day="'+esc(d.id)+'" aria-selected="'+(d.id===S.day)+'">'+
        '<div class="dd"><span class="cw">'+WD[dt.getDay()]+'</span>'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div><div class="lb">'+esc(lb)+'</div></button>';
   }
   h+='</div></div>';
+  if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const d=S.days.find(x=>x.id===S.day);
   const hasD=S.dispos.some(x=>x.date===d.date);
   h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?'<button class="dlink'+(hasD?' on':'')+'" data-todispo="'+esc(d.date)+'">'+(hasD?L('Callsheet'):L('Callsheet folgt'))+' ›</button>':'')+'</div><div class="date">'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</div></div>';
