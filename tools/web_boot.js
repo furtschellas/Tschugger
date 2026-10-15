@@ -240,13 +240,21 @@ function applyData(d){
 }
 /* screenplay: separate encrypted file, fetched only when a scene is opened */
 window.loadScriptData=async function(){
-  if(!MEMBER&&!isAdmin())throw new Error("not signed in");
-  const ac=typeof AbortController==="function"?new AbortController():null;const tm=setTimeout(()=>ac&&ac.abort(),30000);
-  let r;try{r=await fetch("script.enc.json?t="+Date.now(),{cache:"no-store",signal:ac?ac.signal:undefined})}finally{clearTimeout(tm)}
-  if(!r.ok)throw new Error("HTTP "+r.status);
-  const enc=await r.json();const key=await getDataKey();
-  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct));
-  return (JSON.parse(new TextDecoder().decode(pt)).script)||[];
+  try{
+    if(!MEMBER&&!isAdmin())throw new Error("not signed in"); /* e.g. offline start: cached copy below */
+    const ac=typeof AbortController==="function"?new AbortController():null;const tm=setTimeout(()=>ac&&ac.abort(),30000);
+    let r;try{r=await fetch("script.enc.json?t="+Date.now(),{cache:"no-store",signal:ac?ac.signal:undefined})}finally{clearTimeout(tm)}
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const enc=await r.json();const key=await getDataKey();
+    const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct));
+    const list=(JSON.parse(new TextDecoder().decode(pt)).script)||[];
+    if(list.length)try{localStorage.setItem("scriptcache",JSON.stringify(list))}catch(_){}
+    return list;
+  }catch(err){ /* offline or slow network: use the last copy loaded on this device */
+    let c=null;try{c=JSON.parse(localStorage.getItem("scriptcache")||"null")}catch(_){}
+    if(Array.isArray(c)&&c.length)return c;
+    throw err;
+  }
 };
 let LOADP=null;
 function load(force){
@@ -295,7 +303,7 @@ async function checkMember(){
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
   MEMBER=m;return "ok";
 }
-function clearLocal(){try{localStorage.removeItem(CACHE_KEY)}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
+function clearLocal(){try{localStorage.removeItem(CACHE_KEY);localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
 /* ---- sign-in screen ---- */
 let AUTHMODE="login";
 const errText=e=>{const c=(e&&e.code)||"";
