@@ -22,6 +22,12 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
+    // App-Einstellungen (z. B. angebotene Sprachen): alle lesen, nur der Haupt-Admin ändert
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+
     // Weitere Admins: nur der Haupt-Admin verwaltet sie
     match /admins/{email} {
       allow read: if isAdmin();
