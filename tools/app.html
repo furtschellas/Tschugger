@@ -789,7 +789,7 @@ function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;const m=[...Array(b.
 function mailPeople(){
   const out=[],seen=new Set(),add=(name,email,role,src,phone)=>{email=String(email||"").trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){if(name)out.push({name,email:"",phone:phone||"",role:role||"",src,k:nmk(name)});return}const k=nmk(name)+"|"+email;if(seen.has(k))return;seen.add(k);out.push({name,email,phone:phone||"",role:role||"",src,k:nmk(name)})};
   for(const g of S.crew)for(const p of arr(g.people))add(p.name,p.email,p.role,g.dept,p.phone);
-  try{if(typeof ADM!=="undefined"&&ADM){for(const m of arr(ADM.mem))add(m.name||[m.firstName,m.lastName].filter(Boolean).join(" "),m.email,"","user");for(const i of arr(ADM.inv))add(i.name,i.id,i.role,"user")}}catch(_){}
+  try{if(typeof ADM!=="undefined"&&ADM&&perm("contacts.extra")){for(const m of arr(ADM.mem))add(m.name||[m.firstName,m.lastName].filter(Boolean).join(" "),m.email,"","user");for(const i of arr(ADM.inv))add(i.name,i.id,i.role,"user")}}catch(_){}
   return out;
 }
 function findPerson(name,people){
@@ -910,7 +910,7 @@ function addToCalendar(key){
 }
 function renderPrePro(one,embedded){PPPEOPLE=null;
   /* admins: also use the app's user database (people not on the crew list); loads once, then re-renders */
-  try{if(typeof isAdmin==="function"&&isAdmin()&&typeof ADM!=="undefined"&&!ADM.loaded&&typeof ensureAdm==="function")ensureAdm()}catch(_){}
+  try{if(typeof window.canPerm==="function"&&perm("contacts.extra")&&typeof ADM!=="undefined"&&!ADM.loaded&&typeof ensureAdm==="function")ensureAdm()}catch(_){}
   const first=S.days.find(d=>d.kind==="shoot"),pm=(S.meta&&S.meta.prepro)||{};
   const ppoBtn='<span class="pvb"><button class="pvbtn" data-ppo aria-pressed="'+!!S.ppo+'" aria-label="'+esc(L("Teilnehmende ein-/ausblenden"))+'" title="'+esc(L("Teilnehmende ein-/ausblenden"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.8.2 5 2 5 4.9"/></svg></button></span>';
   let h=embedded?'<section class="wkemb"><div class="dtitle"><h3 class="wkh">Weekly Schedule</h3>'+ppoBtn+'</div>':'<div class="dayhead"><div><div class="dtitle"><h2>Prep</h2>'+ppoBtn+'</div></div></div>';
@@ -1280,9 +1280,13 @@ const VIEWS={my:()=>renderMy(),plan:()=>renderPlan(),dispo:()=>renderDispo(),loc
 const ALLTABS=["plan","dispo","loc","crew","script","info"];
 function tabOrder(){const o=Array.isArray(window.TABORDER)?window.TABORDER.filter(x=>ALLTABS.includes(x)):[];return o.concat(ALLTABS.filter(x=>!o.includes(x)))}
 window.tabOrder=tabOrder;
+/* role-based visibility (website): areas a role does not allow are hidden; in the artifact everything is visible */
+const vok=k=>{try{return typeof window.viewOK!=="function"||window.viewOK(k)}catch(_){return true}};
+const perm=p=>{try{return typeof window.canPerm!=="function"||window.canPerm(p)}catch(_){return false}};
 function tabsOn(){
   const ord=tabOrder();let t=Array.isArray(window.TABSON)?ord.filter(x=>window.TABSON.includes(x)):ord;
-  if(window.SCRIPTON===false)t=t.filter(x=>x!=="script");
+  if(window.SCRIPTON===false||!vok("script"))t=t.filter(x=>x!=="script");
+  if(!vok("crew"))t=t.filter(x=>x!=="crew");
   return t.length?t:["plan"];
 }
 /* ---------- script tab: every scene of the screenplay, tap opens the reader ---------- */
@@ -1371,7 +1375,7 @@ function render(){
   const tOn=tabsOn();if(!VIEWS[S.tab]||(ALLTABS.includes(S.tab)&&!tOn.includes(S.tab)))S.tab=tOn[0];
   const nb=document.querySelectorAll("nav.tabs button[data-tab]");nb.forEach(b=>{b.hidden=!tOn.includes(b.dataset.tab);b.style.order=String(tOn.indexOf(b.dataset.tab))});
   const nin=document.querySelector("nav.tabs .in");if(nin)nin.style.setProperty("--ntabs",tOn.length);
-  const uo=unitsOn();document.body.classList.toggle("no-u2",uo.length<2);document.body.classList.toggle("no-script",window.SCRIPTON===false);if(window.SCRIPTON===false){const sc=document.getElementById("scn");if(sc&&!sc.hidden)closeScene()}
+  const uo=unitsOn();document.body.classList.toggle("no-u2",uo.length<2);const noScr=window.SCRIPTON===false||!vok("script");document.body.classList.toggle("no-script",noScr);if(noScr){const sc=document.getElementById("scn");if(sc&&!sc.hidden)closeScene()}
   for(const u of ["2","3"])if(!uo.includes(u)){if(S.pu[u])S.pu=Object.assign({},S.pu,{[u]:false});if(S.uf[u])S.uf=Object.assign({},S.uf,{[u]:false})}
   if(!uo.some(u=>S.pu[u]))S.pu=Object.assign({},S.pu,{"1":true});
   if(uo.length<2&&!S.uf["1"])S.uf=Object.assign({},S.uf,{"1":true});
@@ -1485,7 +1489,7 @@ const fpk=t=>fold(t).replace(/[^a-z0-9]/g,"");
 function fpFor(set,loc){const st=fpk(set),lc=fpk(loc);return arr(S.meta&&S.meta.floorplans).filter(f=>{const r=f.rule||{},ws=arr(r.set).map(fpk),wl=arr(r.loc).map(fpk);
   return (ws.length||wl.length)&&ws.every(w=>st.includes(w))&&(!wl.length||wl.some(w=>lc.includes(w)))&&!arr(r.not).map(fpk).some(w=>st.includes(w)||lc.includes(w))})}
 function blkFor(sc){const n=String(sc||"").toLowerCase().replace(/\s+/g,"");return n?arr(S.meta&&S.meta.blocking).filter(b=>arr(b.sc).some(x=>{x=String(x).toLowerCase();return x===n||(n.startsWith(x+"pt")&&!/pt/.test(x))})).map(b=>{if(!/pt/.test(n))return b;const k=f=>String(f.l).toLowerCase().replace(/\s+/g,""),p=arr(b.pdfs).filter(f=>!/pt/.test(k(f))||n.startsWith(k(f))||k(f).startsWith(n));return p.length?Object.assign({},b,{pdfs:p}):b}):[]}
-function fpLinks(fps,blk,lead){const l=(lead?[lead]:[]).concat(arr(fps).map(f=>'<a class="fpl" href="'+esc(f.url)+'" target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat(arr(blk).flatMap(b=>['<a class="fpl blk" href="'+esc(b.url)+'" target="_blank" rel="noopener noreferrer" title="Blocking" aria-label="Blocking"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></a>'].concat(arr(b.pdfs).map(f=>'<a class="fpl scp" href="'+esc(f.u)+'" target="_blank" rel="noopener noreferrer">'+esc(f.l)+'</a>')))));return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
+function fpLinks(fps,blk,lead){const l=(lead?[lead]:[]).concat(arr(fps).map(f=>'<a class="fpl" href="'+esc(f.url)+'" target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat((vok("blocking")?arr(blk):[]).flatMap(b=>['<a class="fpl blk" href="'+esc(b.url)+'" target="_blank" rel="noopener noreferrer" title="Blocking" aria-label="Blocking"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></a>'].concat(arr(b.pdfs).map(f=>'<a class="fpl scp" href="'+esc(f.u)+'" target="_blank" rel="noopener noreferrer">'+esc(f.l)+'</a>')))));return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
 function itemFp(it,lead){return fpLinks(fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")),blkFor(it.sc),lead)}
 function factsHTML(hits){
   const show=hits.slice().sort((a,b)=>a.d.date<b.d.date?-1:a.d.date>b.d.date?1:String(a.it.t).localeCompare(String(b.it.t)));
@@ -1539,7 +1543,7 @@ async function spLoadMore(b){
 }
 let SCN_SEQ=0;
 async function openScene(sc){
-  if(window.SCRIPTON===false)return;
+  if(window.SCRIPTON===false||!vok("script"))return;
   const seq=++SCN_SEQ,s=sceneSheet();document.body.style.overflow="hidden";s.hidden=false;
   const shell=(b,nav)=>'<div class="scnbox"><div class="scnhd"><b>'+esc(L("Drehbuch"))+'</b>'+(nav||'')+'<button class="scnx" data-scnclose aria-label="'+esc(L("Schliessen"))+'">×</button>'+svButtons()+'</div>'+b+'</div>';
   s.className="scrn "+svClasses();

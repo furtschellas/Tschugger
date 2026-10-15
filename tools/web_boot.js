@@ -90,6 +90,16 @@ Object.assign(I18N,{
  "Keine Treffer.":{fr:"Aucun résultat.",it:"Nessun risultato.",en:"No matches."},
  "Name, E-Mail oder Funktion suchen":{fr:"Chercher nom, e-mail ou fonction",it:"Cerca nome, e-mail o funzione",en:"Search name, email or role"},
  "Daten jetzt aktualisieren":{fr:"Actualiser les données",it:"Aggiorna i dati ora",en:"Refresh data now"},
+ "Crewliste sehen":{fr:"Voir la liste de l'équipe",it:"Vedere la lista crew",en:"See crew list"},
+ "Drehbuch (Script) sehen":{fr:"Voir le scénario (script)",it:"Vedere la sceneggiatura (script)",en:"See script"},
+ "Blocking und Blocking-PDFs sehen":{fr:"Voir le blocking et ses PDF",it:"Vedere blocking e PDF di blocking",en:"See blocking and blocking PDFs"},
+ "Telefon und E-Mail von Personen ausserhalb der Crewliste sehen":{fr:"Voir téléphone et e-mail des personnes hors liste d'équipe",it:"Vedere telefono ed e-mail di persone fuori dalla lista crew",en:"See phone and email of people not on the crew list"},
+ "Zugangsanfragen freischalten":{fr:"Approuver les demandes d'accès",it:"Approvare le richieste di accesso",en:"Approve access requests"},
+ "Berechtigung":{fr:"droit",it:"permesso",en:"permission"},
+ "Berechtigungen":{fr:"droits",it:"permessi",en:"permissions"},
+ "Keine Berechtigungen":{fr:"Aucun droit",it:"Nessun permesso",en:"No permissions"},
+ "Standard wiederherstellen":{fr:"Rétablir par défaut",it:"Ripristina predefinito",en:"Restore default"},
+ "Abbrechen":{fr:"Annuler",it:"Annulla",en:"Cancel"},
  "Rollen":{fr:"Rôles",it:"Ruoli",en:"Roles"},
  "Rolle":{fr:"Rôle",it:"Ruolo",en:"Role"},
  "Benutzer:in":{fr:"Utilisateur",it:"Utente",en:"User"},
@@ -112,7 +122,7 @@ Object.assign(I18N,{
  "Einstellungen der App ändern":{fr:"Modifier les paramètres de l'app",it:"Modificare le impostazioni dell'app",en:"Change app settings"},
  "Alles, auch Rollen, Admins, Sperren und Backup":{fr:"Tout, y compris rôles, admins, blocage et sauvegarde",it:"Tutto, anche ruoli, admin, blocco e backup",en:"Everything, including roles, admins, blocking and backup"},
  "Alle Berechtigungen ausser «Einstellungen der App ändern»":{fr:"Tous les droits sauf « Modifier les paramètres de l'app »",it:"Tutti i permessi tranne «Modificare le impostazioni dell'app»",en:"All permissions except “Change app settings”"},
- "Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person nur die Drehdaten.":{fr:"Un rôle regroupe des droits. Attribue-le dans la gestion des utilisateurs, sous « Rôle ». Sans rôle, une personne ne voit que les données de tournage.",it:"Un ruolo raggruppa dei permessi. Assegnalo nella gestione utenti alla voce «Ruolo». Senza ruolo una persona vede solo i dati delle riprese.",en:"A role bundles permissions. Assign it in user management under “Role”. Without a role a person only sees the shooting data."},
+ "Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person alle Drehdaten, die Crewliste, das Drehbuch und das Blocking, aber keine Verwaltung. Mit Rolle sieht sie nur die Bereiche, die die Rolle erlaubt.":{fr:"Un rôle regroupe des droits. Attribue-le dans la gestion des utilisateurs, sous « Rôle ». Sans rôle, une personne voit toutes les données de tournage, la liste d'équipe, le scénario et le blocking, mais aucune administration. Avec un rôle, seulement ce que le rôle permet.",it:"Un ruolo raggruppa dei permessi. Assegnalo nella gestione utenti alla voce «Ruolo». Senza ruolo una persona vede tutti i dati delle riprese, la lista crew, la sceneggiatura e il blocking, ma nessuna amministrazione. Con un ruolo solo ciò che il ruolo consente.",en:"A role bundles permissions. Assign it in user management under “Role”. Without a role a person sees all shooting data, the crew list, the script and blocking, but no administration. With a role only what the role allows."},
  "Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.":{fr:"Supprimer le rôle « {r} » ? Les personnes ayant ce rôle perdent leurs droits.",it:"Eliminare il ruolo «{r}»? Le persone con questo ruolo perdono i permessi.",en:"Delete role “{r}”? People with this role lose its permissions."},
  "Benutzerverwaltung":{fr:"Gestion des utilisateurs",it:"Gestione utenti",en:"User management"},
  "Einstellungen":{fr:"Paramètres",it:"Impostazioni",en:"Settings"},
@@ -361,10 +371,16 @@ let COADMIN=false;
 const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
-const PERMS=[["users.view","Benutzerdaten sehen"],["users.edit","Benutzerdaten ändern"],["users.invite","Benutzer:innen einladen und Anfragen freischalten"],["crew.food","Essen und Allergien in der Crew sehen"],["crew.bday","Geburtstage in der Crew sehen"],["crew.vcf","Alle Kontakte als VCF exportieren"],["mycal.all","Termine aller Personen ansehen"],["settings","Einstellungen der App ändern"]];
-let MYPERMS=[],MYROLE="";
-const can=p=>isOwner()||(isAdmin()&&p!=="settings")||MYPERMS.includes(p);
-const canAdm=()=>isAdmin()||["users.view","users.invite","users.edit","settings"].some(p=>MYPERMS.includes(p));
+const PERMS=[["view.crew","Crewliste sehen"],["view.script","Drehbuch (Script) sehen"],["view.blocking","Blocking und Blocking-PDFs sehen"],["contacts.extra","Telefon und E-Mail von Personen ausserhalb der Crewliste sehen"],
+  ["users.view","Benutzerdaten sehen"],["users.edit","Benutzerdaten ändern"],["users.invite","Benutzer:innen einladen"],["users.requests","Zugangsanfragen freischalten"],
+  ["crew.food","Essen und Allergien in der Crew sehen"],["crew.bday","Geburtstage in der Crew sehen"],["crew.vcf","Alle Kontakte als VCF exportieren"],["mycal.all","Termine aller Personen ansehen"],["settings","Einstellungen der App ändern"]];
+const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
+const ADMIN_DEFAULT=PERMS.map(x=>x[0]).filter(p=>p!=="settings");
+let MYPERMS=[],MYROLE="",ADMINPERMS=ADMIN_DEFAULT.slice();
+const can=p=>isOwner()||(isAdmin()&&ADMINPERMS.includes(p))||MYPERMS.includes(p);
+const canAdm=()=>isOwner()||["users.view","users.invite","users.requests","users.edit","settings"].some(can);
+/* what someone sees: without a role everything as before; with a role (or as admin) only the areas the role allows */
+window.viewOK=k=>{if(!ME||isOwner())return true;if(!isAdmin()&&!MYROLE)return true;return can("view."+k)};
 window.canPerm=can;
 /* stability: never wait forever on the network (film sets often have weak reception) */
 const withTimeout=(p,ms,what)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error((what||"request")+" timeout"),{code:"unavailable"})),ms))]);
@@ -448,7 +464,8 @@ const isOffline=err=>!navigator.onLine||/unavailable|network|offline|failed to f
 async function checkMember(){
   const {F,db}=await fb();const u=ME;
   if(!isOwner()&&u.emailVerified){try{COADMIN=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(_){COADMIN=false}}
-  MYPERMS=[];MYROLE="";
+  MYPERMS=[];MYROLE="";ADMINPERMS=ADMIN_DEFAULT.slice();
+  if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())ADMINPERMS=(ad.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}catch(_){}}
   if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){MYROLE=String(ur.data().role||"");const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())MYPERMS=(rd.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}}catch(_){}}
   const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){
@@ -565,7 +582,7 @@ async function notifyApproved(em,q){
 }
 /* check again every 5 minutes and when the app comes back to the foreground */
 setInterval(()=>{if(ME&&isAdmin()&&document.visibilityState==="visible")checkRequests()},300000);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&can("users.invite"))checkRequests()});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&can("users.requests"))checkRequests()});
 async function checkRequests(){
   try{const {F,db}=await fb();const r=await F.getDocs(F.collection(db,"requests"));const n=r.size||r.docs.length;
     const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||"";b.setAttribute("aria-label",L("App-Verwaltung")+(n?" · "+n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."):""))}
@@ -694,7 +711,7 @@ function acctButton(on){
     const r=$("#refresh");r.parentNode.insertBefore(g,r);g.addEventListener("click",()=>{S.tab="admin";S.srcOpen=false;window.scrollTo(0,0);render()})}
   g.setAttribute("aria-label",L("App-Verwaltung"));g.title=L("App-Verwaltung");g.hidden=!(on&&canAdm());
   {const r=$("#refresh");if(r)r.classList.toggle("admhide",!!(on&&canAdm()))} /* admins find «Aktualisieren» in App-Verwaltung → Einstellungen */
-  if(on&&can("users.invite"))checkRequests();
+  if(on&&can("users.requests"))checkRequests();
 }
 const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password'));
 let ONBOARD=false;
@@ -778,8 +795,8 @@ async function admLoad(){
   const {F,db}=await fb();
   const none=()=>({docs:[]}),opt=(ok,pr)=>ok?pr:pr.catch(none);
   const [i,m,a,ro,ur]=await Promise.all([opt(isAdmin(),F.getDocs(F.collection(db,"invites"))),opt(isAdmin(),F.getDocs(F.collection(db,"members"))),F.getDocs(F.collection(db,"admins")).catch(none),F.getDocs(F.collection(db,"roles")).catch(none),F.getDocs(F.collection(db,"userroles")).catch(none)]);
-  ADM.roles=ro.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.ur={};ur.docs.forEach(d=>{ADM.ur[d.id]=String((d.data()||{}).role||"")});
-  if(can("users.invite")){try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.reqErr=""}catch(err){ADM.req=[];ADM.reqErr=(err&&err.code)||String(err)}}else{ADM.req=[];ADM.reqErr=""}
+  ADM.roles=ro.docs.filter(d=>d.id!=="admin").map(d=>Object.assign({id:d.id},d.data()));{const ad=ro.docs.find(d=>d.id==="admin");ADM.adminPerms=ad?(ad.data().perms||[]):ADMIN_DEFAULT.slice()}ADM.ur={};ur.docs.forEach(d=>{ADM.ur[d.id]=String((d.data()||{}).role||"")});
+  if(can("users.requests")){try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.reqErr=""}catch(err){ADM.req=[];ADM.reqErr=(err&&err.code)||String(err)}}else{ADM.req=[];ADM.reqErr=""}
   {const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",ADM.req.length>0);b.dataset.n=ADM.req.length||""}}
   ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();
 }
@@ -923,23 +940,31 @@ function reqSec(){
     (ADM.reqErr?'<p class="admerr">'+L("Anfragen nicht lesbar")+' ('+esc(ADM.reqErr)+') – '+L("Firestore-Regeln prüfen.")+'</p>':
      r.length?'<p class="ahint">'+L("Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».")+'</p>':'<p class="ahint">'+L("Keine offenen Anfragen.")+'</p>')+
     r.map(q=>'<div class="arow"><span><b>'+esc(q.name||"")+'</b> · '+esc(q.id)+(q.role?'<br><small>'+esc(q.role)+'</small>':'')+(q.note?'<br><small>«'+esc(q.note)+'»</small>':'')+'</span>'+
-      (can("users.invite")?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
+      (can("users.requests")?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
 }
 const permBoxes=sel=>'<div class="chk perms">'+PERMS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>';
 function rolesSec(){
-  const cnt=id=>Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e)).length;
+  const cnt=id=>id==="admin"?ADM.adm.length:Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e)).length;
   const roles=(ADM.roles||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG));
-  return '<div class="admins"><h3>'+L("Rollen")+'</h3><p class="ahint">'+L("Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person nur die Drehdaten.")+'</p>'+
-    '<div class="arow rfix"><span><b>'+L("Besitzer:in")+'</b><br><small>'+L("Alles, auch Rollen, Admins, Sperren und Backup")+'</small></span></div>'+
-    '<div class="arow rfix"><span><b>'+L("Admin")+'</b><br><small>'+L("Alle Berechtigungen ausser «Einstellungen der App ändern»")+'</small></span><span class="ust adm">'+ADM.adm.length+'</span></div>'+
-    roles.map(ro=>'<form class="arole" data-role="'+esc(ro.id)+'"><div class="arh"><input name="rn" maxlength="40" required value="'+esc(ro.name||"")+'" aria-label="'+esc(L("Name der Rolle"))+'"><span class="ust">'+cnt(ro.id)+' '+L(cnt(ro.id)===1?"Person":"Personen")+'</span></div>'+permBoxes(ro.perms)+'<div class="arb"><button type="submit">'+L("Speichern")+'</button><button type="button" class="lnk" data-rdel="'+esc(ro.id)+'">'+L("Rolle löschen")+'</button></div></form>').join("")+
-    '<form class="arole new" data-role=""><h4>'+L("Neue Rolle")+'</h4><input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'">'+permBoxes([])+'<div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button></div></form></div>';
+  const pplLbl=id=>cnt(id)+' '+L(cnt(id)===1?"Person":"Personen");
+  const row=(id,name,perms,fixedName)=>{const open=ADM.redit===id;
+    return '<div class="arole'+(open?' open':'')+'"><div class="arh"><div class="arn"><b>'+esc(name)+'</b><small>'+(perms.length?perms.length+' '+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+' · '+pplLbl(id)+'</small></div><button type="button" class="pillbtn" data-redit="'+esc(id)+'">'+L(open?"Schliessen":"Bearbeiten")+'</button></div>'+
+      (open?'<form class="arolef" data-role="'+esc(id)+'">'+(fixedName?'<input type="hidden" name="rn" value="'+esc(name)+'">':'<label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required value="'+esc(name)+'"></label>')+permBoxes(perms)+
+        '<div class="arb"><button type="submit">'+L("Speichern")+'</button>'+(id==="admin"?'<button type="button" class="lnk" data-rreset>'+L("Standard wiederherstellen")+'</button>':'<button type="button" class="lnk" data-rdel="'+esc(id)+'">'+L("Rolle löschen")+'</button>')+'</div></form>':'')+'</div>'};
+  return '<div class="admins"><h3>'+L("Rollen")+'</h3><p class="ahint">'+L("Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person alle Drehdaten, die Crewliste, das Drehbuch und das Blocking, aber keine Verwaltung. Mit Rolle sieht sie nur die Bereiche, die die Rolle erlaubt.")+'</p>'+
+    '<div class="arole fixed"><div class="arh"><div class="arn"><b>'+L("Besitzer:in")+'</b><small>'+L("Alles, auch Rollen, Admins, Sperren und Backup")+'</small></div></div></div>'+
+    row("admin",L("Admin"),ADM.adminPerms||ADMIN_DEFAULT,true)+
+    roles.map(ro=>row(ro.id,ro.name||ro.id,arr(ro.perms),false)).join("")+
+    (ADM.redit==="new"?'<form class="arolef new" data-role=""><h4>'+L("Neue Rolle")+'</h4><label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'"></label>'+permBoxes(VIEWPERMS)+'<div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button><button type="button" class="lnk" data-redit="new">'+L("Abbrechen")+'</button></div></form>':
+      '<button type="button" class="abtn" data-redit="new">+ '+L("Neue Rolle")+'</button>')+'</div>';
 }
-document.addEventListener("submit",async e=>{const f=e.target.closest("form.arole");if(!f)return;e.preventDefault();if(!isOwner())return;
+document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&isOwner()){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
+  if(e.target.closest("[data-rreset]")&&isOwner()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
+document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!isOwner())return;
   const name=String(f.rn.value||"").trim().slice(0,40),perms=readBoxes(f,"rp").filter(p=>PERMS.some(x=>x[0]===p));if(!name)return;
   let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
   const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});showMsg(L("Rolle gespeichert."),2500);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();await admLoad()}
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});ADM.redit="";showMsg(L("Rolle gespeichert."),2500);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();await admLoad()}
   catch(err){if(btn)btn.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!isOwner())return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
   if(!confirmSafe(L("Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.").replace("{r}",ro.name||id)))return;
@@ -1018,7 +1043,7 @@ VIEWS.admin=function(){
     '<p class="ahint"><b>'+L("Drehbuch")+'</b> – '+L("Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="so"'+(window.SCRIPTON!==false?' checked':'')+'> '+L("Drehbuch anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></div>':'';
-  const SUBS=[];if(isAdmin()||can("users.view")||can("users.invite"))SUBS.push(["users","Benutzerverwaltung"]);if(can("settings"))SUBS.push(["set","Einstellungen"]);if(own)SUBS.push(["roles","Rollen"],["bk","Backup"]);
+  const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(can("settings"))SUBS.push(["set","Einstellungen"]);if(own)SUBS.push(["roles","Rollen"],["bk","Backup"]);
   if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
   const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>'<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'">'+(t==="Benutzerverwaltung"&&LANG==="de"?"Benutzer&shy;verwaltung":esc(L(t)))+'</button>').join("")+'</nav>':'';
@@ -1026,11 +1051,11 @@ VIEWS.admin=function(){
   if(ADM.sub==="set")return h+'<div class="setbar"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div>'+(own?upSec().replace(/<details([^>]*data-sec="upsec")(?![^>]*\bopen)/,'<details$1 open'):'')+setSec+'</section>';
   if(ADM.sub==="roles")return h+rolesSec()+'</section>';
   if(ADM.sub==="bk")return h+bkSec().replace(' data-sec="backup"',' data-sec="backup" open')+'</section>';
-  const cInv=can("users.invite"),cView=isAdmin()||can("users.view"),cEd=can("users.edit");
+  const cInv=can("users.invite"),cView=can("users.view")||can("users.edit"),cEd=can("users.edit");
   const roleOf=e=>{if(ADMINS.includes(e))return "";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
   const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).name||"");
   const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Benutzer:in")+'</option><option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>'+ADM.roles.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(x=>'<option value="'+esc(x.id)+'"'+(roleOf(r.email)===x.id?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join("")+'</select></label>';
-  h+=(cInv?reqSec():'')+admSec+(!cInv?'':
+  h+=(can("users.requests")?reqSec():'')+admSec+(!cInv?'':
     '<div class="admins"><h3>'+L("Benutzer:innen einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>')+(!cView?'':userList(rows,vis,{own,cInv,cEd,isAdm,roleOf,roleName,roleSel,st,mail}))+'</section>';
