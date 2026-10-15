@@ -1234,6 +1234,21 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-cmail]");i
   const body=L("Hallo")+" "+nm+",\n\n"+L("du bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet. Dort findest du Drehplan, Dispos, Crewliste, Locations und das Drehbuch.")+"\n\n"+
     L("So geht's:")+"\n1. "+app+"\n2. "+L("«Konto erstellen» mit genau dieser E-Mail-Adresse:")+" "+em+"\n   "+L("(Gmail-Adresse: einfach «Mit Google anmelden»)")+"\n3. "+L("Bestätigungs-Mail öffnen und auf den Link tippen – bitte auch im Spam-Ordner nachsehen.")+"\n\n"+L("Bis bald am Set!");
   location.href="mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(body)},true);
+/* blocking gallery: encrypted preview images (blk/*.bin = 12-byte IV + AES-GCM), decrypted with the crew key */
+const BLKIMG=new Map();
+window.blkImg=function(f){
+  if(!BLKIMG.has(f))BLKIMG.set(f,(async()=>{const key=await getDataKey();const r=await fetch(f,{cache:"force-cache"});if(!r.ok)throw new Error("HTTP "+r.status);
+    const buf=new Uint8Array(await r.arrayBuffer());const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:buf.slice(0,12)},key,buf.slice(12));
+    return URL.createObjectURL(new Blob([pt],{type:"image/jpeg"}))})().catch(err=>{BLKIMG.delete(f);throw err}));
+  return BLKIMG.get(f);
+};
+/* crew list: phone / e-mail from the app profile when the crew list has none (people allowed to see contacts outside the crew list) */
+window.crewFill=function(p){
+  if(!ME||!(can("contacts.extra")||can("users.view")))return null;
+  if(!ADM.loaded){ensureAdm();return null}
+  const m=memberFor(p);if(!m)return null;
+  return {phone:String(m.phone||"").trim(),email:String(m.contactEmail||m.email||"").trim()};
+};
 window.crewExtra=function(p){
   const ACC=ADMV.acct&&isOwner();
   if(!p||!(can("crew.food")||can("crew.bday")||can("users.edit")))return"";
