@@ -206,20 +206,27 @@ const lc=s=>String(s||"").trim().toLowerCase();
 let COADMIN=false;
 const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
+/* stability: never wait forever on the network (film sets often have weak reception) */
+const withTimeout=(p,ms,what)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error((what||"request")+" timeout"),{code:"unavailable"})),ms))]);
+let FBP=null;
 async function fb(){
   if(FB)return FB;
+  if(!FBP)FBP=fbInit().catch(err=>{FBP=null;throw err});
+  return FBP;
+}
+async function fbInit(){
   const base="https://www.gstatic.com/firebasejs/"+FB_V+"/";
-  const [app,auth,fs]=await Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]);
+  const [app,auth,fs]=await withTimeout(Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]),20000,"firebase");
   const a=app.initializeApp(FB_CONFIG);
   FB={app:a,A:auth,F:fs,auth:auth.getAuth(a),db:fs.getFirestore(a)};
   FB.auth.languageCode=LANG;
   return FB;
 }
 /* ---- data: fetch encrypted file, decrypt with the key from Firestore ---- */
-async function fetchEnc(){const r=await fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
+async function fetchEnc(){const ac=typeof AbortController==="function"?new AbortController():null;const tm=setTimeout(()=>ac&&ac.abort(),25000);let r;try{r=await fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store",signal:ac?ac.signal:undefined})}catch(err){throw Object.assign(new Error("network: "+(err&&err.name||err)),{code:"unavailable"})}finally{clearTimeout(tm)}if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
 async function getDataKey(){
   if(DATAKEY)return DATAKEY;
-  const {F,db}=await fb();const s=await F.getDoc(F.doc(db,"secret","key"));
+  const {F,db}=await fb();const s=await withTimeout(F.getDoc(F.doc(db,"secret","key")),20000,"key");
   if(!s.exists())throw new Error("no key");
   const kv=String(s.data().k||"").trim().replace(/^["'“”«]+|["'“”»]+$/g,"");
   DATAKEY=await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["decrypt"]);
@@ -230,13 +237,21 @@ function applyData(d){
   for(const [k,src] of [["days","days"],["crew","crew"],["locs","locations"],["places","places"],["dispos","dispos"]])S[k]=(CLEAN[k]||(x=>x))(arr(d[src]));
   MEMO.clear();saveCache();S.loaded=true;
 }
-async function load(force){
+let LOADP=null;
+function load(force){
+  if(LOADP)return LOADP;
+  LOADP=loadOnce(force).finally(()=>{LOADP=null});
+  return LOADP;
+}
+async function loadOnce(force){
   if(!MEMBER&&!isAdmin())return false;
   const enc=await fetchEnc();
   if(!force&&enc.stamp&&enc.stamp===LASTSTAMP&&S.loaded)return true;
   const key=await getDataKey();
-  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct));
-  LASTSTAMP=enc.stamp||null;applyData(JSON.parse(new TextDecoder().decode(pt)));scheduleRender();return true;
+  let pt;try{pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct))}catch(err){DATAKEY=null;throw err}
+  const data=JSON.parse(new TextDecoder().decode(pt));
+  if(!data||!Array.isArray(data.days))throw new Error("data format");
+  LASTSTAMP=enc.stamp||null;applyData(data);scheduleRender();return true;
 }
 function loadErr(err){
   const c=(err&&(err.code||err.name))||"",m=(err&&err.message)||String(err);
@@ -253,7 +268,7 @@ const isOffline=err=>!navigator.onLine||/unavailable|network|offline|failed to f
 async function checkMember(){
   const {F,db}=await fb();const u=ME;
   if(!isOwner()&&u.emailVerified){try{COADMIN=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(_){COADMIN=false}}
-  const ref=F.doc(db,"members",u.uid);let s=await F.getDoc(ref);
+  const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){
     let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
     if(!inv||!inv.exists()){if(isAdmin()){MEMBER=null;return "ok"}return "none"}
@@ -638,6 +653,9 @@ async function checkVersion(){
 }
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkVersion()});
 setTimeout(checkVersion,1500);
+/* ---------- safety net: errors never leave a blank screen ---------- */
+window.addEventListener("unhandledrejection",e=>{console.warn("unhandled",e.reason)});
+window.addEventListener("error",e=>{console.warn("error",e.message);try{if(!document.getElementById("view").innerHTML.trim())render()}catch(_){}});
 /* ---------- start ---------- */
 applyStatic();
 loadCache();
@@ -662,6 +680,8 @@ render();
       afterSignIn(u);
     });
   }catch(err){console.error(err);if(!S.days.length)showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);else{hideGate();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000)}}
+  /* back online after starting without connection: start sign-in again */
+  window.addEventListener("online",()=>{if(!FB&&!FBP)location.reload();else if(ME)tick()});
   const tick=async()=>{
     if(document.visibilityState!=="visible"||!ME||!ME.emailVerified)return;
     try{const st=await checkMember();if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}}catch(_){return}
