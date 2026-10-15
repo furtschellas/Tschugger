@@ -76,6 +76,8 @@ Object.assign(I18N,{
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
  "Passwort-Link senden":{fr:"Envoyer un lien de mot de passe",it:"Invia link password",en:"Send password link"},
  "Startpasswort erzeugen":{fr:"Créer un mot de passe initial",it:"Crea password iniziale",en:"Create start password"},
+ "Anzeigen":{fr:"Afficher",it:"Mostra",en:"Show"},
+ "Keine Berechtigung – bitte die neuen Firestore-Regeln in Firebase veröffentlichen.":{fr:"Pas d’autorisation – publie les nouvelles règles Firestore dans Firebase.",it:"Nessuna autorizzazione – pubblica le nuove regole Firestore in Firebase.",en:"No permission – please publish the new Firestore rules in Firebase."},
  "Startpasswort":{fr:"Mot de passe initial",it:"Password iniziale",en:"Start password"},
  "Für {e} ein Konto mit Startpasswort anlegen? Beim ersten Anmelden muss die Person ein eigenes Passwort festlegen.":{fr:"Créer un compte avec mot de passe initial pour {e} ? À la première connexion, la personne devra choisir son propre mot de passe.",it:"Creare per {e} un account con password iniziale? Al primo accesso la persona dovrà scegliere una propria password.",en:"Create an account with a start password for {e}? On first sign-in the person must set their own password."},
  "hat schon ein Konto – dafür «Passwort-Link senden» verwenden.":{fr:"a déjà un compte – utilise « Envoyer un lien de mot de passe ».",it:"ha già un account – usa «Invia link password».",en:"already has an account – use “Send password link”."},
@@ -675,7 +677,8 @@ async function onAcctSubmit(e){
       const upd={firstName:cn?cn.firstName:clean(f.fn.value),lastName:cn?cn.lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",diet:f.dt.value,intol:readBoxes(f,"pint"),allergies:String(f.al.value||"").trim().slice(0,200)};
       upd.name=[upd.firstName,upd.lastName].filter(Boolean).join(" ");
       const ref=F.doc(db,"members",u.uid);
-      if(MEMBER)await F.updateDoc(ref,upd);else await F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
+      const wr=()=>MEMBER?F.updateDoc(ref,upd):F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
+      try{await wr()}catch(err){if(!/permission/.test(err&&err.code||""))throw err;await u.reload().catch(()=>{});await u.getIdToken(true);await wr()}
       MEMBER=Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd);
       writeOwnBday(upd.name,upd.birthday);
       if(isAdmin())ADM.loaded=false;
@@ -818,6 +821,7 @@ function showStartPw(em,nm,pw){
     if(b&&b.dataset.pw==="copy"){try{await navigator.clipboard.writeText(pw);showMsg(L("Kopiert"),2000)}catch(_){showMsg(pw,8000)}}});
   document.body.appendChild(d);
 }
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pwshow]");if(!b||!isOwner()||!ADM.pw)return;const em=b.dataset.pwshow;const m=ADM.mem.find(x=>x.email===em),i=ADM.inv.find(x=>x.id===em);showStartPw(em,(m&&m.name)||(i&&i.name)||"",ADM.pw[em])});
 /* owner only: change a user's details (registered: name, language, birthday; invited: name, role) */
 function editForm(r){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
@@ -874,7 +878,7 @@ VIEWS.admin=function(){
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>'+
     '<div class="astats">'+rows.length+' '+L("Benutzer")+' · '+rows.filter(r=>r.m&&r.m.active===true).length+' '+L("aktiv")+' · '+rows.filter(r=>!r.m).length+' '+L("noch nicht registriert")+''+((ADM.req||[]).length?' · <a href="#areq" class="reqlnk">'+ADM.req.length+' '+L("Benutzer-Anfragen")+'</a>':'')+'</div>'+
     '<input class="search" id="aq" type="search" placeholder="'+esc(L("Benutzer suchen"))+'" value="'+esc(ADM.q)+'">'+
-    '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">'+L("Admin")+'</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div>'+(own&&ADM.edit===r.email?editForm(r):'')+'<div class="aacts">'+
+    '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">'+L("Admin")+'</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div>'+(own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+(own&&ADM.edit===r.email?editForm(r):'')+'<div class="aacts">'+
       (own?'<button data-adm="edit" data-em="'+esc(r.email)+'">'+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'')+
       (own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'')+
       (own&&!r.m&&!ADMINS.includes(r.email)?'<button data-adm="startpw" data-em="'+esc(r.email)+'" data-nm="'+esc(r.name||"")+'">'+L("Startpasswort erzeugen")+'</button>':'')+
@@ -922,8 +926,8 @@ document.addEventListener("click",async e=>{
     /* passwords can only be set by the person: send Firebase's reset link, which lets them choose a new one */
     if(a==="startpw"){ADM.busy=false;if(!isOwner())return;const em=b.dataset.em;
       if(!confirmSafe(L("Für {e} ein Konto mit Startpasswort anlegen? Beim ersten Anmelden muss die Person ein eigenes Passwort festlegen.").replace("{e}",em)))return;
-      b.disabled=true;try{const pw=await createStartAccount(em,b.dataset.nm||"");showStartPw(em,b.dataset.nm||"",pw);await admLoad()}
-      catch(err){b.disabled=false;showMsg(/email-already-in-use/.test(err&&err.code||"")?em+" "+L("hat schon ein Konto – dafür «Passwort-Link senden» verwenden."):L("Fehler:")+" "+errText(err),7000)}
+      b.disabled=true;try{const pw=await createStartAccount(em,b.dataset.nm||"");ADM.pw=ADM.pw||{};ADM.pw[em]=pw;showStartPw(em,b.dataset.nm||"",pw);await admLoad()}
+      catch(err){b.disabled=false;const c=err&&err.code||"";showMsg(/email-already-in-use/.test(c)?em+" "+L("hat schon ein Konto – dafür «Passwort-Link senden» verwenden."):/permission/.test(c)?L("Keine Berechtigung – bitte die neuen Firestore-Regeln in Firebase veröffentlichen."):L("Fehler:")+" "+errText(err),9000)}
       return}
     if(a==="pwreset"){ADM.busy=false;if(!isOwner())return;const em=b.dataset.em;
       if(!confirmSafe(L("{e} einen Link schicken, mit dem die Person ein neues Passwort festlegt?").replace("{e}",em)))return;

@@ -178,3 +178,4 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .aedit .ahint,.aedit button{grid-column:1/-1}
 @media (max-width:420px){.aedit{grid-template-columns:1fr}}
 #pwbox .pwshow{font:600 24px/1.3 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;text-align:center;padding:12px;border:1px dashed var(--accent);border-radius:10px;margin:10px 0;user-select:all}
+.pwrow{margin:6px 0;font-size:13px}.pwrow .pwshow2{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;letter-spacing:.05em;user-select:all}.pwrow button{font:inherit;font-size:12px;margin-left:6px;padding:2px 8px;border-radius:99px;border:1px solid var(--rule);background:transparent;color:inherit;cursor:pointer}
