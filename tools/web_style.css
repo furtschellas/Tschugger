@@ -164,6 +164,7 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .greq label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
 .greq input,.greq textarea{width:100%;box-sizing:border-box;font:inherit;padding:9px 11px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
 .greq .gbtn{margin-top:10px;width:100%}
-#acctBtn.hasreq{position:relative}
-#acctBtn.hasreq::after{content:attr(data-n);position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font:700 10px/16px var(--f-body);text-align:center;padding:0 3px}
+#acctBtn.hasreq{position:relative!important;overflow:visible}
+#acctBtn .reqdot{position:absolute;top:1px;right:1px;width:9px;height:9px;border-radius:50%;background:#e5484d;box-shadow:0 0 0 2px var(--paper);pointer-events:none}
+#acctBtn:not(.hasreq) .reqdot{display:none}
 .areq{border-color:var(--accent)!important}

@@ -54,6 +54,7 @@ Object.assign(I18N,{
  "dein Zugang zur Crew-App von TSCHUGGER Tigerblood ist freigeschaltet. Melde dich hier mit dieser E-Mail-Adresse an:":{fr:"ton accès à l’app de l’équipe de TSCHUGGER Tigerblood est activé. Connecte-toi ici avec cette adresse e-mail :",it:"il tuo accesso all’app della crew di TSCHUGGER Tigerblood è attivo. Accedi qui con questo indirizzo e-mail:",en:"your access to the TSCHUGGER Tigerblood crew app is approved. Sign in here with this e-mail address:"},
  "Bis bald am Set!":{fr:"À bientôt sur le tournage !",it:"A presto sul set!",en:"See you on set!"},
  "Bitte bestätige deine E-Mail-Adresse:":{fr:"Confirme ton adresse e-mail :",it:"Conferma il tuo indirizzo e-mail:",en:"Please confirm your e-mail address:"},
+ "Bestätigungs-Mail konnte nicht gesendet werden:":{fr:"L’e-mail de confirmation n’a pas pu être envoyé :",it:"Impossibile inviare l’e-mail di conferma:",en:"Could not send the confirmation e-mail:"},
  "Kein Zugang":{it:"Nessun accesso",fr:"Pas d’accès",en:"No access"},
  "Deine Adresse ist (noch) nicht für die Crew-App freigeschaltet. Bitte melde dich bei der Produktion.":{it:"Il tuo indirizzo non è (ancora) abilitato per l’app. Contatta la produzione.",fr:"Ton adresse n’est pas (encore) autorisée pour l’app. Contacte la production.",en:"Your address is not (yet) enabled for the crew app. Please contact the production."},
  "Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion.":{it:"Il tuo accesso è stato bloccato. Contatta la produzione.",fr:"Ton accès a été bloqué. Contacte la production.",en:"Your access has been blocked. Please contact the production."},
@@ -408,9 +409,9 @@ async function onGateSubmit(e){
       if(pw.length<8)throw {code:"weak-password"};
       if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
       window.__justSignedIn=true;const c=await A.createUserWithEmailAndPassword(auth,em,pw);
-      try{await A.sendEmailVerification(c.user,{url:location.origin+location.pathname})}catch(_){}
+      try{await sendMailSafe(A.sendEmailVerification,c.user)}catch(err){console.error(err);gateMsg(L("Bestätigungs-Mail konnte nicht gesendet werden:")+" "+errText(err),true)}
     }
-    else if(f.dataset.f==="reset"){try{await A.sendPasswordResetEmail(auth,em,{url:location.origin+location.pathname})}catch(err){if(!/user-not-found/.test(err.code||""))throw err}gateMsg(L("Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen."),false)}
+    else if(f.dataset.f==="reset"){try{await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),em)}catch(err){if(!/user-not-found/.test(err.code||""))throw err}gateMsg(L("Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen."),false)}
     else if(f.dataset.f==="verify"){await ME.reload();if(auth.currentUser.emailVerified){await ME.getIdToken(true);await afterSignIn(auth.currentUser)}else gateMsg(L("Noch nicht bestätigt. Schau auch im Spam-Ordner nach."),true)}
   }catch(err){console.error(err);gateMsg(errText(err),true)}
   if(btn)btn.disabled=false;
@@ -432,7 +433,7 @@ async function notifyApproved(em,q){
   try{
     const {A,auth}=await fb();if(typeof A.sendSignInLinkToEmail!=="function")throw new Error("no email link");
     const keep=auth.languageCode;auth.languageCode=LANG;
-    try{await A.sendSignInLinkToEmail(auth,em,{url,handleCodeInApp:true})}finally{auth.languageCode=keep}
+    try{await A.sendSignInLinkToEmail(auth,em,{url,handleCodeInApp:true})}finally{auth.languageCode=keep||LANG}
     showMsg(L("E-Mail mit Anmelde-Link gesendet an")+" "+em,6000);return true;
   }catch(err){
     console.warn("mail link",err&&err.code||err);
@@ -442,9 +443,12 @@ async function notifyApproved(em,q){
     return false;
   }
 }
+/* check again every 5 minutes and when the app comes back to the foreground */
+setInterval(()=>{if(ME&&isAdmin()&&document.visibilityState==="visible")checkRequests()},300000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&isAdmin())checkRequests()});
 async function checkRequests(){
   try{const {F,db}=await fb();const r=await F.getDocs(F.collection(db,"requests"));const n=r.size||r.docs.length;
-    const b=document.getElementById("acctBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||""}
+    const b=document.getElementById("acctBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||"";b.setAttribute("aria-label",L("Mein Konto")+(n?" · "+n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."):""))}
     if(n&&!checkRequests.told){checkRequests.told=true;showMsg(n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."),7000)}}catch(_){}
 }
 async function sendRequest(){
@@ -455,13 +459,20 @@ async function sendRequest(){
     REQ={sent:true,err:""}}catch(err){console.error(err);REQ.err=errText(err)}
   showGate(AUTHMODE);
 }
+/* Firebase mails (confirmation, password reset): in the app language; if the return link to this site is not
+   allowed in Firebase (authorised domains), send the mail without return link instead of failing silently */
+async function sendMailSafe(fn,target){
+  const {auth}=await fb();auth.languageCode=LANG;
+  try{return await fn(target,{url:location.origin+location.pathname})}
+  catch(err){if(/continue-uri|unauthorized-domain|invalid-dynamic-link|missing-continue/.test(err&&err.code||""))return await fn(target);throw err}
+}
 async function onGateClick(e){
   const lb=e.target.closest("[data-glang]");if(lb){LANG=lb.dataset.glang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;showGate(AUTHMODE);render();return}
   const m=e.target.closest("[data-gmode]");if(m){showGate(m.dataset.gmode);return}
   const a=e.target.closest("[data-gact]");if(!a)return;
   const {A,auth}=await fb();
   if(a.dataset.gact==="signout"){REQ={sent:false,err:""};await A.signOut(auth)}
-  else if(a.dataset.gact==="resend"){try{await A.sendEmailVerification(auth.currentUser,{url:location.origin+location.pathname});gateMsg(L("Mail gesendet."),false)}catch(err){gateMsg(errText(err),true)}}
+  else if(a.dataset.gact==="resend"){try{await sendMailSafe(A.sendEmailVerification,auth.currentUser);gateMsg(L("Mail gesendet.")+" "+L("Schau auch im Spam-Ordner nach."),false)}catch(err){gateMsg(errText(err),true)}}
   else if(a.dataset.gact==="retry"){if(auth.currentUser)afterSignIn(auth.currentUser)}
   else if(a.dataset.gact==="request"){a.disabled=true;await sendRequest()}
   else if(a.dataset.gact==="google"){
@@ -527,7 +538,7 @@ async function fillNamesFromCrew(){
 function acctButton(on){
   let b=document.getElementById("acctBtn");
   if(!b){b=document.createElement("button");b.id="acctBtn";b.className="refresh";b.type="button";
-    b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg><span class="reqdot" aria-hidden="true"></span>';
     const r=$("#refresh");r.parentNode.insertBefore(b,r);b.addEventListener("click",showAcct)}
   b.setAttribute("aria-label",L("Mein Konto"));b.title=L("Mein Konto");b.hidden=!on;
   if(on&&isAdmin())checkRequests();
@@ -563,7 +574,7 @@ async function onAcctClick(e){
   if(b.dataset.ac==="close")s.hidden=true;
   else if(b.dataset.ac==="theme")setTheme(b.dataset.thset);
   else if(b.dataset.ac==="pwreset"){const msg=b.closest("form").querySelector(".amsg");msg.className="amsg";msg.textContent="";b.disabled=true;
-    try{const {A,auth}=await fb();await A.sendPasswordResetEmail(auth,auth.currentUser.email,{url:location.origin+location.pathname});msg.classList.add("ok");msg.textContent=L("Link zum Zurücksetzen gesendet an")+" "+auth.currentUser.email+". "+L("Schau auch im Spam-Ordner nach.")}
+    try{const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),auth.currentUser.email);msg.classList.add("ok");msg.textContent=L("Link zum Zurücksetzen gesendet an")+" "+auth.currentUser.email+". "+L("Schau auch im Spam-Ordner nach.")}
     catch(err){console.error(err);msg.textContent=errText(err)}b.disabled=false}
   else if(b.dataset.ac==="admin"){s.hidden=true;S.tab="admin";window.scrollTo(0,0);render()}
   else if(b.dataset.ac==="signout"){s.hidden=true;const {A,auth}=await fb();await A.signOut(auth)}
@@ -602,6 +613,7 @@ async function admLoad(){
   const {F,db}=await fb();
   const [i,m,a]=await Promise.all([F.getDocs(F.collection(db,"invites")),F.getDocs(F.collection(db,"members")),F.getDocs(F.collection(db,"admins")).catch(()=>({docs:[]}))]);
   try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()))}catch(_){ADM.req=[]}
+  {const b=document.getElementById("acctBtn");if(b){b.classList.toggle("hasreq",ADM.req.length>0);b.dataset.n=ADM.req.length||""}}
   ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
