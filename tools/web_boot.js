@@ -52,6 +52,11 @@ Object.assign(I18N,{
  "Bereiche":{fr:"Rubriques",it:"Sezioni",en:"Sections"},
  "Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.":{fr:"Seules les rubriques choisies apparaissent en bas de l’app. Au moins une.",it:"Solo le sezioni scelte appaiono in basso nell’app. Almeno una.",en:"Only the selected sections appear at the bottom of the app. At least one."},
  "Bitte mindestens einen Bereich wählen.":{fr:"Choisis au moins une rubrique.",it:"Scegli almeno una sezione.",en:"Please select at least one section."},
+ "Die Daten werden jede Stunde automatisch aus der Dropbox geladen.":{fr:"Les données sont chargées automatiquement depuis la Dropbox toutes les heures.",it:"I dati vengono caricati automaticamente dalla Dropbox ogni ora.",en:"Data is loaded from Dropbox automatically every hour."},
+ "Bitte zuerst anmelden.":{fr:"Connecte-toi d’abord.",it:"Prima accedi.",en:"Please sign in first."},
+ "Eingeschaltet werden Drehplan, Drehbuch, Crewliste, Callsheets und Motivliste jede Stunde automatisch neu geladen (nur gelesen).":{fr:"Activé, le plan de tournage, le scénario, la liste de l’équipe, les callsheets et la liste des décors sont rechargés automatiquement toutes les heures (lecture seule).",it:"Se attivo, piano di lavorazione, sceneggiatura, lista crew, callsheet e lista location vengono ricaricati automaticamente ogni ora (sola lettura).",en:"When on, schedule, script, crew list, callsheets and location list are reloaded automatically every hour (read-only)."},
+ "Daten aus der Dropbox automatisch laden":{fr:"Charger automatiquement les données de la Dropbox",it:"Carica automaticamente i dati dalla Dropbox",en:"Load data from Dropbox automatically"},
+ "Nach oben":{fr:"Monter",it:"Sposta su",en:"Move up"},"Nach unten":{fr:"Descendre",it:"Sposta giù",en:"Move down"},"Reihenfolge mit ▲ ▼ ändern.":{fr:"Change l’ordre avec ▲ ▼.",it:"Cambia l’ordine con ▲ ▼.",en:"Change the order with ▲ ▼."},
  "Mein Konto":{it:"Il mio account",fr:"Mon compte",en:"My account"},
  "Angemeldet als":{it:"Connesso come",fr:"Connecté·e en tant que",en:"Signed in as"},
  "Passwort ändern":{it:"Cambia password",fr:"Changer le mot de passe",en:"Change password"},
@@ -185,7 +190,7 @@ Object.assign(I18N,{
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
 /* languages offered in the app; the main admin picks them (Firestore config/app.langs), cached for the sign-in screen */
-let APPLANGS=["de","fr","it","en"];window.UNIT3=false;window.BDAYPUB=false;window.SCRIPTON=true;window.TABSON=null;try{try{const t=JSON.parse(localStorage.getItem("apptabs")||"null");if(Array.isArray(t)&&t.length)window.TABSON=t}catch(_){}window.SCRIPTON=localStorage.getItem("appscript")!=="0";window.BDAYPUB=localStorage.getItem("appbdaypub")==="1";const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";window.UNIT3=localStorage.getItem("appunit3")==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
+let APPLANGS=["de","fr","it","en"];window.UNIT3=false;window.BDAYPUB=false;window.SCRIPTON=true;window.TABSON=null;window.TABORDER=null;window.AUTOUPD=true;try{try{const o=JSON.parse(localStorage.getItem("apptaborder")||"null");if(Array.isArray(o))window.TABORDER=o}catch(_){}window.AUTOUPD=localStorage.getItem("appauto")!=="0";try{const t=JSON.parse(localStorage.getItem("apptabs")||"null");if(Array.isArray(t)&&t.length)window.TABSON=t}catch(_){}window.SCRIPTON=localStorage.getItem("appscript")!=="0";window.BDAYPUB=localStorage.getItem("appbdaypub")==="1";const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";window.UNIT3=localStorage.getItem("appunit3")==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
 try{const x=JSON.parse(localStorage.getItem("applangs")||"null");if(Array.isArray(x)&&x.length)APPLANGS=x.filter(l=>LANGS.some(z=>z[0]===l))}catch(_){}
 function applyLangs(){
   if(!APPLANGS.length)APPLANGS=["de"];
@@ -198,7 +203,9 @@ async function loadLangs(){
     if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}
     const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
     const bp=d.exists()&&d.data().bdayPublic===true;if(window.BDAYPUB!==bp){window.BDAYPUB=bp;try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}render()}
+    const to=d.exists()&&Array.isArray(d.data().tabOrder)?d.data().tabOrder:null;if(JSON.stringify(window.TABORDER)!==JSON.stringify(to)){window.TABORDER=to;try{to?localStorage.setItem("apptaborder",JSON.stringify(to)):localStorage.removeItem("apptaborder")}catch(_){}render()}
     const tb=d.exists()&&Array.isArray(d.data().tabs)&&d.data().tabs.length?d.data().tabs:null;if(JSON.stringify(window.TABSON)!==JSON.stringify(tb)){window.TABSON=tb;try{tb?localStorage.setItem("apptabs",JSON.stringify(tb)):localStorage.removeItem("apptabs")}catch(_){}render()}
+    const au=d.exists()?d.data().autoUpdate!==false:true;if(window.AUTOUPD!==au){window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}}
     const so=d.exists()?d.data().script!==false:true;if(window.SCRIPTON!==so){window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}render()}
     const u3=d.exists()&&d.data().unit3===true;if(window.UNIT3!==u3){window.UNIT3=u3;try{localStorage.setItem("appunit3",u3?"1":"0")}catch(_){}render()}
     window.LOCSHEET=(d.exists()&&typeof d.data().locSheet==="string")?d.data().locSheet:"";
@@ -568,6 +575,10 @@ document.addEventListener("click",async e=>{const b=e.target.closest('[data-bk="
   BK.busy=true;BK.msg="";render();try{BK.msg=await bkDownload();BK.ok=true}catch(err){console.error(err);BK.msg=errText(err);BK.ok=false}BK.busy=false;render()});
 document.addEventListener("change",async e=>{const i=e.target.closest('[data-bk="up"]');if(!i||BK.busy||!isOwner())return;const f=i.files&&i.files[0];i.value="";if(!f)return;
   BK.busy=true;BK.msg="";render();try{const m=await bkRestore(f);if(m){BK.msg=m;BK.ok=!/fehlgeschlagen|échoué|non riuscit|failed/i.test(m)}}catch(err){console.error(err);BK.msg=err.message||String(err);BK.ok=false}BK.busy=false;render()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-tmv]");if(!b)return;e.preventDefault();const r=b.closest(".tbrow"),p=r&&r.parentNode;if(!p)return;
+  if(b.dataset.tmv==="up"&&r.previousElementSibling)p.insertBefore(r,r.previousElementSibling);
+  else if(b.dataset.tmv==="down"&&r.nextElementSibling)p.insertBefore(r.nextElementSibling,r);
+  b.focus()});
 VIEWS.admin=function(){
   if(!isAdmin())return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>60000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
@@ -591,9 +602,10 @@ VIEWS.admin=function(){
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
     '</div>'+
     '<details class="admins asetd" data-sec="appset"'+(SECS.appset?' open':'')+'><summary>'+L("Einstellungen der App")+'</summary><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
-    '<p class="ahint"><b>'+L("Bereiche")+'</b> – '+L("Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.")+'</p><div class="chk">'+[["plan","Schedule"],["dispo","Callsheet"],["loc","Locations"],["crew","Crew"],["script","Script"],["info","Info"]].map(([k,t])=>'<label class="ck"><input type="checkbox" name="tb" value="'+k+'"'+(!Array.isArray(window.TABSON)||window.TABSON.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
+    '<p class="ahint"><b>'+L("Bereiche")+'</b> – '+L("Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.")+' '+L("Reihenfolge mit ▲ ▼ ändern.")+'</p><div class="tbord">'+tabOrder().map(k=>[k,{plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",info:"Info"}[k]]).map(([k,t])=>'<div class="tbrow"><label class="ck"><input type="checkbox" name="tb" value="'+k+'"'+(!Array.isArray(window.TABSON)||window.TABSON.includes(k)?' checked':'')+'> '+t+'</label><span class="tbmv"><button type="button" data-tmv="up" aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-tmv="down" aria-label="'+esc(L("Nach unten"))+'">▼</button></span></div>').join("")+'</div>'+
     '<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
+    '<p class="ahint"><b>Dropbox</b> – '+L("Eingeschaltet werden Drehplan, Drehbuch, Crewliste, Callsheets und Motivliste jede Stunde automatisch neu geladen (nur gelesen).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="au"'+(window.AUTOUPD!==false?' checked':'')+'> '+L("Daten aus der Dropbox automatisch laden")+'</label></div>'+
     '<p class="ahint"><b>'+L("Drehbuch")+'</b> – '+L("Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="so"'+(window.SCRIPTON!==false?' checked':'')+'> '+L("Drehbuch anzeigen")+'</label></div>'+
     '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
@@ -617,13 +629,13 @@ document.addEventListener("submit",async e=>{
   const fl=e.target.closest('[data-adm="langs"]');
   if(fl){e.preventDefault();if(!isOwner())return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
-    const tb=[...fl.querySelectorAll('input[name=tb]:checked')].map(x=>x.value);
+    const tb=[...fl.querySelectorAll('input[name=tb]:checked')].map(x=>x.value),tord=[...fl.querySelectorAll('input[name=tb]')].map(x=>x.value);
     if(!tb.length){showMsg(L("Bitte mindestens einen Bereich wählen."),4000);return}
-    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked,u3=!!fl.querySelector('input[name=u3]').checked,bp=!!fl.querySelector('input[name=bp]').checked,so=!!fl.querySelector('input[name=so]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
+    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked,u3=!!fl.querySelector('input[name=u3]').checked,bp=!!fl.querySelector('input[name=bp]').checked,so=!!fl.querySelector('input[name=so]').checked,au=!!fl.querySelector('input[name=au]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
     if(mu&&!/^https:\/\/\S+$/.test(mu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
     const sh=String(fl.querySelector('input[name=sheet]').value||"").trim();
     if(sh&&!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(sh)){showMsg(L("Bitte einen Google-Sheets-Link eingeben."),4000);return}
-    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,locSheet:sh,script:so,tabs:tb},{merge:true});window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au},{merge:true});window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const f=e.target.closest('[data-adm="add"]');if(!f)return;e.preventDefault();
   const em=lc(f.em.value),nm=f.nm.value.trim();if(!/@/.test(em))return;
@@ -756,7 +768,9 @@ render();
   const b=$("#refresh");b.hidden=false;
   b.addEventListener("click",async()=>{
     if(b.classList.contains("spin"))return;b.classList.add("spin");
-    try{if(await load(true)){const c=lastCheck(S.meta);showMsg(L("Neueste Daten geladen.")+(c?" "+L("Dropbox zuletzt geprüft")+" "+fmtStamp(c)+".":""),5000)}}
+    try{SCRIPT=null;MEMO.clear();
+      if(await load(true)){const c=lastCheck(S.meta);render();showMsg(L("Neueste Daten geladen.")+(c?" "+L("Dropbox zuletzt geprüft")+" "+fmtStamp(c)+".":"")+(window.AUTOUPD!==false?" "+L("Die Daten werden jede Stunde automatisch aus der Dropbox geladen."):""),7000)}
+      else showMsg(L("Bitte zuerst anmelden."),5000)}
     catch(err){console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),6000)}
     setTimeout(()=>b.classList.remove("spin"),400);
   });
