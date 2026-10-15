@@ -71,6 +71,8 @@ body.no-u2 .pub,body.no-u2 button.uf{display:none!important}
 .chip.off .dd{color:var(--muted)}
 .chip.free{background:rgba(64,132,255,.18);border-color:#4f8cff}
 .chip.free .dd,.chip.free .lb,.chip.free .cw{color:#a9c8ff}
+.chip.trav{background:rgba(160,110,255,.18);border-color:#a06eff}
+.chip.trav .dd,.chip.trav .lb,.chip.trav .cw{color:#d2bcff}
 .chip[disabled]{cursor:default;color:inherit;opacity:1}
 .chip.today{border-color:var(--accent)}
 .chip[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -415,7 +417,7 @@ function itemHTML(it){
 }
 const padD=x=>String(x).replace(/^D(\d)$/,"D0$1");
 function pickDay(list){
-  list=(list||S.days).filter(d=>d.kind!=="off");
+  list=(list||S.days).filter(d=>d.kind!=="off"&&d.kind!=="travel");
   if(S.day&&list.some(d=>d.id===S.day))return;
   const t=todayISO();
   const next=list.find(d=>d.date>=t);
@@ -448,7 +450,7 @@ function dayNav(PD,isSel,attr,key,extra){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
     const ex=extra?extra(d):{cls:"",mark:""};
-    h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.date===t?" today":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"?' disabled aria-disabled="true"':'')+'>'+
+    h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.kind==="travel"?" trav":"")+(d.date===t?" today":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"||d.kind==="travel"?' disabled aria-disabled="true"':'')+'>'+
        '<div class="lb">'+esc(padD(lb))+'/'+WD[dt.getDay()].toUpperCase()+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
   }
   return h+'</div></div>';
@@ -696,7 +698,7 @@ function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   const t=todayISO(),PD=planDays();
   const by={};S.dispos.forEach(x=>by[x.date]=x);
-  const pick=PD.filter(d=>d.kind!=="off");
+  const pick=PD.filter(d=>d.kind!=="off"&&d.kind!=="travel");
   if(!S.dday||!pick.some(d=>d.date===S.dday)){
     S.dday=((pick.find(d=>d.date>=t)||pick[pick.length-1]||{}).date)||null;
   }
