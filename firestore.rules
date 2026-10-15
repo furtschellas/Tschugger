@@ -4,7 +4,7 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function verified() { return signedIn() && request.auth.token.email_verified == true; }
     function myEmail() { return request.auth.token.email.lower(); }
-    function isAdmin() { return verified() && myEmail() in ['furtschellas@gmail.com']; }
+    function isAdmin() { return verified() && myEmail() in ['furtschellas@gmail.com', 'stefan@bildroehre.ch']; }
     function isMember() {
       return signedIn()
         && exists(/databases/$(database)/documents/members/$(request.auth.uid))
