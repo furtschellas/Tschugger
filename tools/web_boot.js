@@ -956,9 +956,13 @@ function userInfo(r){
   const bits=[m.phone?"☎ "+m.phone:"",m.contactEmail&&m.contactEmail!==m.email?"✉ "+m.contactEmail:"",m.birthday?L("Geburtsdatum")+": "+m.birthday.split("-").reverse().join("."):"",g?L(g):"",dietText(m)].filter(Boolean);
   return bits.length?'<div class="uinf">'+bits.map(esc).join(" · ")+'</div>':"";
 }
-function editForm(r){
+/* role picker (owner): Benutzer:in, Admin or one of the custom roles */
+const roleOf=e=>{if(ADMINS.includes(e))return "";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
+const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).name||"");
+const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Benutzer:in")+'</option><option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>'+ADM.roles.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(x=>'<option value="'+esc(x.id)+'"'+(roleOf(r.email)===x.id?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join("")+'</select></label>';
+function editForm(r,withRole){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
-  return '<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
+  return (withRole&&isOwner()&&!ADMINS.includes(r.email)?'<div class="aerole">'+roleSel(r)+'</div>':'')+'<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
     (m?'<label>'+L("Vorname")+'<input name="fn" maxlength="60" value="'+v(m.firstName)+'"></label><label>'+L("Nachname")+'<input name="ln" maxlength="60" value="'+v(m.lastName)+'"></label>'+
        '<label>'+L("Sprache der App")+langSel("lg",m.lang||"de")+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" value="'+v(m.birthday)+'"></label><label>'+L("Geschlecht (optional)")+genderSel("gd",m.gender||"")+'</label>'+contactFields(m,"e")+
        '<label>'+L("Ernährung")+dietSel("edt",normDiet(m).diet)+'</label><label>'+L("Verträglichkeiten")+'</label>'+intolBoxes("eint",normDiet(m).intol)+'<label>'+L("Weitere Allergien (optional)")+'<input name="eal" maxlength="200" value="'+v(m.allergies)+'"></label>'
@@ -1008,7 +1012,7 @@ document.addEventListener("change",async e=>{const sl=e.target.closest("select[d
     if(v==="admin"){await F.setDoc(F.doc(db,"admins",em),{addedAt:F.serverTimestamp()});if(ADM.ur[em])await F.deleteDoc(F.doc(db,"userroles",em))}
     else{if(ADM.adm.includes(em))await F.deleteDoc(F.doc(db,"admins",em));if(v)await F.setDoc(F.doc(db,"userroles",em),{role:v,at:F.serverTimestamp()});else if(ADM.ur[em])await F.deleteDoc(F.doc(db,"userroles",em))}
     showMsg(L("Rolle gespeichert."),2500);await admLoad()}
-  catch(err){sl.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
+  catch(err){sl.disabled=false;console.error(err);showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),9000);render()}});
 /* user list: one compact card per person, filter chips with counts, actions folded away */
 const initials=n=>String(n||"?").split(/[\s@._-]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
 function userList(rows,vis,o){
@@ -1095,9 +1099,6 @@ VIEWS.admin=function(){
   if(ADM.sub==="roles")return h+rolesSec()+'</section>';
   if(ADM.sub==="bk")return h+bkSec().replace(' data-sec="backup"',' data-sec="backup" open')+'</section>';
   const cInv=can("users.invite"),cView=can("users.view")||can("users.edit"),cEd=can("users.edit");
-  const roleOf=e=>{if(ADMINS.includes(e))return "";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
-  const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).name||"");
-  const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Benutzer:in")+'</option><option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>'+ADM.roles.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(x=>'<option value="'+esc(x.id)+'"'+(roleOf(r.email)===x.id?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join("")+'</select></label>';
   h+=(can("users.requests")?reqSec():'')+admSec+(!cInv?'':
     '<div class="admins"><h3>'+L("Benutzer:innen einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
@@ -1275,7 +1276,7 @@ window.crewExtra=function(p){
   /* admins edit the person's user data right here (same form as in App-Verwaltung) */
   const ue=m?m.email:lc(p.email),uinv=ue&&ADM.inv.some(i=>i.id===ue),canEd=can("users.edit")&&(m||uinv)&&(isOwner()||!ADMINS.includes(ue));
   const edBtn=canEd?'<button type="button" class="cinv ced" data-ced="'+esc(ue)+'" aria-expanded="'+(ADM.cedit===ue)+'">✎ '+esc(L(ADM.cedit===ue?"Schliessen":"Benutzerdaten bearbeiten"))+'</button>':"";
-  const edForm=canEd&&ADM.cedit===ue?editForm({email:ue,m,name:p.name,role:p.role}):"";
+  const edForm=canEd&&ADM.cedit===ue?editForm({email:ue,m,name:p.name,role:p.role},true):"";
   if(!(AV("food")||AV("bday")||ACC))return edBtn?'<div class="pinfo">'+edBtn+'</div>'+edForm:"";
   if(ACC){
     if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
