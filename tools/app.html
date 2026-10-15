@@ -818,6 +818,8 @@ function addToCalendar(key){
   catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}
 }
 function renderPrePro(one){PPPEOPLE=null;
+  /* admins: also use the app's user database (people not on the crew list); loads once, then re-renders */
+  try{if(typeof isAdmin==="function"&&isAdmin()&&typeof ADM!=="undefined"&&!ADM.loaded&&typeof ensureAdm==="function")ensureAdm()}catch(_){}
   const first=S.days.find(d=>d.kind==="shoot"),pm=(S.meta&&S.meta.prepro)||{};
   let h='<div class="dayhead"><div><div class="dtitle"><h2>Prep</h2><span class="pvb"><button class="pvbtn" data-ppo aria-pressed="'+!!S.ppo+'" aria-label="'+esc(L("Teilnehmende ein-/ausblenden"))+'" title="'+esc(L("Teilnehmende ein-/ausblenden"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.8.2 5 2 5 4.9"/></svg></button></span></div></div></div>';
   if(S.prepro.length){
