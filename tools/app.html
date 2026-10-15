@@ -550,6 +550,34 @@ html[data-theme="light"] :is(input:not([type=checkbox]):not([type=radio]),select
 .rbadges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.rbadge{font-size:11.5px;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--ink)}.rbadge.warn{background:color-mix(in srgb,#e5484d 16%,transparent)}
 .fpls{align-items:center;gap:6px}.fpls>.scbtn,.fpls>.fpl{height:28px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;line-height:1;margin:0;vertical-align:middle}.fpls>.scbtn{padding:0 12px;letter-spacing:.02em}.fpls>.fpl.scp{padding:0 11px;border-color:#e0457b66}.fpls>.fpl.blk{width:28px;padding:0}
 .sv-no-b .spf .fpls{display:none}
+/* ===== unified buttons: primary (filled), secondary (outline accent), neutral (outline), chips/toggles, small content pills, round icon buttons ===== */
+html body{--btn-r:999px;--btn-fw:600}
+html body :is(.acpage form,.acbox form,.aedit,.arolef,.aform,.alangs,form[data-af],form[data-adm]) button[type=submit],
+html body .gbtn:not(.sec),html body .a2b .pri{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 22px;border:0;border-radius:var(--btn-r);background:var(--accent);color:var(--accent-ink,#fff);font:inherit;font-size:15px;font-weight:var(--btn-fw);letter-spacing:.01em;cursor:pointer;text-decoration:none;box-shadow:0 1px 0 rgba(0,0,0,.04)}
+html body :is(.acpage form,.acbox form,.aedit,.arolef,.aform,.alangs,form[data-af],form[data-adm]) button[type=submit]:hover,html body .gbtn:not(.sec):hover,html body .a2b .pri:hover{filter:brightness(1.07)}
+html body :is(.pillbtn,.abtn,.sp-more,.setbar button,.bkb button,.bk .bkup,.a2b>button:not(.pri):not(.lnk):not(.xclose),.ppcl .gbtn.sec,.pinfo .cinv,.dsp-empty .pd){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 16px;border:1px solid var(--accent)!important;border-radius:var(--btn-r);background:transparent!important;color:var(--accent)!important;font:inherit;font-size:14px;font-weight:var(--btn-fw);cursor:pointer;text-decoration:none;box-shadow:none}
+html body :is(.pillbtn,.abtn,.sp-more,.setbar button,.bkb button,.bk .bkup,.a2b>button:not(.pri):not(.lnk):not(.xclose),.ppcl .gbtn.sec,.pinfo .cinv):hover{background:var(--accent)!important;color:var(--accent-ink,#fff)!important}
+html body .abtn,html body .sp-more{width:100%;border-style:solid}
+html body .pinfo .cinv{min-height:30px;padding:0 12px;font-size:12.5px}
+html body :is(.aacts button,.aacts a,.ubody .aacts .abtnl,.copy,.thm button,.rolesel select){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 14px;border:1px solid var(--rule);border-radius:var(--btn-r);background:transparent;color:var(--ink);font:inherit;font-size:13.5px;font-weight:500;cursor:pointer;text-decoration:none}
+html body .rolesel select{padding:0 12px}
+html body :is(.aacts button,.aacts a,.copy,.thm button):hover{border-color:var(--accent);color:var(--accent)}
+html body :is(.aacts,.ubody .aacts) .warn{color:#e5484d;border-color:color-mix(in srgb,#e5484d 50%,transparent)}
+html body :is(.aacts,.ubody .aacts) .warn:hover{background:#e5484d;color:#fff;border-color:#e5484d}
+html body .copy{min-height:26px;padding:0 10px;font-size:12px}
+html body :is(.smodes button,.ufil button,.asub button,.thm button){min-height:34px;padding:0 14px;border-radius:var(--btn-r);font-size:13.5px;font-weight:var(--btn-fw)}
+html body .asub{border-radius:22px}
+html body :is(.smodes,.ufil,.thm) button[aria-pressed="true"],html body .asub button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink,#fff)}
+html body .thm{display:flex;gap:8px}
+html body .uf{border-radius:var(--btn-r);min-height:36px}
+html body :is(.scbtn,.fpl,.pd){border-radius:var(--btn-r)}
+html body :is(.calbtn,.umore,.mailbtn,.a2box>.xclose){width:34px;height:34px;border-radius:50%;border:1px solid var(--rule);background:transparent;color:var(--accent);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+html body :is(.calbtn,.umore,.mailbtn,.a2box>.xclose):hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+html body .a2box>.xclose{color:var(--ink);font-size:20px;position:absolute}
+html body :is(.ppi,.mci) :is(.calbtn,.mailbtn){position:absolute}
+html body :is(button,a.pillbtn,.abtnl):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html body button:disabled{opacity:.5;cursor:default;filter:none}
+.spblk{margin:6px 0 8px}.sv-no-b .spblk{display:none}
 </style>
 
 <div class="wrap">
@@ -1360,7 +1388,7 @@ function scriptResults(){
   return cnt+'<ul class="sclist">'+vis.map(x=>{
     const hits=hitsOf(x);
     return '<li class="scard"><button class="scli" data-scene="'+esc(x.sc)+'"><span class="sclin">'+esc(x.sc)+'</span><span class="sclih">'+esc(spHead(x))+'</span>'+spTod(x)+
-      (hits.length?'':'<span class="sclid"><i>'+esc(L("nicht geplant"))+'</i></span>')+(rIds.length?roleBadges(x.sc,rIds):'')+(terms.length&&!rIds.length?(snippet(x.text,terms)||'<span class="sclsn">'+esc(L("Treffer im Drehplan (Motiv, Cast oder Beschreibung)"))+'</span>'):'')+'</button>'+factsHTML(hits)+'</li>';
+      (hits.length?'':'<span class="sclid"><i>'+esc(L("nicht geplant"))+'</i></span>')+(rIds.length?roleBadges(x.sc,rIds):'')+(terms.length&&!rIds.length?(snippet(x.text,terms)||'<span class="sclsn">'+esc(L("Treffer im Drehplan (Motiv, Cast oder Beschreibung)"))+'</span>'):'')+'</button>'+(hits.length?factsHTML(hits):blkRow(x.sc))+'</li>';
   }).join("")+'</ul>'+(rows.length>vis.length?'<button class="sp-more" data-sqmore>'+esc(L("Weitere Szenen anzeigen"))+' ('+(rows.length-vis.length)+')</button>':'');
 }
 function fmtStamp(iso){try{return new Date(iso).toLocaleString(LOC[LANG],{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}catch(_){return ""}}
@@ -1545,7 +1573,9 @@ function spTod(x){
   const lbl={d:"Tag",mo:"Tag",ev:"Abend",n:"Nacht"}[k];
   return '<span class="sptod sptod-'+k+'">'+esc(L(lbl))+'</span>';
 }
-function spPage(x,ctx,list,reqSc){return '<div class="sp-scene">'+sceneFacts(reqSc||x.sc,x,list)+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+esc(spHead(x))+'</span><span class="spr">'+spTod(x)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
+/* blocking of a script scene that is not (yet) in the schedule */
+function blkRow(sc){const h=fpLinks([],blkFor(sc));return h?'<div class="spblk">'+h+'</div>':''}
+function spPage(x,ctx,list,reqSc){const f=sceneFacts(reqSc||x.sc,x,list);return '<div class="sp-scene">'+(f||blkRow(x.sc))+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+esc(spHead(x))+'</span><span class="spr">'+spTod(x)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
 function spMore(dir,list,j){
   const y=list[j];if(!y)return'';
   return '<button type="button" class="sp-more" data-spmore="'+dir+'" data-spi="'+j+'">'+(dir==="prev"?'▲ ':'')+esc(L(dir==="prev"?"Vorherige Szene lesen":"Folgende Szene lesen"))+' · '+esc(y.sc)+(dir==="next"?' ▼':'')+'</button>';
