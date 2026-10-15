@@ -93,3 +93,12 @@
 .admv .vcall b{font-size:12px;font-weight:700;letter-spacing:.03em}
 .pinfo .ok{background:rgba(127,224,168,.10);color:#7fe0a8;border:1px solid rgba(127,224,168,.3)}
 .pinfo .off{background:rgba(255,138,138,.15);color:#ff8a8a}
+.asec{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;margin:10px 0;font-size:14px;line-height:1.5}
+.asec>summary{cursor:pointer;padding:10px 12px;font-weight:600;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center}
+.asec>summary::-webkit-details-marker{display:none}
+.asec>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 10px;transition:transform .15s}
+.asec[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+.asec .asb{padding:0 12px 10px}
+.asec .asb span{color:var(--gold)}
+.asec.bcal .asb .bl span{color:var(--gold)}
+.asec.cater,.asec.bcal{padding:0}
