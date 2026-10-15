@@ -1,7 +1,5 @@
 {
- "state": "ok",
- "msg": "Läuft",
- "updatedAt": "2026-10-15T23:22:31Z",
- "version": "Sched 261014 v2",
- "at": "2026-10-15T23:24:23Z"
+ "state": "error",
+ "msg": "TypeError: 'bytes' object does not support item assignment",
+ "at": "2026-10-15T23:49:03Z"
 }
