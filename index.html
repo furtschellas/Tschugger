@@ -477,10 +477,14 @@ html[data-theme="light"] .scbar .uf.u3[aria-pressed="true"],html[data-theme="lig
 .drow .pub.dpub{border:0;padding:0;margin-left:auto}
 .dayhead>div,.dsp-head>div{flex:1;min-width:0}
 .dsp-units{margin-top:12px}
+.pvb .pub.dpub{display:inline-flex;gap:inherit;border:0;padding:0}
+.pvsep{width:1px;height:20px;background:var(--rule);margin:0 2px;align-self:center}
 @media (max-width:374px){:root{--circ:28px}}
 @media (max-width:380px){.dtitle{gap:6px}.dtitle .dlink{padding:4px 8px;font-size:12px}}
 /* Knopfleisten passen sich dynamisch der Breite an (fitRows verkleinert --circ pro Leiste, bis alles auf eine Linie passt) */
-.svb .scnnav,.svb .scuf{display:inline-flex}
+.svb .scuf{display:inline-flex}
+.scnhd>.scnnav{display:inline-flex;gap:6px;margin:0 auto 0 10px}
+.scnhd>.scnnav .pvbtn{width:var(--circ);height:var(--circ)}
 .csbtn{font:700 11.5px/1 var(--f-body)!important;letter-spacing:.02em;border-color:var(--accent)!important;color:var(--accent)!important}
 .csbtn.on{background:var(--accent)!important;color:var(--accent-ink)!important}
 /* ---------- feinschliff ---------- */
@@ -807,7 +811,7 @@ function svToggles(){
 }
 function svApply(){document.querySelectorAll(".svwrap").forEach(w=>w.className="svwrap "+svClasses());document.querySelectorAll(".svwrap [data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const s=document.getElementById("scn");if(!s)return;s.className="scrn "+svClasses();s.querySelectorAll("[data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const t=s.querySelector("[data-spt]");if(t)t.setAttribute("aria-pressed",String(spTheme()==="light"))}
 const PVLBL={i:"Info",d:"Szenenbeschrieb",a:"Adresse",c:"Cast"};
-function pvButtons(pre){return '<span class="pvb">'+(pre||'')+["i","d","c","a"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" aria-label="'+esc(L(PVLBL[k]))+'" title="'+esc(L(PVLBL[k]))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+'</span>'}
+function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","a"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" aria-label="'+esc(L(PVLBL[k]))+'" title="'+esc(L(PVLBL[k]))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+(post?'<span class="pvsep"></span>'+post:'')+'</span>'}
 function itemHTML(it){
   if(!it.sc){
     return '<li class="row ev"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+'</div></li>';
@@ -875,7 +879,7 @@ function renderPlan(){
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const d=S.days.find(x=>x.id===S.day);
   const hasD=S.dispos.some(x=>x.date===d.date);
-  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('<button class="pvbtn csbtn'+(hasD?' on':'')+'" data-todispo="'+esc(d.date)+'" aria-label="'+esc(L('Callsheet'))+'" title="'+esc(L(hasD?'Callsheet':'Callsheet folgt'))+'">CS</button>'):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+UNITBAR+'</div></div>';
+  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('<button class="pvbtn csbtn'+(hasD?' on':'')+'" data-todispo="'+esc(d.date)+'" aria-label="'+esc(L('Callsheet'))+'" title="'+esc(L(hasD?'Callsheet':'Callsheet folgt'))+'">CS</button>',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
   if(d.kind==="shoot"){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
     if(d.extras)f.push([L("Komparsen"),d.extras]);
@@ -1393,7 +1397,7 @@ let SCN_SEQ=0;
 async function openScene(sc){
   if(window.SCRIPTON===false)return;
   const seq=++SCN_SEQ,s=sceneSheet();document.body.style.overflow="hidden";s.hidden=false;
-  const shell=(b,nav)=>'<div class="scnbox"><div class="scnhd"><b>'+esc(L("Drehbuch"))+'</b><button class="scnx" data-scnclose aria-label="'+esc(L("Schliessen"))+'">×</button>'+svButtons(nav)+'</div>'+b+'</div>';
+  const shell=(b,nav)=>'<div class="scnbox"><div class="scnhd"><b>'+esc(L("Drehbuch"))+'</b>'+(nav||'')+'<button class="scnx" data-scnclose aria-label="'+esc(L("Schliessen"))+'">×</button>'+svButtons()+'</div>'+b+'</div>';
   s.className="scrn "+svClasses();
   s.innerHTML=shell('<p class="scnmsg">'+esc(L("Lade"))+' …</p>');
   try{
@@ -1402,8 +1406,8 @@ async function openScene(sc){
     if(x)store("lastsc",x.sc);
     if(!x){s.innerHTML=shell('<p class="scnmsg">'+esc(L("Diese Szene ist im Drehbuch nicht gefunden worden."))+'</p>');return}
     const i=list.indexOf(x),pv=list[i-1],nx=list[i+1];
-    const nav='<span class="scnnav">'+'<button class="pvbtn scnp" '+(pv?'data-scene="'+esc(pv.sc)+'" aria-label="'+esc(L("Vorherige Szene"))+' '+esc(pv.sc)+'" title="'+esc(L("Vorherige Szene"))+' '+esc(pv.sc)+'"':'disabled aria-hidden="true"')+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg></button>'+
-      '<button class="pvbtn scnp" '+(nx?'data-scene="'+esc(nx.sc)+'" aria-label="'+esc(L("Folgende Szene"))+' '+esc(nx.sc)+'" title="'+esc(L("Folgende Szene"))+' '+esc(nx.sc)+'"':'disabled aria-hidden="true"')+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg></button></span>';
+    const nav='<span class="scnnav">'+'<button class="pvbtn scnp" '+(pv?'data-scene="'+esc(pv.sc)+'" aria-label="'+esc(L("Vorherige Szene"))+' '+esc(pv.sc)+'" title="'+esc(L("Vorherige Szene"))+' '+esc(pv.sc)+'"':'disabled aria-hidden="true"')+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14.5l6-6 6 6"/></svg></button>'+
+      '<button class="pvbtn scnp" '+(nx?'data-scene="'+esc(nx.sc)+'" aria-label="'+esc(L("Folgende Szene"))+' '+esc(nx.sc)+'" title="'+esc(L("Folgende Szene"))+' '+esc(nx.sc)+'"':'disabled aria-hidden="true"')+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg></button></span>';
     s.innerHTML=shell('<div class="scnscroll">'+spMore("prev",list,i-1)+'<div class="sp-pages">'+spPage(x,"",list,sc)+'</div>'+spMore("next",list,i+1)+'</div>',nav);
     s.querySelector(".scnscroll").scrollTop=0;try{fitRows(s)}catch(_){}
   }catch(err){console.error(err);if(seq===SCN_SEQ&&!s.hidden)s.innerHTML=shell('<p class="scnmsg">'+esc(L("Drehbuch konnte nicht geladen werden."))+'</p>')}
@@ -2362,7 +2366,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="1289928b76";
+const APP_VER="ceddc88b3d";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
