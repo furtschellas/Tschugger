@@ -1,11 +1,7 @@
 {
- "state": "setup",
- "msg": "Noch nicht eingerichtet",
- "missing": [
-  "CREW_KEY",
-  "ANTHROPIC_API_KEY",
-  "DROPBOX_APP_KEY",
-  "DROPBOX_REFRESH_TOKEN"
- ],
- "at": "2026-10-15T16:26:36Z"
+ "state": "ok",
+ "msg": "Läuft",
+ "updatedAt": "2026-10-15T17:19:36Z",
+ "version": "Sched 261014 v2",
+ "at": "2026-10-15T17:23:46Z"
 }
