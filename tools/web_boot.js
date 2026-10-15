@@ -33,13 +33,13 @@ Object.assign(I18N,{
  "Diese E-Mail-Adresse ist nicht für die Crew-App freigeschaltet.":{fr:"Cette adresse e-mail n’est pas autorisée pour l’app de l’équipe.",it:"Questo indirizzo e-mail non è autorizzato per l’app della crew.",en:"This email address is not authorised for the crew app."},
  "Bitte melde dich ab und wieder an – mit der E-Mail-Adresse, die auf der Crewliste steht. Diese ist bereits freigeschaltet. Bei Google: das Google-Konto mit dieser Adresse wählen. Stimmt die Adresse auf der Crewliste nicht, melde dich bei der Produktion.":{fr:"Déconnecte-toi puis reconnecte-toi avec l’adresse e-mail qui figure sur la liste de l’équipe. Elle est déjà autorisée. Avec Google : choisis le compte Google qui a cette adresse. Si l’adresse sur la liste n’est pas correcte, contacte la production.",it:"Esci e accedi di nuovo con l’indirizzo e-mail che figura nella lista crew. È già autorizzato. Con Google: scegli l’account Google con questo indirizzo. Se l’indirizzo nella lista non è corretto, contatta la produzione.",en:"Please sign out and sign in again with the email address on the crew list. It is already authorised. With Google: choose the Google account with that address. If the address on the crew list is wrong, contact the production."},
  "Abmelden und mit Crewliste-Adresse anmelden":{fr:"Se déconnecter et utiliser l’adresse de la liste",it:"Esci e accedi con l’indirizzo della lista",en:"Sign out and use the crew-list address"},
- "Zugang beim Hauptadministrator anfragen":{fr:"Demander l’accès à l’administrateur principal",it:"Chiedi l’accesso all’amministratore principale",en:"Request access from the main admin"},
+ "Zugang bei der Produktion anfragen":{fr:"Demander l’accès à la production",it:"Chiedi l’accesso alla produzione",en:"Request access from the production"},
  "Vor- und Nachname":{fr:"Prénom et nom",it:"Nome e cognome",en:"First and last name"},
  "Funktion / Department":{fr:"Fonction / département",it:"Funzione / reparto",en:"Job / department"},
  "Nachricht (optional)":{fr:"Message (facultatif)",it:"Messaggio (facoltativo)",en:"Message (optional)"},
  "Anfrage senden":{fr:"Envoyer la demande",it:"Invia richiesta",en:"Send request"},
  "Bitte Vor- und Nachname angeben.":{fr:"Indique ton prénom et ton nom.",it:"Indica nome e cognome.",en:"Please enter your first and last name."},
- "Anfrage gesendet. Du bekommst Zugang, sobald der Hauptadministrator sie freigibt – danach hier auf «Aktualisieren» tippen.":{fr:"Demande envoyée. Tu auras accès dès que l’administrateur principal l’aura validée – touche ensuite « Actualiser » ici.",it:"Richiesta inviata. Avrai accesso appena l’amministratore principale la approva – poi tocca «Aggiorna» qui.",en:"Request sent. You get access as soon as the main admin approves it – then tap “Refresh” here."},
+ "Anfrage gesendet. Du bekommst Zugang, sobald die Produktion sie freigibt – du erhältst dann eine E-Mail, oder tippe hier auf «Aktualisieren».":{fr:"Demande envoyée. Tu auras accès dès que la production l’aura validée – tu recevras alors un e-mail, ou touche « Actualiser » ici.",it:"Richiesta inviata. Avrai accesso appena la produzione la approva – riceverai un’e-mail, oppure tocca «Aggiorna» qui.",en:"Request sent. You get access as soon as the production approves it – you will get an e-mail, or tap “Refresh” here."},
  "Zugangsanfragen":{fr:"Demandes d’accès",it:"Richieste di accesso",en:"Access requests"},
  "Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».":{fr:"Ces personnes ne sont pas sur la liste et demandent l’accès. « Autoriser » les invite ; elles touchent ensuite « Actualiser ».",it:"Queste persone non sono nella lista e chiedono l’accesso. «Autorizza» le invita; poi toccano «Aggiorna».",en:"These people are not on the list and ask for access. “Approve” invites them; they then tap “Refresh”."},
  "Freischalten":{fr:"Autoriser",it:"Autorizza",en:"Approve"},
@@ -418,8 +418,8 @@ async function onGateSubmit(e){
 /* ---- access request: someone not on the list asks the main admin for access ---- */
 let REQ={sent:false,err:""};
 function reqBox(){
-  if(REQ.sent)return '<p class="gok">'+L("Anfrage gesendet. Du bekommst Zugang, sobald der Hauptadministrator sie freigibt – danach hier auf «Aktualisieren» tippen.")+'</p>';
-  return '<details class="greq"><summary>'+L("Zugang beim Hauptadministrator anfragen")+'</summary>'+
+  if(REQ.sent)return '<p class="gok">'+L("Anfrage gesendet. Du bekommst Zugang, sobald die Produktion sie freigibt – du erhältst dann eine E-Mail, oder tippe hier auf «Aktualisieren».")+'</p>';
+  return '<details class="greq"><summary>'+L("Zugang bei der Produktion anfragen")+'</summary>'+
     '<label for="rqn">'+L("Vor- und Nachname")+'</label><input id="rqn" maxlength="80" autocomplete="name">'+
     '<label for="rqf">'+L("Funktion / Department")+'</label><input id="rqf" maxlength="80">'+
     '<label for="rqt">'+L("Nachricht (optional)")+'</label><textarea id="rqt" maxlength="280" rows="2"></textarea>'+
