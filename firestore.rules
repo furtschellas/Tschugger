@@ -52,13 +52,13 @@ service cloud.firestore {
       allow get: if verified() && myEmail() == email;
     }
 
-    // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren und entfernen kann nur der Haupt-Admin
-    // Ansichts-Einstellungen pro Benutzer (Thema, Anzeige-Knöpfe, Units)
+    // Ansichts-Einstellungen pro Benutzer (Thema, Anzeige-Knöpfe, Units): jede Person nur ihre eigenen
     match /prefs/{uid} {
       allow get, delete: if signedIn() && request.auth.uid == uid;
       allow create, update: if signedIn() && request.auth.uid == uid && request.resource.data.size() <= 12;
     }
 
+    // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren und entfernen kann nur der Haupt-Admin
     match /members/{uid} {
       allow read: if isAdmin();
       // der Haupt-Admin selbst kann nicht gesperrt oder gelöscht werden
