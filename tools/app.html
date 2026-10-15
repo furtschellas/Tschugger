@@ -559,8 +559,8 @@ html body :is(.pillbtn,.abtn,.sp-more,.setbar button,.bkb button,.bk .bkup,.a2b>
 html body :is(.pillbtn,.abtn,.sp-more,.setbar button,.bkb button,.bk .bkup,.a2b>button:not(.pri):not(.lnk):not(.xclose),.ppcl .gbtn.sec,.pinfo .cinv):hover{background:var(--accent)!important;color:var(--accent-ink,#fff)!important}
 html body .abtn,html body .sp-more{width:100%;border-style:solid}
 html body .pinfo .cinv{min-height:30px;padding:0 12px;font-size:12.5px}
-html body :is(.aacts button,.aacts a,.ubody .aacts .abtnl,.copy,.thm button,.rolesel select){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 14px;border:1px solid var(--rule);border-radius:var(--btn-r);background:transparent;color:var(--ink);font:inherit;font-size:13.5px;font-weight:500;cursor:pointer;text-decoration:none}
-html body .rolesel select{padding:0 12px}
+html body :is(.aacts button,.aacts a,.ubody .aacts .abtnl,.copy,.thm button){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 14px;border:1px solid var(--rule);border-radius:var(--btn-r);background:transparent;color:var(--ink);font:inherit;font-size:13.5px;font-weight:500;cursor:pointer;text-decoration:none}
+
 html body :is(.aacts button,.aacts a,.copy,.thm button):hover{border-color:var(--accent);color:var(--accent)}
 html body :is(.aacts,.ubody .aacts) .warn{color:#e5484d;border-color:color-mix(in srgb,#e5484d 50%,transparent)}
 html body :is(.aacts,.ubody .aacts) .warn:hover{background:#e5484d;color:#fff;border-color:#e5484d}
@@ -601,6 +601,9 @@ html body .smodes{justify-content:center;flex-wrap:wrap;overflow:visible}
 .galgrid.gs{grid-template-columns:repeat(auto-fill,minmax(min(30%,120px),1fr))}.galgrid.gm{grid-template-columns:repeat(auto-fill,minmax(min(46%,220px),1fr))}.galgrid.gl{grid-template-columns:1fr}.galgrid.gl .galth{aspect-ratio:auto}.galgrid.gl .galth img{height:auto;object-fit:contain;max-height:80dvh;background:#000}
 .galgrid.glist{grid-template-columns:1fr;gap:6px}.galgrid.glist .galth{aspect-ratio:auto;display:flex;align-items:center;gap:12px;padding:6px;text-align:left;color:var(--ink);font:inherit}.galgrid.glist .galth img{width:96px;height:64px;flex:none;border-radius:6px}.galgrid.glist .galplay{left:40px;bottom:auto;top:23px;width:24px;height:24px;font-size:10px}.galname{font-size:13px;overflow-wrap:anywhere}
 .galstage video{max-width:100%;max-height:calc(100dvh - 190px);display:block;background:#000}.galload{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:12.5px;color:#fff;background:rgba(0,0,0,.6);padding:4px 10px;border-radius:99px}
+html body select{color-scheme:dark}html[data-theme="light"] body select{color-scheme:light}
+html body select option,html body select optgroup{background-color:var(--sheet);color:var(--ink)}
+html body .rolesel{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px;color:var(--muted)}html body .rolesel select{flex:1;min-width:0;max-width:340px;min-height:40px;padding:0 36px 0 14px;border-radius:12px;border:1px solid var(--accent);background:var(--sheet) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23e0457b' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;color:var(--ink);font:inherit;font-size:15px;font-weight:600;appearance:none;-webkit-appearance:none;cursor:pointer}
 </style>
 
 <div class="wrap">
