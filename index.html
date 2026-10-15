@@ -917,7 +917,8 @@ Object.assign(I18N,{
  "So geht's:":{fr:"Comment faire :",en:"How to:"},
  "1. Browser-Menü ⋮ öffnen":{fr:"1. Ouvre le menu ⋮ du navigateur",en:"1. Open the browser menu ⋮"},
  "2. «Zum Startbildschirm hinzufügen» oder «App installieren» wählen":{fr:"2. Choisis « Ajouter à l’écran d’accueil » ou « Installer l’app »",en:"2. Choose “Add to Home screen” or “Install app”"},
- "Fertig":{fr:"OK",en:"Done"}
+ "Fertig":{fr:"OK",en:"Done"},
+ "Danach die App vom Startbildschirm öffnen und dort einmal anmelden.":{fr:"Ouvre ensuite l’app depuis l’écran d’accueil et connecte-toi une fois.",en:"Then open the app from the home screen and sign in there once."}
 });
 const A2HS_KEY="a2hs:v1";let DEFERRED=null;
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();DEFERRED=e});
@@ -953,7 +954,7 @@ function showA2hs(steps){
   const share='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg>';
   const body=steps
     ?(isIOS()
-      ?'<p class="a2t">'+L("So geht's auf dem iPhone:")+'</p><ol class="a2steps"><li>'+L("1. Unten auf Teilen tippen").replace(/^1\. /,"")+' '+share+'</li><li>'+L("2. «Zum Home-Bildschirm» wählen").replace(/^2\. /,"")+'</li><li>'+L("3. Oben rechts «Hinzufügen» tippen").replace(/^3\. /,"")+'</li></ol><div class="a2b"><button class="pri" data-a2="ok">'+L("Fertig")+'</button></div>'
+      ?'<p class="a2t">'+L("So geht's auf dem iPhone:")+'</p><ol class="a2steps"><li>'+L("1. Unten auf Teilen tippen").replace(/^1\. /,"")+' '+share+'</li><li>'+L("2. «Zum Home-Bildschirm» wählen").replace(/^2\. /,"")+'</li><li>'+L("3. Oben rechts «Hinzufügen» tippen").replace(/^3\. /,"")+'</li></ol><p>'+L("Danach die App vom Startbildschirm öffnen und dort einmal anmelden.")+'</p><div class="a2b"><button class="pri" data-a2="ok">'+L("Fertig")+'</button></div>'
       :'<p class="a2t">'+L("So geht's:")+'</p><ol class="a2steps"><li>'+L("1. Browser-Menü ⋮ öffnen").replace(/^1\. /,"")+'</li><li>'+L("2. «Zum Startbildschirm hinzufügen» oder «App installieren» wählen").replace(/^2\. /,"")+'</li></ol><div class="a2b"><button class="pri" data-a2="ok">'+L("Fertig")+'</button></div>')
     :'<p>'+L("Dann öffnest du die Crew-App wie eine normale App, ohne Link.")+'</p><div class="a2b"><button class="pri" data-a2="yes">'+L("Ja, hinzufügen")+'</button><button data-a2="later">'+L("Später")+'</button><button class="lnk" data-a2="done">'+L("Ist schon drauf")+'</button></div>';
   s.innerHTML='<div class="a2box"><img src="icon-192.png" alt="" width="56" height="56"><h3>'+L("Zum Startbildschirm hinzufügen?")+'</h3>'+body+'</div>';
@@ -1011,7 +1012,8 @@ Object.assign(I18N,{
  "Mit Google anmelden":{fr:"Se connecter avec Google",en:"Sign in with Google"},
  "oder":{fr:"ou",en:"or"},
  "Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.":{fr:"Tu es connecté·e avec Google. Mot de passe et adresse se gèrent dans ton compte Google.",en:"You are signed in with Google. Manage password and address in your Google account."},
- "Google-Anmeldung abgebrochen.":{fr:"Connexion Google annulée.",en:"Google sign-in cancelled."}
+ "Google-Anmeldung abgebrochen.":{fr:"Connexion Google annulée.",en:"Google sign-in cancelled."},
+ "Offline – du siehst den zuletzt geladenen Stand.":{fr:"Hors ligne – tu vois les dernières données chargées.",en:"Offline – you are seeing the last loaded data."}
 });
 let FB=null,ME=null,MEMBER=null,DATAKEY=null,LASTSTAMP=null;
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -1059,6 +1061,7 @@ function loadErr(err){
   else why=m;
   return L("Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen.")+" ["+why+"]";
 }
+const isOffline=err=>!navigator.onLine||/unavailable|network|offline|failed to fetch|load failed/i.test(((err&&err.code)||"")+" "+((err&&err.message)||""));
 /* ---- membership: invited addresses join once (members/{uid}); blocked = active:false ---- */
 async function checkMember(){
   const {F,db}=await fb();const u=ME;
@@ -1092,7 +1095,7 @@ function gateEl(){
     g.addEventListener("click",onGateClick);}
   return g;
 }
-function GBTN(){return '<button type="button" class="gbtn ggoogle" data-gact="google"><svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>'+L("Mit Google anmelden")+'</button><div class="gor"><span>'+L("oder")+'</span></div>'}
+function GBTN(){if(isIOS()&&isStandalone())return '';return '<button type="button" class="gbtn ggoogle" data-gact="google"><svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>'+L("Mit Google anmelden")+'</button><div class="gor"><span>'+L("oder")+'</span></div>'}
 function showGate(mode,msg,isErr){
   AUTHMODE=mode||AUTHMODE;const g=gateEl();
   const em=ME?esc(ME.email):(g.querySelector("#gem")?esc(g.querySelector("#gem").value):"");
@@ -1106,11 +1109,16 @@ function showGate(mode,msg,isErr){
   else if(AUTHMODE==="verify")f='<form class="gbox" data-f="verify">'+head+'<p class="gtitle">'+L("Bitte bestätige zuerst deine E-Mail-Adresse.")+'</p><p class="ghint">'+L("Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.")+'</p><p class="ghint"><b>'+em+'</b></p><button type="submit">'+L("Ich habe bestätigt")+'</button>'+note+'<button type="button" class="glink" data-gact="resend">'+L("Mail nochmals senden")+'</button><button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="denied"||AUTHMODE==="blocked")f='<div class="gbox">'+head+'<p class="gtitle">'+L("Kein Zugang")+'</p><p class="ghint">'+(AUTHMODE==="blocked"?L("Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion."):L("Deine Adresse ist (noch) nicht für die Crew-App freigeschaltet. Bitte melde dich bei der Produktion."))+'</p><p class="ghint"><b>'+em+'</b></p><button type="button" class="gbtn" data-gact="retry">'+L("Aktualisieren")+'</button><button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</div>';
   else if(AUTHMODE==="wait")f='<div class="gbox">'+head+'<p class="ghint">'+L("Bitte warten …")+'</p></div>';
+  verifyPoll(AUTHMODE==="verify");
   g.innerHTML=f;g.querySelectorAll("[data-glang]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.glang===LANG));
   g.hidden=false;document.body.style.overflow="hidden";
   const first=g.querySelector("input:not([value]),input[value='']")||g.querySelector("#gpw");if(first&&AUTHMODE!=="wait")setTimeout(()=>first.focus(),50);
 }
-function hideGate(){const g=document.getElementById("gate");if(g){g.hidden=true;g.innerHTML=""}document.body.style.overflow=""}
+let VERIFYT=null;
+function verifyPoll(on){clearInterval(VERIFYT);VERIFYT=null;if(!on)return;
+  VERIFYT=setInterval(async()=>{try{const {auth}=await fb();const u=auth.currentUser;if(!u){verifyPoll(false);return}
+    await u.reload();if(auth.currentUser.emailVerified){verifyPoll(false);await auth.currentUser.getIdToken(true);afterSignIn(auth.currentUser)}}catch(_){}},5000)}
+function hideGate(){verifyPoll(false);const g=document.getElementById("gate");if(g){g.hidden=true;g.innerHTML=""}document.body.style.overflow=""}
 function gateMsg(t,isErr){const p=document.querySelector("#gate .gerr,#gate .gok");if(p){p.className=isErr?"gerr":"gok";p.textContent=t}}
 async function onGateSubmit(e){
   e.preventDefault();const f=e.target;const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;gateMsg("",true);
@@ -1148,10 +1156,12 @@ async function onGateClick(e){
 async function afterSignIn(u){
   ME=u;
   if(!u.emailVerified){showGate("verify");return}
-  let st;try{st=await checkMember()}catch(err){console.error(err);showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
+  let st;try{st=await checkMember()}catch(err){console.error(err);
+    if(isOffline(err)&&S.days.length){hideGate();acctButton(true);showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
+    showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
   hideGate();acctButton(true);
-  try{await load(true)}catch(err){console.error(err);showMsg(loadErr(err),15000)}
+  try{await load(true)}catch(err){console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),isOffline(err)?6000:15000)}
   if(window.__justSignedIn){window.__justSignedIn=false;maybeOfferA2hs(true)}else maybeOfferA2hs(false);
 }
 /* ---- account sheet: own password, own email, sign out; admin entry ---- */
@@ -1218,7 +1228,7 @@ VIEWS.admin=function(){
   const st=r=>r.m?(r.m.active===true?'<span class="ust ok">aktiv</span>':'<span class="ust off">gesperrt</span>'):'<span class="ust wait">eingeladen</span>';
   const site=location.origin+location.pathname;
   const mail=r=>"mailto:"+encodeURIComponent(r.email)+"?subject="+encodeURIComponent("TSCHUGGER Tigerblood – Crew-App")+"&body="+encodeURIComponent("Hallo"+(r.name?" "+r.name.split(" ")[0]:"")+"\n\nDu bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet:\n"+site+"\n\nBeim ersten Mal auf «Erstes Mal hier? Konto erstellen» tippen, mit dieser Adresse ("+r.email+") ein eigenes Passwort wählen und die Bestätigungsmail antippen.\n\nBis bald im Wallis!");
-  let h='<section class="adm"><h2 class="dh">Benutzer verwalten</h2><p class="ahint">Nur eingeladene Adressen können ein Konto erstellen. Gesperrte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.</p>'+
+  let h='<section class="adm"><h2 class="dh">Benutzer verwalten</h2><p class="ahint">Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="E-Mail-Adresse" required><input name="nm" type="text" placeholder="Name (optional)"><button type="submit">Einladen</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">Alle '+newCrew.length+' Adressen aus der Crewliste einladen</button>':'')+
     '<div class="astats">'+rows.length+' Benutzer · '+rows.filter(r=>r.m&&r.m.active===true).length+' aktiv · '+rows.filter(r=>!r.m).length+' noch nicht registriert</div>'+
@@ -1226,7 +1236,7 @@ VIEWS.admin=function(){
     '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span></div><div class="aacts">'+
       (!r.m?'<a href="'+mail(r)+'">Einladungsmail</a>':'')+
       (r.m?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">Sperren</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">Entsperren</button>'):'')+
-      (r.inv?'<button data-adm="uninvite" data-em="'+esc(r.email)+'">Einladung löschen</button>':'')+
+      (r.m?'<button data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">Entfernen</button>':(r.inv?'<button data-adm="uninvite" data-em="'+esc(r.email)+'">Einladung löschen</button>':''))+
       '</div></div>').join("")+'</div></section>';
   return h;
 };
@@ -1246,6 +1256,7 @@ document.addEventListener("click",async e=>{
         showMsg(list.length+" Adressen eingeladen.",4000)}}
     else if(a==="block"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:false});showMsg("Gesperrt.",3000)}
     else if(a==="unblock"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:true});showMsg("Entsperrt.",3000)}
+    else if(a==="remove"){if(confirmSafe(b.dataset.em+" entfernen? Die Person kommt danach nicht mehr in die App.")){await F.deleteDoc(F.doc(db,"invites",b.dataset.em)).catch(()=>{});await F.deleteDoc(F.doc(db,"members",b.dataset.uid));showMsg("Entfernt.",3000)}}
     else if(a==="uninvite"){await F.deleteDoc(F.doc(db,"invites",b.dataset.em));showMsg("Einladung gelöscht.",3000)}
     await admLoad();
   }catch(err){console.error(err);showMsg("Fehler: "+(err.message||err),6000)}
@@ -1262,7 +1273,7 @@ render();
   b.addEventListener("click",async()=>{
     if(b.classList.contains("spin"))return;b.classList.add("spin");
     try{if(await load(true)){const c=lastCheck(S.meta);showMsg(L("Neueste Daten geladen.")+(c?" "+L("Dropbox zuletzt geprüft")+" "+fmtStamp(c)+".":""),5000)}}
-    catch(err){console.error(err);showMsg(L("Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen."),5000)}
+    catch(err){console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),6000)}
     setTimeout(()=>b.classList.remove("spin"),400);
   });
   if(!S.loaded&&!S.days.length)showGate("wait");
@@ -1274,9 +1285,14 @@ render();
       if(!u){ME=null;acctButton(false);clearLocal();if(S.tab==="admin")S.tab="plan";render();showGate("login");return}
       afterSignIn(u);
     });
-  }catch(err){console.error(err);if(!S.days.length)showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true)}
-  setInterval(()=>{if(document.visibilityState==="visible")load(false).catch(()=>{})},POLL_MS);
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load(false).catch(()=>{})});
+  }catch(err){console.error(err);if(!S.days.length)showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);else{hideGate();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000)}}
+  const tick=async()=>{
+    if(document.visibilityState!=="visible"||!ME||!ME.emailVerified)return;
+    try{const st=await checkMember();if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}}catch(_){return}
+    load(false).catch(()=>{});
+  };
+  setInterval(tick,POLL_MS);
+  document.addEventListener("visibilitychange",tick);
 })();
 
 </script>
