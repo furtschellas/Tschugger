@@ -373,7 +373,10 @@ const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMo
 const pad2=n=>String(n).padStart(2,"0");
 const fmtDate=iso=>{const d=new Date(iso+"T12:00:00");return WD[d.getDay()]+" "+pad2(d.getDate())+"."+pad2(d.getMonth()+1)+"."+d.getFullYear()};
 /* Maps search: abbreviations written out only in the link ("Rte" → "Route"), the address shown stays as in the list */
-const maps=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
+/* a link stored on the address in the location list (field "map") wins over a generated search link */
+const locMapIndex=()=>memo("locmap",()=>{const m=new Map();for(const l of S.locs){if(!/^https:\/\//.test(l.map||""))continue;for(const k of [[l.venue,l.address].filter(Boolean).join(", "),l.address])if(k)m.set(norm(k),l.map)}return m});
+const maps=q=>locMapIndex().get(norm(q))||mapsSearch(q);
+const mapsSearch=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
 const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};
 const norm=s=>String(s).toLowerCase().replace(/\s+/g,"");
 /* derived-data cache: cleared whenever data changes, so lookups run once per data version */
