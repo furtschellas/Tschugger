@@ -60,11 +60,29 @@ Object.assign(I18N,{
  "Profil":{fr:"Profil",it:"Profilo",en:"Profile"},
  "Profil gespeichert.":{fr:"Profil enregistré.",it:"Profilo salvato.",en:"Profile saved."},
  "Bitte ergänze dein Profil.":{fr:"Complète ton profil.",it:"Completa il tuo profilo.",en:"Please complete your profile."},
+ "Willkommen!":{fr:"Bienvenue !",it:"Benvenuto/a!",en:"Welcome!"},
+ "Bitte fülle vor dem ersten Start dein Profil aus.":{fr:"Avant de commencer, remplis ton profil.",it:"Prima di iniziare, compila il tuo profilo.",en:"Please fill in your profile before you start."},
+ "Name":{fr:"Nom",it:"Nome",en:"Name"},
+ "Aus der Crewliste übernommen.":{fr:"Repris de la liste de l'équipe.",it:"Ripreso dalla lista della troupe.",en:"Taken from the crew list."},
+ "Weiter":{fr:"Continuer",it:"Avanti",en:"Continue"},
  "Essen":{fr:"Repas",it:"Pasti",en:"Food"},
  "Ich esse alles":{fr:"Je mange de tout",it:"Mangio di tutto",en:"I eat everything"},
  "Vegetarisch":{fr:"Végétarien",it:"Vegetariano",en:"Vegetarian"},
  "Vegan":{fr:"Végan",it:"Vegano",en:"Vegan"},
  "Keine Milchprodukte":{fr:"Sans produits laitiers",it:"Senza latticini",en:"No dairy"},
+ "Pescetarisch":{fr:"Pescétarien",it:"Pescetariano",en:"Pescatarian"},
+ "Kein Schweinefleisch":{fr:"Sans porc",it:"Niente maiale",en:"No pork"},
+ "Halal":{fr:"Halal",it:"Halal",en:"Halal"},
+ "Koscher":{fr:"Casher",it:"Kosher",en:"Kosher"},
+ "Keine Milchprodukte / laktosefrei":{fr:"Sans produits laitiers / sans lactose",it:"Senza latticini / senza lattosio",en:"No dairy / lactose-free"},
+ "Glutenfrei":{fr:"Sans gluten",it:"Senza glutine",en:"Gluten-free"},
+ "Ohne Nüsse":{fr:"Sans noix",it:"Senza frutta a guscio",en:"No nuts"},
+ "Ohne Erdnüsse":{fr:"Sans cacahuètes",it:"Senza arachidi",en:"No peanuts"},
+ "Ohne Meeresfrüchte":{fr:"Sans fruits de mer",it:"Senza frutti di mare",en:"No shellfish"},
+ "Ohne Eier":{fr:"Sans œufs",it:"Senza uova",en:"No eggs"},
+ "Ernährung":{fr:"Alimentation",it:"Alimentazione",en:"Diet"},
+ "Verträglichkeiten":{fr:"Intolérances",it:"Intolleranze",en:"Intolerances"},
+ "Weitere Allergien (optional)":{fr:"Autres allergies (facultatif)",it:"Altre allergie (facoltativo)",en:"Other allergies (optional)"},
  "Allergien / Unverträglichkeiten (optional)":{fr:"Allergies / intolérances (facultatif)",it:"Allergie / intolleranze (facoltativo)",en:"Allergies / intolerances (optional)"},
  "Nur für die Produktion sichtbar.":{fr:"Visible uniquement par la production.",it:"Visibile solo alla produzione.",en:"Only visible to the production."},
  "Allergien":{fr:"Allergies",it:"Allergie",en:"Allergies"}
@@ -72,9 +90,15 @@ Object.assign(I18N,{
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
 const langSel=(name,v)=>'<select name="'+name+'" id="'+name+'">'+LANGS.map(([k,t])=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+t+'</option>').join("")+'</select>';
 const clean=v=>String(v||"").trim().slice(0,80);
-const DIETS=[["none","Ich esse alles"],["vegetarian","Vegetarisch"],["vegan","Vegan"],["nodairy","Keine Milchprodukte"]];
+const DIETS=[["none","Ich esse alles"],["vegetarian","Vegetarisch"],["vegan","Vegan"],["pescatarian","Pescetarisch"],["nopork","Kein Schweinefleisch"],["halal","Halal"],["kosher","Koscher"]];
+const INTOL=[["dairy","Keine Milchprodukte / laktosefrei"],["gluten","Glutenfrei"],["nuts","Ohne Nüsse"],["peanuts","Ohne Erdnüsse"],["shellfish","Ohne Meeresfrüchte"],["eggs","Ohne Eier"]];
+/* older profiles stored "nodairy" as diet */
+const normDiet=m=>{const o=Object.assign({},m||{});o.intol=Array.isArray(o.intol)?o.intol.slice():[];if(o.diet==="nodairy"){o.diet="none";if(!o.intol.includes("dairy"))o.intol.push("dairy")}return o};
+const intolBoxes=(pre,sel)=>'<div class="chk">'+INTOL.map(([k,t])=>'<label class="ck"><input type="checkbox" name="'+pre+'" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>';
+const readBoxes=(root,pre)=>[...root.querySelectorAll('input[name="'+pre+'"]:checked')].map(x=>x.value);
 const dietSel=(name,v)=>'<select name="'+name+'" id="'+name+'">'+DIETS.map(([k,t])=>'<option value="'+k+'"'+(k===(v||"none")?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
-const dietText=m=>{if(!m)return"";const d=DIETS.find(x=>x[0]===m.diet);const a=String(m.allergies||"").trim();return [d&&d[0]!=="none"?L(d[1]):"",a?L("Allergien")+": "+a:""].filter(Boolean).join(" · ")};
+const dietText=m0=>{if(!m0)return"";const m=normDiet(m0);const d=DIETS.find(x=>x[0]===m.diet);const a=String(m.allergies||"").trim();
+  return [d&&d[0]!=="none"?L(d[1]):"",...m.intol.map(k=>{const t=INTOL.find(x=>x[0]===k);return t?L(t[1]):""}),a?L("Allergien")+": "+a:""].filter(Boolean).join(" · ")};
 const PENDING_KEY="crewprofile:pending";
 const splitName=n=>{const p=String(n||"").trim().split(/\s+/).filter(Boolean);return p.length?{firstName:p[0],lastName:p.slice(1).join(" ")}:{firstName:"",lastName:""}};
 function crewPerson(email){const e=lc(email);if(!e)return null;for(const g of S.crew)for(const p of (g.people||[]))if(lc(p.email)===e)return p;return null}
@@ -135,6 +159,7 @@ async function checkMember(){
     let pf={};try{const x=JSON.parse(localStorage.getItem(PENDING_KEY)||"null");if(x&&x.email===lc(u.email))pf=x}catch(_){}
     const doc={active:true,email:lc(u.email),name:[pf.firstName,pf.lastName].filter(Boolean).join(" ")||inv.data().name||"",joinedAt:F.serverTimestamp()};
     for(const k of ["firstName","lastName","lang","birthday","diet","allergies"])if(pf[k])doc[k]=pf[k];
+    if(Array.isArray(pf.intol)&&pf.intol.length)doc.intol=pf.intol.filter(k=>INTOL.some(x=>x[0]===k));
     if(!doc.firstName&&!doc.lastName){const sp=splitName(inv.data().name);if(sp.firstName){doc.firstName=clean(sp.firstName);if(sp.lastName)doc.lastName=clean(sp.lastName)}}
     await F.setDoc(ref,doc);try{localStorage.removeItem(PENDING_KEY)}catch(_){}
     s=await F.getDoc(ref);
@@ -171,7 +196,7 @@ function showGate(mode,msg,isErr){
   const note=msg?'<p class="'+(isErr?'gerr':'gok')+'" role="alert">'+esc(msg)+'</p>':'<p class="gerr" role="alert"></p>';
   let f="";
   if(AUTHMODE==="login")f='<form class="gbox" data-f="login">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="current-password" required><button type="submit">'+L("Anmelden")+'</button>'+note+'<button type="button" class="glink" data-gmode="reset">'+L("Passwort vergessen?")+'</button><button type="button" class="glink" data-gmode="register">'+L("Erstes Mal hier? Konto erstellen")+'</button>'+langs+'</form>';
-  else if(AUTHMODE==="register")f='<form class="gbox" data-f="register">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="glang">'+L("Sprache der App")+'</label>'+langSel("glang",LANG)+'<label for="gbd">'+L("Geburtsdatum (optional)")+'</label><input id="gbd" type="date" autocomplete="bday"><label for="gdiet">'+L("Essen")+'</label>'+dietSel("gdiet","none")+'<label for="gall">'+L("Allergien / Unverträglichkeiten (optional)")+'</label><input id="gall" type="text" maxlength="200"><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><p class="ghint">'+L("Mindestens 8 Zeichen.")+'</p><button type="submit">'+L("Konto erstellen")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Schon ein Konto? Anmelden")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="register")f='<form class="gbox" data-f="register">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die du der Produktion angegeben hast.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><p class="ghint">'+L("Mindestens 8 Zeichen.")+'</p><button type="submit">'+L("Konto erstellen")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Schon ein Konto? Anmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="reset")f='<form class="gbox" data-f="reset">'+head+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><button type="submit">'+L("Link zum Zurücksetzen senden")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Zurück")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="verify")f='<form class="gbox" data-f="verify">'+head+'<p class="gtitle">'+L("Bitte bestätige zuerst deine E-Mail-Adresse.")+'</p><p class="ghint">'+L("Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.")+'</p><p class="ghint"><b>'+em+'</b></p><button type="submit">'+L("Ich habe bestätigt")+'</button>'+note+'<button type="button" class="glink" data-gact="resend">'+L("Mail nochmals senden")+'</button><button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
   else if(AUTHMODE==="denied"||AUTHMODE==="blocked")f='<div class="gbox">'+head+'<p class="gtitle">'+L("Kein Zugang")+'</p><p class="ghint">'+(AUTHMODE==="blocked"?L("Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion."):L("Deine Adresse ist (noch) nicht für die Crew-App freigeschaltet. Bitte melde dich bei der Produktion."))+'</p><p class="ghint"><b>'+em+'</b></p><button type="button" class="gbtn" data-gact="retry">'+L("Aktualisieren")+'</button><button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</div>';
@@ -195,7 +220,6 @@ async function onGateSubmit(e){
     else if(f.dataset.f==="register"){
       if(pw.length<8)throw {code:"weak-password"};
       if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
-      try{localStorage.setItem(PENDING_KEY,JSON.stringify({email:lc(em),lang:f.querySelector("#glang").value,birthday:f.querySelector("#gbd").value||"",diet:f.querySelector("#gdiet").value,allergies:String(f.querySelector("#gall").value||"").trim().slice(0,200)}))}catch(_){}
       window.__justSignedIn=true;const c=await A.createUserWithEmailAndPassword(auth,em,pw);
       try{await A.sendEmailVerification(c.user,{url:location.origin+location.pathname})}catch(_){}
     }
@@ -234,18 +258,15 @@ async function afterSignIn(u){
   if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){LANG=prof.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
   try{await load(true)}catch(err){console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),isOffline(err)?6000:15000)}
   await fillNamesFromCrew();
-  if(MEMBER&&!MEMBER.firstName)setTimeout(()=>showAcct(true),600);
+  if(MEMBER&&!MEMBER.diet)setTimeout(()=>showAcct(true),400);
   if(window.__justSignedIn){window.__justSignedIn=false;maybeOfferA2hs(true)}else maybeOfferA2hs(false);
 }
 /* names come from the crew list (matched by e-mail) when the profile has none yet */
+const crewNames=()=>{const p=ME&&crewPerson(ME.email);if(!p||!p.name)return null;const sp=splitName(p.name);return sp.firstName?{firstName:clean(sp.firstName),lastName:clean(sp.lastName||"")}:null};
 async function fillNamesFromCrew(){
-  if(!MEMBER||!ME||(MEMBER.firstName&&MEMBER.lastName))return;
-  const p=crewPerson(ME.email);if(!p||!p.name)return;
-  const sp=splitName(p.name);const upd={};
-  if(!MEMBER.firstName&&sp.firstName)upd.firstName=clean(sp.firstName);
-  if(!MEMBER.lastName&&sp.lastName)upd.lastName=clean(sp.lastName);
-  if(!Object.keys(upd).length)return;
-  upd.name=[upd.firstName||MEMBER.firstName,upd.lastName||MEMBER.lastName].filter(Boolean).join(" ");
+  if(!MEMBER||!ME)return;
+  const cn=crewNames();if(!cn||(MEMBER.firstName===cn.firstName&&(MEMBER.lastName||"")===cn.lastName))return;
+  const upd={firstName:cn.firstName,lastName:cn.lastName,name:[cn.firstName,cn.lastName].filter(Boolean).join(" ")};
   try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),upd);Object.assign(MEMBER,upd)}catch(err){console.error(err)}
 }
 /* ---- account sheet: own password, own email, sign out; admin entry ---- */
@@ -257,20 +278,31 @@ function acctButton(on){
   b.setAttribute("aria-label",L("Mein Konto"));b.title=L("Mein Konto");b.hidden=!on;
 }
 const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password'));
+let ONBOARD=false;
+function nameFields(){
+  const cn=crewNames();
+  if(cn)return '<label>'+L("Name")+'<input type="text" value="'+esc([cn.firstName,cn.lastName].filter(Boolean).join(" "))+'" readonly tabindex="-1" class="ro"></label><p class="ghint">'+L("Aus der Crewliste übernommen.")+'</p>';
+  return '<label>'+L("Vorname")+'<input type="text" name="fn" autocomplete="given-name" required value="'+esc((MEMBER&&MEMBER.firstName)||"")+'"></label><label>'+L("Nachname")+'<input type="text" name="ln" autocomplete="family-name" required value="'+esc((MEMBER&&MEMBER.lastName)||"")+'"></label>';
+}
+function profileForm(onb){
+  return '<form data-af="pf">'+nameFields()+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Ernährung")+dietSel("dt",normDiet(MEMBER).diet)+'</label><label>'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label>'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><button type="submit">'+L(onb?"Weiter":"Speichern")+'</button><p class="amsg" role="alert"></p></form>';
+}
 function showAcct(needProfile){
   let s=document.getElementById("acct");
   if(!s){s=document.createElement("div");s.id="acct";s.className="a2hs";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
     s.addEventListener("click",onAcctClick);s.addEventListener("submit",onAcctSubmit)}
+  ONBOARD=needProfile===true&&!!MEMBER;
+  if(ONBOARD){s.innerHTML='<div class="a2box acbox"><h3>'+L("Willkommen!")+'</h3><p>'+L("Bitte fülle vor dem ersten Start dein Profil aus.")+'</p><p class="ghint">'+esc(ME.email)+'</p>'+profileForm(true)+'<div class="a2b"><button class="lnk" data-ac="signout">'+L("Abmelden")+'</button></div></div>';s.hidden=false;return}
   s.innerHTML='<div class="a2box acbox"><h3>'+L("Mein Konto")+'</h3><p>'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b></p>'+
     (isAdmin()?'<div class="a2b"><button class="pri" data-ac="admin">'+L("Benutzer verwalten")+'</button></div>':'')+
-    (MEMBER||isAdmin()?'<details'+(needProfile===true?' open':'')+'><summary>'+L("Profil")+'</summary><form data-af="pf">'+(needProfile===true?'<p class="ghint">'+L("Bitte ergänze dein Profil.")+'</p>':'')+'<label>'+L("Vorname")+'<input type="text" name="fn" autocomplete="given-name" required value="'+esc((MEMBER&&MEMBER.firstName)||splitName((crewPerson(ME.email)||{}).name).firstName)+'"></label><label>'+L("Nachname")+'<input type="text" name="ln" autocomplete="family-name" required value="'+esc((MEMBER&&MEMBER.lastName)||splitName((crewPerson(ME.email)||{}).name).lastName)+'"></label><label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Essen")+dietSel("dt",MEMBER&&MEMBER.diet)+'</label><label>'+L("Allergien / Unverträglichkeiten (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>':'')+
+    (MEMBER||isAdmin()?'<details><summary>'+L("Profil")+'</summary>'+profileForm(false)+'</details>':'')+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '<div class="a2b"><button data-ac="signout">'+L("Abmelden")+'</button><button class="lnk" data-ac="close">'+L("Schliessen")+'</button></div></div>';
   s.hidden=false;
 }
 async function onAcctClick(e){
-  const s=document.getElementById("acct");if(e.target===s){s.hidden=true;return}
+  const s=document.getElementById("acct");if(e.target===s){if(!ONBOARD)s.hidden=true;return}
   const b=e.target.closest("[data-ac]");if(!b)return;
   if(b.dataset.ac==="close")s.hidden=true;
   else if(b.dataset.ac==="admin"){s.hidden=true;S.tab="admin";window.scrollTo(0,0);render()}
@@ -281,12 +313,14 @@ async function onAcctSubmit(e){
   try{
     const {A,auth,F,db}=await fb();const u=auth.currentUser;
     if(f.dataset.af==="pf"){
-      const upd={firstName:clean(f.fn.value),lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",diet:f.dt.value,allergies:String(f.al.value||"").trim().slice(0,200)};
+      const cn=crewNames();
+      const upd={firstName:cn?cn.firstName:clean(f.fn.value),lastName:cn?cn.lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",diet:f.dt.value,intol:readBoxes(f,"pint"),allergies:String(f.al.value||"").trim().slice(0,200)};
       upd.name=[upd.firstName,upd.lastName].filter(Boolean).join(" ");
       const ref=F.doc(db,"members",u.uid);
       if(MEMBER)await F.updateDoc(ref,upd);else await F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
       MEMBER=Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd);
       if(upd.lang!==LANG&&WDS[upd.lang]){LANG=upd.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
+      if(ONBOARD){ONBOARD=false;document.getElementById("acct").hidden=true;showMsg(L("Profil gespeichert."),3000);btn.disabled=false;return}
       msg.classList.add("ok");msg.textContent=L("Profil gespeichert.");btn.disabled=false;return;
     }
     await A.reauthenticateWithCredential(u,A.EmailAuthProvider.credential(u.email,f.cur.value)).catch(err=>{throw /invalid-credential|wrong-password/.test(err.code||"")?{code:"x",message:L("Aktuelles Passwort falsch.")}:err});
@@ -308,6 +342,13 @@ async function admLoad(){
   ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.loaded=true;render();
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
+function cateringHTML(){
+  const act=ADM.mem.filter(m=>m.active===true).map(normDiet);if(!act.length)return"";
+  const c={};act.forEach(m=>{if(m.diet&&m.diet!=="none")c["d:"+m.diet]=(c["d:"+m.diet]||0)+1;m.intol.forEach(k=>c["i:"+k]=(c["i:"+k]||0)+1)});
+  const parts=[...DIETS.filter(d=>c["d:"+d[0]]).map(d=>c["d:"+d[0]]+" "+L(d[1])),...INTOL.filter(i=>c["i:"+i[0]]).map(i=>c["i:"+i[0]]+" "+L(i[1]))];
+  const al=act.filter(m=>String(m.allergies||"").trim()).map(m=>([m.firstName,m.lastName].filter(Boolean).join(" ")||m.email)+": "+m.allergies.trim());
+  return '<div class="cater"><b>Catering</b> · '+act.length+' aktiv · '+act.filter(m=>!m.diet||m.diet==="none").length+' '+esc(L("Ich esse alles"))+(parts.length?'<br>'+esc(parts.join(" · ")):'')+(al.length?'<br><span>'+esc(L("Allergien"))+': '+esc(al.join(" · "))+'</span>':'')+'</div>';
+}
 VIEWS.admin=function(){
   if(!isAdmin())return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!ADM.loaded){admLoad().catch(err=>{console.error(err);showMsg("Benutzerliste konnte nicht geladen werden: "+(err.message||err),6000)});return '<div class="empty">Lade Benutzer …</div>'}
@@ -326,6 +367,7 @@ VIEWS.admin=function(){
   let h='<section class="adm"><h2 class="dh">Benutzer verwalten</h2><p class="ahint">Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="E-Mail-Adresse" required><input name="nm" type="text" placeholder="Name (optional)"><button type="submit">Einladen</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">Alle '+newCrew.length+' Adressen aus der Crewliste einladen</button>':'')+
+    cateringHTML()+
     '<div class="astats">'+rows.length+' Benutzer · '+rows.filter(r=>r.m&&r.m.active===true).length+' aktiv · '+rows.filter(r=>!r.m).length+' noch nicht registriert</div>'+
     '<input class="search" id="aq" type="search" placeholder="Benutzer suchen" value="'+esc(ADM.q)+'">'+
     '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+(r.m&&r.m.birthday?'<span>*'+esc(fmtDate(r.m.birthday).slice(3))+'</span>':'')+'</div>'+(dietText(r.m)?'<div class="ct diet"><span>'+esc(dietText(r.m))+'</span></div>':'')+'<div class="aacts">'+
