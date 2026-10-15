@@ -29,7 +29,7 @@ jobs:
       - name: Werkzeuge
         run: |
           sudo apt-get -qq update >/dev/null && sudo apt-get -qq install -y poppler-utils >/dev/null
-          pip install -q cryptography==43.0.3 requests==2.32.3
+          pip install -q cryptography==43.0.3 requests==2.32.3 imageio-ffmpeg==0.5.1
       - name: Dropbox lesen und Daten erzeugen
         env:
           CREW_KEY: ${{ secrets.CREW_KEY }}
