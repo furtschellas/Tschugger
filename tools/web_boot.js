@@ -118,6 +118,11 @@ Object.assign(I18N,{
  "Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.":{fr:"Seules ces langues sont proposées dans l’app. Au moins une.",it:"Solo queste lingue sono disponibili nell’app. Almeno una.",en:"Only these languages are offered in the app. At least one."},
  "Bitte mindestens eine Sprache wählen.":{fr:"Choisis au moins une langue.",it:"Scegli almeno una lingua.",en:"Please choose at least one language."},
  "Sprachen gespeichert.":{fr:"Langues enregistrées.",it:"Lingue salvate.",en:"Languages saved."},
+ "Einstellungen der App":{fr:"Réglages de l’app",it:"Impostazioni dell’app",en:"App settings"},
+ "Sprachen":{fr:"Langues",it:"Lingue",en:"Languages"},
+ "Ausgeschaltet zeigt die App nur die 1st Unit, ohne die Knöpfe 1st/2nd.":{fr:"Désactivée, l’app n’affiche que la 1st unit, sans les boutons 1st/2nd.",it:"Se disattivata, l’app mostra solo la 1st unit, senza i pulsanti 1st/2nd.",en:"When off, the app shows only the 1st unit, without the 1st/2nd buttons."},
+ "2nd Unit anzeigen":{fr:"Afficher la 2nd unit",it:"Mostra la 2nd unit",en:"Show 2nd unit"},
+ "Einstellungen gespeichert.":{fr:"Réglages enregistrés.",it:"Impostazioni salvate.",en:"Settings saved."},
  "Kontostatus":{fr:"Statut du compte",it:"Stato account",en:"Account status"},
  "Konto aktiv":{fr:"Compte actif",it:"Account attivo",en:"Account active"},
  "Gesperrt":{fr:"Bloqué",it:"Bloccato",en:"Blocked"},
@@ -150,7 +155,8 @@ Object.assign(I18N,{
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"]];
 /* languages offered in the app; the main admin picks them (Firestore config/app.langs), cached for the sign-in screen */
-let APPLANGS=["de","fr","it","en"];try{const x=JSON.parse(localStorage.getItem("applangs")||"null");if(Array.isArray(x)&&x.length)APPLANGS=x.filter(l=>LANGS.some(z=>z[0]===l))}catch(_){}
+let APPLANGS=["de","fr","it","en"];try{const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1"}catch(_){}
+try{const x=JSON.parse(localStorage.getItem("applangs")||"null");if(Array.isArray(x)&&x.length)APPLANGS=x.filter(l=>LANGS.some(z=>z[0]===l))}catch(_){}
 function applyLangs(){
   if(!APPLANGS.length)APPLANGS=["de"];
   document.querySelectorAll(".lang button[data-lang],.lang button[data-glang]").forEach(b=>{b.style.display=APPLANGS.includes(b.dataset.lang||b.dataset.glang)?"":"none"});
@@ -160,6 +166,7 @@ function applyLangs(){
 async function loadLangs(){
   try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));const l=d.exists()&&d.data().langs;
     if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}
+    const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
   }catch(err){console.warn("langs",err)}
   applyLangs();
 }
@@ -463,7 +470,8 @@ VIEWS.admin=function(){
     '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">'+L("Haupt-Admin")+'</span></div>'+
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
     '</div>'+
-    '<form class="admins alangs" data-adm="langs"><h3>'+L("Sprachen der App")+'</h3><p class="ahint">'+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div><button type="submit">'+L("Speichern")+'</button></form>':'';
+    '<form class="admins alangs" data-adm="langs"><h3>'+L("Einstellungen der App")+'</h3><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
+    '<p class="ahint"><b>2nd Unit</b> – '+L("Ausgeschaltet zeigt die App nur die 1st Unit, ohne die Knöpfe 1st/2nd.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label></div><button type="submit">'+L("Speichern")+'</button></form>':'';
   let h='<section class="adm"><h2 class="dh">'+L("Benutzer verwalten")+'</h2><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     admSec+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
@@ -483,7 +491,7 @@ document.addEventListener("submit",async e=>{
   const fl=e.target.closest('[data-adm="langs"]');
   if(fl){e.preventDefault();if(!isOwner())return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
-    try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{langs:l},{merge:true});APPLANGS=l;try{localStorage.setItem("applangs",JSON.stringify(l))}catch(_){}applyLangs();render();showMsg(L("Sprachen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked;await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2},{merge:true});APPLANGS=l;window.UNIT2=u2;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const fa=e.target.closest('[data-adm="addadmin"]');
   if(fa){e.preventDefault();if(!isOwner())return;const em=lc(fa.em.value);if(!/@/.test(em))return;

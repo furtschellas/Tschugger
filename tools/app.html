@@ -57,6 +57,7 @@ h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-tr
 .pub button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#1a1206}
 .pub button.u2[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .pub button.none{opacity:.45}
+body.no-u2 .pub,body.no-u2 button.uf{display:none!important}
 @media (max-width:600px){.pub{gap:2px;padding-right:4px}.pub button{width:30px;font-size:12px;letter-spacing:-.02em}}
 .chip{flex:0 0 auto;min-width:0;border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:3px 5px;line-height:1.15;text-align:center;cursor:pointer}
 .chip .cw{font-family:var(--f-mono);font-size:9px;font-weight:400;text-transform:uppercase;color:var(--muted);margin-right:3px}
@@ -745,8 +746,11 @@ function renderHeader(){
     if(m.subtitle)$("#sub").innerHTML=subT(m).split(" · ").map((x,i)=>"<span>"+(i?"· ":"")+esc(x)+"</span>").join(" ");
   }else if(S.loaded){$("#stand").textContent=L("Noch keine Daten eingespielt.")}
 }
+/* the main admin can switch the 2nd unit off (website: window.UNIT2=false); then only the 1st unit is shown and the unit buttons disappear */
 function render(){
   if(!VIEWS[S.tab])S.tab="plan";
+  const u2off=window.UNIT2===false;document.body.classList.toggle("no-u2",u2off);
+  if(u2off){if(!S.pu["1"]||S.pu["2"])S.pu={"1":true,"2":false};if(!S.uf["1"]||S.uf["2"])S.uf={"1":true,"2":false}}
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===S.tab));
   const v=$("#view");
   const focusQ=document.activeElement&&document.activeElement.id==="q";
