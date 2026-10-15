@@ -370,7 +370,10 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .scnbox{background:var(--sheet);border:1px solid var(--rule);border-radius:16px 16px 0 0;width:100%;max-width:760px;height:92vh;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.5)}
 @media (min-width:768px){.scrn{align-items:center}.scnbox{border-radius:16px}}
 .scnhd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;row-gap:10px;padding:12px 16px;border-bottom:1px solid var(--rule)}
-.svb{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px;row-gap:8px}
+.svb{flex-basis:100%;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0}
+.svb .scnnav{display:inline-flex;gap:inherit;margin:0}
+.scnp[disabled]{opacity:.3}
+.svb .svsep{flex:none}
 .svb .svfill{flex:1}
 .svb .scnnav{margin:0}
 .svb .spthm{margin:0}
@@ -452,10 +455,10 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .lvb .scuf{margin-left:4px}
 .lvb .mapbtn,.lvb .scall{min-height:var(--circ);height:var(--circ);padding:0 12px;font-size:13px;font-weight:600;background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:99px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 @media (max-width:420px){.lvb .mapbtn,.lvb .scall{padding:0 8px;font-size:12px;gap:3px}.lvb .mapbtn svg{width:13px;height:13px}.lvpills{gap:4px}.lvb .scuf{margin-left:2px}}
-@media (max-width:374px){:root{--circ:28px}}
 .spfd>span+span::before{content:" · "}
 .sv-no-t .spfd{display:none}
 .sv-no-e .spfs{display:none}
+.sv-no-t.sv-no-e.sv-no-i.sv-no-d.sv-no-c.sv-no-a .spf{display:none}
 .lv-no-i .lcm,.lv-no-a .adl,.lv-no-m .scb,.lv-no-m #scall{display:none!important}
 html[data-theme="light"] .scbar .uf[aria-pressed="true"],html[data-theme="light"] .scuf .uf[aria-pressed="true"]{background:#f2b33d;border-color:#d99a1e}
 html[data-theme="light"] .scbar .uf.u2[aria-pressed="true"],html[data-theme="light"] .scuf .uf.u2[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -469,9 +472,17 @@ html[data-theme="light"] .scbar .uf.u3[aria-pressed="true"],html[data-theme="lig
 .pvbtn svg,.thmb svg{width:16px;height:16px}
 .svb,.dtitle .pvb,.scuf,.pub{gap:6px}
 @media (max-width:420px){.svb,.dtitle .pvb,.scuf,.pub{gap:4px}}
-/* Drehplan/Callsheet: Unit-Knöpfe rechts neben der Tagesleiste */
-.stripwrap .pub{order:2;border-right:0;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 6px;border-left:1px solid var(--rule)}
-@media (max-width:600px){.stripwrap .pub{padding-left:4px}}
+/* Drehplan/Callsheet: Unit-Knöpfe rechts unter den runden Anzeige-Knöpfen */
+.drow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:var(--circ)}
+.drow .pub.dpub{border:0;padding:0;margin-left:auto}
+.dayhead>div,.dsp-head>div{flex:1;min-width:0}
+.dsp-units{margin-top:12px}
+@media (max-width:374px){:root{--circ:28px}}
+@media (max-width:380px){.dtitle{gap:6px}.dtitle .dlink{padding:4px 8px;font-size:12px}}
+/* Knopfleisten passen sich dynamisch der Breite an (fitRows verkleinert --circ pro Leiste, bis alles auf eine Linie passt) */
+.svb .scnnav,.svb .scuf{display:inline-flex}
+.csbtn{font:700 11.5px/1 var(--f-body)!important;letter-spacing:.02em;border-color:var(--accent)!important;color:var(--accent)!important}
+.csbtn.on{background:var(--accent)!important;color:var(--accent-ink)!important}
 /* ---------- feinschliff ---------- */
 body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
 button,a,.chip{-webkit-tap-highlight-color:transparent}
@@ -796,7 +807,7 @@ function svToggles(){
 }
 function svApply(){document.querySelectorAll(".svwrap").forEach(w=>w.className="svwrap "+svClasses());document.querySelectorAll(".svwrap [data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const s=document.getElementById("scn");if(!s)return;s.className="scrn "+svClasses();s.querySelectorAll("[data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const t=s.querySelector("[data-spt]");if(t)t.setAttribute("aria-pressed",String(spTheme()==="light"))}
 const PVLBL={i:"Info",d:"Szenenbeschrieb",a:"Adresse",c:"Cast"};
-function pvButtons(){return '<span class="pvb">'+["i","d","c","a"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" aria-label="'+esc(L(PVLBL[k]))+'" title="'+esc(L(PVLBL[k]))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+'</span>'}
+function pvButtons(pre){return '<span class="pvb">'+(pre||'')+["i","d","c","a"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" aria-label="'+esc(L(PVLBL[k]))+'" title="'+esc(L(PVLBL[k]))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+'</span>'}
 function itemHTML(it){
   if(!it.sc){
     return '<li class="row ev"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+'</div></li>';
@@ -838,12 +849,14 @@ function dayPlaces(d){
   return out;
 }
 /* shared day navigation (Schedule + Callsheet): unit filter fixed on the left, days scroll beside it; OFF days are shown but inactive */
+let UNITBAR="";
 function dayNav(PD,isSel,attr,key,extra){
   const t=todayISO();
   const sel=PD.find(isSel)||{};
   const ub=u=>{if(u==="1")return '<button data-pu="1" aria-pressed="'+!!S.pu["1"]+'" aria-label="1st Unit">1st</button>';const has=hasU(sel,u);return '<button data-pu="'+u+'" class="u'+u+(has?'':' none')+'" aria-pressed="'+!!S.pu[u]+'" aria-label="'+UNAME[u]+' Unit"'+(has?'':' title="'+esc(L("Keine "+UNAME[u]+" Unit an diesem Tag."))+'"')+'>'+UNAME[u]+'</button>'};
   const uo=unitsOn();
-  let h='<div class="stripwrap">'+(uo.length>1?'<div class="pub" role="group" aria-label="'+L("Unit filtern")+'">'+uo.map(ub).join("")+'</div>':'')+'<div class="strip in" role="tablist" aria-label="Tage">';
+  UNITBAR=uo.length>1?'<div class="pub dpub" role="group" aria-label="'+L("Unit filtern")+'">'+uo.map(ub).join("")+'</div>':'';
+  let h='<div class="stripwrap"><div class="strip in" role="tablist" aria-label="Tage">';
   for(const d of PD){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
@@ -862,7 +875,7 @@ function renderPlan(){
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const d=S.days.find(x=>x.id===S.day);
   const hasD=S.dispos.some(x=>x.date===d.date);
-  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?'<button class="dlink'+(hasD?' on':'')+'" data-todispo="'+esc(d.date)+'">'+L('Callsheet')+' ›</button>'+pvButtons():'')+'</div><div class="date">'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</div></div>';
+  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('<button class="pvbtn csbtn'+(hasD?' on':'')+'" data-todispo="'+esc(d.date)+'" aria-label="'+esc(L('Callsheet'))+'" title="'+esc(L(hasD?'Callsheet':'Callsheet folgt'))+'">CS</button>'):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+UNITBAR+'</div></div>';
   if(d.kind==="shoot"){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
     if(d.extras)f.push([L("Komparsen"),d.extras]);
@@ -1109,13 +1122,13 @@ function renderDispo(){
   let h=dayNav(PD,d=>d.date===S.dday,"data-dday","date",d=>d.kind!=="shoot"?{cls:"",mark:""}:(by[d.date]?{cls:" has",mark:" ●"}:{cls:" nodispo",mark:""}));
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const day=S.days.find(d=>d.date===S.dday)||{},x=by[S.dday];
-  if(day.kind&&day.kind!=="shoot")return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date">'+fmtDate(day.date)+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
+  if(day.kind&&day.kind!=="shoot")return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+fmtDate(day.date)+'</span>'+UNITBAR+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
   if(!x){
-    return h+'<div class="dsp-empty"><div class="eh">'+esc(day.label||"")+' · '+(day.date?fmtDate(day.date):'')+'</div><b>'+L('Callsheet folgt')+'</b><p>'+L('Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.')+'</p>'+
+    return h+(UNITBAR?'<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>':'')+'<div class="dsp-empty"><div class="eh">'+esc(day.label||"")+' · '+(day.date?fmtDate(day.date):'')+'</div><b>'+L('Callsheet folgt')+'</b><p>'+L('Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.')+'</p>'+
       (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>';
   }
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>':'';
-  h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date">'+fmtDate(x.date)+(x.version?' · '+esc(x.version):'')+'</div></div></div>';
+  h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date drow"><span>'+fmtDate(x.date)+(x.version?' · '+esc(x.version):'')+'</span>'+UNITBAR+'</div></div></div>';
   h+='<div class="dtiles">'+tile("Crew Call",x.crewCall||x.generalCall,true)+tile(L("Drehbeginn"),x.shootCall)+tile("Wrap",x.wrap)+tile(L("Sonne"),x.sr&&x.ss?x.sr+"–"+x.ss:"")+tile(L("Wetter"),x.weather)+'</div>';
   if(TXA(x,"notes").length)h+='<div class="notes">'+TXA(x,"notes").map(n=>'<div class="note warn">'+esc(n)+'</div>').join("")+'</div>';
   const place=(lbl,p)=>p&&(p.name||p.address)?'<div class="dbox"><div class="dk">'+lbl+'</div><div class="dn">'+esc(p.name||"")+'</div>'+(p.address?'<a href="'+maps([p.name,p.address].filter(Boolean).join(", "))+'" target="_blank" rel="noopener noreferrer">'+esc(p.address)+'</a>':'')+(p.parking?'<div class="ds">'+L('Parken')+': '+esc(p.parking)+'</div>':'')+(p.note?'<div class="ds">'+esc(p.note)+'</div>':'')+'</div>':'';
@@ -1216,6 +1229,16 @@ function renderHeader(){
   }else if(S.loaded){$("#stand").textContent=L("Noch keine Daten eingespielt.")}
 }
 /* the main admin can switch the 2nd unit off (website: window.UNIT2=false); then only the 1st unit is shown and the unit buttons disappear */
+/* shrink the round buttons of a toolbar evenly until the row fits on one line */
+function fitRows(root){
+  (root||document).querySelectorAll(".svb,.dtitle,.lvb,.admv").forEach(r=>{
+    r.style.removeProperty("--circ");
+    if(!r.offsetParent||r.scrollWidth<=r.clientWidth+1)return;
+    let c=parseFloat(getComputedStyle(r).getPropertyValue("--circ"))||30;
+    while(c>20&&r.scrollWidth>r.clientWidth+1){c-=1;r.style.setProperty("--circ",c+"px")}
+  });
+}
+window.addEventListener("resize",()=>{clearTimeout(window.__fitT);window.__fitT=setTimeout(()=>{fitRows();const sc=document.getElementById("scn");if(sc)fitRows(sc)},120)});
 function render(){
   const tOn=tabsOn();if(!VIEWS[S.tab]||(ALLTABS.includes(S.tab)&&!tOn.includes(S.tab)))S.tab=tOn[0];
   const nb=document.querySelectorAll("nav.tabs button[data-tab]");nb.forEach(b=>{b.hidden=!tOn.includes(b.dataset.tab);b.style.order=String(tOn.indexOf(b.dataset.tab))});
@@ -1236,6 +1259,7 @@ function render(){
   const sel=v.querySelector('.chip[aria-selected="true"]');
   if(sel)sel.scrollIntoView({block:"nearest",inline:"center"});
   try{renderHeader()}catch(err){console.error(err)}
+  try{fitRows(v)}catch(_){}
 }
 
 /* ---------- interaction (one delegated click handler) ---------- */
@@ -1378,9 +1402,10 @@ async function openScene(sc){
     if(x)store("lastsc",x.sc);
     if(!x){s.innerHTML=shell('<p class="scnmsg">'+esc(L("Diese Szene ist im Drehbuch nicht gefunden worden."))+'</p>');return}
     const i=list.indexOf(x),pv=list[i-1],nx=list[i+1];
-    const nav='<span class="scnnav">'+(pv?'<button data-scene="'+esc(pv.sc)+'" aria-label="'+esc(pv.sc)+'">‹ '+esc(pv.sc)+'</button>':'')+(nx?'<button data-scene="'+esc(nx.sc)+'" aria-label="'+esc(nx.sc)+'">'+esc(nx.sc)+' ›</button>':'')+'</span>';
+    const nav='<span class="scnnav">'+'<button class="pvbtn scnp" '+(pv?'data-scene="'+esc(pv.sc)+'" aria-label="'+esc(L("Vorherige Szene"))+' '+esc(pv.sc)+'" title="'+esc(L("Vorherige Szene"))+' '+esc(pv.sc)+'"':'disabled aria-hidden="true"')+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg></button>'+
+      '<button class="pvbtn scnp" '+(nx?'data-scene="'+esc(nx.sc)+'" aria-label="'+esc(L("Folgende Szene"))+' '+esc(nx.sc)+'" title="'+esc(L("Folgende Szene"))+' '+esc(nx.sc)+'"':'disabled aria-hidden="true"')+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg></button></span>';
     s.innerHTML=shell('<div class="scnscroll">'+spMore("prev",list,i-1)+'<div class="sp-pages">'+spPage(x,"",list,sc)+'</div>'+spMore("next",list,i+1)+'</div>',nav);
-    s.querySelector(".scnscroll").scrollTop=0;
+    s.querySelector(".scnscroll").scrollTop=0;try{fitRows(s)}catch(_){}
   }catch(err){console.error(err);if(seq===SCN_SEQ&&!s.hidden)s.innerHTML=shell('<p class="scnmsg">'+esc(L("Drehbuch konnte nicht geladen werden."))+'</p>')}
 }
 const ACTIONS=[
@@ -2337,7 +2362,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="0e81f7900b";
+const APP_VER="1289928b76";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
