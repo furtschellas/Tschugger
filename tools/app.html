@@ -775,7 +775,7 @@ function ppNames(t){return String(t||"").split(",").map(x=>x.trim()).filter(Bool
 function ppChip(n,people){
   const g=groupPeople(n.replace(/\btbc\b/ig,"").trim(),people);if(g)return '<span class="ppc grp">'+esc(n)+'</span>';
   const p=findPerson(n.replace(/\btbc\b/ig,"").trim(),people.filter(x=>x.email||x.phone))||null;
-  return p?'<button type="button" class="ppc link" data-ppc="'+esc(p.name)+'|'+esc(p.email||"")+'|'+esc(p.phone||"")+'|'+esc(p.role||"")+'|'+esc(p.src||"")+'">'+esc(n)+'</button>':'<span class="ppc">'+esc(n)+'</span>';
+  return p&&vok("contacts")?'<button type="button" class="ppc link" data-ppc="'+esc(p.name)+'|'+esc(p.email||"")+'|'+esc(p.phone||"")+'|'+esc(p.role||"")+'|'+esc(p.src||"")+'">'+esc(n)+'</button>':'<span class="ppc">'+esc(n)+'</span>';
 }
 function ppParts(i){
   const cr=ppNames(i.crew),ca=ppNames(i.cast);if(!cr.length&&!ca.length)return"";
@@ -917,6 +917,7 @@ function myIcs(list){
 function saveIcs(ics,name){try{const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}}
 let MYEV=[],MCNAMES=[];
 function renderMy(){
+  if(!vok("mycal"))return '<div class="empty">'+esc(L("Kein Zugang"))+'</div>';
   const me=myIdentity();const people=mailPeople().filter(x=>x.src&&x.src!=="user");
   const names=[...new Set(people.map(p=>p.name))].sort((a,c)=>a.localeCompare(c,LANG));
   MCNAMES=names;
@@ -1072,10 +1073,11 @@ function renderCrew(){
       let ct='';const web=typeof window.crewHead==="function";const vc=!web?'':(p.phone||p.email)?'<button class="copy vcbtn" data-vc="'+gi+':'+g.people.indexOf(p)+'" aria-label="'+esc(L("Kontakt ins Telefon übernehmen"))+'" title="'+esc(L("Kontakt ins Telefon übernehmen"))+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard</button>':'';
       /* wide screens: vCard after the job title; phones: next to the phone number */
       const vcW=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-wide"'),vcN=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-narrow"');
-      if(p.phone)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vcN:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
-      if(p.email)ct+='<span class="em">'+esc(p.email)+'</span>'+(p.phone?'':vcN);
+      const showC=vok("contacts");const vcW0=vcW;
+      if(p.phone&&showC)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vcN:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
+      if(p.email&&showC)ct+='<span class="em">'+esc(p.email)+'</span>'+(p.phone?'':vcN);
       if(p.note)ct+='<span>'+esc(p.note)+'</span>';
-      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span>'+vcW+'</div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';
+      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span>'+(showC?vcW0:'')+'</div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';
     }).join("")+'</div></section>';
   }
   if(!n)h+='<div class="empty">'+L('Niemand gefunden für')+' «'+esc(S.q)+'».</div>';
@@ -1324,8 +1326,8 @@ const perm=p=>{try{return typeof window.canPerm!=="function"||window.canPerm(p)}
 function tabsOn(){
   const ord=tabOrder();let t=Array.isArray(window.TABSON)?ord.filter(x=>window.TABSON.includes(x)):ord;
   if(window.SCRIPTON===false||!vok("script"))t=t.filter(x=>x!=="script");
-  if(!vok("crew"))t=t.filter(x=>x!=="crew");
-  return t.length?t:["plan"];
+  for(const [tab,k] of [["crew","crew"],["plan","plan"],["dispo","dispo"]])if(!vok(k))t=t.filter(x=>x!==tab);
+  return t.length?t:["info"];
 }
 /* ---------- script tab: every scene of the screenplay, tap opens the reader ---------- */
 let SCRIPTERR=false;
@@ -1434,12 +1436,18 @@ function render(){
   let html;
   try{html=VIEWS[S.tab]()+srcHTML()}
   catch(err){console.error(err);html='<div class="empty">'+esc(L("Diese Ansicht konnte nicht angezeigt werden."))+'<br><small>'+esc(err&&err.message||err)+'</small></div>'}
+  /* keep what someone has typed or ticked in an open form when the page re-renders (data refresh, list reload) */
+  const fkey=f=>[f.className,f.dataset.role,f.dataset.af,f.dataset.adm,f.dataset.em].map(x=>x||"").join("|");
+  const keep={};v.querySelectorAll("form").forEach(f=>{const vals=[];f.querySelectorAll("input,select,textarea").forEach(el=>{if(el.type==="file"||el.type==="hidden"||el.type==="submit")return;vals.push([el.name,el.value,el.type==="checkbox"||el.type==="radio"?el.checked:null,el.dataset.dirty==="1"])});keep[fkey(f)]=vals});
   v.innerHTML=html;
+  v.querySelectorAll("form").forEach(f=>{const vals=keep[fkey(f)];if(!vals)return;const els=[...f.querySelectorAll("input,select,textarea")].filter(el=>!(el.type==="file"||el.type==="hidden"||el.type==="submit"));
+    vals.forEach((x,i)=>{const el=els[i];if(!el||el.name!==x[0]||!x[3])return;if(x[2]!==null)el.checked=x[2];else el.value=x[1];el.dataset.dirty="1"})});
   if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   scallLabel();
   const sel=v.querySelector('.chip[aria-selected="true"]');
   if(sel)sel.scrollIntoView({block:"nearest",inline:"center"});
   try{renderHeader()}catch(err){console.error(err)}
+  {const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}
   for(const [id,t] of [["myCalBtn","my"],["acctBtn","acct"],["admBtn","admin"]]){const hb=document.getElementById(id);if(hb){hb.classList.toggle("on",S.tab===t);hb.setAttribute("aria-current",S.tab===t?"page":"false")}}
   try{pvApply();fitRows(v)}catch(_){}
   saveView();
@@ -1650,6 +1658,9 @@ function mcPick(v){try{if(v)localStorage.setItem("myname",v);else localStorage.r
 document.addEventListener("input",e=>{if(e.target.matches&&e.target.matches("input[data-mcme]")){const v=e.target.value.trim();const hit=MCNAMES.find(n=>n.toLowerCase()===v.toLowerCase());if(hit)mcPick(hit)}});
 document.addEventListener("change",e=>{if(e.target.matches&&e.target.matches("input[data-mcme]")){const v=e.target.value.trim();if(!v){mcPick("");return}const f=fold(v),hits=MCNAMES.filter(n=>fold(n).includes(f));if(hits.length===1)mcPick(hits[0])}});
 document.addEventListener("click",e=>{if(e.target.closest("[data-mcself]"))mcPick("")});
+/* fields someone changed are marked, so a re-render keeps them */
+document.addEventListener("input",e=>{if(e.target.closest&&e.target.closest("#view form"))e.target.dataset.dirty="1"},true);
+document.addEventListener("change",e=>{if(e.target.closest&&e.target.closest("#view form"))e.target.dataset.dirty="1"},true);
 document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;render()}
   else if(e.target.id==="lq"||e.target.id==="sq"){if(e.target.id==="sq"){S.sq=e.target.value;S.sqn=0}else S.lq=e.target.value;clearTimeout(SRCHT);SRCHT=setTimeout(()=>runSearch(e.target.id,false),180)}});
 let SRCHT=null;
