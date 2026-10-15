@@ -13,6 +13,9 @@ import requests
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 R = pathlib.Path(__file__).resolve().parent.parent
+_missing = [k for k in ("CREW_KEY", "ANTHROPIC_API_KEY", "DROPBOX_APP_KEY", "DROPBOX_REFRESH_TOKEN") if not os.environ.get(k, "").strip()]
+if _missing and __name__ == "__main__":
+    print("• Noch nicht eingerichtet – fehlende Secrets:", ", ".join(_missing)); sys.exit(0)
 KEY = base64.b64decode(os.environ["CREW_KEY"].strip())
 ROOT = (os.environ.get("DROPBOX_ROOT") or "ns:14935064499").rstrip("/")
 MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
