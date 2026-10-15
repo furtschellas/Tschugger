@@ -460,6 +460,7 @@ function itemHTML(it){
     (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener">'+esc(ad)+'</a>')+'</div>'})():'')+
     castChips(it.cast)+'<div class="meta">'+meta.join("")+'</div></div></li>';
 }
+const padD=x=>String(x).replace(/^D(\d)$/,"D0$1");
 function pickDay(list){
   list=list||S.days;
   if(S.day&&list.some(d=>d.id===S.day))return;
@@ -488,7 +489,7 @@ function renderPlan(){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?L("Reise"):L("Frei"));
     h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.date===t?" today":"")+'" role="tab" data-day="'+esc(d.id)+'" aria-selected="'+(d.id===S.day)+'">'+
-       '<div class="dd"><span class="cw">'+WD[dt.getDay()]+'</span>'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div><div class="lb">'+esc(lb)+'</div></button>';
+       '<div class="lb">'+esc(padD(lb))+' / '+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div></button>';
   }
   h+='</div></div>';
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
@@ -704,7 +705,7 @@ function renderDispo(){
   let h='<div class="strip" role="tablist" aria-label="Drehtage">';
   for(const d of shoot){
     const dt=new Date(d.date+"T12:00:00"),has=!!by[d.date];
-    h+='<button class="chip'+(has?' has':' nodispo')+(d.date===t?' today':'')+'" role="tab" data-dday="'+esc(d.date)+'" aria-selected="'+(d.date===S.dday)+'"><div class="dd"><span class="cw">'+WD[dt.getDay()]+'</span>'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div><div class="lb">'+esc(d.short||d.label)+(has?' ●':'')+'</div></button>';
+    h+='<button class="chip'+(has?' has':' nodispo')+(d.date===t?' today':'')+'" role="tab" data-dday="'+esc(d.date)+'" aria-selected="'+(d.date===S.dday)+'"><div class="lb">'+esc(padD(d.short||d.label))+' / '+WD[dt.getDay()].toUpperCase()+(has?' ●':'')+'</div><div class="dd">'+dt.getDate()+'.'+(dt.getMonth()+1)+'</div></button>';
   }
   h+='</div>';
   const day=S.days.find(d=>d.date===S.dday)||{},x=by[S.dday];
