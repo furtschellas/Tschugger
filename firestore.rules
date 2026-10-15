@@ -17,8 +17,14 @@ service cloud.firestore {
     function rolePerms() {
       return get(/databases/$(database)/documents/roles/$(get(/databases/$(database)/documents/userroles/$(myEmail())).data.role)).data.perms;
     }
+    // Admin-Rechte: Standard alles ausser 'settings'; der Besitzer kann sie unter roles/admin anpassen
+    function adminHas(p) {
+      return exists(/databases/$(database)/documents/roles/admin)
+        ? p in get(/databases/$(database)/documents/roles/admin).data.perms
+        : p != 'settings';
+    }
     function can(p) {
-      return isOwner() || (isAdmin() && p != 'settings')
+      return isOwner() || (isAdmin() && adminHas(p))
         || (verified() && exists(/databases/$(database)/documents/userroles/$(myEmail())) && p in rolePerms());
     }
     function isMember() {
@@ -72,9 +78,9 @@ service cloud.firestore {
 
     // Einladungen (E-Mail-Adresse = Dokument-ID): verwalten alle Admins
     match /invites/{email} {
-      allow read: if can('users.view') || can('users.invite');
+      allow read: if can('users.view') || can('users.invite') || can('contacts.extra');
       allow delete: if can('users.invite');
-      allow create: if can('users.invite') && request.resource.data.keys().hasOnly(['name', 'role', 'addedAt']);
+      allow create: if (can('users.invite') || can('users.requests')) && request.resource.data.keys().hasOnly(['name', 'role', 'addedAt']);
       allow update: if (can('users.invite') || can('users.edit')) && request.resource.data.keys().hasOnly(['name', 'role', 'addedAt']);
       allow get: if verified() && myEmail() == email;
     }
@@ -86,7 +92,7 @@ service cloud.firestore {
         && request.resource.data.name is string && request.resource.data.name.size() <= 80
         && (!('note' in request.resource.data) || request.resource.data.note.size() <= 280);
       allow get: if (verified() && myEmail() == email) || isAdmin();
-      allow list, delete: if can('users.invite');
+      allow list, delete: if can('users.requests');
     }
 
     // Startpasswort-Konten: nur der Besitzer legt sie an; die Person setzt nach dem ersten Login mustChange auf false
@@ -107,7 +113,7 @@ service cloud.firestore {
 
     // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren und entfernen kann nur der Haupt-Admin
     match /members/{uid} {
-      allow read: if can('users.view') || can('users.edit') || can('crew.food') || can('crew.bday');
+      allow read: if can('users.view') || can('users.edit') || can('crew.food') || can('crew.bday') || can('contacts.extra');
       // der Haupt-Admin selbst kann nicht gesperrt oder gelöscht werden
       allow update, delete: if isOwner() && resource.data.email != 'furtschellas@gmail.com';
       // alle Admins dürfen die Profildaten der Benutzer:innen ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
