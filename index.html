@@ -1483,10 +1483,10 @@ VIEWS.admin=function(){
   const site=location.origin+location.pathname;
   const mail=r=>"mailto:"+encodeURIComponent(r.email)+"?subject="+encodeURIComponent("TSCHUGGER Tigerblood – Crew-App")+"&body="+encodeURIComponent("Hallo"+(r.name?" "+r.name.split(" ")[0]:"")+"\n\nDu bist für die Crew-App von TSCHUGGER Tigerblood freigeschaltet:\n"+site+"\n\nBeim ersten Mal auf «Erstes Mal hier? Konto erstellen» tippen, mit dieser Adresse ("+r.email+") ein eigenes Passwort wählen und die Bestätigungsmail antippen.\n\nBis bald im Wallis!");
   const own=isOwner();const isAdm=e=>ADMINS.includes(e)||ADM.adm.includes(e);
-  const admSec=own?'<div class="admins"><h3>Administratoren</h3><p class="ahint">Administratoren können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du.</p>'+
+  const admSec=own?'<div class="admins"><h3>Administratoren</h3><p class="ahint">Administratoren können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins ernennst du unten bei der Person mit «Zum Admin machen».</p>'+
     '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">Haupt-Admin</span></div>'+
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],"de")).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">Entfernen</button></div>').join("")+
-    '<form class="aform" data-adm="addadmin"><select name="em" required><option value="">Person auswählen …</option>'+rows.filter(r=>!isAdm(r.email)).map(r=>'<option value="'+esc(r.email)+'">'+esc(r.name||r.email)+'</option>').join("")+'</select><button type="submit">Als Admin hinzufügen</button></form></div>':'';
+    '</div>':'';
   let h='<section class="adm"><h2 class="dh">Benutzer verwalten</h2><p class="ahint">Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.</p>'+
     admSec+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="E-Mail-Adresse" required><input name="nm" type="text" placeholder="Name (optional)"><button type="submit">Einladen</button></form>'+
@@ -1578,7 +1578,7 @@ window.crewExtra=function(p){
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- new app version: reload once when the published version differs ---------- */
-const APP_VER="0e1d826647";
+const APP_VER="d009e078cf";
 async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
