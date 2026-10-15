@@ -100,6 +100,10 @@ Object.assign(I18N,{
  "Keine Berechtigungen":{fr:"Aucun droit",it:"Nessun permesso",en:"No permissions"},
  "Standard wiederherstellen":{fr:"Rétablir par défaut",it:"Ripristina predefinito",en:"Restore default"},
  "Abbrechen":{fr:"Annuler",it:"Annulla",en:"Cancel"},
+ "Geschlecht":{fr:"Genre",it:"Genere",en:"Gender"},
+ "bitte wählen":{fr:"choisir",it:"scegli",en:"please choose"},
+ "Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln).":{fr:"Pas d'autorisation – publie d'abord les nouvelles règles Firestore (console Firebase → Firestore → Règles).",it:"Nessuna autorizzazione – pubblica prima le nuove regole Firestore (console Firebase → Firestore → Regole).",en:"No permission – please publish the new Firestore rules first (Firebase console → Firestore → Rules)."},
+ "Telefon":{fr:"Téléphone",it:"Telefono",en:"Phone"},
  "Rollen":{fr:"Rôles",it:"Ruoli",en:"Roles"},
  "Rolle":{fr:"Rôle",it:"Ruolo",en:"Role"},
  "Benutzer:in":{fr:"Utilisateur",it:"Utente",en:"User"},
@@ -357,7 +361,7 @@ const INTOL=[["dairy","Keine Milchprodukte / laktosefrei"],["gluten","Glutenfrei
 const normDiet=m=>{const o=Object.assign({},m||{});o.intol=Array.isArray(o.intol)?o.intol.slice():[];if(o.diet==="nodairy"){o.diet="none";if(!o.intol.includes("dairy"))o.intol.push("dairy")}return o};
 const intolBoxes=(pre,sel)=>'<div class="chk">'+INTOL.map(([k,t])=>'<label class="ck"><input type="checkbox" name="'+pre+'" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>';
 const readBoxes=(root,pre)=>[...root.querySelectorAll('input[name="'+pre+'"]:checked')].map(x=>x.value);
-const dietSel=(name,v)=>'<select name="'+name+'" id="'+name+'">'+DIETS.map(([k,t])=>'<option value="'+k+'"'+(k===(v||"none")?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
+const dietSel=(name,v,req)=>'<select name="'+name+'" id="'+name+'"'+(req?' required':'')+'>'+(req&&!v?'<option value="" selected>– '+L("bitte wählen")+' –</option>':'')+DIETS.map(([k,t])=>'<option value="'+k+'"'+(k===(v||(req?"":"none"))?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
 const dietText=m0=>{if(!m0)return"";const m=normDiet(m0);const d=DIETS.find(x=>x[0]===m.diet);const a=String(m.allergies||"").trim();
   return [d&&d[0]!=="none"?L(d[1]):"",...m.intol.map(k=>{const t=INTOL.find(x=>x[0]===k);return t?L(t[1]):""}),a?L("Allergien")+": "+a:""].filter(Boolean).join(" · ")};
 const PENDING_KEY="crewprofile:pending";
@@ -686,7 +690,8 @@ async function afterSignIn(u){
   if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){LANG=prof.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
   try{await load(true)}catch(err){console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),isOffline(err)?6000:15000)}
   await fillNamesFromCrew();
-  if(MEMBER&&!MEMBER.diet)setTimeout(()=>showAcct(true),400);
+  /* first start, and whenever gender, phone or e-mail is missing: the profile form must be filled in */
+  if(MEMBER&&(!MEMBER.diet||!MEMBER.gender||!String(MEMBER.phone||"").trim()||!String(MEMBER.contactEmail||"").trim()))setTimeout(()=>showAcct(true),400);
   if(window.__justSignedIn){window.__justSignedIn=false;maybeOfferA2hs(true)}else maybeOfferA2hs(false);
 }
 /* names come from the crew list (matched by e-mail) when the profile has none yet */
@@ -715,15 +720,19 @@ function acctButton(on){
 }
 const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password'));
 let ONBOARD=false;
+/* phone + contact e-mail (required); prefilled from the crew list / sign-in address */
+function contactFields(m,pre){const cp=(typeof crewPerson==="function"&&ME&&crewPerson(lc(ME.email)))||{};pre=pre||"";
+  return '<label>'+L("Telefon")+'<input type="tel" name="'+pre+'ph" autocomplete="tel" inputmode="tel" required pattern="[+0-9 ()/.-]{6,}" placeholder="+41 79 123 45 67" value="'+esc((m&&m.phone)||(!pre&&cp.phone)||"")+'"></label>'+
+    '<label>'+L("E-Mail")+'<input type="email" name="'+pre+'ce" autocomplete="email" required value="'+esc((m&&m.contactEmail)||(!pre&&ME&&ME.email)||(m&&m.email)||"")+'"></label>';}
 function nameFields(){
   const cn=crewNames();
   if(cn)return '<div class="pname"><span>'+L("Vorname")+'</span><b>'+esc(cn.firstName)+'</b><span>'+L("Nachname")+'</span><b>'+esc(cn.lastName||"–")+'</b></div><p class="ghint">'+L("Aus der Crewliste übernommen.")+'</p>';
   return '<label>'+L("Vorname")+'<input type="text" name="fn" autocomplete="given-name" required value="'+esc((MEMBER&&MEMBER.firstName)||"")+'"></label><label>'+L("Nachname")+'<input type="text" name="ln" autocomplete="family-name" required value="'+esc((MEMBER&&MEMBER.lastName)||"")+'"></label>';
 }
 const GENDERS=[["m","Männlich"],["w","Weiblich"],["d","Divers"]];
-const genderSel=(n,v)=>'<select name="'+n+'"><option value="">–</option>'+GENDERS.map(([k,t])=>'<option value="'+k+'"'+(v===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
+const genderSel=(n,v,req)=>'<select name="'+n+'"'+(req?' required':'')+'><option value="">–</option>'+GENDERS.map(([k,t])=>'<option value="'+k+'"'+(v===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
 function profileForm(onb){
-  return '<form data-af="pf">'+nameFields()+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Geschlecht (optional)")+genderSel("gd",(MEMBER&&MEMBER.gender)||"")+'</label><label>'+L("Ernährung")+dietSel("dt",normDiet(MEMBER).diet)+'</label><label class="full">'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label class="full">'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><button type="submit">'+L(onb?"Weiter":"Speichern")+'</button><p class="amsg" role="alert"></p></form>';
+  return '<form data-af="pf">'+nameFields()+contactFields(MEMBER)+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Geschlecht")+genderSel("gd",(MEMBER&&MEMBER.gender)||"",true)+'</label><label>'+L("Ernährung")+dietSel("dt",(MEMBER&&MEMBER.diet)?normDiet(MEMBER).diet:"",true)+'</label><label class="full">'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label class="full">'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><button type="submit">'+L(onb?"Weiter":"Speichern")+'</button><p class="amsg" role="alert"></p></form>';
 }
 function acctInner(){
   return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b></p>'+
@@ -765,12 +774,12 @@ async function onAcctSubmit(e){
     const {A,auth,F,db}=await fb();const u=auth.currentUser;
     if(f.dataset.af==="pf"){
       const cn=crewNames();
-      const upd={firstName:cn?cn.firstName:clean(f.fn.value),lastName:cn?cn.lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",gender:f.gd?f.gd.value:"",diet:f.dt.value,intol:readBoxes(f,"pint"),allergies:String(f.al.value||"").trim().slice(0,200)};
+      const upd={firstName:cn?cn.firstName:clean(f.fn.value),lastName:cn?cn.lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",gender:f.gd?f.gd.value:"",phone:String(f.ph.value||"").trim().slice(0,40),contactEmail:lc(String(f.ce.value||"").trim()).slice(0,120),diet:f.dt.value,intol:readBoxes(f,"pint"),allergies:String(f.al.value||"").trim().slice(0,200)};
       upd.name=[upd.firstName,upd.lastName].filter(Boolean).join(" ");
       const ref=F.doc(db,"members",u.uid);
       const wr=()=>MEMBER?F.updateDoc(ref,upd):F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
       try{await wr()}catch(err){if(!/permission/.test(err&&err.code||""))throw err;await u.reload().catch(()=>{});await u.getIdToken(true);
-        try{await wr()}catch(e2){if(!/permission/.test(e2&&e2.code||"")||!("gender" in upd))throw e2;delete upd.gender;await wr()}} /* until the Firestore rules allow «gender», save the rest */
+        try{await wr()}catch(e2){if(!/permission/.test(e2&&e2.code||"")||!("gender" in upd))throw e2;delete upd.gender;delete upd.phone;delete upd.contactEmail;await wr()}} /* until the Firestore rules allow «gender», save the rest */
       MEMBER=Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd);
       writeOwnBday(upd.name,upd.birthday);
       if(isAdmin())ADM.loaded=false;
@@ -920,14 +929,14 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pwshow]");
 function userInfo(r){
   const m=r.m;if(!m||!(isAdmin()||can("users.view")))return"";
   const g=(GENDERS.find(x=>x[0]===m.gender)||[])[1];
-  const bits=[m.birthday?L("Geburtsdatum")+": "+m.birthday.split("-").reverse().join("."):"",g?L(g):"",dietText(m)].filter(Boolean);
+  const bits=[m.phone?"☎ "+m.phone:"",m.contactEmail&&m.contactEmail!==m.email?"✉ "+m.contactEmail:"",m.birthday?L("Geburtsdatum")+": "+m.birthday.split("-").reverse().join("."):"",g?L(g):"",dietText(m)].filter(Boolean);
   return bits.length?'<div class="uinf">'+bits.map(esc).join(" · ")+'</div>':"";
 }
 function editForm(r){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
   return '<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
     (m?'<label>'+L("Vorname")+'<input name="fn" maxlength="60" value="'+v(m.firstName)+'"></label><label>'+L("Nachname")+'<input name="ln" maxlength="60" value="'+v(m.lastName)+'"></label>'+
-       '<label>'+L("Sprache der App")+langSel("lg",m.lang||"de")+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" value="'+v(m.birthday)+'"></label><label>'+L("Geschlecht (optional)")+genderSel("gd",m.gender||"")+'</label>'+
+       '<label>'+L("Sprache der App")+langSel("lg",m.lang||"de")+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" value="'+v(m.birthday)+'"></label><label>'+L("Geschlecht (optional)")+genderSel("gd",m.gender||"")+'</label>'+contactFields(m,"e")+
        '<label>'+L("Ernährung")+dietSel("edt",normDiet(m).diet)+'</label><label>'+L("Verträglichkeiten")+'</label>'+intolBoxes("eint",normDiet(m).intol)+'<label>'+L("Weitere Allergien (optional)")+'<input name="eal" maxlength="200" value="'+v(m.allergies)+'"></label>'
      :'<label>'+L("Name")+'<input name="nm" maxlength="80" value="'+v(i.name||r.name)+'"></label>')+
     '<label>'+L("Funktion")+'<input name="rl" maxlength="80" value="'+v(i.role||r.role)+'"></label>'+
@@ -965,7 +974,7 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form.arol
   let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
   const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});ADM.redit="";showMsg(L("Rolle gespeichert."),2500);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();await admLoad()}
-  catch(err){if(btn)btn.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
+  catch(err){if(btn)btn.disabled=false;showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),9000)}});
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!isOwner())return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
   if(!confirmSafe(L("Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.").replace("{r}",ro.name||id)))return;
   try{const {F,db}=await fb();for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)await F.deleteDoc(F.doc(db,"userroles",em));await F.deleteDoc(F.doc(db,"roles",id));showMsg(L("Rolle gelöscht."),2500);await admLoad()}
@@ -1067,7 +1076,7 @@ document.addEventListener("submit",async e=>{
     const em=sf.dataset.em,g=n=>{const x=sf.querySelector('[name="'+n+'"]');return x?String(x.value||"").trim():null};
     const m=ADM.mem.find(x=>x.email===em),inv=ADM.inv.find(x=>x.id===em),btn=sf.querySelector("button");if(btn)btn.disabled=true;
     try{const {F,db}=await fb();
-      if(m){const fn=g("fn"),ln=g("ln"),d={firstName:fn,lastName:ln,name:[fn,ln].filter(Boolean).join(" ")||m.name||"",lang:g("lg")||m.lang||"de",birthday:g("bd")||"",gender:g("gd")||"",diet:g("edt")||"none",intol:readBoxes(sf,"eint"),allergies:(g("eal")||"").slice(0,200)};
+      if(m){const fn=g("fn"),ln=g("ln"),d={firstName:fn,lastName:ln,name:[fn,ln].filter(Boolean).join(" ")||m.name||"",lang:g("lg")||m.lang||"de",birthday:g("bd")||"",gender:g("gd")||"",phone:(g("eph")||"").slice(0,40),contactEmail:lc(g("ece")||"").slice(0,120),diet:g("edt")||"none",intol:readBoxes(sf,"eint"),allergies:(g("eal")||"").slice(0,200)};
         await F.updateDoc(F.doc(db,"members",m.uid),d)}
       if(inv||!m){const d={name:(m?[g("fn"),g("ln")].filter(Boolean).join(" "):g("nm"))||"",role:g("rl")||""};
         if(inv)await F.updateDoc(F.doc(db,"invites",em),d);else await F.setDoc(F.doc(db,"invites",em),Object.assign(d,{addedAt:F.serverTimestamp()}))}
