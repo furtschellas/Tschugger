@@ -352,7 +352,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .scnnav{display:inline-flex;gap:6px;margin-left:auto;margin-right:10px}
 .scnnav button{font:inherit;font-size:13px;font-weight:600;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;color:var(--ink);cursor:pointer}
 .scnscroll{overflow:auto;padding:14px 12px 28px;-webkit-overflow-scrolling:touch}
-.sp-pages{display:flex;flex-direction:column;gap:14px}
+.sp-pages{display:flex;flex-direction:column;gap:22px}
+.sp-scene .spf{margin-bottom:10px}
 .sp-more{display:block;width:100%;max-width:640px;margin:0 auto 12px;padding:10px 12px;border:1px dashed var(--rule);border-radius:10px;background:transparent;color:var(--accent);font-weight:600;font-size:14px;cursor:pointer}
 .sp-pages+.sp-more{margin:12px auto 0}
 .sp-ctx{opacity:.82}
@@ -362,6 +363,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .spfd{font-size:14px;color:var(--ink)}
 .spfd b{color:var(--gold)}
 .spfs{font-family:var(--f-display);font-weight:700;font-size:15px;margin:4px 0 2px;text-transform:uppercase;letter-spacing:.02em}
+.spfx{font-size:14px;line-height:1.45;color:var(--ink);margin:2px 0 6px}
 .spfk{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;margin:4px 0}
 .spfk i{font-style:normal;color:var(--muted);margin-right:5px;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 .sp-page{--sp-bg:#1d1729;--sp-ink:#ece4d4;--sp-mut:#b4a9c6;--sp-note:#ff8cbd;--sp-rule:#3a3052;background:var(--sp-bg);color:var(--sp-ink);border:1px solid var(--sp-rule);border-radius:8px;padding:24px 22px 30px;font-family:"Courier Prime","Courier New",Courier,monospace;font-size:15px;line-height:1.55;box-shadow:0 2px 14px rgba(0,0,0,.35);max-width:640px;margin:0 auto}
@@ -440,11 +442,11 @@ function getTheme(){return document.documentElement.dataset.theme==="light"?"lig
 function setTheme(t){
   const h=document.documentElement;if(t==="light")h.dataset.theme="light";else delete h.dataset.theme;
   store("theme",t==="light"?"light":"dark");
-  const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#f4f2ee":"#110d1c";
   syncTheme();
 }
 function syncTheme(){
-  const on=getTheme()==="light",b=document.getElementById("thmb");
+  const on=getTheme()==="light",b=document.getElementById("thmb"),m=document.querySelector('meta[name="theme-color"]');
+  if(m)m.content=on?"#f4f2ee":"#110d1c";
   if(b){b.setAttribute("aria-pressed",String(on));const lb=L(on?"Dunkler Modus":"Heller Modus (gut lesbar)");b.title=lb;b.setAttribute("aria-label",lb)}
   document.querySelectorAll("[data-thset]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.thset===getTheme())));
 }
@@ -510,8 +512,9 @@ function itemHTML(it){
   return '<li class="row"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
     (!S.pv.d?'':it.d?'<div class="desc">'+esc(TX(it,"d"))+' '+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>':'<div class="desc">'+'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>'+'</div>')+
+    (S.pv.c?castChips(it.cast):'')+'<div class="meta">'+meta.join("")+'</div>'+
     (it.loc&&S.pv.a?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+
-    (S.pv.c?castChips(it.cast):'')+'<div class="meta">'+meta.join("")+'</div></div></li>';
+    '</div></li>';
 }
 const padD=x=>String(x).replace(/^D(\d)$/,"D0$1");
 function pickDay(list){
@@ -524,9 +527,7 @@ function pickDay(list){
 /* days shown in the schedule strip: 1st = the main calendar (incl. days off / travel), 2nd = days with a 2nd unit */
 /* units: "1" = main schedule (d.items), "2" = d.unit2, "3" = d.unit3 (same structure as unit2) */
 const UNAME={"1":"1st","2":"2nd","3":"3rd"};
-const unitOf=(d,u)=>u==="1"?d:(d["unit"+u]||null);
 const hasU=(d,u)=>{const x=d["unit"+u];return !!(x&&x.items&&x.items.length)};
-const has2nd=d=>hasU(d,"2");
 const unitLists=d=>[["1",d.items||[]],["2",(d.unit2&&d.unit2.items)||[]],["3",(d.unit3&&d.unit3.items)||[]]];
 /* units offered: 2nd unless the main admin switched it off; 3rd when switched on (website) or, in the Claude app, when the schedule has one */
 function unitsOn(){const u=["1"];if(window.UNIT2!==false)u.push("2");if(window.UNIT3===true||(window.UNIT3===undefined&&S.days.some(d=>hasU(d,"3"))))u.push("3");return u}
@@ -914,7 +915,8 @@ function scriptData(){
     let list=null;
     if(typeof window.loadScriptData==="function")list=await window.loadScriptData();
     else if(DB){const q=await DB.collection("script").orderBy("order").get();list=rows(q)}
-    SCRIPT=Array.isArray(list)?list:[];return SCRIPT;
+    list=Array.isArray(list)?list:[];if(list.length)SCRIPT=list; /* never cache an empty result */
+    return list;
   })().finally(()=>{SCRIPTP=null});
   return SCRIPTP;
 }
@@ -974,37 +976,41 @@ function sceneFacts(reqSc,x,list){
     const kv=[[L("Szene"),it.sc],["I/E",it.ie],[L("Seiten"),it.pg],[L("Länge"),it.dur],[L("Regie"),it.dir],["FX",it.fx],[L("Komparsen"),it.xx]].filter(k=>k[1]);
     return '<div class="spf1"><div class="spfd"><b>'+esc(d.short||d.label)+'</b> · '+esc(WD[dt.getDay()]+" "+pad2(dt.getDate())+"."+pad2(dt.getMonth()+1)+".")+(it.t?' · '+esc(it.t):'')+(u!=="1"?' · '+UNAME[u]+' Unit':'')+'</div>'+
       (it.set?'<div class="spfs">'+esc(it.set)+'</div>':'')+
+      (it.d?'<div class="spfx">'+esc(TX(it,"d"))+'</div>':'')+
       '<div class="spfk">'+kv.map(k=>'<span><i>'+esc(cap(String(k[0])))+'</i>'+esc(k[1])+'</span>').join("")+'</div>'+
       (it.cast&&it.cast.length?castChips(it.cast):'')+'</div>';
   }).join("")+'</div>';
 }
-function spPage(x,ctx){return '<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span>'+esc(x.sc)+'</span>'+esc(x.head||"")+'<span>'+esc(x.sc)+'</span></h3>'+scriptHTML(x.text)+'</article>'}
+function spPage(x,ctx,list,reqSc){return '<div class="sp-scene">'+sceneFacts(reqSc||x.sc,x,list)+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span>'+esc(x.sc)+'</span>'+esc(x.head||"")+'<span>'+esc(x.sc)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
 function spMore(dir,list,j){
   const y=list[j];if(!y)return'';
   return '<button type="button" class="sp-more" data-spmore="'+dir+'" data-spi="'+j+'">'+(dir==="prev"?'▲ ':'')+esc(L(dir==="prev"?"Vorherige Szene lesen":"Folgende Szene lesen"))+' · '+esc(y.sc)+(dir==="next"?' ▼':'')+'</button>';
 }
 async function spLoadMore(b){
-  const list=await scriptData(),j=+b.dataset.spi,y=list[j],dir=b.dataset.spmore;if(!y)return;
-  const box=b.closest(".scnscroll"),pages=box.querySelector(".sp-pages");
-  const t=document.createElement("div");t.innerHTML=spPage(y,dir==="prev"?"Vorherige Szene":"Folgende Szene");const art=t.firstChild;
+  if(b.disabled)return;b.disabled=true;
+  let list;try{list=await scriptData()}catch(err){console.error(err);b.disabled=false;return}
+  const j=+b.dataset.spi,y=list[j],dir=b.dataset.spmore;
+  const box=b.isConnected&&b.closest(".scnscroll"),pages=box&&box.querySelector(".sp-pages");if(!y||!pages)return;
+  const t=document.createElement("div");t.innerHTML=spPage(y,dir==="prev"?"Vorherige Szene":"Folgende Szene",list);const art=t.firstChild;
   if(dir==="prev"){const h0=box.scrollHeight,top=box.scrollTop;pages.insertBefore(art,pages.firstChild);box.scrollTop=top+(box.scrollHeight-h0)-80}
   else pages.appendChild(art);
   t.innerHTML=spMore(dir,list,dir==="prev"?j-1:j+1);
   if(t.firstChild)b.replaceWith(t.firstChild);else b.remove();
 }
+let SCN_SEQ=0;
 async function openScene(sc){
-  const s=sceneSheet();document.body.style.overflow="hidden";s.hidden=false;
+  const seq=++SCN_SEQ,s=sceneSheet();document.body.style.overflow="hidden";s.hidden=false;
   const shell=(b,nav)=>'<div class="scnbox"><div class="scnhd"><b>'+esc(L("Drehbuch"))+'</b>'+(nav||'')+'<button class="scnx" data-scnclose aria-label="'+esc(L("Schliessen"))+'">×</button></div>'+b+'</div>';
   s.innerHTML=shell('<p class="scnmsg">'+esc(L("Lade"))+' …</p>');
   try{
     const list=await scriptData();const x=findScene(list,sc);
-    if(s.hidden)return;
+    if(s.hidden||seq!==SCN_SEQ)return;
     if(!x){s.innerHTML=shell('<p class="scnmsg">'+esc(L("Diese Szene ist im Drehbuch nicht gefunden worden."))+'</p>');return}
     const i=list.indexOf(x),pv=list[i-1],nx=list[i+1];
     const nav='<span class="scnnav">'+(pv?'<button data-scene="'+esc(pv.sc)+'" aria-label="'+esc(pv.sc)+'">‹ '+esc(pv.sc)+'</button>':'')+(nx?'<button data-scene="'+esc(nx.sc)+'" aria-label="'+esc(nx.sc)+'">'+esc(nx.sc)+' ›</button>':'')+'</span>';
-    s.innerHTML=shell('<div class="scnscroll">'+sceneFacts(sc,x,list)+spMore("prev",list,i-1)+'<div class="sp-pages">'+spPage(x,"")+'</div>'+spMore("next",list,i+1)+'</div>',nav);
+    s.innerHTML=shell('<div class="scnscroll">'+spMore("prev",list,i-1)+'<div class="sp-pages">'+spPage(x,"",list,sc)+'</div>'+spMore("next",list,i+1)+'</div>',nav);
     s.querySelector(".scnscroll").scrollTop=0;
-  }catch(err){console.error(err);s.innerHTML=shell('<p class="scnmsg">'+esc(L("Drehbuch konnte nicht geladen werden."))+'</p>')}
+  }catch(err){console.error(err);if(seq===SCN_SEQ&&!s.hidden)s.innerHTML=shell('<p class="scnmsg">'+esc(L("Drehbuch konnte nicht geladen werden."))+'</p>')}
 }
 const ACTIONS=[
   ["[data-thm]",()=>setTheme(getTheme()==="light"?"dark":"light")],
@@ -1026,7 +1032,7 @@ const ACTIONS=[
 ];
 document.addEventListener("click",e=>{
   if(e.target.closest("#search"))return; /* search overlay has its own handler */
-  for(const [sel,fn] of ACTIONS){const b=e.target.closest(sel);if(b){if(b.disabled)return;try{fn(b)}catch(err){console.error(err)}return}}
+  for(const [sel,fn] of ACTIONS){const b=e.target.closest(sel);if(b){if(b.disabled)return;try{const r=fn(b);if(r&&typeof r.catch==="function")r.catch(err=>console.error(err))}catch(err){console.error(err)}return}}
 });
 document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;render()}});
 let LASTDAY=todayISO();
