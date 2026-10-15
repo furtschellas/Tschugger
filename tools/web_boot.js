@@ -60,6 +60,8 @@ Object.assign(I18N,{
  "Profil":{fr:"Profil",it:"Profilo",en:"Profile"},
  "Profil gespeichert.":{fr:"Profil enregistré.",it:"Profilo salvato.",en:"Profile saved."},
  "Bitte ergänze dein Profil.":{fr:"Complète ton profil.",it:"Completa il tuo profilo.",en:"Please complete your profile."},
+ "Link zum Zurücksetzen gesendet an":{fr:"Lien de réinitialisation envoyé à",it:"Link per reimpostare inviato a",en:"Reset link sent to"},
+ "Schau auch im Spam-Ordner nach.":{fr:"Vérifie aussi tes spams.",it:"Controlla anche lo spam.",en:"Check your spam folder too."},
  "Willkommen!":{fr:"Bienvenue !",it:"Benvenuto/a!",en:"Welcome!"},
  "Bitte fülle vor dem ersten Start dein Profil aus.":{fr:"Avant de commencer, remplis ton profil.",it:"Prima di iniziare, compila il tuo profilo.",en:"Please fill in your profile before you start."},
  "Name":{fr:"Nom",it:"Nome",en:"Name"},
@@ -296,7 +298,7 @@ function showAcct(needProfile){
   s.innerHTML='<div class="a2box acbox"><h3>'+L("Mein Konto")+'</h3><p>'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b></p>'+
     (isAdmin()?'<div class="a2b"><button class="pri" data-ac="admin">'+L("Benutzer verwalten")+'</button></div>':'')+
     (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
-    (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>'+
+    (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '<div class="a2b"><button data-ac="signout">'+L("Abmelden")+'</button><button class="lnk" data-ac="close">'+L("Schliessen")+'</button></div></div>';
   s.hidden=false;
@@ -305,6 +307,9 @@ async function onAcctClick(e){
   const s=document.getElementById("acct");if(e.target===s){if(!ONBOARD)s.hidden=true;return}
   const b=e.target.closest("[data-ac]");if(!b)return;
   if(b.dataset.ac==="close")s.hidden=true;
+  else if(b.dataset.ac==="pwreset"){const msg=b.closest("form").querySelector(".amsg");msg.className="amsg";msg.textContent="";b.disabled=true;
+    try{const {A,auth}=await fb();await A.sendPasswordResetEmail(auth,auth.currentUser.email,{url:location.origin+location.pathname});msg.classList.add("ok");msg.textContent=L("Link zum Zurücksetzen gesendet an")+" "+auth.currentUser.email+". "+L("Schau auch im Spam-Ordner nach.")}
+    catch(err){console.error(err);msg.textContent=errText(err)}b.disabled=false}
   else if(b.dataset.ac==="admin"){s.hidden=true;S.tab="admin";window.scrollTo(0,0);render()}
   else if(b.dataset.ac==="signout"){s.hidden=true;const {A,auth}=await fb();await A.signOut(auth)}
 }
