@@ -168,3 +168,4 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 #acctBtn .reqdot{position:absolute;top:1px;right:1px;width:9px;height:9px;border-radius:50%;background:#e5484d;box-shadow:0 0 0 2px var(--paper);pointer-events:none}
 #acctBtn:not(.hasreq) .reqdot{display:none}
 .areq{border-color:var(--accent)!important}
+.areq{scroll-margin-top:70px}.astats .reqlnk{color:#e5484d;font-weight:600}

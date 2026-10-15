@@ -40,6 +40,9 @@ Object.assign(I18N,{
  "Anfrage senden":{fr:"Envoyer la demande",it:"Invia richiesta",en:"Send request"},
  "Bitte Vor- und Nachname angeben.":{fr:"Indique ton prénom et ton nom.",it:"Indica nome e cognome.",en:"Please enter your first and last name."},
  "Anfrage gesendet. Du bekommst Zugang, sobald die Produktion sie freigibt – du erhältst dann eine E-Mail, oder tippe hier auf «Aktualisieren».":{fr:"Demande envoyée. Tu auras accès dès que la production l’aura validée – tu recevras alors un e-mail, ou touche « Actualiser » ici.",it:"Richiesta inviata. Avrai accesso appena la produzione la approva – riceverai un’e-mail, oppure tocca «Aggiorna» qui.",en:"Request sent. You get access as soon as the production approves it – you will get an e-mail, or tap “Refresh” here."},
+ "Benutzer-Anfragen":{fr:"Demandes d’utilisateurs",it:"Richieste utenti",en:"User requests"},
+ "Keine offenen Anfragen.":{fr:"Aucune demande en attente.",it:"Nessuna richiesta in sospeso.",en:"No open requests."},
+ "Anfragen nicht lesbar":{fr:"Demandes illisibles",it:"Richieste non leggibili",en:"Requests not readable"},
  "Zugangsanfragen":{fr:"Demandes d’accès",it:"Richieste di accesso",en:"Access requests"},
  "Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».":{fr:"Ces personnes ne sont pas sur la liste et demandent l’accès. « Autoriser » les invite ; elles touchent ensuite « Actualiser ».",it:"Queste persone non sono nella lista e chiedono l’accesso. «Autorizza» le invita; poi toccano «Aggiorna».",en:"These people are not on the list and ask for access. “Approve” invites them; they then tap “Refresh”."},
  "Freischalten":{fr:"Autoriser",it:"Autorizza",en:"Approve"},
@@ -612,7 +615,7 @@ const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false};
 async function admLoad(){
   const {F,db}=await fb();
   const [i,m,a]=await Promise.all([F.getDocs(F.collection(db,"invites")),F.getDocs(F.collection(db,"members")),F.getDocs(F.collection(db,"admins")).catch(()=>({docs:[]}))]);
-  try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()))}catch(_){ADM.req=[]}
+  try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.reqErr=""}catch(err){ADM.req=[];ADM.reqErr=(err&&err.code)||String(err)}
   {const b=document.getElementById("acctBtn");if(b){b.classList.toggle("hasreq",ADM.req.length>0);b.dataset.n=ADM.req.length||""}}
   ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();
 }
@@ -686,8 +689,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-tmv]");if(
   else if(b.dataset.tmv==="down"&&r.nextElementSibling)p.insertBefore(r.nextElementSibling,r);
   b.focus()});
 function reqSec(){
-  const r=(ADM.req||[]).slice().sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),LANG));if(!r.length)return"";
-  return '<div class="admins areq"><h3>'+L("Zugangsanfragen")+' <span class="ust adm">'+r.length+'</span></h3><p class="ahint">'+L("Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».")+'</p>'+
+  const r=(ADM.req||[]).slice().sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),LANG));
+  return '<div class="admins areq" id="areq"><h3>'+L("Benutzer-Anfragen")+' <span class="ust '+(r.length?'adm':'')+'">'+r.length+'</span></h3>'+
+    (ADM.reqErr?'<p class="admerr">'+L("Anfragen nicht lesbar")+' ('+esc(ADM.reqErr)+') – '+L("Firestore-Regeln prüfen.")+'</p>':
+     r.length?'<p class="ahint">'+L("Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».")+'</p>':'<p class="ahint">'+L("Keine offenen Anfragen.")+'</p>')+
     r.map(q=>'<div class="arow"><span><b>'+esc(q.name||"")+'</b> · '+esc(q.id)+(q.role?'<br><small>'+esc(q.role)+'</small>':'')+(q.note?'<br><small>«'+esc(q.note)+'»</small>':'')+'</span>'+
       (isAdmin()?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
 }
@@ -722,18 +727,18 @@ VIEWS.admin=function(){
     '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
     '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></details>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+
-    reqSec()+admSec+(own?bkSec():'')+
+    admSec+(own?bkSec():'')+
     '<div class="admins"><h3>'+L("Benutzer einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>'+
-    '<div class="astats">'+rows.length+' '+L("Benutzer")+' · '+rows.filter(r=>r.m&&r.m.active===true).length+' '+L("aktiv")+' · '+rows.filter(r=>!r.m).length+' '+L("noch nicht registriert")+'</div>'+
+    '<div class="astats">'+rows.length+' '+L("Benutzer")+' · '+rows.filter(r=>r.m&&r.m.active===true).length+' '+L("aktiv")+' · '+rows.filter(r=>!r.m).length+' '+L("noch nicht registriert")+''+((ADM.req||[]).length?' · <a href="#areq" class="reqlnk">'+ADM.req.length+' '+L("Benutzer-Anfragen")+'</a>':'')+'</div>'+
     '<input class="search" id="aq" type="search" placeholder="'+esc(L("Benutzer suchen"))+'" value="'+esc(ADM.q)+'">'+
     '<div class="people">'+vis.map(r=>'<div class="p"><div class="hd"><span class="nm">'+esc(r.name||r.email)+'</span>'+(isAdm(r.email)?'<span class="ust adm">'+L("Admin")+'</span>':'')+st(r)+'</div><div class="ct"><span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?'<span>'+esc(r.m.lang.toUpperCase())+'</span>':'')+'</div><div class="aacts">'+
       (!r.m?'<a href="'+mail(r)+'">'+L("Einladungsmail")+'</a>':'')+
       (own&&!ADMINS.includes(r.email)?(ADM.adm.includes(r.email)?'<button data-adm="rmadmin" data-em="'+esc(r.email)+'">'+L("Admin entfernen")+'</button>':'<button data-adm="mkadmin" data-em="'+esc(r.email)+'">'+L("Zum Admin machen")+'</button>'):'')+
       (own&&r.m&&!ADMINS.includes(r.email)?(r.m.active===true?'<button data-adm="block" data-uid="'+esc(r.m.uid)+'">'+L("Sperren")+'</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">'+L("Entsperren")+'</button>'):'')+
       (ADMINS.includes(r.email)?'':own&&r.m?'<button data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">'+L("Entfernen")+'</button>':(r.inv&&!r.m?'<button data-adm="uninvite" data-em="'+esc(r.email)+'">'+L("Einladung löschen")+'</button>':''))+
-      '</div></div>').join("")+'</div></section>';
+      '</div></div>').join("")+'</div>'+reqSec()+'</section>';
   return h;
 };
 document.addEventListener("input",e=>{if(e.target.id==="aq"){ADM.q=e.target.value;const p=e.target.selectionStart;render();const i=$("#aq");if(i){i.focus();i.setSelectionRange(p,p)}}});
