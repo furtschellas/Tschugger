@@ -386,3 +386,7 @@ html body .catbox button.cico svg{width:16px;height:16px;flex:0 0 16px}
 .meat .mtot{font-size:13px;color:var(--muted)}.meat .mtot b{color:var(--ink,inherit);font-size:15px}
 .meat .catchips{justify-content:flex-end;margin:0}
 .meat .msrc{font-size:11px;color:var(--muted)}
+/* blocking gallery: group headings */
+.galgrid .galgh{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:10px 0 2px}
+.galgrid .galgh:first-child{margin-top:0}.galgrid .galgh small{color:var(--muted);font-weight:600;margin-left:4px}
+.galcap .galcg{color:var(--accent);font-weight:700}

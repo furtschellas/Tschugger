@@ -34,7 +34,8 @@ if _missing and __name__ == "__main__":
     status("setup", "Noch nicht eingerichtet", missing=_missing); sys.exit(0)
 KEY = base64.b64decode(os.environ["CREW_KEY"].strip())
 ROOT = (os.environ.get("DROPBOX_ROOT") or "ns:14935064499").rstrip("/")
-ROOT3D = (os.environ.get("DROPBOX_ROOT_3D") or "ns:13132709057").rstrip("/")   # shared folder «3D» (weekly prep schedule, floorplans)
+ROOT3D = (os.environ.get("DROPBOX_ROOT_3D") or "ns:13132709057").rstrip("/")
+ROOTAUF = (os.environ.get("DROPBOX_ROOT_AUF") or "ns:15240921299").rstrip("/")   # shared folder «AUFLÖSUNG» (in «TSCHUGGER - 3D Locations»)   # shared folder «3D» (weekly prep schedule, floorplans)
 MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
 FORCE = os.environ.get("FORCE", "").lower() in ("ja", "yes", "true", "1")
 EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
@@ -97,12 +98,174 @@ class Dbx:
         j = r.json(); out = j["entries"]
         while j.get("has_more"):
             j = requests.post("https://api.dropboxapi.com/2/files/list_folder/continue", headers=self.h, timeout=60, json={"cursor": j["cursor"]}).json(); out += j["entries"]
-        return [{"name": e["name"], "tag": e[".tag"], "id": e.get("id"), "modified": e.get("server_modified") or e.get("client_modified"), "path": e.get("path_display") or ""} for e in out]
+        return [{"name": e["name"], "tag": e[".tag"], "id": e.get("id"), "modified": e.get("server_modified") or e.get("client_modified"), "path": e.get("path_display") or "",
+                 "size": e.get("size", 0), "hash": e.get("content_hash") or ""} for e in out]
 
     def download(self, fid):
         r = requests.post("https://content.dropboxapi.com/2/files/download", timeout=180,
                           headers=dict(self.h, **{"Dropbox-API-Arg": json.dumps({"path": fid})}))
         r.raise_for_status(); return r.content
+
+# ---------- extra blocking pictures: PDF pages and the AUFLÖSUNG folder ----------
+BPDFE = {}
+IMG_RE = re.compile(r"\.(jpe?g|png|heic|webp)$", re.I)
+
+def _key(e, extra=""):
+    return hashlib.sha1((str(e.get("id")) + "|" + str(e.get("modified")) + extra).encode()).hexdigest()[:20]
+
+def _enc_write(fn, data):
+    iv = secrets.token_bytes(12)
+    open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, data, None))
+
+def _thumb(dbx, e, fn):
+    """encrypted preview picture of a Dropbox photo (made once, kept in blk/)"""
+    if os.path.exists(fn): return True
+    try:
+        r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps(
+            {"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
+        r.raise_for_status(); _enc_write(fn, r.content); return True
+    except Exception as ex:
+        log("Vorschau fehlt:", e["name"], str(ex)[:80]); return False
+
+def _pdf_pages(dbx, e, cache):
+    """every page of a PDF as an encrypted JPEG (blk/<key>p<i>.bin); the page count is kept in meta.pdfPages"""
+    key = _key(e, "|pdf")
+    n = cache.get(key)
+    if n is not None and all(os.path.exists("blk/%sp%d.bin" % (key, i)) for i in range(n)):
+        return key, ["blk/%sp%d.bin" % (key, i) for i in range(n)]
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            src = os.path.join(td, "in.pdf"); open(src, "wb").write(dbx.download(e["id"]))
+            subprocess.run(["pdftoppm", "-jpeg", "-jpegopt", "quality=78", "-scale-to", "1280", "-l", "16", src, os.path.join(td, "p")], check=True, timeout=300)
+            pages = sorted(f for f in os.listdir(td) if f.startswith("p") and f.endswith(".jpg"))
+            out = []
+            for i, f in enumerate(pages):
+                fn = "blk/%sp%d.bin" % (key, i); _enc_write(fn, open(os.path.join(td, f), "rb").read()); out.append(fn)
+        cache[key] = len(out)
+        return key, out
+    except Exception as ex:
+        log("PDF-Seiten nicht erzeugt:", e["name"], str(ex)[:120]); return key, []
+
+def _norm_sc(x):
+    x = re.sub(r"^0+(?=\d)", "", str(x).strip()).lower().replace(" ", "")
+    return re.sub(r"(?<=\d)([a-z]{1,2})$", lambda m: m.group(1).upper(), x)   # 184c → 184C, 107pt1 stays
+
+def scenes_in_name(name):
+    """scene numbers in a location folder name: «06 LAKE PoliceCar 010_14_16_184C_D_E CH» → 10, 14, 16, 184c, 184d, 184e"""
+    out = []
+    for w in name.split()[1:]:
+        w = re.sub(r"[^\w]", "", w)
+        parts = [p for p in w.split("_") if p]
+        if not parts: continue
+        got, prev = [], None
+        for p in parts:
+            p = re.sub(r"(?i)(?<=\d)(pp|optional)$", "", p)
+            m = re.fullmatch(r"(\d{1,3})((?:pt\d)|[A-Za-z]{0,2})", p, re.I)
+            if m:
+                prev = m.group(1); got.append(_norm_sc(m.group(1) + (m.group(2) or "")))
+            elif prev and re.fullmatch(r"[A-Za-z]", p):
+                got.append(_norm_sc(prev + p))
+            else:
+                got = None; break
+        if got: out += got
+    return list(dict.fromkeys(out))
+
+def _web(path, name=None):
+    """Dropbox web link (works for everybody who has the folder in their Dropbox)"""
+    q = requests.utils.quote
+    if name: return "https://www.dropbox.com/home" + q(path) + "?preview=" + q(name)
+    return "https://www.dropbox.com/home" + q(path)
+
+def add_more_blocking(dbx, blk, meta, want_files):
+    changed = False
+    prev = {x.get("name"): x for x in meta.get("blocking") or []}
+    cache = dict(meta.get("pdfPages") or {})
+    used = set()
+    extra = {}  # scene → {"s": [...], "pdf": [...], "loc": [...]} (media items)
+    seen_pdf = {}  # (name, size) → already shown
+
+    def add(sc, g, item):
+        lst = extra.setdefault(sc, {"s": [], "pdf": [], "loc": []})[g]
+        if not any(x["f"] == item["f"] for x in lst): lst.append(item)
+
+    def pdf_items(e, label, u):
+        k = (e["name"].lower(), e.get("size"))
+        if k in seen_pdf: return seen_pdf[k]
+        key, files = _pdf_pages(dbx, e, cache); used.add(key)
+        items = [{"n": label + " · " + str(i + 1) + "/" + str(len(files)), "t": "img", "f": f, "u": u, "g": "pdf"} for i, f in enumerate(files)]
+        want_files.update(files); seen_pdf[k] = items
+        return items
+
+    # (a) pages of the PDFs in the blocking scene folders
+    for b in blk:
+        folder = b.get("url") or ""
+        for e in sorted(BPDFE.get(b["name"], []), key=lambda e: e["name"].lower()):
+            u = folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else (folder or _web(os.path.dirname(e["path"]), e["name"]))
+            for it in pdf_items(e, re.sub(r"\.pdf$", "", e["name"], flags=re.I), u):
+                for sc in b.get("sc") or []: add(_norm_sc(sc), "pdf", it)
+
+    # (b) AUFLÖSUNG
+    allf = dbx.list_path(ROOTAUF, True)
+    if not allf: log("Auflösung: Ordner nicht lesbar oder leer")
+    files = [e for e in allf if e["tag"] == "file"]
+    tops = {}
+    import unicodedata
+    for e in allf: e["path"] = unicodedata.normalize("NFC", e["path"])
+    shortest = min((e["path"] for e in allf), key=lambda x: x.count("/"), default="/")
+    base = shortest.rsplit("/", 1)[0]   # the AUFLÖSUNG folder as this account sees it
+    for e in allf:
+        e["rel"] = e["path"][len(base):].lstrip("/") if e["path"].startswith(base + "/") else e["path"].lstrip("/")
+    for e in files:
+        parts = e["rel"].split("/")
+        if len(parts) < 2:                   # loose file in the root: only scene PDFs («Scene 047.pdf»)
+            m = re.match(r"(?i)scene[\s_]*([0-9]{1,3}[A-Za-z]{0,2}(?:\s*pt\s*\d)?)", e["name"])
+            if m and e["name"].lower().endswith(".pdf"):
+                for it in pdf_items(e, re.sub(r"\.pdf$", "", e["name"], flags=re.I), _web(os.path.dirname(e["path"]), e["name"])): add(_norm_sc(m.group(1)), "pdf", it)
+            continue
+        top = parts[0]; scs = tops.setdefault(top, scenes_in_name(top))
+        sub = parts[1] if len(parts) > 2 else ""
+        msub = re.fullmatch(r"(?i)x?scene[\s_]*([0-9]{1,3}[A-Za-z]{0,2}(?:\s*pt\s*\d)?)", sub.strip()) if sub else None
+        mfile = re.match(r"(?i)x?scene[\s_]*([0-9]{1,3}[A-Za-z]{0,2}(?:\s*pt\s*\d)?)", e["name"])
+        if e["name"].lower().endswith(".pdf"):
+            m = msub or mfile
+            if not m: continue
+            sc = _norm_sc(m.group(1))
+            for it in pdf_items(e, re.sub(r"\.pdf$", "", e["name"], flags=re.I), _web(os.path.dirname(e["path"]), e["name"])): add(sc, "pdf", it)
+        elif IMG_RE.search(e["name"]):
+            fn = "blk/" + _key(e) + ".bin"
+            if not _thumb(dbx, e, fn): continue
+            want_files.add(fn)
+            it = {"n": e["name"], "t": "img", "f": fn, "u": _web(os.path.dirname(e["path"]), e["name"])}
+            if msub:
+                add(_norm_sc(msub.group(1)), "s", dict(it, g="s"))
+            else:
+                for sc in scs: add(sc, "loc", dict(it, g="loc", l=re.sub(r"^\d+\w?\s+", "", sub or top)))
+    # attach: to the blocking entry of the scene, or a new entry «AUF <scene>»
+    by = {}
+    for b in blk:
+        for sc in b.get("sc") or []: by.setdefault(_norm_sc(sc), b)
+    locdir = {}
+    for top, scs in tops.items():
+        for sc in scs: locdir.setdefault(sc, _web(base + "/" + top))
+    for sc in sorted(extra):
+        b = by.get(sc)
+        if not b:
+            b = prev.get("AUF " + sc) or {"name": "AUF " + sc, "sc": [sc], "media": []}
+            b["url"] = locdir.get(sc) or _web(base)
+            blk.append(b); by[sc] = b
+    for b in blk:
+        own = [m for m in (b.get("media") or []) if not m.get("g")]
+        ex = {"s": [], "pdf": [], "loc": []}
+        for sc in b.get("sc") or []:
+            for g in ex:
+                for it in extra.get(_norm_sc(sc), {}).get(g, []):
+                    if not any(x["f"] == it["f"] for x in ex[g]) and not any(x["f"] == it["f"] for x in own): ex[g].append(it)
+        new = own + ex["s"] + ex["pdf"] + ex["loc"][:60]
+        if new != (b.get("media") or []): b["media"] = new; changed = True
+    cache = {k: v for k, v in cache.items() if k in used}
+    if cache != (meta.get("pdfPages") or {}): meta["pdfPages"] = cache; changed = True
+    log("Blocking-Bilder: PDF-Seiten", sum(len(v["pdf"]) for v in extra.values()), "· Szenenfotos", sum(len(v["s"]) for v in extra.values()), "· Motiv-Bilder", len({x["f"] for v in extra.values() for x in v["loc"]}))
+    return changed
 
 # ---------- choosing the newest files (same rules as the Claude task) ----------
 def low(f): return f["name"].lower()
@@ -434,10 +597,11 @@ def main():
         allb = dbx.list_path(ROOT3D + "/0_BlockingFloorplans", True)
         bl = [e for e in allb if e["tag"] == "folder" and e["name"].lower().startswith("scene_") and e["path"].count("/") <= 3]
         bpdf = {}  # scene folder name → PDFs directly inside it
+        bpdfe = {}  # the same as Dropbox entries
         for e in allb:
             pp = e["path"].split("/")
-            if e["tag"] == "file" and e["name"].lower().endswith(".pdf") and len(pp) >= 2 and pp[-2].lower().startswith("scene_"): bpdf.setdefault(pp[-2], []).append(e["name"])
-    except Exception: fl = bl = []; bpdf = {}
+            if e["tag"] == "file" and e["name"].lower().endswith(".pdf") and len(pp) >= 2 and pp[-2].lower().startswith("scene_"): bpdf.setdefault(pp[-2], []).append(e["name"]); bpdfe.setdefault(pp[-2], []).append(e)
+    except Exception: fl = bl = []; bpdf = {}; bpdfe = {}
     if fl or bl:
         known = {x.get("file"): x for x in meta.get("floorplans") or []}
         kb = {x.get("name"): x for x in meta.get("blocking") or []}
@@ -503,8 +667,17 @@ def main():
                             log("Film nicht umgewandelt:", e["name"], str(ex)[:120]); want_files.discard(vf); vf = None
                 items.append({"n": e["name"], "t": "vid" if vid else "img", "f": fn, **({"v": vf} if vf else {}),
                               "u": folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder})
-            if items != (b.get("media") or []):
-                b["media"] = items; changed = True
+            if items != [m for m in (b.get("media") or []) if not m.get("g")]:
+                b["media"] = items + [m for m in (b.get("media") or []) if m.get("g")]; changed = True
+        # ---- more pictures behind the camera button ----
+        # (a) every page of the blocking PDFs as a picture (most scenes only have the PDF)
+        # (b) the shot breakdown folder «AUFLÖSUNG»: per location folder «NN NAME 012_021_034 CH» the scene folders «Scene 027»
+        #     (photos + PDFs) and the 3D/location pictures of that set, shown for every scene in the folder name
+        BPDFE.clear(); BPDFE.update(bpdfe)
+        try:
+            changed = add_more_blocking(dbx, blk, meta, want_files) or changed
+        except Exception as ex:
+            log("Auflösung/Seiten nicht gelesen:", str(ex)[:160])
         for bf in os.listdir("blk"):
             if "blk/" + bf not in want_files and bf.endswith(".bin"):
                 os.remove("blk/" + bf); changed = True
