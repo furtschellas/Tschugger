@@ -126,6 +126,7 @@ async function broadcast(req, env, origin) {
   if (d.fields.sent && d.fields.sent.booleanValue) return json({ error: "Schon gesendet." }, 409, origin);
   const b = await crewDec(env, c);
   if (!(Date.now() - (b.at || 0) < 10 * 60e3)) return json({ error: "Zu alt." }, 410, origin);
+  if (b.push === false) return json({ ok: true, n: 0 }, 200, origin);
   let n = 0, fail = 0;
   const devs = await listDocs("push");
   await Promise.all(devs.map(async dv => {
