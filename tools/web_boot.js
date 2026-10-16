@@ -2615,7 +2615,7 @@ VIEWS.today=function(){
   if(dp&&dp.shootCall)tiles.push(['<b>'+esc(dp.shootCall)+'</b>',L("Drehbeginn")]);
   if(!dp&&d.hours)tiles.push(['<b>'+esc(d.hours)+'</b>',L("Laut Planung: Drehzeit")]);
   if(dp&&dp.wrap)tiles.push(['<b>'+esc(dp.wrap)+'</b>',"Wrap"]);
-  if(d.sr&&d.ss)tiles.push(['<b>'+esc(d.sr+"–"+d.ss)+'</b>',L("Sonne")]);
+  if(d.sr&&d.ss)tiles.push(['<b>'+esc(d.sr+"–"+d.ss)+'</b>',L("Sonnenzeit")]);
   /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
   const wxt=wxTile(d);
   /* drive from the crew hotel (+3 min) and the weather come last */
@@ -2700,6 +2700,7 @@ Object.assign(I18N,{
  "Startseite «Today»":{en:"«Today» start page",fr:"Page d’accueil «Today»",it:"Pagina iniziale «Today»",hi:"«Today» प्रारंभ पृष्ठ"},
  "«Today» anzeigen und die App dort öffnen":{en:"Show «Today» and open the app there",fr:"Afficher «Today» et y ouvrir l’app",it:"Mostra «Today» e apri l’app lì",hi:"«Today» दिखाएँ और ऐप वहीं खोलें"},
  "Ausgeschaltet öffnet die App mit dem Drehplan.":{en:"When off, the app opens with the schedule.",fr:"Désactivé, l’app s’ouvre sur le planning.",it:"Se disattivato, l’app si apre con il piano.",hi:"बंद होने पर ऐप Schedule के साथ खुलता है।"},
+ "Sonnenzeit":{en:"Daylight",fr:"Heures de soleil",it:"Ore di sole",hi:"सूर्य का समय"},
  "Heute":{en:"Today",fr:"Aujourd'hui",it:"Oggi",hi:"आज"},
  "Nächster Drehtag":{en:"Next shooting day",fr:"Prochain jour de tournage",it:"Prossimo giorno di riprese",hi:"अगला शूटिंग दिन"},
  "Nächster Tag":{en:"Next day",fr:"Prochain jour",it:"Prossimo giorno",hi:"अगला दिन"},
