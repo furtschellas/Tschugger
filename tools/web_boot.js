@@ -90,6 +90,7 @@ Object.assign(I18N,{
  "Keine Treffer.":{fr:"Aucun résultat.",it:"Nessun risultato.",en:"No matches."},
  "Name, E-Mail oder Funktion suchen":{fr:"Chercher nom, e-mail ou fonction",it:"Cerca nome, e-mail o funzione",en:"Search name, email or role"},
  "Daten jetzt aktualisieren":{fr:"Actualiser les données",it:"Aggiorna i dati ora",en:"Refresh data now"},
+ "Vorproduktion (Prep) sehen":{fr:"Voir la préproduction (prep)",it:"Vedere la preproduzione (prep)",en:"See pre-production (prep)"},
  "Drehplan sehen":{fr:"Voir le plan de tournage",it:"Vedere il piano di lavorazione",en:"See schedule"},
  "Callsheet sehen":{fr:"Voir la callsheet",it:"Vedere il callsheet",en:"See call sheet"},
  "Kontakte (Telefon, E-Mail) sehen":{fr:"Voir les contacts (téléphone, e-mail)",it:"Vedere i contatti (telefono, e-mail)",en:"See contacts (phone, email)"},
@@ -385,7 +386,7 @@ let COADMIN=false;
 const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
-const PERMS=[["view.plan","Drehplan sehen"],["view.dispo","Callsheet sehen"],["view.crew","Crewliste sehen"],["view.contacts","Kontakte (Telefon, E-Mail) sehen"],["view.mycal","Meine Termine sehen"],["view.script","Drehbuch (Script) sehen"],["view.blocking","Blocking und Blocking-PDFs sehen"],["contacts.extra","Telefon und E-Mail von Personen ausserhalb der Crewliste sehen"],
+const PERMS=[["view.plan","Drehplan sehen"],["view.prep","Vorproduktion (Prep) sehen"],["view.dispo","Callsheet sehen"],["view.crew","Crewliste sehen"],["view.contacts","Kontakte (Telefon, E-Mail) sehen"],["view.mycal","Meine Termine sehen"],["view.script","Drehbuch (Script) sehen"],["view.blocking","Blocking und Blocking-PDFs sehen"],["contacts.extra","Telefon und E-Mail von Personen ausserhalb der Crewliste sehen"],
   ["users.view","Benutzerdaten sehen"],["users.edit","Benutzerdaten ändern"],["users.invite","Benutzer:innen einladen"],["users.requests","Zugangsanfragen freischalten"],
   ["crew.food","Essen und Allergien in der Crew sehen"],["crew.bday","Geburtstage in der Crew sehen"],["crew.vcf","Alle Kontakte als VCF exportieren"],["mycal.all","Termine aller Personen ansehen"],["settings","Einstellungen der App ändern"]];
 const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
