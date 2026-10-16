@@ -1,123 +1,148 @@
 #!/usr/bin/env python3
-"""Push-Nachrichten für «Meine Termine» verschicken.
+"""Push-Nachrichten verschicken (GitHub Action, vom Cloudflare Worker alle 10 Minuten gestartet).
 
-Jedes Gerät, auf dem Push eingeschaltet ist, legt in Firestore unter push/{uid}_{gerät} seine kommenden
-Erinnerungen ab – verschlüsselt mit dem Crew-Schlüssel (CREW_KEY), wie die Crew-Daten auf der Webseite.
-Dieses Skript liest die Einträge (nur lesend), entschlüsselt sie und schickt fällige Erinnerungen als
-Web-Push. Bereits verschickte Erinnerungen stehen in sent.json (wird zwischen den Läufen im Actions-Cache
-aufbewahrt), damit nichts doppelt kommt.
+Jedes Gerät mit Push legt unter push/{uid}_{gerät} seine kommenden Erinnerungen ab, verschlüsselt mit dem
+Crew-Schlüssel. Dieses Skript schickt fällige Erinnerungen und die «Nachrichten an alle», die der Worker nicht
+selbst fertig verschicken konnte. Verschickte Erinnerungen stehen in sent.json (Actions-Cache), damit nichts
+doppelt kommt.
+
+Mit dem Dienstkonto (Secret FIREBASE_SA, siehe tools/fsadmin.py):
+  * liest es die Push-Sammlungen ohne öffentlichen Zugriff,
+  * löscht es Geräte, auf denen die App entfernt wurde (Antwort 404/410),
+  * markiert es Nachrichten an alle als erledigt (fin), so dass nichts doppelt kommt,
+  * nimmt es den Crew-Schlüssel und den Push-Schlüssel (VAPID) aus Firestore.
+Das Repository ist öffentlich: im Protokoll stehen nur Zahlen, keine Titel, Namen oder Geräte.
 """
-import base64, json, os, sys, time
+import base64, hashlib, json, os, sys, time
 
-import requests
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pywebpush import webpush, WebPushException
 
-PROJECT = "tschugger-83692"
-API_KEY = "AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ"
-KEY = base64.b64decode(os.environ["CREW_KEY"].strip().strip('"\''))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import fsadmin  # noqa: E402
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 SENT = os.environ.get("PUSH_SENT", "sent.json")
 EARLY = 6 * 60          # bis zu 6 Minuten zu früh ist in Ordnung (Läufe alle 10 Minuten)
-LATE = 90 * 60          # verspätete Läufe: bis 90 Minuten nach dem Zeitpunkt noch schicken, aber nie nach Beginn
+LATE = 45 * 60          # verspätete Läufe: bis 45 Minuten nach dem Zeitpunkt noch schicken, aber nie nach Beginn
 NOW = time.time()
+CLAIM = "mailto:furtschellas@gmail.com"
 
 
-def dec(iv, ct):
-    return AESGCM(KEY).decrypt(base64.b64decode(iv), base64.b64decode(ct), None)
+def dec(key, c):
+    raw = base64.b64decode(c)
+    return json.loads(AESGCM(key).decrypt(raw[:12], raw[12:], None))
 
 
-def vapid_pem():
-    e = json.load(open(os.path.join(HERE, "vapid.enc.json")))
-    return dec(e["iv"], e["ct"]).decode()
+def vapid_keys(key):
+    """[aktueller, alter] privater VAPID-Schlüssel (PEM). Aktuell: Firestore secret/vapid (Dienstkonto) oder Secret
+    VAPID_PRIVATE; alt: die verschlüsselte Datei im Repository (für Geräte, die noch nicht umgestellt sind)."""
+    out = []
+    try:
+        d = fsadmin.get_doc("secret/vapid") if fsadmin.sa() else None
+        if d and d.get("priv"): out.append(d["priv"])
+    except Exception as e:
+        print("• VAPID aus Firestore nicht lesbar:", type(e).__name__)
+    if os.environ.get("VAPID_PRIVATE", "").strip(): out.append(os.environ["VAPID_PRIVATE"].strip())
+    try:
+        e = json.load(open(os.path.join(HERE, "vapid.enc.json")))
+        out.append(AESGCM(key).decrypt(base64.b64decode(e["iv"]), base64.b64decode(e["ct"]), None).decode())
+    except Exception:
+        pass
+    return list(dict.fromkeys(out))
 
 
-def docs(col="push"):
-    url = f"https://firestore.googleapis.com/v1/projects/{PROJECT}/databases/(default)/documents/" + col
-    tok = None
-    while True:
-        r = requests.get(url, params={"pageSize": 300, "key": API_KEY, **({"pageToken": tok} if tok else {})}, timeout=30)
-        r.raise_for_status()
-        j = r.json()
-        for d in j.get("documents", []):
-            f = d.get("fields", {})
-            if col == "broadcasts" and (f.get("sent", {}) or {}).get("booleanValue"):
-                continue  # already sent right away by the Cloudflare Worker
-            yield d["name"].rsplit("/", 1)[1], (f.get("c", {}) or {}).get("stringValue", "")
-        tok = j.get("nextPageToken")
-        if not tok:
-            break
+def send(sub, data, pems, ttl):
+    """returns «ok», «gone» (device removed the app) or «err»; tries the older VAPID key if the push service rejects the key"""
+    for pem in pems:
+        try:
+            webpush(subscription_info=sub, data=data, vapid_private_key=pem, vapid_claims={"sub": CLAIM}, headers={"Urgency": "high"}, ttl=ttl)
+            return "ok"
+        except WebPushException as e:
+            code = getattr(e.response, "status_code", None)
+            if code in (404, 410): return "gone"
+            if code in (401, 403): continue   # key does not match this subscription: try the next one
+            print("• Push-Fehler HTTP", code)
+            return "err"
+        except Exception as e:
+            print("• Push-Fehler", type(e).__name__)
+            return "err"
+    return "err"
 
 
 def main():
+    kb64 = fsadmin.crew_key_b64()
+    if not kb64:
+        print("• Kein Crew-Schlüssel"); return 1
+    key = base64.b64decode(kb64)
     try:
         sent = json.load(open(SENT))
     except Exception:
         sent = {}
     sent = {k: v for k, v in sent.items() if v > NOW - 3 * 86400}
-    pem = vapid_pem()
-    n_dev = n_sent = 0
-    # messages to everybody / selected roles and departments (broadcasts), at most 24 h old
+    pems = vapid_keys(key)
+    if not pems:
+        print("• Kein VAPID-Schlüssel"); return 1
+    sa = bool(fsadmin.sa())
+    n_dev = n_sent = n_gone = n_late = n_err = 0
+
+    # messages to everybody / selected roles and departments, at most 24 h old, not yet finished by the worker
     bcs = []
     try:
-        for bid, c in docs("broadcasts"):
+        for bid, f, ut in fsadmin.list_docs("broadcasts"):
+            if f.get("fin") or (f.get("sent") and not sa and not f.get("done")): continue
             try:
-                raw = base64.b64decode(c); b = json.loads(AESGCM(KEY).decrypt(raw[:12], raw[12:], None))
-                if b.get("at", 0) / 1000 > NOW - 86400 and b.get("push", True) is not False: bcs.append((bid, b))
-            except Exception as e:
-                print("Nachricht nicht lesbar:", bid, e)
+                b = dec(key, f.get("c") or "")
+            except Exception:
+                continue
+            age = NOW - b.get("at", 0) / 1000
+            if age > 86400 or b.get("push", True) is False: continue
+            if f.get("sent") and age < 180: continue   # the worker is sending it right now
+            bcs.append((bid, b, set(f.get("done") or []), ut))
     except Exception as e:
-        print("Nachrichten nicht lesbar:", e)
-    for did, c in docs():
-        if not c:
-            continue
+        print("• Nachrichten nicht lesbar:", type(e).__name__)
+
+    for did, f, _ in fsadmin.list_docs("push"):
+        c = f.get("c")
+        if not c: continue
         try:
-            raw = base64.b64decode(c)
-            p = json.loads(AESGCM(KEY).decrypt(raw[:12], raw[12:], None))
-        except Exception as e:
-            print("nicht lesbar:", did, e)
+            p = dec(key, c)
+        except Exception:
             continue
         n_dev += 1
         sub = p.get("sub")
-        if not sub or not p.get("on", True):
-            continue
+        if not sub or not p.get("on", True): continue
         who = p.get("who") or {}
-        for bid, b in bcs:
-            key = did + "|b|" + bid
-            if key in sent: continue
+        gone = False
+        for bid, b, done, _ in bcs:
+            k = did + "|b|" + bid
+            if k in sent or did in done: continue
             roles, depts = b.get("roles"), b.get("depts")
             if roles is not None or depts is not None:
-                ok = (who.get("role", "") in (roles or [])) or (bool(who.get("dept")) and who.get("dept") in (depts or []))
-                if not ok: continue
-            data = json.dumps({"title": b.get("title", ""), "body": b.get("body", ""), "url": "./", "tag": "b" + bid}, ensure_ascii=False)
-            try:
-                webpush(subscription_info=sub, data=data, vapid_private_key=pem, vapid_claims={"sub": "mailto:furtschellas@gmail.com"}, headers={"Urgency": "high"}, ttl=86400)
-                n_sent += 1; print("Nachricht gesendet:", did, b.get("title"))
-            except Exception as e:
-                print("Push-Fehler", did, str(e)[:200])
-            sent[key] = NOW
-        for it in p.get("items", []):
+                if not ((who.get("role", "") in (roles or [])) or (bool(who.get("dept")) and who.get("dept") in (depts or []))): continue
+            r = send(sub, json.dumps({"title": b.get("title", ""), "body": b.get("body", ""), "url": "./", "tag": "b" + bid}, ensure_ascii=False), pems, 86400)
+            if r == "gone": gone = True; break
+            if r == "ok": n_sent += 1; sent[k] = NOW
+            else: n_err += 1   # not marked: tried again in the next run
+        for it in ([] if gone else p.get("items", [])):
             at = it.get("at", 0) / 1000
             start = it.get("start", it.get("at", 0)) / 1000
-            key = did + "|" + str(it.get("id")) + "|" + str(int(at))
-            if key in sent or at > NOW + EARLY or at < NOW - LATE or start < NOW - 60:
-                continue
-            data = json.dumps({"title": it.get("title", ""), "body": it.get("body", ""), "url": it.get("url", "./#my"), "tag": str(it.get("id", ""))}, ensure_ascii=False)
-            try:
-                webpush(subscription_info=sub, data=data, vapid_private_key=pem,
-                        vapid_claims={"sub": "mailto:furtschellas@gmail.com"}, headers={"Urgency": "high"}, ttl=3600)
-                n_sent += 1
-                print("gesendet:", did, it.get("title"))
-            except WebPushException as e:
-                code = getattr(e.response, "status_code", None)
-                print("Push-Fehler", did, code, str(e)[:200])
-                if code in (404, 410):
-                    break  # Gerät hat Push abgemeldet – die App räumt den Eintrag beim nächsten Start auf
-            except Exception as e:
-                print("Push-Fehler", did, str(e)[:200])
-            sent[key] = NOW
+            k = did + "|" + str(it.get("id")) + "|" + str(int(at))
+            if k in sent or at > NOW + EARLY or start < NOW - 60: continue
+            if at < NOW - LATE:
+                n_late += 1; sent[k] = NOW; continue
+            r = send(sub, json.dumps({"title": it.get("title", ""), "body": it.get("body", ""), "url": it.get("url", "./#my"), "tag": str(it.get("id", ""))}, ensure_ascii=False), pems, 3600)
+            if r == "gone": gone = True; break
+            if r == "ok": n_sent += 1; sent[k] = NOW
+            else: n_err += 1
+        if gone:
+            n_gone += 1
+            if sa: fsadmin.delete_doc("push/" + did)   # the device removed the app or turned push off in the browser
+    for bid, b, done, ut in bcs:
+        if sa: fsadmin.patch_doc("broadcasts/" + bid, {"fin": True})
     json.dump(sent, open(SENT, "w"))
-    print(f"{n_dev} Geräte, {n_sent} Nachrichten verschickt")
+    print(f"• {n_dev} Geräte · {n_sent} verschickt · {n_err} Fehler (nächster Lauf) · {n_late} zu spät verworfen · {n_gone} abgemeldet"
+          + ("" if sa else " · ohne Dienstkonto (FIREBASE_SA fehlt)"))
 
 
 if __name__ == "__main__":
