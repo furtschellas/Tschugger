@@ -113,6 +113,8 @@ Object.assign(I18N,{
  "Willkommen bestätigt":{fr:"Bienvenue confirmée",it:"Benvenuto confermato",en:"Welcome confirmed"},
  "Willkommen noch nicht bestätigt":{fr:"Bienvenue pas encore confirmée",it:"Benvenuto non ancora confermato",en:"Welcome not yet confirmed"},
  "Danke – viel Spass mit der App!":{fr:"Merci – amuse-toi bien avec l'app !",it:"Grazie – buon divertimento con l'app!",en:"Thanks – enjoy the app!"},
+ "Crewliste: Telefonnummer sehen":{fr:"Liste de l'équipe : voir le numéro de téléphone",it:"Lista crew: vedere il numero di telefono",en:"Crew list: see phone number"},
+ "Crewliste: E-Mail sehen":{fr:"Liste de l'équipe : voir l'e-mail",it:"Lista crew: vedere l'e-mail",en:"Crew list: see email"},
  "E-Mail-Adressen sehen":{fr:"Voir les adresses e-mail",it:"Vedere gli indirizzi e-mail",en:"See email addresses"},
  "E-Mail-Adressen":{fr:"Adresses e-mail",it:"Indirizzi e-mail",en:"Email addresses"},
  "Benutzer:innen ohne Rolle":{fr:"Utilisateurs sans rôle",it:"Utenti senza ruolo",en:"Users without a role"},
@@ -398,7 +400,7 @@ let COADMIN=false;
 const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
-const PERMS=[["view.plan","Drehplan sehen"],["view.prep","Vorproduktion (Prep) sehen"],["view.dispo","Callsheet sehen"],["view.crew","Crewliste sehen"],["view.contacts","Kontakte (Telefon, E-Mail) sehen"],["view.phone","Telefonnummern sehen"],["view.email","E-Mail-Adressen sehen"],["view.mycal","Meine Termine sehen"],["view.script","Drehbuch (Script) sehen"],["view.blocking","Blocking und Blocking-PDFs sehen"],["contacts.extra","Telefon und E-Mail von Personen ausserhalb der Crewliste sehen"],
+const PERMS=[["view.plan","Drehplan sehen"],["view.prep","Vorproduktion (Prep) sehen"],["view.dispo","Callsheet sehen"],["view.crew","Crewliste sehen"],["view.phone","Crewliste: Telefonnummer sehen"],["view.email","Crewliste: E-Mail sehen"],["view.mycal","Meine Termine sehen"],["view.script","Drehbuch (Script) sehen"],["view.blocking","Blocking und Blocking-PDFs sehen"],["contacts.extra","Telefon und E-Mail von Personen ausserhalb der Crewliste sehen"],
   ["users.view","Benutzerdaten sehen"],["users.edit","Benutzerdaten ändern"],["users.invite","Benutzer:innen einladen"],["users.requests","Zugangsanfragen freischalten"],
   ["crew.food","Essen und Allergien in der Crew sehen"],["crew.bday","Geburtstage in der Crew sehen"],["crew.vcf","Alle Kontakte als VCF exportieren"],["mycal.all","Termine aller Personen ansehen"],["settings","Einstellungen der App ändern"]];
 const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
