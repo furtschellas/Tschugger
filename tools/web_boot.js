@@ -982,7 +982,7 @@ async function onGateClick(e){
   }
 }
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour"];let PREFT=null,PREFAPPLY=false;
+const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today"];let PREFT=null,PREFAPPLY=false;
 {const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k))savePrefsSoon()}}
 function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 async function savePrefs(){
@@ -1703,7 +1703,7 @@ function acctInner(){
     (ME&&window.PUSHEN!==false?pushSec():'')+'<section class="psec"><h4>'+L("App-Icon")+'</h4>'+(()=>{a2stCheck();const st=window.A2ST&&window.A2ST.v;
       if(st==="standalone")return '<p class="ghint pok">✓ '+L("Du nutzt die App bereits als Verknüpfung.")+'</p>';
       if(st==="installed")return '<p class="ghint pok">✓ '+L("Das Icon ist auf diesem Gerät vorhanden.")+'</p>';
-      return '<p class="ghint">'+(st==="missing"?'<b>'+L("Auf diesem Gerät ist kein Icon vorhanden.")+'</b> ':!st?L("Prüfe, ob ein Icon vorhanden ist …")+' ':'')+L("Lege die Crew-App auf den Startbildschirm oder Desktop – dann öffnet sie sich wie eine normale App.")+'</p><button type="button" class="pillbtn" data-ac="a2hs">'+L("Icon auf Startbildschirm oder Desktop hinzufügen")+'</button> '})()+'<button type="button" class="pillbtn" data-ac="a2hs" data-more="1">+ '+L("Weiteres Icon erstellen")+'</button>'+'</section>'+(window.TOUREN?'<section class="psec"><h4>'+L("Einführungstour")+'</h4><p class="ghint">'+esc(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?' · '+esc(new Date(MEMBER.tourAt).toLocaleDateString("de-CH")):'')+'</p><button type="button" class="pillbtn" data-ac="tour">'+L("Tour starten")+'</button></section>':'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
+      return '<p class="ghint">'+(st==="missing"?'<b>'+L("Auf diesem Gerät ist kein Icon vorhanden.")+'</b> ':!st?L("Prüfe, ob ein Icon vorhanden ist …")+' ':'')+L("Lege die Crew-App auf den Startbildschirm oder Desktop – dann öffnet sie sich wie eine normale App.")+'</p><button type="button" class="pillbtn" data-ac="a2hs">'+L("Icon auf Startbildschirm oder Desktop hinzufügen")+'</button> '})()+'<button type="button" class="pillbtn" data-ac="a2hs" data-more="1">+ '+L("Weiteres Icon erstellen")+'</button>'+'</section>'+'<section class="psec"><h4>'+L("Startseite «Today»")+'</h4><label class="ck"><input type="checkbox" data-todayon'+(todayOn()?' checked':'')+'> '+L("«Today» anzeigen und die App dort öffnen")+'</label><p class="ghint">'+L("Ausgeschaltet öffnet die App mit dem Drehplan.")+'</p></section>'+(window.TOUREN?'<section class="psec"><h4>'+L("Einführungstour")+'</h4><p class="ghint">'+esc(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?' · '+esc(new Date(MEMBER.tourAt).toLocaleDateString("de-CH")):'')+'</p><button type="button" class="pillbtn" data-ac="tour">'+L("Tour starten")+'</button></section>':'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '';
@@ -2508,7 +2508,76 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-offprep]"))offl
 document.addEventListener("click",e=>{if(!e.target.closest("[data-tomy]"))return;if(typeof openMyCal==="function")openMyCal();else{S.tab="my";render();scrollTo(0,0)}});
 window.addEventListener("online",()=>{if(S.tab==="today")render()});window.addEventListener("offline",()=>{if(S.tab==="today")render()});
 
+/* ---------- weather for the first scene of the day (Open-Meteo, no key needed) ---------- */
+const WXI=c=>c===0?"☀️":c<=2?"🌤️":c===3?"☁️":c<=48?"🌫️":c<=57?"🌦️":c<=67?"🌧️":c<=77?"🌨️":c<=82?"🌧️":c<=86?"🌨️":"⛈️";
+const WXT=c=>L(c===0?"sonnig":c<=2?"leicht bewölkt":c===3?"bedeckt":c<=48?"Nebel":c<=57?"Niesel":c<=67?"Regen":c<=77?"Schnee":c<=82?"Regenschauer":c<=86?"Schneeschauer":"Gewitter");
+const WX={};
+function wxPlace(d){
+  const its=arr(d.items).filter(i=>i.sc&&i.loc&&!/^tba/i.test(i.loc));const it=its[0]||arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));if(!it)return null;
+  let ad="";try{ad=addrForItem(it)}catch(_){ad=it.loc}
+  const geo=(S.meta&&S.meta.geo)||{};let ll=null;
+  for(const k in geo){if(geo[k]&&(ad.includes(k)||k.includes(ad)||(ad.split(",").slice(-1)[0].trim()&&k.includes(ad.split(",").slice(-1)[0].trim())))){ll=geo[k];break}}
+  const town=(ad.match(/\b\d{4}\s+([^,]+)/)||[])[1]||String(it.loc).split(/\s+/)[0];
+  return {ll,town:town.trim(),name:(it.set||"").replace(/^VALAIS\s*–\s*/i,"")||it.loc,loc:it.loc,addr:ad,sc:it.sc,t:it.t||""};
+}
+async function wxLoad(d){
+  const p=wxPlace(d);if(!p)return null;const key=d.date+"|"+p.town;
+  if(WX[key]&&(WX[key].busy||Date.now()-WX[key].at<3600e3))return WX[key];
+  let cached=null;try{cached=JSON.parse(localStorage.getItem("wx:"+key)||"null")}catch(_){}
+  WX[key]=Object.assign({busy:true,at:Date.now(),p},cached||{});
+  try{
+    let ll=p.ll;
+    if(!ll){const g=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=de&country=CH&name="+encodeURIComponent(p.town)).then(r=>r.json());const x=g&&g.results&&g.results[0];if(x)ll=[x.latitude,x.longitude]}
+    if(!ll)throw new Error("no place");
+    const u="https://api.open-meteo.com/v1/forecast?latitude="+ll[0]+"&longitude="+ll[1]+"&timezone=Europe%2FZurich&start_date="+d.date+"&end_date="+d.date+
+      "&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,cloud_cover"+
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunrise,sunset,uv_index_max";
+    const j=await fetch(u).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()});
+    WX[key]={at:Date.now(),p,ll,j,busy:false};try{localStorage.setItem("wx:"+key,JSON.stringify({at:Date.now(),ll,j}))}catch(_){}
+  }catch(err){WX[key]=Object.assign({},WX[key],{busy:false,err:String(err&&err.message||err)})}
+  if(S.tab==="today")render();if(document.getElementById("wxpop"))wxPopup(d.date);
+  return WX[key];
+}
+function wxGet(d){const p=wxPlace(d);if(!p)return null;const w=WX[d.date+"|"+p.town];if(!w||(!w.busy&&Date.now()-w.at>3600e3))wxLoad(d);
+  if(!w||!w.j){let c=null;try{c=JSON.parse(localStorage.getItem("wx:"+d.date+"|"+p.town)||"null")}catch(_){}return c&&c.j?Object.assign({p},c):{p,busy:true}}return w}
+function wxTile(d){
+  const w=wxGet(d);if(!w)return "";const dl=w.j&&w.j.daily;
+  if(!dl||!dl.time||!dl.time.length)return '<button type="button" class="ttile twx" data-wx="'+esc(d.date)+'"><b>'+(w.err?"–":"…")+'</b><span>'+esc(L("Wetter"))+' · '+esc(w.p.town)+'</span></button>';
+  const c=dl.weather_code[0];
+  return '<button type="button" class="ttile twx" data-wx="'+esc(d.date)+'" aria-label="'+esc(L("Wetterbericht"))+'"><b><span class="wxi">'+WXI(c)+'</span> '+Math.round(dl.temperature_2m_min[0])+'–'+Math.round(dl.temperature_2m_max[0])+'°</b><span>'+esc(w.p.town)+(dl.precipitation_probability_max[0]!=null?' · 💧'+dl.precipitation_probability_max[0]+'%':'')+'</span></button>';
+}
+function wxPopup(date){
+  const d=(S.days||[]).find(x=>x.date===date);if(!d)return;const w=wxGet(d);if(!w)return;
+  let o=document.getElementById("wxpop");if(!o){o=document.createElement("div");o.id="wxpop";o.className="a2hs";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o);
+    o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-wxx]"))o.remove()})}
+  const dt=new Date(date+"T12:00:00"),dp=(S.dispos||[]).find(x=>x&&x.date===date);
+  let body='<p class="ghint">'+esc(L("Wird geladen …"))+'</p>';
+  const j=w.j;if(j&&j.hourly&&j.daily){const h=j.hourly,dl=j.daily;
+    const rows=h.time.map((t,i)=>({h:t.slice(11,16),i})).filter(x=>{const hh=+x.h.slice(0,2);return hh>=5&&hh<=23});
+    body='<div class="wxsum"><div class="wxbig">'+WXI(dl.weather_code[0])+'</div><div><b>'+esc(WXT(dl.weather_code[0]))+'</b><br>'+Math.round(dl.temperature_2m_min[0])+'° / '+Math.round(dl.temperature_2m_max[0])+'° · 💧 '+(dl.precipitation_probability_max[0]??"–")+'% · '+(dl.precipitation_sum[0]??0)+' mm<br>'+esc(L("Wind"))+' '+Math.round(dl.wind_speed_10m_max[0])+' km/h, '+esc(L("Böen"))+' '+Math.round(dl.wind_gusts_10m_max[0])+' km/h'+(dl.uv_index_max&&dl.uv_index_max[0]!=null?' · UV '+Math.round(dl.uv_index_max[0]):'')+'<br>'+esc(L("Sonne"))+' '+String(dl.sunrise[0]).slice(11,16)+'–'+String(dl.sunset[0]).slice(11,16)+'</div></div>'+
+      (dp&&dp.weather?'<p class="ghint">'+esc(L("Laut Callsheet"))+': '+esc(dp.weather)+'</p>':'')+
+      '<div class="wxtbl"><div class="wxr wxh"><span>'+esc(L("Zeit"))+'</span><span></span><span>°C</span><span>💧</span><span>mm</span><span>'+esc(L("Wind"))+'</span></div>'+
+      rows.map(({h:hh,i})=>'<div class="wxr'+(w.p.t&&hh.slice(0,2)===String(w.p.t).slice(0,2)?' wxnow':'')+'"><span>'+hh+'</span><span>'+WXI(h.weather_code[i])+'</span><span>'+Math.round(h.temperature_2m[i])+'°</span><span>'+(h.precipitation_probability[i]??"–")+'%</span><span>'+(h.precipitation[i]||0)+'</span><span>'+Math.round(h.wind_speed_10m[i])+(h.wind_gusts_10m[i]>40?' <small>('+Math.round(h.wind_gusts_10m[i])+')</small>':'')+'</span></div>').join("")+'</div>'+
+      '<p class="ghint wxsrc">'+esc(L("Vorhersage"))+': Open-Meteo · '+esc(L("Stand"))+' '+new Date(w.at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})+'</p>'}
+  else if(w.err)body='<p class="ghint">'+esc(L("Wetter nicht verfügbar"))+' ('+esc(w.err)+')</p>';
+  o.innerHTML='<div class="a2box wxbox"><button type="button" class="xclose" data-wxx aria-label="'+esc(L("Schliessen"))+'">×</button><h3>'+esc(L("Wetter"))+' · '+esc(WDL(dt)+" "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+".")+'</h3>'+
+    '<p class="wxplace">📍 <b>'+esc(w.p.town)+'</b> · '+esc(w.p.name)+(w.p.sc?' · '+esc(L("Szene"))+' '+esc(w.p.sc)+(w.p.t?' '+esc(w.p.t):''):'')+'</p>'+body+'</div>';
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-wx]");if(b)wxPopup(b.dataset.wx)});
+Object.assign(I18N,{
+ "Wetterbericht":{en:"Weather report",fr:"Bulletin météo",it:"Bollettino meteo",hi:"मौसम रिपोर्ट"},
+ "sonnig":{en:"sunny",fr:"ensoleillé",it:"soleggiato",hi:"धूप"},"leicht bewölkt":{en:"partly cloudy",fr:"partiellement nuageux",it:"poco nuvoloso",hi:"आंशिक बादल"},
+ "bedeckt":{en:"overcast",fr:"couvert",it:"coperto",hi:"बादल छाए"},"Nebel":{en:"fog",fr:"brouillard",it:"nebbia",hi:"कोहरा"},"Niesel":{en:"drizzle",fr:"bruine",it:"pioviggine",hi:"बूंदाबांदी"},
+ "Regen":{en:"rain",fr:"pluie",it:"pioggia",hi:"बारिश"},"Schnee":{en:"snow",fr:"neige",it:"neve",hi:"बर्फ"},"Regenschauer":{en:"showers",fr:"averses",it:"rovesci",hi:"बौछारें"},
+ "Schneeschauer":{en:"snow showers",fr:"averses de neige",it:"rovesci di neve",hi:"बर्फ की बौछारें"},"Gewitter":{en:"thunderstorm",fr:"orage",it:"temporale",hi:"आंधी-तूफ़ान"},
+ "Wind":{en:"Wind",fr:"Vent",it:"Vento",hi:"हवा"},"Böen":{en:"gusts",fr:"rafales",it:"raffiche",hi:"झोंके"},"Laut Callsheet":{en:"Callsheet says",fr:"Selon la feuille de service",it:"Secondo l’ordine del giorno",hi:"Callsheet के अनुसार"},
+ "Vorhersage":{en:"Forecast",fr:"Prévision",it:"Previsione",hi:"पूर्वानुमान"},"Wetter nicht verfügbar":{en:"Weather not available",fr:"Météo indisponible",it:"Meteo non disponibile",hi:"मौसम उपलब्ध नहीं"}
+});
 /* ---------- 1) «Heute»: everything for today (or the next working day) on one page ---------- */
+/* «Today» on/off per person (profile, synced with the view settings) */
+function todayOn(){try{return localStorage.getItem("today")!=="0"}catch(_){return true}}
+window.todayOn=todayOn;
+document.addEventListener("change",e=>{const c=e.target.closest("[data-todayon]");if(!c)return;store("today",c.checked?"1":"0");if(!c.checked&&S.tab==="today")S.tab="plan";render()});
 function todayDay(){const t=todayISO();const ds=(S.days||[]).filter(d=>d.date);return ds.find(d=>d.date===t)||ds.find(d=>d.date>t&&d.kind==="shoot")||ds.find(d=>d.date>t)||null}
 VIEWS.today=function(){
   if(!S.loaded&&!(S.days||[]).length)return '<div class="empty">'+L("Daten werden geladen …")+'</div>';
@@ -2532,8 +2601,9 @@ VIEWS.today=function(){
   if(!dp&&d.hours)tiles.push(['<b>'+esc(d.hours)+'</b>',L("Laut Planung: Drehzeit")]);
   if(dp&&dp.wrap)tiles.push(['<b>'+esc(dp.wrap)+'</b>',"Wrap"]);
   if(d.sr&&d.ss)tiles.push(['<b>'+esc(d.sr+"–"+d.ss)+'</b>',L("Sonne")]);
-  if(dp&&dp.weather)tiles.push(['<b>'+esc(dp.weather)+'</b>',L("Wetter")]);
-  h+=tiles.length?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+'</div>':'';
+  /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
+  const wxt=wxTile(d);
+  h+=(tiles.length||wxt)?'<div class="ttiles">'+wxt+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+'</div>':'';
   if(!dp&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
   const first=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));
@@ -2562,7 +2632,7 @@ VIEWS.today=function(){
 };
 
 /* the app opens on «Today» (unless a link asks for another page) */
-if(!location.hash&&!window.__todayStart){window.__todayStart=true;S.tab="today";try{render()}catch(_){}}
+if(!location.hash&&!window.__todayStart&&todayOn()){window.__todayStart=true;S.tab="today";try{render()}catch(_){}}
 /* ---------- 11) Protokoll: who changed what in the administration (roles, users, menus, settings, messages) ---------- */
 const AUDIT_COLS=["roles","userroles","admins","owners","invites","members","menus","config","broadcasts","starts","requests"];
 function auditSum(col,data,op){
@@ -2611,6 +2681,9 @@ Object.assign(I18N,{
  "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi impegni",hi:"मेरे अगले कार्यक्रम"},
  "Alle meine Termine":{en:"All my events",fr:"Tous mes rendez-vous",it:"Tutti i miei impegni",hi:"मेरे सभी कार्यक्रम"},
  "Keine anstehenden Termine.":{en:"No upcoming events.",fr:"Aucun rendez-vous à venir.",it:"Nessun impegno in arrivo.",hi:"कोई आगामी कार्यक्रम नहीं।"},
+ "Startseite «Today»":{en:"«Today» start page",fr:"Page d’accueil «Today»",it:"Pagina iniziale «Today»",hi:"«Today» प्रारंभ पृष्ठ"},
+ "«Today» anzeigen und die App dort öffnen":{en:"Show «Today» and open the app there",fr:"Afficher «Today» et y ouvrir l’app",it:"Mostra «Today» e apri l’app lì",hi:"«Today» दिखाएँ और ऐप वहीं खोलें"},
+ "Ausgeschaltet öffnet die App mit dem Drehplan.":{en:"When off, the app opens with the schedule.",fr:"Désactivé, l’app s’ouvre sur le planning.",it:"Se disattivato, l’app si apre con il piano.",hi:"बंद होने पर ऐप Schedule के साथ खुलता है।"},
  "Heute":{en:"Today",fr:"Aujourd'hui",it:"Oggi",hi:"आज"},
  "Nächster Tag":{en:"Next day",fr:"Prochain jour",it:"Prossimo giorno",hi:"अगला दिन"},
  "Mein Call":{en:"My call",fr:"Ma convocation",it:"La mia convocazione",hi:"मेरा कॉल"},

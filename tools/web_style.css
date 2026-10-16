@@ -498,3 +498,14 @@ html body #view .menuadd .pillbtn{min-height:32px;font-size:13px;padding:0 12px}
 .tmylist .tmd{font-size:12.5px;color:var(--muted);white-space:nowrap}.tmylist .tmd b{font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
 .tmylist .tmw{min-width:0}.tmylist .tmw small{font-size:12.5px;color:var(--muted)}
 .tmy .pillbtn{min-height:32px!important;font-size:13px!important}
+/* weather */
+button.ttile.twx{font:inherit;text-align:left;color:inherit;cursor:pointer;border-color:var(--acc-soft)}
+button.ttile.twx:hover{background:var(--acc-tint)}
+.ttile .wxi{font-size:20px}
+.wxbox{max-width:520px}.wxplace{margin:0 0 10px;font-size:14px}
+.wxsum{display:flex;gap:12px;align-items:center;margin:0 0 10px;font-size:14px;line-height:1.5}.wxbig{font-size:44px;line-height:1}
+.wxtbl{display:flex;flex-direction:column;max-height:46vh;overflow:auto;border:1px solid var(--rule);border-radius:10px}
+.wxr{display:grid;grid-template-columns:52px 30px 44px 48px 40px 1fr;gap:4px;padding:5px 10px;font-size:13.5px;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--rule)}
+.wxr:last-child{border-bottom:0}.wxh{position:sticky;top:0;background:var(--sheet);font-weight:700;color:var(--muted);font-size:12px}
+.wxr.wxnow{background:var(--acc-tint)}
+.wxsrc{margin-top:8px}
