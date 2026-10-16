@@ -252,6 +252,13 @@ Object.assign(I18N,{
  "Verlauf leeren":{fr:"Vider l'historique",it:"Svuota cronologia",en:"Clear history",hi:"इतिहास साफ़ करें"},
  "Den ganzen Verlauf der Push-Nachrichten löschen?":{fr:"Supprimer tout l'historique des notifications ?",it:"Eliminare tutta la cronologia delle notifiche?",en:"Delete the whole notification history?",hi:"पुश संदेशों का पूरा इतिहास हटाएँ?"},
  "Verlauf geleert.":{fr:"Historique vidé.",it:"Cronologia svuotata.",en:"History cleared.",hi:"इतिहास साफ़ किया गया।"},
+ "Zusätzlich per WhatsApp (an dieselben Personen)":{fr:"Aussi par WhatsApp (aux mêmes personnes)",it:"Anche via WhatsApp (alle stesse persone)",en:"Also via WhatsApp (to the same people)",hi:"WhatsApp से भी (उन्हीं लोगों को)"},
+ "Tippe bei jeder Person auf WhatsApp – der Text ist schon eingefügt, du musst nur noch auf Senden tippen.":{fr:"Touche WhatsApp pour chaque personne – le texte est déjà prêt, il suffit d'envoyer.",it:"Tocca WhatsApp per ogni persona – il testo è già pronto, basta inviare.",en:"Tap WhatsApp for each person – the text is ready, just tap send.",hi:"हर व्यक्ति के लिए WhatsApp पर टैप करें – टेक्स्ट तैयार है, बस भेजें दबाएँ।"},
+ "Senden als":{fr:"Envoyer par",it:"Invia come",en:"Send as",hi:"इस रूप में भेजें"},
+ "Push geht sofort an alle mit eingeschalteten Push-Nachrichten. WhatsApp, SMS und E-Mail öffnen die jeweilige App auf deinem Gerät – nur an die oben gewählten Empfänger.":{fr:"Le push part tout de suite à ceux qui l'ont activé. WhatsApp, SMS et e-mail ouvrent l'app correspondante sur ton appareil – uniquement pour les destinataires choisis.",it:"Il push parte subito a chi ha le notifiche attive. WhatsApp, SMS ed e-mail aprono l'app sul tuo dispositivo – solo per i destinatari scelti.",en:"Push goes out right away to everyone with notifications on. WhatsApp, SMS and email open the app on your device – only for the recipients chosen above.",hi:"पुश तुरंत उन सबको जाता है जिनकी सूचनाएँ चालू हैं। WhatsApp, SMS और ई-मेल आपके डिवाइस पर ऐप खोलते हैं – केवल ऊपर चुने गए प्राप्तकर्ताओं के लिए।"},
+ "Bitte mindestens einen Weg wählen.":{fr:"Choisis au moins un canal.",it:"Scegli almeno un canale.",en:"Please choose at least one channel.",hi:"कम से कम एक तरीका चुनें।"},
+ "Keine E-Mail-Adressen für diese Empfänger gefunden.":{fr:"Aucune adresse e-mail trouvée pour ces destinataires.",it:"Nessun indirizzo e-mail trovato per questi destinatari.",en:"No email addresses found for these recipients.",hi:"इन प्राप्तकर्ताओं के ई-मेल पते नहीं मिले।"},
+ "Mail-App geöffnet mit {n} Adressen.":{fr:"App mail ouverte avec {n} adresses.",it:"App mail aperta con {n} indirizzi.",en:"Mail app opened with {n} addresses.",hi:"मेल ऐप {n} पतों के साथ खुली।"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -1074,7 +1081,7 @@ async function pushSync(){
 async function pushEnable(){
   if(!pushOK())return;const p=await Notification.requestPermission();
   if(p!=="granted"){showMsg(L("Push-Nachrichten wurden im Browser nicht erlaubt."),6000);render();return}
-  try{await pushSub(true)}catch(err){console.error(err);showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+  try{await withTimeout(pushSub(true),10000,"push")}catch(err){console.error(err);showMsg(L("Fehler:")+" "+(err.message||err),6000)}
   const c=pushCfg();c.on=true;try{localStorage.removeItem("pushlast")}catch(_){}pushSave(c);render();
 }
 async function pushTest(){
@@ -1143,7 +1150,7 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-pushon]")){pushEnable();return}
   if(e.target.closest("[data-pushtest]")){pushTest();return}},true);
 document.addEventListener("change",e=>{const t=e.target;
-  if(t.matches("[data-pushmaster]")){const c=pushCfg();c.on=t.checked;pushSave(c);render()}
+  if(t.matches("[data-pushmaster]")){const c=pushCfg();c.on=t.checked;pushSave(c);if(t.checked&&pushOK()&&Notification.permission==="default")pushEnable();else render()}
   else if(t.matches("[data-pushlead]")){const c=pushCfg();c.lead=+t.value;pushSave(c)}
   else if(t.matches("[data-pushtype]")){const c=pushCfg();c.types[t.dataset.pushtype]=t.checked;pushSave(c);render()}
   else if(t.matches("[data-pushev2]")){pushToggleEv(t.dataset.pushev2,t.dataset.pushdate,t.checked);const s=t.closest("details").querySelector("summary");if(s){const c=pushCfg(),ev=pushEvents(c).filter(x=>pushStart(x)>Date.now()).slice(0,40);s.textContent=L("Kommende Termine")+" ("+ev.filter(x=>!c.off[x.id]).length+"/"+ev.length+")"}}});
@@ -1151,6 +1158,12 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 /* opened from a notification: go to «Meine Termine» */
 if(location.hash==="#my"){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}setTimeout(()=>{if(typeof openMyCal==="function")openMyCal()},400)}
 if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.open==="my"&&typeof openMyCal==="function")openMyCal()});
+/* push while the app is open: also as a pop-up inside the app */
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const p=e.data&&e.data.push;if(!p)return;
+  const o=document.createElement("div");o.className="pushpop";o.setAttribute("role","alertdialog");
+  o.innerHTML='<div class="pphd"><span class="ppic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><b>'+esc(p.title||"TSCHUGGER")+'</b><button type="button" class="ppx" aria-label="'+esc(L("Schliessen"))+'">×</button></div>'+(p.body?'<p>'+esc(p.body)+'</p>':'');
+  o.addEventListener("click",ev=>{if(!ev.target.closest(".ppx")&&/#my/.test(p.url||"")&&typeof openMyCal==="function")openMyCal();o.classList.add("out");setTimeout(()=>o.remove(),250)});
+  document.body.appendChild(o);try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(_){}});
 /* ---- chat assistant: asks Claude through the production's Cloudflare Worker (config/app.chatUrl); every person can switch it off in «Mein Konto» ---- */
 window.CHATURL="";window.CHATEN=true;window.TOUREN=true;window.PUSHEN=true;try{window.PUSHEN=localStorage.getItem("apppushon")!=="0"}catch(_){}try{window.CHATURL=localStorage.getItem("appchat")||"";window.CHATEN=localStorage.getItem("appchaton")!=="0";window.TOUREN=localStorage.getItem("apptouron")!=="0"}catch(_){}
 const chatOn=()=>{let v=null;try{v=localStorage.getItem("chat")}catch(_){}return v!=="0"};
@@ -1272,6 +1285,7 @@ async function tourMark(how){
 }
 async function maybeTour(){
   if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||TOUR.pending)return;
+  if(pushHintDue()){TOUR.afterHint=true;maybePushHint();return}
   if(!window.TOUREN||(MEMBER&&MEMBER.tour)||tourDoneLocal()){setTimeout(maybePushHint,800);return}
   TOUR.pending=true;setTimeout(()=>{TOUR.pending=false;if(!TOUR.el&&!tourDoneLocal()&&!(MEMBER&&MEMBER.tour)){tourMark("shown");tourStart(true)}},700);
 }
@@ -1327,10 +1341,13 @@ async function tourEnd(how,marked){
 }
 
 /* one-time note about push notifications (existing and new users), with a short setup right in the note */
+/* asked once per device (when push is on but this device has not allowed it yet) */
+const hintDone=()=>{try{return !!localStorage.getItem("pushask:"+(ME&&ME.uid))}catch(_){return false}},hintMark=()=>{try{localStorage.setItem("pushask:"+(ME&&ME.uid),"1")}catch(_){}};
+function pushHintDue(){if(!ME||window.PUSHEN===false||hintDone())return false;const c=pushCfg();if(!c.on&&c.hint)return false;if(pushOK())return Notification.permission==="default";return isIOS()&&!pushStandalone()}
 function maybePushHint(){
-  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||document.getElementById("pushhint")||window.PUSHEN===false)return;const c=pushCfg();if(c.hint)return;
+  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||document.getElementById("pushhint")||window.PUSHEN===false||hintDone())return;const c=pushCfg();if(!c.on&&c.hint)return;
   const ios=!pushOK()&&isIOS()&&!pushStandalone();if(!pushOK()&&!ios)return;
-  if(pushOK()&&Notification.permission!=="default"){c.hint=1;pushSave(c);return}
+  if(pushOK()&&Notification.permission!=="default"){hintMark();return}
   const d=document.createElement("div");d.id="pushhint";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
   const types=PUSH_TYPES.filter(x=>vok(x[2]));
   d.innerHTML='<div class="a2box phbox"><span class="wlbeta">'+L("Neu")+'</span><h3>'+L("Push-Nachrichten")+'</h3><p>'+L("Die App erinnert dich jetzt auf Wunsch vor deinen Terminen – auch wenn sie geschlossen ist.")+'</p>'+
@@ -1340,8 +1357,9 @@ function maybePushHint(){
     '<p class="ghint">'+L("Einzelne Termine schaltest du mit der Glocke in «Meine Termine» aus; alles Weitere unter «Mein Konto».")+'</p>'+
     '<div class="a2b"><button type="button" class="lnk" data-ph="no">'+L("Nicht jetzt")+'</button><button type="button" class="pri" data-ph="on">'+L("Einschalten")+'</button></div>')+'</div>';
   d.addEventListener("click",async e=>{const b=e.target.closest("[data-ph]");if(!b){if(e.target.closest("button")&&!e.target.closest("select")){const c=pushCfg();c.hint=1;pushSave(c);d.remove()}return}const c=pushCfg();c.hint=1;
-    if(b.dataset.ph==="on"){c.lead=+(d.querySelector("[data-phlead]")||{value:c.lead}).value||c.lead;d.querySelectorAll("[data-phtype]").forEach(x=>c.types[x.dataset.phtype]=x.checked);c.on=true;pushSave(c);d.remove();await pushEnable();if(Notification.permission==="granted")showMsg(L("Push-Nachrichten sind eingeschaltet."),3500)}
+    if(b.dataset.ph==="on"){c.lead=+(d.querySelector("[data-phlead]")||{value:c.lead}).value||c.lead;d.querySelectorAll("[data-phtype]").forEach(x=>c.types[x.dataset.phtype]=x.checked);c.on=true;pushSave(c);const cont=TOUR.afterHint;TOUR.afterHint=false;d.remove();await pushEnable();if(cont)setTimeout(maybeTour,600);if(Notification.permission==="granted")showMsg(L("Push-Nachrichten sind eingeschaltet."),3500)}
     else{pushSave(c);d.remove();if(b.dataset.ph==="no")showMsg(L("Du kannst Push-Nachrichten jederzeit unter «Mein Konto» einschalten."),4000)}});
+  hintMark();const obs=new MutationObserver(()=>{if(!d.isConnected){obs.disconnect();if(TOUR.afterHint){TOUR.afterHint=false;setTimeout(maybeTour,400)}}});obs.observe(document.body,{childList:true});
   document.body.appendChild(d);
 }
 const tourInfo=m=>!m?"":m.tour==="done"?L("Tour gemacht"):m.tour==="skip"?L("Tour übersprungen"):m.tour==="shown"?L("Tour angefangen"):L("Tour offen");
@@ -1367,12 +1385,23 @@ function bcSms(pl){
   location.href=ios?"sms:/open?addresses="+nums.join(",")+"&body="+body:"sms:"+nums.join(",")+"?body="+body;
   showMsg(L("SMS-App geöffnet mit {n} Nummern.").replace("{n}",nums.length),6000);
 }
-function bcSmsNums(pl){
+function bcSmsNums(pl){return bcRecips(pl).map(x=>x.ph).filter(x=>x.length>=6)}
+/* e-mail: opens the mail app with all chosen recipients in BCC */
+function bcMail(pl){const ems=[...new Set(bcRecips(Object.assign({},pl,{withMail:true})).map(x=>x.email).filter(e=>/@/.test(e)))];
+  if(!ems.length){showMsg(L("Keine E-Mail-Adressen für diese Empfänger gefunden."),6000);return}
+  location.href="mailto:?bcc="+encodeURIComponent(ems.join(","))+"&subject="+encodeURIComponent(pl.title)+"&body="+encodeURIComponent(pl.body);showMsg(L("Mail-App geöffnet mit {n} Adressen.").replace("{n}",ems.length),6000)}
+/* recipients with phone number: exactly the persons chosen in the message (all, or roles / departments) */
+function bcRecips(pl){
   const roleOfE=e=>{e=lc(e||"");if(ADMINS.includes(e))return "owner";if((ADM.adm||[]).includes(e))return "admin";return (ADM.ur||{})[e]||""};
-  const nums=[];for(const g of S.crew||[])for(const p of arr(g.people)){const ph=String(p.phone||"").split(/[\/,;]/)[0].replace(/[^\d+]/g,"");if(ph.length<6)continue;
-    if(pl.roles||pl.depts){const ok=(pl.depts||[]).includes(g.dept)||(p.email&&(pl.roles||[]).includes(roleOfE(p.email)));if(!ok)continue}if(!nums.includes(ph))nums.push(ph)}
-  return nums;
+  const out=[];for(const g of S.crew||[])for(const p of arr(g.people)){const ph=String(p.phone||"").split(/[\/,;]/)[0].replace(/[^\d+]/g,"");if(ph.length<6&&!(pl.withMail&&p.email))continue;
+    if(pl.roles||pl.depts){const ok=(pl.depts||[]).includes(g.dept)||(p.email&&(pl.roles||[]).includes(roleOfE(p.email)));if(!ok)continue}if(!out.some(x=>x.ph===ph))out.push({ph,name:p.name||ph,dept:g.dept||"",email:lc(p.email||"")})}
+  return out;
 }
+/* WhatsApp: WhatsApp has no way to send to many people at once from a web page – one tap per person opens the chat with the text ready */
+function bcWaHTML(){const w=BC.waList;if(!w)return "";w.list=w.list.filter(x=>x.ph&&x.ph.length>=6);const t=encodeURIComponent(w.text);
+  return '<div class="bcwa"><div class="bchh"><h3 class="cath3">WhatsApp</h3><button type="button" class="pillbtn" data-wax>'+L("Fertig")+'</button></div><p class="ghint">'+L("Tippe bei jeder Person auf WhatsApp – der Text ist schon eingefügt, du musst nur noch auf Senden tippen.")+'</p>'+
+    (w.list.length?'<ul class="walist">'+w.list.map(x=>'<li><span><b>'+esc(x.name)+'</b><small>'+esc(HIT(x.dept))+'</small></span><a class="pillbtn wabtn" href="https://wa.me/'+esc(x.ph.replace(/^\+/,""))+'?text='+t+'" target="_blank" rel="noopener" data-wad>WhatsApp</a></li>').join("")+'</ul>':'<p class="ghint">'+L("Keine Telefonnummern für diese Empfänger gefunden.")+'</p>')+'</div>'}
+document.addEventListener("click",e=>{const a=e.target.closest("[data-wad]");if(a){a.classList.add("done");a.textContent="✓ WhatsApp";return}if(e.target.closest("[data-wax]")){BC.waList=null;render()}});
 /* send right away through the Cloudflare Worker; without it the next run picks the message up */
 async function bcDeliver(id){
   const {F,db,auth}=await fb();
@@ -1393,7 +1422,7 @@ function bcHistHTML(){
   return '<div class="bchist">'+BC.hist.map(b=>{const dt=new Date(b.at||0);
     return '<div class="bch"><div class="bchd"><span class="bct">'+esc(dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",year:"numeric"}))+' · '+esc(dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"}))+'</span>'+(b.n!=null?'<span class="ust role">'+esc(L("{n} Geräte").replace("{n}",b.n))+'</span>':'')+'</div>'+
       '<b class="bctt">'+esc(b.title||"")+'</b><p class="bcb">'+esc(b.body||"")+'</p>'+
-      '<div class="bcm"><span>'+esc(L("An"))+': '+esc(bcWho(b))+'</span><span>'+esc(L("Von"))+': '+esc(b.by||"")+'</span></div>'+
+      '<div class="bcm"><span>'+esc(L("An"))+': '+esc(bcWho(b))+'</span>'+(b.ch?'<span>'+esc(["push","wa","sms","mail"].filter(k=>b.ch[k]).map(k=>({push:"Push",wa:"WhatsApp",sms:"SMS",mail:L("E-Mail")})[k]).join(" · "))+'</span>':'')+'<span>'+esc(L("Von"))+': '+esc(b.by||"")+'</span></div>'+
       '<div class="arb"><button type="button" class="pillbtn" data-bcre="'+esc(b.id)+'">↻ '+L("Erneut senden")+'</button></div></div>'}).join("")+'</div>';
 }
 document.addEventListener("click",async e=>{if(!e.target.closest("[data-bcclr]")||!isAdmin())return;if(!confirmSafe(L("Den ganzen Verlauf der Push-Nachrichten löschen?")))return;
@@ -1416,24 +1445,27 @@ VIEWS.bcast=function(){
     '<label>'+L("Nachricht")+'<textarea name="bb" rows="4" maxlength="300" required placeholder="'+esc(L("Kurz und klar, max. 300 Zeichen"))+'"></textarea></label>'+
     '<fieldset class="efood"><legend>'+L("Empfänger")+'</legend><label class="ck"><input type="radio" name="bm" value="all"'+(BC.mode==="all"?' checked':'')+'> '+L("Alle")+'</label><label class="ck"><input type="radio" name="bm" value="sel"'+(BC.mode==="sel"?' checked':'')+'> '+L("Auswahl nach Rolle und/oder Abteilung")+'</label>'+
       (BC.mode==="sel"?'<p class="ahint"><b>'+L("Rollen")+'</b></p><div class="bcchk">'+roles.map(r=>ck("roles",r.id,r.name)).join("")+'</div><p class="ahint"><b>'+L("Abteilungen")+'</b></p><div class="bcchk">'+bcDepts().map(d=>ck("depts",d,HIT(d))).join("")+'</div><p class="ghint">'+L("Wer zu einer gewählten Rolle ODER Abteilung gehört, bekommt die Nachricht.")+'</p>':'')+'</fieldset>'+
-    '<label class="ck bcsms"><input type="checkbox" name="bs"'+(BC.sms?' checked':'')+'> '+L("Zusätzlich als SMS (öffnet die SMS-App deines Handys mit allen Nummern)")+'</label>'+
+    '<fieldset class="efood bcch"><legend>'+L("Senden als")+'</legend><div class="bcchk">'+
+      [["bp","push","Push"],["bw","wa","WhatsApp"],["bs","sms","SMS"],["be","mail","E-Mail"]].map(([n,k,t])=>'<label class="ck"><input type="checkbox" name="'+n+'"'+((BC.ch||{push:true})[k]?' checked':'')+'> '+esc(L(t))+'</label>').join("")+
+      '</div><p class="ghint">'+L("Push geht sofort an alle mit eingeschalteten Push-Nachrichten. WhatsApp, SMS und E-Mail öffnen die jeweilige App auf deinem Gerät – nur an die oben gewählten Empfänger.")+'</p></fieldset>'+
     '<div class="arb"><button type="submit"'+(BC.busy?' disabled':'')+'>'+L("Jetzt senden")+'</button></div><p class="amsg'+(BC.ok?' ok':'')+'" role="status">'+esc(BC.msg)+'</p></form>'+
-    '<div class="bchh"><h3 class="cath3">'+L("Verlauf")+'</h3>'+(isAdmin()&&BC.hist&&BC.hist.length?'<button type="button" class="pillbtn bcclr" data-bcclr>'+L("Verlauf leeren")+'</button>':'')+'</div>'+bcHistHTML()+'</section>';
+    bcWaHTML()+'<div class="bchh"><h3 class="cath3">'+L("Verlauf")+'</h3>'+(isAdmin()&&BC.hist&&BC.hist.length?'<button type="button" class="pillbtn bcclr" data-bcclr>'+L("Verlauf leeren")+'</button>':'')+'</div>'+bcHistHTML()+'</section>';
 };
 document.addEventListener("change",e=>{const t=e.target;if(t.matches("[data-bc] input[name=bm]")){BC.mode=t.value;const f=t.form;const keep={bt:f.bt.value,bb:f.bb.value};render();const g=document.querySelector("[data-bc]");if(g){g.bt.value=keep.bt;g.bb.value=keep.bb}}
   else if(t.matches("[data-bcsel]")){const k=t.dataset.bcsel;BC.sel[k]=BC.sel[k].filter(x=>x!==t.value);if(t.checked)BC.sel[k].push(t.value)}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form[data-bc]");if(!f)return;e.preventDefault();if(!can("push.send")||BC.busy)return;
   const title=String(f.bt.value||"").trim().slice(0,60),body=String(f.bb.value||"").trim().slice(0,300);const msg=f.querySelector(".amsg");
   if(!title||!body){msg.className="amsg";msg.textContent=L("Bitte Titel und Nachricht eingeben.");return}
-  BC.sms=!!(f.bs&&f.bs.checked);const sel=BC.mode==="sel";if(sel&&!BC.sel.roles.length&&!BC.sel.depts.length){msg.className="amsg";msg.textContent=L("Bitte mindestens eine Rolle oder Abteilung wählen.");return}
+  BC.ch={push:!!(f.bp&&f.bp.checked),wa:!!(f.bw&&f.bw.checked),sms:!!(f.bs&&f.bs.checked),mail:!!(f.be&&f.be.checked)};BC.sms=BC.ch.sms;BC.wa=BC.ch.wa;
+  if(!BC.ch.push&&!BC.ch.wa&&!BC.ch.sms&&!BC.ch.mail){msg.className="amsg";msg.textContent=L("Bitte mindestens einen Weg wählen.");return}const sel=BC.mode==="sel";if(sel&&!BC.sel.roles.length&&!BC.sel.depts.length){msg.className="amsg";msg.textContent=L("Bitte mindestens eine Rolle oder Abteilung wählen.");return}
   const who=sel?[BC.sel.roles.map(r=>r==="owner"?L("Owner"):r==="admin"?L("Admin"):r===""?L("Keine Rolle"):((BC.roles||[]).find(x=>x.id===r)||{}).name||r).concat(BC.sel.depts).join(", ")]:[L("alle")];
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+who.join(", ")+"?"))return;
   BC.busy=true;f.querySelector("button[type=submit]").disabled=true;
-  try{const pl={title,body,roles:sel?BC.sel.roles:null,depts:sel?BC.sel.depts:null,by:ME.email,at:Date.now()};
+  try{const pl={title,body,roles:sel?BC.sel.roles:null,depts:sel?BC.sel.depts:null,by:ME.email,at:Date.now(),ch:BC.ch,push:BC.ch.push};
     const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(pl))));
     const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
     const {F,db,auth}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});
-    const r=await bcDeliver(ref.id);if(BC.sms)bcSms(pl);BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";f.reset();BC.hist=null}
+    const r=BC.ch.push?await bcDeliver(ref.id):L("Gespeichert.");if(BC.ch.mail)bcMail(pl);if(BC.sms)setTimeout(()=>bcSms(pl),BC.ch.mail?1500:0);BC.waList=BC.wa?{text:pl.title+"\n"+pl.body,list:bcRecips(pl)}:null;BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";BC.ch={push:true};f.reset();BC.hist=null}
   catch(err){console.error(err);BC.ok=false;BC.msg=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}
   BC.busy=false;render()});
 /* ---- lunch menus: catering enters a menu per shooting day and unit (permission «Menüs eingeben»);

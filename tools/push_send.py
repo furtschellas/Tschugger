@@ -63,7 +63,7 @@ def main():
         for bid, c in docs("broadcasts"):
             try:
                 raw = base64.b64decode(c); b = json.loads(AESGCM(KEY).decrypt(raw[:12], raw[12:], None))
-                if b.get("at", 0) / 1000 > NOW - 86400: bcs.append((bid, b))
+                if b.get("at", 0) / 1000 > NOW - 86400 and b.get("push", True) is not False: bcs.append((bid, b))
             except Exception as e:
                 print("Nachricht nicht lesbar:", bid, e)
     except Exception as e:
@@ -91,7 +91,7 @@ def main():
                 if not ok: continue
             data = json.dumps({"title": b.get("title", ""), "body": b.get("body", ""), "url": "./", "tag": "b" + bid}, ensure_ascii=False)
             try:
-                webpush(subscription_info=sub, data=data, vapid_private_key=pem, vapid_claims={"sub": "mailto:furtschellas@gmail.com"}, ttl=86400)
+                webpush(subscription_info=sub, data=data, vapid_private_key=pem, vapid_claims={"sub": "mailto:furtschellas@gmail.com"}, headers={"Urgency": "high"}, ttl=86400)
                 n_sent += 1; print("Nachricht gesendet:", did, b.get("title"))
             except Exception as e:
                 print("Push-Fehler", did, str(e)[:200])
@@ -105,7 +105,7 @@ def main():
             data = json.dumps({"title": it.get("title", ""), "body": it.get("body", ""), "url": it.get("url", "./#my"), "tag": str(it.get("id", ""))}, ensure_ascii=False)
             try:
                 webpush(subscription_info=sub, data=data, vapid_private_key=pem,
-                        vapid_claims={"sub": "mailto:furtschellas@gmail.com"}, ttl=3600)
+                        vapid_claims={"sub": "mailto:furtschellas@gmail.com"}, headers={"Urgency": "high"}, ttl=3600)
                 n_sent += 1
                 print("gesendet:", did, it.get("title"))
             except WebPushException as e:
