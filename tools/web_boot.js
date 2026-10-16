@@ -2507,6 +2507,13 @@ async function offlinePrep(force){
   if(force){showMsg(L("Offline bereit")+": "+n+" "+L("Seiten"),4000);render()}
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-offprep]"))offlinePrep(true)});
+/* route: from the crew hotel or from where I am right now */
+document.addEventListener("click",e=>{const b=e.target.closest("[data-route]");if(!b)return;let r={};try{r=JSON.parse(b.dataset.route)}catch(_){return}
+  let o=document.getElementById("routepop");if(o)o.remove();o=document.createElement("div");o.id="routepop";o.className="a2hs";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");
+  o.innerHTML='<div class="a2box rtbox"><button type="button" class="xclose" data-rtx aria-label="'+esc(L("Schliessen"))+'">×</button><h3>'+esc(L("Route in Google Maps"))+'</h3><p class="ghint">'+esc(L("Ziel"))+': '+esc(r.to||"")+'</p>'+
+    '<div class="rtopts"><a class="pillbtn" href="'+esc(r.h)+'" target="_blank" rel="noopener noreferrer" data-rtx>'+esc(L("Vom Hotel"))+' <small>'+esc(r.from||"")+'</small></a>'+
+    '<a class="pillbtn" href="'+esc(r.c)+'" target="_blank" rel="noopener noreferrer" data-rtx>'+esc(L("Vom aktuellen Standort"))+'</a></div></div>';
+  document.body.appendChild(o);o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest("[data-rtx]"))setTimeout(()=>o.remove(),50)})});
 document.addEventListener("change",e=>{const c=e.target.closest("[data-offauto]");if(!c)return;store("offline",c.checked?"1":"0");if(c.checked)offlinePrep(false);render()});
 document.addEventListener("click",e=>{if(!e.target.closest("[data-tomy]"))return;if(typeof openMyCal==="function")openMyCal();else{S.tab="my";render();scrollTo(0,0)}});
 window.addEventListener("online",()=>{if(S.tab==="today")render()});window.addEventListener("offline",()=>{if(S.tab==="today")render()});
@@ -2628,7 +2635,8 @@ VIEWS.today=function(){
   /* tap → route in Google Maps from the crew hotel to the first location */
   const drv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
     const url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(d.drive.from||"Hotel")+"&destination="+encodeURIComponent(dest);
-    return '<a class="ttile tdrv" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(L("Route in Google Maps")+": "+(d.drive.from||"Hotel")+" → "+dest)+'"><b>'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+' ›</span></a>'})():'';
+    const here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(dest); /* no origin = current location */
+    return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from:d.drive.from||"Hotel",to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'})():'';
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
   if(!dp&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
@@ -2716,6 +2724,9 @@ Object.assign(I18N,{
  "Startseite «Today»":{en:"«Today» start page",fr:"Page d’accueil «Today»",it:"Pagina iniziale «Today»",hi:"«Today» प्रारंभ पृष्ठ"},
  "«Today» anzeigen und die App dort öffnen":{en:"Show «Today» and open the app there",fr:"Afficher «Today» et y ouvrir l’app",it:"Mostra «Today» e apri l’app lì",hi:"«Today» दिखाएँ और ऐप वहीं खोलें"},
  "Ausgeschaltet öffnet die App mit dem Drehplan.":{en:"When off, the app opens with the schedule.",fr:"Désactivé, l’app s’ouvre sur le planning.",it:"Se disattivato, l’app si apre con il piano.",hi:"बंद होने पर ऐप Schedule के साथ खुलता है।"},
+ "Ziel":{en:"Destination",fr:"Destination",it:"Destinazione",hi:"गंतव्य"},
+ "Vom Hotel":{en:"From the hotel",fr:"Depuis l’hôtel",it:"Dall’hotel",hi:"होटल से"},
+ "Vom aktuellen Standort":{en:"From my current location",fr:"Depuis ma position actuelle",it:"Dalla mia posizione attuale",hi:"मेरी वर्तमान जगह से"},
  "Route in Google Maps":{en:"Route in Google Maps",fr:"Itinéraire dans Google Maps",it:"Percorso in Google Maps",hi:"Google Maps में रास्ता"},
  "Sonnenzeit":{en:"Daylight",fr:"Heures de soleil",it:"Ore di sole",hi:"सूर्य का समय"},
  "Heute":{en:"Today",fr:"Aujourd'hui",it:"Oggi",hi:"आज"},
