@@ -604,6 +604,11 @@ html body .smodes{justify-content:center;flex-wrap:wrap;overflow:visible}
 html body select{color-scheme:dark}html[data-theme="light"] body select{color-scheme:light}
 html body select option,html body select optgroup{background-color:var(--sheet);color:var(--ink)}
 html body .rolesel{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px;color:var(--muted)}html body .rolesel select{flex:1;min-width:0;max-width:340px;min-height:40px;padding:0 36px 0 14px;border-radius:12px;border:1px solid var(--accent);background:var(--sheet) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23e0457b' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;color:var(--ink);font:inherit;font-size:15px;font-weight:600;appearance:none;-webkit-appearance:none;cursor:pointer}
+
+/* display option buttons (schedule, script, reader): on = pink filled, off = clearly dimmed */
+html body .pvbtn[aria-pressed="true"]{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important}
+html body .pvbtn[aria-pressed="false"]{background:transparent!important;border-color:var(--rule)!important;color:var(--muted)!important;opacity:.55}
+html body .pvbtn[aria-pressed="false"]:hover{opacity:.85}
 </style>
 
 <div class="wrap">
