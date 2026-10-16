@@ -556,3 +556,17 @@ html body #view .today .tsclist,html body #view .today .tmylist,html body #view 
 html body #view .today .tcard>.ghint,html body #view .today .tcard>.tsub{margin:0}
 html body #view .today .tcard>.ghint+.pillbtn,html body #view .today .tcard>.tsub+.ghint{margin-top:8px}
 html body #view .today .tacts{margin-top:10px}.today .tacts .pillbtn{margin:0!important}
+/* schedule day facts: drive and weather as narrow chips */
+html body #view .factd{max-width:none;padding:3px 7px}
+html body #view .factd .v,html body #view .factw .v{letter-spacing:0}
+html body #view .factd>summary{gap:4px!important}
+html body #view .factd>summary::after{margin-left:0}
+html body #view button.fact.factw{font:inherit;color:inherit;cursor:pointer;align-items:center;gap:4px;padding:3px 7px}
+html body #view .factw .v{font-family:var(--f-mono);font-size:13px;display:inline-flex;align-items:center;gap:1px}
+html body #view .factw:hover{border-color:var(--accent)}
+/* Today tiles: lower, as many per row as the screen allows */
+html body #view .today .ttiles{gap:8px}
+html body #view .today .ttile{flex:1 1 120px;padding:8px 12px;min-height:0;gap:2px;border-radius:10px}
+html body #view .today .ttile b{font-size:17px;line-height:1.2}
+html body #view .today .ttile span{font-size:11px;line-height:1.3}
+html body #view .factd .v{font-family:var(--f-body);font-weight:600;font-size:13px}
