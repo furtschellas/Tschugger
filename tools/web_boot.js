@@ -64,6 +64,30 @@ Object.assign(I18N,{
  "Alle vier in GitHub eintragen:":{fr:"Saisir les quatre dans GitHub :",it:"Inserire tutte e quattro in GitHub:",en:"Enter all four in GitHub:"},
  "Ersten Lauf starten:":{fr:"Lancer le premier passage :",it:"Avviare la prima esecuzione:",en:"Start the first run:"},
  "Alle Texte, die die App verschickt oder anzeigt. Platzhalter: {vorname} {name} {email} {app} {passwort} {disclaimer}. Du bearbeitest jeweils nur die gewählte Sprache; ohne eigenen Text gilt die Standardfassung.":{fr:"Tous les textes que l'app envoie ou affiche. Variables : {vorname} {name} {email} {app} {passwort} {disclaimer}. Tu modifies uniquement la langue choisie ; sans texte propre, la version standard s'applique.",it:"Tutti i testi che l'app invia o mostra. Segnaposto: {vorname} {name} {email} {app} {passwort} {disclaimer}. Modifichi solo la lingua scelta; senza testo proprio vale la versione standard.",en:"All texts the app sends or shows. Placeholders: {vorname} {name} {email} {app} {passwort} {disclaimer}. You only edit the selected language; without your own text the default applies."},
+ "15 Min. vorher":{fr:"15 min avant",it:"15 min prima",en:"15 min before"},
+ "30 Min. vorher":{fr:"30 min avant",it:"30 min prima",en:"30 min before"},
+ "1 Std. vorher":{fr:"1 h avant",it:"1 ora prima",en:"1 hour before"},
+ "2 Std. vorher":{fr:"2 h avant",it:"2 ore prima",en:"2 hours before"},
+ "3 Std. vorher":{fr:"3 h avant",it:"3 ore prima",en:"3 hours before"},
+ "1 Tag vorher":{fr:"1 jour avant",it:"1 giorno prima",en:"1 day before"},
+ "Alle Drehtage":{fr:"Tous les jours de tournage",it:"Tutti i giorni di riprese",en:"All shooting days"},
+ "Alle Prep-Termine":{fr:"Tous les rdv de prep",it:"Tutti gli appuntamenti prep",en:"All prep appointments"},
+ "Termin":{fr:"Rendez-vous",it:"Appuntamento",en:"Appointment"},
+ "Push-Nachrichten wurden im Browser nicht erlaubt.":{fr:"Les notifications n'ont pas été autorisées dans le navigateur.",it:"Le notifiche non sono state consentite nel browser.",en:"Notifications were not allowed in the browser."},
+ "Test-Nachricht":{fr:"Message test",it:"Messaggio di prova",en:"Test message"},
+ "So sehen Erinnerungen an deine Termine aus.":{fr:"Voici à quoi ressemblent les rappels de tes rendez-vous.",it:"Ecco come appaiono i promemoria dei tuoi appuntamenti.",en:"This is what reminders for your appointments look like."},
+ "Push-Nachricht ausschalten":{fr:"Désactiver la notification",it:"Disattiva notifica",en:"Turn notification off"},
+ "Push-Nachricht an":{fr:"Notification activée",it:"Notifica attiva",en:"Notification on"},
+ "Dieser Browser unterstützt keine Push-Nachrichten.":{fr:"Ce navigateur ne prend pas en charge les notifications.",it:"Questo browser non supporta le notifiche.",en:"This browser does not support notifications."},
+ "Push-Nachrichten sind in den Einstellungen dieses Browsers blockiert. Erlaube sie dort für diese Seite.":{fr:"Les notifications sont bloquées dans les réglages du navigateur. Autorise-les pour ce site.",it:"Le notifiche sono bloccate nelle impostazioni del browser. Consentile per questo sito.",en:"Notifications are blocked in this browser's settings. Allow them there for this site."},
+ "Auf diesem Gerät einschalten":{fr:"Activer sur cet appareil",it:"Attiva su questo dispositivo",en:"Turn on for this device"},
+ "Auf diesem Gerät aktiv":{fr:"Actif sur cet appareil",it:"Attivo su questo dispositivo",en:"Active on this device"},
+ "Push-Nachrichten":{fr:"Notifications push",it:"Notifiche push",en:"Push notifications"},
+ "Erinnerungen an kommende Termine erhalten":{fr:"Recevoir des rappels pour les prochains rdv",it:"Ricevi promemoria per i prossimi appuntamenti",en:"Get reminders for upcoming appointments"},
+ "Erinnern":{fr:"Rappel",it:"Promemoria",en:"Remind me"},
+ "Für welche Termine?":{fr:"Pour quels rdv ?",it:"Per quali appuntamenti?",en:"For which appointments?"},
+ "Kommende Termine":{fr:"Prochains rdv",it:"Prossimi appuntamenti",en:"Upcoming appointments"},
+ "Hier oder mit der Glocke in «Meine Termine» schaltest du einzelne Termine aus.":{fr:"Ici ou avec la cloche dans « Mes rendez-vous », tu désactives des rdv individuels.",it:"Qui o con la campanella in «I miei appuntamenti» disattivi singoli appuntamenti.",en:"Turn off single appointments here or with the bell in “My appointments”."},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -491,7 +515,7 @@ async function getDataKey(){
   const {F,db}=await fb();const s=await withTimeout(F.getDoc(F.doc(db,"secret","key")),20000,"key");
   if(!s.exists())throw new Error("no key");
   const kv=String(s.data().k||"").trim().replace(/^["'“”«]+|["'“”»]+$/g,"");
-  DATAKEY=await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["decrypt"]);
+  DATAKEY=await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["encrypt","decrypt"]);
   return DATAKEY;
 }
 function applyData(d){
@@ -531,7 +555,7 @@ async function loadOnce(force){
   let pt;try{pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct))}catch(err){DATAKEY=null;throw err}
   const data=JSON.parse(new TextDecoder().decode(pt));
   if(!data||!Array.isArray(data.days))throw new Error("data format");
-  LASTSTAMP=enc.stamp||null;applyData(data);scheduleRender();return true;
+  LASTSTAMP=enc.stamp||null;applyData(data);scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
 }
 function loadErr(err){
   const c=(err&&(err.code||err.name))||"",m=(err&&err.message)||String(err);
@@ -728,7 +752,7 @@ async function onGateClick(e){
   }
 }
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck"];let PREFT=null,PREFAPPLY=false;
+const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat"];let PREFT=null,PREFAPPLY=false;
 {const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k))savePrefsSoon()}}
 function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 async function savePrefs(){
@@ -746,6 +770,7 @@ function applyPrefs(p){
     if(typeof p.spt==="string")SPT=p.spt==="light"||p.spt==="dark"?p.spt:null;
     if(p.theme==="light"||p.theme==="dark")setTheme(p.theme);
   }finally{PREFAPPLY=false}
+  if(typeof p.push==="string")pushSyncSoon();
   render();
 }
 async function loadPrefs(){
@@ -824,6 +849,94 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form.docf
   catch(err){btn.disabled=false;msg.textContent=(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err))}});
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-docreset]");if(!b||!can("settings"))return;const k=b.dataset.docreset,lang=DOCLANGS.includes(b.dataset.dl)?b.dataset.dl:"de";
   try{await docStore(k,lang,{body:"",subject:""});render();showMsg(L("Standardtext wiederhergestellt.")+" ("+lang.toUpperCase()+")",2500)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
+/* ---- push notifications for upcoming events: settings in «Mein Konto» (on by default, lead time, which kinds of events),
+   every event can be switched off on its own; each device stores its upcoming reminders encrypted in push/{uid}_{device},
+   a GitHub run (started every 10 minutes by the Cloudflare Worker) sends the due ones ---- */
+const VAPID_PUB="BEP6-lmT3gVm_ZL1R3qiyBzrntxU6dkKtCEbqanP4KjR9xFTTJNtg8Jm1lxWTs7Z2790ZdoNeV4HtNd1jQEjGeo";
+const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"],[180,"3 Std. vorher"],[1440,"1 Tag vorher"]];
+const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
+function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
+  return {on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
+function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
+const pushOK=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
+function pushDev(){let d="";try{d=localStorage.getItem("pushdev")||""}catch(_){}if(!/^[a-z0-9]{10}$/.test(d)){d=Array.from(crypto.getRandomValues(new Uint8Array(10)),x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");try{localStorage.setItem("pushdev",d)}catch(_){}}return d}
+const pushId=s=>{let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)};
+const hmOf=t=>{const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?String(+m[1]).padStart(2,"0")+":"+m[2]:""};
+/* all events the device would remind of, by kind; each with a stable id */
+function pushEvents(c){
+  c=c||pushCfg();const out=[],seen=new Set(),t=todayISO(),add=(kind,e)=>{const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));if(seen.has(id))return;seen.add(id);out.push(Object.assign({id,kind},e))};
+  try{if(c.types.my&&vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)myEvents(me).forEach(e=>add("my",{date:e.date,t:hmOf(e.t),n:e.n,where:e.where||""}))}}catch(err){console.warn("push my",err)}
+  try{if(c.types.shoot&&vok("plan"))for(const d of S.days){if(d.kind!=="shoot"||d.date<t)continue;const dp=S.dispos.find(x=>x&&x.date===d.date)||{};
+    add("shoot",{date:d.date,t:hmOf(dp.crewCall)||hmOf(dp.generalCall),n:(d.short||d.label||"")+" · "+L("Drehtag"),where:(typeof dayPlaces==="function"?dayPlaces(d).join(", "):"")})}}catch(err){console.warn("push shoot",err)}
+  try{if(c.types.prep&&vok("prep"))for(const d of S.prepro){if(d.date<t)continue;for(const i of arr(d.items).concat(arr(d.parallel))){if(!i||!i.n||/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n).trim()))continue;add("prep",{date:d.date,t:hmOf(i.t),n:i.n,where:i.where||""})}}}catch(err){console.warn("push prep",err)}
+  return out.sort((a,b)=>(a.date+(a.t||"08:00")).localeCompare(b.date+(b.t||"08:00")));
+}
+/* start time of an event (events without a time: 08:00) and when to remind */
+const pushStart=e=>new Date(e.date+"T"+(e.t||"08:00")+":00").getTime();
+function pushItems(c){c=c||pushCfg();const now=Date.now(),lim=now+15*864e5;
+  return pushEvents(c).filter(e=>!c.off[e.id]).map(e=>{const st=pushStart(e),at=st-c.lead*60e3;
+    const dt=new Date(st),day=WDL(dt)+" "+String(dt.getDate()).padStart(2,"0")+"."+String(dt.getMonth()+1).padStart(2,"0")+".";
+    return {id:e.id,at,start:st,title:e.n||L("Termin"),body:[day+(e.t?" "+e.t:""),e.where].filter(Boolean).join(" · "),url:"./#my"}}).filter(x=>x.start>now&&x.start<lim).slice(0,80)}
+let PUSHT=null,PUSHBUSY=false;
+function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>pushSync().catch(err=>console.warn("push",err&&err.code||err)),2500)}
+async function pushReg(){return navigator.serviceWorker.getRegistration?((await navigator.serviceWorker.getRegistration())||(await navigator.serviceWorker.ready)):navigator.serviceWorker.ready}
+const u8=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");s+="===".slice((s.length+3)%4);return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
+async function pushSub(create){const reg=await pushReg();let sub=await reg.pushManager.getSubscription();
+  if(!sub&&create)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u8(VAPID_PUB)});return sub}
+async function pushSync(){
+  if(!ME||!ME.uid||!pushOK()||PUSHBUSY)return;PUSHBUSY=true;
+  try{const c=pushCfg(),{F,db}=await fb(),ref=F.doc(db,"push",ME.uid+"_"+pushDev());let last="";try{last=localStorage.getItem("pushlast")||""}catch(_){}
+    if(!c.on||Notification.permission!=="granted"){if(last){await F.deleteDoc(ref).catch(()=>{});try{localStorage.removeItem("pushlast")}catch(_){}}return}
+    const sub=await pushSub(true);if(!sub)return;
+    const pl={on:true,sub:sub.toJSON(),lang:LANG,items:pushItems(c)};const js=JSON.stringify(pl),h=pushId(js)+"|"+Math.floor(Date.now()/216e5);
+    if(h===last)return;
+    const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(js)));
+    const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
+    await F.setDoc(ref,{c:btoa(bin),at:F.serverTimestamp()});try{localStorage.setItem("pushlast",h)}catch(_){}
+  }finally{PUSHBUSY=false}
+}
+async function pushEnable(){
+  if(!pushOK())return;const p=await Notification.requestPermission();
+  if(p!=="granted"){showMsg(L("Push-Nachrichten wurden im Browser nicht erlaubt."),6000);render();return}
+  try{await pushSub(true)}catch(err){console.error(err);showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+  const c=pushCfg();c.on=true;try{localStorage.removeItem("pushlast")}catch(_){}pushSave(c);render();
+}
+async function pushTest(){try{const reg=await pushReg();await reg.showNotification(L("Test-Nachricht"),{body:L("So sehen Erinnerungen an deine Termine aus."),icon:"icon-192.png",badge:"icon-192.png",tag:"test"})}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}}
+/* bell in «Meine Termine» rows */
+window.pushBell=function(e){const c=pushCfg();if(!c.on||!c.types.my||!pushOK())return "";const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));const off=!!c.off[id];
+  return '<button type="button" class="pbell'+(off?' off':'')+'" data-pushev="'+id+'" data-pushdate="'+esc(e.date)+'" aria-pressed="'+(!off)+'" aria-label="'+esc(L(off?"Push-Nachricht einschalten":"Push-Nachricht ausschalten"))+'" title="'+esc(L(off?"Push-Nachricht aus":"Push-Nachricht an"))+'"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'+(off?'<path d="M3 3l18 18"/>':'')+'</svg></button>'};
+function pushSec(){
+  const c=pushCfg();let dev="";
+  if(!pushOK())dev='<p class="ghint">'+L(isIOS()&&!pushStandalone()?"Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.":"Dieser Browser unterstützt keine Push-Nachrichten.")+'</p>';
+  else if(Notification.permission==="denied")dev='<p class="ghint">'+L("Push-Nachrichten sind in den Einstellungen dieses Browsers blockiert. Erlaube sie dort für diese Seite.")+'</p>';
+  else if(Notification.permission!=="granted")dev='<div class="arb"><button type="button" data-pushon>'+L("Auf diesem Gerät einschalten")+'</button></div>';
+  else dev='<p class="ghint pok">✓ '+L("Auf diesem Gerät aktiv")+' <button type="button" class="pillbtn" data-pushtest>'+L("Test-Nachricht")+'</button></p>';
+  const types=PUSH_TYPES.filter(x=>vok(x[2]));
+  const ev=c.on?pushEvents(c).filter(e=>pushStart(e)>Date.now()).slice(0,40):[];
+  return '<section class="psec pushsec"><h4>'+L("Push-Nachrichten")+'</h4>'+
+    '<label class="ck"><input type="checkbox" data-pushmaster'+(c.on?' checked':'')+'> '+L("Erinnerungen an kommende Termine erhalten")+'</label>'+
+    (c.on?dev+'<label>'+L("Erinnern")+'<select data-pushlead>'+PUSH_LEADS.map(([v,t])=>'<option value="'+v+'"'+(v===c.lead?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
+      '<p class="ahint"><b>'+L("Für welche Termine?")+'</b></p>'+types.map(([k,t])=>'<label class="ck"><input type="checkbox" data-pushtype="'+k+'"'+(c.types[k]?' checked':'')+'> '+L(t)+'</label>').join("")+
+      '<details class="pushlist" data-sec="pushlist"'+(SECS.pushlist?' open':'')+'><summary>'+L("Kommende Termine")+' ('+ev.filter(e=>!c.off[e.id]).length+'/'+ev.length+')</summary>'+
+      (ev.length?ev.map(e=>{const dt=new Date(e.date+"T12:00:00");return '<label class="ck pev"><input type="checkbox" data-pushev2="'+e.id+'" data-pushdate="'+esc(e.date)+'"'+(c.off[e.id]?'':' checked')+'> <span><b>'+WDL(dt)+' '+String(dt.getDate()).padStart(2,"0")+'.'+String(dt.getMonth()+1).padStart(2,"0")+'.'+(e.t?' '+esc(e.t):'')+'</b> '+esc(e.n||"")+'</span></label>'}).join(""):'<p class="ghint">'+L("Keine kommenden Termine gefunden.")+'</p>')+
+      '<p class="ahint">'+L("Hier oder mit der Glocke in «Meine Termine» schaltest du einzelne Termine aus.")+'</p></details>':'')+
+    '</section>';
+}
+function pushToggleEv(id,date,on){const c=pushCfg();if(on)delete c.off[id];else c.off[id]=date||todayISO();pushSave(c)}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-pushev]");if(b){e.preventDefault();e.stopPropagation();pushToggleEv(b.dataset.pushev,b.dataset.pushdate,b.classList.contains("off"));render();return}
+  if(e.target.closest("[data-pushon]")){pushEnable();return}
+  if(e.target.closest("[data-pushtest]")){pushTest();return}},true);
+document.addEventListener("change",e=>{const t=e.target;
+  if(t.matches("[data-pushmaster]")){const c=pushCfg();c.on=t.checked;pushSave(c);render()}
+  else if(t.matches("[data-pushlead]")){const c=pushCfg();c.lead=+t.value;pushSave(c)}
+  else if(t.matches("[data-pushtype]")){const c=pushCfg();c.types[t.dataset.pushtype]=t.checked;pushSave(c);render()}
+  else if(t.matches("[data-pushev2]")){pushToggleEv(t.dataset.pushev2,t.dataset.pushdate,t.checked);const s=t.closest("details").querySelector("summary");if(s){const c=pushCfg(),ev=pushEvents(c).filter(x=>pushStart(x)>Date.now()).slice(0,40);s.textContent=L("Kommende Termine")+" ("+ev.filter(x=>!c.off[x.id]).length+"/"+ev.length+")"}}});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pushSyncSoon()});
+/* opened from a notification: go to «Meine Termine» */
+if(location.hash==="#my"){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}setTimeout(()=>{if(typeof openMyCal==="function")openMyCal()},400)}
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.open==="my"&&typeof openMyCal==="function")openMyCal()});
 /* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */
 const WELCOME_VER="1";
 const WTXT={
@@ -881,7 +994,7 @@ async function afterSignIn(u){
     if(isOffline(err)&&S.days.length){hideGate();acctButton(true);showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
-  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();
+  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();pushSyncSoon();
   const prof=MEMBER||{};
   let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}
   if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){LANG=prof.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
@@ -936,7 +1049,7 @@ function profileForm(onb){
 function acctInner(){
   return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b>'+' · '+L("Rolle")+': <b>'+esc(isOwner()?L("Owner"):isAdmin()?L("Admin"):MYROLE?(MYROLE==="crew"?"Crew":MYROLE):L("keine"))+'</b>'+(()=>{let w=(MEMBER&&MEMBER.welcomeAck)||"";if(!w)try{w=(localStorage.getItem("welcomeAck")||"").split("|")[0]}catch(_){}return w?' · '+L("Willkommen bestätigt")+' '+esc(new Date(w).toLocaleDateString("de-CH")):''})()+'</p>'+
     (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
-    '<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
+    (ME?pushSec():'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '';
@@ -1026,7 +1139,7 @@ async function admLoad(){
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
-const SECS={};try{for(const k of ["cater","bcal"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
+const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
 const secOpen=(k,title,body)=>'<details class="asec '+k+'" data-sec="'+k+'"'+(SECS[k]!==false?' open':'')+'><summary>'+esc(title)+'</summary><div class="asb">'+body+'</div></details>';
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
 /* departments that are not fed on set: left out of the catering count */
@@ -1051,13 +1164,13 @@ function cateringHTML(){
 const BK={busy:false,msg:"",ok:false};
 function bkSec(){
   let last="";try{last=localStorage.getItem("bk:last")||""}catch(_){}
-  return '<details class="admins asetd" data-sec="backup"'+(SECS.backup?' open':'')+'><summary>'+L("Backup")+'</summary><div class="bk">'+
+  return '<div class="bk">'+
     '<p class="ahint">'+L("Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.")+'</p>'+
     (last?'<p class="ahint">'+L("Letztes Backup auf diesem Gerät")+': '+esc(fmtStamp(last))+'</p>':'')+
     '<div class="bkb"><button type="button" class="abtn" data-bk="dl"'+(BK.busy?' disabled':'')+'>'+L("Backup herunterladen")+'</button>'+
     '<label class="abtn bkup">'+L("Backup wiederherstellen")+'<input type="file" accept="application/json,.json" data-bk="up" hidden></label></div>'+
     '<p class="ahint">'+L("Beim Wiederherstellen werden die Einträge aus der Datei ergänzt oder überschrieben. Nichts wird gelöscht.")+'</p>'+
-    (BK.msg?'<p class="amsg'+(BK.ok?' ok':'')+'" role="status">'+esc(BK.msg)+'</p>':'')+'</div></details>';
+    (BK.msg?'<p class="amsg'+(BK.ok?' ok':'')+'" role="status">'+esc(BK.msg)+'</p>':'')+'</div>';
 }
 async function bkCollect(){
   const {F,db}=await fb();
@@ -1111,14 +1224,14 @@ function upSec(){
   else if(d.state==="error")st='<p class="upst err">● '+L("Fehler beim letzten Lauf")+' ('+esc(when(d.at))+'): '+esc(d.msg||"")+'</p>';
   else st='<p class="upst warn">● '+L("Noch nicht eingerichtet")+(d.missing&&d.missing.length?' – '+L("es fehlen")+': '+d.missing.map(m=>'<code>'+esc(m)+'</code>').join(", "):'')+'</p>';
   const ok=d&&d.state==="ok";
-  return '<details class="admins asetd upsec" data-sec="upsec"'+(SECS.upsec||!ok?' open':'')+'><summary>'+L("Automatische Aktualisierung (Dropbox → Webseite)")+'</summary>'+st+
+  return '<div class="upsec"><p class="ahint"><b>'+L("Automatische Aktualisierung (Dropbox → Webseite)")+'</b></p>'+st+
     '<p class="ahint">'+L("GitHub liest die Dropbox zweimal pro Stunde (nur lesend), wandelt neue Drehpläne, Crewlisten, Dispos und das Drehbuch um und veröffentlicht sie verschlüsselt auf der Webseite – ohne dass ein Computer laufen muss.")+'</p>'+
     (ok?'':'<ol class="upsteps"><li>'+L("Dropbox-Zugang (nur lesend) erzeugen:")+' <a href="dropbox-setup.html" target="_blank" rel="noopener">dropbox-setup.html</a> → <code>DROPBOX_APP_KEY</code>, <code>DROPBOX_REFRESH_TOKEN</code></li>'+
       '<li>'+L("Claude-API-Schlüssel erstellen:")+' <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> → <code>ANTHROPIC_API_KEY</code></li>'+
       '<li><code>CREW_KEY</code> – '+L("den Schlüssel der Crew-Daten bekommst du von Claude im Chat.")+'</li>'+
       '<li>'+L("Alle vier in GitHub eintragen:")+' <a href="'+GH+'/settings/secrets/actions" target="_blank" rel="noopener">Settings → Secrets → Actions</a></li>'+
       '<li>'+L("Ersten Lauf starten:")+' <a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">Actions → «Run workflow»</a></li></ol>')+
-    '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p><div class="setbar inup"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div></details>';
+    '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p><div class="setbar inup"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div></div>';
 }
 /* owner only: account with a one-time start password, created in a second Firebase instance so the owner stays signed in */
 function genPw(){const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=new Uint32Array(12);crypto.getRandomValues(r);
@@ -1296,26 +1409,27 @@ VIEWS.admin=function(){
     '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">'+L("Owner")+'</span></div>'+
     ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
     '</div>':'';
-  const setSec=can("settings")?'<div class="admins asetd"><h3>'+L("Einstellungen der App")+'</h3><form class="alangs" data-adm="langs"><p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+
-    '<p class="ahint"><b>'+L("Bereiche")+'</b> – '+L("Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.")+' '+L("Reihenfolge mit ▲ ▼ ändern.")+'</p><div class="tbord">'+tabOrder().map(k=>[k,{plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",info:"Info"}[k]]).map(([k,t])=>'<div class="tbrow"><label class="ck"><input type="checkbox" name="tb" value="'+k+'"'+(!Array.isArray(window.TABSON)||window.TABSON.includes(k)?' checked':'')+'> '+t+'</label><span class="tbmv"><button type="button" data-tmv="up" aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-tmv="down" aria-label="'+esc(L("Nach unten"))+'">▼</button></span></div>').join("")+'</div>'+
-    '<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+
-    '<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer:innen in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
-    '<p class="ahint"><b>'+L("Anmeldung")+'</b> – '+L("Ausgeschaltet verschwindet «Mit Google anmelden» auf der Anmeldeseite. Wer schon mit Google angemeldet ist, bleibt angemeldet.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="go"'+(window.GOOGLEON!==false?' checked':'')+'> '+L("Mit Google anmelden anbieten")+'</label></div>'+
+  /* Einstellungen: one form (id setform) whose fields sit in collapsible groups – all open by default */
+  const sv='<div class="arb"><button type="submit" form="setform">'+L("Speichern")+'</button></div>';
+  const grp=(k,t,body)=>'<details class="admins asetd setgrp alangs" data-sec="set-'+k+'"'+(SECS["set-"+k]!==false?' open':'')+'><summary>'+L(t)+'</summary>'+body+'</details>';
+  const setSec=can("settings")?'<form id="setform" class="alangs" data-adm="langs" novalidate></form>'+
+    grp("up","Aktualisieren",(own?upSec():'<div class="setbar inup"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div>')+'<p class="ahint"><b>Dropbox</b> – '+L("Eingeschaltet werden Drehplan, Drehbuch, Crewliste, Callsheets und Motivliste jede Stunde automatisch neu geladen (nur gelesen).")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="au"'+(window.AUTOUPD!==false?' checked':'')+'> '+L("Daten aus der Dropbox automatisch laden")+'</label></div>'+'<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input form="setform" class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+sv)+
+    grp("langs","Sprachen",'<p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input form="setform" type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+sv)+
+    grp("areas","Bereiche",'<p class="ahint"><b>'+L("Bereiche")+'</b> – '+L("Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.")+' '+L("Reihenfolge mit ▲ ▼ ändern.")+'</p><div class="tbord">'+tabOrder().map(k=>[k,{plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",info:"Info"}[k]]).map(([k,t])=>'<div class="tbrow"><label class="ck"><input form="setform" type="checkbox" name="tb" value="'+k+'"'+(!Array.isArray(window.TABSON)||window.TABSON.includes(k)?' checked':'')+'> '+t+'</label><span class="tbmv"><button type="button" data-tmv="up" aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-tmv="down" aria-label="'+esc(L("Nach unten"))+'">▼</button></span></div>').join("")+'</div>'+'<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input form="setform" type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+'<p class="ahint"><b>'+L("Drehbuch")+'</b> – '+L("Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="so"'+(window.SCRIPTON!==false?' checked':'')+'> '+L("Drehbuch anzeigen")+'</label></div>'+sv)+
+    grp("misc","Einstellungen",'<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer:innen in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
+    '<p class="ahint"><b>'+L("Anmeldung")+'</b> – '+L("Ausgeschaltet verschwindet «Mit Google anmelden» auf der Anmeldeseite. Wer schon mit Google angemeldet ist, bleibt angemeldet.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="go"'+(window.GOOGLEON!==false?' checked':'')+'> '+L("Mit Google anmelden anbieten")+'</label></div>'+
     '<p class="ahint"><b>'+L("Benutzer:innen ohne Rolle")+'</b> – '+L("Personen ohne Rolle sehen weder Drehplan, Drehbuch noch Blocking. Hier kannst du ihnen zusätzlich freigeben:")+'</p><div class="chk">'+
-      [["pp","phone","Telefonnummern"],["pe","email","E-Mail-Adressen"],["pm","mycal","Meine Termine"]].map(([n,k,t])=>'<label class="ck"><input type="checkbox" name="'+n+'"'+(window.PUBV[k]!==false?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>'+
-    '<p class="ahint"><b>Dropbox</b> – '+L("Eingeschaltet werden Drehplan, Drehbuch, Crewliste, Callsheets und Motivliste jede Stunde automatisch neu geladen (nur gelesen).")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="au"'+(window.AUTOUPD!==false?' checked':'')+'> '+L("Daten aus der Dropbox automatisch laden")+'</label></div>'+
-    '<p class="ahint"><b>'+L("Drehbuch")+'</b> – '+L("Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.")+'</p><div class="chk"><label class="ck"><input type="checkbox" name="so"'+(window.SCRIPTON!==false?' checked':'')+'> '+L("Drehbuch anzeigen")+'</label></div>'+
-    '<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+
-    '<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'"><button type="submit">'+L("Speichern")+'</button></form></div>':'';
+      [["pp","phone","Telefonnummern"],["pe","email","E-Mail-Adressen"],["pm","mycal","Meine Termine"]].map(([n,k,t])=>'<label class="ck"><input form="setform" type="checkbox" name="'+n+'"'+(window.PUBV[k]!==false?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>'+'<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input form="setform" class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'">'+(typeof chatSetSec==="function"?chatSetSec():'')+sv)+
+    (own?grp("bk","Backup",bkSec()):''):(own?grp("up","Aktualisieren",upSec())+grp("bk","Backup",bkSec()):'');
   const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(own)SUBS.push(["roles","Rollen"]);if(can("settings"))SUBS.push(["docs","Dokumente"],["set","Einstellungen"]);
   if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
   const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>'<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'">'+(t==="Benutzerverwaltung"?'<span class="lgl">'+esc(L(t))+'</span><span class="sml">'+esc(L("Benutzer"))+'</span>':esc(L(t)))+'</button>').join("")+'</nav>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+subNav;
-  if(ADM.sub==="set")return h+(own?'':'<div class="setbar"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div>')+(own?upSec().replace(/<details([^>]*data-sec="upsec")(?![^>]*\bopen)/,'<details$1 open'):'')+setSec+(own?bkSec():'')+'</section>';
+  if(ADM.sub==="set")return h+setSec+'</section>';
   if(ADM.sub==="docs")return h+docsSec()+'</section>';
   if(ADM.sub==="roles")return h+rolesSec()+'</section>';
-  if(ADM.sub==="bk")return h+bkSec().replace(' data-sec="backup"',' data-sec="backup" open')+'</section>';
+  if(ADM.sub==="bk")return h+bkSec()+'</section>';
   const cInv=can("users.invite"),cView=can("users.view")||can("users.edit"),cEd=can("users.edit");
   h+=(can("users.requests")?reqSec():'')+admSec+(!cInv?'':
     '<div class="admins"><h3>'+L("Benutzer:innen einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
@@ -1338,15 +1452,15 @@ document.addEventListener("submit",async e=>{
     catch(err){console.error(err);if(btn)btn.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const fl=e.target.closest('[data-adm="langs"]');
-  if(fl){e.preventDefault();if(!can("settings"))return;const l=[...fl.querySelectorAll('input[name=al]:checked')].map(x=>x.value);
+  if(fl){e.preventDefault();if(!can("settings"))return;const l=[...[...fl.elements].filter(x=>x.name==='al'&&x.checked)].map(x=>x.value);
     if(!l.length){showMsg(L("Bitte mindestens eine Sprache wählen."),4000);return}
-    const tb=[...fl.querySelectorAll('input[name=tb]:checked')].map(x=>x.value),tord=[...fl.querySelectorAll('input[name=tb]')].map(x=>x.value);
+    const tb=[...[...fl.elements].filter(x=>x.name==='tb'&&x.checked)].map(x=>x.value),tord=[...[...fl.elements].filter(x=>x.name==='tb')].map(x=>x.value);
     if(!tb.length){showMsg(L("Bitte mindestens einen Bereich wählen."),4000);return}
-    try{const {F,db}=await fb();const u2=!!fl.querySelector('input[name=u2]').checked,u3=!!fl.querySelector('input[name=u3]').checked,bp=!!fl.querySelector('input[name=bp]').checked,so=!!fl.querySelector('input[name=so]').checked,au=!!fl.querySelector('input[name=au]').checked;const mu=String(fl.querySelector('input[name=map]').value||"").trim();
+    try{const {F,db}=await fb();const u2=!!fl.elements['u2'].checked,u3=!!fl.elements['u3'].checked,bp=!!fl.elements['bp'].checked,so=!!fl.elements['so'].checked,au=!!fl.elements['au'].checked;const mu=String(fl.elements['map'].value||"").trim();
     if(mu&&!/^https:\/\/\S+$/.test(mu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
-    const sh=String(fl.querySelector('input[name=sheet]').value||"").trim();
+    const sh=String(fl.elements['sheet'].value||"").trim();
     if(sh&&!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(sh)){showMsg(L("Bitte einen Google-Sheets-Link eingeben."),4000);return}
-    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,phonePublic:!!(fl.querySelector('input[name=pp]')||{}).checked,emailPublic:!!(fl.querySelector('input[name=pe]')||{}).checked,mycalPublic:!!(fl.querySelector('input[name=pm]')||{}).checked,googleLogin:!!(fl.querySelector('input[name=go]')||{}).checked,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au},{merge:true});window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au},{merge:true});window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const f=e.target.closest('[data-adm="add"]');if(!f)return;e.preventDefault();
   const em=lc(f.em.value),nm=f.nm.value.trim();if(!/@/.test(em))return;

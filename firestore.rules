@@ -134,6 +134,16 @@ service cloud.firestore {
         && request.resource.data.active == true;
     }
 
+    // Push-Erinnerungen pro Gerät: mit dem Crew-Schlüssel verschlüsselt; die GitHub-Aktion liest sie (ohne Anmeldung) und verschickt fällige
+    match /push/{id} {
+      allow read: if true;
+      allow create, update: if signedIn() && id.matches(request.auth.uid + '_[a-z0-9]{10}')
+        && (isMember() || isAdmin())
+        && request.resource.data.keys().hasOnly(['c', 'at'])
+        && request.resource.data.c is string && request.resource.data.c.size() < 60000;
+      allow delete: if signedIn() && id.matches(request.auth.uid + '_[a-z0-9]{10}');
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
