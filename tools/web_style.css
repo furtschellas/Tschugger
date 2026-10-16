@@ -578,3 +578,9 @@ html body #view button.ttile.tdrv:hover{background:var(--acc-tint)}
 .rtopts .pillbtn{min-height:44px;justify-content:center;flex-direction:column;gap:0;line-height:1.2}
 .rtopts .pillbtn small{font-weight:400;font-size:12px;color:var(--muted)}
 html body #view .ttile b .tkm{font-weight:400;font-size:.8em;color:var(--muted)}
+/* Mein Konto: details with the same chevron as elsewhere */
+html body #view .acpage details>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+html body #view .acpage details>summary::-webkit-details-marker{display:none}
+html body #view .acpage details>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin:-4px 6px 0 10px;transition:transform .18s}
+html body #view .acpage details[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+html body #view .acpage .psec .pillbtn{margin:6px 8px 0 0}
