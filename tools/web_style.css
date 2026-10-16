@@ -255,3 +255,10 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .setgrp .srcin{margin:4px 0 0;padding:0;border:0}
 .phbox .phl{display:block;margin:8px 0}.phbox .phl select{display:block;width:100%;margin-top:4px;font:inherit;padding:8px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}.phbox .ck{display:flex;gap:8px;margin:6px 0}
 .setgrp{position:relative}.setgrp .uprf{position:absolute;top:9px;right:44px;width:30px;height:30px;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}.setgrp .uprf:active{transform:rotate(-30deg)}
+.catbox{border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin:10px 0}.cathd{display:flex;align-items:center;justify-content:space-between;gap:8px}.catopen{font-size:13px;padding:4px 12px}
+.catsum{margin:6px 0 4px;font-size:14px}.catchips{display:flex;flex-wrap:wrap;gap:4px 6px;margin:4px 0}.catchip{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--paper);border:1px solid var(--rule)}.catchip.warn{border-color:#e9a23b;color:#e9a23b}
+.catmore{margin-top:6px}.catmore>summary{cursor:pointer;color:var(--accent);font-size:14px;font-weight:600}
+.catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:12px 0}.catcard{border:1px solid var(--rule);border-radius:12px;padding:10px 12px;background:var(--sheet)}.catcard h4{margin:0 0 6px;font-size:14px}.catcard.warn{border-color:#e9a23b}.catcard .catn{padding:0;font-size:14px;line-height:1.5}
+.cath3{margin:18px 0 6px;font-size:15px}.cattbl{border:1px solid var(--rule);border-radius:12px;overflow:hidden}.catrow{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;padding:8px 12px;border-top:1px solid var(--rule);font-size:14px}.catrow:first-child{border-top:0}.catdep{display:block;font-size:12px;color:var(--muted)}
+@media print{.catpage .catcard,.catpage .cattbl{break-inside:avoid}}
+.uinf a,.usub a.em{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:2px}

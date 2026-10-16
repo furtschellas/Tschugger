@@ -122,6 +122,7 @@ Object.assign(I18N,{
  "Sucht über alles: Szenen, Rollen, Personen, Locations.":{fr:"Cherche partout : scènes, rôles, personnes, décors.",it:"Cerca ovunque: scene, ruoli, persone, location.",en:"Searches everything: scenes, roles, people, locations."},
  "Test an mich":{fr:"Test à moi",it:"Test a me",en:"Test to me"},
  "Tour gemacht":{fr:"Visite faite",it:"Tour fatto",en:"Tour done"},
+ "Tour angefangen":{fr:"Visite commencée",it:"Tour iniziato",en:"Tour started"},
  "Tour offen":{fr:"Visite pas faite",it:"Tour non fatto",en:"Tour not done"},
  "Tour starten":{fr:"Lancer la visite",it:"Avvia il tour",en:"Start tour"},
  "Tour übersprungen":{fr:"Visite passée",it:"Tour saltato",en:"Tour skipped"},
@@ -148,6 +149,28 @@ Object.assign(I18N,{
  "Push-Nachrichten sind eingeschaltet.":{fr:"Les notifications sont activées.",it:"Le notifiche sono attive.",en:"Notifications are on."},
  "Du kannst Push-Nachrichten jederzeit unter «Mein Konto» einschalten.":{fr:"Tu peux activer les notifications à tout moment sous « Mon compte ».",it:"Puoi attivare le notifiche in qualsiasi momento in «Il mio account».",en:"You can turn on notifications any time under “My account”."},
  "OK":{fr:"OK",it:"OK",en:"OK"},
+ "Übersicht":{fr:"Aperçu",it:"Panoramica",en:"Overview"},
+ "Namen und Details":{fr:"Noms et détails",it:"Nomi e dettagli",en:"Names and details"},
+ "Alle aktiven Benutzer:innen der App, die am Set verpflegt werden.":{fr:"Tous les utilisateurs actifs de l'app nourris sur le plateau.",it:"Tutti gli utenti attivi dell'app che mangiano sul set.",en:"All active app users who are catered on set."},
+ "Alle Sonderwünsche":{fr:"Tous les besoins particuliers",it:"Tutte le richieste speciali",en:"All special requests"},
+ "Tage wählen":{fr:"Choisir le jour",it:"Scegli il giorno",en:"Choose a day"},
+ "Wische durch die Tage: PREP, OFF, TRAVEL und die Drehtage D01, D02 … Heute ist hervorgehoben.":{fr:"Fais défiler les jours : PREP, OFF, TRAVEL et les jours de tournage D01, D02 … Aujourd'hui est mis en évidence.",it:"Scorri i giorni: PREP, OFF, TRAVEL e i giorni di riprese D01, D02 … Oggi è evidenziato.",en:"Swipe through the days: PREP, OFF, TRAVEL and shooting days D01, D02 … Today is highlighted."},
+ "Unit filtern":{fr:"Filtrer par unit",it:"Filtra per unit",en:"Filter by unit"},
+ "Auch im Callsheet wählst du oben den Tag und filterst nach Unit.":{fr:"Dans la callsheet aussi, tu choisis le jour en haut et filtres par unit.",it:"Anche nel callsheet scegli il giorno in alto e filtri per unit.",en:"In the call sheet you also pick the day at the top and filter by unit."},
+ "Optionen":{fr:"Options",it:"Opzioni",en:"Options"},
+ "«Szenen» klappt alle Szenen auf oder zu; daneben blendest du Info und Adresse ein und filterst nach Unit.":{fr:"« Scènes » ouvre ou ferme toutes les scènes ; à côté, tu affiches info et adresse et filtres par unit.",it:"«Scene» apre o chiude tutte le scene; accanto mostri info e indirizzo e filtri per unit.",en:"“Scenes” expands or collapses all scenes; next to it you show info and address and filter by unit."},
+ "Suche nach Motiv, Adresse oder Szene.":{fr:"Cherche un décor, une adresse ou une scène.",it:"Cerca location, indirizzo o scena.",en:"Search for a location, address or scene."},
+ "Crew durchsuchen":{fr:"Chercher dans l'équipe",it:"Cerca nella crew",en:"Search the crew"},
+ "Suche nach Name, Funktion oder Abteilung. Mit «vCard» speicherst du einen Kontakt direkt im Telefon.":{fr:"Cherche par nom, fonction ou département. « vCard » enregistre un contact dans ton téléphone.",it:"Cerca per nome, ruolo o reparto. Con «vCard» salvi un contatto nel telefono.",en:"Search by name, role or department. “vCard” saves a contact straight to your phone."},
+ "Zusatzinfos":{fr:"Infos supplémentaires",it:"Info aggiuntive",en:"Extra info"},
+ "Je nach Berechtigung: Essen, Geburtstage, Kontoinfos und alle Kontakte als VCF.":{fr:"Selon l'autorisation : repas, anniversaires, infos de compte et tous les contacts en VCF.",it:"Secondo l'autorizzazione: pasti, compleanni, info account e tutti i contatti come VCF.",en:"Depending on permission: food, birthdays, account info and all contacts as VCF."},
+ "Blende Infobox, Drehtag & Zeit, englische Szenenbezeichnung, Cast, Adresse und Blocking ein oder aus.":{fr:"Affiche ou masque infobox, jour et heure, titre anglais de la scène, cast, adresse et blocking.",it:"Mostra o nascondi infobox, giorno e ora, titolo inglese della scena, cast, indirizzo e blocking.",en:"Show or hide info box, shooting day & time, English scene heading, cast, address and blocking."},
+ "Suchen nach":{fr:"Rechercher par",it:"Cerca per",en:"Search by"},
+ "Suche im Drehbuch gezielt nach Rolle, Szene, Drehtag, Person, Motiv oder Text.":{fr:"Cherche dans le scénario par rôle, scène, jour, personne, décor ou texte.",it:"Cerca nella sceneggiatura per ruolo, scena, giorno, persona, location o testo.",en:"Search the script by role, scene, shooting day, person, location or text."},
+ "Alle Essenswünsche, Unverträglichkeiten und Allergien der Crew auf einen Blick.":{fr:"Tous les régimes, intolérances et allergies de l'équipe en un coup d'œil.",it:"Tutte le preferenze alimentari, intolleranze e allergie della crew in un colpo d'occhio.",en:"All the crew's dietary wishes, intolerances and allergies at a glance."},
+ "Push-Glocke":{fr:"Cloche de notification",it:"Campanella notifiche",en:"Notification bell"},
+ "Mit der Glocke schaltest du die Erinnerung für einzelne Termine aus oder ein.":{fr:"La cloche active ou désactive le rappel d'un rdv.",it:"Con la campanella attivi o disattivi il promemoria di un singolo appuntamento.",en:"The bell turns the reminder for a single appointment on or off."},
+ "Hier stellst du ein, ob, wann und für welche Termine du erinnert wirst.":{fr:"Ici tu règles si, quand et pour quels rdv tu reçois un rappel.",it:"Qui imposti se, quando e per quali appuntamenti ricevere promemoria.",en:"Here you set whether, when and for which appointments you're reminded."},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -814,7 +837,7 @@ async function onGateClick(e){
   }
 }
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat"];let PREFT=null,PREFAPPLY=false;
+const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour"];let PREFT=null,PREFAPPLY=false;
 {const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k))savePrefsSoon()}}
 function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 async function savePrefs(){
@@ -1067,36 +1090,53 @@ setInterval(()=>{try{chatFab()}catch(_){}},1500);
 /* ---- introduction tour: offered once to everybody (new and existing users) after the welcome note; can be skipped;
    the result (done/skip + date) is kept in the profile (members.tour/tourAt); «Mein Konto» starts it again ---- */
 const TOUR_STEPS=[
-  {sel:'nav.tabs [data-tab="plan"]',t:"Schedule",x:"Der Drehplan Tag für Tag: Szenen, Motive und Zeiten. Mit «Script» öffnest du eine Szene im Drehbuch, die Kamera zeigt Blocking-Fotos und -Filme."},
-  {sel:'#view .dayhead .pvb',t:"Anzeigeoptionen",x:"Blende im Drehplan ein oder aus, was du sehen willst: Info, Szenenbeschrieb, Cast, Adresse und Blocking. Deine Auswahl bleibt gespeichert."},
-  {sel:'#view .dayhead .dpub',t:"1st / 2nd Unit",x:"Wähle, welche Units du siehst – zum Beispiel nur die 2nd Unit. Ist eine Unit an diesem Tag nicht im Einsatz, ist ihr Knopf blass."},
-  {sel:'nav.tabs [data-tab="dispo"]',t:"Callsheet",x:"Die Dispo des Drehtags: Crew Call, Drehbeginn, Wrap, Locations und Cast."},
-  {sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
-  {sel:'nav.tabs [data-tab="crew"]',t:"Crew",x:"Die Crewliste nach Abteilungen – je nach Berechtigung mit Telefon und E-Mail."},
-  {sel:'nav.tabs [data-tab="script"]',t:"Script",x:"Das Drehbuch mit Suche."},
-  {sel:'nav.tabs [data-tab="info"]',t:"Info",x:"Allgemeine Infos zur Produktion und zur App."},
-  {sel:"#searchBtn",t:"Suche",x:"Sucht über alles: Szenen, Rollen, Personen, Locations."},
-  {sel:"#myCalBtn",t:"Meine Termine",x:"Alle deine kommenden Termine an einem Ort – mit «In den Kalender» und der Glocke für Push-Nachrichten."},
-  {sel:"#acctBtn",t:"Mein Konto",x:"Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten."},
-  {sel:"#admBtn",t:"App-Verwaltung",x:"Benutzer, Rollen, Dokumente und Einstellungen – nur mit Berechtigung sichtbar."},
-  {sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
+  {tab:"plan",sel:'nav.tabs [data-tab="plan"]',t:"Schedule",x:"Der Drehplan Tag für Tag: Szenen, Motive und Zeiten. Mit «Script» öffnest du eine Szene im Drehbuch, die Kamera zeigt Blocking-Fotos und -Filme."},
+  {tab:"plan",sel:"#view .stripwrap",t:"Tage wählen",x:"Wische durch die Tage: PREP, OFF, TRAVEL und die Drehtage D01, D02 … Heute ist hervorgehoben."},
+  {tab:"plan",sel:"#view .dayhead .pvb",t:"Anzeigeoptionen",x:"Blende im Drehplan ein oder aus, was du sehen willst: Info, Szenenbeschrieb, Cast, Adresse und Blocking. Deine Auswahl bleibt gespeichert."},
+  {tab:"plan",sel:"#view .dayhead .dpub",t:"1st / 2nd Unit",x:"Wähle, welche Units du siehst – zum Beispiel nur die 2nd Unit. Ist eine Unit an diesem Tag nicht im Einsatz, ist ihr Knopf blass."},
+  {tab:"dispo",sel:'nav.tabs [data-tab="dispo"]',t:"Callsheet",x:"Die Dispo des Drehtags: Crew Call, Drehbeginn, Wrap, Locations und Cast."},
+  {tab:"dispo",sel:"#view .dpub",t:"Unit filtern",x:"Auch im Callsheet wählst du oben den Tag und filterst nach Unit."},
+  {tab:"loc",sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
+  {tab:"loc",sel:"#view .scall",up:1,t:"Optionen",x:"«Szenen» klappt alle Szenen auf oder zu; daneben blendest du Info und Adresse ein und filterst nach Unit."},
+  {tab:"loc",sel:"#view input.search",t:"Suche",x:"Suche nach Motiv, Adresse oder Szene."},
+  {tab:"crew",sel:'nav.tabs [data-tab="crew"]',t:"Crew",x:"Die Crewliste nach Abteilungen – je nach Berechtigung mit Telefon und E-Mail."},
+  {tab:"crew",sel:"#view input.search",t:"Crew durchsuchen",x:"Suche nach Name, Funktion oder Abteilung. Mit «vCard» speicherst du einen Kontakt direkt im Telefon."},
+  {tab:"crew",sel:"#view .admv",t:"Zusatzinfos",x:"Je nach Berechtigung: Essen, Geburtstage, Kontoinfos und alle Kontakte als VCF."},
+  {tab:"script",sel:'nav.tabs [data-tab="script"]',t:"Script",x:"Das Drehbuch mit Suche."},
+  {tab:"script",sel:"#view .pvbtn",up:1,t:"Anzeigeoptionen",x:"Blende Infobox, Drehtag & Zeit, englische Szenenbezeichnung, Cast, Adresse und Blocking ein oder aus."},
+  {tab:"script",sel:"#view .smodes",t:"Suchen nach",x:"Suche im Drehbuch gezielt nach Rolle, Szene, Drehtag, Person, Motiv oder Text."},
+  {tab:"cater",sel:'nav.tabs [data-tab="cater"]',t:"Catering",x:"Alle Essenswünsche, Unverträglichkeiten und Allergien der Crew auf einen Blick."},
+  {tab:"info",sel:'nav.tabs [data-tab="info"]',t:"Info",x:"Allgemeine Infos zur Produktion und zur App."},
+  {tab:"plan",sel:"#searchBtn",t:"Suche",x:"Sucht über alles: Szenen, Rollen, Personen, Locations."},
+  {tab:"my",sel:"#myCalBtn",t:"Meine Termine",x:"Alle deine kommenden Termine an einem Ort – mit «In den Kalender» und der Glocke für Push-Nachrichten."},
+  {tab:"my",sel:"#view .pbell",t:"Push-Glocke",x:"Mit der Glocke schaltest du die Erinnerung für einzelne Termine aus oder ein."},
+  {tab:"acct",sel:"#acctBtn",t:"Mein Konto",x:"Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten."},
+  {tab:"acct",sel:"#view .pushsec",t:"Push-Nachrichten",x:"Hier stellst du ein, ob, wann und für welche Termine du erinnert wirst."},
+  {tab:"plan",sel:"#admBtn",t:"App-Verwaltung",x:"Benutzer, Rollen, Dokumente und Einstellungen – nur mit Berechtigung sichtbar."},
+  {tab:"plan",sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
 ];
 const TOUR={i:-1,steps:[],el:null};
-const tourVisible=s=>{const e=document.querySelector(s);if(!e||e.hidden||e.closest("[hidden]"))return null;const r=e.getBoundingClientRect();return r.width&&r.height?e:null};
-function tourDoneLocal(){try{return !!localStorage.getItem("tourDone:"+(ME&&ME.uid))}catch(_){return false}}
+const tourEl=st=>{let e=document.querySelector(st.sel);for(let k=0;e&&k<(st.up||0);k++)e=e.parentElement;if(!e||e.hidden||e.closest("[hidden]"))return null;const r=e.getBoundingClientRect();return r.width&&r.height?e:null};
+function tourShow(st){if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
+function tourDoneLocal(){try{return !!(localStorage.getItem("tourDone:"+(ME&&ME.uid))||localStorage.getItem("tour"))}catch(_){return false}}
+/* the tour starts by itself only once per person: marked right when it is offered (this device, the synced view settings and the profile) */
+async function tourMark(how){
+  const at=new Date().toISOString(),v=how+"|"+at;try{localStorage.setItem("tourDone:"+(ME&&ME.uid),v)}catch(_){}store("tour",v);
+  try{if(MEMBER&&ME){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{tour:how,tourAt:at});MEMBER.tour=how;MEMBER.tourAt=at}}catch(err){console.warn("tour",err&&err.code||err)}
+}
 async function maybeTour(){
-  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el)return;if(!window.TOUREN){setTimeout(maybePushHint,800);return}
-  if(MEMBER&&MEMBER.tour){setTimeout(maybePushHint,800);return}
-  if(tourDoneLocal()){setTimeout(maybePushHint,800);let v="";try{v=localStorage.getItem("tourDone:"+ME.uid)||""}catch(_){}const [how,at]=v.split("|");
-    if(MEMBER&&(how==="done"||how==="skip"))try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{tour:how,tourAt:at||new Date().toISOString()});MEMBER.tour=how;MEMBER.tourAt=at}catch(_){}return}
-  setTimeout(()=>tourStart(true),700);
+  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||TOUR.pending)return;
+  if(!window.TOUREN||(MEMBER&&MEMBER.tour)||tourDoneLocal()){setTimeout(maybePushHint,800);return}
+  TOUR.pending=true;setTimeout(()=>{TOUR.pending=false;if(!TOUR.el&&!tourDoneLocal()&&!(MEMBER&&MEMBER.tour)){tourMark("shown");tourStart(true)}},700);
 }
 function tourStart(ask){
   if(TOUR.el)TOUR.el.remove();if(CHAT.open){CHAT.open=false;chatPanel()}
   TOUR.prev={tab:S.tab,day:S.day};
   /* show a shooting day so the display options and unit buttons can be explained */
   {const t=todayISO(),cur=S.days.find(x=>x.id===S.day);if(S.tab!=="plan"||!cur||cur.kind!=="shoot"){const sd=S.days.filter(x=>x.kind==="shoot");const d=sd.find(x=>x.date>=t)||sd[0];S.tab="plan";if(d)S.day=d.id;render()}}
-  window.scrollTo(0,0);TOUR.steps=TOUR_STEPS.filter(s=>tourVisible(s.sel));TOUR.i=ask?-1:0;
+  {const keep=S.tab,navOn=t=>{const b=document.querySelector('nav.tabs [data-tab="'+t+'"]');return !!(b&&!b.hidden)};
+    TOUR.steps=TOUR_STEPS.filter(st=>{try{return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}});S.tab=keep;render()}
+  window.scrollTo(0,0);TOUR.i=ask?-1:0;
   const o=document.createElement("div");o.id="tour";o.className="tour";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML='<div class="tspot"></div><div class="tcard" role="document"></div>';
   o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;
     if(a==="next")tourGo(TOUR.i+1);else if(a==="back")tourGo(TOUR.i-1);else if(a==="skip")tourEnd("skip");else if(a==="done")tourEnd("done")});
@@ -1109,25 +1149,24 @@ function tourGo(i){
     c.innerHTML='<h3>'+L("Kurze Tour durch die App?")+'</h3><p>'+L("In einer Minute zeigen wir dir die wichtigsten Funktionen. Du kannst die Tour später jederzeit unter «Mein Konto» starten.")+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><button type="button" class="pri" data-tour="next">'+L("Tour starten")+'</button></div>';return}
   if(i>=n){sp.hidden=true;c.className="tcard center";
     c.innerHTML='<h3>'+L("Fertig!")+'</h3><p>'+L("Viel Spass mit der App. Die Tour findest du jederzeit wieder unter «Mein Konto».")+'</p><div class="tbtns"><button type="button" class="pri" data-tour="done">'+L("Los geht's")+'</button></div>';return}
-  const s=TOUR.steps[i];sp.hidden=false;c.className="tcard";
+  const s=TOUR.steps[i];if(!tourShow(s)){const dir=i>=(TOUR.last==null?-1:TOUR.last)?1:-1;TOUR.steps.splice(i,1);return tourGo(dir>0?i:i-1)}TOUR.last=i;sp.hidden=false;c.className="tcard";
   c.innerHTML='<div class="tprog">'+(i+1)+' / '+n+'</div><h3>'+esc(L(s.t))+'</h3><p>'+esc(L(s.x))+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><span></span>'+(i>0?'<button type="button" class="sec" data-tour="back">'+L("Zurück")+'</button>':'')+'<button type="button" class="pri" data-tour="next">'+L(i===n-1?"Fertig":"Weiter")+'</button></div>';
   tourPlace();try{c.querySelector(".pri").focus({preventScroll:true})}catch(_){}
 }
 function tourPlace(){
-  const o=TOUR.el;if(!o||TOUR.i<0||TOUR.i>=TOUR.steps.length)return;const e=document.querySelector(TOUR.steps[TOUR.i].sel);if(!e)return;
+  const o=TOUR.el;if(!o||TOUR.i<0||TOUR.i>=TOUR.steps.length)return;const e=tourEl(TOUR.steps[TOUR.i]);if(!e)return;
   const r=e.getBoundingClientRect(),pad=6,sp=o.querySelector(".tspot"),c=o.querySelector(".tcard");
   Object.assign(sp.style,{left:(r.left-pad)+"px",top:(r.top-pad)+"px",width:(r.width+2*pad)+"px",height:(r.height+2*pad)+"px"});
   const vh=innerHeight,vw=innerWidth,cw=Math.min(340,vw-24);c.style.width=cw+"px";
-  const ch=c.offsetHeight||170,below=r.bottom+14+ch<vh-8;
-  c.style.top=(below?r.bottom+14:Math.max(8,r.top-14-ch))+"px";
+  const ch=c.offsetHeight||170,below=r.bottom+14+ch<vh-8,above=r.top-14-ch>8;
+  c.style.top=(below?r.bottom+14:above?r.top-14-ch:Math.max(8,vh-ch-90))+"px";
   c.style.left=Math.min(vw-cw-12,Math.max(12,r.left+r.width/2-cw/2))+"px";
 }
 async function tourEnd(how){
   if(TOUR.el){TOUR.el.remove();TOUR.el=null}removeEventListener("resize",tourPlace);
-  if(TOUR.prev&&TOUR.prev.tab==="plan"&&TOUR.prev.day&&TOUR.prev.day!==S.day){S.day=TOUR.prev.day;render()}TOUR.prev=null;setTimeout(maybePushHint,800);
-  const at=new Date().toISOString();try{localStorage.setItem("tourDone:"+(ME&&ME.uid),how+"|"+at)}catch(_){}
+  if(TOUR.prev){if(TOUR.prev.day)S.day=TOUR.prev.day;S.tab=["acct","admin"].includes(TOUR.prev.tab)?TOUR.prev.tab:"plan";render();window.scrollTo(0,0)}TOUR.prev=null;setTimeout(maybePushHint,800);
+  tourMark(how);
   if(how==="skip")showMsg(L("Tour übersprungen – du findest sie unter «Mein Konto».")+"",4000);
-  try{if(MEMBER&&ME){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{tour:how,tourAt:at});MEMBER.tour=how;MEMBER.tourAt=at}}catch(err){console.warn("tour",err&&err.code||err)}
 }
 
 /* one-time note about push notifications (existing and new users), with a short setup right in the note */
@@ -1148,7 +1187,7 @@ function maybePushHint(){
     else{pushSave(c);d.remove();if(b.dataset.ph==="no")showMsg(L("Du kannst Push-Nachrichten jederzeit unter «Mein Konto» einschalten."),4000)}});
   document.body.appendChild(d);
 }
-const tourInfo=m=>!m?"":m.tour==="done"?L("Tour gemacht"):m.tour==="skip"?L("Tour übersprungen"):L("Tour offen");
+const tourInfo=m=>!m?"":m.tour==="done"?L("Tour gemacht"):m.tour==="skip"?L("Tour übersprungen"):m.tour==="shown"?L("Tour angefangen"):L("Tour offen");
 /* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */
 const WELCOME_VER="1";
 const WTXT={
@@ -1352,7 +1391,7 @@ async function admLoad(){
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
-const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-src","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
+const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-src","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
 const secOpen=(k,title,body)=>'<details class="asec '+k+'" data-sec="'+k+'"'+(SECS[k]!==false?' open':'')+'><summary>'+esc(title)+'</summary><div class="asb">'+body+'</div></details>';
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
 /* departments that are not fed on set: left out of the catering count */
@@ -1361,18 +1400,40 @@ function crewDeptOf(m){
   const e=lc(m.email),k=nkey([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);
   const x=aix();return (e&&x.dept.get("e:"+e))||(k&&x.dept.get("n:"+k))||"";
 }
-function cateringHTML(){
-  const act=ADM.mem.filter(m=>m.active===true&&!NO_CATER.test(crewDeptOf(m))).map(normDiet);if(!act.length)return"";
+/* catering: the crew list shows a short summary at the top and bundles the details in one collapsible block;
+   the Catering page (tab instead of Script for people with the catering permission) shows everything at a glance */
+function caterData(){
+  const act=ADM.mem.filter(m=>m.active===true&&!NO_CATER.test(crewDeptOf(m))).map(normDiet);
   const nm=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
-  const special=act.filter(m=>(m.diet&&m.diet!=="none")||m.intol.length||String(m.allergies||"").trim());
-  /* one collapsible line per diet / intolerance / allergy with the names; people who eat everything without special wishes are only counted */
-  const grp=(label,list)=>list.length?'<details class="catg"><summary><b>'+list.length+'</b> '+esc(label)+'</summary><div class="catn">'+list.map(m=>esc(nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join(" · ")+'</div></details>':'';
-  const body='<p class="cats">'+esc(act.length-special.length+' '+L("ohne Sonderwünsche")+' · '+special.length+' '+L("mit Sonderwünschen"))+'</p>'+
-    DIETS.filter(d=>d[0]!=="none").map(d=>grp(L(d[1]),special.filter(m=>m.diet===d[0]))).join("")+
-    INTOL.map(i=>grp(L(i[1]),special.filter(m=>m.intol.includes(i[0])))).join("")+
-    (special.some(m=>String(m.allergies||"").trim())?'<details class="catg"><summary><b>'+special.filter(m=>String(m.allergies||"").trim()).length+'</b> '+esc(L("Weitere Allergien"))+'</summary><div class="catn">'+special.filter(m=>String(m.allergies||"").trim()).map(m=>esc(nm(m))+': '+esc(m.allergies.trim())).join("<br>")+'</div></details>':'');
-  return secOpen("cater",'Catering · '+act.length+' '+L("aktiv"),body);
+  const alg=m=>String(m.allergies||"").trim();
+  const special=act.filter(m=>(m.diet&&m.diet!=="none")||m.intol.length||alg(m));
+  const groups=DIETS.filter(d=>d[0]!=="none").map(d=>[L(d[1]),special.filter(m=>m.diet===d[0])]).concat(INTOL.map(i=>[L(i[1]),special.filter(m=>m.intol.includes(i[0]))])).filter(g=>g[1].length);
+  const allergy=special.filter(alg);
+  return {act,special,groups,allergy,nm,alg};
 }
+function caterSummary(c){
+  return '<p class="catsum"><b>'+c.act.length+'</b> '+esc(L("Personen"))+' · <b>'+(c.act.length-c.special.length)+'</b> '+esc(L("ohne Sonderwünsche"))+' · <b>'+c.special.length+'</b> '+esc(L("mit Sonderwünschen"))+'</p>'+
+    (c.groups.length||c.allergy.length?'<div class="catchips">'+c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'')+'</div>':'');
+}
+function cateringHTML(){
+  const c=caterData();if(!c.act.length)return"";
+  const grp=(label,list)=>'<details class="catg"><summary><b>'+list.length+'</b> '+esc(label)+'</summary><div class="catn">'+list.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join(" · ")+'</div></details>';
+  const det=c.groups.map(([t,l])=>grp(t,l)).join("")+(c.allergy.length?'<details class="catg"><summary><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</summary><div class="catn">'+c.allergy.map(m=>esc(c.nm(m))+': '+esc(c.alg(m))).join("<br>")+'</div></details>':'');
+  return '<div class="asec cater catbox"><div class="cathd"><b>Catering</b><button type="button" class="pillbtn catopen" data-catpage>'+esc(L("Übersicht"))+' →</button></div>'+caterSummary(c)+
+    (det?'<details class="catmore" data-sec="catmore"'+(SECS.catmore===true?' open':'')+'><summary>'+esc(L("Namen und Details"))+'</summary>'+det+'</details>':'')+'</div>';
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-catpage]")){S.tab="cater";S.srcOpen=false;window.scrollTo(0,0);render()}});
+VIEWS.cater=function(){
+  if(!ME||!can("crew.food"))return '<div class="empty">'+L("Kein Zugang")+'</div>';
+  ensureAdm();if(!ADM.loaded)return '<section class="mypage catpage"><h2 class="pgt">Catering</h2><p class="ghint">'+(ADM.err?esc(L("Daten der Benutzer:innen nicht lesbar"))+' ('+esc(ADM.err)+')':L("Lade …"))+'</p></section>';
+  const c=caterData(),dep=m=>crewDeptOf(m)||"–";
+  let h='<section class="mypage catpage"><h2 class="pgt">Catering</h2><p class="ghint">'+esc(L("Alle aktiven Benutzer:innen der App, die am Set verpflegt werden."))+'</p>'+caterSummary(c);
+  h+='<div class="catgrid">'+c.groups.map(([t,l])=>'<div class="catcard"><h4><b>'+l.length+'</b> '+esc(t)+'</h4><div class="catn">'+l.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join("<br>")+'</div></div>').join("")+
+    (c.allergy.length?'<div class="catcard warn"><h4><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</h4><div class="catn">'+c.allergy.map(m=>'<b>'+esc(c.nm(m))+'</b>: '+esc(c.alg(m))).join("<br>")+'</div></div>':'')+'</div>';
+  if(c.special.length)h+='<h3 class="cath3">'+esc(L("Alle Sonderwünsche"))+'</h3><div class="cattbl">'+c.special.slice().sort((a,b)=>c.nm(a).localeCompare(c.nm(b),LANG)).map(m=>'<div class="catrow"><div><b>'+esc(c.nm(m))+'</b><span class="catdep">'+esc(dep(m))+'</span></div><div>'+esc(dietText(m))+'</div></div>').join("")+'</div>';
+  return h+'</section>';
+};
+window.caterTab=()=>!!(ME&&can("crew.food"));
 /* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */
 const BK={busy:false,msg:"",ok:false};
 function bkSec(){
@@ -1476,8 +1537,9 @@ function userInfo(r){
   const m=r.m;if(!m||!(isAdmin()||can("users.view")))return"";
   const g=(GENDERS.find(x=>x[0]===m.gender)||[])[1];
   const wl=m.welcomeAck?L("Willkommen bestätigt")+" "+new Date(m.welcomeAck).toLocaleDateString("de-CH"):L("Willkommen noch nicht bestätigt");
-  const bits=[wl,m.phone?"☎ "+m.phone:"",m.contactEmail&&m.contactEmail!==m.email?"✉ "+m.contactEmail:"",m.birthday?L("Geburtsdatum")+": "+m.birthday.split("-").reverse().join("."):"",g?L(g):"",dietText(m)].filter(Boolean);
-  return bits.length?'<div class="uinf">'+bits.map(esc).join(" · ")+'</div>':"";
+  const tel=x=>'<a href="tel:'+esc(String(x).replace(/[^\d+]/g,""))+'">☎ '+esc(x)+'</a>',mail=x=>'<a href="mailto:'+esc(x)+'">✉ '+esc(x)+'</a>';
+  const bits=[esc(wl),m.phone?tel(m.phone):"",m.contactEmail&&m.contactEmail!==m.email?mail(m.contactEmail):"",m.birthday?esc(L("Geburtsdatum")+": "+m.birthday.split("-").reverse().join(".")):"",g?esc(L(g)):"",esc(dietText(m))].filter(Boolean);
+  return bits.length?'<div class="uinf">'+bits.join(" · ")+'</div>':"";
 }
 /* new users get the role «Crew» automatically (an invitation creates userroles/{email} = crew) */
 async function assignCrew(em){em=lc(em);if(!em||ADMINS.includes(em)||(ADM.adm||[]).includes(em)||(ADM.ur||{})[em])return;
@@ -1571,7 +1633,7 @@ function userList(rows,vis,o){
     const hasActs=acts.length||(own&&!isOwn);
     return '<div class="ucard'+(r.m&&r.m.active!==true?' blocked':'')+(open?' open':'')+'">'+
       '<div class="uhd"><span class="uav'+(r.m&&isOnline(r.m)?' on':'')+'" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b>'+badge+o.st(r)+'</div>'+
-      '<div class="usub">'+(cp.role?esc(cp.role)+' · ':'')+'<span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?' · '+esc(r.m.lang.toUpperCase()):'')+(r.m&&seenText(r.m)?' · <span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'')+(r.m?' · <span class="utour">'+esc(tourInfo(r.m))+'</span>':'')+'</div>'+userInfo(r)+'</div>'+
+      '<div class="usub">'+(cp.role?esc(cp.role)+' · ':'')+'<a class="em" href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>'+(r.m&&r.m.lang?' · '+esc(r.m.lang.toUpperCase()):'')+(r.m&&seenText(r.m)?' · <span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'')+(r.m?' · <span class="utour">'+esc(tourInfo(r.m))+'</span>':'')+'</div>'+userInfo(r)+'</div>'+
       (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" aria-label="'+esc(L("Aktionen"))+'" title="'+esc(L("Aktionen"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
       (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
       (open?'<div class="ubody">'+(own&&!isOwn?o.roleSel(r):'')+(o.cEd&&ADM.edit===r.email?editForm(r):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
