@@ -34,7 +34,7 @@ const isMobile=()=>isIOS()||/android/i.test(navigator.userAgent);
 function a2hsState(){try{return localStorage.getItem(A2HS_KEY)||""}catch(_){return ""}}
 function a2hsSet(v){try{localStorage.setItem(A2HS_KEY,v)}catch(_){}}
 function hideA2hs(){const s=document.getElementById("a2hs");if(s)s.hidden=true}
-/* ask after sign-in; after "Später" ask again at the earliest in 3 days; never after "Ist schon drauf" / installed */
+/* asked exactly once per device (during setup); afterwards only on request from «Mein Konto» */
 /* shortcut on the home screen (phone/tablet) or desktop: asked once while setting up (see the setup chain in web_boot), again from «Mein Konto» */
 /* create the shortcut right away where the browser allows it: Chrome/Edge show their install dialog (one click → icon on the desktop / start menu);
    other desktop browsers get a ready shortcut file (Windows .url, Mac .webloc) to put on the desktop; phones get the steps */
@@ -53,14 +53,15 @@ function a2hsFile(){
   a2hsSet("done");hideA2hs();
   showMsg(L("Verknüpfung heruntergeladen – zieh die Datei «TSCHUGGER Crew» aus dem Download-Ordner auf den Desktop."),9000);
 }
-function a2hsDue(){return !isStandalone()&&!a2hsState()}
+function a2hsDue(){return !isStandalone()&&!a2hsState()}   /* any stored state (asked, later, done) means: never ask again by itself */
 function maybeOfferA2hs(afterLogin){
   if(isStandalone())return;if(afterLogin!=="setup")return; /* only from the setup chain */
   const st=a2hsState();if(st==="done")return;
-  if(!afterLogin&&st&&Date.now()-(+st||0)<3*864e5)return;
+  if(st)return;
   showA2hs();
 }
 function showA2hs(steps){
+  if(!steps&&!a2hsState())a2hsSet("asked:"+Date.now()); /* ask only once per device (desktop or home screen); later only from «Mein Konto» */
   let s=document.getElementById("a2hs");
   if(!s){s=document.createElement("div");s.id="a2hs";s.className="a2hs";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
     s.addEventListener("click",async e=>{

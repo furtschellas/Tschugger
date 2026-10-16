@@ -390,3 +390,64 @@ html body .catbox button.cico svg{width:16px;height:16px;flex:0 0 16px}
 .galgrid .galgh{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:10px 0 2px}
 .galgrid .galgh:first-child{margin-top:0}.galgrid .galgh small{color:var(--muted);font-weight:600;margin-left:4px}
 .galcap .galcg{color:var(--accent);font-weight:700}
+
+/* =====================================================================
+   UNIFIED LOOK – one type scale, one set of buttons, fields, expanders and links
+   (comes last so it wins over the older one-off rules)
+   ===================================================================== */
+:root{--fs-eyebrow:12px;--fs-label:13px;--fs-small:13px;--fs-body:15px;--fs-card:16px;--fs-page:26px;
+  --ctl-h:44px;--btn-h:38px;--btn-sm-h:32px;--ico-h:34px;--ctl-r:10px;--acc-soft:color-mix(in srgb,var(--accent) 45%,transparent);--acc-tint:color-mix(in srgb,var(--accent) 12%,transparent)}
+
+/* --- type: page titles, section titles, card titles, eyebrows, labels, hints --- */
+html body #view h2.pgt,html body #view h2.dh,html body #view .myhead h2{font-family:var(--f-display);font-size:var(--fs-page);font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1.1;margin:4px 0 14px}
+html body #view h3:not(.dh):not(.ppd),html body #view .catt b,html body #view .asec>summary b,html body #view .asetd>summary b{font-size:var(--fs-card);font-weight:700;line-height:1.3}
+html body #view legend,html body #view h4.pph,html body #view .menuul,html body #view .galgh,html body .galgrid .galgh,html body #view .eyebrow{font-family:var(--f-body);font-size:var(--fs-eyebrow)!important;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+html body #view label:not(.ck):not(.abtn):not(.pillbtn):not(.bcch){font-size:var(--fs-label);font-weight:600;color:var(--muted)}
+html body #view label.ck{font-size:var(--fs-body);font-weight:400;color:var(--ink)}
+html body #view .ghint,html body #view .catdep,html body #view .msrc{font-size:var(--fs-small);line-height:1.5}
+html body #view p,html body #view li{font-size:var(--fs-body)}
+
+/* --- fields: inputs, textareas, selects --- */
+html body #view :is(input[type=text],input[type=search],input[type=email],input[type=tel],input[type=password],input[type=number],input[type=date],input[type=time],input[type=url],input:not([type]),textarea,select){
+  font-family:var(--f-body);font-size:16px;min-height:var(--ctl-h);border-radius:var(--ctl-r);border:1px solid var(--rule);background-color:var(--sheet);color:var(--ink);padding:0 12px;box-sizing:border-box;transition:border-color .15s,box-shadow .15s}
+html body #view textarea{padding:10px 12px;line-height:1.45}
+html body #view select{-webkit-appearance:none;appearance:none;padding-right:36px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--accent) 50%),linear-gradient(135deg,var(--accent) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 52%,calc(100% - 13px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+html body #view :is(input,textarea,select):focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--acc-tint)}
+html body #view ::placeholder{color:var(--muted);opacity:.8}
+
+/* --- buttons: primary (filled), secondary (outline pill), small pill, round icon, text link --- */
+html body #view .arb button[type=submit],html body #view button.primary{min-height:var(--btn-h);padding:0 20px;border-radius:999px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-family:var(--f-body);font-size:14.5px;font-weight:600;cursor:pointer}
+html body #view :is(.pillbtn,.abtn):not(.wa):not(.wabtn){min-height:var(--btn-h);padding:0 16px;border-radius:999px;font-family:var(--f-body);font-size:14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;line-height:1.2}
+html body #view :is(.pillbtn,.abtn,.arb button[type=submit]):hover{filter:brightness(1.08)}
+html body #view :is(a.mapbtn,button.scall,button.scbtn,a.fpl,.copy.vcbtn){min-height:var(--btn-sm-h);height:auto;padding:0 12px;border-radius:999px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px;text-decoration:none;line-height:1.2}
+html body #view a.fpl.blk{width:var(--btn-sm-h);padding:0;justify-content:center}
+html body :is(#view,.a2box) :is(.calbtn,.mailbtn,.umore,.cico,.foodtog.ico,.uprf){width:var(--ico-h);height:var(--ico-h);min-width:var(--ico-h);padding:0!important;border-radius:50%;border:1px solid var(--acc-soft);background:transparent;color:var(--accent);display:inline-flex;align-items:center;justify-content:center;flex:none;cursor:pointer;transition:background .15s,border-color .15s}
+html body :is(#view,.a2box) :is(.calbtn,.mailbtn,.umore,.cico,.foodtog.ico,.uprf):hover{border-color:var(--accent);background:var(--acc-tint)}
+html body #view :is(.foodtog.ico[aria-pressed=true],.cico.on,.umore[aria-expanded=true]){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+html body :is(#view,.a2box) :is(.calbtn,.mailbtn,.umore,.cico,.foodtog.ico,.uprf) svg{width:17px;height:17px;flex:0 0 17px}
+html body #view .foodtog.vcall{width:auto;border-radius:999px;padding:0 12px!important;gap:6px}
+html body #view .lnk,html body #view button.link{font-family:var(--f-body);font-size:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:var(--acc-soft)}
+
+/* --- links in text: always accent, thin underline --- */
+html body #view a:not([class]),html body #view a.em,html body #view a.srcf,html body #view .usub a,html body #view .spfa a,html body #view .uinfo a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:var(--acc-soft)}
+html body #view a:not([class]):hover,html body #view a.em:hover,html body #view a.srcf:hover,html body #view .usub a:hover{text-decoration-color:var(--accent)}
+
+/* --- expanders: one chevron everywhere (down = closed, up = open) --- */
+html body #view :is(.asec,.asetd,.paccd,.docs .docd)>summary::after,html body #view .catchev{content:"";display:inline-block;flex:none;width:8px;height:8px;border:0;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin:-4px 6px 0 10px;transition:transform .18s}
+html body #view :is(.asec,.asetd,.paccd,.docs .docd)[open]>summary::after,html body #view .catbox[open] .catchev{transform:rotate(-135deg);margin-top:4px}
+html body #view :is(details.src,.ppparts)>summary,html body #view .factd>summary{list-style:none;cursor:pointer}
+html body #view :is(details.src,.ppparts)>summary::before{content:"";display:inline-block;width:6px;height:6px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg);margin:0 8px 1px 1px;transition:transform .18s}
+html body #view :is(details.src,.ppparts)[open]>summary::before{content:"";transform:rotate(45deg);margin-bottom:3px}
+html body #view .factd>summary::after{content:"";display:inline-block;width:5px;height:5px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin:0 2px 2px 6px;font-size:0;transition:transform .18s}
+html body #view .factd[open]>summary::after{content:"";transform:rotate(-135deg);margin-bottom:-1px}
+html body #view details>summary{-webkit-tap-highlight-color:transparent}
+html body #view details>summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+/* --- cards and spacing --- */
+html body #view :is(.asec,.catbox,.ucard,.menuf,.paccd){border-radius:14px}
+html body #view .usort select,html body #view select{padding-right:36px!important;background-color:var(--sheet)!important}
+.menuadd{display:flex;flex-wrap:wrap;gap:8px;border-top:1px solid var(--rule);padding-top:10px}
+html body #view .menuadd .pillbtn{min-height:32px;font-size:13px;padding:0 12px}
+.menuadd[hidden]{display:none!important}

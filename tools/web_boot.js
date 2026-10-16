@@ -1539,18 +1539,27 @@ function dayEatHTML(d){let e;try{e=dayEaters(d)}catch(_){return ""}if(!e.total)r
     .concat(INTOL.filter(x=>e.intol[x[0]]).map(x=>'<span class="catchip"><b>'+e.intol[x[0]]+'</b> '+esc(L(x[1]))+'</span>')).join("");
   const tip=e.crew+" Crew"+(e.cast?" · "+e.cast+" Cast":"")+(e.ex?" · "+e.ex+" "+L("Kompars."):"")+" · "+L(e.src==="dispo"?"laut Callsheet":"noch kein Callsheet – ganze Crew");
   return '<div class="meat" title="'+esc(tip)+'"><span class="mtot"><b>'+e.total+'</b> '+esc(L("Personen"))+'</span><div class="catchips">'+chips+'</div><span class="msrc">'+esc(tip)+'</span></div>'}
+const MENUX=new Set();
+document.addEventListener("click",e=>{const b=e.target.closest("[data-menux]");if(!b)return;
+  /* keep what was typed in the form, then show the extra unit */
+  const f=b.closest("form[data-menu]"),date=f.dataset.menu,cur={};f.querySelectorAll("input[name^=u]").forEach(x=>{if(x.value)cur[x.name]=x.value});
+  if(Object.keys(cur).length)window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],cur)});
+  MENUX.add(b.dataset.menux);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();render()});
 function menuSec(){
   const t=todayISO(),days=S.days.filter(d=>d.kind==="shoot"&&d.date>=t);const units=typeof unitsOn==="function"?unitsOn():["1"];
   if(!days.length)return '<p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>';
   return '<p class="ghint">'+L("Zwei Menüs pro Drehtag und Unit – sie erscheinen im Drehplan und im Callsheet beim Lunch.")+'</p>'+days.map(d=>{const m=(window.MENUS||{})[d.date]||{};const dt=new Date(d.date+"T12:00:00");
-    const us=units.filter(u=>u==="1"||(typeof hasU==="function"&&hasU(d,u)));const multi=us.length>1;
+    /* units: 1st always; 2nd/3rd when they shoot that day, when a menu was entered for them, or when catering adds them by hand («+ 3rd Unit») */
+    const us=["1","2","3"].filter(u=>u==="1"||(typeof hasU==="function"&&hasU(d,u))||m["u"+u+"a"]||m["u"+u+"b"]||MENUX.has(d.date+"|"+u));const multi=us.length>1;
+    const addU=["2","3"].filter(u=>!us.includes(u));
     return '<form class="menuf" data-menu="'+esc(d.date)+'"><div class="menuh"><div class="menuhd"><b>'+esc(d.short||d.label||"")+'</b> <span>'+esc(WDL(dt)+" "+String(dt.getDate()).padStart(2,"0")+"."+String(dt.getMonth()+1).padStart(2,"0")+".")+'</span></div>'+dayEatHTML(d)+'</div>'+
       (multi?'<label class="ck menutog"><input type="checkbox" name="tog"'+(m.tog?' checked':'')+'> '+L("Alle Units essen zusammen (ein gemeinsames Menü)")+'</label>':'')+
       us.filter(u=>u==="1"||!m.tog).map(u=>'<div class="menuu" data-mu="'+u+'"><div class="menuul">'+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'</div>'+["a","b"].map((k,i)=>'<label>'+L("Menü")+' '+(i+1)+'<input name="u'+u+k+'" maxlength="300" placeholder="'+esc(L(i?"z. B. vegetarisch: Gemüsecurry":"z. B. Risotto mit Pilzen"))+'" value="'+esc(k==="a"?(m["u"+u+"a"]||m["u"+u]||""):(m["u"+u+"b"]||""))+'"></label>').join("")+'</div>').join("")+
+      (addU.length&&!m.tog?'<div class="menuadd">'+addU.map(u=>'<button type="button" class="pillbtn" data-menux="'+esc(d.date)+'|'+u+'">+ '+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'</button>').join("")+'</div>':'')+
       '<label class="menuzw"><span>'+L("Zwischenverpflegung")+' <span class="ghint">('+L("optional")+')</span></span><input name="zw" maxlength="300" placeholder="'+esc(L("z. B. Früchte, Sandwiches um 16:00"))+'" value="'+esc(m.zw||"")+'"></label>'+
       '<div class="arb"><button type="submit">'+L("Speichern")+'</button></div></form>'}).join("");
 }
-document.addEventListener("change",e=>{const t=e.target;if(!t.matches("form[data-menu] input[name=tog]"))return;const f=t.form;f.querySelectorAll('.menuu').forEach(x=>{if(x.dataset.mu!=="1")x.hidden=t.checked});
+document.addEventListener("change",e=>{const t=e.target;if(!t.matches("form[data-menu] input[name=tog]"))return;const f=t.form;f.querySelectorAll('.menuu').forEach(x=>{if(x.dataset.mu!=="1")x.hidden=t.checked});{const a=f.querySelector('.menuadd');if(a)a.hidden=t.checked}
   if(!t.checked&&!f.querySelector('.menuu[data-mu="2"]')){const date=f.dataset.menu;window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],{tog:false},Object.fromEntries([...f.querySelectorAll("input[name^=u]")].map(x=>[x.name,x.value])))});render()}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form[data-menu]");if(!f)return;e.preventDefault();if(!canMenu())return;
   const date=f.dataset.menu,val={by:ME.email,tog:!!(f.tog&&f.tog.checked),zw:f.zw?String(f.zw.value||"").trim().slice(0,300):""};["1","2","3"].forEach(u=>["a","b"].forEach(k=>{if(f["u"+u+k])val["u"+u+k]=String(f["u"+u+k].value||"").trim().slice(0,300)}));const btn=f.querySelector("button[type=submit]");btn.disabled=true;
