@@ -184,6 +184,18 @@ service cloud.firestore {
           && request.resource.data.get('u3a', '').size() <= 300 && request.resource.data.get('u3b', '').size() <= 300));
     }
 
+    // Protokoll: jede angemeldete Person aus der Crew schreibt ihre eigenen Verwaltungs-Änderungen mit; lesen nur Admins oder «Protokoll sehen»
+    match /audit/{id} {
+      allow create: if verified() && (isMember() || isAdmin())
+        && request.resource.data.keys().hasOnly(['by', 'at', 'op', 'col', 'id', 'sum'])
+        && request.resource.data.by == myEmail()
+        && request.resource.data.sum is string && request.resource.data.sum.size() <= 300
+        && request.resource.data.id is string && request.resource.data.id.size() <= 120;
+      allow read: if isAdmin() || can('audit.view');
+      allow update: if false;
+      allow delete: if isOwner();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

@@ -25,7 +25,20 @@ Object.assign(I18N,{
  "Danach die App vom Startbildschirm öffnen und dort einmal anmelden.":{it:"Poi apri l’app dalla schermata Home e accedi una volta.",fr:"Ouvre ensuite l’app depuis l’écran d’accueil et connecte-toi une fois.",en:"Then open the app from the home screen and sign in there once."}
 });
 const A2HS_KEY="a2hs:v1";let DEFERRED=null;
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();DEFERRED=e});
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();DEFERRED=e;if(window.A2AUTO)a2hsAuto()});
+/* automatic: where the browser allows installing (Chrome, Edge, Samsung, Android), the install dialog opens by itself
+   with the next tap or click in the app (browsers need one user action) – once per device, without an extra question first */
+let A2ARMED=false;
+function a2hsAuto(){
+  window.A2AUTO=true;
+  if(isStandalone()||a2hsState()||!DEFERRED||A2ARMED)return !!DEFERRED&&A2ARMED;
+  A2ARMED=true;
+  const go=async()=>{document.removeEventListener("pointerup",go,true);document.removeEventListener("keyup",go,true);
+    const p=DEFERRED;DEFERRED=null;if(!p||a2hsState())return;a2hsSet("asked:"+Date.now());
+    try{p.prompt();const r=await p.userChoice;if(r&&r.outcome==="accepted"){a2hsSet("done");showMsg(L("Icon erstellt – du findest die App jetzt auf dem Desktop bzw. Startbildschirm."),5000)}}catch(_){}};
+  document.addEventListener("pointerup",go,true);document.addEventListener("keyup",go,true);
+  return true;
+}
 window.addEventListener("appinstalled",()=>{try{localStorage.setItem(A2HS_KEY,"done")}catch(_){}hideA2hs()});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 const isStandalone=()=>(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
@@ -48,11 +61,20 @@ async function a2hsDo(more){
 function a2hsFile(){
   const url=location.origin+location.pathname,mac=/Mac/i.test(navigator.platform||navigator.userAgent);
   const txt=mac?'<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>URL</key><string>'+url+'</string></dict></plist>\n'
-    :"[InternetShortcut]\r\nURL="+url+"\r\nIconFile="+location.origin+location.pathname.replace(/[^/]*$/,"")+"icon-192.png\r\nIconIndex=0\r\n";
+    :"[InternetShortcut]\r\nURL="+url+"\r\nIconFile="+location.origin+location.pathname.replace(/[^/]*$/,"")+"clap-192.png\r\nIconIndex=0\r\n";
   try{const blob=new Blob([txt],{type:"application/octet-stream"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TSCHUGGER Crew"+(mac?".webloc":".url");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),20000)}catch(_){}
   a2hsSet("done");hideA2hs();
   showMsg(L("Verknüpfung heruntergeladen – zieh die Datei «TSCHUGGER Crew» aus dem Download-Ordner auf den Desktop."),9000);
 }
+/* is the app icon on this device? Chrome/Edge can tell (installed web app), elsewhere we only know when the app runs from the icon.
+   If the icon was deleted, the marker is reset so it can be created again */
+async function a2hsCheck(){
+  if(isStandalone())return "standalone";
+  try{if(navigator.getInstalledRelatedApps){const l=await navigator.getInstalledRelatedApps();if(l&&l.length)return "installed";if(a2hsState()==="done")a2hsSet("removed:"+Date.now());return "missing"}}catch(_){}
+  if(DEFERRED){if(a2hsState()==="done")a2hsSet("removed:"+Date.now());return "missing"}
+  return "unknown";
+}
+window.a2hsCheck=a2hsCheck;
 function a2hsDue(){return !isStandalone()&&!a2hsState()}   /* any stored state (asked, later, done) means: never ask again by itself */
 function maybeOfferA2hs(afterLogin){
   if(isStandalone())return;if(afterLogin!=="setup")return; /* only from the setup chain */
@@ -81,6 +103,6 @@ function showA2hs(steps){
       :isMobile()?'<p class="a2t">'+L("So geht's:")+'</p><ol class="a2steps"><li>'+L("1. Browser-Menü ⋮ öffnen").replace(/^1\. /,"")+'</li><li>'+L("2. «Zum Startbildschirm hinzufügen» oder «App installieren» wählen").replace(/^2\. /,"")+'</li></ol><div class="a2b"><button class="pri" data-a2="ok">'+L("Fertig")+'</button></div>'
       :'<p class="a2t">'+L("So geht's am Computer:")+'</p><ol class="a2steps"><li>'+L("Chrome / Edge: in der Adresszeile auf das Installieren-Symbol ⊕ klicken oder im Menü «App installieren» wählen")+'</li><li>'+L("Safari (Mac): Menü «Ablage» → «Zum Dock hinzufügen»")+'</li><li>'+L("Firefox: die Seite als Lesezeichen oder per Drag & Drop der Adresse auf den Schreibtisch ziehen")+'</li></ol><div class="a2b"><button class="pri" data-a2="ok">'+L("Fertig")+'</button></div>')
     :'<p>'+L("Dann öffnest du die Crew-App wie eine normale App, ohne Link.")+(isIOS()?' '+L("Auf dem iPhone braucht es das auch für Push-Nachrichten."):'')+'</p><div class="a2b"><button class="pri" data-a2="yes">'+L("Ja, hinzufügen")+'</button><button data-a2="later">'+L("Später")+'</button><button class="lnk" data-a2="done">'+L("Ist schon drauf")+'</button></div>';
-  s.innerHTML='<div class="a2box"><img src="icon-192.png" alt="" width="56" height="56"><h3>'+L(isMobile()?"Zum Startbildschirm hinzufügen?":"Verknüpfung auf dem Desktop erstellen?")+'</h3>'+body+'</div>';
+  s.innerHTML='<div class="a2box"><img src="clap-192.png" alt="" width="56" height="56"><h3>'+L(isMobile()?"Zum Startbildschirm hinzufügen?":"Verknüpfung auf dem Desktop erstellen?")+'</h3>'+body+'</div>';
   s.hidden=false;
 }
