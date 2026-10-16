@@ -933,7 +933,7 @@ async function onAcctClick(e){
   else if(b.dataset.ac==="signout"){b.disabled=true;s.hidden=true;S.tab="plan";store("tab","plan");
     try{const {A,auth}=await fb();await A.signOut(auth)}catch(err){console.error(err)}
     /* straight to the sign-in screen (e-mail + password) */
-    ME=null;MYPERMS=[];acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();render();showGate("login")}
+    ME=null;MYPERMS=[];{const w=document.getElementById("welcome");if(w)w.remove();WELCOME_OPEN=false}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();render();showGate("login")}
 }
 async function onAcctSubmit(e){
   e.preventDefault();const f=e.target,msg=f.querySelector(".amsg"),btn=f.querySelector("button[type=submit]")||f.querySelector("button");msg.className="amsg";msg.textContent="";
@@ -1517,7 +1517,7 @@ render();
       if(em){window.__justSignedIn=true;if(window.resetViewState)window.resetViewState();A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(null,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
     }
     A.onAuthStateChanged(auth,u=>{
-      if(!u){ME=null;MYPERMS=[];acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
+      if(!u){ME=null;MYPERMS=[];{const w=document.getElementById("welcome");if(w)w.remove();WELCOME_OPEN=false}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
         /* the sign-in screen may already be open (person switched to «create account» while Firebase was starting): keep it and what was typed */
         const g=document.getElementById("gate");if(g&&!g.hidden&&["login","register","reset"].includes(AUTHMODE)&&g.querySelector("form"))return;
         showGate("login");return}
