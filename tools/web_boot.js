@@ -206,6 +206,13 @@ Object.assign(I18N,{
  "Mit der Sonne wechselst du zwischen dunkler und heller Darstellung – hell ist draussen bei Sonne gut lesbar. Mit «Weiter» kommt deine Einstellung zurück.":{fr:"Le soleil passe du mode sombre au mode clair – le clair se lit bien dehors au soleil. « Suivant » rétablit ton réglage.",it:"Con il sole passi tra scuro e chiaro – il chiaro si legge bene fuori al sole. «Avanti» ripristina la tua impostazione.",en:"The sun switches between dark and light – light is easy to read outdoors in sunshine. “Next” restores your setting.",hi:"सूरज से गहरा और हल्का मोड बदलें – धूप में बाहर हल्का मोड आसानी से पढ़ा जाता है। «आगे» से आपकी सेटिंग वापस आती है।"},
  "Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.":{fr:"Sur iPhone/iPad : ajoute d'abord l'app via « Partager → Sur l'écran d'accueil » et ouvre-la depuis là – tu pourras alors activer les notifications.",it:"Su iPhone/iPad: aggiungi prima l'app con «Condividi → Aggiungi a Home» e aprila da lì – poi puoi attivare le notifiche.",en:"On iPhone/iPad: first add the app via “Share → Add to Home Screen” and open it from there – then you can turn on notifications.",hi:"iPhone/iPad पर: पहले «शेयर → होम स्क्रीन पर जोड़ें» से ऐप जोड़ें और वहीं से खोलें – फिर आप पुश सूचनाएँ चालू कर सकते हैं।"},
  "Darsteller":{fr:"Comédiens",it:"Attori",en:"Cast",hi:"कलाकार"},
+ "Gesendet an {n} Geräte.":{fr:"Envoyé à {n} appareils.",it:"Inviato a {n} dispositivi.",en:"Sent to {n} devices.",hi:"{n} डिवाइस पर भेजा गया।"},
+ "Noch keine Push-Nachrichten gesendet.":{fr:"Aucune notification envoyée pour l'instant.",it:"Nessuna notifica inviata finora.",en:"No notifications sent yet.",hi:"अभी तक कोई पुश संदेश नहीं भेजा गया।"},
+ "{n} Geräte":{fr:"{n} appareils",it:"{n} dispositivi",en:"{n} devices",hi:"{n} डिवाइस"},
+ "An":{fr:"À",it:"A",en:"To",hi:"को"},
+ "Von":{fr:"De",it:"Da",en:"From",hi:"से"},
+ "Erneut senden":{fr:"Renvoyer",it:"Invia di nuovo",en:"Send again",hi:"फिर से भेजें"},
+ "Verlauf":{fr:"Historique",it:"Cronologia",en:"History",hi:"इतिहास"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -1259,6 +1266,36 @@ function bcButton(){
 setInterval(()=>{try{bcButton()}catch(_){}},1500);
 function bcDepts(){return [...new Set((S.crew||[]).map(g=>g.dept).filter(Boolean))]}
 async function bcLoadRoles(){if(BC.roles)return;BC.roles=[];try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"roles"));BC.roles=q.docs.filter(d=>d.id!=="admin").map(d=>({id:d.id,name:String(d.data().name||d.id)})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}catch(_){}render()}
+/* send right away through the Cloudflare Worker; without it the next run picks the message up */
+async function bcDeliver(id){
+  const {F,db,auth}=await fb();
+  if(window.CHATURL){try{const tok=await auth.currentUser.getIdToken();
+    const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({id})});const j=await r.json().catch(()=>({}));
+    if(r.ok){try{await F.updateDoc(F.doc(db,"broadcasts",id),{sent:true,n:j.n||0})}catch(_){}return L("Gesendet an {n} Geräte.").replace("{n}",j.n||0)}
+    await fetch(window.CHATURL.replace(/\/+$/,"")+"/notify",{method:"POST",headers:{Authorization:"Bearer "+tok}}).catch(()=>{});return L("Gesendet – die Nachricht kommt in etwa einer Minute an.")}catch(_){}}
+  return L("Gespeichert – die Nachricht geht mit dem nächsten Lauf (spätestens in 15 Minuten) raus.");
+}
+/* history: every message with date, time, recipients and sender; can be sent again */
+async function bcLoadHist(){BC.hist=[];try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"broadcasts"));const key=await getDataKey();
+  const out=[];for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));out.push(Object.assign({id:d.id,sent:d.data().sent,n:d.data().n},JSON.parse(new TextDecoder().decode(pt))))}catch(_){}}
+  BC.hist=out.sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,100)}catch(err){console.warn("bc hist",err&&err.code||err);BC.histErr=String((err&&err.code)||err)}render()}
+const bcWho=b=>b.roles||b.depts?[].concat((b.roles||[]).map(r=>r==="owner"?L("Owner"):r==="admin"?L("Admin"):r===""?L("Keine Rolle"):((BC.roles||[]).find(x=>x.id===r)||{}).name||r),(b.depts||[]).map(HIT)).join(", "):L("Alle");
+function bcHistHTML(){
+  if(!BC.hist){bcLoadHist();return '<p class="ghint">'+L("Lade …")+'</p>'}
+  if(!BC.hist.length)return '<p class="ghint">'+L("Noch keine Push-Nachrichten gesendet.")+'</p>';
+  return '<div class="bchist">'+BC.hist.map(b=>{const dt=new Date(b.at||0);
+    return '<div class="bch"><div class="bchd"><span class="bct">'+esc(dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",year:"numeric"}))+' · '+esc(dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"}))+'</span>'+(b.n!=null?'<span class="ust role">'+esc(L("{n} Geräte").replace("{n}",b.n))+'</span>':'')+'</div>'+
+      '<b class="bctt">'+esc(b.title||"")+'</b><p class="bcb">'+esc(b.body||"")+'</p>'+
+      '<div class="bcm"><span>'+esc(L("An"))+': '+esc(bcWho(b))+'</span><span>'+esc(L("Von"))+': '+esc(b.by||"")+'</span></div>'+
+      '<div class="arb"><button type="button" class="pillbtn" data-bcre="'+esc(b.id)+'">↻ '+L("Erneut senden")+'</button></div></div>'}).join("")+'</div>';
+}
+document.addEventListener("click",async e=>{const bt=e.target.closest("[data-bcre]");if(!bt||!can("push.send")||BC.busy)return;const b=(BC.hist||[]).find(x=>x.id===bt.dataset.bcre);if(!b)return;
+  if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+bcWho(b)+"?"))return;BC.busy=true;bt.disabled=true;
+  try{const pl={title:b.title,body:b.body,roles:b.roles||null,depts:b.depts||null,by:ME.email,at:Date.now(),re:b.id};
+    const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(pl))));
+    const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
+    const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});showMsg(await bcDeliver(ref.id),5000);BC.hist=null}
+  catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}BC.busy=false;render()});
 VIEWS.bcast=function(){
   if(!ME||!can("push.send"))return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!BC.roles)bcLoadRoles();
@@ -1269,7 +1306,8 @@ VIEWS.bcast=function(){
     '<label>'+L("Nachricht")+'<textarea name="bb" rows="4" maxlength="300" required placeholder="'+esc(L("Kurz und klar, max. 300 Zeichen"))+'"></textarea></label>'+
     '<fieldset class="efood"><legend>'+L("Empfänger")+'</legend><label class="ck"><input type="radio" name="bm" value="all"'+(BC.mode==="all"?' checked':'')+'> '+L("Alle")+'</label><label class="ck"><input type="radio" name="bm" value="sel"'+(BC.mode==="sel"?' checked':'')+'> '+L("Auswahl nach Rolle und/oder Abteilung")+'</label>'+
       (BC.mode==="sel"?'<p class="ahint"><b>'+L("Rollen")+'</b></p><div class="bcchk">'+roles.map(r=>ck("roles",r.id,r.name)).join("")+'</div><p class="ahint"><b>'+L("Abteilungen")+'</b></p><div class="bcchk">'+bcDepts().map(d=>ck("depts",d,HIT(d))).join("")+'</div><p class="ghint">'+L("Wer zu einer gewählten Rolle ODER Abteilung gehört, bekommt die Nachricht.")+'</p>':'')+'</fieldset>'+
-    '<div class="arb"><button type="submit"'+(BC.busy?' disabled':'')+'>'+L("Jetzt senden")+'</button></div><p class="amsg'+(BC.ok?' ok':'')+'" role="status">'+esc(BC.msg)+'</p></form></section>';
+    '<div class="arb"><button type="submit"'+(BC.busy?' disabled':'')+'>'+L("Jetzt senden")+'</button></div><p class="amsg'+(BC.ok?' ok':'')+'" role="status">'+esc(BC.msg)+'</p></form>'+
+    '<h3 class="cath3">'+L("Verlauf")+'</h3>'+bcHistHTML()+'</section>';
 };
 document.addEventListener("change",e=>{const t=e.target;if(t.matches("[data-bc] input[name=bm]")){BC.mode=t.value;const f=t.form;const keep={bt:f.bt.value,bb:f.bb.value};render();const g=document.querySelector("[data-bc]");if(g){g.bt.value=keep.bt;g.bb.value=keep.bb}}
   else if(t.matches("[data-bcsel]")){const k=t.dataset.bcsel;BC.sel[k]=BC.sel[k].filter(x=>x!==t.value);if(t.checked)BC.sel[k].push(t.value)}});
@@ -1283,9 +1321,8 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form[data
   try{const pl={title,body,roles:sel?BC.sel.roles:null,depts:sel?BC.sel.depts:null,by:ME.email,at:Date.now()};
     const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(pl))));
     const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
-    const {F,db,auth}=await fb();await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});
-    let now=false;if(window.CHATURL){try{const tok=await auth.currentUser.getIdToken();const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/notify",{method:"POST",headers:{Authorization:"Bearer "+tok}});now=r.ok}catch(_){}}
-    BC.ok=true;BC.msg=L(now?"Gesendet – die Nachricht kommt in etwa einer Minute an.":"Gespeichert – die Nachricht geht mit dem nächsten Lauf (spätestens in 15 Minuten) raus.");BC.sel={roles:[],depts:[]};BC.mode="all";f.reset()}
+    const {F,db,auth}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});
+    const r=await bcDeliver(ref.id);BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";f.reset();BC.hist=null}
   catch(err){console.error(err);BC.ok=false;BC.msg=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}
   BC.busy=false;render()});
 /* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */

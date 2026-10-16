@@ -160,6 +160,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if can('push.send') && request.resource.data.keys().hasOnly(['c', 'at'])
         && request.resource.data.c is string && request.resource.data.c.size() < 4000;
+      allow update: if can('push.send') && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sent', 'n']);
       allow delete: if isAdmin();
     }
 
