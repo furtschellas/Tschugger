@@ -445,6 +445,7 @@ async function loadLangs(){
     const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
     {const c=d.exists()?d.data():{};const nv={phone:c.phonePublic===true,email:c.emailPublic===true,mycal:c.mycalPublic===true};if(JSON.stringify(nv)!==JSON.stringify(window.PUBV)){window.PUBV=nv;try{localStorage.setItem("apppubv",JSON.stringify(nv))}catch(_){}render()}}
     {const go=!(d.exists()&&d.data().googleLogin===false);if(window.GOOGLEON!==go){window.GOOGLEON=go;try{localStorage.setItem("appgoogle",go?"1":"0")}catch(_){}try{const g=document.getElementById("gate");if(g&&!g.hidden&&(AUTHMODE==="login"||AUTHMODE==="register")&&!g.querySelector("input:focus"))showGate(AUTHMODE)}catch(_){}}}
+    {const cu=String((d.exists()&&d.data().chatUrl)||"");if(window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
     {const dc=(d.exists()&&d.data().docs)||{};window.DOCS=dc;try{localStorage.setItem("appdocs",JSON.stringify(dc))}catch(_){}}
     const bp=d.exists()&&d.data().bdayPublic===true;if(window.BDAYPUB!==bp){window.BDAYPUB=bp;try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}render()}
     const to=d.exists()&&Array.isArray(d.data().tabOrder)?d.data().tabOrder:null;if(JSON.stringify(window.TABORDER)!==JSON.stringify(to)){window.TABORDER=to;try{to?localStorage.setItem("apptaborder",JSON.stringify(to)):localStorage.removeItem("apptaborder")}catch(_){}render()}
@@ -937,6 +938,70 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 /* opened from a notification: go to «Meine Termine» */
 if(location.hash==="#my"){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}setTimeout(()=>{if(typeof openMyCal==="function")openMyCal()},400)}
 if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.open==="my"&&typeof openMyCal==="function")openMyCal()});
+/* ---- chat assistant: asks Claude through the production's Cloudflare Worker (config/app.chatUrl); every person can switch it off in «Mein Konto» ---- */
+window.CHATURL="";try{window.CHATURL=localStorage.getItem("appchat")||""}catch(_){}
+const chatOn=()=>{let v=null;try{v=localStorage.getItem("chat")}catch(_){}return v!=="0"};
+const CHAT={open:false,busy:false,msgs:[]};try{CHAT.msgs=JSON.parse(sessionStorage.getItem("chatmsgs")||"[]")||[]}catch(_){}
+const APPHELP=`So ist die App aufgebaut (unten die Bereiche, oben die Knöpfe):
+- Schedule: Drehplan Tag für Tag mit Szenen, Motiven, Units (1st/2nd Unit); Knopf «Script» öffnet die Szene im Drehbuch, Kamera-Knopf zeigt Blocking-Fotos/Filme, Zahlen-Knöpfe öffnen Floorplans (PDF).
+- Callsheet: Dispo des Tages (Crew Call, Drehbeginn, Wrap, Locations, Cast, Abteilungen).
+- Locations: alle Motive mit Adresse, Karte und Szenen.
+- Crew: Crewliste nach Abteilungen (Telefon/E-Mail nur mit Berechtigung), Catering-Übersicht, Geburtstage.
+- Script: das Drehbuch mit Suche.
+- Info: allgemeine Infos.
+- Lupe oben: Suche über alles. Kalender-Symbol: «Meine Termine» (eigene Termine, mit «In den Kalender» und Push-Glocke). Personen-Symbol: «Mein Konto» (Profil, Push-Nachrichten, Darstellung hell/dunkel, Passwort, Abmelden, Tour neu starten). Zahnrad: App-Verwaltung (nur mit Berechtigung).
+- Daten kommen automatisch aus der Dropbox der Produktion.`;
+function chatCtx(){
+  const out=[APPHELP];const J=x=>JSON.stringify(x,(k,v)=>v===""||v===null||(Array.isArray(v)&&!v.length)?undefined:v);
+  try{if(vok("plan"))out.push("DREHPLAN (days): "+J(S.days))}catch(_){}
+  try{if(vok("dispo"))out.push("CALLSHEETS (dispos): "+J(S.dispos))}catch(_){}
+  try{if(vok("prep"))out.push("PREP / WEEKLY SCHEDULE: "+J(S.prepro))}catch(_){}
+  try{out.push("LOCATIONS: "+J(S.locs))}catch(_){}
+  try{const ph=vok("phone"),em=vok("email");out.push("CREWLISTE: "+J(S.crew.map(g=>Object.assign({},g,{people:arr(g.people).map(p=>{const q=Object.assign({},p);if(!ph){delete q.phone;delete q.tel;delete q.mobile}if(!em)delete q.email;return q})}))))}catch(_){}
+  try{if(vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)out.push("MEINE TERMINE ("+me.name+"): "+J(myEvents(me).map(e=>({date:e.date,t:e.t,end:e.end,n:e.n,where:e.where,src:e.src}))))}}catch(_){}
+  return out.join("\n\n");
+}
+function chatFab(){
+  let b=document.getElementById("chatFab");const g=document.getElementById("gate"),show=!!(ME&&window.CHATURL&&chatOn()&&!ONBOARD&&!WELCOME_OPEN&&(!g||g.hidden));
+  if(!b){b=document.createElement("button");b.id="chatFab";b.type="button";b.className="chatfab";
+    b.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/></svg>';
+    b.addEventListener("click",()=>{CHAT.open=!CHAT.open;chatPanel()});document.body.appendChild(b)}
+  b.setAttribute("aria-label",L("Assistent"));b.title=L("Assistent");b.hidden=!show;if(!show&&CHAT.open){CHAT.open=false;chatPanel()}
+}
+const chatMd=t=>esc(t).replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/(^|\n)- /g,"$1• ").replace(/(https:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g,"<br>");
+function chatPanel(){
+  let p=document.getElementById("chatBox");
+  if(!CHAT.open){if(p)p.hidden=true;return}
+  if(!p){p=document.createElement("div");p.id="chatBox";p.className="chatbox";p.setAttribute("role","dialog");p.setAttribute("aria-label",L("Assistent"));document.body.appendChild(p);
+    p.addEventListener("submit",e=>{e.preventDefault();const i=p.querySelector("textarea");const q=String(i.value||"").trim();if(q&&!CHAT.busy){i.value="";chatAsk(q)}});
+    p.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&e.target.matches("textarea")){e.preventDefault();p.querySelector("form").requestSubmit()}});
+    p.addEventListener("click",e=>{if(e.target.closest("[data-chatx]")){CHAT.open=false;chatPanel()}else if(e.target.closest("[data-chatclr]")){CHAT.msgs=[];chatKeep();chatPanel()}else{const s=e.target.closest("[data-chatq]");if(s&&!CHAT.busy)chatAsk(s.dataset.chatq)}})}
+  const sug=["Wann ist mein nächster Termin?","Wo drehen wir morgen?","Wer ist die Regie?","Wie funktioniert Meine Termine?"];
+  p.innerHTML='<div class="chhd"><b>'+L("Assistent")+'</b><span class="chbeta">BETA</span>'+(CHAT.msgs.length?'<button type="button" class="lnk" data-chatclr>'+L("Neu")+'</button>':'')+'<button type="button" class="chx" data-chatx aria-label="'+esc(L("Schliessen"))+'">×</button></div>'+
+    '<div class="chmsgs">'+(CHAT.msgs.length?'':'<p class="ghint">'+L("Frag mich etwas zum Drehplan, zu Locations, zur Crew oder zur App.")+'</p><div class="chsug">'+sug.map(q=>'<button type="button" data-chatq="'+esc(L(q))+'">'+esc(L(q))+'</button>').join("")+'</div>')+
+    CHAT.msgs.map(m=>'<div class="chm '+(m.r==="u"?"me":m.r==="e"?"err":"bot")+'">'+(m.r==="u"?esc(m.t).replace(/\n/g,"<br>"):chatMd(m.t))+'</div>').join("")+(CHAT.busy?'<div class="chm bot busy"><span></span><span></span><span></span></div>':'')+'</div>'+
+    '<form class="chin"><textarea rows="1" maxlength="2000" placeholder="'+esc(L("Frage eingeben …"))+'" aria-label="'+esc(L("Frage"))+'"></textarea><button type="submit" aria-label="'+esc(L("Senden"))+'"'+(CHAT.busy?' disabled':'')+'>➤</button></form>'+
+    '<p class="chnote">'+L("Antworten ohne Gewähr – verbindlich sind die Unterlagen der Produktion.")+'</p>';
+  p.hidden=false;const ms=p.querySelector(".chmsgs");ms.scrollTop=ms.scrollHeight;if(!CHAT.busy&&matchMedia("(pointer:fine)").matches)p.querySelector("textarea").focus();
+}
+function chatKeep(){try{sessionStorage.setItem("chatmsgs",JSON.stringify(CHAT.msgs.slice(-30)))}catch(_){}}
+async function chatAsk(q){
+  CHAT.msgs.push({r:"u",t:q});CHAT.busy=true;chatKeep();chatPanel();
+  try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();
+    const r=await withTimeout(fetch(window.CHATURL.replace(/\/+$/,"")+"/chat",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},
+      body:JSON.stringify({q,lang:LANG,today:new Date().toLocaleString("de-CH",{weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}),who:(MEMBER&&MEMBER.name||"")+" <"+ME.email+">",
+        hist:CHAT.msgs.slice(0,-1).filter(m=>m.r!=="e").slice(-10),ctx:chatCtx()})}),60000,"chat");
+    const j=await r.json().catch(()=>({}));
+    CHAT.msgs.push(r.ok&&j.a?{r:"a",t:j.a}:{r:"e",t:L("Fehler:")+" "+(j.error||r.status)})}
+  catch(err){CHAT.msgs.push({r:"e",t:L(navigator.onLine===false?"Keine Verbindung.":"Der Assistent ist gerade nicht erreichbar.")})}
+  CHAT.busy=false;chatKeep();chatPanel();
+}
+function chatSec(){if(!window.CHATURL)return "";
+  return '<section class="psec"><h4>'+L("Assistent")+'</h4><label class="ck"><input type="checkbox" data-chaton'+(chatOn()?' checked':'')+'> '+L("Chat-Assistent anzeigen (Knopf unten rechts)")+'</label></section>'}
+function chatSetSec(){
+  return '<p class="ahint"><b>'+L("Assistent")+'</b> – '+L("Adresse des Cloudflare Workers für den Chat-Assistenten (und den zuverlässigen Zeitplan für Push und Dropbox). Leer = kein Assistent.")+' <a href="https://github.com/furtschellas/Tschugger/blob/main/tools/chat_worker.js" target="_blank" rel="noopener">'+L("Worker-Code und Anleitung")+'</a></p><input form="setform" class="amap" type="url" name="chat" inputmode="url" placeholder="https://tschugger.….workers.dev" value="'+esc(window.CHATURL||"")+'">'}
+document.addEventListener("change",e=>{if(e.target.matches("[data-chaton]")){store("chat",e.target.checked?"1":"0");chatFab()}});
+setInterval(()=>{try{chatFab()}catch(_){}},1500);
 /* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */
 const WELCOME_VER="1";
 const WTXT={
@@ -1458,9 +1523,10 @@ document.addEventListener("submit",async e=>{
     if(!tb.length){showMsg(L("Bitte mindestens einen Bereich wählen."),4000);return}
     try{const {F,db}=await fb();const u2=!!fl.elements['u2'].checked,u3=!!fl.elements['u3'].checked,bp=!!fl.elements['bp'].checked,so=!!fl.elements['so'].checked,au=!!fl.elements['au'].checked;const mu=String(fl.elements['map'].value||"").trim();
     if(mu&&!/^https:\/\/\S+$/.test(mu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
+    const cu=String((fl.elements['chat']||{}).value||"").trim();if(cu&&!/^https:\/\/\S+$/.test(cu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
     const sh=String(fl.elements['sheet'].value||"").trim();
     if(sh&&!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(sh)){showMsg(L("Bitte einen Google-Sheets-Link eingeben."),4000);return}
-    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au},{merge:true});window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au,chatUrl:cu},{merge:true});window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const f=e.target.closest('[data-adm="add"]');if(!f)return;e.preventDefault();
   const em=lc(f.em.value),nm=f.nm.value.trim();if(!/@/.test(em))return;
