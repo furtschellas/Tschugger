@@ -531,3 +531,12 @@ html body #view .catgrid>*{flex:1 1 150px;min-width:0}
 .ttile span .ldrop{vertical-align:-.15em}
 .wxbig .lic{display:block}
 .wxr .lwx{vertical-align:middle}
+/* Today scenes on phones: one line each */
+@media (max-width:600px){
+  .tscs{padding:12px 12px}
+  .tsclist{gap:0}
+  .tsclist li{grid-template-columns:44px 64px 1fr;gap:8px;padding:4px 0;font-size:13.5px;line-height:1.3}
+  .tsclist .tset{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .tsclist .tset .chgtxt{white-space:normal}
+  .tscs .pillbtn{min-height:32px!important;font-size:13px!important;padding:0 12px!important}
+}
