@@ -372,3 +372,17 @@ html body .bcwa a.wabtn.wagrp.pillbtn{display:block;text-align:center;margin:8px
 html body .ubar button.cico.uall,html body .aacts button.cico{padding:0!important;min-width:34px;width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--accent);background:transparent;color:var(--accent)}
 html body .aacts button.cico.on{background:var(--accent);color:var(--accent-ink,#fff)}
 html body .ubar button.cico.uall svg,html body .aacts button.cico svg{width:16px;height:16px;flex:0 0 16px}
+/* menu unit fields: really hide the other units when all units eat together */
+.menuu[hidden]{display:none!important}
+/* catering card: icon-only round buttons */
+html body .catbox button.cico{padding:0!important;min-width:34px;width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:16px;line-height:1;margin:0}
+html body .catbox button.cico svg{width:16px;height:16px;flex:0 0 16px}
+.menuzw{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--rule);padding-top:8px;margin-top:2px}
+.menuzw .ghint{display:inline;margin:0;font-weight:400}
+/* menus: who eats that day, right of the day */
+.menuh{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:flex-start;justify-content:space-between}
+.menuhd{display:flex;gap:8px;align-items:baseline}
+.meat{display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:auto;text-align:right;max-width:100%}
+.meat .mtot{font-size:13px;color:var(--muted)}.meat .mtot b{color:var(--ink,inherit);font-size:15px}
+.meat .catchips{justify-content:flex-end;margin:0}
+.meat .msrc{font-size:11px;color:var(--muted)}
