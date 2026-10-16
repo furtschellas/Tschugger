@@ -1883,8 +1883,8 @@ $("#searchBtn").addEventListener("click",openSearch);
 $("#myCalBtn").addEventListener("click",()=>openMyCal());
 /* every pop-up: × at the top right, Esc closes the topmost one (the first-start profile form stays until it is filled in) */
 const onboarding=()=>{try{return typeof ONBOARD!=="undefined"&&ONBOARD}catch(_){return false}};
-function closeDialog(d){if(!d)return;if(d.id==="acct"){if(onboarding())return;d.hidden=true;return}if(d.id==="a2hs"){d.hidden=true;return}d.remove()}
-function addX(d){const box=d.querySelector(".a2box");if(!box||box.querySelector(":scope>.xclose")||(d.id==="acct"&&onboarding()))return;
+function closeDialog(d){if(!d||d.id==="welcome")return;if(d.id==="acct"){if(onboarding())return;d.hidden=true;return}if(d.id==="a2hs"){d.hidden=true;return}d.remove()}
+function addX(d){const box=d.querySelector(".a2box");if(!box||d.id==="welcome"||box.querySelector(":scope>.xclose")||(d.id==="acct"&&onboarding()))return;
   const b=document.createElement("button");b.type="button";b.className="xclose";b.setAttribute("aria-label",L("Schliessen"));b.title=L("Schliessen");b.textContent="×";b.addEventListener("click",()=>closeDialog(d));box.prepend(b)}
 new MutationObserver(()=>{for(const d of document.querySelectorAll(".a2hs:not([hidden])"))addX(d)}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});
 document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;const ds=[...document.querySelectorAll(".a2hs:not([hidden])")];if(ds.length){e.preventDefault();closeDialog(ds[ds.length-1])}});

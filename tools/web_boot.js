@@ -110,6 +110,9 @@ Object.assign(I18N,{
  "Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln).":{fr:"Pas d'autorisation – publie d'abord les nouvelles règles Firestore (console Firebase → Firestore → Règles).",it:"Nessuna autorizzazione – pubblica prima le nuove regole Firestore (console Firebase → Firestore → Regole).",en:"No permission – please publish the new Firestore rules first (Firebase console → Firestore → Rules)."},
  "Bitte ausfüllen:":{fr:"À remplir :",it:"Da compilare:",en:"Please fill in:"},
  "Profil gespeichert. Geschlecht, Telefon und E-Mail konnten noch nicht gespeichert werden – die Produktion muss die neuen App-Regeln aktivieren.":{fr:"Profil enregistré. Genre, téléphone et e-mail n'ont pas encore pu être enregistrés – la production doit activer les nouvelles règles.",it:"Profilo salvato. Genere, telefono ed e-mail non sono ancora stati salvati – la produzione deve attivare le nuove regole.",en:"Profile saved. Gender, phone and email could not be saved yet – the production has to activate the new app rules."},
+ "Willkommen bestätigt":{fr:"Bienvenue confirmée",it:"Benvenuto confermato",en:"Welcome confirmed"},
+ "Willkommen noch nicht bestätigt":{fr:"Bienvenue pas encore confirmée",it:"Benvenuto non ancora confermato",en:"Welcome not yet confirmed"},
+ "Danke – viel Spass mit der App!":{fr:"Merci – amuse-toi bien avec l'app !",it:"Grazie – buon divertimento con l'app!",en:"Thanks – enjoy the app!"},
  "Telefon":{fr:"Téléphone",it:"Telefono",en:"Phone"},
  "Sortieren":{fr:"Trier",it:"Ordina",en:"Sort"},
  "Abteilung":{fr:"Département",it:"Reparto",en:"Department"},
@@ -659,7 +662,7 @@ async function onGateClick(e){
   }
 }
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu"];let PREFT=null,PREFAPPLY=false;
+const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck"];let PREFT=null,PREFAPPLY=false;
 {const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k))savePrefsSoon()}}
 function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 async function savePrefs(){
@@ -684,6 +687,35 @@ async function loadPrefs(){
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),10000,"prefs");
     if(d.exists())applyPrefs(d.data());else savePrefs()}catch(err){console.warn("prefs",err&&err.code||err)}
 }
+/* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */
+const WELCOME_VER="1";
+const WTXT={
+ de:{t:"Herzlich willkommen in der TSCHUGGER-App!",p:["Schön, dass du dabei bist. Hier findest du Drehplan, Callsheets, Crewliste, Locations und Drehbuch von TSCHUGGER Tigerblood an einem Ort.","Bitte beachte: Die App ist eine BETA-Testversion. Alle angezeigten Daten sind ohne Gewähr. Weder die Produktion noch die Entwickler:innen übernehmen eine Garantie für die Richtigkeit, Vollständigkeit oder Aktualität der Daten. Verbindlich sind immer die offiziellen Unterlagen der Produktion (Drehplan, Callsheet, Dispo).","Alle Inhalte sind vertraulich und nur für die Crew bestimmt – bitte nicht weitergeben.","Fehler entdeckt oder einen Wunsch? Melde dich bei der Produktion."],c:"Ich habe die Hinweise gelesen und verstanden.",b:"Bestätigen"},
+ fr:{t:"Bienvenue dans l'app TSCHUGGER !",p:["Ravi·e de t'accueillir. Tu trouves ici le plan de tournage, les callsheets, la liste de l'équipe, les décors et le scénario de TSCHUGGER Tigerblood au même endroit.","Attention : l'app est une version de test BETA. Toutes les données affichées sont sans garantie. Ni la production ni les développeurs ne garantissent l'exactitude, l'exhaustivité ou l'actualité des données. Seuls les documents officiels de la production (plan de tournage, callsheet, dispo) font foi.","Tous les contenus sont confidentiels et réservés à l'équipe – merci de ne pas les diffuser.","Une erreur ou une suggestion ? Contacte la production."],c:"J'ai lu et compris ces indications.",b:"Confirmer"},
+ it:{t:"Benvenuta/o nell'app TSCHUGGER!",p:["Che bello averti a bordo. Qui trovi piano di lavorazione, callsheet, lista crew, location e sceneggiatura di TSCHUGGER Tigerblood in un unico posto.","Nota bene: l'app è una versione di prova BETA. Tutti i dati visualizzati sono senza garanzia. Né la produzione né gli sviluppatori garantiscono la correttezza, completezza o attualità dei dati. Fanno fede sempre i documenti ufficiali della produzione (piano di lavorazione, callsheet, dispo).","Tutti i contenuti sono riservati e destinati solo alla crew – per favore non diffonderli.","Hai trovato un errore o hai un desiderio? Rivolgiti alla produzione."],c:"Ho letto e compreso le indicazioni.",b:"Conferma"},
+ en:{t:"Welcome to the TSCHUGGER app!",p:["Great to have you on board. Here you'll find the shooting schedule, call sheets, crew list, locations and script of TSCHUGGER Tigerblood in one place.","Please note: the app is a BETA test version. All data shown is without guarantee. Neither the production nor the developers guarantee that the data is correct, complete or up to date. The official production documents (schedule, call sheet, dispo) are always binding.","All content is confidential and for the crew only – please do not share it.","Found a mistake or have a wish? Get in touch with the production."],c:"I have read and understood these notes.",b:"Confirm"}};
+let WELCOME_OPEN=false;
+async function welcomeDone(){
+  if(MEMBER&&MEMBER.welcomeAck&&MEMBER.welcomeVer===WELCOME_VER)return true;
+  let loc="";try{loc=localStorage.getItem("welcomeAck")||""}catch(_){}
+  if(loc&&loc.split("|")[1]===WELCOME_VER)return true;
+  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().welcomeAck;if(w&&String(w).split("|")[1]===WELCOME_VER){try{localStorage.setItem("welcomeAck",w)}catch(_){}return true}}catch(_){}
+  return false;
+}
+async function maybeWelcome(){
+  if(!ME||WELCOME_OPEN||ONBOARD)return;
+  if(await welcomeDone())return;
+  WELCOME_OPEN=true;const T=WTXT[LANG]||WTXT.de;
+  const d=document.createElement("div");d.id="welcome";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  d.innerHTML='<div class="a2box wlbox"><span class="wlbeta">BETA</span><h3>'+esc(T.t)+'</h3>'+T.p.map((x,i)=>'<p'+(i===1?' class="wlwarn"':'')+'>'+esc(x)+'</p>').join("")+
+    '<label class="wlchk"><input type="checkbox" data-wlok> '+esc(T.c)+'</label><div class="a2b"><button type="button" class="pri" data-wlgo disabled>'+esc(T.b)+'</button></div><p class="amsg" role="alert"></p></div>';
+  d.addEventListener("change",e=>{if(e.target.matches("[data-wlok]"))d.querySelector("[data-wlgo]").disabled=!e.target.checked});
+  d.addEventListener("click",async e=>{const b=e.target.closest("[data-wlgo]");if(!b||b.disabled)return;b.disabled=true;
+    const at=new Date().toISOString();store("welcomeAck",at+"|"+WELCOME_VER);savePrefs();
+    try{if(MEMBER){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{welcomeAck:at,welcomeVer:WELCOME_VER});MEMBER.welcomeAck=at;MEMBER.welcomeVer=WELCOME_VER}}catch(err){console.warn("welcome",err&&err.code||err)}
+    d.remove();WELCOME_OPEN=false;showMsg(L("Danke – viel Spass mit der App!"),3000)});
+  document.body.appendChild(d);
+}
 let START=null;
 async function afterSignIn(u){
   ME=u;
@@ -704,7 +736,7 @@ async function afterSignIn(u){
   /* first start, and whenever gender, phone or e-mail is missing: the profile form must be filled in */
   let partialAt=0;try{partialAt=+localStorage.getItem("profPartial:"+ME.uid)||0}catch(_){}
   const needExtra=(!MEMBER||!MEMBER.gender||!String(MEMBER.phone||"").trim()||!String(MEMBER.contactEmail||"").trim())&&Date.now()-partialAt>12*3600e3;
-  if(MEMBER&&(!MEMBER.diet||needExtra))setTimeout(()=>showAcct(true),400);
+  if(MEMBER&&(!MEMBER.diet||needExtra))setTimeout(()=>showAcct(true),400);else setTimeout(maybeWelcome,600);
   if(window.__justSignedIn){window.__justSignedIn=false;maybeOfferA2hs(true)}else maybeOfferA2hs(false);
 }
 /* names come from the crew list (matched by e-mail) when the profile has none yet */
@@ -748,7 +780,7 @@ function profileForm(onb){
   return '<form data-af="pf" novalidate>'+nameFields()+contactFields(MEMBER)+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Geschlecht")+genderSel("gd",(MEMBER&&MEMBER.gender)||"",true)+'</label><label>'+L("Ernährung")+dietSel("dt",(MEMBER&&MEMBER.diet)?normDiet(MEMBER).diet:"",true)+'</label><label class="full">'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label class="full">'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form>';
 }
 function acctInner(){
-  return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b></p>'+
+  return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b>'+(()=>{let w=(MEMBER&&MEMBER.welcomeAck)||"";if(!w)try{w=(localStorage.getItem("welcomeAck")||"").split("|")[0]}catch(_){}return w?' · '+L("Willkommen bestätigt")+' '+esc(new Date(w).toLocaleDateString("de-CH")):''})()+'</p>'+
     (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
     '<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
@@ -809,7 +841,7 @@ async function onAcctSubmit(e){
       if(isAdmin())ADM.loaded=false;
       if(upd.lang!==LANG&&WDS[upd.lang]){LANG=upd.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
       if(PARTIAL){try{localStorage.setItem("profPartial:"+u.uid,String(Date.now()))}catch(_){}console.warn("profile: gender/phone/e-mail not saved – Firestore rules not published yet");showMsg(L("Profil gespeichert. Geschlecht, Telefon und E-Mail konnten noch nicht gespeichert werden – die Produktion muss die neuen App-Regeln aktivieren."),9000)}
-      if(ONBOARD){ONBOARD=false;document.getElementById("acct").hidden=true;if(!PARTIAL)showMsg(L("Profil gespeichert."),3000);btn.disabled=false;return}
+      if(ONBOARD){ONBOARD=false;document.getElementById("acct").hidden=true;setTimeout(maybeWelcome,300);if(!PARTIAL)showMsg(L("Profil gespeichert."),3000);btn.disabled=false;return}
       msg.classList.add("ok");msg.textContent=L("Profil gespeichert.");btn.disabled=false;return;
     }
     await A.reauthenticateWithCredential(u,A.EmailAuthProvider.credential(u.email,f.cur.value)).catch(err=>{throw /invalid-credential|wrong-password/.test(err.code||"")?{code:"x",message:L("Aktuelles Passwort falsch.")}:err});
@@ -954,7 +986,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pwshow]");
 function userInfo(r){
   const m=r.m;if(!m||!(isAdmin()||can("users.view")))return"";
   const g=(GENDERS.find(x=>x[0]===m.gender)||[])[1];
-  const bits=[m.phone?"☎ "+m.phone:"",m.contactEmail&&m.contactEmail!==m.email?"✉ "+m.contactEmail:"",m.birthday?L("Geburtsdatum")+": "+m.birthday.split("-").reverse().join("."):"",g?L(g):"",dietText(m)].filter(Boolean);
+  const wl=m.welcomeAck?L("Willkommen bestätigt")+" "+new Date(m.welcomeAck).toLocaleDateString("de-CH"):L("Willkommen noch nicht bestätigt");
+  const bits=[wl,m.phone?"☎ "+m.phone:"",m.contactEmail&&m.contactEmail!==m.email?"✉ "+m.contactEmail:"",m.birthday?L("Geburtsdatum")+": "+m.birthday.split("-").reverse().join("."):"",g?L(g):"",dietText(m)].filter(Boolean);
   return bits.length?'<div class="uinf">'+bits.map(esc).join(" · ")+'</div>':"";
 }
 /* role picker (owner): Benutzer:in, Admin or one of the custom roles */
