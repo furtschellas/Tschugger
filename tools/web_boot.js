@@ -161,6 +161,9 @@ Object.assign(I18N,{
  "Anmeldung":{fr:"Connexion",it:"Accesso",en:"Sign-in"},
  "Ausgeschaltet verschwindet «Mit Google anmelden» auf der Anmeldeseite. Wer schon mit Google angemeldet ist, bleibt angemeldet.":{fr:"Désactivé, « Se connecter avec Google » disparaît de la page de connexion. Les personnes déjà connectées avec Google le restent.",it:"Disattivato, «Accedi con Google» scompare dalla pagina di accesso. Chi è già connesso con Google resta connesso.",en:"When off, “Sign in with Google” disappears from the sign-in page. People already signed in with Google stay signed in."},
  "Mit Google anmelden anbieten":{fr:"Proposer la connexion avec Google",it:"Offrire l'accesso con Google",en:"Offer sign-in with Google"},
+ "ohne Sonderwünsche":{fr:"sans demande particulière",it:"senza richieste particolari",en:"no special requests"},
+ "mit Sonderwünschen":{fr:"avec demandes particulières",it:"con richieste particolari",en:"with special requests"},
+ "Weitere Allergien":{fr:"Autres allergies",it:"Altre allergie",en:"Other allergies"},
  "Telefon":{fr:"Téléphone",it:"Telefono",en:"Phone"},
  "Sortieren":{fr:"Trier",it:"Ordina",en:"Sort"},
  "Abteilung":{fr:"Département",it:"Reparto",en:"Department"},
@@ -987,10 +990,15 @@ function crewDeptOf(m){
 }
 function cateringHTML(){
   const act=ADM.mem.filter(m=>m.active===true&&!NO_CATER.test(crewDeptOf(m))).map(normDiet);if(!act.length)return"";
-  const c={};act.forEach(m=>{if(m.diet&&m.diet!=="none")c["d:"+m.diet]=(c["d:"+m.diet]||0)+1;m.intol.forEach(k=>c["i:"+k]=(c["i:"+k]||0)+1)});
-  const parts=[...DIETS.filter(d=>c["d:"+d[0]]).map(d=>c["d:"+d[0]]+" "+L(d[1])),...INTOL.filter(i=>c["i:"+i[0]]).map(i=>c["i:"+i[0]]+" "+L(i[1]))];
-  const al=act.filter(m=>String(m.allergies||"").trim()).map(m=>([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email)+": "+m.allergies.trim());
-  return secOpen("cater",'Catering · '+act.length+' '+L("aktiv"),esc(act.filter(m=>!m.diet||m.diet==="none").length+' '+L("Ich esse alles"))+(parts.length?'<br>'+esc(parts.join(" · ")):'')+(al.length?'<br><span>'+esc(L("Allergien"))+': '+esc(al.join(" · "))+'</span>':''));
+  const nm=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
+  const special=act.filter(m=>(m.diet&&m.diet!=="none")||m.intol.length||String(m.allergies||"").trim());
+  /* one collapsible line per diet / intolerance / allergy with the names; people who eat everything without special wishes are only counted */
+  const grp=(label,list)=>list.length?'<details class="catg"><summary><b>'+list.length+'</b> '+esc(label)+'</summary><div class="catn">'+list.map(m=>esc(nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join(" · ")+'</div></details>':'';
+  const body='<p class="cats">'+esc(act.length-special.length+' '+L("ohne Sonderwünsche")+' · '+special.length+' '+L("mit Sonderwünschen"))+'</p>'+
+    DIETS.filter(d=>d[0]!=="none").map(d=>grp(L(d[1]),special.filter(m=>m.diet===d[0]))).join("")+
+    INTOL.map(i=>grp(L(i[1]),special.filter(m=>m.intol.includes(i[0])))).join("")+
+    (special.some(m=>String(m.allergies||"").trim())?'<details class="catg"><summary><b>'+special.filter(m=>String(m.allergies||"").trim()).length+'</b> '+esc(L("Weitere Allergien"))+'</summary><div class="catn">'+special.filter(m=>String(m.allergies||"").trim()).map(m=>esc(nm(m))+': '+esc(m.allergies.trim())).join("<br>")+'</div></details>':'');
+  return secOpen("cater",'Catering · '+act.length+' '+L("aktiv"),body);
 }
 /* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */
 const BK={busy:false,msg:"",ok:false};
@@ -1056,7 +1064,7 @@ function upSec(){
   else if(d.state==="error")st='<p class="upst err">● '+L("Fehler beim letzten Lauf")+' ('+esc(when(d.at))+'): '+esc(d.msg||"")+'</p>';
   else st='<p class="upst warn">● '+L("Noch nicht eingerichtet")+(d.missing&&d.missing.length?' – '+L("es fehlen")+': '+d.missing.map(m=>'<code>'+esc(m)+'</code>').join(", "):'')+'</p>';
   const ok=d&&d.state==="ok";
-  return '<details class="admins asetd upsec" data-sec="upsec"'+(SECS.upsec||!ok?' open':'')+'><summary>'+L("Automatische Aktualisierung (Dropbox → Webseite)")+'</summary>'+st+
+  return '<details class="admins asetd upsec" data-sec="upsec"'+(SECS.upsec||!ok?' open':'')+'><summary>'+L("Automatische Aktualisierung (Dropbox → Webseite)")+'</summary>'+st+'<div class="setbar inup"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div>'+
     '<p class="ahint">'+L("GitHub liest die Dropbox zweimal pro Stunde (nur lesend), wandelt neue Drehpläne, Crewlisten, Dispos und das Drehbuch um und veröffentlicht sie verschlüsselt auf der Webseite – ohne dass ein Computer laufen muss.")+'</p>'+
     (ok?'':'<ol class="upsteps"><li>'+L("Dropbox-Zugang (nur lesend) erzeugen:")+' <a href="dropbox-setup.html" target="_blank" rel="noopener">dropbox-setup.html</a> → <code>DROPBOX_APP_KEY</code>, <code>DROPBOX_REFRESH_TOKEN</code></li>'+
       '<li>'+L("Claude-API-Schlüssel erstellen:")+' <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> → <code>ANTHROPIC_API_KEY</code></li>'+
@@ -1242,7 +1250,7 @@ VIEWS.admin=function(){
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
   const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>'<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'">'+(t==="Benutzerverwaltung"?'<span class="lgl">'+esc(L(t))+'</span><span class="sml">'+esc(L("Benutzer"))+'</span>':esc(L(t)))+'</button>').join("")+'</nav>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+subNav;
-  if(ADM.sub==="set")return h+'<div class="setbar"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div>'+(own?upSec().replace(/<details([^>]*data-sec="upsec")(?![^>]*\bopen)/,'<details$1 open'):'')+setSec+docsSec()+'</section>';
+  if(ADM.sub==="set")return h+(own?'':'<div class="setbar"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div>')+(own?upSec().replace(/<details([^>]*data-sec="upsec")(?![^>]*\bopen)/,'<details$1 open'):'')+setSec+docsSec()+'</section>';
   if(ADM.sub==="roles")return h+rolesSec()+'</section>';
   if(ADM.sub==="bk")return h+bkSec().replace(' data-sec="backup"',' data-sec="backup" open')+'</section>';
   const cInv=can("users.invite"),cView=can("users.view")||can("users.edit"),cEd=can("users.edit");
