@@ -260,7 +260,7 @@ def add_recce(dbx, days, add):
 
 WANT = set()
 
-def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=()):
+def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
     changed = False
     prev = {x.get("name"): x for x in meta.get("blocking") or []}
     WANT.clear()
@@ -288,6 +288,17 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=()):
             u = folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else (folder or _web(os.path.dirname(e["path"]), e["name"]))
             for it in pdf_items(e, re.sub(r"\.pdf$", "", e["name"], flags=re.I), u):
                 for sc in b.get("sc") or []: add(_norm_sc(sc), "pdf", it)
+
+    # (a2) floorplans: every page as a picture (blk/…p<i>.bin), so they open in the app and offline
+    for fp, e in fpe:
+        if not e: continue
+        if e["name"].lower().endswith(".pdf"):
+            key, files = _pdf_pages(dbx, e, cache); used.add(key)
+        else:
+            fn = "blk/" + _key(e, "|fp") + "p0.bin"; files = [fn] if _thumb(dbx, e, fn) else []
+        if files:
+            want_files.update(files)
+            if fp.get("pg") != files: fp["pg"] = files; changed = True
 
     # (b) AUFLÖSUNG
     allf = dbx.list_path(ROOTAUF, True)
@@ -804,7 +815,7 @@ def main():
         #     (photos + PDFs) and the 3D/location pictures of that set, shown for every scene in the folder name
         BPDFE.clear(); BPDFE.update(bpdfe)
         try:
-            changed = add_more_blocking(dbx, blk, meta, want_files, data.get("days") or [], data.get("locations") or []) or changed
+            changed = add_more_blocking(dbx, blk, meta, want_files, data.get("days") or [], data.get("locations") or [], [(x, next((e for e in fl if e["name"] == x.get("file")), None)) for x in fps]) or changed
         except Exception as ex:
             log("Auflösung/Seiten nicht gelesen:", str(ex)[:160])
         # store every picture once (meta.bm) and let the scenes refer to it by number – keeps the data file small

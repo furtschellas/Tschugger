@@ -2486,23 +2486,23 @@ const OFF={busy:false};
 function offState(){try{return JSON.parse(localStorage.getItem("offline:v1")||"null")}catch(_){return null}}
 /* today (or the next working day) and the day after it */
 function offDays(){const d=todayDay();if(!d)return [];const ds=(S.days||[]).filter(x=>x.date&&x.date>=d.date).map(x=>x.date);return [...new Set(ds)].slice(0,2)}
+/* offline: no photos – only the blocking PDF pages and the floorplans, for all shooting days */
 async function offlinePrep(force){
-  if(OFF.busy||!ME||navigator.onLine===false||!S.days||!S.days.length)return;
-  const st=offState(),dates=offDays();
-  if(!force&&st&&Date.now()-st.at<6*3600e3&&JSON.stringify(st.dates)===JSON.stringify(dates))return;
+  if(OFF.busy||!ME||navigator.onLine===false||!S.meta)return;
+  const st=offState(),files=new Set();
+  for(const b of arr(S.meta.blocking))for(const m of (typeof bmed==="function"?bmed(b):arr(b.media)))if(m&&m.g==="pdf"&&m.f)files.add(m.f);
+  for(const f of arr(S.meta.floorplans))for(const p of arr(f.pg))files.add(p);
+  const list=[...files].sort(),sig=list.length+"|"+(list[0]||"")+"|"+(list[list.length-1]||"");
+  if(!force&&st&&st.v===2&&st.sig===sig&&Date.now()-st.at<12*3600e3)return;
   OFF.busy=true;if(force)render();
   let n=0,fail=0;
   try{
     await getDataKey().catch(()=>{});
-    const files=new Set();
-    for(const d of S.days.filter(x=>dates.includes(x.date)))for(const [,its] of unitItems(d))for(const it of its){if(!it.sc||typeof blkFor!=="function")continue;
-      for(const b of blkFor(it.sc))for(const m of (typeof bmed==="function"?bmed(b):arr(b.media)))if(m.f&&!/\.mp4\.bin$/.test(m.f))files.add(m.f)}
-    const list=[...files].slice(0,400);
     for(let i=0;i<list.length;i+=6)await Promise.all(list.slice(i,i+6).map(f=>fetch(f,{cache:"force-cache"}).then(r=>{if(r.ok)n++;else fail++}).catch(()=>{fail++})));
     try{if(window.loadScriptData)await window.loadScriptData()}catch(_){}
-    try{localStorage.setItem("offline:v1",JSON.stringify({at:Date.now(),dates,n,fail}))}catch(_){}
+    try{localStorage.setItem("offline:v1",JSON.stringify({v:2,at:Date.now(),sig,n,fail,fp:arr(S.meta.floorplans).filter(f=>arr(f.pg).length).length}))}catch(_){}
   }finally{OFF.busy=false}
-  if(force){showMsg(L("Offline bereit")+": "+n+" "+L("Bilder"),4000);render()}
+  if(force){showMsg(L("Offline bereit")+": "+n+" "+L("Seiten"),4000);render()}
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-offprep]"))offlinePrep(true)});
 document.addEventListener("click",e=>{if(!e.target.closest("[data-tomy]"))return;if(typeof openMyCal==="function")openMyCal();else{S.tab="my";render();scrollTo(0,0)}});
@@ -2619,7 +2619,7 @@ VIEWS.today=function(){
   /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
   const wxt=wxTile(d);
   /* drive from the crew hotel (+3 min) and the weather come last */
-  const drv=d.drive&&d.drive.min?'<div class="ttile tdrv"><b>'+ICCAR(20)+' '+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+' · '+esc(d.drive.from||"Hotel")+'</span></div>':'';
+  const drv=d.drive&&d.drive.min?'<div class="ttile tdrv" title="'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'"><b>'+ICCAR(20)+' '+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+'</span></div>':'';
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
   if(!dp&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
@@ -2642,7 +2642,8 @@ VIEWS.today=function(){
   /* offline */
   const st=offState(),on=navigator.onLine!==false;
   h+='<div class="tcard toff"><div class="tch">'+esc(L("Offline am Set"))+(on?'':' <span class="chgdot">'+esc(L("offline"))+'</span>')+'</div>'+
-    (st?'<p class="tsub">✓ '+esc(L("Gespeichert für"))+' '+esc(arr(st.dates).map(dmy).join(", ")||"–")+' · '+st.n+' '+esc(L("Bilder"))+' · '+esc(L("Stand"))+' '+esc(new Date(st.at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"}))+'</p>':'<p class="ghint">'+esc(L("Drehplan, Callsheet, Kontakte, Drehbuch und die Blocking-Bilder für heute und morgen werden automatisch auf diesem Gerät gespeichert."))+'</p>')+
+    (st&&st.v===2?'<p class="tsub">✓ '+esc(L("Gespeichert"))+': '+st.n+' '+esc(L("Seiten"))+' ('+esc(L("Blocking-PDFs und Floorplans, alle Drehtage"))+') · '+esc(L("Stand"))+' '+esc(new Date(st.at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"}))+'</p>':'')+
+    '<p class="ghint">'+esc(L("Drehplan, Callsheet, Kontakte, Drehbuch, Blocking-PDFs und Floorplans werden für alle Drehtage automatisch auf diesem Gerät gespeichert – Fotos nicht."))+'</p>'+
     (on?'<button type="button" class="pillbtn" data-offprep'+(OFF.busy?' disabled':'')+'>'+esc(L(OFF.busy?"Wird geladen …":"Jetzt für offline laden"))+'</button>':'')+'</div>';
   return h+'</section>';
 };
@@ -2731,6 +2732,10 @@ Object.assign(I18N,{
  "Drehplan, Callsheet, Kontakte, Drehbuch und die Blocking-Bilder für heute und morgen werden automatisch auf diesem Gerät gespeichert.":{en:"Schedule, callsheet, contacts, script and today's and tomorrow's blocking pictures are saved on this device automatically.",fr:"Planning, feuille de service, contacts, scénario et images de blocking d'aujourd'hui et de demain sont enregistrés automatiquement sur cet appareil.",it:"Piano, ordine del giorno, contatti, sceneggiatura e immagini di blocking di oggi e domani vengono salvati automaticamente su questo dispositivo.",hi:"Schedule, Callsheet, संपर्क, Script और आज-कल की Blocking तस्वीरें अपने आप इस डिवाइस पर सहेजी जाती हैं।"},
  "Wird geladen …":{en:"Loading …",fr:"Chargement …",it:"Caricamento …",hi:"लोड हो रहा है …"},
  "Jetzt für offline laden":{en:"Save for offline now",fr:"Enregistrer hors ligne maintenant",it:"Salva offline ora",hi:"अभी ऑफ़लाइन सहेजें"},
+ "Gespeichert":{en:"Saved",fr:"Enregistré",it:"Salvato",hi:"सहेजा गया"},
+ "Seiten":{en:"pages",fr:"pages",it:"pagine",hi:"पेज"},
+ "Blocking-PDFs und Floorplans, alle Drehtage":{en:"blocking PDFs and floorplans, all shooting days",fr:"PDF de blocking et plans, tous les jours de tournage",it:"PDF di blocking e planimetrie, tutti i giorni di riprese",hi:"Blocking PDF और फ़्लोरप्लान, सभी शूटिंग दिन"},
+ "Drehplan, Callsheet, Kontakte, Drehbuch, Blocking-PDFs und Floorplans werden für alle Drehtage automatisch auf diesem Gerät gespeichert – Fotos nicht.":{en:"Schedule, callsheet, contacts, script, blocking PDFs and floorplans are saved on this device for all shooting days – photos are not.",fr:"Planning, feuille de service, contacts, scénario, PDF de blocking et plans sont enregistrés sur cet appareil pour tous les jours – pas les photos.",it:"Piano, ordine del giorno, contatti, sceneggiatura, PDF di blocking e planimetrie vengono salvati su questo dispositivo per tutti i giorni – le foto no.",hi:"Schedule, Callsheet, संपर्क, Script, Blocking PDF और फ़्लोरप्लान सभी दिनों के लिए इस डिवाइस पर सहेजे जाते हैं – फ़ोटो नहीं।"},
  "Offline bereit":{en:"Ready offline",fr:"Prêt hors ligne",it:"Pronto offline",hi:"ऑफ़लाइन तैयार"},
  "Protokoll":{en:"Log",fr:"Journal",it:"Registro",hi:"लॉग"},
  "Protokoll sehen":{en:"See log",fr:"Voir le journal",it:"Vedere il registro",hi:"लॉग देखें"},
