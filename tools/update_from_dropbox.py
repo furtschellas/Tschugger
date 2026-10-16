@@ -340,8 +340,16 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=()):
             for g in ex:
                 for it in extra.get(_norm_sc(sc), {}).get(g, []):
                     if not any(x["f"] == it["f"] for x in ex[g]) and not any(x["f"] == it["f"] for x in own): ex[g].append(it)
-        new = own + ex["s"] + ex["pdf"] + ex["loc"][:30]
-        if not new: new = ex["recce"][:30]   # recce pictures only for scenes without any blocking / shot breakdown / set pictures – never mixed
+        b["_new"], b["_rec"] = own + ex["s"] + ex["pdf"] + ex["loc"][:30], ex["recce"][:30]
+    # recce pictures only for scenes without any blocking / shot breakdown / set pictures (also not for «5 pt3» when «5» has some) – never mixed
+    has = set()
+    for b in blk:
+        if b["_new"]:
+            for sc in b.get("sc") or []: has.add(_norm_sc(sc).lower())
+    def base(sc): return re.sub(r"(pt|sl)\w*$", "", _norm_sc(sc).lower())
+    for b in blk:
+        new = b.pop("_new"); rec = b.pop("_rec")
+        if not new and not any(_norm_sc(sc).lower() in has or base(sc) in has for sc in b.get("sc") or []): new = rec
         if new != (b.get("media") or []): b["media"] = new; changed = True
     want_files.update(WANT)
     cache = {k: v for k, v in cache.items() if k in used}
