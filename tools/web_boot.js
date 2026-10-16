@@ -2505,6 +2505,7 @@ async function offlinePrep(force){
   if(force){showMsg(L("Offline bereit")+": "+n+" "+L("Bilder"),4000);render()}
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-offprep]"))offlinePrep(true)});
+document.addEventListener("click",e=>{if(!e.target.closest("[data-tomy]"))return;if(typeof openMyCal==="function")openMyCal();else{S.tab="my";render();scrollTo(0,0)}});
 window.addEventListener("online",()=>{if(S.tab==="today")render()});window.addEventListener("offline",()=>{if(S.tab==="today")render()});
 
 /* ---------- 1) «Heute»: everything for today (or the next working day) on one page ---------- */
@@ -2517,8 +2518,12 @@ VIEWS.today=function(){
   const dp=(S.dispos||[]).find(x=>x&&x.date===d.date)||null;
   const card=(cls,title,body)=>body?'<div class="tcard '+cls+'"><div class="tch">'+title+'</div>'+body+'</div>':'';
   let h='<section class="today"><div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+".")+'</span></div>';
-  /* calls */
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
+  /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
+  try{if(me&&vok("mycal")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
+    h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'</div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+'<b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?'<small>'+esc(x.where)+'</small>':'')+(x.driver?'<small>'+esc(L("Fahrer:in"))+': '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+
+      '<button type="button" class="pillbtn" data-tomy>'+esc(L("Alle meine Termine"))+'</button></div>'}}catch(_){}
+  /* calls */
   let myCall="";try{if(me&&dp){const myDep=fold(me.src||"").split(/[\s/]/)[0];const c=myDep?arr(dp.calls).find(z=>fold(z.dept||"").includes(myDep)):null;if(c)myCall=hm(c.t)+" · "+c.dept}}catch(_){}
   const tiles=[];
   if(myCall)tiles.push(['<b>'+esc(myCall.split(" · ")[0])+'</b>',L("Mein Call")+" · "+esc(myCall.split(" · ").slice(1).join(" · "))]);
@@ -2542,7 +2547,6 @@ VIEWS.today=function(){
   if(scs.length)h+=card("tscs",esc(L("Szenen"))+' <small>'+scs.length+'</small>','<ul class="tsclist">'+scs.map(([u,it])=>{const cg=window.chgFor(d.date,u,it.sc);
     return '<li'+(cg?' class="chg"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset">'+esc(it.set||"")+(u!=="1"?' <span class="ust">'+esc(UNAME[u])+'</span>':'')+(cg?'<span class="chgtxt">'+esc(cg)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
   /* my events */
-  try{if(me&&vok("mycal")){const ev=myEvents(me).filter(x=>x.date===d.date);if(ev.length)h+=card("tmy",esc(L("Meine Termine")),'<ul class="tsclist">'+ev.map(x=>'<li><span class="tt">'+esc(x.t||"")+'</span><span class="tset">'+esc(x.n||"")+(x.where?' · '+esc(x.where):'')+'</span></li>').join("")+'</ul>')}}catch(_){}
   /* changes */
   const cl=chgList();
   h+='<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(cl.some(c=>c.unread)?' <span class="chgdot">'+cl.filter(c=>c.unread).length+' '+esc(L("neu"))+'</span>':'')+'</div>'+
@@ -2604,6 +2608,9 @@ function auditSec(){
 document.addEventListener("input",e=>{const i=e.target.closest("[data-audq]");if(!i)return;AUD.q=i.value;clearTimeout(AUD.t);AUD.t=setTimeout(()=>{const v=document.querySelector("#view");const pos=i.selectionStart;render();const n=document.querySelector("[data-audq]");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}},250)});
 document.addEventListener("click",e=>{if(e.target.closest("[data-audre]")){AUD.list=null;render()}});
 Object.assign(I18N,{
+ "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi impegni",hi:"मेरे अगले कार्यक्रम"},
+ "Alle meine Termine":{en:"All my events",fr:"Tous mes rendez-vous",it:"Tutti i miei impegni",hi:"मेरे सभी कार्यक्रम"},
+ "Keine anstehenden Termine.":{en:"No upcoming events.",fr:"Aucun rendez-vous à venir.",it:"Nessun impegno in arrivo.",hi:"कोई आगामी कार्यक्रम नहीं।"},
  "Heute":{en:"Today",fr:"Aujourd'hui",it:"Oggi",hi:"आज"},
  "Nächster Tag":{en:"Next day",fr:"Prochain jour",it:"Prossimo giorno",hi:"अगला दिन"},
  "Mein Call":{en:"My call",fr:"Ma convocation",it:"La mia convocazione",hi:"मेरा कॉल"},
