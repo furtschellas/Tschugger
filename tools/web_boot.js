@@ -279,6 +279,12 @@ Object.assign(I18N,{
  "Regulär":{fr:"Normal",it:"Normale",en:"Regular",hi:"सामान्य"},
  "Mittagsmenüs eingeben":{fr:"Saisir les menus de midi",it:"Inserire i menù del pranzo",en:"Enter lunch menus",hi:"दोपहर के मेन्यू दर्ज करें"},
  "Catering-Seite öffnen":{fr:"Ouvrir la page catering",it:"Apri la pagina catering",en:"Open catering page",hi:"कैटरिंग पेज खोलें"},
+ "Kontakt-E-Mail":{fr:"E-mail de contact",it:"E-mail di contatto",en:"Contact email",hi:"संपर्क ई-मेल"},
+ "Willkommen":{fr:"Bienvenue",it:"Benvenuto",en:"Welcome",hi:"स्वागत"},
+ "bestätigt":{fr:"confirmé",it:"confermato",en:"confirmed",hi:"पुष्ट"},
+ "noch nicht bestätigt":{fr:"pas encore confirmé",it:"non ancora confermato",en:"not yet confirmed",hi:"अभी पुष्ट नहीं"},
+ "Alle aufklappen":{fr:"Tout déplier",it:"Espandi tutti",en:"Expand all",hi:"सब खोलें"},
+ "Alle zuklappen":{fr:"Tout replier",it:"Comprimi tutti",en:"Collapse all",hi:"सब बंद करें"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -1719,7 +1725,7 @@ async function onAcctSubmit(e){
   btn.disabled=false;
 }
 /* ---- admin: invitations and members (German only; visible to admins) ---- */
-const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false};
+const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false,open:new Set()};
 async function admLoad(){
   const {F,db}=await fb();
   const none=()=>({docs:[]}),opt=(ok,pr)=>ok?pr:pr.catch(none);
@@ -1733,7 +1739,7 @@ async function admLoad(){
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
-const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-push","set-src","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
+const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-push","set-src","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.catcard=localStorage.getItem("sec:catcard")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
 const secOpen=(k,title,body)=>'<details class="asec '+k+'" data-sec="'+k+'"'+(SECS[k]!==false?' open':'')+'><summary>'+esc(title)+'</summary><div class="asb">'+body+'</div></details>';
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
 /* departments that are not fed on set: left out of the catering count */
@@ -1768,7 +1774,7 @@ function cateringHTML(){
   const c=caterData();if(!c.act.length)return"";
   const reg=c.act.length-c.special.length;
   const chips=(reg?'<span class="catchip reg"><b>'+reg+'</b> '+esc(L("Regulär"))+'</span>':'')+c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'');
-  return '<details class="catbox"><summary><div class="cathd"><span class="catic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9"/></svg></span><div class="catt"><b>Catering</b><span>'+c.act.length+' '+esc(L("Personen"))+' · '+c.special.length+' '+esc(L("mit Sonderwünschen"))+'</span></div>'+(can("catering.edit")?'<button type="button" class="cico catmenu" data-catpage aria-label="'+esc(L("Mittagsmenüs eingeben"))+'" title="'+esc(L("Mittagsmenüs eingeben"))+'">🍽</button>':'')+'<span class="catchev" aria-hidden="true"></span></div>'+
+  return '<details class="catbox" data-sec="catcard"'+(SECS.catcard===true?' open':'')+'><summary><div class="cathd"><span class="catic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9"/></svg></span><div class="catt"><b>Catering</b><span>'+c.act.length+' '+esc(L("Personen"))+' · '+c.special.length+' '+esc(L("mit Sonderwünschen"))+'</span></div>'+(can("catering.edit")?'<button type="button" class="cico catmenu" data-catpage aria-label="'+esc(L("Mittagsmenüs eingeben"))+'" title="'+esc(L("Mittagsmenüs eingeben"))+'">🍽</button>':'')+'<span class="catchev" aria-hidden="true"></span></div>'+
     (chips?'<div class="catchips">'+chips+'</div>':'')+'</summary><div class="catbody">'+(can("catering.edit")||can("crew.food")?'<div class="catacts"><button type="button" class="pillbtn" data-catpage>🍽 '+L(can("catering.edit")?"Mittagsmenüs eingeben":"Catering-Seite öffnen")+'</button></div>':'')+(c.special.length?caterOverview(c):'<p class="ghint">'+esc(L("Keine Sonderwünsche."))+'</p>')+'</div></details>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-catpage]")){e.preventDefault();S.tab="cater";S.srcOpen=false;window.scrollTo(0,0);render()}});
@@ -1882,12 +1888,13 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pwshow]");
 /* admins: see and change a user's details (registered: profile incl. food; invited: name, role) */
 function userInfo(r){
   const m=r.m;if(!m||!(isAdmin()||can("users.view")))return"";
-  const g=(GENDERS.find(x=>x[0]===m.gender)||[])[1];
-  const wl=m.welcomeAck?L("Willkommen bestätigt")+" "+new Date(m.welcomeAck).toLocaleDateString("de-CH"):L("Willkommen noch nicht bestätigt");
-  const tel=x=>'<a href="tel:'+esc(String(x).replace(/[^\d+]/g,""))+'">☎ '+esc(x)+'</a>',mail=x=>'<a href="mailto:'+esc(x)+'">✉ '+esc(x)+'</a>';
-  const bits=[esc(wl),m.phone?tel(m.phone):"",m.contactEmail&&m.contactEmail!==m.email?mail(m.contactEmail):"",m.birthday?esc(L("Geburtsdatum")+": "+m.birthday.split("-").reverse().join(".")):"",g?esc(L(g)):"",esc(dietText(m))].filter(Boolean);
-  return bits.length?'<div class="uinf">'+bits.join(" · ")+'</div>':"";
+  const g=(GENDERS.find(x=>x[0]===m.gender)||[])[1];const row=(k,v)=>v?'<div class="udl"><span>'+esc(L(k))+'</span><b>'+v+'</b></div>':'';
+  return row("Telefon",m.phone?'<a href="tel:'+esc(String(m.phone).replace(/[^\d+]/g,""))+'">'+esc(m.phone)+'</a>':"")+
+    row("Kontakt-E-Mail",m.contactEmail&&m.contactEmail!==m.email?'<a href="mailto:'+esc(m.contactEmail)+'">'+esc(m.contactEmail)+'</a>':"")+
+    row("Geburtsdatum",m.birthday?esc(m.birthday.split("-").reverse().join(".")):"")+row("Geschlecht",g?esc(L(g)):"")+row("Essen",esc(dietText(m)))+
+    row("Willkommen",esc(m.welcomeAck?L("bestätigt")+" "+new Date(m.welcomeAck).toLocaleDateString("de-CH"):L("noch nicht bestätigt")));
 }
+
 /* new users get the role «Crew» automatically (an invitation creates userroles/{email} = crew) */
 async function assignCrew(em){em=lc(em);if(!em||ADMINS.includes(em)||(ADM.adm||[]).includes(em)||(ADM.ur||{})[em])return;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"userroles",em),{role:"crew",at:F.serverTimestamp()});ADM.ur=ADM.ur||{};ADM.ur[em]="crew"}catch(err){console.warn("crew role",err&&err.code||err)}}
@@ -1989,7 +1996,7 @@ function userList(rows,vis,o){
   const F=[["all","Alle"],["online","Online"],["act","Aktiv"],["inv","Eingeladen"],["off","Gesperrt"],["adm","Mit Rolle"]];
   const chips='<div class="ufil" role="group">'+F.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>'<button type="button" data-uf="'+k+'" aria-pressed="'+(ADM.uf===k)+'">'+L(t)+' <span>'+ADM.cnt[k]+'</span></button>').join("")+'</div>';
   const card=r=>{
-    const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.act===r.email,nm=r.name||cp.name||"";
+    const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.open.has(r.email),nm=r.name||cp.name||"";
     const badge=o.isAdm(r.email)?'<span class="ust adm">'+L(isOwn?"Owner":"Admin")+'</span>':(o.roleOf(r.email)?'<span class="ust role">'+esc(o.roleName(o.roleOf(r.email)))+'</span>':'<span class="ust norole">'+esc(L("Keine Rolle"))+'</span>');
     const acts=[
       o.cEd&&(own||!isOwn)?'<button data-adm="edit" data-em="'+esc(r.email)+'">✎ '+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'',
@@ -2000,24 +2007,30 @@ function userList(rows,vis,o){
       own&&r.m&&!isOwn?(r.m.active===true?'<button class="warn" data-adm="block" data-uid="'+esc(r.m.uid)+'">'+L("Sperren")+'</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">'+L("Entsperren")+'</button>'):'',
       isOwn?'':own&&r.m?'<button class="warn" data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">'+L("Entfernen")+'</button>':(r.inv&&!r.m&&o.cInv?'<button class="warn" data-adm="uninvite" data-em="'+esc(r.email)+'">'+L("Einladung löschen")+'</button>':'')
     ].filter(Boolean);
-    const hasActs=acts.length||(own&&!isOwn);
+    const hasActs=true;
+    /* details (function, contact, language, last online, tour, profile) only in the opened card */
+    const det='<div class="udet">'+(cp.role||(r.m&&r.m.func)?'<div class="udl"><span>'+L("Funktion")+'</span><b>'+esc(cp.role||r.m.func)+'</b></div>':'')+
+      '<div class="udl"><span>'+L("E-Mail")+'</span><a class="em" href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'+
+      (r.m&&r.m.lang?'<div class="udl"><span>'+L("Sprache")+'</span><b>'+esc(r.m.lang.toUpperCase())+'</b></div>':'')+
+      (r.m&&r.m?'<div class="udl"><span>'+L("Einführungstour")+'</span><b>'+esc(tourInfo(r.m))+'</b></div>':'')+userInfo(r)+'</div>';
     return '<div class="ucard'+(r.m&&r.m.active!==true?' blocked':'')+(open?' open':'')+'">'+
       '<div class="uhd"><span class="uav'+(r.m&&isOnline(r.m)?' on':'')+'" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b></div><div class="ubadges">'+o.st(r)+badge+'</div>'+
-      '<div class="usub">'+(cp.role||(r.m&&r.m.func)?esc(cp.role||r.m.func)+' · ':'')+'<a class="em" href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>'+(r.m&&r.m.lang?' · '+esc(r.m.lang.toUpperCase()):'')+(r.m&&seenText(r.m)?' · <span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'')+(r.m?' · <span class="utour">'+esc(tourInfo(r.m))+'</span>':'')+'</div>'+userInfo(r)+'</div>'+
+      (r.m&&seenText(r.m)?'<div class="usub"><span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span></div>':'')+'</div>'+
       (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" aria-label="'+esc(L("Aktionen"))+'" title="'+esc(L("Aktionen"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
       (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
-      (open?'<div class="ubody">'+(o.cEd&&ADM.edit===r.email?editForm(r,true):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
+      (open?'<div class="ubody">'+det+(o.cEd&&ADM.edit===r.email?editForm(r,true):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
     '</div>'};
   const SORTS=[["first","Vorname"],["name","Nachname"],["dept","Abteilung"],["status","Status"],["role","Rolle"],["new","Neueste zuerst"],["seen","Zuletzt online"],["email","E-Mail"]];
   const sortSel='<label class="usort">'+L("Sortieren")+' <select data-usort>'+SORTS.map(([k,t])=>'<option value="'+k+'"'+((ADM.sort||"first")===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>';
   const onl=rows.filter(r=>r.m&&isOnline(r.m)).map(r=>r.name||(crewPerson(r.email)||{}).name||r.email);
   return '<div class="admins ulist"><h3>'+L("Benutzer:innen")+' <span class="ust">'+rows.length+'</span></h3>'+
     '<p class="uonline"><span class="odot" aria-hidden="true"></span>'+(onl.length?'<b>'+esc(L("Gerade aktiv"))+' ('+onl.length+'):</b> '+esc(onl.join(", ")):esc(L("Gerade ist niemand aktiv.")))+'</p>'+
-    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'</div>'+
+    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'<button type="button" class="pillbtn uall" data-uall>'+L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen")+'</button></div>'+
     (vis.length?'<div class="ucards">'+vis.map(card).join("")+'</div>':'<p class="ahint">'+L("Keine Treffer.")+'</p>')+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-uf]");if(b){ADM.uf=b.dataset.uf;render();return}
-  const t=e.target.closest("[data-uact]");if(t){const em=t.dataset.uact;const was=ADM.act===em||ADM.edit===em;ADM.act=was?"":em;if(was||ADM.edit!==em)ADM.edit="";render()}});
+  const t=e.target.closest("[data-uact]");if(t){const em=t.dataset.uact;const was=ADM.open.has(em)||ADM.edit===em;if(was){ADM.open.delete(em);if(ADM.edit===em)ADM.edit=""}else ADM.open.add(em);ADM.act=em;render();return}
+  const all=e.target.closest("[data-uall]");if(all){const ems=[...document.querySelectorAll(".ucards [data-uact]")].map(x=>x.dataset.uact);const anyClosed=ems.some(x=>!ADM.open.has(x));ADM.open=new Set(anyClosed?ems:[]);if(!anyClosed)ADM.edit="";render()}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dorefresh]");if(!b)return;const r=$("#refresh");if(r)r.click()});
 try{ADM.sort=localStorage.getItem("usort")||"first"}catch(_){ADM.sort="first"}
 document.addEventListener("change",e=>{const sl=e.target.closest("select[data-usort]");if(!sl)return;ADM.sort=sl.value;try{localStorage.setItem("usort",ADM.sort)}catch(_){}render()});

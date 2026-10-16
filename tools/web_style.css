@@ -359,3 +359,7 @@ html body .bcwa a.wabtn.wagrp.pillbtn{display:block;text-align:center;margin:8px
 .acpage .psec .pillbtn+.pillbtn{margin-left:6px}
 .catacts{display:flex;justify-content:flex-end;margin:12px 0 0}.catacts .pillbtn{font-weight:700}.catchip.reg b{color:var(--ink)}
 .catmenu{font-size:15px;margin-right:4px}
+.udet{display:flex;flex-direction:column;gap:4px;margin:2px 0 10px;padding:10px 12px;border-radius:12px;background:var(--paper);border:1px solid var(--rule)}
+.udl{display:flex;gap:10px;font-size:14px;line-height:1.4}.udl>span{flex:0 0 92px;color:var(--muted);font-size:12px;padding-top:2px}.udl b{font-weight:600}
+.udet .uinf{margin-top:4px;padding-top:6px;border-top:1px solid var(--rule)}
+.ubar .uall{margin-left:auto;font-size:13px;padding:6px 14px}
