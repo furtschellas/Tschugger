@@ -265,3 +265,12 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .efood{border:1px solid var(--rule);border-radius:12px;padding:6px 12px 10px;margin:12px 0 6px;min-width:0}.efood legend{padding:0 6px;font-weight:700;font-size:14px;color:var(--accent)}
 .efood{grid-column:1/-1}
 .ust.norole{opacity:.6;border-style:dashed}
+.bcform{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.bcform>label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:var(--muted)}
+.bcform input:not([type=checkbox]):not([type=radio]),.bcform textarea{font:inherit;font-size:16px;font-weight:400;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box}
+.bcform textarea{resize:vertical;min-height:96px;line-height:1.4}
+.bcform input:focus,.bcform textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.bcform .ck{display:flex;align-items:center;gap:10px;font-size:15px;margin:4px 0}
+.bcchk{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}.bcchk .ck{margin:0;padding:6px 12px;border:1px solid var(--rule);border-radius:99px;font-size:13px}.bcchk .ck:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.bcform .arb button{width:100%;padding:12px;font-size:16px;border-radius:12px}
+.bcform .amsg.ok{color:var(--ok,#3c9)}

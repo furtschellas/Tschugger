@@ -32,8 +32,8 @@ def vapid_pem():
     return dec(e["iv"], e["ct"]).decode()
 
 
-def docs():
-    url = f"https://firestore.googleapis.com/v1/projects/{PROJECT}/databases/(default)/documents/push"
+def docs(col="push"):
+    url = f"https://firestore.googleapis.com/v1/projects/{PROJECT}/databases/(default)/documents/" + col
     tok = None
     while True:
         r = requests.get(url, params={"pageSize": 300, "key": API_KEY, **({"pageToken": tok} if tok else {})}, timeout=30)
@@ -54,6 +54,17 @@ def main():
     sent = {k: v for k, v in sent.items() if v > NOW - 3 * 86400}
     pem = vapid_pem()
     n_dev = n_sent = 0
+    # messages to everybody / selected roles and departments (broadcasts), at most 24 h old
+    bcs = []
+    try:
+        for bid, c in docs("broadcasts"):
+            try:
+                raw = base64.b64decode(c); b = json.loads(AESGCM(KEY).decrypt(raw[:12], raw[12:], None))
+                if b.get("at", 0) / 1000 > NOW - 86400: bcs.append((bid, b))
+            except Exception as e:
+                print("Nachricht nicht lesbar:", bid, e)
+    except Exception as e:
+        print("Nachrichten nicht lesbar:", e)
     for did, c in docs():
         if not c:
             continue
@@ -67,6 +78,21 @@ def main():
         sub = p.get("sub")
         if not sub or not p.get("on", True):
             continue
+        who = p.get("who") or {}
+        for bid, b in bcs:
+            key = did + "|b|" + bid
+            if key in sent: continue
+            roles, depts = b.get("roles"), b.get("depts")
+            if roles is not None or depts is not None:
+                ok = (who.get("role", "") in (roles or [])) or (bool(who.get("dept")) and who.get("dept") in (depts or []))
+                if not ok: continue
+            data = json.dumps({"title": b.get("title", ""), "body": b.get("body", ""), "url": "./", "tag": "b" + bid}, ensure_ascii=False)
+            try:
+                webpush(subscription_info=sub, data=data, vapid_private_key=pem, vapid_claims={"sub": "mailto:furtschellas@gmail.com"}, ttl=86400)
+                n_sent += 1; print("Nachricht gesendet:", did, b.get("title"))
+            except Exception as e:
+                print("Push-Fehler", did, str(e)[:200])
+            sent[key] = NOW
         for it in p.get("items", []):
             at = it.get("at", 0) / 1000
             start = it.get("start", it.get("at", 0)) / 1000
