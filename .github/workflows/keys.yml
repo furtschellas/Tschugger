@@ -1,0 +1,51 @@
+name: Schlüssel wechseln
+
+# von Hand: Actions → «Schlüssel wechseln» → Run workflow. Braucht das Secret FIREBASE_SA (Dienstkonto).
+on:
+  workflow_dispatch:
+    inputs:
+      what:
+        description: "vapid = neuer Push-Schlüssel · crew = neuer Crew-Schlüssel (alles wird neu verschlüsselt)"
+        type: choice
+        options: [vapid, crew]
+        default: vapid
+
+permissions:
+  contents: write
+
+# nie gleichzeitig mit der Dropbox-Aktualisierung (die würde sonst mit dem alten Schlüssel schreiben)
+concurrency:
+  group: dropbox-update
+  cancel-in-progress: false
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q cryptography==43.0.3 requests==2.32.3 boto3==1.35.54
+      - name: Schlüssel wechseln
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+        run: python tools/rotate.py ${{ github.event.inputs.what }}
+      - name: Veröffentlichen
+        if: success() && github.event.inputs.what == 'crew'
+        run: |
+          git config user.name "Crew-App Aktualisierung"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A data.enc.json script.enc.json stamp.json tools/*.enc.json
+          git ls-files --error-unmatch blk >/dev/null 2>&1 && git add -A blk || true
+          git diff --cached --quiet && exit 0
+          git commit -q -m "Neuer Crew-Schlüssel: Daten neu verschlüsselt"
+          git config http.postBuffer 524288000
+          for i in 1 2 3; do git pull -q --rebase origin main && git push origin HEAD:main && exit 0; sleep 10; done
+          exit 1

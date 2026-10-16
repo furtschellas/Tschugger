@@ -173,7 +173,9 @@ service cloud.firestore {
       allow read: if true;
       allow create: if can('push.send') && request.resource.data.keys().hasOnly(['c', 'at'])
         && request.resource.data.c is string && request.resource.data.c.size() < 4000;
-      allow update: if can('push.send') && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sent', 'n']);
+      // der Worker markiert im Namen der sendenden Person: sent (einmalig), n, done (Geräte), fin (alle erledigt)
+      allow update: if can('push.send') && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sent', 'n', 'done', 'fin'])
+        && (!('done' in request.resource.data) || (request.resource.data.done is list && request.resource.data.done.size() <= 1000));
       allow delete: if isAdmin();
     }
 
