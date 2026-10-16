@@ -1,0 +1,184 @@
+/* ---- membership: invited addresses join once (members/{uid}); blocked = active:false ---- */
+async function checkMember(){
+  const {F,db}=await fb();const u=ME;
+  if(!isOwner()&&u.emailVerified){try{if((await F.getDoc(F.doc(db,"owners",lc(u.email)))).exists()&&!ADMINS.includes(lc(u.email)))ADMINS.push(lc(u.email))}catch(_){}}
+  if(!isOwner()&&u.emailVerified){try{COADMIN=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(_){COADMIN=false}}
+  MYPERMS=[];MYROLE="";ADMINPERMS=ADMIN_DEFAULT.slice();
+  if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())ADMINPERMS=(ad.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}catch(_){}}
+  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){MYROLE=String(ur.data().role||"");const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())MYPERMS=(rd.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}}catch(_){}
+  }
+  if(isOwner())setTimeout(migrateCrew,1500);
+  const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
+  if(!s.exists()){
+    let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
+    if(!inv||!inv.exists()){if(isAdmin()){MEMBER=null;return "ok"}return "none"}
+    let pf={};try{const x=JSON.parse(localStorage.getItem(PENDING_KEY)||"null");if(x&&x.email===lc(u.email))pf=x}catch(_){}
+    const doc={active:true,email:lc(u.email),name:[pf.firstName,pf.lastName].filter(Boolean).join(" ")||inv.data().name||"",joinedAt:F.serverTimestamp()};
+    for(const k of ["firstName","lastName","lang","birthday","gender","diet","allergies"])if(pf[k])doc[k]=pf[k];
+    if(Array.isArray(pf.intol)&&pf.intol.length)doc.intol=pf.intol.filter(k=>INTOL.some(x=>x[0]===k));
+    if(!doc.firstName&&!doc.lastName){const sp=splitName(inv.data().name);if(sp.firstName){doc.firstName=clean(sp.firstName);if(sp.lastName)doc.lastName=clean(sp.lastName)}}
+    await F.setDoc(ref,doc);try{localStorage.removeItem(PENDING_KEY)}catch(_){}
+    s=await F.getDoc(ref);
+  }
+  const m=s.data();if(m.active!==true)return isAdmin()?"ok":"blocked";
+  if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
+  MEMBER=m;return "ok";
+}
+function clearLocal(){try{localStorage.removeItem("dk:v1");localStorage.removeItem(CACHE_KEY);localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
+/* ---- sign-in screen ---- */
+let AUTHMODE="login";
+const errText=e=>{const c=(e&&e.code)||"";
+  if(/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c))return L("E-Mail oder Passwort falsch.");
+  if(/email-already-in-use/.test(c))return L("Für diese Adresse gibt es schon ein Konto. Bitte anmelden.");
+  if(/invalid-email/.test(c))return L("Ungültige E-Mail-Adresse.");
+  if(/weak-password/.test(c))return L("Mindestens 8 Zeichen.");
+  if(/too-many-requests/.test(c))return L("Zu viele Versuche. Bitte kurz warten.");
+  if(/requires-recent-login/.test(c))return L("Aktuelles Passwort falsch.");
+  if(/network/.test(c))return L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen.");
+  return (e&&e.message)||String(e)};
+function gateEl(){
+  let g=document.getElementById("gate");
+  if(!g){g=document.createElement("div");g.id="gate";g.className="gate";document.body.appendChild(g);
+    g.addEventListener("submit",onGateSubmit);
+    g.addEventListener("click",onGateClick);}
+  return g;
+}
+function GBTN(){if(window.GOOGLEON===false||(isIOS()&&isStandalone()))return '';return '<button type="button" class="gbtn ggoogle" data-gact="google"><svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>'+L("Mit Google anmelden")+'</button><div class="gor"><span>'+L("oder")+'</span></div>'}
+function showGate(mode,msg,isErr){
+  AUTHMODE=mode||AUTHMODE;const g=gateEl();
+  const em=ME?esc(ME.email):(g.querySelector("#gem")?esc(g.querySelector("#gem").value):"");
+  const head='<h2>Tschugger <span>Tigerblood</span></h2>';
+  const langs='<div class="lang glang"><button type="button" data-glang="de">DE</button><button type="button" data-glang="fr">FR</button><button type="button" data-glang="it">IT</button><button type="button" data-glang="en">EN</button><button type="button" data-glang="hi">HI</button></div>';
+  const note=msg?'<p class="'+(isErr?'gerr':'gok')+'" role="alert">'+esc(msg)+'</p>':'<p class="gerr" role="alert"></p>';
+  let f="";
+  if(AUTHMODE==="login")f='<form class="gbox" data-f="login">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die auf der Crewliste steht – diese ist bereits freigeschaltet.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="current-password" required><button type="submit">'+L("Anmelden")+'</button>'+note+'<button type="button" class="glink" data-gmode="reset">'+L("Passwort vergessen?")+'</button><button type="button" class="glink" data-gmode="register">'+L("Erstes Mal hier? Konto erstellen")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="register")f='<form class="gbox" data-f="register">'+head+'<p class="ghint">'+L("Nur für die Crew von TSCHUGGER Tigerblood. Melde dich mit der E-Mail-Adresse an, die auf der Crewliste steht – diese ist bereits freigeschaltet.")+'</p>'+GBTN()+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><label for="gpw">'+L("Passwort")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><p class="ghint">'+L("Mindestens 8 Zeichen.")+'</p><button type="submit">'+L("Konto erstellen")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Schon ein Konto? Anmelden")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="newpw")f='<form class="gbox" data-f="newpw">'+head+'<p class="gtitle">'+L("Bitte lege jetzt dein eigenes Passwort fest.")+'</p><p class="ghint">'+L("Du hast dich mit einem Startpasswort angemeldet. Es gilt nur einmal.")+'</p><p class="ghint"><b>'+em+'</b></p><label for="gpw">'+L("Neues Passwort (mind. 8 Zeichen)")+'</label><input id="gpw" type="password" autocomplete="new-password" minlength="8" required><label for="gpw2">'+L("Neues Passwort wiederholen")+'</label><input id="gpw2" type="password" autocomplete="new-password" minlength="8" required><button type="submit">'+L("Passwort speichern")+'</button>'+note+'<button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="reset")f='<form class="gbox" data-f="reset">'+head+'<label for="gem">'+L("E-Mail")+'</label><input id="gem" type="email" autocomplete="username" required value="'+em+'"><button type="submit">'+L("Link zum Zurücksetzen senden")+'</button>'+note+'<button type="button" class="glink" data-gmode="login">'+L("Zurück")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="verify")f='<form class="gbox" data-f="verify">'+head+'<p class="gtitle">'+L("Bitte bestätige zuerst deine E-Mail-Adresse.")+'</p><p class="ghint">'+L("Wir haben dir eine Mail mit einem Bestätigungslink geschickt. Tippe auf den Link und komm dann hierher zurück.")+'</p><p class="ghint"><b>'+em+'</b></p>'+vmStatus()+'<p class="ghint gtip">'+L("Absender: noreply@tschugger-83692.firebaseapp.com – bitte auch im Spam- bzw. Junk-Ordner nachsehen und die Mail als «Kein Spam» markieren.")+'</p><button type="submit">'+L("Ich habe bestätigt")+'</button>'+note+'<button type="button" class="glink" data-gact="resend">'+L("Mail nochmals senden")+'</button>'+(GBTN()?'<p class="ghint">'+L("Gmail-Adresse? Dann geht es ohne Bestätigungs-Mail:")+'</p>'+GBTN():'')+'<button type="button" class="glink" data-gact="signout">'+L("Abmelden")+'</button>'+langs+'</form>';
+  else if(AUTHMODE==="denied"||AUTHMODE==="blocked")f='<div class="gbox">'+head+'<p class="gtitle">'+L("Kein Zugang")+'</p><p class="ghint">'+(AUTHMODE==="blocked"?L("Dein Zugang wurde gesperrt. Bitte melde dich bei der Produktion."):L("Diese E-Mail-Adresse ist nicht für die Crew-App freigeschaltet."))+'</p><p class="ghint"><b>'+em+'</b></p>'+(AUTHMODE==="blocked"?'':'<p class="ghint gtip">'+L("Bitte melde dich ab und wieder an – mit der E-Mail-Adresse, die auf der Crewliste steht. Diese ist bereits freigeschaltet. Bei Google: das Google-Konto mit dieser Adresse wählen. Stimmt die Adresse auf der Crewliste nicht, melde dich bei der Produktion.")+'</p>'+reqBox())+'<button type="button" class="gbtn" data-gact="signout">'+L("Abmelden und mit Crewliste-Adresse anmelden")+'</button><button type="button" class="glink" data-gact="retry">'+L("Aktualisieren")+'</button>'+langs+'</div>';
+  else if(AUTHMODE==="wait")f='<div class="gbox">'+head+'<p class="ghint">'+L("Bitte warten …")+'</p></div>';
+  verifyPoll(AUTHMODE==="verify");
+  g.innerHTML=f;applyLangs();g.querySelectorAll("[data-glang]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.glang===LANG));
+  g.hidden=false;document.body.style.overflow="hidden";
+  const first=g.querySelector("input:not([value]),input[value='']")||g.querySelector("#gpw");if(first&&AUTHMODE!=="wait")setTimeout(()=>first.focus(),50);
+}
+let VERIFYT=null;
+function verifyPoll(on){clearInterval(VERIFYT);VERIFYT=null;if(!on)return;
+  VERIFYT=setInterval(async()=>{try{const {auth}=await fb();const u=auth.currentUser;if(!u){verifyPoll(false);return}
+    await u.reload();if(auth.currentUser.emailVerified){verifyPoll(false);await auth.currentUser.getIdToken(true);afterSignIn(auth.currentUser);return}
+    if((VERIFYN=(VERIFYN||0)+1)%3===0&&await startExists(u)){verifyPoll(false);afterSignIn(auth.currentUser)}}catch(_){}},5000)}
+let VERIFYN=0;
+async function startExists(u){try{const {F,db}=await fb();return (await F.getDoc(F.doc(db,"starts",lc(u.email)))).exists()}catch(_){return false}}
+function hideGate(){verifyPoll(false);const g=document.getElementById("gate");if(g){g.hidden=true;g.innerHTML=""}document.body.style.overflow=""}
+function gateMsg(t,isErr){const p=document.querySelector("#gate .gerr,#gate .gok");if(p){p.className=isErr?"gerr":"gok";p.textContent=t}}
+async function onGateSubmit(e){
+  e.preventDefault();const f=e.target;const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;gateMsg("",true);
+  try{
+    const {A,auth}=await fb();const em=f.querySelector("#gem")?f.querySelector("#gem").value.trim():"";const pw=f.querySelector("#gpw")?f.querySelector("#gpw").value:"";
+    if(f.dataset.f==="login"){window.__justSignedIn=true;if(window.resetViewState)window.resetViewState();await A.signInWithEmailAndPassword(auth,em,pw)}
+    else if(f.dataset.f==="register"){
+      if(pw.length<8)throw {code:"weak-password"};
+      if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
+      window.__justSignedIn=true;if(window.resetViewState)window.resetViewState();const c=await A.createUserWithEmailAndPassword(auth,em,pw);
+      await sendVerify(c.user)
+    }
+    else if(f.dataset.f==="reset"){try{await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),em)}catch(err){if(!/user-not-found/.test(err.code||""))throw err}gateMsg(L("Wenn es für diese Adresse ein Konto gibt, kommt gleich eine Mail zum Zurücksetzen."),false)}
+    else if(f.dataset.f==="newpw"){
+      if(pw.length<8)throw {code:"weak-password"};
+      if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
+      const {F,db}=await fb();await A.updatePassword(auth.currentUser,pw);
+      await F.updateDoc(F.doc(db,"starts",lc(auth.currentUser.email)),{mustChange:false});START={mustChange:false};
+      showMsg(L("Passwort gespeichert."),3000);await afterSignIn(auth.currentUser)}
+    else if(f.dataset.f==="verify"){await ME.reload();if(auth.currentUser.emailVerified){await ME.getIdToken(true);await afterSignIn(auth.currentUser)}else if(await startExists(auth.currentUser))await afterSignIn(auth.currentUser);else gateMsg(L("Noch nicht bestätigt. Schau auch im Spam-Ordner nach."),true)}
+  }catch(err){console.error(err);gateMsg(errText(err),true)}
+  if(btn)btn.disabled=false;
+}
+/* ---- access request: someone not on the list asks the main admin for access ---- */
+let REQ={sent:false,err:""};
+function reqBox(){
+  if(REQ.sent)return '<p class="gok">'+L("Anfrage gesendet. Du bekommst Zugang, sobald die Produktion sie freigibt – du erhältst dann eine E-Mail, oder tippe hier auf «Aktualisieren».")+'</p>';
+  return '<details class="greq"><summary>'+L("Zugang bei der Produktion anfragen")+'</summary>'+
+    '<label for="rqn">'+L("Vor- und Nachname")+'</label><input id="rqn" maxlength="80" autocomplete="name">'+
+    '<label for="rqf">'+L("Funktion / Department")+'</label><input id="rqf" maxlength="80">'+
+    '<label for="rqt">'+L("Nachricht (optional)")+'</label><textarea id="rqt" maxlength="280" rows="2"></textarea>'+
+    '<button type="button" class="gbtn" data-gact="request">'+L("Anfrage senden")+'</button>'+(REQ.err?'<p class="gerr">'+esc(REQ.err)+'</p>':'')+'</details>';
+}
+/* after approval: Firebase sends the person an e-mail with a one-tap sign-in link (needs "E-Mail-Link" sign-in enabled in Firebase);
+   if that is not possible, a prepared e-mail opens in the admin's mail app */
+async function notifyApproved(em,q){
+  const url=location.origin+location.pathname+"?approved=1&em="+encodeURIComponent(em);
+  try{
+    const {A,auth}=await fb();if(typeof A.sendSignInLinkToEmail!=="function")throw new Error("no email link");
+    const keep=auth.languageCode;auth.languageCode=LANG;
+    try{await A.sendSignInLinkToEmail(auth,em,{url,handleCodeInApp:true})}finally{auth.languageCode=keep||LANG}
+    showMsg(L("E-Mail mit Anmelde-Link gesendet an")+" "+em,6000);return true;
+  }catch(err){
+    console.warn("mail link",err&&err.code||err);
+    location.href=mailto(em,"approved",{vorname:String((q&&q.name)||"").split(/\s+/)[0],name:(q&&q.name)||""});
+    return false;
+  }
+}
+/* check again every 5 minutes and when the app comes back to the foreground */
+setInterval(()=>{if(ME&&isAdmin()&&document.visibilityState==="visible")checkRequests()},300000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&can("users.requests"))checkRequests()});
+async function checkRequests(){
+  try{const {F,db}=await fb();const r=await F.getDocs(F.collection(db,"requests"));const n=r.size||r.docs.length;
+    const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||"";b.setAttribute("aria-label",L("App-Verwaltung")+(n?" · "+n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."):""))}
+    if(n&&!checkRequests.told){checkRequests.told=true;showMsg(n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."),7000)}}catch(_){}
+}
+async function sendRequest(){
+  const n=String(($("#rqn")||{}).value||"").trim(),f=String(($("#rqf")||{}).value||"").trim(),t=String(($("#rqt")||{}).value||"").trim();
+  if(n.length<3){REQ.err=L("Bitte Vor- und Nachname angeben.");showGate(AUTHMODE);return}
+  try{const {F,db,auth}=await fb();const em=lc(auth.currentUser&&auth.currentUser.email);if(!em)throw new Error("not signed in");
+    await F.setDoc(F.doc(db,"requests",em),{name:n.slice(0,80),role:f.slice(0,80),note:t.slice(0,280),at:F.serverTimestamp()});
+    REQ={sent:true,err:""}}catch(err){console.error(err);REQ.err=errText(err)}
+  showGate(AUTHMODE);
+}
+/* Firebase mails (confirmation, password reset): in the app language; if the return link to this site is not
+   allowed in Firebase (authorised domains), send the mail without return link instead of failing silently */
+/* confirmation mail: status survives gate re-renders; sent automatically when an unconfirmed account
+   signs in and no mail went out in the last 10 minutes (accounts from before had never received one) */
+const VM={at:0,err:"",busy:false};
+function vmKey(u){return "vm:"+(u&&u.uid||"")}
+function vmStatus(){
+  if(VM.busy)return '<p class="gok">'+L("Mail wird gesendet …")+'</p>';
+  if(VM.err)return '<p class="gerr">'+L("Bestätigungs-Mail konnte nicht gesendet werden:")+' '+esc(VM.err)+'</p>';
+  if(VM.at)return '<p class="gok">'+L("Mail gesendet um")+' '+new Date(VM.at).toLocaleTimeString(LANG==="en"?"en-GB":LANG+"-CH",{hour:"2-digit",minute:"2-digit"})+'.</p>';
+  return '';
+}
+async function sendVerify(u,manual){
+  if(!u||VM.busy)return;VM.busy=true;VM.err="";if(AUTHMODE==="verify")showGate("verify");
+  try{const {A}=await fb();await sendMailSafe(A.sendEmailVerification,u);VM.at=Date.now();try{localStorage.setItem(vmKey(u),String(VM.at))}catch(_){}}
+  catch(err){console.error("verify mail",err);VM.err=/too-many/.test(err&&err.code||"")?L("Zu viele Versuche – bitte in ein paar Minuten nochmals."):errText(err)}
+  finally{VM.busy=false;if(AUTHMODE==="verify")showGate("verify")}
+}
+function autoVerify(u){
+  let last=0;try{last=+localStorage.getItem(vmKey(u))||0}catch(_){}
+  if(!VM.at&&last)VM.at=last;
+  if(Date.now()-Math.max(last,VM.at)>600000)sendVerify(u);
+}
+async function sendMailSafe(fn,target){
+  const {auth}=await fb();auth.languageCode=LANG;
+  try{return await fn(target,{url:location.origin+location.pathname})}
+  catch(err){if(/continue-uri|unauthorized-domain|invalid-dynamic-link|missing-continue/.test(err&&err.code||""))return await fn(target);throw err}
+}
+async function onGateClick(e){
+  const lb=e.target.closest("[data-glang]");if(lb){LANG=lb.dataset.glang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;showGate(AUTHMODE);render();return}
+  const m=e.target.closest("[data-gmode]");if(m){showGate(m.dataset.gmode);return}
+  const a=e.target.closest("[data-gact]");if(!a)return;
+  const {A,auth}=await fb();
+  if(a.dataset.gact==="signout"){REQ={sent:false,err:""};await A.signOut(auth)}
+  else if(a.dataset.gact==="resend"){a.disabled=true;await sendVerify(auth.currentUser,true);a.disabled=false}
+  else if(a.dataset.gact==="retry"){if(auth.currentUser)afterSignIn(auth.currentUser)}
+  else if(a.dataset.gact==="request"){a.disabled=true;await sendRequest()}
+  else if(a.dataset.gact==="google"){
+    const prov=new A.GoogleAuthProvider();prov.setCustomParameters({prompt:"select_account"});window.__justSignedIn=true;
+    if(window.resetViewState)window.resetViewState();
+    try{if(isStandalone())await A.signInWithRedirect(auth,prov);else await A.signInWithPopup(auth,prov)}
+    catch(err){const c=err.code||"";
+      if(/popup-blocked|operation-not-supported|web-storage/.test(c)){try{await A.signInWithRedirect(auth,prov)}catch(e2){gateMsg(errText(e2),true)}}
+      else if(/popup-closed|cancelled-popup/.test(c))gateMsg(L("Google-Anmeldung abgebrochen."),true);
+      else gateMsg(errText(err),true)}
+  }
+}
