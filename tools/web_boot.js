@@ -2197,7 +2197,7 @@ VIEWS.admin=function(){
   const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(canRoleEdit()||canRoleAssign())SUBS.push(["roles","Rollen"]);if(can("settings"))SUBS.push(["docs","Dokumente"],["set","Einstellungen"]);if(isAdmin()||can("audit.view"))SUBS.push(["log","Protokoll"]);
   if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
-  const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>{const sh={users:"User",roles:"Rollen",docs:"Docs",set:"Einst.",log:"Log"}[k]||t;if(k==="users")t="User";
+  const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>{const sh={users:"User",roles:"Rollen",docs:"Docs",set:"App",log:"Log"}[k]||t;if(k==="users")t="User";
     return '<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'"><span class="lgl">'+esc(L(t))+'</span><span class="sml">'+esc(LANG==="de"?sh:L(sh))+'</span></button>'}).join("")+'</nav>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+subNav;
   if(ADM.sub==="set")return h+setSec+'</section>';
