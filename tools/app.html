@@ -1499,6 +1499,10 @@ function fitRows(root){
 window.addEventListener("resize",()=>{clearTimeout(window.__fitT);window.__fitT=setTimeout(()=>{fitRows();fitRows(document.querySelector("header")||document);const sc=document.getElementById("scn");if(sc)fitRows(sc)},120)});
 function render(){
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form"))return} /* never wipe a form someone is typing in */
+  /* «Today» comes with the website part that loads a moment later: until then show nothing instead of flashing the schedule */
+  if(S.tab==="today"&&!VIEWS.today&&!S.todayGone){const v0=$("#view");if(v0&&!v0.dataset.wait){v0.dataset.wait="1";v0.innerHTML='<div class="empty"></div>'}document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab==="today"));
+    if(!S.todayWaitT)S.todayWaitT=setTimeout(()=>{if(!VIEWS.today){S.todayGone=true;render()}},6000);return}
+  {const v0=$("#view");if(v0&&v0.dataset.wait)delete v0.dataset.wait}
   /* a page that is not available yet (e.g. before sign-in) is remembered and opened as soon as it is */
   const tOn=tabsOn();if(S.want&&Date.now()-S.wantAt>30000)S.want=null;if(S.want&&VIEWS[S.want]&&(!ALLTABS.includes(S.want)||tOn.includes(S.want))){S.tab=S.want;S.want=null}
   if(!VIEWS[S.tab]||(ALLTABS.includes(S.tab)&&!tOn.includes(S.tab))){if(!S.want&&!S.wantAt){S.want=S.tab;S.wantAt=Date.now()}S.tab=tOn[0]}
@@ -1875,14 +1879,16 @@ function searchAll(q,mode){
   const match=(text,nums,phone)=>{const T=nrm(text),N=nrm(nums);if(phone&&qd.length>=3&&N.replace(/\s+/g," ").split(" ").some(w=>w.includes(qd)))return true;return terms.every(t=>isNum(t)?N.split(/\s+/).some(w=>w.startsWith(t)):(T.includes(t)||N.includes(t)))};
   const R={day:[],sc:[],loc:[],crew:[],dispo:[],info:[]};
   const WDL=[["sonntag","sunday","dimanche","domenica"],["montag","monday","lundi","lunedi"],["dienstag","tuesday","mardi","martedi"],["mittwoch","wednesday","mercredi","mercoledi"],["donnerstag","thursday","jeudi","giovedi"],["freitag","friday","vendredi","venerdi"],["samstag","saturday","samedi","sabato"]];
-  for(const d of S.days){if(!M("day")&&mode!=="text")break;
+  /* only areas the person may see (Drehplan, Locations, Crew, Callsheet) */
+  const okPlan=vok("plan"),okLoc=true,okCrew=vok("crew"),okDispo=vok("dispo"),okPh=vok("phone"),okEm=vok("email");
+  for(const d of (okPlan?S.days:[])){if(!M("day")&&mode!=="text")break;
     const x=new Date(d.date+"T12:00:00");
     const sc1=(d.items||[]).filter(i=>i.sc).length,sc2=((d.unit2&&d.unit2.items)||[]).filter(i=>i.sc).length,sc3=((d.unit3&&d.unit3.items)||[]).filter(i=>i.sc).length;
     const kindw=d.kind==="shoot"?"drehtag shooting day tournage riprese":d.kind==="off"?"drehfrei frei day off off-day libre libero":"reise reisetag travel voyage viaggio";
     const text=[d.label,d.short,kindw,WDL[x.getDay()].join(" "),WD[x.getDay()],dshort(d),(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info"),dayPlaces(d).join(" "),sc2?"2nd unit":"",sc3?"3rd unit":"",sc1?"1st unit":""].join(" ");
     if(mode==="text"?terms.every(t=>nrm([(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info")].join(" ")).includes(t)):match(text,nrm(d.short||"")+" "+dshort(d)))R.day.push({k:"day",d,sc1,sc2});
   }
-  for(const d of S.days)for(const [u,list] of unitLists(d))for(const it of list){
+  for(const d of (okPlan?S.days:[]))for(const [u,list] of unitLists(d))for(const it of list){
     if(!it.sc)continue;if(!unitsOn().includes(u))continue;const ad=addrForItem(it);
     const sc=nrm(it.sc).replace(/\s+/g,"");
     const text=[it.set,it.d,it.d_de,it.d_fr,ad,it.loc,(it.cast||[]).map(c=>cast[c]||"").join(" "),d.label,d.short,UNAME[u]+" unit","szene scene"].join(" ");
@@ -1897,13 +1903,13 @@ function searchAll(q,mode){
     R.sc.push({k:"sc",d,u,it,ad,score});
   }
   R.sc.sort((x,y)=>y.score-x.score||(x.d.date<y.d.date?-1:x.d.date>y.d.date?1:String(x.it.t).localeCompare(String(y.it.t))));
-  for(const g of (M("loc")?groupLocs():[])){
+  for(const g of (M("loc")&&okLoc?groupLocs():[])){
     const text=g.s5?[g.title,...g.parts.map(p=>fullAddr(p.it.loc)+" "+p.it.set)].join(" "):[g.title,g.venue,g.address,...g.items.map(l=>[l.name,l.venue,l.address].join(" "))].join(" ");
     const nums=g.s5?g.parts.map(p=>nrm(p.it.sc).replace(/\s+/g,"")).join(" "):g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[])).map(x=>nrm(x).replace(/\s+/g,"")).join(" ");
     if(match(text,nums+" "+nrm(text).replace(/[^0-9a-z ]/g," ")))R.loc.push({k:"loc",g});
   }
-  if(M("person"))for(const dep of S.crew)for(const pp of (dep.people||[]))if(match([pp.name,pp.role,pp.role_fr,pp.role_en,dep.dept,dep.dept_fr,dep.dept_en,pp.email,pp.note].join(" "),phoneVars(pp.phone),true))R.crew.push({k:"crew",p:pp,dep});
-  if(mode==="all")for(const x of S.dispos){const vals=JSON.stringify(x).replace(/"[a-zA-Z]+":/g," ");if(match(vals,nrm(x.label||"")+" "+dshort(x)))R.dispo.push({k:"dispo",x})}
+  if(M("person")&&okCrew)for(const dep of S.crew)for(const pp of (dep.people||[]))if(match([pp.name,pp.role,pp.role_fr,pp.role_en,dep.dept,dep.dept_fr,dep.dept_en,okEm?pp.email:"",pp.note].join(" "),okPh?phoneVars(pp.phone):"",true))R.crew.push({k:"crew",p:pp,dep});
+  if(mode==="all"&&okDispo)for(const x of S.dispos){const vals=JSON.stringify(x).replace(/"[a-zA-Z]+":/g," ");if(match(vals,nrm(x.label||"")+" "+dshort(x)))R.dispo.push({k:"dispo",x})}
   if(mode==="all"||mode==="text")for(const c of S.places)for(const it of (c.items||[]))if(match([it.name,it.address,it.note,TX(it,"note"),c.cat,TX(c,"cat")].join(" "),phoneVars(it.phone),true))R.info.push({k:"info",it,c});
   return {R,terms};
 }

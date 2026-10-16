@@ -1233,7 +1233,7 @@ function chatCtx(){
   try{if(vok("dispo"))out.push("CALLSHEETS (dispos): "+J(S.dispos))}catch(_){}
   try{if(vok("prep"))out.push("PREP / WEEKLY SCHEDULE: "+J(S.prepro))}catch(_){}
   try{out.push("LOCATIONS: "+J(S.locs))}catch(_){}
-  try{const ph=vok("phone"),em=vok("email");out.push("CREWLISTE: "+J(S.crew.map(g=>Object.assign({},g,{people:arr(g.people).map(p=>{const q=Object.assign({},p);if(!ph){delete q.phone;delete q.tel;delete q.mobile}if(!em)delete q.email;return q})}))))}catch(_){}
+  try{const ph=vok("phone"),em=vok("email");if(vok("crew"))out.push("CREWLISTE: "+J(S.crew.map(g=>Object.assign({},g,{people:arr(g.people).map(p=>{const q=Object.assign({},p);if(!ph){delete q.phone;delete q.tel;delete q.mobile}if(!em)delete q.email;return q})}))))}catch(_){}
   try{if(vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)out.push("MEINE TERMINE ("+me.name+"): "+J(myEvents(me).map(e=>({date:e.date,t:e.t,end:e.end,n:e.n,where:e.where,src:e.src}))))}}catch(_){}
   return out.join("\n\n");
 }
