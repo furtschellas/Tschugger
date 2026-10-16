@@ -2631,7 +2631,7 @@ VIEWS.today=function(){
   /* scenes */
   const scs=[];for(const [u,its] of unitItems(d))if(u==="1"||hasU(d,u))its.forEach(it=>{if(it.sc)scs.push([u,it])});
   if(scs.length)h+=card("tscs",esc(L("Szenen"))+' <small>'+scs.length+'</small>','<ul class="tsclist">'+scs.map(([u,it])=>{const cg=window.chgFor(d.date,u,it.sc);
-    return '<li'+(cg?' class="chg"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset">'+esc(it.set||"")+(u!=="1"?' <span class="ust">'+esc(UNAME[u])+'</span>':'')+(cg?'<span class="chgtxt">'+esc(cg)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
+    return '<li'+(cg?' class="chg"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset" title="'+esc(it.set||"")+'">'+esc(String(it.set||"").replace(/^VALAIS\s*[–-]\s*/i,""))+(u!=="1"?' <span class="ust">'+esc(UNAME[u])+'</span>':'')+(cg?'<span class="chgtxt">'+esc(cg)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
   /* my events */
   /* changes */
   const cl=chgList();
