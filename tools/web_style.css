@@ -577,3 +577,4 @@ html body #view button.ttile.tdrv:hover{background:var(--acc-tint)}
 .rtbox{max-width:420px}.rtopts{display:flex;flex-direction:column;gap:10px;margin-top:12px}
 .rtopts .pillbtn{min-height:44px;justify-content:center;flex-direction:column;gap:0;line-height:1.2}
 .rtopts .pillbtn small{font-weight:400;font-size:12px;color:var(--muted)}
+html body #view .ttile b .tkm{font-weight:400;font-size:.8em;color:var(--muted)}
