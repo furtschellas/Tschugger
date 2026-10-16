@@ -602,3 +602,9 @@ html body #view .acpage .thm{display:flex;flex-wrap:wrap;gap:8px}
 html body #view .acpage .thm button{font:inherit;font-size:14px;font-weight:600;min-height:38px;padding:0 16px;border-radius:999px;border:1px solid var(--acc-soft);background:transparent;color:var(--accent);cursor:pointer}
 html body #view .acpage .thm button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 html body #view .acpage .thm button:not([aria-pressed="true"]):hover{background:var(--acc-tint)}
+/* e-mail addresses: never wider than their box – break only at sensible places (after @ and dots) */
+html body #view .udl{min-width:0}
+html body #view .udl>b,html body #view .udl>span{min-width:0}
+html body #view .udl b,html body #view .usub,html body #view a[href^="mailto:"]{overflow-wrap:anywhere;word-break:normal}
+html body #view .udl b a[href^="mailto:"]{display:inline-block;max-width:100%}
+html body #view .usub a[href^="mailto:"]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:inline-block;vertical-align:bottom}
