@@ -899,7 +899,7 @@ function acctInner(){
 }
 /* «Mein Konto» is its own page; only the first-start profile (onboarding) stays a dialog */
 VIEWS.acct=function(){if(ME)setTimeout(()=>{const v=document.getElementById("view");if(v&&S.tab==="acct")markNeed(v)},0);return ME?'<section class="mypage acpage">'+acctInner()+'</section>':'<div class="empty">'+L("Kein Zugang")+'</div>'};
-let ACCTWIRED=false;
+let ACCTWIRED=false;setTimeout(()=>wireAcctPage(),0);
 function wireAcctPage(){if(ACCTWIRED)return;ACCTWIRED=true;
   document.addEventListener("click",e=>{if(e.target.closest(".acpage"))onAcctClick(e)});
   document.addEventListener("submit",e=>{if(e.target.closest(".acpage"))onAcctSubmit(e)})}
@@ -925,7 +925,10 @@ async function onAcctClick(e){
     try{const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),auth.currentUser.email);msg.classList.add("ok");msg.textContent=L("Link zum Zurücksetzen gesendet an")+" "+auth.currentUser.email+". "+L("Schau auch im Spam-Ordner nach.")}
     catch(err){console.error(err);msg.textContent=errText(err)}b.disabled=false}
   else if(b.dataset.ac==="admin"){s.hidden=true;S.tab="admin";window.scrollTo(0,0);render()}
-  else if(b.dataset.ac==="signout"){s.hidden=true;if(S.tab==="acct")S.tab="plan";const {A,auth}=await fb();await A.signOut(auth)}
+  else if(b.dataset.ac==="signout"){b.disabled=true;s.hidden=true;S.tab="plan";store("tab","plan");
+    try{const {A,auth}=await fb();await A.signOut(auth)}catch(err){console.error(err)}
+    /* straight to the sign-in screen (e-mail + password) */
+    ME=null;MYPERMS=[];acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();render();showGate("login")}
 }
 async function onAcctSubmit(e){
   e.preventDefault();const f=e.target,msg=f.querySelector(".amsg"),btn=f.querySelector("button[type=submit]")||f.querySelector("button");msg.className="amsg";msg.textContent="";
