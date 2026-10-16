@@ -2548,7 +2548,7 @@ async function wxLoad(d){
     const j=await fetch(u).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()});
     WX[key]={at:Date.now(),p,ll,j,busy:false};try{localStorage.setItem("wx:"+key,JSON.stringify({at:Date.now(),ll,j}))}catch(_){}
   }catch(err){WX[key]=Object.assign({},WX[key],{busy:false,err:String(err&&err.message||err)})}
-  if(S.tab==="today")render();if(document.getElementById("wxpop"))wxPopup(d.date);
+  if(S.tab==="today"||S.tab==="plan")render();if(document.getElementById("wxpop"))wxPopup(d.date);
   return WX[key];
 }
 function wxGet(d){const p=wxPlace(d);if(!p)return null;const w=WX[d.date+"|"+p.town];if(!w||(!w.busy&&Date.now()-w.at>3600e3))wxLoad(d);
@@ -2559,6 +2559,9 @@ function wxTile(d){
   const c=dl.weather_code[0];
   return '<button type="button" class="ttile twx" data-wx="'+esc(d.date)+'" aria-label="'+esc(L("Wetterbericht"))+'"><b><span class="wxi">'+WXI(c)+'</span> '+Math.round(dl.temperature_2m_min[0])+'–'+Math.round(dl.temperature_2m_max[0])+'°</b><span>'+esc(w.p.town)+(dl.precipitation_probability_max[0]!=null?' · '+ICDROP(12)+dl.precipitation_probability_max[0]+'%':'')+'</span></button>';
 }
+/* compact weather chip for the schedule's day facts */
+window.wxFact=function(d){const w=wxGet(d);if(!w)return "";const dl=w.j&&w.j.daily;if(!dl||!dl.time||!dl.time.length)return "";
+  return '<button type="button" class="fact factw" data-wx="'+esc(d.date)+'" title="'+esc(L("Wetterbericht")+" · "+w.p.town)+'">'+WXI(dl.weather_code[0],14)+'<span class="v">'+Math.round(dl.temperature_2m_min[0])+'–'+Math.round(dl.temperature_2m_max[0])+'°'+(dl.precipitation_probability_max[0]!=null?'\u2009'+ICDROP(10)+dl.precipitation_probability_max[0]+'%':'')+'</span></button>'};
 function wxPopup(date){
   const d=(S.days||[]).find(x=>x.date===date);if(!d)return;const w=wxGet(d);if(!w)return;
   let o=document.getElementById("wxpop");if(!o){o=document.createElement("div");o.id="wxpop";o.className="a2hs";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o);
@@ -2604,7 +2607,7 @@ VIEWS.today=function(){
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
   try{if(me&&vok("mycal")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
-    h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'<button type="button" class="tmyall" data-tomy>'+esc(L("Alle"))+' ›</button></div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· '+ICCAR(13)+' '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+'</div>'}}catch(_){}
+    h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'<button type="button" class="tmyall" data-tomy>'+esc(L("Alle"))+' ›</button></div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· '+esc(L("Fahrer:in"))+': '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+'</div>'}}catch(_){}
   /* title of the (next) shooting day below my events */
   h+=thead;
   /* calls */
@@ -2613,13 +2616,13 @@ VIEWS.today=function(){
   if(myCall)tiles.push(['<b>'+esc(myCall.split(" · ")[0])+'</b>',L("Mein Call")+" · "+esc(myCall.split(" · ").slice(1).join(" · "))]);
   if(dp&&(dp.crewCall||dp.generalCall))tiles.push(['<b>'+esc(dp.crewCall||dp.generalCall)+'</b>',"Crew Call"]);
   if(dp&&dp.shootCall)tiles.push(['<b>'+esc(dp.shootCall)+'</b>',L("Drehbeginn")]);
-  if(!dp&&d.hours)tiles.push(['<b>'+esc(d.hours)+'</b>',L("Laut Planung: Drehzeit")]);
+  if(!dp&&d.hours)tiles.push(['<b>'+esc(d.hours)+'</b>',L("Drehzeit")]);
   if(dp&&dp.wrap)tiles.push(['<b>'+esc(dp.wrap)+'</b>',"Wrap"]);
   if(d.sr&&d.ss)tiles.push(['<b>'+esc(d.sr+"–"+d.ss)+'</b>',L("Sonnenzeit")]);
   /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
   const wxt=wxTile(d);
   /* drive from the crew hotel (+3 min) and the weather come last */
-  const drv=d.drive&&d.drive.min?'<div class="ttile tdrv" title="'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'"><b>'+ICCAR(20)+' '+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+'</span></div>':'';
+  const drv=d.drive&&d.drive.min?'<div class="ttile tdrv" title="'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'"><b>'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+'</span></div>':'';
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
   if(!dp&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
@@ -2649,7 +2652,13 @@ VIEWS.today=function(){
 };
 
 /* the app opens on «Today» (unless a link asks for another page) */
-if(!location.hash&&!window.__todayStart&&todayOn()){window.__todayStart=true;S.tab="today";try{render()}catch(_){}}
+/* the app opens on «Today» when it was not used for at least 2 hours (on start and when it comes back to the front) */
+const TODAY_AFTER=2*3600e3;
+const lastActive=()=>{try{return +(localStorage.getItem("lastActive")||0)}catch(_){return 0}};
+const markActive=()=>{try{localStorage.setItem("lastActive",String(Date.now()))}catch(_){}};
+if(!location.hash&&!window.__todayStart&&todayOn()){window.__todayStart=true;const la=lastActive();if(!la||Date.now()-la>=TODAY_AFTER){S.tab="today";try{render()}catch(_){}}}
+markActive();setInterval(()=>{if(document.visibilityState==="visible")markActive()},60e3);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){const la=lastActive();if(la&&Date.now()-la>=TODAY_AFTER&&todayOn()&&S.tab!=="today"){S.tab="today";scrollTo(0,0);render()}markActive()}else markActive()});
 /* ---------- 11) Protokoll: who changed what in the administration (roles, users, menus, settings, messages) ---------- */
 const AUDIT_COLS=["roles","userroles","admins","owners","invites","members","menus","config","broadcasts","starts","requests"];
 function auditSum(col,data,op){

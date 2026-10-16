@@ -704,7 +704,8 @@ const memo=(k,f)=>{if(MEMO.has(k))return MEMO.get(k);const v=f();MEMO.set(k,v);r
 try{const pu=JSON.parse(localStorage.getItem("pu")||"null");if(pu&&typeof pu==="object")S.pu={"1":!!pu["1"],"2":!!pu["2"],"3":!!pu["3"]}}catch(e){}
 try{const t=localStorage.getItem("tab");if(t)S.tab=({map:"loc",music:"plan"})[t]||t}catch(e){}
 /* the app always opens on «Heute» (unless a link asks for another page) */
-try{if(!location.hash&&localStorage.getItem("today")!=="0")S.tab="today"}catch(_){}
+/* «Today» when the app is opened again after at least 2 hours (otherwise the last page stays) */
+try{const la=+(localStorage.getItem("lastActive")||0);if(!location.hash&&localStorage.getItem("today")!=="0"&&(!la||Date.now()-la>=2*3600e3))S.tab="today"}catch(_){}
 
 function castChips(ids){
   const m=(S.meta&&S.meta.cast)||{};
@@ -1050,10 +1051,12 @@ function renderPlan(){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
     if(d.extras)f.push([L("Kompars:innen"),d.extras]);
     /* drive from the crew hotel: +3 min buffer; the route itself only when opened; shown next to the shooting time */
-    const dv=d.drive&&d.drive.min?'<details class="fact factd"><summary><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</span></summary><span class="fsub">'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'</span></details>':'';
+    const dv=d.drive&&d.drive.min?'<details class="fact factd"><summary><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc((d.drive.min+3)+"′"+(d.drive.km?"\u2009·\u2009"+Math.round(d.drive.km)+"\u2009km":""))+'</span></summary><span class="fsub">'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'</span></details>':'';
     /* the drive to the set sits right next to the shooting time */
     const fx=f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>');
     if(dv)fx.splice(d.hours?1:0,0,dv);
+    /* weather (website): compact chip after the drive, tap → report */
+    try{const wf=window.wxFact?window.wxFact(d):"";if(wf)fx.splice(d.hours?(dv?2:1):0,0,wf)}catch(_){}
     h+='<div class="facts">'+fx.join("")+'</div>';
   }
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
@@ -1488,7 +1491,9 @@ function fitRows(root){
 window.addEventListener("resize",()=>{clearTimeout(window.__fitT);window.__fitT=setTimeout(()=>{fitRows();fitRows(document.querySelector("header")||document);const sc=document.getElementById("scn");if(sc)fitRows(sc)},120)});
 function render(){
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form"))return} /* never wipe a form someone is typing in */
-  const tOn=tabsOn();if(!VIEWS[S.tab]||(ALLTABS.includes(S.tab)&&!tOn.includes(S.tab)))S.tab=tOn[0];
+  /* a page that is not available yet (e.g. before sign-in) is remembered and opened as soon as it is */
+  const tOn=tabsOn();if(S.want&&Date.now()-S.wantAt>30000)S.want=null;if(S.want&&VIEWS[S.want]&&(!ALLTABS.includes(S.want)||tOn.includes(S.want))){S.tab=S.want;S.want=null}
+  if(!VIEWS[S.tab]||(ALLTABS.includes(S.tab)&&!tOn.includes(S.tab))){if(!S.want&&!S.wantAt){S.want=S.tab;S.wantAt=Date.now()}S.tab=tOn[0]}
   const nb=document.querySelectorAll("nav.tabs button[data-tab]");nb.forEach(b=>{b.hidden=!tOn.includes(b.dataset.tab);b.style.order=String(tOn.indexOf(b.dataset.tab))});
   const nin=document.querySelector("nav.tabs .in");if(nin)nin.style.setProperty("--ntabs",tOn.length);
   const uo=unitsOn();document.body.classList.toggle("no-u2",uo.length<2);const noScr=window.SCRIPTON===false||!vok("script");document.body.classList.toggle("no-script",noScr);if(noScr){const sc=document.getElementById("scn");if(sc&&!sc.hidden)closeScene()}
@@ -1526,7 +1531,7 @@ function setOpen(btn,open){
 }
 function scallLabel(){const b=document.getElementById("scall");if(!b)return;const ks=[...document.querySelectorAll("[data-sckey]")].map(x=>x.dataset.sckey);const all=ks.length>0&&ks.every(k=>S.openSc[k]);b.setAttribute("aria-expanded",all);b.classList.toggle("on",all)}
 /* tapping the tab you are already on jumps back to today; switching tabs keeps the last chosen day */
-function goTab(tab){const again=S.tab===tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;if(again&&tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
+function goTab(tab){S.want=null;const again=S.tab===tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;if(again&&tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
 /* last chosen day (Schedule, Callsheet), page and open scenes are remembered; after 2 hours without use or a new sign-in it starts at today again */
 const VS_TTL=2*3600*1000;let VS_AT=Date.now();
 try{const v=JSON.parse(localStorage.getItem("viewstate")||"null");if(v&&Date.now()-(+v.at||0)<VS_TTL){if(v.day)S.day=v.day;if(v.dday)S.dday=v.dday;if(v.openSc&&typeof v.openSc==="object")S.openSc=v.openSc;if(v.tab)S.tab=v.tab;VS_AT=+v.at}}catch(_){}
