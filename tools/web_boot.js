@@ -122,6 +122,7 @@ Object.assign(I18N,{
  "Sucht über alles: Szenen, Rollen, Personen, Locations.":{fr:"Cherche partout : scènes, rôles, personnes, décors.",it:"Cerca ovunque: scene, ruoli, persone, location.",en:"Searches everything: scenes, roles, people, locations."},
  "Test an mich":{fr:"Test à moi",it:"Test a me",en:"Test to me"},
  "Tour gemacht":{fr:"Visite faite",it:"Tour fatto",en:"Tour done"},
+ "Keine Rolle":{fr:"Aucun rôle",it:"Nessun ruolo",en:"No role"},
  "Tour angefangen":{fr:"Visite commencée",it:"Tour iniziato",en:"Tour started"},
  "Tour offen":{fr:"Visite pas faite",it:"Tour non fatto",en:"Tour not done"},
  "Tour starten":{fr:"Lancer la visite",it:"Avvia il tour",en:"Start tour"},
@@ -171,6 +172,15 @@ Object.assign(I18N,{
  "Push-Glocke":{fr:"Cloche de notification",it:"Campanella notifiche",en:"Notification bell"},
  "Mit der Glocke schaltest du die Erinnerung für einzelne Termine aus oder ein.":{fr:"La cloche active ou désactive le rappel d'un rdv.",it:"Con la campanella attivi o disattivi il promemoria di un singolo appuntamento.",en:"The bell turns the reminder for a single appointment on or off."},
  "Hier stellst du ein, ob, wann und für welche Termine du erinnert wirst.":{fr:"Ici tu règles si, quand et pour quels rdv tu reçois un rappel.",it:"Qui imposti se, quando e per quali appuntamenti ricevere promemoria.",en:"Here you set whether, when and for which appointments you're reminded."},
+ "Termin in den Kalender":{fr:"Rdv dans le calendrier",it:"Appuntamento nel calendario",en:"Add to calendar"},
+ "Mit dem Kalender-Knopf übernimmst du einen Termin direkt in deinen Kalender (Handy oder Computer).":{fr:"Le bouton calendrier ajoute un rdv directement à ton calendrier (téléphone ou ordinateur).",it:"Con il pulsante calendario aggiungi un appuntamento al tuo calendario (telefono o computer).",en:"The calendar button adds an appointment straight to your calendar (phone or computer)."},
+ "E-Mail-Verteiler":{fr:"Liste de diffusion",it:"Lista e-mail",en:"Email list"},
+ "Der Brief-Knopf öffnet eine E-Mail an alle Teilnehmenden dieses Termins – praktisch für kurzfristige Infos.":{fr:"Le bouton enveloppe ouvre un e-mail à tous les participants de ce rdv – pratique pour les infos de dernière minute.",it:"Il pulsante busta apre un'e-mail a tutti i partecipanti – utile per info dell'ultimo minuto.",en:"The envelope button opens an email to everyone in this appointment – handy for short-notice info."},
+ "Die Crewliste nach Abteilungen.":{fr:"La liste de l'équipe par département.",it:"La lista crew per reparti.",en:"The crew list by department."},
+ "Mit Telefon und E-Mail – ein Tipp genügt zum Anrufen oder Schreiben.":{fr:"Avec téléphone et e-mail – un tap suffit pour appeler ou écrire.",it:"Con telefono ed e-mail – basta un tocco per chiamare o scrivere.",en:"With phone and email – one tap to call or write."},
+ "Kalender-Export":{fr:"Export calendrier",it:"Esporta nel calendario",en:"Calendar export"},
+ "«Alle in den Kalender» übernimmt alle deine Termine auf einmal; mit dem Kalender-Knopf bei jedem Termin einzeln.":{fr:"« Tout dans le calendrier » ajoute tous tes rdv d'un coup ; le bouton calendrier de chaque rdv les ajoute un par un.",it:"«Tutti nel calendario» aggiunge tutti gli appuntamenti in una volta; il pulsante calendario di ciascuno li aggiunge singolarmente.",en:"“All to calendar” adds all your appointments at once; the calendar button on each adds them one by one."},
+ "Deine Verwaltung:":{fr:"Ton administration :",it:"La tua gestione:",en:"Your admin area:"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -1091,15 +1101,17 @@ setInterval(()=>{try{chatFab()}catch(_){}},1500);
    the result (done/skip + date) is kept in the profile (members.tour/tourAt); «Mein Konto» starts it again ---- */
 const TOUR_STEPS=[
   {tab:"plan",sel:'nav.tabs [data-tab="plan"]',t:"Schedule",x:"Der Drehplan Tag für Tag: Szenen, Motive und Zeiten. Mit «Script» öffnest du eine Szene im Drehbuch, die Kamera zeigt Blocking-Fotos und -Filme."},
-  {tab:"plan",sel:"#view .stripwrap",t:"Tage wählen",x:"Wische durch die Tage: PREP, OFF, TRAVEL und die Drehtage D01, D02 … Heute ist hervorgehoben."},
-  {tab:"plan",sel:"#view .dayhead .pvb",t:"Anzeigeoptionen",x:"Blende im Drehplan ein oder aus, was du sehen willst: Info, Szenenbeschrieb, Cast, Adresse und Blocking. Deine Auswahl bleibt gespeichert."},
-  {tab:"plan",sel:"#view .dayhead .dpub",t:"1st / 2nd Unit",x:"Wähle, welche Units du siehst – zum Beispiel nur die 2nd Unit. Ist eine Unit an diesem Tag nicht im Einsatz, ist ihr Knopf blass."},
+  {tab:"plan",day:"shoot",sel:"#view .stripwrap",t:"Tage wählen",x:"Wische durch die Tage: PREP, OFF, TRAVEL und die Drehtage D01, D02 … Heute ist hervorgehoben."},
+  {tab:"plan",day:"shoot",sel:"#view .dayhead .pvb",t:"Anzeigeoptionen",x:"Blende im Drehplan ein oder aus, was du sehen willst: Info, Szenenbeschrieb, Cast, Adresse und Blocking. Deine Auswahl bleibt gespeichert."},
+  {tab:"plan",day:"shoot",sel:"#view .dayhead .dpub",t:"1st / 2nd Unit",x:"Wähle, welche Units du siehst – zum Beispiel nur die 2nd Unit. Ist eine Unit an diesem Tag nicht im Einsatz, ist ihr Knopf blass."},
+  {tab:"plan",day:"prep",sel:"#view .ppi .calbtn:not(.mailbtn)",t:"Termin in den Kalender",x:"Mit dem Kalender-Knopf übernimmst du einen Termin direkt in deinen Kalender (Handy oder Computer)."},
+  {tab:"plan",day:"prep",sel:"#view .ppi .mailbtn",t:"E-Mail-Verteiler",x:"Der Brief-Knopf öffnet eine E-Mail an alle Teilnehmenden dieses Termins – praktisch für kurzfristige Infos."},
   {tab:"dispo",sel:'nav.tabs [data-tab="dispo"]',t:"Callsheet",x:"Die Dispo des Drehtags: Crew Call, Drehbeginn, Wrap, Locations und Cast."},
   {tab:"dispo",sel:"#view .dpub",t:"Unit filtern",x:"Auch im Callsheet wählst du oben den Tag und filterst nach Unit."},
   {tab:"loc",sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
   {tab:"loc",sel:"#view .scall",up:1,t:"Optionen",x:"«Szenen» klappt alle Szenen auf oder zu; daneben blendest du Info und Adresse ein und filterst nach Unit."},
   {tab:"loc",sel:"#view input.search",t:"Suche",x:"Suche nach Motiv, Adresse oder Szene."},
-  {tab:"crew",sel:'nav.tabs [data-tab="crew"]',t:"Crew",x:"Die Crewliste nach Abteilungen – je nach Berechtigung mit Telefon und E-Mail."},
+  {tab:"crew",sel:'nav.tabs [data-tab="crew"]',t:"Crew",x:()=>L("Die Crewliste nach Abteilungen.")+(vok("phone")||vok("email")?" "+L("Mit Telefon und E-Mail – ein Tipp genügt zum Anrufen oder Schreiben."):"")},
   {tab:"crew",sel:"#view input.search",t:"Crew durchsuchen",x:"Suche nach Name, Funktion oder Abteilung. Mit «vCard» speicherst du einen Kontakt direkt im Telefon."},
   {tab:"crew",sel:"#view .admv",t:"Zusatzinfos",x:"Je nach Berechtigung: Essen, Geburtstage, Kontoinfos und alle Kontakte als VCF."},
   {tab:"script",sel:'nav.tabs [data-tab="script"]',t:"Script",x:"Das Drehbuch mit Suche."},
@@ -1109,15 +1121,18 @@ const TOUR_STEPS=[
   {tab:"info",sel:'nav.tabs [data-tab="info"]',t:"Info",x:"Allgemeine Infos zur Produktion und zur App."},
   {tab:"plan",sel:"#searchBtn",t:"Suche",x:"Sucht über alles: Szenen, Rollen, Personen, Locations."},
   {tab:"my",sel:"#myCalBtn",t:"Meine Termine",x:"Alle deine kommenden Termine an einem Ort – mit «In den Kalender» und der Glocke für Push-Nachrichten."},
+  {tab:"my",sel:"#view [data-mcall]",t:"Kalender-Export",x:"«Alle in den Kalender» übernimmt alle deine Termine auf einmal; mit dem Kalender-Knopf bei jedem Termin einzeln."},
   {tab:"my",sel:"#view .pbell",t:"Push-Glocke",x:"Mit der Glocke schaltest du die Erinnerung für einzelne Termine aus oder ein."},
   {tab:"acct",sel:"#acctBtn",t:"Mein Konto",x:"Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten."},
   {tab:"acct",sel:"#view .pushsec",t:"Push-Nachrichten",x:"Hier stellst du ein, ob, wann und für welche Termine du erinnert wirst."},
-  {tab:"plan",sel:"#admBtn",t:"App-Verwaltung",x:"Benutzer, Rollen, Dokumente und Einstellungen – nur mit Berechtigung sichtbar."},
+  {tab:"plan",sel:"#admBtn",t:"App-Verwaltung",x:()=>{const a=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))a.push(L("Benutzer"));if(isOwner())a.push(L("Rollen"));if(can("settings"))a.push(L("Dokumente"),L("Einstellungen"));return L("Deine Verwaltung:")+" "+a.join(", ")+"."}},
   {tab:"plan",sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
 ];
 const TOUR={i:-1,steps:[],el:null};
 const tourEl=st=>{let e=document.querySelector(st.sel);for(let k=0;e&&k<(st.up||0);k++)e=e.parentElement;if(!e||e.hidden||e.closest("[hidden]"))return null;const r=e.getBoundingClientRect();return r.width&&r.height?e:null};
-function tourShow(st){if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
+function tourDay(kind){const t=todayISO();if(kind==="shoot"){const sd=S.days.filter(x=>x.kind==="shoot");const d=sd.find(x=>x.date>=t)||sd[0];return d?d.id:null}
+  if(kind==="prep"){const pp=(S.prepro||[]).filter(d=>arr(d.items).some(i=>i.crew||i.cast));const d=pp.find(x=>x.date>=t)||pp[0];return d?"prep:"+d.date:null}return null}
+function tourShow(st){if(st.day){const id=tourDay(st.day);if(id&&S.day!==id){S.day=id;if(S.tab===st.tab)render()}}if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}else if(st.day)render();window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
 function tourDoneLocal(){try{return !!(localStorage.getItem("tourDone:"+(ME&&ME.uid))||localStorage.getItem("tour"))}catch(_){return false}}
 /* the tour starts by itself only once per person: marked right when it is offered (this device, the synced view settings and the profile) */
 async function tourMark(how){
@@ -1150,7 +1165,7 @@ function tourGo(i){
   if(i>=n){sp.hidden=true;c.className="tcard center";
     c.innerHTML='<h3>'+L("Fertig!")+'</h3><p>'+L("Viel Spass mit der App. Die Tour findest du jederzeit wieder unter «Mein Konto».")+'</p><div class="tbtns"><button type="button" class="pri" data-tour="done">'+L("Los geht's")+'</button></div>';return}
   const s=TOUR.steps[i];if(!tourShow(s)){const dir=i>=(TOUR.last==null?-1:TOUR.last)?1:-1;TOUR.steps.splice(i,1);return tourGo(dir>0?i:i-1)}TOUR.last=i;sp.hidden=false;c.className="tcard";
-  c.innerHTML='<div class="tprog">'+(i+1)+' / '+n+'</div><h3>'+esc(L(s.t))+'</h3><p>'+esc(L(s.x))+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><span></span>'+(i>0?'<button type="button" class="sec" data-tour="back">'+L("Zurück")+'</button>':'')+'<button type="button" class="pri" data-tour="next">'+L(i===n-1?"Fertig":"Weiter")+'</button></div>';
+  c.innerHTML='<div class="tprog">'+(i+1)+' / '+n+'</div><h3>'+esc(L(s.t))+'</h3><p>'+esc(typeof s.x==="function"?s.x():L(s.x))+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><span></span>'+(i>0?'<button type="button" class="sec" data-tour="back">'+L("Zurück")+'</button>':'')+'<button type="button" class="pri" data-tour="next">'+L(i===n-1?"Fertig":"Weiter")+'</button></div>';
   tourPlace();try{c.querySelector(".pri").focus({preventScroll:true})}catch(_){}
 }
 function tourPlace(){
@@ -1625,7 +1640,7 @@ function userList(rows,vis,o){
   const chips='<div class="ufil" role="group">'+F.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>'<button type="button" data-uf="'+k+'" aria-pressed="'+(ADM.uf===k)+'">'+L(t)+' <span>'+ADM.cnt[k]+'</span></button>').join("")+'</div>';
   const card=r=>{
     const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.act===r.email,nm=r.name||cp.name||"";
-    const badge=o.isAdm(r.email)?'<span class="ust adm">'+L(isOwn?"Owner":"Admin")+'</span>':(o.roleOf(r.email)?'<span class="ust role">'+esc(o.roleName(o.roleOf(r.email)))+'</span>':'');
+    const badge=o.isAdm(r.email)?'<span class="ust adm">'+L(isOwn?"Owner":"Admin")+'</span>':(o.roleOf(r.email)?'<span class="ust role">'+esc(o.roleName(o.roleOf(r.email)))+'</span>':'<span class="ust norole">'+esc(L("Keine Rolle"))+'</span>');
     const acts=[
       o.cEd&&(own||!isOwn)?'<button data-adm="edit" data-em="'+esc(r.email)+'">✎ '+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'',
       own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'',
