@@ -525,3 +525,9 @@ html body #view .ttiles,html body #view .dtiles,html body #view .catgrid{display
 html body #view .ttiles>*{flex:1 1 140px;min-width:0}
 html body #view .dtiles>*{flex:1 1 100px;min-width:0}
 html body #view .catgrid>*{flex:1 1 150px;min-width:0}
+/* line icons (weather, car, drop, pin) in the accent colour */
+.lic{color:var(--accent);vertical-align:-.18em;flex:none}
+.ttile b .lic{vertical-align:-.2em;margin-right:2px}
+.ttile span .ldrop{vertical-align:-.15em}
+.wxbig .lic{display:block}
+.wxr .lwx{vertical-align:middle}
