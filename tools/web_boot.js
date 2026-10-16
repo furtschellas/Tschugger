@@ -1723,9 +1723,8 @@ function acctInner(){
     grp.acc.push(el.outerHTML)});
   const subs=ACSUBS.filter(([k])=>grp[k].length);if(!subs.some(([k])=>k===ACSUB))ACSUB=subs.length?subs[0][0]:"pro";
   const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-acsub="'+k+'" aria-selected="'+(ACSUB===k)+'">'+esc(L(t))+'</button>').join("")+'</nav>';
-  /* the account part also shows who is signed in */
-  const accHead=ACSUB==="acc"?head.filter(h=>/acwho/.test(h)).join(""):"";
-  return head.filter(h=>/myhead/.test(h)).join("")+nav+accHead+grp[ACSUB].join("");
+  /* who is signed in: always shown, above the groups */
+  return head.filter(h=>/myhead/.test(h)).join("")+head.filter(h=>/acwho/.test(h)).join("")+nav+grp[ACSUB].join("");
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-acsub]");if(!b)return;ACSUB=b.dataset.acsub;try{localStorage.setItem("acsub",ACSUB)}catch(_){}render();scrollTo(0,0)});
 /* «Mein Konto» is its own page; only the first-start profile (onboarding) stays a dialog */
