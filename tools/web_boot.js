@@ -147,6 +147,13 @@ Object.assign(I18N,{
  "Termine":{fr:"Rendez-vous",it:"Appuntamenti",en:"Appointments"},
  "Benutzer":{fr:"Utilisateurs",it:"Utenti",en:"Users"},
  "App":{fr:"App",it:"App",en:"App"},
+ "Online":{fr:"En ligne",it:"Online",en:"Online"},
+ "gerade aktiv":{fr:"actif maintenant",it:"attivo ora",en:"active now"},
+ "Gerade aktiv":{fr:"Actifs maintenant",it:"Attivi ora",en:"Active now"},
+ "Gerade ist niemand aktiv.":{fr:"Personne n'est actif en ce moment.",it:"Al momento nessuno è attivo.",en:"Nobody is active right now."},
+ "aktiv vor {n} Min.":{fr:"actif il y a {n} min",it:"attivo {n} min fa",en:"active {n} min ago"},
+ "aktiv vor {n} Std.":{fr:"actif il y a {n} h",it:"attivo {n} h fa",en:"active {n} h ago"},
+ "zuletzt aktiv":{fr:"dernière activité",it:"ultima attività",en:"last active"},
  "Telefon":{fr:"Téléphone",it:"Telefono",en:"Phone"},
  "Sortieren":{fr:"Trier",it:"Ordina",en:"Sort"},
  "Abteilung":{fr:"Département",it:"Reparto",en:"Department"},
@@ -750,6 +757,20 @@ async function maybeWelcome(){
     d.remove();WELCOME_OPEN=false;showMsg(L("Danke – viel Spass mit der App!"),3000)});
   document.body.appendChild(d);
 }
+/* ---- presence: signed-in members leave a «last seen» mark every 2 minutes while the app is open (shown to admins) ---- */
+let SEENT=null,SEENAT=0;
+async function markSeen(){
+  if(!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
+  try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{lastSeen:F.serverTimestamp()})}catch(err){console.warn("seen",err&&err.code||err)}
+}
+setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
+function startSeen(){clearInterval(SEENT);SEENAT=0;markSeen();SEENT=setInterval(markSeen,120e3)}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")markSeen()});
+const seenMs=m=>{const j=m&&m.lastSeen;return j?(j.seconds?j.seconds*1000:(j.toMillis?j.toMillis():Date.parse(j)||0)):0};
+const isOnline=m=>Date.now()-seenMs(m)<4*60e3;
+function seenText(m){const t=seenMs(m);if(!t)return "";const d=Date.now()-t;if(d<4*60e3)return L("gerade aktiv");
+  const mi=Math.round(d/60e3);if(mi<60)return L("aktiv vor {n} Min.").replace("{n}",mi);const h=Math.round(mi/60);if(h<24)return L("aktiv vor {n} Std.").replace("{n}",h);
+  return L("zuletzt aktiv")+" "+new Date(t).toLocaleDateString("de-CH")}
 let START=null;
 async function afterSignIn(u){
   ME=u;
@@ -761,7 +782,7 @@ async function afterSignIn(u){
     if(isOffline(err)&&S.days.length){hideGate();acctButton(true);showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
-  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();
+  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();
   const prof=MEMBER||{};
   let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}
   if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){LANG=prof.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
@@ -1084,7 +1105,7 @@ document.addEventListener("change",async e=>{const sl=e.target.closest("select[d
 /* user list: one compact card per person, filter chips with counts, actions folded away */
 const initials=n=>String(n||"?").split(/[\s@._-]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
 function userList(rows,vis,o){
-  const F=[["all","Alle"],["act","Aktiv"],["inv","Eingeladen"],["off","Gesperrt"],["adm","Mit Rolle"]];
+  const F=[["all","Alle"],["online","Online"],["act","Aktiv"],["inv","Eingeladen"],["off","Gesperrt"],["adm","Mit Rolle"]];
   const chips='<div class="ufil" role="group">'+F.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>'<button type="button" data-uf="'+k+'" aria-pressed="'+(ADM.uf===k)+'">'+L(t)+' <span>'+ADM.cnt[k]+'</span></button>').join("")+'</div>';
   const card=r=>{
     const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.act===r.email,nm=r.name||cp.name||"";
@@ -1100,15 +1121,17 @@ function userList(rows,vis,o){
     ].filter(Boolean);
     const hasActs=acts.length||(own&&!isOwn);
     return '<div class="ucard'+(r.m&&r.m.active!==true?' blocked':'')+(open?' open':'')+'">'+
-      '<div class="uhd"><span class="uav" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b>'+badge+o.st(r)+'</div>'+
-      '<div class="usub">'+(cp.role?esc(cp.role)+' · ':'')+'<span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?' · '+esc(r.m.lang.toUpperCase()):'')+'</div>'+userInfo(r)+'</div>'+
+      '<div class="uhd"><span class="uav'+(r.m&&isOnline(r.m)?' on':'')+'" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b>'+badge+o.st(r)+'</div>'+
+      '<div class="usub">'+(cp.role?esc(cp.role)+' · ':'')+'<span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?' · '+esc(r.m.lang.toUpperCase()):'')+(r.m&&seenText(r.m)?' · <span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'')+'</div>'+userInfo(r)+'</div>'+
       (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" aria-label="'+esc(L("Aktionen"))+'" title="'+esc(L("Aktionen"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
       (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
       (open?'<div class="ubody">'+(own&&!isOwn?o.roleSel(r):'')+(o.cEd&&ADM.edit===r.email?editForm(r):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
     '</div>'};
   const SORTS=[["first","Vorname"],["name","Nachname"],["dept","Abteilung"],["status","Status"],["role","Rolle"],["new","Neueste zuerst"],["email","E-Mail"]];
   const sortSel='<label class="usort">'+L("Sortieren")+' <select data-usort>'+SORTS.map(([k,t])=>'<option value="'+k+'"'+((ADM.sort||"first")===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>';
+  const onl=rows.filter(r=>r.m&&isOnline(r.m)).map(r=>r.name||(crewPerson(r.email)||{}).name||r.email);
   return '<div class="admins ulist"><h3>'+L("Benutzer:innen")+' <span class="ust">'+rows.length+'</span></h3>'+
+    '<p class="uonline"><span class="odot" aria-hidden="true"></span>'+(onl.length?'<b>'+esc(L("Gerade aktiv"))+' ('+onl.length+'):</b> '+esc(onl.join(", ")):esc(L("Gerade ist niemand aktiv.")))+'</p>'+
     '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'</div>'+
     (vis.length?'<div class="ucards">'+vis.map(card).join("")+'</div>':'<p class="ahint">'+L("Keine Treffer.")+'</p>')+'</div>';
 }
@@ -1137,7 +1160,7 @@ VIEWS.admin=function(){
    const dep=r=>{for(const g of S.crew)for(const p of arr(g.people))if(lc(p.email)===r.email)return g.dept||"";return "~"};
    const by={name:(a,b)=>String(last(a)).localeCompare(last(b),LANG)||String(nmOf(a)).localeCompare(nmOf(b),LANG),first:(a,b)=>String(nmOf(a)).localeCompare(nmOf(b),LANG),status:(a,b)=>stOf(a)-stOf(b),role:(a,b)=>rk(a)-rk(b),new:(a,b)=>ts(b)-ts(a),dept:(a,b)=>dep(a).localeCompare(dep(b),LANG),email:(a,b)=>a.email.localeCompare(b.email)};
    const f=by[ADM.sort]||by.first;rows.sort((a,b)=>f(a,b)||by.first(a,b))}
-  const q=lc(ADM.q);const UF={all:()=>true,act:r=>r.m&&r.m.active===true,inv:r=>!r.m,off:r=>r.m&&r.m.active!==true,adm:r=>ADMINS.includes(r.email)||ADM.adm.includes(r.email)||!!ADM.ur[r.email]};
+  const q=lc(ADM.q);const UF={online:r=>!!r.m&&isOnline(r.m),all:()=>true,act:r=>r.m&&r.m.active===true,inv:r=>!r.m,off:r=>r.m&&r.m.active!==true,adm:r=>ADMINS.includes(r.email)||ADM.adm.includes(r.email)||!!ADM.ur[r.email]};
   if(!UF[ADM.uf])ADM.uf="all";
   const vis=rows.filter(r=>(!q||(r.email+" "+r.name+" "+((crewPerson(r.email)||{}).role||"")).toLowerCase().includes(q))&&UF[ADM.uf](r));
   ADM.cnt=Object.fromEntries(Object.keys(UF).map(k=>[k,rows.filter(UF[k]).length]));

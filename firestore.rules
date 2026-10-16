@@ -126,7 +126,7 @@ service cloud.firestore {
         && request.resource.data.email == myEmail());
       allow update: if verified() && request.auth.uid == uid
         && resource.data.active == true
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'lastSeen'])
         && request.resource.data.email == myEmail()
         && request.resource.data.active == true;
     }
