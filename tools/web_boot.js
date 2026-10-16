@@ -154,6 +154,12 @@ Object.assign(I18N,{
  "Gerade ist niemand aktiv.":{fr:"Personne n'est actif en ce moment.",it:"Al momento nessuno è attivo.",en:"Nobody is active right now."},
  "aktiv vor {n} Min.":{fr:"actif il y a {n} min",it:"attivo {n} min fa",en:"active {n} min ago"},
  "aktiv vor {n} Std.":{fr:"actif il y a {n} h",it:"attivo {n} h fa",en:"active {n} h ago"},
+ "zuletzt online":{fr:"dernière connexion",it:"ultimo accesso",en:"last online"},
+ "heute":{fr:"aujourd'hui",it:"oggi",en:"today"},
+ "gestern":{fr:"hier",it:"ieri",en:"yesterday"},
+ "vor {n} Min.":{fr:"il y a {n} min",it:"{n} min fa",en:"{n} min ago"},
+ "noch nie online":{fr:"jamais en ligne",it:"mai online",en:"never online"},
+ "Zuletzt online":{fr:"Dernière connexion",it:"Ultimo accesso",en:"Last online"},
  "zuletzt aktiv":{fr:"dernière activité",it:"ultima attività",en:"last active"},
  "Standard":{fr:"Standard",it:"Standard",en:"Default"},
  "Gilt für alle ohne andere Rolle, auch für neue Benutzer:innen.":{fr:"S'applique à tous sans autre rôle, y compris les nouveaux utilisateurs.",it:"Vale per tutti senza altro ruolo, anche per i nuovi utenti.",en:"Applies to everyone without another role, including new users."},
@@ -860,9 +866,10 @@ function startSeen(){clearInterval(SEENT);SEENAT=0;markSeen();SEENT=setInterval(
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")markSeen()});
 const seenMs=m=>{const j=m&&m.lastSeen;return j?(j.seconds?j.seconds*1000:(j.toMillis?j.toMillis():Date.parse(j)||0)):0};
 const isOnline=m=>Date.now()-seenMs(m)<4*60e3;
-function seenText(m){const t=seenMs(m);if(!t)return "";const d=Date.now()-t;if(d<4*60e3)return L("gerade aktiv");
-  const mi=Math.round(d/60e3);if(mi<60)return L("aktiv vor {n} Min.").replace("{n}",mi);const h=Math.round(mi/60);if(h<24)return L("aktiv vor {n} Std.").replace("{n}",h);
-  return L("zuletzt aktiv")+" "+new Date(t).toLocaleDateString("de-CH")}
+function seenText(m){const t=seenMs(m);if(!t)return m&&m.active===true?L("noch nie online"):"";const d=Date.now()-t;if(d<4*60e3)return L("gerade aktiv");
+  const mi=Math.round(d/60e3);if(mi<60)return L("zuletzt online")+" "+L("vor {n} Min.").replace("{n}",mi);
+  const dt=new Date(t),hm=dt.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"}),day=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime(),dd=Math.round((day(new Date())-day(dt))/864e5);
+  return L("zuletzt online")+" "+(dd===0?L("heute")+" "+hm:dd===1?L("gestern")+" "+hm:dt.toLocaleDateString("de-CH")+" "+hm)}
 let START=null;
 async function afterSignIn(u){
   ME=u;
@@ -1243,7 +1250,7 @@ function userList(rows,vis,o){
       (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
       (open?'<div class="ubody">'+(own&&!isOwn?o.roleSel(r):'')+(o.cEd&&ADM.edit===r.email?editForm(r):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
     '</div>'};
-  const SORTS=[["first","Vorname"],["name","Nachname"],["dept","Abteilung"],["status","Status"],["role","Rolle"],["new","Neueste zuerst"],["email","E-Mail"]];
+  const SORTS=[["first","Vorname"],["name","Nachname"],["dept","Abteilung"],["status","Status"],["role","Rolle"],["new","Neueste zuerst"],["seen","Zuletzt online"],["email","E-Mail"]];
   const sortSel='<label class="usort">'+L("Sortieren")+' <select data-usort>'+SORTS.map(([k,t])=>'<option value="'+k+'"'+((ADM.sort||"first")===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>';
   const onl=rows.filter(r=>r.m&&isOnline(r.m)).map(r=>r.name||(crewPerson(r.email)||{}).name||r.email);
   return '<div class="admins ulist"><h3>'+L("Benutzer:innen")+' <span class="ust">'+rows.length+'</span></h3>'+
@@ -1274,7 +1281,7 @@ VIEWS.admin=function(){
    const stOf=r=>r.m?(r.m.active===true?0:2):1,rk=r=>ADMINS.includes(r.email)?0:ADM.adm.includes(r.email)?1:ADM.ur[r.email]?2:3;
    const ts=r=>{const j=r.m&&r.m.joinedAt;return j?(j.seconds?j.seconds*1000:Date.parse(j)||0):0};
    const dep=r=>{for(const g of S.crew)for(const p of arr(g.people))if(lc(p.email)===r.email)return g.dept||"";return "~"};
-   const by={name:(a,b)=>String(last(a)).localeCompare(last(b),LANG)||String(nmOf(a)).localeCompare(nmOf(b),LANG),first:(a,b)=>String(nmOf(a)).localeCompare(nmOf(b),LANG),status:(a,b)=>stOf(a)-stOf(b),role:(a,b)=>rk(a)-rk(b),new:(a,b)=>ts(b)-ts(a),dept:(a,b)=>dep(a).localeCompare(dep(b),LANG),email:(a,b)=>a.email.localeCompare(b.email)};
+   const by={name:(a,b)=>String(last(a)).localeCompare(last(b),LANG)||String(nmOf(a)).localeCompare(nmOf(b),LANG),first:(a,b)=>String(nmOf(a)).localeCompare(nmOf(b),LANG),status:(a,b)=>stOf(a)-stOf(b),role:(a,b)=>rk(a)-rk(b),new:(a,b)=>ts(b)-ts(a),seen:(a,b)=>seenMs(b.m)-seenMs(a.m),dept:(a,b)=>dep(a).localeCompare(dep(b),LANG),email:(a,b)=>a.email.localeCompare(b.email)};
    const f=by[ADM.sort]||by.first;rows.sort((a,b)=>f(a,b)||by.first(a,b))}
   const q=lc(ADM.q);const UF={online:r=>!!r.m&&isOnline(r.m),all:()=>true,act:r=>r.m&&r.m.active===true,inv:r=>!r.m,off:r=>r.m&&r.m.active!==true,adm:r=>ADMINS.includes(r.email)||ADM.adm.includes(r.email)||!!ADM.ur[r.email]};
   if(!UF[ADM.uf])ADM.uf="all";
