@@ -63,6 +63,7 @@ Object.assign(I18N,{
  "den Schlüssel der Crew-Daten bekommst du von Claude im Chat.":{fr:"la clé des données d’équipe, tu la reçois de Claude dans le chat.",it:"la chiave dei dati crew te la dà Claude nella chat.",en:"you get the crew data key from Claude in the chat."},
  "Alle vier in GitHub eintragen:":{fr:"Saisir les quatre dans GitHub :",it:"Inserire tutte e quattro in GitHub:",en:"Enter all four in GitHub:"},
  "Ersten Lauf starten:":{fr:"Lancer le premier passage :",it:"Avviare la prima esecuzione:",en:"Start the first run:"},
+ "Alle Texte, die die App verschickt oder anzeigt. Platzhalter: {vorname} {name} {email} {app} {passwort} {disclaimer}. Du bearbeitest jeweils nur die gewählte Sprache; ohne eigenen Text gilt die Standardfassung.":{fr:"Tous les textes que l'app envoie ou affiche. Variables : {vorname} {name} {email} {app} {passwort} {disclaimer}. Tu modifies uniquement la langue choisie ; sans texte propre, la version standard s'applique.",it:"Tutti i testi che l'app invia o mostra. Segnaposto: {vorname} {name} {email} {app} {passwort} {disclaimer}. Modifichi solo la lingua scelta; senza testo proprio vale la versione standard.",en:"All texts the app sends or shows. Placeholders: {vorname} {name} {email} {app} {passwort} {disclaimer}. You only edit the selected language; without your own text the default applies."},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -762,30 +763,61 @@ const DOCDEF={
  startpw:{t:"Startpasswort-Mail",use:"«Per Mail schicken» nach «Startpasswort erzeugen».",
   subject:"Dein Zugang zur TSCHUGGER Crew-App",
   body:"Hallo {vorname}\n\ndein Konto für die Crew-App von TSCHUGGER Tigerblood ist bereit:\n{app}\n\nE-Mail: {email}\nStartpasswort: {passwort}\n\nBeim ersten Anmelden legst du ein eigenes Passwort fest.\n\n{disclaimer}\n\nBis bald am Set!"}};
-const docRaw=k=>{const c=(window.DOCS||{})[k];const d=DOCDEF[k];return {subject:c&&typeof c.subject==="string"&&c.subject.trim()?c.subject:(d.subject||""),body:c&&typeof c.body==="string"&&c.body.trim()?c.body:d.body,custom:!!(c&&(c.body||c.subject))}};
-function docGet(k,v){v=v||{};const r=docRaw(k);
-  const map=Object.assign({app:location.origin+location.pathname,disclaimer:k==="disclaimer"?"":docRaw("disclaimer").body,vorname:"",name:"",email:"",passwort:""},v);
-  const fill=t=>String(t||"").replace(/\{(\w+)\}/g,(m,x)=>x in map?map[x]:m).replace(/\n{3,}/g,"\n\n").replace(/^Hallo \n/,"Hallo\n");
+
+/* default texts in the other languages (German defaults are above) */
+const DOCI18N={
+ disclaimer:{fr:{body:"Remarque : l'app est une version de test BETA. Toutes les données affichées sont sans garantie. La production et les développeurs n'assument AUCUNE garantie quant à l'exactitude, l'exhaustivité ou l'actualité des données. Seuls les documents officiels de la production (plan de tournage, callsheet, dispo) font foi."},
+  it:{body:"Nota: l'app è una versione di prova BETA. Tutti i dati visualizzati sono senza garanzia. La produzione e gli sviluppatori NON si assumono alcuna garanzia sulla correttezza, completezza o attualità dei dati. Fanno fede sempre i documenti ufficiali della produzione (piano di lavorazione, callsheet, dispo)."},
+  en:{body:"Note: the app is a BETA test version. All data shown is without guarantee. The production and the developers accept NO liability for the data being correct, complete or up to date. The official production documents (schedule, call sheet, dispo) are always binding."}},
+ welcome:{fr:{subject:"Bienvenue dans l'app TSCHUGGER !",body:"Ravi·e de t'accueillir. Tu trouves ici le plan de tournage, les callsheets, la liste de l'équipe, les décors et le scénario de TSCHUGGER Tigerblood au même endroit.\n\n{disclaimer}\n\nTous les contenus sont confidentiels et réservés à l'équipe – merci de ne pas les diffuser.\n\nUne erreur ou une suggestion ? Contacte Stefan Künzler."},
+  it:{subject:"Benvenuta/o nell'app TSCHUGGER!",body:"Che bello averti a bordo. Qui trovi piano di lavorazione, callsheet, lista crew, location e sceneggiatura di TSCHUGGER Tigerblood in un unico posto.\n\n{disclaimer}\n\nTutti i contenuti sono riservati e destinati solo alla crew – per favore non diffonderli.\n\nHai trovato un errore o hai un desiderio? Rivolgiti a Stefan Künzler."},
+  en:{subject:"Welcome to the TSCHUGGER app!",body:"Great to have you on board. Here you'll find the shooting schedule, call sheets, crew list, locations and script of TSCHUGGER Tigerblood in one place.\n\n{disclaimer}\n\nAll content is confidential and for the crew only – please do not share it.\n\nFound a mistake or have a wish? Get in touch with Stefan Künzler."}},
+ invite:{fr:{subject:"Ton accès à l'app TSCHUGGER",body:"Bonjour {vorname}\n\nTu as accès à l'app de l'équipe de TSCHUGGER Tigerblood : plan de tournage, callsheets, liste de l'équipe, décors et scénario.\n\nComment faire :\n1. {app}\n2. « Créer un compte » avec exactement cette adresse e-mail : {email}\n3. Ouvre l'e-mail de confirmation et tape sur le lien – regarde aussi dans les spams.\n\n{disclaimer}\n\nÀ bientôt sur le plateau !"},
+  it:{subject:"Il tuo accesso all'app TSCHUGGER",body:"Ciao {vorname}\n\nhai accesso all'app della crew di TSCHUGGER Tigerblood: piano di lavorazione, callsheet, lista crew, location e sceneggiatura.\n\nCome fare:\n1. {app}\n2. «Crea account» con esattamente questo indirizzo e-mail: {email}\n3. Apri l'e-mail di conferma e tocca il link – controlla anche lo spam.\n\n{disclaimer}\n\nA presto sul set!"},
+  en:{subject:"Your access to the TSCHUGGER app",body:"Hi {vorname}\n\nyou now have access to the TSCHUGGER Tigerblood crew app: schedule, call sheets, crew list, locations and script.\n\nHow it works:\n1. {app}\n2. “Create account” with exactly this email address: {email}\n3. Open the confirmation email and tap the link – please also check your spam folder.\n\n{disclaimer}\n\nSee you on set!"}},
+ approved:{fr:{subject:"Ton accès à l'app TSCHUGGER est activé",body:"Bonjour {vorname}\n\nton accès à l'app de l'équipe de TSCHUGGER Tigerblood est activé. Connecte-toi ici avec cette adresse ({email}) :\n{app}\n\n{disclaimer}\n\nÀ bientôt sur le plateau !"},
+  it:{subject:"Il tuo accesso all'app TSCHUGGER è attivo",body:"Ciao {vorname}\n\nil tuo accesso all'app della crew di TSCHUGGER Tigerblood è attivo. Accedi qui con questo indirizzo ({email}):\n{app}\n\n{disclaimer}\n\nA presto sul set!"},
+  en:{subject:"Your access to the TSCHUGGER app is active",body:"Hi {vorname}\n\nyour access to the TSCHUGGER Tigerblood crew app is active. Sign in here with this address ({email}):\n{app}\n\n{disclaimer}\n\nSee you on set!"}},
+ startpw:{fr:{subject:"Ton accès à l'app TSCHUGGER",body:"Bonjour {vorname}\n\nton compte pour l'app de l'équipe de TSCHUGGER Tigerblood est prêt :\n{app}\n\nE-mail : {email}\nMot de passe initial : {passwort}\n\nÀ la première connexion, tu choisis ton propre mot de passe.\n\n{disclaimer}\n\nÀ bientôt sur le plateau !"},
+  it:{subject:"Il tuo accesso all'app TSCHUGGER",body:"Ciao {vorname}\n\nil tuo account per l'app della crew di TSCHUGGER Tigerblood è pronto:\n{app}\n\nE-mail: {email}\nPassword iniziale: {passwort}\n\nAl primo accesso scegli una password tua.\n\n{disclaimer}\n\nA presto sul set!"},
+  en:{subject:"Your access to the TSCHUGGER app",body:"Hi {vorname}\n\nyour account for the TSCHUGGER Tigerblood crew app is ready:\n{app}\n\nEmail: {email}\nStart password: {passwort}\n\nWhen you sign in for the first time you choose your own password.\n\n{disclaimer}\n\nSee you on set!"}}};
+const DOCLANGS=["de","fr","it","en"];
+/* text of a document in one language: own text (config/app.docs[k][lang]; German also from the older docs[k].subject/body) or the default */
+const docRaw=(k,lang)=>{lang=DOCLANGS.includes(lang)?lang:LANG;const c=(window.DOCS||{})[k]||{};const d=DOCDEF[k];
+  const own=lang==="de"?(c.de&&(c.de.body||c.de.subject)?c.de:(c.body||c.subject?{subject:c.subject,body:c.body}:null)):(c[lang]&&(c[lang].body||c[lang].subject)?c[lang]:null);
+  const def=lang==="de"?{subject:d.subject,body:d.body}:Object.assign({subject:d.subject,body:d.body},(DOCI18N[k]||{})[lang]||{});
+  return {subject:own&&own.subject&&String(own.subject).trim()?own.subject:(def.subject||""),body:own&&own.body&&String(own.body).trim()?own.body:def.body,custom:!!own}};
+function docGet(k,v,lang){v=v||{};lang=lang||v.lang||LANG;const r=docRaw(k,lang);
+  const map=Object.assign({app:location.origin+location.pathname,disclaimer:k==="disclaimer"?"":docRaw("disclaimer",lang).body,vorname:"",name:"",email:"",passwort:""},v);
+  const fill=t=>String(t||"").replace(/\{(\w+)\}/g,(m,x)=>x in map?map[x]:m).replace(/\n{3,}/g,"\n\n").replace(/^(Hallo|Bonjour|Ciao|Hi) \n/,"$1\n");
   return {subject:fill(r.subject),body:fill(r.body)}}
 const mailto=(em,k,v)=>{const d=docGet(k,Object.assign({email:em},v));return "mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(d.subject)+"&body="+encodeURIComponent(d.body)};
 function docsSec(){
-  return '<div class="admins docs"><h3>'+L("Dokumente")+'</h3><p class="ahint">'+L("Alle Texte, die die App verschickt oder anzeigt. Platzhalter: {vorname} {name} {email} {app} {passwort} {disclaimer}. Eigene Texte gelten für alle Sprachen; ohne eigenen Text wird die Standardfassung verwendet.")+'</p>'+
-    Object.keys(DOCDEF).map(k=>{const d=DOCDEF[k],r=docRaw(k);
+  const dl=DOCLANGS.includes(ADM.doclang)?ADM.doclang:(DOCLANGS.includes(LANG)?LANG:"de");
+  return '<div class="admins docs"><h3>'+L("Dokumente")+'</h3><p class="ahint">'+L("Alle Texte, die die App verschickt oder anzeigt. Platzhalter: {vorname} {name} {email} {app} {passwort} {disclaimer}. Du bearbeitest jeweils nur die gewählte Sprache; ohne eigenen Text gilt die Standardfassung.")+'</p>'+
+    '<div class="smodes doclangs" role="group">'+DOCLANGS.map(l=>'<button type="button" data-doclang="'+l+'" aria-pressed="'+(l===dl)+'">'+l.toUpperCase()+'</button>').join("")+'</div>'+
+    Object.keys(DOCDEF).map(k=>{const d=DOCDEF[k],r=docRaw(k,dl);
       return '<details class="docd" data-sec="doc-'+k+'"'+(SECS["doc-"+k]?' open':'')+'><summary><b>'+esc(L(d.t))+'</b>'+(r.custom?' <span class="ust role">'+L("angepasst")+'</span>':'')+'</summary>'+
-        '<form class="docf" data-doc="'+k+'"><p class="ahint">'+esc(L(d.use))+'</p>'+(d.subject!==undefined?'<label>'+L(k==="welcome"?"Titel":"Betreff")+'<input name="ds" maxlength="200" value="'+esc(r.subject)+'"></label>':'')+
+        '<form class="docf" data-doc="'+k+'" data-dl="'+dl+'"><p class="ahint">'+esc(L(d.use))+'</p>'+(d.subject!==undefined?'<label>'+L(k==="welcome"?"Titel":"Betreff")+'<input name="ds" maxlength="200" value="'+esc(r.subject)+'"></label>':'')+
         '<label>'+L("Text")+'<textarea name="db" rows="'+(k==="disclaimer"?5:12)+'">'+esc(r.body)+'</textarea></label>'+
-        '<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Speichern")+'</button>'+(r.custom?'<button type="button" class="lnk" data-docreset="'+k+'">'+L("Standard wiederherstellen")+'</button>':'')+(k!=="welcome"&&k!=="disclaimer"&&ME?'<a class="lnk" href="'+esc(mailto(ME.email,k,{vorname:"Test",name:"Test Person",passwort:"Abc123xyz"}))+'">'+L("Test an mich")+'</a>':'')+'</div></form></details>'}).join("")+
+        '<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Speichern")+'</button>'+(r.custom?'<button type="button" class="lnk" data-docreset="'+k+'" data-dl="'+dl+'">'+L("Standard wiederherstellen")+'</button>':'')+(k!=="welcome"&&k!=="disclaimer"&&ME?'<a class="lnk" href="'+esc(mailto(ME.email,k,{vorname:"Test",name:"Test Person",passwort:"Abc123xyz",lang:dl}))+'">'+L("Test an mich")+'</a>':'')+'</div></form></details>'}).join("")+
     '<p class="ahint">'+L("Bestätigungs-Mail, Passwort-Zurücksetzen und Anmelde-Link verschickt Firebase. Deren Texte änderst du in der Firebase-Konsole unter Authentication → Templates.")+'</p></div>';
 }
+const docDef=(k,lang)=>lang==="de"?{subject:DOCDEF[k].subject||"",body:DOCDEF[k].body||""}:Object.assign({subject:DOCDEF[k].subject||"",body:DOCDEF[k].body||""},(DOCI18N[k]||{})[lang]||{});
+/* store one language of one document; German also clears the older language-less fields */
+async function docStore(k,lang,val){const {F,db}=await fb();const part={[lang]:val};if(lang==="de")Object.assign(part,{body:"",subject:""});
+  await F.setDoc(F.doc(db,"config","app"),{docs:{[k]:part}},{merge:true});
+  const cur=Object.assign({},(window.DOCS||{})[k]||{},part);window.DOCS=Object.assign({},window.DOCS,{[k]:cur});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-doclang]");if(!b)return;ADM.doclang=b.dataset.doclang;render()});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form.docf");if(!f)return;e.preventDefault();if(!can("settings"))return;
-  const k=f.dataset.doc,msg=f.querySelector(".amsg"),btn=f.querySelector("button[type=submit]");btn.disabled=true;msg.className="amsg";msg.textContent="";
-  const val={body:String(f.db.value||"").replace(/\r/g,"")};if(f.ds)val.subject=String(f.ds.value||"").trim();
-  if(val.body.trim()===(DOCDEF[k].body||"").trim()&&(val.subject===undefined||val.subject===(DOCDEF[k].subject||"")))val.body="",val.subject="";
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{[k]:val}},{merge:true});window.DOCS=Object.assign({},window.DOCS,{[k]:val});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
-    document.activeElement&&document.activeElement.blur&&document.activeElement.blur();showMsg(L("Gespeichert."),2500);render()}
+  const k=f.dataset.doc,lang=DOCLANGS.includes(f.dataset.dl)?f.dataset.dl:"de",msg=f.querySelector(".amsg"),btn=f.querySelector("button[type=submit]");btn.disabled=true;msg.className="amsg";msg.textContent="";
+  const val={body:String(f.db.value||"").replace(/\r/g,""),subject:f.ds?String(f.ds.value||"").trim():""};const df=docDef(k,lang);
+  if(val.body.trim()===df.body.trim()&&(!f.ds||val.subject===df.subject))val.body="",val.subject="";
+  try{await docStore(k,lang,val);
+    document.activeElement&&document.activeElement.blur&&document.activeElement.blur();showMsg(L("Gespeichert.")+" ("+lang.toUpperCase()+")",2500);render()}
   catch(err){btn.disabled=false;msg.textContent=(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err))}});
-document.addEventListener("click",async e=>{const b=e.target.closest("[data-docreset]");if(!b||!can("settings"))return;const k=b.dataset.docreset;
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{[k]:{body:"",subject:""}}},{merge:true});window.DOCS=Object.assign({},window.DOCS,{[k]:{body:"",subject:""}});render();showMsg(L("Standardtext wiederhergestellt."),2500)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-docreset]");if(!b||!can("settings"))return;const k=b.dataset.docreset,lang=DOCLANGS.includes(b.dataset.dl)?b.dataset.dl:"de";
+  try{await docStore(k,lang,{body:"",subject:""});render();showMsg(L("Standardtext wiederhergestellt.")+" ("+lang.toUpperCase()+")",2500)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
 /* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */
 const WELCOME_VER="1";
 const WTXT={
@@ -1072,14 +1104,14 @@ function upSec(){
   else if(d.state==="error")st='<p class="upst err">● '+L("Fehler beim letzten Lauf")+' ('+esc(when(d.at))+'): '+esc(d.msg||"")+'</p>';
   else st='<p class="upst warn">● '+L("Noch nicht eingerichtet")+(d.missing&&d.missing.length?' – '+L("es fehlen")+': '+d.missing.map(m=>'<code>'+esc(m)+'</code>').join(", "):'')+'</p>';
   const ok=d&&d.state==="ok";
-  return '<details class="admins asetd upsec" data-sec="upsec"'+(SECS.upsec||!ok?' open':'')+'><summary>'+L("Automatische Aktualisierung (Dropbox → Webseite)")+'</summary>'+st+'<div class="setbar inup"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div>'+
+  return '<details class="admins asetd upsec" data-sec="upsec"'+(SECS.upsec||!ok?' open':'')+'><summary>'+L("Automatische Aktualisierung (Dropbox → Webseite)")+'</summary>'+st+
     '<p class="ahint">'+L("GitHub liest die Dropbox zweimal pro Stunde (nur lesend), wandelt neue Drehpläne, Crewlisten, Dispos und das Drehbuch um und veröffentlicht sie verschlüsselt auf der Webseite – ohne dass ein Computer laufen muss.")+'</p>'+
     (ok?'':'<ol class="upsteps"><li>'+L("Dropbox-Zugang (nur lesend) erzeugen:")+' <a href="dropbox-setup.html" target="_blank" rel="noopener">dropbox-setup.html</a> → <code>DROPBOX_APP_KEY</code>, <code>DROPBOX_REFRESH_TOKEN</code></li>'+
       '<li>'+L("Claude-API-Schlüssel erstellen:")+' <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> → <code>ANTHROPIC_API_KEY</code></li>'+
       '<li><code>CREW_KEY</code> – '+L("den Schlüssel der Crew-Daten bekommst du von Claude im Chat.")+'</li>'+
       '<li>'+L("Alle vier in GitHub eintragen:")+' <a href="'+GH+'/settings/secrets/actions" target="_blank" rel="noopener">Settings → Secrets → Actions</a></li>'+
       '<li>'+L("Ersten Lauf starten:")+' <a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">Actions → «Run workflow»</a></li></ol>')+
-    '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p></details>';
+    '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p><div class="setbar inup"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div></details>';
 }
 /* owner only: account with a one-time start password, created in a second Firebase instance so the owner stays signed in */
 function genPw(){const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=new Uint32Array(12);crypto.getRandomValues(r);
