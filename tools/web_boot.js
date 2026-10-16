@@ -294,6 +294,9 @@ Object.assign(I18N,{
  "z. B. Früchte, Sandwiches um 16:00":{en:"e.g. fruit, sandwiches at 4 pm",fr:"p. ex. fruits, sandwichs à 16h",it:"p. es. frutta, panini alle 16",hi:"जैसे फल, सैंडविच 16:00 बजे"},
  "laut Callsheet":{en:"according to callsheet",fr:"selon la feuille de service",it:"secondo l\u2019ordine del giorno",hi:"Callsheet के अनुसार"},
  "noch kein Callsheet – ganze Crew":{en:"no callsheet yet – whole crew",fr:"pas encore de feuille de service – toute l\u2019équipe",it:"nessun ordine del giorno – tutta la troupe",hi:"अभी Callsheet नहीं – पूरी Crew"},
+ "Rollen pflegen":{en:"Assign roles",fr:"Attribuer les rôles",it:"Assegnare i ruoli",hi:"भूमिकाएँ सौंपें"},
+ "Rollen bearbeiten":{en:"Edit roles",fr:"Modifier les rôles",it:"Modificare i ruoli",hi:"भूमिकाएँ संपादित करें"},
+ "Für die App-Verwaltung fehlt die Berechtigung.":{en:"You don't have permission for app management.",fr:"Tu n'as pas l'autorisation pour la gestion de l'app.",it:"Non hai l'autorizzazione per la gestione dell'app.",hi:"ऐप प्रबंधन की अनुमति नहीं है।"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -694,7 +697,7 @@ const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
 /* permissions, grouped by main topic (topic in capitals, short labels so they fit on one line on phones) */
-const PERMS=[["view.plan","Drehplan sehen","Drehplan"],["view.prep","Prep sehen","Drehplan"],["view.dispo","Callsheet sehen","Drehplan"],["view.script","Drehbuch sehen","Drehbuch"],["view.blocking","Blocking sehen","Drehbuch"],["view.crew","Crewliste sehen","Crewliste"],["view.phone","Telefon sehen","Crewliste"],["view.email","E-Mail sehen","Crewliste"],["contacts.extra","Externe Kontakte sehen","Crewliste"],["crew.food","Essen sehen","Crewliste"],["crew.bday","Geburtstage sehen","Crewliste"],["crew.vcf","VCF exportieren","Crewliste"],["view.mycal","Meine Termine sehen","Termine"],["mycal.all","Alle Termine sehen","Termine"],["push.send","Push-Nachrichten senden","Termine"],["users.view","Benutzer sehen","Benutzer"],["users.edit","Benutzer ändern","Benutzer"],["users.invite","Benutzer einladen","Benutzer"],["users.requests","Anfragen freischalten","Benutzer"],["settings","Einstellungen ändern","App"]];
+const PERMS=[["view.plan","Drehplan sehen","Drehplan"],["view.prep","Prep sehen","Drehplan"],["view.dispo","Callsheet sehen","Drehplan"],["view.script","Drehbuch sehen","Drehbuch"],["view.blocking","Blocking sehen","Drehbuch"],["view.crew","Crewliste sehen","Crewliste"],["view.phone","Telefon sehen","Crewliste"],["view.email","E-Mail sehen","Crewliste"],["contacts.extra","Externe Kontakte sehen","Crewliste"],["crew.food","Essen sehen","Crewliste"],["crew.bday","Geburtstage sehen","Crewliste"],["crew.vcf","VCF exportieren","Crewliste"],["view.mycal","Meine Termine sehen","Termine"],["mycal.all","Alle Termine sehen","Termine"],["push.send","Push-Nachrichten senden","Termine"],["users.view","Benutzer sehen","Benutzer"],["users.edit","Benutzer ändern","Benutzer"],["users.invite","Benutzer einladen","Benutzer"],["users.requests","Anfragen freischalten","Benutzer"],["roles.assign","Rollen pflegen","Benutzer"],["roles.edit","Rollen bearbeiten","Benutzer"],["settings","Einstellungen ändern","App"]];
 const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
 const ADMIN_DEFAULT=PERMS.map(x=>x[0]).filter(p=>p!=="settings");
 let MYPERMS=[],MYROLE="",ADMINPERMS=ADMIN_DEFAULT.slice();
@@ -702,7 +705,9 @@ const can=p=>isOwner()||(isAdmin()&&ADMINPERMS.includes(p))||MYPERMS.includes(p)
 /* the gear (App-Verwaltung) only with the permission «Einstellungen ändern» */
 /* lunch menus: only admins/owners and people with the catering role */
 window.canMenu=()=>!!(ME&&(isAdmin()||/cater/i.test(MYROLE||"")));
-const canAdm=()=>isOwner()||can("settings");
+/* roles: «Rollen bearbeiten» = create/change/delete roles (not the admin role), «Rollen pflegen» = give people a role (not admin/owner) */
+window.canRoleEdit=()=>isAdmin()||can("roles.edit");window.canRoleAssign=()=>isAdmin()||can("roles.assign");
+const canAdm=()=>isOwner()||["settings","users.view","users.invite","users.requests","users.edit","roles.edit","roles.assign"].some(p=>can(p));   /* gear = App-Verwaltung: anyone with one of its permissions */
 /* what someone sees: without a role everything as before; with a role (or as admin) only the areas the role allows */
 window.viewOK=k=>{if(!ME||isOwner())return true;if(!isAdmin()&&!MYROLE){if(["plan","script","blocking"].includes(k))return false;return k in window.PUBV?window.PUBV[k]===true:true}return can("view."+k)};
 window.canPerm=can;
@@ -1657,7 +1662,7 @@ function acctButton(on){
     g.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="reqdot" aria-hidden="true"></span>';
     const r=$("#refresh");r.parentNode.insertBefore(g,r);g.addEventListener("click",()=>{S.tab="admin";S.srcOpen=false;window.scrollTo(0,0);render()})}
   g.setAttribute("aria-label",L("App-Verwaltung"));g.title=L("App-Verwaltung");g.hidden=!(on&&canAdm());
-  {const r=$("#refresh");if(r)r.classList.toggle("admhide",!!(on&&canAdm()))} /* admins find «Aktualisieren» in App-Verwaltung → Einstellungen */
+  {const r=$("#refresh");if(r)r.classList.toggle("admhide",!!(on&&(isOwner()||can("settings"))))} /* admins find «Aktualisieren» in App-Verwaltung → Einstellungen */
   if(on&&can("users.requests"))checkRequests();
 }
 const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password'));
@@ -1948,10 +1953,10 @@ async function migrateCrew(){
   catch(err){console.warn("crew migration",err&&err.code||err)}
 }
 /* role picker (owner): Benutzer:in, Admin or one of the custom roles */
-const canRole=e=>!!e&&!ROOT_OWNERS.includes(e)&&!(ME&&lc(ME.email)===e)&&(isOwner()||(isAdmin()&&!ADMINS.includes(e)));
+const canRole=e=>!!e&&!ROOT_OWNERS.includes(e)&&!(ME&&lc(ME.email)===e)&&(isOwner()||(isAdmin()&&!ADMINS.includes(e))||(can("roles.assign")&&!ADMINS.includes(e)&&!ADM.adm.includes(e)));
 const roleOf=e=>{if(ADMINS.includes(e))return "owner";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
 const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).name||"");
-const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Keine Rolle (eingeschränkt)")+'</option>'+(isOwner()?'<option value="owner"'+(roleOf(r.email)==="owner"?' selected':'')+'>'+L("Owner")+'</option>':'')+'<option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>'+ADM.roles.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(x=>'<option value="'+esc(x.id)+'"'+(roleOf(r.email)===x.id?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join("")+'</select></label>';
+const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Keine Rolle (eingeschränkt)")+'</option>'+(isOwner()?'<option value="owner"'+(roleOf(r.email)==="owner"?' selected':'')+'>'+L("Owner")+'</option>':'')+(isAdmin()?'<option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>':'')+ADM.roles.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(x=>'<option value="'+esc(x.id)+'"'+(roleOf(r.email)===x.id?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join("")+'</select></label>';
 function editForm(r,withRole){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
   return (withRole&&canRole(r.email)?'<div class="aerole">'+roleSel(r)+'</div>':'')+'<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
@@ -1977,7 +1982,7 @@ function rolesSec(){
   const roles=(ADM.roles||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG));
   const pplLbl=id=>cnt(id)+' '+L(cnt(id)===1?"Person":"Personen");
   const row=(id,name,perms,fixedName)=>{const open=ADM.redit===id;
-    return '<div class="arole'+(open?' open':'')+'"><div class="arh"><div class="arn"><b>'+esc(name)+(id==="crew"?' <span class="ust role">'+L("Standard")+'</span>':'')+'</b><small>'+(id==="crew"?L("Wird neuen Benutzer:innen automatisch zugewiesen.")+' ':'')+(perms.length?perms.length+' '+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+' · '+pplLbl(id)+'</small></div><button type="button" class="pillbtn" data-redit="'+esc(id)+'">'+L(open?"Schliessen":"Bearbeiten")+'</button></div>'+
+    return '<div class="arole'+(open?' open':'')+'"><div class="arh"><div class="arn"><b>'+esc(name)+(id==="crew"?' <span class="ust role">'+L("Standard")+'</span>':'')+'</b><small>'+(id==="crew"?L("Wird neuen Benutzer:innen automatisch zugewiesen.")+' ':'')+(perms.length?perms.length+' '+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+' · '+pplLbl(id)+'</small></div>'+(canRoleEdit()&&(id!=="admin"||isAdmin())?'<button type="button" class="pillbtn" data-redit="'+esc(id)+'">'+L(open?"Schliessen":"Bearbeiten")+'</button>':'')+'</div>'+
       (open?'<form class="arolef" data-role="'+esc(id)+'">'+(fixedName?'<input type="hidden" name="rn" value="'+esc(name)+'">':'<label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required value="'+esc(name)+'"></label>')+permBoxes(perms)+
         '<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Speichern")+'</button>'+(id==="crew"?'':id==="admin"?'<button type="button" class="lnk" data-rreset>'+L("Standard wiederherstellen")+'</button>':'<button type="button" class="lnk" data-rdel="'+esc(id)+'">'+L("Rolle löschen")+'</button>')+'</div></form>':'')+'</div>'};
   return '<div class="admins"><h3>'+L("Rollen")+'</h3><p class="ahint">'+L("Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person alle Drehdaten, die Crewliste, das Drehbuch und das Blocking, aber keine Verwaltung. Mit Rolle sieht sie nur die Bereiche, die die Rolle erlaubt.")+'</p>'+
@@ -1985,7 +1990,7 @@ function rolesSec(){
     row("admin",L("Admin"),ADM.adminPerms||ADMIN_DEFAULT,true)+
     roles.map(ro=>row(ro.id,ro.name||ro.id,arr(ro.perms),false)).join("")+
     (ADM.redit==="new"?'<form class="arolef new" data-role=""><h4>'+L("Neue Rolle")+'</h4><label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'"></label>'+permBoxes(VIEWPERMS)+'<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button><button type="button" class="lnk" data-redit="new">'+L("Abbrechen")+'</button></div></form>':
-      '<button type="button" class="abtn" data-redit="new">+ '+L("Neue Rolle")+'</button>')+'</div>'+permAccessSec();
+      (canRoleEdit()?'<button type="button" class="abtn" data-redit="new">+ '+L("Neue Rolle")+'</button>':''))+'</div>'+permAccessSec();
 }
 /* who has which permission: every option can be opened and lists the people (owners, admins, roles; people without a role where allowed) */
 function permAccessSec(){
@@ -2001,19 +2006,19 @@ function permAccessSec(){
       return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]?' open':'')+'><summary><span>'+esc(L(t))+'</span><b class="pacn">'+w.length+'</b></summary>'+
         (w.length?'<ul class="paccl">'+w.map(([e,r])=>'<li><span>'+esc(nameOf(e))+'</span><span class="ust role">'+esc(r)+'</span></li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+'</details>'}).join("")).join("")+'</div>';
 }
-document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&isAdmin()){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
-  if(e.target.closest("[data-rreset]")&&isAdmin()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
-document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!isAdmin())return;
+document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&canRoleEdit()&&(b.dataset.redit!=="admin"||isAdmin())){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
+  if(e.target.closest("[data-rreset]")&&canRoleEdit()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
+document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!canRoleEdit()||(f.dataset.role==="admin"&&!isAdmin()))return;
   const name=String(f.rn.value||"").trim().slice(0,40),perms=readBoxes(f,"rp").filter(p=>PERMS.some(x=>x[0]===p));if(!name)return;
   let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
   const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});ADM.redit="";showMsg(L("Rolle gespeichert."),2500);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();await admLoad()}
   catch(err){if(btn)btn.disabled=false;console.error(err);{const m=f.querySelector(".amsg");if(m){m.className="amsg";m.textContent=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}}showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),9000)}});
-document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!isAdmin())return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!canRoleEdit())return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
   if(!confirmSafe(L("Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.").replace("{r}",ro.name||id)))return;
   try{const {F,db}=await fb();for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)await F.deleteDoc(F.doc(db,"userroles",em));await F.deleteDoc(F.doc(db,"roles",id));showMsg(L("Rolle gelöscht."),2500);await admLoad()}
   catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
-document.addEventListener("change",async e=>{const sl=e.target.closest("select[data-urole]");if(!sl||!isAdmin())return;e.stopPropagation();const em=sl.dataset.urole,v=sl.value;if(!canRole(em)||(v==="owner"&&!isOwner())){render();return}
+document.addEventListener("change",async e=>{const sl=e.target.closest("select[data-urole]");if(!sl||!canRoleAssign())return;e.stopPropagation();const em=sl.dataset.urole,v=sl.value;if(!canRole(em)||(v==="owner"&&!isOwner())||(v==="admin"&&!isAdmin())){render();return}
   /* applied right away in the list (no full reload); written in the background, undone on error. Owners are managed by owners only */
   const prev={ur:ADM.ur[em],adm:ADM.adm.includes(em),own:ADMINS.includes(em)};
   const setLocal=(own,adm,ur)=>{const k=ADMINS.indexOf(em);if(own&&k<0)ADMINS.push(em);if(!own&&k>=0)ADMINS.splice(k,1);ADM.own=(ADM.own||[]).filter(x=>x!==em);if(own)ADM.own.push(em);ADM.adm=ADM.adm.filter(x=>x!==em);if(adm)ADM.adm.push(em);if(ur)ADM.ur[em]=ur;else delete ADM.ur[em]};
@@ -2074,7 +2079,7 @@ document.addEventListener("change",e=>{const sl=e.target.closest("select[data-us
 try{ADM.sub=localStorage.getItem("admsub")||"users"}catch(_){ADM.sub="users"}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
 VIEWS.admin=function(){
-  if(!canAdm())return '<div class="empty">'+L("Für die App-Verwaltung fehlt die Berechtigung «Einstellungen ändern».")+'</div>';
+  if(!canAdm())return '<div class="empty">'+L("Für die App-Verwaltung fehlt die Berechtigung.")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>60000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
   if(!ADM.loaded){admLoad().catch(err=>{console.error(err);showMsg(L("Liste der Benutzer:innen konnte nicht geladen werden:")+" "+(err.message||err),6000)});return '<div class="empty">'+L("Lade Benutzer:innen …")+'</div>'}
   const memBy={};ADM.mem.forEach(m=>memBy[m.email]=m);
@@ -2117,7 +2122,7 @@ VIEWS.admin=function(){
     '<p class="ahint"><b>'+L("Benutzer:innen ohne Rolle")+'</b> – '+L("Personen ohne Rolle sehen weder Drehplan, Drehbuch noch Blocking. Hier kannst du ihnen zusätzlich freigeben:")+'</p><div class="chk">'+
       [["pp","phone","Telefonnummern"],["pe","email","E-Mail-Adressen"],["pm","mycal","Meine Termine"]].map(([n,k,t])=>'<label class="ck"><input form="setform" type="checkbox" name="'+n+'"'+(window.PUBV[k]!==false?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>'+'<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input form="setform" class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'">'+(typeof chatSetSec==="function"?chatSetSec():'')+sv)+
     grp("push","Push-Nachrichten",pushStatusSec())+grp("src","Quellen",srcInner())+(own?grp("bk","Backup",bkSec()):''):(own?grp("up","Aktualisieren",upSec())+grp("src","Quellen",srcInner())+grp("bk","Backup",bkSec()):'');
-  const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(isAdmin())SUBS.push(["roles","Rollen"]);if(can("settings"))SUBS.push(["docs","Dokumente"],["set","Einstellungen"]);
+  const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(canRoleEdit()||canRoleAssign())SUBS.push(["roles","Rollen"]);if(can("settings"))SUBS.push(["docs","Dokumente"],["set","Einstellungen"]);
   if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
   const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>'<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'">'+(t==="Benutzerverwaltung"?'<span class="lgl">'+esc(L(t))+'</span><span class="sml">'+esc(L("Benutzer"))+'</span>':esc(L(t)))+'</button>').join("")+'</nav>':'';

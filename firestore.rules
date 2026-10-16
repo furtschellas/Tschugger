@@ -53,16 +53,21 @@ service cloud.firestore {
 
     match /roles/{id} {
       allow read: if signedIn();
-      allow write: if isAdmin()
+      // Rollen anlegen/ändern/löschen: Admins, oder wer «Rollen bearbeiten» hat (nicht die Admin-Rolle)
+      allow write: if (isAdmin() || (can('roles.edit') && id != 'admin'))
         && (request.resource == null || (request.resource.data.keys().hasOnly(['name', 'perms', 'at'])
             && request.resource.data.name is string && request.resource.data.name.size() <= 40
             && request.resource.data.perms is list && request.resource.data.perms.size() <= 40));
     }
     match /userroles/{email} {
       allow get: if (verified() && myEmail() == email) || isAdmin();
-      allow list: if isAdmin();
+      allow list: if isAdmin() || can('roles.assign') || can('roles.edit');
       allow write: if ((isOwner() && !isRoot(email)) || (isAdmin() && !ownerEmail(email))) && email != myEmail()
         && (request.resource == null || request.resource.data.keys().hasOnly(['role', 'at']));
+      // «Rollen pflegen»: Rollen zuweisen, aber nicht an Owner oder Admins und nicht sich selbst
+      allow write: if can('roles.assign') && email != myEmail() && !ownerEmail(email)
+        && !exists(/databases/$(database)/documents/admins/$(email))
+        && (request.resource == null || (request.resource.data.keys().hasOnly(['role', 'at']) && request.resource.data.role != 'admin'));
       // wer einladen darf, gibt neuen Benutzer:innen automatisch die Rolle «Crew»
       allow create: if can('users.invite') && !ownerEmail(email)
         && request.resource.data.keys().hasOnly(['role', 'at']) && request.resource.data.role == 'crew';
