@@ -689,6 +689,26 @@ def main():
                 days = res.get("days") if isinstance(res, dict) else None
                 if isinstance(days, list) and days:
                     for d in days: d["id"] = d.get("date") or d.get("id")
+                    # days from today on that the new version no longer contains (e.g. today, when the new week starts tomorrow)
+                    # come from the previous version, marked with their source
+                    import zoneinfo; today = datetime.datetime.now(zoneinfo.ZoneInfo("Europe/Zurich")).date().isoformat(); have = {d.get("date") for d in days}
+                    prevsrc = (meta.get("prepro") or {}).get("source") or ""
+                    for d in data.get("prepro") or []:
+                        if d.get("date") and d["date"] >= today and d["date"] not in have:
+                            days.append(dict(d, older=d.get("older") or prevsrc)); have.add(d["date"])
+                    if today not in have:   # still nothing for today: look in older weekly schedules of the folder (also «z OLD»)
+                        try:
+                            olds = [e for e in pf + [x for x in dbx.list_path(ROOT3D + "/11_Planning Prep Rehearsals/z OLD") if x["tag"] == "file" and x["name"].lower().endswith(".pdf")]
+                                    if e["id"] != f["id"] and re.search(r"(?i)weekly|wochen", e["name"])]
+                            for oe in sorted(olds, key=stand, reverse=True)[:2]:
+                                r2 = claude([pdf_block(dbx.download(oe["id"]))],
+                                    "Gib aus dieser Wochenplanung NUR den Tag %s als JSON-Objekt {\"days\": [...]} zurück, in derselben Struktur wie: %s (leere Liste, wenn der Tag fehlt; der Wochentag im PDF ist massgebend)." % (today, json.dumps({"days": days[:1]}, ensure_ascii=False)[:8000]), 8000)
+                                od = [x for x in (r2.get("days") if isinstance(r2, dict) else None) or [] if x.get("date") == today]
+                                if od:
+                                    od[0]["id"] = today; od[0]["older"] = oe["name"]; days.append(od[0]); have.add(today)
+                                    log("Prep-Wochenplanung: heutiger Tag aus älterer Version", oe["name"]); break
+                        except Exception as ex2:
+                            log("Ältere Wochenplanung nicht lesbar:", str(ex2)[:120])
                     data["prepro"] = sorted(days, key=lambda d: d.get("date", ""))
                     pm = res.get("meta") or {}; pm["source"] = f["name"]; meta["prepro"] = pm
                     changed = True; log("Prep-Wochenplanung:", len(days), "Tage")
