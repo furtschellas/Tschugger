@@ -2494,7 +2494,7 @@ function chgDetect(){
   /* newest wins for the same scene and kind */
   const merged=out.concat(keep.filter(c=>!out.some(o=>o.kind===c.kind&&o.sc===c.sc&&o.u===c.u&&o.date===c.date)));
   chgSave(merged);
-  try{if(document.visibilityState==="visible")showMsg(L("Drehplan geändert")+": "+out.length+" "+L(out.length===1?"Änderung":"Änderungen")+" – "+L("siehe «Heute»"),6000)}catch(_){}
+  try{if(document.visibilityState==="visible"&&vok("plan"))showMsg(L("Drehplan geändert")+": "+out.length+" "+L(out.length===1?"Änderung":"Änderungen")+" – "+L("siehe «Heute»"),6000)}catch(_){}
 }
 function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem("chgseen:v1")||0);return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
 /* used by the schedule (itemHTML): mark a changed scene */
@@ -2516,7 +2516,7 @@ function offDays(){const d=todayDay();if(!d)return [];const ds=(S.days||[]).filt
 /* offline: no photos – only the blocking PDF pages and the floorplans, for all shooting days */
 const offAuto=()=>{try{return localStorage.getItem("offline")!=="0"}catch(_){return true}};
 async function offlinePrep(force){
-  if(OFF.busy||!ME||navigator.onLine===false||!S.meta)return;
+  if(OFF.busy||!ME||navigator.onLine===false||!S.meta||!(vok("blocking")||vok("plan")))return;
   if(!force&&!offAuto())return; /* switched off in the profile: only on request */
   const st=offState(),files=new Set();
   for(const b of arr(S.meta.blocking))for(const m of (typeof bmed==="function"?bmed(b):arr(b.media)))if(m&&m.g==="pdf"&&m.f)files.add(m.f);
@@ -2637,7 +2637,9 @@ VIEWS.today=function(){
   const d=todayDay(),t=todayISO();
   if(!d)return '<section class="today"><h2 class="pgt">'+L("Heute")+'</h2><p class="ghint">'+L("Keine kommenden Drehtage.")+'</p></section>';
   const isToday=d.date===t,dt=new Date(d.date+"T12:00:00");
-  const dp=(S.dispos||[]).find(x=>x&&x.date===d.date)||null;
+  /* only what the person may see: schedule parts need «Drehplan sehen», callsheet parts «Callsheet sehen» */
+  const canPlan=vok("plan"),canDispo=vok("dispo");
+  const dp=canDispo?((S.dispos||[]).find(x=>x&&x.date===d.date)||null):null;
   const card=(cls,title,body)=>body?'<div class="tcard '+cls+'"><div class="tch">'+title+'</div>'+body+'</div>':'';
   const thead='<div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+".")+'</span></div>';
   let h='<section class="today">';
@@ -2653,39 +2655,39 @@ VIEWS.today=function(){
   if(myCall)tiles.push(['<b>'+esc(myCall.split(" · ")[0])+'</b>',L("Mein Call")+" · "+esc(myCall.split(" · ").slice(1).join(" · "))]);
   if(dp&&(dp.crewCall||dp.generalCall))tiles.push(['<b>'+esc(dp.crewCall||dp.generalCall)+'</b>',"Crew Call"]);
   if(dp&&dp.shootCall)tiles.push(['<b>'+esc(dp.shootCall)+'</b>',L("Drehbeginn")]);
-  if(!dp&&d.hours)tiles.push(['<b>'+esc(d.hours)+'</b>',L("Drehzeit")]);
+  if(!dp&&d.hours&&canPlan)tiles.push(['<b>'+esc(d.hours)+'</b>',L("Drehzeit")]);
   if(dp&&dp.wrap)tiles.push(['<b>'+esc(dp.wrap)+'</b>',"Wrap"]);
   if(d.sr&&d.ss)tiles.push(['<b>'+esc(d.sr+"–"+d.ss)+'</b>',L("Sonnenzeit")]);
   /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
-  const wxt=wxTile(d);
+  const wxt=canPlan?wxTile(d):"";
   /* drive from the crew hotel (+3 min, over 20 min +15 %) and the weather come last */
   /* tap → route in Google Maps from the crew hotel to the first location */
-  const drv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
+  const drv=canPlan&&d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
     const url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(d.drive.from||"Hotel")+"&destination="+encodeURIComponent(dest);
     const here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(dest); /* no origin = current location */
     return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from:d.drive.from||"Hotel",to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′")+(d.drive.km?'<small class="tkm"> · '+Math.round(d.drive.km)+' km</small>':'')+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'})():'';
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
-  if(!dp&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
+  if(!dp&&canDispo&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
-  const first=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));
+  const first=canPlan?arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc)):null;
   if(first){let ad="";try{ad=addrForItem(first)}catch(_){ad=first.loc}
     h+=card("tloc",esc(L("Erste Location")),'<div class="tbig">'+esc(first.set||first.loc)+'</div>'+(ad&&!/^tba$/i.test(ad)?'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>':''))}
   /* menu */
   try{const mn=window.menuFor?window.menuFor(d.date,"all"):"";if(mn)h+=card("tmenu",esc(L("Mittagessen")),mn)}catch(_){}
   /* scenes */
-  const scs=[];for(const [u,its] of unitItems(d))if(u==="1"||hasU(d,u))its.forEach(it=>{if(it.sc)scs.push([u,it])});
+  const scs=[];if(canPlan)for(const [u,its] of unitItems(d))if(u==="1"||hasU(d,u))its.forEach(it=>{if(it.sc)scs.push([u,it])});
   if(scs.length)h+=card("tscs",esc(L("Szenen"))+' <small>'+scs.length+'</small>','<ul class="tsclist">'+scs.map(([u,it])=>{const cg=window.chgFor(d.date,u,it.sc);
     return '<li'+(cg?' class="chg"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset" title="'+esc(it.set||"")+'">'+esc(String(it.set||"").replace(/^VALAIS\s*[–-]\s*/i,""))+(u!=="1"?' <span class="ust">'+esc(UNAME[u])+'</span>':'')+(cg?'<span class="chgtxt">'+esc(cg)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
   /* my events */
   /* changes */
-  const cl=chgList();
-  h+='<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(cl.some(c=>c.unread)?' <span class="chgdot">'+cl.filter(c=>c.unread).length+' '+esc(L("neu"))+'</span>':'')+'</div>'+
+  const cl=canPlan?chgList():[];
+  if(canPlan)h+='<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(cl.some(c=>c.unread)?' <span class="chgdot">'+cl.filter(c=>c.unread).length+' '+esc(L("neu"))+'</span>':'')+'</div>'+
     (cl.length?'<ul class="chglist">'+cl.map(c=>'<li'+(c.unread?' class="unread"':'')+'><span class="cd">'+esc(dmy(c.date))+'</span><span class="cw">'+(c.sc?'<b>'+esc(L("Szene"))+' '+esc(c.sc)+'</b>'+(c.u&&c.u!=="1"?' <span class="ust">'+esc(UNAME[c.u])+'</span>':'')+' · ':'')+esc(c.txt)+'</span></li>').join("")+'</ul>'+
       '<div class="tacts">'+(cl.some(c=>c.unread)?'<button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button>':'')+(can("push.send")?'<button type="button" class="pillbtn" data-chgpush>'+esc(L("Als Push-Nachricht senden"))+'</button>':'')+'</div>'
       :'<p class="ghint">'+esc(L("Seit deinem letzten Besuch hat sich am Drehplan nichts geändert."))+'</p>')+'</div>';
   /* offline */
   const st=offState(),on=navigator.onLine!==false;
-  h+='<div class="tcard toff"><div class="tch">'+esc(L("Offline am Set"))+(on?'':' <span class="chgdot">'+esc(L("offline"))+'</span>')+'</div>'+
+  if(vok("blocking")||vok("plan"))h+='<div class="tcard toff"><div class="tch">'+esc(L("Offline am Set"))+(on?'':' <span class="chgdot">'+esc(L("offline"))+'</span>')+'</div>'+
     (st&&st.v===2?'<p class="tsub">✓ '+esc(L("Gespeichert"))+': '+st.n+' '+esc(L("Seiten"))+' ('+esc(L("Blocking-PDFs und Floorplans, alle Drehtage"))+') · '+esc(L("Stand"))+' '+esc(new Date(st.at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"}))+'</p>':'')+
     '<p class="ghint">'+esc(L("Drehplan, Callsheet, Kontakte, Drehbuch, Blocking-PDFs und Floorplans werden für alle Drehtage automatisch auf diesem Gerät gespeichert – Fotos nicht."))+'</p>'+
     (on?'<button type="button" class="pillbtn" data-offprep'+(OFF.busy?' disabled':'')+'>'+esc(L(OFF.busy?"Wird geladen …":"Jetzt für offline laden"))+'</button>':'')+'</div>';
