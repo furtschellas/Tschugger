@@ -259,6 +259,12 @@ Object.assign(I18N,{
  "Bitte mindestens einen Weg wählen.":{fr:"Choisis au moins un canal.",it:"Scegli almeno un canale.",en:"Please choose at least one channel.",hi:"कम से कम एक तरीका चुनें।"},
  "Keine E-Mail-Adressen für diese Empfänger gefunden.":{fr:"Aucune adresse e-mail trouvée pour ces destinataires.",it:"Nessun indirizzo e-mail trovato per questi destinatari.",en:"No email addresses found for these recipients.",hi:"इन प्राप्तकर्ताओं के ई-मेल पते नहीं मिले।"},
  "Mail-App geöffnet mit {n} Adressen.":{fr:"App mail ouverte avec {n} adresses.",it:"App mail aperta con {n} indirizzi.",en:"Mail app opened with {n} addresses.",hi:"मेल ऐप {n} पतों के साथ खुली।"},
+ "App-Verknüpfung":{fr:"Raccourci de l'app",it:"Collegamento all'app",en:"App shortcut",hi:"ऐप शॉर्टकट"},
+ "Du nutzt die App bereits als Verknüpfung.":{fr:"Tu utilises déjà l'app comme raccourci.",it:"Stai già usando l'app come collegamento.",en:"You're already using the app as a shortcut.",hi:"आप पहले से ऐप को शॉर्टकट के रूप में इस्तेमाल कर रहे हैं।"},
+ "Lege die Crew-App auf den Startbildschirm oder Desktop – dann öffnet sie sich wie eine normale App.":{fr:"Place l'app sur l'écran d'accueil ou le bureau – elle s'ouvrira comme une app normale.",it:"Metti l'app nella schermata Home o sul desktop – si aprirà come una normale app.",en:"Put the crew app on your home screen or desktop – it then opens like a normal app.",hi:"Crew ऐप को होम स्क्रीन या डेस्कटॉप पर रखें – फिर यह सामान्य ऐप की तरह खुलेगा।"},
+ "Verknüpfung erstellen":{fr:"Créer un raccourci",it:"Crea collegamento",en:"Create shortcut",hi:"शॉर्टकट बनाएँ"},
+ "In eine WhatsApp-Gruppe teilen":{fr:"Partager dans un groupe WhatsApp",it:"Condividi in un gruppo WhatsApp",en:"Share to a WhatsApp group",hi:"WhatsApp ग्रुप में शेयर करें"},
+ "Am schnellsten: in eure Crew-Gruppe teilen. Oder einzeln – bei jeder Person auf WhatsApp tippen, der Text ist schon eingefügt.":{fr:"Le plus rapide : partager dans votre groupe d'équipe. Ou un par un – touche WhatsApp pour chaque personne, le texte est déjà prêt.",it:"Il modo più rapido: condividere nel gruppo della crew. Oppure uno per uno – tocca WhatsApp per ogni persona, il testo è già pronto.",en:"Quickest: share to your crew group. Or one by one – tap WhatsApp for each person, the text is ready.",hi:"सबसे तेज़: अपने crew ग्रुप में शेयर करें। या एक-एक करके – हर व्यक्ति के लिए WhatsApp टैप करें, टेक्स्ट तैयार है।"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -1285,6 +1291,7 @@ async function tourMark(how){
 }
 async function maybeTour(){
   if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||TOUR.pending)return;
+  if(typeof a2hsDue==="function"&&a2hsDue()&&!TOUR.a2asked){TOUR.a2asked=true;showA2hs();const s=document.getElementById("a2hs");if(s){const ob=new MutationObserver(()=>{if(s.hidden||!s.isConnected){ob.disconnect();setTimeout(maybeTour,400)}});ob.observe(s,{attributes:true,attributeFilter:["hidden"]})}return}
   if(pushHintDue()){TOUR.afterHint=true;maybePushHint();return}
   if(!window.TOUREN||(MEMBER&&MEMBER.tour)||tourDoneLocal()){setTimeout(maybePushHint,800);return}
   TOUR.pending=true;setTimeout(()=>{TOUR.pending=false;if(!TOUR.el&&!tourDoneLocal()&&!(MEMBER&&MEMBER.tour)){tourMark("shown");tourStart(true)}},700);
@@ -1399,7 +1406,7 @@ function bcRecips(pl){
 }
 /* WhatsApp: WhatsApp has no way to send to many people at once from a web page – one tap per person opens the chat with the text ready */
 function bcWaHTML(){const w=BC.waList;if(!w)return "";w.list=w.list.filter(x=>x.ph&&x.ph.length>=6);const t=encodeURIComponent(w.text);
-  return '<div class="bcwa"><div class="bchh"><h3 class="cath3">WhatsApp</h3><button type="button" class="pillbtn" data-wax>'+L("Fertig")+'</button></div><p class="ghint">'+L("Tippe bei jeder Person auf WhatsApp – der Text ist schon eingefügt, du musst nur noch auf Senden tippen.")+'</p>'+
+  return '<div class="bcwa"><div class="bchh"><h3 class="cath3">WhatsApp</h3><button type="button" class="pillbtn" data-wax>'+L("Fertig")+'</button></div><a class="pillbtn wabtn wagrp" href="https://wa.me/?text='+t+'" target="_blank" rel="noopener">'+L("In eine WhatsApp-Gruppe teilen")+'</a><p class="ghint">'+L("Am schnellsten: in eure Crew-Gruppe teilen. Oder einzeln – bei jeder Person auf WhatsApp tippen, der Text ist schon eingefügt.")+'</p>'+
     (w.list.length?'<ul class="walist">'+w.list.map(x=>'<li><span><b>'+esc(x.name)+'</b><small>'+esc(HIT(x.dept))+'</small></span><a class="pillbtn wabtn" href="https://wa.me/'+esc(x.ph.replace(/^\+/,""))+'?text='+t+'" target="_blank" rel="noopener" data-wad>WhatsApp</a></li>').join("")+'</ul>':'<p class="ghint">'+L("Keine Telefonnummern für diese Empfänger gefunden.")+'</p>')+'</div>'}
 document.addEventListener("click",e=>{const a=e.target.closest("[data-wad]");if(a){a.classList.add("done");a.textContent="✓ WhatsApp";return}if(e.target.closest("[data-wax]")){BC.waList=null;render()}});
 /* send right away through the Cloudflare Worker; without it the next run picks the message up */
@@ -1560,7 +1567,7 @@ async function afterSignIn(u){
   let partialAt=0;try{partialAt=+localStorage.getItem("profPartial:"+ME.uid)||0}catch(_){}
   const needExtra=(!MEMBER||!MEMBER.gender||!String(MEMBER.phone||"").trim()||!String(MEMBER.contactEmail||"").trim())&&Date.now()-partialAt>12*3600e3;
   if(MEMBER&&(!MEMBER.diet||needExtra))setTimeout(()=>showAcct(true),400);else setTimeout(maybeWelcome,600);
-  if(window.__justSignedIn){window.__justSignedIn=false;maybeOfferA2hs(true)}else maybeOfferA2hs(false);
+  if(window.__justSignedIn)window.__justSignedIn=false;
 }
 /* names come from the crew list (matched by e-mail) when the profile has none yet */
 const crewNames=()=>{const p=ME&&crewPerson(ME.email);if(!p||!p.name)return null;const sp=splitName(p.name);return sp.firstName?{firstName:clean(sp.firstName),lastName:clean(sp.lastName||"")}:null};
@@ -1609,7 +1616,7 @@ function profileForm(onb){
 function acctInner(){
   return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b>'+' · '+L("Rolle")+': <b>'+esc(isOwner()?L("Owner"):isAdmin()?L("Admin"):MYROLE?(MYROLE==="crew"?"Crew":MYROLE):L("keine"))+'</b>'+(()=>{let w=(MEMBER&&MEMBER.welcomeAck)||"";if(!w)try{w=(localStorage.getItem("welcomeAck")||"").split("|")[0]}catch(_){}return w?' · '+L("Willkommen bestätigt")+' '+esc(new Date(w).toLocaleDateString("de-CH")):''})()+'</p>'+
     (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
-    (ME&&window.PUSHEN!==false?pushSec():'')+(window.TOUREN?'<section class="psec"><h4>'+L("Einführungstour")+'</h4><p class="ghint">'+esc(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?' · '+esc(new Date(MEMBER.tourAt).toLocaleDateString("de-CH")):'')+'</p><button type="button" class="pillbtn" data-ac="tour">'+L("Tour starten")+'</button></section>':'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
+    (ME&&window.PUSHEN!==false?pushSec():'')+'<section class="psec"><h4>'+L("App-Verknüpfung")+'</h4>'+(typeof isStandalone==="function"&&isStandalone()?'<p class="ghint pok">✓ '+L("Du nutzt die App bereits als Verknüpfung.")+'</p>':'<p class="ghint">'+L("Lege die Crew-App auf den Startbildschirm oder Desktop – dann öffnet sie sich wie eine normale App.")+'</p><button type="button" class="pillbtn" data-ac="a2hs">'+L("Verknüpfung erstellen")+'</button>')+'</section>'+(window.TOUREN?'<section class="psec"><h4>'+L("Einführungstour")+'</h4><p class="ghint">'+esc(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?' · '+esc(new Date(MEMBER.tourAt).toLocaleDateString("de-CH")):'')+'</p><button type="button" class="pillbtn" data-ac="tour">'+L("Tour starten")+'</button></section>':'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '';
@@ -1639,6 +1646,7 @@ async function onAcctClick(e){
   if(b.dataset.ac==="close")s.hidden=true;
   else if(b.dataset.ac==="theme")setTheme(b.dataset.thset);
   else if(b.dataset.ac==="tour")tourStart(false);
+  else if(b.dataset.ac==="a2hs"&&typeof showA2hs==="function")showA2hs();
   else if(b.dataset.ac==="pwreset"){const msg=b.closest("form").querySelector(".amsg");msg.className="amsg";msg.textContent="";b.disabled=true;
     try{const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),auth.currentUser.email);msg.classList.add("ok");msg.textContent=L("Link zum Zurücksetzen gesendet an")+" "+auth.currentUser.email+". "+L("Schau auch im Spam-Ordner nach.")}
     catch(err){console.error(err);msg.textContent=errText(err)}b.disabled=false}

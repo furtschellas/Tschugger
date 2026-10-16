@@ -93,7 +93,7 @@ body.no-u2 .pub,body.no-u2 button.uf{display:none!important}
 .dayhead h2{font-family:var(--f-display);font-size:28px;font-weight:700;margin:0;line-height:1}
 .dayhead .date{font-size:14px;color:var(--muted)}
 .facts{display:flex;flex-wrap:wrap;gap:6px}
-.fact .fsub{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:4px}.factd{display:inline-block!important;max-width:220px;padding:4px 10px}.factd .fsub{white-space:normal;line-height:1.3}.factd>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:6px}.factd>summary::-webkit-details-marker{display:none}.factd>summary::after{content:"▸";font-size:10px;color:var(--muted);margin-left:2px}.factd[open]>summary::after{content:"▾"}.fact{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding:4px 8px;display:flex;align-items:baseline;gap:6px}
+.fact .fsub{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:4px}.factd{display:inline-block!important;max-width:200px;padding:3px 7px}.factd>summary{gap:4px!important}.factd .k{margin-right:0}.factd .fsub{white-space:normal;line-height:1.3}.factd>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:6px}.factd>summary::-webkit-details-marker{display:none}.factd>summary::after{content:"▸";font-size:10px;color:var(--muted);margin-left:2px}.factd[open]>summary::after{content:"▾"}.fact{background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding:4px 8px;display:flex;align-items:baseline;gap:6px}
 .fact .k{font-family:var(--f-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .fact .v{font-family:var(--f-mono);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
 .notes{display:grid;gap:6px}
@@ -1040,7 +1040,7 @@ function renderPlan(){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
     if(d.extras)f.push([L("Kompars:innen"),d.extras]);
     /* drive from the crew hotel: +3 min buffer; the route itself only when opened */
-    const dv=d.drive&&d.drive.min?'<details class="fact factd"><summary><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc((d.drive.min+3)+" "+L("Min.")+(d.drive.km?" · "+d.drive.km+" km":""))+'</span></summary><span class="fsub">'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'</span></details>':'';
+    const dv=d.drive&&d.drive.min?'<details class="fact factd"><summary><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</span></summary><span class="fsub">'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'</span></details>':'';
     h+='<div class="facts">'+f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>').join("")+dv+'</div>';
   }
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
