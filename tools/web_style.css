@@ -366,3 +366,9 @@ html body .bcwa a.wabtn.wagrp.pillbtn{display:block;text-align:center;margin:8px
 @media (min-width:640px){.ucard .umain{display:flex;flex-wrap:wrap;align-items:center;column-gap:10px}.ucard .umain>.unm{flex:0 1 auto}.ucard .umain>.ubadges{margin:0}.ucard .umain>:not(.unm):not(.ubadges){flex-basis:100%}}
 .uact h3{display:flex;align-items:center;gap:8px}.uactl{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .uactp{display:inline-flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:99px;background:var(--paper);border:1px solid var(--rule);font-size:14px}.uactp .uav{width:26px;height:26px;font-size:11px}
+.ucard .usub a{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:2px}.ucard .usub{overflow-wrap:anywhere}
+.ubar .uall.cico{margin-left:auto;width:34px;height:34px;flex:0 0 34px}
+.aacts .cico{width:34px;height:34px}
+html body .ubar button.cico.uall,html body .aacts button.cico{padding:0!important;min-width:34px;width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--accent);background:transparent;color:var(--accent)}
+html body .aacts button.cico.on{background:var(--accent);color:var(--accent-ink,#fff)}
+html body .ubar button.cico.uall svg,html body .aacts button.cico svg{width:16px;height:16px;flex:0 0 16px}
