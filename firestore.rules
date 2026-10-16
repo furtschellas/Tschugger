@@ -158,9 +158,11 @@ service cloud.firestore {
         && request.resource.data.active == true;
     }
 
-    // Push-Erinnerungen pro Gerät: mit dem Crew-Schlüssel verschlüsselt; die GitHub-Aktion liest sie (ohne Anmeldung) und verschickt fällige
+    // Push-Erinnerungen pro Gerät: mit dem Crew-Schlüssel verschlüsselt; Worker und GitHub lesen sie mit dem Dienstkonto (FIREBASE_SA),
+    // in der App nur das eigene Gerät und die Admins (Push-Status)
     match /push/{id} {
-      allow read: if true;
+      allow get: if signedIn() && id.matches(request.auth.uid + '_[a-z0-9]{10}');
+      allow read: if isAdmin();
       allow create, update: if signedIn() && id.matches(request.auth.uid + '_[a-z0-9]{10}')
         && (isMember() || isAdmin())
         && request.resource.data.keys().hasOnly(['c', 'at'])
@@ -170,7 +172,7 @@ service cloud.firestore {
 
     // Push-Nachrichten an alle (verschlüsselt mit dem Crew-Schlüssel); nur mit Berechtigung «push.send»
     match /broadcasts/{id} {
-      allow read: if true;
+      allow read: if can('push.send') || isAdmin();
       allow create: if can('push.send') && request.resource.data.keys().hasOnly(['c', 'at'])
         && request.resource.data.c is string && request.resource.data.c.size() < 4000;
       // der Worker markiert im Namen der sendenden Person: sent (einmalig), n, done (Geräte), fin (alle erledigt)
