@@ -252,3 +252,4 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .utour{color:var(--muted)}
 .cico{width:30px;height:30px;flex:0 0 30px;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;vertical-align:middle}.cico.on{background:var(--accent);color:var(--accent-ink,#fff)}.cico:disabled{opacity:.5}.cico:active{transform:scale(.94)}
 .pinfo{align-items:center}
+.setgrp .srcin{margin:4px 0 0;padding:0;border:0}

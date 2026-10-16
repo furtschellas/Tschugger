@@ -241,6 +241,63 @@ def read_sheet(url):
     return "\n".join(rows)
 
 # ---------- main ----------
+def norm_sc(x): return re.sub(r"\s+", " ", str(x or "")).strip().lower()
+
+
+def add_drive_times(data):
+    """Anfahrt Crew-Hotel → erstes Motiv je Drehtag (Auto). Geocoding: OpenStreetMap/Nominatim, Route: OSRM.
+    Ergebnisse werden in data.meta.geo/route gemerkt, damit nur neue Adressen abgefragt werden."""
+    meta = data.setdefault("meta", {})
+    geo, route = meta.setdefault("geo", {}), meta.setdefault("route", {})
+    hotel = None
+    for p in data.get("places") or []:
+        if str(p.get("cat", "")).lower().startswith("hotel"):
+            for it in p.get("items") or []:
+                if it.get("address"): hotel = it; break
+        if hotel: break
+    if not hotel: log("Anfahrt: kein Crew-Hotel in den Infos"); return
+    scene_loc = {}
+    for l in data.get("locations") or []:
+        for st in l.get("sets") or []:
+            for sc in st.get("scenes") or []: scene_loc.setdefault(norm_sc(sc), l)
+    H = {"User-Agent": "TschuggerCrewApp/1.0 (furtschellas@gmail.com)"}
+    def gc(addr):
+        if addr in geo: return geo[addr]
+        try:
+            time.sleep(1.1)
+            r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": addr, "format": "json", "limit": 1, "countrycodes": "ch"}, headers=H, timeout=20)
+            j = r.json() if r.ok else []
+            geo[addr] = [float(j[0]["lat"]), float(j[0]["lon"])] if j else None
+        except Exception as e:
+            log("Geocoding fehlgeschlagen:", type(e).__name__); return None
+        return geo[addr]
+    def rt(a, b):
+        k = a + "|" + b
+        if route.get(k): return route[k]
+        ga, gb = gc(a), gc(b)
+        if not ga or not gb: return None
+        try:
+            r = requests.get("https://router.project-osrm.org/route/v1/driving/%f,%f;%f,%f" % (ga[1], ga[0], gb[1], gb[0]), params={"overview": "false"}, headers=H, timeout=20)
+            j = r.json()
+            if j.get("routes"):
+                x = j["routes"][0]; route[k] = {"min": int(round(x["duration"] / 60)), "km": round(x["distance"] / 1000, 1)}
+        except Exception as e:
+            log("Route fehlgeschlagen:", type(e).__name__); return None
+        return route.get(k)
+    n = 0
+    for d in data.get("days") or []:
+        if d.get("kind") != "shoot": continue
+        loc = None; lname = ""
+        for it in d.get("items") or []:
+            if it.get("sc"):
+                loc = scene_loc.get(norm_sc(it["sc"])) or scene_loc.get(norm_sc(str(it["sc"]).split()[0]))
+                if loc: lname = it.get("loc") or ""; break
+        if not loc or not loc.get("address"): d.pop("drive", None); continue
+        r = rt(hotel["address"], loc["address"])
+        if r: d["drive"] = {"from": hotel.get("name", "Hotel"), "to": lname or loc.get("name", ""), "min": r["min"], "km": r["km"]}; n += 1
+    log("Anfahrt Hotel → erstes Motiv:", n, "Drehtage")
+
+
 def main():
     cfg = {}
     try:
@@ -485,6 +542,8 @@ def main():
     data["meta"] = meta
     for k in ("days", "crew", "locations", "places", "dispos"): data.setdefault(k, [])
     if not data["days"] or not data["crew"]: sys.exit("Keine Drehtage oder Crew – nichts veröffentlicht")
+    try: add_drive_times(data)
+    except Exception as e: log("Anfahrt nicht berechnet:", type(e).__name__)
     w1 = enc_file(R / "data.enc.json", data)
     w2 = enc_file(R / "script.enc.json", {"script": [{k: d[k] for k in ("sc", "head", "text") if k in d} for d in scr]}) if scr else False
     log("Daten:", "geändert" if changed else "unverändert", "· Datei:", "neu geschrieben" if (w1 or w2) else "gleich")
