@@ -332,6 +332,7 @@ Object.assign(I18N,{
  "Name der Rolle":{fr:"Nom du rôle",it:"Nome del ruolo",en:"Role name"},
  "Name der Rolle, z. B. Catering":{fr:"Nom du rôle, p. ex. Catering",it:"Nome del ruolo, ad es. Catering",en:"Role name, e.g. Catering"},
  "Person":{fr:"personne",it:"persona",en:"person"},
+ "Keine Sonderwünsche.":{fr:"Aucun besoin particulier.",it:"Nessuna richiesta speciale.",en:"No special requests.",hi:"कोई विशेष अनुरोध नहीं।"},
  "Personen":{fr:"personnes",it:"persone",en:"people"},
  "Benutzerdaten sehen":{fr:"Voir les données des utilisateurs",it:"Vedere i dati utente",en:"See user data"},
  "Benutzerdaten ändern":{fr:"Modifier les données des utilisateurs",it:"Modificare i dati utente",en:"Change user data"},
@@ -1511,23 +1512,25 @@ function caterSummary(c){
   return '<p class="catsum"><b>'+c.act.length+'</b> '+esc(L("Personen"))+' · <b>'+(c.act.length-c.special.length)+'</b> '+esc(L("ohne Sonderwünsche"))+' · <b>'+c.special.length+'</b> '+esc(L("mit Sonderwünschen"))+'</p>'+
     (c.groups.length||c.allergy.length?'<div class="catchips">'+c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'')+'</div>':'');
 }
+function caterOverview(c){
+  const dep=m=>crewDeptOf(m)||"–";
+  let h='<div class="catgrid">'+c.groups.map(([t,l])=>'<div class="catcard"><h4><b>'+l.length+'</b> '+esc(t)+'</h4><div class="catn">'+l.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join("<br>")+'</div></div>').join("")+
+    (c.allergy.length?'<div class="catcard warn"><h4><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</h4><div class="catn">'+c.allergy.map(m=>'<b>'+esc(c.nm(m))+'</b>: '+esc(c.alg(m))).join("<br>")+'</div></div>':'')+'</div>';
+  if(c.special.length)h+='<h3 class="cath3">'+esc(L("Alle Sonderwünsche"))+'</h3><div class="cattbl">'+c.special.slice().sort((a,b)=>c.nm(a).localeCompare(c.nm(b),LANG)).map(m=>'<div class="catrow"><div><b>'+esc(c.nm(m))+'</b><span class="catdep">'+esc(HIT(dep(m)))+'</span></div><div>'+esc(dietText(m))+'</div></div>').join("")+'</div>';
+  return h;
+}
 function cateringHTML(){
   const c=caterData();if(!c.act.length)return"";
-  const grp=(label,list)=>'<details class="catg"><summary><b>'+list.length+'</b> '+esc(label)+'</summary><div class="catn">'+list.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join(" · ")+'</div></details>';
-  const det=c.groups.map(([t,l])=>grp(t,l)).join("")+(c.allergy.length?'<details class="catg"><summary><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</summary><div class="catn">'+c.allergy.map(m=>esc(c.nm(m))+': '+esc(c.alg(m))).join("<br>")+'</div></details>':'');
-  return '<div class="asec cater catbox"><div class="cathd"><b>Catering</b><button type="button" class="pillbtn catopen" data-catpage>'+esc(L("Übersicht"))+' →</button></div>'+caterSummary(c)+
-    (det?'<details class="catmore" data-sec="catmore"'+(SECS.catmore===true?' open':'')+'><summary>'+esc(L("Namen und Details"))+'</summary>'+det+'</details>':'')+'</div>';
+  const chips=c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'');
+  return '<details class="catbox" data-sec="catmore"'+(SECS.catmore===true?' open':'')+'><summary><div class="cathd"><span class="catic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9"/></svg></span><div class="catt"><b>Catering</b><span>'+c.act.length+' '+esc(L("Personen"))+' · '+c.special.length+' '+esc(L("mit Sonderwünschen"))+'</span></div><span class="catchev" aria-hidden="true"></span></div>'+
+    (chips?'<div class="catchips">'+chips+'</div>':'')+'</summary><div class="catbody">'+(c.special.length?caterOverview(c):'<p class="ghint">'+esc(L("Keine Sonderwünsche."))+'</p>')+'</div></details>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-catpage]")){S.tab="cater";S.srcOpen=false;window.scrollTo(0,0);render()}});
 VIEWS.cater=function(){
   if(!ME||!can("crew.food"))return '<div class="empty">'+L("Kein Zugang")+'</div>';
   ensureAdm();if(!ADM.loaded)return '<section class="mypage catpage"><h2 class="pgt">Catering</h2><p class="ghint">'+(ADM.err?esc(L("Daten der Benutzer:innen nicht lesbar"))+' ('+esc(ADM.err)+')':L("Lade …"))+'</p></section>';
-  const c=caterData(),dep=m=>crewDeptOf(m)||"–";
-  let h='<section class="mypage catpage"><h2 class="pgt">Catering</h2><p class="ghint">'+esc(L("Alle aktiven Benutzer:innen der App, die am Set verpflegt werden."))+'</p>'+caterSummary(c);
-  h+='<div class="catgrid">'+c.groups.map(([t,l])=>'<div class="catcard"><h4><b>'+l.length+'</b> '+esc(t)+'</h4><div class="catn">'+l.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join("<br>")+'</div></div>').join("")+
-    (c.allergy.length?'<div class="catcard warn"><h4><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</h4><div class="catn">'+c.allergy.map(m=>'<b>'+esc(c.nm(m))+'</b>: '+esc(c.alg(m))).join("<br>")+'</div></div>':'')+'</div>';
-  if(c.special.length)h+='<h3 class="cath3">'+esc(L("Alle Sonderwünsche"))+'</h3><div class="cattbl">'+c.special.slice().sort((a,b)=>c.nm(a).localeCompare(c.nm(b),LANG)).map(m=>'<div class="catrow"><div><b>'+esc(c.nm(m))+'</b><span class="catdep">'+esc(dep(m))+'</span></div><div>'+esc(dietText(m))+'</div></div>').join("")+'</div>';
-  return h+'</section>';
+  const c=caterData();
+  return '<section class="mypage catpage"><h2 class="pgt">Catering</h2><p class="ghint">'+esc(L("Alle aktiven Benutzer:innen der App, die am Set verpflegt werden."))+'</p>'+caterSummary(c)+caterOverview(c)+'</section>';
 };
 window.caterTab=()=>!!(ME&&can("crew.food"));
 /* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */

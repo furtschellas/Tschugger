@@ -289,3 +289,22 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .acpage .psec .pillbtn{margin-top:4px}
 .acpage .thm{display:flex;gap:8px}.acpage .thm button{flex:1}
 @media (min-width:700px){.acpage .psec,.acpage>details{padding:16px 20px}}
+/* catering card in the crew list (redesigned) */
+.catbox{display:block;border:1px solid var(--rule);border-radius:16px;padding:0;margin:12px 0 16px;background:var(--sheet);overflow:hidden}
+.catbox>summary{list-style:none;cursor:pointer;padding:12px 14px 12px}.catbox>summary::-webkit-details-marker{display:none}
+.catbox .cathd{display:flex;align-items:center;gap:12px}
+.catic{flex:0 0 36px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.catt{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}.catt b{font-size:16px}.catt span{font-size:13px;color:var(--muted)}
+.catchev{width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-right:6px;transition:transform .2s}
+.catbox[open] .catchev{transform:rotate(-135deg)}
+.catbox .catchips{margin:10px 0 0 48px}
+.catchip{display:inline-flex;align-items:baseline;gap:4px;font-size:12px;padding:3px 10px;border-radius:99px;background:var(--paper);border:1px solid var(--rule);color:var(--ink)}
+.catchip b{color:var(--accent)}
+.catchip.warn{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.catbody{padding:2px 14px 14px;border-top:1px solid var(--rule)}
+.catbody .catgrid{margin-top:12px}
+.catcard.warn{border-color:var(--accent)}
+.pinfo .diet{background:color-mix(in srgb,var(--accent) 16%,transparent)!important;color:var(--accent)!important}
+html[data-theme="light"] .pinfo .diet{background:#fde7f1!important;color:#c2185b!important}
+@media (max-width:420px){.catbox .catchips{margin-left:0}}
+.catbody .catgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}.catbody .catcard{padding:9px 11px}.catbody .catcard h4{font-size:13px}.catbody .catn{font-size:13px}
