@@ -283,6 +283,7 @@ Object.assign(I18N,{
  "Willkommen":{fr:"Bienvenue",it:"Benvenuto",en:"Welcome",hi:"स्वागत"},
  "bestätigt":{fr:"confirmé",it:"confermato",en:"confirmed",hi:"पुष्ट"},
  "noch nicht bestätigt":{fr:"pas encore confirmé",it:"non ancora confermato",en:"not yet confirmed",hi:"अभी पुष्ट नहीं"},
+ "Alle Benutzenden":{fr:"Tous les utilisateurs",it:"Tutti gli utenti",en:"All users",hi:"सभी उपयोगकर्ता"},
  "Alle aufklappen":{fr:"Tout déplier",it:"Espandi tutti",en:"Expand all",hi:"सब खोलें"},
  "Alle zuklappen":{fr:"Tout replier",it:"Comprimi tutti",en:"Collapse all",hi:"सब बंद करें"},
  "Bitte eine gültige E-Mail-Adresse eingeben.":{fr:"Saisis une adresse e-mail valide.",it:"Inserisci un indirizzo e-mail valido.",en:"Please enter a valid email address.",hi:"कृपया मान्य ई-मेल पता दर्ज करें।"},
@@ -2026,8 +2027,8 @@ function userList(rows,vis,o){
   const SORTS=[["first","Vorname"],["name","Nachname"],["dept","Abteilung"],["status","Status"],["role","Rolle"],["new","Neueste zuerst"],["seen","Zuletzt online"],["email","E-Mail"]];
   const sortSel='<label class="usort">'+L("Sortieren")+' <select data-usort>'+SORTS.map(([k,t])=>'<option value="'+k+'"'+((ADM.sort||"first")===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>';
   const onl=rows.filter(r=>r.m&&isOnline(r.m)).map(r=>r.name||(crewPerson(r.email)||{}).name||r.email);
-  return '<div class="admins ulist"><h3>'+L("Benutzer:innen")+' <span class="ust">'+rows.length+'</span></h3>'+
-    '<p class="uonline"><span class="odot" aria-hidden="true"></span>'+(onl.length?'<b>'+esc(L("Gerade aktiv"))+' ('+onl.length+'):</b> '+esc(onl.join(", ")):esc(L("Gerade ist niemand aktiv.")))+'</p>'+
+  return '<div class="admins ulist"><h3>'+L("Alle Benutzenden")+' <span class="ust">'+rows.length+'</span></h3>'+
+
     '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'<button type="button" class="pillbtn uall" data-uall>'+L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen")+'</button></div>'+
     (vis.length?'<div class="ucards">'+vis.map(card).join("")+'</div>':'<p class="ahint">'+L("Keine Treffer.")+'</p>')+'</div>';
 }
@@ -2093,10 +2094,13 @@ VIEWS.admin=function(){
   if(ADM.sub==="roles")return h+rolesSec()+'</section>';
   if(ADM.sub==="bk")return h+bkSec()+'</section>';
   const cInv=can("users.invite"),cView=can("users.view")||can("users.edit"),cEd=can("users.edit");
-  h+=(can("users.requests")?reqSec():'')+admSec+(!cInv?'':
+  /* order: requests, who is online right now, the people, inviting, admins at the end */
+  const onl=rows.filter(r=>r.m&&isOnline(r.m));
+  const actSec=!cView?'':'<div class="admins uact"><h3><span class="odot" aria-hidden="true"></span>'+L("Gerade aktiv")+' <span class="ust">'+onl.length+'</span></h3>'+(onl.length?'<div class="uactl">'+onl.map(r=>{const nm=r.name||(crewPerson(r.email)||{}).name||r.email;return '<span class="uactp"><span class="uav on" aria-hidden="true">'+esc(initials(nm))+'</span>'+esc(nm)+'</span>'}).join("")+'</div>':'<p class="ghint">'+L("Gerade ist niemand aktiv.")+'</p>')+'</div>';
+  h+=(can("users.requests")?reqSec():'')+actSec+(!cView?'':userList(rows,vis,{own,cInv,cEd,isAdm,roleOf,roleName,roleSel,st,mail}))+(!cInv?'':
     '<div class="admins"><h3>'+L("Benutzer:innen einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
-    (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>')+(!cView?'':userList(rows,vis,{own,cInv,cEd,isAdm,roleOf,roleName,roleSel,st,mail}))+'</section>';
+    (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>')+admSec+'</section>';
   return h;
 };
 document.addEventListener("input",e=>{if(e.target.id==="aq"){ADM.q=e.target.value;const p=e.target.selectionStart;render();const i=$("#aq");if(i){i.focus();i.setSelectionRange(p,p)}}});
