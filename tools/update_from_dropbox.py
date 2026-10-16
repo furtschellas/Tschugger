@@ -668,7 +668,12 @@ def main():
         pf = [e for e in dbx.list_path(ROOT3D + "/11_Planning Prep Rehearsals") if e["tag"] == "file" and e["name"].lower().endswith(".pdf")]
     except Exception: pf = []
     if pf:
-        f = max(pf, key=lambda e: e["modified"] or "")
+        # always the newest «Weekly Schedule» (other PDFs in the folder, e.g. TBO_FITTING_16.10.pdf, are not the weekly plan)
+        wk = [e for e in pf if re.search(r"(?i)weekly|wochen", e["name"])] or pf
+        def stand(e):   # «… stand_15.10-1.pdf» → (10, 15, 1): the date and copy number in the name, then the upload time
+            m = re.search(r"(\d{1,2})\.(\d{1,2})(?:\.\d{2,4})?(?:-(\d+))?\.pdf$", e["name"], re.I)
+            return ((int(m.group(2)), int(m.group(1)), int(m.group(3) or 0)) if m else (0, 0, 0), e["modified"] or "")
+        f = max(wk, key=stand)
         name = "3D/11_Planning Prep Rehearsals/" + f["name"]
         sources.append({"kind": "prep", "name": name, "modified": f["modified"]})
         if FORCE or old.get(("prep", base(name))) != f["modified"]:
