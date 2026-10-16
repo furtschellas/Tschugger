@@ -24,10 +24,7 @@ service cloud.firestore {
     }
     function can(p) {
       return isOwner() || (isAdmin() && adminHas(p))
-        || (verified() && exists(/databases/$(database)/documents/userroles/$(myEmail())) && p in rolePerms())
-        // ohne eigene Rolle gilt die Standardrolle «Crew»
-        || (verified() && !exists(/databases/$(database)/documents/userroles/$(myEmail()))
-            && exists(/databases/$(database)/documents/roles/crew) && p in get(/databases/$(database)/documents/roles/crew).data.perms);
+        || (verified() && exists(/databases/$(database)/documents/userroles/$(myEmail())) && p in rolePerms());
     }
     function isMember() {
       return signedIn()
@@ -59,6 +56,9 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow write: if isOwner() && email != 'furtschellas@gmail.com'
         && (request.resource == null || request.resource.data.keys().hasOnly(['role', 'at']));
+      // wer einladen darf, gibt neuen Benutzer:innen automatisch die Rolle «Crew»
+      allow create: if can('users.invite') && email != 'furtschellas@gmail.com'
+        && request.resource.data.keys().hasOnly(['role', 'at']) && request.resource.data.role == 'crew';
     }
 
     // Geburtstagsliste (nur Name + Tag/Monat): jede Person pflegt ihren eigenen Eintrag, der Haupt-Admin gleicht ab;
