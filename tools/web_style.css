@@ -466,7 +466,7 @@ html body #view .menuadd .pillbtn{min-height:32px;font-size:13px;padding:0 12px}
 .tcard .tsub{font-size:13px;color:var(--muted);margin:6px 0}
 .tcard a{word-break:break-word}
 .tsclist{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:6px}
-.tsclist li{display:grid;grid-template-columns:48px minmax(40px,max-content) 1fr;gap:8px;align-items:baseline;font-size:14.5px;padding:4px 0;border-bottom:1px dashed var(--rule)}
+.tsclist li{display:grid;grid-template-columns:48px 72px 1fr;gap:8px;align-items:baseline;font-size:14.5px;padding:4px 0;border-bottom:1px dashed var(--rule)}
 .tsclist li:last-child{border-bottom:0}
 .tsclist .tt{font-variant-numeric:tabular-nums;color:var(--muted)}
 .tsclist .tsc{font-weight:700}
@@ -520,3 +520,8 @@ button.ttile.twx:hover{background:var(--acc-tint)}
 .tmylist li{grid-template-columns:96px 1fr;gap:8px;padding:4px 0;font-size:13.5px;line-height:1.3}
 .tmylist .tmw{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tmylist .tmd{font-size:12px}.tmylist .tmd b{font-size:13.5px}
+/* tiles always fill the full page width: as many per row as fit, the last row stretches too */
+html body #view .ttiles,html body #view .dtiles,html body #view .catgrid{display:flex!important;flex-wrap:wrap;gap:8px}
+html body #view .ttiles>*{flex:1 1 140px;min-width:0}
+html body #view .dtiles>*{flex:1 1 100px;min-width:0}
+html body #view .catgrid>*{flex:1 1 150px;min-width:0}
