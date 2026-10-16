@@ -308,3 +308,10 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 html[data-theme="light"] .pinfo .diet{background:#fde7f1!important;color:#c2185b!important}
 @media (max-width:420px){.catbox .catchips{margin-left:0}}
 .catbody .catgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}.catbody .catcard{padding:9px 11px}.catbody .catcard h4{font-size:13px}.catbody .catn{font-size:13px}
+.pacc .paccg{margin:16px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.paccd{border:1px solid var(--rule);border-radius:12px;margin:6px 0;background:var(--paper);overflow:hidden}
+.paccd>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;font-size:14px}.paccd>summary::-webkit-details-marker{display:none}
+.paccd>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-left:6px;transition:transform .2s}.paccd[open]>summary::after{transform:rotate(-135deg)}
+.pacn{margin-left:auto;min-width:26px;text-align:center;font-size:12px;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.paccl{list-style:none;margin:0;padding:0 12px 8px;border-top:1px solid var(--rule)}.paccl li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--rule);font-size:14px}.paccl li:last-child{border-bottom:0}
+.paccd .ghint{padding:0 12px 10px}
