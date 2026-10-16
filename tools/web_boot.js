@@ -2625,7 +2625,10 @@ VIEWS.today=function(){
   /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
   const wxt=wxTile(d);
   /* drive from the crew hotel (+3 min) and the weather come last */
-  const drv=d.drive&&d.drive.min?'<div class="ttile tdrv" title="'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'"><b>'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+'</span></div>':'';
+  /* tap → route in Google Maps from the crew hotel to the first location */
+  const drv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
+    const url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(d.drive.from||"Hotel")+"&destination="+encodeURIComponent(dest);
+    return '<a class="ttile tdrv" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer" title="'+esc(L("Route in Google Maps")+": "+(d.drive.from||"Hotel")+" → "+dest)+'"><b>'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+' ›</span></a>'})():'';
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
   if(!dp&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
@@ -2713,6 +2716,7 @@ Object.assign(I18N,{
  "Startseite «Today»":{en:"«Today» start page",fr:"Page d’accueil «Today»",it:"Pagina iniziale «Today»",hi:"«Today» प्रारंभ पृष्ठ"},
  "«Today» anzeigen und die App dort öffnen":{en:"Show «Today» and open the app there",fr:"Afficher «Today» et y ouvrir l’app",it:"Mostra «Today» e apri l’app lì",hi:"«Today» दिखाएँ और ऐप वहीं खोलें"},
  "Ausgeschaltet öffnet die App mit dem Drehplan.":{en:"When off, the app opens with the schedule.",fr:"Désactivé, l’app s’ouvre sur le planning.",it:"Se disattivato, l’app si apre con il piano.",hi:"बंद होने पर ऐप Schedule के साथ खुलता है।"},
+ "Route in Google Maps":{en:"Route in Google Maps",fr:"Itinéraire dans Google Maps",it:"Percorso in Google Maps",hi:"Google Maps में रास्ता"},
  "Sonnenzeit":{en:"Daylight",fr:"Heures de soleil",it:"Ore di sole",hi:"सूर्य का समय"},
  "Heute":{en:"Today",fr:"Aujourd'hui",it:"Oggi",hi:"आज"},
  "Nächster Drehtag":{en:"Next shooting day",fr:"Prochain jour de tournage",it:"Prossimo giorno di riprese",hi:"अगला शूटिंग दिन"},
