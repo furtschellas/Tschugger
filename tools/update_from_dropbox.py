@@ -681,7 +681,7 @@ def main():
     def fkey(kind, f): return kind + "|" + base(f["name"]) + "|" + str(f["modified"])
     def keep_old(kind, f):
         """the file could not be used: keep the previous entry in the sources, so the file is tried again in the next run"""
-        sources[-1] = olds.get((kind, base(f["name"]))) if kind == "dispo" else oldkind.get(kind)
+        sources[-1] = olds.get((kind, base(f["name"]))) if kind in ("dispo", "prep") else oldkind.get(kind)
     def may_try(kind, f):
         k = fkey(kind, f); seen.add(k)
         if FORCE or fails.get(k, 0) < 3: return True
@@ -774,59 +774,82 @@ def main():
                 failed("script", f, "zu wenige Szenen erkannt (%d) – bisheriges bleibt" % len(sc))
           except Exception as e: failed("script", f, e)
 
-    # weekly prep / rehearsal schedule (shared folder «3D» → 11_Planning Prep Rehearsals): newest PDF, outside «z OLD»
+    # prep / rehearsal planning (shared folder «3D» → 11_Planning Prep Rehearsals): every «Weekly Schedule» and «Daily Schedule»
+    # is read on its own (only new or changed files go to Claude); per day the document with the newest «stand» wins,
+    # so a Daily Schedule replaces those days of the Weekly Schedule and the rest of the week stays.
     try:
         pf = [e for e in dbx.list_path(ROOT3D + "/11_Planning Prep Rehearsals") if e["tag"] == "file" and e["name"].lower().endswith(".pdf")]
-    except Exception: pf = []
-    if pf:
-        # always the newest «Weekly Schedule» (other PDFs in the folder, e.g. TBO_FITTING_16.10.pdf, are not the weekly plan)
-        wk = [e for e in pf if re.search(r"(?i)weekly|wochen", e["name"])] or pf
-        def stand(e):   # «… stand_15.10-1.pdf» → (10, 15, 1): the date and copy number in the name, then the upload time
-            m = re.search(r"(\d{1,2})\.(\d{1,2})(?:\.\d{2,4})?(?:-(\d+))?\.pdf$", e["name"], re.I)
-            return ((int(m.group(2)), int(m.group(1)), int(m.group(3) or 0)) if m else (0, 0, 0), e["modified"] or "")
-        f = max(wk, key=stand)
-        name = "3D/11_Planning Prep Rehearsals/" + f["name"]
-        sources.append({"kind": "prep", "name": name, "modified": f["modified"]})
-        if (FORCE or old.get(("prep", base(name))) != f["modified"]) and may_try("prep", {"name": name, "modified": f["modified"]}):
-            log("Prep-Wochenplanung: neu, wird ausgelesen")
-            ex = {"days": (data.get("prepro") or [])[:2], "meta": {k: v for k, v in (meta.get("prepro") or {}).items() if k in ("title", "range", "issued", "distribution", "note")}}
+    except Exception as ex:
+        pf = []; log("Prep-Ordner nicht lesbar:", str(ex)[:80])
+    PLAN_RE = re.compile(r"(?i)weekly|wochen|daily|tages")
+    def stand(e):   # «… stand_15.10-1.pdf» → (10, 15, 1): the date and copy number in the name, then the upload time
+        m = re.search(r"(\d{1,2})\.(\d{1,2})(?:\.\d{2,4})?(?:-(\d+))?\.pdf$", e["name"], re.I)
+        return ((int(m.group(2)), int(m.group(1)), int(m.group(3) or 0)) if m else (0, 0, 0), e["modified"] or "")
+    plans = sorted([e for e in pf if PLAN_RE.search(e["name"])], key=stand, reverse=True)[:4]   # newest first
+    if pf and not plans: plans = sorted(pf, key=stand, reverse=True)[:1]
+    if plans:
+        import zoneinfo
+        today = datetime.datetime.now(zoneinfo.ZoneInfo("Europe/Zurich")).date().isoformat()
+        keep_from = (datetime.date.fromisoformat(today) - datetime.timedelta(days=7)).isoformat()
+        cache = {k: v for k, v in (meta.get("prepFiles") or {}).items() if any(k == e["name"] for e in plans)}
+        ex = {"days": (data.get("prepro") or [])[:2], "meta": {k: v for k, v in (meta.get("prepro") or {}).items() if k in ("title", "range", "issued", "distribution", "note")}}
+        for e in plans:
+            name = "3D/11_Planning Prep Rehearsals/" + e["name"]
+            sources.append({"kind": "prep", "name": name, "modified": e["modified"]})
+            c = cache.get(e["name"])
+            if c and c.get("m") == e["modified"] and not FORCE: continue
+            fi = {"name": name, "modified": e["modified"]}
+            if not may_try("prep", fi): continue
+            log("Prep-Planung: neu, wird ausgelesen", _h(e["name"]))
             try:
-                res = claude([pdf_block(dbx.download(f["id"]))],
-                    "Erzeuge aus dieser Wochenplanung (Weekly Schedule, Vorbereitung & Proben) ein JSON-Objekt {\"days\": [...], \"meta\": {...}} genau in der Struktur dieses Beispiels: %s\n"
+                res = claude([pdf_block(dbx.download(e["id"]))],
+                    "Erzeuge aus dieser Planung (Weekly oder Daily Schedule, Vorbereitung & Proben) ein JSON-Objekt {\"days\": [...], \"meta\": {...}} genau in der Struktur dieses Beispiels: %s\n"
                     "Regeln: ein Eintrag pro Kalendertag (id = date = YYYY-MM-DD; der Wochentag im PDF ist massgebend, falsche Datumsangaben korrigieren und in meta.note auf Deutsch erwähnen, mit note_fr, note_it, note_en). "
                     "items: {t \"HH:MM\" oder \"TBA\"/\"All Day\"/\"N.A\", end, n (Titel wie im PDF, nicht übersetzen), crew, cast (Namen kommagetrennt wie im PDF), where (Ort mit Adresse), map (Link aus dem PDF), hl true für farbig hervorgehobene Zeilen}. "
                     "VERBUNDENE ZELLEN beachten: gilt ein Ort für mehrere Zeilen, bei jeder dieser Zeilen eintragen. Parallele Termine in parallel[], Transporte in transport {cast, castMap, crew, crewMap, rows:[{driver, name, from, fromMap, at, to, toMap, arr}]}. "
-                    "meta: {source: \"%s\", title, range, issued (Ausgabedatum/Zeit im PDF), distribution (Verteiler), note…}." % (json.dumps(ex, ensure_ascii=False)[:20000], f["name"]), 32000)
+                    "meta: {source: \"%s\", title, range, issued (Ausgabedatum/Zeit im PDF), distribution (Verteiler), note…}." % (json.dumps(ex, ensure_ascii=False)[:20000], e["name"]), 32000)
                 days = res.get("days") if isinstance(res, dict) else None
                 if isinstance(days, list) and days:
                     for d in days: d["id"] = d.get("date") or d.get("id")
-                    # days from today on that the new version no longer contains (e.g. today, when the new week starts tomorrow)
-                    # come from the previous version, marked with their source
-                    import zoneinfo; today = datetime.datetime.now(zoneinfo.ZoneInfo("Europe/Zurich")).date().isoformat(); have = {d.get("date") for d in days}
-                    prevsrc = (meta.get("prepro") or {}).get("source") or ""
-                    for d in data.get("prepro") or []:
-                        if d.get("date") and d["date"] >= today and d["date"] not in have:
-                            days.append(dict(d, older=d.get("older") or prevsrc)); have.add(d["date"])
-                    if today not in have:   # still nothing for today: look in older weekly schedules of the folder (also «z OLD»)
-                        try:
-                            olds = [e for e in pf + [x for x in dbx.list_path(ROOT3D + "/11_Planning Prep Rehearsals/z OLD") if x["tag"] == "file" and x["name"].lower().endswith(".pdf")]
-                                    if e["id"] != f["id"] and re.search(r"(?i)weekly|wochen", e["name"])]
-                            for oe in sorted(olds, key=stand, reverse=True)[:2]:
-                                r2 = claude([pdf_block(dbx.download(oe["id"]))],
-                                    "Gib aus dieser Wochenplanung NUR den Tag %s als JSON-Objekt {\"days\": [...]} zurück, in derselben Struktur wie: %s (leere Liste, wenn der Tag fehlt; der Wochentag im PDF ist massgebend)." % (today, json.dumps({"days": days[:1]}, ensure_ascii=False)[:8000]), 8000)
-                                od = [x for x in (r2.get("days") if isinstance(r2, dict) else None) or [] if x.get("date") == today]
-                                if od:
-                                    od[0]["id"] = today; od[0]["older"] = oe["name"]; days.append(od[0]); have.add(today)
-                                    log("Prep-Wochenplanung: heutiger Tag aus älterer Version", _h(oe["name"])); break
-                        except Exception as ex2:
-                            log("Ältere Wochenplanung nicht lesbar:", str(ex2)[:120])
-                    data["prepro"] = sorted(days, key=lambda d: d.get("date", ""))
-                    pm = res.get("meta") or {}; pm["source"] = f["name"]; meta["prepro"] = pm
-                    changed = True; log("Prep-Wochenplanung:", len(days), "Tage")
+                    pm = res.get("meta") or {}; pm["source"] = e["name"]
+                    cache[e["name"]] = {"m": e["modified"], "days": [d for d in days if str(d.get("date") or "") >= keep_from], "meta": pm}
+                    changed = True; log("Prep-Planung:", len(days), "Tage")
                 else:
-                    failed("prep", {"name": name, "modified": f["modified"]}, "Ergebnis unvollständig – bisherige bleibt")
-            except Exception as e:
-                failed("prep", {"name": name, "modified": f["modified"]}, e)
+                    failed("prep", fi, "Ergebnis unvollständig – bisherige bleibt")
+            except Exception as ex2:
+                failed("prep", fi, ex2)
+        # compose: newest document first, each day taken from the newest document that has it
+        days, have, used = [], set(), []
+        for e in plans:
+            c = cache.get(e["name"])
+            if not c: continue
+            add = [dict(d, src=e["name"]) for d in c.get("days") or [] if d.get("date") and d["date"] not in have]
+            if add: used.append(e["name"])
+            days += add; have.update(d["date"] for d in add)
+        if days:
+            # days from today on that no current document has any more come from the previous state, marked with their source
+            for d in data.get("prepro") or []:
+                if d.get("date") and d["date"] >= today and d["date"] not in have:
+                    days.append(dict(d, older=d.get("older") or d.get("src") or (meta.get("prepro") or {}).get("source") or "")); have.add(d["date"])
+            if today not in have:   # still nothing for today: look in the older plans of the folder «z OLD»
+                try:
+                    olds = [x for x in dbx.list_path(ROOT3D + "/11_Planning Prep Rehearsals/z OLD") if x["tag"] == "file" and x["name"].lower().endswith(".pdf") and PLAN_RE.search(x["name"])]
+                    for oe in sorted(olds, key=stand, reverse=True)[:2]:
+                        r2 = claude([pdf_block(dbx.download(oe["id"]))],
+                            "Gib aus dieser Planung NUR den Tag %s als JSON-Objekt {\"days\": [...]} zurück, in derselben Struktur wie: %s (leere Liste, wenn der Tag fehlt; der Wochentag im PDF ist massgebend)." % (today, json.dumps({"days": days[:1]}, ensure_ascii=False)[:8000]), 8000)
+                        od = [x for x in (r2.get("days") if isinstance(r2, dict) else None) or [] if x.get("date") == today]
+                        if od:
+                            od[0]["id"] = today; od[0]["older"] = oe["name"]; days.append(od[0]); have.add(today)
+                            log("Prep-Planung: heutiger Tag aus älterer Version", _h(oe["name"])); break
+                except Exception as ex3:
+                    log("Ältere Planung nicht lesbar:", str(ex3)[:120])
+            newp = sorted(days, key=lambda d: d.get("date", ""))
+            pm = dict((cache.get(used[0]) or {}).get("meta") or {}) if used else dict(meta.get("prepro") or {})
+            if len(used) > 1: pm["sources"] = used
+            if newp != (data.get("prepro") or []) or pm != (meta.get("prepro") or {}):
+                data["prepro"] = newp; meta["prepro"] = pm; changed = True
+                log("Prep-Planung:", len(newp), "Tage aus", len(used), "Dokumenten")
+        if cache != (meta.get("prepFiles") or {}): meta["prepFiles"] = cache; changed = True
 
     # floorplans (PDF) and blocking photo folders (shared folder «3D» → 0_BlockingFloorplans)
     try:
