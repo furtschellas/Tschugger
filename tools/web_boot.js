@@ -2606,7 +2606,7 @@ VIEWS.today=function(){
   /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
   const wxt=wxTile(d);
   /* drive from the crew hotel (+3 min) and the weather come last */
-  const drv=d.drive&&d.drive.min?'<div class="ttile tdrv"><b>🚐 '+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+' · '+esc(d.drive.from||"Hotel")+'</span></div>':'';
+  const drv=d.drive&&d.drive.min?'<div class="ttile tdrv"><b>'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+' · '+esc(d.drive.from||"Hotel")+'</span></div>':'';
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
   if(!dp&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
