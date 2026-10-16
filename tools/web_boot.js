@@ -204,6 +204,8 @@ Object.assign(I18N,{
  "Hier wechselst du die Sprache der App – so sieht sie zum Beispiel auf Englisch aus. Mit «Weiter» geht es in deiner Sprache weiter.":{fr:"Ici tu changes la langue de l'app – voici par exemple l'anglais. « Suivant » te ramène à ta langue.",it:"Qui cambi la lingua dell'app – ecco per esempio l'inglese. «Avanti» ti riporta alla tua lingua.",en:"Here you change the app's language – this is how it looks in another language. “Next” brings back your language.",hi:"यहाँ ऐप की भाषा बदलें – उदाहरण के लिए अंग्रेज़ी में ऐसा दिखता है। «आगे» से आपकी भाषा वापस आती है।"},
  "Hell / Dunkel":{fr:"Clair / sombre",it:"Chiaro / scuro",en:"Light / dark",hi:"हल्का / गहरा"},
  "Mit der Sonne wechselst du zwischen dunkler und heller Darstellung – hell ist draussen bei Sonne gut lesbar. Mit «Weiter» kommt deine Einstellung zurück.":{fr:"Le soleil passe du mode sombre au mode clair – le clair se lit bien dehors au soleil. « Suivant » rétablit ton réglage.",it:"Con il sole passi tra scuro e chiaro – il chiaro si legge bene fuori al sole. «Avanti» ripristina la tua impostazione.",en:"The sun switches between dark and light – light is easy to read outdoors in sunshine. “Next” restores your setting.",hi:"सूरज से गहरा और हल्का मोड बदलें – धूप में बाहर हल्का मोड आसानी से पढ़ा जाता है। «आगे» से आपकी सेटिंग वापस आती है।"},
+ "Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.":{fr:"Sur iPhone/iPad : ajoute d'abord l'app via « Partager → Sur l'écran d'accueil » et ouvre-la depuis là – tu pourras alors activer les notifications.",it:"Su iPhone/iPad: aggiungi prima l'app con «Condividi → Aggiungi a Home» e aprila da lì – poi puoi attivare le notifiche.",en:"On iPhone/iPad: first add the app via “Share → Add to Home Screen” and open it from there – then you can turn on notifications.",hi:"iPhone/iPad पर: पहले «शेयर → होम स्क्रीन पर जोड़ें» से ऐप जोड़ें और वहीं से खोलें – फिर आप पुश सूचनाएँ चालू कर सकते हैं।"},
+ "Darsteller":{fr:"Comédiens",it:"Attori",en:"Cast",hi:"कलाकार"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -332,6 +334,9 @@ Object.assign(I18N,{
  "Name der Rolle":{fr:"Nom du rôle",it:"Nome del ruolo",en:"Role name"},
  "Name der Rolle, z. B. Catering":{fr:"Nom du rôle, p. ex. Catering",it:"Nome del ruolo, ad es. Catering",en:"Role name, e.g. Catering"},
  "Person":{fr:"personne",it:"persona",en:"person"},
+ "Wer hat welchen Zugriff?":{fr:"Qui a accès à quoi ?",it:"Chi ha accesso a cosa?",en:"Who has which access?",hi:"किसके पास कौन-सी पहुँच है?"},
+ "Tippe auf eine Berechtigung, um zu sehen, wer sie hat – und über welche Rolle.":{fr:"Touche une autorisation pour voir qui l'a – et par quel rôle.",it:"Tocca un'autorizzazione per vedere chi ce l'ha – e con quale ruolo.",en:"Tap a permission to see who has it – and through which role.",hi:"किसी अनुमति पर टैप करें और देखें कि वह किसके पास है – और किस भूमिका से।"},
+ "Niemand":{fr:"Personne",it:"Nessuno",en:"Nobody",hi:"कोई नहीं"},
  "Keine Sonderwünsche.":{fr:"Aucun besoin particulier.",it:"Nessuna richiesta speciale.",en:"No special requests.",hi:"कोई विशेष अनुरोध नहीं।"},
  "Personen":{fr:"personnes",it:"persone",en:"people"},
  "Benutzerdaten sehen":{fr:"Voir les données des utilisateurs",it:"Vedere i dati utente",en:"See user data"},
@@ -1693,7 +1698,21 @@ function rolesSec(){
     row("admin",L("Admin"),ADM.adminPerms||ADMIN_DEFAULT,true)+
     roles.map(ro=>row(ro.id,ro.name||ro.id,arr(ro.perms),false)).join("")+
     (ADM.redit==="new"?'<form class="arolef new" data-role=""><h4>'+L("Neue Rolle")+'</h4><label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'"></label>'+permBoxes(VIEWPERMS)+'<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button><button type="button" class="lnk" data-redit="new">'+L("Abbrechen")+'</button></div></form>':
-      '<button type="button" class="abtn" data-redit="new">+ '+L("Neue Rolle")+'</button>')+'</div>';
+      '<button type="button" class="abtn" data-redit="new">+ '+L("Neue Rolle")+'</button>')+'</div>'+permAccessSec();
+}
+/* who has which permission: every option can be opened and lists the people (owners, admins, roles; people without a role where allowed) */
+function permAccessSec(){
+  const nameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name))||(i&&i.name)||cp.name||e};
+  const everyone=[...new Set(ADM.mem.map(m=>m.email).concat(ADM.inv.map(i=>i.id)).concat(ADMINS))].filter(Boolean);
+  const rp=id=>{const r=(ADM.roles||[]).find(x=>x.id===id);return r?arr(r.perms):[]};const aperm=ADM.adminPerms||ADMIN_DEFAULT;
+  const noRoleOK=k=>({"view.phone":"phone","view.email":"email","view.mycal":"mycal"})[k];
+  const who=k=>everyone.map(e=>{if(ADMINS.includes(e))return [e,L("Owner")];if(ADM.adm.includes(e))return aperm.includes(k)?[e,L("Admin")]:null;const id=ADM.ur[e];
+      if(id)return rp(id).includes(k)?[e,((ADM.roles||[]).find(x=>x.id===id)||{}).name||id]:null;const pk=noRoleOK(k);return pk&&window.PUBV&&window.PUBV[pk]?[e,L("Keine Rolle")]:null}).filter(Boolean)
+    .sort((a,b)=>nameOf(a[0]).localeCompare(nameOf(b[0]),LANG));
+  return '<div class="admins pacc"><h3>'+L("Wer hat welchen Zugriff?")+'</h3><p class="ahint">'+L("Tippe auf eine Berechtigung, um zu sehen, wer sie hat – und über welche Rolle.")+'</p>'+
+    [...new Set(PERMS.map(x=>x[2]))].map(g=>'<h5 class="paccg">'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const w=who(k);
+      return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]?' open':'')+'><summary><span>'+esc(L(t))+'</span><b class="pacn">'+w.length+'</b></summary>'+
+        (w.length?'<ul class="paccl">'+w.map(([e,r])=>'<li><span>'+esc(nameOf(e))+'</span><span class="ust role">'+esc(r)+'</span></li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+'</details>'}).join("")).join("")+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&isAdmin()){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
   if(e.target.closest("[data-rreset]")&&isAdmin()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
