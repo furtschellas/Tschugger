@@ -261,20 +261,25 @@ def add_drive_times(data):
         for st in l.get("sets") or []:
             for sc in st.get("scenes") or []: scene_loc.setdefault(norm_sc(sc), l)
     H = {"User-Agent": "TschuggerCrewApp/1.0 (furtschellas@gmail.com)"}
-    def gc(addr):
-        if addr in geo: return geo[addr]
-        try:
-            time.sleep(1.1)
-            r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": addr, "format": "json", "limit": 1, "countrycodes": "ch"}, headers=H, timeout=20)
-            j = r.json() if r.ok else []
-            geo[addr] = [float(j[0]["lat"]), float(j[0]["lon"])] if j else None
-        except Exception as e:
-            log("Geocoding fehlgeschlagen:", type(e).__name__); return None
-        return geo[addr]
+    def gc(addr, name=""):
+        if geo.get(addr): return geo[addr]
+        parts = [x.strip() for x in addr.split(",") if x.strip()]
+        cands = [addr] + [", ".join(parts[i:]) for i in range(1, len(parts) - 1)] + ([name + ", " + parts[-1]] if name and parts else [])
+        for q in cands:
+            try:
+                time.sleep(1.1)
+                r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": q, "format": "json", "limit": 1, "countrycodes": "ch"}, headers=H, timeout=20)
+                j = r.json() if r.ok else []
+            except Exception as e:
+                log("Geocoding fehlgeschlagen:", type(e).__name__); return None
+            if j:
+                geo[addr] = [float(j[0]["lat"]), float(j[0]["lon"])]; return geo[addr]
+        geo[addr] = None; log("Adresse nicht gefunden:", addr)
+        return None
     def rt(a, b):
         k = a + "|" + b
         if route.get(k): return route[k]
-        ga, gb = gc(a), gc(b)
+        ga, gb = gc(a, hotel.get("name", "")), gc(b)
         if not ga or not gb: return None
         try:
             r = requests.get("https://router.project-osrm.org/route/v1/driving/%f,%f;%f,%f" % (ga[1], ga[0], gb[1], gb[0]), params={"overview": "false"}, headers=H, timeout=20)
