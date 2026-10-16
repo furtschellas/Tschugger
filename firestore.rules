@@ -54,7 +54,10 @@ service cloud.firestore {
     match /roles/{id} {
       allow read: if signedIn();
       // Rollen anlegen/ändern/löschen: Admins, oder wer «Rollen bearbeiten» hat (nicht die Admin-Rolle)
-      allow write: if (isAdmin() || (can('roles.edit') && id != 'admin'))
+      // nicht die eigene Rolle und nur Berechtigungen, die man selbst hat (keine Selbst-Beförderung)
+      allow write: if (isAdmin() || (can('roles.edit') && id != 'admin'
+          && !(exists(/databases/$(database)/documents/userroles/$(myEmail())) && get(/databases/$(database)/documents/userroles/$(myEmail())).data.role == id)
+          && (request.resource == null || request.resource.data.perms.hasOnly(rolePerms()))))
         && (request.resource == null || (request.resource.data.keys().hasOnly(['name', 'perms', 'at'])
             && request.resource.data.name is string && request.resource.data.name.size() <= 40
             && request.resource.data.perms is list && request.resource.data.perms.size() <= 40));
