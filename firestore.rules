@@ -117,16 +117,16 @@ service cloud.firestore {
       allow update, delete: if isOwner() && resource.data.email != 'furtschellas@gmail.com';
       // alle Admins dürfen die Profildaten der Benutzer:innen ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
       allow update: if can('users.edit') && resource.data.email != 'furtschellas@gmail.com'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer']);
       allow get: if signedIn() && request.auth.uid == uid;
       allow create: if isOwner() || (isAdmin() && request.auth.uid == uid) || (verified() && request.auth.uid == uid
         && exists(/databases/$(database)/documents/invites/$(myEmail()))
-        && request.resource.data.keys().hasOnly(['active', 'email', 'name', 'joinedAt', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies'])
+        && request.resource.data.keys().hasOnly(['active', 'email', 'name', 'joinedAt', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer'])
         && request.resource.data.active == true
         && request.resource.data.email == myEmail());
       allow update: if verified() && request.auth.uid == uid
         && resource.data.active == true
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer'])
         && request.resource.data.email == myEmail()
         && request.resource.data.active == true;
     }
