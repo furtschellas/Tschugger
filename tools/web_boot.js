@@ -244,6 +244,14 @@ Object.assign(I18N,{
  "z. B. Risotto · vegetarisch: Gemüsecurry · Dessert":{fr:"p. ex. risotto · végétarien : curry de légumes · dessert",it:"p. es. risotto · vegetariano: curry di verdure · dessert",en:"e.g. risotto · vegetarian: vegetable curry · dessert",hi:"जैसे रिसोट्टो · शाकाहारी: सब्ज़ी करी · मिठाई"},
  "Menü gespeichert.":{fr:"Menu enregistré.",it:"Menù salvato.",en:"Menu saved.",hi:"मेन्यू सहेजा गया।"},
  "Essenswünsche":{fr:"Régimes et souhaits",it:"Preferenze alimentari",en:"Dietary wishes",hi:"भोजन पसंद"},
+ "Ausgeschaltet verschwinden Erinnerungen, Glocken und der Briefumschlag für Nachrichten an alle.":{fr:"Désactivé, les rappels, cloches et l'enveloppe des messages à tous disparaissent.",it:"Se spento, spariscono promemoria, campanelle e la busta per i messaggi a tutti.",en:"When off, reminders, bells and the envelope for messages to everyone disappear.",hi:"बंद करने पर रिमाइंडर, घंटियाँ और सबको संदेश वाला लिफ़ाफ़ा छिप जाते हैं।"},
+ "Push-Nachrichten anbieten":{fr:"Proposer les notifications",it:"Offri le notifiche",en:"Offer push notifications",hi:"पुश सूचनाएँ उपलब्ध करें"},
+ "Zusätzlich als SMS (öffnet die SMS-App deines Handys mit allen Nummern)":{fr:"Aussi par SMS (ouvre l'app SMS de ton téléphone avec tous les numéros)",it:"Anche via SMS (apre l'app SMS del telefono con tutti i numeri)",en:"Also as SMS (opens your phone's SMS app with all numbers)",hi:"SMS से भी (आपके फ़ोन की SMS ऐप सभी नंबरों के साथ खुलेगी)"},
+ "Keine Telefonnummern für diese Empfänger gefunden.":{fr:"Aucun numéro trouvé pour ces destinataires.",it:"Nessun numero trovato per questi destinatari.",en:"No phone numbers found for these recipients.",hi:"इन प्राप्तकर्ताओं के फ़ोन नंबर नहीं मिले।"},
+ "SMS-App geöffnet mit {n} Nummern.":{fr:"App SMS ouverte avec {n} numéros.",it:"App SMS aperta con {n} numeri.",en:"SMS app opened with {n} numbers.",hi:"SMS ऐप {n} नंबरों के साथ खुली।"},
+ "Verlauf leeren":{fr:"Vider l'historique",it:"Svuota cronologia",en:"Clear history",hi:"इतिहास साफ़ करें"},
+ "Den ganzen Verlauf der Push-Nachrichten löschen?":{fr:"Supprimer tout l'historique des notifications ?",it:"Eliminare tutta la cronologia delle notifiche?",en:"Delete the whole notification history?",hi:"पुश संदेशों का पूरा इतिहास हटाएँ?"},
+ "Verlauf geleert.":{fr:"Historique vidé.",it:"Cronologia svuotata.",en:"History cleared.",hi:"इतिहास साफ़ किया गया।"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -606,6 +614,7 @@ async function loadLangs(){
     const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
     {const c=d.exists()?d.data():{};const nv={phone:c.phonePublic===true,email:c.emailPublic===true,mycal:c.mycalPublic===true};if(JSON.stringify(nv)!==JSON.stringify(window.PUBV)){window.PUBV=nv;try{localStorage.setItem("apppubv",JSON.stringify(nv))}catch(_){}render()}}
     {const go=!(d.exists()&&d.data().googleLogin===false);if(window.GOOGLEON!==go){window.GOOGLEON=go;try{localStorage.setItem("appgoogle",go?"1":"0")}catch(_){}try{const g=document.getElementById("gate");if(g&&!g.hidden&&(AUTHMODE==="login"||AUTHMODE==="register")&&!g.querySelector("input:focus"))showGate(AUTHMODE)}catch(_){}}}
+    {const c=d.exists()?d.data():{};const pe=c.pushEnabled!==false;if(window.PUSHEN!==pe){window.PUSHEN=pe;try{localStorage.setItem("apppushon",pe?"1":"0")}catch(_){}render()}}
     {const c=d.exists()?d.data():{};const ce=c.chatEnabled!==false,te=c.tourEnabled!==false;if(window.CHATEN!==ce||window.TOUREN!==te){window.CHATEN=ce;window.TOUREN=te;try{localStorage.setItem("appchaton",ce?"1":"0");localStorage.setItem("apptouron",te?"1":"0")}catch(_){}}}
     {const cu=String((d.exists()&&d.data().chatUrl)||"");if(window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
     {const dc=(d.exists()&&d.data().docs)||{};window.DOCS=dc;try{localStorage.setItem("appdocs",JSON.stringify(dc))}catch(_){}}
@@ -1023,7 +1032,7 @@ const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"
 function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
   return {hint:c.hint||0,on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
 function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
-const pushOK=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
 function pushDev(){let d="";try{d=localStorage.getItem("pushdev")||""}catch(_){}if(!/^[a-z0-9]{10}$/.test(d)){d=Array.from(crypto.getRandomValues(new Uint8Array(10)),x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");try{localStorage.setItem("pushdev",d)}catch(_){}}return d}
 const pushId=s=>{let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)};
@@ -1143,7 +1152,7 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 if(location.hash==="#my"){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}setTimeout(()=>{if(typeof openMyCal==="function")openMyCal()},400)}
 if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.open==="my"&&typeof openMyCal==="function")openMyCal()});
 /* ---- chat assistant: asks Claude through the production's Cloudflare Worker (config/app.chatUrl); every person can switch it off in «Mein Konto» ---- */
-window.CHATURL="";window.CHATEN=true;window.TOUREN=true;try{window.CHATURL=localStorage.getItem("appchat")||"";window.CHATEN=localStorage.getItem("appchaton")!=="0";window.TOUREN=localStorage.getItem("apptouron")!=="0"}catch(_){}
+window.CHATURL="";window.CHATEN=true;window.TOUREN=true;window.PUSHEN=true;try{window.PUSHEN=localStorage.getItem("apppushon")!=="0"}catch(_){}try{window.CHATURL=localStorage.getItem("appchat")||"";window.CHATEN=localStorage.getItem("appchaton")!=="0";window.TOUREN=localStorage.getItem("apptouron")!=="0"}catch(_){}
 const chatOn=()=>{let v=null;try{v=localStorage.getItem("chat")}catch(_){}return v!=="0"};
 const CHAT={open:false,busy:false,msgs:[]};try{CHAT.msgs=JSON.parse(sessionStorage.getItem("chatmsgs")||"[]")||[]}catch(_){}
 const APPHELP=`So ist die App aufgebaut (unten die Bereiche, oben die Knöpfe):
@@ -1203,7 +1212,8 @@ async function chatAsk(q){
 function chatSec(){if(!window.CHATURL||!window.CHATEN)return "";
   return '<section class="psec"><h4>'+L("Assistent")+'</h4><label class="ck"><input type="checkbox" data-chaton'+(chatOn()?' checked':'')+'> '+L("Chat-Assistent anzeigen (Knopf unten rechts)")+'</label></section>'}
 function chatSetSec(){
-  return '<p class="ahint"><b>'+L("Einführungstour")+'</b> – '+L("Eingeschaltet wird die Tour allen einmalig angeboten und kann unter «Mein Konto» neu gestartet werden.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="to"'+(window.TOUREN!==false?' checked':'')+'> '+L("Einführungstour anbieten")+'</label></div>'+
+  return '<p class="ahint"><b>'+L("Push-Nachrichten")+'</b> – '+L("Ausgeschaltet verschwinden Erinnerungen, Glocken und der Briefumschlag für Nachrichten an alle.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="pn"'+(window.PUSHEN!==false?' checked':'')+'> '+L("Push-Nachrichten anbieten")+'</label></div>'+
+    '<p class="ahint"><b>'+L("Einführungstour")+'</b> – '+L("Eingeschaltet wird die Tour allen einmalig angeboten und kann unter «Mein Konto» neu gestartet werden.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="to"'+(window.TOUREN!==false?' checked':'')+'> '+L("Einführungstour anbieten")+'</label></div>'+
     '<p class="ahint"><b>'+L("Assistent")+'</b> – '+L("Adresse des Cloudflare Workers für den Chat-Assistenten (und den zuverlässigen Zeitplan für Push und Dropbox). Leer = kein Assistent.")+' <a href="https://github.com/furtschellas/Tschugger/blob/main/tools/chat_worker.js" target="_blank" rel="noopener">'+L("Worker-Code und Anleitung")+'</a></p><input form="setform" class="amap" type="url" name="chat" inputmode="url" placeholder="https://tschugger.….workers.dev" value="'+esc(window.CHATURL||"")+'"><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="ca"'+(window.CHATEN!==false?' checked':'')+'> '+L("KI-Assistent anbieten")+'</label></div>'}
 document.addEventListener("change",e=>{if(e.target.matches("[data-chaton]")){store("chat",e.target.checked?"1":"0");chatFab()}});
 setInterval(()=>{try{chatFab()}catch(_){}},1500);
@@ -1318,7 +1328,7 @@ async function tourEnd(how,marked){
 
 /* one-time note about push notifications (existing and new users), with a short setup right in the note */
 function maybePushHint(){
-  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||document.getElementById("pushhint"))return;const c=pushCfg();if(c.hint)return;
+  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||document.getElementById("pushhint")||window.PUSHEN===false)return;const c=pushCfg();if(c.hint)return;
   const ios=!pushOK()&&isIOS()&&!pushStandalone();if(!pushOK()&&!ios)return;
   if(pushOK()&&Notification.permission!=="default"){c.hint=1;pushSave(c);return}
   const d=document.createElement("div");d.id="pushhint";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
@@ -1343,11 +1353,26 @@ function bcButton(){
   if(!b){b=document.createElement("button");b.id="bcBtn";b.className="refresh";b.type="button";
     b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>';
     mc.parentNode.insertBefore(b,mc.nextSibling);b.addEventListener("click",()=>{S.tab="bcast";S.srcOpen=false;window.scrollTo(0,0);render()})}
-  b.setAttribute("aria-label",L("Push-Nachricht senden"));b.title=L("Push-Nachricht senden");b.hidden=!(ME&&can("push.send"));
+  b.setAttribute("aria-label",L("Push-Nachricht senden"));b.title=L("Push-Nachricht senden");b.hidden=!(ME&&can("push.send")&&window.PUSHEN!==false);
 }
 setInterval(()=>{try{bcButton()}catch(_){}},1500);
 function bcDepts(){return [...new Set((S.crew||[]).map(g=>g.dept).filter(Boolean))]}
 async function bcLoadRoles(){if(BC.roles)return;BC.roles=[];try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"roles"));BC.roles=q.docs.filter(d=>d.id!=="admin").map(d=>({id:d.id,name:String(d.data().name||d.id)})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}catch(_){}render()}
+/* SMS: opens the phone's SMS app with the numbers of the recipients (crew list / app profiles) and the text */
+function bcSms(pl){
+  const nums=bcSmsNums(pl);
+  if(!nums.length){showMsg(L("Keine Telefonnummern für diese Empfänger gefunden."),6000);return}
+  const body=encodeURIComponent(pl.title+"\n"+pl.body);
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  location.href=ios?"sms:/open?addresses="+nums.join(",")+"&body="+body:"sms:"+nums.join(",")+"?body="+body;
+  showMsg(L("SMS-App geöffnet mit {n} Nummern.").replace("{n}",nums.length),6000);
+}
+function bcSmsNums(pl){
+  const roleOfE=e=>{e=lc(e||"");if(ADMINS.includes(e))return "owner";if((ADM.adm||[]).includes(e))return "admin";return (ADM.ur||{})[e]||""};
+  const nums=[];for(const g of S.crew||[])for(const p of arr(g.people)){const ph=String(p.phone||"").split(/[\/,;]/)[0].replace(/[^\d+]/g,"");if(ph.length<6)continue;
+    if(pl.roles||pl.depts){const ok=(pl.depts||[]).includes(g.dept)||(p.email&&(pl.roles||[]).includes(roleOfE(p.email)));if(!ok)continue}if(!nums.includes(ph))nums.push(ph)}
+  return nums;
+}
 /* send right away through the Cloudflare Worker; without it the next run picks the message up */
 async function bcDeliver(id){
   const {F,db,auth}=await fb();
@@ -1371,6 +1396,9 @@ function bcHistHTML(){
       '<div class="bcm"><span>'+esc(L("An"))+': '+esc(bcWho(b))+'</span><span>'+esc(L("Von"))+': '+esc(b.by||"")+'</span></div>'+
       '<div class="arb"><button type="button" class="pillbtn" data-bcre="'+esc(b.id)+'">↻ '+L("Erneut senden")+'</button></div></div>'}).join("")+'</div>';
 }
+document.addEventListener("click",async e=>{if(!e.target.closest("[data-bcclr]")||!isAdmin())return;if(!confirmSafe(L("Den ganzen Verlauf der Push-Nachrichten löschen?")))return;
+  try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"broadcasts"));for(const d of q.docs)await F.deleteDoc(F.doc(db,"broadcasts",d.id));BC.hist=[];showMsg(L("Verlauf geleert."),3000);render()}
+  catch(err){showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}});
 document.addEventListener("click",async e=>{const bt=e.target.closest("[data-bcre]");if(!bt||!can("push.send")||BC.busy)return;const b=(BC.hist||[]).find(x=>x.id===bt.dataset.bcre);if(!b)return;
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+bcWho(b)+"?"))return;BC.busy=true;bt.disabled=true;
   try{const pl={title:b.title,body:b.body,roles:b.roles||null,depts:b.depts||null,by:ME.email,at:Date.now(),re:b.id};
@@ -1388,15 +1416,16 @@ VIEWS.bcast=function(){
     '<label>'+L("Nachricht")+'<textarea name="bb" rows="4" maxlength="300" required placeholder="'+esc(L("Kurz und klar, max. 300 Zeichen"))+'"></textarea></label>'+
     '<fieldset class="efood"><legend>'+L("Empfänger")+'</legend><label class="ck"><input type="radio" name="bm" value="all"'+(BC.mode==="all"?' checked':'')+'> '+L("Alle")+'</label><label class="ck"><input type="radio" name="bm" value="sel"'+(BC.mode==="sel"?' checked':'')+'> '+L("Auswahl nach Rolle und/oder Abteilung")+'</label>'+
       (BC.mode==="sel"?'<p class="ahint"><b>'+L("Rollen")+'</b></p><div class="bcchk">'+roles.map(r=>ck("roles",r.id,r.name)).join("")+'</div><p class="ahint"><b>'+L("Abteilungen")+'</b></p><div class="bcchk">'+bcDepts().map(d=>ck("depts",d,HIT(d))).join("")+'</div><p class="ghint">'+L("Wer zu einer gewählten Rolle ODER Abteilung gehört, bekommt die Nachricht.")+'</p>':'')+'</fieldset>'+
+    '<label class="ck bcsms"><input type="checkbox" name="bs"'+(BC.sms?' checked':'')+'> '+L("Zusätzlich als SMS (öffnet die SMS-App deines Handys mit allen Nummern)")+'</label>'+
     '<div class="arb"><button type="submit"'+(BC.busy?' disabled':'')+'>'+L("Jetzt senden")+'</button></div><p class="amsg'+(BC.ok?' ok':'')+'" role="status">'+esc(BC.msg)+'</p></form>'+
-    '<h3 class="cath3">'+L("Verlauf")+'</h3>'+bcHistHTML()+'</section>';
+    '<div class="bchh"><h3 class="cath3">'+L("Verlauf")+'</h3>'+(isAdmin()&&BC.hist&&BC.hist.length?'<button type="button" class="pillbtn bcclr" data-bcclr>'+L("Verlauf leeren")+'</button>':'')+'</div>'+bcHistHTML()+'</section>';
 };
 document.addEventListener("change",e=>{const t=e.target;if(t.matches("[data-bc] input[name=bm]")){BC.mode=t.value;const f=t.form;const keep={bt:f.bt.value,bb:f.bb.value};render();const g=document.querySelector("[data-bc]");if(g){g.bt.value=keep.bt;g.bb.value=keep.bb}}
   else if(t.matches("[data-bcsel]")){const k=t.dataset.bcsel;BC.sel[k]=BC.sel[k].filter(x=>x!==t.value);if(t.checked)BC.sel[k].push(t.value)}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form[data-bc]");if(!f)return;e.preventDefault();if(!can("push.send")||BC.busy)return;
   const title=String(f.bt.value||"").trim().slice(0,60),body=String(f.bb.value||"").trim().slice(0,300);const msg=f.querySelector(".amsg");
   if(!title||!body){msg.className="amsg";msg.textContent=L("Bitte Titel und Nachricht eingeben.");return}
-  const sel=BC.mode==="sel";if(sel&&!BC.sel.roles.length&&!BC.sel.depts.length){msg.className="amsg";msg.textContent=L("Bitte mindestens eine Rolle oder Abteilung wählen.");return}
+  BC.sms=!!(f.bs&&f.bs.checked);const sel=BC.mode==="sel";if(sel&&!BC.sel.roles.length&&!BC.sel.depts.length){msg.className="amsg";msg.textContent=L("Bitte mindestens eine Rolle oder Abteilung wählen.");return}
   const who=sel?[BC.sel.roles.map(r=>r==="owner"?L("Owner"):r==="admin"?L("Admin"):r===""?L("Keine Rolle"):((BC.roles||[]).find(x=>x.id===r)||{}).name||r).concat(BC.sel.depts).join(", ")]:[L("alle")];
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+who.join(", ")+"?"))return;
   BC.busy=true;f.querySelector("button[type=submit]").disabled=true;
@@ -1404,7 +1433,7 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form[data
     const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(pl))));
     const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
     const {F,db,auth}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});
-    const r=await bcDeliver(ref.id);BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";f.reset();BC.hist=null}
+    const r=await bcDeliver(ref.id);if(BC.sms)bcSms(pl);BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";f.reset();BC.hist=null}
   catch(err){console.error(err);BC.ok=false;BC.msg=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}
   BC.busy=false;render()});
 /* ---- lunch menus: catering enters a menu per shooting day and unit (permission «Menüs eingeben»);
@@ -1548,7 +1577,7 @@ function profileForm(onb){
 function acctInner(){
   return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b>'+' · '+L("Rolle")+': <b>'+esc(isOwner()?L("Owner"):isAdmin()?L("Admin"):MYROLE?(MYROLE==="crew"?"Crew":MYROLE):L("keine"))+'</b>'+(()=>{let w=(MEMBER&&MEMBER.welcomeAck)||"";if(!w)try{w=(localStorage.getItem("welcomeAck")||"").split("|")[0]}catch(_){}return w?' · '+L("Willkommen bestätigt")+' '+esc(new Date(w).toLocaleDateString("de-CH")):''})()+'</p>'+
     (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
-    (ME?pushSec():'')+(window.TOUREN?'<section class="psec"><h4>'+L("Einführungstour")+'</h4><p class="ghint">'+esc(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?' · '+esc(new Date(MEMBER.tourAt).toLocaleDateString("de-CH")):'')+'</p><button type="button" class="pillbtn" data-ac="tour">'+L("Tour starten")+'</button></section>':'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
+    (ME&&window.PUSHEN!==false?pushSec():'')+(window.TOUREN?'<section class="psec"><h4>'+L("Einführungstour")+'</h4><p class="ghint">'+esc(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?' · '+esc(new Date(MEMBER.tourAt).toLocaleDateString("de-CH")):'')+'</p><button type="button" class="pillbtn" data-ac="tour">'+L("Tour starten")+'</button></section>':'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '';
@@ -2013,7 +2042,7 @@ document.addEventListener("submit",async e=>{
     const cu=String((fl.elements['chat']||{}).value||"").trim();if(cu&&!/^https:\/\/\S+$/.test(cu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
     const sh=String(fl.elements['sheet'].value||"").trim();
     if(sh&&!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(sh)){showMsg(L("Bitte einen Google-Sheets-Link eingeben."),4000);return}
-    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au,chatUrl:cu,chatEnabled:!!(fl.elements['ca']||{}).checked,tourEnabled:!!(fl.elements['to']||{}).checked},{merge:true});window.CHATEN=!!(fl.elements['ca']||{}).checked;window.TOUREN=!!(fl.elements['to']||{}).checked;try{localStorage.setItem("appchaton",window.CHATEN?"1":"0");localStorage.setItem("apptouron",window.TOUREN?"1":"0")}catch(_){}window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au,chatUrl:cu,chatEnabled:!!(fl.elements['ca']||{}).checked,pushEnabled:!!(fl.elements['pn']||{}).checked,tourEnabled:!!(fl.elements['to']||{}).checked},{merge:true});window.CHATEN=!!(fl.elements['ca']||{}).checked;window.PUSHEN=!!(fl.elements['pn']||{}).checked;try{localStorage.setItem("apppushon",window.PUSHEN?"1":"0")}catch(_){}window.TOUREN=!!(fl.elements['to']||{}).checked;try{localStorage.setItem("appchaton",window.CHATEN?"1":"0");localStorage.setItem("apptouron",window.TOUREN?"1":"0")}catch(_){}window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const f=e.target.closest('[data-adm="add"]');if(!f)return;e.preventDefault();
   const em=lc(f.em.value),nm=f.nm.value.trim();if(!/@/.test(em))return;
