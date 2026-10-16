@@ -1049,9 +1049,12 @@ function renderPlan(){
   if(d.kind==="shoot"){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
     if(d.extras)f.push([L("Kompars:innen"),d.extras]);
-    /* drive from the crew hotel: +3 min buffer; the route itself only when opened */
+    /* drive from the crew hotel: +3 min buffer; the route itself only when opened; shown next to the shooting time */
     const dv=d.drive&&d.drive.min?'<details class="fact factd"><summary><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</span></summary><span class="fsub">'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'</span></details>':'';
-    h+='<div class="facts">'+f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>').join("")+dv+'</div>';
+    /* the drive to the set sits right next to the shooting time */
+    const fx=f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>');
+    if(dv)fx.splice(d.hours?1:0,0,dv);
+    h+='<div class="facts">'+fx.join("")+'</div>';
   }
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
   h+='</div>';
