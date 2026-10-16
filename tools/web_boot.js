@@ -1709,7 +1709,7 @@ function acctInnerAll(){
     '';
 }
 /* «Mein Konto» in groups like the app management: Profil (with password/e-mail) · Essen · Benachrichtigungen · App */
-const ACSUBS=[["pro","Profil"],["food","Essen"],["note","Benachrichtigungen"],["app","App"]];
+const ACSUBS=[["pro","Profil"],["food","Essen"],["note","Push"],["app","App"]];
 let ACSUB="pro";try{ACSUB=localStorage.getItem("acsub")||"pro"}catch(_){}
 function acctInner(){
   const raw=acctInnerAll();const box=document.createElement("div");box.innerHTML=raw;
