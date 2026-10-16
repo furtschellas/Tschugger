@@ -240,7 +240,7 @@ Object.assign(I18N,{
  "Menüs":{fr:"Menus",it:"Menù",en:"Menus",hi:"मेन्यू"},
  "Pro Drehtag und Unit":{fr:"Par jour de tournage et unit",it:"Per giorno di riprese e unit",en:"Per shooting day and unit",hi:"हर शूट दिन और Unit के लिए"},
  "Keine kommenden Drehtage.":{fr:"Aucun jour de tournage à venir.",it:"Nessun giorno di riprese in arrivo.",en:"No upcoming shooting days.",hi:"कोई आगामी शूट दिन नहीं।"},
- "Das Menü erscheint im Drehplan beim Lunch des Tages – pro Unit.":{fr:"Le menu apparaît dans le plan au lunch du jour – par unit.",it:"Il menù appare nel piano al pranzo del giorno – per unit.",en:"The menu shows up in the schedule at that day's lunch – per unit.",hi:"मेन्यू शेड्यूल में उस दिन के लंच पर दिखेगा – हर Unit के लिए।"},
+ "Zwei Menüs pro Drehtag und Unit – sie erscheinen im Drehplan und im Callsheet beim Lunch.":{fr:"Le menu apparaît dans le plan au lunch du jour – par unit.",it:"Il menù appare nel piano al pranzo del giorno – per unit.",en:"The menu shows up in the schedule at that day's lunch – per unit.",hi:"मेन्यू शेड्यूल में उस दिन के लंच पर दिखेगा – हर Unit के लिए।"},
  "z. B. Risotto · vegetarisch: Gemüsecurry · Dessert":{fr:"p. ex. risotto · végétarien : curry de légumes · dessert",it:"p. es. risotto · vegetariano: curry di verdure · dessert",en:"e.g. risotto · vegetarian: vegetable curry · dessert",hi:"जैसे रिसोट्टो · शाकाहारी: सब्ज़ी करी · मिठाई"},
  "Menü gespeichert.":{fr:"Menu enregistré.",it:"Menù salvato.",en:"Menu saved.",hi:"मेन्यू सहेजा गया।"},
  "Essenswünsche":{fr:"Régimes et souhaits",it:"Preferenze alimentari",en:"Dietary wishes",hi:"भोजन पसंद"},
@@ -265,6 +265,10 @@ Object.assign(I18N,{
  "Verknüpfung erstellen":{fr:"Créer un raccourci",it:"Crea collegamento",en:"Create shortcut",hi:"शॉर्टकट बनाएँ"},
  "In eine WhatsApp-Gruppe teilen":{fr:"Partager dans un groupe WhatsApp",it:"Condividi in un gruppo WhatsApp",en:"Share to a WhatsApp group",hi:"WhatsApp ग्रुप में शेयर करें"},
  "Am schnellsten: in eure Crew-Gruppe teilen. Oder einzeln – bei jeder Person auf WhatsApp tippen, der Text ist schon eingefügt.":{fr:"Le plus rapide : partager dans votre groupe d'équipe. Ou un par un – touche WhatsApp pour chaque personne, le texte est déjà prêt.",it:"Il modo più rapido: condividere nel gruppo della crew. Oppure uno per uno – tocca WhatsApp per ogni persona, il testo è già pronto.",en:"Quickest: share to your crew group. Or one by one – tap WhatsApp for each person, the text is ready.",hi:"सबसे तेज़: अपने crew ग्रुप में शेयर करें। या एक-एक करके – हर व्यक्ति के लिए WhatsApp टैप करें, टेक्स्ट तैयार है।"},
+ "z. B. Risotto mit Pilzen":{fr:"p. ex. risotto aux champignons",it:"p. es. risotto ai funghi",en:"e.g. mushroom risotto",hi:"जैसे मशरूम रिसोट्टो"},
+ "z. B. vegetarisch: Gemüsecurry":{fr:"p. ex. végétarien : curry de légumes",it:"p. es. vegetariano: curry di verdure",en:"e.g. vegetarian: vegetable curry",hi:"जैसे शाकाहारी: सब्ज़ी करी"},
+ "Alle Units essen zusammen (ein gemeinsames Menü)":{fr:"Toutes les units mangent ensemble (un menu commun)",it:"Tutte le unit mangiano insieme (un menù comune)",en:"All units eat together (one shared menu)",hi:"सभी Units साथ खाती हैं (एक साझा मेन्यू)"},
+ "Alle Units essen zusammen":{fr:"Toutes les units mangent ensemble",it:"Tutte le unit mangiano insieme",en:"All units eat together",hi:"सभी Units साथ खाती हैं"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -1482,20 +1486,28 @@ let MENUAT=0;
 async function menusLoad(force){if(!ME||(!force&&Date.now()-MENUAT<120e3))return;MENUAT=Date.now();
   try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"menus"));const m={};q.docs.forEach(d=>{m[d.id]=d.data()});
     if(JSON.stringify(m)!==JSON.stringify(window.MENUS)){window.MENUS=m;try{localStorage.setItem("menus",JSON.stringify(m))}catch(_){}render()}}catch(err){console.warn("menus",err&&err.code||err)}}
-window.menuFor=(date,u)=>{const m=(window.MENUS||{})[date];const t=m&&String(m["u"+u]||"").trim();if(!t)return "";
-  return '<div class="menu"><span class="mico" aria-hidden="true">🍽</span><div><b>'+esc(L("Menü"))+'</b><div class="mtxt">'+esc(t).replace(/\n/g,"<br>")+'</div></div></div>'};
+/* two menu options per day and unit (u1a/u1b, u2a/u2b …; the older single field u1 counts as option 1) */
+const menuOpts=(m,u)=>{if(m.tog)u="1";return [String(m["u"+u+"a"]||m["u"+u]||"").trim(),String(m["u"+u+"b"]||"").trim()].filter(Boolean)};
+window.menuFor=(date,u)=>{const m=(window.MENUS||{})[date];if(!m)return "";
+  const units=u==="all"?(m.tog?["1"]:["1","2","3"].filter(x=>menuOpts(m,x).length)):[u];if(!units.length||!menuOpts(m,units[0]).length&&u!=="all")return "";
+  const block=x=>{const o=menuOpts(m,x);return o.length?(u==="all"&&units.length>1?'<div class="mu">'+esc(UNAME&&UNAME[x]?UNAME[x]+" Unit":x)+'</div>':'')+o.map((t,i)=>'<div class="mtxt">'+(o.length>1?'<span class="mopt">'+esc(L("Menü"))+' '+(i+1)+'</span> ':'')+esc(t).replace(/\n/g,"<br>")+'</div>').join(""):""};
+  const body=units.map(block).join("");if(!body)return "";
+  return '<div class="menu"><span class="mico" aria-hidden="true">🍽</span><div><b>'+esc(L("Menü"))+'</b>'+(m.tog&&(u==="all"||u!=="1")?'<div class="mu">'+esc(L("Alle Units essen zusammen"))+'</div>':'')+body+'</div></div>'};
 setInterval(()=>{if(document.visibilityState==="visible")menusLoad()},60e3);
 function menuSec(){
   const t=todayISO(),days=S.days.filter(d=>d.kind==="shoot"&&d.date>=t);const units=typeof unitsOn==="function"?unitsOn():["1"];
   if(!days.length)return '<p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>';
-  return '<p class="ghint">'+L("Das Menü erscheint im Drehplan beim Lunch des Tages – pro Unit.")+'</p>'+days.map(d=>{const m=(window.MENUS||{})[d.date]||{};const dt=new Date(d.date+"T12:00:00");
-    const us=units.filter(u=>u==="1"||(typeof hasU==="function"&&hasU(d,u)));
+  return '<p class="ghint">'+L("Zwei Menüs pro Drehtag und Unit – sie erscheinen im Drehplan und im Callsheet beim Lunch.")+'</p>'+days.map(d=>{const m=(window.MENUS||{})[d.date]||{};const dt=new Date(d.date+"T12:00:00");
+    const us=units.filter(u=>u==="1"||(typeof hasU==="function"&&hasU(d,u)));const multi=us.length>1;
     return '<form class="menuf" data-menu="'+esc(d.date)+'"><div class="menuh"><b>'+esc(d.short||d.label||"")+'</b> <span>'+esc(WDL(dt)+" "+String(dt.getDate()).padStart(2,"0")+"."+String(dt.getMonth()+1).padStart(2,"0")+".")+'</span></div>'+
-      us.map(u=>'<label>'+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'<textarea name="u'+u+'" rows="2" maxlength="400" placeholder="'+esc(L("z. B. Risotto · vegetarisch: Gemüsecurry · Dessert"))+'">'+esc(m["u"+u]||"")+'</textarea></label>').join("")+
+      (multi?'<label class="ck menutog"><input type="checkbox" name="tog"'+(m.tog?' checked':'')+'> '+L("Alle Units essen zusammen (ein gemeinsames Menü)")+'</label>':'')+
+      us.filter(u=>u==="1"||!m.tog).map(u=>'<div class="menuu" data-mu="'+u+'"><div class="menuul">'+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'</div>'+["a","b"].map((k,i)=>'<label>'+L("Menü")+' '+(i+1)+'<input name="u'+u+k+'" maxlength="300" placeholder="'+esc(L(i?"z. B. vegetarisch: Gemüsecurry":"z. B. Risotto mit Pilzen"))+'" value="'+esc(k==="a"?(m["u"+u+"a"]||m["u"+u]||""):(m["u"+u+"b"]||""))+'"></label>').join("")+'</div>').join("")+
       '<div class="arb"><button type="submit">'+L("Speichern")+'</button></div></form>'}).join("");
 }
+document.addEventListener("change",e=>{const t=e.target;if(!t.matches("form[data-menu] input[name=tog]"))return;const f=t.form;f.querySelectorAll('.menuu').forEach(x=>{if(x.dataset.mu!=="1")x.hidden=t.checked});
+  if(!t.checked&&!f.querySelector('.menuu[data-mu="2"]')){const date=f.dataset.menu;window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],{tog:false},Object.fromEntries([...f.querySelectorAll("input[name^=u]")].map(x=>[x.name,x.value])))});render()}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form[data-menu]");if(!f)return;e.preventDefault();if(!can("catering.edit"))return;
-  const date=f.dataset.menu,val={by:ME.email};["1","2","3"].forEach(u=>{if(f["u"+u])val["u"+u]=String(f["u"+u].value||"").trim().slice(0,400)});const btn=f.querySelector("button[type=submit]");btn.disabled=true;
+  const date=f.dataset.menu,val={by:ME.email,tog:!!(f.tog&&f.tog.checked)};["1","2","3"].forEach(u=>["a","b"].forEach(k=>{if(f["u"+u+k])val["u"+u+k]=String(f["u"+u+k].value||"").trim().slice(0,300)}));const btn=f.querySelector("button[type=submit]");btn.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"menus",date),Object.assign({},val,{at:F.serverTimestamp()}));window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],val)});try{localStorage.setItem("menus",JSON.stringify(window.MENUS))}catch(_){}
     document.activeElement&&document.activeElement.blur&&document.activeElement.blur();showMsg(L("Menü gespeichert."),2500);render()}
   catch(err){btn.disabled=false;showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}});

@@ -168,10 +168,10 @@ service cloud.firestore {
     match /menus/{date} {
       allow read: if isMember() || isAdmin();
       allow write: if can('catering.edit') && date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && (request.resource == null || (request.resource.data.keys().hasOnly(['u1', 'u2', 'u3', 'by', 'at'])
-          && (!('u1' in request.resource.data) || request.resource.data.u1.size() <= 400)
-          && (!('u2' in request.resource.data) || request.resource.data.u2.size() <= 400)
-          && (!('u3' in request.resource.data) || request.resource.data.u3.size() <= 400)));
+        && (request.resource == null || (request.resource.data.keys().hasOnly(['u1', 'u2', 'u3', 'u1a', 'u1b', 'u2a', 'u2b', 'u3a', 'u3b', 'tog', 'by', 'at'])
+          && request.resource.data.get('u1a', '').size() <= 300 && request.resource.data.get('u1b', '').size() <= 300
+          && request.resource.data.get('u2a', '').size() <= 300 && request.resource.data.get('u2b', '').size() <= 300
+          && request.resource.data.get('u3a', '').size() <= 300 && request.resource.data.get('u3b', '').size() <= 300));
     }
 
     match /{document=**} {
