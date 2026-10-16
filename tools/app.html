@@ -955,7 +955,7 @@ function myIdentity(){
   return p;
 }
 function iAmIn(names,me,people){
-  for(const raw of names){const n=raw.replace(/\btbc\b/ig,"").trim();if(!n)continue;
+  for(const raw of names){const n=raw.replace(/\([^)]*\)/g," ").replace(/\b(tbc|tba|tbd)\b/ig,"").replace(/\s+/g," ").trim();if(!n)continue; /* «Stefan Künzler (online tbc)» → Stefan Künzler */
     const g=groupPeople(n,people);if(g){if(g.list.some(x=>(me.email&&x.email===me.email)||x.k===me.k))return true;continue}
     const f=findPerson(n,[me]);if(f)return true}
   return false;
