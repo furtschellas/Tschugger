@@ -1708,8 +1708,8 @@ function acctInnerAll(){
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '';
 }
-/* «Mein Konto» in groups like the app management: Profil · Benachrichtigungen · App · Konto */
-const ACSUBS=[["pro","Profil"],["note","Benachrichtigungen"],["app","App"],["acc","Konto"]];
+/* «Mein Konto» in groups like the app management: Profil (with password/e-mail) · Essen · Benachrichtigungen · App */
+const ACSUBS=[["pro","Profil"],["food","Essen"],["note","Benachrichtigungen"],["app","App"]];
 let ACSUB="pro";try{ACSUB=localStorage.getItem("acsub")||"pro"}catch(_){}
 function acctInner(){
   const raw=acctInnerAll();const box=document.createElement("div");box.innerHTML=raw;
@@ -1720,7 +1720,12 @@ function acctInner(){
   [...box.children].forEach(el=>{
     if(el.classList.contains("myhead")||el.classList.contains("acwho")){head.push(el.outerHTML);return}
     if(el.matches("section.psec")){const g=el.classList.contains("pushsec")?"note":(map.get(tit(el))||"app");grp[g].push(el.outerHTML);return}
-    grp.acc.push(el.outerHTML)});
+    grp.pro.push(el.outerHTML)});  /* password / e-mail change belong to the profile */
+  /* «Essen» is the food part of the same profile form (one form, so saving keeps working): shown alone in its own group */
+  const prof=box.querySelector('section.psec form[data-af="pf"]');
+  if(prof){const sec=prof.closest("section.psec");const i=grp.pro.indexOf(sec.outerHTML);
+    const pro=sec.cloneNode(true);pro.classList.add("no-food");if(i>=0)grp.pro[i]=pro.outerHTML;
+    const food=sec.cloneNode(true);food.classList.add("only-food");const h=food.querySelector(":scope>h4");if(h)h.textContent=L("Essen");grp.food.push(food.outerHTML)}
   const subs=ACSUBS.filter(([k])=>grp[k].length);if(!subs.some(([k])=>k===ACSUB))ACSUB=subs.length?subs[0][0]:"pro";
   const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-acsub="'+k+'" aria-selected="'+(ACSUB===k)+'">'+esc(L(t))+'</button>').join("")+'</nav>';
   /* who is signed in: always shown, above the groups */
