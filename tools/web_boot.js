@@ -235,6 +235,15 @@ Object.assign(I18N,{
  "Letzter Versand-Lauf bei GitHub fehlgeschlagen:":{fr:"Dernier envoi GitHub échoué :",it:"Ultimo invio GitHub fallito:",en:"Last GitHub sending run failed:",hi:"GitHub पर आख़िरी रन विफल:"},
  "GitHub hat den Versand noch nie gestartet.":{fr:"GitHub n'a encore jamais lancé l'envoi.",it:"GitHub non ha mai avviato l'invio.",en:"GitHub has never started the sending run.",hi:"GitHub ने अभी तक भेजना शुरू नहीं किया।"},
  "Neu prüfen":{fr:"Revérifier",it:"Ricontrolla",en:"Check again",hi:"फिर से जाँचें"},
+ "Menüs eingeben":{fr:"Saisir les menus",it:"Inserire i menu",en:"Enter menus",hi:"मेन्यू दर्ज करें"},
+ "Menü":{fr:"Menu",it:"Menù",en:"Menu",hi:"मेन्यू"},
+ "Menüs":{fr:"Menus",it:"Menù",en:"Menus",hi:"मेन्यू"},
+ "Pro Drehtag und Unit":{fr:"Par jour de tournage et unit",it:"Per giorno di riprese e unit",en:"Per shooting day and unit",hi:"हर शूट दिन और Unit के लिए"},
+ "Keine kommenden Drehtage.":{fr:"Aucun jour de tournage à venir.",it:"Nessun giorno di riprese in arrivo.",en:"No upcoming shooting days.",hi:"कोई आगामी शूट दिन नहीं।"},
+ "Das Menü erscheint im Drehplan beim Lunch des Tages – pro Unit.":{fr:"Le menu apparaît dans le plan au lunch du jour – par unit.",it:"Il menù appare nel piano al pranzo del giorno – per unit.",en:"The menu shows up in the schedule at that day's lunch – per unit.",hi:"मेन्यू शेड्यूल में उस दिन के लंच पर दिखेगा – हर Unit के लिए।"},
+ "z. B. Risotto · vegetarisch: Gemüsecurry · Dessert":{fr:"p. ex. risotto · végétarien : curry de légumes · dessert",it:"p. es. risotto · vegetariano: curry di verdure · dessert",en:"e.g. risotto · vegetarian: vegetable curry · dessert",hi:"जैसे रिसोट्टो · शाकाहारी: सब्ज़ी करी · मिठाई"},
+ "Menü gespeichert.":{fr:"Menu enregistré.",it:"Menù salvato.",en:"Menu saved.",hi:"मेन्यू सहेजा गया।"},
+ "Essenswünsche":{fr:"Régimes et souhaits",it:"Preferenze alimentari",en:"Dietary wishes",hi:"भोजन पसंद"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -634,7 +643,7 @@ const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
 /* permissions, grouped by main topic (topic in capitals, short labels so they fit on one line on phones) */
-const PERMS=[["view.plan","Drehplan sehen","Drehplan"],["view.prep","Prep sehen","Drehplan"],["view.dispo","Callsheet sehen","Drehplan"],["view.script","Drehbuch sehen","Drehbuch"],["view.blocking","Blocking sehen","Drehbuch"],["view.crew","Crewliste sehen","Crewliste"],["view.phone","Telefon sehen","Crewliste"],["view.email","E-Mail sehen","Crewliste"],["contacts.extra","Externe Kontakte sehen","Crewliste"],["crew.food","Essen sehen","Crewliste"],["crew.bday","Geburtstage sehen","Crewliste"],["crew.vcf","VCF exportieren","Crewliste"],["view.mycal","Meine Termine sehen","Termine"],["mycal.all","Alle Termine sehen","Termine"],["push.send","Push-Nachrichten senden","Termine"],["users.view","Benutzer sehen","Benutzer"],["users.edit","Benutzer ändern","Benutzer"],["users.invite","Benutzer einladen","Benutzer"],["users.requests","Anfragen freischalten","Benutzer"],["settings","Einstellungen ändern","App"]];
+const PERMS=[["view.plan","Drehplan sehen","Drehplan"],["view.prep","Prep sehen","Drehplan"],["view.dispo","Callsheet sehen","Drehplan"],["view.script","Drehbuch sehen","Drehbuch"],["view.blocking","Blocking sehen","Drehbuch"],["view.crew","Crewliste sehen","Crewliste"],["view.phone","Telefon sehen","Crewliste"],["view.email","E-Mail sehen","Crewliste"],["contacts.extra","Externe Kontakte sehen","Crewliste"],["crew.food","Essen sehen","Crewliste"],["crew.bday","Geburtstage sehen","Crewliste"],["crew.vcf","VCF exportieren","Crewliste"],["catering.edit","Menüs eingeben","Crewliste"],["view.mycal","Meine Termine sehen","Termine"],["mycal.all","Alle Termine sehen","Termine"],["push.send","Push-Nachrichten senden","Termine"],["users.view","Benutzer sehen","Benutzer"],["users.edit","Benutzer ändern","Benutzer"],["users.invite","Benutzer einladen","Benutzer"],["users.requests","Anfragen freischalten","Benutzer"],["settings","Einstellungen ändern","App"]];
 const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
 const ADMIN_DEFAULT=PERMS.map(x=>x[0]).filter(p=>p!=="settings");
 let MYPERMS=[],MYROLE="",ADMINPERMS=ADMIN_DEFAULT.slice();
@@ -1398,6 +1407,30 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form[data
     const r=await bcDeliver(ref.id);BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";f.reset();BC.hist=null}
   catch(err){console.error(err);BC.ok=false;BC.msg=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}
   BC.busy=false;render()});
+/* ---- lunch menus: catering enters a menu per shooting day and unit (permission «Menüs eingeben»);
+   the schedule shows it at «Lunch» of that day and unit ---- */
+window.MENUS={};try{window.MENUS=JSON.parse(localStorage.getItem("menus")||"{}")||{}}catch(_){}
+let MENUAT=0;
+async function menusLoad(force){if(!ME||(!force&&Date.now()-MENUAT<120e3))return;MENUAT=Date.now();
+  try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"menus"));const m={};q.docs.forEach(d=>{m[d.id]=d.data()});
+    if(JSON.stringify(m)!==JSON.stringify(window.MENUS)){window.MENUS=m;try{localStorage.setItem("menus",JSON.stringify(m))}catch(_){}render()}}catch(err){console.warn("menus",err&&err.code||err)}}
+window.menuFor=(date,u)=>{const m=(window.MENUS||{})[date];const t=m&&String(m["u"+u]||"").trim();if(!t)return "";
+  return '<div class="menu"><span class="mico" aria-hidden="true">🍽</span><div><b>'+esc(L("Menü"))+'</b><div class="mtxt">'+esc(t).replace(/\n/g,"<br>")+'</div></div></div>'};
+setInterval(()=>{if(document.visibilityState==="visible")menusLoad()},60e3);
+function menuSec(){
+  const t=todayISO(),days=S.days.filter(d=>d.kind==="shoot"&&d.date>=t);const units=typeof unitsOn==="function"?unitsOn():["1"];
+  if(!days.length)return '<p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>';
+  return '<p class="ghint">'+L("Das Menü erscheint im Drehplan beim Lunch des Tages – pro Unit.")+'</p>'+days.map(d=>{const m=(window.MENUS||{})[d.date]||{};const dt=new Date(d.date+"T12:00:00");
+    const us=units.filter(u=>u==="1"||(typeof hasU==="function"&&hasU(d,u)));
+    return '<form class="menuf" data-menu="'+esc(d.date)+'"><div class="menuh"><b>'+esc(d.short||d.label||"")+'</b> <span>'+esc(WDL(dt)+" "+String(dt.getDate()).padStart(2,"0")+"."+String(dt.getMonth()+1).padStart(2,"0")+".")+'</span></div>'+
+      us.map(u=>'<label>'+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'<textarea name="u'+u+'" rows="2" maxlength="400" placeholder="'+esc(L("z. B. Risotto · vegetarisch: Gemüsecurry · Dessert"))+'">'+esc(m["u"+u]||"")+'</textarea></label>').join("")+
+      '<div class="arb"><button type="submit">'+L("Speichern")+'</button></div></form>'}).join("");
+}
+document.addEventListener("submit",async e=>{const f=e.target.closest("form[data-menu]");if(!f)return;e.preventDefault();if(!can("catering.edit"))return;
+  const date=f.dataset.menu,val={by:ME.email};["1","2","3"].forEach(u=>{if(f["u"+u])val["u"+u]=String(f["u"+u].value||"").trim().slice(0,400)});const btn=f.querySelector("button[type=submit]");btn.disabled=true;
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"menus",date),Object.assign({},val,{at:F.serverTimestamp()}));window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],val)});try{localStorage.setItem("menus",JSON.stringify(window.MENUS))}catch(_){}
+    document.activeElement&&document.activeElement.blur&&document.activeElement.blur();showMsg(L("Menü gespeichert."),2500);render()}
+  catch(err){btn.disabled=false;showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}});
 /* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */
 const WELCOME_VER="1";
 const WTXT={
@@ -1456,7 +1489,7 @@ async function afterSignIn(u){
     if(isOffline(err)&&S.days.length){hideGate();acctButton(true);showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
-  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();pushSyncSoon();
+  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();pushSyncSoon();menusLoad(true);
   const prof=MEMBER||{};
   let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}
   if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){LANG=prof.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
@@ -1646,12 +1679,14 @@ function cateringHTML(){
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-catpage]")){S.tab="cater";S.srcOpen=false;window.scrollTo(0,0);render()}});
 VIEWS.cater=function(){
-  if(!ME||!can("crew.food"))return '<div class="empty">'+L("Kein Zugang")+'</div>';
-  ensureAdm();if(!ADM.loaded)return '<section class="mypage catpage"><h2 class="pgt">Catering</h2><p class="ghint">'+(ADM.err?esc(L("Daten der Benutzer:innen nicht lesbar"))+' ('+esc(ADM.err)+')':L("Lade …"))+'</p></section>';
-  const c=caterData();
-  return '<section class="mypage catpage"><h2 class="pgt">Catering</h2><p class="ghint">'+esc(L("Alle aktiven Benutzer:innen der App, die am Set verpflegt werden."))+'</p>'+caterSummary(c)+caterOverview(c)+'</section>';
+  if(!ME||!(can("crew.food")||can("catering.edit")))return '<div class="empty">'+L("Kein Zugang")+'</div>';
+  let h='<section class="mypage catpage"><h2 class="pgt">Catering</h2>';
+  if(can("catering.edit"))h+='<details class="catbox catmenus" data-sec="catmenus"'+(SECS.catmenus===false?'':' open')+'><summary><div class="cathd"><span class="catic" aria-hidden="true">🍽</span><div class="catt"><b>'+L("Menüs")+'</b><span>'+L("Pro Drehtag und Unit")+'</span></div><span class="catchev" aria-hidden="true"></span></div></summary><div class="catbody">'+menuSec()+'</div></details>';
+  if(can("crew.food")){ensureAdm();if(!ADM.loaded)h+='<p class="ghint">'+(ADM.err?esc(L("Daten der Benutzer:innen nicht lesbar"))+' ('+esc(ADM.err)+')':L("Lade …"))+'</p>';
+    else{const c=caterData();h+='<h3 class="cath3">'+L("Essenswünsche")+'</h3><p class="ghint">'+esc(L("Alle aktiven Benutzer:innen der App, die am Set verpflegt werden."))+'</p>'+caterSummary(c)+caterOverview(c)}}
+  return h+'</section>';
 };
-window.caterTab=()=>!!(ME&&can("crew.food"));
+window.caterTab=()=>!!(ME&&(can("crew.food")||can("catering.edit")));
 /* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */
 const BK={busy:false,msg:"",ok:false};
 function bkSec(){
