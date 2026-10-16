@@ -1527,7 +1527,7 @@ function fitRows(root){
   (root||document).querySelectorAll(".smodes,.asub,.hbtns,.myhead,.mcpick,.fpls").forEach(r=>{
     r.style.removeProperty("--bs");
     if(!r.offsetParent)return;
-    const kids=r.children,over=()=>r.scrollWidth>r.clientWidth+1||(!r.classList.contains("hbtns")&&[...kids].some(c=>c.scrollWidth>c.clientWidth+1&&c.tagName==="BUTTON"))||(r.classList.contains("smodes")&&kids.length>1&&kids[kids.length-1].offsetTop>kids[0].offsetTop+2);
+    const kids=r.children,hb=r.classList.contains("hbtns"),over=()=>r.scrollWidth>r.clientWidth+(hb?10:1)||(!r.classList.contains("hbtns")&&[...kids].some(c=>c.scrollWidth>c.clientWidth+1&&c.tagName==="BUTTON"))||(r.classList.contains("smodes")&&kids.length>1&&kids[kids.length-1].offsetTop>kids[0].offsetTop+2);
     let b=1;while(b>0.72&&over()){b=Math.round((b-0.04)*100)/100;r.style.setProperty("--bs",b)}
   });
 }
