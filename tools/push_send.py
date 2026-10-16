@@ -40,7 +40,10 @@ def docs(col="push"):
         r.raise_for_status()
         j = r.json()
         for d in j.get("documents", []):
-            yield d["name"].rsplit("/", 1)[1], (d.get("fields", {}).get("c", {}) or {}).get("stringValue", "")
+            f = d.get("fields", {})
+            if col == "broadcasts" and (f.get("sent", {}) or {}).get("booleanValue"):
+                continue  # already sent right away by the Cloudflare Worker
+            yield d["name"].rsplit("/", 1)[1], (f.get("c", {}) or {}).get("stringValue", "")
         tok = j.get("nextPageToken")
         if not tok:
             break

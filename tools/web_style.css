@@ -325,3 +325,9 @@ section.adm>h2.dh:first-child{margin-top:22px}
 .bcform .arb button{background:var(--accent);color:var(--accent-ink,#fff);border:0;font-weight:700;cursor:pointer}
 .bcform .arb button:disabled{opacity:.55}
 @media (min-width:700px){.bcform{gap:16px}.bcform .arb button{width:auto;min-width:220px;padding:12px 28px}.bcform .arb{display:flex;justify-content:flex-end}}
+.bchist{display:flex;flex-direction:column;gap:10px;margin:8px 0 16px}
+.bch{border:1px solid var(--rule);border-radius:14px;padding:12px 14px;background:var(--sheet)}
+.bchd{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}.bchd .ust{margin-left:auto}
+.bctt{display:block;margin:6px 0 2px;font-size:15px}.bcb{margin:0 0 8px;white-space:pre-wrap;line-height:1.4}
+.bcm{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--muted)}
+.bch .arb{margin-top:8px;display:flex;justify-content:flex-end}.bch .pillbtn{font-size:13px;padding:5px 14px}
