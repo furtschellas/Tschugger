@@ -120,6 +120,17 @@ def _enc_write(fn, data):
     iv = secrets.token_bytes(12)
     open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, data, None))
 
+def small_jpeg(data):
+    """photo previews: at most 1024 px, JPEG quality 70 (PDF pages are not touched); unchanged if that is not smaller"""
+    try:
+        import io
+        from PIL import Image
+        im = Image.open(io.BytesIO(data)).convert("RGB"); im.thumbnail((1024, 1024))
+        o = io.BytesIO(); im.save(o, "JPEG", quality=70, optimize=True, progressive=True)
+        return o.getvalue() if len(o.getvalue()) < len(data) * 0.92 else data
+    except Exception:
+        return data
+
 def _thumb(dbx, e, fn):
     """encrypted preview picture of a Dropbox photo (made once, kept in blk/)"""
     if os.path.exists(fn): return True
@@ -128,7 +139,7 @@ def _thumb(dbx, e, fn):
     try:
         r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps(
             {"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
-        r.raise_for_status(); _enc_write(fn, r.content); return True
+        r.raise_for_status(); _enc_write(fn, small_jpeg(r.content)); return True
     except Exception as ex:
         log("Vorschau fehlt:", e["name"], str(ex)[:80]); return False
 
@@ -731,7 +742,7 @@ def main():
                         r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps({"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
                         r.raise_for_status()
                         iv = secrets.token_bytes(12)
-                        open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, r.content, None)); changed = True
+                        open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, small_jpeg(r.content), None)); changed = True
                     except Exception as ex:
                         log("Vorschau fehlt:", e["name"], str(ex)[:80]); want_files.discard(fn); continue
                 vid = bool(re.search(r"\.(mov|mp4|m4v)$", e["name"], re.I))
