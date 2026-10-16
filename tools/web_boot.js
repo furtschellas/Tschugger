@@ -289,6 +289,11 @@ Object.assign(I18N,{
  "Bitte eine gültige E-Mail-Adresse eingeben.":{fr:"Saisis une adresse e-mail valide.",it:"Inserisci un indirizzo e-mail valido.",en:"Please enter a valid email address.",hi:"कृपया मान्य ई-मेल पता दर्ज करें।"},
  "hat bereits ein Konto.":{fr:"a déjà un compte.",it:"ha già un account.",en:"already has an account.",hi:"का पहले से खाता है।"},
  "Schick jetzt die Einladungs-Mail (✉ bei der Person).":{fr:"Envoie maintenant l'e-mail d'invitation (✉ chez la personne).",it:"Ora invia l'e-mail d'invito (✉ presso la persona).",en:"Now send the invitation email (✉ on the person).",hi:"अब निमंत्रण ई-मेल भेजें (व्यक्ति के पास ✉)।"},
+ "Zwischenverpflegung":{en:"Snacks",fr:"Collation",it:"Spuntino",hi:"नाश्ता"},
+ "optional":{en:"optional",fr:"facultatif",it:"facoltativo",hi:"वैकल्पिक"},
+ "z. B. Früchte, Sandwiches um 16:00":{en:"e.g. fruit, sandwiches at 4 pm",fr:"p. ex. fruits, sandwichs à 16h",it:"p. es. frutta, panini alle 16",hi:"जैसे फल, सैंडविच 16:00 बजे"},
+ "laut Callsheet":{en:"according to callsheet",fr:"selon la feuille de service",it:"secondo l\u2019ordine del giorno",hi:"Callsheet के अनुसार"},
+ "noch kein Callsheet – ganze Crew":{en:"no callsheet yet – whole crew",fr:"pas encore de feuille de service – toute l\u2019équipe",it:"nessun ordine del giorno – tutta la troupe",hi:"अभी Callsheet नहीं – पूरी Crew"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -689,12 +694,14 @@ const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
 /* permissions, grouped by main topic (topic in capitals, short labels so they fit on one line on phones) */
-const PERMS=[["view.plan","Drehplan sehen","Drehplan"],["view.prep","Prep sehen","Drehplan"],["view.dispo","Callsheet sehen","Drehplan"],["view.script","Drehbuch sehen","Drehbuch"],["view.blocking","Blocking sehen","Drehbuch"],["view.crew","Crewliste sehen","Crewliste"],["view.phone","Telefon sehen","Crewliste"],["view.email","E-Mail sehen","Crewliste"],["contacts.extra","Externe Kontakte sehen","Crewliste"],["crew.food","Essen sehen","Crewliste"],["crew.bday","Geburtstage sehen","Crewliste"],["crew.vcf","VCF exportieren","Crewliste"],["catering.edit","Menüs eingeben","Crewliste"],["view.mycal","Meine Termine sehen","Termine"],["mycal.all","Alle Termine sehen","Termine"],["push.send","Push-Nachrichten senden","Termine"],["users.view","Benutzer sehen","Benutzer"],["users.edit","Benutzer ändern","Benutzer"],["users.invite","Benutzer einladen","Benutzer"],["users.requests","Anfragen freischalten","Benutzer"],["settings","Einstellungen ändern","App"]];
+const PERMS=[["view.plan","Drehplan sehen","Drehplan"],["view.prep","Prep sehen","Drehplan"],["view.dispo","Callsheet sehen","Drehplan"],["view.script","Drehbuch sehen","Drehbuch"],["view.blocking","Blocking sehen","Drehbuch"],["view.crew","Crewliste sehen","Crewliste"],["view.phone","Telefon sehen","Crewliste"],["view.email","E-Mail sehen","Crewliste"],["contacts.extra","Externe Kontakte sehen","Crewliste"],["crew.food","Essen sehen","Crewliste"],["crew.bday","Geburtstage sehen","Crewliste"],["crew.vcf","VCF exportieren","Crewliste"],["view.mycal","Meine Termine sehen","Termine"],["mycal.all","Alle Termine sehen","Termine"],["push.send","Push-Nachrichten senden","Termine"],["users.view","Benutzer sehen","Benutzer"],["users.edit","Benutzer ändern","Benutzer"],["users.invite","Benutzer einladen","Benutzer"],["users.requests","Anfragen freischalten","Benutzer"],["settings","Einstellungen ändern","App"]];
 const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
 const ADMIN_DEFAULT=PERMS.map(x=>x[0]).filter(p=>p!=="settings");
 let MYPERMS=[],MYROLE="",ADMINPERMS=ADMIN_DEFAULT.slice();
 const can=p=>isOwner()||(isAdmin()&&ADMINPERMS.includes(p))||MYPERMS.includes(p);
 /* the gear (App-Verwaltung) only with the permission «Einstellungen ändern» */
+/* lunch menus: only admins/owners and people with the catering role */
+window.canMenu=()=>!!(ME&&(isAdmin()||/cater/i.test(MYROLE||"")));
 const canAdm=()=>isOwner()||can("settings");
 /* what someone sees: without a role everything as before; with a role (or as admin) only the areas the role allows */
 window.viewOK=k=>{if(!ME||isOwner())return true;if(!isAdmin()&&!MYROLE){if(["plan","script","blocking"].includes(k))return false;return k in window.PUBV?window.PUBV[k]===true:true}return can("view."+k)};
@@ -1511,25 +1518,42 @@ async function menusLoad(force){if(!ME||(!force&&Date.now()-MENUAT<120e3))return
 /* two menu options per day and unit (u1a/u1b, u2a/u2b …; the older single field u1 counts as option 1) */
 const menuOpts=(m,u)=>{if(m.tog)u="1";return [String(m["u"+u+"a"]||m["u"+u]||"").trim(),String(m["u"+u+"b"]||"").trim()].filter(Boolean)};
 window.menuFor=(date,u)=>{const m=(window.MENUS||{})[date];if(!m)return "";
-  const units=u==="all"?(m.tog?["1"]:["1","2","3"].filter(x=>menuOpts(m,x).length)):[u];if(!units.length||!menuOpts(m,units[0]).length&&u!=="all")return "";
+  const units=u==="all"?(m.tog?["1"]:["1","2","3"].filter(x=>menuOpts(m,x).length)):[u];if(!String(m.zw||"").trim()&&(!units.length||!menuOpts(m,units[0]).length&&u!=="all"))return "";
   const block=x=>{const o=menuOpts(m,x);return o.length?(u==="all"&&units.length>1?'<div class="mu">'+esc(UNAME&&UNAME[x]?UNAME[x]+" Unit":x)+'</div>':'')+o.map((t,i)=>'<div class="mtxt">'+(o.length>1?'<span class="mopt">'+esc(L("Menü"))+' '+(i+1)+'</span> ':'')+esc(t).replace(/\n/g,"<br>")+'</div>').join(""):""};
-  const body=units.map(block).join("");if(!body)return "";
+  const zw=String(m.zw||"").trim();const body=units.map(block).join("")+(zw?'<div class="mtxt mzw"><span class="mopt">'+esc(L("Zwischenverpflegung"))+'</span> '+esc(zw).replace(/\n/g,"<br>")+'</div>':"");if(!body)return "";
   return '<div class="menu"><span class="mico" aria-hidden="true">🍽</span><div><b>'+esc(L("Menü"))+'</b>'+(m.tog&&(u==="all"||u!=="1")?'<div class="mu">'+esc(L("Alle Units essen zusammen"))+'</div>':'')+body+'</div></div>'};
 setInterval(()=>{if(document.visibilityState==="visible")menusLoad()},60e3);
+/* who eats on a shooting day: crew of the departments called in that day's callsheet (all active crew if there is
+   no callsheet yet), plus the cast of the callsheet and the extras; split by diet */
+function dayEaters(d){const c=caterData(),dp=(S.dispos||[]).find(x=>x&&x.date===d.date),fd=x=>String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+  let crew=c.act,src=dp?"dispo":"crew";
+  if(dp&&arr(dp.calls).length){const deps=arr(dp.calls).map(z=>fd(z.dept)).filter(Boolean);const f=c.act.filter(m=>{const dd=fd(crewDeptOf(m));return dd&&deps.some(x=>x.includes(dd)||dd.includes(x))});if(f.length)crew=f}
+  const cast=dp?arr(dp.cast).filter(x=>x&&(x.actor||x.role)).length:0,ex=parseInt(String((dp&&dp.extras)||d.extras||0).replace(/[^0-9]/g,""))||0;
+  const cnt={};crew.forEach(m=>{const k=m.diet&&m.diet!=="none"?m.diet:"none";cnt[k]=(cnt[k]||0)+1});
+  const intol={};crew.forEach(m=>m.intol.forEach(i=>{intol[i]=(intol[i]||0)+1}));
+  return {total:crew.length+cast+ex,crew:crew.length,cnt,intol,cast,ex,src}}
+function dayEatHTML(d){let e;try{e=dayEaters(d)}catch(_){return ""}if(!e.total)return "";
+  const reg=(e.cnt.none||0)+e.cast+e.ex;
+  const chips=[reg?'<span class="catchip reg"><b>'+reg+'</b> '+esc(L("Regulär"))+'</span>':'']
+    .concat(DIETS.filter(x=>x[0]!=="none"&&e.cnt[x[0]]).map(x=>'<span class="catchip"><b>'+e.cnt[x[0]]+'</b> '+esc(L(x[1]))+'</span>'))
+    .concat(INTOL.filter(x=>e.intol[x[0]]).map(x=>'<span class="catchip"><b>'+e.intol[x[0]]+'</b> '+esc(L(x[1]))+'</span>')).join("");
+  const tip=e.crew+" Crew"+(e.cast?" · "+e.cast+" Cast":"")+(e.ex?" · "+e.ex+" "+L("Kompars."):"")+" · "+L(e.src==="dispo"?"laut Callsheet":"noch kein Callsheet – ganze Crew");
+  return '<div class="meat" title="'+esc(tip)+'"><span class="mtot"><b>'+e.total+'</b> '+esc(L("Personen"))+'</span><div class="catchips">'+chips+'</div><span class="msrc">'+esc(tip)+'</span></div>'}
 function menuSec(){
   const t=todayISO(),days=S.days.filter(d=>d.kind==="shoot"&&d.date>=t);const units=typeof unitsOn==="function"?unitsOn():["1"];
   if(!days.length)return '<p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>';
   return '<p class="ghint">'+L("Zwei Menüs pro Drehtag und Unit – sie erscheinen im Drehplan und im Callsheet beim Lunch.")+'</p>'+days.map(d=>{const m=(window.MENUS||{})[d.date]||{};const dt=new Date(d.date+"T12:00:00");
     const us=units.filter(u=>u==="1"||(typeof hasU==="function"&&hasU(d,u)));const multi=us.length>1;
-    return '<form class="menuf" data-menu="'+esc(d.date)+'"><div class="menuh"><b>'+esc(d.short||d.label||"")+'</b> <span>'+esc(WDL(dt)+" "+String(dt.getDate()).padStart(2,"0")+"."+String(dt.getMonth()+1).padStart(2,"0")+".")+'</span></div>'+
+    return '<form class="menuf" data-menu="'+esc(d.date)+'"><div class="menuh"><div class="menuhd"><b>'+esc(d.short||d.label||"")+'</b> <span>'+esc(WDL(dt)+" "+String(dt.getDate()).padStart(2,"0")+"."+String(dt.getMonth()+1).padStart(2,"0")+".")+'</span></div>'+dayEatHTML(d)+'</div>'+
       (multi?'<label class="ck menutog"><input type="checkbox" name="tog"'+(m.tog?' checked':'')+'> '+L("Alle Units essen zusammen (ein gemeinsames Menü)")+'</label>':'')+
       us.filter(u=>u==="1"||!m.tog).map(u=>'<div class="menuu" data-mu="'+u+'"><div class="menuul">'+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'</div>'+["a","b"].map((k,i)=>'<label>'+L("Menü")+' '+(i+1)+'<input name="u'+u+k+'" maxlength="300" placeholder="'+esc(L(i?"z. B. vegetarisch: Gemüsecurry":"z. B. Risotto mit Pilzen"))+'" value="'+esc(k==="a"?(m["u"+u+"a"]||m["u"+u]||""):(m["u"+u+"b"]||""))+'"></label>').join("")+'</div>').join("")+
+      '<label class="menuzw"><span>'+L("Zwischenverpflegung")+' <span class="ghint">('+L("optional")+')</span></span><input name="zw" maxlength="300" placeholder="'+esc(L("z. B. Früchte, Sandwiches um 16:00"))+'" value="'+esc(m.zw||"")+'"></label>'+
       '<div class="arb"><button type="submit">'+L("Speichern")+'</button></div></form>'}).join("");
 }
 document.addEventListener("change",e=>{const t=e.target;if(!t.matches("form[data-menu] input[name=tog]"))return;const f=t.form;f.querySelectorAll('.menuu').forEach(x=>{if(x.dataset.mu!=="1")x.hidden=t.checked});
   if(!t.checked&&!f.querySelector('.menuu[data-mu="2"]')){const date=f.dataset.menu;window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],{tog:false},Object.fromEntries([...f.querySelectorAll("input[name^=u]")].map(x=>[x.name,x.value])))});render()}});
-document.addEventListener("submit",async e=>{const f=e.target.closest("form[data-menu]");if(!f)return;e.preventDefault();if(!can("catering.edit"))return;
-  const date=f.dataset.menu,val={by:ME.email,tog:!!(f.tog&&f.tog.checked)};["1","2","3"].forEach(u=>["a","b"].forEach(k=>{if(f["u"+u+k])val["u"+u+k]=String(f["u"+u+k].value||"").trim().slice(0,300)}));const btn=f.querySelector("button[type=submit]");btn.disabled=true;
+document.addEventListener("submit",async e=>{const f=e.target.closest("form[data-menu]");if(!f)return;e.preventDefault();if(!canMenu())return;
+  const date=f.dataset.menu,val={by:ME.email,tog:!!(f.tog&&f.tog.checked),zw:f.zw?String(f.zw.value||"").trim().slice(0,300):""};["1","2","3"].forEach(u=>["a","b"].forEach(k=>{if(f["u"+u+k])val["u"+u+k]=String(f["u"+u+k].value||"").trim().slice(0,300)}));const btn=f.querySelector("button[type=submit]");btn.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"menus",date),Object.assign({},val,{at:F.serverTimestamp()}));window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],val)});try{localStorage.setItem("menus",JSON.stringify(window.MENUS))}catch(_){}
     document.activeElement&&document.activeElement.blur&&document.activeElement.blur();showMsg(L("Menü gespeichert."),2500);render()}
   catch(err){btn.disabled=false;showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}});
@@ -1778,19 +1802,19 @@ function cateringHTML(){
   const c=caterData();if(!c.act.length)return"";
   const reg=c.act.length-c.special.length;
   const chips=(reg?'<span class="catchip reg"><b>'+reg+'</b> '+esc(L("Regulär"))+'</span>':'')+c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'');
-  return '<details class="catbox" data-sec="catcard"'+(SECS.catcard===true?' open':'')+'><summary><div class="cathd"><span class="catic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9"/></svg></span><div class="catt"><b>Catering</b><span>'+c.act.length+' '+esc(L("Personen"))+' · '+c.special.length+' '+esc(L("mit Sonderwünschen"))+'</span></div>'+(can("catering.edit")?'<button type="button" class="cico catmenu" data-catpage aria-label="'+esc(L("Mittagsmenüs eingeben"))+'" title="'+esc(L("Mittagsmenüs eingeben"))+'">🍽</button>':'')+'<span class="catchev" aria-hidden="true"></span></div>'+
-    (chips?'<div class="catchips">'+chips+'</div>':'')+'</summary><div class="catbody">'+(can("catering.edit")||can("crew.food")?'<div class="catacts"><button type="button" class="pillbtn" data-catpage>🍽 '+L(can("catering.edit")?"Mittagsmenüs eingeben":"Catering-Seite öffnen")+'</button></div>':'')+(c.special.length?caterOverview(c):'<p class="ghint">'+esc(L("Keine Sonderwünsche."))+'</p>')+'</div></details>';
+  return '<details class="catbox" data-sec="catcard"'+(SECS.catcard===true?' open':'')+'><summary><div class="cathd"><span class="catic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9"/></svg></span><div class="catt"><b>Catering</b><span>'+c.act.length+' '+esc(L("Personen"))+' · '+c.special.length+' '+esc(L("mit Sonderwünschen"))+'</span></div>'+(canMenu()||can("crew.food")?(()=>{const t=esc(L(canMenu()?"Mittagsmenüs eingeben":"Catering-Seite öffnen"));return '<button type="button" class="cico catmenu" data-catpage aria-label="'+t+'" title="'+t+'">'+(canMenu()?'🍽':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>')+'</button>'})():'')+'<span class="catchev" aria-hidden="true"></span></div>'+
+    (chips?'<div class="catchips">'+chips+'</div>':'')+'</summary><div class="catbody">'+(canMenu()||can("crew.food")?'':'')+(c.special.length?caterOverview(c):'<p class="ghint">'+esc(L("Keine Sonderwünsche."))+'</p>')+'</div></details>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-catpage]")){e.preventDefault();S.tab="cater";S.srcOpen=false;window.scrollTo(0,0);render()}});
 VIEWS.cater=function(){
-  if(!ME||!(can("crew.food")||can("catering.edit")))return '<div class="empty">'+L("Kein Zugang")+'</div>';
+  if(!ME||!(can("crew.food")||canMenu()))return '<div class="empty">'+L("Kein Zugang")+'</div>';
   let h='<section class="mypage catpage"><h2 class="pgt">Catering</h2>';
-  if(can("catering.edit"))h+='<details class="catbox catmenus" data-sec="catmenus"'+(SECS.catmenus===false?'':' open')+'><summary><div class="cathd"><span class="catic" aria-hidden="true">🍽</span><div class="catt"><b>'+L("Menüs")+'</b><span>'+L("Pro Drehtag und Unit")+'</span></div><span class="catchev" aria-hidden="true"></span></div></summary><div class="catbody">'+menuSec()+'</div></details>';
+  if(canMenu())h+='<details class="catbox catmenus" data-sec="catmenus"'+(SECS.catmenus===false?'':' open')+'><summary><div class="cathd"><span class="catic" aria-hidden="true">🍽</span><div class="catt"><b>'+L("Menüs")+'</b><span>'+L("Pro Drehtag und Unit")+'</span></div><span class="catchev" aria-hidden="true"></span></div></summary><div class="catbody">'+menuSec()+'</div></details>';
   if(can("crew.food")){ensureAdm();if(!ADM.loaded)h+='<p class="ghint">'+(ADM.err?esc(L("Daten der Benutzer:innen nicht lesbar"))+' ('+esc(ADM.err)+')':L("Lade …"))+'</p>';
     else{const c=caterData();h+='<h3 class="cath3">'+L("Essenswünsche")+'</h3><p class="ghint">'+esc(L("Alle aktiven Benutzer:innen der App, die am Set verpflegt werden."))+'</p>'+caterSummary(c)+caterOverview(c)}}
   return h+'</section>';
 };
-window.caterTab=()=>!!(ME&&(can("crew.food")||can("catering.edit")));
+window.caterTab=()=>!!(ME&&(can("crew.food")||canMenu()));
 /* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */
 const BK={busy:false,msg:"",ok:false};
 function bkSec(){
