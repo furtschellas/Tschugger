@@ -644,3 +644,10 @@ Object.assign(I18N,{
  "Allergien":{fr:"Allergies",it:"Allergie",en:"Allergies"}
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"],["hi","हिन्दी"]];
+Object.assign(I18N,{
+ "Bei Änderungen benachrichtigen":{fr:"Me prévenir en cas de changement",it:"Avvisami in caso di modifiche",en:"Notify me about changes"},
+ "Änderungen am Drehplan":{fr:"Changements du plan de tournage",it:"Modifiche al piano di riprese",en:"Changes to the shooting schedule"},
+ "Neue und geänderte Callsheets":{fr:"Feuilles de service nouvelles ou modifiées",it:"Fogli di chiamata nuovi o modificati",en:"New and updated callsheets"},
+ "Änderungen der Prep-Planung":{fr:"Changements du planning de préparation",it:"Modifiche alla pianificazione prep",en:"Changes to the prep schedule"},
+ "Erinnerungen":{fr:"Rappels",it:"Promemoria",en:"Reminders"}
+});

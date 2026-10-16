@@ -44,4 +44,4 @@ self.addEventListener("push",e=>{let d={};try{d=e.data?e.data.json():{}}catch(_)
   e.waitUntil(Promise.all([self.registration.showNotification(d.title||"TSCHUGGER",opt),
     self.clients.matchAll({type:"window",includeUncontrolled:true}).then(cs=>cs.forEach(c=>c.postMessage({push:{title:d.title||"",body:d.body||"",url:d.url||""}})))]))});
 self.addEventListener("notificationclick",e=>{e.notification.close();const url=new URL((e.notification.data&&e.notification.data.url)||"./#my",self.registration.scope).href;
-  e.waitUntil(self.clients.matchAll({type:"window",includeUncontrolled:true}).then(cs=>{for(const c of cs){if(c.url.startsWith(self.registration.scope)&&"focus" in c){c.postMessage({open:"my"});return c.focus()}}return self.clients.openWindow(url)}))});
+  e.waitUntil(self.clients.matchAll({type:"window",includeUncontrolled:true}).then(cs=>{for(const c of cs){if(c.url.startsWith(self.registration.scope)&&"focus" in c){c.postMessage({open:url});return c.focus()}}return self.clients.openWindow(url)}))});

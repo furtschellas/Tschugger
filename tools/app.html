@@ -640,8 +640,15 @@ nav.tabs.short .lbl[data-s]{font-size:0}nav.tabs.short .lbl[data-s]::after{conte
 /* Kopf-Symbole (Suche, Termine, Push …) etwas grösser */
 /* die Symbolleiste behält ihre Breite (der Titel daneben weicht aus), damit die Symbole nicht automatisch schrumpfen */
 html body header .hbtns{flex:none}
-html body .hbtns>.refresh{width:calc(34px*var(--bs,1));height:calc(34px*var(--bs,1))}
+html body .hbtns>.refresh{width:calc(25px*var(--bs,1));height:calc(34px*var(--bs,1))}
+html body header .hbtns{gap:2px}
+/* optisch gleich gross: das Zahnrad füllt seinen Rahmen fast ganz aus, darum etwas kleiner */
+html body .hbtns>#admBtn svg{width:calc(20px*var(--bs,1));height:calc(20px*var(--bs,1))}
 html body .hbtns>.refresh svg{width:calc(22px*var(--bs,1));height:calc(22px*var(--bs,1))}
+.smodes .sm-s{display:none}
+@media (max-width:600px){.smodes .sm-l{display:none}.smodes .sm-s{display:inline}}
+/* Schriftzug «Tigerblood» 15 % kleiner */
+html body h1 span{font-size:.74em}
 </style>
 
 <div class="wrap">
@@ -1851,9 +1858,11 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 /* ---------- search modes («Direktlinks»): Alle · Rolle · Szene · Drehtag · Person · Motiv · Text, in the global and the script search ---------- */
 const SMODES=[["all","Alle"],["role","Rolle"],["sc","Szene"],["day","Drehtag"],["person","Person"],["loc","Motiv"],["text","Text"]];
 const SMODE_OK=k=>SMODES.some(x=>x[0]===k);
+/* auf dem Handy kürzer: Szene = SZ, Drehtag = Tag, Motiv = Loc */
+const SMODE_SH={de:{sc:"SZ",day:"Tag",loc:"Loc"},en:{sc:"Sc",day:"Day",loc:"Loc"},fr:{sc:"Sc",day:"Jour",loc:"Loc"},it:{sc:"Sc",day:"Gior.",loc:"Loc"}};
 try{S.gm=localStorage.getItem("gm")||"all";S.sqm=localStorage.getItem("sqm")||"all"}catch(_){S.gm=S.sqm="all"}
 if(!SMODE_OK(S.gm))S.gm="all";if(!SMODE_OK(S.sqm))S.sqm="all";
-const modeChips=(cur,attr)=>'<div class="smodes" role="group" aria-label="'+esc(L("Suchen nach"))+'">'+SMODES.map(([k,t])=>'<button type="button" '+attr+'="'+k+'" aria-pressed="'+(cur===k)+'">'+esc(L(t))+'</button>').join("")+'</div>';
+const modeChips=(cur,attr)=>'<div class="smodes" role="group" aria-label="'+esc(L("Suchen nach"))+'">'+SMODES.map(([k,t])=>{const sh=(SMODE_SH[LANG]||SMODE_SH.en)[k];return '<button type="button" '+attr+'="'+k+'" aria-pressed="'+(cur===k)+'"'+(sh?' aria-label="'+esc(L(t))+'"':'')+'>'+(sh?'<span class="sm-l">'+esc(L(t))+'</span><span class="sm-s">'+esc(sh)+'</span>':esc(L(t)))+'</button>'}).join("")+'</div>';
 const SHINT={all:"Suche nach Szenennummer (z. B. 186), Drehtag (D5, Day 5, 26.10., Montag, heute, morgen), Motiv, Adresse, Rolle (z. B. Regina), Crew-Name, Funktion oder Telefonnummer.",
   role:"Rolle eingeben, z. B. Regina oder 8. Leer lassen für die Liste aller Rollen.",sc:"Szenennummer eingeben, z. B. 186 oder 4A.",day:"Drehtag eingeben: D5, 26.10., Montag, heute oder morgen.",
   person:"Name, Funktion oder Telefonnummer eingeben.",loc:"Motiv oder Adresse eingeben, z. B. Kapelle oder Salgesch.",text:"Wörter aus Szenenbeschrieb, Notizen oder Infos eingeben."};

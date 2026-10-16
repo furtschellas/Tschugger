@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: dropbox-update
@@ -74,6 +75,17 @@ jobs:
           du -sh blk || true
           for i in 1 2 3; do git pull -q --rebase origin main && git push origin HEAD:main && exit 0; sleep 10; done
           exit 1
+      # Push bei Änderungen (Drehplan, Callsheet, Prep): erst wenn die neuen Daten online sind
+      - name: Push bei Änderungen
+        if: success() && hashFiles('pending_push.json') != ''
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 60
+          python tools/notify_changes.py
+          gh api -X POST repos/${{ github.repository }}/actions/workflows/push.yml/dispatches -f ref=main || true
       - name: Status bei Fehler veröffentlichen
         if: failure()
         run: |

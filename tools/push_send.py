@@ -120,7 +120,9 @@ def main():
             roles, depts = b.get("roles"), b.get("depts")
             if roles is not None or depts is not None:
                 if not ((who.get("role", "") in (roles or [])) or (bool(who.get("dept")) and who.get("dept") in (depts or []))): continue
-            r = send(sub, json.dumps({"title": b.get("title", ""), "body": b.get("body", ""), "url": "./", "tag": "b" + bid}, ensure_ascii=False), pems, 86400)
+            if b.get("kind") and (p.get("news") or {}).get(b["kind"], True) is False: continue   # automatic message the person turned off
+            tx = (b.get("i18n") or {}).get(p.get("lang") or "de") or b
+            r = send(sub, json.dumps({"title": tx.get("title", ""), "body": tx.get("body", ""), "url": b.get("url") or "./", "tag": "b" + bid}, ensure_ascii=False), pems, 86400)
             if r == "gone": gone = True; break
             if r == "ok": n_sent += 1; sent[k] = NOW
             else: n_err += 1   # not marked: tried again in the next run
