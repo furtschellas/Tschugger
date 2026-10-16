@@ -797,7 +797,7 @@ function dayNav(PD,isSel,attr,key,extra,pre){
 }
 /* PREP: preparation / rehearsal week before the first shooting day (data "prepro": one entry per date; meta.prepro: source, contacts) */
 function ppWhere(w,m){if(!w)return'';const q=m||(/\d{4}\s+\S/.test(w)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(w.replace(/^On location:\s*/i,"")):"");return '<div class="ppl">'+(q?'<a href="'+esc(q)+'" target="_blank" rel="noopener">'+esc(w)+'</a>':esc(w))+'</div>'}
-function ppItem(i,date,grp,k){return '<div class="ppi'+(i.hl?' hl':'')+'">'+(date&&(i.crew||i.cast)?'<button type="button" class="calbtn mailbtn" data-ppmail="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("E-Mail-Verteiler"))+'" title="'+esc(L("E-Mail-Verteiler"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></button>':'')+(date?'<button type="button" class="calbtn" data-cal="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("In den Kalender"))+'" title="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>':'')+'<div class="ppt">'+esc(i.t||"")+(i.end?'<br>'+esc(i.end):'')+'</div><div class="ppb"><div class="ppn">'+esc(TX(i,"n")||"")+'</div>'+
+function ppItem(i,date,grp,k){return '<div class="ppi'+(i.hl?' hl':'')+'">'+(date&&(i.crew||i.cast)&&vok("email")?'<button type="button" class="calbtn mailbtn" data-ppmail="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("E-Mail-Verteiler"))+'" title="'+esc(L("E-Mail-Verteiler"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></button>':'')+(date?'<button type="button" class="calbtn" data-cal="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("In den Kalender"))+'" title="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>':'')+'<div class="ppt">'+esc(i.t||"")+(i.end?'<br>'+esc(i.end):'')+'</div><div class="ppb"><div class="ppn">'+esc(TX(i,"n")||"")+'</div>'+
   ppParts(i)+(i.who?'<div class="ppw">'+esc(i.who)+'</div>':'')+ppWhere(i.where,i.map)+fpLinks(fpFor(i.n,i.where),[])+(TX(i,"note")?'<div class="ppx">'+esc(TX(i,"note"))+'</div>':'')+'</div></div>'}
 /* participants: collapsible; people with phone or e-mail open a contact card */
 function ppNames(t){return String(t||"").split(",").map(x=>x.trim()).filter(Boolean)}
@@ -816,9 +816,9 @@ function ppParts(i){
 }
 let PPPEOPLE=null;
 function ppContact(v){
-  const [name,email,phone,role,dept]=v.split("|");
+  let [name,email,phone,role,dept]=v.split("|");
   let b=document.getElementById("ppcbox");if(b)b.remove();b=document.createElement("div");b.id="ppcbox";b.className="a2hs";b.setAttribute("role","dialog");b.setAttribute("aria-modal","true");
-  const tel=String(phone||"").replace(/[^\d+]/g,"");
+  if(!vok("phone"))phone="";if(!vok("email"))email="";const tel=String(phone||"").replace(/[^\d+]/g,"");
   b.innerHTML='<div class="a2box mbox"><h3>'+esc(name)+'</h3>'+(role||(dept&&dept!=="user")?'<p class="ghint">'+esc([role,dept!=="user"?dept:""].filter(Boolean).join(" · "))+'</p>':'')+
     '<div class="ppcl">'+(phone?'<a class="gbtn" href="tel:'+esc(tel)+'">📞 '+esc(phone)+'</a><a class="gbtn sec" href="sms:'+esc(tel)+'">💬 SMS</a>':'')+(email?'<a class="gbtn sec" href="mailto:'+esc(email)+'">✉ '+esc(email)+'</a>':'')+'</div>'+
     '<div class="a2b"><button type="button" class="lnk" data-ppcx>'+esc(L("Schliessen"))+'</button></div></div>';
@@ -873,7 +873,7 @@ function groupPeople(term,people){
   for(const [re,dep] of dm)if(re.test(t)){const g=S.crew.filter(x=>dep.test(fold(x.dept)));if(g.length)return {all:false,list:people.filter(p=>g.some(x=>fold(x.dept)===fold(p.src)))}}
   return null;
 }
-function ppMail(key){
+function ppMail(key){if(!vok("email"))return;
   const [date,grp,k]=key.split("|");const d=S.prepro.find(x=>x.date===date);if(!d)return;
   const i=(grp==="p"?arr(d.parallel):d.items)[+k];if(!i)return;
   const people=mailPeople(),found=[],missing=[],groups=[],have=new Set();
@@ -1102,15 +1102,15 @@ function renderCrew(){
       let ct='';const web=typeof window.crewHead==="function";const vc=!web?'':(p.phone||p.email)?'<button class="copy vcbtn" data-vc="'+gi+':'+g.people.indexOf(p)+'" aria-label="'+esc(L("Kontakt ins Telefon übernehmen"))+'" title="'+esc(L("Kontakt ins Telefon übernehmen"))+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard</button>':'';
       /* wide screens: vCard after the job title; phones: next to the phone number */
       const vcW=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-wide"'),vcN=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-narrow"');
-      const showC=vok("contacts");const vcW0=vcW;
+      const showC=vok("contacts"),showP=showC&&vok("phone"),showE=showC&&vok("email");const vcW0=vcW;
       /* phone / e-mail missing in the crew list: taken from the person's app profile (marked) */
       const fx=(!p.phone||!p.email)&&typeof window.crewFill==="function"?window.crewFill(p):null;const fromApp='<span class="fromapp" title="'+esc(L("aus dem App-Profil"))+'">App</span>';
-      if(fx&&fx.phone&&!p.phone&&showC)ct+='<a href="tel:'+esc(fx.phone.replace(/\s/g,""))+'"><span>'+esc(fx.phone)+'</span></a>'+fromApp;
-      if(fx&&fx.email&&!p.email&&showC)ct+='<a class="em" href="mailto:'+esc(fx.email)+'">'+esc(fx.email)+'</a>'+fromApp;
-      if(p.phone&&showC)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vcN:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
-      if(p.email&&showC)ct+='<span class="em">'+esc(p.email)+'</span>'+(p.phone?'':vcN);
+      if(fx&&fx.phone&&!p.phone&&showP)ct+='<a href="tel:'+esc(fx.phone.replace(/\s/g,""))+'"><span>'+esc(fx.phone)+'</span></a>'+fromApp;
+      if(fx&&fx.email&&!p.email&&showE)ct+='<a class="em" href="mailto:'+esc(fx.email)+'">'+esc(fx.email)+'</a>'+fromApp;
+      if(p.phone&&showP)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vcN:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
+      if(p.email&&showE)ct+='<span class="em">'+esc(p.email)+'</span>'+(p.phone&&showP||!showP?'':vcN);
       if(p.note)ct+='<span>'+esc(p.note)+'</span>';
-      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span>'+(showC?vcW0:'')+'</div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';
+      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span>'+(showP?vcW0:'')+'</div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';
     }).join("")+'</div></section>';
   }
   if(!n)h+='<div class="empty">'+L('Niemand gefunden für')+' «'+esc(S.q)+'».</div>';
