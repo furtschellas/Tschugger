@@ -624,6 +624,29 @@ def read_sheet(url):
 def norm_sc(x): return re.sub(r"\s+", " ", str(x or "")).strip().lower()
 
 
+def apply_place_fixes(data):
+    """Info page: addresses missing in the «Good to know» PDF, extra entries (e.g. the cast hotel) and hidden phone numbers –
+    kept in tools/places_extra.enc.json (encrypted: the repository is public). Only fills gaps, never overrides the PDF."""
+    fx = dec_file(R / "tools" / "places_extra.enc.json")
+    if not fx: return
+    nz = lambda t: re.sub(r"[^a-z0-9]", "", re.sub(r"\(.*?\)", "", str(t or "").lower()))
+    def match(name, table):
+        n = nz(name)   # exact name first, else the longest matching beginning («Coop Pronto» before «Coop»)
+        hits = sorted(((n == nz(k), len(nz(k)), v) for k, v in table.items() if nz(k) and (n == nz(k) or n.startswith(nz(k)))), reverse=True)
+        return hits[0][2] if hits else None
+    hide = {nz(x) for x in fx.get("hidePhone") or []}
+    for cat in data.get("places") or []:
+        for it in cat.get("items") or []:
+            a = match(it.get("name"), fx.get("address") or {})
+            if a and not it.get("address"): it["address"] = a
+            ph = match(it.get("name"), fx.get("phone") or {})
+            if ph and not it.get("phone"): it["phone"] = ph
+            if nz(it.get("name")) in hide or any(nz(it.get("name")).startswith(h) for h in hide): it.pop("phone", None)
+        for add in (fx.get("add") or {}).get(cat.get("cat"), []):
+            if not any(nz(add.get("name")) == nz(it.get("name")) for it in cat.get("items") or []):
+                cat.setdefault("items", []).append(dict(add))
+
+
 def add_drive_times(data):
     """Anfahrt Crew-Hotel → erstes Motiv je Drehtag (Auto). Geocoding: OpenStreetMap/Nominatim, Route: OSRM.
     Ergebnisse werden in data.meta.geo/route gemerkt, damit nur neue Adressen abgefragt werden."""
@@ -1048,6 +1071,8 @@ def main():
     data["meta"] = meta
     for k in ("days", "crew", "locations", "places", "dispos"): data.setdefault(k, [])
     if not data["days"] or not data["crew"]: sys.exit("Keine Drehtage oder Crew – nichts veröffentlicht")
+    try: apply_place_fixes(data)
+    except Exception as e: log("Info-Ergänzungen nicht angewendet:", type(e).__name__)
     try: add_drive_times(data)
     except Exception as e: log("Anfahrt nicht berechnet:", type(e).__name__)
     if BLKS: BLKS.sync()   # R2: pictures first, so the new data never points to a picture that is not there yet
