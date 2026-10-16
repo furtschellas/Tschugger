@@ -4,7 +4,7 @@ const BC={roles:null,sel:{roles:[],depts:[]},mode:"all",busy:false,msg:"",ok:fal
 function bcButton(){
   let b=document.getElementById("bcBtn");const mc=document.getElementById("myCalBtn");if(!mc)return;
   if(!b){b=document.createElement("button");b.id="bcBtn";b.className="refresh";b.type="button";
-    b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/></svg>';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="15.5" rx="2"/><path d="m3.5 8 8.5 6.5 8.5-6.5"/></svg>';
     mc.parentNode.insertBefore(b,mc.nextSibling);b.addEventListener("click",()=>{S.tab="bcast";S.srcOpen=false;window.scrollTo(0,0);render()})}
   b.setAttribute("aria-label",L("Push-Nachricht senden"));b.title=L("Push-Nachricht senden");b.hidden=!(ME&&can("push.send")&&window.PUSHEN!==false);
 }

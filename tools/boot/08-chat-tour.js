@@ -71,6 +71,12 @@ setInterval(()=>{try{chatFab()}catch(_){}},20000);
 /* ---- introduction tour: offered once to everybody (new and existing users) after the welcome note; can be skipped;
    the result (done/skip + date) is kept in the profile (members.tour/tourAt); «Mein Konto» starts it again ---- */
 const TOUR_STEPS=[
+  {tab:"today",sel:'nav.tabs [data-tab="today"]',t:"Today",x:"Alles für heute – oder den nächsten Arbeitstag – auf einer Seite. Nach mehr als 2 Stunden Pause öffnet die App direkt hier."},
+  {tab:"today",sel:"#view .tmy",t:"Meine nächsten Termine",x:"Deine nächsten Termine auf einen Blick; mit «Alle ›» siehst du alle."},
+  {tab:"today",sel:"#view [data-route]",t:"Anfahrt",x:"Fahrzeit zum ersten Set. Antippen und wählen, ob die Route vom Hotel oder von deinem Standort aus geplant wird."},
+  {tab:"today",sel:"#view [data-wx]",t:"Wetter",x:"Das Wetter am ersten Motiv – antippen für den detaillierten Wetterbericht."},
+  {tab:"today",sel:"#view .tchg",t:"Änderungen",x:"Was sich seit deinem letzten Besuch geändert hat. Geänderte Zeilen sind auch im Drehplan markiert."},
+  {tab:"today",sel:"#view .toff",t:"Offline am Set",x:"Lädt die PDF-Seiten und Floorplans aller Tage aufs Gerät – sie öffnen sich dann auch ohne Empfang."},
   {tab:"plan",sel:'nav.tabs [data-tab="plan"]',t:"Schedule",x:"Der Drehplan Tag für Tag: Szenen, Motive und Zeiten. Mit «Script» öffnest du eine Szene im Drehbuch, die Kamera zeigt Blocking-Fotos und -Filme."},
   {tab:"plan",day:"shoot",sel:"#view .stripwrap",t:"Tage wählen",x:"Wische durch die Tage: PREP, OFF, TRAVEL und die Drehtage D01, D02 … Heute ist hervorgehoben."},
   {tab:"plan",day:"shoot",sel:"#view .dayhead .pvb",t:"Anzeigeoptionen",x:"Blende im Drehplan ein oder aus, was du sehen willst: Info, Szenenbeschrieb, Cast, Adresse und Blocking. Deine Auswahl bleibt gespeichert."},
@@ -96,12 +102,14 @@ const TOUR_STEPS=[
   {tab:"plan",sel:"#thmb",demo:"theme",t:"Hell / Dunkel",x:"Mit der Sonne wechselst du zwischen dunkler und heller Darstellung – hell ist draussen bei Sonne gut lesbar. Mit «Weiter» kommt deine Einstellung zurück."},
   {tab:"plan",sel:"#searchBtn",t:"Suche",x:"Sucht über alles: Szenen, Rollen, Personen, Locations."},
   {tab:"my",sel:"#myCalBtn",t:"Meine Termine",x:"Alle deine kommenden Termine an einem Ort – mit «In den Kalender» und der Glocke für Push-Nachrichten."},
+  {tab:"my",sel:"#view [data-mcself]",t:"Termine anderer",x:"Tippe einen Namen ein, um die Termine einer anderen Person zu sehen. Das Haus bringt dich zu deinen eigenen zurück."},
   {tab:"my",sel:"#view [data-mcall]",t:"Kalender-Export",x:"«Alle in den Kalender» übernimmt alle deine Termine auf einmal; mit dem Kalender-Knopf bei jedem Termin einzeln."},
   {tab:"my",sel:"#view .pbell",t:"Push-Glocke",x:"Mit der Glocke schaltest du die Erinnerung für einzelne Termine aus oder ein."},
   {tab:"plan",sel:"#bcBtn",t:"Push-Nachricht senden",x:"Mit dem Briefumschlag schickst du sofort eine Push-Nachricht an alle – oder nur an bestimmte Rollen und Abteilungen."},
   {tab:"acct",sel:"#acctBtn",t:"Mein Konto",x:"Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten."},
-  {tab:"acct",sel:"#view .pushsec",t:"Push-Nachrichten",x:"Hier stellst du ein, ob, wann und für welche Termine du erinnert wirst."},
-  {tab:"plan",sel:"#admBtn",t:"App-Verwaltung",x:()=>{const a=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))a.push(L("Benutzer"));if(isOwner())a.push(L("Rollen"));if(can("settings"))a.push(L("Dokumente"),L("Einstellungen"));return L("Deine Verwaltung:")+" "+a.join(", ")+"."}},
+  {tab:"acct",sel:"#view .acsub",t:"Bereiche",x:"Profil, Essen, Push und App. Unter «App» findest du Darstellung, Sprache, Offline, Today und das App-Icon."},
+  {tab:"acct",acsub:"note",sel:"#view .pushsec",t:"Push-Nachrichten",x:"Wähle, ob du bei Änderungen am Drehplan, bei neuen Callsheets und bei Änderungen der Prep-Planung benachrichtigt wirst – und wann du an deine Termine erinnert wirst. Ein Tipp auf die Nachricht öffnet direkt den betroffenen Tag."},
+  {tab:"plan",sel:"#admBtn",t:"App-Verwaltung",x:()=>{const a=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))a.push(L("Benutzer"));if(typeof canRoleEdit==="function"?(canRoleEdit()||canRoleAssign()):isOwner())a.push(L("Rollen"));if(can("settings"))a.push(L("Dokumente"),"App");if(isAdmin()||can("audit.view"))a.push(L("Protokoll"));return L("Deine Verwaltung:")+" "+a.join(", ")+"."}},
   {tab:"plan",sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
 ];
 const TOUR={i:-1,steps:[],el:null};
@@ -116,7 +124,7 @@ function tourDemo(st){
   if(want==="lang"&&!o.lang){const to=(APPLANGS||[]).find(l=>l!==LANG&&l==="en")||(APPLANGS||[]).find(l=>l!==LANG);if(to){o.lang=LANG;LANG=to;applyStatic();render()}}
   if(want==="theme"&&!o.theme){o.theme=getTheme();setTheme(o.theme==="dark"?"light":"dark")}
 }
-function tourShow(st){if(st.day){const id=tourDay(st.day);if(id&&S.day!==id){S.day=id;if(S.tab===st.tab)render()}}if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}else if(st.day)render();window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
+function tourShow(st){if(st.acsub&&typeof ACSUB!=="undefined"&&ACSUB!==st.acsub){ACSUB=st.acsub;if(S.tab===st.tab)render()}if(st.day){const id=tourDay(st.day);if(id&&S.day!==id){S.day=id;if(S.tab===st.tab)render()}}if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}else if(st.day)render();window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
 function tourDoneLocal(){try{return !!(localStorage.getItem("tourDone:"+(ME&&ME.uid))||localStorage.getItem("tour"))}catch(_){return false}}
 /* the tour starts by itself only once per person: marked right when it is offered (this device, the synced view settings and the profile) */
 /* app icon status for «Mein Konto»: checked whenever the page is opened (at most every 20 s) */
