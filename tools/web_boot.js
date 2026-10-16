@@ -437,7 +437,8 @@ const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
 const ADMIN_DEFAULT=PERMS.map(x=>x[0]).filter(p=>p!=="settings");
 let MYPERMS=[],MYROLE="",ADMINPERMS=ADMIN_DEFAULT.slice();
 const can=p=>isOwner()||(isAdmin()&&ADMINPERMS.includes(p))||MYPERMS.includes(p);
-const canAdm=()=>isOwner()||["users.view","users.invite","users.requests","users.edit","settings"].some(can);
+/* the gear (App-Verwaltung) only with the permission «Einstellungen ändern» */
+const canAdm=()=>isOwner()||can("settings");
 /* what someone sees: without a role everything as before; with a role (or as admin) only the areas the role allows */
 window.viewOK=k=>{if(!ME||isOwner())return true;if(!isAdmin()&&!MYROLE)return k in window.PUBV?window.PUBV[k]!==false:true;return can("view."+k)};
 window.canPerm=can;
@@ -1186,7 +1187,7 @@ VIEWS.admin=function(){
   const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(own)SUBS.push(["roles","Rollen"],["bk","Backup"]);if(can("settings"))SUBS.push(["set","Einstellungen"]);
   if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
-  const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>'<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'">'+(t==="Benutzerverwaltung"&&LANG==="de"?"Benutzer&shy;verwaltung":esc(L(t)))+'</button>').join("")+'</nav>':'';
+  const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>'<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'">'+(t==="Benutzerverwaltung"?'<span class="lgl">'+esc(L(t))+'</span><span class="sml">'+esc(L("Benutzer"))+'</span>':esc(L(t)))+'</button>').join("")+'</nav>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+subNav;
   if(ADM.sub==="set")return h+'<div class="setbar"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div>'+(own?upSec().replace(/<details([^>]*data-sec="upsec")(?![^>]*\bopen)/,'<details$1 open'):'')+setSec+'</section>';
   if(ADM.sub==="roles")return h+rolesSec()+'</section>';
