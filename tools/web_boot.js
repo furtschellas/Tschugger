@@ -97,7 +97,6 @@ Object.assign(I18N,{
  "Meine Termine sehen":{fr:"Voir mes rendez-vous",it:"Vedere i miei appuntamenti",en:"See my appointments"},
  "Crewliste sehen":{fr:"Voir la liste de l'équipe",it:"Vedere la lista crew",en:"See crew list"},
  "Drehbuch (Script) sehen":{fr:"Voir le scénario (script)",it:"Vedere la sceneggiatura (script)",en:"See script"},
- "Blocking und Blocking-PDFs sehen":{fr:"Voir le blocking et ses PDF",it:"Vedere blocking e PDF di blocking",en:"See blocking and blocking PDFs"},
  "Telefon und E-Mail von Personen ausserhalb der Crewliste sehen":{fr:"Voir téléphone et e-mail des personnes hors liste d'équipe",it:"Vedere telefono ed e-mail di persone fuori dalla lista crew",en:"See phone and email of people not on the crew list"},
  "Zugangsanfragen freischalten":{fr:"Approuver les demandes d'accès",it:"Approvare le richieste di accesso",en:"Approve access requests"},
  "Berechtigung":{fr:"droit",it:"permesso",en:"permission"},
