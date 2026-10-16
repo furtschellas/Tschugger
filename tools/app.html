@@ -922,7 +922,7 @@ function iAmIn(names,me,people){
 function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
 function myEvents(me){
   const out=[],people=mailPeople(),t=todayISO();
-  for(const d of S.prepro){if(d.date<t)continue;
+  for(const d of (vok("prep")?S.prepro:[])){if(d.date<t)continue;
     for(const [grp,list] of [["i",d.items],["p",arr(d.parallel)]])list.forEach((i,k)=>{if(/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n||"").trim()))return;if(iAmIn(ppNames(i.crew).concat(ppNames(i.cast)),me,people))out.push({date:d.date,t:hm(i.t)||i.t||"",end:hm(i.end),n:i.n,where:i.where,map:i.map,src:"Weekly Schedule",go:shootOn(d.date)?d.date:"prep:"+d.date,cal:d.date+"|"+grp+"|"+k})});
     const tr=d.transport;if(tr)arr(tr.rows).forEach(r=>{if(iAmIn(ppNames(r.name),me,people))out.push({date:d.date,t:hm(r.at)||r.at||"",n:"Transport → "+(r.to||""),where:r.from,map:r.fromMap,src:"Transport",go:shootOn(d.date)?d.date:"prep:"+d.date,driver:r.driver})})}
   /* shooting days only from the callsheets: the day counts when its callsheet calls my department, lists me by name, or (general crew call) I work on set */
@@ -1010,7 +1010,7 @@ function renderPlan(){
   /* one PREP button per prep day from today on; past prep days disappear */
   /* weekly-schedule days that fall on a shooting day get no PREP button; they appear below that day's schedule */
   const shootDates=new Set(S.days.filter(d=>d.kind==="shoot").map(d=>d.date));
-  const PP=S.prepro.filter(d=>d.date>=t&&!shootDates.has(d.date));
+  const PP=vok("prep")?S.prepro.filter(d=>d.date>=t&&!shootDates.has(d.date)):[];
   /* prep days without any programme (only "Rest") are shown as OFF and cannot be selected */
   const ppOff=d=>d.off===true||!d.items.length||d.items.every(i=>/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n||"").trim()));
   const PPA=PP.filter(d=>!ppOff(d));
@@ -1056,7 +1056,7 @@ function renderPlan(){
       h+='<ol class="tl">'+x.items.map(itemHTML).join("")+'</ol>';
     }else if(!shown.length)h+='<div class="empty">'+L('Keine '+UNAME[u]+' Unit an diesem Tag.')+'</div>';
   }
-  const wk=S.prepro.find(x=>x.date===d.date);if(wk)h+=renderPrePro(wk,true);
+  const wk=vok("prep")&&S.prepro.find(x=>x.date===d.date);if(wk)h+=renderPrePro(wk,true);
   return h;
 }
 /* vCard 3.0 for one crew member, so it can be added to the phone's contacts */
