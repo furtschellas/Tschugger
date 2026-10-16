@@ -584,3 +584,8 @@ html body #view .acpage details>summary::-webkit-details-marker{display:none}
 html body #view .acpage details>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin:-4px 6px 0 10px;transition:transform .18s}
 html body #view .acpage details[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
 html body #view .acpage .psec .pillbtn{margin:6px 8px 0 0}
+/* Mein Konto: profile form split into «Profil» and «Essen» */
+html body #view .acpage .no-food fieldset.efood{display:none}
+html body #view .acpage .only-food form>*:not(fieldset.efood):not(button[type=submit]):not(.amsg){display:none!important}
+html body #view .acpage .only-food fieldset.efood{border:0;padding:0;margin:0}
+html body #view .acpage .only-food fieldset.efood>legend{display:none}
