@@ -33,7 +33,7 @@ const API_KEY = "AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ";
 const SITE = "https://furtschellas.github.io/Tschugger/";
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
-const VERSION = "2026-10-16";
+const VERSION = "2026-10-17";
 
 let JWKS = null, JWKS_AT = 0;
 const b64u = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
@@ -163,7 +163,7 @@ async function vapidFromPem(pem) {
 async function vapids(env) {
   if (VAPIDS && Date.now() - VAPIDS_AT < 10 * 60e3) return VAPIDS;
   const pems = [];
-  if (saJson(env)) { try { const r = await fsReq(env, "secret/vapid"); if (r.ok) { const p = fv(((await r.json()).fields || {}).priv); if (p) pems.push(p); } } catch (_) {} }
+  if (saJson(env)) for (const path of ["secret/vapid", "secret/vapidprev"]) { try { const r = await fsReq(env, path); if (r.ok) { const p = fv(((await r.json()).fields || {}).priv); if (p) pems.push(p); } } catch (_) {} }
   if (env.VAPID_PRIVATE) pems.push(String(env.VAPID_PRIVATE));
   try {
     const e = await (await fetch(SITE + "tools/vapid.enc.json", { cf: { cacheTtl: 300 } })).json();
@@ -242,13 +242,14 @@ async function broadcast(req, env, origin, ctx) {
   if (fv(f.sent)) return json({ error: "Schon gesendet." }, 409, origin);
   const b = await crewDec(env, c);
   if (!(Date.now() - (b.at || 0) < 10 * 60e3)) return json({ error: "Zu alt." }, 410, origin);
+  let devs;
+  try { devs = await listDocs(env, "push"); } catch (e) { return json({ error: "Geräte nicht lesbar (FIREBASE_SA im Worker?) – die Nachricht geht mit dem nächsten Lauf raus." }, 503, origin); }
   const claim = await fsPatch(env, "broadcasts/" + id, { sent: true }, g.tok, d.updateTime);
   if (!claim.ok) return json({ error: claim.status === 403 ? "Keine Berechtigung «Push senden»." : "Schon gesendet." }, claim.status === 403 ? 403 : 409, origin);
   if (b.push === false) { await fsPatch(env, "broadcasts/" + id, { n: 0, fin: true }, g.tok); return json({ ok: true, n: 0, claimed: true }, 200, origin); }
   const lim = Math.max(1, +env.PUSH_LIMIT || 25);
   let n = 0, fail = 0, tried = 0, more = false;
   const done = [], gone = [];
-  const devs = await listDocs(env, "push");
   const todo = [];
   for (const dv of devs) {
     const pc = fv(dv.f.c); if (!pc) continue;

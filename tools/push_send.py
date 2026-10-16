@@ -39,8 +39,9 @@ def vapid_keys(key):
     VAPID_PRIVATE; alt: die verschlüsselte Datei im Repository (für Geräte, die noch nicht umgestellt sind)."""
     out = []
     try:
-        d = fsadmin.get_doc("secret/vapid") if fsadmin.sa() else None
-        if d and d.get("priv"): out.append(d["priv"])
+        for path in ("secret/vapid", "secret/vapidprev"):   # current and previous key (devices not yet moved)
+            d = fsadmin.get_doc(path) if fsadmin.sa() else None
+            if d and d.get("priv"): out.append(d["priv"])
     except Exception as e:
         print("• VAPID aus Firestore nicht lesbar:", type(e).__name__)
     if os.environ.get("VAPID_PRIVATE", "").strip(): out.append(os.environ["VAPID_PRIVATE"].strip())
@@ -56,7 +57,7 @@ def send(sub, data, pems, ttl):
     """returns «ok», «gone» (device removed the app) or «err»; tries the older VAPID key if the push service rejects the key"""
     for pem in pems:
         try:
-            webpush(subscription_info=sub, data=data, vapid_private_key=pem, vapid_claims={"sub": CLAIM}, headers={"Urgency": "high"}, ttl=ttl)
+            webpush(subscription_info=sub, data=data, vapid_private_key=pem, vapid_claims={"sub": CLAIM}, headers={"Urgency": "high"}, ttl=ttl, timeout=15)
             return "ok"
         except WebPushException as e:
             code = getattr(e.response, "status_code", None)
@@ -71,6 +72,8 @@ def send(sub, data, pems, ttl):
 
 
 def main():
+    import signal
+    signal.signal(signal.SIGTERM, lambda *a: sys.exit(1))   # job timeout: still save sent.json (finally below)
     kb64 = fsadmin.crew_key_b64()
     if not kb64:
         print("• Kein Crew-Schlüssel"); return 1
@@ -97,52 +100,57 @@ def main():
                 continue
             age = NOW - b.get("at", 0) / 1000
             if age > 86400 or b.get("push", True) is False: continue
-            if f.get("sent") and age < 180: continue   # the worker is sending it right now
+            if f.get("sent") and "n" not in f and age < 180: continue   # the worker is sending it right now
+            if not f.get("sent") and age < 60 and not b.get("kind"): continue   # just written: the worker sends it
+            if not f.get("sent") and sa and not fsadmin.patch_doc("broadcasts/" + bid, {"sent": True}, update_time=ut): continue   # somebody else took it
             bcs.append((bid, b, set(f.get("done") or []), ut))
     except Exception as e:
         print("• Nachrichten nicht lesbar:", type(e).__name__)
 
-    for did, f, _ in fsadmin.list_docs("push"):
-        c = f.get("c")
-        if not c: continue
-        try:
-            p = dec(key, c)
-        except Exception:
-            continue
-        n_dev += 1
-        sub = p.get("sub")
-        if not sub or not p.get("on", True): continue
-        who = p.get("who") or {}
-        gone = False
-        for bid, b, done, _ in bcs:
-            k = did + "|b|" + bid
-            if k in sent or did in done: continue
-            roles, depts = b.get("roles"), b.get("depts")
-            if roles is not None or depts is not None:
-                if not ((who.get("role", "") in (roles or [])) or (bool(who.get("dept")) and who.get("dept") in (depts or []))): continue
-            if b.get("kind") and (p.get("news") or {}).get(b["kind"], True) is False: continue   # automatic message the person turned off
-            tx = (b.get("i18n") or {}).get(p.get("lang") or "de") or b
-            r = send(sub, json.dumps({"title": tx.get("title", ""), "body": tx.get("body", ""), "url": b.get("url") or "./", "tag": "b" + bid}, ensure_ascii=False), pems, 86400)
-            if r == "gone": gone = True; break
-            if r == "ok": n_sent += 1; sent[k] = NOW
-            else: n_err += 1   # not marked: tried again in the next run
-        for it in ([] if gone else p.get("items", [])):
-            at = it.get("at", 0) / 1000
-            start = it.get("start", it.get("at", 0)) / 1000
-            k = did + "|" + str(it.get("id")) + "|" + str(int(at))
-            if k in sent or at > NOW + EARLY or start < NOW - 60: continue
-            if at < NOW - LATE:
-                n_late += 1; sent[k] = NOW; continue
-            r = send(sub, json.dumps({"title": it.get("title", ""), "body": it.get("body", ""), "url": it.get("url", "./#my"), "tag": str(it.get("id", ""))}, ensure_ascii=False), pems, 3600)
-            if r == "gone": gone = True; break
-            if r == "ok": n_sent += 1; sent[k] = NOW
-            else: n_err += 1
-        if gone:
-            n_gone += 1
-            if sa: fsadmin.delete_doc("push/" + did)   # the device removed the app or turned push off in the browser
-    for bid, b, done, ut in bcs:
-        if sa: fsadmin.patch_doc("broadcasts/" + bid, {"fin": True})
-    json.dump(sent, open(SENT, "w"))
+    bad = set()   # messages with failed devices: not finished, tried again next run
+    try:
+        for did, f, _ in fsadmin.list_docs("push"):
+            c = f.get("c")
+            if not c: continue
+            try:
+                p = dec(key, c)
+            except Exception:
+                continue
+            n_dev += 1
+            sub = p.get("sub")
+            if not sub or not p.get("on", True): continue
+            who = p.get("who") or {}
+            gone = False
+            for bid, b, done, _ in bcs:
+                k = did + "|b|" + bid
+                if k in sent or did in done: continue
+                roles, depts = b.get("roles"), b.get("depts")
+                if roles is not None or depts is not None:
+                    if not ((who.get("role", "") in (roles or [])) or (bool(who.get("dept")) and who.get("dept") in (depts or []))): continue
+                if b.get("kind") and (p.get("news") or {}).get(b["kind"], True) is False: continue   # automatic message the person turned off
+                tx = (b.get("i18n") or {}).get(p.get("lang") or "de") or b
+                r = send(sub, json.dumps({"title": tx.get("title", ""), "body": tx.get("body", ""), "url": b.get("url") or "./", "tag": "b" + bid}, ensure_ascii=False), pems, 86400)
+                if r == "gone": gone = True; break
+                if r == "ok": n_sent += 1; sent[k] = NOW
+                else: n_err += 1; bad.add(bid)   # not marked: tried again in the next run
+            for it in ([] if gone else p.get("items", [])):
+                at = it.get("at", 0) / 1000
+                start = it.get("start", it.get("at", 0)) / 1000
+                k = did + "|" + str(it.get("id")) + "|" + str(int(at))
+                if k in sent or at > NOW + EARLY or start < NOW - 60: continue
+                if at < NOW - LATE:
+                    n_late += 1; sent[k] = NOW; continue
+                r = send(sub, json.dumps({"title": it.get("title", ""), "body": it.get("body", ""), "url": it.get("url", "./#my"), "tag": str(it.get("id", ""))}, ensure_ascii=False), pems, 3600)
+                if r == "gone": gone = True; break
+                if r == "ok": n_sent += 1; sent[k] = NOW
+                else: n_err += 1
+            if gone:
+                n_gone += 1
+                if sa: fsadmin.delete_doc("push/" + did)   # the device removed the app or turned push off in the browser
+        for bid, b, done, ut in bcs:
+            if sa and bid not in bad: fsadmin.patch_doc("broadcasts/" + bid, {"fin": True})   # with failures: again next run
+    finally:   # always remember what was sent, also after an error or timeout – nothing is sent twice
+        json.dump(sent, open(SENT, "w"))
     print(f"• {n_dev} Geräte · {n_sent} verschickt · {n_err} Fehler (nächster Lauf) · {n_late} zu spät verworfen · {n_gone} abgemeldet"
           + ("" if sa else " · ohne Dienstkonto (FIREBASE_SA fehlt)"))
 

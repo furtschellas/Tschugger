@@ -328,17 +328,36 @@ def add_recce(dbx, days, add):
 WANT = set()
 NEWS = []      # changes for the automatic push messages (written to pending_push.json, sent after publishing)
 
+def _nz(v): return re.sub(r"[^a-z0-9:]", "", str(v or "").lower())
+
 def day_sig(d):
-    """what matters in a day for «changed»: times, scenes, titles, places – not translations or wording of notes"""
-    its = lambda L: [[i.get(k) for k in ("t", "end", "sc", "n", "set", "loc", "where", "ie")] for i in (L or []) if isinstance(i, dict)]
+    """what matters in a day for «changed»: times, scenes, titles, places – normalised (case, spaces, punctuation), so a
+    slightly different wording of the same PDF does not count as a change; translations and notes are left out"""
+    its = lambda L: [[_nz(i.get(k)) for k in ("t", "end", "sc", "n", "loc", "where")] for i in (L or []) if isinstance(i, dict)]
     u = lambda k: its((d.get(k) or {}).get("items")) if isinstance(d.get(k), dict) else []
     return json.dumps([d.get("kind"), its(d.get("items")), its(d.get("parallel") if isinstance(d.get("parallel"), list) else []), u("unit2"), u("unit3")], ensure_ascii=False, sort_keys=True)
 
 def changed_days(old, new, today):
     """dates from today on that are new, removed or different"""
-    o = {d.get("date") or d.get("id"): day_sig(d) for d in old or [] if isinstance(d, dict)}
-    n = {d.get("date") or d.get("id"): day_sig(d) for d in new or [] if isinstance(d, dict)}
-    return sorted(k for k in set(o) | set(n) if k and str(k) >= today and o.get(k) != n.get(k))
+    iso = lambda d: isinstance(d, dict) and not d.get("older") and re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(d.get("date") or d.get("id") or ""))
+    o = {str(d.get("date") or d.get("id")): day_sig(d) for d in old or [] if iso(d)}
+    n = {str(d.get("date") or d.get("id")): day_sig(d) for d in new or [] if iso(d)}
+    return sorted(k for k in set(o) | set(n) if k >= today and o.get(k) != n.get(k))
+
+def cs_sig(d):
+    """callsheet: only times (HH:MM) and scene numbers count – a re-read with other wording is no change"""
+    out = []
+    def walk(x, path=""):
+        if isinstance(x, dict):
+            for k in sorted(x):
+                if k.startswith("_") or re.search(r"_(fr|it|en|hi)$", k) or k in ("id", "file", "link"): continue
+                walk(x[k], path + "/" + k)
+        elif isinstance(x, list):
+            for i, y in enumerate(x): walk(y, path + "/" + str(i))
+        elif isinstance(x, str):
+            t = re.findall(r"\b\d{1,2}[:.]\d{2}\b", x)
+            if t or re.search(r"/(sc|scene|scenes)(/|$)", path): out.append((path, t or _nz(x)))
+    walk(d); return json.dumps(out)
 PARTIAL = []   # parts that could not be read in this run: then no picture is deleted (they would only come back later)
 
 def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
@@ -773,7 +792,7 @@ def main():
                 prev = dispos.get(d["date"])
                 if not prev or (prev.get("_mod") or "") <= (f["modified"] or ""):
                     d["id"] = d["date"]; d["_mod"] = f["modified"]; dispos[d["date"]] = d; changed = True
-                    if d["date"] >= TODAY: NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})
+                    if d["date"] >= TODAY and (not prev or cs_sig(prev) != cs_sig(d)): NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})
             else: failed("dispo", f, "kein Drehtag erkannt")
         except Exception as e: failed("dispo", f, e)
     if dispos: data["dispos"] = sorted(dispos.values(), key=lambda d: d.get("date", ""))
@@ -849,7 +868,8 @@ def main():
             for d in data.get("prepro") or []:
                 if d.get("date") and d["date"] >= today and d["date"] not in have:
                     days.append(dict(d, older=d.get("older") or d.get("src") or (meta.get("prepro") or {}).get("source") or "")); have.add(d["date"])
-            if today not in have:   # still nothing for today: look in the older plans of the folder «z OLD»
+            if today not in have and meta.get("prepMiss") != today:   # still nothing for today: look in the older plans of the folder «z OLD» (once a day)
+                meta["prepMiss"] = today
                 try:
                     olds = [x for x in dbx.list_path(ROOT3D + "/11_Planning Prep Rehearsals/z OLD") if x["tag"] == "file" and x["name"].lower().endswith(".pdf") and PLAN_RE.search(x["name"])]
                     for oe in sorted(olds, key=stand, reverse=True)[:2]:
@@ -1035,7 +1055,8 @@ def main():
     w2 = enc_file(R / "script.enc.json", {"script": [{k: d[k] for k in ("sc", "head", "text") if k in d} for d in scr]}) if scr else False
     log("Daten:", "geändert" if changed else "unverändert", "· Datei:", "neu geschrieben" if (w1 or w2) else "gleich")
     write_stamp()
-    if NEWS:   # sent by tools/notify_changes.py after the data is published
+    if NEWS and FORCE: log("Alles neu eingelesen – keine Push-Nachrichten bei Änderungen")
+    if NEWS and not FORCE:   # sent by tools/notify_changes.py after the data is published
         (R / "pending_push.json").write_text(json.dumps({"news": NEWS, "days": [{"date": d.get("date"), "label": d.get("short") or d.get("label") or ""} for d in data.get("days") or []]}, ensure_ascii=False))
         log("Push bei Änderungen vorgemerkt:", ", ".join(n["kind"] for n in NEWS))
     status("ok", "Läuft", updatedAt=meta.get("updatedAt") or "", version=meta.get("scheduleVersion") or "")
