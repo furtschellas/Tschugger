@@ -540,3 +540,19 @@ html body #view .catgrid>*{flex:1 1 150px;min-width:0}
   .tsclist .tset .chgtxt{white-space:normal}
   .tscs .pillbtn{min-height:32px!important;font-size:13px!important;padding:0 12px!important}
 }
+/* ===== Today: one rhythm for spacing ===== */
+html body #view .today{display:flex;flex-direction:column;gap:12px;padding-top:4px}
+html body #view .today>*{margin:0!important}
+html body #view .today .tcard{padding:14px 16px;border-radius:14px}
+html body #view .today .tcard .tch{margin:0 0 10px;min-height:22px}
+html body #view .today .thead{margin:10px 0 -2px!important;gap:2px 12px}
+html body #view .today .thead .pgt{margin:0!important;font-size:24px}
+html body #view .today .ttiles{gap:10px}
+html body #view .today .ttile{padding:12px 14px;gap:4px;min-height:64px;justify-content:center}
+html body #view .today>.ghint{margin:-4px 0 0!important;font-size:12.5px}
+html body #view .today .tcard .tbig{margin:0 0 4px}
+html body #view .today .tcard .pillbtn{margin:10px 8px 0 0}
+html body #view .today .tsclist,html body #view .today .tmylist,html body #view .today .chglist{margin:0}
+html body #view .today .tcard>.ghint,html body #view .today .tcard>.tsub{margin:0}
+html body #view .today .tcard>.ghint+.pillbtn,html body #view .today .tcard>.tsub+.ghint{margin-top:8px}
+html body #view .today .tacts{margin-top:10px}.today .tacts .pillbtn{margin:0!important}

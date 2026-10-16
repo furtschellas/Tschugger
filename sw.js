@@ -1,7 +1,7 @@
 /* Service worker: app files load fresh from the network when online and from the cache when offline
    (film locations often have no reception). The crew data file is never cached here – the app keeps
    its own last copy – and nothing from Firebase sign-in or the database is cached. */
-const CACHE="crew-app-v8";
+const CACHE="crew-app-v9";
 const SHELL=["./","index.html","manifest.webmanifest","clap.svg","clap-180.png","clap-192.png","clap-512.png","clap-maskable-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
@@ -13,6 +13,10 @@ self.addEventListener("fetch",e=>{
   const lib=u.hostname==="www.gstatic.com"&&u.pathname.startsWith("/firebasejs/");
   const font=u.hostname==="fonts.googleapis.com"||u.hostname==="fonts.gstatic.com";
   if(same&&/data\.enc\.json$/.test(u.pathname))return;
+  /* blocking photos are not kept for offline use (only PDF pages «…p<n>.bin» and floorplans are) */
+  if(same&&/\/blk\/[0-9a-f]{20}(\.mp4)?\.bin$/.test(u.pathname))return;
+  /* PDF pages and floorplans never change (new file name for new content): cache first */
+  if(same&&/\/blk\/[0-9a-f]{20}p\d+\.bin$/.test(u.pathname)){e.respondWith(caches.match(r).then(m=>m||fetch(r).then(res=>put(r,res))));return}
   if(!same&&!lib&&!font)return;
   /* Firebase library and fonts have fixed versions: serve from cache, load only once */
   if(lib||font){e.respondWith(caches.match(r).then(m=>m||fetch(r).then(res=>put(r,res))));return}
