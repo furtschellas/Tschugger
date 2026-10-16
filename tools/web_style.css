@@ -340,3 +340,5 @@ section.adm>h2.dh:first-child{margin-top:22px}
 .menuf label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--muted)}
 .menuf textarea{font:inherit;font-size:15px;font-weight:400;color:var(--ink);background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:8px 10px;resize:vertical}
 .menuf .arb{display:flex;justify-content:flex-end}.menuf .arb button{background:var(--accent);color:var(--accent-ink,#fff);border:0;border-radius:99px;padding:7px 18px;font-weight:700;cursor:pointer}
+.bcsms{font-size:14px!important;color:var(--ink)}
+.bchh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px}.bchh .cath3{margin:0}.bcclr{font-size:13px;padding:5px 14px}
