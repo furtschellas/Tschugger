@@ -138,6 +138,16 @@ Object.assign(I18N,{
  "Aktualisieren":{fr:"Actualiser",it:"Aggiorna",en:"Update"},
  "Keine Verbindung.":{fr:"Pas de connexion.",it:"Nessuna connessione.",en:"No connection."},
  "Der Assistent ist gerade nicht erreichbar.":{fr:"L'assistant n'est pas joignable pour le moment.",it:"L'assistente non è raggiungibile al momento.",en:"The assistant is not reachable right now."},
+ "Anzeigeoptionen":{fr:"Options d'affichage",it:"Opzioni di visualizzazione",en:"Display options"},
+ "Blende im Drehplan ein oder aus, was du sehen willst: Info, Szenenbeschrieb, Cast, Adresse und Blocking. Deine Auswahl bleibt gespeichert.":{fr:"Affiche ou masque dans le plan ce que tu veux voir : info, description de scène, cast, adresse et blocking. Ton choix est enregistré.",it:"Mostra o nascondi nel piano ciò che vuoi vedere: info, descrizione scena, cast, indirizzo e blocking. La scelta resta salvata.",en:"Show or hide what you want to see in the schedule: info, scene description, cast, address and blocking. Your choice is saved."},
+ "Wähle, welche Units du siehst – zum Beispiel nur die 2nd Unit. Ist eine Unit an diesem Tag nicht im Einsatz, ist ihr Knopf blass.":{fr:"Choisis les units affichées – par exemple seulement la 2nd Unit. Si une unit ne tourne pas ce jour-là, son bouton est pâle.",it:"Scegli quali unit vedere – per esempio solo la 2nd Unit. Se una unit non lavora quel giorno, il suo pulsante è sbiadito.",en:"Choose which units you see – for example only the 2nd Unit. If a unit isn't working that day, its button is faded."},
+ "Die App erinnert dich jetzt auf Wunsch vor deinen Terminen – auch wenn sie geschlossen ist.":{fr:"Si tu le souhaites, l'app te rappelle désormais tes rendez-vous – même fermée.",it:"Ora l'app, se vuoi, ti ricorda i tuoi appuntamenti – anche quando è chiusa.",en:"The app can now remind you before your appointments – even when it's closed."},
+ "Einzelne Termine schaltest du mit der Glocke in «Meine Termine» aus; alles Weitere unter «Mein Konto».":{fr:"Désactive des rdv individuels avec la cloche dans « Mes rendez-vous » ; le reste sous « Mon compte ».",it:"Disattivi singoli appuntamenti con la campanella in «I miei appuntamenti»; il resto in «Il mio account».",en:"Turn off single appointments with the bell in “My appointments”; everything else under “My account”."},
+ "Nicht jetzt":{fr:"Pas maintenant",it:"Non ora",en:"Not now"},
+ "Einschalten":{fr:"Activer",it:"Attiva",en:"Turn on"},
+ "Push-Nachrichten sind eingeschaltet.":{fr:"Les notifications sont activées.",it:"Le notifiche sono attive.",en:"Notifications are on."},
+ "Du kannst Push-Nachrichten jederzeit unter «Mein Konto» einschalten.":{fr:"Tu peux activer les notifications à tout moment sous « Mon compte ».",it:"Puoi attivare le notifiche in qualsiasi momento in «Il mio account».",en:"You can turn on notifications any time under “My account”."},
+ "OK":{fr:"OK",it:"OK",en:"OK"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -908,7 +918,7 @@ const VAPID_PUB="BEP6-lmT3gVm_ZL1R3qiyBzrntxU6dkKtCEbqanP4KjR9xFTTJNtg8Jm1lxWTs7
 const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"],[180,"3 Std. vorher"],[1440,"1 Tag vorher"]];
 const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
 function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
-  return {on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
+  return {hint:c.hint||0,on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
 function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
 const pushOK=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
@@ -1058,6 +1068,8 @@ setInterval(()=>{try{chatFab()}catch(_){}},1500);
    the result (done/skip + date) is kept in the profile (members.tour/tourAt); «Mein Konto» starts it again ---- */
 const TOUR_STEPS=[
   {sel:'nav.tabs [data-tab="plan"]',t:"Schedule",x:"Der Drehplan Tag für Tag: Szenen, Motive und Zeiten. Mit «Script» öffnest du eine Szene im Drehbuch, die Kamera zeigt Blocking-Fotos und -Filme."},
+  {sel:'#view .dayhead .pvb',t:"Anzeigeoptionen",x:"Blende im Drehplan ein oder aus, was du sehen willst: Info, Szenenbeschrieb, Cast, Adresse und Blocking. Deine Auswahl bleibt gespeichert."},
+  {sel:'#view .dayhead .dpub',t:"1st / 2nd Unit",x:"Wähle, welche Units du siehst – zum Beispiel nur die 2nd Unit. Ist eine Unit an diesem Tag nicht im Einsatz, ist ihr Knopf blass."},
   {sel:'nav.tabs [data-tab="dispo"]',t:"Callsheet",x:"Die Dispo des Drehtags: Crew Call, Drehbeginn, Wrap, Locations und Cast."},
   {sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
   {sel:'nav.tabs [data-tab="crew"]',t:"Crew",x:"Die Crewliste nach Abteilungen – je nach Berechtigung mit Telefon und E-Mail."},
@@ -1073,15 +1085,17 @@ const TOUR={i:-1,steps:[],el:null};
 const tourVisible=s=>{const e=document.querySelector(s);if(!e||e.hidden||e.closest("[hidden]"))return null;const r=e.getBoundingClientRect();return r.width&&r.height?e:null};
 function tourDoneLocal(){try{return !!localStorage.getItem("tourDone:"+(ME&&ME.uid))}catch(_){return false}}
 async function maybeTour(){
-  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||!window.TOUREN)return;
-  if(MEMBER&&MEMBER.tour)return;
-  if(tourDoneLocal()){let v="";try{v=localStorage.getItem("tourDone:"+ME.uid)||""}catch(_){}const [how,at]=v.split("|");
+  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el)return;if(!window.TOUREN){setTimeout(maybePushHint,800);return}
+  if(MEMBER&&MEMBER.tour){setTimeout(maybePushHint,800);return}
+  if(tourDoneLocal()){setTimeout(maybePushHint,800);let v="";try{v=localStorage.getItem("tourDone:"+ME.uid)||""}catch(_){}const [how,at]=v.split("|");
     if(MEMBER&&(how==="done"||how==="skip"))try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{tour:how,tourAt:at||new Date().toISOString()});MEMBER.tour=how;MEMBER.tourAt=at}catch(_){}return}
   setTimeout(()=>tourStart(true),700);
 }
 function tourStart(ask){
   if(TOUR.el)TOUR.el.remove();if(CHAT.open){CHAT.open=false;chatPanel()}
-  if(S.tab==="acct"||S.tab==="admin"||S.tab==="my"){S.tab="plan";render()}
+  TOUR.prev={tab:S.tab,day:S.day};
+  /* show a shooting day so the display options and unit buttons can be explained */
+  {const t=todayISO(),cur=S.days.find(x=>x.id===S.day);if(S.tab!=="plan"||!cur||cur.kind!=="shoot"){const sd=S.days.filter(x=>x.kind==="shoot");const d=sd.find(x=>x.date>=t)||sd[0];S.tab="plan";if(d)S.day=d.id;render()}}
   window.scrollTo(0,0);TOUR.steps=TOUR_STEPS.filter(s=>tourVisible(s.sel));TOUR.i=ask?-1:0;
   const o=document.createElement("div");o.id="tour";o.className="tour";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML='<div class="tspot"></div><div class="tcard" role="document"></div>';
   o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;
@@ -1110,9 +1124,29 @@ function tourPlace(){
 }
 async function tourEnd(how){
   if(TOUR.el){TOUR.el.remove();TOUR.el=null}removeEventListener("resize",tourPlace);
+  if(TOUR.prev&&TOUR.prev.tab==="plan"&&TOUR.prev.day&&TOUR.prev.day!==S.day){S.day=TOUR.prev.day;render()}TOUR.prev=null;setTimeout(maybePushHint,800);
   const at=new Date().toISOString();try{localStorage.setItem("tourDone:"+(ME&&ME.uid),how+"|"+at)}catch(_){}
   if(how==="skip")showMsg(L("Tour übersprungen – du findest sie unter «Mein Konto».")+"",4000);
   try{if(MEMBER&&ME){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{tour:how,tourAt:at});MEMBER.tour=how;MEMBER.tourAt=at}}catch(err){console.warn("tour",err&&err.code||err)}
+}
+
+/* one-time note about push notifications (existing and new users), with a short setup right in the note */
+function maybePushHint(){
+  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||document.getElementById("pushhint"))return;const c=pushCfg();if(c.hint)return;
+  const ios=!pushOK()&&isIOS()&&!pushStandalone();if(!pushOK()&&!ios)return;
+  if(pushOK()&&Notification.permission!=="default"){c.hint=1;pushSave(c);return}
+  const d=document.createElement("div");d.id="pushhint";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  const types=PUSH_TYPES.filter(x=>vok(x[2]));
+  d.innerHTML='<div class="a2box phbox"><span class="wlbeta">'+L("Neu")+'</span><h3>'+L("Push-Nachrichten")+'</h3><p>'+L("Die App erinnert dich jetzt auf Wunsch vor deinen Terminen – auch wenn sie geschlossen ist.")+'</p>'+
+    (ios?'<p class="ghint">'+L("Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.")+'</p><div class="a2b"><button type="button" class="pri" data-ph="ok">'+L("OK")+'</button></div>':
+    '<label class="phl">'+L("Erinnern")+'<select data-phlead>'+PUSH_LEADS.map(([v,t])=>'<option value="'+v+'"'+(v===c.lead?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
+    '<p class="ahint"><b>'+L("Für welche Termine?")+'</b></p>'+types.map(([k,t])=>'<label class="ck"><input type="checkbox" data-phtype="'+k+'"'+(c.types[k]?' checked':'')+'> '+L(t)+'</label>').join("")+
+    '<p class="ghint">'+L("Einzelne Termine schaltest du mit der Glocke in «Meine Termine» aus; alles Weitere unter «Mein Konto».")+'</p>'+
+    '<div class="a2b"><button type="button" class="lnk" data-ph="no">'+L("Nicht jetzt")+'</button><button type="button" class="pri" data-ph="on">'+L("Einschalten")+'</button></div>')+'</div>';
+  d.addEventListener("click",async e=>{const b=e.target.closest("[data-ph]");if(!b){if(e.target.closest("button")&&!e.target.closest("select")){const c=pushCfg();c.hint=1;pushSave(c);d.remove()}return}const c=pushCfg();c.hint=1;
+    if(b.dataset.ph==="on"){c.lead=+(d.querySelector("[data-phlead]")||{value:c.lead}).value||c.lead;d.querySelectorAll("[data-phtype]").forEach(x=>c.types[x.dataset.phtype]=x.checked);c.on=true;pushSave(c);d.remove();await pushEnable();if(Notification.permission==="granted")showMsg(L("Push-Nachrichten sind eingeschaltet."),3500)}
+    else{pushSave(c);d.remove();if(b.dataset.ph==="no")showMsg(L("Du kannst Push-Nachrichten jederzeit unter «Mein Konto» einschalten."),4000)}});
+  document.body.appendChild(d);
 }
 const tourInfo=m=>!m?"":m.tour==="done"?L("Tour gemacht"):m.tour==="skip"?L("Tour übersprungen"):L("Tour offen");
 /* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */
@@ -1410,7 +1444,7 @@ function upSec(){
       '<li><code>CREW_KEY</code> – '+L("den Schlüssel der Crew-Daten bekommst du von Claude im Chat.")+'</li>'+
       '<li>'+L("Alle vier in GitHub eintragen:")+' <a href="'+GH+'/settings/secrets/actions" target="_blank" rel="noopener">Settings → Secrets → Actions</a></li>'+
       '<li>'+L("Ersten Lauf starten:")+' <a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">Actions → «Run workflow»</a></li></ol>')+
-    '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p><div class="setbar inup"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div></div>';
+    '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p></div>';
 }
 /* owner only: account with a one-time start password, created in a second Firebase instance so the owner stays signed in */
 function genPw(){const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=new Uint32Array(12);crypto.getRandomValues(r);
@@ -1591,9 +1625,9 @@ VIEWS.admin=function(){
   const srcInner=()=>{const x=typeof srcHTML==="function"?srcHTML():"";return x?x.replace(/^<details[^>]*><summary>[\s\S]*?<\/summary>/,'<div class="src srcin">').replace(/<\/details>$/,'</div>'):'<p class="ghint">–</p>'};
   /* Einstellungen: one form (id setform) whose fields sit in collapsible groups – all open by default */
   const sv='<div class="arb"><button type="submit" form="setform">'+L("Speichern")+'</button></div>';
-  const grp=(k,t,body)=>'<details class="admins asetd setgrp alangs" data-sec="set-'+k+'"'+(SECS["set-"+k]!==false?' open':'')+'><summary>'+L(t)+'</summary>'+body+'</details>';
+  const grp=(k,t,body)=>'<details class="admins asetd setgrp alangs" data-sec="set-'+k+'"'+(SECS["set-"+k]!==false?' open':'')+'><summary>'+L(t)+'</summary>'+(k==="up"?'<button type="button" class="uprf" data-dorefresh aria-label="'+esc(L("Daten jetzt aktualisieren"))+'" title="'+esc(L("Daten jetzt aktualisieren"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>':'')+body+'</details>';
   const setSec=can("settings")?'<form id="setform" class="alangs" data-adm="langs" novalidate></form>'+
-    grp("up","Aktualisieren",(own?upSec():'<div class="setbar inup"><button type="button" class="pillbtn" data-dorefresh><span aria-hidden="true">↻</span> '+L("Daten jetzt aktualisieren")+'</button></div>')+'<p class="ahint"><b>Dropbox</b> – '+L("Eingeschaltet werden Drehplan, Drehbuch, Crewliste, Callsheets und Motivliste jede Stunde automatisch neu geladen (nur gelesen).")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="au"'+(window.AUTOUPD!==false?' checked':'')+'> '+L("Daten aus der Dropbox automatisch laden")+'</label></div>'+'<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input form="setform" class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+sv)+
+    grp("up","Aktualisieren",(own?upSec():'')+'<p class="ahint"><b>Dropbox</b> – '+L("Eingeschaltet werden Drehplan, Drehbuch, Crewliste, Callsheets und Motivliste jede Stunde automatisch neu geladen (nur gelesen).")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="au"'+(window.AUTOUPD!==false?' checked':'')+'> '+L("Daten aus der Dropbox automatisch laden")+'</label></div>'+'<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input form="setform" class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+sv)+
     grp("langs","Sprachen",'<p class="ahint"><b>'+L("Sprachen")+'</b> – '+L("Nur diese Sprachen stehen in der App zur Auswahl. Mindestens eine.")+'</p><div class="chk">'+LANGS.map(([k,t])=>'<label class="ck"><input form="setform" type="checkbox" name="al" value="'+k+'"'+(APPLANGS.includes(k)?' checked':'')+'> '+t+'</label>').join("")+'</div>'+sv)+
     grp("areas","Bereiche",'<p class="ahint"><b>'+L("Bereiche")+'</b> – '+L("Nur die gewählten Bereiche erscheinen unten in der App. Mindestens einer.")+' '+L("Reihenfolge mit ▲ ▼ ändern.")+'</p><div class="tbord">'+tabOrder().map(k=>[k,{plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",info:"Info"}[k]]).map(([k,t])=>'<div class="tbrow"><label class="ck"><input form="setform" type="checkbox" name="tb" value="'+k+'"'+(!Array.isArray(window.TABSON)||window.TABSON.includes(k)?' checked':'')+'> '+t+'</label><span class="tbmv"><button type="button" data-tmv="up" aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-tmv="down" aria-label="'+esc(L("Nach unten"))+'">▼</button></span></div>').join("")+'</div>'+'<p class="ahint"><b>Units</b> – '+L("Ausgeschaltete Units verschwinden aus Schedule, Callsheet und Locations. Ist nur die 1st Unit aktiv, entfallen die Unit-Knöpfe.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="u2"'+(window.UNIT2!==false?' checked':'')+'> '+L("2nd Unit anzeigen")+'</label><label class="ck"><input form="setform" type="checkbox" name="u3"'+(window.UNIT3===true?' checked':'')+'> '+L("3rd Unit anzeigen")+'</label></div>'+'<p class="ahint"><b>'+L("Drehbuch")+'</b> – '+L("Eingeschaltet erscheint bei jeder Szene der Knopf «Script», der die Szene im Drehbuch öffnet.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="so"'+(window.SCRIPTON!==false?' checked':'')+'> '+L("Drehbuch anzeigen")+'</label></div>'+sv)+
     grp("misc","Einstellungen",'<p class="ahint"><b>'+L("Geburtstage")+'</b> – '+L("Eingeschaltet sehen alle Benutzer:innen in der Crew die Geburtstagsliste der Drehzeit (nur Tag und Monat, ohne Jahrgang).")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="bp"'+(window.BDAYPUB===true?' checked':'')+'> '+L("Geburtstagsliste allen anzeigen")+'</label></div>'+
