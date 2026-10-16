@@ -37,7 +37,8 @@ ROOT = (os.environ.get("DROPBOX_ROOT") or "ns:14935064499").rstrip("/")
 ROOT3D = (os.environ.get("DROPBOX_ROOT_3D") or "ns:13132709057").rstrip("/")
 ROOTAUF = (os.environ.get("DROPBOX_ROOT_AUF") or "ns:15240921299").rstrip("/")
 ROOTRECCE = (os.environ.get("DROPBOX_ROOT_RECCE") or "ns:13058967505/RECCE").rstrip("/")   # recce photos (in «TSCHUGGER - 3D Locations»)
-PIC_DEADLINE = time.time() + 14 * 60   # new previews only for 14 minutes per run; the rest follows in the next runs   # shared folder «AUFLÖSUNG» (in «TSCHUGGER - 3D Locations»)   # shared folder «3D» (weekly prep schedule, floorplans)
+PIC_DEADLINE = time.time() + 10 * 60   # new previews only for 10 minutes per run; the rest follows in the next runs
+PIC_BUDGET = [int(os.environ.get("PIC_BUDGET") or 250)]   # and at most this many new preview files per run (keeps each push small)   # shared folder «AUFLÖSUNG» (in «TSCHUGGER - 3D Locations»)   # shared folder «3D» (weekly prep schedule, floorplans)
 MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
 FORCE = os.environ.get("FORCE", "").lower() in ("ja", "yes", "true", "1")
 EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
@@ -122,7 +123,8 @@ def _enc_write(fn, data):
 def _thumb(dbx, e, fn):
     """encrypted preview picture of a Dropbox photo (made once, kept in blk/)"""
     if os.path.exists(fn): return True
-    if time.time() > PIC_DEADLINE: return False
+    if time.time() > PIC_DEADLINE or PIC_BUDGET[0] <= 0: return False
+    PIC_BUDGET[0] -= 1
     try:
         r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps(
             {"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
@@ -136,7 +138,8 @@ def _pdf_pages(dbx, e, cache):
     n = cache.get(key)
     if n is not None and all(os.path.exists("blk/%sp%d.bin" % (key, i)) for i in range(n)):
         return key, ["blk/%sp%d.bin" % (key, i) for i in range(n)]
-    if time.time() > PIC_DEADLINE: return key, []
+    if time.time() > PIC_DEADLINE or PIC_BUDGET[0] <= 0: return key, []
+    PIC_BUDGET[0] -= 4
     try:
         with tempfile.TemporaryDirectory() as td:
             src = os.path.join(td, "in.pdf"); open(src, "wb").write(dbx.download(e["id"]))
