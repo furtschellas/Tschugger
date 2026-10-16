@@ -2166,7 +2166,8 @@ VIEWS.admin=function(){
   const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(canRoleEdit()||canRoleAssign())SUBS.push(["roles","Rollen"]);if(can("settings"))SUBS.push(["docs","Dokumente"],["set","Einstellungen"]);if(isAdmin()||can("audit.view"))SUBS.push(["log","Protokoll"]);
   if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
-  const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>'<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'">'+(t==="Benutzerverwaltung"?'<span class="lgl">'+esc(L(t))+'</span><span class="sml">'+esc(L("Benutzer"))+'</span>':esc(L(t)))+'</button>').join("")+'</nav>':'';
+  const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>{const sh={users:"Benutzer",roles:"Rollen",docs:"Docs",set:"Einst.",log:"Log"}[k]||t;
+    return '<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'"><span class="lgl">'+esc(L(t))+'</span><span class="sml">'+esc(LANG==="de"?sh:L(sh))+'</span></button>'}).join("")+'</nav>':'';
   let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+subNav;
   if(ADM.sub==="set")return h+setSec+'</section>';
   if(ADM.sub==="docs")return h+docsSec()+'</section>';
@@ -2748,6 +2749,9 @@ Object.assign(I18N,{
  "Alle meine Termine":{en:"All my events",fr:"Tous mes rendez-vous",it:"Tutti i miei impegni",hi:"मेरे सभी कार्यक्रम"},
  "Keine anstehenden Termine.":{en:"No upcoming events.",fr:"Aucun rendez-vous à venir.",it:"Nessun impegno in arrivo.",hi:"कोई आगामी कार्यक्रम नहीं।"},
  "Gilt für dieses Gerät; die Sprache im Profil bestimmt E-Mails und Push.":{en:"Applies to this device; the language in the profile is used for e-mails and notifications.",fr:"S’applique à cet appareil ; la langue du profil sert aux e-mails et notifications.",it:"Vale per questo dispositivo; la lingua del profilo vale per e-mail e notifiche.",hi:"इस डिवाइस पर लागू; प्रोफ़ाइल की भाषा ई-मेल और सूचनाओं के लिए है।"},
+ "Docs":{en:"Docs",fr:"Docs",it:"Docs",hi:"Docs"},
+ "Einst.":{en:"Settings",fr:"Réglages",it:"Impost.",hi:"सेटिंग"},
+ "Log":{en:"Log",fr:"Journal",it:"Log",hi:"लॉग"},
  "Benachrichtigungen":{en:"Notifications",fr:"Notifications",it:"Notifiche",hi:"सूचनाएँ"},
  "Konto":{en:"Account",fr:"Compte",it:"Account",hi:"खाता"},
  "Startseite «Today»":{en:"«Today» start page",fr:"Page d’accueil «Today»",it:"Pagina iniziale «Today»",hi:"«Today» प्रारंभ पृष्ठ"},

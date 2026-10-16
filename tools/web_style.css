@@ -589,3 +589,8 @@ html body #view .acpage .no-food fieldset.efood{display:none}
 html body #view .acpage .only-food form>*:not(fieldset.efood):not(button[type=submit]):not(.amsg){display:none!important}
 html body #view .acpage .only-food fieldset.efood{border:0;padding:0;margin:0}
 html body #view .acpage .only-food fieldset.efood>legend{display:none}
+/* app management on phones: short labels, all sections in one row */
+@media (max-width:600px){
+  html body #view .asub:not(.acsub){grid-auto-flow:column!important;grid-template-columns:none!important;grid-auto-columns:1fr!important;gap:2px}
+  html body #view .asub:not(.acsub) button{padding:8px 2px!important;font-size:13px;white-space:nowrap;min-width:0}
+}
