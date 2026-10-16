@@ -17,6 +17,8 @@ self.addEventListener("fetch",e=>{
   const lib=u.hostname==="www.gstatic.com"&&u.pathname.startsWith("/firebasejs/");
   const font=u.hostname==="fonts.googleapis.com"||u.hostname==="fonts.gstatic.com";
   if(same&&/data\.enc\.json$/.test(u.pathname))return;
+  /* small status files are asked for with «?t=…» every few minutes: never stored, otherwise the cache grows without end */
+  if(same&&u.search&&/\/(stamp\.json|status\.json|version\.txt|script\.enc\.json)$/.test(u.pathname))return;
   /* pictures: here on GitHub Pages or (newer) from Cloudflare R2 through the worker – same rules for both */
   const blkPath=/\/blk\/[0-9a-f]{20}(p\d+|\.mp4)?\.bin$/.test(u.pathname);
   /* blocking photos are not kept for offline use (only PDF pages «…p<n>.bin» and floorplans are) */

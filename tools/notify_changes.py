@@ -25,7 +25,7 @@ TXT = {
 # which role may see what (like the app: no role sees callsheets and prep, but not the shooting schedule)
 VIEW = {"plan": "view.plan", "cs": "view.dispo", "prep": "view.prep"}
 NOROLE = {"plan": False, "cs": True, "prep": True}
-GO = {"plan": "plan", "cs": "dispo", "prep": "plan"}
+GO = {"plan": "plan", "cs": "dispo", "prep": "prep"}
 
 
 def log(*a): print("•", *a, flush=True)

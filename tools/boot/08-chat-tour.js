@@ -84,18 +84,13 @@ const TOUR_STEPS=[
   {tab:"plan",day:"prep",sel:"#view .ppi .calbtn:not(.mailbtn)",t:"Termin in den Kalender",x:"Mit dem Kalender-Knopf übernimmst du einen Termin direkt in deinen Kalender (Handy oder Computer)."},
   {tab:"plan",day:"prep",sel:"#view .ppi .mailbtn",t:"E-Mail-Verteiler",x:"Der Brief-Knopf öffnet eine E-Mail an alle Teilnehmenden dieses Termins – praktisch für kurzfristige Infos."},
   {tab:"dispo",sel:'nav.tabs [data-tab="dispo"]',t:"Callsheet",x:"Die Dispo des Drehtags: Crew Call, Drehbeginn, Wrap, Locations und Cast."},
-  {tab:"dispo",sel:"#view .dpub",t:"Unit filtern",x:"Auch im Callsheet wählst du oben den Tag und filterst nach Unit."},
   {tab:"loc",sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
   {tab:"loc",sel:"#view .mapbtn",t:"Karte",x:"«Map» öffnet die Karte mit allen Drehorten – praktisch für die Anfahrt."},
   {tab:"loc",sel:"#scall",t:"Szenen",x:"«Szenen» klappt bei allen Motiven die Szenen auf oder zu – so siehst du auf einen Blick, was wo gedreht wird."},
   {tab:"loc",sel:"#view .lch",t:"Ein Motiv",x:"Tippe auf ein Motiv: Adresse, Karte, Floorplans und die Szenen, die dort gedreht werden."},
-  {tab:"loc",sel:"#view input.search",t:"Suche",x:"Suche nach Motiv, Adresse oder Szene."},
   {tab:"crew",sel:'nav.tabs [data-tab="crew"]',t:"Crew",x:()=>L("Die Crewliste nach Abteilungen.")+(vok("phone")||vok("email")?" "+L("Mit Telefon und E-Mail – ein Tipp genügt zum Anrufen oder Schreiben."):"")},
-  {tab:"crew",sel:"#view input.search",t:"Crew durchsuchen",x:"Suche nach Name, Funktion oder Abteilung. Mit «vCard» speicherst du einen Kontakt direkt im Telefon."},
   {tab:"crew",sel:"#view .admv",t:"Zusatzinfos",x:"Je nach Berechtigung: Essen, Geburtstage, Kontoinfos und alle Kontakte als VCF."},
   {tab:"script",sel:'nav.tabs [data-tab="script"]',t:"Script",x:"Das Drehbuch mit Suche."},
-  {tab:"script",sel:"#view .pvbtn",up:1,t:"Anzeigeoptionen",x:"Blende Infobox, Drehtag & Zeit, englische Szenenbezeichnung, Cast, Adresse und Blocking ein oder aus."},
-  {tab:"script",sel:"#view .smodes",t:"Suchen nach",x:"Suche im Drehbuch gezielt nach Rolle, Szene, Drehtag, Person, Motiv oder Text."},
   {tab:"cater",sel:'nav.tabs [data-tab="cater"]',t:"Catering",x:"Alle Essenswünsche, Unverträglichkeiten und Allergien der Crew auf einen Blick."},
   {tab:"info",sel:'nav.tabs [data-tab="info"]',t:"Info",x:"Allgemeine Infos zur Produktion und zur App."},
   {tab:"plan",sel:"header .lang",demo:"lang",t:"Sprache",x:"Hier wechselst du die Sprache der App – so sieht sie zum Beispiel auf Englisch aus. Mit «Weiter» geht es in deiner Sprache weiter."},
@@ -109,7 +104,6 @@ const TOUR_STEPS=[
   {tab:"acct",sel:"#acctBtn",t:"Mein Konto",x:"Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten."},
   {tab:"acct",sel:"#view .acsub",t:"Bereiche",x:"Profil, Essen, Push und App. Unter «App» findest du Darstellung, Sprache, Offline, Today und das App-Icon."},
   {tab:"acct",acsub:"note",sel:"#view .pushsec",t:"Push-Nachrichten",x:"Wähle, ob du bei Änderungen am Drehplan, bei neuen Callsheets und bei Änderungen der Prep-Planung benachrichtigt wirst – und wann du an deine Termine erinnert wirst. Ein Tipp auf die Nachricht öffnet direkt den betroffenen Tag."},
-  {tab:"plan",sel:"#admBtn",t:"App-Verwaltung",x:()=>{const a=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))a.push(L("Benutzer"));if(typeof canRoleEdit==="function"?(canRoleEdit()||canRoleAssign()):isOwner())a.push(L("Rollen"));if(can("settings"))a.push(L("Dokumente"),"App");if(isAdmin()||can("audit.view"))a.push(L("Protokoll"));return L("Deine Verwaltung:")+" "+a.join(", ")+"."}},
   {tab:"plan",sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
 ];
 const TOUR={i:-1,steps:[],el:null};

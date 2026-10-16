@@ -5,7 +5,8 @@ const VAPID_PUB="BEP6-lmT3gVm_ZL1R3qiyBzrntxU6dkKtCEbqanP4KjR9xFTTJNtg8Jm1lxWTs7
 const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"],[180,"3 Std. vorher"],[1440,"1 Tag vorher"]];
 const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
 function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
-  return {hint:c.hint||0,news:Object.assign({plan:true,cs:true,prep:true},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
+  const nd=c.on===false?false:true;  /* reminders were switched off: change pushes start off too */
+  return {hint:c.hint||0,news:Object.assign({plan:nd,cs:nd,prep:nd},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
 function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
 const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
@@ -93,13 +94,13 @@ function pushStatusSec(){
   h+=!window.CHATURL?bad(L("Cloudflare Worker nicht eingetragen – Push-Nachrichten gehen nur, wenn GitHub den Versand startet (oft stundenlang verspätet)."))
     :w&&w.ok?ok(L("Worker erreichbar"))+(w.push?ok(L("Sofort-Versand bereit (CREW_KEY gesetzt)")):bad(L("CREW_KEY fehlt im Worker – kein Sofort-Versand.")))+(w.cron?ok(L("Zeitplan aktiv (GH_TOKEN gesetzt)")):bad(L("GH_TOKEN fehlt im Worker – Erinnerungen werden nicht pünktlich verschickt.")))
     :bad(L("Worker nicht erreichbar:")+" "+esc(JSON.stringify((w&&w.error)||"")));
-  h+=d.devErr?bad(L("Geräte nicht lesbar – bitte die neuen Firestore-Regeln veröffentlichen.")+" ("+esc(d.devErr)+")"):(d.devices?ok(L("{n} Geräte für Push angemeldet").replace("{n}",d.devices)):bad(L("Noch kein Gerät für Push angemeldet.")));
+  h+=d.devErr?(isAdmin()?bad(L("Geräte nicht lesbar.")+" ("+esc(d.devErr)+")"):""):(d.devices?ok(L("{n} Geräte für Push angemeldet").replace("{n}",d.devices)):bad(L("Noch kein Gerät für Push angemeldet.")));
   if(!d.devErr)h+=d.mine?ok(L("Dieses Gerät ist angemeldet")):bad(L("Dieses Gerät ist nicht angemeldet – unter «Mein Konto» Push einschalten."));
   h+=d.run?(d.run.ok==="success"?ok(L("Letzter Versand-Lauf bei GitHub:")+" "+esc(when(d.run.at))):bad(L("Letzter Versand-Lauf bei GitHub fehlgeschlagen:")+" "+esc(when(d.run.at)))):bad(L("GitHub hat den Versand noch nie gestartet."));
   if(d.runs){const hr=d.runs.filter(x=>Date.now()-x.at<3600e3),wk=hr.filter(x=>x.ev==="workflow_dispatch").length;
     h+=wk>=4?ok(L("Worker startet den Versand regelmässig ({n}× in der letzten Stunde).").replace("{n}",wk))
       :bad(L("Der Worker-Zeitplan startet den Versand nicht ({n}× in der letzten Stunde, erwartet 6×). In Cloudflare: Worker → Settings → Triggers → Cron «*/10 * * * *» und das Secret GH_TOKEN prüfen.").replace("{n}",wk))}
-  if(w&&w.ok){h+=w.sa?ok(L("Dienstkonto eingerichtet (FIREBASE_SA)")):bad(L("Dienstkonto fehlt im Worker (FIREBASE_SA) – Push-Daten bleiben öffentlich lesbar."));
+  if(w&&w.ok){h+=w.sa?ok(L("Dienstkonto eingerichtet (FIREBASE_SA)")):bad(L("Dienstkonto fehlt im Worker (FIREBASE_SA) – Test und Sofort-Versand funktionieren nicht."));
     h+=w.v?ok(L("Worker-Version")+" "+esc(w.v)):bad(L("Alte Worker-Version – bitte den neuen Code aus tools/chat_worker.js einsetzen."))}
   return h+'</ul><div class="arb"><button type="button" class="pillbtn" data-pstat>↻ '+L("Neu prüfen")+'</button></div>';
 }
@@ -146,9 +147,13 @@ document.addEventListener("change",e=>{const t=e.target;
   else if(t.matches("[data-pushev2]")){pushToggleEv(t.dataset.pushev2,t.dataset.pushdate,t.checked);const s=t.closest("details").querySelector("summary");if(s){const c=pushCfg(),ev=pushEvents(c).filter(x=>pushStart(x)>Date.now()).slice(0,40);s.textContent=L("Kommende Termine")+" ("+ev.filter(x=>!c.off[x.id]).length+"/"+ev.length+")"}}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pushSyncSoon()});
 /* opened from a notification: go to «Meine Termine» */
-function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo):(\d{4}-\d{2}-\d{2})/);if(!m)return false;
+function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo|prep):(\d{4}-\d{2}-\d{2})/);if(!m)return false;
   try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}
-  setTimeout(()=>{S.want=null;S.srcOpen=false;if(m[1]==="dispo"){S.tab="dispo";S.dday=m[2]}else{S.tab="plan";S.day=(S.days||[]).some(d=>d.id===m[2]||d.date===m[2])?m[2]:"prep:"+m[2]}try{store("tab",S.tab)}catch(_){}window.scrollTo(0,0);render()},400);return true}
+  let n=0;const go=()=>{ /* wait for the data (up to 6 s), so a new shooting day is found */
+    const has=(S.days||[]).some(d=>d.id===m[2]||d.date===m[2]);if(m[1]==="plan"&&!has&&n++<15){setTimeout(go,400);return}
+    S.want=null;S.srcOpen=false;if(m[1]==="dispo"){S.tab="dispo";S.dday=m[2]}else{S.tab="plan";S.day=m[1]==="prep"||!has?"prep:"+m[2]:m[2]}
+    try{store("tab",S.tab)}catch(_){}window.scrollTo(0,0);render()};
+  setTimeout(go,400);return true}
 pushGo(location.hash);
 if(location.hash==="#my"){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}setTimeout(()=>{if(typeof openMyCal==="function")openMyCal()},400)}
 if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const o=e.data&&e.data.open;if(!o)return;if(pushGo(o))return;if((o==="my"||/#my/.test(o))&&typeof openMyCal==="function")openMyCal()});
