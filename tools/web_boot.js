@@ -285,6 +285,9 @@ Object.assign(I18N,{
  "noch nicht bestätigt":{fr:"pas encore confirmé",it:"non ancora confermato",en:"not yet confirmed",hi:"अभी पुष्ट नहीं"},
  "Alle aufklappen":{fr:"Tout déplier",it:"Espandi tutti",en:"Expand all",hi:"सब खोलें"},
  "Alle zuklappen":{fr:"Tout replier",it:"Comprimi tutti",en:"Collapse all",hi:"सब बंद करें"},
+ "Bitte eine gültige E-Mail-Adresse eingeben.":{fr:"Saisis une adresse e-mail valide.",it:"Inserisci un indirizzo e-mail valido.",en:"Please enter a valid email address.",hi:"कृपया मान्य ई-मेल पता दर्ज करें।"},
+ "hat bereits ein Konto.":{fr:"a déjà un compte.",it:"ha già un account.",en:"already has an account.",hi:"का पहले से खाता है।"},
+ "Schick jetzt die Einladungs-Mail (✉ bei der Person).":{fr:"Envoie maintenant l'e-mail d'invitation (✉ chez la personne).",it:"Ora invia l'e-mail d'invito (✉ presso la persona).",en:"Now send the invitation email (✉ on the person).",hi:"अब निमंत्रण ई-मेल भेजें (व्यक्ति के पास ✉)।"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -2123,8 +2126,18 @@ document.addEventListener("submit",async e=>{
     await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au,chatUrl:cu,chatEnabled:!!(fl.elements['ca']||{}).checked,pushEnabled:!!(fl.elements['pn']||{}).checked,tourEnabled:!!(fl.elements['to']||{}).checked},{merge:true});window.CHATEN=!!(fl.elements['ca']||{}).checked;window.PUSHEN=!!(fl.elements['pn']||{}).checked;try{localStorage.setItem("apppushon",window.PUSHEN?"1":"0")}catch(_){}window.TOUREN=!!(fl.elements['to']||{}).checked;try{localStorage.setItem("appchaton",window.CHATEN?"1":"0");localStorage.setItem("apptouron",window.TOUREN?"1":"0")}catch(_){}window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const f=e.target.closest('[data-adm="add"]');if(!f)return;e.preventDefault();
-  const em=lc(f.em.value),nm=f.nm.value.trim();if(!/@/.test(em))return;
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"invites",em),{name:nm,addedAt:F.serverTimestamp()});await assignCrew(em);showMsg(em+" "+L("eingeladen."),3000);await admLoad()}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+  const em=lc(String(f.em.value||"").trim()),nm=String(f.nm.value||"").trim().slice(0,80);
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){showMsg(L("Bitte eine gültige E-Mail-Adresse eingeben."),4000);try{f.em.focus()}catch(_){}return}
+  const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
+  /* leave the input first – otherwise the page does not refresh while the cursor is still in the field */
+  try{document.activeElement&&document.activeElement.blur&&document.activeElement.blur()}catch(_){}
+  try{const {F,db}=await fb();
+    if(ADM.mem.some(m=>m.email===em)){showMsg(em+" "+L("hat bereits ein Konto."),4000);if(btn)btn.disabled=false;return}
+    await F.setDoc(F.doc(db,"invites",em),Object.assign(nm?{name:nm}:{},{addedAt:F.serverTimestamp()}),{merge:true});await assignCrew(em);
+    if(!ADM.inv.some(i=>i.id===em))ADM.inv.push({id:em,name:nm});f.reset();admIndex();render();
+    showMsg(em+" "+L("eingeladen.")+" "+L("Schick jetzt die Einladungs-Mail (✉ bei der Person)."),6000);admLoad().catch(()=>{})}
+  catch(err){console.error(err);showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}
+  if(btn)btn.disabled=false;
 });
 document.addEventListener("click",async e=>{
   const b=e.target.closest("button[data-adm]");if(!b||ADM.busy)return;ADM.busy=true;
