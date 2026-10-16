@@ -804,7 +804,7 @@ function ppNames(t){return String(t||"").split(",").map(x=>x.trim()).filter(Bool
 function ppChip(n,people){
   const g=groupPeople(n.replace(/\btbc\b/ig,"").trim(),people);if(g)return '<span class="ppc grp">'+esc(n)+'</span>';
   const p=findPerson(n.replace(/\btbc\b/ig,"").trim(),people.filter(x=>x.email||x.phone))||null;
-  return p&&vok("contacts")?'<button type="button" class="ppc link" data-ppc="'+esc(p.name)+'|'+esc(p.email||"")+'|'+esc(p.phone||"")+'|'+esc(p.role||"")+'|'+esc(p.src||"")+'">'+esc(n)+'</button>':'<span class="ppc">'+esc(n)+'</span>';
+  return p&&(vok("phone")||vok("email"))?'<button type="button" class="ppc link" data-ppc="'+esc(p.name)+'|'+esc(p.email||"")+'|'+esc(p.phone||"")+'|'+esc(p.role||"")+'|'+esc(p.src||"")+'">'+esc(n)+'</button>':'<span class="ppc">'+esc(n)+'</span>';
 }
 function ppParts(i){
   const cr=ppNames(i.crew),ca=ppNames(i.cast);if(!cr.length&&!ca.length)return"";
@@ -1102,7 +1102,7 @@ function renderCrew(){
       let ct='';const web=typeof window.crewHead==="function";const vc=!web?'':(p.phone||p.email)?'<button class="copy vcbtn" data-vc="'+gi+':'+g.people.indexOf(p)+'" aria-label="'+esc(L("Kontakt ins Telefon übernehmen"))+'" title="'+esc(L("Kontakt ins Telefon übernehmen"))+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard</button>':'';
       /* wide screens: vCard after the job title; phones: next to the phone number */
       const vcW=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-wide"'),vcN=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-narrow"');
-      const showC=vok("contacts"),showP=showC&&vok("phone"),showE=showC&&vok("email");const vcW0=vcW;
+      const showP=vok("phone"),showE=vok("email");const vcW0=vcW;
       /* phone / e-mail missing in the crew list: taken from the person's app profile (marked) */
       const fx=(!p.phone||!p.email)&&typeof window.crewFill==="function"?window.crewFill(p):null;const fromApp='<span class="fromapp" title="'+esc(L("aus dem App-Profil"))+'">App</span>';
       if(fx&&fx.phone&&!p.phone&&showP)ct+='<a href="tel:'+esc(fx.phone.replace(/\s/g,""))+'"><span>'+esc(fx.phone)+'</span></a>'+fromApp;
