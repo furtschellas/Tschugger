@@ -609,3 +609,9 @@ html body #view .udl b,html body #view .usub,html body #view a[href^="mailto:"]{
 html body #view .udl b a[href^="mailto:"]{display:inline-block;max-width:100%}
 html body #view .usub a[href^="mailto:"]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:inline-block;vertical-align:bottom}
 .ck.plock{opacity:.45}
+
+/* App-Verwaltung: alle Bereiche (User, Rollen, Docs, Einstellungen, Log …) immer auf einer Zeile, auch auf Desktop */
+html body #view .asub:not(.acsub),html body #view .asub.n4,html body #view .asub.n5{grid-auto-flow:column!important;grid-template-columns:none!important;grid-auto-columns:1fr!important}
+html body #view .asub:not(.acsub) button{white-space:nowrap;min-width:0}
+/* Telefonnummern nie umbrechen: passt eine Nummer nicht mehr, rutscht sie als Ganzes auf die nächste Zeile */
+html body a[href^="tel:"]{white-space:nowrap;display:inline-block;max-width:100%}
