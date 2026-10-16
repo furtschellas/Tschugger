@@ -264,3 +264,4 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .uinf a,.usub a.em{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:2px}
 .efood{border:1px solid var(--rule);border-radius:12px;padding:6px 12px 10px;margin:12px 0 6px;min-width:0}.efood legend{padding:0 6px;font-weight:700;font-size:14px;color:var(--accent)}
 .efood{grid-column:1/-1}
+.ust.norole{opacity:.6;border-style:dashed}
