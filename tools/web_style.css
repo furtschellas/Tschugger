@@ -262,3 +262,5 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .cath3{margin:18px 0 6px;font-size:15px}.cattbl{border:1px solid var(--rule);border-radius:12px;overflow:hidden}.catrow{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;padding:8px 12px;border-top:1px solid var(--rule);font-size:14px}.catrow:first-child{border-top:0}.catdep{display:block;font-size:12px;color:var(--muted)}
 @media print{.catpage .catcard,.catpage .cattbl{break-inside:avoid}}
 .uinf a,.usub a.em{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:2px}
+.efood{border:1px solid var(--rule);border-radius:12px;padding:6px 12px 10px;margin:12px 0 6px;min-width:0}.efood legend{padding:0 6px;font-weight:700;font-size:14px;color:var(--accent)}
+.efood{grid-column:1/-1}
