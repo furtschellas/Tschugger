@@ -364,3 +364,5 @@ html body .bcwa a.wabtn.wagrp.pillbtn{display:block;text-align:center;margin:8px
 .udet .uinf{margin-top:4px;padding-top:6px;border-top:1px solid var(--rule)}
 .ubar .uall{margin-left:auto;font-size:13px;padding:6px 14px}
 @media (min-width:640px){.ucard .umain{display:flex;flex-wrap:wrap;align-items:center;column-gap:10px}.ucard .umain>.unm{flex:0 1 auto}.ucard .umain>.ubadges{margin:0}.ucard .umain>:not(.unm):not(.ubadges){flex-basis:100%}}
+.uact h3{display:flex;align-items:center;gap:8px}.uactl{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.uactp{display:inline-flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:99px;background:var(--paper);border:1px solid var(--rule);font-size:14px}.uactp .uav{width:26px;height:26px;font-size:11px}
