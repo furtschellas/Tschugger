@@ -123,6 +123,31 @@ Object.assign(I18N,{
  "Telefonnummern":{fr:"Numéros de téléphone",it:"Numeri di telefono",en:"Phone numbers"},
  "Ausgeschaltet sehen nur Personen mit einer Rolle, die «Telefonnummern sehen» erlaubt, die Nummern in Crewliste und Kontaktkarten.":{fr:"Désactivé, seules les personnes dont le rôle autorise « Voir les numéros de téléphone » voient les numéros dans la liste et les fiches contact.",it:"Disattivato, solo le persone con un ruolo che consente «Vedere i numeri di telefono» vedono i numeri nella lista crew e nelle schede contatto.",en:"When off, only people whose role allows “See phone numbers” see the numbers in the crew list and contact cards."},
  "Telefonnummern allen Benutzer:innen ohne Rolle anzeigen":{fr:"Afficher les numéros à tous les utilisateurs sans rôle",it:"Mostrare i numeri a tutti gli utenti senza ruolo",en:"Show phone numbers to all users without a role"},
+ "DREHPLAN sehen":{fr:"Voir le PLAN",it:"Vedere il PIANO",en:"See SCHEDULE"},
+ "PREP sehen":{fr:"Voir la PREP",it:"Vedere la PREP",en:"See PREP"},
+ "CALLSHEET sehen":{fr:"Voir la CALLSHEET",it:"Vedere il CALLSHEET",en:"See CALL SHEET"},
+ "DREHBUCH sehen":{fr:"Voir le SCÉNARIO",it:"Vedere la SCENEGGIATURA",en:"See SCRIPT"},
+ "BLOCKING sehen":{fr:"Voir le BLOCKING",it:"Vedere il BLOCKING",en:"See BLOCKING"},
+ "CREWLISTE sehen":{fr:"Voir la LISTE",it:"Vedere la LISTA",en:"See CREW LIST"},
+ "TELEFON sehen":{fr:"Voir le TÉLÉPHONE",it:"Vedere il TELEFONO",en:"See PHONE"},
+ "E-MAIL sehen":{fr:"Voir l'E-MAIL",it:"Vedere l'E-MAIL",en:"See EMAIL"},
+ "EXTERNE KONTAKTE sehen":{fr:"Voir CONTACTS EXTERNES",it:"Vedere CONTATTI ESTERNI",en:"See EXTERNAL CONTACTS"},
+ "ESSEN sehen":{fr:"Voir les REPAS",it:"Vedere i PASTI",en:"See FOOD"},
+ "GEBURTSTAGE sehen":{fr:"Voir les ANNIVERSAIRES",it:"Vedere i COMPLEANNI",en:"See BIRTHDAYS"},
+ "VCF exportieren":{fr:"Exporter VCF",it:"Esportare VCF",en:"Export VCF"},
+ "MEINE TERMINE sehen":{fr:"Voir MES RDV",it:"Vedere I MIEI APPUNTAMENTI",en:"See MY APPOINTMENTS"},
+ "ALLE TERMINE sehen":{fr:"Voir TOUS LES RDV",it:"Vedere TUTTI GLI APPUNTAMENTI",en:"See ALL APPOINTMENTS"},
+ "BENUTZER sehen":{fr:"Voir les UTILISATEURS",it:"Vedere gli UTENTI",en:"See USERS"},
+ "BENUTZER ändern":{fr:"Modifier les UTILISATEURS",it:"Modificare gli UTENTI",en:"Edit USERS"},
+ "BENUTZER einladen":{fr:"Inviter des UTILISATEURS",it:"Invitare UTENTI",en:"Invite USERS"},
+ "ANFRAGEN freischalten":{fr:"Approuver les DEMANDES",it:"Approvare le RICHIESTE",en:"Approve REQUESTS"},
+ "EINSTELLUNGEN ändern":{fr:"Modifier les PARAMÈTRES",it:"Modificare le IMPOSTAZIONI",en:"Change SETTINGS"},
+ "DREHPLAN":{fr:"PLAN DE TOURNAGE",it:"PIANO",en:"SCHEDULE"},
+ "DREHBUCH":{fr:"SCÉNARIO",it:"SCENEGGIATURA",en:"SCRIPT"},
+ "CREWLISTE":{fr:"LISTE DE L'ÉQUIPE",it:"LISTA CREW",en:"CREW LIST"},
+ "TERMINE":{fr:"RENDEZ-VOUS",it:"APPUNTAMENTI",en:"APPOINTMENTS"},
+ "BENUTZER":{fr:"UTILISATEURS",it:"UTENTI",en:"USERS"},
+ "APP":{fr:"APP",it:"APP",en:"APP"},
  "Telefon":{fr:"Téléphone",it:"Telefono",en:"Phone"},
  "Sortieren":{fr:"Trier",it:"Ordina",en:"Sort"},
  "Abteilung":{fr:"Département",it:"Reparto",en:"Department"},
@@ -149,7 +174,7 @@ Object.assign(I18N,{
  "Termine aller Personen ansehen":{fr:"Voir les rendez-vous de tout le monde",it:"Vedere gli appuntamenti di tutti",en:"See everyone's appointments"},
  "Einstellungen der App ändern":{fr:"Modifier les paramètres de l'app",it:"Modificare le impostazioni dell'app",en:"Change app settings"},
  "Alles, auch Rollen, Admins, Sperren und Backup":{fr:"Tout, y compris rôles, admins, blocage et sauvegarde",it:"Tutto, anche ruoli, admin, blocco e backup",en:"Everything, including roles, admins, blocking and backup"},
- "Alle Berechtigungen ausser «Einstellungen der App ändern»":{fr:"Tous les droits sauf « Modifier les paramètres de l'app »",it:"Tutti i permessi tranne «Modificare le impostazioni dell'app»",en:"All permissions except “Change app settings”"},
+ "Alle Berechtigungen ausser «EINSTELLUNGEN ändern»":{fr:"Tous les droits sauf « Modifier les paramètres de l'app »",it:"Tutti i permessi tranne «Modificare le impostazioni dell'app»",en:"All permissions except “Change app settings”"},
  "Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person alle Drehdaten, die Crewliste, das Drehbuch und das Blocking, aber keine Verwaltung. Mit Rolle sieht sie nur die Bereiche, die die Rolle erlaubt.":{fr:"Un rôle regroupe des droits. Attribue-le dans la gestion des utilisateurs, sous « Rôle ». Sans rôle, une personne voit toutes les données de tournage, la liste d'équipe, le scénario et le blocking, mais aucune administration. Avec un rôle, seulement ce que le rôle permet.",it:"Un ruolo raggruppa dei permessi. Assegnalo nella gestione utenti alla voce «Ruolo». Senza ruolo una persona vede tutti i dati delle riprese, la lista crew, la sceneggiatura e il blocking, ma nessuna amministrazione. Con un ruolo solo ciò che il ruolo consente.",en:"A role bundles permissions. Assign it in user management under “Role”. Without a role a person sees all shooting data, the crew list, the script and blocking, but no administration. With a role only what the role allows."},
  "Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.":{fr:"Supprimer le rôle « {r} » ? Les personnes ayant ce rôle perdent leurs droits.",it:"Eliminare il ruolo «{r}»? Le persone con questo ruolo perdono i permessi.",en:"Delete role “{r}”? People with this role lose its permissions."},
  "Benutzerverwaltung":{fr:"Gestion des utilisateurs",it:"Gestione utenti",en:"User management"},
@@ -400,9 +425,8 @@ let COADMIN=false;
 const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
-const PERMS=[["view.plan","Drehplan sehen"],["view.prep","Vorproduktion (Prep) sehen"],["view.dispo","Callsheet sehen"],["view.crew","Crewliste sehen"],["view.phone","Crewliste: Telefonnummer sehen"],["view.email","Crewliste: E-Mail sehen"],["view.mycal","Meine Termine sehen"],["view.script","Drehbuch (Script) sehen"],["view.blocking","Blocking und Blocking-PDFs sehen"],["contacts.extra","Telefon und E-Mail von Personen ausserhalb der Crewliste sehen"],
-  ["users.view","Benutzerdaten sehen"],["users.edit","Benutzerdaten ändern"],["users.invite","Benutzer:innen einladen"],["users.requests","Zugangsanfragen freischalten"],
-  ["crew.food","Essen und Allergien in der Crew sehen"],["crew.bday","Geburtstage in der Crew sehen"],["crew.vcf","Alle Kontakte als VCF exportieren"],["mycal.all","Termine aller Personen ansehen"],["settings","Einstellungen der App ändern"]];
+/* permissions, grouped by main topic (topic in capitals, short labels so they fit on one line on phones) */
+const PERMS=[["view.plan","DREHPLAN sehen","DREHPLAN"],["view.prep","PREP sehen","DREHPLAN"],["view.dispo","CALLSHEET sehen","DREHPLAN"],["view.script","DREHBUCH sehen","DREHBUCH"],["view.blocking","BLOCKING sehen","DREHBUCH"],["view.crew","CREWLISTE sehen","CREWLISTE"],["view.phone","TELEFON sehen","CREWLISTE"],["view.email","E-MAIL sehen","CREWLISTE"],["contacts.extra","EXTERNE KONTAKTE sehen","CREWLISTE"],["crew.food","ESSEN sehen","CREWLISTE"],["crew.bday","GEBURTSTAGE sehen","CREWLISTE"],["crew.vcf","VCF exportieren","CREWLISTE"],["view.mycal","MEINE TERMINE sehen","TERMINE"],["mycal.all","ALLE TERMINE sehen","TERMINE"],["users.view","BENUTZER sehen","BENUTZER"],["users.edit","BENUTZER ändern","BENUTZER"],["users.invite","BENUTZER einladen","BENUTZER"],["users.requests","ANFRAGEN freischalten","BENUTZER"],["settings","EINSTELLUNGEN ändern","APP"]];
 const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
 const ADMIN_DEFAULT=PERMS.map(x=>x[0]).filter(p=>p!=="settings");
 let MYPERMS=[],MYROLE="",ADMINPERMS=ADMIN_DEFAULT.slice();
@@ -1024,7 +1048,7 @@ function reqSec(){
     r.map(q=>'<div class="arow"><span><b>'+esc(q.name||"")+'</b> · '+esc(q.id)+(q.role?'<br><small>'+esc(q.role)+'</small>':'')+(q.note?'<br><small>«'+esc(q.note)+'»</small>':'')+'</span>'+
       (can("users.requests")?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
 }
-const permBoxes=sel=>'<div class="chk perms">'+PERMS.map(([k,t])=>'<label class="ck"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>';
+const permBoxes=sel=>'<div class="perms">'+[...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp"><h5>'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>'<label class="ck"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>').join("")+'</div>';
 function rolesSec(){
   const cnt=id=>id==="admin"?ADM.adm.length:Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e)).length;
   const roles=(ADM.roles||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG));
