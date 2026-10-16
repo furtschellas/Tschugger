@@ -2003,7 +2003,7 @@ function userList(rows,vis,o){
     const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.open.has(r.email),nm=r.name||cp.name||"";
     const badge=o.isAdm(r.email)?'<span class="ust adm">'+L(isOwn?"Owner":"Admin")+'</span>':(o.roleOf(r.email)?'<span class="ust role">'+esc(o.roleName(o.roleOf(r.email)))+'</span>':'<span class="ust norole">'+esc(L("Keine Rolle"))+'</span>');
     const acts=[
-      o.cEd&&(own||!isOwn)?'<button data-adm="edit" data-em="'+esc(r.email)+'">✎ '+L(ADM.edit===r.email?"Schliessen":"Bearbeiten")+'</button>':'',
+      o.cEd&&(own||!isOwn)?'<button class="cico'+(ADM.edit===r.email?' on':'')+'" data-adm="edit" data-em="'+esc(r.email)+'" aria-label="'+esc(L(ADM.edit===r.email?"Schliessen":"Bearbeiten"))+'" title="'+esc(L(ADM.edit===r.email?"Schliessen":"Bearbeiten"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ADM.edit===r.email?'<path d="M18 6 6 18M6 6l12 12"/>':'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>')+'</svg></button>':'',
       own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'',
       own&&!r.m&&!isOwn?'<button data-adm="nomail" data-em="'+esc(r.email)+'">'+L("Ohne Bestätigungs-Mail freischalten")+'</button>':'',
       own&&!r.m&&!isOwn?'<button data-adm="startpw" data-em="'+esc(r.email)+'" data-nm="'+esc(r.name||"")+'">'+L("Startpasswort erzeugen")+'</button>':'',
@@ -2019,7 +2019,7 @@ function userList(rows,vis,o){
       (r.m&&r.m?'<div class="udl"><span>'+L("Einführungstour")+'</span><b>'+esc(tourInfo(r.m))+'</b></div>':'')+userInfo(r)+'</div>';
     return '<div class="ucard'+(r.m&&r.m.active!==true?' blocked':'')+(open?' open':'')+'">'+
       '<div class="uhd"><span class="uav'+(r.m&&isOnline(r.m)?' on':'')+'" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b></div><div class="ubadges">'+o.st(r)+badge+'</div>'+
-      (r.m&&seenText(r.m)?'<div class="usub"><span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span></div>':'')+'</div>'+
+      (()=>{const ph=(r.m&&r.m.phone)||cp.phone||"",ce=(r.m&&r.m.contactEmail)||r.email;const bits=[r.m&&seenText(r.m)?'<span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'',ph?'<a href="tel:'+esc(String(ph).replace(/[^\d+]/g,""))+'">'+esc(ph)+'</a>':'',ce?'<a href="mailto:'+esc(ce)+'">'+esc(ce)+'</a>':''].filter(Boolean);return bits.length?'<div class="usub">'+bits.join(' · ')+'</div>':''})()+'</div>'+
       (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" aria-label="'+esc(L("Aktionen"))+'" title="'+esc(L("Aktionen"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
       (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
       (open?'<div class="ubody">'+det+(o.cEd&&ADM.edit===r.email?editForm(r,true):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
@@ -2029,7 +2029,7 @@ function userList(rows,vis,o){
   const onl=rows.filter(r=>r.m&&isOnline(r.m)).map(r=>r.name||(crewPerson(r.email)||{}).name||r.email);
   return '<div class="admins ulist"><h3>'+L("Alle Benutzenden")+' <span class="ust">'+rows.length+'</span></h3>'+
 
-    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'<button type="button" class="pillbtn uall" data-uall>'+L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen")+'</button></div>'+
+    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'<button type="button" class="cico uall" data-uall aria-label="'+esc(L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen"))+'" title="'+esc(L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(vis.length&&vis.every(r=>ADM.open.has(r.email))?'<path d="m7 11 5-5 5 5M7 18l5-5 5 5"/>':'<path d="m7 6 5 5 5-5M7 13l5 5 5-5"/>')+'</svg></button></div>'+
     (vis.length?'<div class="ucards">'+vis.map(card).join("")+'</div>':'<p class="ahint">'+L("Keine Treffer.")+'</p>')+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-uf]");if(b){ADM.uf=b.dataset.uf;render();return}
