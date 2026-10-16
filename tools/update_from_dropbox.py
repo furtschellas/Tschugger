@@ -340,7 +340,7 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=()):
             for g in ex:
                 for it in extra.get(_norm_sc(sc), {}).get(g, []):
                     if not any(x["f"] == it["f"] for x in ex[g]) and not any(x["f"] == it["f"] for x in own): ex[g].append(it)
-        new = own + ex["s"] + ex["pdf"] + ex["loc"][:60] + ex["recce"][:60]
+        new = own + ex["s"] + ex["pdf"] + ex["loc"][:30] + ex["recce"][:30]
         if new != (b.get("media") or []): b["media"] = new; changed = True
     want_files.update(WANT)
     cache = {k: v for k, v in cache.items() if k in used}
@@ -685,6 +685,9 @@ def main():
     except Exception: fl = bl = []; bpdf = {}; bpdfe = {}
     if fl or bl:
         known = {x.get("file"): x for x in meta.get("floorplans") or []}
+        _bm = meta.get("bm") or []
+        for x in meta.get("blocking") or []:   # pictures are stored once in meta.bm; expand them while working
+            if "mi" in x and "media" not in x: x["media"] = [_bm[i] for i in x.pop("mi") if 0 <= i < len(_bm)]
         kb = {x.get("name"): x for x in meta.get("blocking") or []}
         fpdir = meta.get("fpFolderUrl") or ""; bdir = meta.get("blkFolderUrl") or ""
         TOWNS = ("salgesch", "martigny", "sion", "chalais", "saxon", "salvan", "vernayaz", "collombey", "leytron", "saint-maurice")
@@ -759,6 +762,17 @@ def main():
             changed = add_more_blocking(dbx, blk, meta, want_files, data.get("days") or [], data.get("locations") or []) or changed
         except Exception as ex:
             log("Auflösung/Seiten nicht gelesen:", str(ex)[:160])
+        # store every picture once (meta.bm) and let the scenes refer to it by number – keeps the data file small
+        bm, idx = [], {}
+        for b in blk:
+            mi = []
+            for m in b.pop("media", None) or []:
+                k = json.dumps(m, sort_keys=True, ensure_ascii=False)
+                if k not in idx: idx[k] = len(bm); bm.append(m)
+                mi.append(idx[k])
+            b["mi"] = mi
+        if bm != (meta.get("bm") or []): changed = True
+        meta["bm"] = bm
         for bf in os.listdir("blk"):
             if "blk/" + bf not in want_files and bf.endswith(".bin"):
                 os.remove("blk/" + bf); changed = True

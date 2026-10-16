@@ -1597,8 +1597,10 @@ function sceneFacts(reqSc,x,list){
 const fpk=t=>fold(t).replace(/[^a-z0-9]/g,"");
 function fpFor(set,loc){const st=fpk(set),lc=fpk(loc);return arr(S.meta&&S.meta.floorplans).filter(f=>{const r=f.rule||{},ws=arr(r.set).map(fpk),wl=arr(r.loc).map(fpk);
   return (ws.length||wl.length)&&ws.every(w=>st.includes(w))&&(!wl.length||wl.some(w=>lc.includes(w)))&&!arr(r.not).map(fpk).some(w=>st.includes(w)||lc.includes(w))})}
+/* blocking pictures: each picture is stored once in meta.bm, the scenes refer to it by number (mi) */
+function bmed(b){if(!b)return[];if(Array.isArray(b.media))return b.media;const bm=arr(S.meta&&S.meta.bm);return arr(b.mi).map(i=>bm[i]).filter(Boolean)}
 function blkFor(sc){const n=String(sc||"").toLowerCase().replace(/\s+/g,"");return n?arr(S.meta&&S.meta.blocking).filter(b=>arr(b.sc).some(x=>{x=String(x).toLowerCase();return x===n||(n.startsWith(x+"pt")&&!/pt/.test(x))})).map(b=>{if(!/pt/.test(n))return b;const k=f=>String(f.l).toLowerCase().replace(/\s+/g,""),p=arr(b.pdfs).filter(f=>!/pt/.test(k(f))||n.startsWith(k(f))||k(f).startsWith(n));return p.length?Object.assign({},b,{pdfs:p}):b}):[]}
-function fpLinks(fps,blk,lead){const l=(lead?[lead]:[]).concat(arr(fps).map(f=>'<a class="fpl" href="'+esc(f.url)+'" target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat((vok("blocking")?arr(blk):[]).flatMap(b=>['<a class="fpl blk'+(arr(b.media).length?' hasm':'')+'" href="'+esc(b.url)+'"'+(arr(b.media).length?' data-blkg="'+esc(b.name)+'"':'')+' target="_blank" rel="noopener noreferrer" title="Blocking" aria-label="Blocking"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></a>'].concat(arr(b.pdfs).map(f=>'<a class="fpl scp" href="'+esc(f.u)+'" target="_blank" rel="noopener noreferrer">'+esc(f.l)+'</a>')))));return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
+function fpLinks(fps,blk,lead){const l=(lead?[lead]:[]).concat(arr(fps).map(f=>'<a class="fpl" href="'+esc(f.url)+'" target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat((vok("blocking")?arr(blk):[]).flatMap(b=>['<a class="fpl blk'+(bmed(b).length?' hasm':'')+'" href="'+esc(b.url)+'"'+(bmed(b).length?' data-blkg="'+esc(b.name)+'"':'')+' target="_blank" rel="noopener noreferrer" title="Blocking" aria-label="Blocking"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></a>'].concat(arr(b.pdfs).map(f=>'<a class="fpl scp" href="'+esc(f.u)+'" target="_blank" rel="noopener noreferrer">'+esc(f.l)+'</a>')))));return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
 function itemFp(it,lead){return fpLinks(fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")),blkFor(it.sc),lead)}
 function factsHTML(hits){
   const show=hits.slice().sort((a,b)=>a.d.date<b.d.date?-1:a.d.date>b.d.date?1:String(a.it.t).localeCompare(String(b.it.t)));
@@ -1635,10 +1637,10 @@ function spTod(x){
   return '<span class="sptod sptod-'+k+'">'+esc(L(lbl))+'</span>';
 }
 /* ---------- blocking gallery: photos and video stills of a scene folder in a pop-up ---------- */
-document.addEventListener("click",e=>{const a=e.target.closest("[data-blkg]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkg);if(!b||!arr(b.media).length)return;e.preventDefault();e.stopPropagation();openGallery(b)},true);
+document.addEventListener("click",e=>{const a=e.target.closest("[data-blkg]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkg);if(!b||!bmed(b).length)return;e.preventDefault();e.stopPropagation();openGallery(b)},true);
 function openGallery(b,start){
   let d=document.getElementById("blkgal");if(d)d.remove();d=document.createElement("div");d.id="blkgal";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
-  const all=arr(b.media),title=L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ");
+  const all=bmed(b),title=L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ");
   /* view options: size (small / large / list), filter (all / photos / videos), slideshow; size is remembered */
   let gv="m",gf="all",timer=null;try{gv=localStorage.getItem("galview")||"m"}catch(_){}
   let media=all;const setF=()=>{media=all.filter(m=>gf==="all"||(gf==="vid")===(m.t==="vid"))};
