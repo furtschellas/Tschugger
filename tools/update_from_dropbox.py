@@ -326,6 +326,19 @@ def add_recce(dbx, days, add):
     log("Recce-Bilder zugeordnet:", n)
 
 WANT = set()
+NEWS = []      # changes for the automatic push messages (written to pending_push.json, sent after publishing)
+
+def day_sig(d):
+    """what matters in a day for «changed»: times, scenes, titles, places – not translations or wording of notes"""
+    its = lambda L: [[i.get(k) for k in ("t", "end", "sc", "n", "set", "loc", "where", "ie")] for i in (L or []) if isinstance(i, dict)]
+    u = lambda k: its((d.get(k) or {}).get("items")) if isinstance(d.get(k), dict) else []
+    return json.dumps([d.get("kind"), its(d.get("items")), its(d.get("parallel") if isinstance(d.get("parallel"), list) else []), u("unit2"), u("unit3")], ensure_ascii=False, sort_keys=True)
+
+def changed_days(old, new, today):
+    """dates from today on that are new, removed or different"""
+    o = {d.get("date") or d.get("id"): day_sig(d) for d in old or [] if isinstance(d, dict)}
+    n = {d.get("date") or d.get("id"): day_sig(d) for d in new or [] if isinstance(d, dict)}
+    return sorted(k for k in set(o) | set(n) if k and str(k) >= today and o.get(k) != n.get(k))
 PARTIAL = []   # parts that could not be read in this run: then no picture is deleted (they would only come back later)
 
 def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
@@ -673,6 +686,8 @@ def main():
     BLKS = BlkStore()
     if BLKS.r2 and os.environ.get("BLK_BASE", "").strip(): meta["blkBase"] = os.environ["BLK_BASE"].strip().rstrip("/") + "/"
     else: meta.pop("blkBase", None)
+    import zoneinfo
+    TODAY = datetime.datetime.now(zoneinfo.ZoneInfo("Europe/Zurich")).date().isoformat()
     dbx = Dbx(); files = dbx.list_all(); log("Dropbox gelesen:", len(files), "Dateien")
 
     def is_new(kind, f): return FORCE or old.get((kind, base(f["name"]))) != f["modified"]
@@ -703,7 +718,9 @@ def main():
             days = (res.get("days") if isinstance(res, dict) else None) or []
             if len(days) >= max(3, len(data.get("days") or []) // 2):
                 for i, d in enumerate(sorted(days, key=lambda d: d.get("date", ""))): d["order"] = i; d["id"] = d.get("date") or d.get("id")
+                ch = changed_days(data.get("days"), days, TODAY) if data.get("days") else []
                 data["days"] = days; meta["scheduleVersion"] = res.get("scheduleVersion") or meta.get("scheduleVersion")
+                if ch: NEWS.append({"kind": "plan", "dates": ch, "version": meta.get("scheduleVersion") or ""})
                 if res.get("cast"): meta["cast"] = {str(k): v for k, v in res["cast"].items()}
                 if res.get("subtitle"): meta["subtitle"] = res["subtitle"]
                 changed = True; log("Drehplan:", len(days), "Tage")
@@ -756,6 +773,7 @@ def main():
                 prev = dispos.get(d["date"])
                 if not prev or (prev.get("_mod") or "") <= (f["modified"] or ""):
                     d["id"] = d["date"]; d["_mod"] = f["modified"]; dispos[d["date"]] = d; changed = True
+                    if d["date"] >= TODAY: NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})
             else: failed("dispo", f, "kein Drehtag erkannt")
         except Exception as e: failed("dispo", f, e)
     if dispos: data["dispos"] = sorted(dispos.values(), key=lambda d: d.get("date", ""))
@@ -846,6 +864,8 @@ def main():
             newp = sorted(days, key=lambda d: d.get("date", ""))
             pm = dict((cache.get(used[0]) or {}).get("meta") or {}) if used else dict(meta.get("prepro") or {})
             if len(used) > 1: pm["sources"] = used
+            chp = changed_days(data.get("prepro"), newp, TODAY) if data.get("prepro") else []
+            if chp: NEWS.append({"kind": "prep", "dates": chp})
             if newp != (data.get("prepro") or []) or pm != (meta.get("prepro") or {}):
                 data["prepro"] = newp; meta["prepro"] = pm; changed = True
                 log("Prep-Planung:", len(newp), "Tage aus", len(used), "Dokumenten")
@@ -1015,6 +1035,9 @@ def main():
     w2 = enc_file(R / "script.enc.json", {"script": [{k: d[k] for k in ("sc", "head", "text") if k in d} for d in scr]}) if scr else False
     log("Daten:", "geändert" if changed else "unverändert", "· Datei:", "neu geschrieben" if (w1 or w2) else "gleich")
     write_stamp()
+    if NEWS:   # sent by tools/notify_changes.py after the data is published
+        (R / "pending_push.json").write_text(json.dumps({"news": NEWS, "days": [{"date": d.get("date"), "label": d.get("short") or d.get("label") or ""} for d in data.get("days") or []]}, ensure_ascii=False))
+        log("Push bei Änderungen vorgemerkt:", ", ".join(n["kind"] for n in NEWS))
     status("ok", "Läuft", updatedAt=meta.get("updatedAt") or "", version=meta.get("scheduleVersion") or "")
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ const VAPID_PUB="BEP6-lmT3gVm_ZL1R3qiyBzrntxU6dkKtCEbqanP4KjR9xFTTJNtg8Jm1lxWTs7
 const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"],[180,"3 Std. vorher"],[1440,"1 Tag vorher"]];
 const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
 function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
-  return {hint:c.hint||0,on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
+  return {hint:c.hint||0,news:Object.assign({plan:true,cs:true,prep:true},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
 function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
 const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
@@ -43,10 +43,10 @@ async function pushSub(create){const reg=await pushReg();let sub=await reg.pushM
 async function pushSync(){
   if(!ME||!ME.uid||!pushOK()||PUSHBUSY)return;PUSHBUSY=true;
   try{const c=pushCfg(),{F,db}=await fb(),ref=F.doc(db,"push",ME.uid+"_"+pushDev());let last="";try{last=localStorage.getItem("pushlast")||""}catch(_){}
-    if(!c.on||Notification.permission!=="granted"){if(last){await F.deleteDoc(ref).catch(()=>{});try{localStorage.removeItem("pushlast")}catch(_){}}return}
+    if(!(c.on||newsAny(c))||Notification.permission!=="granted"){if(last){await F.deleteDoc(ref).catch(()=>{});try{localStorage.removeItem("pushlast")}catch(_){}}return}
     const sub=await pushSub(true);if(!sub)return;
     let dept="";try{const me=typeof myIdentity==="function"&&myIdentity();dept=me&&me.src||""}catch(_){}
-    const pl={on:true,sub:sub.toJSON(),k:sub.__k||vapidPub(),lang:LANG,items:pushItems(c),who:{email:lc(ME.email),role:isOwner()?"owner":isAdmin()?"admin":(MYROLE||""),dept}};const js=JSON.stringify(pl),h=pushId(js)+"|"+Math.floor(Date.now()/216e5);
+    const pl={on:true,sub:sub.toJSON(),k:sub.__k||vapidPub(),lang:LANG,items:c.on?pushItems(c):[],news:newsFor(c),who:{email:lc(ME.email),role:isOwner()?"owner":isAdmin()?"admin":(MYROLE||""),dept}};const js=JSON.stringify(pl),h=pushId(js)+"|"+Math.floor(Date.now()/216e5);
     if(h===last)return;
     const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(js)));
     const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
@@ -108,6 +108,10 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-pstat]")){PST.d
 /* bell in «Meine Termine» rows */
 window.pushBell=function(e){const c=pushCfg();if(!c.on||!c.types.my||!pushOK())return "";const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));const off=!!c.off[id];
   return '<button type="button" class="pbell'+(off?' off':'')+'" data-pushev="'+id+'" data-pushdate="'+esc(e.date)+'" aria-pressed="'+(!off)+'" aria-label="'+esc(L(off?"Push-Nachricht einschalten":"Push-Nachricht ausschalten"))+'" title="'+esc(L(off?"Push-Nachricht aus":"Push-Nachricht an"))+'"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'+(off?'<path d="M3 3l18 18"/>':'')+'</svg></button>'};
+/* push on changes (sent automatically after the Dropbox update): only what the person may see, each can be turned off */
+const PUSH_NEWS=[["plan","Änderungen am Drehplan","plan"],["cs","Neue und geänderte Callsheets","dispo"],["prep","Änderungen der Prep-Planung","prep"]];
+function newsFor(c){const o={};for(const [k,,v] of PUSH_NEWS)o[k]=!!c.news[k]&&vok(v);return o}
+function newsAny(c){return PUSH_NEWS.some(([k,,v])=>c.news[k]&&vok(v))}
 function pushSec(){
   const c=pushCfg();let dev="";
   if(!pushOK())dev='<p class="ghint">'+L(isIOS()&&!pushStandalone()?"Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.":"Dieser Browser unterstützt keine Push-Nachrichten.")+'</p>';
@@ -116,7 +120,11 @@ function pushSec(){
   else dev='<p class="ghint pok">✓ '+L("Auf diesem Gerät aktiv")+' <button type="button" class="pillbtn" data-pushtest>'+L("Test-Nachricht")+'</button></p>';
   const types=PUSH_TYPES.filter(x=>vok(x[2]));
   const ev=c.on?pushEvents(c).filter(e=>pushStart(e)>Date.now()).slice(0,40):[];
+  const nw=PUSH_NEWS.filter(x=>vok(x[2]));
   return '<section class="psec pushsec"><h4>'+L("Push-Nachrichten")+'</h4>'+
+    (nw.length?'<p class="ahint"><b>'+L("Bei Änderungen benachrichtigen")+'</b></p>'+nw.map(([k,t])=>'<label class="ck"><input type="checkbox" data-pushnews="'+k+'"'+(c.news[k]?' checked':'')+'> '+L(t)+'</label>').join(""):'')+
+    (!c.on&&newsAny(c)?dev:'')+
+    '<p class="ahint"><b>'+L("Erinnerungen")+'</b></p>'+
     '<label class="ck"><input type="checkbox" data-pushmaster'+(c.on?' checked':'')+'> '+L("Erinnerungen an kommende Termine erhalten")+'</label>'+
     (c.on?dev+'<label>'+L("Erinnern")+'<select data-pushlead>'+PUSH_LEADS.map(([v,t])=>'<option value="'+v+'"'+(v===c.lead?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
       '<p class="ahint"><b>'+L("Für welche Termine?")+'</b></p>'+types.map(([k,t])=>'<label class="ck"><input type="checkbox" data-pushtype="'+k+'"'+(c.types[k]?' checked':'')+'> '+L(t)+'</label>').join("")+
@@ -132,13 +140,18 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-pushtest]")){pushTest();return}},true);
 document.addEventListener("change",e=>{const t=e.target;
   if(t.matches("[data-pushmaster]")){const c=pushCfg();c.on=t.checked;pushSave(c);if(t.checked&&pushOK()&&Notification.permission==="default")pushEnable();else render()}
+  else if(t.matches("[data-pushnews]")){const c=pushCfg();c.news[t.dataset.pushnews]=t.checked;pushSave(c);if(t.checked&&pushOK()&&Notification.permission==="default")pushEnable();else render()}
   else if(t.matches("[data-pushlead]")){const c=pushCfg();c.lead=+t.value;pushSave(c)}
   else if(t.matches("[data-pushtype]")){const c=pushCfg();c.types[t.dataset.pushtype]=t.checked;pushSave(c);render()}
   else if(t.matches("[data-pushev2]")){pushToggleEv(t.dataset.pushev2,t.dataset.pushdate,t.checked);const s=t.closest("details").querySelector("summary");if(s){const c=pushCfg(),ev=pushEvents(c).filter(x=>pushStart(x)>Date.now()).slice(0,40);s.textContent=L("Kommende Termine")+" ("+ev.filter(x=>!c.off[x.id]).length+"/"+ev.length+")"}}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pushSyncSoon()});
 /* opened from a notification: go to «Meine Termine» */
+function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo):(\d{4}-\d{2}-\d{2})/);if(!m)return false;
+  try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}
+  setTimeout(()=>{S.want=null;S.srcOpen=false;if(m[1]==="dispo"){S.tab="dispo";S.dday=m[2]}else{S.tab="plan";S.day=(S.days||[]).some(d=>d.id===m[2]||d.date===m[2])?m[2]:"prep:"+m[2]}try{store("tab",S.tab)}catch(_){}window.scrollTo(0,0);render()},400);return true}
+pushGo(location.hash);
 if(location.hash==="#my"){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}setTimeout(()=>{if(typeof openMyCal==="function")openMyCal()},400)}
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.open==="my"&&typeof openMyCal==="function")openMyCal()});
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const o=e.data&&e.data.open;if(!o)return;if(pushGo(o))return;if((o==="my"||/#my/.test(o))&&typeof openMyCal==="function")openMyCal()});
 /* push while the app is open: also as a pop-up inside the app */
 if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const p=e.data&&e.data.push;if(!p)return;
   const o=document.createElement("div");o.className="pushpop";o.setAttribute("role","alertdialog");

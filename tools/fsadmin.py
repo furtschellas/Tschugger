@@ -103,6 +103,15 @@ def patch_doc(path, fields, update_time=None):
     return r.status_code == 200
 
 
+def create_doc(col, fields, raw=None):
+    """new document with a random id (needs FIREBASE_SA); raw: already encoded Firestore values (e.g. timestamps)"""
+    h, _ = _auth()
+    if not h: return None
+    body = {"fields": {**{k: enc(v) for k, v in fields.items()}, **(raw or {})}}
+    r = requests.post(BASE + "/" + col, headers=h, json=body, timeout=30)
+    return r.json().get("name", "").rsplit("/", 1)[-1] if r.status_code == 200 else None
+
+
 def delete_doc(path):
     h, _ = _auth()
     if not h: return False
