@@ -200,6 +200,10 @@ Object.assign(I18N,{
  "Gesendet – die Nachricht kommt in etwa einer Minute an.":{fr:"Envoyé – le message arrive dans environ une minute.",it:"Inviato – il messaggio arriva tra circa un minuto.",en:"Sent – the message arrives in about a minute.",hi:"भेज दिया – संदेश लगभग एक मिनट में पहुँचेगा।"},
  "Gespeichert – die Nachricht geht mit dem nächsten Lauf (spätestens in 15 Minuten) raus.":{fr:"Enregistré – le message part au prochain passage (dans 15 minutes au plus).",it:"Salvato – il messaggio parte al prossimo giro (entro 15 minuti).",en:"Saved – the message goes out with the next run (within 15 minutes).",hi:"सहेजा गया – संदेश अगली बार (अधिकतम 15 मिनट में) भेजा जाएगा।"},
  "Mit dem Briefumschlag schickst du sofort eine Push-Nachricht an alle – oder nur an bestimmte Rollen und Abteilungen.":{fr:"Avec l'enveloppe, tu envoies tout de suite une notification à tous – ou seulement à certains rôles et départements.",it:"Con la busta invii subito una notifica a tutti – o solo a certi ruoli e reparti.",en:"With the envelope you instantly send a notification to everyone – or only to certain roles and departments.",hi:"लिफ़ाफ़े से तुरंत सभी को – या केवल चुनी भूमिकाओं और विभागों को – पुश संदेश भेजें।"},
+ "Sprache":{fr:"Langue",it:"Lingua",en:"Language",hi:"भाषा"},
+ "Hier wechselst du die Sprache der App – so sieht sie zum Beispiel auf Englisch aus. Mit «Weiter» geht es in deiner Sprache weiter.":{fr:"Ici tu changes la langue de l'app – voici par exemple l'anglais. « Suivant » te ramène à ta langue.",it:"Qui cambi la lingua dell'app – ecco per esempio l'inglese. «Avanti» ti riporta alla tua lingua.",en:"Here you change the app's language – this is how it looks in another language. “Next” brings back your language.",hi:"यहाँ ऐप की भाषा बदलें – उदाहरण के लिए अंग्रेज़ी में ऐसा दिखता है। «आगे» से आपकी भाषा वापस आती है।"},
+ "Hell / Dunkel":{fr:"Clair / sombre",it:"Chiaro / scuro",en:"Light / dark",hi:"हल्का / गहरा"},
+ "Mit der Sonne wechselst du zwischen dunkler und heller Darstellung – hell ist draussen bei Sonne gut lesbar. Mit «Weiter» kommt deine Einstellung zurück.":{fr:"Le soleil passe du mode sombre au mode clair – le clair se lit bien dehors au soleil. « Suivant » rétablit ton réglage.",it:"Con il sole passi tra scuro e chiaro – il chiaro si legge bene fuori al sole. «Avanti» ripristina la tua impostazione.",en:"The sun switches between dark and light – light is easy to read outdoors in sunshine. “Next” restores your setting.",hi:"सूरज से गहरा और हल्का मोड बदलें – धूप में बाहर हल्का मोड आसानी से पढ़ा जाता है। «आगे» से आपकी सेटिंग वापस आती है।"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -1140,6 +1144,8 @@ const TOUR_STEPS=[
   {tab:"script",sel:"#view .smodes",t:"Suchen nach",x:"Suche im Drehbuch gezielt nach Rolle, Szene, Drehtag, Person, Motiv oder Text."},
   {tab:"cater",sel:'nav.tabs [data-tab="cater"]',t:"Catering",x:"Alle Essenswünsche, Unverträglichkeiten und Allergien der Crew auf einen Blick."},
   {tab:"info",sel:'nav.tabs [data-tab="info"]',t:"Info",x:"Allgemeine Infos zur Produktion und zur App."},
+  {tab:"plan",sel:"header .lang",demo:"lang",t:"Sprache",x:"Hier wechselst du die Sprache der App – so sieht sie zum Beispiel auf Englisch aus. Mit «Weiter» geht es in deiner Sprache weiter."},
+  {tab:"plan",sel:"#thmb",demo:"theme",t:"Hell / Dunkel",x:"Mit der Sonne wechselst du zwischen dunkler und heller Darstellung – hell ist draussen bei Sonne gut lesbar. Mit «Weiter» kommt deine Einstellung zurück."},
   {tab:"plan",sel:"#searchBtn",t:"Suche",x:"Sucht über alles: Szenen, Rollen, Personen, Locations."},
   {tab:"my",sel:"#myCalBtn",t:"Meine Termine",x:"Alle deine kommenden Termine an einem Ort – mit «In den Kalender» und der Glocke für Push-Nachrichten."},
   {tab:"my",sel:"#view [data-mcall]",t:"Kalender-Export",x:"«Alle in den Kalender» übernimmt alle deine Termine auf einmal; mit dem Kalender-Knopf bei jedem Termin einzeln."},
@@ -1154,6 +1160,14 @@ const TOUR={i:-1,steps:[],el:null};
 const tourEl=st=>{let e=document.querySelector(st.sel);for(let k=0;e&&k<(st.up||0);k++)e=e.parentElement;if(!e||e.hidden||e.closest("[hidden]"))return null;const r=e.getBoundingClientRect();return r.width&&r.height?e:null};
 function tourDay(kind){const t=todayISO();if(kind==="shoot"){const sd=S.days.filter(x=>x.kind==="shoot");const d=sd.find(x=>x.date>=t)||sd[0];return d?d.id:null}
   if(kind==="prep"){const pp=(S.prepro||[]).filter(d=>arr(d.items).some(i=>i.crew||i.cast));const d=pp.find(x=>x.date>=t)||pp[0];return d?"prep:"+d.date:null}return null}
+/* demonstrations (language, light/dark) are undone as soon as the step is left */
+function tourDemo(st){
+  const want=st&&st.demo,o=TOUR.orig||(TOUR.orig={});
+  if(o.lang&&want!=="lang"){LANG=o.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;delete o.lang;render()}
+  if(o.theme&&want!=="theme"){setTheme(o.theme);delete o.theme}
+  if(want==="lang"&&!o.lang){const to=(APPLANGS||[]).find(l=>l!==LANG&&l==="en")||(APPLANGS||[]).find(l=>l!==LANG);if(to){o.lang=LANG;LANG=to;applyStatic();render()}}
+  if(want==="theme"&&!o.theme){o.theme=getTheme();setTheme(o.theme==="dark"?"light":"dark")}
+}
 function tourShow(st){if(st.day){const id=tourDay(st.day);if(id&&S.day!==id){S.day=id;if(S.tab===st.tab)render()}}if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}else if(st.day)render();window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
 function tourDoneLocal(){try{return !!(localStorage.getItem("tourDone:"+(ME&&ME.uid))||localStorage.getItem("tour"))}catch(_){return false}}
 /* the tour starts by itself only once per person: marked right when it is offered (this device, the synced view settings and the profile) */
@@ -1182,11 +1196,12 @@ function tourStart(ask){
 }
 function tourGo(i){
   const o=TOUR.el;if(!o)return;TOUR.i=i;const n=TOUR.steps.length,c=o.querySelector(".tcard"),sp=o.querySelector(".tspot");
+  if(i<0||i>=n)tourDemo(null);
   if(i<0){sp.hidden=true;c.className="tcard center";
     c.innerHTML='<h3>'+L("Kurze Tour durch die App?")+'</h3><p>'+L("In einer Minute zeigen wir dir die wichtigsten Funktionen. Du kannst die Tour später jederzeit unter «Mein Konto» starten.")+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><button type="button" class="pri" data-tour="next">'+L("Tour starten")+'</button></div>';return}
   if(i>=n){sp.hidden=true;c.className="tcard center";
     c.innerHTML='<h3>'+L("Fertig!")+'</h3><p>'+L("Viel Spass mit der App. Die Tour findest du jederzeit wieder unter «Mein Konto».")+'</p><div class="tbtns"><button type="button" class="pri" data-tour="done">'+L("Los geht's")+'</button></div>';return}
-  const s=TOUR.steps[i];if(!tourShow(s)){const dir=i>=(TOUR.last==null?-1:TOUR.last)?1:-1;TOUR.steps.splice(i,1);return tourGo(dir>0?i:i-1)}TOUR.last=i;sp.hidden=false;c.className="tcard";
+  const s=TOUR.steps[i];tourDemo(s);if(!tourShow(s)){const dir=i>=(TOUR.last==null?-1:TOUR.last)?1:-1;TOUR.steps.splice(i,1);return tourGo(dir>0?i:i-1)}TOUR.last=i;sp.hidden=false;c.className="tcard";
   c.innerHTML='<div class="tprog">'+(i+1)+' / '+n+'</div><h3>'+esc(L(s.t))+'</h3><p>'+esc(typeof s.x==="function"?s.x():L(s.x))+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><span></span>'+(i>0?'<button type="button" class="sec" data-tour="back">'+L("Zurück")+'</button>':'')+'<button type="button" class="pri" data-tour="next">'+L(i===n-1?"Fertig":"Weiter")+'</button></div>';
   tourPlace();try{c.querySelector(".pri").focus({preventScroll:true})}catch(_){}
 }
@@ -1200,7 +1215,7 @@ function tourPlace(){
   c.style.left=Math.min(vw-cw-12,Math.max(12,r.left+r.width/2-cw/2))+"px";
 }
 async function tourEnd(how){
-  if(TOUR.el){TOUR.el.remove();TOUR.el=null}removeEventListener("resize",tourPlace);
+  tourDemo(null);if(TOUR.el){TOUR.el.remove();TOUR.el=null}removeEventListener("resize",tourPlace);
   if(TOUR.prev){if(TOUR.prev.day)S.day=TOUR.prev.day;S.tab=["acct","admin"].includes(TOUR.prev.tab)?TOUR.prev.tab:"plan";render();window.scrollTo(0,0)}TOUR.prev=null;setTimeout(maybePushHint,800);
   tourMark(how);
   if(how==="skip")showMsg(L("Tour übersprungen – du findest sie unter «Mein Konto».")+"",4000);
