@@ -276,6 +276,9 @@ Object.assign(I18N,{
  "Ein Motiv":{fr:"Un décor",it:"Una location",en:"A location",hi:"एक लोकेशन"},
  "Tippe auf ein Motiv: Adresse, Karte, Floorplans und die Szenen, die dort gedreht werden.":{fr:"Touche un décor : adresse, carte, plans et scènes tournées sur place.",it:"Tocca una location: indirizzo, mappa, planimetrie e le scene girate lì.",en:"Tap a location: address, map, floorplans and the scenes shot there.",hi:"किसी लोकेशन पर टैप करें: पता, नक्शा, फ़्लोरप्लान और वहाँ शूट होने वाले दृश्य।"},
  "Weiteres Icon erstellen":{fr:"Créer une autre icône",it:"Crea un'altra icona",en:"Create another icon",hi:"एक और आइकन बनाएँ"},
+ "Regulär":{fr:"Normal",it:"Normale",en:"Regular",hi:"सामान्य"},
+ "Mittagsmenüs eingeben":{fr:"Saisir les menus de midi",it:"Inserire i menù del pranzo",en:"Enter lunch menus",hi:"दोपहर के मेन्यू दर्ज करें"},
+ "Catering-Seite öffnen":{fr:"Ouvrir la page catering",it:"Apri la pagina catering",en:"Open catering page",hi:"कैटरिंग पेज खोलें"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -1752,22 +1755,23 @@ function caterData(){
 }
 function caterSummary(c){
   return '<p class="catsum"><b>'+c.act.length+'</b> '+esc(L("Personen"))+' · <b>'+(c.act.length-c.special.length)+'</b> '+esc(L("ohne Sonderwünsche"))+' · <b>'+c.special.length+'</b> '+esc(L("mit Sonderwünschen"))+'</p>'+
-    (c.groups.length||c.allergy.length?'<div class="catchips">'+c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'')+'</div>':'');
+    (c.groups.length||c.allergy.length||c.act.length?'<div class="catchips">'+(c.act.length-c.special.length?'<span class="catchip reg"><b>'+(c.act.length-c.special.length)+'</b> '+esc(L("Regulär"))+'</span>':'')+c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'')+'</div>':'');
 }
 function caterOverview(c){
-  const dep=m=>crewDeptOf(m)||"–";
-  let h='<div class="catgrid">'+c.groups.map(([t,l])=>'<div class="catcard"><h4><b>'+l.length+'</b> '+esc(t)+'</h4><div class="catn">'+l.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join("<br>")+'</div></div>').join("")+
+  const dep=m=>crewDeptOf(m)||"–";const regl=c.act.filter(m=>!c.special.includes(m));
+  let h='<div class="catgrid">'+(regl.length?'<div class="catcard reg"><h4><b>'+regl.length+'</b> '+esc(L("Regulär"))+'</h4><div class="catn">'+regl.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join("<br>")+'</div></div>':'')+c.groups.map(([t,l])=>'<div class="catcard"><h4><b>'+l.length+'</b> '+esc(t)+'</h4><div class="catn">'+l.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join("<br>")+'</div></div>').join("")+
     (c.allergy.length?'<div class="catcard warn"><h4><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</h4><div class="catn">'+c.allergy.map(m=>'<b>'+esc(c.nm(m))+'</b>: '+esc(c.alg(m))).join("<br>")+'</div></div>':'')+'</div>';
   if(c.special.length)h+='<h3 class="cath3">'+esc(L("Alle Sonderwünsche"))+'</h3><div class="cattbl">'+c.special.slice().sort((a,b)=>c.nm(a).localeCompare(c.nm(b),LANG)).map(m=>'<div class="catrow"><div><b>'+esc(c.nm(m))+'</b><span class="catdep">'+esc(HIT(dep(m)))+'</span></div><div>'+esc(dietText(m))+'</div></div>').join("")+'</div>';
   return h;
 }
 function cateringHTML(){
   const c=caterData();if(!c.act.length)return"";
-  const chips=c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'');
-  return '<details class="catbox" data-sec="catmore"'+(SECS.catmore===true?' open':'')+'><summary><div class="cathd"><span class="catic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9"/></svg></span><div class="catt"><b>Catering</b><span>'+c.act.length+' '+esc(L("Personen"))+' · '+c.special.length+' '+esc(L("mit Sonderwünschen"))+'</span></div><span class="catchev" aria-hidden="true"></span></div>'+
-    (chips?'<div class="catchips">'+chips+'</div>':'')+'</summary><div class="catbody">'+(c.special.length?caterOverview(c):'<p class="ghint">'+esc(L("Keine Sonderwünsche."))+'</p>')+'</div></details>';
+  const reg=c.act.length-c.special.length;
+  const chips=(reg?'<span class="catchip reg"><b>'+reg+'</b> '+esc(L("Regulär"))+'</span>':'')+c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'');
+  return '<details class="catbox"><summary><div class="cathd"><span class="catic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9"/></svg></span><div class="catt"><b>Catering</b><span>'+c.act.length+' '+esc(L("Personen"))+' · '+c.special.length+' '+esc(L("mit Sonderwünschen"))+'</span></div>'+(can("catering.edit")?'<button type="button" class="cico catmenu" data-catpage aria-label="'+esc(L("Mittagsmenüs eingeben"))+'" title="'+esc(L("Mittagsmenüs eingeben"))+'">🍽</button>':'')+'<span class="catchev" aria-hidden="true"></span></div>'+
+    (chips?'<div class="catchips">'+chips+'</div>':'')+'</summary><div class="catbody">'+(can("catering.edit")||can("crew.food")?'<div class="catacts"><button type="button" class="pillbtn" data-catpage>🍽 '+L(can("catering.edit")?"Mittagsmenüs eingeben":"Catering-Seite öffnen")+'</button></div>':'')+(c.special.length?caterOverview(c):'<p class="ghint">'+esc(L("Keine Sonderwünsche."))+'</p>')+'</div></details>';
 }
-document.addEventListener("click",e=>{if(e.target.closest("[data-catpage]")){S.tab="cater";S.srcOpen=false;window.scrollTo(0,0);render()}});
+document.addEventListener("click",e=>{if(e.target.closest("[data-catpage]")){e.preventDefault();S.tab="cater";S.srcOpen=false;window.scrollTo(0,0);render()}});
 VIEWS.cater=function(){
   if(!ME||!(can("crew.food")||can("catering.edit")))return '<div class="empty">'+L("Kein Zugang")+'</div>';
   let h='<section class="mypage catpage"><h2 class="pgt">Catering</h2>';

@@ -357,3 +357,5 @@ html body .bcwa a.wabtn.wagrp.pillbtn{display:block;text-align:center;margin:8px
 .menu .mu{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:6px}.menu .mopt{font-size:11px;font-weight:700;color:var(--accent);margin-right:4px}
 .menutog{font-size:14px;margin:2px 0}
 .acpage .psec .pillbtn+.pillbtn{margin-left:6px}
+.catacts{display:flex;justify-content:flex-end;margin:12px 0 0}.catacts .pillbtn{font-weight:700}.catchip.reg b{color:var(--ink)}
+.catmenu{font-size:15px;margin-right:4px}
