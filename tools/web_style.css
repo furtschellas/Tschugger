@@ -509,3 +509,4 @@ button.ttile.twx:hover{background:var(--acc-tint)}
 .wxr:last-child{border-bottom:0}.wxh{position:sticky;top:0;background:var(--sheet);font-weight:700;color:var(--muted);font-size:12px}
 .wxr.wxnow{background:var(--acc-tint)}
 .wxsrc{margin-top:8px}
+.today .tmy+.thead{margin-top:18px}

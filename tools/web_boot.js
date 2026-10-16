@@ -2586,12 +2586,15 @@ VIEWS.today=function(){
   const isToday=d.date===t,dt=new Date(d.date+"T12:00:00");
   const dp=(S.dispos||[]).find(x=>x&&x.date===d.date)||null;
   const card=(cls,title,body)=>body?'<div class="tcard '+cls+'"><div class="tch">'+title+'</div>'+body+'</div>':'';
-  let h='<section class="today"><div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+".")+'</span></div>';
+  const thead='<div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+".")+'</span></div>';
+  let h='<section class="today">';
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
   try{if(me&&vok("mycal")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
     h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'</div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· 🚐 '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+
       '<button type="button" class="pillbtn" data-tomy>'+esc(L("Alle meine Termine"))+'</button></div>'}}catch(_){}
+  /* title of the (next) shooting day below my events */
+  h+=thead;
   /* calls */
   let myCall="";try{if(me&&dp){const myDep=fold(me.src||"").split(/[\s/]/)[0];const c=myDep?arr(dp.calls).find(z=>fold(z.dept||"").includes(myDep)):null;if(c)myCall=hm(c.t)+" · "+c.dept}}catch(_){}
   const tiles=[];
@@ -2685,6 +2688,7 @@ Object.assign(I18N,{
  "«Today» anzeigen und die App dort öffnen":{en:"Show «Today» and open the app there",fr:"Afficher «Today» et y ouvrir l’app",it:"Mostra «Today» e apri l’app lì",hi:"«Today» दिखाएँ और ऐप वहीं खोलें"},
  "Ausgeschaltet öffnet die App mit dem Drehplan.":{en:"When off, the app opens with the schedule.",fr:"Désactivé, l’app s’ouvre sur le planning.",it:"Se disattivato, l’app si apre con il piano.",hi:"बंद होने पर ऐप Schedule के साथ खुलता है।"},
  "Heute":{en:"Today",fr:"Aujourd'hui",it:"Oggi",hi:"आज"},
+ "Nächster Drehtag":{en:"Next shooting day",fr:"Prochain jour de tournage",it:"Prossimo giorno di riprese",hi:"अगला शूटिंग दिन"},
  "Nächster Tag":{en:"Next day",fr:"Prochain jour",it:"Prossimo giorno",hi:"अगला दिन"},
  "Mein Call":{en:"My call",fr:"Ma convocation",it:"La mia convocazione",hi:"मेरा कॉल"},
  "Erste Location":{en:"First location",fr:"Premier lieu",it:"Prima location",hi:"पहली लोकेशन"},
