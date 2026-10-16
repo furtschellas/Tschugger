@@ -363,3 +363,4 @@ html body .bcwa a.wabtn.wagrp.pillbtn{display:block;text-align:center;margin:8px
 .udl{display:flex;gap:10px;font-size:14px;line-height:1.4}.udl>span{flex:0 0 92px;color:var(--muted);font-size:12px;padding-top:2px}.udl b{font-weight:600}
 .udet .uinf{margin-top:4px;padding-top:6px;border-top:1px solid var(--rule)}
 .ubar .uall{margin-left:auto;font-size:13px;padding:6px 14px}
+@media (min-width:640px){.ucard .umain{display:flex;flex-wrap:wrap;align-items:center;column-gap:10px}.ucard .umain>.unm{flex:0 1 auto}.ucard .umain>.ubadges{margin:0}.ucard .umain>:not(.unm):not(.ubadges){flex-basis:100%}}
