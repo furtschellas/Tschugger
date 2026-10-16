@@ -632,6 +632,14 @@ html body .chip>.dd{line-height:1.05}
 /* «Ich» als Haus-Symbol */
 html body .mcself{display:inline-flex;align-items:center;justify-content:center;min-width:calc(36px*var(--bs,1));padding:0 10px}
 html body .mcself svg{width:18px;height:18px}
+/* Hauptmenü unten: immer eine Zeile – passen die langen Namen nicht, zeigt die App die kurzen (auch auf Tablet/Desktop) */
+nav.tabs .lbl{white-space:nowrap;overflow:hidden;max-width:100%}
+nav.tabs.short .lbl[data-s]{font-size:0}nav.tabs.short .lbl[data-s]::after{content:attr(data-s);font-size:10px}
+/* Kopf: «· geprüft …» bleibt zusammen – passt es nicht, kommt es als Ganzes auf die nächste Zeile (Umbruch nach der Sched-Version) */
+#stand .chk{white-space:nowrap;display:inline-block}
+/* Kopf-Symbole (Suche, Termine, Push …) etwas grösser */
+html body .hbtns>.refresh{width:calc(31px*var(--bs,1));height:calc(31px*var(--bs,1))}
+html body .hbtns>.refresh svg{width:calc(20px*var(--bs,1));height:calc(20px*var(--bs,1))}
 </style>
 
 <div class="wrap">
@@ -1498,7 +1506,7 @@ function renderHeader(){
   const m=S.meta;
   if(m){
     const c=lastCheck(m);
-    $("#stand").innerHTML='<b>'+esc(m.scheduleVersion||"–")+'</b>'+(c?' · '+L('geprüft')+' '+esc(fmtStamp(c)):'');
+    $("#stand").innerHTML='<b>'+esc(m.scheduleVersion||"–")+'</b>'+(c?' <span class="chk">· '+L('geprüft')+' '+esc(fmtStamp(c))+'</span>':'');
     if(m.subtitle)$("#sub").innerHTML=subT(m).split(" · ").map((x,i)=>"<span>"+(i?"· ":"")+esc(x)+"</span>").join(" ");
   }else if(S.loaded){$("#stand").textContent=L("Noch keine Daten eingespielt.")}
 }
@@ -1524,6 +1532,9 @@ function fitRows(root){
 window.addEventListener("resize",()=>{clearTimeout(window.__fitT);window.__fitT=setTimeout(()=>{fitRows();fitRows(document.querySelector("header")||document);const sc=document.getElementById("scn");if(sc)fitRows(sc)},120)});
 document.addEventListener("focusout",e=>{if(!S.rpend||!e.target.closest||!e.target.closest("#view form"))return;
   setTimeout(()=>{const ae=document.activeElement;if(S.rpend&&!(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&ae.closest("#view form")))render()},150)});
+function fitNav(){const n=document.querySelector("nav.tabs");if(!n)return;n.classList.remove("short");
+  if([...n.querySelectorAll("button:not([hidden]) .lbl")].some(l=>l.scrollWidth>l.clientWidth+1))n.classList.add("short")}
+window.addEventListener("resize",()=>{clearTimeout(window.__fnT);window.__fnT=setTimeout(fitNav,120)});
 function render(){
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form")){S.rpend=true;return}} /* never wipe a form someone is typing in – catch up when the field is left */
   S.rpend=false;
@@ -1557,6 +1568,7 @@ function render(){
   const sel=v.querySelector('.chip[aria-selected="true"]');
   if(sel)sel.scrollIntoView({block:"nearest",inline:"center"});
   try{renderHeader()}catch(err){console.error(err)}
+  try{fitNav()}catch(_){}
   try{fitRows(document.querySelector("header.top"))}catch(_){}
   {const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}
   for(const [id,t] of [["myCalBtn","my"],["acctBtn","acct"],["admBtn","admin"]]){const hb=document.getElementById(id);if(hb){hb.classList.toggle("on",S.tab===t);hb.setAttribute("aria-current",S.tab===t?"page":"false")}}
