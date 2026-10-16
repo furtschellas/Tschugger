@@ -99,6 +99,21 @@ async function listDocs(col) {
   }
   return out;
 }
+/* test from «Mein Konto»: a real push to all devices of the signed-in person */
+async function selftest(req, env, origin) {
+  let user; try { user = await verifyToken((req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return json({ error: "Nicht angemeldet." }, 401, origin); }
+  if (!env.CREW_KEY) return json({ error: "CREW_KEY fehlt im Worker." }, 500, origin);
+  const b = await req.json().catch(() => ({}));
+  const devs = (await listDocs("push")).filter(d => d.id.startsWith(user.sub + "_"));
+  let n = 0; const st = [];
+  for (const dv of devs) {
+    const pc = dv.f.c && dv.f.c.stringValue; if (!pc) continue;
+    let p; try { p = await crewDec(env, pc); } catch (_) { st.push("decrypt"); continue; }
+    if (!p.sub) continue;
+    try { const s = await sendPush(env, p.sub, { title: String(b.title || "TSCHUGGER"), body: String(b.body || "Test"), url: "./", tag: "selftest" }); st.push(s); if (s >= 200 && s < 300) n++; } catch (e) { st.push(String(e).slice(0, 80)); }
+  }
+  return json({ ok: true, devices: devs.length, n, st }, 200, origin);
+}
 async function broadcast(req, env, origin) {
   try { await verifyToken((req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return json({ error: "Nicht angemeldet." }, 401, origin); }
   if (!env.CREW_KEY) return json({ error: "CREW_KEY fehlt im Worker." }, 500, origin);
@@ -126,7 +141,7 @@ async function broadcast(req, env, origin) {
 
 const cors = origin => ({
   "Access-Control-Allow-Origin": ORIGINS.includes(origin) ? origin : ORIGINS[0],
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
   "Access-Control-Max-Age": "86400",
   "Vary": "Origin",
@@ -186,6 +201,7 @@ export default {
     const url = new URL(req.url);
     if (req.method === "POST" && url.pathname.replace(/\/+$/, "") === "/chat") return chat(req, env, origin);
     if (req.method === "POST" && url.pathname.replace(/\/+$/, "") === "/broadcast") return broadcast(req, env, origin);
+    if (req.method === "POST" && url.pathname.replace(/\/+$/, "") === "/selftest") return selftest(req, env, origin);
     if (req.method === "POST" && url.pathname.replace(/\/+$/, "") === "/notify") {
       try { await verifyToken((req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return json({ error: "Nicht angemeldet." }, 401, origin); }
       const r = await dispatch(env, "push.yml");
