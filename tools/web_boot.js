@@ -1666,7 +1666,7 @@ async function onAcctClick(e){
   if(b.dataset.ac==="close")s.hidden=true;
   else if(b.dataset.ac==="theme")setTheme(b.dataset.thset);
   else if(b.dataset.ac==="tour")tourStart(false);
-  else if(b.dataset.ac==="a2hs"&&typeof showA2hs==="function")showA2hs();
+  else if(b.dataset.ac==="a2hs"&&typeof a2hsDo==="function"){a2hsDo().then(done=>{if(!done)showA2hs(true)})}
   else if(b.dataset.ac==="pwreset"){const msg=b.closest("form").querySelector(".amsg");msg.className="amsg";msg.textContent="";b.disabled=true;
     try{const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),auth.currentUser.email);msg.classList.add("ok");msg.textContent=L("Link zum Zurücksetzen gesendet an")+" "+auth.currentUser.email+". "+L("Schau auch im Spam-Ordner nach.")}
     catch(err){console.error(err);msg.textContent=errText(err)}b.disabled=false}
