@@ -213,6 +213,7 @@ Object.assign(I18N,{
  "Von":{fr:"De",it:"Da",en:"From",hi:"से"},
  "Erneut senden":{fr:"Renvoyer",it:"Invia di nuovo",en:"Send again",hi:"फिर से भेजें"},
  "Verlauf":{fr:"Historique",it:"Cronologia",en:"History",hi:"इतिहास"},
+ "Kein Problem – du kannst die Tour jederzeit neu starten: oben auf «Mein Konto» tippen und dort «Tour starten» wählen.":{fr:"Pas de souci – tu peux relancer la visite à tout moment : touche « Mon compte » en haut, puis « Lancer la visite ».",it:"Nessun problema – puoi riavviare il tour quando vuoi: tocca «Il mio account» in alto e scegli «Avvia il tour».",en:"No problem – you can restart the tour any time: tap “My account” at the top and choose “Start tour”.",hi:"कोई बात नहीं – आप टूर कभी भी फिर से शुरू कर सकते हैं: ऊपर «मेरा खाता» पर टैप करें और «टूर शुरू करें» चुनें।"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -1204,7 +1205,7 @@ function tourStart(ask){
   window.scrollTo(0,0);TOUR.i=ask?-1:0;
   const o=document.createElement("div");o.id="tour";o.className="tour";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML='<div class="tspot"></div><div class="tcard" role="document"></div>';
   o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;
-    if(a==="next")tourGo(TOUR.i+1);else if(a==="back")tourGo(TOUR.i-1);else if(a==="skip")tourEnd("skip");else if(a==="done")tourEnd("done")});
+    if(a==="next")tourGo(TOUR.i+1);else if(a==="back")tourGo(TOUR.i-1);else if(a==="skip")tourSkipInfo();else if(a==="skipok")tourEnd("skip",true);else if(a==="done")tourEnd("done")});
   document.body.appendChild(o);TOUR.el=o;tourGo(TOUR.i);
   addEventListener("resize",tourPlace);
 }
@@ -1228,11 +1229,21 @@ function tourPlace(){
   c.style.top=(below?r.bottom+14:above?r.top-14-ch:Math.max(8,vh-ch-90))+"px";
   c.style.left=Math.min(vw-cw-12,Math.max(12,r.left+r.width/2-cw/2))+"px";
 }
-async function tourEnd(how){
+/* skipped: point at «Mein Konto», where the tour can be started again any time */
+function tourSkipInfo(){
+  const o=TOUR.el;if(!o){tourEnd("skip");return}tourDemo(null);tourMark("skip");
+  if(TOUR.prev){if(TOUR.prev.day)S.day=TOUR.prev.day;S.tab=["acct","admin"].includes(TOUR.prev.tab)?TOUR.prev.tab:"plan";render();window.scrollTo(0,0)}
+  const e=document.getElementById("acctBtn"),sp=o.querySelector(".tspot"),c=o.querySelector(".tcard");
+  c.className="tcard";c.innerHTML='<h3>'+L("Tour übersprungen")+'</h3><p>'+L("Kein Problem – du kannst die Tour jederzeit neu starten: oben auf «Mein Konto» tippen und dort «Tour starten» wählen.")+'</p><div class="tbtns"><span></span><button type="button" class="pri" data-tour="skipok">'+L("OK")+'</button></div>';
+  if(e&&!e.hidden){const r=e.getBoundingClientRect(),pad=6;sp.hidden=false;Object.assign(sp.style,{left:(r.left-pad)+"px",top:(r.top-pad)+"px",width:(r.width+2*pad)+"px",height:(r.height+2*pad)+"px"});
+    const cw=Math.min(340,innerWidth-24);c.style.width=cw+"px";c.style.top=(r.bottom+14)+"px";c.style.left=Math.min(innerWidth-cw-12,Math.max(12,r.left+r.width/2-cw/2))+"px"}
+  else{sp.hidden=true;c.className="tcard center"}
+  try{c.querySelector(".pri").focus({preventScroll:true})}catch(_){}
+}
+async function tourEnd(how,marked){
   tourDemo(null);if(TOUR.el){TOUR.el.remove();TOUR.el=null}removeEventListener("resize",tourPlace);
   if(TOUR.prev){if(TOUR.prev.day)S.day=TOUR.prev.day;S.tab=["acct","admin"].includes(TOUR.prev.tab)?TOUR.prev.tab:"plan";render();window.scrollTo(0,0)}TOUR.prev=null;setTimeout(maybePushHint,800);
-  tourMark(how);
-  if(how==="skip")showMsg(L("Tour übersprungen – du findest sie unter «Mein Konto».")+"",4000);
+  if(!marked)tourMark(how);
 }
 
 /* one-time note about push notifications (existing and new users), with a short setup right in the note */
