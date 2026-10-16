@@ -1,5 +1,6 @@
 /* TSCHUGGER Crew-App – Cloudflare Worker
  *
+ * 0. /notify: startet nach einer «Push-Nachricht an alle» sofort den Versand bei GitHub.
  * 1. Chat-Assistent: die App schickt Frage + die Daten, die die angemeldete Person sehen darf, hierher;
  *    der Worker prüft die Firebase-Anmeldung und fragt Claude. Der API-Schlüssel bleibt hier geheim.
  * 2. Zeitplan (Cron Trigger «*\/10 * * * *»): startet bei GitHub alle 10 Minuten die Push-Nachrichten
@@ -95,6 +96,11 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     const url = new URL(req.url);
     if (req.method === "POST" && url.pathname.replace(/\/+$/, "") === "/chat") return chat(req, env, origin);
+    if (req.method === "POST" && url.pathname.replace(/\/+$/, "") === "/notify") {
+      try { await verifyToken((req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "")); } catch (e) { return json({ error: "Nicht angemeldet." }, 401, origin); }
+      const r = await dispatch(env, "push.yml");
+      return json({ ok: / 204$/.test(r), r }, / 204$/.test(r) ? 200 : 502, origin);
+    }
     if (req.method === "GET" && url.pathname === "/") return json({ ok: true, chat: !!env.ANTHROPIC_API_KEY, cron: !!env.GH_TOKEN }, 200, origin);
     return json({ error: "not found" }, 404, origin);
   },
