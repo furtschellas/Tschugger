@@ -459,18 +459,18 @@ html body #view .menuadd .pillbtn{min-height:32px;font-size:13px;padding:0 12px}
 .ttile{border:1px solid var(--rule);border-radius:12px;padding:10px 12px;background:var(--sheet);display:flex;flex-direction:column;gap:2px}
 .ttile b{font-size:19px;font-weight:700;line-height:1.2}
 .ttile span{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
-.tcard{border:1px solid var(--rule);border-radius:14px;padding:14px;margin:0 0 12px;background:var(--sheet)}
-.tcard .tch{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.tcard .tch small{color:var(--muted);font-weight:600}
-.tcard .tbig{font-size:17px;font-weight:700;margin-bottom:4px}
-.tcard .tsub{font-size:13px;color:var(--muted);margin:6px 0}
-.tcard a{word-break:break-word}
+.today .tcard{border:1px solid var(--rule);border-radius:14px;padding:14px;margin:0 0 12px;background:var(--sheet)}
+.today .tcard .tch{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.today .tcard .tch small{color:var(--muted);font-weight:600}
+.today .tcard .tbig{font-size:17px;font-weight:700;margin-bottom:4px}
+.today .tcard .tsub{font-size:13px;color:var(--muted);margin:6px 0}
+.today .tcard a{word-break:break-word}
 .tsclist{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:6px}
 .tsclist li{display:grid;grid-template-columns:48px 72px 1fr;gap:8px;align-items:baseline;font-size:14.5px;padding:4px 0;border-bottom:1px dashed var(--rule)}
 .tsclist li:last-child{border-bottom:0}
 .tsclist .tt{font-variant-numeric:tabular-nums;color:var(--muted)}
 .tsclist .tsc{font-weight:700}
-.tcard .pillbtn{margin:4px 6px 0 0}
+.today .tcard .pillbtn{margin:4px 6px 0 0}
 .chgdot{background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:1px 8px;font-size:11px;letter-spacing:.04em}
 .chglist{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
 .chglist li{display:grid;grid-template-columns:72px 1fr;gap:8px;font-size:14px;padding:6px 8px;border-radius:8px}
