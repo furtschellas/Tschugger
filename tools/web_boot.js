@@ -2605,13 +2605,14 @@ VIEWS.today=function(){
   if(d.sr&&d.ss)tiles.push(['<b>'+esc(d.sr+"–"+d.ss)+'</b>',L("Sonne")]);
   /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
   const wxt=wxTile(d);
-  h+=(tiles.length||wxt)?'<div class="ttiles">'+wxt+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+'</div>':'';
+  /* drive from the crew hotel (+3 min) and the weather come last */
+  const drv=d.drive&&d.drive.min?'<div class="ttile tdrv"><b>🚐 '+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+' · '+esc(d.drive.from||"Hotel")+'</span></div>':'';
+  h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
   if(!dp&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
   const first=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));
   if(first){let ad="";try{ad=addrForItem(first)}catch(_){ad=first.loc}
-    h+=card("tloc",esc(L("Erste Location")),'<div class="tbig">'+esc(first.set||first.loc)+'</div>'+(ad&&!/^tba$/i.test(ad)?'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>':'')+
-      (d.drive&&d.drive.min?'<div class="tsub">'+esc(L("Anfahrt"))+' '+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":"")+" · "+(d.drive.from||"Hotel"))+'</div>':''))}
+    h+=card("tloc",esc(L("Erste Location")),'<div class="tbig">'+esc(first.set||first.loc)+'</div>'+(ad&&!/^tba$/i.test(ad)?'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>':''))}
   /* menu */
   try{const mn=window.menuFor?window.menuFor(d.date,"all"):"";if(mn)h+=card("tmenu",esc(L("Mittagessen")),mn)}catch(_){}
   /* scenes */
