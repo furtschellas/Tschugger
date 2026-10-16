@@ -35,7 +35,9 @@ if _missing and __name__ == "__main__":
 KEY = base64.b64decode(os.environ["CREW_KEY"].strip())
 ROOT = (os.environ.get("DROPBOX_ROOT") or "ns:14935064499").rstrip("/")
 ROOT3D = (os.environ.get("DROPBOX_ROOT_3D") or "ns:13132709057").rstrip("/")
-ROOTAUF = (os.environ.get("DROPBOX_ROOT_AUF") or "ns:15240921299").rstrip("/")   # shared folder «AUFLÖSUNG» (in «TSCHUGGER - 3D Locations»)   # shared folder «3D» (weekly prep schedule, floorplans)
+ROOTAUF = (os.environ.get("DROPBOX_ROOT_AUF") or "ns:15240921299").rstrip("/")
+ROOTRECCE = (os.environ.get("DROPBOX_ROOT_RECCE") or "ns:13058967505/RECCE").rstrip("/")   # recce photos (in «TSCHUGGER - 3D Locations»)
+PIC_DEADLINE = time.time() + 14 * 60   # new previews only for 14 minutes per run; the rest follows in the next runs   # shared folder «AUFLÖSUNG» (in «TSCHUGGER - 3D Locations»)   # shared folder «3D» (weekly prep schedule, floorplans)
 MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
 FORCE = os.environ.get("FORCE", "").lower() in ("ja", "yes", "true", "1")
 EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
@@ -120,6 +122,7 @@ def _enc_write(fn, data):
 def _thumb(dbx, e, fn):
     """encrypted preview picture of a Dropbox photo (made once, kept in blk/)"""
     if os.path.exists(fn): return True
+    if time.time() > PIC_DEADLINE: return False
     try:
         r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps(
             {"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
@@ -133,6 +136,7 @@ def _pdf_pages(dbx, e, cache):
     n = cache.get(key)
     if n is not None and all(os.path.exists("blk/%sp%d.bin" % (key, i)) for i in range(n)):
         return key, ["blk/%sp%d.bin" % (key, i) for i in range(n)]
+    if time.time() > PIC_DEADLINE: return key, []
     try:
         with tempfile.TemporaryDirectory() as td:
             src = os.path.join(td, "in.pdf"); open(src, "wb").write(dbx.download(e["id"]))
@@ -176,16 +180,83 @@ def _web(path, name=None):
     if name: return "https://www.dropbox.com/home" + q(path) + "?preview=" + q(name)
     return "https://www.dropbox.com/home" + q(path)
 
-def add_more_blocking(dbx, blk, meta, want_files):
+SYN = {"polizeistation": "police station", "polizei": "police", "weinkeller": "wine cellar", "keller": "cellar", "denkmal": "monument",
+       "strasse": "road street", "see": "lake", "etang": "lake", "brucke": "bridge", "brücke": "bridge", "haus": "house", "aunts": "aunt",
+       "kirche": "church chapel", "kapelle": "chapel", "wald": "forest", "spital": "hospital", "schule": "school"}
+STOP = {"de", "du", "des", "la", "le", "les", "l", "und", "and", "the", "ext", "int", "rte", "route", "av", "avenue", "rue", "str", "div", "option",
+        "opt", "tbc", "tba", "valais", "wallis", "of", "s", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "scene", "scenes"}
+
+def _words(t, syn=True):
+    import unicodedata
+    t = unicodedata.normalize("NFKD", str(t or "")).encode("ascii", "ignore").decode().lower()
+    w = [x for x in re.split(r"[^a-z0-9]+", t) if x and x not in STOP and not x.isdigit()]
+    out = set()
+    for x in w:
+        out.add(x)
+        if not syn: continue
+        for k, v in SYN.items():
+            if k in x: out.update(v.split())
+        if x.endswith("s") and len(x) > 4: out.add(x[:-1])
+    return out
+
+def add_recce(dbx, days, add):
+    allr = dbx.list_path(ROOTRECCE, True)
+    if not allr: log("Recce: Ordner nicht lesbar oder leer"); return
+    import unicodedata
+    for e in allr: e["path"] = unicodedata.normalize("NFC", e["path"])
+    # photo folders = folders that directly hold pictures; their name (and the parent's, for «BlockingFotos») describes the place
+    pics = {}
+    for e in allr:
+        if e["tag"] == "file" and IMG_RE.search(e["name"]):
+            pics.setdefault(e["path"].rsplit("/", 1)[0], []).append(e)
+    # scenes with town, place words (without any town names) and set words
+    scenes = {}; rows = []
+    for d in days:
+        for its in [d.get("items") or []] + ([d.get("parallel")] if isinstance(d.get("parallel"), list) else []) + [(d.get(u) if isinstance(d.get(u), dict) else {}).get("items") or [] for u in ("unit2", "unit3")]:
+            for it in its:
+                sc = it.get("sc")
+                if not sc or not it.get("loc") or str(it.get("loc")).upper().startswith("TBA"): continue
+                loc = str(it["loc"]); town = _words(loc.split()[0], False) if loc.split() else set()
+                rows.append((_norm_sc(sc), town, (_words(loc, False) - town, _words(loc) - town), _words(it.get("set"))))
+    towns = set().union(*[r[1] for r in rows]) if rows else set()
+    for sc, town, place, setw in rows:
+        scenes.setdefault(sc, []).append((town, (place[0] - towns, place[1] - towns), setw))
+    n = 0
+    for folder, files in sorted(pics.items(), key=lambda x: x[0], reverse=True):   # newest recce first
+        parts = folder.split("/")
+        name = parts[-1]
+        if re.fullmatch(r"(?i)blocking\s*fotos?|fotos?|photos?|pics?|bilder", name.strip()) and len(parts) > 1: name = parts[-2] + " " + name
+        nm = re.sub(r"^\d+\s+", "", name)
+        fw = _words(nm); fraw = _words(nm, False)
+        datem = re.search(r"(20\d{6})", folder)
+        label = nm + (" · " + datem.group(1)[6:8] + "." + datem.group(1)[4:6] + "." if datem else "")
+        hit = []
+        for sc, rows in scenes.items():
+            for town, place, setw in rows:
+                if any(len(x) >= 5 for x in place[0] & fraw) or any(len(x) >= 7 for x in place[1] & fw) or (town & fraw and (setw & fw)):
+                    hit.append(sc); break
+        if not hit: continue
+        for e in sorted(files, key=lambda e: e["name"].lower())[:40]:
+            fn = "blk/" + _key(e) + ".bin"
+            if not _thumb(dbx, e, fn): continue
+            WANT.add(fn); n += 1
+            it = {"n": e["name"], "t": "img", "f": fn, "u": _web(folder, e["name"]), "g": "recce", "l": label}
+            for sc in hit: add(sc, "recce", it)
+    log("Recce-Bilder zugeordnet:", n)
+
+WANT = set()
+
+def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=()):
     changed = False
     prev = {x.get("name"): x for x in meta.get("blocking") or []}
+    WANT.clear()
     cache = dict(meta.get("pdfPages") or {})
     used = set()
     extra = {}  # scene → {"s": [...], "pdf": [...], "loc": [...]} (media items)
     seen_pdf = {}  # (name, size) → already shown
 
     def add(sc, g, item):
-        lst = extra.setdefault(sc, {"s": [], "pdf": [], "loc": []})[g]
+        lst = extra.setdefault(sc, {"s": [], "pdf": [], "loc": [], "recce": []})[g]
         if not any(x["f"] == item["f"] for x in lst): lst.append(item)
 
     def pdf_items(e, label, u):
@@ -240,6 +311,12 @@ def add_more_blocking(dbx, blk, meta, want_files):
                 add(_norm_sc(msub.group(1)), "s", dict(it, g="s"))
             else:
                 for sc in scs: add(sc, "loc", dict(it, g="loc", l=re.sub(r"^\d+\w?\s+", "", sub or top)))
+    # (c) RECCE: «RECCE/zRECCE 202609 Wallis/20260917 Wallis/05 Sion POLIZEISTATION EXT/…» – matched to the scenes shot there
+    #     (same town or place name as the scene's location, plus a word of the set; scouted alternatives elsewhere stay out)
+    try:
+        add_recce(dbx, days, add)
+    except Exception as ex:
+        log("Recce nicht gelesen:", str(ex)[:160])
     # attach: to the blocking entry of the scene, or a new entry «AUF <scene>»
     by = {}
     for b in blk:
@@ -255,16 +332,17 @@ def add_more_blocking(dbx, blk, meta, want_files):
             blk.append(b); by[sc] = b
     for b in blk:
         own = [m for m in (b.get("media") or []) if not m.get("g")]
-        ex = {"s": [], "pdf": [], "loc": []}
+        ex = {"s": [], "pdf": [], "loc": [], "recce": []}
         for sc in b.get("sc") or []:
             for g in ex:
                 for it in extra.get(_norm_sc(sc), {}).get(g, []):
                     if not any(x["f"] == it["f"] for x in ex[g]) and not any(x["f"] == it["f"] for x in own): ex[g].append(it)
-        new = own + ex["s"] + ex["pdf"] + ex["loc"][:60]
+        new = own + ex["s"] + ex["pdf"] + ex["loc"][:60] + ex["recce"][:60]
         if new != (b.get("media") or []): b["media"] = new; changed = True
+    want_files.update(WANT)
     cache = {k: v for k, v in cache.items() if k in used}
     if cache != (meta.get("pdfPages") or {}): meta["pdfPages"] = cache; changed = True
-    log("Blocking-Bilder: PDF-Seiten", sum(len(v["pdf"]) for v in extra.values()), "· Szenenfotos", sum(len(v["s"]) for v in extra.values()), "· Motiv-Bilder", len({x["f"] for v in extra.values() for x in v["loc"]}))
+    log("Blocking-Bilder: Recce", len({x["f"] for v in extra.values() for x in v.get("recce", [])}), "·", "PDF-Seiten", sum(len(v["pdf"]) for v in extra.values()), "· Szenenfotos", sum(len(v["s"]) for v in extra.values()), "· Motiv-Bilder", len({x["f"] for v in extra.values() for x in v["loc"]}))
     return changed
 
 # ---------- choosing the newest files (same rules as the Claude task) ----------
@@ -675,7 +753,7 @@ def main():
         #     (photos + PDFs) and the 3D/location pictures of that set, shown for every scene in the folder name
         BPDFE.clear(); BPDFE.update(bpdfe)
         try:
-            changed = add_more_blocking(dbx, blk, meta, want_files) or changed
+            changed = add_more_blocking(dbx, blk, meta, want_files, data.get("days") or [], data.get("locations") or []) or changed
         except Exception as ex:
             log("Auflösung/Seiten nicht gelesen:", str(ex)[:160])
         for bf in os.listdir("blk"):
