@@ -608,3 +608,4 @@ html body #view .udl>b,html body #view .udl>span{min-width:0}
 html body #view .udl b,html body #view .usub,html body #view a[href^="mailto:"]{overflow-wrap:anywhere;word-break:normal}
 html body #view .udl b a[href^="mailto:"]{display:inline-block;max-width:100%}
 html body #view .usub a[href^="mailto:"]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:inline-block;vertical-align:bottom}
+.ck.plock{opacity:.45}

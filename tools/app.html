@@ -609,6 +609,14 @@ html body .rolesel{display:flex;align-items:center;gap:10px;margin:8px 0;font-si
 html body .pvbtn[aria-pressed="true"]{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important}
 html body .pvbtn[aria-pressed="false"]{background:transparent!important;border-color:var(--rule)!important;color:var(--muted)!important;opacity:.55}
 html body .pvbtn[aria-pressed="false"]:hover{opacity:.85}
+
+/* bottom menu: always one line; «Locations» is «Loc» on phones */
+nav.tabs .lbl{white-space:nowrap;overflow:hidden;text-overflow:clip;max-width:100%}
+nav.tabs button{min-width:0}
+@media (max-width:600px){nav.tabs .lbl{font-size:10px;letter-spacing:0}nav.tabs [data-tab="loc"] .lbl{font-size:0}nav.tabs [data-tab="loc"] .lbl::after{content:"Loc";font-size:10px}nav.tabs .ico{width:40px}}
+/* search modes (search page and script): always one line */
+html body .smodes{flex-wrap:nowrap!important;justify-content:flex-start!important;overflow-x:auto!important;gap:4px!important}
+html body .smodes button{flex:1 1 auto!important;min-width:0;padding:0 8px!important;font-size:12.5px!important;white-space:nowrap}
 </style>
 
 <div class="wrap">
@@ -1396,6 +1404,8 @@ function tabsOn(){
   for(const [tab,k] of [["crew","crew"],["plan","plan"],["dispo","dispo"]])if(!vok(k))t=t.filter(x=>x!==tab);
   /* catering page: for people with the catering permission it takes the place of the script (when they don't see the script) */
   try{if(window.caterTab&&window.caterTab()&&!t.includes("script")){const at=scrAt<0?t.length:Math.min(scrAt,t.length);t.splice(at,0,"cater")}}catch(_){}
+  /* «Today» is always the first (left-most) area */
+  if(t.includes("today"))t=["today"].concat(t.filter(x=>x!=="today"));
   return t.length?t:["info"];
 }
 /* ---------- script tab: every scene of the screenplay, tap opens the reader ---------- */
