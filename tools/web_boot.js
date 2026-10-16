@@ -88,6 +88,56 @@ Object.assign(I18N,{
  "Für welche Termine?":{fr:"Pour quels rdv ?",it:"Per quali appuntamenti?",en:"For which appointments?"},
  "Kommende Termine":{fr:"Prochains rdv",it:"Prossimi appuntamenti",en:"Upcoming appointments"},
  "Hier oder mit der Glocke in «Meine Termine» schaltest du einzelne Termine aus.":{fr:"Ici ou avec la cloche dans « Mes rendez-vous », tu désactives des rdv individuels.",it:"Qui o con la campanella in «I miei appuntamenti» disattivi singoli appuntamenti.",en:"Turn off single appointments here or with the bell in “My appointments”."},
+ "Adresse des Cloudflare Workers für den Chat-Assistenten (und den zuverlässigen Zeitplan für Push und Dropbox). Leer = kein Assistent.":{fr:"Adresse du Cloudflare Worker pour l'assistant (et le planning fiable pour push et Dropbox). Vide = pas d'assistant.",it:"Indirizzo del Cloudflare Worker per l'assistente (e la pianificazione affidabile di push e Dropbox). Vuoto = nessun assistente.",en:"Address of the Cloudflare Worker for the assistant (and the reliable schedule for push and Dropbox). Empty = no assistant."},
+ "Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden.":{fr:"Tous les décors avec adresse, carte et scènes tournées sur place.",it:"Tutte le location con indirizzo, mappa e scene girate lì.",en:"All locations with address, map and the scenes shot there."},
+ "Alle deine kommenden Termine an einem Ort – mit «In den Kalender» und der Glocke für Push-Nachrichten.":{fr:"Tous tes prochains rdv au même endroit – avec « Dans le calendrier » et la cloche pour les notifications.",it:"Tutti i tuoi prossimi appuntamenti in un posto – con «Nel calendario» e la campanella per le notifiche.",en:"All your upcoming appointments in one place – with “Add to calendar” and the bell for notifications."},
+ "Allgemeine Infos zur Produktion und zur App.":{fr:"Infos générales sur la production et l'app.",it:"Info generali sulla produzione e sull'app.",en:"General info about the production and the app."},
+ "Antworten ohne Gewähr – verbindlich sind die Unterlagen der Produktion.":{fr:"Réponses sans garantie – seuls les documents de la production font foi.",it:"Risposte senza garanzia – fanno fede i documenti della produzione.",en:"Answers without guarantee – the production's documents are binding."},
+ "Assistent":{fr:"Assistant",it:"Assistente",en:"Assistant"},
+ "Benutzer, Rollen, Dokumente und Einstellungen – nur mit Berechtigung sichtbar.":{fr:"Utilisateurs, rôles, documents et réglages – visible seulement avec autorisation.",it:"Utenti, ruoli, documenti e impostazioni – visibile solo con autorizzazione.",en:"Users, roles, documents and settings – only visible with permission."},
+ "Bestätigungs-Mail, Passwort-Zurücksetzen und Anmelde-Link verschickt Firebase. Deren Texte änderst du in der Firebase-Konsole unter Authentication → Templates.":{fr:"L'e-mail de confirmation, la réinitialisation du mot de passe et le lien de connexion sont envoyés par Firebase. Modifie leurs textes dans la console Firebase sous Authentication → Templates.",it:"L'e-mail di conferma, il reset della password e il link di accesso li invia Firebase. I testi si modificano nella console Firebase in Authentication → Templates.",en:"The confirmation email, password reset and sign-in link are sent by Firebase. Change their texts in the Firebase console under Authentication → Templates."},
+ "Chat-Assistent anzeigen (Knopf unten rechts)":{fr:"Afficher l'assistant (bouton en bas à droite)",it:"Mostra l'assistente (pulsante in basso a destra)",en:"Show the assistant (button bottom right)"},
+ "Das Drehbuch mit Suche.":{fr:"Le scénario avec recherche.",it:"La sceneggiatura con ricerca.",en:"The script with search."},
+ "Der Drehplan Tag für Tag: Szenen, Motive und Zeiten. Mit «Script» öffnest du eine Szene im Drehbuch, die Kamera zeigt Blocking-Fotos und -Filme.":{fr:"Le plan de tournage jour par jour : scènes, décors et horaires. « Script » ouvre la scène dans le scénario, la caméra montre photos et vidéos de blocking.",it:"Il piano di lavorazione giorno per giorno: scene, location e orari. «Script» apre la scena nella sceneggiatura, la videocamera mostra foto e video del blocking.",en:"The shooting schedule day by day: scenes, locations and times. “Script” opens a scene in the script, the camera shows blocking photos and videos."},
+ "Der Owner kann nicht gesperrt oder entfernt werden.":{fr:"L'owner ne peut pas être bloqué ni supprimé.",it:"L'owner non può essere bloccato né rimosso.",en:"The owner cannot be blocked or removed."},
+ "Die Crewliste nach Abteilungen – je nach Berechtigung mit Telefon und E-Mail.":{fr:"La liste de l'équipe par département – selon autorisation avec téléphone et e-mail.",it:"La lista crew per reparti – secondo l'autorizzazione con telefono ed e-mail.",en:"The crew list by department – depending on permission with phone and email."},
+ "Die Dispo des Drehtags: Crew Call, Drehbeginn, Wrap, Locations und Cast.":{fr:"La dispo du jour de tournage : crew call, début du tournage, wrap, décors et cast.",it:"La dispo del giorno di riprese: crew call, inizio riprese, wrap, location e cast.",en:"The day's dispo: crew call, shooting start, wrap, locations and cast."},
+ "Einführungstour":{fr:"Visite guidée",it:"Tour introduttivo",en:"Intro tour"},
+ "Einführungstour anbieten":{fr:"Proposer la visite guidée",it:"Offri il tour introduttivo",en:"Offer the intro tour"},
+ "Eingeschaltet wird die Tour allen einmalig angeboten und kann unter «Mein Konto» neu gestartet werden.":{fr:"Activée, la visite est proposée une fois à tous et peut être relancée sous « Mon compte ».",it:"Se attivo, il tour viene proposto una volta a tutti e si può riavviare in «Il mio account».",en:"When on, the tour is offered once to everyone and can be restarted under “My account”."},
+ "Fertig!":{fr:"Terminé !",it:"Fatto!",en:"Done!"},
+ "Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App.":{fr:"Demande à l'assistant, p. ex. « Où tourne-t-on demain ? » – il connaît les données de l'app.",it:"Chiedi all'assistente, ad es. «Dove giriamo domani?» – conosce i dati dell'app.",en:"Ask the assistant, e.g. “Where are we shooting tomorrow?” – it knows the app's data."},
+ "Frag mich etwas zum Drehplan, zu Locations, zur Crew oder zur App.":{fr:"Pose-moi une question sur le plan, les décors, l'équipe ou l'app.",it:"Chiedimi qualcosa su piano, location, crew o app.",en:"Ask me about the schedule, locations, crew or the app."},
+ "Frage":{fr:"Question",it:"Domanda",en:"Question"},
+ "Frage eingeben …":{fr:"Ta question …",it:"Scrivi la domanda …",en:"Type your question …"},
+ "In einer Minute zeigen wir dir die wichtigsten Funktionen. Du kannst die Tour später jederzeit unter «Mein Konto» starten.":{fr:"En une minute, nous te montrons les fonctions principales. Tu peux relancer la visite à tout moment sous « Mon compte ».",it:"In un minuto ti mostriamo le funzioni principali. Puoi avviare il tour in qualsiasi momento in «Il mio account».",en:"In one minute we'll show you the main features. You can start the tour any time under “My account”."},
+ "KI-Assistent anbieten":{fr:"Proposer l'assistant IA",it:"Offri l'assistente IA",en:"Offer the AI assistant"},
+ "Kurze Tour durch die App?":{fr:"Petite visite de l'app ?",it:"Un breve tour dell'app?",en:"Quick tour of the app?"},
+ "Los geht's":{fr:"C'est parti",it:"Si parte",en:"Let's go"},
+ "Neu":{fr:"Nouveau",it:"Nuovo",en:"New"},
+ "Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten.":{fr:"Profil, notifications, clair/sombre, mot de passe et déconnexion. Tu peux relancer cette visite ici.",it:"Profilo, notifiche, chiaro/scuro, password e logout. Qui puoi riavviare questo tour.",en:"Profile, notifications, light/dark, password and sign-out. You can restart this tour here."},
+ "Senden":{fr:"Envoyer",it:"Invia",en:"Send"},
+ "Standardtext wiederhergestellt.":{fr:"Texte standard rétabli.",it:"Testo standard ripristinato.",en:"Default text restored."},
+ "Suche":{fr:"Recherche",it:"Ricerca",en:"Search"},
+ "Sucht über alles: Szenen, Rollen, Personen, Locations.":{fr:"Cherche partout : scènes, rôles, personnes, décors.",it:"Cerca ovunque: scene, ruoli, persone, location.",en:"Searches everything: scenes, roles, people, locations."},
+ "Test an mich":{fr:"Test à moi",it:"Test a me",en:"Test to me"},
+ "Tour gemacht":{fr:"Visite faite",it:"Tour fatto",en:"Tour done"},
+ "Tour offen":{fr:"Visite pas faite",it:"Tour non fatto",en:"Tour not done"},
+ "Tour starten":{fr:"Lancer la visite",it:"Avvia il tour",en:"Start tour"},
+ "Tour übersprungen":{fr:"Visite passée",it:"Tour saltato",en:"Tour skipped"},
+ "Tour übersprungen – du findest sie unter «Mein Konto».":{fr:"Visite passée – tu la trouves sous « Mon compte ».",it:"Tour saltato – lo trovi in «Il mio account».",en:"Tour skipped – you'll find it under “My account”."},
+ "Viel Spass mit der App. Die Tour findest du jederzeit wieder unter «Mein Konto».":{fr:"Amuse-toi bien avec l'app. La visite est toujours disponible sous « Mon compte ».",it:"Buon divertimento con l'app. Il tour lo ritrovi sempre in «Il mio account».",en:"Enjoy the app. You'll always find the tour under “My account”."},
+ "Wann ist mein nächster Termin?":{fr:"Quel est mon prochain rdv ?",it:"Quando è il mio prossimo appuntamento?",en:"When is my next appointment?"},
+ "Wer ist die Regie?":{fr:"Qui est à la réalisation ?",it:"Chi è la regia?",en:"Who is directing?"},
+ "Wie funktioniert Meine Termine?":{fr:"Comment fonctionne Mes rendez-vous ?",it:"Come funziona I miei appuntamenti?",en:"How does My appointments work?"},
+ "Wo drehen wir morgen?":{fr:"Où tourne-t-on demain ?",it:"Dove giriamo domani?",en:"Where are we shooting tomorrow?"},
+ "Worker-Code und Anleitung":{fr:"Code du worker et guide",it:"Codice del worker e guida",en:"Worker code and guide"},
+ "angepasst":{fr:"personnalisé",it:"personalizzato",en:"customized"},
+ "Überspringen":{fr:"Passer",it:"Salta",en:"Skip"},
+ "Fertig":{fr:"Terminé",it:"Fine",en:"Done"},
+ "Aktualisieren":{fr:"Actualiser",it:"Aggiorna",en:"Update"},
+ "Keine Verbindung.":{fr:"Pas de connexion.",it:"Nessuna connessione.",en:"No connection."},
+ "Der Assistent ist gerade nicht erreichbar.":{fr:"L'assistant n'est pas joignable pour le moment.",it:"L'assistente non è raggiungibile al momento.",en:"The assistant is not reachable right now."},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -445,6 +495,7 @@ async function loadLangs(){
     const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
     {const c=d.exists()?d.data():{};const nv={phone:c.phonePublic===true,email:c.emailPublic===true,mycal:c.mycalPublic===true};if(JSON.stringify(nv)!==JSON.stringify(window.PUBV)){window.PUBV=nv;try{localStorage.setItem("apppubv",JSON.stringify(nv))}catch(_){}render()}}
     {const go=!(d.exists()&&d.data().googleLogin===false);if(window.GOOGLEON!==go){window.GOOGLEON=go;try{localStorage.setItem("appgoogle",go?"1":"0")}catch(_){}try{const g=document.getElementById("gate");if(g&&!g.hidden&&(AUTHMODE==="login"||AUTHMODE==="register")&&!g.querySelector("input:focus"))showGate(AUTHMODE)}catch(_){}}}
+    {const c=d.exists()?d.data():{};const ce=c.chatEnabled!==false,te=c.tourEnabled!==false;if(window.CHATEN!==ce||window.TOUREN!==te){window.CHATEN=ce;window.TOUREN=te;try{localStorage.setItem("appchaton",ce?"1":"0");localStorage.setItem("apptouron",te?"1":"0")}catch(_){}}}
     {const cu=String((d.exists()&&d.data().chatUrl)||"");if(window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
     {const dc=(d.exists()&&d.data().docs)||{};window.DOCS=dc;try{localStorage.setItem("appdocs",JSON.stringify(dc))}catch(_){}}
     const bp=d.exists()&&d.data().bdayPublic===true;if(window.BDAYPUB!==bp){window.BDAYPUB=bp;try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}render()}
@@ -939,7 +990,7 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 if(location.hash==="#my"){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}setTimeout(()=>{if(typeof openMyCal==="function")openMyCal()},400)}
 if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.open==="my"&&typeof openMyCal==="function")openMyCal()});
 /* ---- chat assistant: asks Claude through the production's Cloudflare Worker (config/app.chatUrl); every person can switch it off in «Mein Konto» ---- */
-window.CHATURL="";try{window.CHATURL=localStorage.getItem("appchat")||""}catch(_){}
+window.CHATURL="";window.CHATEN=true;window.TOUREN=true;try{window.CHATURL=localStorage.getItem("appchat")||"";window.CHATEN=localStorage.getItem("appchaton")!=="0";window.TOUREN=localStorage.getItem("apptouron")!=="0"}catch(_){}
 const chatOn=()=>{let v=null;try{v=localStorage.getItem("chat")}catch(_){}return v!=="0"};
 const CHAT={open:false,busy:false,msgs:[]};try{CHAT.msgs=JSON.parse(sessionStorage.getItem("chatmsgs")||"[]")||[]}catch(_){}
 const APPHELP=`So ist die App aufgebaut (unten die Bereiche, oben die Knöpfe):
@@ -962,7 +1013,7 @@ function chatCtx(){
   return out.join("\n\n");
 }
 function chatFab(){
-  let b=document.getElementById("chatFab");const g=document.getElementById("gate"),show=!!(ME&&window.CHATURL&&chatOn()&&!ONBOARD&&!WELCOME_OPEN&&(!g||g.hidden));
+  let b=document.getElementById("chatFab");const g=document.getElementById("gate"),show=!!(ME&&window.CHATURL&&window.CHATEN&&chatOn()&&!ONBOARD&&!WELCOME_OPEN&&(!g||g.hidden));
   if(!b){b=document.createElement("button");b.id="chatFab";b.type="button";b.className="chatfab";
     b.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/></svg>';
     b.addEventListener("click",()=>{CHAT.open=!CHAT.open;chatPanel()});document.body.appendChild(b)}
@@ -996,12 +1047,74 @@ async function chatAsk(q){
   catch(err){CHAT.msgs.push({r:"e",t:L(navigator.onLine===false?"Keine Verbindung.":"Der Assistent ist gerade nicht erreichbar.")})}
   CHAT.busy=false;chatKeep();chatPanel();
 }
-function chatSec(){if(!window.CHATURL)return "";
+function chatSec(){if(!window.CHATURL||!window.CHATEN)return "";
   return '<section class="psec"><h4>'+L("Assistent")+'</h4><label class="ck"><input type="checkbox" data-chaton'+(chatOn()?' checked':'')+'> '+L("Chat-Assistent anzeigen (Knopf unten rechts)")+'</label></section>'}
 function chatSetSec(){
-  return '<p class="ahint"><b>'+L("Assistent")+'</b> – '+L("Adresse des Cloudflare Workers für den Chat-Assistenten (und den zuverlässigen Zeitplan für Push und Dropbox). Leer = kein Assistent.")+' <a href="https://github.com/furtschellas/Tschugger/blob/main/tools/chat_worker.js" target="_blank" rel="noopener">'+L("Worker-Code und Anleitung")+'</a></p><input form="setform" class="amap" type="url" name="chat" inputmode="url" placeholder="https://tschugger.….workers.dev" value="'+esc(window.CHATURL||"")+'">'}
+  return '<p class="ahint"><b>'+L("Einführungstour")+'</b> – '+L("Eingeschaltet wird die Tour allen einmalig angeboten und kann unter «Mein Konto» neu gestartet werden.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="to"'+(window.TOUREN!==false?' checked':'')+'> '+L("Einführungstour anbieten")+'</label></div>'+
+    '<p class="ahint"><b>'+L("Assistent")+'</b> – '+L("Adresse des Cloudflare Workers für den Chat-Assistenten (und den zuverlässigen Zeitplan für Push und Dropbox). Leer = kein Assistent.")+' <a href="https://github.com/furtschellas/Tschugger/blob/main/tools/chat_worker.js" target="_blank" rel="noopener">'+L("Worker-Code und Anleitung")+'</a></p><input form="setform" class="amap" type="url" name="chat" inputmode="url" placeholder="https://tschugger.….workers.dev" value="'+esc(window.CHATURL||"")+'"><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="ca"'+(window.CHATEN!==false?' checked':'')+'> '+L("KI-Assistent anbieten")+'</label></div>'}
 document.addEventListener("change",e=>{if(e.target.matches("[data-chaton]")){store("chat",e.target.checked?"1":"0");chatFab()}});
 setInterval(()=>{try{chatFab()}catch(_){}},1500);
+/* ---- introduction tour: offered once to everybody (new and existing users) after the welcome note; can be skipped;
+   the result (done/skip + date) is kept in the profile (members.tour/tourAt); «Mein Konto» starts it again ---- */
+const TOUR_STEPS=[
+  {sel:'nav.tabs [data-tab="plan"]',t:"Schedule",x:"Der Drehplan Tag für Tag: Szenen, Motive und Zeiten. Mit «Script» öffnest du eine Szene im Drehbuch, die Kamera zeigt Blocking-Fotos und -Filme."},
+  {sel:'nav.tabs [data-tab="dispo"]',t:"Callsheet",x:"Die Dispo des Drehtags: Crew Call, Drehbeginn, Wrap, Locations und Cast."},
+  {sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
+  {sel:'nav.tabs [data-tab="crew"]',t:"Crew",x:"Die Crewliste nach Abteilungen – je nach Berechtigung mit Telefon und E-Mail."},
+  {sel:'nav.tabs [data-tab="script"]',t:"Script",x:"Das Drehbuch mit Suche."},
+  {sel:'nav.tabs [data-tab="info"]',t:"Info",x:"Allgemeine Infos zur Produktion und zur App."},
+  {sel:"#searchBtn",t:"Suche",x:"Sucht über alles: Szenen, Rollen, Personen, Locations."},
+  {sel:"#myCalBtn",t:"Meine Termine",x:"Alle deine kommenden Termine an einem Ort – mit «In den Kalender» und der Glocke für Push-Nachrichten."},
+  {sel:"#acctBtn",t:"Mein Konto",x:"Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten."},
+  {sel:"#admBtn",t:"App-Verwaltung",x:"Benutzer, Rollen, Dokumente und Einstellungen – nur mit Berechtigung sichtbar."},
+  {sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
+];
+const TOUR={i:-1,steps:[],el:null};
+const tourVisible=s=>{const e=document.querySelector(s);if(!e||e.hidden||e.closest("[hidden]"))return null;const r=e.getBoundingClientRect();return r.width&&r.height?e:null};
+function tourDoneLocal(){try{return !!localStorage.getItem("tourDone:"+(ME&&ME.uid))}catch(_){return false}}
+async function maybeTour(){
+  if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||!window.TOUREN)return;
+  if(MEMBER&&MEMBER.tour)return;
+  if(tourDoneLocal()){let v="";try{v=localStorage.getItem("tourDone:"+ME.uid)||""}catch(_){}const [how,at]=v.split("|");
+    if(MEMBER&&(how==="done"||how==="skip"))try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{tour:how,tourAt:at||new Date().toISOString()});MEMBER.tour=how;MEMBER.tourAt=at}catch(_){}return}
+  setTimeout(()=>tourStart(true),700);
+}
+function tourStart(ask){
+  if(TOUR.el)TOUR.el.remove();if(CHAT.open){CHAT.open=false;chatPanel()}
+  if(S.tab==="acct"||S.tab==="admin"||S.tab==="my"){S.tab="plan";render()}
+  window.scrollTo(0,0);TOUR.steps=TOUR_STEPS.filter(s=>tourVisible(s.sel));TOUR.i=ask?-1:0;
+  const o=document.createElement("div");o.id="tour";o.className="tour";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML='<div class="tspot"></div><div class="tcard" role="document"></div>';
+  o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;
+    if(a==="next")tourGo(TOUR.i+1);else if(a==="back")tourGo(TOUR.i-1);else if(a==="skip")tourEnd("skip");else if(a==="done")tourEnd("done")});
+  document.body.appendChild(o);TOUR.el=o;tourGo(TOUR.i);
+  addEventListener("resize",tourPlace);
+}
+function tourGo(i){
+  const o=TOUR.el;if(!o)return;TOUR.i=i;const n=TOUR.steps.length,c=o.querySelector(".tcard"),sp=o.querySelector(".tspot");
+  if(i<0){sp.hidden=true;c.className="tcard center";
+    c.innerHTML='<h3>'+L("Kurze Tour durch die App?")+'</h3><p>'+L("In einer Minute zeigen wir dir die wichtigsten Funktionen. Du kannst die Tour später jederzeit unter «Mein Konto» starten.")+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><button type="button" class="pri" data-tour="next">'+L("Tour starten")+'</button></div>';return}
+  if(i>=n){sp.hidden=true;c.className="tcard center";
+    c.innerHTML='<h3>'+L("Fertig!")+'</h3><p>'+L("Viel Spass mit der App. Die Tour findest du jederzeit wieder unter «Mein Konto».")+'</p><div class="tbtns"><button type="button" class="pri" data-tour="done">'+L("Los geht's")+'</button></div>';return}
+  const s=TOUR.steps[i];sp.hidden=false;c.className="tcard";
+  c.innerHTML='<div class="tprog">'+(i+1)+' / '+n+'</div><h3>'+esc(L(s.t))+'</h3><p>'+esc(L(s.x))+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><span></span>'+(i>0?'<button type="button" class="sec" data-tour="back">'+L("Zurück")+'</button>':'')+'<button type="button" class="pri" data-tour="next">'+L(i===n-1?"Fertig":"Weiter")+'</button></div>';
+  tourPlace();try{c.querySelector(".pri").focus({preventScroll:true})}catch(_){}
+}
+function tourPlace(){
+  const o=TOUR.el;if(!o||TOUR.i<0||TOUR.i>=TOUR.steps.length)return;const e=document.querySelector(TOUR.steps[TOUR.i].sel);if(!e)return;
+  const r=e.getBoundingClientRect(),pad=6,sp=o.querySelector(".tspot"),c=o.querySelector(".tcard");
+  Object.assign(sp.style,{left:(r.left-pad)+"px",top:(r.top-pad)+"px",width:(r.width+2*pad)+"px",height:(r.height+2*pad)+"px"});
+  const vh=innerHeight,vw=innerWidth,cw=Math.min(340,vw-24);c.style.width=cw+"px";
+  const ch=c.offsetHeight||170,below=r.bottom+14+ch<vh-8;
+  c.style.top=(below?r.bottom+14:Math.max(8,r.top-14-ch))+"px";
+  c.style.left=Math.min(vw-cw-12,Math.max(12,r.left+r.width/2-cw/2))+"px";
+}
+async function tourEnd(how){
+  if(TOUR.el){TOUR.el.remove();TOUR.el=null}removeEventListener("resize",tourPlace);
+  const at=new Date().toISOString();try{localStorage.setItem("tourDone:"+(ME&&ME.uid),how+"|"+at)}catch(_){}
+  if(how==="skip")showMsg(L("Tour übersprungen – du findest sie unter «Mein Konto».")+"",4000);
+  try{if(MEMBER&&ME){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{tour:how,tourAt:at});MEMBER.tour=how;MEMBER.tourAt=at}}catch(err){console.warn("tour",err&&err.code||err)}
+}
+const tourInfo=m=>!m?"":m.tour==="done"?L("Tour gemacht"):m.tour==="skip"?L("Tour übersprungen"):L("Tour offen");
 /* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */
 const WELCOME_VER="1";
 const WTXT={
@@ -1019,7 +1132,7 @@ async function welcomeDone(){
 }
 async function maybeWelcome(){
   if(!ME||WELCOME_OPEN||ONBOARD)return;
-  if(await welcomeDone())return;
+  if(await welcomeDone()){maybeTour();return}
   WELCOME_OPEN=true;let T=WTXT[LANG]||WTXT.de;
   if(LANG==="de"||docRaw("welcome").custom||docRaw("disclaimer").custom){const w=docGet("welcome",{});const dis=docRaw("disclaimer").body.trim();
     T=Object.assign({},WTXT[LANG]||WTXT.de,{t:w.subject,p:w.body.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean)});T.warnIdx=T.p.findIndex(x=>x===dis)}
@@ -1030,7 +1143,7 @@ async function maybeWelcome(){
   d.addEventListener("click",async e=>{const b=e.target.closest("[data-wlgo]");if(!b||b.disabled)return;b.disabled=true;
     const at=new Date().toISOString();store("welcomeAck",at+"|"+WELCOME_VER);savePrefs();
     try{if(MEMBER){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{welcomeAck:at,welcomeVer:WELCOME_VER});MEMBER.welcomeAck=at;MEMBER.welcomeVer=WELCOME_VER}}catch(err){console.warn("welcome",err&&err.code||err)}
-    d.remove();WELCOME_OPEN=false;showMsg(L("Danke – viel Spass mit der App!"),3000)});
+    d.remove();WELCOME_OPEN=false;maybeTour()});
   document.body.appendChild(d);
 }
 /* ---- presence: signed-in members leave a «last seen» mark every 2 minutes while the app is open (shown to admins) ---- */
@@ -1114,7 +1227,7 @@ function profileForm(onb){
 function acctInner(){
   return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b>'+' · '+L("Rolle")+': <b>'+esc(isOwner()?L("Owner"):isAdmin()?L("Admin"):MYROLE?(MYROLE==="crew"?"Crew":MYROLE):L("keine"))+'</b>'+(()=>{let w=(MEMBER&&MEMBER.welcomeAck)||"";if(!w)try{w=(localStorage.getItem("welcomeAck")||"").split("|")[0]}catch(_){}return w?' · '+L("Willkommen bestätigt")+' '+esc(new Date(w).toLocaleDateString("de-CH")):''})()+'</p>'+
     (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
-    (ME?pushSec():'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
+    (ME?pushSec():'')+(window.TOUREN?'<section class="psec"><h4>'+L("Einführungstour")+'</h4><p class="ghint">'+esc(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?' · '+esc(new Date(MEMBER.tourAt).toLocaleDateString("de-CH")):'')+'</p><button type="button" class="pillbtn" data-ac="tour">'+L("Tour starten")+'</button></section>':'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell (gut lesbar)")+'</button></div></section>'+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '';
@@ -1143,6 +1256,7 @@ async function onAcctClick(e){
   const b=e.target.closest("[data-ac]");if(!b)return;
   if(b.dataset.ac==="close")s.hidden=true;
   else if(b.dataset.ac==="theme")setTheme(b.dataset.thset);
+  else if(b.dataset.ac==="tour")tourStart(false);
   else if(b.dataset.ac==="pwreset"){const msg=b.closest("form").querySelector(".amsg");msg.className="amsg";msg.textContent="";b.disabled=true;
     try{const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),auth.currentUser.email);msg.classList.add("ok");msg.textContent=L("Link zum Zurücksetzen gesendet an")+" "+auth.currentUser.email+". "+L("Schau auch im Spam-Ordner nach.")}
     catch(err){console.error(err);msg.textContent=errText(err)}b.disabled=false}
@@ -1150,7 +1264,7 @@ async function onAcctClick(e){
   else if(b.dataset.ac==="signout"){b.disabled=true;s.hidden=true;S.tab="plan";store("tab","plan");
     try{const {A,auth}=await fb();await A.signOut(auth)}catch(err){console.error(err)}
     /* straight to the sign-in screen (e-mail + password) */
-    ME=null;MYPERMS=[];{const w=document.getElementById("welcome");if(w)w.remove();WELCOME_OPEN=false}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();render();showGate("login")}
+    ME=null;MYPERMS=[];{const w=document.getElementById("welcome");if(w)w.remove();WELCOME_OPEN=false;if(TOUR.el){TOUR.el.remove();TOUR.el=null}}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();render();showGate("login")}
 }
 async function onAcctSubmit(e){
   e.preventDefault();const f=e.target,msg=f.querySelector(".amsg"),btn=f.querySelector("button[type=submit]")||f.querySelector("button");msg.className="amsg";msg.textContent="";
@@ -1423,7 +1537,7 @@ function userList(rows,vis,o){
     const hasActs=acts.length||(own&&!isOwn);
     return '<div class="ucard'+(r.m&&r.m.active!==true?' blocked':'')+(open?' open':'')+'">'+
       '<div class="uhd"><span class="uav'+(r.m&&isOnline(r.m)?' on':'')+'" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b>'+badge+o.st(r)+'</div>'+
-      '<div class="usub">'+(cp.role?esc(cp.role)+' · ':'')+'<span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?' · '+esc(r.m.lang.toUpperCase()):'')+(r.m&&seenText(r.m)?' · <span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'')+'</div>'+userInfo(r)+'</div>'+
+      '<div class="usub">'+(cp.role?esc(cp.role)+' · ':'')+'<span class="em">'+esc(r.email)+'</span>'+(r.m&&r.m.lang?' · '+esc(r.m.lang.toUpperCase()):'')+(r.m&&seenText(r.m)?' · <span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'')+(r.m?' · <span class="utour">'+esc(tourInfo(r.m))+'</span>':'')+'</div>'+userInfo(r)+'</div>'+
       (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" aria-label="'+esc(L("Aktionen"))+'" title="'+esc(L("Aktionen"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
       (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
       (open?'<div class="ubody">'+(own&&!isOwn?o.roleSel(r):'')+(o.cEd&&ADM.edit===r.email?editForm(r):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
@@ -1526,7 +1640,7 @@ document.addEventListener("submit",async e=>{
     const cu=String((fl.elements['chat']||{}).value||"").trim();if(cu&&!/^https:\/\/\S+$/.test(cu)){showMsg(L("Bitte einen Link mit https:// eingeben."),4000);return}
     const sh=String(fl.elements['sheet'].value||"").trim();
     if(sh&&!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(sh)){showMsg(L("Bitte einen Google-Sheets-Link eingeben."),4000);return}
-    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au,chatUrl:cu},{merge:true});window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
+    await F.setDoc(F.doc(db,"config","app"),{langs:l,unit2:u2,unit3:u3,mapUrl:mu,bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,locSheet:sh,script:so,tabs:tb,tabOrder:tord,autoUpdate:au,chatUrl:cu,chatEnabled:!!(fl.elements['ca']||{}).checked,tourEnabled:!!(fl.elements['to']||{}).checked},{merge:true});window.CHATEN=!!(fl.elements['ca']||{}).checked;window.TOUREN=!!(fl.elements['to']||{}).checked;try{localStorage.setItem("appchaton",window.CHATEN?"1":"0");localStorage.setItem("apptouron",window.TOUREN?"1":"0")}catch(_){}window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}window.TABORDER=tord;try{localStorage.setItem("apptaborder",JSON.stringify(tord))}catch(_){}window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}window.TABSON=tb;try{localStorage.setItem("apptabs",JSON.stringify(tb))}catch(_){}window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}window.LOCSHEET=sh;APPLANGS=l;window.UNIT2=u2;window.UNIT3=u3;window.BDAYPUB=bp;if(bp)syncBdays(true);try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}window.MAPURL=mu;try{localStorage.setItem("applangs",JSON.stringify(l));localStorage.setItem("appunit2",u2?"1":"0");localStorage.setItem("appunit3",u3?"1":"0");localStorage.setItem("appmap",mu)}catch(_){}applyLangs();render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
   const f=e.target.closest('[data-adm="add"]');if(!f)return;e.preventDefault();
   const em=lc(f.em.value),nm=f.nm.value.trim();if(!/@/.test(em))return;
@@ -1662,6 +1776,8 @@ window.crewFill=function(p){
   const m=memberFor(p);if(!m)return null;
   return {phone:String(m.phone||"").trim(),email:String(m.contactEmail||m.email||"").trim()};
 };
+const CICO={edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',close:'<path d="M18 6 6 18M6 6l12 12"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',add:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5"/><path d="M19 8v6M16 11h6"/>'};
+const cico=(k,label,attrs,extra)=>'<button type="button" class="cico'+(extra||"")+'" '+attrs+' aria-label="'+esc(label)+'" title="'+esc(label)+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+CICO[k]+'</svg></button>';
 window.crewExtra=function(p){
   /* «Kontoinfos» (owner and everyone allowed to change user data): account status, edit user data, role */
   const ACC=ADMV.acct&&(isOwner()||can("users.edit"));
@@ -1670,14 +1786,14 @@ window.crewExtra=function(p){
   const m=memberFor(p),ch=[],na=t=>'<span class="na">'+esc(t)+'</span>';
   /* admins edit the person's user data right here (same form as in App-Verwaltung) */
   const ue=m?m.email:lc(p.email),uinv=ue&&ADM.inv.some(i=>i.id===ue),canEd=ACC&&can("users.edit")&&(m||uinv)&&(isOwner()||!ADMINS.includes(ue));
-  const edBtn=canEd?'<button type="button" class="cinv ced" data-ced="'+esc(ue)+'" aria-expanded="'+(ADM.cedit===ue)+'">✎ '+esc(L(ADM.cedit===ue?"Schliessen":"Benutzerdaten bearbeiten"))+'</button>':"";
+  const edBtn=canEd?cico(ADM.cedit===ue?"close":"edit",L(ADM.cedit===ue?"Schliessen":"Benutzerdaten bearbeiten"),'data-ced="'+esc(ue)+'" aria-expanded="'+(ADM.cedit===ue)+'"',ADM.cedit===ue?" on":""):"";
   const edForm=canEd&&ADM.cedit===ue?editForm({email:ue,m,name:p.name,role:p.role},false):"";
   const rSel=ACC&&isOwner()&&(m||uinv)&&!ADMINS.includes(ue)?roleSel({email:ue}):"";
   if(!(AV("food")||AV("bday")||ACC))return "";
   if(ACC){
     if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
-      if(inv&&isAdmin())ch.push('<button type="button" class="cinv" data-cmail="'+esc(e)+'" data-nm="'+esc(p.name||"")+'">✉ '+esc(L("Einladungs-Mail schicken"))+'</button>');
-      if(!inv&&isOwner()&&e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))ch.push('<button type="button" class="cinv" data-cinv="'+esc(e)+'" data-nm="'+esc(p.name||"")+'" data-rl="'+esc(p.role||"")+'">+ '+esc(L("Als Benutzer:in einladen"))+'</button>')}
+      if(inv&&isAdmin())ch.push(cico("mail",L("Einladungs-Mail schicken"),'data-cmail="'+esc(e)+'" data-nm="'+esc(p.name||"")+'"'));
+      if(!inv&&isOwner()&&e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))ch.push(cico("add",L("Als Benutzer:in einladen"),'data-cinv="'+esc(e)+'" data-nm="'+esc(p.name||"")+'" data-rl="'+esc(p.role||"")+'"'))}
     else ch.push(m.active===true?'<span class="ok">'+esc(L("Konto aktiv"))+'</span>':'<span class="off">'+esc(L("Gesperrt"))+'</span>');
     const ems=[lc(p.email),m&&m.email].filter(Boolean);
     if(ems.some(e=>ADMINS.includes(e)))ch.push('<span class="adm">'+esc(L("Owner"))+'</span>');
