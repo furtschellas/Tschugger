@@ -745,6 +745,9 @@ const PVLBL={i:"Info",d:"Szenenbeschrieb",a:"Adresse",c:"Cast",b:"Blocking"};
 /* schedule display options only toggle CSS classes: no re-render, no scroll jump */
 function pvApply(){const b=document.body;for(const k of ["i","d","c","a","b"])b.classList.toggle("pv-no-"+k,!S.pv[k]);document.querySelectorAll("[data-pv]").forEach(x=>x.setAttribute("aria-pressed",String(!!S.pv[x.dataset.pv])))}
 function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","a","b"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" aria-label="'+esc(L(PVLBL[k]))+'" title="'+esc(L(PVLBL[k]))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+(post?'<span class="pvsep"></span>'+post:'')+'</span>'}
+/* drive time shown: up to 20 min +3 min buffer, longer drives +15 % (rounded up) */
+function driveMin(m){m=+m||0;return m>20?Math.ceil(m*1.15):m+3}
+window.driveMin=driveMin;
 function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
@@ -1050,8 +1053,8 @@ function renderPlan(){
   if(d.kind==="shoot"){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
     if(d.extras)f.push([L("Kompars:innen"),d.extras]);
-    /* drive from the crew hotel: +3 min buffer; the route itself only when opened; shown next to the shooting time */
-    const dv=d.drive&&d.drive.min?'<details class="fact factd"><summary><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc((d.drive.min+3)+"′"+(d.drive.km?"\u2009·\u2009"+Math.round(d.drive.km)+"\u2009km":""))+'</span></summary><span class="fsub">'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'</span></details>':'';
+    /* drive from the crew hotel: +3 min buffer (over 20 min: +15 %); the route itself only when opened; shown next to the shooting time */
+    const dv=d.drive&&d.drive.min?'<details class="fact factd"><summary><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc(driveMin(d.drive.min)+"′"+(d.drive.km?"\u2009·\u2009"+Math.round(d.drive.km)+"\u2009km":""))+'</span></summary><span class="fsub">'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'</span></details>':'';
     /* the drive to the set sits right next to the shooting time */
     const fx=f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>');
     if(dv)fx.splice(d.hours?1:0,0,dv);

@@ -2631,12 +2631,12 @@ VIEWS.today=function(){
   if(d.sr&&d.ss)tiles.push(['<b>'+esc(d.sr+"–"+d.ss)+'</b>',L("Sonnenzeit")]);
   /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
   const wxt=wxTile(d);
-  /* drive from the crew hotel (+3 min) and the weather come last */
+  /* drive from the crew hotel (+3 min, over 20 min +15 %) and the weather come last */
   /* tap → route in Google Maps from the crew hotel to the first location */
   const drv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
     const url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(d.drive.from||"Hotel")+"&destination="+encodeURIComponent(dest);
     const here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(dest); /* no origin = current location */
-    return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from:d.drive.from||"Hotel",to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc((d.drive.min+3)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'})():'';
+    return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from:d.drive.from||"Hotel",to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′"+(d.drive.km?" · "+Math.round(d.drive.km)+" km":""))+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'})():'';
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
   if(!dp&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
