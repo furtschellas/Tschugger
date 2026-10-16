@@ -14,7 +14,7 @@ import shutil,subprocess,os
 ESB=os.environ.get("ESBUILD") or shutil.which("esbuild") or next((p for p in ["/home/claude/.tools/node_modules/.bin/esbuild",str(pathlib.Path.home()/".tools/node_modules/.bin/esbuild")] if os.path.exists(p)),"")
 def _mini(code,loader):
   try:
-    args=[ESB,"--loader="+loader,"--log-level=error"]+(["--minify"] if loader=="css" else ["--minify-whitespace","--minify-syntax","--target=es2019"])
+    args=[ESB,"--loader="+loader,"--log-level=error"]+(["--minify"] if loader=="css" else ["--minify-whitespace","--minify-syntax","--target=es2019","--charset=utf8"])
     r=subprocess.run(args,input=code.encode(),capture_output=True,timeout=60)
     return r.stdout.decode() if r.returncode==0 and r.stdout else code
   except Exception:return code
