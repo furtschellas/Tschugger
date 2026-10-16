@@ -638,8 +638,10 @@ nav.tabs.short .lbl[data-s]{font-size:0}nav.tabs.short .lbl[data-s]::after{conte
 /* Kopf: «· geprüft …» bleibt zusammen – passt es nicht, kommt es als Ganzes auf die nächste Zeile (Umbruch nach der Sched-Version) */
 #stand .chk{white-space:nowrap;display:inline-block}
 /* Kopf-Symbole (Suche, Termine, Push …) etwas grösser */
-html body .hbtns>.refresh{width:calc(31px*var(--bs,1));height:calc(31px*var(--bs,1))}
-html body .hbtns>.refresh svg{width:calc(20px*var(--bs,1));height:calc(20px*var(--bs,1))}
+/* die Symbolleiste behält ihre Breite (der Titel daneben weicht aus), damit die Symbole nicht automatisch schrumpfen */
+html body header .hbtns{flex:none}
+html body .hbtns>.refresh{width:calc(34px*var(--bs,1));height:calc(34px*var(--bs,1))}
+html body .hbtns>.refresh svg{width:calc(22px*var(--bs,1));height:calc(22px*var(--bs,1))}
 </style>
 
 <div class="wrap">
@@ -1525,7 +1527,7 @@ function fitRows(root){
   (root||document).querySelectorAll(".smodes,.asub,.hbtns,.myhead,.mcpick,.fpls").forEach(r=>{
     r.style.removeProperty("--bs");
     if(!r.offsetParent)return;
-    const kids=r.children,over=()=>r.scrollWidth>r.clientWidth+1||[...kids].some(c=>c.scrollWidth>c.clientWidth+1&&c.tagName==="BUTTON")||(r.classList.contains("smodes")&&kids.length>1&&kids[kids.length-1].offsetTop>kids[0].offsetTop+2);
+    const kids=r.children,over=()=>r.scrollWidth>r.clientWidth+1||(!r.classList.contains("hbtns")&&[...kids].some(c=>c.scrollWidth>c.clientWidth+1&&c.tagName==="BUTTON"))||(r.classList.contains("smodes")&&kids.length>1&&kids[kids.length-1].offsetTop>kids[0].offsetTop+2);
     let b=1;while(b>0.72&&over()){b=Math.round((b-0.04)*100)/100;r.style.setProperty("--bs",b)}
   });
 }
