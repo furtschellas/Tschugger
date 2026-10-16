@@ -799,10 +799,10 @@ def main():
                                 open(src, "wb").write(dbx.download(e["id"]))
                                 subprocess.run([ff, "-y", "-loglevel", "error", "-i", src, "-vf", "scale=-2:'min(720,ih)'", "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
                                                 "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", dst], check=True, timeout=900)
-                                data = open(dst, "rb").read()
-                            if len(data) > 45e6: raise RuntimeError("zu gross")
+                                vbytes = open(dst, "rb").read()
+                            if len(vbytes) > 45e6: raise RuntimeError("zu gross")
                             iv = secrets.token_bytes(12)
-                            open(vf, "wb").write(iv + AESGCM(KEY).encrypt(iv, data, None)); changed = True
+                            open(vf, "wb").write(iv + AESGCM(KEY).encrypt(iv, vbytes, None)); changed = True
                         except Exception as ex:
                             log("Film nicht umgewandelt:", e["name"], str(ex)[:120]); want_files.discard(vf); vf = None
                 items.append({"n": e["name"], "t": "vid" if vid else "img", "f": fn, **({"v": vf} if vf else {}),
