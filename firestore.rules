@@ -24,7 +24,10 @@ service cloud.firestore {
     }
     function can(p) {
       return isOwner() || (isAdmin() && adminHas(p))
-        || (verified() && exists(/databases/$(database)/documents/userroles/$(myEmail())) && p in rolePerms());
+        || (verified() && exists(/databases/$(database)/documents/userroles/$(myEmail())) && p in rolePerms())
+        // ohne eigene Rolle gilt die Standardrolle «Crew»
+        || (verified() && !exists(/databases/$(database)/documents/userroles/$(myEmail()))
+            && exists(/databases/$(database)/documents/roles/crew) && p in get(/databases/$(database)/documents/roles/crew).data.perms);
     }
     function isMember() {
       return signedIn()
