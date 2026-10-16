@@ -1,6 +1,6 @@
 /* ---------- web boot (GitHub Pages): Firebase sign-in + encrypted data file ---------- */
 const FB_CONFIG={apiKey:"AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ",authDomain:"tschugger-83692.firebaseapp.com",projectId:"tschugger-83692",storageBucket:"tschugger-83692.firebasestorage.app",messagingSenderId:"786764568575",appId:"1:786764568575:web:552eeefa77c44f5d24b9ca"};
-const FB_V="10.12.2",ROOT_OWNERS=["furtschellas@gmail.com"],ADMINS=ROOT_OWNERS.slice(),DATA_URL="data.enc.json",POLL_MS=3*60*1000;
+const FB_V="10.12.2",ROOT_OWNERS=["furtschellas@gmail.com"],ADMINS=ROOT_OWNERS.slice(),DATA_URL="data.enc.json",POLL_MS=5*60*1000;
 Object.assign(I18N,{
  "Anmelden":{it:"Accedi",fr:"Se connecter",en:"Sign in"},
  "E-Mail":{it:"E-mail",fr:"E-mail",en:"Email"},
@@ -776,15 +776,20 @@ function load(force){
   LOADP=loadOnce(force).finally(()=>{LOADP=null});
   return LOADP;
 }
+/* stamp.json (a few bytes): stamp of the data file and the last Dropbox check – the 0.8 MB data file is only loaded when it changed */
+let CHECKED="";
+async function fetchStamp(){try{const r=await withTimeout(fetch("stamp.json?t="+Date.now(),{cache:"no-store"}),8000,"stamp");if(!r.ok)return null;const j=await r.json();
+  if(j&&j.c){CHECKED=j.c;if(S.meta)S.meta.checkedAt=j.c}return j&&j.s?j:null}catch(_){return null}}
 async function loadOnce(force){
   if(!MEMBER&&!isAdmin())return false;
+  if(!force&&S.loaded&&LASTSTAMP){const st=await fetchStamp();if(st&&st.s===LASTSTAMP)return true}
   const enc=await fetchEnc();
   if(!force&&enc.stamp&&enc.stamp===LASTSTAMP&&S.loaded)return true;
   const key=await getDataKey();
   let pt;try{pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct))}catch(err){DATAKEY=null;throw err}
   const data=JSON.parse(new TextDecoder().decode(pt));
   if(!data||!Array.isArray(data.days))throw new Error("data format");
-  LASTSTAMP=enc.stamp||null;applyData(data);scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
+  LASTSTAMP=enc.stamp||null;applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
 }
 function loadErr(err){
   const c=(err&&(err.code||err.name))||"",m=(err&&err.message)||String(err);
@@ -1113,15 +1118,22 @@ let PUSHT=null,PUSHBUSY=false;
 function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>{try{pushLocalSchedule()}catch(_){}pushSync().catch(err=>console.warn("push",err&&err.code||err))},2500)}
 async function pushReg(){return navigator.serviceWorker.getRegistration?((await navigator.serviceWorker.getRegistration())||(await navigator.serviceWorker.ready)):navigator.serviceWorker.ready}
 const u8=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");s+="===".slice((s.length+3)%4);return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
-async function pushSub(create){const reg=await pushReg();let sub=await reg.pushManager.getSubscription();
-  if(!sub&&create)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u8(VAPID_PUB)});return sub}
+/* public push key: the one the Cloudflare Worker reports (after a key change), else the built-in one */
+let VAPIDQ=null;
+function vapidPub(){let k="";try{k=localStorage.getItem("vapidpub")||""}catch(_){}return /^B[A-Za-z0-9_-]{80,}$/.test(k)?k:VAPID_PUB}
+async function vapidRefresh(){if(!window.CHATURL)return vapidPub();if(!VAPIDQ)VAPIDQ=fetch(window.CHATURL.replace(/\/+$/,"")+"/",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&/^B[A-Za-z0-9_-]{80,}$/.test(j.vapidPub||""))try{localStorage.setItem("vapidpub",j.vapidPub)}catch(_){}return vapidPub()}).catch(()=>vapidPub());return VAPIDQ}
+const b64uOf=buf=>{const b=new Uint8Array(buf||[]);let s="";for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
+async function pushSub(create){const reg=await pushReg();let sub=await reg.pushManager.getSubscription();const k=await withTimeout(vapidRefresh(),4000,"vapid").catch(()=>vapidPub());
+  /* subscribed with an older key: subscribe again with the current one */
+  if(sub&&sub.options&&sub.options.applicationServerKey&&b64uOf(sub.options.applicationServerKey)!==k){try{await sub.unsubscribe()}catch(_){}sub=null;create=true;try{localStorage.removeItem("pushlast")}catch(_){}}
+  if(!sub&&create)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u8(k)});if(sub)sub.__k=k;return sub}
 async function pushSync(){
   if(!ME||!ME.uid||!pushOK()||PUSHBUSY)return;PUSHBUSY=true;
   try{const c=pushCfg(),{F,db}=await fb(),ref=F.doc(db,"push",ME.uid+"_"+pushDev());let last="";try{last=localStorage.getItem("pushlast")||""}catch(_){}
     if(!c.on||Notification.permission!=="granted"){if(last){await F.deleteDoc(ref).catch(()=>{});try{localStorage.removeItem("pushlast")}catch(_){}}return}
     const sub=await pushSub(true);if(!sub)return;
     let dept="";try{const me=typeof myIdentity==="function"&&myIdentity();dept=me&&me.src||""}catch(_){}
-    const pl={on:true,sub:sub.toJSON(),lang:LANG,items:pushItems(c),who:{email:lc(ME.email),role:isOwner()?"owner":isAdmin()?"admin":(MYROLE||""),dept}};const js=JSON.stringify(pl),h=pushId(js)+"|"+Math.floor(Date.now()/216e5);
+    const pl={on:true,sub:sub.toJSON(),k:sub.__k||vapidPub(),lang:LANG,items:pushItems(c),who:{email:lc(ME.email),role:isOwner()?"owner":isAdmin()?"admin":(MYROLE||""),dept}};const js=JSON.stringify(pl),h=pushId(js)+"|"+Math.floor(Date.now()/216e5);
     if(h===last)return;
     const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(js)));
     const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
@@ -1157,7 +1169,8 @@ const PST={busy:false,d:null};
 async function pushStatusLoad(){if(PST.busy)return;PST.busy=true;const d={};
   try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"push"));d.devices=q.docs.length;d.mine=ME?q.docs.filter(x=>x.id.startsWith(ME.uid+"_")).length:0}catch(err){d.devErr=String((err&&err.code)||err)}
   if(window.CHATURL){try{const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/");d.worker=r.ok?await r.json():{error:r.status}}catch(err){d.worker={error:String(err.message||err)}}}
-  try{const r=await fetch("https://api.github.com/repos/furtschellas/Tschugger/actions/workflows/push.yml/runs?per_page=1");const j=await r.json();const x=(j.workflow_runs||[])[0];if(x)d.run={at:x.created_at,ok:x.conclusion,ev:x.event}}catch(_){}
+  try{const r=await fetch("https://api.github.com/repos/furtschellas/Tschugger/actions/workflows/push.yml/runs?per_page=12");const j=await r.json();const xs=j.workflow_runs||[];const x=xs[0];
+    if(x)d.run={at:x.created_at,ok:x.conclusion,ev:x.event};d.runs=xs.map(y=>({at:Date.parse(y.created_at),ev:y.event}))}catch(_){}
   PST.d=d;PST.busy=false;render()}
 function pushStatusSec(){
   if(!PST.d){pushStatusLoad();return '<p class="ghint">'+L("Lade …")+'</p>'}
@@ -1170,6 +1183,11 @@ function pushStatusSec(){
   h+=d.devErr?bad(L("Geräte nicht lesbar – bitte die neuen Firestore-Regeln veröffentlichen.")+" ("+esc(d.devErr)+")"):(d.devices?ok(L("{n} Geräte für Push angemeldet").replace("{n}",d.devices)):bad(L("Noch kein Gerät für Push angemeldet.")));
   if(!d.devErr)h+=d.mine?ok(L("Dieses Gerät ist angemeldet")):bad(L("Dieses Gerät ist nicht angemeldet – unter «Mein Konto» Push einschalten."));
   h+=d.run?(d.run.ok==="success"?ok(L("Letzter Versand-Lauf bei GitHub:")+" "+esc(when(d.run.at))):bad(L("Letzter Versand-Lauf bei GitHub fehlgeschlagen:")+" "+esc(when(d.run.at)))):bad(L("GitHub hat den Versand noch nie gestartet."));
+  if(d.runs){const hr=d.runs.filter(x=>Date.now()-x.at<3600e3),wk=hr.filter(x=>x.ev==="workflow_dispatch").length;
+    h+=wk>=4?ok(L("Worker startet den Versand regelmässig ({n}× in der letzten Stunde).").replace("{n}",wk))
+      :bad(L("Der Worker-Zeitplan startet den Versand nicht ({n}× in der letzten Stunde, erwartet 6×). In Cloudflare: Worker → Settings → Triggers → Cron «*/10 * * * *» und das Secret GH_TOKEN prüfen.").replace("{n}",wk))}
+  if(w&&w.ok){h+=w.sa?ok(L("Dienstkonto eingerichtet (FIREBASE_SA)")):bad(L("Dienstkonto fehlt im Worker (FIREBASE_SA) – Push-Daten bleiben öffentlich lesbar."));
+    h+=w.v?ok(L("Worker-Version")+" "+esc(w.v)):bad(L("Alte Worker-Version – bitte den neuen Code aus tools/chat_worker.js einsetzen."))}
   return h+'</ul><div class="arb"><button type="button" class="pillbtn" data-pstat>↻ '+L("Neu prüfen")+'</button></div>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-pstat]")){PST.d=null;render()}});
@@ -1228,14 +1246,18 @@ const APPHELP=`So ist die App aufgebaut (unten die Bereiche, oben die Knöpfe):
 - Lupe oben: Suche über alles. Kalender-Symbol: «Meine Termine» (eigene Termine, mit «In den Kalender» und Push-Glocke). Personen-Symbol: «Mein Konto» (Profil, Push-Nachrichten, Darstellung hell/dunkel, Passwort, Abmelden, Tour neu starten). Zahnrad: App-Verwaltung (nur mit Berechtigung).
 - Daten kommen automatisch aus der Dropbox der Produktion.`;
 function chatCtx(){
-  const out=[APPHELP];const J=x=>JSON.stringify(x,(k,v)=>v===""||v===null||(Array.isArray(v)&&!v.length)?undefined:v);
-  try{if(vok("plan"))out.push("DREHPLAN (days): "+J(S.days))}catch(_){}
-  try{if(vok("dispo"))out.push("CALLSHEETS (dispos): "+J(S.dispos))}catch(_){}
-  try{if(vok("prep"))out.push("PREP / WEEKLY SCHEDULE: "+J(S.prepro))}catch(_){}
+  const out=[APPHELP];const J=x=>JSON.stringify(x,(k,v)=>v===""||v===null||(Array.isArray(v)&&!v.length)||/_(fr|it|en|hi)$/.test(k)?undefined:v);
+  /* from yesterday on (past days only as a short list), translations left out – keeps the question fast and cheap */
+  const y=new Date(Date.now()-864e5).toISOString().slice(0,10),cur=a=>arr(a).filter(d=>d&&String(d.date||"")>=y);
+  try{if(vok("plan")){out.push("DREHPLAN (days, ab gestern): "+J(cur(S.days)));const past=S.days.filter(d=>d&&String(d.date||"")<y);if(past.length)out.push("FRÜHERE DREHTAGE (nur Datum/Titel): "+J(past.map(d=>({date:d.date,label:d.label||d.short,kind:d.kind}))))}}catch(_){}
+  try{if(vok("dispo"))out.push("CALLSHEETS (dispos, ab gestern): "+J(cur(S.dispos)))}catch(_){}
+  try{if(vok("prep"))out.push("PREP / WEEKLY SCHEDULE (ab gestern): "+J(cur(S.prepro)))}catch(_){}
   try{out.push("LOCATIONS: "+J(S.locs))}catch(_){}
   try{const ph=vok("phone"),em=vok("email");if(vok("crew"))out.push("CREWLISTE: "+J(S.crew.map(g=>Object.assign({},g,{people:arr(g.people).map(p=>{const q=Object.assign({},p);if(!ph){delete q.phone;delete q.tel;delete q.mobile}if(!em)delete q.email;return q})}))))}catch(_){}
-  try{if(vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)out.push("MEINE TERMINE ("+me.name+"): "+J(myEvents(me).map(e=>({date:e.date,t:e.t,end:e.end,n:e.n,where:e.where,src:e.src}))))}}catch(_){}
-  return out.join("\n\n");
+  try{if(vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)out.push("MEINE TERMINE ("+me.name+"): "+J(myEvents(me).filter(e=>String(e.date||"")>=y).map(e=>({date:e.date,t:e.t,end:e.end,n:e.n,where:e.where,src:e.src}))))}}catch(_){}
+  /* «Meine Termine» first after the help, so a cut at the limit takes the least important part */
+  const mine=out.findIndex(x=>/^MEINE TERMINE/.test(x));if(mine>1)out.splice(1,0,out.splice(mine,1)[0]);
+  return out.join("\n\n").slice(0,55000);
 }
 function chatFab(){
   let b=document.getElementById("chatFab");const g=document.getElementById("gate"),show=!!(ME&&window.CHATURL&&window.CHATEN&&chatOn()&&!ONBOARD&&!WELCOME_OPEN&&(!g||g.hidden));
@@ -1279,7 +1301,7 @@ function chatSetSec(){
     '<p class="ahint"><b>'+L("Einführungstour")+'</b> – '+L("Eingeschaltet wird die Tour allen einmalig angeboten und kann unter «Mein Konto» neu gestartet werden.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="to"'+(window.TOUREN!==false?' checked':'')+'> '+L("Einführungstour anbieten")+'</label></div>'+
     '<p class="ahint"><b>'+L("Assistent")+'</b> – '+L("Adresse des Cloudflare Workers für den Chat-Assistenten (und den zuverlässigen Zeitplan für Push und Dropbox). Leer = kein Assistent.")+' <a href="https://github.com/furtschellas/Tschugger/blob/main/tools/chat_worker.js" target="_blank" rel="noopener">'+L("Worker-Code und Anleitung")+'</a></p><input form="setform" class="amap" type="url" name="chat" inputmode="url" placeholder="https://tschugger.….workers.dev" value="'+esc(window.CHATURL||"")+'"><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="ca"'+(window.CHATEN!==false?' checked':'')+'> '+L("KI-Assistent anbieten")+'</label></div>'}
 document.addEventListener("change",e=>{if(e.target.matches("[data-chaton]")){store("chat",e.target.checked?"1":"0");chatFab()}});
-setInterval(()=>{try{chatFab()}catch(_){}},1500);
+setInterval(()=>{try{chatFab()}catch(_){}},20000);
 /* ---- introduction tour: offered once to everybody (new and existing users) after the welcome note; can be skipped;
    the result (done/skip + date) is kept in the profile (members.tour/tourAt); «Mein Konto» starts it again ---- */
 const TOUR_STEPS=[
@@ -1430,7 +1452,7 @@ function bcButton(){
     mc.parentNode.insertBefore(b,mc.nextSibling);b.addEventListener("click",()=>{S.tab="bcast";S.srcOpen=false;window.scrollTo(0,0);render()})}
   b.setAttribute("aria-label",L("Push-Nachricht senden"));b.title=L("Push-Nachricht senden");b.hidden=!(ME&&can("push.send")&&window.PUSHEN!==false);
 }
-setInterval(()=>{try{bcButton()}catch(_){}},1500);
+setInterval(()=>{try{bcButton()}catch(_){}},20000);
 function bcDepts(){return [...new Set((S.crew||[]).map(g=>g.dept).filter(Boolean))]}
 async function bcLoadRoles(){if(BC.roles)return;BC.roles=[];try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"roles"));BC.roles=q.docs.filter(d=>d.id!=="admin").map(d=>({id:d.id,name:String(d.data().name||d.id)})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}catch(_){}render()}
 /* SMS: opens the phone's SMS app with the numbers of the recipients (crew list / app profiles) and the text */
@@ -1464,12 +1486,14 @@ async function bcDeliver(id){
   const {F,db,auth}=await fb();
   if(window.CHATURL){try{const tok=await auth.currentUser.getIdToken();
     const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({id})});const j=await r.json().catch(()=>({}));
-    if(r.ok){try{await F.updateDoc(F.doc(db,"broadcasts",id),{sent:true,n:j.n||0})}catch(_){}return L("Gesendet an {n} Geräte.").replace("{n}",j.n||0)}
+    if(r.ok){if(!j.claimed)try{await F.updateDoc(F.doc(db,"broadcasts",id),{sent:true,n:j.n||0})}catch(_){}
+      return L("Gesendet an {n} Geräte.").replace("{n}",j.n||0)+(j.rest||j.fail?" "+L("Die übrigen folgen in wenigen Minuten."):"")}
+    if(r.status===403||r.status===409)return L("Nicht gesendet:")+" "+(j.error||r.status);
     await fetch(window.CHATURL.replace(/\/+$/,"")+"/notify",{method:"POST",headers:{Authorization:"Bearer "+tok}}).catch(()=>{});return L("Gesendet – die Nachricht kommt in etwa einer Minute an.")}catch(_){}}
   return L("Gespeichert – die Nachricht geht mit dem nächsten Lauf (spätestens in 15 Minuten) raus.");
 }
 /* history: every message with date, time, recipients and sender; can be sent again */
-async function bcLoadHist(){BC.hist=[];try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"broadcasts"));const key=await getDataKey();
+async function bcLoadHist(){BC.hist=[];try{const {F,db}=await fb();let q;try{q=await F.getDocs(F.query(F.collection(db,"broadcasts"),F.orderBy("at","desc"),F.limit(100)))}catch(_){q=await F.getDocs(F.collection(db,"broadcasts"))}const key=await getDataKey();
   const out=[];for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));out.push(Object.assign({id:d.id,sent:d.data().sent,n:d.data().n},JSON.parse(new TextDecoder().decode(pt))))}catch(_){}}
   BC.hist=out.sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,100)}catch(err){console.warn("bc hist",err&&err.code||err);BC.histErr=String((err&&err.code)||err)}render()}
 const bcWho=b=>b.roles||b.depts?[].concat((b.roles||[]).map(r=>r==="owner"?L("Owner"):r==="admin"?L("Admin"):r===""?L("Keine Rolle"):((BC.roles||[]).find(x=>x.id===r)||{}).name||r),(b.depts||[]).map(HIT)).join(", "):L("Alle");
@@ -1530,7 +1554,9 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form[data
 window.MENUS={};try{window.MENUS=JSON.parse(localStorage.getItem("menus")||"{}")||{}}catch(_){}
 let MENUAT=0;
 async function menusLoad(force){if(!ME||(!force&&Date.now()-MENUAT<120e3))return;MENUAT=Date.now();
-  try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"menus"));const m={};q.docs.forEach(d=>{m[d.id]=d.data()});
+  try{const {F,db}=await fb();const from=new Date(Date.now()-864e5).toISOString().slice(0,10);
+    let q;try{q=await F.getDocs(F.query(F.collection(db,"menus"),F.where(F.documentId(),">=",from)))}catch(_){q=await F.getDocs(F.collection(db,"menus"))}
+    const m={};q.docs.forEach(d=>{if(d.id>=from)m[d.id]=d.data()});
     if(JSON.stringify(m)!==JSON.stringify(window.MENUS)){window.MENUS=m;try{localStorage.setItem("menus",JSON.stringify(m))}catch(_){}render()}}catch(err){console.warn("menus",err&&err.code||err)}}
 /* two menu options per day and unit (u1a/u1b, u2a/u2b …; the older single field u1 counts as option 1) */
 const menuOpts=(m,u)=>{if(m.tog)u="1";return [String(m["u"+u+"a"]||m["u"+u]||"").trim(),String(m["u"+u+"b"]||"").trim()].filter(Boolean)};
@@ -1833,7 +1859,11 @@ function crewDeptOf(m){
 }
 /* catering: the crew list shows a short summary at the top and bundles the details in one collapsible block;
    the Catering page (tab instead of Script for people with the catering permission) shows everything at a glance */
+let CATM=null;
 function caterData(){
+  if(CATM&&Date.now()-CATM.t<800&&CATM.n===ADM.mem.length&&CATM.l===LANG)return CATM.v;
+  const v=caterData0();CATM={t:Date.now(),n:ADM.mem.length,l:LANG,v};return v}
+function caterData0(){
   const act=ADM.mem.filter(m=>m.active===true&&!NO_CATER.test(crewDeptOf(m))).map(normDiet);
   const nm=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
   const alg=m=>String(m.allergies||"").trim();
@@ -2342,9 +2372,17 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-cmail]");i
   const em=b.dataset.cmail;location.href=mailto(em,"invite",{vorname:(b.dataset.nm||"").split(/\s+/)[0],name:b.dataset.nm||""})},true);
 /* blocking gallery: encrypted preview images (blk/*.bin = 12-byte IV + AES-GCM), decrypted with the crew key */
 const BLKIMG=new Map();
+/* where the pictures live: Cloudflare R2 behind the worker (meta.blkBase) or GitHub Pages (blk/ next to the app) */
+window.blkUrl=f=>{const b=S.meta&&S.meta.blkBase;return b&&/^https:\/\//.test(b)&&/^blk\//.test(f)?b+f:f};
 window.blkImg=function(f){
-  if(!BLKIMG.has(f))BLKIMG.set(f,(async()=>{const key=await getDataKey();const r=await fetch(f,{cache:"force-cache"});if(!r.ok)throw new Error("HTTP "+r.status);
-    const buf=new Uint8Array(await r.arrayBuffer());const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:buf.slice(0,12)},key,buf.slice(12));
+  if(!BLKIMG.has(f))BLKIMG.set(f,(async()=>{const key=await getDataKey(),u=blkUrl(f);
+    const get=async c=>{const r=await fetch(u,{cache:c});if(!r.ok)throw new Error("HTTP "+r.status);return new Uint8Array(await r.arrayBuffer())};
+    const dec=buf=>crypto.subtle.decrypt({name:"AES-GCM",iv:buf.slice(0,12)},key,buf.slice(12));
+    let pt;try{pt=await dec(await get("force-cache"))}
+    catch(err){ /* an old copy from before a key change: drop it and load it again */
+      if(/^HTTP/.test(err.message||""))throw err;
+      try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.open(k).then(c=>c.delete(u))))}catch(_){}
+      pt=await dec(await get("reload"))}
     return URL.createObjectURL(new Blob([pt],{type:/\.mp4\.bin$/.test(f)?"video/mp4":"image/jpeg"}))})().catch(err=>{BLKIMG.delete(f);throw err}));
   return BLKIMG.get(f);
 };
@@ -2522,13 +2560,13 @@ async function offlinePrep(force){
   const st=offState(),files=new Set();
   for(const b of arr(S.meta.blocking))for(const m of (typeof bmed==="function"?bmed(b):arr(b.media)))if(m&&m.g==="pdf"&&m.f)files.add(m.f);
   for(const f of arr(S.meta.floorplans))for(const p of arr(f.pg))files.add(p);
-  const list=[...files].sort(),sig=list.length+"|"+(list[0]||"")+"|"+(list[list.length-1]||"");
+  const list=[...files].sort(),sig=list.length+"|"+(list[0]||"")+"|"+(list[list.length-1]||"")+"|"+(S.meta.blkBase||"");
   if(!force&&st&&st.v===2&&st.sig===sig&&Date.now()-st.at<12*3600e3)return;
   OFF.busy=true;if(force)render();
   let n=0,fail=0;
   try{
     await getDataKey().catch(()=>{});
-    for(let i=0;i<list.length;i+=6)await Promise.all(list.slice(i,i+6).map(f=>fetch(f,{cache:"force-cache"}).then(r=>{if(r.ok)n++;else fail++}).catch(()=>{fail++})));
+    for(let i=0;i<list.length;i+=6)await Promise.all(list.slice(i,i+6).map(f=>fetch(blkUrl(f),{cache:"force-cache"}).then(r=>{if(r.ok)n++;else fail++}).catch(()=>{fail++})));
     try{if(window.loadScriptData)await window.loadScriptData()}catch(_){}
     try{localStorage.setItem("offline:v1",JSON.stringify({v:2,at:Date.now(),sig,n,fail,fp:arr(S.meta.floorplans).filter(f=>arr(f.pg).length).length}))}catch(_){}
   }finally{OFF.busy=false}
@@ -2571,8 +2609,10 @@ function wxPlace(d){
   const town=(ad.match(/\b\d{4}\s+([^,]+)/)||[])[1]||String(it.loc).split(/\s+/)[0];
   return {ll,town:town.trim(),name:(it.set||"").replace(/^VALAIS\s*–\s*/i,"")||it.loc,loc:it.loc,addr:ad,sc:it.sc,t:it.t||""};
 }
+try{const lim=new Date(Date.now()-2*864e5).toISOString().slice(0,10);for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.startsWith("wx:")&&k.slice(3,13)<lim)localStorage.removeItem(k)}}catch(_){}
 async function wxLoad(d){
   const p=wxPlace(d);if(!p)return null;const key=d.date+"|"+p.town;
+  {const t0=new Date(Date.now()-864e5).toISOString().slice(0,10),t1=new Date(Date.now()+15*864e5).toISOString().slice(0,10);if(d.date<t0||d.date>t1)return null}
   if(WX[key]&&(WX[key].busy||Date.now()-WX[key].at<3600e3))return WX[key];
   let cached=null;try{cached=JSON.parse(localStorage.getItem("wx:"+key)||"null")}catch(_){}
   WX[key]=Object.assign({busy:true,at:Date.now(),p},cached||{});
@@ -2834,4 +2874,4 @@ document.addEventListener("click",e=>{const ae=document.activeElement;if(ae&&/^(
 document.addEventListener("change",e=>{if(!e.target.matches||!e.target.matches("select"))return;const ae=document.activeElement;if(ae&&ae!==e.target&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&ae.form&&!ae.form.contains(e.target))try{ae.blur()}catch(_){}},true);
 /* main topics (bottom bar): English names in every language except Hindi */
 function hiTabs(){document.querySelectorAll("nav.tabs button[data-tab] .lbl").forEach(l=>{if(!l.dataset.orig)l.dataset.orig=l.textContent.trim();const o=l.dataset.orig;l.textContent=LANG==="hi"&&I18N[o]&&I18N[o].hi?I18N[o].hi:o})}
-{const _r=render;render=function(){const x=_r.apply(this,arguments);try{hiTabs()}catch(_){}return x}}
+{const _r=render;render=function(){const x=_r.apply(this,arguments);try{hiTabs()}catch(_){}try{chatFab()}catch(_){}try{bcButton()}catch(_){}return x}}
