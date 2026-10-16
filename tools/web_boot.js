@@ -214,6 +214,27 @@ Object.assign(I18N,{
  "Erneut senden":{fr:"Renvoyer",it:"Invia di nuovo",en:"Send again",hi:"फिर से भेजें"},
  "Verlauf":{fr:"Historique",it:"Cronologia",en:"History",hi:"इतिहास"},
  "Kein Problem – du kannst die Tour jederzeit neu starten: oben auf «Mein Konto» tippen und dort «Tour starten» wählen.":{fr:"Pas de souci – tu peux relancer la visite à tout moment : touche « Mon compte » en haut, puis « Lancer la visite ».",it:"Nessun problema – puoi riavviare il tour quando vuoi: tocca «Il mio account» in alto e scegli «Avvia il tour».",en:"No problem – you can restart the tour any time: tap “My account” at the top and choose “Start tour”.",hi:"कोई बात नहीं – आप टूर कभी भी फिर से शुरू कर सकते हैं: ऊपर «मेरा खाता» पर टैप करें और «टूर शुरू करें» चुनें।"},
+ "Push-Nachrichten sind auf diesem Gerät noch nicht erlaubt.":{fr:"Les notifications ne sont pas encore autorisées sur cet appareil.",it:"Le notifiche non sono ancora consentite su questo dispositivo.",en:"Notifications are not allowed on this device yet.",hi:"इस डिवाइस पर पुश सूचनाएँ अभी अनुमत नहीं हैं।"},
+ "Test über den Server an {n} Gerät(e) gesendet.":{fr:"Test envoyé par le serveur à {n} appareil(s).",it:"Test inviato dal server a {n} dispositivo/i.",en:"Test sent via the server to {n} device(s).",hi:"सर्वर से {n} डिवाइस पर टेस्ट भेजा गया।"},
+ "Server-Test fehlgeschlagen:":{fr:"Échec du test serveur :",it:"Test del server non riuscito:",en:"Server test failed:",hi:"सर्वर टेस्ट विफल:"},
+ "dieses Gerät ist noch nicht registriert":{fr:"cet appareil n'est pas encore enregistré",it:"questo dispositivo non è ancora registrato",en:"this device is not registered yet",hi:"यह डिवाइस अभी पंजीकृत नहीं है"},
+ "Nur lokal getestet – für echte Push-Nachrichten muss die Produktion den Cloudflare Worker einrichten.":{fr:"Testé seulement en local – pour de vraies notifications, la production doit configurer le Cloudflare Worker.",it:"Testato solo in locale – per notifiche vere la produzione deve configurare il Cloudflare Worker.",en:"Tested locally only – for real notifications the production has to set up the Cloudflare Worker.",hi:"केवल स्थानीय टेस्ट – असली पुश सूचनाओं के लिए प्रोडक्शन को Cloudflare Worker सेट करना होगा।"},
+ "Cloudflare Worker nicht eingetragen – Push-Nachrichten gehen nur, wenn GitHub den Versand startet (oft stundenlang verspätet).":{fr:"Cloudflare Worker non renseigné – les notifications ne partent que lorsque GitHub lance l'envoi (souvent avec des heures de retard).",it:"Cloudflare Worker non inserito – le notifiche partono solo quando GitHub avvia l'invio (spesso con ore di ritardo).",en:"Cloudflare Worker not set – notifications only go out when GitHub starts the run (often hours late).",hi:"Cloudflare Worker सेट नहीं – सूचनाएँ तभी जाती हैं जब GitHub भेजना शुरू करे (अक्सर घंटों देर से)।"},
+ "Worker erreichbar":{fr:"Worker joignable",it:"Worker raggiungibile",en:"Worker reachable",hi:"Worker पहुँच में है"},
+ "Sofort-Versand bereit (CREW_KEY gesetzt)":{fr:"Envoi immédiat prêt (CREW_KEY défini)",it:"Invio immediato pronto (CREW_KEY impostato)",en:"Instant sending ready (CREW_KEY set)",hi:"तुरंत भेजना तैयार (CREW_KEY सेट)"},
+ "CREW_KEY fehlt im Worker – kein Sofort-Versand.":{fr:"CREW_KEY manque dans le Worker – pas d'envoi immédiat.",it:"CREW_KEY manca nel Worker – nessun invio immediato.",en:"CREW_KEY missing in the Worker – no instant sending.",hi:"Worker में CREW_KEY नहीं – तुरंत भेजना नहीं।"},
+ "Zeitplan aktiv (GH_TOKEN gesetzt)":{fr:"Planning actif (GH_TOKEN défini)",it:"Pianificazione attiva (GH_TOKEN impostato)",en:"Schedule active (GH_TOKEN set)",hi:"शेड्यूल सक्रिय (GH_TOKEN सेट)"},
+ "GH_TOKEN fehlt im Worker – Erinnerungen werden nicht pünktlich verschickt.":{fr:"GH_TOKEN manque dans le Worker – les rappels ne partent pas à l'heure.",it:"GH_TOKEN manca nel Worker – i promemoria non partono puntuali.",en:"GH_TOKEN missing in the Worker – reminders are not sent on time.",hi:"Worker में GH_TOKEN नहीं – रिमाइंडर समय पर नहीं जाते।"},
+ "Worker nicht erreichbar:":{fr:"Worker injoignable :",it:"Worker non raggiungibile:",en:"Worker not reachable:",hi:"Worker पहुँच में नहीं:"},
+ "Geräte nicht lesbar – bitte die neuen Firestore-Regeln veröffentlichen.":{fr:"Appareils illisibles – publie les nouvelles règles Firestore.",it:"Dispositivi non leggibili – pubblica le nuove regole Firestore.",en:"Devices not readable – please publish the new Firestore rules.",hi:"डिवाइस पढ़े नहीं जा सके – कृपया नए Firestore नियम प्रकाशित करें।"},
+ "{n} Geräte für Push angemeldet":{fr:"{n} appareils inscrits aux notifications",it:"{n} dispositivi registrati per le notifiche",en:"{n} devices registered for push",hi:"{n} डिवाइस पुश के लिए पंजीकृत"},
+ "Noch kein Gerät für Push angemeldet.":{fr:"Aucun appareil inscrit aux notifications.",it:"Nessun dispositivo registrato per le notifiche.",en:"No device registered for push yet.",hi:"अभी कोई डिवाइस पुश के लिए पंजीकृत नहीं।"},
+ "Dieses Gerät ist angemeldet":{fr:"Cet appareil est inscrit",it:"Questo dispositivo è registrato",en:"This device is registered",hi:"यह डिवाइस पंजीकृत है"},
+ "Dieses Gerät ist nicht angemeldet – unter «Mein Konto» Push einschalten.":{fr:"Cet appareil n'est pas inscrit – active les notifications sous « Mon compte ».",it:"Questo dispositivo non è registrato – attiva le notifiche in «Il mio account».",en:"This device is not registered – turn on push under “My account”.",hi:"यह डिवाइस पंजीकृत नहीं – «मेरा खाता» में पुश चालू करें।"},
+ "Letzter Versand-Lauf bei GitHub:":{fr:"Dernier envoi GitHub :",it:"Ultimo invio GitHub:",en:"Last GitHub sending run:",hi:"GitHub पर आख़िरी भेजने का रन:"},
+ "Letzter Versand-Lauf bei GitHub fehlgeschlagen:":{fr:"Dernier envoi GitHub échoué :",it:"Ultimo invio GitHub fallito:",en:"Last GitHub sending run failed:",hi:"GitHub पर आख़िरी रन विफल:"},
+ "GitHub hat den Versand noch nie gestartet.":{fr:"GitHub n'a encore jamais lancé l'envoi.",it:"GitHub non ha mai avviato l'invio.",en:"GitHub has never started the sending run.",hi:"GitHub ने अभी तक भेजना शुरू नहीं किया।"},
+ "Neu prüfen":{fr:"Revérifier",it:"Ricontrolla",en:"Check again",hi:"फिर से जाँचें"},
  "Läufe auf GitHub ansehen":{fr:"Voir les passages sur GitHub",it:"Vedi le esecuzioni su GitHub",en:"See the runs on GitHub"},
  "Als Benutzer:in einladen":{fr:"Inviter comme utilisateur",it:"Invita come utente",en:"Invite as user"},
  "ist jetzt als Benutzer:in freigeschaltet und kann ein Konto erstellen.":{fr:"est maintenant autorisé et peut créer un compte.",it:"è ora abilitato e può creare un account.",en:"is now approved and can create an account."},
@@ -955,7 +976,8 @@ const docRaw=(k,lang)=>{lang=DOCLANGS.includes(lang)?lang:LANG;const c=(window.D
 function docGet(k,v,lang){v=v||{};lang=lang||v.lang||LANG;const r=docRaw(k,lang);
   const map=Object.assign({app:location.origin+location.pathname,disclaimer:k==="disclaimer"?"":docRaw("disclaimer",lang).body,vorname:"",name:"",email:"",passwort:""},v);
   const fill=t=>String(t||"").replace(/\{(\w+)\}/g,(m,x)=>x in map?map[x]:m).replace(/\n{3,}/g,"\n\n").replace(/^(Hallo|Bonjour|Ciao|Hi) \n/,"$1\n");
-  return {subject:fill(r.subject),body:fill(r.body)}}
+  const g=t=>lang==="de"&&typeof deG==="function"?deG(t):t;
+  return {subject:g(fill(r.subject)),body:g(fill(r.body))}}
 const mailto=(em,k,v)=>{const d=docGet(k,Object.assign({email:em},v));return "mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(d.subject)+"&body="+encodeURIComponent(d.body)};
 function docsSec(){
   const dl=DOCLANGS.includes(ADM.doclang)?ADM.doclang:(DOCLANGS.includes(LANG)?LANG:"de");
@@ -1013,7 +1035,7 @@ function pushItems(c){c=c||pushCfg();const now=Date.now(),lim=now+15*864e5;
     const dt=new Date(st),day=WDL(dt)+" "+String(dt.getDate()).padStart(2,"0")+"."+String(dt.getMonth()+1).padStart(2,"0")+".";
     return {id:e.id,at,start:st,title:e.n||L("Termin"),body:[day+(e.t?" "+e.t:""),e.where].filter(Boolean).join(" · "),url:"./#my"}}).filter(x=>x.start>now&&x.start<lim).slice(0,80)}
 let PUSHT=null,PUSHBUSY=false;
-function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>pushSync().catch(err=>console.warn("push",err&&err.code||err)),2500)}
+function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>{try{pushLocalSchedule()}catch(_){}pushSync().catch(err=>console.warn("push",err&&err.code||err))},2500)}
 async function pushReg(){return navigator.serviceWorker.getRegistration?((await navigator.serviceWorker.getRegistration())||(await navigator.serviceWorker.ready)):navigator.serviceWorker.ready}
 const u8=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");s+="===".slice((s.length+3)%4);return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
 async function pushSub(create){const reg=await pushReg();let sub=await reg.pushManager.getSubscription();
@@ -1037,7 +1059,46 @@ async function pushEnable(){
   try{await pushSub(true)}catch(err){console.error(err);showMsg(L("Fehler:")+" "+(err.message||err),6000)}
   const c=pushCfg();c.on=true;try{localStorage.removeItem("pushlast")}catch(_){}pushSave(c);render();
 }
-async function pushTest(){try{const reg=await pushReg();await reg.showNotification(L("Test-Nachricht"),{body:L("So sehen Erinnerungen an deine Termine aus."),icon:"icon-192.png",badge:"icon-192.png",tag:"test"})}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}}
+async function pushTest(){
+  const msg=t=>showMsg(t,7000);
+  try{if(Notification.permission!=="granted"){msg(L("Push-Nachrichten sind auf diesem Gerät noch nicht erlaubt."));return}
+    try{localStorage.removeItem("pushlast")}catch(_){}await pushSync();
+    if(window.CHATURL){const {auth}=await fb();const tok=await auth.currentUser.getIdToken();
+      const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/selftest",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({title:L("Test-Nachricht"),body:L("So sehen Erinnerungen an deine Termine aus.")})});
+      const j=await r.json().catch(()=>({}));
+      if(r.ok&&j.n>0){msg(L("Test über den Server an {n} Gerät(e) gesendet.").replace("{n}",j.n));return}
+      msg(L("Server-Test fehlgeschlagen:")+" "+(j.error||(j.devices===0?L("dieses Gerät ist noch nicht registriert"):JSON.stringify(j.st||r.status))));return}
+    const reg=await pushReg();await reg.showNotification(L("Test-Nachricht"),{body:L("So sehen Erinnerungen an deine Termine aus."),icon:"icon-192.png",badge:"icon-192.png",tag:"test"});
+    msg(L("Nur lokal getestet – für echte Push-Nachrichten muss die Produktion den Cloudflare Worker einrichten."))}
+  catch(err){msg(L("Fehler:")+" "+(err.message||err))}}
+/* while the app is open (or in the background), reminders also come from the device itself – a backup when the server is late */
+let LOCALT=[];
+function pushLocalSchedule(){LOCALT.forEach(clearTimeout);LOCALT=[];const c=pushCfg();if(!c.on||!pushOK()||Notification.permission!=="granted")return;
+  const now=Date.now();for(const it of pushItems(c)){const d=it.at-now;if(d<-5*60e3||d>6*3600e3)continue;
+    LOCALT.push(setTimeout(async()=>{const k="pushlocal:"+it.id+"|"+it.at;try{if(localStorage.getItem(k))return;localStorage.setItem(k,"1")}catch(_){}
+      try{const reg=await pushReg();const open=await reg.getNotifications({tag:it.id});if(open&&open.length)return;await reg.showNotification(it.title,{body:it.body,tag:it.id,icon:"icon-192.png",badge:"icon-192.png",data:{url:"./#my"}})}catch(_){}},Math.max(0,d)))}}
+/* status for the production (Einstellungen): server, registered devices, last runs */
+const PST={busy:false,d:null};
+async function pushStatusLoad(){if(PST.busy)return;PST.busy=true;const d={};
+  try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"push"));d.devices=q.docs.length;d.mine=ME?q.docs.filter(x=>x.id.startsWith(ME.uid+"_")).length:0}catch(err){d.devErr=String((err&&err.code)||err)}
+  if(window.CHATURL){try{const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/");d.worker=r.ok?await r.json():{error:r.status}}catch(err){d.worker={error:String(err.message||err)}}}
+  try{const r=await fetch("https://api.github.com/repos/furtschellas/Tschugger/actions/workflows/push.yml/runs?per_page=1");const j=await r.json();const x=(j.workflow_runs||[])[0];if(x)d.run={at:x.created_at,ok:x.conclusion,ev:x.event}}catch(_){}
+  PST.d=d;PST.busy=false;render()}
+function pushStatusSec(){
+  if(!PST.d){pushStatusLoad();return '<p class="ghint">'+L("Lade …")+'</p>'}
+  const d=PST.d,w=d.worker,ok=t=>'<li class="ok">✓ '+t+'</li>',bad=t=>'<li class="bad">✗ '+t+'</li>';
+  const when=t=>{try{return new Date(t).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(_){return t}};
+  let h='<ul class="pstat">';
+  h+=!window.CHATURL?bad(L("Cloudflare Worker nicht eingetragen – Push-Nachrichten gehen nur, wenn GitHub den Versand startet (oft stundenlang verspätet)."))
+    :w&&w.ok?ok(L("Worker erreichbar"))+(w.push?ok(L("Sofort-Versand bereit (CREW_KEY gesetzt)")):bad(L("CREW_KEY fehlt im Worker – kein Sofort-Versand.")))+(w.cron?ok(L("Zeitplan aktiv (GH_TOKEN gesetzt)")):bad(L("GH_TOKEN fehlt im Worker – Erinnerungen werden nicht pünktlich verschickt.")))
+    :bad(L("Worker nicht erreichbar:")+" "+esc(JSON.stringify((w&&w.error)||"")));
+  h+=d.devErr?bad(L("Geräte nicht lesbar – bitte die neuen Firestore-Regeln veröffentlichen.")+" ("+esc(d.devErr)+")"):(d.devices?ok(L("{n} Geräte für Push angemeldet").replace("{n}",d.devices)):bad(L("Noch kein Gerät für Push angemeldet.")));
+  if(!d.devErr)h+=d.mine?ok(L("Dieses Gerät ist angemeldet")):bad(L("Dieses Gerät ist nicht angemeldet – unter «Mein Konto» Push einschalten."));
+  h+=d.run?(d.run.ok==="success"?ok(L("Letzter Versand-Lauf bei GitHub:")+" "+esc(when(d.run.at))):bad(L("Letzter Versand-Lauf bei GitHub fehlgeschlagen:")+" "+esc(when(d.run.at)))):bad(L("GitHub hat den Versand noch nie gestartet."));
+  return h+'</ul><div class="arb"><button type="button" class="pillbtn" data-pstat>↻ '+L("Neu prüfen")+'</button></div>';
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-pstat]")){PST.d=null;render()}});
+
 /* bell in «Meine Termine» rows */
 window.pushBell=function(e){const c=pushCfg();if(!c.on||!c.types.my||!pushOK())return "";const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));const off=!!c.off[id];
   return '<button type="button" class="pbell'+(off?' off':'')+'" data-pushev="'+id+'" data-pushdate="'+esc(e.date)+'" aria-pressed="'+(!off)+'" aria-label="'+esc(L(off?"Push-Nachricht einschalten":"Push-Nachricht ausschalten"))+'" title="'+esc(L(off?"Push-Nachricht aus":"Push-Nachricht an"))+'"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'+(off?'<path d="M3 3l18 18"/>':'')+'</svg></button>'};
@@ -1546,7 +1607,7 @@ async function admLoad(){
 }
 function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
-const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-src","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
+const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-push","set-src","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
 const secOpen=(k,title,body)=>'<details class="asec '+k+'" data-sec="'+k+'"'+(SECS[k]!==false?' open':'')+'><summary>'+esc(title)+'</summary><div class="asb">'+body+'</div></details>';
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
 /* departments that are not fed on set: left out of the catering count */
@@ -1812,11 +1873,11 @@ function userList(rows,vis,o){
     ].filter(Boolean);
     const hasActs=acts.length||(own&&!isOwn);
     return '<div class="ucard'+(r.m&&r.m.active!==true?' blocked':'')+(open?' open':'')+'">'+
-      '<div class="uhd"><span class="uav'+(r.m&&isOnline(r.m)?' on':'')+'" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b>'+badge+o.st(r)+'</div>'+
+      '<div class="uhd"><span class="uav'+(r.m&&isOnline(r.m)?' on':'')+'" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b></div><div class="ubadges">'+o.st(r)+badge+'</div>'+
       '<div class="usub">'+(cp.role||(r.m&&r.m.func)?esc(cp.role||r.m.func)+' · ':'')+'<a class="em" href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>'+(r.m&&r.m.lang?' · '+esc(r.m.lang.toUpperCase()):'')+(r.m&&seenText(r.m)?' · <span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'')+(r.m?' · <span class="utour">'+esc(tourInfo(r.m))+'</span>':'')+'</div>'+userInfo(r)+'</div>'+
       (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" aria-label="'+esc(L("Aktionen"))+'" title="'+esc(L("Aktionen"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
       (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
-      (open?'<div class="ubody">'+(canRole(r.email)?o.roleSel(r):'')+(o.cEd&&ADM.edit===r.email?editForm(r):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
+      (open?'<div class="ubody">'+(o.cEd&&ADM.edit===r.email?editForm(r,true):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
     '</div>'};
   const SORTS=[["first","Vorname"],["name","Nachname"],["dept","Abteilung"],["status","Status"],["role","Rolle"],["new","Neueste zuerst"],["seen","Zuletzt online"],["email","E-Mail"]];
   const sortSel='<label class="usort">'+L("Sortieren")+' <select data-usort>'+SORTS.map(([k,t])=>'<option value="'+k+'"'+((ADM.sort||"first")===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>';
@@ -1876,7 +1937,7 @@ VIEWS.admin=function(){
     '<p class="ahint"><b>'+L("Anmeldung")+'</b> – '+L("Ausgeschaltet verschwindet «Mit Google anmelden» auf der Anmeldeseite. Wer schon mit Google angemeldet ist, bleibt angemeldet.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="go"'+(window.GOOGLEON!==false?' checked':'')+'> '+L("Mit Google anmelden anbieten")+'</label></div>'+
     '<p class="ahint"><b>'+L("Benutzer:innen ohne Rolle")+'</b> – '+L("Personen ohne Rolle sehen weder Drehplan, Drehbuch noch Blocking. Hier kannst du ihnen zusätzlich freigeben:")+'</p><div class="chk">'+
       [["pp","phone","Telefonnummern"],["pe","email","E-Mail-Adressen"],["pm","mycal","Meine Termine"]].map(([n,k,t])=>'<label class="ck"><input form="setform" type="checkbox" name="'+n+'"'+(window.PUBV[k]!==false?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>'+'<p class="ahint"><b>'+L("Karte")+'</b> – '+L("Link zur Karte für den Knopf «Map» in Locations (z. B. Google My Maps). Leer = Standardkarte.")+'</p><input form="setform" class="amap" type="url" name="map" inputmode="url" placeholder="https://www.google.com/maps/d/…" value="'+esc(window.MAPURL||"")+'">'+(typeof chatSetSec==="function"?chatSetSec():'')+sv)+
-    grp("src","Quellen",srcInner())+(own?grp("bk","Backup",bkSec()):''):(own?grp("up","Aktualisieren",upSec())+grp("src","Quellen",srcInner())+grp("bk","Backup",bkSec()):'');
+    grp("push","Push-Nachrichten",pushStatusSec())+grp("src","Quellen",srcInner())+(own?grp("bk","Backup",bkSec()):''):(own?grp("up","Aktualisieren",upSec())+grp("src","Quellen",srcInner())+grp("bk","Backup",bkSec()):'');
   const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(isAdmin())SUBS.push(["roles","Rollen"]);if(can("settings"))SUBS.push(["docs","Dokumente"],["set","Einstellungen"]);
   if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
@@ -2064,7 +2125,7 @@ window.crewExtra=function(p){
   /* admins edit the person's user data right here (same form as in App-Verwaltung) */
   const ue=m?m.email:lc(p.email),uinv=ue&&ADM.inv.some(i=>i.id===ue),canEd=ACC&&can("users.edit")&&(m||uinv)&&(isOwner()||!ADMINS.includes(ue));
   const edBtn=canEd?cico(ADM.cedit===ue?"close":"edit",L(ADM.cedit===ue?"Schliessen":"Benutzerdaten bearbeiten"),'data-ced="'+esc(ue)+'" aria-expanded="'+(ADM.cedit===ue)+'"',ADM.cedit===ue?" on":""):"";
-  const edForm=canEd&&ADM.cedit===ue?editForm({email:ue,m,name:p.name,role:p.role},false):"";
+  const edForm=canEd&&ADM.cedit===ue?editForm({email:ue,m,name:p.name,role:p.role},true):"";
   const rSel=ACC&&canRole(ue)&&(m||uinv)?roleSel({email:ue}):"";
   if(!(AV("food")||AV("bday")||ACC))return "";
   if(ACC){
@@ -2078,7 +2139,7 @@ window.crewExtra=function(p){
   }
   if(m&&AV("bday")){const b=bdShort(m.birthday);ch.push(b?'<span class="bday">'+esc(L("Geburtstag"))+' '+esc(b)+'</span>':(ACC?na(L("Geburtstag")+": –"):""))}
   if(m&&AV("food")){const t=dietText(m);ch.push(t?'<span class="diet">'+esc(t)+'</span>':(m.diet?"":(ACC?na(L("Essen")+": "+L("keine Angaben")):"")))}
-  if(edBtn)ch.push(edBtn);if(rSel)ch.push(rSel);
+  if(edBtn)ch.push(edBtn);
   const h=ch.filter(Boolean).join("");return (h?'<div class="pinfo">'+h+'</div>':"")+edForm;
 };
 document.addEventListener("click",e=>{const b=e.target.closest("[data-ced]");if(!b||!can("users.edit"))return;e.preventDefault();e.stopPropagation();ADM.cedit=ADM.cedit===b.dataset.ced?"":b.dataset.ced;render()},true);
