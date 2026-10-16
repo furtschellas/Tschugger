@@ -1,7 +1,7 @@
 /* Service worker: app files load fresh from the network when online and from the cache when offline
    (film locations often have no reception). The crew data file is never cached here – the app keeps
    its own last copy – and nothing from Firebase sign-in or the database is cached. */
-const CACHE="crew-app-v4";
+const CACHE="crew-app-v5";
 const SHELL=["./","index.html","manifest.webmanifest","icon.svg","icon-180.png","icon-192.png","icon-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
@@ -27,3 +27,8 @@ self.addEventListener("fetch",e=>{
   }));
   e.waitUntil(net.catch(()=>{}));
 });
+/* push notifications (reminders for upcoming events); a tap opens the app at «Meine Termine» */
+self.addEventListener("push",e=>{let d={};try{d=e.data?e.data.json():{}}catch(_){d={body:e.data&&e.data.text()}}
+  e.waitUntil(self.registration.showNotification(d.title||"TSCHUGGER",{body:d.body||"",tag:d.tag||undefined,icon:"icon-192.png",badge:"icon-192.png",data:{url:d.url||"./#my"}}))});
+self.addEventListener("notificationclick",e=>{e.notification.close();const url=new URL((e.notification.data&&e.notification.data.url)||"./#my",self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({type:"window",includeUncontrolled:true}).then(cs=>{for(const c of cs){if(c.url.startsWith(self.registration.scope)&&"focus" in c){c.postMessage({open:"my"});return c.focus()}}return self.clients.openWindow(url)}))});

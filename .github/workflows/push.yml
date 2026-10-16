@@ -1,0 +1,44 @@
+name: Push-Nachrichten
+
+# wird vom Cloudflare Worker alle 10 Minuten gestartet (zuverlässig); der eigene Zeitplan ist nur die Reserve
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: push
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bereits verschickte holen
+        uses: actions/cache/restore@v4
+        with:
+          path: sent.json
+          key: push-sent-${{ github.run_id }}
+          restore-keys: push-sent-
+      - run: pip install -q cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1
+      - name: Fällige Erinnerungen schicken
+        env:
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+        run: python tools/push_send.py
+      - name: Verschickte merken
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: sent.json
+          key: push-sent-${{ github.run_id }}
