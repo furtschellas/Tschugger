@@ -597,3 +597,8 @@ html body #view .acpage .only-food fieldset.efood>legend{display:none}
 /* Mein Konto: the four groups always in one row */
 html body #view .asub.acsub{grid-auto-flow:column!important;grid-template-columns:none!important;grid-auto-columns:1fr!important;gap:2px}
 html body #view .asub.acsub button{padding:8px 2px!important;white-space:nowrap;min-width:0;font-size:13.5px}
+/* Mein Konto › App: the chosen appearance and language in pink */
+html body #view .acpage .thm{display:flex;flex-wrap:wrap;gap:8px}
+html body #view .acpage .thm button{font:inherit;font-size:14px;font-weight:600;min-height:38px;padding:0 16px;border-radius:999px;border:1px solid var(--acc-soft);background:transparent;color:var(--accent);cursor:pointer}
+html body #view .acpage .thm button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+html body #view .acpage .thm button:not([aria-pressed="true"]):hover{background:var(--acc-tint)}
