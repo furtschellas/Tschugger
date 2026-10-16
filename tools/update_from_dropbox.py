@@ -340,7 +340,8 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=()):
             for g in ex:
                 for it in extra.get(_norm_sc(sc), {}).get(g, []):
                     if not any(x["f"] == it["f"] for x in ex[g]) and not any(x["f"] == it["f"] for x in own): ex[g].append(it)
-        new = own + ex["s"] + ex["pdf"] + ex["loc"][:30] + ex["recce"][:30]
+        new = own + ex["s"] + ex["pdf"] + ex["loc"][:30]
+        if not new: new = ex["recce"][:30]   # recce pictures only for scenes without any blocking / shot breakdown / set pictures – never mixed
         if new != (b.get("media") or []): b["media"] = new; changed = True
     want_files.update(WANT)
     cache = {k: v for k, v in cache.items() if k in used}
