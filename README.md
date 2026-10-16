@@ -6,4 +6,4 @@ Website-Version der Crew-App (Drehplan, Callsheet, Locations, Crew, Infos) für 
 - Anmeldung mit E-Mail und Passwort über Firebase Authentication. Nur eingeladene Adressen können beitreten; der Admin verwaltet Einladungen und Sperren in der App (Konto → Benutzer verwalten).
 - `data.enc.json` – die Crew-Daten, verschlüsselt (AES-GCM). Den Schlüssel bekommen nur angemeldete, freigeschaltete Mitglieder aus Firestore.
 - `firestore.rules` – die Zugriffsregeln für Firestore.
-- `tools/publish.py` – verschlüsselt einen Daten-Export neu; wird von der stündlichen Aktualisierung aufgerufen.
+- `tools/update_from_dropbox.py` – liest die Dropbox (nur lesend) und schreibt die verschlüsselten Daten; läuft alle 30 Minuten als GitHub Action.

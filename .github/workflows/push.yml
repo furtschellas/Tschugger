@@ -3,7 +3,7 @@ name: Push-Nachrichten
 # wird vom Cloudflare Worker alle 10 Minuten gestartet (zuverlässig); der eigene Zeitplan ist nur die Reserve
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -35,6 +35,8 @@ jobs:
       - name: Fällige Erinnerungen schicken
         env:
           CREW_KEY: ${{ secrets.CREW_KEY }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
         run: python tools/push_send.py
       - name: Verschickte merken
         if: always()

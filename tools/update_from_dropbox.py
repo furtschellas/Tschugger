@@ -28,11 +28,14 @@ def status(state, msg, **extra):
     new["at"] = now.isoformat().replace("+00:00", "Z")
     p.write_text(json.dumps(new, ensure_ascii=False, indent=1) + "\n")
 
-_missing = [k for k in ("CREW_KEY", "ANTHROPIC_API_KEY", "DROPBOX_APP_KEY", "DROPBOX_REFRESH_TOKEN") if not os.environ.get(k, "").strip()]
+sys.path.insert(0, str(R / "tools"))
+import fsadmin  # noqa: E402  (service account: the crew key comes from Firestore secret/key, so a key change needs no secret update)
+_missing = [k for k in ("ANTHROPIC_API_KEY", "DROPBOX_APP_KEY", "DROPBOX_REFRESH_TOKEN") if not os.environ.get(k, "").strip()]
+if not (os.environ.get("CREW_KEY", "").strip() or os.environ.get("FIREBASE_SA", "").strip()): _missing.insert(0, "CREW_KEY")
 if _missing and __name__ == "__main__":
     print("• Noch nicht eingerichtet – fehlende Secrets:", ", ".join(_missing))
     status("setup", "Noch nicht eingerichtet", missing=_missing); sys.exit(0)
-KEY = base64.b64decode(os.environ["CREW_KEY"].strip())
+KEY = base64.b64decode(fsadmin.crew_key_b64() or os.environ.get("CREW_KEY", "").strip())
 ROOT = (os.environ.get("DROPBOX_ROOT") or "ns:14935064499").rstrip("/")
 ROOT3D = (os.environ.get("DROPBOX_ROOT_3D") or "ns:13132709057").rstrip("/")
 ROOTAUF = (os.environ.get("DROPBOX_ROOT_AUF") or "ns:15240921299").rstrip("/")
@@ -42,10 +45,26 @@ PIC_BUDGET = [int(os.environ.get("PIC_BUDGET") or 250)]   # and at most this man
 MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
 FORCE = os.environ.get("FORCE", "").lower() in ("ja", "yes", "true", "1")
 EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
+TRIGGER = os.environ.get("TRIGGER", "")   # «cron» when the Cloudflare Worker started the run on its schedule
 NOW = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 DEFAULT_SHEET = "https://docs.google.com/spreadsheets/d/1-90uPfHztMs7i0u_zW473Jd0CUHdC7nlxZrzfgBqqJg/edit?gid=1204350231"
 
 def log(*a): print("•", *a, flush=True)
+
+def write_stamp():
+    """stamp.json (public, tiny): the app polls this instead of the whole data file. s = stamp of data.enc.json,
+    c = last check of the Dropbox. Rewritten when the data changed, after a manual run, or when c is older than 2 h."""
+    p = R / "stamp.json"
+    try: s = json.load(open(R / "data.enc.json")).get("stamp", "")
+    except Exception: s = ""
+    try: old = json.load(open(p))
+    except Exception: old = {}
+    try: age = (datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.fromisoformat(old.get("c", "").replace("Z", "+00:00"))).total_seconds()
+    except Exception: age = 1e9
+    manual = EVENT == "workflow_dispatch" and TRIGGER != "cron"
+    if old.get("s") == s and age < 2 * 3600 and not manual: return
+    p.write_text(json.dumps({"s": s, "c": NOW}) + "\n")
+def _h(x): return "#" + hashlib.sha1(str(x).encode()).hexdigest()[:6]   # short anonymous tag instead of a file name (public log)
 
 # ---------- encryption (same format as tools/publish.py) ----------
 def dec_file(p):
@@ -77,15 +96,29 @@ class Dbx:
         if r.status_code != 200: sys.exit("Dropbox-Anmeldung fehlgeschlagen (HTTP %s)" % r.status_code)
         self.h = {"Authorization": "Bearer " + r.json()["access_token"]}
 
-    def list_all(self):
-        out = []
-        r = requests.post("https://api.dropboxapi.com/2/files/list_folder", headers=self.h, timeout=60,
-                          json={"path": ROOT, "recursive": True, "include_non_downloadable_files": False})
-        if r.status_code != 200: sys.exit("Dropbox-Ordner nicht lesbar (HTTP %s)" % r.status_code)
-        j = r.json(); out += j["entries"]
+    def api(self, ep, body):
+        """Dropbox API call with retries on rate limits and server errors; any other error raises"""
+        for i in range(4):
+            try:
+                r = requests.post("https://api.dropboxapi.com/2/" + ep, headers=self.h, timeout=60, json=body)
+            except requests.RequestException as ex:
+                if i == 3: raise RuntimeError("Dropbox nicht erreichbar: " + type(ex).__name__)
+                time.sleep(5 * (i + 1)); continue
+            if r.status_code == 200: return r.json()
+            if r.status_code in (429, 500, 502, 503, 504) and i < 3:
+                time.sleep(int(r.headers.get("Retry-After") or 5 * (i + 1))); continue
+            raise RuntimeError("Dropbox HTTP %s (%s)" % (r.status_code, ep))
+
+    def _list(self, path, recursive, nd=True):
+        j = self.api("files/list_folder", {"path": path, "recursive": recursive, "include_non_downloadable_files": nd})
+        out = list(j["entries"])
         while j.get("has_more"):
-            j = requests.post("https://api.dropboxapi.com/2/files/list_folder/continue", headers=self.h, timeout=60,
-                              json={"cursor": j["cursor"]}).json(); out += j["entries"]
+            j = self.api("files/list_folder/continue", {"cursor": j["cursor"]}); out += j["entries"]
+        return out
+
+    def list_all(self):
+        try: out = self._list(ROOT, True, False)
+        except Exception as ex: sys.exit("Dropbox-Ordner nicht lesbar (%s)" % str(ex)[:80])
         files = []
         for e in out:
             if e.get(".tag") != "file": continue
@@ -95,12 +128,8 @@ class Dbx:
         return files
 
     def list_path(self, path, recursive=False):
-        """children of a folder (files and folders, with path_lower); [] if the folder cannot be read"""
-        r = requests.post("https://api.dropboxapi.com/2/files/list_folder", headers=self.h, timeout=60, json={"path": path, "recursive": recursive})
-        if r.status_code != 200: return []
-        j = r.json(); out = j["entries"]
-        while j.get("has_more"):
-            j = requests.post("https://api.dropboxapi.com/2/files/list_folder/continue", headers=self.h, timeout=60, json={"cursor": j["cursor"]}).json(); out += j["entries"]
+        """children of a folder (files and folders); raises if the folder cannot be read – an empty list always means empty"""
+        out = self._list(path, recursive)
         return [{"name": e["name"], "tag": e[".tag"], "id": e.get("id"), "modified": e.get("server_modified") or e.get("client_modified"), "path": e.get("path_display") or "",
                  "size": e.get("size", 0), "hash": e.get("content_hash") or ""} for e in out]
 
@@ -108,6 +137,44 @@ class Dbx:
         r = requests.post("https://content.dropboxapi.com/2/files/download", timeout=180,
                           headers=dict(self.h, **{"Dropbox-API-Arg": json.dumps({"path": fid})}))
         r.raise_for_status(); return r.content
+
+# ---------- where the encrypted pictures live: blk/ in the repository, or Cloudflare R2 when R2_* secrets are set ----------
+class BlkStore:
+    """R2 mode: files made in this run are written to blk/ locally and uploaded at the end (sync); the repository no
+    longer keeps blk/ (the workflow removes it from git). Without R2 everything stays as before (blk/ in the repository)."""
+    def __init__(self):
+        self.r2 = None; self.keys = set(); self.gone = []
+        acct, kid, sec = (os.environ.get(k, "").strip() for k in ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"))
+        if acct and kid and sec:
+            import boto3
+            self.bucket = os.environ.get("R2_BUCKET", "").strip() or "tschugger-blk"
+            self.r2 = boto3.client("s3", endpoint_url="https://%s.r2.cloudflarestorage.com" % acct, aws_access_key_id=kid,
+                                   aws_secret_access_key=sec, region_name="auto")
+            for pg in self.r2.get_paginator("list_objects_v2").paginate(Bucket=self.bucket, Prefix="blk/"):
+                for o in pg.get("Contents", []): self.keys.add(o["Key"])
+            log("Bilder-Speicher: R2,", len(self.keys), "Dateien")
+    def have(self, fn): return fn in self.keys or os.path.exists(fn)
+    def files(self):
+        loc = {"blk/" + f for f in os.listdir("blk") if f.endswith(".bin")} if os.path.isdir("blk") else set()
+        return loc | self.keys
+    def remove(self, fn):
+        if os.path.exists(fn): os.remove(fn)
+        if fn in self.keys: self.gone.append(fn); self.keys.discard(fn)
+    def sync(self):
+        """R2: upload what is only local, delete what is no longer used"""
+        if not self.r2: return
+        from concurrent.futures import ThreadPoolExecutor
+        up = [fn for fn in self.files() if fn not in self.keys and os.path.exists(fn)]
+        def put(fn):
+            self.r2.upload_file(fn, self.bucket, fn, ExtraArgs={"ContentType": "application/octet-stream", "CacheControl": "public, max-age=31536000, immutable"})
+        with ThreadPoolExecutor(16) as ex: list(ex.map(put, up))
+        self.keys.update(up)
+        for i in range(0, len(self.gone), 1000):
+            self.r2.delete_objects(Bucket=self.bucket, Delete={"Objects": [{"Key": k} for k in self.gone[i:i + 1000]], "Quiet": True})
+        log("R2: hochgeladen", len(up), "· gelöscht", len(self.gone)); self.gone = []
+
+BLKS = None
+def blk_have(fn): return BLKS.have(fn) if BLKS else os.path.exists(fn)
 
 # ---------- extra blocking pictures: PDF pages and the AUFLÖSUNG folder ----------
 BPDFE = {}
@@ -133,7 +200,7 @@ def small_jpeg(data):
 
 def _thumb(dbx, e, fn):
     """encrypted preview picture of a Dropbox photo (made once, kept in blk/)"""
-    if os.path.exists(fn): return True
+    if blk_have(fn): return True
     if time.time() > PIC_DEADLINE or PIC_BUDGET[0] <= 0: return False
     PIC_BUDGET[0] -= 1
     try:
@@ -141,20 +208,20 @@ def _thumb(dbx, e, fn):
             {"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
         r.raise_for_status(); _enc_write(fn, small_jpeg(r.content)); return True
     except Exception as ex:
-        log("Vorschau fehlt:", e["name"], str(ex)[:80]); return False
+        log("Vorschau fehlt:", _h(e["name"]), type(ex).__name__); return False
 
 def _pdf_pages(dbx, e, cache):
     """every page of a PDF as an encrypted JPEG (blk/<key>p<i>.bin); the page count is kept in meta.pdfPages"""
     key = _key(e, "|pdf")
     n = cache.get(key)
-    if n is not None and all(os.path.exists("blk/%sp%d.bin" % (key, i)) for i in range(n)):
+    if n is not None and all(blk_have("blk/%sp%d.bin" % (key, i)) for i in range(n)):
         return key, ["blk/%sp%d.bin" % (key, i) for i in range(n)]
     if time.time() > PIC_DEADLINE or PIC_BUDGET[0] <= 0: return key, []
     PIC_BUDGET[0] -= 4
     try:
         with tempfile.TemporaryDirectory() as td:
             src = os.path.join(td, "in.pdf"); open(src, "wb").write(dbx.download(e["id"]))
-            subprocess.run(["pdftoppm", "-jpeg", "-jpegopt", "quality=78", "-scale-to", "1280", "-l", "16", src, os.path.join(td, "p")], check=True, timeout=300)
+            subprocess.run(["pdftoppm", "-jpeg", "-jpegopt", "quality=78", "-scale-to", "1280", "-l", "40", src, os.path.join(td, "p")], check=True, timeout=300)
             pages = sorted(f for f in os.listdir(td) if f.startswith("p") and f.endswith(".jpg"))
             out = []
             for i, f in enumerate(pages):
@@ -162,7 +229,7 @@ def _pdf_pages(dbx, e, cache):
         cache[key] = len(out)
         return key, out
     except Exception as ex:
-        log("PDF-Seiten nicht erzeugt:", e["name"], str(ex)[:120]); return key, []
+        log("PDF-Seiten nicht erzeugt:", _h(e["name"]), type(ex).__name__); return key, []
 
 def _norm_sc(x):
     x = re.sub(r"^0+(?=\d)", "", str(x).strip()).lower().replace(" ", "")
@@ -259,6 +326,7 @@ def add_recce(dbx, days, add):
     log("Recce-Bilder zugeordnet:", n)
 
 WANT = set()
+PARTIAL = []   # parts that could not be read in this run: then no picture is deleted (they would only come back later)
 
 def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
     changed = False
@@ -341,7 +409,7 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
     try:
         add_recce(dbx, days, add)
     except Exception as ex:
-        log("Recce nicht gelesen:", str(ex)[:160])
+        log("Recce nicht gelesen:", str(ex)[:160]); PARTIAL.append("recce")
     # attach: to the blocking entry of the scene, or a new entry «AUF <scene>»
     by = {}
     for b in blk:
@@ -414,6 +482,8 @@ def spec():
         SPEC = dec_file(R / "tools" / "spec.enc.json")["spec"]
     return SPEC
 
+class Truncated(RuntimeError): pass
+
 def claude(parts, task, max_tokens=32000):
     """parts: list of content blocks; returns parsed JSON from the answer."""
     body = {"model": MODEL, "max_tokens": max_tokens, "stream": True,
@@ -422,7 +492,7 @@ def claude(parts, task, max_tokens=32000):
     h = {"x-api-key": os.environ["ANTHROPIC_API_KEY"].strip(), "anthropic-version": "2023-06-01", "content-type": "application/json"}
     for attempt in range(3):
         try:
-            text = []
+            text = []; stop = ""
             with requests.post("https://api.anthropic.com/v1/messages", headers=h, json=body, stream=True, timeout=(30, 600)) as r:
                 if r.status_code != 200:
                     raise RuntimeError("Claude-API HTTP %s: %s" % (r.status_code, r.text[:200]))
@@ -431,12 +501,15 @@ def claude(parts, task, max_tokens=32000):
                     ev = json.loads(line[5:])
                     if ev.get("type") == "content_block_delta" and ev["delta"].get("type") == "text_delta": text.append(ev["delta"]["text"])
                     if ev.get("type") == "error": raise RuntimeError("Claude-API Fehler: %s" % ev.get("error"))
+                    if ev.get("type") == "message_delta" and (ev.get("delta") or {}).get("stop_reason") == "max_tokens": stop = "max_tokens"
+            if stop == "max_tokens": raise Truncated("Antwort abgeschnitten (zu lang)")
             t = "".join(text).strip()
             t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
             v = json.loads(t)
             # accept {"crew": [...]} style wrappers where a plain array was asked for
             if isinstance(v, dict) and "Array" in task and len(v) == 1 and isinstance(next(iter(v.values())), list): v = next(iter(v.values()))
             return v
+        except Truncated: raise
         except Exception as e:
             log("Claude-Versuch", attempt + 1, "fehlgeschlagen:", str(e)[:160])
             time.sleep(10 * (attempt + 1))
@@ -549,7 +622,7 @@ def add_drive_times(data):
                 log("Geocoding fehlgeschlagen:", type(e).__name__); return None
             if j:
                 geo[addr] = [float(j[0]["lat"]), float(j[0]["lon"])]; return geo[addr]
-        geo[addr] = None; log("Adresse nicht gefunden:", addr)
+        geo[addr] = None; log("Adresse nicht gefunden:", _h(addr))
         return None
     def rt(a, b):
         k = a + "|" + b
@@ -584,7 +657,7 @@ def main():
         f = requests.get("https://firestore.googleapis.com/v1/projects/tschugger-83692/databases/(default)/documents/config/app", timeout=20).json().get("fields", {})
         cfg = {k: list(v.values())[0] for k, v in f.items()}
     except Exception: log("App-Einstellungen nicht lesbar – Standard wird verwendet")
-    if cfg.get("autoUpdate") is False and EVENT == "schedule":
+    if cfg.get("autoUpdate") is False and (EVENT == "schedule" or TRIGGER == "cron"):
         log("Automatische Aktualisierung ist in den App-Einstellungen ausgeschaltet."); status("off", "In den App-Einstellungen ausgeschaltet"); return
 
     data = dec_file(R / "data.enc.json") or {}
@@ -596,20 +669,38 @@ def main():
     for s in meta.get("sources", []): oldkind.setdefault(s.get("kind"), s)
     changed = False; sources = []
 
+    global BLKS
+    BLKS = BlkStore()
+    if BLKS.r2 and os.environ.get("BLK_BASE", "").strip(): meta["blkBase"] = os.environ["BLK_BASE"].strip().rstrip("/") + "/"
+    else: meta.pop("blkBase", None)
     dbx = Dbx(); files = dbx.list_all(); log("Dropbox gelesen:", len(files), "Dateien")
 
     def is_new(kind, f): return FORCE or old.get((kind, base(f["name"]))) != f["modified"]
+    olds = {(s.get("kind"), base(s.get("name"))): s for s in meta.get("sources", [])}
+    fails = dict(meta.get("fails") or {}); seen = set()   # «kind|file|modified» → failed attempts (at most 3 per file version)
+    def fkey(kind, f): return kind + "|" + base(f["name"]) + "|" + str(f["modified"])
+    def keep_old(kind, f):
+        """the file could not be used: keep the previous entry in the sources, so the file is tried again in the next run"""
+        sources[-1] = olds.get((kind, base(f["name"]))) if kind == "dispo" else oldkind.get(kind)
+    def may_try(kind, f):
+        k = fkey(kind, f); seen.add(k)
+        if FORCE or fails.get(k, 0) < 3: return True
+        keep_old(kind, f); log(kind, "übersprungen nach 3 Fehlversuchen", _h(f["name"])); return False
+    def failed(kind, f, why):
+        k = fkey(kind, f); seen.add(k); fails[k] = fails.get(k, 0) + 1
+        keep_old(kind, f); log(kind, "nicht übernommen (Versuch %d/3):" % fails[k], str(why)[:120])
 
     # schedule
     f = pick_schedule(files)
     if f:
         sources.append({"kind": "schedule", "name": f["name"], "modified": f["modified"]})
-        if is_new("schedule", f):
-            log("Drehplan: neu, wird ausgelesen")
+        if is_new("schedule", f) and may_try("schedule", f):
+          log("Drehplan: neu, wird ausgelesen")
+          try:
             res = claude([pdf_block(dbx.download(f["id"]))],
                 "Erzeuge aus diesem Drehplan ein JSON-Objekt {\"scheduleVersion\": \"Sched …\" (aus dem Dateinamen: %s), \"subtitle\": \"Dreh Wallis · TT.MM.–TT.MM.JJJJ\", \"cast\": {Rollennummer: Rollenname}, \"days\": [ein Objekt pro Kalendertag gemäss Collection \"days\", jeweils mit Feld \"id\" = Datum]}. Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisherige Übersetzungen zum Wiederverwenden (gleicher Text = gleiche Übersetzung): %s"
                 % (f["name"].rsplit("/", 1)[-1], json.dumps(strip_ids(data.get("days"))[:40], ensure_ascii=False)[:60000]), 64000)
-            days = res.get("days") or []
+            days = (res.get("days") if isinstance(res, dict) else None) or []
             if len(days) >= max(3, len(data.get("days") or []) // 2):
                 for i, d in enumerate(sorted(days, key=lambda d: d.get("date", ""))): d["order"] = i; d["id"] = d.get("date") or d.get("id")
                 data["days"] = days; meta["scheduleVersion"] = res.get("scheduleVersion") or meta.get("scheduleVersion")
@@ -617,14 +708,16 @@ def main():
                 if res.get("subtitle"): meta["subtitle"] = res["subtitle"]
                 changed = True; log("Drehplan:", len(days), "Tage")
             else:
-                log("Drehplan: Ergebnis unvollständig – bisherige Daten bleiben"); sources[-1] = oldkind.get("schedule") or sources[-1]
+                failed("schedule", f, "Ergebnis unvollständig – bisherige Daten bleiben")
+          except Exception as e: failed("schedule", f, e)
 
     # crew
     f = pick_crew(files)
     if f:
         sources.append({"kind": "crew", "name": f["name"], "modified": f["modified"]})
-        if is_new("crew", f):
-            log("Crewliste: neu, wird ausgelesen")
+        if is_new("crew", f) and may_try("crew", f):
+          log("Crewliste: neu, wird ausgelesen")
+          try:
             res = claude([pdf_block(dbx.download(f["id"]))],
                 "Erzeuge aus dieser Crewliste ein JSON-Array gemäss Collection \"crew\" (ein Objekt pro Department, mit Feld \"id\" = \"c00\", \"c01\" …), mit den Übersetzungsfeldern. Bisherige Übersetzungen zum Wiederverwenden: %s"
                 % json.dumps(strip_ids(data.get("crew")), ensure_ascii=False)[:40000], 32000)
@@ -632,24 +725,28 @@ def main():
                 for i, d in enumerate(res): d["order"] = i; d["id"] = "c%02d" % i
                 data["crew"] = res; changed = True; log("Crewliste:", len(res), "Departments")
             else:
-                log("Crewliste: Ergebnis unvollständig – bisherige Daten bleiben"); sources[-1] = oldkind.get("crew") or sources[-1]
+                failed("crew", f, "Ergebnis unvollständig – bisherige Daten bleiben")
+          except Exception as e: failed("crew", f, e)
 
     # good-to-know
     f = pick_info(files)
     if f:
         sources.append({"kind": "info", "name": f["name"], "modified": f["modified"]})
-        if is_new("info", f):
-            log("Infos: neu, werden ausgelesen")
+        if is_new("info", f) and may_try("info", f):
+          log("Infos: neu, werden ausgelesen")
+          try:
             res = claude([pdf_block(dbx.download(f["id"]))], "Erzeuge aus diesem Dokument ein JSON-Array gemäss Collection \"places\" (Feld \"id\" = \"p00\", \"p01\" …), mit den Übersetzungsfeldern.", 16000)
             if isinstance(res, list) and res:
                 for i, d in enumerate(res): d["order"] = i; d["id"] = "p%02d" % i
                 data["places"] = res; changed = True; log("Infos:", len(res), "Kategorien")
+            else: failed("info", f, "Ergebnis leer")
+          except Exception as e: failed("info", f, e)
 
     # callsheets: every new or changed file, newest per shooting day wins
     dispos = {d.get("date") or d.get("id"): d for d in (data.get("dispos") or [])}
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        if not is_new("dispo", f): continue
+        if not is_new("dispo", f) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
             d = claude([pdf_block(dbx.download(f["id"]))],
@@ -659,20 +756,23 @@ def main():
                 prev = dispos.get(d["date"])
                 if not prev or (prev.get("_mod") or "") <= (f["modified"] or ""):
                     d["id"] = d["date"]; d["_mod"] = f["modified"]; dispos[d["date"]] = d; changed = True
-        except Exception as e: log("Callsheet nicht lesbar:", str(e)[:120])
+            else: failed("dispo", f, "kein Drehtag erkannt")
+        except Exception as e: failed("dispo", f, e)
     if dispos: data["dispos"] = sorted(dispos.values(), key=lambda d: d.get("date", ""))
 
     # screenplay
     f = pick_script(files)
     if f:
         sources.append({"kind": "script", "name": f["name"], "modified": f["modified"]})
-        if is_new("script", f):
-            log("Drehbuch: neu, wird eingelesen")
+        if is_new("script", f) and may_try("script", f):
+          log("Drehbuch: neu, wird eingelesen")
+          try:
             sc = script_from_pdf(dbx.download(f["id"]))
             if len(sc) >= max(20, int(len(scr) * 0.7)):
                 scr = sc; changed = True; log("Drehbuch:", len(sc), "Szenen")
             else:
-                log("Drehbuch: zu wenige Szenen erkannt (%d) – bisheriges bleibt" % len(sc)); sources[-1] = oldkind.get("script") or sources[-1]
+                failed("script", f, "zu wenige Szenen erkannt (%d) – bisheriges bleibt" % len(sc))
+          except Exception as e: failed("script", f, e)
 
     # weekly prep / rehearsal schedule (shared folder «3D» → 11_Planning Prep Rehearsals): newest PDF, outside «z OLD»
     try:
@@ -687,7 +787,7 @@ def main():
         f = max(wk, key=stand)
         name = "3D/11_Planning Prep Rehearsals/" + f["name"]
         sources.append({"kind": "prep", "name": name, "modified": f["modified"]})
-        if FORCE or old.get(("prep", base(name))) != f["modified"]:
+        if (FORCE or old.get(("prep", base(name))) != f["modified"]) and may_try("prep", {"name": name, "modified": f["modified"]}):
             log("Prep-Wochenplanung: neu, wird ausgelesen")
             ex = {"days": (data.get("prepro") or [])[:2], "meta": {k: v for k, v in (meta.get("prepro") or {}).items() if k in ("title", "range", "issued", "distribution", "note")}}
             try:
@@ -717,16 +817,16 @@ def main():
                                 od = [x for x in (r2.get("days") if isinstance(r2, dict) else None) or [] if x.get("date") == today]
                                 if od:
                                     od[0]["id"] = today; od[0]["older"] = oe["name"]; days.append(od[0]); have.add(today)
-                                    log("Prep-Wochenplanung: heutiger Tag aus älterer Version", oe["name"]); break
+                                    log("Prep-Wochenplanung: heutiger Tag aus älterer Version", _h(oe["name"])); break
                         except Exception as ex2:
                             log("Ältere Wochenplanung nicht lesbar:", str(ex2)[:120])
                     data["prepro"] = sorted(days, key=lambda d: d.get("date", ""))
                     pm = res.get("meta") or {}; pm["source"] = f["name"]; meta["prepro"] = pm
                     changed = True; log("Prep-Wochenplanung:", len(days), "Tage")
                 else:
-                    log("Prep-Wochenplanung: Ergebnis unvollständig – bisherige bleibt"); sources[-1] = oldkind.get("prep") or sources[-1]
+                    failed("prep", {"name": name, "modified": f["modified"]}, "Ergebnis unvollständig – bisherige bleibt")
             except Exception as e:
-                log("Prep-Wochenplanung nicht lesbar:", str(e)[:120]); sources[-1] = oldkind.get("prep") or sources[-1]
+                failed("prep", {"name": name, "modified": f["modified"]}, e)
 
     # floorplans (PDF) and blocking photo folders (shared folder «3D» → 0_BlockingFloorplans)
     try:
@@ -773,19 +873,24 @@ def main():
             for e in sorted(bmed.get(b["name"], []), key=lambda e: e["name"].lower()):
                 key = hashlib.sha1((str(e.get("id")) + "|" + str(e.get("modified"))).encode()).hexdigest()[:20]
                 fn = "blk/" + key + ".bin"; want_files.add(fn)
-                if not os.path.exists(fn):
+                if not blk_have(fn):
+                    if time.time() > PIC_DEADLINE or PIC_BUDGET[0] <= 0: want_files.discard(fn); continue   # follows in the next run
+                    PIC_BUDGET[0] -= 1
                     try:
                         r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps({"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
                         r.raise_for_status()
                         iv = secrets.token_bytes(12)
                         open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, small_jpeg(r.content), None)); changed = True
                     except Exception as ex:
-                        log("Vorschau fehlt:", e["name"], str(ex)[:80]); want_files.discard(fn); continue
+                        log("Vorschau fehlt:", _h(e["name"]), type(ex).__name__); want_files.discard(fn); continue
                 vid = bool(re.search(r"\.(mov|mp4|m4v)$", e["name"], re.I))
                 vf = None
                 if vid:  # playable copy: 720p H.264 MP4, encrypted like the previews
                     vf = "blk/" + key + ".mp4.bin"; want_files.add(vf)
-                    if not os.path.exists(vf):
+                    left = PIC_DEADLINE - time.time()
+                    if not blk_have(vf) and (left < 120 or PIC_BUDGET[0] < 10): want_files.discard(vf); vf = None   # films: only with enough time left
+                    elif not blk_have(vf):
+                        PIC_BUDGET[0] -= 10
                         try:
                             import shutil
                             ff = shutil.which("ffmpeg")
@@ -798,13 +903,13 @@ def main():
                                 src = os.path.join(td, "in" + os.path.splitext(e["name"])[1].lower()); dst = os.path.join(td, "out.mp4")
                                 open(src, "wb").write(dbx.download(e["id"]))
                                 subprocess.run([ff, "-y", "-loglevel", "error", "-i", src, "-vf", "scale=-2:'min(720,ih)'", "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
-                                                "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", dst], check=True, timeout=900)
+                                                "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", dst], check=True, timeout=max(60, min(900, int(left))))
                                 vbytes = open(dst, "rb").read()
                             if len(vbytes) > 45e6: raise RuntimeError("zu gross")
                             iv = secrets.token_bytes(12)
                             open(vf, "wb").write(iv + AESGCM(KEY).encrypt(iv, vbytes, None)); changed = True
                         except Exception as ex:
-                            log("Film nicht umgewandelt:", e["name"], str(ex)[:120]); want_files.discard(vf); vf = None
+                            log("Film nicht umgewandelt:", _h(e["name"]), str(ex)[:60]); want_files.discard(vf); vf = None
                 items.append({"n": e["name"], "t": "vid" if vid else "img", "f": fn, **({"v": vf} if vf else {}),
                               "u": folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder})
             if items != [m for m in (b.get("media") or []) if not m.get("g")]:
@@ -817,7 +922,7 @@ def main():
         try:
             changed = add_more_blocking(dbx, blk, meta, want_files, data.get("days") or [], data.get("locations") or [], [(x, next((e for e in fl if e["name"] == x.get("file")), None)) for x in fps]) or changed
         except Exception as ex:
-            log("Auflösung/Seiten nicht gelesen:", str(ex)[:160])
+            log("Auflösung/Seiten nicht gelesen:", str(ex)[:160]); PARTIAL.append("auf")
         # store every picture once (meta.bm) and let the scenes refer to it by number – keeps the data file small
         bm, idx = [], {}
         for b in blk:
@@ -829,9 +934,14 @@ def main():
             b["mi"] = mi
         if bm != (meta.get("bm") or []): changed = True
         meta["bm"] = bm
-        for bf in os.listdir("blk"):
-            if "blk/" + bf not in want_files and bf.endswith(".bin"):
-                os.remove("blk/" + bf); changed = True
+        if PARTIAL:   # something could not be read: delete nothing now (the pictures would only be made again later)
+            log("Aufräumen ausgelassen – nicht alles lesbar:", ", ".join(PARTIAL))
+        else:
+            gone = [fn for fn in BLKS.files() if fn not in want_files]
+            if len(gone) > max(200, len(want_files)):   # safety net: never wipe most of the pictures in one run
+                log("Aufräumen ausgelassen – zu viele Dateien wären gelöscht worden:", len(gone))
+            else:
+                for fn in gone: BLKS.remove(fn); changed = True
         for b in blk:  # every scene PDF as its own button (preview inside the shared scene folder)
             names = sorted(bpdf.get(b["name"], []))
             if not names: continue
@@ -851,9 +961,10 @@ def main():
         h = hashlib.sha256(txt.encode()).hexdigest()[:16]
         if FORCE or h != meta.get("locHash"):
             log("Motivliste: geändert, wird ausgelesen")
-            res = claude([{"type": "text", "text": "MOTIVLISTE (Tabelle, Zellen mit | getrennt, Links in <…>):\n" + txt}],
+            try: res = claude([{"type": "text", "text": "MOTIVLISTE (Tabelle, Zellen mit | getrennt, Links in <…>):\n" + txt}],
                 "Erzeuge daraus ein JSON-Array gemäss Collection \"locations\" (Feld \"id\" = \"l00\", \"l01\" …). Bestehende Einträge (für fehlende Maps-Links übernehmen): %s"
                 % json.dumps(strip_ids(data.get("locations")), ensure_ascii=False)[:40000], 32000)
+            except Exception as e: res = None; log("Motivliste nicht übernommen:", str(e)[:120])
             oldn = len(data.get("locations") or [])
             if isinstance(res, list) and (len(res) >= int(oldn * 0.8) or sheet != (oldkind.get("locations") or {}).get("link")):
                 for i, d in enumerate(res): d["order"] = i; d["id"] = "l%02d" % i
@@ -866,16 +977,21 @@ def main():
     elif oldkind.get("locations"):
         log("Motivliste nicht lesbar – bisherige bleibt"); sources.append(oldkind["locations"])
 
-    meta["sources"] = sources; meta["checkedAt"] = NOW
+    meta["sources"] = [x for x in sources if x]; meta.pop("checkedAt", None)   # «last checked» lives in stamp.json (otherwise the data file changes every run)
+    fails = {k: v for k, v in fails.items() if k in seen}
+    if fails: meta["fails"] = fails
+    else: meta.pop("fails", None)
     if changed: meta["updatedAt"] = NOW
     data["meta"] = meta
     for k in ("days", "crew", "locations", "places", "dispos"): data.setdefault(k, [])
     if not data["days"] or not data["crew"]: sys.exit("Keine Drehtage oder Crew – nichts veröffentlicht")
     try: add_drive_times(data)
     except Exception as e: log("Anfahrt nicht berechnet:", type(e).__name__)
+    if BLKS: BLKS.sync()   # R2: pictures first, so the new data never points to a picture that is not there yet
     w1 = enc_file(R / "data.enc.json", data)
     w2 = enc_file(R / "script.enc.json", {"script": [{k: d[k] for k in ("sc", "head", "text") if k in d} for d in scr]}) if scr else False
     log("Daten:", "geändert" if changed else "unverändert", "· Datei:", "neu geschrieben" if (w1 or w2) else "gleich")
+    write_stamp()
     status("ok", "Läuft", updatedAt=meta.get("updatedAt") or "", version=meta.get("scheduleVersion") or "")
 
 if __name__ == "__main__":
