@@ -2521,7 +2521,7 @@ VIEWS.today=function(){
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
   try{if(me&&vok("mycal")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
-    h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'</div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+'<b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?'<small>'+esc(x.where)+'</small>':'')+(x.driver?'<small>'+esc(L("Fahrer:in"))+': '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+
+    h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'</div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· 🚐 '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+
       '<button type="button" class="pillbtn" data-tomy>'+esc(L("Alle meine Termine"))+'</button></div>'}}catch(_){}
   /* calls */
   let myCall="";try{if(me&&dp){const myDep=fold(me.src||"").split(/[\s/]/)[0];const c=myDep?arr(dp.calls).find(z=>fold(z.dept||"").includes(myDep)):null;if(c)myCall=hm(c.t)+" · "+c.dept}}catch(_){}
