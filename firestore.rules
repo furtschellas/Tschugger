@@ -68,7 +68,7 @@ service cloud.firestore {
       allow write: if can('roles.assign') && email != myEmail() && !ownerEmail(email)
         && !exists(/databases/$(database)/documents/admins/$(email))
         && (request.resource == null || (request.resource.data.keys().hasOnly(['role', 'at']) && request.resource.data.role != 'admin'));
-      // wer einladen darf, gibt neuen Benutzer:innen automatisch die Rolle «Crew»
+      // wer einladen darf, gibt neuen Benutzenden automatisch die Rolle «Crew»
       allow create: if can('users.invite') && !ownerEmail(email)
         && request.resource.data.keys().hasOnly(['role', 'at']) && request.resource.data.role == 'crew';
     }
@@ -139,7 +139,7 @@ service cloud.firestore {
       allow read: if can('users.view') || can('users.edit') || can('crew.food') || can('crew.bday') || can('contacts.extra');
       // der Haupt-Admin selbst kann nicht gesperrt oder gelöscht werden
       allow update, delete: if isOwner() && !isRoot(resource.data.email);
-      // alle Admins dürfen die Profildaten der Benutzer:innen ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
+      // alle Admins dürfen die Profildaten der Benutzenden ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
       allow update: if can('users.edit') && (isOwner() || !ownerEmail(resource.data.email))
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'func']);
       allow get: if signedIn() && request.auth.uid == uid;
@@ -174,7 +174,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Lunch-Menüs pro Drehtag und Unit (Catering mit «Menüs eingeben»)
+    // Lunch-Menüs und Zwischenverpflegung pro Drehtag und Unit: nur Catering-Rolle und Admins
     match /menus/{date} {
       allow read: if isMember() || isAdmin();
       allow write: if (isAdmin() || isCatering()) && date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
