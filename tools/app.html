@@ -704,7 +704,7 @@ const memo=(k,f)=>{if(MEMO.has(k))return MEMO.get(k);const v=f();MEMO.set(k,v);r
 try{const pu=JSON.parse(localStorage.getItem("pu")||"null");if(pu&&typeof pu==="object")S.pu={"1":!!pu["1"],"2":!!pu["2"],"3":!!pu["3"]}}catch(e){}
 try{const t=localStorage.getItem("tab");if(t)S.tab=({map:"loc",music:"plan"})[t]||t}catch(e){}
 /* the app always opens on «Heute» (unless a link asks for another page) */
-if(!location.hash)S.tab="today";
+try{if(!location.hash&&localStorage.getItem("today")!=="0")S.tab="today"}catch(_){}
 
 function castChips(ids){
   const m=(S.meta&&S.meta.cast)||{};
@@ -1379,7 +1379,7 @@ const vok=k=>{try{return typeof window.viewOK!=="function"||window.viewOK(k)}cat
 const perm=p=>{try{return typeof window.canPerm!=="function"||window.canPerm(p)}catch(_){return false}};
 function tabsOn(){
   const ord=tabOrder();let t=Array.isArray(window.TABSON)?ord.filter(x=>window.TABSON.includes(x)||(x==="today"&&!window.TABSON.includes("-today"))):ord;
-  if(!VIEWS.today)t=t.filter(x=>x!=="today"); /* «Today» comes with the website (sign-in); the plain artifact has no such page */
+  if(!VIEWS.today||(window.todayOn&&!window.todayOn()))t=t.filter(x=>x!=="today"); /* «Today» comes with the website and can be switched off in the profile */ /* «Today» comes with the website (sign-in); the plain artifact has no such page */
   const scrAt=t.indexOf("script");
   if(window.SCRIPTON===false||!vok("script"))t=t.filter(x=>x!=="script");
   for(const [tab,k] of [["crew","crew"],["plan","plan"],["dispo","dispo"]])if(!vok(k))t=t.filter(x=>x!==tab);

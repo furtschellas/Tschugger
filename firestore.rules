@@ -131,7 +131,7 @@ service cloud.firestore {
     // Ansichts-Einstellungen pro Benutzer (Thema, Anzeige-Knöpfe, Units): jede Person nur ihre eigenen
     match /prefs/{uid} {
       allow get, delete: if signedIn() && request.auth.uid == uid;
-      allow create, update: if signedIn() && request.auth.uid == uid && request.resource.data.size() <= 12;
+      allow create, update: if signedIn() && request.auth.uid == uid && request.resource.data.size() <= 16;
     }
 
     // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren und entfernen kann nur der Haupt-Admin
