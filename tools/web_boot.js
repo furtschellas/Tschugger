@@ -1697,7 +1697,7 @@ const genderSel=(n,v,req)=>'<select name="'+n+'"'+(req?' required':'')+'><option
 function profileForm(onb){
   return '<form data-af="pf" novalidate>'+nameFields()+funcField()+contactFields(MEMBER)+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Geschlecht")+genderSel("gd",(MEMBER&&MEMBER.gender)||"",true)+'</label><fieldset class="efood"><legend>'+L("Essen")+'</legend><label>'+L("Ernährung")+dietSel("dt",(MEMBER&&MEMBER.diet)?normDiet(MEMBER).diet:"",true)+'</label><label class="full">'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label class="full">'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p></fieldset><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form>';
 }
-function acctInner(){
+function acctInnerAll(){
   return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b>'+' · '+L("Rolle")+': <b>'+esc(isOwner()?L("Owner"):isAdmin()?L("Admin"):MYROLE?(MYROLE==="crew"?"Crew":MYROLE):L("keine"))+'</b>'+(()=>{let w=(MEMBER&&MEMBER.welcomeAck)||"";if(!w)try{w=(localStorage.getItem("welcomeAck")||"").split("|")[0]}catch(_){}return w?' · '+L("Willkommen bestätigt")+' '+esc(new Date(w).toLocaleDateString("de-CH")):''})()+'</p>'+
     (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
     (ME&&window.PUSHEN!==false?pushSec():'')+'<section class="psec"><h4>'+L("App-Icon")+'</h4>'+(()=>{a2stCheck();const st=window.A2ST&&window.A2ST.v;
@@ -1708,6 +1708,26 @@ function acctInner(){
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
     '';
 }
+/* «Mein Konto» in groups like the app management: Profil · Benachrichtigungen · App · Konto */
+const ACSUBS=[["pro","Profil"],["note","Benachrichtigungen"],["app","App"],["acc","Konto"]];
+let ACSUB="pro";try{ACSUB=localStorage.getItem("acsub")||"pro"}catch(_){}
+function acctInner(){
+  const raw=acctInnerAll();const box=document.createElement("div");box.innerHTML=raw;
+  const grp={};ACSUBS.forEach(([k])=>grp[k]=[]);
+  const head=[];
+  const tit=el=>{const h=el.querySelector(":scope>h4");return h?h.textContent.trim():""};
+  const map=new Map([[L("Profil"),"pro"],[L("Startseite «Today»"),"app"],[L("Offline-Daten"),"app"],[L("App-Icon"),"app"],[L("Einführungstour"),"app"],[L("Darstellung"),"app"],[L("Assistent"),"app"]]);
+  [...box.children].forEach(el=>{
+    if(el.classList.contains("myhead")||el.classList.contains("acwho")){head.push(el.outerHTML);return}
+    if(el.matches("section.psec")){const g=el.classList.contains("pushsec")?"note":(map.get(tit(el))||"app");grp[g].push(el.outerHTML);return}
+    grp.acc.push(el.outerHTML)});
+  const subs=ACSUBS.filter(([k])=>grp[k].length);if(!subs.some(([k])=>k===ACSUB))ACSUB=subs.length?subs[0][0]:"pro";
+  const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-acsub="'+k+'" aria-selected="'+(ACSUB===k)+'">'+esc(L(t))+'</button>').join("")+'</nav>';
+  /* the account part also shows who is signed in */
+  const accHead=ACSUB==="acc"?head.filter(h=>/acwho/.test(h)).join(""):"";
+  return head.filter(h=>/myhead/.test(h)).join("")+nav+accHead+grp[ACSUB].join("");
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-acsub]");if(!b)return;ACSUB=b.dataset.acsub;try{localStorage.setItem("acsub",ACSUB)}catch(_){}render();scrollTo(0,0)});
 /* «Mein Konto» is its own page; only the first-start profile (onboarding) stays a dialog */
 VIEWS.acct=function(){if(ME)setTimeout(()=>{const v=document.getElementById("view");if(v&&S.tab==="acct")markNeed(v)},0);return ME?'<section class="mypage acpage">'+acctInner()+'</section>':'<div class="empty">'+L("Kein Zugang")+'</div>'};
 let ACCTWIRED=false;setTimeout(()=>wireAcctPage(),0);
@@ -2721,6 +2741,8 @@ Object.assign(I18N,{
  "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi impegni",hi:"मेरे अगले कार्यक्रम"},
  "Alle meine Termine":{en:"All my events",fr:"Tous mes rendez-vous",it:"Tutti i miei impegni",hi:"मेरे सभी कार्यक्रम"},
  "Keine anstehenden Termine.":{en:"No upcoming events.",fr:"Aucun rendez-vous à venir.",it:"Nessun impegno in arrivo.",hi:"कोई आगामी कार्यक्रम नहीं।"},
+ "Benachrichtigungen":{en:"Notifications",fr:"Notifications",it:"Notifiche",hi:"सूचनाएँ"},
+ "Konto":{en:"Account",fr:"Compte",it:"Account",hi:"खाता"},
  "Startseite «Today»":{en:"«Today» start page",fr:"Page d’accueil «Today»",it:"Pagina iniziale «Today»",hi:"«Today» प्रारंभ पृष्ठ"},
  "«Today» anzeigen und die App dort öffnen":{en:"Show «Today» and open the app there",fr:"Afficher «Today» et y ouvrir l’app",it:"Mostra «Today» e apri l’app lì",hi:"«Today» दिखाएँ और ऐप वहीं खोलें"},
  "Ausgeschaltet öffnet die App mit dem Drehplan.":{en:"When off, the app opens with the schedule.",fr:"Désactivé, l’app s’ouvre sur le planning.",it:"Se disattivato, l’app si apre con il piano.",hi:"बंद होने पर ऐप Schedule के साथ खुलता है।"},
