@@ -954,13 +954,18 @@ function myIcs(list){
 }
 function saveIcs(ics,name){try{const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}}
 let MYEV=[],MCNAMES=[];
+/* «Meine Termine»: only upcoming events, events that started at most 5 hours ago and events still running (end time);
+   events without a time stay visible for their whole day */
+function evRecent(e){const ok=x=>/^\d\d:\d\d$/.test(x||"");if(!ok(e.t)&&!ok(e.end))return e.date>=todayISO();
+  const ms=x=>new Date(e.date+"T"+x+":00").getTime(),now=Date.now();
+  return (ok(e.t)&&ms(e.t)>=now-5*3600e3)||(ok(e.end)&&ms(e.end)>=now)}
 function renderMy(){
   if(!vok("mycal"))return '<div class="empty">'+esc(L("Kein Zugang"))+'</div>';
   const me=myIdentity();const people=mailPeople().filter(x=>x.src&&x.src!=="user");
   const names=[...new Set(people.map(p=>p.name))].sort((a,c)=>a.localeCompare(c,LANG));
   MCNAMES=names;
   const sel=!myAdmin()?'<p class="mcsel">'+esc(L("Termine für"))+' <b>'+esc(me?me.name:"–")+'</b></p>':'<div class="mcpick"><label class="mcsel">'+esc(L("Termine für"))+' <input type="search" list="mcnames" data-mcme autocomplete="off" placeholder="'+esc(L("Name tippen …"))+'" value="'+esc(me?me.name:"")+'"></label><datalist id="mcnames">'+names.map(n=>'<option value="'+esc(n)+'"></option>').join("")+'</datalist><button type="button" class="pillbtn mcself" data-mcself>'+esc(L("Ich"))+'</button></div>';
-  MYEV=me?myEvents(me):[];
+  MYEV=me?myEvents(me).filter(evRecent):[];
   let h='<section class="mypage"><div class="myhead"><h2 class="pgt">'+esc(L("Meine Termine"))+'</h2></div><div class="myrow">'+sel+(me&&MYEV.length?'<button type="button" class="pillbtn" data-mcall>'+esc(L("Alle in den Kalender"))+' ('+MYEV.length+')</button>':'')+'</div>';
   if(!me)h+='<p class="ghint">'+esc(L(myAdmin()?"Bitte oben deinen Namen wählen.":"Dein Name wurde in der Crewliste nicht gefunden."))+'</p>';
   else{
