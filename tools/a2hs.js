@@ -38,8 +38,9 @@ function hideA2hs(){const s=document.getElementById("a2hs");if(s)s.hidden=true}
 /* shortcut on the home screen (phone/tablet) or desktop: asked once while setting up (see the setup chain in web_boot), again from «Mein Konto» */
 /* create the shortcut right away where the browser allows it: Chrome/Edge show their install dialog (one click → icon on the desktop / start menu);
    other desktop browsers get a ready shortcut file (Windows .url, Mac .webloc) to put on the desktop; phones get the steps */
-async function a2hsDo(){
-  if(isStandalone()){showMsg(L("Die App ist auf diesem Gerät schon installiert."),4000);return true}
+async function a2hsDo(more){
+  if(isStandalone()&&!more){showMsg(L("Die App ist auf diesem Gerät schon installiert."),4000);return true}
+  if(more&&isStandalone()){if(!isMobile()){a2hsFile();return true}return false}
   if(DEFERRED){const p=DEFERRED;DEFERRED=null;try{p.prompt();const r=await p.userChoice;if(r&&r.outcome==="accepted"){a2hsSet("done");showMsg(L("Icon erstellt – du findest die App jetzt auf dem Desktop bzw. Startbildschirm."),5000)}else a2hsSet(String(Date.now()))}catch(_){}hideA2hs();return true}
   if(!isMobile()){a2hsFile();return true}
   return false;
