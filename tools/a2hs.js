@@ -1,5 +1,8 @@
 /* ---------- home screen: offer to add the app after signing in (only when opened in the browser) ---------- */
 Object.assign(I18N,{
+ "Die App ist auf diesem Gerät schon installiert.":{fr:"L'app est déjà installée sur cet appareil.",it:"L'app è già installata su questo dispositivo.",en:"The app is already installed on this device.",hi:"ऐप इस डिवाइस पर पहले से इंस्टॉल है।"},
+ "Icon erstellt – du findest die App jetzt auf dem Desktop bzw. Startbildschirm.":{fr:"Icône créée – tu trouves l'app sur le bureau ou l'écran d'accueil.",it:"Icona creata – trovi l'app sul desktop o nella schermata Home.",en:"Icon created – you'll find the app on your desktop or home screen.",hi:"आइकन बन गया – ऐप अब डेस्कटॉप या होम स्क्रीन पर है।"},
+ "Verknüpfung heruntergeladen – zieh die Datei «TSCHUGGER Crew» aus dem Download-Ordner auf den Desktop.":{fr:"Raccourci téléchargé – glisse le fichier « TSCHUGGER Crew » du dossier Téléchargements sur le bureau.",it:"Collegamento scaricato – trascina il file «TSCHUGGER Crew» dalla cartella Download sul desktop.",en:"Shortcut downloaded – drag the file “TSCHUGGER Crew” from your Downloads folder onto the desktop.",hi:"शॉर्टकट डाउनलोड हुआ – «TSCHUGGER Crew» फ़ाइल को डाउनलोड फ़ोल्डर से डेस्कटॉप पर खींचें।"},
  "Verknüpfung auf dem Desktop erstellen?":{fr:"Créer un raccourci sur le bureau ?",it:"Creare un collegamento sul desktop?",en:"Create a desktop shortcut?",hi:"डेस्कटॉप पर शॉर्टकट बनाएँ?"},
  "So geht's am Computer:":{fr:"Sur l'ordinateur :",it:"Sul computer:",en:"On a computer:",hi:"कंप्यूटर पर:"},
  "Chrome / Edge: in der Adresszeile auf das Installieren-Symbol ⊕ klicken oder im Menü «App installieren» wählen":{fr:"Chrome / Edge : clique sur l'icône d'installation ⊕ dans la barre d'adresse ou choisis « Installer l'app » dans le menu",it:"Chrome / Edge: clicca sull'icona di installazione ⊕ nella barra degli indirizzi o scegli «Installa app» nel menu",en:"Chrome / Edge: click the install icon ⊕ in the address bar or choose “Install app” in the menu",hi:"Chrome / Edge: पता बार में इंस्टॉल आइकन ⊕ पर क्लिक करें या मेनू में «ऐप इंस्टॉल करें» चुनें"},
@@ -33,6 +36,22 @@ function a2hsSet(v){try{localStorage.setItem(A2HS_KEY,v)}catch(_){}}
 function hideA2hs(){const s=document.getElementById("a2hs");if(s)s.hidden=true}
 /* ask after sign-in; after "Später" ask again at the earliest in 3 days; never after "Ist schon drauf" / installed */
 /* shortcut on the home screen (phone/tablet) or desktop: asked once while setting up (see the setup chain in web_boot), again from «Mein Konto» */
+/* create the shortcut right away where the browser allows it: Chrome/Edge show their install dialog (one click → icon on the desktop / start menu);
+   other desktop browsers get a ready shortcut file (Windows .url, Mac .webloc) to put on the desktop; phones get the steps */
+async function a2hsDo(){
+  if(isStandalone()){showMsg(L("Die App ist auf diesem Gerät schon installiert."),4000);return true}
+  if(DEFERRED){const p=DEFERRED;DEFERRED=null;try{p.prompt();const r=await p.userChoice;if(r&&r.outcome==="accepted"){a2hsSet("done");showMsg(L("Icon erstellt – du findest die App jetzt auf dem Desktop bzw. Startbildschirm."),5000)}else a2hsSet(String(Date.now()))}catch(_){}hideA2hs();return true}
+  if(!isMobile()){a2hsFile();return true}
+  return false;
+}
+function a2hsFile(){
+  const url=location.origin+location.pathname,mac=/Mac/i.test(navigator.platform||navigator.userAgent);
+  const txt=mac?'<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>URL</key><string>'+url+'</string></dict></plist>\n'
+    :"[InternetShortcut]\r\nURL="+url+"\r\nIconFile="+location.origin+location.pathname.replace(/[^/]*$/,"")+"icon-192.png\r\nIconIndex=0\r\n";
+  try{const blob=new Blob([txt],{type:"application/octet-stream"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TSCHUGGER Crew"+(mac?".webloc":".url");document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),20000)}catch(_){}
+  a2hsSet("done");hideA2hs();
+  showMsg(L("Verknüpfung heruntergeladen – zieh die Datei «TSCHUGGER Crew» aus dem Download-Ordner auf den Desktop."),9000);
+}
 function a2hsDue(){return !isStandalone()&&!a2hsState()}
 function maybeOfferA2hs(afterLogin){
   if(isStandalone())return;if(afterLogin!=="setup")return; /* only from the setup chain */
@@ -47,8 +66,7 @@ function showA2hs(steps){
       const b=e.target.closest("[data-a2]");if(!b){if(e.target===s){a2hsSet(String(Date.now()));hideA2hs()}return}
       const a=b.dataset.a2;
       if(a==="yes"){
-        if(DEFERRED){const p=DEFERRED;DEFERRED=null;p.prompt();try{const r=await p.userChoice;a2hsSet(r&&r.outcome==="accepted"?"done":String(Date.now()))}catch(_){}hideA2hs()}
-        else showA2hs(true);
+        if(!(await a2hsDo()))showA2hs(true);
       }else if(a==="later"){a2hsSet(String(Date.now()));hideA2hs()}
       else if(a==="done"){a2hsSet("done");hideA2hs()}
       else if(a==="ok"){a2hsSet(String(Date.now()));hideA2hs()}
