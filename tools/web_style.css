@@ -510,3 +510,13 @@ button.ttile.twx:hover{background:var(--acc-tint)}
 .wxr.wxnow{background:var(--acc-tint)}
 .wxsrc{margin-top:8px}
 .today .tmy+.thead{margin-top:18px}
+
+/* my next events: one line each, «All ›» top right */
+.tmy{padding:12px 14px}
+.tmy .tch{margin-bottom:4px}
+.tmy .tmyall{margin-left:auto;font:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:none;border:1px solid var(--acc-soft);border-radius:999px;padding:3px 10px;cursor:pointer}
+.tmy .tmyall:hover{background:var(--acc-tint)}
+.tmylist{margin:0}
+.tmylist li{grid-template-columns:96px 1fr;gap:8px;padding:4px 0;font-size:13.5px;line-height:1.3}
+.tmylist .tmw{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tmylist .tmd{font-size:12px}.tmylist .tmd b{font-size:13.5px}
