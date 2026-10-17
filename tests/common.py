@@ -5,9 +5,10 @@ import json, os, time
 RESULTS, FAILS = [], []
 
 
-def check(name, ok, info=""):
+def check(name, ok, info="", public=False):
+    """public=True: the detail of a failed check contains no crew data (only numbers/flags) and is kept in the results"""
     r = {"n": name, "ok": bool(ok)}
-    if not ok and info and "lief durch" in name:   # a part that crashed: the reason (without addresses or numbers) helps to fix it
+    if not ok and info and ("lief durch" in name or public):   # a part that crashed: the reason (without addresses or numbers) helps to fix it
         import re as _re
         r["e"] = _re.sub(r"[\w.+-]+@[\w-]+\.[\w.]+|\+?\d[\d ]{6,}", "…", str(info))[:160]
     RESULTS.append(r)

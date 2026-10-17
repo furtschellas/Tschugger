@@ -79,6 +79,8 @@ window.ghProgress=ghProgress;
 
 /* title line of every box: title, then the last result (on the phone on a line of its own), the open/close button top right */
 const logHead=(t,st,tm,pg)=>'<span class="lsh"><b>'+t+'</b>'+(st?'<span class="lss">'+st+'</span>':'')+(tm?'<span class="lst">'+tm+'</span>':'')+'</span>'+tstAllBtn(pg);window.logHead=logHead;
+/* a tap on «Log» (also when already there) shows every box closed again */
+document.addEventListener("click",e=>{const b=e.target.closest('[data-asub="log"],[data-asub="test"]');if(b&&S.tab==="admin"&&ADM.sub===b.dataset.asub)logReset()},true);
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("audd"))AUD.open=e.target.open},true);
 Object.assign(I18N,{
  "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi appuntamenti",hi:"मेरे अगले कार्यक्रम"},

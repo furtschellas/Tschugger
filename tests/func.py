@@ -269,6 +269,12 @@ async def owner_tests(p, port):
     await E("document.querySelector('#a2un [data-a2unok]').click()"); await pg.wait_for_timeout(200)
     check("App deinstallieren: Dialog schliesst, Status wird neu geprüft", await E("!document.getElementById('a2un')"))
 
+    # changes: newest on top; read ones disappear 2 days after «Als gelesen markieren»
+    co = await E("""(()=>{const t=todayISO(),n=Date.now();localStorage.setItem('chg:v1',JSON.stringify([{date:t,at:n-3600e3,sc:'1',txt:'alt'},{date:t,at:n-600e3,sc:'2',txt:'neu'}]));localStorage.setItem('chgseen:v1','0');
+      const a=chgList().map(c=>c.txt);localStorage.setItem('chg:v1',JSON.stringify([{date:t,at:n-2.5*864e5,sc:'3',txt:'gelesen'}]));localStorage.setItem('chgseen:v1',String(n-2.1*864e5));const b=chgList().length;
+      localStorage.setItem('chgseen:v1',String(n-864e5));const c=chgList().length;localStorage.removeItem('chg:v1');localStorage.setItem('chgseen:v1','0');return {order:a,gone:b,kept:c}})()""")
+    check("Änderungen: neueste zuoberst, gelesene nach 2 Tagen entfernt", co == {"order": ["neu", "alt"], "gone": 0, "kept": 1}, co, public=True)
+
     # Today: the person chooses the parts in Mein Konto → App
     await E("localStorage.setItem('today','1');S.tab='acct';ACSUB='app';render()"); await pg.wait_for_timeout(300)
     tp = await E("[...document.querySelectorAll('#view [data-todaypart]')].map(x=>x.dataset.todaypart)")
@@ -333,8 +339,8 @@ async def owner_tests(p, port):
     await E("S.tab='today';render()"); await pg.wait_for_timeout(100)
     await E("""TST.d={at:Date.now(),sha:'abc1234',ok:false,n:3,fail:1,suites:[{name:'App',ok:true,n:2,fail:0,checks:[{n:'a',ok:true},{n:'b',ok:true}]},{name:'Firestore-Regeln',ok:false,n:1,fail:1,checks:[{n:'c',ok:false}]}]};S.tab='admin';ADM.sub='log';render()""")
     await pg.wait_for_timeout(500)
-    lg = await E("({su:document.querySelectorAll('#view .tstsec .tstsu').length,bad:document.querySelectorAll('#view .tstsec .tstsu.bad[open]').length,open:document.querySelector('#view .tstsec').open})")
-    check("Log: Testresultate je Teil, alles zugeklappt bis man es öffnet", lg == {"su": 2, "bad": 0, "open": False}, lg)
+    lg = await E("(()=>{const b=document.querySelector('#view details[data-lsec=\"tst\"]');return {su:b.querySelectorAll('.tstsu').length,bad:b.querySelectorAll('.tstsu.bad[open]').length,open:b.open}})()")
+    check("Log: Testresultate je Teil, alles zugeklappt bis man es öffnet", lg == {"su": 2, "bad": 0, "open": False}, lg, public=True)
     await E("window.CHATURL=window.CHATURL||'https://worker.test';render()"); await pg.wait_for_timeout(300)
     check("Log/Tests: kein Knopf «Alle auf- oder zuklappen» oben (jedes Menü hat seinen eigenen)", not await E("!!document.querySelector('#view [data-logall]')"))
     # opening Log/Tests starts the tests again; while a test runs, its open/close button shows the progress as a ring
@@ -350,7 +356,7 @@ async def owner_tests(p, port):
     check("Berechtigungen testen: danach wieder eigene Rechte (Owner)", await E("isOwner()&&!SIMROLE&&tabsOn().includes('plan')"))
     await E("document.querySelector('#view [data-tstall]').click()"); await pg.wait_for_timeout(200)
     al = await E("(()=>{const b=document.querySelector('#view [data-tstall]').closest('.tstsec');return {box:b.open,sub:[...b.querySelectorAll('details')].some(d=>d.open)}})()")
-    check("Log: Auf-/Zuklapp-Knopf öffnet das Menü, Unterthemen bleiben zu (nur von Hand)", al == {"box": True, "sub": False}, al)
+    check("Log: Auf-/Zuklapp-Knopf öffnet das Menü, Unterthemen bleiben zu (nur von Hand)", al == {"box": True, "sub": False}, al, public=True)
     ra = await E("(()=>{const bx=[...document.querySelectorAll('#view details.tstsec')];return {n:bx.length,ok:bx.every(d=>{const sm=d.querySelector(':scope>summary');const b=sm&&sm.querySelector(':scope>[data-tstall]');if(!b)return false;const r=b.getBoundingClientRect(),q=sm.getBoundingClientRect();return sm.lastElementChild===b&&q.right-r.right<40&&r.top-q.top<14})}})()")
     check("Log: jedes Menü auf- und zuklappbar, Knopf oben rechts", ra["n"] >= 4 and ra["ok"], ra)
     l2 = await E("(()=>{const sm=document.querySelector('#view details.tstsec>summary.lsum');const t=sm.querySelector('.lsh b'),st=sm.querySelector('.lss'),tm=sm.querySelector('.lst');return {w:innerWidth,second:!!st&&st.getBoundingClientRect().top>=t.getBoundingClientRect().bottom-1,third:!!tm&&tm.getBoundingClientRect().top>=st.getBoundingClientRect().bottom-1}})()")
@@ -359,7 +365,7 @@ async def owner_tests(p, port):
       const others=[...document.querySelectorAll('#view details.tstsec')].filter(d=>d!==au).some(d=>d.open);const open=au.open&&![...au.querySelectorAll('details')].some(d=>d.open);return {open,others}})()""")
     await pg.wait_for_timeout(150); await E("render()"); await pg.wait_for_timeout(200)
     tg["keep"] = await E("!!(document.querySelector('#view details.audd')||{}).open")
-    check("Log: Knopf im Menü klappt nur dieses Menü auf (Unterthemen zu), bleibt nach Neuaufbau offen", tg["open"] and not tg["others"] and tg["keep"], tg)
+    check("Log: Knopf im Menü klappt nur dieses Menü auf (Unterthemen zu), bleibt nach Neuaufbau offen", tg["open"] and not tg["others"] and tg["keep"], tg, public=True)
     await E("document.querySelector('#view details.audd [data-tstall]').click()"); await pg.wait_for_timeout(150)
     check("Log: zweiter Klick klappt das Menü wieder zu", not await E("document.querySelector('#view details.audd').open"))
     # every box like «Automatische Tests»: last result (with time) in the title, parts to open, start button below
@@ -371,7 +377,8 @@ async def owner_tests(p, port):
     await E("S.tab='today';render()"); await pg.wait_for_timeout(200); await E("S.tab='admin';ADM.sub='log';render()"); await pg.wait_for_timeout(300)
     check("Log: nach erneutem Öffnen alles zugeklappt (nichts gemerkt)", await E("[...document.querySelectorAll('#view details')].every(d=>!d.open)"))
     await E("(()=>{const d=document.querySelector('#view details[data-lsec=\"tst\"]');d.open=true;const s=d.querySelector('details.tstsu');s.open=true})()"); await pg.wait_for_timeout(150); await E("render()"); await pg.wait_for_timeout(200)
-    check("Log: geöffnete Unterteile bleiben offen, solange man auf der Seite bleibt", await E("!!document.querySelector('#view details[data-lsec=\"tst\"] details.tstsu[open]')"))
+    ko = await E("({sub:!!document.querySelector('#view details[data-lsec=\"tst\"] details.tstsu[open]'),box:!!(document.querySelector('#view details[data-lsec=\"tst\"]')||{}).open,su:JSON.stringify(TST.su).slice(0,80),tab:S.tab+'/'+ADM.sub})")
+    check("Log: geöffnete Unterteile bleiben offen, solange man auf der Seite bleibt", ko["sub"], ko, public=True)
     pf = await E("""(()=>{const keep={};for(const k of PREFKEYS){keep[k]=localStorage.getItem(k);localStorage.setItem(k,'x')}localStorage.setItem('rc','abc');
       let n=0;const p={};for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null)p[k]=v}const v=localStorage.getItem('rc');if(v!==null&&Object.keys(p).length<14)p.rc=v;n=Object.keys(p).length+2;
       for(const k of PREFKEYS){if(keep[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,keep[k])}localStorage.removeItem('rc');return n})()""")
