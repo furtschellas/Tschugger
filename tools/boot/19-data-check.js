@@ -160,7 +160,7 @@ async function roleTestRun(auto){
         if(/konnte nicht angezeigt/.test(v.innerText))issues.push(L("Seite mit Fehler")+": "+(RTN[t]||t));
         if(!vok("phone")&&v.querySelector('a[href^="tel:"]')&&t==="crew")issues.push(L("Telefonnummern sichtbar ohne Recht"));
         if(!vok("email")&&v.querySelector('a[href^="mailto:"]')&&t==="crew")issues.push(L("E-Mail-Adressen sichtbar ohne Recht"))}catch(err){issues.push((RTN[t]||t)+": "+(err&&err.message||err))}}
-    try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}
+    try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}
     const vis=id=>{const b=document.getElementById(id);return !!b&&getComputedStyle(b).display!=="none"};
     if(vis("myCalBtn")!==!!vok("mycal"))issues.push(L("Kalender-Symbol stimmt nicht mit dem Recht überein"));
     if(vis("bcBtn")!==!!(can("push.send")&&window.PUSHEN!==false))issues.push(L("Couvert-Symbol stimmt nicht mit dem Recht überein"));
@@ -170,12 +170,12 @@ async function roleTestRun(auto){
       vok("phone")&&L("Telefon"),vok("email")&&L("E-Mail"),canAdm()&&L("App-Verwaltung"),can("data.check")&&L("Dokumente prüfen")].filter(Boolean);
     out.push({name:ro.name,tabs:tabs.map(t=>RTN[t]||t),extra,issues});
     /* back to the real rights for a moment and show the progress (the role's pages were drawn without being shown) */
-    SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}
+    SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}
     if(S.tab==="admin"&&ADM.sub==="log")render();   /* only the progress on Log/Tests; the visible page is never touched by the test */
     await new Promise(r=>setTimeout(r,180))}}
   catch(err){out.push({name:L("Fehler"),tabs:[],extra:[],issues:[String(err&&err.message||err)]})}
   finally{SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;try{const ad=await (async()=>ADM.adminPerms)();ADMINPERMS=isOwner()?ADMIN_DEFAULT.slice():(ad||ADMINPERMS)}catch(_){}
-    if(mid){S.tab=here.tab;ADM.sub=here.sub}try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}}
+    if(mid){S.tab=here.tab;ADM.sub=here.sub}try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}}
   {const w=500-(Date.now()-t0);if(w>0)await new Promise(r=>setTimeout(r,w))}
   RTS.res=out;RTS.at=Date.now();RTS.busy=false;RTS.prog=null;if(!auto)RTS.open=true;try{localStorage.setItem("rt:last",JSON.stringify({res:out,at:RTS.at}))}catch(_){}render()}
 window.roleTestSec=function(){if(!isAdmin()||SIMROLE)return "";const r=RTS.res||[],bad=r.filter(x=>x.issues.length).length;
