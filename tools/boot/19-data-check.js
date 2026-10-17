@@ -19,7 +19,7 @@ const dbase=s=>{const m=String(s).match(/^(\d+[A-Z]?)(?:PT|SL|PART|TEIL)\d*[A-Z]
 const dhas=(set,s)=>set.has(s)||set.has(dbase(s))||set.has(dnum(s));
 const dday=d=>{try{const dt=new Date(d+"T12:00:00");return WDL(dt)+" "+pad2(dt.getDate())+"."+pad2(dt.getMonth()+1)+"."}catch(_){return d}};
 async function dckRun(auto){
-  if(DCK.busy)return;DCK.busy=true;render();
+  if(DCK.busy)return;DCK.busy=true;const t0=Date.now();render();
   const out=[],w=(lvl,area,text)=>out.push({lvl,area,text});   /* lvl: warn = Unstimmigkeit, info = Hinweis, ok = in Ordnung */
   const t=todayISO(),days=(S.days||[]).filter(d=>d&&d.date);
   const items=[];for(const d of days){for(const it of (d.items||[]))if(it.sc)items.push([d,it,"1"]);for(const u of ["2","3"]){const x=d["unit"+u];if(x&&Array.isArray(x.items))for(const it of x.items)if(it.sc)items.push([d,it,u])}}
@@ -117,6 +117,7 @@ async function dckRun(auto){
       const sw=!!(navigator.serviceWorker&&navigator.serviceWorker.controller);
       w(bad.length||!key?"warn":"ok",L("Selbsttest der App"),(key?"✓ "+L("Schlüssel"):"✗ "+L("Schlüssel"))+" · "+(bad.length?"✗ "+L("Seiten mit Fehler")+": "+bad.join(", "):"✓ "+tabsOn().length+" "+L("Seiten"))+" · "+(sw?"✓ ":"– ")+L("Offline-Speicher")+" · "+(navigator.onLine?"✓ ":"– ")+L("Verbindung"))}
   }catch(err){w("warn",L("Prüfung"),L("Fehler:")+" "+(err&&err.message||err))}
+  {const w=500-(Date.now()-t0);if(w>0)await new Promise(r=>setTimeout(r,w))}   /* the progress stays visible at least 0.5 s */
   DCK.res=out;DCK.at=Date.now();DCK.busy=false;if(!auto)DCK.open=true;try{localStorage.setItem("dck:last",JSON.stringify({res:out,at:DCK.at}))}catch(_){}render();
 }
 window.dataCheckSec=function(flat){if(!dckMay())return "";
@@ -129,9 +130,9 @@ window.dataCheckSec=function(flat){if(!dckMay())return "";
     return '<details class="tstsu'+(w?' bad':'')+'" data-su="dck:'+esc(a)+'"'+logSu("dck:"+a)+'><summary>'+(w?'⚠ ':'✓ ')+esc(a)+' · '+(w?w+' '+esc(L(w===1?"Unstimmigkeit":"Unstimmigkeiten")):n?n+' '+esc(L(n===1?"Hinweis":"Hinweise")):esc(L("in Ordnung")))+'</summary>'+
       '<ul class="dckl">'+l.map(x=>'<li class="'+x.lvl+'"><span class="dcki">'+ic[x.lvl]+'</span><span>'+esc(x.text)+'</span></li>').join("")+'</ul></details>'}).sort((a,b)=>(b.includes('tstsu bad')?1:0)-(a.includes('tstsu bad')?1:0)).join("");
   const body='<p class="ghint">'+esc(L("Vergleicht die Dokumente aus der Dropbox untereinander (Drehplan, Locations, Drehbuch, Cast-Liste, Prep Weekly/Daily, Callsheets, Crewliste) und prüft die App auf diesem Gerät. Es werden nur Bereiche verglichen, die du sehen darfst."))+'</p>'+parts+
-    '<div class="arb tstbtns"><button type="button" class="pillbtn" data-dckrun'+(DCK.busy?' disabled':'')+'>'+TST_RUN+esc(L(DCK.busy?"Prüfe …":"Jetzt prüfen"))+'</button></div>';
+    '<div class="arb tstbtns">'+tstIco("data-dckrun",TST_RUN,DCK.busy?"Prüfe …":"Jetzt prüfen",DCK.busy)+'</div>';
   /* own tab «Test»: the box without the outer collapse (the tab is the topic) */
-  if(flat)return '<div class="dcksec dckflat'+(nw?' bad':'')+'"><p class="dcksum lsum">'+logHead(esc(L("Dokumente prüfen")),sum,tm).replace(/<button[\s\S]*<\/button>$/,"")+'</p>'+body+'</div>';
+  if(flat)return '<div class="dcksec dckflat'+(nw?' bad':'')+'"><p class="dcksum lsum">'+logHead(esc(L("Dokumente prüfen")),sum,tm,DCK.busy?{pct:null}:null)+'</p>'+body+'</div>';
   return '<details class="tstsec dcksec'+(nw?' bad':'')+'"'+(DCK.open?' open':'')+' data-lsec="dck"><summary class="lsum">'+logHead(esc(L("Dokumente prüfen")),sum,tm,DCK.busy?{pct:null}:null)+'</summary>'+body+'</details>'};
 document.addEventListener("click",e=>{if(e.target.closest("[data-dckrun]")&&dckMay())dckRun()});
 /* Mein Konto → App: for people with «Dokumente prüfen» who are not admins (admins find it under App-Verwaltung → Log) */
@@ -148,7 +149,9 @@ async function roleTestRun(auto){
   const keep={p:MYPERMS.slice(),r:MYROLE,tab:S.tab,sub:ADM.sub,ac:typeof ACSUB!=="undefined"?ACSUB:null,ap:ADMINPERMS};
   const roles=[{id:"admin",name:L("Admin"),adm:true,perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}].concat((ADM.roles||[]).map(r=>({id:r.id,name:r.name||r.id,perms:arr(r.perms)}))).concat([{id:"",name:L("Keine Rolle"),perms:[]}]);
   const out=[];
-  try{let k=0;for(const ro of roles){RTS.prog=Math.round(k++/roles.length*100);
+  const t0=Date.now();
+  let here={tab:keep.tab,sub:keep.sub},mid=false;
+  try{let k=0;for(const ro of roles){RTS.prog=Math.round(k++/roles.length*100);here={tab:S.tab,sub:ADM.sub};mid=true;
     SIMROLE={adm:!!ro.adm};MYPERMS=ro.adm?[]:ro.perms.filter(p=>PERMS.some(x=>x[0]===p));MYROLE=ro.adm?"":ro.id;if(ro.adm)ADMINPERMS=ro.perms;
     const issues=[],tabs=tabsOn();
     for(const t of tabs){S.tab=t;try{render();const v=document.getElementById("view");
@@ -165,11 +168,12 @@ async function roleTestRun(auto){
       vok("phone")&&L("Telefon"),vok("email")&&L("E-Mail"),canAdm()&&L("App-Verwaltung"),can("data.check")&&L("Dokumente prüfen")].filter(Boolean);
     out.push({name:ro.name,tabs:tabs.map(t=>RTN[t]||t),extra,issues});
     /* back to the real rights for a moment and show the progress (the role's pages were drawn without being shown) */
-    SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=keep.tab;ADM.sub=keep.sub;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}render();
+    SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}if(S.tab==="admin")render();
     await new Promise(r=>setTimeout(r,180))}}
   catch(err){out.push({name:L("Fehler"),tabs:[],extra:[],issues:[String(err&&err.message||err)]})}
   finally{SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;try{const ad=await (async()=>ADM.adminPerms)();ADMINPERMS=isOwner()?ADMIN_DEFAULT.slice():(ad||ADMINPERMS)}catch(_){}
-    S.tab=keep.tab;ADM.sub=keep.sub;try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}}
+    if(mid){S.tab=here.tab;ADM.sub=here.sub}try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}}
+  {const w=500-(Date.now()-t0);if(w>0)await new Promise(r=>setTimeout(r,w))}
   RTS.res=out;RTS.at=Date.now();RTS.busy=false;RTS.prog=null;if(!auto)RTS.open=true;try{localStorage.setItem("rt:last",JSON.stringify({res:out,at:RTS.at}))}catch(_){}render()}
 window.roleTestSec=function(){if(!isAdmin()||SIMROLE)return "";const r=RTS.res||[],bad=r.filter(x=>x.issues.length).length;
   const sum=RTS.res?'<span class="tsth">'+(bad?'⚠ '+bad+' '+esc(L(bad===1?"Berechtigungsstufe mit Problemen":"Berechtigungsstufen mit Problemen")):'✓ '+r.length+' '+esc(L("Berechtigungsstufen in Ordnung")))+'</span>':'<span class="tsth">'+esc(L("noch nicht geprüft"))+'</span>',tm=RTS.res&&RTS.at?esc(logWhen(RTS.at)):"";
@@ -177,7 +181,7 @@ window.roleTestSec=function(){if(!isAdmin()||SIMROLE)return "";const r=RTS.res||
     '<p class="ghint">'+esc(L("Zeigt die App einen Moment mit den Rechten jeder Rolle: welche Bereiche sie sieht, welche Zusatzrechte sie hat, ob alle Seiten ohne Fehler erscheinen und ob Telefon, E-Mail und Kopf-Symbole nur mit Recht sichtbar sind. Es wird nichts geändert."))+'</p>'+
     r.slice().sort((a,b)=>b.issues.length-a.issues.length).map(x=>'<details class="tstsu'+(x.issues.length?' bad':'')+'" data-su="rt:'+esc(x.name)+'"'+logSu("rt:"+x.name)+'><summary>'+(x.issues.length?'⚠ ':'✓ ')+esc(x.name)+' · '+(x.issues.length?x.issues.length+' '+esc(L(x.issues.length===1?"Problem":"Probleme")):esc(L("in Ordnung")))+'</summary>'+
       '<ul class="tstl"><li class="ok">'+esc(L("Sieht"))+': '+esc(x.tabs.join(", ")||"–")+'</li>'+(x.extra.length?'<li class="ok">'+esc(L("Darf"))+': '+esc(x.extra.join(", "))+'</li>':'')+x.issues.map(t=>'<li class="no">✗ '+esc(t)+'</li>').join("")+'</ul></details>').join("")+
-    '<div class="arb tstbtns"><button type="button" class="pillbtn" data-rtrun'+(RTS.busy?' disabled':'')+'>'+TST_RUN+esc(L(RTS.busy?"Prüfe …":"Jetzt prüfen"))+'</button></div></details>'};
+    '<div class="arb tstbtns">'+tstIco("data-rtrun",TST_RUN,RTS.busy?"Prüfe …":"Jetzt prüfen",RTS.busy)+'</div></details>'};
 document.addEventListener("click",e=>{if(e.target.closest("[data-rtrun]")&&isAdmin()&&!SIMROLE)roleTestRun()});
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("rtsec"))RTS.open=e.target.open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="dck")DCK.open=d.open},true);

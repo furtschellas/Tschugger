@@ -650,6 +650,7 @@ Object.assign(I18N,{
  "läuft …":{fr:"en cours …",it:"in corso …",en:"running …"},
  "wartet auf GitHub …":{fr:"en attente de GitHub …",it:"in attesa di GitHub …",en:"waiting for GitHub …"},
  "Zeiten":{fr:"Horaires",it:"Orari",en:"Times"},
+ "Resultate neu laden":{fr:"Recharger les résultats",it:"Ricarica i risultati",en:"Reload results"},
  "vorher":{fr:"avant",it:"prima",en:"before"},
  "überarbeitet":{fr:"révisé",it:"rivisto",en:"revised"},
  "Die App erinnert dich auf Wunsch vor deinen Terminen und meldet neue Drehpläne und Callsheets – auch wenn sie geschlossen ist.":{fr:"Sur demande, l’app te rappelle tes rendez-vous et signale les nouveaux plans de tournage et feuilles de service – même fermée.",it:"Su richiesta l’app ti ricorda i tuoi appuntamenti e segnala nuovi piani di riprese e ordini del giorno – anche quando è chiusa.",en:"If you like, the app reminds you before your appointments and tells you about new shooting schedules and callsheets – even when it is closed."},

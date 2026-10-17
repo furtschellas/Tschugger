@@ -264,6 +264,11 @@ async def owner_tests(p, port):
     fl = await E("(()=>{S.tab='today';render();const b=document.querySelector('#view .tloc [data-route]');if(!b)return null;b.click();const n=document.querySelectorAll('#routepop .rtpill').length;document.querySelectorAll('#routepop').forEach(x=>x.remove());return n})()")
     check("Today: Adresse der ersten Location öffnet die Auswahl (Hotel / Standort)", fl in (None, 2), fl, public=True)
 
+    # every button that shows only a symbol has a tooltip with its function (all pages, header, dialogs)
+    nt = await E("""(async()=>{const bad=new Set();const scan=()=>document.querySelectorAll('button,a[role="button"]').forEach(b=>{if(b.offsetParent===null)return;if((b.textContent||'').replace(/[\\s›‹×+↻✓✗⚠·]/g,'').length)return;if(!b.title)bad.add((b.className||b.id||b.tagName)+'');});
+      for(const t of tabsOn().concat(['acct','admin','my'])){S.tab=t;render();await new Promise(r=>setTimeout(r,60));scan()}for(const k of ['users','roles','docs','set','log']){S.tab='admin';ADM.sub=k;render();await new Promise(r=>setTimeout(r,60));scan()}S.tab='today';render();return [...bad].slice(0,12)})()""")
+    check("Alle Symbol-Knöpfe zeigen beim Darüberfahren ihre Funktion", nt == [], nt, public=True)
+
     # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
     ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
       r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")
@@ -360,6 +365,8 @@ async def owner_tests(p, port):
     await E("document.querySelector('#view [data-rtrun]').click()"); await pg.wait_for_timeout(5000)
     rt = await E("(RTS.res||[]).map(x=>({n:x.name,i:x.issues.length,t:x.tabs.length}))")
     check("Berechtigungen testen: jede Stufe geprüft, ohne Probleme", len(rt) >= 4 and all(x["i"] == 0 for x in rt), rt)
+    for x in rt:
+        check(f"Berechtigungen testen: {x['n']} – Seiten, Telefon/E-Mail und Kopf-Symbole stimmen", x["i"] == 0, x, public=True)
     check("Berechtigungen testen: danach wieder eigene Rechte (Owner)", await E("isOwner()&&!SIMROLE&&tabsOn().includes('plan')"))
     await E("document.querySelector('#view [data-tstall]').click()"); await pg.wait_for_timeout(200)
     al = await E("(()=>{const b=document.querySelector('#view [data-tstall]').closest('.tstsec');return {box:b.open,sub:[...b.querySelectorAll('details')].some(d=>d.open)}})()")
