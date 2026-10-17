@@ -54,9 +54,31 @@ window.logWhen=logWhen;
 /* sub-parts (data-su) are open only while you stay on the page: every new visit of Log/Tests starts with everything closed */
 const logSu=k=>TST.su[k]?' open':'';window.logSu=logSu;
 function logReset(){TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false}
-{let last="";const _r=render;render=function(){const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test")?ADM.sub:"";if(now&&now!==last)logReset();last=now;return _r.apply(this,arguments)}}
+{let last="";const _r=render;render=function(){if(typeof RTS!=="undefined"&&RTS.busy)return _r.apply(this,arguments);
+  const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test")?ADM.sub:"";if(now&&now!==last){logReset();setTimeout(()=>logAutoRun(now),250)}last=now;return _r.apply(this,arguments)}}
+/* opening Log/Tests starts all tests again: permissions and documents right here, the automatic tests on GitHub
+   (at most every 30 minutes and never while a run is going – each run takes 10–15 minutes); the progress is shown */
+async function logAutoRun(sub){
+  if(sub==="log"&&isAdmin()&&!SIMROLE&&typeof roleTestRun==="function")await roleTestRun(true);
+  if(typeof dckMay==="function"&&dckMay()&&typeof dckRun==="function")await dckRun(true);
+  if(sub==="log"&&isAdmin()){await ghPoll();const r=GH.run,age=r?Date.now()-Date.parse(r.created_at):1e12;if(window.CHATURL&&(!r||r.status==="completed")&&age>30*60e3)tstStart(true)}}
+/* progress of the GitHub run (public repository, no data): status of the last «Website veröffentlichen» run and its steps */
+const GH={run:null,jobs:[],t:null,at:0};
+async function ghPoll(){clearTimeout(GH.t);try{
+    const r=await fetch("https://api.github.com/repos/furtschellas/Tschugger/actions/workflows/pages.yml/runs?per_page=1",{cache:"no-store"});if(!r.ok)return;
+    const j=await r.json();GH.run=(j.workflow_runs||[])[0]||null;GH.jobs=[];
+    if(GH.run&&GH.run.status!=="completed"){const q=await fetch(GH.run.jobs_url,{cache:"no-store"});if(q.ok)GH.jobs=(await q.json()).jobs||[]}
+    GH.at=Date.now();const was=TST.running;TST.running=!!GH.run&&GH.run.status!=="completed";
+    if(was&&!TST.running){TST.d=null;TST.run=false}
+    if(S.tab==="admin"&&ADM.sub==="log")render();
+    if(TST.running&&S.tab==="admin"&&ADM.sub==="log")GH.t=setTimeout(ghPoll,45000)}catch(_){}}
+function ghProgress(){const r=GH.run;if(!r||r.status==="completed")return null;
+  const st=GH.jobs.flatMap(j=>(j.steps||[]).map(x=>Object.assign({job:j.name},x))),tot=st.length||1,done=st.filter(x=>x.status==="completed").length,cur=st.find(x=>x.status==="in_progress");
+  return {pct:r.status==="queued"?2:Math.max(4,Math.round(done/tot*100)),label:r.status==="queued"?L("wartet auf GitHub …"):(cur?cur.name:L("läuft …"))}}
+window.ghProgress=ghProgress;
+
 /* title line of every box: title, then the last result (on the phone on a line of its own), the open/close button top right */
-const logHead=(t,st,tm)=>'<span class="lsh"><b>'+t+'</b>'+(st?'<span class="lss">'+st+'</span>':'')+(tm?'<span class="lst">'+tm+'</span>':'')+'</span>'+tstAllBtn();window.logHead=logHead;
+const logHead=(t,st,tm,pg)=>'<span class="lsh"><b>'+t+'</b>'+(st?'<span class="lss">'+st+'</span>':'')+(tm?'<span class="lst">'+tm+'</span>':'')+'</span>'+tstAllBtn(pg);window.logHead=logHead;
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("audd"))AUD.open=e.target.open},true);
 Object.assign(I18N,{
  "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi appuntamenti",hi:"मेरे अगले कार्यक्रम"},
@@ -153,14 +175,16 @@ const TST_RUN='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true
 const TST_ALL='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>';
 async function testsLoad(){if(TST.busy)return;TST.busy=true;try{const r=await fetch("./tests.json?t="+Date.now(),{cache:"no-store"});TST.d=r.ok?await r.json():{none:true}}catch(_){TST.d={none:true}}TST.busy=false;render()}
 /* open/close button at the right end of every box in Log/Tests */
-function tstAllBtn(){return '<button type="button" class="tstall" data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'}
+/* while a test runs, the button shows the progress as a ring around it (pct = percent, null = running, unknown how far) */
+function tstAllBtn(pg){const p=pg&&pg.pct!=null?Math.max(0,Math.min(100,pg.pct)):null;
+  return '<button type="button" class="tstall'+(pg?' prog'+(p==null?' ind':''):'')+'"'+(pg&&p!=null?' style="--p:'+p+'"':'')+' data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+(pg?' · '+esc(L("läuft"))+(p!=null?' '+p+' %':''):'')+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'}
 function testsSec(){
   if(!TST.d){testsLoad();return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("Lade …")))+'</summary></details>'}
   const d=TST.d;if(d.none)return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("noch keine Resultate")))+'</summary></details>';
   const dt=new Date(d.at||0),when=dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit"})+" "+dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"});
   const suites=Array.isArray(d.suites)&&d.suites.length?d.suites:[{name:"",ok:d.ok,n:d.n,fail:d.fail,checks:d.checks||[]}];
   const head=d.crash?'✗ '+L("Tests abgebrochen"):d.ok?'✓ '+L("{n} von {n} bestanden").split("{n}").join(d.n):'✗ '+L("{f} von {n} fehlgeschlagen").replace("{f}",d.fail).replace("{n}",d.n);
-  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(TST.open?' open':'')+' data-lsec="tst"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),'<span class="tsth">'+esc(head)+'</span>',esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':''))+'</summary>'+
+  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(TST.open?' open':'')+' data-lsec="tst"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),(()=>{const g=ghProgress();return g?'<span class="tsth">'+esc(L("Tests laufen"))+' · '+esc(g.label)+' · '+g.pct+' %</span>':'<span class="tsth">'+esc(head)+'</span>'})(),esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':''),ghProgress())+'</summary>'+
     '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
     suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
       return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'" data-su="'+esc(su.name)+'"'+(TST.su[su.name]?' open':'')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
@@ -175,11 +199,12 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-tstall]");
   const k=box.dataset.lsec;if(k==="tst")TST.open=open;else if(k==="aud")AUD.open=open;else if(k==="rt"&&typeof RTS!=="undefined")RTS.open=open;else if(k==="dck"&&typeof DCK!=="undefined")DCK.open=open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="tst")TST.open=d.open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.su)TST.su[d.dataset.su]=d.open},true);
-document.addEventListener("click",async e=>{if(!e.target.closest("[data-tstrun]")||!isAdmin()||TST.run)return;TST.run=true;TST.msg="";render();
+document.addEventListener("click",e=>{if(e.target.closest("[data-tstrun]"))tstStart(false)});
+async function tstStart(auto){if(!isAdmin()||TST.run||!window.CHATURL)return;TST.run=true;TST.msg="";render();
   try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/tests",{method:"POST",headers:{Authorization:"Bearer "+tok}});const j=await r.json().catch(()=>({}));
     TST.msg=r.ok?L("Tests gestartet – das Ergebnis erscheint hier in etwa 10–15 Minuten."):r.status===404?L("Der Worker kennt diese Funktion noch nicht – bitte den neuen Code aus tools/chat_worker.js einsetzen."):(j.error||("HTTP "+r.status));
     if(r.ok){const t0=Date.now(),before=TST.d&&TST.d.at;const poll=async()=>{if(Date.now()-t0>25*60e3){TST.run=false;render();return}TST.d=null;await testsLoad();if(TST.d&&TST.d.at&&TST.d.at!==before){TST.run=false;TST.msg="";render();return}setTimeout(poll,60e3)};setTimeout(poll,90e3)}else TST.run=false}
-  catch(err){TST.run=false;TST.msg=L("Fehler:")+" "+(err.message||err)}render()});
+  catch(err){TST.run=false;TST.msg=L("Fehler:")+" "+(err.message||err)}if(auto&&TST.msg&&!/gestartet/.test(TST.msg))TST.msg="";setTimeout(ghPoll,4000);render()}
 
 /* Log/Tests: all boxes closed when the page is opened; one button opens or closes all of them (open state only for this visit) */
 window.logTopHTML=function(){return '<div class="logtop"><button type="button" class="pillbtn" data-logall>'+TST_ALL+' '+esc(L("Alle auf- oder zuklappen"))+'</button></div>'};

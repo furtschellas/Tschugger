@@ -387,7 +387,7 @@ VIEWS.admin=function(){
   if(ADM.sub==="set")return h+setSec+'</section>';
   if(ADM.sub==="docs")return h+docsSec()+'</section>';
   if(ADM.sub==="roles")return h+rolesSec()+'</section>';
-  if(ADM.sub==="log")return h+(window.logTopHTML?window.logTopHTML():"")+testsSec()+(window.roleTestSec?window.roleTestSec():"")+(isAdmin()&&window.dataCheckSec?window.dataCheckSec():"")+auditSec()+'</section>';
+  if(ADM.sub==="log")return h+testsSec()+(window.roleTestSec?window.roleTestSec():"")+(isAdmin()&&window.dataCheckSec?window.dataCheckSec():"")+auditSec()+'</section>';
   if(ADM.sub==="test")return h+'<div class="dcktab">'+(window.dataCheckSec?window.dataCheckSec(true):"")+'</div></section>';
   if(ADM.sub==="bk")return h+bkSec()+'</section>';
   const cInv=can("users.invite"),cView=can("users.view")||can("users.edit"),cEd=can("users.edit");
