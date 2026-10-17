@@ -11,6 +11,17 @@
 #splash .spr{position:absolute;inset:0;transform:rotate(-90deg)}#splash circle{fill:none;stroke-width:5}#splash .spt{stroke:rgba(255,255,255,.12)}
 #splash .spp{stroke:#ff2e8a;stroke-linecap:round;stroke-dasharray:465;stroke-dashoffset:465;transition:stroke-dashoffset .25s}
 @media (prefers-color-scheme:light){html:not([data-theme="dark"]) #splash{background:#f6f2ea}html:not([data-theme="dark"]) #splash .spv{color:rgba(0,0,0,.55)}}</style>
+<script>/* stability: errors are collected (reported to the owners without any data), the last version that started without
+   errors is kept on the device, and if this version does not start, the page switches to that one (once per session) */
+window.__ERRS=[];window.APPVER="__APP_VER__";window.WORKERVER="__WORKER_VER__";window.addEventListener("error",function(e){try{__ERRS.push({m:String(e.message||"").slice(0,200),f:String(e.filename||"").split("/").pop().slice(0,40),l:e.lineno||0,t:Date.now()})}catch(_){}});
+window.addEventListener("unhandledrejection",function(e){try{var r=e.reason;__ERRS.push({m:String(r&&r.message||r||"").slice(0,200),f:"promise",l:0,t:Date.now()})}catch(_){}});
+window.addEventListener("load",function(){setTimeout(function(){var ok=typeof render==="function"&&typeof VIEWS==="object"&&window.__APPOK;
+  var safe=/[?&]safe=/.test(location.search);if(safe)try{history.replaceState(null,"",location.pathname+location.hash)}catch(_){}
+  if(ok&&!safe)try{sessionStorage.removeItem("safeTry")}catch(_){}
+  if(!ok&&!safe){try{if(!sessionStorage.getItem("safeTry")){sessionStorage.setItem("safeTry","1");location.replace(location.pathname+"?safe=1"+location.hash);return}}catch(_){}}
+  /* good: no error while starting and the page drew itself → keep this version as the fallback */
+  if(ok&&!safe&&!__ERRS.length){var c=navigator.serviceWorker&&navigator.serviceWorker.controller;if(c)try{c.postMessage({good:1})}catch(_){}}},5000)});
+</script>
 <script>/* start screen: the logo (about the size of a five-franc coin); the ring shows how far the app has loaded and the page
    appears the moment it is ready – also on reload. It never blocks the app: at the latest after 8 s it disappears. */
 (function(){var el=document.getElementById("splash"),c=document.getElementById("splp"),t0=Date.now(),cur=0,done=false;

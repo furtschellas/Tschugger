@@ -1,6 +1,6 @@
 /* ---- data: fetch encrypted file, decrypt with the key from Firestore ---- */
 /* the encrypted data file is requested right at start, in parallel with the sign-in check; the first load uses that answer */
-let PREENC=null;try{if(navigator.onLine!==false)PREENC=fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)}catch(_){}
+let PREENC=null;try{if(navigator.onLine!==false&&!LASTSTAMP)PREENC=fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)}catch(_){}
 async function fetchEnc(){if(PREENC){const p=PREENC;PREENC=null;const j=await p;if(j&&j.ct)return j}const ac=typeof AbortController==="function"?new AbortController():null;const tm=setTimeout(()=>ac&&ac.abort(),25000);let r;try{r=await fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store",signal:ac?ac.signal:undefined})}catch(err){throw Object.assign(new Error("network: "+(err&&err.name||err)),{code:"unavailable"})}finally{clearTimeout(tm)}if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
 async function getDataKey(){
   if(DATAKEY)return DATAKEY;
@@ -50,14 +50,14 @@ async function fetchStamp(){try{const r=await withTimeout(fetch("stamp.json?t="+
   if(j&&j.c){CHECKED=j.c;if(S.meta)S.meta.checkedAt=j.c}return j&&j.s?j:null}catch(_){return null}}
 async function loadOnce(force){
   if(!MEMBER&&!isAdmin())return false;
-  if(!force&&S.loaded&&LASTSTAMP){const st=await fetchStamp();if(st&&st.s===LASTSTAMP)return true}
+  if(!force&&LASTSTAMP&&(S.loaded||window.CACHEOK)){const st=await fetchStamp();if(st&&st.s===LASTSTAMP){if(!S.loaded){S.loaded=true;scheduleRender()}return true}}
   const enc=await fetchEnc();
   if(!force&&enc.stamp&&enc.stamp===LASTSTAMP&&S.loaded)return true;
   const key=await getDataKey();
   let pt;try{pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct))}catch(err){DATAKEY=null;throw err}
   const data=JSON.parse(new TextDecoder().decode(pt));
   if(!data||!Array.isArray(data.days))throw new Error("data format");
-  LASTSTAMP=enc.stamp||null;applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
+  LASTSTAMP=enc.stamp||null;try{if(LASTSTAMP)localStorage.setItem("dstamp:v1",LASTSTAMP)}catch(_){}applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
 }
 function loadErr(err){
   const c=(err&&(err.code||err.name))||"",m=(err&&err.message)||String(err);

@@ -25,8 +25,8 @@ async function auditLoad(){AUD.busy=true;try{const {F,db}=await fb();let q;
     try{q=await F.getDocs(F.query(F.collection(db,"audit"),F.orderBy("at","desc"),F.limit(300)))}catch(_){q=await F.getDocs(F.collection(db,"audit"))}
     AUD.list=q.docs.map(d=>Object.assign({id_:d.id},d.data())).map(x=>Object.assign(x,{ms:x.at&&x.at.toMillis?x.at.toMillis():(x.at&&x.at.seconds?x.at.seconds*1000:Date.parse(x.at)||0)})).sort((a,b)=>b.ms-a.ms).slice(0,300);AUD.err=""}
   catch(err){AUD.list=[];AUD.err=(err&&err.code)||String(err)}AUD.busy=false;AUD.at=Date.now();render()}
-const AUDLBL={roles:"Rolle",userroles:"Rolle zugewiesen",admins:"Admin",owners:"Owner",invites:"Einladung",members:"Profil",menus:"Menü",config:"Einstellungen",broadcasts:"Push-Nachricht",starts:"Startpasswort",requests:"Zugangsanfrage"};
-const AUDOP={set:"gespeichert",update:"geändert",delete:"gelöscht",add:"erstellt"};
+const AUDLBL={app:"App-Fehler",roles:"Rolle",userroles:"Rolle zugewiesen",admins:"Admin",owners:"Owner",invites:"Einladung",members:"Profil",menus:"Menü",config:"Einstellungen",broadcasts:"Push-Nachricht",starts:"Startpasswort",requests:"Zugangsanfrage"};
+const AUDOP={error:"gemeldet",set:"gespeichert",update:"geändert",delete:"gelöscht",add:"erstellt"};
 function auditSecInner(){
   if(!AUD.list&&!AUD.busy)auditLoad();
   if(!AUD.list)return '<div class="empty">'+L("Lade Protokoll …")+'</div>';
@@ -146,3 +146,21 @@ async function tstStart(auto){if(!isAdmin()||TST.run||!window.CHATURL)return;TST
 window.logTopHTML=function(){return '<div class="logtop"><button type="button" class="pillbtn" data-logall>'+TST_ALL+' '+esc(L("Alle auf- oder zuklappen"))+'</button></div>'};
 document.addEventListener("click",e=>{if(!e.target.closest("[data-logall]"))return;const v=document.getElementById("view");const ds=[...v.querySelectorAll("details[data-lsec]")];const open=!ds.every(d=>d.open);
   ds.forEach(d=>{d.open=open;if(!open)d.querySelectorAll("details").forEach(x=>{x.open=false;if(x.dataset.su)TST.su[x.dataset.su]=false})});TST.open=open;AUD.open=open;if(typeof RTS!=="undefined")RTS.open=open;if(typeof DCK!=="undefined")DCK.open=open});
+
+/* ---------- errors on a device are reported to the owners (in Log, «App-Fehler»): only the message, file and line –
+   never data (addresses and numbers removed); at most 5 per visit, the same message once a day per device ---------- */
+const ERRSENT=new Set();let ERRN=0;
+async function errReport(){try{if(!ME||!window.__ERRS||!__ERRS.length||ERRN>=5)return;if(!(MEMBER||isAdmin()))return;
+    const today=new Date().toISOString().slice(0,10);let seen={};try{seen=JSON.parse(localStorage.getItem("errsent:v1")||"{}")}catch(_){}if(seen.d!==today)seen={d:today,m:[]};
+    const list=__ERRS.splice(0);const {F,db}=await fb();
+    for(const e of list){const m=String(e.m||"").replace(/[\w.+-]+@[\w-]+\.[\w.]+/g,"…").replace(/\+?\d[\d ]{6,}/g,"…").slice(0,200);const k=m+"|"+e.f;
+      if(!m||ERRSENT.has(k)||seen.m.includes(k)||ERRN>=5)continue;ERRSENT.add(k);seen.m.push(k);ERRN++;
+      await F.addDoc(F.collection(db,"audit"),{by:lc(ME.email),at:F.serverTimestamp(),op:"error",col:"app",id:String(window.APPVER||"").slice(0,40),sum:(m+(e.f?" ("+e.f+(e.l?":"+e.l:"")+")":"")).slice(0,290)})}
+    try{localStorage.setItem("errsent:v1",JSON.stringify({d:today,m:seen.m.slice(-30)}))}catch(_){}}catch(_){}}
+setInterval(errReport,30000);setTimeout(errReport,8000);
+/* ---------- the worker in Cloudflare: admins see in Log/Tests when it runs an older version than this app expects ---------- */
+const WK={v:null,at:0};
+async function workerCheck(){if(!window.CHATURL||!isAdmin()||Date.now()-WK.at<10*60e3)return;WK.at=Date.now();
+  try{const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/",{cache:"no-store"});const j=r.ok?await r.json():null;WK.v=j&&j.v||"?";if(S.tab==="admin")render()}catch(_){WK.v="?"}}
+window.workerWarnHTML=function(){workerCheck();const want=window.WORKERVER||"";if(!want||!WK.v||WK.v===want)return "";
+  return '<div class="wkwarn" role="status"><b>'+esc(L("Cloudflare Worker veraltet"))+'</b><br>'+esc(L("Er läuft mit Version {a}, die App erwartet {b}. Bitte den Code aus tools/chat_worker.js in Cloudflare einsetzen.").replace("{a}",WK.v==="?"?L("unbekannt"):WK.v).replace("{b}",want))+'</div>'};

@@ -12,8 +12,11 @@ assert src.count("</style>")>=1 and "</script>" in src, "app.html: </style> oder
 i=src.index(START);j=src.rindex("</script>")
 parts=sorted((T/"boot").glob("*.js"))
 assert parts, "tools/boot/*.js fehlt"
-boot=(T/"a2hs.js").read_text()+"\n"+"".join(p.read_text() for p in parts)
-body=src[:i]+"\n"+boot+"\n"+src[j:]
+# every part runs in a script of its own: an error in one part stops only that part, the rest of the app keeps working
+# (each part is valid JavaScript on its own – the syntax test checks that; global names are shared between the scripts)
+mods=[("a2hs.js",(T/"a2hs.js").read_text())]+[(p.name,p.read_text()) for p in parts]
+boot="\n</script>\n"+"".join("<script>/* "+n+" */\n"+c+"\n</script>\n" for n,c in mods)+"<script>window.__APPOK=1</script>\n"
+body=src[:i]+boot+src[j+len("</script>"):]
 body=body.replace("</style>",(T/"web_style.css").read_text()+"\n</style>\n</head>\n<body>\n"+(T/"splash.html").read_text(),1)   # start screen first
 assert "claude.use" not in body.split("<script>",2)[-1].split("/* ---------- web boot")[1]
 out=(T/"web_head.html").read_text()+body.replace('<meta name="claude:viewport-fit-sides" content="cover">\n',"")+"\n</body>\n</html>\n"
@@ -31,5 +34,7 @@ if ESB and os.path.exists(ESB):
   out=re.sub(r"(<style>)([\s\S]*?)(</style>)",lambda m:m.group(1)+_mini(m.group(2),"css").strip()+m.group(3),out)
 ver=hashlib.sha1(out.encode()).hexdigest()[:10]
 out=out.replace("__APP_VER__",ver)
+_wv=re.search(r'const VERSION = "([^"]+)"',(T/"chat_worker.js").read_text())
+out=out.replace("__WORKER_VER__",_wv.group(1) if _wv else "")   # the app warns admins when the worker in Cloudflare is older
 (R/"index.html").write_text(out);(R/"version.txt").write_text(ver+"\n")
 print("index.html",len(out))
