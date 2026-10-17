@@ -1,0 +1,75 @@
+name: Website veröffentlichen
+
+# Jede Änderung am Code wird zuerst getestet (tests/smoke.py: sechs Rollen, Handy und Desktop) und nur veröffentlicht,
+# wenn alles klappt. Reine Daten-Aktualisierungen (Dropbox) gehen ohne Test gleich online.
+# Einmalig nötig: Repository → Settings → Pages → Source: «GitHub Actions».
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.f.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            code:
+              - 'index.html'
+              - 'sw.js'
+              - 'manifest.webmanifest'
+              - 'tools/app.html'
+              - 'tools/boot/**'
+              - 'tools/web_style.css'
+              - 'tools/a2hs.js'
+              - 'tests/**'
+
+  test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Werkzeuge
+        run: |
+          pip install -q playwright==1.48.0 cryptography==43.0.3 requests==2.32.3
+          python -m playwright install --with-deps chromium >/dev/null
+      - name: Tests
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+        run: python tests/smoke.py
+
+  deploy:
+    needs: [changes, test]
+    if: always() && needs.changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: d
+        uses: actions/deploy-pages@v4
