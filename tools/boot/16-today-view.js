@@ -1,6 +1,6 @@
 /* ---------- 1) «Heute»: everything for today (or the next working day) on one page ---------- */
 /* «Today» on/off per person (profile, synced with the view settings) */
-function todayOn(){try{return localStorage.getItem("today")!=="0"}catch(_){return true}}
+function todayOn(){try{const v=localStorage.getItem("today")||"";return !(v==="0"||v.startsWith("0|"))}catch(_){return true}}
 window.todayOn=todayOn;
 /* which parts Today shows (profile → App): stored with the on/off value, «1|menu,off» = on, without lunch and offline */
 const TODAY_PARTS=[["my","Meine nächsten Termine",()=>vok("mycal")],["time","Zeiten (Call, Drehbeginn, Wrap, Sonne)",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
@@ -9,14 +9,26 @@ function todayHidden(){let v="";try{v=localStorage.getItem("today")||""}catch(_)
 const tShow=k=>!todayHidden().has(k);
 window.todayPartsHTML=function(){if(!todayOn())return "";const hid=todayHidden(),ps=TODAY_PARTS.filter(x=>x[2]());
   return '<p class="ahint"><b>'+esc(L("Was zeigt «Today»?"))+'</b></p>'+ps.map(([k,t])=>'<label class="ck"><input type="checkbox" data-todaypart="'+k+'"'+(hid.has(k)?'':' checked')+'> '+esc(L(t))+'</label>').join("")};
-document.addEventListener("change",e=>{const c=e.target.closest("[data-todayon]");if(!c)return;const hid=[...todayHidden()];store("today",c.checked?"1"+(hid.length?"|"+hid.join(","):""):"0");if(!c.checked&&S.tab==="today")S.tab="plan";render()});
+document.addEventListener("change",e=>{const c=e.target.closest("[data-todayon]");if(!c)return;const hid=[...todayHidden()];store("today",(c.checked?"1":"0")+(hid.length?"|"+hid.join(","):""));if(!c.checked&&S.tab==="today")S.tab="plan";render()});
 document.addEventListener("change",e=>{const c=e.target.closest("[data-todaypart]");if(!c)return;const hid=todayHidden();if(c.checked)hid.delete(c.dataset.todaypart);else hid.add(c.dataset.todaypart);
   store("today","1"+(hid.size?"|"+[...hid].join(","):""));if(typeof savePrefsSoon==="function")savePrefsSoon()});
+/* a new script version (from the Dropbox update): shown for 3 days like the schedule changes, with the scenes from the changelog
+   and the whole changelog to open */
+function scriptChg(){const sx=S.meta&&S.meta.scriptChange,at=sx?Date.parse(sx.at):0;
+  if(!sx||!at||!vok("script")||Date.now()-at>=3*864e5)return null;const seen=+(localStorage.getItem("chgseen:v1")||0);
+  return {date:new Date(at).toISOString().slice(0,10),at,unread:at>seen,script:1,sx,txt:L("Neue Drehbuch-Version")+" "+(sx.v||"")+(sx.prev&&sx.prev!==sx.v?" ("+L("vorher")+" "+sx.prev+")":sx.prev===sx.v?" ("+L("überarbeitet")+")":"")}}
+function scriptChgHTML(c){const sx=c.sx||{},sc=arr(sx.scenes);
+  return '<button type="button" class="lnk tscr" data-tscript>'+esc(c.txt)+'</button>'+
+    (sc.length?'<span class="tscrsc">'+esc(L(sc.length===1?"Szene":"Szenen"))+': '+sc.map(x=>'<button type="button" class="lnk" data-scene="'+esc(x)+'">'+esc(x)+'</button>').join(", ")+'</span>':'')+
+    (sx.log?'<details class="tscrlog"><summary>'+esc(L("Ganzes Changelog"))+'</summary><pre>'+esc(sx.log)+'</pre></details>':'')}
 function todayDay(){const t=todayISO();const ds=(S.days||[]).filter(d=>d.date);return ds.find(d=>d.date===t)||ds.find(d=>d.date>t&&d.kind==="shoot")||ds.find(d=>d.date>t)||null}
 VIEWS.today=function(){
   if(!S.loaded&&!(S.days||[]).length)return '<div class="empty">'+L("Daten werden geladen …")+'</div>';
   const d=todayDay(),t=todayISO();
-  if(!d)return '<section class="today"><h2 class="pgt">'+L("Heute")+'</h2><p class="ghint">'+L("Keine kommenden Drehtage.")+'</p></section>';
+  if(!d){const sc=tShow("chg")?scriptChg():null;
+    return '<section class="today"><h2 class="pgt">'+L("Heute")+'</h2><p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>'+
+      (sc?'<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(sc.unread?' <span class="chgdot">1 '+esc(L("neu"))+'</span>':'')+'</div><ul class="chglist"><li'+(sc.unread?' class="unread"':'')+'><span class="cd">'+esc(dmy(sc.date))+'</span><span class="cw">'+scriptChgHTML(sc)+'</span></li></ul>'+
+        (sc.unread?'<div class="tacts"><button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button></div>':'')+'</div>':'')+'</section>'}
   const isToday=d.date===t,dt=new Date(d.date+"T12:00:00");
   /* only what the person may see: schedule parts need «Drehplan sehen», callsheet parts «Callsheet sehen» */
   const canPlan=vok("plan"),canDispo=vok("dispo");
@@ -64,12 +76,9 @@ VIEWS.today=function(){
   /* my events */
   /* changes */
   const cl=canPlan?chgList():[];
-  /* a new script version (from the Dropbox update): shown for 3 days, like the schedule changes */
-  {const sx=S.meta&&S.meta.scriptChange,at=sx?Date.parse(sx.at):0;
-    if(sx&&at&&vok("script")&&Date.now()-at<3*864e5){const seen=+(localStorage.getItem("chgseen:v1")||0);
-      cl.unshift({date:new Date(at).toISOString().slice(0,10),at,unread:at>seen,script:1,txt:L("Neue Drehbuch-Version")+" "+(sx.v||"")+(sx.prev&&sx.prev!==sx.v?" ("+L("vorher")+" "+sx.prev+")":sx.prev===sx.v?" ("+L("überarbeitet")+")":"")})}}
+  {const sc=scriptChg();if(sc)cl.unshift(sc)}
   if((canPlan||cl.length)&&tShow("chg"))h+='<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(cl.some(c=>c.unread)?' <span class="chgdot">'+cl.filter(c=>c.unread).length+' '+esc(L("neu"))+'</span>':'')+'</div>'+
-    (cl.length?'<ul class="chglist">'+cl.map(c=>'<li'+(c.unread?' class="unread"':'')+'><span class="cd">'+esc(dmy(c.date))+'</span><span class="cw">'+(c.sc?'<b>'+esc(L("Szene"))+' '+esc(c.sc)+'</b>'+(c.u&&c.u!=="1"?' <span class="td-unit">'+esc(UNAME[c.u])+'</span>':'')+' · ':'')+(c.script?'<button type="button" class="lnk tscr" data-tscript>'+esc(c.txt)+'</button>':esc(c.txt))+'</span></li>').join("")+'</ul>'+
+    (cl.length?'<ul class="chglist">'+cl.map(c=>'<li'+(c.unread?' class="unread"':'')+'><span class="cd">'+esc(dmy(c.date))+'</span><span class="cw">'+(c.sc?'<b>'+esc(L("Szene"))+' '+esc(c.sc)+'</b>'+(c.u&&c.u!=="1"?' <span class="td-unit">'+esc(UNAME[c.u])+'</span>':'')+' · ':'')+(c.script?scriptChgHTML(c):esc(c.txt))+'</span></li>').join("")+'</ul>'+
       '<div class="tacts">'+(cl.some(c=>c.unread)?'<button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button>':'')+(can("push.send")&&cl.some(c=>!c.script)?'<button type="button" class="pillbtn" data-chgpush>'+esc(L("Als Push-Nachricht senden"))+'</button>':'')+'</div>'
       :'<p class="ghint">'+esc(L("Seit deinem letzten Besuch hat sich am Drehplan nichts geändert."))+'</p>')+'</div>';
   /* offline */

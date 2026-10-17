@@ -775,3 +775,8 @@ html body #view :is(.asec,.asetd,.setgrp,.paccd,.docd,.tstsec,.bcdev,.catbox){bo
 html[data-theme="light"]{--field-bg:#fff}
 .audd .admins.audit{border:0;background:transparent;padding:0;margin:6px 0 0}.audd .admins.audit>h3{display:none}.audd:not(.bad) .tsth{color:var(--muted)!important;font-weight:400}
 .logtop{display:flex;justify-content:flex-end;margin:6px 0 4px}
+
+/* Today: new script version with the scenes and the whole changelog */
+.tchg .tscrsc{display:block;margin-top:2px;font-size:13px;color:var(--muted)}.tchg .tscrsc .lnk{padding:0;min-height:0;font-size:13px}
+.tchg .tscrlog{margin-top:6px}.tchg .tscrlog>summary{cursor:pointer;font-size:13px;color:var(--accent)}
+.tchg .tscrlog pre{white-space:pre-wrap;font-family:var(--f-body);font-size:13px;line-height:1.45;margin:6px 0 0;max-height:60vh;overflow:auto}

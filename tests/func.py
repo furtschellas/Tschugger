@@ -214,11 +214,14 @@ async def owner_tests(p, port):
     check("Eigene Termine: Empfänger nach Person (Name oder E-Mail) und Abteilung", vis == [True, True, True, False, False], vis)
 
     # new script version: header (after the schedule version), Today (3 days, unread, opens the script), push setting
-    await E("S.meta.scriptVersion='v13';S.meta.scriptChange={at:new Date().toISOString(),v:'v13',prev:'v12'};localStorage.setItem('chgseen:v1','0');renderHeader();S.tab='today';render()"); await pg.wait_for_timeout(300)
+    await E("S.meta.scriptVersion='v13';S.meta.scriptChange={at:new Date().toISOString(),v:'v13',prev:'v12',scenes:['5','6','184CA'],log:'Sc5 deleted: Football\nSc6 changed: Sweets\nSc184CA added: Woman with dog'};localStorage.setItem('chgseen:v1','0');renderHeader();S.tab='today';render()"); await pg.wait_for_timeout(300)
     check("Kopf: Drehbuch-Version nach der Sched-Version", "Drehbuch v13" in await E("document.getElementById('stand').innerText"))
     check("Handy: Zeile über dem Titel («Dreh Wallis …») ausgeblendet", await E("innerWidth<=600&&document.getElementById('sub').getBoundingClientRect().height===0"))
     td = await E("(()=>{const l=document.querySelector('#view .tchg [data-tscript]');return {t:l?l.innerText:'',dot:(document.querySelector('#view .tchg .chgdot')||{}).innerText||''}})()")
     check("Today: neue Drehbuch-Version unter «Änderungen» (mit vorheriger Version, als neu markiert)", "v13" in td["t"] and "v12" in td["t"] and "neu" in td["dot"], td)
+    cg = await E("(()=>{const c=document.querySelector('#view .tchg');const d=c&&c.querySelector('details.tscrlog');return {sc:c?[...c.querySelectorAll('.tscrsc [data-scene]')].map(b=>b.dataset.scene):[],det:!!d,open:d?d.open:null,txt:d?d.querySelector('pre').textContent:''}})()")
+    check("Today: Szenen aus dem Changelog bei der Drehbuch-Änderung (antippbar)", cg["sc"] == ["5", "6", "184CA"], cg)
+    check("Today: ganzes Changelog zum Auf- und Zuklappen (zu Beginn zu)", cg["det"] and cg["open"] is False and "Woman with dog" in cg["txt"], cg)
     await E("document.querySelector('#view [data-tscript]').click()"); await pg.wait_for_timeout(300)
     check("Today: Tippen auf die Drehbuch-Änderung öffnet das Drehbuch", await E("S.tab") == "script")
     await E("S.meta.scriptChange.at=new Date(Date.now()-4*864e5).toISOString();S.tab='today';render()"); await pg.wait_for_timeout(200)
