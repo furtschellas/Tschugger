@@ -56,17 +56,21 @@ async def owner_tests(p, port):
         await E("document.querySelector('#view [data-day=\"%s\"]').click()" % other); await pg.wait_for_timeout(250)
         check("Drehplan: Tag wechseln per Tages-Chip", await E("S.day") == other)
         await E("document.querySelector('#view [data-day=\"%s\"]').click()" % sd["day"]); await pg.wait_for_timeout(250)
+    scn_plan = await E("(()=>{const b=[...document.querySelectorAll('#view [data-scene]')].find(x=>x.offsetParent);return b?b.dataset.scene:''})()")
+    await E("S.tab='loc';render()"); await pg.wait_for_timeout(300)   # cards that open and close: Locations
     k = await E("(document.querySelector('#view [data-sckey]')||{}).dataset?.sckey||''")
     if k:
         await pg.click('#view [data-sckey="%s"]' % k); await pg.wait_for_timeout(150)
         a1 = await E("document.querySelector('#view [data-sckey=\"%s\"]').closest('.scd').classList.contains('open')" % k)
         await pg.click('#view [data-sckey="%s"]' % k); await pg.wait_for_timeout(150)
         a2 = await E("document.querySelector('#view [data-sckey=\"%s\"]').closest('.scd').classList.contains('open')" % k)
-        check("Drehplan: Szene auf- und zuklappen", a1 != a2, [a1, a2])
+        check("Locations: Karte auf- und zuklappen", a1 != a2, [a1, a2])
     if await E("!!document.getElementById('scall')"):
         await E("document.getElementById('scall').click()"); await pg.wait_for_timeout(150)
-        check("Drehplan: «alle aufklappen» öffnet alle Szenen", await E("[...document.querySelectorAll('#view [data-sckey]')].every(b=>b.getAttribute('aria-expanded')==='true')"))
-    scn = await E("(()=>{const b=[...document.querySelectorAll('#view [data-scene]')].find(x=>x.offsetParent);return b?b.dataset.scene:''})()")
+        check("Locations: «alle aufklappen» öffnet alle Karten", await E("[...document.querySelectorAll('#view [data-sckey]')].every(b=>b.getAttribute('aria-expanded')==='true')"))
+    await E("S.tab='plan';S.day=%s;render()" % json.dumps(sd["day"])); await pg.wait_for_timeout(300)
+    scn = scn_plan
+    check("Drehplan: Script-Knopf vorhanden", bool(scn))
     if scn:
         await E("[...document.querySelectorAll('#view [data-scene]')].find(x=>x.offsetParent).click()")
         await pg.wait_for_timeout(2500)
@@ -122,6 +126,23 @@ async def owner_tests(p, port):
         await E("document.querySelector('[data-bcre]').click()"); await pg.wait_for_timeout(1500)
         check("Nachricht an alle: «Erneut senden» legt eine neue Nachricht an", await E("Object.keys(window.__db).filter(k=>k.startsWith('broadcasts/')).length") == n1 + 1)
 
+    # ---------- own appointments ----------
+    await E("S.tab='my';render()"); await pg.wait_for_timeout(800)
+    check("Eigene Termine: Knopf «+ Termin» neben dem Titel", await E("!!document.querySelector('#view .myhead [data-oeadd]')"))
+    await E("document.querySelector('#view [data-oeadd]').click()"); await pg.wait_for_timeout(800)
+    await pg.fill("#oedlg [name=ti]", "Testprobe Funktion"); await pg.fill("#oedlg [name=t1]", "09:00")
+    await pg.check("#oedlg input[name=oem][value=sel]"); await pg.check('#oedlg [data-oek="roles"][value="crew"]')
+    await pg.click("#oedlg button[type=submit]"); await pg.wait_for_timeout(1500)
+    ev = await E("""(async()=>{const ks=Object.keys(window.__db).filter(k=>k.startsWith('events/'));if(!ks.length)return null;const d=window.__db[ks[0]];const key=await getDataKey();
+                   const raw=Uint8Array.from(atob(d.c),c=>c.charCodeAt(0));return {plain:JSON.stringify(d).includes('Testprobe'),by:d.by===ME.uid,
+                   b:JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:raw.slice(0,12)},key,raw.slice(12))))}})()""")
+    check("Eigene Termine: gespeichert, verschlüsselt, mit Empfängern", bool(ev) and not ev["plain"] and ev["by"] and ev["b"].get("roles") == ["crew"], ev and ev.get("b", {}).get("roles"))
+    check("Eigene Termine: erscheint in «Meine Termine» mit Stift", "Testprobe Funktion" in await E("document.getElementById('view').innerText") and await E("!!document.querySelector('#view [data-oeed]')"))
+    d = await E("""(()=>{const me={name:'X',email:'',k:'x',src:''};const n0=myEvents(me).length,o=window.ownEvents;
+                  window.ownEvents=()=>[{date:'2099-01-01',t:'09:00',n:'Probe Kostüm',src:'a'},{date:'2099-01-01',t:'9:00',n:'Probe Kostüm!',src:'b'},{date:'2099-01-01',t:'10:00',n:'Probe Kostüm',src:'c'}];
+                  const n=myEvents(me).length-n0;window.ownEvents=o;return n})()""")
+    check("Eigene Termine: doppelte Termine nur einmal", d == 2, d)
+
     # ---------- vCard ----------
     await E("S.tab='crew';S.q='';render()"); await pg.wait_for_timeout(500)
     who = await E("(()=>{const b=[...document.querySelectorAll('#view [data-vc]')].find(x=>x.offsetParent);if(!b)return null;const [gi,pi]=b.dataset.vc.split(':').map(Number);const p=S.crew[gi].people[pi];return {name:p.name,phone:!!p.phone}})()")
@@ -145,7 +166,7 @@ async def offline_test(p, port):
     st = await E("({on:navigator.onLine,days:(S.days||[]).length,me:!!ME})")
     check("Offline: zuletzt geladene Daten bleiben sichtbar", not st["on"] and st["days"] == days and days > 0, st)
     await E("S.tab='plan';S.day=(S.days.find(d=>d.kind==='shoot')||{}).id;render()"); await pg.wait_for_timeout(300)
-    check("Offline: Drehplan zeigt Szenen", await E("document.querySelectorAll('#view [data-sckey]').length") > 0)
+    check("Offline: Drehplan zeigt Szenen", await E("(()=>{const d=S.days.find(d=>d.id===S.day)||{};const sc=((d.items||[]).find(i=>i.sc)||{}).sc;return !!sc&&document.getElementById('view').innerText.includes(String(sc).split(/[ ,\\/]/)[0])})()"))
     await E("S.tab='today';render()"); await pg.wait_for_timeout(300)
     check("Offline: Hinweis «offline» auf Today", "offline" in (await E("document.getElementById('view').innerText")).lower())
     await b.close()
@@ -176,6 +197,8 @@ async def hidden_data(p, port):
             check(f"{who}: Telefonnummern sichtbar (Recht vorhanden)", bool(shown) or not phones)
         if not perms["email"]:
             check(f"{who}: keine E-Mail-Adressen der Crew", "mailto:" not in " ".join(texts))
+        vis = await E("(()=>{const me={name:'Z',email:ME.email,k:'z',src:''};return [ownFor({roles:['crew']},me),ownFor({roles:null,depts:null,people:null},me),ownFor({people:[{k:'nobody'}]},me)]})()")
+        check(f"{who}: eigener Termin nur für gewählte Rolle sichtbar", vis == [who == "crew", True, False], vis)
         await E("S.tab='crew';render()"); await pg.wait_for_timeout(300)
         adm = await E("({food:!!document.querySelector('#view [data-admv=\"food\"],#view .efood-tog'),bday:!!document.querySelector('#view [data-admv=\"bday\"]'),btn:!!(document.getElementById('admBtn')&&!document.getElementById('admBtn').hidden)})")
         check(f"{who}: Catering-Zahlen nur mit Recht", adm["food"] == perms["food"], adm)
