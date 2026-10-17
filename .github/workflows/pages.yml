@@ -78,13 +78,21 @@ jobs:
           CREW_KEY: ${{ secrets.CREW_KEY }}
           TESTS_OUT: /tmp/t-func.json
         run: python tests/func.py
+      - name: Sicherheit (Repository, Seite, Verschlüsselung, Worker, eingeschleuster Code)
+        id: t4
+        continue-on-error: true
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+          TESTS_OUT: /tmp/t-sec.json
+        run: python tests/security.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: tests-app
           path: /tmp/t-*.json
       - name: Gesamtergebnis
-        if: steps.t1.outcome != 'success' || steps.t2.outcome != 'success' || steps.t3.outcome != 'success'
+        if: steps.t1.outcome != 'success' || steps.t2.outcome != 'success' || steps.t3.outcome != 'success' || steps.t4.outcome != 'success'
         run: exit 1
 
   rules:
@@ -150,7 +158,7 @@ jobs:
           merge-multiple: true
       - name: Ins Repository
         run: |
-          python3 tests/merge_results.py /tmp/tests.json "Hintergrund=/tmp/res/t-backend.json" "App=/tmp/res/t-app.json" "Funktionen=/tmp/res/t-func.json" "Firestore-Regeln=/tmp/res/t-rules.json"
+          python3 tests/merge_results.py /tmp/tests.json "Hintergrund=/tmp/res/t-backend.json" "App=/tmp/res/t-app.json" "Funktionen=/tmp/res/t-func.json" "Sicherheit=/tmp/res/t-sec.json" "Firestore-Regeln=/tmp/res/t-rules.json"
           git config user.name "Crew-App Tests"
           git config user.email "actions@users.noreply.github.com"
           for i in 1 2 3; do

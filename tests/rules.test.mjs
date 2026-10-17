@@ -40,6 +40,7 @@ await env.withSecurityRulesDisabled(async c => {
   await setDoc(doc(db, "gcal/feed"), { c: "x" });
   await setDoc(doc(db, "secret/gcal"), { url: "https://calendar.google.com/x.ics" });
   await setDoc(doc(db, "push/uCrew_abcdefghij"), { c: "x", at: 1 });
+  await setDoc(doc(db, "broadcasts/b0"), { c: "x", at: 1 });
   await setDoc(doc(db, "audit/a1"), { by: "crew@test.ch", at: 1, op: "x", col: "x", id: "x", sum: "x" });
 });
 
@@ -96,6 +97,27 @@ await check("Google Kalender: Owner sieht die Adresse", assertSucceeds(getDoc(do
 await check("Google Kalender: Liste für «Termine erstellen» lesbar", assertSucceeds(getDoc(doc(as("power"), "gcal/feed"))));
 await check("Google Kalender: Crew ohne Recht nicht", assertFails(getDoc(doc(as("crew"), "gcal/feed"))));
 await check("Google Kalender: niemand schreibt die Liste aus der App", assertFails(setDoc(doc(as("owner"), "gcal/feed"), { c: "y" })));
+
+// ---------- more security ----------
+await check("Sicherheit: ohne Anmeldung keine Mitgliederliste", assertFails(getDocs(collection(anon, "members"))));
+await check("Sicherheit: ohne Anmeldung keine Einladungen", assertFails(getDocs(collection(anon, "invites"))));
+await check("Sicherheit: Crew sieht keine Einladungen", assertFails(getDocs(collection(as("crew"), "invites"))));
+await check("Sicherheit: Crew sieht keine Zugangsanfragen", assertFails(getDocs(collection(as("crew"), "requests"))));
+await check("Sicherheit: Crew sieht keine Rollen-Zuweisungen anderer", assertFails(getDoc(doc(as("crew"), "userroles/other@test.ch"))));
+await check("Sicherheit: eigene Rollen-Zuweisung lesbar", assertSucceeds(getDoc(doc(as("crew"), "userroles/crew@test.ch"))));
+await check("Sicherheit: nicht eingeladene Person kann nicht beitreten", assertFails(setDoc(doc(as("stranger"), "members/uStr"), { active: true, email: "str@test.ch", name: "x" })));
+await check("Sicherheit: Beitritt nur mit eigener Adresse", assertFails(setDoc(doc(as("stranger"), "members/uOther2"), { active: true, email: "other@test.ch" })));
+await check("Sicherheit: Anfrage nur in eigenem Namen", assertFails(setDoc(doc(as("stranger"), "requests/crew@test.ch"), { name: "x", at: 1 })));
+await check("Sicherheit: eigene Anfrage geht", assertSucceeds(setDoc(doc(as("stranger"), "requests/str@test.ch"), { name: "x", at: 1 })));
+await check("Sicherheit: Crew kann niemanden einladen", assertFails(setDoc(doc(as("crew"), "invites/neu@test.ch"), { name: "x", addedAt: 1 })));
+await check("Sicherheit: Crew kann sich kein Startpasswort-Konto anlegen", assertFails(setDoc(doc(as("crew"), "starts/neu@test.ch"), { mustChange: true, at: 1 })));
+await check("Sicherheit: Owner-Liste nicht für Crew", assertFails(getDocs(collection(as("crew"), "owners"))));
+await check("Sicherheit: Admin kann keinen weiteren Owner ernennen", assertFails(setDoc(doc(as("admin"), "owners/crew@test.ch"), { addedAt: 1 })));
+await check("Sicherheit: Menüs nur Catering und Admins", assertFails(setDoc(doc(as("crew"), "menus/2026-10-20"), { u1: "x" })));
+await check("Sicherheit: Push-Gerät nur unter eigener Kennung", assertFails(setDoc(doc(as("crew"), "push/uOther_abcdefghij"), { c: "x", at: 1 })));
+await check("Sicherheit: Nachricht an alle – Empfänger nachträglich nicht änderbar", assertFails(updateDoc(doc(as("power"), "broadcasts/b0"), { c: "y" })));
+await check("Sicherheit: Protokoll nur im eigenen Namen", assertFails(addDoc(collection(as("crew"), "audit"), { by: "other@test.ch", at: 1, op: "x", col: "x", id: "x", sum: "x" })));
+await check("Sicherheit: Protokolleinträge nicht änderbar", assertFails(updateDoc(doc(as("owner"), "audit/a1"), { sum: "y" })));
 
 // ---------- prefs, log, everything else ----------
 await check("Einstellungen der Person: nur die eigenen", assertFails(getDoc(doc(as("crew"), "prefs/uOther"))));
