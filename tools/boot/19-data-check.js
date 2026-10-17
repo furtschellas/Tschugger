@@ -106,13 +106,15 @@ async function dckRun(){
   }catch(err){w("warn",L("Prüfung"),L("Fehler:")+" "+(err&&err.message||err))}
   DCK.res=out;DCK.at=Date.now();DCK.busy=false;render();
 }
-window.dataCheckSec=function(){if(!dckMay())return "";
+window.dataCheckSec=function(flat){if(!dckMay())return "";
   const r=DCK.res||[],nw=r.filter(x=>x.lvl==="warn").length,ni=r.filter(x=>x.lvl==="info").length;
   const ic={warn:"⚠",info:"ℹ",ok:"✓"};
-  return '<details class="tstsec dcksec'+(nw?' bad':'')+'"'+(DCK.res?' open':'')+'><summary><b>'+esc(L("Dokumente prüfen"))+'</b>'+(DCK.res?' · <span class="tsth">'+(nw?nw+' '+esc(L(nw===1?"Unstimmigkeit":"Unstimmigkeiten")):esc(L("keine Unstimmigkeiten")))+(ni?', '+ni+' '+esc(L(ni===1?"Hinweis":"Hinweise")):'')+'</span>':'')+'</summary>'+
+  const sum=DCK.res?'<span class="tsth">'+(nw?nw+' '+esc(L(nw===1?"Unstimmigkeit":"Unstimmigkeiten")):esc(L("keine Unstimmigkeiten")))+(ni?', '+ni+' '+esc(L(ni===1?"Hinweis":"Hinweise")):'')+'</span>':'';
+  /* Mein Konto → App: always open (the section already has the title); App-Verwaltung → Log: to open like the other boxes */
+  return (flat?'<div class="dcksec dckflat'+(nw?' bad':'')+'">'+(sum?'<p class="dcksum">'+sum+'</p>':''):'<details class="tstsec dcksec'+(nw?' bad':'')+'"'+(DCK.res?' open':'')+'><summary><b>'+esc(L("Dokumente prüfen"))+'</b>'+(sum?' · '+sum:'')+'</summary>')+
     '<p class="ghint">'+esc(L("Vergleicht die Dokumente aus der Dropbox untereinander (Drehplan, Locations, Drehbuch, Cast-Liste, Prep Weekly/Daily, Callsheets, Crewliste) und prüft die App auf diesem Gerät. Es werden nur Bereiche verglichen, die du sehen darfst."))+'</p>'+
     '<div class="arb"><button type="button" class="pillbtn" data-dckrun'+(DCK.busy?' disabled':'')+'>'+esc(L(DCK.busy?"Prüfe …":DCK.res?"Nochmals prüfen":"Jetzt prüfen"))+'</button></div>'+
-    (DCK.res?'<ul class="dckl">'+r.slice().sort((a,b)=>({warn:0,info:1,ok:2})[a.lvl]-({warn:0,info:1,ok:2})[b.lvl]).map(x=>'<li class="'+x.lvl+'"><span class="dcki">'+ic[x.lvl]+'</span><span><b>'+esc(x.area)+'</b><br>'+esc(x.text)+'</span></li>').join("")+'</ul>':'')+'</details>'};
+    (DCK.res?'<ul class="dckl">'+r.slice().sort((a,b)=>({warn:0,info:1,ok:2})[a.lvl]-({warn:0,info:1,ok:2})[b.lvl]).map(x=>'<li class="'+x.lvl+'"><span class="dcki">'+ic[x.lvl]+'</span><span><b>'+esc(x.area)+'</b><br>'+esc(x.text)+'</span></li>').join("")+'</ul>':'')+(flat?'</div>':'</details>')};
 document.addEventListener("click",e=>{if(e.target.closest("[data-dckrun]")&&dckMay())dckRun()});
 /* Mein Konto → App: for people with «Dokumente prüfen» who are not admins (admins find it under App-Verwaltung → Log) */
-{const _aia=acctInnerAll;acctInnerAll=function(){const h=_aia();return (!isAdmin()&&dckMay())?h+'<section class="psec dckacct"><h4>'+esc(L("Dokumente prüfen"))+'</h4>'+window.dataCheckSec()+'</section>':h}}
+{const _aia=acctInnerAll;acctInnerAll=function(){const h=_aia();return (!isAdmin()&&dckMay())?h+'<section class="psec dckacct"><h4>'+esc(L("Dokumente prüfen"))+'</h4>'+window.dataCheckSec(true)+'</section>':h}}

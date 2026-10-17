@@ -739,3 +739,6 @@ html body #view .abtn{margin-top:6px}
 .bcprev{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.bcprev img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--rule)}.bcprev span{font-size:12px;color:var(--muted)}
 .bcthumb{display:block;width:100%;max-width:240px;max-height:180px;object-fit:cover;border-radius:10px;margin:6px 0;cursor:zoom-in}.bcthumb.ld{height:60px;background:var(--paper)}
 #bcview .bcvbox{max-width:560px}#bcview .bcvimg img{width:100%;height:auto;border-radius:12px;display:block}
+/* hidden means hidden – also for buttons with their own display (header icons without permission) */
+[hidden]{display:none!important}
+.dckflat .dcksum{margin:0 0 6px;font-size:13px}.dckflat.bad .tsth{color:#d6455d}.dckflat:not(.bad) .tsth{color:#2e9d5b}
