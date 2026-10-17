@@ -225,6 +225,13 @@ async def owner_tests(p, port):
     check("Log: Testresultate je Teil, Fehler offen", lg == {"su": 2, "bad": 1, "open": True}, lg)
     await E("TST.d=null")
 
+    # push page: who has push on a device, collapsible and closed by default (before the history)
+    await E("""(async()=>{window.__db['push/uX_abcdefghij']={c:await ownEnc({sub:{endpoint:'x'},on:true,who:{email:'crew@test.ch'}}),at:1};window.__db['push/uY_abcdefghij']={c:await ownEnc({sub:null,on:false,who:{email:'cater@test.ch'}}),at:1};BC.hist=null;BC.dev=null;BC.devOpen=false;S.tab='bcast';render()})()""")
+    await pg.wait_for_timeout(1500)
+    pd = await E("(()=>{const d=document.querySelector('#view details.bcdev');const h=document.querySelector('#view .bchh');return d?{open:d.open,before:!!(h&&(d.compareDocumentPosition(h)&4)),txt:d.innerText}:null})()")
+    check("Push: «Push aktiviert» vor dem Verlauf, zugeklappt", bool(pd) and not pd["open"] and pd["before"], pd)
+    check("Push: nur Personen mit eingeschaltetem Push", bool(pd) and "1 Person" in pd["txt"], pd and pd["txt"][:80])
+
     # ---------- vCard ----------
     await E("S.tab='crew';S.q='';render()"); await pg.wait_for_timeout(500)
     who = await E("(()=>{const b=[...document.querySelectorAll('#view [data-vc]')].find(x=>x.offsetParent);if(!b)return null;const [gi,pi]=b.dataset.vc.split(':').map(Number);const p=S.crew[gi].people[pi];return {name:p.name,phone:!!p.phone}})()")
