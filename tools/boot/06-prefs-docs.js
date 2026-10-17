@@ -8,7 +8,7 @@ addEventListener("pagehide",prefsFlush);document.addEventListener("visibilitycha
 async function savePrefs(){
   if(!ME||!ME.uid)return;const p={};
   try{for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null)p[k]=String(v).slice(0,400)}}catch(_){return}
-  try{const v=localStorage.getItem("rc");if(v!==null&&Object.keys(p).length<14)p.rc=v.slice(0,20)}catch(_){}   /* role-change notice seen (room permitting: the rules allow 16 fields) */
+  try{for(const k of ["rc","scrv"]){const v=localStorage.getItem(k);if(v!==null&&Object.keys(p).length<14)p[k]=v.slice(0,60)}}catch(_){}   /* role-change notice seen (room permitting: the rules allow 16 fields) */
   let lt=0;try{lt=+localStorage.getItem("prefsLocalAt")||0}catch(_){}PREFT=null;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"prefs",ME.uid),Object.assign(p,{at:F.serverTimestamp(),lt}))}catch(err){console.warn("prefs",err&&err.code||err)}
 }
@@ -16,7 +16,7 @@ function applyPrefs(p){
   if(!p||typeof p!=="object")return;PREFAPPLY=true;
   try{
     for(const k of PREFKEYS)if(typeof p[k]==="string")try{localStorage.setItem(k,p[k])}catch(_){}
-    if(typeof p.rc==="string")try{localStorage.setItem("rc",p.rc)}catch(_){}
+    for(const k of ["rc","scrv"])if(typeof p[k]==="string")try{localStorage.setItem(k,p[k])}catch(_){}
     const js=k=>{try{return JSON.parse(p[k])}catch(_){return null}};
     for(const [k,o] of [["pv",S.pv],["sv",S.sv],["lv",S.lv]]){const x=js(k);if(x&&typeof x==="object")for(const i in o)if(typeof x[i]==="boolean")o[i]=x[i]}
     for(const k of ["uf","pu"]){const x=js(k);if(x&&typeof x==="object")S[k]=Object.assign({},S[k],...["1","2","3"].filter(u=>typeof x[u]==="boolean").map(u=>({[u]:x[u]})))}

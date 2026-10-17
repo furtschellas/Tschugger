@@ -14,20 +14,38 @@ document.addEventListener("change",e=>{const c=e.target.closest("[data-todaypart
   store("today","1"+(hid.size?"|"+[...hid].join(","):""));if(typeof savePrefsSoon==="function")savePrefsSoon()});
 /* a new script version (from the Dropbox update): shown for 3 days like the schedule changes, with the scenes from the changelog
    and the whole changelog to open */
+/* the changes grouped by day: the date as a line of its own, the changes below it over the whole width */
+function chgListHTML(cl){let last="";
+  return '<ul class="chglist">'+cl.map(c=>{const dh=c.date!==last?'<li class="cdh"><span class="cd">'+esc(dmy(c.date))+'</span></li>':'';last=c.date;
+    return dh+'<li class="chgi'+(c.unread?' unread':'')+'"><span class="cw">'+(c.sc?'<b>'+esc(L("Szene"))+' '+esc(c.sc)+'</b>'+(c.u&&c.u!=="1"?' <span class="td-unit">'+esc(UNAME[c.u])+'</span>':'')+' · ':'')+(c.script?scriptChgHTML(c):esc(c.txt))+'</span></li>'}).join("")+'</ul>'}
+/* changelog text → one line per scene, with «added / deleted / changed / clarified» marked (lines broken by the PDF are joined again) */
+const CLOGK={added:"add",deleted:"del",changed:"chg",clarified:"clr"},CLOGDE={added:"neu hinzugefügt",deleted:"gestrichen",changed:"geändert",clarified:"präzisiert"};
+function clogHTML(t){const intro=[],items=[];let cur=null;
+  for(let x of String(t||"").split("\n")){x=x.replace(/\s{2,}/g," ").trim();if(!x)continue;
+    const m=x.match(/^Sc\s?(\d+[A-Z]{0,3})\b\s*(.*)$/);
+    if(m){cur={sc:m[1],parts:[]};items.push(cur);x=m[2];if(!x)continue}
+    const k=x.match(/^(?:(SL)\s+)?(added|deleted|changed|clarified)\s*:\s*(.*)$/i);
+    if(cur&&k)cur.parts.push({sl:!!k[1],k:k[2].toLowerCase(),t:k[3]});
+    else if(cur&&cur.parts.length)cur.parts[cur.parts.length-1].t+=" "+x;
+    else if(cur)cur.parts.push({k:"",t:x});
+    else intro.push(x)}
+  return (intro.length?'<p class="clogi">'+intro.map(esc).join("<br>")+'</p>':'')+'<ul class="clog">'+items.map(i=>'<li><button type="button" class="lnk clsc" data-scene="'+esc(i.sc)+'">Sc'+esc(i.sc)+'</button><span class="clp">'+
+    i.parts.map(p=>'<span class="clr">'+(p.k?'<span class="clk '+CLOGK[p.k]+'">'+(p.sl?'SL ':'')+esc(L(CLOGDE[p.k]))+'</span> ':'')+esc(p.t)+'</span>').join("")+'</span></li>').join("")+'</ul>'}
+window.clogHTML=clogHTML;
 function scriptChg(){const sx=S.meta&&S.meta.scriptChange,at=sx?Date.parse(sx.at):0;
   if(!sx||!at||!vok("script")||Date.now()-at>=3*864e5)return null;const seen=+(localStorage.getItem("chgseen:v1")||0);
   return {date:new Date(at).toISOString().slice(0,10),at,unread:at>seen,script:1,sx,txt:L("Neue Drehbuch-Version")+" "+(sx.v||"")+(sx.prev&&sx.prev!==sx.v?" ("+L("vorher")+" "+sx.prev+")":sx.prev===sx.v?" ("+L("überarbeitet")+")":"")}}
 function scriptChgHTML(c){const sx=c.sx||{},sc=arr(sx.scenes);
   return '<button type="button" class="lnk tscr" data-tscript>'+esc(c.txt)+'</button>'+
     (sc.length?'<span class="tscrsc">'+esc(L(sc.length===1?"Szene":"Szenen"))+': '+sc.map(x=>'<button type="button" class="lnk" data-scene="'+esc(x)+'">'+esc(x)+'</button>').join(", ")+'</span>':'')+
-    (sx.log?'<details class="tscrlog"><summary>'+esc(L("Ganzes Changelog"))+'</summary><pre>'+esc(sx.log)+'</pre></details>':'')}
+    (sx.log?'<details class="tscrlog"><summary>'+esc(L("Ganzes Changelog"))+'</summary>'+clogHTML(sx.log)+'</details>':'')}
 function todayDay(){const t=todayISO();const ds=(S.days||[]).filter(d=>d.date);return ds.find(d=>d.date===t)||ds.find(d=>d.date>t&&d.kind==="shoot")||ds.find(d=>d.date>t)||null}
 VIEWS.today=function(){
   if(!S.loaded&&!(S.days||[]).length)return '<div class="empty">'+L("Daten werden geladen …")+'</div>';
   const d=todayDay(),t=todayISO();
   if(!d){const sc=tShow("chg")?scriptChg():null;
     return '<section class="today"><h2 class="pgt">'+L("Heute")+'</h2><p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>'+
-      (sc?'<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(sc.unread?' <span class="chgdot">1 '+esc(L("neu"))+'</span>':'')+'</div><ul class="chglist"><li'+(sc.unread?' class="unread"':'')+'><span class="cd">'+esc(dmy(sc.date))+'</span><span class="cw">'+scriptChgHTML(sc)+'</span></li></ul>'+
+      (sc?'<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(sc.unread?' <span class="chgdot">1 '+esc(L("neu"))+'</span>':'')+'</div>chgListHTML([sc])+'+
         (sc.unread?'<div class="tacts"><button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button></div>':'')+'</div>':'')+'</section>'}
   const isToday=d.date===t,dt=new Date(d.date+"T12:00:00");
   /* only what the person may see: schedule parts need «Drehplan sehen», callsheet parts «Callsheet sehen» */
@@ -78,7 +96,7 @@ VIEWS.today=function(){
   const cl=canPlan?chgList():[];
   {const sc=scriptChg();if(sc)cl.unshift(sc)}
   if((canPlan||cl.length)&&tShow("chg"))h+='<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(cl.some(c=>c.unread)?' <span class="chgdot">'+cl.filter(c=>c.unread).length+' '+esc(L("neu"))+'</span>':'')+'</div>'+
-    (cl.length?'<ul class="chglist">'+cl.map(c=>'<li'+(c.unread?' class="unread"':'')+'><span class="cd">'+esc(dmy(c.date))+'</span><span class="cw">'+(c.sc?'<b>'+esc(L("Szene"))+' '+esc(c.sc)+'</b>'+(c.u&&c.u!=="1"?' <span class="td-unit">'+esc(UNAME[c.u])+'</span>':'')+' · ':'')+(c.script?scriptChgHTML(c):esc(c.txt))+'</span></li>').join("")+'</ul>'+
+    (cl.length?chgListHTML(cl)+
       '<div class="tacts">'+(cl.some(c=>c.unread)?'<button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button>':'')+(can("push.send")&&cl.some(c=>!c.script)?'<button type="button" class="pillbtn" data-chgpush>'+esc(L("Als Push-Nachricht senden"))+'</button>':'')+'</div>'
       :'<p class="ghint">'+esc(L("Seit deinem letzten Besuch hat sich am Drehplan nichts geändert."))+'</p>')+'</div>';
   /* offline */
