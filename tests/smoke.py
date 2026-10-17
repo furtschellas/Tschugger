@@ -73,6 +73,14 @@ def check(name, ok, info=""):
     if not ok: FAILS.append(name)
 
 
+def wait_port(port, t=15):
+    """the test server needs a moment, longer on a slow machine"""
+    end = time.time() + t
+    while time.time() < end:
+        try: socket.create_connection(("127.0.0.1", port), 0.5).close(); return
+        except OSError: time.sleep(0.2)
+
+
 def free_port():
     s = socket.socket(); s.bind(("127.0.0.1", 0)); p = s.getsockname()[1]; s.close(); return p
 
@@ -123,7 +131,7 @@ async def main():
     port = free_port()
     srv = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", str(ROOT)],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(1)
+    wait_port(port)
     try:
         async with async_playwright() as p:
             # ---------- every role: signed in, every page renders, no script errors ----------
@@ -145,6 +153,9 @@ async def main():
                     # Today
                     await E("S.tab='today';render()"); await pg.wait_for_timeout(600)
                     check("Today: Seite mit Karten", await E("document.querySelectorAll('#view .today .tcard').length") >= 1)
+                    tl = await E("[...document.querySelectorAll('#view .today .ttiles>*')].map(t=>{const r=t.getBoundingClientRect();return [Math.round(r.left),Math.round(r.top),Math.round(r.width)]})")
+                    cols = len({x[0] for x in tl}); rws = len({x[1] for x in tl})
+                    check("Today auf dem Handy: Kacheln 2×2", len(tl) < 2 or (cols == 2 and len({x[2] for x in tl}) == 1), tl)
                     rows = await E("[...document.querySelectorAll('#view .tsclist li')].map(l=>Math.round(l.getBoundingClientRect().height))")
                     check("Today: Szenen je eine Zeile", all(h <= 30 for h in rows), rows[:5])
                     # day chips: label and date always the same distance

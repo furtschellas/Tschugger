@@ -19,7 +19,7 @@ async def shoot(out):
     port = smoke.free_port()
     srv = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", str(smoke.ROOT)],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(1)
+    smoke.wait_port(port)
     try:
         async with async_playwright() as p:
             for width in (390, 1280):
