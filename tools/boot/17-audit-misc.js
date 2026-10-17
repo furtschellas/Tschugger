@@ -63,10 +63,11 @@ async function logAutoRun(sub){
   if(typeof dckMay==="function"&&dckMay()&&typeof dckRun==="function")await dckRun(true);
   if(sub==="log"&&isAdmin())await ghPoll()}   /* progress of a GitHub run that is going */
 /* the automatic tests on GitHub never start by themselves (not on reload, «Log» or opening the box) – only with their start button */
-/* progress of the GitHub run (public repository, no data): status of the last «Website veröffentlichen» run and its steps */
+/* progress of the GitHub run (public repository, no data): only runs started with the start button (workflow_dispatch) –
+   the checks of a new app version (after every update) are not shown as «Tests laufen» */
 const GH={run:null,jobs:[],t:null,at:0};
 async function ghPoll(){clearTimeout(GH.t);try{
-    const r=await fetch("https://api.github.com/repos/furtschellas/Tschugger/actions/workflows/pages.yml/runs?per_page=1",{cache:"no-store"});if(!r.ok)return;
+    const r=await fetch("https://api.github.com/repos/furtschellas/Tschugger/actions/workflows/pages.yml/runs?per_page=1&event=workflow_dispatch",{cache:"no-store"});if(!r.ok)return;
     const j=await r.json();GH.run=(j.workflow_runs||[])[0]||null;GH.jobs=[];
     if(GH.run&&GH.run.status!=="completed"){const q=await fetch(GH.run.jobs_url,{cache:"no-store"});if(q.ok)GH.jobs=(await q.json()).jobs||[]}
     GH.at=Date.now();const was=TST.running;TST.running=!!GH.run&&GH.run.status!=="completed";
@@ -154,7 +155,7 @@ document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.datas
 document.addEventListener("click",e=>{if(e.target.closest("[data-tstrun]"))tstStart(false)});
 async function tstStart(auto){if(!isAdmin()||TST.run||!window.CHATURL)return;TST.run=true;TST.msg="";render();
   try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/tests",{method:"POST",headers:{Authorization:"Bearer "+tok}});const j=await r.json().catch(()=>({}));
-    TST.msg=r.ok?L("Tests gestartet – das Ergebnis erscheint hier in etwa 10–15 Minuten."):r.status===404?L("Der Worker kennt diese Funktion noch nicht – bitte den neuen Code aus tools/chat_worker.js einsetzen."):(j.error||("HTTP "+r.status));
+    TST.msg=r.ok?L("Tests gestartet – das Ergebnis erscheint hier in etwa 10–15 Minuten."):r.status===404?L("Der Cloudflare Worker hat noch den alten Code und kennt diese Funktion nicht. Neuen Code einsetzen: Cloudflare → Workers & Pages → Worker → «Edit code» → Inhalt von tools/chat_worker.js einfügen → «Deploy». Oder einmalig die automatische Übertragung einrichten (siehe .github/workflows/worker.yml)."):(j.error||("HTTP "+r.status));
     if(r.ok){const t0=Date.now(),before=TST.d&&TST.d.at;const poll=async()=>{if(Date.now()-t0>25*60e3){TST.run=false;render();return}TST.d=null;await testsLoad();if(TST.d&&TST.d.at&&TST.d.at!==before){TST.run=false;TST.msg="";render();return}setTimeout(poll,60e3)};setTimeout(poll,90e3)}else TST.run=false}
   catch(err){TST.run=false;TST.msg=L("Fehler:")+" "+(err.message||err)}if(auto&&TST.msg&&!/gestartet/.test(TST.msg))TST.msg="";setTimeout(ghPoll,4000);render()}
 

@@ -1,0 +1,39 @@
+name: Cloudflare Worker aktualisieren
+
+# Überträgt tools/chat_worker.js in den Cloudflare Worker, sobald sich der Code ändert (oder von Hand gestartet).
+# Nur der Code wird ersetzt – Variablen, Secrets, Bindings und der Zeitplan im Worker bleiben, wie sie sind.
+# Einmalig nötig (Repository → Settings → Secrets and variables → Actions):
+#   Secret   CF_API_TOKEN   Cloudflare API-Token mit dem Recht «Workers Scripts: Edit»
+#   Secret   CF_ACCOUNT_ID  Cloudflare Account-ID (Dashboard → Workers & Pages, rechts)
+#   Variable CF_WORKER_NAME Name des Workers in Cloudflare
+on:
+  push:
+    branches: [main]
+    paths: ["tools/chat_worker.js"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Code übertragen
+        env:
+          TOKEN: ${{ secrets.CF_API_TOKEN }}
+          ACC: ${{ secrets.CF_ACCOUNT_ID }}
+          NAME: ${{ vars.CF_WORKER_NAME }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$ACC" ] || [ -z "$NAME" ]; then
+            echo "Nicht eingerichtet (CF_API_TOKEN, CF_ACCOUNT_ID, CF_WORKER_NAME fehlen) – Code bitte von Hand in Cloudflare einsetzen."; exit 0; fi
+          node --check tools/chat_worker.js
+          V=$(grep -o 'const VERSION = "[^"]*"' tools/chat_worker.js | cut -d'"' -f2)
+          code=$(curl -s -o /tmp/r.json -w "%{http_code}" -X PUT \
+            "https://api.cloudflare.com/client/v4/accounts/$ACC/workers/scripts/$NAME/content" \
+            -H "Authorization: Bearer $TOKEN" \
+            -F 'metadata={"main_module":"worker.js"};type=application/json' \
+            -F "worker.js=@tools/chat_worker.js;type=application/javascript+module")
+          ok=$(python3 -c "import json;print(json.load(open('/tmp/r.json')).get('success'))" 2>/dev/null || echo False)
+          if [ "$code" = "200" ] && [ "$ok" = "True" ]; then echo "Worker aktualisiert auf Version $V"; else echo "Fehler $code"; python3 -c "import json;print([e.get('message') for e in json.load(open('/tmp/r.json')).get('errors',[])])" || true; exit 1; fi

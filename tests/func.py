@@ -326,6 +326,12 @@ async def owner_tests(p, port):
 
         ab = await E("(()=>{S.tab='acct';ACSUB='app';render();const a=document.querySelector('#view .psec.about');return a?a.innerText:''})()")
         check("Mein Konto → App: «Über die App» mit App-Version und © MrK 2026", "MrK 2026" in ab and "App " in ab)
+        # phone back button: closes an open window first, then goes back to the previous page (not out of the app)
+        bk = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));S.tab='plan';render();await w(100);S.tab='script';render();await w(100);
+          const b=document.createElement('button');b.dataset.route=JSON.stringify({h:'https://x',c:'https://y',from:'Hotel',to:'Sion'});document.body.appendChild(b);b.click();b.remove();await w(150);
+          const pop=!!document.getElementById('routepop');history.back();await w(300);const closed=!document.getElementById('routepop'),tab1=S.tab;
+          history.back();await w(300);return {pop,closed,tab1,tab2:S.tab}})()""")
+        check("Zurück-Knopf: schliesst zuerst das Fenster, dann zurück zur vorherigen Seite (Drehbuch → Drehplan)", bk == {"pop": True, "closed": True, "tab1": "script", "tab2": "plan"}, bk, public=True)
         # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
         ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
           r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")
