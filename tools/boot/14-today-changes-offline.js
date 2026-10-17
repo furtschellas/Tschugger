@@ -45,7 +45,9 @@ function chgDetect(){
   chgSave(merged);
   try{if(document.visibilityState==="visible"&&vok("plan"))showMsg(L("Drehplan geändert")+": "+out.length+" "+L(out.length===1?"Änderung":"Änderungen")+" – "+L("siehe «Heute»"),6000)}catch(_){}
 }
-function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem("chgseen:v1")||0);return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
+/* changes: unread ones for 3 days; once marked as read they disappear 2 days later; the newest change always on top */
+const chgSeenGone=(at,seen)=>at<=seen&&Date.now()-seen>2*864e5;
+function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem("chgseen:v1")||0);return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t&&!chgSeenGone(c.at,seen)).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>b.at-a.at||String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
 /* used by the schedule (itemHTML): mark a changed scene */
 window.chgFor=(date,u,sc)=>{const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};
 document.addEventListener("click",e=>{if(!e.target.closest("[data-chgseen]"))return;try{localStorage.setItem("chgseen:v1",String(Date.now()))}catch(_){}render()});
