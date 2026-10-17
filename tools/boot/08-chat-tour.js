@@ -119,14 +119,14 @@ const TOUR_STEPS=[
   {tab:"acct",acsub:"pro",sel:'#view form[data-af="pf"]',t:"Profil",x:"Name, Telefon, E-Mail, Sprache und Geburtstag – so findet dich die Crew in der Crewliste."},
   {tab:"acct",acsub:"food",sel:"#view .only-food",t:"Essen",x:"Ernährung, Unverträglichkeiten und Allergien – das sieht das Catering."},
   {tab:"acct",acsub:"app",sel:"#view .acpage .psec",t:"App-Einstellungen",x:"Hell oder dunkel, Sprache, Offline-Daten, die Startseite Today, das App-Icon und diese Tour."},
-  {tab:"acct",acsub:"app",sel:"#view .dckacct",need:()=>!isAdmin()&&can("data.check"),t:"Dokumente prüfen",x:"Vergleicht Drehplan, Drehbuch, Locations, Prep und Callsheets und zeigt Unstimmigkeiten."},
-  /* App-Verwaltung: only what the person may use, each part in one sentence */
+    /* App-Verwaltung: only what the person may use, each part in one sentence */
   {tab:"admin",sel:"#admBtn",need:()=>canAdm(),t:"App-Verwaltung",x:"Das Zahnrad öffnet die Verwaltung. Du siehst nur die Teile, für die du Rechte hast."},
   {tab:"admin",asub:"users",sel:'#view .asub [data-asub="users"]',need:()=>can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"),t:"User",x:"Benutzende einladen, Anfragen freischalten, Profile ändern und Rollen zuweisen."},
   {tab:"admin",asub:"roles",sel:'#view .asub [data-asub="roles"]',need:()=>canRoleEdit()||canRoleAssign()||can("roles.view"),t:"Access",x:"Rollen und ihre Rechte. Unter «Wer hat welchen Zugriff?» schaltest du mit dem Stift ein Recht direkt für eine Rolle ein oder aus."},
   {tab:"admin",asub:"docs",sel:'#view .asub [data-asub="docs"]',need:()=>can("settings"),t:"Docs",x:"Die Texte der Einladungs-Mails und der Willkommensnachricht."},
   {tab:"admin",asub:"set",sel:'#view .asub [data-asub="set"]',need:()=>can("settings"),t:"App",x:"Aktualisierung aus der Dropbox, Sprachen, Bereiche, eigene Termine und Google Kalender, Push, Tour und Assistent ein- oder ausschalten."},
   {tab:"admin",asub:"log",sel:'#view .asub [data-asub="log"]',need:()=>isAdmin()||can("audit.view"),t:"Log/Tests",x:"Automatische Tests, «Rollen testen», «Dokumente prüfen» und wer was geändert hat."},
+  {tab:"admin",asub:"test",sel:'#view .asub [data-asub="test"],#view .dcktab .dcksec',need:()=>!isAdmin()&&can("data.check"),t:"Dokumente prüfen",x:"Vergleicht Drehplan, Drehbuch, Locations, Prep und Callsheets und zeigt Unstimmigkeiten."},
   {tab:"plan",sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
 ];
 const TOUR={i:-1,steps:[],el:null};

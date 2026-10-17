@@ -131,7 +131,7 @@ window.dataCheckSec=function(flat){if(!dckMay())return "";
     (DCK.res?'<ul class="dckl">'+r.slice().sort((a,b)=>({warn:0,info:1,ok:2})[a.lvl]-({warn:0,info:1,ok:2})[b.lvl]).map(x=>'<li class="'+x.lvl+'"><span class="dcki">'+ic[x.lvl]+'</span><span><b>'+esc(x.area)+'</b><br>'+esc(x.text)+'</span></li>').join("")+'</ul>':'')+(flat?'</div>':'</details>')};
 document.addEventListener("click",e=>{if(e.target.closest("[data-dckrun]")&&dckMay())dckRun()});
 /* Mein Konto → App: for people with «Dokumente prüfen» who are not admins (admins find it under App-Verwaltung → Log) */
-{const _aia=acctInnerAll;acctInnerAll=function(){const h=_aia();return (!isAdmin()&&dckMay())?h+'<section class="psec dckacct"><h4>'+esc(L("Dokumente prüfen"))+'</h4>'+window.dataCheckSec(true)+'</section>':h}}
+/* without admin rights: own tab «Test» in the App-Verwaltung (12-admin) */
 
 /* ---------- Rollen testen (App-Verwaltung → Log/Tests, Owner und Admins): die App einen Moment mit den Rechten jeder Rolle ansehen ----------
    Pro Rolle: welche Bereiche sie sieht, welche Zusatzrechte sie hat, ob jede Seite ohne Fehler erscheint, ob Telefon/E-Mail
