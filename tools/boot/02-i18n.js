@@ -865,3 +865,137 @@ Object.assign(I18N,{
 Object.assign(I18N,{
  "Alarm an Owner und Admins, wenn die Aktualisierung zweimal hintereinander fehlschlägt (Push-Nachricht)":{fr:"Alerte aux propriétaires et admins si la mise à jour échoue deux fois de suite (notification push)",it:"Avviso a proprietari e admin se l’aggiornamento fallisce due volte di seguito (notifica push)",en:"Alert owners and admins when the update fails twice in a row (push notification)"}
 });
+
+/* ---- moved from 20-script-news.js ---- */
+Object.assign(I18N,{
+"Seit {d} ist das Drehbuch {v} in der App.":{fr:"Depuis le {d}, le scénario {v} est dans l’app.",it:"Dal {d} la sceneggiatura {v} è nell’app.",en:"Since {d}, script {v} is in the app."},
+ "Vorher":{fr:"Avant",it:"Prima",en:"Before"},
+ "Geänderte Szene":{fr:"Scène modifiée",it:"Scena modificata",en:"Changed scene"},
+ "Geänderte Szenen":{fr:"Scènes modifiées",it:"Scene modificate",en:"Changed scenes"},
+ "Drehbuch öffnen":{fr:"Ouvrir le scénario",it:"Apri la sceneggiatura",en:"Open script"},
+ "neu hinzugefügt":{fr:"ajouté",it:"aggiunto",en:"added"},
+ "gestrichen":{fr:"supprimé",it:"eliminato",en:"deleted"},
+ "geändert":{fr:"modifié",it:"modificato",en:"changed"},
+ "präzisiert":{fr:"précisé",it:"precisato",en:"clarified"}
+});
+
+/* ---- moved from 17-audit-misc.js ---- */
+Object.assign(I18N,{
+"Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi appuntamenti",hi:"मेरे अगले कार्यक्रम"},
+ "Alle meine Termine":{en:"All my events",fr:"Tous mes rendez-vous",it:"Tutti i miei appuntamenti",hi:"मेरे सभी कार्यक्रम"},
+ "Keine anstehenden Termine.":{en:"No upcoming events.",fr:"Aucun rendez-vous à venir.",it:"Nessun appuntamento in arrivo.",hi:"कोई आगामी कार्यक्रम नहीं।"},
+ "Gilt für dieses Gerät; die Sprache im Profil bestimmt E-Mails und Push.":{en:"Applies to this device; the language in the profile is used for e-mails and notifications.",fr:"S’applique à cet appareil ; la langue du profil sert aux e-mails et notifications.",it:"Vale per questo dispositivo; la lingua del profilo vale per e-mail e notifiche.",hi:"इस डिवाइस पर लागू; प्रोफ़ाइल की भाषा ई-मेल और सूचनाओं के लिए है।"},
+ "User":{en:"Users",fr:"Utilisateurs",it:"Utenti",hi:"यूज़र"},
+ "Docs":{en:"Docs",fr:"Docs",it:"Docs",hi:"Docs"},
+ "Einst.":{en:"Settings",fr:"Réglages",it:"Impost.",hi:"सेटिंग"},
+ "Log":{en:"Log",fr:"Journal",it:"Log",hi:"लॉग"},
+ "Benachrichtigungen":{en:"Notifications",fr:"Notifications",it:"Notifiche",hi:"सूचनाएँ"},
+ "Konto":{en:"Account",fr:"Compte",it:"Account",hi:"खाता"},
+ "Startseite «Today»":{en:"“Today” start page",fr:"Page d’accueil « Today »",it:"Pagina iniziale «Today»",hi:"«Today» प्रारंभ पृष्ठ"},
+ "«Today» anzeigen und die App dort öffnen":{en:"Show “Today” and open the app there",fr:"Afficher « Today » et y ouvrir l’app",it:"Mostra «Today» e apri l’app lì",hi:"«Today» दिखाएँ और ऐप वहीं खोलें"},
+ "Ausgeschaltet öffnet die App mit dem Drehplan.":{en:"When off, the app opens with the schedule.",fr:"Désactivé, l’app s’ouvre sur le planning.",it:"Se disattivato, l’app si apre con il piano.",hi:"बंद होने पर ऐप Schedule के साथ खुलता है।"},
+ "Ziel":{en:"Destination",fr:"Destination",it:"Destinazione",hi:"गंतव्य"},
+ "Vom Hotel":{en:"From the hotel",fr:"Depuis l’hôtel",it:"Dall’hotel",hi:"होटल से"},
+ "Vom aktuellen Standort":{en:"From my current location",fr:"Depuis ma position actuelle",it:"Dalla mia posizione attuale",hi:"मेरी वर्तमान जगह से"},
+ "Route in Google Maps":{en:"Route in Google Maps",fr:"Itinéraire dans Google Maps",it:"Percorso in Google Maps",hi:"Google Maps में रास्ता"},
+ "Sonnenzeit":{en:"Daylight",fr:"Heures de soleil",it:"Ore di sole",hi:"सूर्य का समय"},
+ "Heute":{en:"Today",fr:"Aujourd’hui",it:"Oggi",hi:"आज"},
+ "Nächster Drehtag":{en:"Next shooting day",fr:"Prochain jour de tournage",it:"Prossimo giorno di riprese",hi:"अगला शूटिंग दिन"},
+ "Nächster Tag":{en:"Next day",fr:"Prochain jour",it:"Prossimo giorno",hi:"अगला दिन"},
+ "Mein Call":{en:"My call",fr:"Ma convocation",it:"La mia convocazione",hi:"मेरा कॉल"},
+ "Erste Location":{en:"First location",fr:"Premier lieu",it:"Prima location",hi:"पहली लोकेशन"},
+ "Mittagessen":{en:"Lunch",fr:"Déjeuner",it:"Pranzo",hi:"दोपहर का खाना"},
+ "Drehplan öffnen":{en:"Open schedule",fr:"Ouvrir le planning",it:"Apri il piano",hi:"Schedule खोलें"},
+ "Änderungen":{en:"Changes",fr:"Modifications",it:"Modifiche",hi:"बदलाव"},
+ "Änderung":{en:"change",fr:"modification",it:"modifica",hi:"बदलाव"},
+ "neu":{en:"new",fr:"nouveau",it:"nuovo",hi:"नया"},
+ "Neu im Drehplan":{en:"New in the schedule",fr:"Nouveau dans le planning",it:"Nuovo nel piano",hi:"Schedule में नया"},
+ "verschoben":{en:"moved",fr:"déplacé",it:"spostato",hi:"बदला गया"},
+ "Zeit":{en:"Time",fr:"Heure",it:"Ora",hi:"समय"},
+ "nicht mehr im Drehplan":{en:"no longer in the schedule",fr:"plus dans le planning",it:"non più nel piano",hi:"अब Schedule में नहीं"},
+ "Neues Callsheet":{en:"New callsheet",fr:"Nouvelle feuille de service",it:"Nuovo ordine del giorno",hi:"नई Callsheet"},
+ "Callsheet aktualisiert":{en:"Callsheet updated",fr:"Feuille de service mise à jour",it:"Ordine del giorno aggiornato",hi:"Callsheet अपडेट"},
+ "Drehplan geändert":{en:"Schedule changed",fr:"Planning modifié",it:"Piano modificato",hi:"Schedule बदला"},
+ "siehe «Heute»":{en:"see “Today”",fr:"voir « Aujourd’hui »",it:"vedi «Oggi»",hi:"«आज» देखें"},
+ "Als gelesen markieren":{en:"Mark as read",fr:"Marquer comme lu",it:"Segna come letto",hi:"पढ़ा हुआ चिह्नित करें"},
+ "Als Push-Nachricht senden":{en:"Send as notification",fr:"Envoyer comme notification",it:"Invia come notifica",hi:"नोटिफ़िकेशन भेजें"},
+ "Änderungen im Drehplan":{en:"Schedule changes",fr:"Modifications du planning",it:"Modifiche al piano",hi:"Schedule में बदलाव"},
+ "Seit deinem letzten Besuch hat sich am Drehplan nichts geändert.":{en:"Nothing in the schedule has changed since your last visit.",fr:"Rien n’a changé dans le planning depuis ta dernière visite.",it:"Nulla è cambiato nel piano dalla tua ultima visita.",hi:"आपकी पिछली विज़िट के बाद Schedule में कुछ नहीं बदला।"},
+ "Offline am Set":{en:"Offline on set",fr:"Hors ligne sur le tournage",it:"Offline sul set",hi:"सेट पर ऑफ़लाइन"},
+ "offline":{en:"offline",fr:"hors ligne",it:"offline",hi:"ऑफ़लाइन"},
+ "Gespeichert für":{en:"Saved for",fr:"Enregistré pour",it:"Salvato per",hi:"इनके लिए सहेजा"},
+ "Bilder":{en:"pictures",fr:"images",it:"immagini",hi:"तस्वीरें"},
+ "Stand":{en:"as of",fr:"état au",it:"aggiornato al",hi:"स्थिति"},
+ "Drehplan, Callsheet, Kontakte, Drehbuch und die Blocking-Bilder für heute und morgen werden automatisch auf diesem Gerät gespeichert.":{en:"Schedule, callsheet, contacts, script and today’s and tomorrow’s blocking pictures are saved on this device automatically.",fr:"Planning, feuille de service, contacts, scénario et images de blocking d’aujourd’hui et de demain sont enregistrés automatiquement sur cet appareil.",it:"Piano, ordine del giorno, contatti, sceneggiatura e immagini di blocking di oggi e domani vengono salvati automaticamente su questo dispositivo.",hi:"Schedule, Callsheet, संपर्क, Script और आज-कल की Blocking तस्वीरें अपने आप इस डिवाइस पर सहेजी जाती हैं।"},
+ "Wird geladen …":{en:"Loading …",fr:"Chargement …",it:"Caricamento …",hi:"लोड हो रहा है …"},
+ "Jetzt für offline laden":{en:"Save for offline now",fr:"Enregistrer hors ligne maintenant",it:"Salva offline ora",hi:"अभी ऑफ़लाइन सहेजें"},
+ "Offline-Daten":{en:"Offline data",fr:"Données hors ligne",it:"Dati offline",hi:"ऑफ़लाइन डेटा"},
+ "Offline-Daten immer automatisch laden":{en:"Always load offline data automatically",fr:"Toujours charger les données hors ligne automatiquement",it:"Carica sempre automaticamente i dati offline",hi:"ऑफ़लाइन डेटा हमेशा अपने आप लोड करें"},
+ "Blocking-PDFs und Floorplans aller Drehtage werden auf diesem Gerät gespeichert (keine Fotos). Ausgeschaltet nur auf Knopfdruck in «Today».":{en:"Blocking PDFs and floorplans for all shooting days are saved on this device (no photos). When off, only on request in “Today”.",fr:"Les PDF de blocking et les plans de tous les jours sont enregistrés sur cet appareil (pas de photos). Désactivé : seulement sur demande dans « Today ».",it:"PDF di blocking e planimetrie di tutti i giorni vengono salvati su questo dispositivo (niente foto). Se disattivato, solo su richiesta in «Today».",hi:"सभी शूटिंग दिनों के Blocking PDF और फ़्लोरप्लान इस डिवाइस पर सहेजे जाते हैं (फ़ोटो नहीं)। बंद होने पर केवल «Today» में बटन से।"},
+ "Gespeichert":{en:"Saved",fr:"Enregistré",it:"Salvato",hi:"सहेजा गया"},
+ "Seiten":{en:"pages",fr:"pages",it:"pagine",hi:"पेज"},
+ "Blocking-PDFs und Floorplans, alle Drehtage":{en:"blocking PDFs and floorplans, all shooting days",fr:"PDF de blocking et plans, tous les jours de tournage",it:"PDF di blocking e planimetrie, tutti i giorni di riprese",hi:"Blocking PDF और फ़्लोरप्लान, सभी शूटिंग दिन"},
+ "Drehplan, Callsheet, Kontakte, Drehbuch, Blocking-PDFs und Floorplans werden für alle Drehtage automatisch auf diesem Gerät gespeichert – Fotos nicht.":{en:"Schedule, callsheet, contacts, script, blocking PDFs and floorplans are saved on this device for all shooting days – photos are not.",fr:"Planning, feuille de service, contacts, scénario, PDF de blocking et plans sont enregistrés sur cet appareil pour tous les jours – pas les photos.",it:"Piano, ordine del giorno, contatti, sceneggiatura, PDF di blocking e planimetrie vengono salvati su questo dispositivo per tutti i giorni – le foto no.",hi:"Schedule, Callsheet, संपर्क, Script, Blocking PDF और फ़्लोरप्लान सभी दिनों के लिए इस डिवाइस पर सहेजे जाते हैं – फ़ोटो नहीं।"},
+ "Offline bereit":{en:"Ready offline",fr:"Prêt hors ligne",it:"Pronto offline",hi:"ऑफ़लाइन तैयार"},
+ "Protokoll":{en:"Log",fr:"Journal",it:"Registro",hi:"लॉग"},
+ "Protokoll sehen":{en:"See log",fr:"Voir le journal",it:"Vedere il registro",hi:"लॉग देखें"},
+ "Lade Protokoll …":{en:"Loading log …",fr:"Chargement du journal …",it:"Caricamento registro …",hi:"लॉग लोड हो रहा है …"},
+ "Wer hat wann Rollen, Benutzende, Menüs, Einstellungen oder Push-Nachrichten geändert – die letzten 300 Einträge.":{en:"Who changed roles, users, menus, settings or notifications and when – the last 300 entries.",fr:"Qui a modifié quand les rôles, utilisateurs, menus, réglages ou notifications – les 300 dernières entrées.",it:"Chi ha modificato quando ruoli, utenti, menù, impostazioni o notifiche – le ultime 300 voci.",hi:"किसने कब भूमिकाएँ, उपयोगकर्ता, मेनू, सेटिंग्स या नोटिफ़िकेशन बदले – पिछली 300 प्रविष्टियाँ।"},
+ "Protokoll nicht lesbar – bitte die neuen Firestore-Regeln veröffentlichen.":{en:"Log not readable – please publish the new Firestore rules.",fr:"Journal illisible – publie les nouvelles règles Firestore.",it:"Registro non leggibile – pubblica le nuove regole Firestore.",hi:"लॉग पढ़ा नहीं जा सका – नए Firestore नियम प्रकाशित करें।"},
+ "Suchen: Person, Rolle, Menü …":{en:"Search: person, role, menu …",fr:"Rechercher : personne, rôle, menu …",it:"Cerca: persona, ruolo, menù …",hi:"खोजें: व्यक्ति, भूमिका, मेनू …"},
+ "Neu laden":{en:"Reload",fr:"Recharger",it:"Ricarica",hi:"फिर से लोड करें"},
+ "Noch keine Einträge.":{en:"No entries yet.",fr:"Pas encore d’entrées.",it:"Ancora nessuna voce.",hi:"अभी कोई प्रविष्टि नहीं।"},
+ "Rolle zugewiesen":{en:"Role assigned",fr:"Rôle attribué",it:"Ruolo assegnato",hi:"भूमिका सौंपी"},
+ "Einladung":{en:"Invitation",fr:"Invitation",it:"Invito",hi:"निमंत्रण"},
+ "Profil":{en:"Profile",fr:"Profil",it:"Profilo",hi:"प्रोफ़ाइल"},
+ "Menü":{en:"Menu",fr:"Menu",it:"Menù",hi:"मेनू"},
+ "Push-Nachricht":{en:"Notification",fr:"Notification",it:"Notifica",hi:"नोटिफ़िकेशन"},
+ "Startpasswort":{en:"Start password",fr:"Mot de passe initial",it:"Password iniziale",hi:"शुरुआती पासवर्ड"},
+ "Zugangsanfrage":{en:"Access request",fr:"Demande d’accès",it:"Richiesta di accesso",hi:"पहुँच अनुरोध"},
+ "gespeichert":{en:"saved",fr:"enregistré",it:"salvato",hi:"सहेजा"},
+ "geändert":{en:"changed",fr:"modifié",it:"modificato",hi:"बदला"},
+ "gelöscht":{en:"deleted",fr:"supprimé",it:"eliminato",hi:"हटाया"},
+ "erstellt":{en:"created",fr:"créé",it:"creato",hi:"बनाया"},
+ "Nachricht gesendet":{en:"message sent",fr:"message envoyé",it:"messaggio inviato",hi:"संदेश भेजा"},
+ "versendet":{en:"sent",fr:"envoyé",it:"inviato",hi:"भेजा"}
+});
+
+/* ---- moved from 15-weather.js ---- */
+Object.assign(I18N,{
+"Wetterbericht":{en:"Weather report",fr:"Bulletin météo",it:"Bollettino meteo",hi:"मौसम रिपोर्ट"},
+ "sonnig":{en:"sunny",fr:"ensoleillé",it:"soleggiato",hi:"धूप"},"leicht bewölkt":{en:"partly cloudy",fr:"partiellement nuageux",it:"poco nuvoloso",hi:"आंशिक बादल"},
+ "bedeckt":{en:"overcast",fr:"couvert",it:"coperto",hi:"बादल छाए"},"Nebel":{en:"fog",fr:"brouillard",it:"nebbia",hi:"कोहरा"},"Niesel":{en:"drizzle",fr:"bruine",it:"pioviggine",hi:"बूंदाबांदी"},
+ "Regen":{en:"rain",fr:"pluie",it:"pioggia",hi:"बारिश"},"Schnee":{en:"snow",fr:"neige",it:"neve",hi:"बर्फ"},"Regenschauer":{en:"showers",fr:"averses",it:"rovesci",hi:"बौछारें"},
+ "Schneeschauer":{en:"snow showers",fr:"averses de neige",it:"rovesci di neve",hi:"बर्फ की बौछारें"},"Gewitter":{en:"thunderstorm",fr:"orage",it:"temporale",hi:"आंधी-तूफ़ान"},
+ "Wind":{en:"Wind",fr:"Vent",it:"Vento",hi:"हवा"},"Böen":{en:"gusts",fr:"rafales",it:"raffiche",hi:"झोंके"},"Laut Callsheet":{en:"Callsheet says",fr:"Selon la feuille de service",it:"Secondo l’ordine del giorno",hi:"Callsheet के अनुसार"},
+ "Vorhersage":{en:"Forecast",fr:"Prévision",it:"Previsione",hi:"पूर्वानुमान"},"Wetter nicht verfügbar":{en:"Weather not available",fr:"Météo indisponible",it:"Meteo non disponibile",hi:"मौसम उपलब्ध नहीं"}
+});
+
+/* ---- moved from 11-account.js ---- */
+Object.assign(I18N,{
+"App-Icon und App installieren":{fr:"Icône et installation de l’app",it:"Icona e installazione dell’app",en:"App icon and installing the app"},
+ "App deinstallieren":{fr:"Désinstaller l’app",it:"Disinstalla l’app",en:"Uninstall app"},
+ "Als App installieren":{fr:"Installer comme app",it:"Installa come app",en:"Install as app"},
+ "Du nutzt die App bereits als installierte App.":{fr:"Tu utilises déjà l’app installée.",it:"Stai già usando l’app installata.",en:"You are already using the installed app."},
+ "Die App ist auf diesem Gerät installiert.":{fr:"L’app est installée sur cet appareil.",it:"L’app è installata su questo dispositivo.",en:"The app is installed on this device."},
+ "Die App ist auf diesem Gerät nicht installiert.":{fr:"L’app n’est pas installée sur cet appareil.",it:"L’app non è installata su questo dispositivo.",en:"The app is not installed on this device."},
+ "Prüfe, ob die App installiert ist …":{fr:"Vérification de l’installation …",it:"Verifico se l’app è installata …",en:"Checking whether the app is installed …"},
+ "Installiere die Crew-App auf dem Startbildschirm oder Desktop – dann öffnet sie sich wie eine normale App.":{fr:"Installe l’app de l’équipe sur l’écran d’accueil ou le bureau – elle s’ouvre alors comme une app normale.",it:"Installa l’app della crew sulla schermata Home o sul desktop – si apre come una normale app.",en:"Install the crew app on your home screen or desktop – it then opens like a normal app."},
+ "Halte das App-Icon auf dem Home-Bildschirm gedrückt.":{fr:"Maintiens l’icône de l’app sur l’écran d’accueil.",it:"Tieni premuta l’icona dell’app nella schermata Home.",en:"Press and hold the app icon on the home screen."},
+ "Tippe auf «App entfernen».":{fr:"Touche « Supprimer l’app ».",it:"Tocca «Rimuovi app».",en:"Tap “Remove App”."},
+ "Wähle «Vom Home-Bildschirm entfernen».":{fr:"Choisis « Retirer de l’écran d’accueil ».",it:"Scegli «Rimuovi dalla schermata Home».",en:"Choose “Remove from Home Screen”."},
+ "Halte das App-Icon auf dem Startbildschirm gedrückt.":{fr:"Maintiens l’icône de l’app sur l’écran d’accueil.",it:"Tieni premuta l’icona dell’app sulla schermata Home.",en:"Press and hold the app icon on the home screen."},
+ "Tippe auf «Deinstallieren» (oder «App-Info» → «Deinstallieren»).":{fr:"Touche « Désinstaller » (ou « Infos sur l’app » → « Désinstaller »).",it:"Tocca «Disinstalla» (oppure «Info app» → «Disinstalla»).",en:"Tap “Uninstall” (or “App info” → “Uninstall”)."},
+ "Öffne im Finder den Ordner «Programme» (bzw. «~/Programme»).":{fr:"Ouvre le dossier « Applications » (ou « ~/Applications ») dans le Finder.",it:"Apri la cartella «Applicazioni» (o «~/Applicazioni») nel Finder.",en:"Open the “Applications” folder (or “~/Applications”) in Finder."},
+ "Ziehe «Tschugger Tigerblood» in den Papierkorb.":{fr:"Glisse « Tschugger Tigerblood » dans la corbeille.",it:"Trascina «Tschugger Tigerblood» nel cestino.",en:"Drag “Tschugger Tigerblood” to the Trash."},
+ "Öffne die installierte App.":{fr:"Ouvre l’app installée.",it:"Apri l’app installata.",en:"Open the installed app."},
+ "Klicke oben rechts auf das Menü (⋮ bzw. …).":{fr:"Clique en haut à droite sur le menu (⋮ ou …).",it:"Clicca in alto a destra sul menu (⋮ o …).",en:"Click the menu at the top right (⋮ or …)."},
+ "Wähle «Deinstallieren».":{fr:"Choisis « Désinstaller ».",it:"Scegli «Disinstalla».",en:"Choose “Uninstall”."},
+ "Wähle «Tschugger Tigerblood deinstallieren».":{fr:"Choisis « Désinstaller Tschugger Tigerblood ».",it:"Scegli «Disinstalla Tschugger Tigerblood».",en:"Choose “Uninstall Tschugger Tigerblood”."},
+ "Dein Konto und deine Einstellungen bleiben erhalten – du kannst die App jederzeit im Browser öffnen oder wieder installieren.":{fr:"Ton compte et tes réglages sont conservés – tu peux rouvrir l’app dans le navigateur ou la réinstaller à tout moment.",it:"Il tuo account e le impostazioni restano – puoi riaprire l’app nel browser o reinstallarla in qualsiasi momento.",en:"Your account and settings are kept – you can open the app in the browser or install it again at any time."}
+});
+
+/* ---- moved from 11-account.js ---- */
+Object.assign(I18N,{
+"Die App ist auf diesem Gerät installiert – öffne sie am besten über das App-Icon.":{fr:"L’app est installée sur cet appareil – ouvre-la plutôt avec l’icône de l’app.",it:"L’app è installata su questo dispositivo – aprila meglio dall’icona dell’app.",en:"The app is installed on this device – best open it from the app icon."}
+});

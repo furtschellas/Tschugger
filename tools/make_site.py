@@ -2,6 +2,9 @@
 The data layer at the end of the app (Claude database) is swapped for an encrypted data file."""
 import pathlib,re,hashlib
 T=pathlib.Path(__file__).resolve().parent;R=T.parent
+# the app itself lives in parts (tools/base: head, styles, markup, script parts in order); tools/app.html is put together from them
+BASE=[p for p in sorted((T/"base").glob("*")) if p.suffix in (".html",".js")]
+if BASE:(T/"app.html").write_text("".join(p.read_text() for p in BASE))
 src=(T/"app.html").read_text()
 START="\napplyStatic();\nloadCache();\nrender();\n"
 assert src.count(START)==1, "app.html: Startblock «applyStatic(); loadCache(); render();» nicht genau einmal gefunden"

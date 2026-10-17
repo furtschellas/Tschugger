@@ -76,7 +76,7 @@ function bcHistHTML(){
   if(!BC.hist){bcLoadHist();return '<p class="ghint">'+L("Lade …")+'</p>'}
   if(!BC.hist.length)return '<p class="ghint">'+L("Noch keine Push-Nachrichten gesendet.")+'</p>';
   return '<div class="bchist">'+BC.hist.map(b=>{const dt=new Date(b.at||0);
-    return '<div class="bch"><div class="bchd"><span class="bct">'+esc(dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",year:"numeric"}))+' · '+esc(dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"}))+'</span>'+(b.n!=null?'<span class="ust role">'+esc(L("{n} Geräte").replace("{n}",b.n))+'</span>':'')+'</div>'+
+    return '<div class="bch"><div class="bchd"><span class="bct">'+esc(fmtD(dt))+' · '+esc(fmtT(dt))+'</span>'+(b.n!=null?'<span class="ust role">'+esc(L("{n} Geräte").replace("{n}",b.n))+'</span>':'')+'</div>'+
       '<b class="bctt">'+esc(b.title||"")+'</b><p class="bcb">'+esc(b.body||"")+'</p>'+
       '<div class="bcm"><span>'+esc(L("An"))+': '+esc(bcWho(b))+'</span>'+(b.ch?'<span>'+esc(["push","wa","sms","mail"].filter(k=>b.ch[k]).map(k=>({push:"Push",wa:"WhatsApp",sms:"SMS",mail:L("E-Mail")})[k]).join(" · "))+'</span>':'')+'<span>'+esc(L("Von"))+': '+esc(b.by||"")+'</span></div>'+bcRcptHTML(b)+
       '<div class="arb"><button type="button" class="pillbtn" data-bcre="'+esc(b.id)+'">↻ '+L("Erneut senden")+'</button></div></div>'}).join("")+'</div>';

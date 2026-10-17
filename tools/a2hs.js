@@ -76,12 +76,6 @@ async function a2hsCheck(){
 }
 window.a2hsCheck=a2hsCheck;
 function a2hsDue(){return !isStandalone()&&!a2hsState()}   /* any stored state (asked, later, done) means: never ask again by itself */
-function maybeOfferA2hs(afterLogin){
-  if(isStandalone())return;if(afterLogin!=="setup")return; /* only from the setup chain */
-  const st=a2hsState();if(st==="done")return;
-  if(st)return;
-  showA2hs();
-}
 function showA2hs(steps){
   if(!steps&&!a2hsState())a2hsSet("asked:"+Date.now()); /* ask only once per device (desktop or home screen); later only from «Mein Konto» */
   let s=document.getElementById("a2hs");

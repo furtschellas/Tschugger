@@ -394,8 +394,8 @@ async def owner_tests(p, port):
     check("Log: zweiter Klick klappt alle Unterthemen auf", await E("(()=>{const a=document.querySelector('#view details.audd');return a.open&&[...a.querySelectorAll('details')].every(d=>d.open)})()"))
     await E("document.querySelector('#view details.audd [data-tstall]').click()"); await pg.wait_for_timeout(150)
     check("Log: dritter Klick schliesst das ganze Menü", await E("(()=>{const a=document.querySelector('#view details.audd');return !a.open&&![...a.querySelectorAll('details')].some(d=>d.open)})()"))
-    lk = await E("(()=>{const b=[...document.querySelectorAll('#view .lsum .tstall, #view .tstbtns button')];return {n:b.length,same:b.every(x=>x.classList.contains('lbtn')&&Math.round(x.getBoundingClientRect().width)===34&&!!x.title)}})()")
-    check("Log: alle Symbol-Knöpfe gleich gestaltet (rund, 34 px, mit Tooltip)", lk["n"] >= 6 and lk["same"], lk, public=True)
+    lk = await E("(()=>{const b=[...document.querySelectorAll('#view .lsum .tstall, #view .tstbtns button')];return {n:b.length,same:b.every(x=>x.classList.contains('lbtn')&&Math.round(x.getBoundingClientRect().width)===34&&!!x.title),centred:b.every(x=>{const r=x.getBoundingClientRect(),g=x.querySelector('svg').getBoundingClientRect();return Math.abs(g.left+g.width/2-r.left-r.width/2)<=1&&Math.abs(g.top+g.height/2-r.top-r.height/2)<=1})}})()")
+    check("Log: alle Symbol-Knöpfe gleich gestaltet (rund, 34 px, Symbol in der Mitte, mit Tooltip)", lk["n"] >= 6 and lk["same"] and lk["centred"], lk, public=True)
     # every box like «Automatische Tests»: last result (with time) in the title, parts to open, start button below
     lb = await E("""(()=>{const r={};for(const [k,sel] of [['tst','details[data-lsec="tst"]'],['rt','details[data-lsec="rt"]'],['dck','details[data-lsec="dck"]'],['aud','details[data-lsec="aud"]']]){const d=document.querySelector('#view '+sel);if(!d){r[k]=null;continue}
       const sm=d.querySelector(':scope>summary').textContent;r[k]={time:/\\d\\d\\.\\d\\d\\.? \\d\\d:\\d\\d/.test(sm),su:d.querySelectorAll('details.tstsu').length,run:!!d.querySelector('.tstbtns button')}}return r})()""")

@@ -170,7 +170,7 @@ function userInfo(r){
   return row("Telefon",m.phone?'<a href="tel:'+esc(String(m.phone).replace(/[^\d+]/g,""))+'">'+esc(m.phone)+'</a>':"")+
     row("Kontakt-E-Mail",m.contactEmail&&m.contactEmail!==m.email?'<a href="mailto:'+esc(m.contactEmail)+'">'+esc(m.contactEmail)+'</a>':"")+
     row("Geburtsdatum",m.birthday?esc(m.birthday.split("-").reverse().join(".")):"")+row("Geschlecht",g?esc(L(g)):"")+row("Essen",esc(dietText(m)))+
-    row("Willkommen",esc(m.welcomeAck?L("bestätigt")+" "+new Date(m.welcomeAck).toLocaleDateString("de-CH"):L("noch nicht bestätigt")));
+    row("Willkommen",esc(m.welcomeAck?L("bestätigt")+" "+fmtD(m.welcomeAck):L("noch nicht bestätigt")));
 }
 
 /* new users get the role «Crew» automatically (an invitation creates userroles/{email} = crew) */
@@ -590,7 +590,6 @@ window.crewExtra=function(p){
   const ue=m?m.email:lc(p.email),uinv=ue&&ADM.inv.some(i=>i.id===ue),canEd=ACC&&can("users.edit")&&(m||uinv)&&(isOwner()||!ADMINS.includes(ue));
   const edBtn=canEd?cico(ADM.cedit===ue?"close":"edit",L(ADM.cedit===ue?"Schliessen":"Benutzerdaten bearbeiten"),'data-ced="'+esc(ue)+'" aria-expanded="'+(ADM.cedit===ue)+'"',ADM.cedit===ue?" on":""):"";
   const edForm=canEd&&ADM.cedit===ue?editForm({email:ue,m,name:p.name,role:p.role},true):"";
-  const rSel=ACC&&canRole(ue)&&(m||uinv)?roleSel({email:ue}):"";
   if(!(AV("food")||AV("bday")||ACC))return "";
   if(ACC){
     if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
