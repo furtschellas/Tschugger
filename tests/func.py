@@ -275,6 +275,8 @@ async def owner_tests(p, port):
     await E("document.querySelector('#view [data-tstall]').click()"); await pg.wait_for_timeout(200)
     al = await E("(()=>{const b=document.querySelector('#view [data-tstall]').closest('.tstsec');return [b,...b.querySelectorAll('details')].every(d=>d.open)})()")
     check("Log: Knopf «alles aufklappen» öffnet alle Teile", al)
+    ra = await E("(()=>{const bx=[...document.querySelectorAll('#view details.tstsec')];return {n:bx.length,ok:bx.every(d=>{const sm=d.querySelector(':scope>summary');const b=sm&&sm.querySelector(':scope>[data-tstall]');if(!b)return false;const r=b.getBoundingClientRect(),q=sm.getBoundingClientRect();return sm.lastElementChild===b&&q.right-r.right<40})}})()")
+    check("Log: jedes Menü auf- und zuklappbar, Knopf ganz rechts", ra["n"] >= 4 and ra["ok"], ra)
     check("Log: Knopf «Tests jetzt starten» (Kreis-Pfeile) für Admins", await E("!!document.querySelector('#view [data-tstrun] svg')"))
     await E("TST.d=null")
 
