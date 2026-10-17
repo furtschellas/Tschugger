@@ -256,8 +256,8 @@ async def owner_tests(p, port):
     # route choice (Today → Anfahrt): two option rows, the hotel with its name below the title
     await E("""(()=>{const b=document.createElement('button');b.dataset.route=JSON.stringify({h:'https://www.google.com/maps/dir/?api=1&origin=Hotel',c:'https://www.google.com/maps/dir/?api=1',from:'Hotel Moxy Sion',to:'Sion'});document.body.appendChild(b);b.click();b.remove()})()""")
     await pg.wait_for_timeout(200)
-    rp = await E("(()=>{const o=[...document.querySelectorAll('#routepop .rtopt')];const r=o.map(a=>{const t=a.querySelector('b').getBoundingClientRect(),s=a.querySelector('small').getBoundingClientRect();return {t:a.innerText.replace(/\\s+/g,' '),gap:Math.round(s.top-t.bottom),ic:!!a.querySelector('.rtic svg')}});document.querySelectorAll('#routepop').forEach(x=>x.remove());return r})()")
-    check("Anfahrt: zwei Optionen mit Symbol, Hotelname direkt unter dem Titel", len(rp) == 2 and all(x["ic"] for x in rp) and "Hotel Moxy Sion" in rp[0]["t"] and all(abs(x["gap"]) <= 6 for x in rp), rp)
+    rp = await E("""(()=>{const o=[...document.querySelectorAll('#routepop .rtpill')];const r=o.map(a=>{const t=a.querySelector('b').getBoundingClientRect(),s=a.querySelector('small');return {t:a.textContent,gap:s?Math.round(s.getBoundingClientRect().top-t.bottom):0,h:Math.round(a.getBoundingClientRect().height)}});document.querySelectorAll('#routepop').forEach(x=>x.remove());return r})()""")
+    check("Anfahrt: zwei runde Knöpfe, Hotelname direkt unter «Vom Hotel», gleich hoch", len(rp) == 2 and "Hotel Moxy Sion" in rp[0]["t"] and abs(rp[0]["gap"]) <= 4 and abs(rp[0]["h"] - rp[1]["h"]) <= 2, rp)
     check("Mein Konto → App: Titel «App-Icon und App installieren»", "App-Icon und App installieren" in await E("(()=>{S.tab='acct';ACSUB='app';render();return document.getElementById('view').innerText})()"))
 
     # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
@@ -354,6 +354,15 @@ async def owner_tests(p, port):
     check("Log: Knopf im Menü klappt nur dieses Menü auf, bleibt nach Neuaufbau offen", tg["open"] and not tg["others"] and tg["keep"], tg)
     await E("document.querySelector('#view details.audd [data-tstall]').click()"); await pg.wait_for_timeout(150)
     check("Log: zweiter Klick klappt das Menü wieder zu", not await E("document.querySelector('#view details.audd').open"))
+    # every box like «Automatische Tests»: last result (with time) in the title, parts to open, start button below
+    lb = await E("""(()=>{const r={};for(const [k,sel] of [['tst','details[data-lsec="tst"]'],['rt','details[data-lsec="rt"]'],['dck','details[data-lsec="dck"]'],['aud','details[data-lsec="aud"]']]){const d=document.querySelector('#view '+sel);if(!d){r[k]=null;continue}
+      const sm=d.querySelector(':scope>summary').textContent;r[k]={time:/\\d\\d\\.\\d\\d\\.? \\d\\d:\\d\\d/.test(sm),su:d.querySelectorAll('details.tstsu').length,run:!!d.querySelector('.tstbtns button')}}return r})()""")
+    check("Log: jedes Menü wie «Automatische Tests» (Zeit im Titel, Unterteile, Knopf unten)", all(lb[k] and lb[k]["time"] and lb[k]["su"] > 0 for k in ("tst", "rt", "dck", "aud")) and lb["rt"]["run"] and lb["dck"]["run"], lb)
+    await E("document.querySelectorAll('#view details').forEach(d=>d.open=true)"); await pg.wait_for_timeout(200)
+    await E("S.tab='today';render()"); await pg.wait_for_timeout(200); await E("S.tab='admin';ADM.sub='log';render()"); await pg.wait_for_timeout(300)
+    check("Log: nach erneutem Öffnen alles zugeklappt (nichts gemerkt)", await E("[...document.querySelectorAll('#view details')].every(d=>!d.open)"))
+    await E("(()=>{const d=document.querySelector('#view details[data-lsec=\"tst\"]');d.open=true;const s=d.querySelector('details.tstsu');s.open=true})()"); await pg.wait_for_timeout(150); await E("render()"); await pg.wait_for_timeout(200)
+    check("Log: geöffnete Unterteile bleiben offen, solange man auf der Seite bleibt", await E("!!document.querySelector('#view details[data-lsec=\"tst\"] details.tstsu[open]')"))
     pf = await E("""(()=>{const keep={};for(const k of PREFKEYS){keep[k]=localStorage.getItem(k);localStorage.setItem(k,'x')}localStorage.setItem('rc','abc');
       let n=0;const p={};for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null)p[k]=v}const v=localStorage.getItem('rc');if(v!==null&&Object.keys(p).length<14)p.rc=v;n=Object.keys(p).length+2;
       for(const k of PREFKEYS){if(keep[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,keep[k])}localStorage.removeItem('rc');return n})()""")
