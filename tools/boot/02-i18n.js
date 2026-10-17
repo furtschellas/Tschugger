@@ -1007,3 +1007,6 @@ Object.assign(I18N,{
  "unbekannt":{fr:"inconnue",it:"sconosciuta",en:"unknown"}
 });
 Object.assign(I18N,{"Weitere":{fr:"Autres",it:"Altri",en:"Other"},"ohne Rolle":{fr:"sans rôle",it:"senza ruolo",en:"no role"}});
+Object.assign(I18N,{
+ "Seite":{fr:"page",it:"pagina",en:"page"}
+});

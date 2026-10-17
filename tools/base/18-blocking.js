@@ -3,9 +3,10 @@
 document.addEventListener("click",e=>{const a=e.target.closest("[data-fpg]");if(!a||typeof window.blkImg!=="function")return;const f=arr(S.meta&&S.meta.floorplans).find(x=>(x.file||x.name)===a.dataset.fpg);if(!f||!arr(f.pg).length)return;
   e.preventDefault();e.stopPropagation();openGallery({name:"fp:"+f.name,title:"Floorplan · "+f.name,sc:[],url:f.url,media:arr(f.pg).map((p,i)=>({n:f.name+(f.pg.length>1?" · "+(i+1)+"/"+f.pg.length:""),t:"img",f:p,u:f.url}))})},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkg]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkg);if(!b||!bmed(b).length)return;e.preventDefault();e.stopPropagation();openGallery(b)},true);
-function openGallery(b,start){
+document.addEventListener("click",e=>{const a=e.target.closest("[data-blkpdf]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkpdf);if(!b)return;e.preventDefault();e.stopPropagation();openGallery(b,0,a.dataset.pdfn)},true);
+function openGallery(b,start,pdf){
   let d=document.getElementById("blkgal");if(d)d.remove();d=document.createElement("div");d.id="blkgal";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
-  const all=bmed(b),title=b.title||(L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / "));
+  const all=pdf?bmed(b).filter(m=>m.g==="pdf"&&String(m.n).split(" · ")[0]===pdf):bmed(b),title=pdf?L("Auflösung")+" "+pdfLbl(pdf):(b.title||(L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ")));
   /* view options: size (small / large / list), filter (all / photos / videos), slideshow; size is remembered */
   let gv="m",gf="all",timer=null;try{gv=localStorage.getItem("galview")||"m"}catch(_){}
   let media=all;const setF=()=>{media=all.filter(m=>gf==="all"||(gf==="vid")===(m.t==="vid"))};
@@ -16,7 +17,7 @@ function openGallery(b,start){
   const bar=()=>'<div class="galbar">'+seg("data-gv",gv,[["s","Klein",'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5"/><rect x="10" y="3" width="5" height="5"/><rect x="17" y="3" width="4" height="5"/><rect x="3" y="10" width="5" height="5"/><rect x="10" y="10" width="5" height="5"/><rect x="17" y="10" width="4" height="5"/><rect x="3" y="17" width="5" height="4"/><rect x="10" y="17" width="5" height="4"/></svg>'],["m","Mittel",'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>'],["l","Gross",'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="1"/></svg>'],["list","Liste",'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="6" height="5"/><path d="M12 6h9M12 15h9"/><rect x="3" y="13" width="6" height="5"/></svg>']])+
     (hasVid&&hasImg?seg("data-gfl",gf,[["all","Alle"],["img","Fotos"],["vid","Videos"]]):'')+
     '<button type="button" class="pillbtn galshow" data-gshow>▶ '+esc(L("Diashow"))+'</button></div>';
-  const grid=()=>'<div class="a2box galbox"><h3>'+esc(title)+' <small>'+media.length+'</small></h3>'+bar()+(arr(b.pdfs).length?'<div class="fpls">'+arr(b.pdfs).map(f=>'<a class="fpl scp" href="'+esc(safeUrl(f.u))+'" target="_blank" rel="noopener noreferrer">PDF '+esc(f.l)+'</a>').join("")+'</div>':'')+
+  const grid=()=>'<div class="a2box galbox"><h3>'+esc(title)+' <small>'+media.length+'</small></h3>'+bar()+(!pdf&&(arr(b.pdfs).length||pdfDocs(b).size)?'<div class="fpls">'+pdfBtns(b).join("")+'</div>':'')+
     '<div class="galgrid g'+gv+'">'+media.map((m,i)=>(multiG&&(i===0||(media[i-1].g||"")!==(m.g||""))?'<div class="galgh">'+esc(L(GLBL[m.g||""]))+' <small>'+media.filter(x=>(x.g||"")===(m.g||"")).length+'</small></div>':'')+'<button type="button" class="galth'+(m.t==="vid"?' vid':'')+'" data-gi="'+i+'" aria-label="'+esc(m.n)+'"><img alt="" data-gf="'+esc(m.f)+'">'+(m.t==="vid"?'<span class="galplay" aria-hidden="true">▶</span>':'')+(gv==="list"?'<span class="galname">'+esc(m.n)+'</span>':'')+'</button>').join("")+'</div>'+
     '<div class="a2b"><a class="pillbtn" href="'+esc(safeUrl(b.url))+'" target="_blank" rel="noopener noreferrer">'+esc(L("Ordner in Dropbox öffnen"))+'</a></div></div>';
   const view=i=>{const m=media[i];return '<div class="a2box galbox galview"><h3>'+esc(title)+' <small>'+(i+1)+' / '+media.length+'</small></h3>'+
@@ -37,7 +38,9 @@ function openGallery(b,start){
   document.body.appendChild(d);show(start);d.tabIndex=-1;d.focus();
 }
 /* blocking of a script scene that is not (yet) in the schedule */
-function blkRow(sc){const h=fpLinks([],blkFor(sc));return h?'<div class="spblk">'+h+'</div>':''}
+/* the scene in the shooting schedule (for the floorplan of its location) */
+function scItem(sc){const k=String(sc||"").toLowerCase().replace(/\s+/g,"");if(!k)return null;for(const d of S.days||[])for(const it of arr(d.items).concat(arr((d.unit2||{}).items),arr((d.unit3||{}).items)))if(String(it.sc||"").toLowerCase().replace(/\s+/g,"")===k)return it;return null}
+function blkRow(sc){const it=scItem(sc);const h=fpLinks(it?fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")):[],blkFor(sc));return h?'<div class="spblk">'+h+'</div>':''}
 function spPage(x,ctx,list,reqSc){const f=sceneFacts(reqSc||x.sc,x,list);return '<div class="sp-scene">'+(f||blkRow(x.sc))+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+esc(spHead(x))+'</span><span class="spr">'+spTod(x)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
 function spMore(dir,list,j){
   const y=list[j];if(!y)return'';
