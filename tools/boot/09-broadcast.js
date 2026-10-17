@@ -49,14 +49,21 @@ async function bcDeliver(id){
   return L("Gespeichert – die Nachricht geht mit dem nächsten Lauf (spätestens in 15 Minuten) raus.");
 }
 /* history: every message with date, time, recipients and sender; can be sent again */
-async function bcLoadHist(){BC.hist=[];BC.dev=null;try{const {F,db}=await fb();let q;try{q=await F.getDocs(F.query(F.collection(db,"broadcasts"),F.orderBy("at","desc"),F.limit(100)))}catch(_){q=await F.getDocs(F.collection(db,"broadcasts"))}const key=await getDataKey();
+async function bcLoadHist(){BC.hist=[];BC.dev=null;BC.devOn=null;try{const {F,db}=await fb();let q;try{q=await F.getDocs(F.query(F.collection(db,"broadcasts"),F.orderBy("at","desc"),F.limit(100)))}catch(_){q=await F.getDocs(F.collection(db,"broadcasts"))}const key=await getDataKey();
   const out=[];for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));out.push(Object.assign({id:d.id,sent:d.data().sent,n:d.data().n,done:d.data().done||null},JSON.parse(new TextDecoder().decode(pt))))}catch(_){}}
   BC.hist=out.sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,100)}catch(err){console.warn("bc hist",err&&err.code||err);BC.histErr=String((err&&err.code)||err)}render()}
 /* who got it: «done» holds the devices; admins may read the device list (push/…) and see whose device it is */
 async function bcLoadDev(){if(BC.dev||!isAdmin())return;BC.dev={};try{const {F,db}=await fb();const key=await getDataKey();const q=await F.getDocs(F.collection(db,"push"));
-  for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));const w=(JSON.parse(new TextDecoder().decode(pt)).who)||{};BC.dev[d.id]=lc(w.email)}catch(_){}}}catch(err){console.warn("bc dev",err&&err.code||err)}render()}
+  for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));const pl=JSON.parse(new TextDecoder().decode(pt)),w=pl.who||{};BC.dev[d.id]=lc(w.email);(BC.devOn=BC.devOn||{})[d.id]={em:lc(w.email),on:pl.on!==false&&!!pl.sub,rem:!!(pl.items||[]).length,news:pl.news||{},at:+d.data().at||0}}catch(_){}}}catch(err){console.warn("bc dev",err&&err.code||err)}render()}
 function bcPerson(em){if(!em)return "";for(const g of (S.crew||[]))for(const p of (g.people||[]))if(p.name&&lc(p.email)===em)return p.name;
   const m=(typeof ADM!=="undefined"&&ADM.mem||[]).find(x=>lc(x.email)===em);const n=m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);return n||em}
+/* who has push switched on on a device (admins): collapsible, always closed when the page is opened */
+function bcDevHTML(){if(!isAdmin())return "";if(!BC.dev){bcLoadDev();return ""}
+  const per=new Map();for(const x of Object.values(BC.devOn||{})){if(!x.on||!x.em)continue;const n=bcPerson(x.em);const o=per.get(n)||{n:0,news:false};o.n++;o.news=o.news||Object.values(x.news||{}).some(Boolean);per.set(n,o)}
+  const list=[...per.keys()].sort((a,c)=>a.localeCompare(c,"de"));
+  return '<details class="bcdev"'+(BC.devOpen?' open':'')+'><summary><b>'+esc(L("Push aktiviert"))+'</b> · '+list.length+' '+esc(L(list.length===1?"Person":"Personen"))+'</summary>'+
+    (list.length?'<div class="bcrl">'+list.map(n=>'<span>'+esc(n)+(per.get(n).n>1?' <small>×'+per.get(n).n+'</small>':'')+'</span>').join("")+'</div>':'<p class="ghint">'+esc(L("Noch niemand."))+'</p>')+
+    '<p class="ghint">'+esc(L("Personen mit mindestens einem Gerät, auf dem Push-Nachrichten eingeschaltet sind. ×2 = zwei Geräte."))+'</p></details>'}
 function bcRcptHTML(b){if(!isAdmin()||b.push===false)return "";
   if(!b.done||!b.done.length)return '<div class="bcr">'+esc(L("Empfänger nicht erfasst (vor dem 17.10.2026 gesendet oder noch unterwegs)."))+'</div>';
   if(!BC.dev){bcLoadDev();return '<div class="bcr">'+esc(L("Lade …"))+'</div>'}
@@ -98,7 +105,7 @@ VIEWS.bcast=function(){
       [["bp","push","Push"],["bw","wa","WhatsApp"],["bs","sms","SMS"],["be","mail","E-Mail"]].map(([n,k,t])=>'<label class="ck"><input type="checkbox" name="'+n+'"'+((BC.ch||{push:true})[k]?' checked':'')+'> '+esc(L(t))+'</label>').join("")+
       '</div><p class="ghint">'+L("Push geht sofort an alle mit eingeschalteten Push-Nachrichten. WhatsApp, SMS und E-Mail öffnen die jeweilige App auf deinem Gerät – nur an die oben gewählten Empfänger.")+'</p></fieldset>'+
     '<div class="arb"><button type="submit"'+(BC.busy?' disabled':'')+'>'+L("Jetzt senden")+'</button></div><p class="amsg'+(BC.ok?' ok':'')+'" role="status">'+esc(BC.msg)+'</p></form>'+
-    bcWaHTML()+'<div class="bchh"><h3 class="cath3">'+L("Verlauf")+'</h3>'+(isAdmin()&&BC.hist&&BC.hist.length?'<button type="button" class="pillbtn bcclr" data-bcclr>'+L("Verlauf leeren")+'</button>':'')+'</div>'+bcHistHTML()+'</section>';
+    bcWaHTML()+bcDevHTML()+'<div class="bchh"><h3 class="cath3">'+L("Verlauf")+'</h3>'+(isAdmin()&&BC.hist&&BC.hist.length?'<button type="button" class="pillbtn bcclr" data-bcclr>'+L("Verlauf leeren")+'</button>':'')+'</div>'+bcHistHTML()+'</section>';
 };
 document.addEventListener("change",e=>{const t=e.target;if(t.matches("[data-bc] input[name=bm]")){BC.mode=t.value;const f=t.form;const keep={bt:f.bt.value,bb:f.bb.value};render();const g=document.querySelector("[data-bc]");if(g){g.bt.value=keep.bt;g.bb.value=keep.bb}}
   else if(t.matches("[data-bcsel]")){const k=t.dataset.bcsel;BC.sel[k]=BC.sel[k].filter(x=>x!==t.value);if(t.checked)BC.sel[k].push(t.value)}});
@@ -117,3 +124,5 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form[data
     const r=BC.ch.push?await bcDeliver(ref.id):L("Gespeichert.");if(BC.ch.mail)bcMail(pl);if(BC.sms)setTimeout(()=>bcSms(pl),BC.ch.mail?1500:0);BC.waList=BC.wa?{text:pl.title+"\n"+pl.body,list:bcRecips(pl)}:null;BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";BC.ch={push:true};f.reset();BC.hist=null}
   catch(err){console.error(err);BC.ok=false;BC.msg=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}
   BC.busy=false;render()});
+
+document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("bcdev"))BC.devOpen=e.target.open},true); /* only in memory: closed again after reloading */
