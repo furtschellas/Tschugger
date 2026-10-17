@@ -143,6 +143,78 @@ async def owner_tests(p, port):
                   const n=myEvents(me).length-n0;window.ownEvents=o;return n})()""")
     check("Eigene Termine: doppelte Termine nur einmal", d == 2, d)
 
+    # edit and delete with the pencil, long note with line breaks
+    await E("document.querySelector('#view [data-oeed]').click()"); await pg.wait_for_timeout(800)
+    check("Eigene Termine: Stift öffnet den Termin zum Bearbeiten", await E("(document.querySelector('#oedlg [name=ti]')||{}).value") == "Testprobe Funktion")
+    long_note = "Zeile eins\n" + "x" * 1900
+    await pg.fill("#oedlg [name=ti]", "Testprobe geändert"); await pg.fill("#oedlg [name=no]", long_note)
+    await pg.click("#oedlg button[type=submit]"); await pg.wait_for_timeout(1500)
+    txt = await E("document.getElementById('view').innerText")
+    check("Eigene Termine: Änderung gespeichert", "Testprobe geändert" in txt and "Testprobe Funktion" not in txt)
+    check("Eigene Termine: lange Notiz (2000 Zeichen) mit Zeilenumbruch", await E("(()=>{const n=[...document.querySelectorAll('#view .mci .ppx')].find(x=>x.textContent.startsWith('Zeile eins'));return !!n&&n.textContent.length>1900&&getComputedStyle(n).whiteSpace==='pre-line'})()"))
+
+    # in the shooting schedule and the prep schedule of that day
+    sh = await E("""(async()=>{const sd=S.days.find(d=>d.kind==='shoot'&&d.date>=todayISO());const pp=(S.prepro||[]).find(d=>d.date>=todayISO()&&d.off!==true&&(d.items||[]).some(i=>!/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n||'').trim()))&&!S.days.some(x=>x.kind==='shoot'&&x.date===d.date));
+        const mk=async o=>{const {F,db}=await fb();await F.addDoc(F.collection(db,'events'),{c:await ownEnc(Object.assign({byEmail:lc(ME.email),byName:'Owner',roles:null,depts:null,people:null},o)),at:1,by:ME.uid})};
+        if(sd)await mk({title:'Plantermin',date:sd.date,t:'07:15'});if(pp)await mk({title:'Preptermin',date:pp.date,t:'14:00'});await ownLoad(true);return {sd:sd&&sd.id,pp:pp&&pp.date}})()""")
+    if sh["sd"]:
+        await E("S.tab='plan';S.day=%s;render()" % json.dumps(sh["sd"])); await pg.wait_for_timeout(400)
+        check("Eigene Termine: im Drehplan am Tag («Weitere Termine»)", "Plantermin" in await E("(document.querySelector('#view .oeday')||{}).innerText||''"))
+    if sh["pp"]:
+        await E("S.tab='plan';S.day='prep:%s';render()" % sh["pp"]); await pg.wait_for_timeout(400)
+        check("Eigene Termine: in der Prep-Planung am Tag", "Preptermin" in await E("(document.querySelector('#view .oeday')||{}).innerText||''"))
+
+    # Google Calendar: list from gcal/feed, take one over → event with gc, recipients chosen
+    await E("""(async()=>{const d=new Date(Date.now()+2*864e5).toISOString().slice(0,10);window.__db['gcal/feed']={c:await ownEnc([{uid:'g1',title:'Kalendertermin',date:d,t:'10:00',end:'11:00',where:'Sion',note:''}]),at:Date.now()};
+                window.GCALON=true;S.tab='my';render()})()"""); await pg.wait_for_timeout(600)
+    check("Google Kalender: Knopf in «Meine Termine»", await E("!!document.querySelector('#view [data-oegc]')"))
+    await E("document.querySelector('#view [data-oegc]').click()"); await pg.wait_for_timeout(1500)
+    check("Google Kalender: Termine zur Auswahl", "Kalendertermin" in await E("(document.getElementById('gcdlg')||{}).innerText||''"))
+    await E("document.querySelector('#gcdlg [data-gcadd]').click()"); await pg.wait_for_timeout(800)
+    check("Google Kalender: «Übernehmen» füllt den Termin vor", await E("(document.querySelector('#oedlg [name=ti]')||{}).value") == "Kalendertermin")
+    await pg.check("#oedlg input[name=oem][value=sel]"); await pg.check('#oedlg [data-oek="roles"][value="crew"]')
+    await pg.click("#oedlg button[type=submit]"); await pg.wait_for_timeout(1500)
+    gc = await E("Object.values(window.__db).filter(v=>v&&v.gc==='g1').length")
+    check("Google Kalender: übernommener Termin mit Kalender-ID gespeichert", gc == 1, gc)
+    await E("document.querySelector('#view [data-oegc]').click()"); await pg.wait_for_timeout(1500)
+    check("Google Kalender: übernommener Termin als «in der App» markiert", await E("!!document.querySelector('#gcdlg .gcrow.on [data-gced]')"))
+    await E("const g=document.getElementById('gcdlg');if(g)g.remove()")
+
+    # delete
+    await E("S.tab='my';render()"); await pg.wait_for_timeout(400)
+    await E("[...document.querySelectorAll('#view .mci')].find(m=>m.innerText.includes('Testprobe geändert')).querySelector('[data-oeed]').click()"); await pg.wait_for_timeout(800)
+    await E("document.querySelector('#oedlg [data-oedel]').click()"); await pg.wait_for_timeout(1500)
+    check("Eigene Termine: löschen", "Testprobe geändert" not in await E("document.getElementById('view').innerText"))
+
+    # switched off in App-Verwaltung → no button, no appointments
+    await E("window.OWNEV=false;render()"); await pg.wait_for_timeout(300)
+    off = await E("({btn:!!document.querySelector('#view [data-oeadd]'),ev:document.getElementById('view').innerText.includes('Kalendertermin')})")
+    check("Eigene Termine: ausgeschaltet → kein Knopf und keine eigenen Termine", not off["btn"] and not off["ev"], off)
+    await E("window.OWNEV=true;render()")
+
+    # recipients: person and department
+    vis = await E("""(()=>{const me={name:'Anna Muster',email:'anna@x.ch',k:nmk('Anna Muster'),src:'Kamera'};
+        return [ownFor({people:[{k:nmk('Anna Muster')}]},me),ownFor({people:[{email:'anna@x.ch'}]},me),ownFor({depts:['Kamera']},me),ownFor({depts:['Ton']},me),ownFor({people:[{k:'otto'}],depts:['Licht']},me)]})()""")
+    check("Eigene Termine: Empfänger nach Person (Name oder E-Mail) und Abteilung", vis == [True, True, True, False, False], vis)
+
+    # first push prompt: also offers changes to schedule, callsheet and prep
+    await E("localStorage.removeItem('pushask:'+ME.uid);window.pushOK=()=>true;try{Object.defineProperty(Notification,'permission',{get:()=>'default',configurable:true})}catch(_){};WELCOME_OPEN=false;ONBOARD=false;TOUR.el=null;maybePushHint()")
+    await pg.wait_for_timeout(400)
+    check("Push-Abfrage: Drehplan-, Callsheet- und Prep-Änderungen wählbar", await E("document.querySelectorAll('#pushhint [data-phnews]').length") == 3)
+    await E("const h=document.getElementById('pushhint');if(h)h.remove()")
+
+    # phone: long addresses get «str.»
+    await E("S.tab='loc';render()"); await pg.wait_for_timeout(300)
+    ab = await E("""(()=>{const v=document.getElementById('view');const s=document.createElement('span');s.className='addr';s.style.cssText='display:inline';s.textContent='Restaurant Frohheim, Unterdorfstrasse 12, Bahnhofstrasse 4, 3970 Salgesch Wallis Schweiz';v.prepend(s);fitAddr(v);const t=s.textContent;s.remove();return t})()""")
+    check("Handy: lange Adressen «…strasse» → «…str.»", "Unterdorfstr. 12" in ab and "strasse" not in ab, ab)
+
+    # App-Verwaltung → Log: results of the automatic tests, one part per suite
+    await E("""TST.d={at:Date.now(),sha:'abc1234',ok:false,n:3,fail:1,suites:[{name:'App',ok:true,n:2,fail:0,checks:[{n:'a',ok:true},{n:'b',ok:true}]},{name:'Firestore-Regeln',ok:false,n:1,fail:1,checks:[{n:'c',ok:false}]}]};S.tab='admin';ADM.sub='log';render()""")
+    await pg.wait_for_timeout(500)
+    lg = await E("({su:document.querySelectorAll('#view .tstsec .tstsu').length,bad:document.querySelectorAll('#view .tstsec .tstsu.bad[open]').length,open:document.querySelector('#view .tstsec').open})")
+    check("Log: Testresultate je Teil, Fehler offen", lg == {"su": 2, "bad": 1, "open": True}, lg)
+    await E("TST.d=null")
+
     # ---------- vCard ----------
     await E("S.tab='crew';S.q='';render()"); await pg.wait_for_timeout(500)
     who = await E("(()=>{const b=[...document.querySelectorAll('#view [data-vc]')].find(x=>x.offsetParent);if(!b)return null;const [gi,pi]=b.dataset.vc.split(':').map(Number);const p=S.crew[gi].people[pi];return {name:p.name,phone:!!p.phone}})()")

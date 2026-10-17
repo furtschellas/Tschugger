@@ -84,6 +84,10 @@ await check("Termine: fremden Termin nicht ändern", assertFails(updateDoc(doc(a
 await check("Termine: fremden Termin nicht löschen", assertFails(deleteDoc(doc(as("crew"), "events/evPower"))));
 await check("Termine: eigenen Termin ändern", assertSucceeds(updateDoc(doc(as("power"), "events/evPower"), { c: "y" })));
 await check("Termine: Ersteller nicht umschreiben", assertFails(updateDoc(doc(as("power"), "events/evPower"), { by: "uCrew" })));
+await check("Termine: lange Notiz (bis 20000 Zeichen verschlüsselt) geht", assertSucceeds(updateDoc(doc(as("power"), "events/evPower"), { c: "x".repeat(19000) })));
+await check("Termine: zu gross wird abgelehnt", assertFails(updateDoc(doc(as("power"), "events/evPower"), { c: "x".repeat(21000) })));
+await check("Termine: Kalender-ID beim Anlegen erlaubt", assertSucceeds(addDoc(collection(as("power"), "events"), { c: "x", at: serverTimestamp(), by: "uPower", gc: "g1" })));
+await check("Termine: keine anderen Zusatzfelder", assertFails(addDoc(collection(as("power"), "events"), { c: "x", at: serverTimestamp(), by: "uPower", roles: ["crew"] })));
 await check("Termine: Admin darf löschen", assertSucceeds(deleteDoc(doc(as("admin"), "events/evPower"))));
 
 // ---------- Google Calendar ----------
