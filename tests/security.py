@@ -46,6 +46,25 @@ blob = json.dumps(tj, ensure_ascii=False)
 check("Testresultate (öffentlich): nur Namen der Prüfungen, keine Adressen oder Nummern",
       not re.search(r"@[a-z0-9-]+\.[a-z]{2,}|\+41\s?\d{2}\s?\d{3}", blob))
 
+# names from the crew list (decrypted with the key) must not appear in plain text – except the app contact in the welcome texts
+try:
+    import smoke as _sm
+    _k = base64.b64decode(_sm.crew_key())
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM as _A
+    _e = json.loads((ROOT / "data.enc.json").read_text())
+    _d = json.loads(_A(_k).decrypt(base64.b64decode(_e["iv"]), base64.b64decode(_e["ct"]), None))
+    names = {p["name"] for g in _d.get("crew", []) for p in g.get("people", []) if len(str(p.get("name", ""))) > 6}
+    leak = set()
+    for f, s in src.items():
+        if f.name == "tests.json": continue
+        for n in names:
+            for m in re.finditer(re.escape(n), s):
+                ctx = s[max(0, m.start() - 250):m.end() + 250]
+                if not re.search(r"kontaktieren|contacter|contattare|contact|संपर्क|Fehler|erreur|errore|mistake|wrong|गलती", ctx): leak.add((f.name, n[:3] + "…"))
+    check(f"Repository: keine Namen aus der Crewliste im Klartext ({len(names)} geprüft)", not leak, sorted(leak)[:5])
+except SystemExit:
+    pass
+
 # ---------- 2) encryption ----------
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM  # noqa: E402
 k = secrets.token_bytes(32); iv = secrets.token_bytes(12); ct = AESGCM(k).encrypt(iv, b'{"crew":"x"}', None)
@@ -71,6 +90,21 @@ check("Keine gefährlichen Funktionen (eval, new Function, document.write)",
 sw = (ROOT / "sw.js").read_text()
 check("Service Worker: Crew-Datei und Anmeldung werden nie zwischengespeichert",
       "data\\.enc\\.json$/.test(u.pathname))return" in sw and "firebasejs" in sw and "identitytoolkit" not in sw.replace("//", ""))
+
+# ---------- 3b) no AI gets the data publicly ----------
+rb = (ROOT / "robots.txt").read_text() if (ROOT / "robots.txt").exists() else ""
+check("KI: robots.txt sperrt Suchmaschinen und KI-Crawler (GPTBot, ClaudeBot, Google-Extended, CCBot …)",
+      all(b in rb for b in ("GPTBot", "ClaudeBot", "Google-Extended", "CCBot", "PerplexityBot")) and re.search(r"User-agent: \*\s*\nDisallow: /", rb))
+check("KI: Seite verbietet Indexieren, Archivieren und KI-Nutzung (meta robots)", re.search(r'name="robots" content="[^"]*noindex[^"]*noarchive[^"]*noai', html))
+ai_hosts = r"api\.openai\.com|generativelanguage\.googleapis\.com|api\.mistral\.ai|api\.cohere|huggingface\.co|api\.perplexity|api\.groq|deepseek|api\.x\.ai"
+check("KI: keine anderen KI-Dienste im Code", not [f.name for f, s in src.items() if f.name != "security.py" and re.search(ai_hosts, s)])
+anth = {f.name for f, s in src.items() if "api.anthropic.com" in s and f.name != "security.py"}
+check("KI: nur die Dropbox-Aktualisierung und der Worker sprechen mit Claude (API, nicht öffentlich)", anth <= {"update_from_dropbox.py", "chat_worker.js"}, sorted(anth))
+check("KI: die App selbst schickt nichts an eine KI (nur über den eigenen Worker)", not [f.name for f, s in src.items() if f.parent.name == "boot" and "anthropic.com/v1" in s] and "anthropic.com/v1" not in (ROOT / "tools" / "app.html").read_text())
+check("KI: keine Ablage von Dateien bei der KI (Files API) – Daten werden nur gelesen, nicht gespeichert",
+      not re.search(r"/v1/files|anthropic-beta[^\n]*files", src.get(ROOT / "tools" / "update_from_dropbox.py", "") + src.get(ROOT / "tools" / "chat_worker.js", "")))
+check("Dropbox: nur gelesen (keine Schreib-, Verschiebe- oder Freigabe-Aufrufe)",
+      not re.search(r"/2/files/(upload|delete|move|copy|create_folder)|/2/sharing/(create|add)", src.get(ROOT / "tools" / "update_from_dropbox.py", "")))
 
 # ---------- 4) worker and GitHub ----------
 wk = (ROOT / "tools" / "chat_worker.js").read_text()
