@@ -56,12 +56,13 @@ const logSu=k=>TST.su[k]?' open':'';window.logSu=logSu;
 function logReset(){TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false}
 {let last="";const _r=render;render=function(){if((typeof RTS!=="undefined"&&RTS.busy)||(typeof DCK!=="undefined"&&DCK.busy))return _r.apply(this,arguments);   /* the tests switch pages for a moment: not a new visit */
   const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test")?ADM.sub:"";if(now&&now!==last){logReset();setTimeout(()=>logAutoRun(now),250)}last=now;return _r.apply(this,arguments)}}
-/* opening Log/Tests starts all tests again: permissions and documents right here, the automatic tests on GitHub
-   (at most every 30 minutes and never while a run is going – each run takes 10–15 minutes); the progress is shown */
+/* every tap on Log/Tests starts all tests again: permissions and documents right here, the automatic tests on GitHub
+   (never while a run is still going – each run takes 10–15 minutes); the progress is shown in the open/close button */
 async function logAutoRun(sub){
   if(sub==="log"&&isAdmin()&&!SIMROLE&&typeof roleTestRun==="function")await roleTestRun(true);
   if(typeof dckMay==="function"&&dckMay()&&typeof dckRun==="function")await dckRun(true);
-  if(sub==="log"&&isAdmin()){await ghPoll();const r=GH.run,age=r?Date.now()-Date.parse(r.created_at):1e12;if(window.CHATURL&&(!r||r.status==="completed")&&age>30*60e3)tstStart(true)}}
+  /* the automatic tests on GitHub: started again every time (not while a run is going – its progress is shown instead) */
+  if(sub==="log"&&isAdmin()){await ghPoll();const r=GH.run;if(window.CHATURL&&(!r||r.status==="completed"))tstStart(true)}}
 /* progress of the GitHub run (public repository, no data): status of the last «Website veröffentlichen» run and its steps */
 const GH={run:null,jobs:[],t:null,at:0};
 async function ghPoll(){clearTimeout(GH.t);try{
@@ -80,7 +81,7 @@ window.ghProgress=ghProgress;
 /* title line of every box: title, then the last result (on the phone on a line of its own), the open/close button top right */
 const logHead=(t,st,tm,pg)=>'<span class="lsh"><b>'+t+'</b>'+(st?'<span class="lss">'+st+'</span>':'')+(tm?'<span class="lst">'+tm+'</span>':'')+'</span>'+tstAllBtn(pg);window.logHead=logHead;
 /* a tap on «Log» (also when already there) shows every box closed again */
-document.addEventListener("click",e=>{const b=e.target.closest('[data-asub="log"],[data-asub="test"]');if(b&&S.tab==="admin"&&ADM.sub===b.dataset.asub)logReset()},true);
+document.addEventListener("click",e=>{const b=e.target.closest('[data-asub="log"],[data-asub="test"]');if(b&&S.tab==="admin"&&ADM.sub===b.dataset.asub){logReset();setTimeout(()=>logAutoRun(b.dataset.asub),250)}},true);
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("audd"))AUD.open=e.target.open},true);
 Object.assign(I18N,{
  "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi appuntamenti",hi:"मेरे अगले कार्यक्रम"},
