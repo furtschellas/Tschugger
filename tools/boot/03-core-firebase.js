@@ -77,7 +77,8 @@ const withTimeout=(p,ms,what)=>Promise.race([p,new Promise((_,rej)=>setTimeout((
 let FBP=null;
 async function fb(){
   if(FB)return FB;
-  if(!FBP)FBP=fbInit().catch(err=>{FBP=null;throw err});
+  /* the app parts are separate scripts: Firebase starts only when all of them are loaded (it uses functions from later parts) */
+  if(!FBP)FBP=(document.readyState==="loading"?new Promise(r=>document.addEventListener("DOMContentLoaded",r,{once:true})):Promise.resolve()).then(fbInit).catch(err=>{FBP=null;throw err});
   return FBP;
 }
 async function fbInit(){
