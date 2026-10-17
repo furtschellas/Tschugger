@@ -843,3 +843,6 @@ html body #view .tstsu:not(.bad)>summary{color:#2e9d5b}html body #view .tstsu.ba
 html body #view .lsum .tsth{font-weight:600}html body #view .tstsec:not(.bad) .lsum .tsth,html body #view .dckflat:not(.bad) .lsum .tsth{color:#2e9d5b}html body #view .tstsec.bad .lsum .tsth,html body #view .dckflat.bad .lsum .tsth{color:#d6455d}
 html body #view .dckflat .lsum{margin:0 0 8px}
 html body #view .tstbtns{justify-content:flex-end;gap:8px}html body #view .tstbtns .tsticon{width:36px;height:36px;min-height:0;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--accent)}
+/* Dokumente prüfen: notes in orange */
+html body #view .tstsu.note>summary{color:#f08a24}html body #view .dckl li.info .dcki{color:#f08a24}
+html body #view .lsum .tsth .dw{color:#d6455d}html body #view .lsum .tsth .dn{color:#f08a24}html body #view .lsum .tsth .dk{color:#2e9d5b}
