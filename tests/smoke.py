@@ -67,8 +67,9 @@ window.__deny=(path,op,d)=>{const e=(()=>{try{return JSON.parse(sessionStorage.g
   return false};
 """
 
-FAILS = []
+FAILS = []; RESULTS = []
 def check(name, ok, info=""):
+    RESULTS.append({"n": name, "ok": bool(ok)})   # only the names, never the details (they can contain crew data)
     print(("✓ " if ok else "✗ ") + name + ("" if ok or not info else "  – " + str(info)[:160]), flush=True)
     if not ok: FAILS.append(name)
 
@@ -215,6 +216,10 @@ async def main():
     finally:
         srv.terminate()
     print(f"\n{'ALLES OK' if not FAILS else str(len(FAILS)) + ' FEHLER'}", flush=True)
+    out = os.environ.get("SMOKE_OUT")   # CI: results for the log in the app (tests.json on the website)
+    if out:
+        json.dump({"at": int(time.time() * 1000), "sha": os.environ.get("GITHUB_SHA", "")[:7], "ok": not FAILS,
+                   "n": len(RESULTS), "fail": len(FAILS), "checks": RESULTS}, open(out, "w"), ensure_ascii=False)
     return 1 if FAILS else 0
 
 

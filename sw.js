@@ -21,7 +21,7 @@ self.addEventListener("fetch",e=>{
   if(same&&/\/vc\/[0-9a-z]+\.vcf$/.test(u.pathname)){e.respondWith(caches.open("crew-vc").then(c=>c.match(r.url)).then(res=>res||new Response("",{status:404})).catch(()=>new Response("",{status:404})));return}
   if(same&&/data\.enc\.json$/.test(u.pathname))return;
   /* small status files are asked for with «?t=…» every few minutes: never stored, otherwise the cache grows without end */
-  if(same&&u.search&&/\/(stamp\.json|status\.json|version\.txt|script\.enc\.json)$/.test(u.pathname))return;
+  if(same&&u.search&&/\/(stamp\.json|status\.json|version\.txt|script\.enc\.json|tests\.json)$/.test(u.pathname))return;
   /* pictures: here on GitHub Pages or (newer) from Cloudflare R2 through the worker – same rules for both */
   const blkPath=/\/blk\/[0-9a-f]{20}(p\d+|\.mp4)?\.bin$/.test(u.pathname);
   /* blocking photos are not kept for offline use (only PDF pages «…p<n>.bin» and floorplans are) */

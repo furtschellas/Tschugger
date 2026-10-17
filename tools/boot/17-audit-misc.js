@@ -130,3 +130,19 @@ document.addEventListener("change",e=>{if(!e.target.matches||!e.target.matches("
 /* main topics (bottom bar): English names in every language except Hindi */
 function hiTabs(){document.querySelectorAll("nav.tabs button[data-tab] .lbl").forEach(l=>{if(!l.dataset.orig)l.dataset.orig=l.textContent.trim();const o=l.dataset.orig;if(!l.dataset.so&&l.dataset.s)l.dataset.so=l.dataset.s;const hi=LANG==="hi"&&I18N[o]&&I18N[o].hi;l.textContent=hi?I18N[o].hi:o;if(l.dataset.so)l.dataset.s=hi?I18N[o].hi:l.dataset.so})}
 {const _r=render;render=function(){const x=_r.apply(this,arguments);try{hiTabs()}catch(_){}try{chatFab()}catch(_){}try{bcButton()}catch(_){}return x}}
+
+/* results of the automatic tests (GitHub, before every release of new code): App-Verwaltung → Log, collapsible */
+const TST={d:null,busy:false};
+async function testsLoad(){if(TST.busy)return;TST.busy=true;try{const r=await fetch("./tests.json?t="+Date.now(),{cache:"no-store"});TST.d=r.ok?await r.json():{none:true}}catch(_){TST.d={none:true}}TST.busy=false;render()}
+function testsSec(){
+  if(!TST.d){testsLoad();return '<details class="tstsec"><summary>'+esc(L("Automatische Tests"))+' · '+esc(L("Lade …"))+'</summary></details>'}
+  const d=TST.d;if(d.none)return '<details class="tstsec"><summary>'+esc(L("Automatische Tests"))+' · '+esc(L("noch keine Resultate"))+'</summary></details>';
+  const dt=new Date(d.at||0),when=dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit"})+" "+dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"});
+  const cs=(d.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
+  const head=d.crash?'✗ '+L("Tests abgebrochen"):d.ok?'✓ '+L("{n} von {n} bestanden").split("{n}").join(d.n):'✗ '+L("{f} von {n} fehlgeschlagen").replace("{f}",d.fail).replace("{n}",d.n);
+  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(d.ok?'':' open')+'><summary><b>'+esc(L("Automatische Tests"))+'</b> · <span class="tsth">'+esc(head)+'</span> · '+esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':'')+'</summary>'+
+    '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die App mit sechs Rollen auf Handy und Desktop. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
+    '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+'</li>').join("")+'</ul>'+
+    '<div class="arb"><button type="button" class="pillbtn" data-tstre>↻ '+esc(L("Neu laden"))+'</button></div></details>';
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d=null;render()}});

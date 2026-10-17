@@ -648,6 +648,14 @@ Object.assign(I18N,{
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"],["hi","हिन्दी"]];
 Object.assign(I18N,{
+ "Die App erinnert dich auf Wunsch vor deinen Terminen und meldet neue Drehpläne und Callsheets – auch wenn sie geschlossen ist.":{fr:"Sur demande, l'app te rappelle tes rendez-vous et signale les nouveaux plans de tournage et feuilles de service – même fermée.",it:"Su richiesta l'app ti ricorda i tuoi appuntamenti e segnala nuovi piani di riprese e fogli di chiamata – anche quando è chiusa.",en:"If you like, the app reminds you before your appointments and tells you about new shooting schedules and callsheets – even when it is closed."},
+ "Automatische Tests":{fr:"Tests automatiques",it:"Test automatici",en:"Automatic tests"},
+ "noch keine Resultate":{fr:"pas encore de résultats",it:"ancora nessun risultato",en:"no results yet"},
+ "Tests abgebrochen":{fr:"Tests interrompus",it:"Test interrotti",en:"Tests aborted"},
+ "{n} von {n} bestanden":{fr:"{n} sur {n} réussis",it:"{n} su {n} superati",en:"{n} of {n} passed"},
+ "{f} von {n} fehlgeschlagen":{fr:"{f} sur {n} en échec",it:"{f} su {n} falliti",en:"{f} of {n} failed"},
+ "Neu laden":{fr:"Recharger",it:"Ricarica",en:"Reload"},
+ "Vor jeder Veröffentlichung von neuem Code prüft GitHub die App mit sechs Rollen auf Handy und Desktop. Schlägt ein Test fehl, wird nicht veröffentlicht.":{fr:"Avant chaque publication de nouveau code, GitHub teste l'app avec six rôles sur mobile et ordinateur. Si un test échoue, rien n'est publié.",it:"Prima di ogni pubblicazione di nuovo codice GitHub verifica l'app con sei ruoli su telefono e desktop. Se un test fallisce, non si pubblica.",en:"Before new code is released, GitHub tests the app with six roles on phone and desktop. If a test fails, nothing is released."},
  "Bei Änderungen benachrichtigen":{fr:"Me prévenir en cas de changement",it:"Avvisami in caso di modifiche",en:"Notify me about changes"},
  "Änderungen am Drehplan":{fr:"Changements du plan de tournage",it:"Modifiche al piano di riprese",en:"Changes to the shooting schedule"},
  "Neue und geänderte Callsheets":{fr:"Feuilles de service nouvelles ou modifiées",it:"Fogli di chiamata nuovi o modificati",en:"New and updated callsheets"},
