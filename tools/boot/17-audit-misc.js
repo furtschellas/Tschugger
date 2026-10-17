@@ -53,16 +53,19 @@ function logWhen(ms){const dt=new Date(ms);return dt.toLocaleDateString(LOC[LANG
 window.logWhen=logWhen;
 /* sub-parts (data-su) are open only while you stay on the page: every new visit of Log/Tests starts with everything closed */
 const logSu=k=>TST.su[k]?' open':'';window.logSu=logSu;
-function logReset(){TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false}
+function logReset(){if(typeof GH!=="undefined")GH.wasOpen=false;TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false}
 {let last="";const _r=render;render=function(){if((typeof RTS!=="undefined"&&RTS.busy)||(typeof DCK!=="undefined"&&DCK.busy))return _r.apply(this,arguments);   /* the tests switch pages for a moment: not a new visit */
   const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test")?ADM.sub:"";if(now&&now!==last){logReset();setTimeout(()=>logAutoRun(now),250)}last=now;return _r.apply(this,arguments)}}
-/* every tap on Log/Tests starts all tests again: permissions and documents right here, the automatic tests on GitHub
-   (never while a run is still going – each run takes 10–15 minutes); the progress is shown in the open/close button */
+/* every tap on Log/Tests starts the permission and document tests again; the automatic tests on GitHub start when their
+   box is opened; the progress is shown in the open/close button */
 async function logAutoRun(sub){
   if(sub==="log"&&isAdmin()&&!SIMROLE&&typeof roleTestRun==="function")await roleTestRun(true);
   if(typeof dckMay==="function"&&dckMay()&&typeof dckRun==="function")await dckRun(true);
-  /* the automatic tests on GitHub: started again every time (not while a run is going – its progress is shown instead) */
-  if(sub==="log"&&isAdmin()){await ghPoll();const r=GH.run;if(window.CHATURL&&(!r||r.status==="completed"))tstStart(true)}}
+  if(sub==="log"&&isAdmin())await ghPoll()}   /* progress of a GitHub run that is going */
+/* the automatic tests on GitHub start when their box is opened (not while a run is going – its progress is shown instead) */
+document.addEventListener("toggle",async e=>{const d=e.target;if(!d||!d.dataset||d.dataset.lsec!=="tst")return;
+  const was=GH.wasOpen;GH.wasOpen=d.open;if(!d.open||was||!isAdmin())return;   /* only a real opening, not a redraw of an open box */
+  await ghPoll();const r=GH.run;if(window.CHATURL&&!TST.run&&(!r||r.status==="completed"))tstStart(true)},true);
 /* progress of the GitHub run (public repository, no data): status of the last «Website veröffentlichen» run and its steps */
 const GH={run:null,jobs:[],t:null,at:0};
 async function ghPoll(){clearTimeout(GH.t);try{

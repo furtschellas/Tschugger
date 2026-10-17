@@ -168,7 +168,7 @@ async function roleTestRun(auto){
       vok("phone")&&L("Telefon"),vok("email")&&L("E-Mail"),canAdm()&&L("App-Verwaltung"),can("data.check")&&L("Dokumente prüfen")].filter(Boolean);
     out.push({name:ro.name,tabs:tabs.map(t=>RTN[t]||t),extra,issues});
     /* back to the real rights for a moment and show the progress (the role's pages were drawn without being shown) */
-    SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}if(S.tab==="admin")render();
+    SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}render();   /* always draw the page the person is on (the role's pages were drawn in between) */
     await new Promise(r=>setTimeout(r,180))}}
   catch(err){out.push({name:L("Fehler"),tabs:[],extra:[],issues:[String(err&&err.message||err)]})}
   finally{SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;try{const ad=await (async()=>ADM.adminPerms)();ADMINPERMS=isOwner()?ADMIN_DEFAULT.slice():(ad||ADMINPERMS)}catch(_){}
