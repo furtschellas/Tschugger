@@ -13,7 +13,7 @@ function navDialogs(){const l=[];
 function navClose(d){if(!d)return;if(d.id==="scn"&&typeof closeScene==="function")closeScene();else if(d.id==="search"&&typeof closeSearch==="function")closeSearch();
   else{const x=d.querySelector("[data-bcvx],[data-rcok],[data-rtx],.xclose,[data-scrn='ok'],[data-a2unok]");if(x&&x.closest("#"+(d.id||"_"))===d&&!x.closest("form"))x.click();if(d.isConnected)d.remove()}}
 /* a new page of the app gets its own step back */
-{const _r=render;render=function(){const x=_r.apply(this,arguments);try{if(typeof RTS!=="undefined"&&RTS.busy)return x;
+{const _r=render;render=function(){const x=_r.apply(this,arguments);try{
     if(NAV.last===null){history.replaceState(Object.assign({},history.state||{},{t:S.tab}),"");NAV.last=S.tab}
     else if(S.tab!==NAV.last){if(!NAV.pop)history.pushState({t:S.tab},"");NAV.last=S.tab}}catch(_){}NAV.pop=false;return x}}
 /* a window that opens gets a step back too; closed with its own button, that step is taken away again */
