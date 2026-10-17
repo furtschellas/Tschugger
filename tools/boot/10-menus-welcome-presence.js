@@ -113,7 +113,7 @@ async function afterSignIn(u){
   if(START&&START.mustChange){showGate("newpw");return}
   if(!u.emailVerified&&!START){showGate("verify");autoVerify(u);return}
   let st;try{st=await checkMember()}catch(err){console.error(err);
-    if(isOffline(err)&&S.days.length){hideGate();acctButton(true);showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
+    if(isOffline(err)&&S.days.length){hideGate();acctButton(true);render();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
   hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();pushSyncSoon();menusLoad(true);

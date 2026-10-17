@@ -1,11 +1,15 @@
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
 const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false;
-{const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k))savePrefsSoon()}}
+{const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}}}
 function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
+/* a change made just before closing or reloading is saved right away (before, the older copy online won on the next start) */
+const prefsFlush=()=>{if(PREFT){clearTimeout(PREFT);PREFT=null;savePrefs()}};
+addEventListener("pagehide",prefsFlush);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")prefsFlush()});
 async function savePrefs(){
   if(!ME||!ME.uid)return;const p={};
   try{for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null)p[k]=String(v).slice(0,400)}}catch(_){return}
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"prefs",ME.uid),Object.assign(p,{at:F.serverTimestamp()}))}catch(err){console.warn("prefs",err&&err.code||err)}
+  let lt=0;try{lt=+localStorage.getItem("prefsLocalAt")||0}catch(_){}PREFT=null;
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"prefs",ME.uid),Object.assign(p,{at:F.serverTimestamp(),lt}))}catch(err){console.warn("prefs",err&&err.code||err)}
 }
 function applyPrefs(p){
   if(!p||typeof p!=="object")return;PREFAPPLY=true;
@@ -23,7 +27,9 @@ function applyPrefs(p){
 async function loadPrefs(){
   if(!ME||!ME.uid)return;
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),10000,"prefs");
-    if(d.exists())applyPrefs(d.data());else savePrefs()}catch(err){console.warn("prefs",err&&err.code||err)}
+    let lt=0;try{lt=+localStorage.getItem("prefsLocalAt")||0}catch(_){}
+    /* settings changed on this device after the copy online was saved: this device wins and is saved */
+    if(d.exists()&&!(lt&&(+d.data().lt||0)<lt))applyPrefs(d.data());else savePrefs()}catch(err){console.warn("prefs",err&&err.code||err)}
 }
 /* ---- documents: every text the app sends or shows (mails, welcome note, disclaimer); editable under App-Verwaltung → Einstellungen → Dokumente ---- */
 const DOCDEF={

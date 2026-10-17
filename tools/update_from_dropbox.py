@@ -621,6 +621,23 @@ def read_sheet(url):
     return "\n".join(rows)
 
 # ---------- main ----------
+PREP_PLAN_RE = re.compile(r"(?i)weekly|wochen|daily|tages")
+def prep_stand(e):
+    """«… stand_15.10-1.pdf» → (10, 15, 1): the date and copy number in the name, then the upload time"""
+    m = re.search(r"(\d{1,2})\.(\d{1,2})(?:\.\d{2,4})?(?:-(\d+))?\.pdf$", e["name"], re.I)
+    return ((int(m.group(2)), int(m.group(1)), int(m.group(3) or 0)) if m else (0, 0, 0), e["modified"] or "")
+
+def compose_prep(plans, cache):
+    """plans newest first; each day is taken from the newest document that has it → (days, documents used)"""
+    days, have, used = [], set(), []
+    for e in plans:
+        c = cache.get(e["name"])
+        if not c: continue
+        add = [dict(d, src=e["name"]) for d in c.get("days") or [] if d.get("date") and d["date"] not in have]
+        if add: used.append(e["name"])
+        days += add; have.update(d["date"] for d in add)
+    return days, used
+
 def norm_sc(x): return re.sub(r"\s+", " ", str(x or "")).strip().lower()
 
 
@@ -841,10 +858,7 @@ def main():
         pf = [e for e in dbx.list_path(ROOT3D + "/11_Planning Prep Rehearsals") if e["tag"] == "file" and e["name"].lower().endswith(".pdf")]
     except Exception as ex:
         pf = []; log("Prep-Ordner nicht lesbar:", str(ex)[:80])
-    PLAN_RE = re.compile(r"(?i)weekly|wochen|daily|tages")
-    def stand(e):   # «… stand_15.10-1.pdf» → (10, 15, 1): the date and copy number in the name, then the upload time
-        m = re.search(r"(\d{1,2})\.(\d{1,2})(?:\.\d{2,4})?(?:-(\d+))?\.pdf$", e["name"], re.I)
-        return ((int(m.group(2)), int(m.group(1)), int(m.group(3) or 0)) if m else (0, 0, 0), e["modified"] or "")
+    PLAN_RE = PREP_PLAN_RE; stand = prep_stand
     plans = sorted([e for e in pf if PLAN_RE.search(e["name"])], key=stand, reverse=True)[:4]   # newest first
     if pf and not plans: plans = sorted(pf, key=stand, reverse=True)[:1]
     if plans:
@@ -878,14 +892,7 @@ def main():
                     failed("prep", fi, "Ergebnis unvollständig – bisherige bleibt")
             except Exception as ex2:
                 failed("prep", fi, ex2)
-        # compose: newest document first, each day taken from the newest document that has it
-        days, have, used = [], set(), []
-        for e in plans:
-            c = cache.get(e["name"])
-            if not c: continue
-            add = [dict(d, src=e["name"]) for d in c.get("days") or [] if d.get("date") and d["date"] not in have]
-            if add: used.append(e["name"])
-            days += add; have.update(d["date"] for d in add)
+        days, used = compose_prep(plans, cache); have = {d["date"] for d in days}
         if days:
             # days from today on that no current document has any more come from the previous state, marked with their source
             for d in data.get("prepro") or []:
