@@ -240,9 +240,27 @@ function permAccessSec(){
     .sort((a,b)=>nameOf(a[0]).localeCompare(nameOf(b[0]),LANG));
   return '<div class="admins pacc"><h3>'+L("Wer hat welchen Zugriff?")+'</h3><p class="ahint">'+L("Tippe auf eine Berechtigung, um zu sehen, wer sie hat – und über welche Rolle.")+'</p>'+
     [...new Set(PERMS.map(x=>x[2]))].map(g=>'<h5 class="paccg">'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const w=who(k);
-      return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]?' open':'')+'><summary><span>'+esc(L(t))+'</span><b class="pacn">'+w.length+'</b></summary>'+
-        (w.length?'<ul class="paccl">'+w.map(([e,r])=>'<li><span>'+esc(nameOf(e))+'</span><span class="ust role">'+esc(r)+'</span></li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+'</details>'}).join("")).join("")+'</div>';
+      /* roles first – switch the permission on or off for a role right here; the people below, to open */
+      const rl=[['owner',L("Owner"),true,false]].concat([['admin',L("Admin"),aperm.includes(k),isAdmin()&&k!=="settings"]])
+        .concat((ADM.roles||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(r=>[r.id,r.name||r.id,arr(r.perms).includes(k),canRoleEdit()&&(isAdmin()||(r.id!==MYROLE&&MYPERMS.includes(k)))]));
+      const nr=noRoleOK(k);if(nr)rl.push(['',L("Keine Rolle"),!!(window.PUBV&&window.PUBV[nr]),false]);
+      const edit=ADM.paccEdit===k,canEd=rl.some(x=>x[3]);
+      return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]||edit?' open':'')+'><summary><span>'+esc(L(t))+'</span>'+(canEd?'<button type="button" class="paccpen'+(edit?' on':'')+'" data-paccedit="'+k+'" aria-label="'+esc(L("Rollen ändern"))+'" title="'+esc(L("Rollen ändern"))+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'')+'<b class="pacn">'+w.length+'</b></summary>'+
+        (edit?'<div class="paccr">'+rl.map(([id,n,on,ed])=>'<label class="ck paccrole'+(ed?'':' plock')+'"><input type="checkbox" data-pacc="'+esc(id)+'" data-perm="'+k+'"'+(on?' checked':'')+(ed?'':' disabled')+'> '+esc(n)+'</label>').join("")+'</div>'
+          :'<div class="paccr">'+(rl.filter(x=>x[2]).map(x=>'<span class="ust role">'+esc(x[1])+'</span>').join("")||'<span class="ghint">'+esc(L("Keine Rolle"))+'</span>')+'</div>')+
+        '<details class="paccp" data-sec="paccp-'+k+'"'+(SECS["paccp-"+k]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+w.length+')</summary>'+
+        (w.length?'<ul class="paccl">'+w.map(([e,r])=>'<li><span>'+esc(nameOf(e))+'</span><span class="ust role">'+esc(r)+'</span></li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+'</details></details>'}).join("")).join("")+'</div>';
 }
+document.addEventListener("click",e=>{const b=e.target.closest("[data-paccedit]");if(!b)return;e.preventDefault();e.stopPropagation();const k=b.dataset.paccedit;ADM.paccEdit=ADM.paccEdit===k?"":k;if(ADM.paccEdit)SECS["pacc-"+k]=true;render()},true);
+/* «Wer hat welchen Zugriff?»: a permission switched on/off for a role directly (same rules as «Bearbeiten»: no self-promotion) */
+document.addEventListener("change",async e=>{const c=e.target.closest("input[data-pacc]");if(!c)return;const id=c.dataset.pacc,k=c.dataset.perm,on=c.checked;
+  if(!id||id==="owner"||(id==="admin"&&!isAdmin())||(id!=="admin"&&!canRoleEdit())||(!isAdmin()&&(id===MYROLE||!MYPERMS.includes(k)))){render();return}
+  const ro=id==="admin"?{name:"Admin",perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:Object.assign({},(ADM.roles||[]).find(x=>x.id===id)||{});if(id!=="admin"&&!ro.name&&!ro.perms){render();return}
+  const before=arr(ro.perms).slice(),perms=[...new Set(on?before.concat([k]):before.filter(p=>p!==k))].filter(p=>PERMS.some(x=>x[0]===p));
+  const apply=ps=>{if(id==="admin")ADM.adminPerms=ps;else{const r=(ADM.roles||[]).find(x=>x.id===id);if(r)r.perms=ps}};
+  apply(perms);render();
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name:ro.name||id,perms,at:F.serverTimestamp()});showMsg(L("Rolle gespeichert."),2000)}
+  catch(err){apply(before);render();showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),6000)}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&canRoleEdit()&&(b.dataset.redit!=="admin"||isAdmin())){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
   if(e.target.closest("[data-rreset]")&&canRoleEdit()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!canRoleEdit()||(f.dataset.role==="admin"&&!isAdmin()))return;

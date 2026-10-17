@@ -208,6 +208,16 @@ async def owner_tests(p, port):
     ab = await E("""(()=>{const v=document.getElementById('view');const s=document.createElement('span');s.className='addr';s.style.cssText='display:inline';s.textContent='Restaurant Sonnenhof, Unterdorfstrasse 12, Bahnweg 4, 3998 Musterdorf Wallis Schweiz';v.prepend(s);fitAddr(v);const t=s.textContent;s.remove();return t})()""")
     check("Handy: lange Adressen «…strasse» → «…str.»", "Unterdorfstr. 12" in ab and "strasse" not in ab, ab)
 
+    # Access: roles per permission on top, pencil switches them right there, people to open
+    await E("S.tab='admin';ADM.sub='roles';render()"); await pg.wait_for_timeout(1500)
+    ac = await E("(()=>{const d=document.querySelector('#view details[data-sec=\"pacc-view.plan\"]');return d?{roles:d.querySelectorAll('.paccr .ust').length,people:!!d.querySelector('details.paccp'),pen:!!d.querySelector('[data-paccedit]')}:null})()")
+    check("Access: Rollen zuoberst, Personen zum Aufklappen, Stift", bool(ac) and ac["roles"] >= 2 and ac["people"] and ac["pen"], ac)
+    await E("document.querySelector('[data-paccedit=\"view.plan\"]').click()"); await pg.wait_for_timeout(300)
+    b0 = await E("window.__db['roles/catering'].perms.includes('view.plan')")
+    await E("document.querySelector('[data-pacc=\"catering\"][data-perm=\"view.plan\"]').click()"); await pg.wait_for_timeout(800)
+    check("Access: Recht für eine Rolle direkt umschalten", await E("window.__db['roles/catering'].perms.includes('view.plan')") == (not b0))
+    await E("document.querySelector('[data-pacc=\"catering\"][data-perm=\"view.plan\"]').click()"); await pg.wait_for_timeout(800)
+
     # App-Verwaltung → Log: results of the automatic tests, one part per suite
     await E("""TST.d={at:Date.now(),sha:'abc1234',ok:false,n:3,fail:1,suites:[{name:'App',ok:true,n:2,fail:0,checks:[{n:'a',ok:true},{n:'b',ok:true}]},{name:'Firestore-Regeln',ok:false,n:1,fail:1,checks:[{n:'c',ok:false}]}]};S.tab='admin';ADM.sub='log';render()""")
     await pg.wait_for_timeout(500)
