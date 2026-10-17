@@ -870,3 +870,6 @@ html body #view .tstsu .tstgrp{margin:6px 10px;border-radius:8px}html body #view
 html body #view .tstl .tstroles{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:4px}html body #view .tstl .tstroles span{font-size:11px;padding:0 6px;border-radius:999px;border:1px solid var(--rule)}
 html body #view .tstl .tstroles .ok{color:#2e9d5b}html body #view .tstl .tstroles .no{color:#d6455d;border-color:#d6455d}
 .psec.about .abv{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}.psec.about .mrk{color:#ff2e8a}
+/* script search: the role badges get their own row over the full width (a long badge squeezed the scene title into one letter per line) */
+html body #view .scli .rbadges{grid-column:1/-1;margin-top:6px}
+html body #view .sclih{overflow-wrap:break-word;word-break:normal}

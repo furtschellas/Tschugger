@@ -332,6 +332,10 @@ async def owner_tests(p, port):
           const pop=!!document.getElementById('routepop');history.back();await w(300);const closed=!document.getElementById('routepop'),tab1=S.tab;
           history.back();await w(300);return {pop,closed,tab1,tab2:S.tab}})()""")
         check("Zurück-Knopf: schliesst zuerst das Fenster, dann zurück zur vorherigen Seite (Drehbuch → Drehplan)", bk == {"pop": True, "closed": True, "tab1": "script", "tab2": "plan"}, bk, public=True)
+        # script search with a long role badge: the scene title stays on one line (not one letter per line)
+        sl = await E("""(()=>{const b=document.createElement('div');b.id='view2';b.style.width='380px';b.innerHTML='<ul class=sclist><li class=scard><button class=scli><span class=sclin>2</span><span class=sclih>INT. KAPELLE - EVENING</span><span class=sctag>ABEND</span><span class=rbadges><span class="rbadge warn"><b>Bax</b> ⚠ spricht im Drehbuch, fehlt im Drehplan</span></span></button></li></ul>';
+          document.getElementById('view').appendChild(b);const h=b.querySelector('.sclih').getBoundingClientRect(),r=b.querySelector('.rbadges').getBoundingClientRect(),t=b.querySelector('.sclih');const lh=parseFloat(getComputedStyle(t).lineHeight)||20;b.remove();return {lines:Math.round(h.height/lh),below:r.top>=h.bottom-1}})()""")
+        check("Drehbuch-Suche: Szenentitel lesbar, Rollen-Hinweise auf eigener Zeile", sl["lines"] <= 2 and sl["below"], sl, public=True)
         # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
         ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
           r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")
