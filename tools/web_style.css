@@ -615,3 +615,15 @@ html body #view .asub:not(.acsub),html body #view .asub.n4,html body #view .asub
 html body #view .asub:not(.acsub) button{white-space:nowrap;min-width:0}
 /* Telefonnummern nie umbrechen: passt eine Nummer nicht mehr, rutscht sie als Ganzes auf die nächste Zeile */
 html body a[href^="tel:"]{white-space:nowrap;display:inline-block;max-width:100%}
+
+/* Today: Szenen je eine Zeile (Zeit · Szene · Set · Beschrieb, gekürzt mit «…»); nächste Termine und Szenen kompakter */
+html body #view .today .tsclist{gap:0;margin-bottom:8px}
+html body #view .today .tsclist li{grid-template-columns:40px max-content minmax(0,1fr);gap:6px;padding:3px 0;font-size:13.5px;line-height:1.3;align-items:baseline}
+html body #view .today .tsclist li.chg{padding:3px 4px}
+html body #view .today .tsclist .tset{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body #view .today .tsclist .tds{color:var(--muted);font-size:12.5px}
+html body #view .today .tsclist .ust{font-size:11px}
+html body #view .today .tmylist li{padding:2px 0;line-height:1.25;font-size:13px}
+html body #view .today .tmylist .tmd b{font-size:13px}
+html body #view .today .tmy .tch,html body #view .today .tscs .tch{margin-bottom:2px}
+html body #view .today .tsclist .tsc{min-width:30px;white-space:nowrap}

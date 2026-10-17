@@ -49,7 +49,9 @@ VIEWS.today=function(){
   /* scenes */
   const scs=[];if(canPlan)for(const [u,its] of unitItems(d))if(u==="1"||hasU(d,u))its.forEach(it=>{if(it.sc)scs.push([u,it])});
   if(scs.length)h+=card("tscs",esc(L("Szenen"))+' <small>'+scs.length+'</small>','<ul class="tsclist">'+scs.map(([u,it])=>{const cg=window.chgFor(d.date,u,it.sc);
-    return '<li'+(cg?' class="chg"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset" title="'+esc(it.set||"")+'">'+esc(String(it.set||"").replace(/^VALAIS\s*[–-]\s*/i,""))+(u!=="1"?' <span class="ust">'+esc(UNAME[u])+'</span>':'')+(cg?'<span class="chgtxt">'+esc(cg)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
+    /* one line per scene: time, scene, set and – as far as there is room – the description (cut with «…») */
+    const set=String(it.set||"").replace(/^VALAIS\s*[–-]\s*/i,""),ds=String((LANG==="en"?it.d:(it["d_"+LANG]||it.d))||"").trim();
+    return '<li'+(cg?' class="chg" title="'+esc(cg)+'"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset" title="'+esc([set,ds].filter(Boolean).join(" – "))+'">'+(u!=="1"?'<span class="ust">'+esc(UNAME[u])+'</span> ':'')+esc(set)+(ds?'<span class="tds"> · '+esc(ds)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
   /* my events */
   /* changes */
   const cl=canPlan?chgList():[];
