@@ -240,6 +240,16 @@ async def owner_tests(p, port):
     check("Tour (Owner): zeigt «Termin hinzufügen» und «Push-Nachricht senden»", "Termin hinzufügen" in tt["t"] and "Push-Nachricht senden" in tt["t"], tt["t"])
     await E("if(TOUR.el)TOUR.el.remove();TOUR.el=null;document.querySelectorAll('#tour').forEach(x=>x.remove())")
 
+    # documents compared (App-Verwaltung → Log)
+    await E("S.tab='admin';ADM.sub='log';render()"); await pg.wait_for_timeout(800)
+    await E("document.querySelector('[data-dckrun]').click()"); await pg.wait_for_timeout(6000)
+    await E("S.tab='admin';ADM.sub='log';render()"); await pg.wait_for_timeout(400)
+    dk = await E("({n:(DCK.res||[]).length,areas:[...new Set((DCK.res||[]).map(x=>x.area))],self:(DCK.res||[]).some(x=>x.area==='Selbsttest der App'&&x.lvl==='ok')})")
+    check("Dokumente prüfen: Vergleich läuft und meldet Ergebnisse je Bereich", dk["n"] >= 4 and "Drehplan ↔ Drehbuch" in dk["areas"] and dk["self"], dk)
+    sy = await E("""(()=>{const keep=[S.days,S.locs];S.locs=JSON.parse(JSON.stringify(S.locs));S.locs.forEach(l=>(l.sets||[]).forEach(st=>st.scenes=[]));return 1})()""")
+    await E("dckRun()"); await pg.wait_for_timeout(5000)
+    check("Dokumente prüfen: erkennt Szenen ohne Location als Unstimmigkeit", await E("(DCK.res||[]).some(x=>x.lvl==='warn'&&x.area==='Drehplan ↔ Locations')"))
+
     # App-Verwaltung → Log: results of the automatic tests, one part per suite
     await E("""TST.d={at:Date.now(),sha:'abc1234',ok:false,n:3,fail:1,suites:[{name:'App',ok:true,n:2,fail:0,checks:[{n:'a',ok:true},{n:'b',ok:true}]},{name:'Firestore-Regeln',ok:false,n:1,fail:1,checks:[{n:'c',ok:false}]}]};S.tab='admin';ADM.sub='log';render()""")
     await pg.wait_for_timeout(500)
@@ -317,6 +327,8 @@ async def hidden_data(p, port):
         await E("tourStart(false)"); await pg.wait_for_timeout(1500)
         tt = await E("TOUR.steps.map(s=>s.t)")
         await E("if(TOUR.el)TOUR.el.remove();TOUR.el=null;document.querySelectorAll('#tour').forEach(x=>x.remove())")
+        dc = await E("(()=>{ACSUB='app';S.tab='acct';render();return !!document.querySelector('#view .dcksec')})()")
+        check(f"{who}: «Dokumente prüfen» in Mein Konto nur mit Recht", dc == (await E("can('data.check')")), dc)
         check(f"{who}: Tour ohne Schritte für fehlende Rechte", "Termin hinzufügen" not in tt and ("Schedule" in tt) == (who != "norole") and ("Lunch-Menüs" in tt) == (who == "catering"), tt)
         await b.close()
 

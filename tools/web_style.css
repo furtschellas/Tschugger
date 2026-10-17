@@ -728,3 +728,8 @@ html body #view .abtn{margin-top:6px}
 #oedlg .oeli.on{border-color:var(--accent)}
 #oedlg .oeld{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 #oedlg .oelb{display:flex;flex-direction:column;gap:2px;min-width:0}#oedlg .oelb small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+/* Dokumente prüfen */
+.dcksec .arb{display:flex;justify-content:flex-start;margin:8px 0}
+.dckl{list-style:none;margin:8px 0 0;padding:0}.dckl li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid var(--rule);font-size:13px;line-height:1.4}
+.dckl li.warn .dcki{color:#d6455d}.dckl li.info .dcki{color:var(--accent)}.dckl li.ok .dcki{color:#2e9d5b}.dckl li.ok{color:var(--muted)}
+.dckacct .dcksec{margin:0}

@@ -387,7 +387,7 @@ VIEWS.admin=function(){
   if(ADM.sub==="set")return h+setSec+'</section>';
   if(ADM.sub==="docs")return h+docsSec()+'</section>';
   if(ADM.sub==="roles")return h+rolesSec()+'</section>';
-  if(ADM.sub==="log")return h+testsSec()+auditSec()+'</section>';
+  if(ADM.sub==="log")return h+testsSec()+(window.dataCheckSec?window.dataCheckSec():"")+auditSec()+'</section>';
   if(ADM.sub==="bk")return h+bkSec()+'</section>';
   const cInv=can("users.invite"),cView=can("users.view")||can("users.edit"),cEd=can("users.edit");
   /* order: requests, who is online right now, the people, inviting, admins at the end */
