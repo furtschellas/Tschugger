@@ -36,6 +36,28 @@ async function dckRun(){
       if(sl.length){const ss=new Set(sl.map(x=>dsc(x.sc)));const miss=[...new Set(items.flatMap(([,it])=>scs(it)))].filter(s=>!dhas(ss,s));
         if(miss.length)w("warn",L("Drehplan ↔ Drehbuch"),L("Szenen im Drehplan, die im Drehbuch fehlen:")+" "+miss.slice(0,30).join(", "));
         else w("ok",L("Drehplan ↔ Drehbuch"),L("Alle Szenen des Drehplans stehen im Drehbuch."))}
+      /* scene by scene: inside/outside, time of day and the cast against the scene in the script */
+      if(sl.length){const byS=new Map(sl.map(x=>[dsc(x.sc),x]));const cast=(S.meta&&S.meta.cast)||{};
+        const ieP=v=>{const t=String(v||"").toUpperCase();return /^(I\/E|E\/I)/.test(t)?"IE":/^I/.test(t)?"INT":/^E/.test(t)?"EXT":""};
+        const ieS=h=>{const t=String(h||"").toUpperCase().trim();return /^(I\/E|E\/I|INT\.?\s*\/\s*EXT)/.test(t)?"IE":/^INT/.test(t)?"INT":/^EXT/.test(t)?"EXT":""};
+        const todP=v=>{const t=String(v||"").split("/").pop().toUpperCase();return /^N/.test(t)?"N":/^(EV|DUSK|A)/.test(t)?"E":/^(D|M|MO|AM|PM|DAWN)/.test(t)?"D":""};
+        const todS=h=>{const t=String(h||"").toUpperCase().split(/\s[-–]\s/).pop();return /(NIGHT|NACHT)/.test(t)?"N":/(EVENING|ABEND|DUSK|DÄMMERUNG)/.test(t)?"E":/(DAY|TAG|MORNING|MORGEN|AFTERNOON|NACHMITTAG|MITTAG|DAWN)/.test(t)?"D":""};
+        const TODN={D:L("Tag"),N:L("Nacht"),E:L("Abend")};
+        const ieBad=[],todBad=[],castMiss=[],speakMiss=[];const seen=new Set();
+        for(const [d,it] of items)for(const s of scs(it)){const part=dbase(s)!==s;const x=byS.get(s)||byS.get(dbase(s));if(!x||seen.has(s)||part)continue;seen.add(s);const tag=s+" ("+(d.short||d.label)+")"; /* scene parts (PT/SL) may be shot inside and outside: not compared */
+          const a=ieP(it.ie),b=ieS(x.head);if(a&&b&&a!==b&&!(a==="IE"||b==="IE"))ieBad.push(tag+": "+L("Drehplan")+" "+a+", "+L("Drehbuch")+" "+b);
+          const ta=todP(it.ie),tb=todS(x.head);if(ta&&tb&&ta!==tb)todBad.push(tag+": "+L("Drehplan")+" "+TODN[ta]+", "+L("Drehbuch")+" "+TODN[tb]);
+          const txt=fold(x.text||"")+" "+fold(x.head||"");
+          for(const c of arr(it.cast)){const n=String(cast[c]||"").trim();const first=fold(n.split(/\s+/).pop()||"");const nm=fold(n);if(n&&!txt.includes(nm)&&!(first.length>2&&txt.includes(first)))castMiss.push(tag+": "+n)}
+          const castN=arr(it.cast).map(c=>fold(String(cast[c]||""))).filter(Boolean);
+          const spk=new Set([...String(x.text||"").matchAll(/^\s*([A-ZÄÖÜ][A-ZÄÖÜ'\-]+(?: [A-ZÄÖÜ][A-ZÄÖÜ'\-]+)?)\s*(\([^)]*\))?\s*$/gm)].map(m=>m[1].trim()).filter(n=>n.length>2&&!/^(INT|EXT|CUT|SCHNITT|ENDE|FADE|OFF|ZWISCHENSCHNITT|RÜCKBLENDE|FLASHBACK|MONTAGE|SPÄTER|CONTINUOUS)$/.test(n)));
+          const allCast=Object.values(cast).map(c=>fold(String(c)));
+          for(const n of spk){const f=fold(n);if(!/^[a-zäöüéè' -]+$/.test(f))continue;const known=allCast.find(c=>c===f||c.split(" ").pop()===f);if(known&&!castN.some(c=>c===known))speakMiss.push(tag+": "+n.charAt(0)+n.slice(1).toLowerCase())}}
+        if(ieBad.length)w("warn",L("Drehplan ↔ Drehbuch"),L("Innen/Aussen stimmt nicht überein:")+" "+ieBad.slice(0,12).join(" · "));
+        if(todBad.length)w("warn",L("Drehplan ↔ Drehbuch"),L("Tageszeit stimmt nicht überein:")+" "+todBad.slice(0,12).join(" · "));
+        if(castMiss.length)w("info",L("Drehplan ↔ Drehbuch"),L("Cast laut Drehplan, im Drehbuch der Szene nicht gefunden:")+" "+castMiss.slice(0,15).join(" · "));
+        if(speakMiss.length)w("info",L("Drehplan ↔ Drehbuch"),L("Sprechen im Drehbuch (laut Cast-Liste), fehlen im Cast des Drehplans:")+" "+speakMiss.slice(0,15).join(" · "));
+        if(!ieBad.length&&!todBad.length)w("ok",L("Drehplan ↔ Drehbuch"),L("Innen/Aussen und Tageszeit stimmen bei allen {n} Szenen überein.").replace("{n}",seen.size))}
       else w("info",L("Drehplan ↔ Drehbuch"),L("Drehbuch nicht geladen – Vergleich übersprungen."))
     }
     /* 3) cast numbers ↔ cast list */
