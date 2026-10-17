@@ -1010,3 +1010,4 @@ Object.assign(I18N,{"Weitere":{fr:"Autres",it:"Altri",en:"Other"},"ohne Rolle":{
 Object.assign(I18N,{
  "Seite":{fr:"page",it:"pagina",en:"page"}
 });
+Object.assign(I18N,{"Über die App":{fr:"À propos de l’app",it:"Informazioni sull’app",en:"About the app"}});

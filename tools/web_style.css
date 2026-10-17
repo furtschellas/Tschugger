@@ -869,3 +869,4 @@ html body #view .wkwarn{border:1px solid #f08a24;background:color-mix(in srgb,#f
 html body #view .tstsu .tstgrp{margin:6px 10px;border-radius:8px}html body #view .tstsu .tstgrp>summary{font-size:13px;padding:6px 10px}
 html body #view .tstl .tstroles{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:4px}html body #view .tstl .tstroles span{font-size:11px;padding:0 6px;border-radius:999px;border:1px solid var(--rule)}
 html body #view .tstl .tstroles .ok{color:#2e9d5b}html body #view .tstl .tstroles .no{color:#d6455d;border-color:#d6455d}
+.psec.about .abv{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}.psec.about .mrk{color:#ff2e8a}
