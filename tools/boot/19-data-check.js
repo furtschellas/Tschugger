@@ -137,7 +137,7 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-dckrun]")&&dckM
 /* Mein Konto → App: for people with «Dokumente prüfen» who are not admins (admins find it under App-Verwaltung → Log) */
 /* without admin rights: own tab «Test» in the App-Verwaltung (12-admin) */
 
-/* ---------- Rollen testen (App-Verwaltung → Log/Tests, Owner und Admins): die App einen Moment mit den Rechten jeder Rolle ansehen ----------
+/* ---------- Berechtigungen testen (App-Verwaltung → Log/Tests, Owner und Admins): die App einen Moment mit den Rechten jeder Rolle ansehen ----------
    Pro Rolle: welche Bereiche sie sieht, welche Zusatzrechte sie hat, ob jede Seite ohne Fehler erscheint, ob Telefon/E-Mail
    nur mit Recht sichtbar sind und ob die Kopf-Symbole stimmen. Danach ist alles wieder wie vorher. Nichts wird gespeichert. */
 const RTS={res:null,busy:false,at:0,open:false};
@@ -168,8 +168,8 @@ async function roleTestRun(){
     S.tab=keep.tab;ADM.sub=keep.sub;try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}}
   RTS.res=out;RTS.at=Date.now();RTS.busy=false;RTS.open=true;render()}
 window.roleTestSec=function(){if(!isAdmin()||SIMROLE)return "";const r=RTS.res||[],bad=r.filter(x=>x.issues.length).length;
-  const sum=RTS.res?'<span class="tsth">'+(bad?'⚠ '+bad+' '+esc(L(bad===1?"Rolle mit Problemen":"Rollen mit Problemen")):'✓ '+r.length+' '+esc(L("Rollen in Ordnung")))+'</span>'+(RTS.at?' · '+esc(logWhen(RTS.at)):''):'<span class="tsth">'+esc(L("noch nicht geprüft"))+'</span>';
-  return '<details class="tstsec rtsec'+(bad?' bad':'')+'"'+(RTS.open?' open':'')+' data-lsec="rt"><summary><b>'+esc(L("Rollen testen"))+'</b> · '+sum+tstAllBtn()+'</summary>'+
+  const sum=RTS.res?'<span class="tsth">'+(bad?'⚠ '+bad+' '+esc(L(bad===1?"Berechtigungsstufe mit Problemen":"Berechtigungsstufen mit Problemen")):'✓ '+r.length+' '+esc(L("Berechtigungsstufen in Ordnung")))+'</span>'+(RTS.at?' · '+esc(logWhen(RTS.at)):''):'<span class="tsth">'+esc(L("noch nicht geprüft"))+'</span>';
+  return '<details class="tstsec rtsec'+(bad?' bad':'')+'"'+(RTS.open?' open':'')+' data-lsec="rt"><summary><b>'+esc(L("Berechtigungen testen"))+'</b> · '+sum+tstAllBtn()+'</summary>'+
     '<p class="ghint">'+esc(L("Zeigt die App einen Moment mit den Rechten jeder Rolle: welche Bereiche sie sieht, welche Zusatzrechte sie hat, ob alle Seiten ohne Fehler erscheinen und ob Telefon, E-Mail und Kopf-Symbole nur mit Recht sichtbar sind. Es wird nichts geändert."))+'</p>'+
     r.slice().sort((a,b)=>b.issues.length-a.issues.length).map(x=>'<details class="tstsu'+(x.issues.length?' bad':'')+'" data-su="rt:'+esc(x.name)+'"'+logSu("rt:"+x.name)+'><summary>'+(x.issues.length?'⚠ ':'✓ ')+esc(x.name)+' · '+(x.issues.length?x.issues.length+' '+esc(L(x.issues.length===1?"Problem":"Probleme")):esc(L("in Ordnung")))+'</summary>'+
       '<ul class="tstl"><li class="ok">'+esc(L("Sieht"))+': '+esc(x.tabs.join(", ")||"–")+'</li>'+(x.extra.length?'<li class="ok">'+esc(L("Darf"))+': '+esc(x.extra.join(", "))+'</li>':'')+x.issues.map(t=>'<li class="no">✗ '+esc(t)+'</li>').join("")+'</ul></details>').join("")+
