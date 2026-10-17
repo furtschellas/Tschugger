@@ -100,6 +100,8 @@ async def session(p, port, who, width=390, extra=""):
         await ctx.route("**/firebasejs/**/" + name, lambda r, q=None, body=body: r.fulfill(status=200, content_type="text/javascript", body=body))
     pg = await ctx.new_page(); pg.set_default_timeout(15000)
     errs = []; pg.on("pageerror", lambda e: errs.append(str(e)[:160]))
+    # errors the app catches itself but logs (e.g. a part calling a function of a part not loaded yet) count too
+    pg.on("console", lambda m: errs.append(m.text[:160]) if m.type == "error" and ("ReferenceError" in m.text or "is not defined" in m.text or "is not a function" in m.text) else None)
     await pg.goto("http://127.0.0.1:%d/" % port, wait_until="domcontentloaded"); await pg.wait_for_selector("#gem", state="visible"); await pg.wait_for_timeout(300)
     await pg.fill("#gem", PEOPLE[who]); await pg.fill("#gpw", "geheim123"); await pg.click("#gate button[type=submit]")
     await pg.wait_for_timeout(2800)
