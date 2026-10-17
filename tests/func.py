@@ -393,10 +393,8 @@ async def hidden_data(p, port):
             await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
             rc = await E("(()=>{const d=document.getElementById('rolechg');return d?d.innerText:''})()")
             check("Rolle geändert: Nachricht mit den neuen Rechten", "Callsheet sehen" in rc and "Catering" in rc, rc[:120])
-            await E("(()=>{const b=document.querySelector('#rolechg [data-rctour]');if(b)b.click()})()"); await pg.wait_for_timeout(1500)
-            nt = await E("TOUR.steps.map(s=>s.t)")
-            check("Rolle geändert: Tour zeigt nur das Neue (Callsheet), nicht die bestehenden Funktionen", len(nt) >= 1 and "Callsheet" in " ".join(nt) and "Schedule" not in nt and "Lunch-Menüs" not in nt and "Suche" not in " ".join(nt), nt)
-            await E("if(TOUR.el)TOUR.el.remove();TOUR.el=null;document.querySelectorAll('#tour,#rolechg').forEach(x=>x.remove());S.tab='today';render()")
+            check("Rolle geändert: keine Tour angeboten", not await E("!!document.querySelector('#rolechg [data-rctour]')") and "Tour" not in rc, rc[:120])
+            await E("const r=document.getElementById('rolechg');if(r)r.remove()")
         check(f"{who}: Tour ohne Schritte für fehlende Rechte", "Termin hinzufügen" not in tt and ("App-Verwaltung" in tt) == (who == "power") and ("Schedule" in tt) == (who != "norole") and ("Lunch-Menüs" in tt) == (who == "catering"), tt)
         await b.close()
 
