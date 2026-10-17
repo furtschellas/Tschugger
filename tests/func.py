@@ -443,8 +443,8 @@ async def owner_tests(p, port):
     pi = await E("""(async()=>{const ks=Object.keys(window.__db).filter(k=>k.startsWith('bcimg/'));if(!ks.length)return null;const d=window.__db[ks[0]];
         const bks=Object.keys(window.__db).filter(k=>k.startsWith('broadcasts/'));const key=await getDataKey();const raw=Uint8Array.from(atob(window.__db[bks[bks.length-1]].c),c=>c.charCodeAt(0));
         const b=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:raw.slice(0,12)},key,raw.slice(12))));
-        return {plain:d.c.startsWith('data:'),id:ks[0].split('/')[1],img:b.img,url:b.url||''}})()""")
-    check("Push-Bild: verschlüsselt gespeichert und mit der Nachricht verknüpft", bool(pi) and not pi["plain"] and pi["img"] == pi["id"] and pi["url"].startswith("./#bc="), pi)
+        const im=window.__db['bcimg/'+b.img];return {plain:!im||im.c.startsWith('data:'),id:im?b.img:null,img:b.img,url:b.url||''}})()""")
+    check("Push-Bild: verschlüsselt gespeichert und mit der Nachricht verknüpft", bool(pi) and not pi["plain"] and pi["img"] == pi["id"] and pi["url"].startswith("./#bc="), pi, public=True)
     if pi:
         await E("bcGo(%s)" % json.dumps(pi["url"].replace("./", ""))); await pg.wait_for_timeout(2500)
         bv = await E("(()=>{const d=document.getElementById('bcview');return d?{t:d.innerText.slice(0,60),img:!!d.querySelector('.bcvimg img')}:null})()")
