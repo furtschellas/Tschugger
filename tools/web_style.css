@@ -812,4 +812,5 @@ html body .clog .clsc{min-height:0;height:auto;padding:0;border:0;background:non
 .clog .clk{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:999px;border:1px solid currentColor;margin-right:2px}
 .clog .clk.add{color:#2e8b57}.clog .clk.del{color:#c0392b}.clog .clk.chg{color:var(--accent)}.clog .clk.clr{color:var(--muted)}
 .scrbox{max-height:85vh;overflow:auto}.scrbox .scrsc .lnk{min-height:0;height:auto;padding:0;border:0;background:none;width:auto;font-size:inherit}
-.scrbox .tscrlog{margin:8px 0}.scrbox .tscrlog>summary{cursor:pointer;color:var(--accent);font-size:14px}
+.scrbox .scrlog{margin:8px 0}.scrbox .scrlog>summary{cursor:pointer;color:var(--accent);font-size:14px}
+html body #view .today .tchg .tscrlog>summary{min-height:0;padding:2px 0;line-height:1.3}
