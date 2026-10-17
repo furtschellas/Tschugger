@@ -80,7 +80,7 @@ async def owner_tests(p, port):
 
     # ---------- my appointments ----------
     r = await E("""(()=>{const me={name:'Anna Muster',email:'',k:nmk('Anna Muster')};const pp=[];
-                  return [iAmIn(['Anna Muster (online tbc)'],me,pp),iAmIn(['STEFAN KÜNZLER tba'],me,pp),iAmIn(['Stefan Muster'],me,pp)]})()""")
+                  return [iAmIn(['Anna Muster (online tbc)'],me,pp),iAmIn(['ANNA MUSTER tba'],me,pp),iAmIn(['Otto Beispiel'],me,pp)]})()""")
     check("Meine Termine: Name mit Zusatz «(online tbc)» oder «tba» wird erkannt", r[:2] == [True, True], r)
     check("Meine Termine: anderer Name wird nicht erkannt", r[2] is False, r)
     bell = await E("""(()=>{const c=pushCfg();c.on=true;c.types.my=true;pushSave(c);const d=new Date(Date.now()+864e5).toISOString().slice(0,10);
