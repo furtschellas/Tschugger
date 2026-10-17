@@ -51,6 +51,13 @@ class FakeFS:
 
 # ====================================================================== Dropbox-Aktualisierung
 import update_from_dropbox as U  # noqa: E402
+_sf = lambda n, m="2026-10-01": {"name": n, "modified": m}
+_fs = [_sf("01_Script/261017_Tschugger_Tigerblood_v13 CLEAN.pdf"), _sf("01_Script/261017_Tschugger_Tigerblood_v13.pdf"), _sf("01_Script/Tschugger Script Changelog v13 261017.pdf"),
+       _sf("01_Script/250901_Tschugger_Tigerblood_v12 CLEAN.pdf"), _sf("01_Script/English translation v12/Tschugger_v12 EN.pdf"), _sf("01_Script/Tschugger_v14 SPP.pdf")]
+check("Drehbuch: neueste Version, CLEAN bevorzugt", (U.pick_script(_fs) or {}).get("name", "").endswith("v13 CLEAN.pdf"))
+check("Drehbuch: neue Version ohne CLEAN wird trotzdem genommen", (U.pick_script(_fs + [_sf("01_Script/261101_Tschugger_Tigerblood_v14.pdf")]) or {}).get("name", "").endswith("v14.pdf"))
+check("Drehbuch: höhere Nummer gewinnt auch zweistellig (v9 < v10)", (U.pick_script([_sf("01_Script/x_v9 CLEAN.pdf"), _sf("01_Script/x_v10.pdf")]) or {}).get("name", "").endswith("v10.pdf"))
+check("Drehbuch: Changelog, Übersetzung und SPP nie gewählt", U.pick_script([_fs[2], _fs[4], _fs[5]]) is None)
 
 TODAY = datetime.date.today().isoformat()
 D = lambda n: (datetime.date.today() + datetime.timedelta(days=n)).isoformat()
