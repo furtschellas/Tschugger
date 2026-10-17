@@ -118,6 +118,12 @@ await check("Sicherheit: Crew kann niemanden einladen", assertFails(setDoc(doc(a
 await check("Sicherheit: Crew kann sich kein Startpasswort-Konto anlegen", assertFails(setDoc(doc(as("crew"), "starts/neu@test.ch"), { mustChange: true, at: 1 })));
 await check("Admin-Liste: wer Rollen bearbeitet, sieht wer Admin ist (sonst «Keine Rolle»)", assertSucceeds(getDocs(collection(as("power"), "admins"))));
 await check("Admin-Liste: Crew ohne Verwaltungsrecht nicht", assertFails(getDocs(collection(as("crew"), "admins"))));
+await check("Admin-Liste: mit «Rollen sehen» lesbar (Admins nicht als «Keine Rolle»)", assertSucceeds(getDocs(collection(as("viewer"), "admins"))));
+await check("Owner-Liste: mit «Rollen sehen» lesbar", assertSucceeds(getDocs(collection(as("viewer"), "owners"))));
+await check("Admin-Liste: mit «Rollen sehen» nicht änderbar", assertFails(setDoc(doc(as("viewer"), "admins/other@test.ch"), { addedAt: 1 })));
+await check("Owner-Liste: mit «Rollen bearbeiten» nicht änderbar", assertFails(setDoc(doc(as("power"), "owners/other@test.ch"), { addedAt: 1 })));
+await check("Einstellungen: zu viele Felder abgelehnt (max. 16)", assertFails(setDoc(doc(as("crew"), "prefs/uCrew"), Object.fromEntries([...Array(17)].map((_, i) => ["k" + i, "x"])))));
+await check("Einstellungen: «Nachricht gesehen» (rc) speicherbar", assertSucceeds(setDoc(doc(as("crew"), "prefs/uCrew"), { theme: "dark", rc: "abc", at: 1, lt: 1 })));
 await check("Sicherheit: Owner-Liste nicht für Crew", assertFails(getDocs(collection(as("crew"), "owners"))));
 await check("Sicherheit: Admin kann keinen weiteren Owner ernennen", assertFails(setDoc(doc(as("admin"), "owners/crew@test.ch"), { addedAt: 1 })));
 await check("Sicherheit: Menüs nur Catering und Admins", assertFails(setDoc(doc(as("crew"), "menus/2026-10-20"), { u1: "x" })));

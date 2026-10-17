@@ -277,6 +277,19 @@ async def owner_tests(p, port):
     check("Log: Knopf «alles aufklappen» öffnet alle Teile", al)
     ra = await E("(()=>{const bx=[...document.querySelectorAll('#view details.tstsec')];return {n:bx.length,ok:bx.every(d=>{const sm=d.querySelector(':scope>summary');const b=sm&&sm.querySelector(':scope>[data-tstall]');if(!b)return false;const r=b.getBoundingClientRect(),q=sm.getBoundingClientRect();return sm.lastElementChild===b&&q.right-r.right<40})}})()")
     check("Log: jedes Menü auf- und zuklappbar, Knopf ganz rechts", ra["n"] >= 4 and ra["ok"], ra)
+    tg = await E("""(()=>{document.querySelectorAll('#view details.tstsec').forEach(d=>d.open=false);const au=document.querySelector('#view details.audd');au.querySelector(':scope>summary [data-tstall]').click();
+      const others=[...document.querySelectorAll('#view details.tstsec')].filter(d=>d!==au).some(d=>d.open);const open=au.open&&[...au.querySelectorAll('details')].every(d=>d.open);return {open,others}})()""")
+    await pg.wait_for_timeout(150); await E("render()"); await pg.wait_for_timeout(200)
+    tg["keep"] = await E("!!(document.querySelector('#view details.audd')||{}).open")
+    check("Log: Knopf im Menü klappt nur dieses Menü auf, bleibt nach Neuaufbau offen", tg["open"] and not tg["others"] and tg["keep"], tg)
+    await E("document.querySelector('#view details.audd [data-tstall]').click()"); await pg.wait_for_timeout(150)
+    check("Log: zweiter Klick klappt das Menü wieder zu", not await E("document.querySelector('#view details.audd').open"))
+    pf = await E("""(()=>{const keep={};for(const k of PREFKEYS){keep[k]=localStorage.getItem(k);localStorage.setItem(k,'x')}localStorage.setItem('rc','abc');
+      let n=0;const p={};for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null)p[k]=v}const v=localStorage.getItem('rc');if(v!==null&&Object.keys(p).length<14)p.rc=v;n=Object.keys(p).length+2;
+      for(const k of PREFKEYS){if(keep[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,keep[k])}localStorage.removeItem('rc');return n})()""")
+    check("Einstellungen: auch mit allen Werten höchstens 16 Felder (Regel)", pf <= 16, pf)
+    src = await E("savePrefs.toString()")
+    check("Einstellungen: «Nachricht gesehen» wird nur gespeichert, wenn Platz ist", "length<14" in src)
     check("Log: Knopf «Tests jetzt starten» (Kreis-Pfeile) für Admins", await E("!!document.querySelector('#view [data-tstrun] svg')"))
     await E("TST.d=null")
 
@@ -379,6 +392,12 @@ async def hidden_data(p, port):
         dc = await E("(()=>{ACSUB='app';S.tab='acct';render();const a=!!document.querySelector('#view .dcksec');S.tab='admin';ADM.sub='test';render();const t=document.querySelector('#view .dcktab .dcksec');ADM.sub='log';render();return {acct:a,test:!!t&&t.tagName!=='DETAILS'&&!!t.querySelector('[data-dckrun]'),gear:!document.getElementById('admBtn').hidden}})()")
         want = await E("!isAdmin()&&can('data.check')")
         check(f"{who}: «Dokumente prüfen» im Zahnrad unter «Test» nur mit Recht, nicht mehr in Mein Konto", not dc["acct"] and dc["test"] == want and (dc["gear"] or not want), dc)
+        if want:
+            tb = await E("(()=>{S.tab='admin';ADM.sub='test';render();const subs=[...document.querySelectorAll('#view .asub [data-asub]')].map(b=>b.dataset.asub);ADM.sub='log';render();const lg=!!document.querySelector('#view .dcksec');S.tab='today';render();return {subs,lg,audit:can('audit.view')}})()")
+            check(f"{who}: Reiter «Test» nur mit «Dokumente prüfen», kein Doppel im Log", "test" in tb["subs"] and not tb["lg"] and ("log" in tb["subs"]) == tb["audit"], tb)
+            check(f"{who}: in der Tour «Dokumente prüfen» unter dem Zahnrad", "Dokumente prüfen" in tt and "App-Verwaltung" in tt, tt)
+        else:
+            check(f"{who}: kein Reiter «Test» ohne Recht", not await E("(()=>{S.tab='admin';render();const t=!!document.querySelector('#view [data-asub=\"test\"]');S.tab='today';render();return t})()"))
         if who == "power":
             await E("ADM.loaded=false;S.tab='admin';ADM.sub='users';render()"); await pg.wait_for_timeout(2500)
             await E("render()"); await pg.wait_for_timeout(300)
@@ -400,6 +419,13 @@ async def hidden_data(p, port):
             await E("(()=>{const k=memKey();const c=JSON.parse(localStorage.getItem(k)||'{}');c.p=(c.p||[]).filter(p=>p!=='view.dispo');localStorage.setItem(k,JSON.stringify(c))})()")
             await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
             check("Rolle geändert: Nachricht nur einmal (auch wenn ein anderes Gerät noch den alten Stand hat)", not await E("!!document.getElementById('rolechg')"))
+            await E("const r=document.getElementById('rolechg');if(r)r.remove()")
+            await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
+            check("Rolle geändert: ohne Änderung keine Nachricht", not await E("!!document.getElementById('rolechg')"))
+            await E("(()=>{localStorage.removeItem('rc');const k=memKey();const c=JSON.parse(localStorage.getItem(k)||'{}');c.p=(c.p||[]).concat(['users.edit']);localStorage.setItem(k,JSON.stringify(c))})()")
+            await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
+            rr = await E("(()=>{const d=document.getElementById('rolechg');return d?d.innerText:''})()")
+            check("Rolle geändert: weggefallene Rechte werden genannt («Nicht mehr»)", "Nicht mehr" in rr and "Benutzer ändern" in rr, rr[:160])
             await E("const r=document.getElementById('rolechg');if(r)r.remove()")
         check(f"{who}: Tour ohne Schritte für fehlende Rechte", "Termin hinzufügen" not in tt and ("App-Verwaltung" in tt) == (who == "power") and ("Schedule" in tt) == (who != "norole") and ("Lunch-Menüs" in tt) == (who == "catering"), tt)
         await b.close()
