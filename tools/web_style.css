@@ -701,3 +701,23 @@ html body #view .oerowd{grid-template-columns:96px minmax(0,1fr) auto}html body 
 .pacc .paccpen.on{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent)}
 .pacc .paccr .ust{margin:0}
 .bcdev{border:1px solid var(--rule);border-radius:14px;padding:10px 14px;margin:16px 0 4px;background:var(--sheet);font-size:13px}.bcdev summary{cursor:pointer}.bcdev .bcrl{margin-top:8px}
+/* Access / Rollen pflegen: ruhigere Abstände zu den Rändern */
+html body #view .admins:has(.arole),html body #view .admins.pacc{padding:16px 16px 18px;border-radius:14px}
+html body #view .admins:has(.arole)>h3,html body #view .admins.pacc>h3{margin:0 0 6px}
+html body #view .admins:has(.arole)>.ahint,html body #view .admins.pacc>.ahint{margin:0 0 12px;line-height:1.45}
+html body #view .arole{padding:12px 14px;border-radius:12px;margin:8px 0}
+html body #view .arole .arh{align-items:flex-start}
+html body #view .arole .arh .pillbtn{flex:none;margin-top:2px}
+html body #view .arn small{line-height:1.4}
+html body #view .arolef{padding-top:12px;margin-top:10px;border-top:1px dashed var(--rule)}
+html body #view .arolef .pgrp{padding:10px 12px;border-radius:12px}
+html body #view .arolef .arb{margin-top:12px}
+html body #view .pacc .paccg{margin:14px 2px 6px}
+html body #view .pacc .paccd>summary{padding:12px 14px}
+html body #view .pacc .paccr{padding:0 14px;margin:0 0 10px;gap:6px}
+html body #view .pacc .paccrole{padding:5px 12px 5px 8px;max-width:100%;box-sizing:border-box}
+html body #view .pacc .paccp{margin:0;border-top:1px solid var(--rule)}
+html body #view .pacc .paccp>summary{padding:10px 14px}
+html body #view .pacc .paccp .paccl{border-top:0;padding:0 14px 8px}
+html body #view .pacc .paccp .ghint{padding:0 14px 10px}
+html body #view .abtn{margin-top:6px}
