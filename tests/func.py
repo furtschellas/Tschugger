@@ -261,6 +261,11 @@ async def owner_tests(p, port):
     await pg.wait_for_timeout(500)
     lg = await E("({su:document.querySelectorAll('#view .tstsec .tstsu').length,bad:document.querySelectorAll('#view .tstsec .tstsu.bad[open]').length,open:document.querySelector('#view .tstsec').open})")
     check("Log: Testresultate je Teil, Fehler offen", lg == {"su": 2, "bad": 1, "open": True}, lg)
+    await E("window.CHATURL=window.CHATURL||'https://worker.test';render()"); await pg.wait_for_timeout(300)
+    await E("document.querySelector('#view [data-tstall]').click()"); await pg.wait_for_timeout(200)
+    al = await E("[...document.querySelectorAll('#view .tstsec details, #view .tstsec')].every(d=>d.open)")
+    check("Log: Knopf «alles aufklappen» öffnet alle Teile", al)
+    check("Log: Knopf «Tests jetzt starten» (Kreis-Pfeile) für Admins", await E("!!document.querySelector('#view [data-tstrun] svg')"))
     await E("TST.d=null")
 
     # push page: who has push on a device, collapsible and closed by default (before the history)
@@ -361,6 +366,11 @@ async def hidden_data(p, port):
         await E("if(TOUR.el)TOUR.el.remove();TOUR.el=null;document.querySelectorAll('#tour').forEach(x=>x.remove())")
         dc = await E("(()=>{ACSUB='app';S.tab='acct';render();const d=document.querySelector('#view .dcksec');return !!d&&d.tagName!=='DETAILS'&&!!d.querySelector('[data-dckrun]')})()")
         check(f"{who}: «Dokumente prüfen» in Mein Konto nur mit Recht", dc == (await E("can('data.check')")), dc)
+        if who == "crew":
+            await E("MYPERMS.push('roles.view');try{acctButton(true)}catch(_){};S.tab='admin';ADM.sub='roles';ADM.loaded=false;render()"); await pg.wait_for_timeout(1500)
+            rv = await E("({tab:!!document.querySelector('[data-asub=\"roles\"]')||ADM.sub==='roles',view:!!document.querySelector('#view .pacc'),edit:document.querySelectorAll('#view [data-redit],#view [data-paccedit]').length,gear:!document.getElementById('admBtn').hidden})")
+            check("Rollen sehen: Access sichtbar, aber nichts änderbar", rv["view"] and rv["edit"] == 0 and rv["gear"], rv)
+            await E("MYPERMS.splice(MYPERMS.indexOf('roles.view'),1);try{acctButton(true)}catch(_){};S.tab='today';render()")
         check(f"{who}: Tour ohne Schritte für fehlende Rechte", "Termin hinzufügen" not in tt and ("Schedule" in tt) == (who != "norole") and ("Lunch-Menüs" in tt) == (who == "catering"), tt)
         await b.close()
 

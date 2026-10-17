@@ -35,7 +35,7 @@ function auditSec(){
   const q=fold(AUD.q);
   const rows=AUD.list.map(x=>{const tgt=x.col==="members"?memName(x.id):x.col==="roles"?(((ADM.roles||[]).find(r=>r.id===x.id)||{}).name||x.id):x.col==="menus"?dmy(x.id):x.col==="config"?"":x.col==="broadcasts"?"":/@/.test(x.id)?nameOf(x.id):x.id;
     return Object.assign({},x,{who:nameOf(x.by),tgt,what:L(AUDLBL[x.col]||x.col)+" "+L(AUDOP[x.op]||x.op)})}).filter(x=>!q||fold([x.who,x.tgt,x.what,x.sum].join(" ")).includes(q));
-  return '<div class="admins audit"><h3>'+L("Protokoll")+' <small>'+AUD.list.length+'</small></h3><p class="ahint">'+L("Wer hat wann Rollen, Benutzende, Menüs, Einstellungen oder Push-Nachrichten geändert – die letzten 300 Einträge.")+'</p>'+
+  return '<div class="admins audit"><h3>'+L("Log")+' <small>'+AUD.list.length+'</small></h3><p class="ahint">'+L("Wer hat wann Rollen, Benutzende, Menüs, Einstellungen oder Push-Nachrichten geändert – die letzten 300 Einträge.")+'</p>'+
     (AUD.err?'<p class="amsg">'+esc(L("Protokoll nicht lesbar – bitte die neuen Firestore-Regeln veröffentlichen."))+' ('+esc(AUD.err)+')</p>':'')+
     '<div class="audbar"><input type="search" data-audq placeholder="'+esc(L("Suchen: Person, Rolle, Menü …"))+'" value="'+esc(AUD.q)+'"><button type="button" class="cico" data-audre aria-label="'+esc(L("Neu laden"))+'" title="'+esc(L("Neu laden"))+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button></div>'+
     (rows.length?'<ul class="audlist">'+rows.map(x=>'<li><div class="audh"><b>'+esc(x.what)+'</b>'+(x.tgt?' <span class="audt">'+esc(x.tgt)+'</span>':'')+'<span class="audw">'+esc(x.ms?new Date(x.ms).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"")+'</span></div><div class="audb">'+esc(x.who)+(x.sum?' · <span class="ghint">'+esc(x.sum)+'</span>':'')+'</div></li>').join("")+'</ul>':'<p class="ghint">'+L("Noch keine Einträge.")+'</p>')+'</div>';
@@ -132,7 +132,9 @@ function hiTabs(){document.querySelectorAll("nav.tabs button[data-tab] .lbl").fo
 {const _r=render;render=function(){const x=_r.apply(this,arguments);try{hiTabs()}catch(_){}try{chatFab()}catch(_){}try{bcButton()}catch(_){}return x}}
 
 /* results of the automatic tests (GitHub, before every release of new code): App-Verwaltung → Log, collapsible */
-const TST={d:null,busy:false};
+const TST={d:null,busy:false,run:false,msg:"",open:false,closed:false};
+const TST_RUN='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10"/><path d="M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/></svg>';
+const TST_ALL='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>';
 async function testsLoad(){if(TST.busy)return;TST.busy=true;try{const r=await fetch("./tests.json?t="+Date.now(),{cache:"no-store"});TST.d=r.ok?await r.json():{none:true}}catch(_){TST.d={none:true}}TST.busy=false;render()}
 function testsSec(){
   if(!TST.d){testsLoad();return '<details class="tstsec"><summary>'+esc(L("Automatische Tests"))+' · '+esc(L("Lade …"))+'</summary></details>'}
@@ -140,11 +142,20 @@ function testsSec(){
   const dt=new Date(d.at||0),when=dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit"})+" "+dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"});
   const suites=Array.isArray(d.suites)&&d.suites.length?d.suites:[{name:"",ok:d.ok,n:d.n,fail:d.fail,checks:d.checks||[]}];
   const head=d.crash?'✗ '+L("Tests abgebrochen"):d.ok?'✓ '+L("{n} von {n} bestanden").split("{n}").join(d.n):'✗ '+L("{f} von {n} fehlgeschlagen").replace("{f}",d.fail).replace("{n}",d.n);
-  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(d.ok?'':' open')+'><summary><b>'+esc(L("Automatische Tests"))+'</b> · <span class="tsth">'+esc(head)+'</span> · '+esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':'')+'</summary>'+
+  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(d.ok||TST.closed?'':' open')+(TST.open?' open':'')+'><summary><b>'+esc(L("Automatische Tests"))+'</b>'+'<button type="button" class="tstall" data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'+' · <span class="tsth">'+esc(head)+'</span> · '+esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':'')+'</summary>'+
     '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
     suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
       return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'"'+(su.ok?'':' open')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
         '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+'</li>').join("")+'</ul>'+(su.name?'</details>':'')}).join("")+
-    '<div class="arb"><button type="button" class="pillbtn" data-tstre>↻ '+esc(L("Neu laden"))+'</button></div></details>';
+    '<div class="arb tstbtns">'+(window.CHATURL&&isAdmin()?'<button type="button" class="pillbtn" data-tstrun'+(TST.run?' disabled':'')+'>'+TST_RUN+esc(L(TST.run?"Tests laufen …":"Tests jetzt starten"))+'</button>':'')+'<button type="button" class="pillbtn" data-tstre>↻ '+esc(L("Neu laden"))+'</button></div>'+(TST.msg?'<p class="ghint">'+esc(TST.msg)+'</p>':'')+'</details>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d=null;render()}});
+
+/* open/close everything in the test box; start the tests by hand (through the worker: GitHub «Website veröffentlichen» with all tests) */
+document.addEventListener("click",e=>{const a=e.target.closest("[data-tstall]");if(!a)return;e.preventDefault();e.stopPropagation();const box=a.closest(".tstsec");if(!box)return;
+  const all=[box,...box.querySelectorAll("details")];const open=!all.every(d=>d.open);all.forEach(d=>d.open=open);TST.open=open;TST.closed=!open},true);
+document.addEventListener("click",async e=>{if(!e.target.closest("[data-tstrun]")||!isAdmin()||TST.run)return;TST.run=true;TST.msg="";render();
+  try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/tests",{method:"POST",headers:{Authorization:"Bearer "+tok}});const j=await r.json().catch(()=>({}));
+    TST.msg=r.ok?L("Tests gestartet – das Ergebnis erscheint hier in etwa 10–15 Minuten."):r.status===404?L("Der Worker kennt diese Funktion noch nicht – bitte den neuen Code aus tools/chat_worker.js einsetzen."):(j.error||("HTTP "+r.status));
+    if(r.ok){const t0=Date.now(),before=TST.d&&TST.d.at;const poll=async()=>{if(Date.now()-t0>25*60e3){TST.run=false;render();return}TST.d=null;await testsLoad();if(TST.d&&TST.d.at&&TST.d.at!==before){TST.run=false;TST.msg="";render();return}setTimeout(poll,60e3)};setTimeout(poll,90e3)}else TST.run=false}
+  catch(err){TST.run=false;TST.msg=L("Fehler:")+" "+(err.message||err)}render()});

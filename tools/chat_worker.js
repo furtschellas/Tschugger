@@ -33,7 +33,7 @@ const API_KEY = "AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ";
 const SITE = "https://furtschellas.github.io/Tschugger/";
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
-const VERSION = "2026-10-17b";
+const VERSION = "2026-10-17c";
 
 let JWKS = null, JWKS_AT = 0;
 const b64u = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
@@ -71,6 +71,17 @@ async function requireMember(req) {
   MEMBERS.set(user.sub, Date.now());
   if (MEMBERS.size > 2000) MEMBERS.clear();
   return { user, tok };
+}
+/* Owner or Admin: the fixed owner, or an entry under owners/ or admins/ (each person may read only their own entry) */
+async function isAdminUser(g) {
+  const em = String(g.user.email || "").toLowerCase();
+  if (!em || g.user.email_verified === false) return false;
+  if (em === "furtschellas@gmail.com") return true;
+  for (const col of ["owners", "admins"]) {
+    const r = await fetch(FS + "/" + col + "/" + encodeURIComponent(em), { headers: { Authorization: "Bearer " + g.tok } });
+    if (r.status === 200) return true;
+  }
+  return false;
 }
 async function guard(req, origin) {
   try { return await requireMember(req); }
@@ -362,6 +373,14 @@ export default {
       if (req.method === "POST" && path === "/chat") return await chat(req, env, origin);
       if (req.method === "POST" && path === "/broadcast") return await broadcast(req, env, origin, ctx);
       if (req.method === "POST" && path === "/selftest") return await selftest(req, env, origin);
+      /* App-Verwaltung → Log: start the automatic tests by hand (Owner and Admins only) */
+      if (req.method === "POST" && path === "/tests") {
+        const g = await guard(req, origin); if (g.err) return g.err;
+        if (!(await isAdminUser(g))) return json({ error: "Nur für Owner und Admins." }, 403, origin);
+        if (!allow("tests", g.user.sub, 3, 30 * 60e3)) return json({ error: "Höchstens 3 Testläufe pro halbe Stunde." }, 429, origin);
+        const r = await dispatch(env, "pages.yml");
+        return json({ ok: / 204$/.test(r), r }, / 204$/.test(r) ? 200 : 502, origin);
+      }
       if (req.method === "POST" && path === "/notify") {
         const g = await guard(req, origin); if (g.err) return g.err;
         if (!allow("notify", g.user.sub, 3, 10 * 60e3)) return json({ error: "Zu oft." }, 429, origin);

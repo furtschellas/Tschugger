@@ -21,7 +21,7 @@ const env = await initializeTestEnvironment({
 // people: owner, admin, crew (role crew), power (roles.edit, push.send, events.add), stranger (signed in, not invited)
 const U = {
   owner: ["uOwner", "furtschellas@gmail.com"], admin: ["uAdmin", "admin@test.ch"], crew: ["uCrew", "crew@test.ch"],
-  power: ["uPower", "power@test.ch"], stranger: ["uStr", "str@test.ch"], other: ["uOther", "other@test.ch"],
+  power: ["uPower", "power@test.ch"], viewer: ["uView", "view@test.ch"], stranger: ["uStr", "str@test.ch"], other: ["uOther", "other@test.ch"],
 };
 const as = k => env.authenticatedContext(U[k][0], { email: U[k][1], email_verified: true }).firestore();
 const anon = env.unauthenticatedContext().firestore();
@@ -35,6 +35,8 @@ await env.withSecurityRulesDisabled(async c => {
   await setDoc(doc(db, "userroles/crew@test.ch"), { role: "crew" });
   await setDoc(doc(db, "userroles/power@test.ch"), { role: "power" });
   await setDoc(doc(db, "userroles/other@test.ch"), { role: "crew" });
+  await setDoc(doc(db, "roles/viewer"), { name: "Viewer", perms: ["roles.view"] });
+  await setDoc(doc(db, "userroles/view@test.ch"), { role: "viewer" });
   for (const k of ["crew", "power", "other"]) await setDoc(doc(db, "members/" + U[k][0]), { active: true, email: U[k][1], name: k });
   await setDoc(doc(db, "events/evPower"), { c: "x", at: 1, by: "uPower" });
   await setDoc(doc(db, "gcal/feed"), { c: "x" });
@@ -104,6 +106,9 @@ await check("Sicherheit: ohne Anmeldung keine Einladungen", assertFails(getDocs(
 await check("Sicherheit: Crew sieht keine Einladungen", assertFails(getDocs(collection(as("crew"), "invites"))));
 await check("Sicherheit: Crew sieht keine Zugangsanfragen", assertFails(getDocs(collection(as("crew"), "requests"))));
 await check("Sicherheit: Crew sieht keine Rollen-Zuweisungen anderer", assertFails(getDoc(doc(as("crew"), "userroles/other@test.ch"))));
+await check("Rollen sehen: Zuweisungen mit «Rollen sehen» lesbar, aber nicht änderbar", assertSucceeds(getDocs(collection(as("viewer"), "userroles"))));
+await check("Rollen sehen: kann keine Rolle zuweisen", assertFails(setDoc(doc(as("viewer"), "userroles/other@test.ch"), { role: "power" })));
+await check("Rollen sehen: kann keine Rolle ändern", assertFails(setDoc(doc(as("viewer"), "roles/crew"), { name: "Crew", perms: ["view.plan"] })));
 await check("Sicherheit: eigene Rollen-Zuweisung lesbar", assertSucceeds(getDoc(doc(as("crew"), "userroles/crew@test.ch"))));
 await check("Sicherheit: nicht eingeladene Person kann nicht beitreten", assertFails(setDoc(doc(as("stranger"), "members/uStr"), { active: true, email: "str@test.ch", name: "x" })));
 await check("Sicherheit: Beitritt nur mit eigener Adresse", assertFails(setDoc(doc(as("stranger"), "members/uOther2"), { active: true, email: "other@test.ch" })));
