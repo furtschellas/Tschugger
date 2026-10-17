@@ -327,7 +327,7 @@ async def owner_tests(p, port):
         ab = await E("(()=>{S.tab='acct';ACSUB='app';render();const a=document.querySelector('#view .psec.about');return a?a.innerText:''})()")
         check("Mein Konto → App: «Über die App» mit App-Version und © MrK 2026", "MrK 2026" in ab and "App " in ab)
         # phone back button: closes an open window first, then goes back to the previous page (not out of the app)
-        bk = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));S.tab='plan';render();await w(100);S.tab='script';render();await w(100);
+        bk = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));S.tab='today';render();await w(100);S.tab='plan';render();await w(100);S.tab='script';render();await w(100);
           const b=document.createElement('button');b.dataset.route=JSON.stringify({h:'https://x',c:'https://y',from:'Hotel',to:'Sion'});document.body.appendChild(b);b.click();b.remove();await w(150);
           const pop=!!document.getElementById('routepop');history.back();await w(300);const closed=!document.getElementById('routepop'),tab1=S.tab;
           history.back();await w(300);return {pop,closed,tab1,tab2:S.tab}})()""")
