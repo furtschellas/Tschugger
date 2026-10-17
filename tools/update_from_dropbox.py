@@ -491,15 +491,15 @@ def pick_schedule(files):
     return max(c, key=key) if c else None
 
 def pick_script(files):
-    """always the newest script version: highest «vNN» in the file name; within the same version CLEAN (without revision marks)
-    before the normal PDF; never translations, changelogs, SPP or landscape versions"""
+    """always the newest CLEAN version (without revision marks): highest «vNN» in the file name; a version without CLEAN is never
+    used (it is usually uploaded a few minutes before the CLEAN one); never translations, changelogs, SPP or landscape versions"""
     def ver(f):
         n = low(f).rsplit("/", 1)[-1]
-        if not n.endswith(".pdf") or re.search(r"spp|querformat|queerformat|changelog|translation|[ _-]en[ _.]", n): return None
+        if not n.endswith(".pdf") or "clean" not in n or re.search(r"spp|querformat|queerformat|changelog|translation|[ _-]en[ _.]", n): return None
         m = re.search(r"(?:^|[ _-])v(\d+)(?:[ _.-]|$)", n)
         return int(m.group(1)) if m else None
     c = [f for f in files if low(f).startswith("01_script/") and "english translation" not in low(f) and ver(f) is not None]
-    return max(c, key=lambda f: (ver(f), "clean" in low(f).rsplit("/", 1)[-1], f["modified"] or "")) if c else None
+    return max(c, key=lambda f: (ver(f), f["modified"] or "")) if c else None
 
 def pick_crew(files):
     c = [f for f in files if low(f).startswith("03_crewlist/") and "_archiv" not in low(f) and "crewliste" in low(f) and low(f).endswith(".pdf")]
