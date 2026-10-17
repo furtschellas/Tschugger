@@ -185,11 +185,12 @@ const TST_ALL='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true
 async function testsLoad(){if(TST.busy)return;TST.busy=true;try{const r=await fetch("./tests.json?t="+Date.now(),{cache:"no-store"});TST.d=r.ok?await r.json():{none:true}}catch(_){TST.d={none:true}}TST.busy=false;render()}
 /* buttons in Log/Tests: only the symbol (the text is the tooltip and for screen readers) */
 const TST_LOAD='<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>';
-const tstIco=(attr,ic,t,dis)=>'<button type="button" class="cico tsticon" '+attr+(dis?' disabled':'')+' aria-label="'+esc(L(t))+'" title="'+esc(L(t))+'">'+ic+'</button>';window.tstIco=tstIco;
+const tstIco=(attr,ic,t,dis,pg)=>{const p=pg&&pg.pct!=null?Math.max(0,Math.min(100,pg.pct)):null;
+  return '<button type="button" class="lbtn tsticon'+(pg?' prog'+(p==null?' ind':''):'')+'" '+attr+(dis?' disabled':'')+(pg&&p!=null?' style="--p:'+p+'"':'')+' aria-label="'+esc(L(t))+'" title="'+esc(L(t))+'">'+ic+'</button>'};window.tstIco=tstIco;
 /* open/close button at the right end of every box in Log/Tests */
 /* while a test runs, the button shows the progress as a ring around it (pct = percent, null = running, unknown how far) */
 function tstAllBtn(pg){const p=pg&&pg.pct!=null?Math.max(0,Math.min(100,pg.pct)):null;
-  return '<button type="button" class="tstall'+(pg?' prog'+(p==null?' ind':''):'')+'"'+(pg&&p!=null?' style="--p:'+p+'"':'')+' data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+(pg?' · '+esc(L("läuft"))+(p!=null?' '+p+' %':''):'')+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'}
+  return '<button type="button" class="lbtn tstall'+(pg?' prog'+(p==null?' ind':''):'')+'"'+(pg&&p!=null?' style="--p:'+p+'"':'')+' data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+(pg?' · '+esc(L("läuft"))+(p!=null?' '+p+' %':''):'')+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'}
 function testsSec(){
   if(!TST.d){testsLoad();return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("Lade …")))+'</summary></details>'}
   const d=TST.d;if(d.none)return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("noch keine Resultate")))+'</summary></details>';
@@ -201,14 +202,18 @@ function testsSec(){
     suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
       return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'" data-su="'+esc(su.name)+'"'+(TST.su[su.name]?' open':'')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
         '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+(c.e?'<br><small>'+esc(c.e)+'</small>':'')+'</li>').join("")+'</ul>'+(su.name?'</details>':'')}).join("")+
-    '<div class="arb tstbtns">'+(window.CHATURL&&isAdmin()?tstIco("data-tstrun",TST_RUN,TST.run?"Tests laufen …":"Tests jetzt starten",TST.run):'')+tstIco("data-tstre",TST_LOAD,"Resultate neu laden")+'</div>'+(TST.msg?'<p class="ghint">'+esc(TST.msg)+'</p>':'')+'</details>';
+    '<div class="arb tstbtns">'+(window.CHATURL&&isAdmin()?tstIco("data-tstrun",TST_RUN,TST.run||ghProgress()?"Tests laufen …":"Tests jetzt starten",TST.run,(()=>{const g=ghProgress();return g?{pct:g.pct}:TST.run?{pct:null}:null})()):'')+tstIco("data-tstre",TST_LOAD,"Resultate neu laden")+'</div>'+(TST.msg?'<p class="ghint">'+esc(TST.msg)+'</p>':'')+'</details>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d=null;render()}});
 
 /* open/close everything in the test box; start the tests by hand (through the worker: GitHub «Website veröffentlichen» with all tests) */
 document.addEventListener("click",e=>{const a=e.target.closest("[data-tstall]");if(!a)return;e.preventDefault();e.stopPropagation();const box=a.closest(".tstsec,.dckflat");if(!box)return;
   if(box.tagName!=="DETAILS"){const ds=[...box.querySelectorAll("details")],op=!ds.every(d=>d.open);ds.forEach(d=>{d.open=op;if(d.dataset.su)TST.su[d.dataset.su]=op});return}   /* own tab «Test»: the areas themselves */
-  const open=!box.open;box.open=open;if(!open)box.querySelectorAll("details").forEach(d=>{d.open=false;if(d.dataset.su)TST.su[d.dataset.su]=false});
+  /* 1st press: open the box (parts closed) · 2nd: open all its parts · 3rd: close everything */
+  const parts=[...box.querySelectorAll("details")];let open;
+  if(!box.open){open=true;box.open=true}
+  else if(parts.length&&parts.some(d=>!d.open)){open=true;parts.forEach(d=>{d.open=true;if(d.dataset.su)TST.su[d.dataset.su]=true})}
+  else{open=false;box.open=false;parts.forEach(d=>{d.open=false;if(d.dataset.su)TST.su[d.dataset.su]=false})}
   const k=box.dataset.lsec;if(k==="tst")TST.open=open;else if(k==="aud")AUD.open=open;else if(k==="rt"&&typeof RTS!=="undefined")RTS.open=open;else if(k==="dck"&&typeof DCK!=="undefined")DCK.open=open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="tst")TST.open=d.open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.su)TST.su[d.dataset.su]=d.open},true);

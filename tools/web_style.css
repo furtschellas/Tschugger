@@ -845,4 +845,26 @@ html body #view .dckflat .lsum{margin:0 0 8px}
 html body #view .tstbtns{justify-content:flex-end;gap:8px}html body #view .tstbtns .tsticon{width:36px;height:36px;min-height:0;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--accent)}
 /* Dokumente prüfen: notes in orange */
 html body #view .tstsu.note>summary{color:#f08a24}html body #view .dckl li.info .dcki{color:#f08a24}
-html body #view .lsum .tsth .dw{color:#d6455d}html body #view .lsum .tsth .dn{color:#f08a24}html body #view .lsum .tsth .dk{color:#2e9d5b}
+html body #view .lsum .tsth .dckw{color:#d6455d}html body #view .lsum .tsth .dckn{color:#f08a24}html body #view .lsum .tsth .dckk{color:#2e9d5b}
+
+/* Log/Tests and Test: one style for all symbol buttons (open/close, start, reload) – round, accent outline;
+   while something runs the outer circle becomes the progress ring */
+html body #view button.lbtn{position:relative;width:34px;height:34px;min-width:34px;min-height:0;flex:0 0 34px;padding:0!important;border-radius:50%;
+  border:1.5px solid color-mix(in srgb,var(--accent) 55%,transparent);background:transparent;color:var(--accent);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin:0}
+html body #view button.lbtn:hover,html body #view button.lbtn:focus-visible{background:var(--acc-tint);border-color:var(--accent)}
+html body #view button.lbtn svg{width:17px;height:17px}
+html body #view button.lbtn:disabled{opacity:1;cursor:default}
+html body #view button.lbtn.prog{border-color:transparent}
+html body #view button.lbtn.prog::before{content:"";position:absolute;inset:-1.5px;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p,0)*1%),color-mix(in srgb,var(--accent) 22%,transparent) 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px))}
+html body #view button.lbtn.prog.ind::before{background:conic-gradient(var(--accent) 0 28%,color-mix(in srgb,var(--accent) 22%,transparent) 28%);animation:tstspin 1s linear infinite}
+/* opened: every part a small card – status line on top, its findings indented below with a coloured bar */
+html body #view .tstsu{margin:6px 0;padding:0;border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+html body #view .tstsu>summary{padding:8px 12px;font-size:14px;cursor:pointer}
+html body #view .tstsu[open]>summary{background:color-mix(in srgb,currentColor 8%,transparent);border-bottom:1px solid var(--rule)}
+html body #view .tstsu>.dckl,html body #view .tstsu>.tstl,html body #view .tstsu>.audlist{margin:0;padding:6px 12px 8px 14px;border-left:3px solid #2e9d5b}
+html body #view .tstsu.bad>.dckl,html body #view .tstsu.bad>.tstl{border-left-color:#d6455d}
+html body #view .tstsu.note>.dckl{border-left-color:#f08a24}
+html body #view .tstsu .dckl li{padding:7px 0;font-size:13px;line-height:1.45}
+html body #view .tstsu .dckl li:first-child{border-top:0}
+html body #view .tstsu .dckl li.ok{color:var(--muted)}
