@@ -218,6 +218,13 @@ async def owner_tests(p, port):
     check("Access: Recht für eine Rolle direkt umschalten", await E("window.__db['roles/catering'].perms.includes('view.plan')") == (not b0))
     await E("document.querySelector('[data-pacc=\"catering\"][data-perm=\"view.plan\"]').click()"); await pg.wait_for_timeout(800)
 
+    # tour made for the person: intro with the role, own appointments only with the permission
+    await E("tourStart(false)"); await pg.wait_for_timeout(2000)
+    tt = await E("({t:TOUR.steps.map(s=>s.t),intro:tourIntro()})")
+    check("Tour: beginnt mit «Deine Tour» und nennt die Rolle", tt["t"][:1] == ["Deine Tour"] and "Owner" in tt["intro"], tt["intro"])
+    check("Tour (Owner): zeigt «Termin hinzufügen» und «Push-Nachricht senden»", "Termin hinzufügen" in tt["t"] and "Push-Nachricht senden" in tt["t"], tt["t"])
+    await E("if(TOUR.el)TOUR.el.remove();TOUR.el=null;document.querySelectorAll('#tour').forEach(x=>x.remove())")
+
     # App-Verwaltung → Log: results of the automatic tests, one part per suite
     await E("""TST.d={at:Date.now(),sha:'abc1234',ok:false,n:3,fail:1,suites:[{name:'App',ok:true,n:2,fail:0,checks:[{n:'a',ok:true},{n:'b',ok:true}]},{name:'Firestore-Regeln',ok:false,n:1,fail:1,checks:[{n:'c',ok:false}]}]};S.tab='admin';ADM.sub='log';render()""")
     await pg.wait_for_timeout(500)
@@ -292,6 +299,10 @@ async def hidden_data(p, port):
         adm = await E("({food:!!document.querySelector('#view [data-admv=\"food\"],#view .efood-tog'),bday:!!document.querySelector('#view [data-admv=\"bday\"]'),btn:!!(document.getElementById('admBtn')&&!document.getElementById('admBtn').hidden)})")
         check(f"{who}: Catering-Zahlen nur mit Recht", adm["food"] == perms["food"], adm)
         check(f"{who}: App-Verwaltung nur für Admins", adm["btn"] == perms["adm"], adm)
+        await E("tourStart(false)"); await pg.wait_for_timeout(1500)
+        tt = await E("TOUR.steps.map(s=>s.t)")
+        await E("if(TOUR.el)TOUR.el.remove();TOUR.el=null;document.querySelectorAll('#tour').forEach(x=>x.remove())")
+        check(f"{who}: Tour ohne Schritte für fehlende Rechte", "Termin hinzufügen" not in tt and ("Schedule" in tt) == (who != "norole") and ("Lunch-Menüs" in tt) == (who == "catering"), tt)
         await b.close()
 
 

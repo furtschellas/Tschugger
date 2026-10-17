@@ -70,7 +70,16 @@ document.addEventListener("change",e=>{if(e.target.matches("[data-chaton]")){sto
 setInterval(()=>{try{chatFab()}catch(_){}},20000);
 /* ---- introduction tour: offered once to everybody (new and existing users) after the welcome note; can be skipped;
    the result (done/skip + date) is kept in the profile (members.tour/tourAt); «Mein Konto» starts it again ---- */
+/* the tour is put together per person: a step only appears when its element is there (= the role sees it) and, with «need», when the permission fits;
+   the first step says which role the tour is for and what it covers */
+function tourIntro(){
+  const rn=isOwner()?L("Owner"):isAdmin()?L("Admin"):MYROLE?(((typeof OWN!=="undefined"&&OWN.roles)||[]).find(r=>r.id===MYROLE)||{}).name||(MYROLE.charAt(0).toUpperCase()+MYROLE.slice(1)):L("ohne Rolle");
+  const TN={today:"Today",plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",cater:"Catering",info:"Info"};
+  const areas=(typeof tabsOn==="function"?tabsOn():[]).map(t=>TN[t]||t).join(", ");
+  const extra=[can("push.send")&&L("Push-Nachrichten an alle senden"),window.ownEvAddBtn&&window.ownEvAddBtn()&&L("eigene Termine für andere anlegen"),vok("mycal")&&can("mycal.all")&&L("die Termine anderer sehen"),typeof canMenu==="function"&&canMenu()&&tabsOn().includes("cater")&&L("die Lunch-Menüs eintragen")].filter(Boolean);
+  return (rn===L("ohne Rolle")?L("Diese Tour ist auf dich zugeschnitten."):L("Diese Tour ist auf dich zugeschnitten – Rolle: {r}.").replace("{r}",rn))+" "+L("Du siehst: {a}.").replace("{a}",areas)+(extra.length?" "+L("Zusätzlich darfst du: {x}.").replace("{x}",extra.join(", ")):"")}
 const TOUR_STEPS=[
+  {tab:"today",sel:"nav.tabs",t:"Deine Tour",x:()=>tourIntro()},
   {tab:"today",sel:'nav.tabs [data-tab="today"]',t:"Today",x:"Alles für heute – oder den nächsten Arbeitstag – auf einer Seite. Nach mehr als 2 Stunden Pause öffnet die App direkt hier."},
   {tab:"today",sel:"#view .tmy",t:"Meine nächsten Termine",x:"Deine nächsten Termine auf einen Blick; mit «Alle ›» siehst du alle."},
   {tab:"today",sel:"#view [data-route]",t:"Anfahrt",x:"Fahrzeit zum ersten Set. Antippen und wählen, ob die Route vom Hotel oder von deinem Standort aus geplant wird."},
@@ -92,17 +101,18 @@ const TOUR_STEPS=[
   {tab:"crew",sel:"#view .admv",t:"Zusatzinfos",x:"Je nach Berechtigung: Essen, Geburtstage, Kontoinfos und alle Kontakte als VCF."},
   {tab:"script",sel:'nav.tabs [data-tab="script"]',t:"Script",x:"Das Drehbuch mit Suche."},
   {tab:"cater",sel:'nav.tabs [data-tab="cater"]',t:"Catering",x:"Alle Essenswünsche, Unverträglichkeiten und Allergien der Crew auf einen Blick."},
+  {tab:"cater",sel:"#view .catmenus",t:"Lunch-Menüs",x:"Hier trägst du pro Drehtag und Unit die Menüs ein – sie erscheinen im Drehplan und im Callsheet beim Lunch.",need:()=>typeof canMenu==="function"&&canMenu()&&tabsOn().includes("cater")},
   {tab:"info",sel:'nav.tabs [data-tab="info"]',t:"Info",x:"Allgemeine Infos zur Produktion und zur App."},
   {tab:"plan",sel:"header .lang",demo:"lang",t:"Sprache",x:"Hier wechselst du die Sprache der App – so sieht sie zum Beispiel auf Englisch aus. Mit «Weiter» geht es in deiner Sprache weiter."},
   {tab:"plan",sel:"#thmb",demo:"theme",t:"Hell / Dunkel",x:"Mit der Sonne wechselst du zwischen dunkler und heller Darstellung – hell ist draussen bei Sonne gut lesbar. Mit «Weiter» kommt deine Einstellung zurück."},
   {tab:"plan",sel:"#searchBtn",t:"Suche",x:"Sucht über alles: Szenen, Rollen, Personen, Locations."},
   {tab:"my",sel:"#myCalBtn",t:"Meine Termine",x:"Alle deine kommenden Termine an einem Ort – mit «In den Kalender» und der Glocke für Push-Nachrichten."},
-  {tab:"my",sel:"#view [data-mcself]",t:"Termine anderer",x:"Tippe einen Namen ein, um die Termine einer anderen Person zu sehen. Das Haus bringt dich zu deinen eigenen zurück."},
+  {tab:"my",sel:"#view [data-mcself]",need:()=>can("mycal.all")||isAdmin(),t:"Termine anderer",x:"Tippe einen Namen ein, um die Termine einer anderen Person zu sehen. Das Haus bringt dich zu deinen eigenen zurück."},
   {tab:"my",sel:"#view [data-mcall]",t:"Kalender-Export",x:"«Alle in den Kalender» übernimmt alle deine Termine auf einmal; mit dem Kalender-Knopf bei jedem Termin einzeln."},
   {tab:"my",sel:"#view .pbell",t:"Push-Glocke",x:"Mit der Glocke schaltest du die Erinnerung für einzelne Termine aus oder ein."},
-  {tab:"my",sel:"#view [data-oeadd]",t:"Termin hinzufügen",x:"Mit «+ Termin» legst du einen eigenen Termin an und wählst, wer ihn sieht: alle, Rollen, Abteilungen oder einzelne Personen. Er erscheint auch im Drehplan und in der Prep-Planung am jeweiligen Tag."},
+  {tab:"my",sel:"#view [data-oeadd]",need:()=>can("events.add"),t:"Termin hinzufügen",x:"Mit «+ Termin» legst du einen eigenen Termin an und wählst, wer ihn sieht: alle, Rollen, Abteilungen oder einzelne Personen. Er erscheint auch im Drehplan und in der Prep-Planung am jeweiligen Tag."},
   {tab:"my",sel:"#view [data-oegc]",t:"Google Kalender",x:"Wähle Termine aus dem Google Kalender aus und bestimme, wer sie sieht. Ändert sich ein Termin dort, wird er hier automatisch nachgeführt."},
-  {tab:"plan",sel:"#bcBtn",t:"Push-Nachricht senden",x:"Mit dem Briefumschlag schickst du sofort eine Push-Nachricht an alle – oder nur an bestimmte Rollen und Abteilungen."},
+  {tab:"plan",sel:"#bcBtn",need:()=>can("push.send"),t:"Push-Nachricht senden",x:"Mit dem Briefumschlag schickst du sofort eine Push-Nachricht an alle – oder nur an bestimmte Rollen und Abteilungen."},
   {tab:"acct",sel:"#acctBtn",t:"Mein Konto",x:"Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten."},
   {tab:"acct",sel:"#view .acsub",t:"Bereiche",x:"Profil, Essen, Push und App. Unter «App» findest du Darstellung, Sprache, Offline, Today und das App-Icon."},
   {tab:"acct",acsub:"note",sel:"#view .pushsec",t:"Push-Nachrichten",x:"Wähle, ob du bei Änderungen am Drehplan, bei neuen Callsheets und bei Änderungen der Prep-Planung benachrichtigt wirst – und wann du an deine Termine erinnert wirst. Ein Tipp auf die Nachricht öffnet direkt den betroffenen Tag."},
@@ -162,7 +172,7 @@ function tourStart(ask){
   /* show a shooting day so the display options and unit buttons can be explained */
   {const t=todayISO(),cur=S.days.find(x=>x.id===S.day);if(S.tab!=="plan"||!cur||cur.kind!=="shoot"){const sd=S.days.filter(x=>x.kind==="shoot");const d=sd.find(x=>x.date>=t)||sd[0];S.tab="plan";if(d)S.day=d.id;render()}}
   {const keep=S.tab,navOn=t=>{const b=document.querySelector('nav.tabs [data-tab="'+t+'"]');return !!(b&&!b.hidden)};
-    TOUR.steps=TOUR_STEPS.filter(st=>{try{return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}});S.tab=keep;render()}
+    TOUR.steps=TOUR_STEPS.filter(st=>{try{if(st.need&&!st.need())return false;return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}});S.tab=keep;render()}
   window.scrollTo(0,0);TOUR.i=ask?-1:0;
   const o=document.createElement("div");o.id="tour";o.className="tour";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML='<div class="tspot"></div><div class="tour-card" role="document"></div>';
   o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;
