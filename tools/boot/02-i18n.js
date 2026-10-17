@@ -1006,3 +1006,4 @@ Object.assign(I18N,{
  "Er läuft mit Version {a}, die App erwartet {b}. Bitte den Code aus tools/chat_worker.js in Cloudflare einsetzen.":{fr:"Il tourne en version {a}, l’app attend {b}. Merci de copier le code de tools/chat_worker.js dans Cloudflare.",it:"Gira con la versione {a}, l’app si aspetta {b}. Inserisci il codice di tools/chat_worker.js in Cloudflare.",en:"It runs version {a}, the app expects {b}. Please paste the code from tools/chat_worker.js into Cloudflare."},
  "unbekannt":{fr:"inconnue",it:"sconosciuta",en:"unknown"}
 });
+Object.assign(I18N,{"Weitere":{fr:"Autres",it:"Altri",en:"Other"},"ohne Rolle":{fr:"sans rôle",it:"senza ruolo",en:"no role"}});
