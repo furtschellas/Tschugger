@@ -868,3 +868,4 @@ html body #view .tstsu.note>.dckl{border-left-color:#f08a24}
 html body #view .tstsu .dckl li{padding:7px 0;font-size:13px;line-height:1.45}
 html body #view .tstsu .dckl li:first-child{border-top:0}
 html body #view .tstsu .dckl li.ok{color:var(--muted)}
+.pushpop .ppimg{margin-top:8px}.pushpop .ppimg img{display:block;max-width:100%;max-height:180px;border-radius:10px;object-fit:cover}

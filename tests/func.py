@@ -269,6 +269,13 @@ async def owner_tests(p, port):
       for(const t of tabsOn().concat(['acct','admin','my'])){S.tab=t;render();await new Promise(r=>setTimeout(r,60));scan()}for(const k of ['users','roles','docs','set','log']){S.tab='admin';ADM.sub=k;render();await new Promise(r=>setTimeout(r,60));scan()}S.tab='today';render();return [...bad].slice(0,12)})()""")
     check("Alle Symbol-Knöpfe zeigen beim Darüberfahren ihre Funktion", nt == [], nt, public=True)
 
+    # picture with a push message: saved encrypted, shown in the pop-up of an open app and in the large view
+    pim = await E("""(async()=>{const c=document.createElement('canvas');c.width=40;c.height=30;c.getContext('2d').fillRect(0,0,40,30);const u=c.toDataURL('image/jpeg');
+      const id=await bcImgSave(u);delete BCIMG[id];const pp=document.createElement('div');pp.className='pushpop';document.body.appendChild(pp);bcPopImg(pp,'./#bc='+id+'&t=x');
+      await new Promise(r=>setTimeout(r,1500));const pop=!!pp.querySelector('.ppimg img');pp.remove();bcShow(id,'T','B');await new Promise(r=>setTimeout(r,1200));
+      const v=document.querySelector('#bcview .bcvimg img');const big=!!v&&v.src===u;document.querySelectorAll('#bcview').forEach(x=>x.remove());return {pop,big}})()""")
+    check("Push mit Bild: Bild im Pop-up der offenen App und in der grossen Ansicht", pim == {"pop": True, "big": True}, pim, public=True)
+
     # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
     ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
       r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")
