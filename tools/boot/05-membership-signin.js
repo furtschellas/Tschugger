@@ -197,7 +197,10 @@ async function onGateClick(e){
 function roleChanged(prev){if(!prev||!ME)return;const was=prev.a?"admin":(prev.r||""),now=isOwner()?"owner":COADMIN?"admin":(MYROLE||"");
   const pp=new Set(prev.a?(prev.ap||[]):(prev.p||[])),np=new Set(now==="admin"?ADMINPERMS:now==="owner"?PERMS.map(x=>x[0]):MYPERMS);
   const add=[...np].filter(k=>!pp.has(k)),rem=[...pp].filter(k=>!np.has(k));if(was===now&&!add.length&&!rem.length)return;
-  setTimeout(()=>showRoleChange(now,add,rem),2500)}
+  /* only once per change, also across devices: the shown state is kept with the synced settings */
+  let h=0;for(const ch of now+":"+[...np].sort().join(","))h=(h*31+ch.charCodeAt(0))|0;const sig=(h>>>0).toString(36);
+  let seen="";try{seen=localStorage.getItem("rc")||""}catch(_){}if(seen===sig)return;
+  store("rc",sig);savePrefs();setTimeout(()=>showRoleChange(now,add,rem),2500)}
 function showRoleChange(role,add,rem){if(document.getElementById("rolechg"))return;
   const lbl=k=>{const x=PERMS.find(p=>p[0]===k);return x?L(x[1]):k};
   const rn=role==="owner"?L("Owner"):role==="admin"?L("Admin"):role?((typeof OWN!=="undefined"&&(OWN.roles||[]).find(r=>r.id===role))||{}).name||role.charAt(0).toUpperCase()+role.slice(1):L("Keine Rolle");

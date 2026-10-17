@@ -395,6 +395,10 @@ async def hidden_data(p, port):
             check("Rolle geändert: Nachricht mit den neuen Rechten", "Callsheet sehen" in rc and "Catering" in rc, rc[:120])
             check("Rolle geändert: keine Tour angeboten", not await E("!!document.querySelector('#rolechg [data-rctour]')") and "Tour" not in rc, rc[:120])
             await E("const r=document.getElementById('rolechg');if(r)r.remove()")
+            await E("(()=>{const k=memKey();const c=JSON.parse(localStorage.getItem(k)||'{}');c.p=(c.p||[]).filter(p=>p!=='view.dispo');localStorage.setItem(k,JSON.stringify(c))})()")
+            await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
+            check("Rolle geändert: Nachricht nur einmal (auch wenn ein anderes Gerät noch den alten Stand hat)", not await E("!!document.getElementById('rolechg')"))
+            await E("const r=document.getElementById('rolechg');if(r)r.remove()")
         check(f"{who}: Tour ohne Schritte für fehlende Rechte", "Termin hinzufügen" not in tt and ("App-Verwaltung" in tt) == (who == "power") and ("Schedule" in tt) == (who != "norole") and ("Lunch-Menüs" in tt) == (who == "catering"), tt)
         await b.close()
 
