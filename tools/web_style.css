@@ -732,7 +732,7 @@ html body #view .abtn{margin-top:6px}
 .dcksec .arb{display:flex;justify-content:flex-start;margin:8px 0}
 .dckl{list-style:none;margin:8px 0 0;padding:0}.dckl li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid var(--rule);font-size:13px;line-height:1.4}
 .dckl li.warn .dcki{color:#d6455d}.dckl li.info .dcki{color:var(--accent)}.dckl li.ok .dcki{color:#2e9d5b}.dckl li.ok{color:var(--muted)}
-.dckacct .dcksec{margin:0}
+.dcktab .dcksec{margin-top:4px}
 /* Bilder in Push-Nachrichten */
 .bcimgf{display:flex;flex-direction:column;gap:6px}.bcimgf .bcil{font-size:13px;font-weight:600;color:var(--muted)}
 .bcpick{align-self:flex-start;cursor:pointer}
