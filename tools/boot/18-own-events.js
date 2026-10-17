@@ -49,10 +49,10 @@ async function ownDialog(id,pre){
     '<p class="ahint"><b>'+L("Personen")+'</b></p><div class="oepl">'+pchips()+'</div><input type="search" list="oenames" data-oeadp autocomplete="off" placeholder="'+esc(L("Name tippen …"))+'"><datalist id="oenames">'+ppl.map(p=>'<option value="'+esc(p.name)+'"></option>').join("")+'</datalist>'+
     '<p class="ghint">'+L("Wer zu einer gewählten Rolle, Abteilung ODER Person gehört, sieht den Termin.")+'</p>';
   d.innerHTML='<div class="a2box oebox"><h3>'+esc(L(!isNew?"Termin bearbeiten":pre?"Termin aus Google Kalender übernehmen":"Termin hinzufügen"))+'</h3><form data-oeform novalidate>'+
-    '<label>'+L("Titel")+'<input name="ti" maxlength="80" required value="'+esc(ev?ev.title:"")+'"></label>'+
+    '<label>'+L("Titel")+'<input name="ti" maxlength="150" required value="'+esc(ev?ev.title:"")+'"></label>'+
     '<div class="oerow"><label>'+L("Datum")+'<input type="date" name="da" required value="'+esc(ev?ev.date:todayISO())+'"></label><label>'+L("Von")+'<input type="time" name="t1" value="'+esc(ev?ev.t:"")+'"></label><label>'+L("Bis")+'<input type="time" name="t2" value="'+esc(ev?ev.end:"")+'"></label></div>'+
-    '<label>'+L("Ort")+'<input name="wh" maxlength="160" value="'+esc(ev?ev.where:"")+'"></label>'+
-    '<label>'+L("Notiz")+'<textarea name="no" rows="2" maxlength="300">'+esc(ev?ev.note:"")+'</textarea></label>'+
+    '<label>'+L("Ort")+'<input name="wh" maxlength="300" value="'+esc(ev?ev.where:"")+'"></label>'+
+    '<label>'+L("Notiz")+'<textarea name="no" rows="4" maxlength="2000">'+esc(ev?ev.note:"")+'</textarea></label>'+
     '<fieldset class="efood"><legend>'+L("Wer sieht den Termin?")+'</legend><label class="ck"><input type="radio" name="oem" value="all"'+(st.sel?'':' checked')+'> '+L("Alle")+'</label><label class="ck"><input type="radio" name="oem" value="sel"'+(st.sel?' checked':'')+'> '+L("Auswahl nach Rolle, Abteilung oder Person")+'</label><div class="oesel"'+(st.sel?'':' hidden')+'>'+selBox()+'</div></fieldset>'+
     '<p class="amsg" role="status"></p><div class="a2b">'+(!isNew?'<button type="button" class="lnk oedel" data-oedel>'+L("Löschen")+'</button>':'')+'<button type="button" class="lnk" data-oex>'+L("Abbrechen")+'</button><button type="submit" class="pri">'+L("Speichern")+'</button></div></form></div>';
   const redrawPeople=()=>{const pl=d.querySelector(".oepl");if(pl)pl.innerHTML=pchips()};

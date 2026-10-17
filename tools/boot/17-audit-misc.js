@@ -138,11 +138,13 @@ function testsSec(){
   if(!TST.d){testsLoad();return '<details class="tstsec"><summary>'+esc(L("Automatische Tests"))+' · '+esc(L("Lade …"))+'</summary></details>'}
   const d=TST.d;if(d.none)return '<details class="tstsec"><summary>'+esc(L("Automatische Tests"))+' · '+esc(L("noch keine Resultate"))+'</summary></details>';
   const dt=new Date(d.at||0),when=dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit"})+" "+dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"});
-  const cs=(d.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
+  const suites=Array.isArray(d.suites)&&d.suites.length?d.suites:[{name:"",ok:d.ok,n:d.n,fail:d.fail,checks:d.checks||[]}];
   const head=d.crash?'✗ '+L("Tests abgebrochen"):d.ok?'✓ '+L("{n} von {n} bestanden").split("{n}").join(d.n):'✗ '+L("{f} von {n} fehlgeschlagen").replace("{f}",d.fail).replace("{n}",d.n);
   return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(d.ok?'':' open')+'><summary><b>'+esc(L("Automatische Tests"))+'</b> · <span class="tsth">'+esc(head)+'</span> · '+esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':'')+'</summary>'+
-    '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die App mit sechs Rollen auf Handy und Desktop. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
-    '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+'</li>').join("")+'</ul>'+
+    '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
+    suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
+      return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'"'+(su.ok?'':' open')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
+        '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+'</li>').join("")+'</ul>'+(su.name?'</details>':'')}).join("")+
     '<div class="arb"><button type="button" class="pillbtn" data-tstre>↻ '+esc(L("Neu laden"))+'</button></div></details>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d=null;render()}});

@@ -188,10 +188,10 @@ service cloud.firestore {
       allow read: if isMember() || isAdmin();
       allow create: if (can('events.add') || isAdmin()) && request.resource.data.keys().hasOnly(['c', 'at', 'by', 'gc'])
         && request.resource.data.by == request.auth.uid
-        && request.resource.data.c is string && request.resource.data.c.size() < 8000;
+        && request.resource.data.c is string && request.resource.data.c.size() < 20000;
       allow update: if ((resource.data.by == request.auth.uid && can('events.add')) || isAdmin())
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['c'])
-        && request.resource.data.c is string && request.resource.data.c.size() < 8000;
+        && request.resource.data.c is string && request.resource.data.c.size() < 20000;
       allow delete: if resource.data.by == request.auth.uid || isAdmin();
     }
 
