@@ -158,6 +158,14 @@ async def main():
                     check("Today auf dem Handy: Kacheln 2×2", len(tl) < 2 or (cols == 2 and len({x[2] for x in tl}) == 1), tl)
                     rows = await E("[...document.querySelectorAll('#view .tsclist li')].map(l=>Math.round(l.getBoundingClientRect().height))")
                     check("Today: Szenen je eine Zeile", all(h <= 30 for h in rows), rows[:5])
+                    # push history: admins see who got the message (devices in «done» → person)
+                    await E("""(async()=>{const key=await getDataKey();const en=async o=>{const iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(o))));const a=new Uint8Array(12+ct.length);a.set(iv);a.set(ct,12);return btoa(String.fromCharCode(...a))};
+                      window.__db['push/devA']={c:await en({who:{email:'crew@test.ch'}})};window.__db['push/devB']={c:await en({who:{email:'catering@test.ch'}})};
+                      window.__db['broadcasts/bT']={c:await en({title:'Test',body:'x',at:Date.now(),push:true}),n:3,done:['devA','devB','devGone']};
+                      BC.hist=null;S.tab='bcast';render()})()""")
+                    await pg.wait_for_timeout(1500)
+                    rc = await E("(()=>{const d=document.querySelector('#view details.bcr');if(!d)return '';d.open=true;return d.textContent})()")
+                    check("Push-Verlauf: Empfänger sichtbar", "(2 + 1" in rc and "abgemeldet" in rc, rc[:120])
                     # day chips: label and date always the same distance
                     await E("S.tab='plan';render()"); await pg.wait_for_timeout(500)
                     gaps = await E("[...document.querySelectorAll('.chip')].slice(0,8).map(c=>{const l=c.querySelector('.lb'),d=c.querySelector('.dd');return l&&d?Math.round(d.getBoundingClientRect().top-l.getBoundingClientRect().bottom):0})")
