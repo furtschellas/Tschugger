@@ -692,6 +692,7 @@ Object.assign(I18N,{
  "Funktionen":{fr:"Fonctions",it:"Funzioni",en:"Functions"},
  "Firestore-Regeln":{fr:"Règles Firestore",it:"Regole Firestore",en:"Firestore rules"},
  "abgebrochen":{fr:"interrompu",it:"interrotto",en:"aborted"},
+ "Weitere Termine":{fr:"Autres rendez-vous",it:"Altri appuntamenti",en:"Other appointments"},
  "Bei Änderungen benachrichtigen":{fr:"Me prévenir en cas de changement",it:"Avvisami in caso di modifiche",en:"Notify me about changes"},
  "Änderungen am Drehplan":{fr:"Changements du plan de tournage",it:"Modifiche al piano di riprese",en:"Changes to the shooting schedule"},
  "Neue und geänderte Callsheets":{fr:"Feuilles de service nouvelles ou modifiées",it:"Ordini del giorno nuovi o modificati",en:"New and updated callsheets"},

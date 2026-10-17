@@ -109,7 +109,7 @@ async def session(p, port, who, width=390, extra=""):
 # shared building blocks (same meaning everywhere); any OTHER class name used in two modules is a collision risk
 SHARED = set("""ghint pillbtn a2hs a2box ck ahint amsg lnk a2b empty arb pgt chk role mypage admins ok psec off pri refresh efood
 xclose gbtn lang glink hasreq smodes pok pushsec amap wlbox sec wlbeta cath3 catchip reg catchips myhead asub n acbox warn cico
-em search src dh on ico spin ttile fact v ust bcchk calbtn mcd""".split())
+em search src dh on ico spin ttile fact v ust bcchk calbtn mcd uh""".split())
 
 def class_collisions():
     """class names that two different modules (tools/boot/*.js, app.html) use – except the shared building blocks"""
