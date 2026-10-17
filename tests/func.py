@@ -143,6 +143,14 @@ async def owner_tests(p, port):
                   const n=myEvents(me).length-n0;window.ownEvents=o;return n})()""")
     check("Eigene Termine: doppelte Termine nur einmal", d == 2, d)
 
+    # dialog: the appointments already added below «Speichern», tap = change it
+    await E("document.querySelector('#view [data-oeadd]').click()"); await pg.wait_for_timeout(800)
+    li = await E("(()=>{const l=document.querySelector('#oedlg .oelist');return l?{n:l.querySelectorAll('[data-oego]').length,t:l.innerText,after:!!(document.querySelector('#oedlg form').compareDocumentPosition(l)&4)}:null})()")
+    check("Termin hinzufügen: unter «Speichern» die hinzugefügten Termine mit Empfängern", bool(li) and li["n"] >= 1 and "Testprobe Funktion" in li["t"] and "Crew" in li["t"] and li["after"], li)
+    await E("document.querySelector('#oedlg [data-oego]').click()"); await pg.wait_for_timeout(800)
+    check("Termin hinzufügen: Tippen auf einen Termin öffnet ihn zum Ändern", await E("(document.querySelector('#oedlg [name=ti]')||{}).value") == "Testprobe Funktion")
+    await E("document.getElementById('oedlg').remove()")
+
     # edit and delete with the pencil, long note with line breaks
     await E("document.querySelector('#view [data-oeed]').click()"); await pg.wait_for_timeout(800)
     check("Eigene Termine: Stift öffnet den Termin zum Bearbeiten", await E("(document.querySelector('#oedlg [name=ti]')||{}).value") == "Testprobe Funktion")
@@ -163,6 +171,13 @@ async def owner_tests(p, port):
     if sh["pp"]:
         await E("S.tab='plan';S.day='prep:%s';render()" % sh["pp"]); await pg.wait_for_timeout(400)
         check("Eigene Termine: in der Prep-Planung am Tag", "Preptermin" in await E("(document.querySelector('#view .oeday')||{}).innerText||''"))
+
+    # a rest day (prep: only «Rest») with an own appointment can be opened and shows it
+    rd = await E("""(async()=>{const r=(S.prepro||[]).find(d=>d.date>=todayISO()&&(d.items||[]).length&&d.items.every(i=>/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n||'').trim())));if(!r)return null;
+        const {F,db}=await fb();await F.addDoc(F.collection(db,'events'),{c:await ownEnc({title:'Fondue essen',date:r.date,t:'19:00',byEmail:lc(ME.email),byName:'Owner',roles:null,depts:null,people:null}),at:1,by:ME.uid});await ownLoad(true);
+        S.tab='plan';S.day='prep:'+r.date;render();const c=document.querySelector('#view [data-day="prep:'+r.date+'"]');return {date:r.date,chip:!!c&&!c.disabled,shown:((document.querySelector('#view .oeday')||{}).innerText||'').includes('Fondue essen')}})()""")
+    if rd:
+        check("Prep: Ruhetag mit eigenem Termin lässt sich öffnen und zeigt ihn", rd["chip"] and rd["shown"], rd)
 
     # Google Calendar: list from gcal/feed, take one over → event with gc, recipients chosen
     await E("""(async()=>{const d=new Date(Date.now()+2*864e5).toISOString().slice(0,10);window.__db['gcal/feed']={c:await ownEnc([{uid:'g1',title:'Kalendertermin',date:d,t:'10:00',end:'11:00',where:'Sion',note:''}]),at:Date.now()};

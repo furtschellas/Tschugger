@@ -721,3 +721,10 @@ html body #view .pacc .paccp>summary{padding:10px 14px}
 html body #view .pacc .paccp .paccl{border-top:0;padding:0 14px 8px}
 html body #view .pacc .paccp .ghint{padding:0 14px 10px}
 html body #view .abtn{margin-top:6px}
+/* eigener Termin: Liste der hinzugefügten Termine unter «Speichern» */
+#oedlg .oelist{margin-top:18px;padding-top:12px;border-top:1px solid var(--rule)}
+#oedlg .oelist h4{margin:0 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#oedlg .oeli{display:grid;grid-template-columns:70px minmax(0,1fr);gap:10px;width:100%;text-align:left;background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin:6px 0;color:var(--ink);font:inherit;cursor:pointer}
+#oedlg .oeli.on{border-color:var(--accent)}
+#oedlg .oeld{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+#oedlg .oelb{display:flex;flex-direction:column;gap:2px;min-width:0}#oedlg .oelb small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}

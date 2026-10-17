@@ -36,6 +36,12 @@ window.ownEvEditBtn=e=>e&&e.own&&ME&&(isAdmin()||(e.byEmail&&lc(e.byEmail)===lc(
 /* ---------- dialog: new / edit ---------- */
 async function ownRoles(){if(OWN.roles)return OWN.roles;OWN.roles=[];try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"roles"));OWN.roles=q.docs.filter(d=>d.id!=="admin").map(d=>({id:d.id,name:String(d.data().name||d.id)})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}catch(_){}return OWN.roles}
 function ownPeople(){const seen=new Set();return mailPeople().filter(p=>p.name&&!seen.has(p.k)&&seen.add(p.k)).map(p=>({name:p.name,k:p.k,email:lc(p.email||"")})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}
+/* below «Speichern»: the appointments already added (own ones; admins: all) – tap one to change it */
+function ownAud(ev){if(!ev.roles&&!ev.depts&&!ev.people)return L("Alle");const r=(ev.roles||[]).map(x=>x==="owner"?L("Owner"):x==="admin"?L("Admin"):x===""?L("Keine Rolle"):((OWN.roles||[]).find(y=>y.id===x)||{}).name||x);
+  return r.concat((ev.depts||[]).map(x=>HIT(x))).concat((ev.people||[]).map(p=>p.name)).join(", ")}
+function ownListHTML(cur){const t=todayISO(),mine=(OWN.list||[]).filter(ev=>ev.date>=t&&(isAdmin()||(ev.byEmail&&lc(ev.byEmail)===lc(ME.email)))).sort((a,b)=>(a.date+(a.t||"")).localeCompare(b.date+(b.t||"")));
+  return '<div class="oelist"><h4>'+esc(L("Hinzugefügte Termine"))+' ('+mine.length+')</h4>'+(mine.length?mine.map(ev=>{const dt=new Date(ev.date+"T12:00:00");
+    return '<button type="button" class="oeli'+(ev.id===cur?' on':'')+'" data-oego="'+esc(ev.id)+'"><span class="oeld">'+WDL(dt)+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'.'+(ev.t?'<br>'+esc(ev.t):'')+'</span><span class="oelb"><b>'+esc(ev.title||"")+'</b><small>'+esc(L("Für"))+': '+esc(ownAud(ev))+(ev.gc?' · '+esc(L("Google Kalender")):'')+'</small></span></button>'}).join(""):'<p class="ghint">'+esc(L("Noch keine kommenden Termine hinzugefügt."))+'</p>')+'</div>'}
 async function ownDialog(id,pre){
   const ev=id?(OWN.list||[]).find(x=>x.id===id):(pre?{title:pre.title,date:pre.date,t:pre.t,end:pre.end,where:pre.where,note:pre.note,gcNew:pre.uid}:null);if(id&&!ev)return;const isNew=!ev||!ev.id;
   const roles=[{id:"owner",name:L("Owner")},{id:"admin",name:L("Admin")}].concat(await ownRoles()).concat([{id:"",name:L("Keine Rolle")}]);
@@ -54,7 +60,7 @@ async function ownDialog(id,pre){
     '<label>'+L("Ort")+'<input name="wh" maxlength="300" value="'+esc(ev?ev.where:"")+'"></label>'+
     '<label>'+L("Notiz")+'<textarea name="no" rows="4" maxlength="2000">'+esc(ev?ev.note:"")+'</textarea></label>'+
     '<fieldset class="efood"><legend>'+L("Wer sieht den Termin?")+'</legend><label class="ck"><input type="radio" name="oem" value="all"'+(st.sel?'':' checked')+'> '+L("Alle")+'</label><label class="ck"><input type="radio" name="oem" value="sel"'+(st.sel?' checked':'')+'> '+L("Auswahl nach Rolle, Abteilung oder Person")+'</label><div class="oesel"'+(st.sel?'':' hidden')+'>'+selBox()+'</div></fieldset>'+
-    '<p class="amsg" role="status"></p><div class="a2b">'+(!isNew?'<button type="button" class="lnk oedel" data-oedel>'+L("Löschen")+'</button>':'')+'<button type="button" class="lnk" data-oex>'+L("Abbrechen")+'</button><button type="submit" class="pri">'+L("Speichern")+'</button></div></form></div>';
+    '<p class="amsg" role="status"></p><div class="a2b">'+(!isNew?'<button type="button" class="lnk oedel" data-oedel>'+L("Löschen")+'</button>':'')+'<button type="button" class="lnk" data-oex>'+L("Abbrechen")+'</button><button type="submit" class="pri">'+L("Speichern")+'</button></div></form>'+ownListHTML(ev&&ev.id)+'</div>';
   const redrawPeople=()=>{const pl=d.querySelector(".oepl");if(pl)pl.innerHTML=pchips()};
   d.addEventListener("change",e=>{const t=e.target;
     if(t.name==="oem"){st.sel=t.value==="sel";d.querySelector(".oesel").hidden=!st.sel}
@@ -62,6 +68,7 @@ async function ownDialog(id,pre){
     else if(t.matches("[data-oeadp]")){const p=ppl.find(x=>x.name===t.value.trim());if(p&&!st.people.some(x=>x.k===p.k)){st.people.push(p);redrawPeople()}t.value=""}});
   d.addEventListener("input",e=>{const t=e.target;if(t.matches("[data-oeadp]")){const p=ppl.find(x=>x.name===t.value.trim());if(p&&!st.people.some(x=>x.k===p.k)){st.people.push(p);redrawPeople();t.value=""}}});
   d.addEventListener("click",async e=>{
+    const go=e.target.closest("[data-oego]");if(go){d.remove();ownDialog(go.dataset.oego);return}
     const rm=e.target.closest("[data-oerm]");if(rm){st.people.splice(+rm.dataset.oerm,1);redrawPeople();return}
     if(e.target.closest("[data-oex]")){d.remove();return}
     if(e.target.closest("[data-oedel]")){if(!confirmSafe(L("Diesen Termin löschen?")))return;try{const {F,db}=await fb();await F.deleteDoc(F.doc(db,"events",ev.id));d.remove();showMsg(L("Termin gelöscht."),3000);ownLoad(true)}catch(err){d.querySelector(".amsg").textContent=L("Fehler:")+" "+(err.message||err)}}});
