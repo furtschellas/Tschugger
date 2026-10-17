@@ -246,9 +246,9 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 @media print{.chatfab,.chatbox{display:none!important}}
 .chhd .lnk{background:none;border:0;color:var(--accent);font:inherit;font-size:14px;cursor:pointer;padding:2px 6px}
 .tour{position:fixed;inset:0;z-index:60}.tour .tspot{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(8,6,14,.72);border:2px solid var(--accent);transition:all .25s ease;pointer-events:none}.tour .tspot[hidden]{display:block;left:50%!important;top:50%!important;width:0!important;height:0!important;border:0}
-.tour .tcard{position:fixed;background:var(--sheet,#1a1526);color:var(--ink);border:1px solid var(--rule);border-radius:16px;padding:16px 16px 12px;box-shadow:0 18px 50px -12px rgba(0,0,0,.6);transition:top .25s ease,left .25s ease}.tour .tcard.center{left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 32px))!important}
+.tour .tour-card{position:fixed;background:var(--sheet,#1a1526);color:var(--ink);border:1px solid var(--rule);border-radius:16px;padding:16px 16px 12px;box-shadow:0 18px 50px -12px rgba(0,0,0,.6);transition:top .25s ease,left .25s ease}.tour .tour-card.center{left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 32px))!important}
 .tour h3{margin:0 0 6px;font-size:18px}.tour p{margin:0 0 12px;line-height:1.45;font-size:15px}.tprog{font-size:12px;color:var(--muted);margin-bottom:4px;font-variant-numeric:tabular-nums}
-.tbtns{display:flex;align-items:center;gap:8px}.tbtns span{flex:1}.tbtns button{font:inherit;font-weight:600;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}.tbtns .pri{border:0;background:var(--accent);color:var(--accent-ink,#fff)}.tbtns .sec{border:1px solid var(--rule);background:transparent;color:var(--ink)}.tbtns .lnk{border:0;background:none;color:var(--muted);padding:8px 4px}.tour .tcard.center .tbtns{justify-content:flex-end}
+.tbtns{display:flex;align-items:center;gap:8px}.tbtns span{flex:1}.tbtns button{font:inherit;font-weight:600;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}.tbtns .pri{border:0;background:var(--accent);color:var(--accent-ink,#fff)}.tbtns .sec{border:1px solid var(--rule);background:transparent;color:var(--ink)}.tbtns .lnk{border:0;background:none;color:var(--muted);padding:8px 4px}.tour .tour-card.center .tbtns{justify-content:flex-end}
 .utour{color:var(--muted)}
 .cico{width:30px;height:30px;flex:0 0 30px;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;vertical-align:middle}.cico.on{background:var(--accent);color:var(--accent-ink,#fff)}.cico:disabled{opacity:.5}.cico:active{transform:scale(.94)}
 .pinfo{align-items:center}
@@ -622,7 +622,7 @@ html body #view .today .tsclist li{grid-template-columns:40px max-content minmax
 html body #view .today .tsclist li.chg{padding:3px 4px}
 html body #view .today .tsclist .tset{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html body #view .today .tsclist .tds{color:var(--muted);font-size:12.5px}
-html body #view .today .tsclist .ust{font-size:11px}
+html body #view .today .td-unit{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin-right:2px}
 html body #view .today .tmylist li{padding:2px 0;line-height:1.25;font-size:13px}
 html body #view .today .tmylist .tmd b{font-size:13px}
 html body #view .today .tmy .tch,html body #view .today .tscs .tch{margin-bottom:2px}

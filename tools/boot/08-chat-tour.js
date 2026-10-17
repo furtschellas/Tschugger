@@ -162,26 +162,26 @@ function tourStart(ask){
   {const keep=S.tab,navOn=t=>{const b=document.querySelector('nav.tabs [data-tab="'+t+'"]');return !!(b&&!b.hidden)};
     TOUR.steps=TOUR_STEPS.filter(st=>{try{return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}});S.tab=keep;render()}
   window.scrollTo(0,0);TOUR.i=ask?-1:0;
-  const o=document.createElement("div");o.id="tour";o.className="tour";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML='<div class="tspot"></div><div class="tcard" role="document"></div>';
+  const o=document.createElement("div");o.id="tour";o.className="tour";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML='<div class="tspot"></div><div class="tour-card" role="document"></div>';
   o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;
     if(a==="next")tourGo(TOUR.i+1);else if(a==="back")tourGo(TOUR.i-1);else if(a==="skip")tourSkipInfo();else if(a==="skipok")tourEnd("skip",true);else if(a==="done")tourEnd("done")});
   document.body.appendChild(o);TOUR.el=o;tourGo(TOUR.i);
   addEventListener("resize",tourPlace);
 }
 function tourGo(i){
-  const o=TOUR.el;if(!o)return;TOUR.i=i;const n=TOUR.steps.length,c=o.querySelector(".tcard"),sp=o.querySelector(".tspot");
+  const o=TOUR.el;if(!o)return;TOUR.i=i;const n=TOUR.steps.length,c=o.querySelector(".tour-card"),sp=o.querySelector(".tspot");
   if(i<0||i>=n)tourDemo(null);
-  if(i<0){sp.hidden=true;c.className="tcard center";
+  if(i<0){sp.hidden=true;c.className="tour-card center";
     c.innerHTML='<h3>'+L("Kurze Tour durch die App?")+'</h3><p>'+L("In einer Minute zeigen wir dir die wichtigsten Funktionen. Du kannst die Tour später jederzeit unter «Mein Konto» starten.")+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><button type="button" class="pri" data-tour="next">'+L("Tour starten")+'</button></div>';return}
-  if(i>=n){sp.hidden=true;c.className="tcard center";
+  if(i>=n){sp.hidden=true;c.className="tour-card center";
     c.innerHTML='<h3>'+L("Fertig!")+'</h3><p>'+L("Viel Spass mit der App. Die Tour findest du jederzeit wieder unter «Mein Konto».")+'</p><div class="tbtns"><button type="button" class="pri" data-tour="done">'+L("Los geht's")+'</button></div>';return}
-  const s=TOUR.steps[i];tourDemo(s);if(!tourShow(s)){const dir=i>=(TOUR.last==null?-1:TOUR.last)?1:-1;TOUR.steps.splice(i,1);return tourGo(dir>0?i:i-1)}TOUR.last=i;sp.hidden=false;c.className="tcard";
+  const s=TOUR.steps[i];tourDemo(s);if(!tourShow(s)){const dir=i>=(TOUR.last==null?-1:TOUR.last)?1:-1;TOUR.steps.splice(i,1);return tourGo(dir>0?i:i-1)}TOUR.last=i;sp.hidden=false;c.className="tour-card";
   c.innerHTML='<div class="tprog">'+(i+1)+' / '+n+'</div><h3>'+esc(L(s.t))+'</h3><p>'+esc(typeof s.x==="function"?s.x():L(s.x))+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><span></span>'+(i>0?'<button type="button" class="sec" data-tour="back">'+L("Zurück")+'</button>':'')+'<button type="button" class="pri" data-tour="next">'+L(i===n-1?"Fertig":"Weiter")+'</button></div>';
   tourPlace();try{c.querySelector(".pri").focus({preventScroll:true})}catch(_){}
 }
 function tourPlace(){
   const o=TOUR.el;if(!o||TOUR.i<0||TOUR.i>=TOUR.steps.length)return;const e=tourEl(TOUR.steps[TOUR.i]);if(!e)return;
-  const r=e.getBoundingClientRect(),pad=6,sp=o.querySelector(".tspot"),c=o.querySelector(".tcard");
+  const r=e.getBoundingClientRect(),pad=6,sp=o.querySelector(".tspot"),c=o.querySelector(".tour-card");
   Object.assign(sp.style,{left:(r.left-pad)+"px",top:(r.top-pad)+"px",width:(r.width+2*pad)+"px",height:(r.height+2*pad)+"px"});
   const vh=innerHeight,vw=innerWidth,cw=Math.min(340,vw-24);c.style.width=cw+"px";
   const ch=c.offsetHeight||170,below=r.bottom+14+ch<vh-8,above=r.top-14-ch>8;
@@ -192,11 +192,11 @@ function tourPlace(){
 function tourSkipInfo(){
   const o=TOUR.el;if(!o){tourEnd("skip");return}tourDemo(null);tourMark("skip");
   if(TOUR.prev){if(TOUR.prev.day)S.day=TOUR.prev.day;S.tab=["acct","admin"].includes(TOUR.prev.tab)?TOUR.prev.tab:"plan";render();window.scrollTo(0,0)}
-  const e=document.getElementById("acctBtn"),sp=o.querySelector(".tspot"),c=o.querySelector(".tcard");
-  c.className="tcard";c.innerHTML='<h3>'+L("Tour übersprungen")+'</h3><p>'+L("Kein Problem – du kannst die Tour jederzeit neu starten: oben auf «Mein Konto» tippen und dort «Tour starten» wählen.")+'</p><div class="tbtns"><span></span><button type="button" class="pri" data-tour="skipok">'+L("OK")+'</button></div>';
+  const e=document.getElementById("acctBtn"),sp=o.querySelector(".tspot"),c=o.querySelector(".tour-card");
+  c.className="tour-card";c.innerHTML='<h3>'+L("Tour übersprungen")+'</h3><p>'+L("Kein Problem – du kannst die Tour jederzeit neu starten: oben auf «Mein Konto» tippen und dort «Tour starten» wählen.")+'</p><div class="tbtns"><span></span><button type="button" class="pri" data-tour="skipok">'+L("OK")+'</button></div>';
   if(e&&!e.hidden){const r=e.getBoundingClientRect(),pad=6;sp.hidden=false;Object.assign(sp.style,{left:(r.left-pad)+"px",top:(r.top-pad)+"px",width:(r.width+2*pad)+"px",height:(r.height+2*pad)+"px"});
     const cw=Math.min(340,innerWidth-24);c.style.width=cw+"px";c.style.top=(r.bottom+14)+"px";c.style.left=Math.min(innerWidth-cw-12,Math.max(12,r.left+r.width/2-cw/2))+"px"}
-  else{sp.hidden=true;c.className="tcard center"}
+  else{sp.hidden=true;c.className="tour-card center"}
   try{c.querySelector(".pri").focus({preventScroll:true})}catch(_){}
 }
 async function tourEnd(how,marked){
