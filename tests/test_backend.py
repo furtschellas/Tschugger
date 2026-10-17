@@ -147,6 +147,24 @@ eps = [e for e, _ in calls]; b1 = fs.d["broadcasts/b1"]
 check("Push-Versand: zweiter Lauf schickt nur noch an das fehlgeschlagene Gerät", eps == ["https://push/admin"], eps)
 check("Push-Versand: danach erledigt", b1.get("fin") is True and "dErr" in b1.get("done"))
 
+# ====================================================================== Google Kalender
+import gcal_sync as G  # noqa: E402
+dd = lambda n: (datetime.date.today() + datetime.timedelta(days=n)).strftime("%Y%m%d")
+ics = "\r\n".join(["BEGIN:VCALENDAR", "VERSION:2.0",
+    "BEGIN:VEVENT", "UID:a1", f"DTSTART;TZID=Europe/Zurich:{dd(1)}T090000", f"DTEND;TZID=Europe/Zurich:{dd(1)}T103000", "SUMMARY:Kostümprobe", "LOCATION:Sion", "END:VEVENT",
+    "BEGIN:VEVENT", "UID:a2", f"DTSTART;VALUE=DATE:{dd(2)}", "SUMMARY:Ganztag", "END:VEVENT",
+    "BEGIN:VEVENT", "UID:a3", f"DTSTART:{dd(3)}T080000Z", f"DTEND:{dd(3)}T090000Z", "RRULE:FREQ=DAILY;COUNT=2", "SUMMARY:Serie", "END:VEVENT",
+    "BEGIN:VEVENT", "UID:old", f"DTSTART:{dd(-3)}T080000Z", "SUMMARY:alt", "END:VEVENT", "END:VCALENDAR"]).encode()
+it = G.parse(ics)
+check("Google Kalender: Zeit in Schweizer Zeit, ganztags ohne Zeit, Vergangenes weg", [(x["title"], x["t"], x["end"]) for x in it[:2]] == [("Kostümprobe", "09:00", "10:30"), ("Ganztag", "", "")] and all(x["title"] != "alt" for x in it), it[:2])
+check("Google Kalender: Serientermin einzeln, mit eigener ID pro Tag", [x["uid"] for x in it if x["title"] == "Serie"] == ["a3|" + D(3), "a3|" + D(4)])
+evs = [("e1", {"gc": "a1", "c": G.enc(KEY, {"title": "alt", "date": D(1), "t": "08:00", "roles": ["crew"]})}),
+       ("e2", {"gc": "weg", "c": G.enc(KEY, {"date": D(1)})}), ("e3", {"c": enc({"title": "eigener"})})]
+u, dl = G.sync(KEY, it, evs)
+n1 = G.dec(KEY, u["e1"]) if "e1" in u else {}
+check("Google Kalender: geänderte Zeit und Titel werden nachgeführt, Empfänger bleiben", n1.get("t") == "09:00" and n1.get("title") == "Kostümprobe" and n1.get("roles") == ["crew"], n1)
+check("Google Kalender: im Kalender gelöscht → aus der App entfernt; eigene Termine unberührt", dl == ["e2"] and "e3" not in u, (dl, list(u)))
+
 # ====================================================================== Alarm
 import fail_alarm as A  # noqa: E402
 A.ROOT = str(TMP)

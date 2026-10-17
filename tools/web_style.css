@@ -662,3 +662,18 @@ html body #view .mci:has(.oeed){min-height:124px}
 #oedlg .oerow{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr)}
 #oedlg .oerow input{width:100%;min-width:0;box-sizing:border-box}
 #oedlg .oerow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#oedlg .oerow label:first-child{grid-column:1/-1}
+/* eigener Termin: Dialog im Stil der übrigen Formulare (wie «Push-Nachricht senden») */
+#oedlg form{gap:12px;margin-top:10px}
+#oedlg form>label,#oedlg .oerow>label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:var(--muted)}
+#oedlg input:not([type=checkbox]):not([type=radio]),#oedlg textarea{font:inherit;font-size:16px;font-weight:400;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box;min-height:44px}
+#oedlg textarea{resize:vertical;min-height:72px;line-height:1.4}
+#oedlg input:focus,#oedlg textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+#oedlg input[type=date],#oedlg input[type=time]{-webkit-appearance:none;appearance:none;color-scheme:dark}
+html[data-theme="light"] #oedlg input[type=date],html[data-theme="light"] #oedlg input[type=time]{color-scheme:light}
+#oedlg .oerow{gap:10px}
+#oedlg fieldset{margin:0}
+#oedlg .ck{font-size:15px;gap:10px}
+#oedlg .oesel input[data-oeadp]{margin-top:4px}
+#oedlg .oechip{background:var(--paper);padding:4px 6px 4px 12px}
+#oedlg .a2b{margin-top:4px}
+#oedlg .a2b .pri{min-width:140px}
