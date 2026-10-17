@@ -355,6 +355,10 @@ async def owner_tests(p, port):
     # opening Log/Tests starts the tests again; while a test runs, its open/close button shows the progress as a ring
     await E("RTS.at=0;S.tab='today';render()"); await pg.wait_for_timeout(100); await E("S.tab='admin';ADM.sub='log';render()"); await pg.wait_for_timeout(2500)
     check("Log/Tests öffnen startet «Berechtigungen testen» und «Dokumente prüfen» neu", await E("Date.now()-RTS.at<10000&&Date.now()-DCK.at<10000&&S.tab==='admin'&&ADM.sub==='log'"))
+    gs = await E("""(async()=>{window.__ts=0;const o=tstStart;tstStart=function(){__ts++};const w=ms=>new Promise(r=>setTimeout(r,ms));
+      S.tab='today';render();await w(50);S.tab='admin';ADM.sub='log';render();await w(1200);const a=__ts;
+      const d=document.querySelector('#view details[data-lsec="tst"]');d.open=true;await w(400);const b=__ts;render();await w(400);const c=__ts;tstStart=o;return {log:a,open:b,redraw:c}})()""")
+    check("Automatische Tests: starten erst beim Aufklappen ihres Menüs (nicht beim Tipp auf Log, nicht beim Neuzeichnen)", gs == {"log": 0, "open": 1, "redraw": 1}, gs, public=True)
     await E("RTS.at=0;window.__rtp=[];const o=render;window.__rtw=setInterval(()=>{if(RTS.busy)__rtp.push(!!document.querySelector('#view details[data-lsec=\"rt\"] .tstall.prog'))},40);document.querySelector('[data-asub=\"log\"]')&&document.querySelector('[data-asub=\"log\"]').click()"); await pg.wait_for_timeout(3000)
     rp2 = await E("(()=>{clearInterval(__rtw);return {again:Date.now()-RTS.at<8000,ring:__rtp.some(Boolean),tab:S.tab+'/'+ADM.sub}})()")
     check("Erneuter Tipp auf «Log» startet die Tests wieder, Berechtigungstest mit Fortschrittsring", rp2["again"] and rp2["ring"] and rp2["tab"] == "admin/log", rp2, public=True)
