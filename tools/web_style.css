@@ -733,3 +733,9 @@ html body #view .abtn{margin-top:6px}
 .dckl{list-style:none;margin:8px 0 0;padding:0}.dckl li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid var(--rule);font-size:13px;line-height:1.4}
 .dckl li.warn .dcki{color:#d6455d}.dckl li.info .dcki{color:var(--accent)}.dckl li.ok .dcki{color:#2e9d5b}.dckl li.ok{color:var(--muted)}
 .dckacct .dcksec{margin:0}
+/* Bilder in Push-Nachrichten */
+.bcimgf{display:flex;flex-direction:column;gap:6px}.bcimgf .bcil{font-size:13px;font-weight:600;color:var(--muted)}
+.bcpick{align-self:flex-start;cursor:pointer}
+.bcprev{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.bcprev img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--rule)}.bcprev span{font-size:12px;color:var(--muted)}
+.bcthumb{display:block;width:100%;max-width:240px;max-height:180px;object-fit:cover;border-radius:10px;margin:6px 0;cursor:zoom-in}.bcthumb.ld{height:60px;background:var(--paper)}
+#bcview .bcvbox{max-width:560px}#bcview .bcvimg img{width:100%;height:auto;border-radius:12px;display:block}
