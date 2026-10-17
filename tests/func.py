@@ -222,6 +222,8 @@ async def owner_tests(p, port):
     cg = await E("(()=>{const c=document.querySelector('#view .tchg');const d=c&&c.querySelector('details.tscrlog');return {sc:c?[...c.querySelectorAll('.tscrsc [data-scene]')].map(b=>b.dataset.scene):[],det:!!d,open:d?d.open:null,txt:d?d.querySelector('pre').textContent:''}})()")
     check("Today: Szenen aus dem Changelog bei der Drehbuch-Änderung (antippbar)", cg["sc"] == ["5", "6", "184CA"], cg)
     check("Today: ganzes Changelog zum Auf- und Zuklappen (zu Beginn zu)", cg["det"] and cg["open"] is False and "Woman with dog" in cg["txt"], cg)
+    hh = await E("(()=>{const li=[...document.querySelectorAll('#view .tchg .chglist li')];const sc=li.find(x=>x.querySelector('[data-tscript]'));const o=li.filter(x=>x!==sc);return {w:innerWidth,one:o.length?Math.max(...o.map(x=>x.getBoundingClientRect().height)):0,scr:sc?sc.getBoundingClientRect().height:0}})()")
+    check("Handy: Änderungen kompakt (Zeile höchstens 44 px, Drehbuch-Eintrag höchstens 90 px)", hh["w"] > 600 or ((hh["one"] == 0 or hh["one"] <= 44) and hh["scr"] <= 90), hh)
     await E("document.querySelector('#view [data-tscript]').click()"); await pg.wait_for_timeout(300)
     check("Today: Tippen auf die Drehbuch-Änderung öffnet das Drehbuch", await E("S.tab") == "script")
     await E("S.meta.scriptChange.at=new Date(Date.now()-4*864e5).toISOString();S.tab='today';render()"); await pg.wait_for_timeout(200)

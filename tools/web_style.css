@@ -780,3 +780,21 @@ html[data-theme="light"]{--field-bg:#fff}
 .tchg .tscrsc{display:block;margin-top:2px;font-size:13px;color:var(--muted)}.tchg .tscrsc .lnk{padding:0;min-height:0;font-size:13px}
 .tchg .tscrlog{margin-top:6px}.tchg .tscrlog>summary{cursor:pointer;font-size:13px;color:var(--accent)}
 .tchg .tscrlog pre{white-space:pre-wrap;font-family:var(--f-body);font-size:13px;line-height:1.45;margin:6px 0 0;max-height:60vh;overflow:auto}
+
+/* Today → Änderungen on the phone: compact (small padding, one tight line per change, small buttons) */
+html body #view .today .chglist .lnk{min-height:0;height:auto;padding:0;line-height:inherit;font-size:inherit;text-align:left;border:0;background:none;width:auto}
+@media (max-width:600px){
+  html body #view .today .tchg{padding:10px 12px}
+  html body #view .today .tchg .tch{margin:0 0 6px;min-height:0}
+  html body #view .today .chglist{gap:2px}
+  html body #view .today .chglist li{grid-template-columns:58px 1fr;gap:6px;padding:3px 6px;font-size:13px;line-height:1.3;border-radius:6px}
+  html body #view .today .chglist .cd{font-size:12px}
+  html body #view .today .tchg .tscrsc{display:inline;margin:0 0 0 4px;font-size:12px}
+  html body #view .today .tchg .tscrsc::before{content:"· "}
+  html body #view .today .tchg .tscrsc .lnk{font-size:12px}
+  html body #view .today .tchg .tscrlog{margin-top:2px}
+  html body #view .today .tchg .tscrlog>summary{font-size:12px}
+  html body #view .today .tchg .tscrlog pre{font-size:12px;line-height:1.35;max-height:45vh}
+  html body #view .today .tchg .tacts{margin-top:6px;gap:6px}
+  html body #view .today .tchg .tacts .pillbtn{min-height:30px;height:30px;padding:0 10px;font-size:12px}
+}
