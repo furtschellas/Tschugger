@@ -234,8 +234,9 @@ async def owner_tests(p, port):
     await E("S.meta.scriptChange={at:new Date().toISOString(),v:'v14',prev:'v13',scenes:['9']};maybeScriptNews()"); await pg.wait_for_timeout(300)
     check("Neue Drehbuch-Version: bei der nächsten Version wieder", await E("!!document.getElementById('scrnews')&&document.getElementById('scrnews').innerText.includes('v14')"))
     await E("document.querySelectorAll('#scrnews').forEach(x=>x.remove());S.meta.scriptChange={at:new Date().toISOString(),v:'v13',prev:'v12',scenes:['5','6','184CA'],log:'Sc5 deleted: Football'};localStorage.setItem('scrv','v13|'+S.meta.scriptChange.at);window.__scrNewsOff=true")
-    hh = await E("(()=>{const li=[...document.querySelectorAll('#view .tchg .chglist li')];const sc=li.find(x=>x.querySelector('[data-tscript]'));const o=li.filter(x=>x!==sc);return {w:innerWidth,one:o.length?Math.max(...o.map(x=>x.getBoundingClientRect().height)):0,scr:sc?sc.getBoundingClientRect().height:0}})()")
-    check("Handy: Änderungen kompakt (Zeile höchstens 44 px, Drehbuch-Eintrag höchstens 90 px)" + ("" if hh["w"] > 600 or ((hh["one"] == 0 or hh["one"] <= 44) and hh["scr"] <= 90) else " – lief durch nicht"), hh["w"] > 600 or ((hh["one"] == 0 or hh["one"] <= 44) and hh["scr"] <= 90), hh)
+    hh = await E("(()=>{const i=document.querySelector('#view .tchg .chglist li.chgi'),h=document.querySelector('#view .tchg .chglist li.cdh'),c=document.querySelector('#view .tchg');if(!i)return {w:innerWidth};const cs=getComputedStyle(i),cc=getComputedStyle(c);
+      return {w:innerWidth,pad:parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom),fs:parseFloat(cs.fontSize),lh:parseFloat(cs.lineHeight),cdh:h?h.getBoundingClientRect().height:0,card:parseFloat(cc.paddingTop)}})()")
+    check("Handy: Änderungen kompakt (wenig Abstand, kleine Schrift, enge Zeilen, Datumszeile niedrig)", hh["w"] > 600 or (hh.get("pad", 99) <= 8 and hh.get("fs", 99) <= 13 and hh.get("lh", 99) <= 18 and hh.get("cdh", 99) <= 24 and hh.get("card", 99) <= 10), hh)
     await E("document.querySelector('#view [data-tscript]').click()"); await pg.wait_for_timeout(300)
     check("Today: Tippen auf die Drehbuch-Änderung öffnet das Drehbuch", await E("S.tab") == "script")
     await E("S.meta.scriptChange.at=new Date(Date.now()-4*864e5).toISOString();S.tab='today';render()"); await pg.wait_for_timeout(200)
@@ -247,6 +248,22 @@ async def owner_tests(p, port):
     await E("const c=pushCfg();c.news.script=false;pushSave(c)")
     check("Push: Drehbuch-Meldung abbestellbar (geht so ans Gerät)", await E("newsFor(pushCfg()).script===false&&newsFor(Object.assign(pushCfg(),{news:{script:true}})).script===true"))
     await E("const c=pushCfg();c.news.script=true;pushSave(c)")
+
+    # route choice (Today → Anfahrt): two option rows, the hotel with its name below the title
+    await E("""(()=>{const b=document.createElement('button');b.dataset.route=JSON.stringify({h:'https://www.google.com/maps/dir/?api=1&origin=Hotel',c:'https://www.google.com/maps/dir/?api=1',from:'Hotel Moxy Sion',to:'Sion'});document.body.appendChild(b);b.click();b.remove()})()""")
+    await pg.wait_for_timeout(200)
+    rp = await E("(()=>{const o=[...document.querySelectorAll('#routepop .rtopt')];const r=o.map(a=>{const t=a.querySelector('b').getBoundingClientRect(),s=a.querySelector('small').getBoundingClientRect();return {t:a.innerText.replace(/\\s+/g,' '),gap:Math.round(s.top-t.bottom),ic:!!a.querySelector('.rtic svg')}});document.querySelectorAll('#routepop').forEach(x=>x.remove());return r})()")
+    check("Anfahrt: zwei Optionen mit Symbol, Hotelname direkt unter dem Titel", len(rp) == 2 and all(x["ic"] for x in rp) and "Hotel Moxy Sion" in rp[0]["t"] and all(abs(x["gap"]) <= 6 for x in rp), rp)
+    check("Mein Konto → App: Titel «App-Icon und App installieren»", "App-Icon und App installieren" in await E("(()=>{S.tab='acct';ACSUB='app';render();return document.getElementById('view').innerText})()"))
+
+    # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
+    ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
+      r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")
+    check("App-Icon: nicht installiert nur «Als App installieren», installiert nur «App deinstallieren»", ai["missing"] == {"inst": True, "un": False} and ai["installed"] == {"inst": False, "un": True} and ai["standalone"] == {"inst": False, "un": True}, ai)
+    await E("document.querySelector('#view [data-ac=\"a2un\"]').click()"); await pg.wait_for_timeout(200)
+    check("App deinstallieren: Anleitung mit Schritten für dieses Gerät", await E("document.querySelectorAll('#a2un .a2ol li').length") >= 2)
+    await E("document.querySelector('#a2un [data-a2unok]').click()"); await pg.wait_for_timeout(200)
+    check("App deinstallieren: Dialog schliesst, Status wird neu geprüft", await E("!document.getElementById('a2un')"))
 
     # Today: the person chooses the parts in Mein Konto → App
     await E("localStorage.setItem('today','1');S.tab='acct';ACSUB='app';render()"); await pg.wait_for_timeout(300)
