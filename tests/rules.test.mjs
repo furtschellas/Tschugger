@@ -118,6 +118,8 @@ await check("Sicherheit: Crew kann niemanden einladen", assertFails(setDoc(doc(a
 await check("Sicherheit: Crew kann sich kein Startpasswort-Konto anlegen", assertFails(setDoc(doc(as("crew"), "starts/neu@test.ch"), { mustChange: true, at: 1 })));
 await check("Admin-Liste: wer Rollen bearbeitet, sieht wer Admin ist (sonst «Keine Rolle»)", assertSucceeds(getDocs(collection(as("power"), "admins"))));
 await check("Admin-Liste: Crew ohne Verwaltungsrecht nicht", assertFails(getDocs(collection(as("crew"), "admins"))));
+await check("Push-Bild (entfernt): nicht mehr hochladen", assertFails(addDoc(collection(as("power"), "bcimg"), { c: "x", at: 1, by: "uPower" })));
+await check("Push-Bild (entfernt): nicht mehr lesbar", assertFails(getDocs(collection(as("crew"), "bcimg"))));
 await check("Admin-Liste: mit «Rollen sehen» lesbar (Admins nicht als «Keine Rolle»)", assertSucceeds(getDocs(collection(as("viewer"), "admins"))));
 await check("Owner-Liste: mit «Rollen sehen» lesbar", assertSucceeds(getDocs(collection(as("viewer"), "owners"))));
 await check("Admin-Liste: mit «Rollen sehen» nicht änderbar", assertFails(setDoc(doc(as("viewer"), "admins/other@test.ch"), { addedAt: 1 })));
@@ -132,11 +134,6 @@ await check("Sicherheit: Nachricht an alle – Empfänger nachträglich nicht ä
 await check("Sicherheit: Protokoll nur im eigenen Namen", assertFails(addDoc(collection(as("crew"), "audit"), { by: "other@test.ch", at: 1, op: "x", col: "x", id: "x", sum: "x" })));
 await check("Sicherheit: Protokolleinträge nicht änderbar", assertFails(updateDoc(doc(as("owner"), "audit/a1"), { sum: "y" })));
 
-await check("Push-Bild: ohne «Push senden» nicht hochladen", assertFails(addDoc(collection(as("crew"), "bcimg"), { c: "x", at: serverTimestamp(), by: "uCrew" })));
-await check("Push-Bild: mit «Push senden» hochladen", assertSucceeds(addDoc(collection(as("power"), "bcimg"), { c: "x", at: serverTimestamp(), by: "uPower" })));
-await check("Push-Bild: Crew darf es ansehen", assertSucceeds(getDocs(collection(as("crew"), "bcimg"))));
-await check("Push-Bild: nicht eingeladene Person nicht", assertFails(getDocs(collection(as("stranger"), "bcimg"))));
-await check("Push-Bild: zu gross wird abgelehnt", assertFails(addDoc(collection(as("power"), "bcimg"), { c: "x".repeat(950000), at: serverTimestamp(), by: "uPower" })));
 
 // ---------- prefs, log, everything else ----------
 await check("Einstellungen der Person: nur die eigenen", assertFails(getDoc(doc(as("crew"), "prefs/uOther"))));

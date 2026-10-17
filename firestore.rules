@@ -182,14 +182,9 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Bilder zu Push-Nachrichten (auf dem Gerät verkleinert, verschlüsselt): lesen alle aus der Crew (sie öffnen die Nachricht),
-    // anlegen nur mit «Push senden», löschen wer es angelegt hat und Admins
+    // Bilder zu Push-Nachrichten: Funktion entfernt – nur noch alte Bilder löschen (Admins, beim Leeren des Verlaufs)
     match /bcimg/{id} {
-      allow read: if isMember() || isAdmin();
-      allow create: if can('push.send') && request.resource.data.keys().hasOnly(['c', 'at', 'by'])
-        && request.resource.data.by == request.auth.uid
-        && request.resource.data.c is string && request.resource.data.c.size() < 900000;
-      allow delete: if isAdmin() || resource.data.by == request.auth.uid;
+      allow delete: if isAdmin();
     }
 
     // Eigene Termine (verschlüsselt mit dem Crew-Schlüssel; wer sie sieht, steht verschlüsselt darin): lesen alle aus der Crew,
