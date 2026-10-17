@@ -2,7 +2,7 @@
    HEUTE · ÄNDERUNGEN · OFFLINE · PROTOKOLL
    ===================================================================== */
 const pad2x=n=>String(n).padStart(2,"0");
-const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+" "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+"."};
+const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+", "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+"."};
 const scKey=x=>String(x||"").toLowerCase().replace(/\s+/g,"");
 const unitItems=d=>[["1",arr(d.items)],["2",arr((d.unit2||{}).items)],["3",arr((d.unit3||{}).items)]];
 

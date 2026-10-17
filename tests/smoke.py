@@ -92,6 +92,7 @@ async def session(p, port, who, width=390, extra=""):
     await ctx.add_init_script(SEED % {"key": json.dumps(KEY), "people": json.dumps(PEOPLE), "nv": nv})
     if extra: await ctx.add_init_script(extra)
     await ctx.add_init_script("try{localStorage.setItem('lang','de')}catch(_){}")
+    await ctx.add_init_script("window.__scrNewsOff=true")   # the message on a new script version is tested on its own (func.py)
     # nothing leaves the machine: weather, fonts, GitHub, worker
     await ctx.route(lambda u: not (u.startswith("http://127.0.0.1:%d" % port) or "/firebasejs/" in u), lambda r: r.abort())
     for name, f in [("firebase-app.js", "app.js"), ("firebase-auth.js", "auth.js"), ("firebase-firestore.js", "fs.js")]:
