@@ -1,5 +1,5 @@
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline"];let PREFT=null,PREFAPPLY=false;
+const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false;
 {const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k))savePrefsSoon()}}
 function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 async function savePrefs(){
