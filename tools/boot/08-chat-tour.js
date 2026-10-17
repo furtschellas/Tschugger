@@ -100,6 +100,8 @@ const TOUR_STEPS=[
   {tab:"my",sel:"#view [data-mcself]",t:"Termine anderer",x:"Tippe einen Namen ein, um die Termine einer anderen Person zu sehen. Das Haus bringt dich zu deinen eigenen zurück."},
   {tab:"my",sel:"#view [data-mcall]",t:"Kalender-Export",x:"«Alle in den Kalender» übernimmt alle deine Termine auf einmal; mit dem Kalender-Knopf bei jedem Termin einzeln."},
   {tab:"my",sel:"#view .pbell",t:"Push-Glocke",x:"Mit der Glocke schaltest du die Erinnerung für einzelne Termine aus oder ein."},
+  {tab:"my",sel:"#view [data-oeadd]",t:"Termin hinzufügen",x:"Mit «+ Termin» legst du einen eigenen Termin an und wählst, wer ihn sieht: alle, Rollen, Abteilungen oder einzelne Personen. Er erscheint auch im Drehplan und in der Prep-Planung am jeweiligen Tag."},
+  {tab:"my",sel:"#view [data-oegc]",t:"Google Kalender",x:"Wähle Termine aus dem Google Kalender aus und bestimme, wer sie sieht. Ändert sich ein Termin dort, wird er hier automatisch nachgeführt."},
   {tab:"plan",sel:"#bcBtn",t:"Push-Nachricht senden",x:"Mit dem Briefumschlag schickst du sofort eine Push-Nachricht an alle – oder nur an bestimmte Rollen und Abteilungen."},
   {tab:"acct",sel:"#acctBtn",t:"Mein Konto",x:"Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten."},
   {tab:"acct",sel:"#view .acsub",t:"Bereiche",x:"Profil, Essen, Push und App. Unter «App» findest du Darstellung, Sprache, Offline, Today und das App-Icon."},
