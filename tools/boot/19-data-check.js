@@ -2,7 +2,7 @@
    Drehplan ↔ Locations ↔ Drehbuch ↔ Cast-Liste, Prep Weekly ↔ Daily, Callsheets ↔ Drehplan, Namen ↔ Crewliste,
    dazu ein kurzer Selbsttest der App. Alles läuft im Browser mit den Daten, die die Person sehen darf – nichts geht weg.
    Sichtbar für Admins in App-Verwaltung → Log, für alle mit dem Recht «Dokumente prüfen» in Mein Konto → App. */
-const DCK={res:null,busy:false,at:0};
+const DCK={res:null,busy:false,at:0,open:false};
 try{const l=JSON.parse(localStorage.getItem("dck:last")||"null");if(l&&Array.isArray(l.res)){DCK.res=l.res;DCK.at=l.at||0}}catch(_){} /* the last check of this device is shown again */
 /* screenplay text: action lines (and speaker cues) vs. what is said – a name inside dialogue does not put the person on set */
 function dckSplit(t){const act=[],dlg=[];let inD=false;for(const raw of String(t||"").split("\n")){const l=raw.trim();
@@ -117,14 +117,14 @@ async function dckRun(){
       const sw=!!(navigator.serviceWorker&&navigator.serviceWorker.controller);
       w(bad.length||!key?"warn":"ok",L("Selbsttest der App"),(key?"✓ "+L("Schlüssel"):"✗ "+L("Schlüssel"))+" · "+(bad.length?"✗ "+L("Seiten mit Fehler")+": "+bad.join(", "):"✓ "+tabsOn().length+" "+L("Seiten"))+" · "+(sw?"✓ ":"– ")+L("Offline-Speicher")+" · "+(navigator.onLine?"✓ ":"– ")+L("Verbindung"))}
   }catch(err){w("warn",L("Prüfung"),L("Fehler:")+" "+(err&&err.message||err))}
-  DCK.res=out;DCK.at=Date.now();DCK.busy=false;try{localStorage.setItem("dck:last",JSON.stringify({res:out,at:DCK.at}))}catch(_){}render();
+  DCK.res=out;DCK.at=Date.now();DCK.busy=false;DCK.open=true;try{localStorage.setItem("dck:last",JSON.stringify({res:out,at:DCK.at}))}catch(_){}render();
 }
 window.dataCheckSec=function(flat){if(!dckMay())return "";
   const r=DCK.res||[],nw=r.filter(x=>x.lvl==="warn").length,ni=r.filter(x=>x.lvl==="info").length;
   const ic={warn:"⚠",info:"ℹ",ok:"✓"};
   const sum=DCK.res?'<span class="tsth">'+(nw?nw+' '+esc(L(nw===1?"Unstimmigkeit":"Unstimmigkeiten")):esc(L("keine Unstimmigkeiten")))+(ni?', '+ni+' '+esc(L(ni===1?"Hinweis":"Hinweise")):'')+'</span>':'';
   /* Mein Konto → App: always open (the section already has the title); App-Verwaltung → Log: to open like the other boxes */
-  return (flat?'<div class="dcksec dckflat'+(nw?' bad':'')+'">'+(sum?'<p class="dcksum">'+sum+'</p>':''):'<details class="tstsec dcksec'+(nw?' bad':'')+'"'+(DCK.res?' open':'')+'><summary><b>'+esc(L("Dokumente prüfen"))+'</b>'+(sum?' · '+sum:'')+'</summary>')+
+  return (flat?'<div class="dcksec dckflat'+(nw?' bad':'')+'">'+(sum?'<p class="dcksum">'+sum+'</p>':''):'<details class="tstsec dcksec'+(nw?' bad':'')+'"'+(DCK.open?' open':'')+' data-lsec="dck"><summary><b>'+esc(L("Dokumente prüfen"))+'</b>'+(sum?' · '+sum:'')+'</summary>')+
     '<p class="ghint">'+esc(L("Vergleicht die Dokumente aus der Dropbox untereinander (Drehplan, Locations, Drehbuch, Cast-Liste, Prep Weekly/Daily, Callsheets, Crewliste) und prüft die App auf diesem Gerät. Es werden nur Bereiche verglichen, die du sehen darfst."))+'</p>'+
     (DCK.res&&DCK.at?'<p class="ghint">'+esc(L("Letzte Prüfung"))+': '+esc(new Date(DCK.at).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))+'</p>':'')+
     '<div class="arb"><button type="button" class="pillbtn" data-dckrun'+(DCK.busy?' disabled':'')+'>'+esc(L(DCK.busy?"Prüfe …":DCK.res?"Nochmals prüfen":"Jetzt prüfen"))+'</button></div>'+
@@ -132,3 +132,43 @@ window.dataCheckSec=function(flat){if(!dckMay())return "";
 document.addEventListener("click",e=>{if(e.target.closest("[data-dckrun]")&&dckMay())dckRun()});
 /* Mein Konto → App: for people with «Dokumente prüfen» who are not admins (admins find it under App-Verwaltung → Log) */
 {const _aia=acctInnerAll;acctInnerAll=function(){const h=_aia();return (!isAdmin()&&dckMay())?h+'<section class="psec dckacct"><h4>'+esc(L("Dokumente prüfen"))+'</h4>'+window.dataCheckSec(true)+'</section>':h}}
+
+/* ---------- Rollen testen (App-Verwaltung → Log/Tests, Owner und Admins): die App einen Moment mit den Rechten jeder Rolle ansehen ----------
+   Pro Rolle: welche Bereiche sie sieht, welche Zusatzrechte sie hat, ob jede Seite ohne Fehler erscheint, ob Telefon/E-Mail
+   nur mit Recht sichtbar sind und ob die Kopf-Symbole stimmen. Danach ist alles wieder wie vorher. Nichts wird gespeichert. */
+const RTS={res:null,busy:false,at:0,open:false};
+const RTN={today:"Today",plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",cater:"Catering",info:"Info"};
+async function roleTestRun(){
+  if(RTS.busy||!isAdmin())return;RTS.busy=true;render();
+  const keep={p:MYPERMS.slice(),r:MYROLE,tab:S.tab,sub:ADM.sub,ac:typeof ACSUB!=="undefined"?ACSUB:null};
+  const roles=[{id:"admin",name:L("Admin"),adm:true,perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}].concat((ADM.roles||[]).map(r=>({id:r.id,name:r.name||r.id,perms:arr(r.perms)}))).concat([{id:"",name:L("Keine Rolle"),perms:[]}]);
+  const out=[];
+  try{for(const ro of roles){
+    SIMROLE={adm:!!ro.adm};MYPERMS=ro.adm?[]:ro.perms.filter(p=>PERMS.some(x=>x[0]===p));MYROLE=ro.adm?"":ro.id;if(ro.adm)ADMINPERMS=ro.perms;
+    const issues=[],tabs=tabsOn();
+    for(const t of tabs){S.tab=t;try{render();const v=document.getElementById("view");
+        if(/konnte nicht angezeigt/.test(v.innerText))issues.push(L("Seite mit Fehler")+": "+(RTN[t]||t));
+        if(!vok("phone")&&v.querySelector('a[href^="tel:"]')&&t==="crew")issues.push(L("Telefonnummern sichtbar ohne Recht"));
+        if(!vok("email")&&v.querySelector('a[href^="mailto:"]')&&t==="crew")issues.push(L("E-Mail-Adressen sichtbar ohne Recht"))}catch(err){issues.push((RTN[t]||t)+": "+(err&&err.message||err))}}
+    try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}
+    const vis=id=>{const b=document.getElementById(id);return !!b&&getComputedStyle(b).display!=="none"};
+    if(vis("myCalBtn")!==!!vok("mycal"))issues.push(L("Kalender-Symbol stimmt nicht mit dem Recht überein"));
+    if(vis("bcBtn")!==!!(can("push.send")&&window.PUSHEN!==false))issues.push(L("Couvert-Symbol stimmt nicht mit dem Recht überein"));
+    if(vis("admBtn")!==!!canAdm())issues.push(L("Zahnrad stimmt nicht mit dem Recht überein"));
+    if(!ro.adm&&ro.id&&(tabs.includes("plan")!==can("view.plan")))issues.push(L("Drehplan sichtbar, obwohl das Recht fehlt (oder umgekehrt)"));
+    const extra=[can("push.send")&&L("Push senden"),can("events.add")&&L("Termine erstellen"),vok("mycal")&&L("Meine Termine"),can("mycal.all")&&L("Termine anderer"),can("crew.food")&&L("Essen"),can("crew.bday")&&L("Geburtstage"),
+      vok("phone")&&L("Telefon"),vok("email")&&L("E-Mail"),canAdm()&&L("App-Verwaltung"),can("data.check")&&L("Dokumente prüfen")].filter(Boolean);
+    out.push({name:ro.name,tabs:tabs.map(t=>RTN[t]||t),extra,issues})}}
+  catch(err){out.push({name:L("Fehler"),tabs:[],extra:[],issues:[String(err&&err.message||err)]})}
+  finally{SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;try{const ad=await (async()=>ADM.adminPerms)();ADMINPERMS=isOwner()?ADMIN_DEFAULT.slice():(ad||ADMINPERMS)}catch(_){}
+    S.tab=keep.tab;ADM.sub=keep.sub;try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}}
+  RTS.res=out;RTS.at=Date.now();RTS.busy=false;RTS.open=true;render()}
+window.roleTestSec=function(){if(!isAdmin()||SIMROLE)return "";const r=RTS.res||[],bad=r.filter(x=>x.issues.length).length;
+  return '<details class="tstsec rtsec'+(bad?' bad':'')+'"'+(RTS.open?' open':'')+' data-lsec="rt"><summary><b>'+esc(L("Rollen testen"))+'</b>'+(RTS.res?' · <span class="tsth">'+(bad?bad+' '+esc(L(bad===1?"Rolle mit Problemen":"Rollen mit Problemen")):r.length+' '+esc(L("Rollen in Ordnung")))+'</span>':'')+'</summary>'+
+    '<p class="ghint">'+esc(L("Zeigt die App einen Moment mit den Rechten jeder Rolle: welche Bereiche sie sieht, welche Zusatzrechte sie hat, ob alle Seiten ohne Fehler erscheinen und ob Telefon, E-Mail und Kopf-Symbole nur mit Recht sichtbar sind. Es wird nichts geändert."))+'</p>'+
+    (RTS.res&&RTS.at?'<p class="ghint">'+esc(L("Letzte Prüfung"))+': '+esc(new Date(RTS.at).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))+'</p>':'')+
+    '<div class="arb"><button type="button" class="pillbtn" data-rtrun'+(RTS.busy?' disabled':'')+'>'+esc(L(RTS.busy?"Prüfe …":RTS.res?"Nochmals prüfen":"Jetzt prüfen"))+'</button></div>'+
+    (RTS.res?'<ul class="dckl">'+r.map(x=>'<li class="'+(x.issues.length?'warn':'ok')+'"><span class="dcki">'+(x.issues.length?'⚠':'✓')+'</span><span><b>'+esc(x.name)+'</b><br>'+esc(L("Sieht"))+': '+esc(x.tabs.join(", ")||"–")+(x.extra.length?'<br>'+esc(L("Darf"))+': '+esc(x.extra.join(", ")):'')+(x.issues.length?'<br><b>'+esc(x.issues.join(" · "))+'</b>':'')+'</span></li>').join("")+'</ul>':'')+'</details>'};
+document.addEventListener("click",e=>{if(e.target.closest("[data-rtrun]")&&isAdmin()&&!SIMROLE)roleTestRun()});
+document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("rtsec"))RTS.open=e.target.open},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="dck")DCK.open=d.open},true);
