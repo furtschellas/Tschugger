@@ -367,6 +367,11 @@ async def hidden_data(p, port):
         await E("if(TOUR.el)TOUR.el.remove();TOUR.el=null;document.querySelectorAll('#tour').forEach(x=>x.remove())")
         dc = await E("(()=>{ACSUB='app';S.tab='acct';render();const d=document.querySelector('#view .dcksec');return !!d&&d.tagName!=='DETAILS'&&!!d.querySelector('[data-dckrun]')})()")
         check(f"{who}: «Dokumente prüfen» in Mein Konto nur mit Recht", dc == (await E("can('data.check')")), dc)
+        if who == "power":
+            await E("ADM.loaded=false;S.tab='admin';ADM.sub='users';render()"); await pg.wait_for_timeout(2500)
+            await E("render()"); await pg.wait_for_timeout(300)
+            ab = await E("(()=>{const r=[...document.querySelectorAll('#view .ucard,#view .urow,#view [data-uem]')].find(x=>/admin Test/.test(x.innerText));return r?r.innerText.slice(0,80):document.getElementById('view').innerText.includes('admin Test')?'row?':''})()")
+            check("Power-User: Admins erscheinen als «Admin», nicht als «Keine Rolle»", "Admin" in ab and "Keine Rolle" not in ab, ab)
         if who == "crew":
             await E("MYPERMS.push('roles.view');try{acctButton(true)}catch(_){};S.tab='admin';ADM.sub='roles';ADM.loaded=false;render()"); await pg.wait_for_timeout(1500)
             rv = await E("({tab:!!document.querySelector('[data-asub=\"roles\"]')||ADM.sub==='roles',view:!!document.querySelector('#view .pacc'),edit:document.querySelectorAll('#view [data-redit],#view [data-paccedit]').length,gear:!document.getElementById('admBtn').hidden})")

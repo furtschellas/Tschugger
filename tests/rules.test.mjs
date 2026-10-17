@@ -116,6 +116,8 @@ await check("Sicherheit: Anfrage nur in eigenem Namen", assertFails(setDoc(doc(a
 await check("Sicherheit: eigene Anfrage geht", assertSucceeds(setDoc(doc(as("stranger"), "requests/str@test.ch"), { name: "x", at: 1 })));
 await check("Sicherheit: Crew kann niemanden einladen", assertFails(setDoc(doc(as("crew"), "invites/neu@test.ch"), { name: "x", addedAt: 1 })));
 await check("Sicherheit: Crew kann sich kein Startpasswort-Konto anlegen", assertFails(setDoc(doc(as("crew"), "starts/neu@test.ch"), { mustChange: true, at: 1 })));
+await check("Admin-Liste: wer Rollen bearbeitet, sieht wer Admin ist (sonst «Keine Rolle»)", assertSucceeds(getDocs(collection(as("power"), "admins"))));
+await check("Admin-Liste: Crew ohne Verwaltungsrecht nicht", assertFails(getDocs(collection(as("crew"), "admins"))));
 await check("Sicherheit: Owner-Liste nicht für Crew", assertFails(getDocs(collection(as("crew"), "owners"))));
 await check("Sicherheit: Admin kann keinen weiteren Owner ernennen", assertFails(setDoc(doc(as("admin"), "owners/crew@test.ch"), { addedAt: 1 })));
 await check("Sicherheit: Menüs nur Catering und Admins", assertFails(setDoc(doc(as("crew"), "menus/2026-10-20"), { u1: "x" })));

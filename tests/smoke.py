@@ -64,7 +64,7 @@ window.__deny=(path,op,d)=>{const e=(()=>{try{return JSON.parse(sessionStorage.g
   if(col==="broadcasts"&&op==="write")return !can("push.send");
   if(col==="audit"&&op==="list")return !(admin||can("audit.view"));
   if(col==="config"&&op==="write")return !can("settings");
-  if((col==="admins"||col==="owners")&&op==="list")return !admin;
+  if((col==="admins"||col==="owners")&&op==="list")return !(admin||can("users.view")||can("users.edit")||can("roles.assign")||can("roles.edit")||can("roles.view"));
   return false};
 """
 
