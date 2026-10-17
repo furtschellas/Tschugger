@@ -21,14 +21,3 @@ function showScriptNews(sx){
   document.body.appendChild(d)}
 window.maybeScriptNews=function(){if(window.__scrNewsOff)return;const sx=scrNewsDue();if(sx&&!scrNewsBusy())showScriptNews(sx)};
 setInterval(()=>{try{window.maybeScriptNews()}catch(_){}},4000);
-Object.assign(I18N,{
- "Seit {d} ist das Drehbuch {v} in der App.":{fr:"Depuis le {d}, le scénario {v} est dans l’app.",it:"Dal {d} la sceneggiatura {v} è nell’app.",en:"Since {d}, script {v} is in the app."},
- "Vorher":{fr:"Avant",it:"Prima",en:"Before"},
- "Geänderte Szene":{fr:"Scène modifiée",it:"Scena modificata",en:"Changed scene"},
- "Geänderte Szenen":{fr:"Scènes modifiées",it:"Scene modificate",en:"Changed scenes"},
- "Drehbuch öffnen":{fr:"Ouvrir le scénario",it:"Apri la sceneggiatura",en:"Open script"},
- "neu hinzugefügt":{fr:"ajouté",it:"aggiunto",en:"added"},
- "gestrichen":{fr:"supprimé",it:"eliminato",en:"deleted"},
- "geändert":{fr:"modifié",it:"modificato",en:"changed"},
- "präzisiert":{fr:"précisé",it:"precisato",en:"clarified"}
-});

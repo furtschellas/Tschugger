@@ -17,7 +17,7 @@ const dsc=x=>String(x||"").toUpperCase().replace(/\s+/g,"").replace(/^SC/,"");
 /* scene parts («186PT1A», «25SL2») belong to their scene: 186, 25 */
 const dbase=s=>{const m=String(s).match(/^(\d+[A-Z]?)(?:PT|SL|PART|TEIL)\d*[A-Z]?$/);return m?m[1]:s};const dnum=s=>(String(s).match(/^\d+/)||[""])[0];
 const dhas=(set,s)=>set.has(s)||set.has(dbase(s))||set.has(dnum(s));
-const dday=d=>{try{const dt=new Date(d+"T12:00:00");return WDL(dt)+" "+pad2(dt.getDate())+"."+pad2(dt.getMonth()+1)+"."}catch(_){return d}};
+const dday=d=>{try{return dmy(d)}catch(_){return d}};   /* same day format as everywhere («Sa, 17.10.») */
 /* a page drawn for a test only (not shown, the visible page stays as it is); an error in the page throws */
 function offView(t){const d=document.createElement("div");d.innerHTML=VIEWS[t]?VIEWS[t]():"";return d}
 async function dckRun(auto){
@@ -112,7 +112,7 @@ async function dckRun(auto){
       if(next.length)w("info",L("Callsheets ↔ Drehplan"),L("Noch kein Callsheet für:")+" "+next.map(d=>(d.short||d.label)+" "+dday(d.date)).join(", "))}
     /* 7) how fresh the data is */
     {const m=S.meta||{},at=Date.parse((typeof lastCheck==="function"?lastCheck(m):m.updatedAt)||"");if(at&&Date.now()-at>6*3600e3)w("warn",L("Aktualität"),L("Die Daten wurden seit über 6 Stunden nicht mehr aus der Dropbox geprüft."));
-      else if(at)w("ok",L("Aktualität"),L("Zuletzt mit der Dropbox abgeglichen:")+" "+new Date(at).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))}
+      else if(at)w("ok",L("Aktualität"),L("Zuletzt mit der Dropbox abgeglichen:")+" "+fmtDT(at))}
     /* 8) self test of the app on this device */
     {const bad=[],keep=S.tab;for(const tb of tabsOn()){S.tab=tb;try{offView(tb)}catch(_){bad.push(tb)}}S.tab=keep;
       let key=false;try{key=!!(await getDataKey())}catch(_){}

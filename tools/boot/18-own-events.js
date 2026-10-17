@@ -108,7 +108,7 @@ async function gcDialog(){
       (tk?'<button type="button" class="pillbtn" data-gced="'+esc(tk.id)+'">'+esc(L("Bearbeiten"))+'</button>':'<button type="button" class="pillbtn" data-gcadd="'+i+'">'+esc(L("Übernehmen"))+'</button>')+'</div>'}).join("");
   d.innerHTML='<div class="a2box gcbox"><h3>'+esc(L("Google Kalender"))+'</h3><p class="ghint">'+esc(L("Wähle, welche Termine in die App kommen und wer sie sieht. Änderungen im Google Kalender (Zeit, Titel, Ort) werden automatisch nachgeführt; dort gelöschte Termine verschwinden aus der App."))+'</p>'+
     (GC.feed.err?'<p class="ghint">⚠ '+esc(GC.feed.err)+'</p>':'')+(items.length?'<div class="gclist">'+rows+'</div>':'<p class="ghint">'+esc(L("Keine kommenden Termine im Google Kalender."))+'</p>')+
-    '<p class="ghint">'+esc(L("Stand"))+': '+(GC.feed.chk||GC.feed.at?esc(new Date(Math.max(GC.feed.chk||0,GC.feed.at||0)).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})):'–')+'</p><div class="a2b"><button type="button" class="pri" data-gcx>'+esc(L("Schliessen"))+'</button></div></div>';
+    '<p class="ghint">'+esc(L("Stand"))+': '+(GC.feed.chk||GC.feed.at?esc(fmtDT(Math.max(GC.feed.chk||0,GC.feed.at||0))):'–')+'</p><div class="a2b"><button type="button" class="pri" data-gcx>'+esc(L("Schliessen"))+'</button></div></div>';
   d.addEventListener("click",e=>{if(e.target.closest("[data-gcx]")){d.remove();return}
     const a=e.target.closest("[data-gcadd]");if(a){d.remove();ownDialog(null,items[+a.dataset.gcadd]);return}
     const b=e.target.closest("[data-gced]");if(b){d.remove();ownDialog(b.dataset.gced)}});
@@ -117,7 +117,7 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-oegc]")){e.prev
 /* App-Verwaltung → App → Termine: secret iCal address (Google Kalender → Einstellungen → «Privatadresse im iCal-Format») */
 async function gcUrlLoad(){if(GC.url!==null)return;GC.url="";try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"secret","gcal"));GC.url=d.exists()?String(d.data().url||""):""}catch(_){GC.url=""}render()}
 window.gcalSetSec=function(){if(!can("settings"))return "";gcUrlLoad();if(!GC.feed&&window.GCALON)gcLoad();
-  const st=GC.feed&&(GC.feed.at||GC.feed.chk)?L("Zuletzt gelesen")+': '+new Date(Math.max(GC.feed.chk||0,GC.feed.at||0)).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+' · '+(GC.feed.items||[]).length+' '+L("Termine")+(GC.feed.err?' · ⚠ '+GC.feed.err:''):'';
+  const st=GC.feed&&(GC.feed.at||GC.feed.chk)?L("Zuletzt gelesen")+': '+fmtDT(Math.max(GC.feed.chk||0,GC.feed.at||0))+' · '+(GC.feed.items||[]).length+' '+L("Termine")+(GC.feed.err?' · ⚠ '+GC.feed.err:''):'';
   return '<p class="ahint"><b>'+L("Google Kalender")+'</b> – '+L("Geheime Adresse im iCal-Format einfügen (Google Kalender → Einstellungen des Kalenders → «Privatadresse im iCal-Format»). Die Termine werden alle 10 Minuten gelesen; in «Meine Termine» wählst du, welche in die App kommen.")+'</p>'+
     '<input form="setform" class="amap" type="url" name="gcal" inputmode="url" autocomplete="off" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" value="'+esc(GC.url||"")+'">'+(st?'<p class="ghint">'+esc(st)+'</p>':'')}
 document.addEventListener("submit",async e=>{const f=e.target;if(!f||f.id!=="setform"||!can("settings"))return;const el=f.elements["gcal"];if(!el)return;

@@ -66,18 +66,9 @@ function wxPopup(date){
       (dp&&dp.weather?'<p class="ghint">'+esc(L("Laut Callsheet"))+': '+esc(dp.weather)+'</p>':'')+
       '<div class="wxtbl"><div class="wxr wxh"><span>'+esc(L("Zeit"))+'</span><span></span><span>°C</span><span>'+ICDROP(13)+'</span><span>mm</span><span>'+esc(L("Wind"))+'</span></div>'+
       rows.map(({h:hh,i})=>'<div class="wxr'+(w.p.t&&hh.slice(0,2)===String(w.p.t).slice(0,2)?' wxnow':'')+'"><span>'+hh+'</span><span>'+WXI(h.weather_code[i])+'</span><span>'+Math.round(h.temperature_2m[i])+'°</span><span>'+(h.precipitation_probability[i]??"–")+'%</span><span>'+(h.precipitation[i]||0)+'</span><span>'+Math.round(h.wind_speed_10m[i])+(h.wind_gusts_10m[i]>40?' <small>('+Math.round(h.wind_gusts_10m[i])+')</small>':'')+'</span></div>').join("")+'</div>'+
-      '<p class="ghint wxsrc">'+esc(L("Vorhersage"))+': Open-Meteo · '+esc(L("Stand"))+' '+new Date(w.at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})+'</p>'}
+      '<p class="ghint wxsrc">'+esc(L("Vorhersage"))+': Open-Meteo · '+esc(L("Stand"))+' '+fmtT(w.at)+'</p>'}
   else if(w.err)body='<p class="ghint">'+esc(L("Wetter nicht verfügbar"))+' ('+esc(w.err)+')</p>';
   o.innerHTML='<div class="a2box wxbox"><button type="button" class="xclose" data-wxx aria-label="'+esc(L("Schliessen"))+'">×</button><h3>'+esc(L("Wetter"))+' · '+esc(WDL(dt)+" "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+".")+'</h3>'+
     '<p class="wxplace">'+ICS('<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',15,"lpin")+' <b>'+esc(w.p.town)+'</b> · '+esc(w.p.name)+(w.p.sc?' · '+esc(L("Szene"))+' '+esc(w.p.sc)+(w.p.t?' '+esc(w.p.t):''):'')+'</p>'+body+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-wx]");if(b)wxPopup(b.dataset.wx)});
-Object.assign(I18N,{
- "Wetterbericht":{en:"Weather report",fr:"Bulletin météo",it:"Bollettino meteo",hi:"मौसम रिपोर्ट"},
- "sonnig":{en:"sunny",fr:"ensoleillé",it:"soleggiato",hi:"धूप"},"leicht bewölkt":{en:"partly cloudy",fr:"partiellement nuageux",it:"poco nuvoloso",hi:"आंशिक बादल"},
- "bedeckt":{en:"overcast",fr:"couvert",it:"coperto",hi:"बादल छाए"},"Nebel":{en:"fog",fr:"brouillard",it:"nebbia",hi:"कोहरा"},"Niesel":{en:"drizzle",fr:"bruine",it:"pioviggine",hi:"बूंदाबांदी"},
- "Regen":{en:"rain",fr:"pluie",it:"pioggia",hi:"बारिश"},"Schnee":{en:"snow",fr:"neige",it:"neve",hi:"बर्फ"},"Regenschauer":{en:"showers",fr:"averses",it:"rovesci",hi:"बौछारें"},
- "Schneeschauer":{en:"snow showers",fr:"averses de neige",it:"rovesci di neve",hi:"बर्फ की बौछारें"},"Gewitter":{en:"thunderstorm",fr:"orage",it:"temporale",hi:"आंधी-तूफ़ान"},
- "Wind":{en:"Wind",fr:"Vent",it:"Vento",hi:"हवा"},"Böen":{en:"gusts",fr:"rafales",it:"raffiche",hi:"झोंके"},"Laut Callsheet":{en:"Callsheet says",fr:"Selon la feuille de service",it:"Secondo l’ordine del giorno",hi:"Callsheet के अनुसार"},
- "Vorhersage":{en:"Forecast",fr:"Prévision",it:"Previsione",hi:"पूर्वानुमान"},"Wetter nicht verfügbar":{en:"Weather not available",fr:"Météo indisponible",it:"Meteo non disponibile",hi:"मौसम उपलब्ध नहीं"}
-});

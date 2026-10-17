@@ -1,7 +1,7 @@
 /* =====================================================================
    HEUTE · ÄNDERUNGEN · OFFLINE · PROTOKOLL
    ===================================================================== */
-const pad2x=n=>String(n).padStart(2,"0");
+const pad2x=pad2;   /* kept as a name for older parts */
 const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+", "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+"."};
 const scKey=x=>String(x||"").toLowerCase().replace(/\s+/g,"");
 const unitItems=d=>[["1",arr(d.items)],["2",arr((d.unit2||{}).items)],["3",arr((d.unit3||{}).items)]];
@@ -63,7 +63,6 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-chgpush]")
 const OFF={busy:false};
 function offState(){try{return JSON.parse(localStorage.getItem("offline:v1")||"null")}catch(_){return null}}
 /* today (or the next working day) and the day after it */
-function offDays(){const d=todayDay();if(!d)return [];const ds=(S.days||[]).filter(x=>x.date&&x.date>=d.date).map(x=>x.date);return [...new Set(ds)].slice(0,2)}
 /* offline: no photos – only the blocking PDF pages and the floorplans, for all shooting days */
 const offAuto=()=>{try{return localStorage.getItem("offline")!=="0"}catch(_){return true}};
 async function offlinePrep(force){

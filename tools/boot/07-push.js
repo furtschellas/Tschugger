@@ -89,7 +89,7 @@ async function pushStatusLoad(){if(PST.busy)return;PST.busy=true;const d={};
 function pushStatusSec(){
   if(!PST.d){pushStatusLoad();return '<p class="ghint">'+L("Lade …")+'</p>'}
   const d=PST.d,w=d.worker,ok=t=>'<li class="ok">✓ '+t+'</li>',bad=t=>'<li class="bad">✗ '+t+'</li>';
-  const when=t=>{try{return new Date(t).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(_){return t}};
+  const when=t=>{try{return fmtDT(t)}catch(_){return t}};
   let h='<ul class="pstat">';
   h+=!window.CHATURL?bad(L("Cloudflare Worker nicht eingetragen – Push-Nachrichten gehen nur, wenn GitHub den Versand startet (oft stundenlang verspätet)."))
     :w&&w.ok?ok(L("Worker erreichbar"))+(w.push?ok(L("Sofort-Versand bereit (CREW_KEY gesetzt)")):bad(L("CREW_KEY fehlt im Worker – kein Sofort-Versand.")))+(w.cron?ok(L("Zeitplan aktiv (GH_TOKEN gesetzt)")):bad(L("GH_TOKEN fehlt im Worker – Erinnerungen werden nicht pünktlich verschickt.")))
