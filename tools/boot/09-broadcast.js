@@ -119,7 +119,7 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form[data
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+who.join(", ")+"?"))return;
   BC.busy=true;f.querySelector("button[type=submit]").disabled=true;
   try{const pl={title,body,roles:sel?BC.sel.roles:null,depts:sel?BC.sel.depts:null,by:ME.email,at:Date.now(),ch:BC.ch,push:BC.ch.push};
-    if(BC.img){const iid=await bcImgSave(BC.img.url);pl.img=iid;pl.url=bcLink(iid,title,body)}
+    if(BC.img){const iid=await bcImgSave(BC.img.url);pl.img=iid;pl.url=bcLink(iid,title,body);if(!/^📷/.test(pl.title||""))pl.title="📷 "+(pl.title||"")}   /* the notification itself cannot carry the (encrypted) picture: the camera says «tap to see it» */
     const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(pl))));
     const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
     const {F,db,auth}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});
@@ -155,8 +155,15 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-bcimgx]")){cons
 async function bcShow(id,t,b){const d=document.createElement("div");d.className="a2hs";d.id="bcview";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
   d.innerHTML='<div class="a2box bcvbox">'+(t?'<h3>'+esc(t)+'</h3>':'')+(b?'<p>'+esc(b)+'</p>':'')+'<div class="bcvimg"><p class="ghint">'+esc(L("Lade …"))+'</p></div><div class="a2b"><button type="button" class="pri" data-bcvx>'+esc(L("Schliessen"))+'</button></div></div>';
   d.addEventListener("click",ev=>{if(ev.target.closest("[data-bcvx]")||ev.target===d)d.remove()});document.body.appendChild(d);
-  try{const u=await bcImgLoad(id);d.querySelector(".bcvimg").innerHTML='<img src="'+u+'" alt="">'}catch(_){d.querySelector(".bcvimg").innerHTML='<p class="ghint">'+esc(L("Bild nicht verfügbar."))+'</p>'}}
+  const u=await bcImgTry(id);if(!d.isConnected)return;d.querySelector(".bcvimg").innerHTML=u?'<img src="'+u+'" alt="">':'<p class="ghint">'+esc(L("Bild nicht verfügbar."))+'</p>'}
+/* the picture, tried again for up to about 12 s (after opening the app from a notification sign-in and crew key come a moment later) */
+async function bcImgTry(id){for(let i=0;i<10;i++){try{return await bcImgLoad(id)}catch(_){await new Promise(r=>setTimeout(r,1200))}}return ""}
+/* push while the app is open: the pop-up shows the picture too (tap → large) */
+function bcPopImg(pp,url){const m=String(url||"").match(/#bc=([^&]+)/);if(!pp||!m)return;let id="";try{id=decodeURIComponent(m[1])}catch(_){return}
+  const w=document.createElement("div");w.className="ppimg";w.innerHTML='<span class="bcthumb ld"></span>';pp.appendChild(w);
+  bcImgTry(id).then(u=>{if(!u){w.remove();return}w.innerHTML='<img src="'+u+'" alt="">'})}
+window.bcPopImg=bcPopImg;
 function bcGo(h){const m=String(h||"").match(/#bc=([^&]+)(?:&t=([^&]*))?(?:&b=([^&]*))?/);if(!m)return false;try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}
   const dec=x=>{try{return decodeURIComponent(x||"")}catch(_){return ""}};const go=()=>{if(!ME){setTimeout(go,500);return}bcShow(dec(m[1]),dec(m[2]),dec(m[3]))};setTimeout(go,600);return true}
 bcGo(location.hash);
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const o=e.data&&e.data.open;if(o)bcGo(o);const p=e.data&&e.data.push;if(p&&/#bc=/.test(p.url||"")){setTimeout(()=>{const pp=[...document.querySelectorAll(".pushpop")].pop();if(pp)pp.addEventListener("click",()=>bcGo(p.url),{once:true})},50)}});
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const o=e.data&&e.data.open;if(o)bcGo(o);const p=e.data&&e.data.push;if(p&&/#bc=/.test(p.url||"")){setTimeout(()=>{const pp=[...document.querySelectorAll(".pushpop")].pop();if(pp){bcPopImg(pp,p.url);pp.addEventListener("click",()=>bcGo(p.url),{once:true})}},50)}});
