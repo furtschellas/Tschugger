@@ -181,6 +181,30 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Eigene Termine (verschlüsselt mit dem Crew-Schlüssel; wer sie sieht, steht verschlüsselt darin): lesen alle aus der Crew,
+    // anlegen mit «Eigene Termine erstellen», ändern und löschen nur, wer ihn angelegt hat, und Admins.
+    // gc = Termin-ID im Google Kalender (übernommene Termine; der GitHub-Lauf führt sie nach)
+    match /events/{id} {
+      allow read: if isMember() || isAdmin();
+      allow create: if (can('events.add') || isAdmin()) && request.resource.data.keys().hasOnly(['c', 'at', 'by', 'gc'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.c is string && request.resource.data.c.size() < 8000;
+      allow update: if ((resource.data.by == request.auth.uid && can('events.add')) || isAdmin())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['c'])
+        && request.resource.data.c is string && request.resource.data.c.size() < 8000;
+      allow delete: if resource.data.by == request.auth.uid || isAdmin();
+    }
+
+    // Google Kalender: geheime iCal-Adresse nur für «Einstellungen»; die gelesenen Termine (verschlüsselt) für alle,
+    // die Termine erstellen dürfen. Geschrieben wird gcal/feed nur vom GitHub-Lauf (Dienstkonto).
+    match /secret/gcal {
+      allow read, write: if can('settings');
+    }
+    match /gcal/{doc} {
+      allow read: if can('events.add') || isAdmin();
+      allow write: if false;
+    }
+
     // Lunch-Menüs und Zwischenverpflegung pro Drehtag und Unit: nur Catering-Rolle und Admins
     match /menus/{date} {
       allow read: if isMember() || isAdmin();
