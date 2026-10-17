@@ -131,6 +131,7 @@ async def owner_tests(p, port):
     check("Eigene Termine: Knopf «+ Termin» neben dem Titel", await E("!!document.querySelector('#view .myhead [data-oeadd]')"))
     await E("document.querySelector('#view [data-oeadd]').click()"); await pg.wait_for_timeout(800)
     await pg.fill("#oedlg [name=ti]", "Testprobe Funktion"); await pg.fill("#oedlg [name=t1]", "09:00")
+    await E("document.querySelector('#oedlg [name=da]').value=new Date(Date.now()+864e5).toISOString().slice(0,10)")   # tomorrow: today 09:00 is gone from «Meine Termine» after 14:00
     await pg.check("#oedlg input[name=oem][value=sel]"); await pg.check('#oedlg [data-oek="roles"][value="crew"]')
     await pg.click("#oedlg button[type=submit]"); await pg.wait_for_timeout(1500)
     ev = await E("""(async()=>{const ks=Object.keys(window.__db).filter(k=>k.startsWith('events/'));if(!ks.length)return null;const d=window.__db[ks[0]];const key=await getDataKey();
@@ -260,7 +261,7 @@ async def owner_tests(p, port):
     await E("""TST.d={at:Date.now(),sha:'abc1234',ok:false,n:3,fail:1,suites:[{name:'App',ok:true,n:2,fail:0,checks:[{n:'a',ok:true},{n:'b',ok:true}]},{name:'Firestore-Regeln',ok:false,n:1,fail:1,checks:[{n:'c',ok:false}]}]};S.tab='admin';ADM.sub='log';render()""")
     await pg.wait_for_timeout(500)
     lg = await E("({su:document.querySelectorAll('#view .tstsec .tstsu').length,bad:document.querySelectorAll('#view .tstsec .tstsu.bad[open]').length,open:document.querySelector('#view .tstsec').open})")
-    check("Log: Testresultate je Teil, Fehler offen", lg == {"su": 2, "bad": 1, "open": True}, lg)
+    check("Log: Testresultate je Teil, Teile zugeklappt bis man sie öffnet", lg == {"su": 2, "bad": 0, "open": True}, lg)
     await E("window.CHATURL=window.CHATURL||'https://worker.test';render()"); await pg.wait_for_timeout(300)
     await E("document.querySelector('#view [data-tstall]').click()"); await pg.wait_for_timeout(200)
     al = await E("(()=>{const b=document.querySelector('#view [data-tstall]').closest('.tstsec');return [b,...b.querySelectorAll('details')].every(d=>d.open)})()")
