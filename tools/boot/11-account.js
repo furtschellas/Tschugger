@@ -183,3 +183,10 @@ Object.assign(I18N,{
  "Wähle «Tschugger Tigerblood deinstallieren».":{fr:"Choisis « Désinstaller Tschugger Tigerblood ».",it:"Scegli «Disinstalla Tschugger Tigerblood».",en:"Choose “Uninstall Tschugger Tigerblood”."},
  "Dein Konto und deine Einstellungen bleiben erhalten – du kannst die App jederzeit im Browser öffnen oder wieder installieren.":{fr:"Ton compte et tes réglages sont conservés – tu peux rouvrir l’app dans le navigateur ou la réinstaller à tout moment.",it:"Il tuo account e le impostazioni restano – puoi riaprire l’app nel browser o reinstallarla in qualsiasi momento.",en:"Your account and settings are kept – you can open the app in the browser or install it again at any time."}
 });
+
+/* the app is installed but opened in the browser: point to the installed app once per session
+   (a web page cannot switch to the installed app itself; links and push messages open it where the browser supports it) */
+setTimeout(async()=>{try{if(typeof isStandalone==="function"&&isStandalone())return;if(sessionStorage.getItem("instHint"))return;
+  if(typeof window.a2hsCheck!=="function"||await window.a2hsCheck()!=="installed")return;sessionStorage.setItem("instHint","1");
+  if(typeof showMsg==="function")showMsg(L("Die App ist auf diesem Gerät installiert – öffne sie am besten über das App-Icon."),7000)}catch(_){}},4000);
+Object.assign(I18N,{"Die App ist auf diesem Gerät installiert – öffne sie am besten über das App-Icon.":{fr:"L’app est installée sur cet appareil – ouvre-la plutôt avec l’icône de l’app.",it:"L’app è installata su questo dispositivo – aprila meglio dall’icona dell’app.",en:"The app is installed on this device – best open it from the app icon."}});

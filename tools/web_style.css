@@ -830,3 +830,10 @@ html body #view .tstsec>summary.lsum,html body #view .lsum{display:grid;grid-tem
 .lsum .lss::before,.lsum .lst::before{content:" · "}
 html body #view .lsum .tstall{margin:0;align-self:start}
 @media (max-width:600px){.lsum .lsh b{display:block}.lsum .lss,.lsum .lst{display:block;font-size:12px;color:var(--muted)}.lsum .lss::before,.lsum .lst::before{content:none}}
+/* progress ring around the open/close button while a test runs */
+html body #view .tstall.prog{position:relative;border-color:transparent}
+html body #view .tstall.prog::before{content:"";position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p,0)*1%),var(--rule) 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px))}
+html body #view .tstall.prog.ind::before{background:conic-gradient(var(--accent) 0 25%,var(--rule) 25%);animation:tstspin 1s linear infinite}
+@keyframes tstspin{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion:reduce){html body #view .tstall.prog.ind::before{animation-duration:3s}}
