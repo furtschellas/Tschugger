@@ -5,7 +5,7 @@ const CACHE="crew-app-v9";
 const PAGES_MAX=4000;   /* PDF pages and floorplans kept for offline use: at most this many, the oldest go first */
 const SHELL=["./","index.html","manifest.webmanifest","clap.svg","clap-180.png","clap-192.png","clap-512.png","clap-maskable-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});
-self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=="crew-vc").map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 let TRIMT=null;
 const trimSoon=()=>{clearTimeout(TRIMT);TRIMT=setTimeout(()=>caches.open(CACHE).then(async c=>{const ks=(await c.keys()).filter(q=>/\/blk\//.test(q.url));
   if(ks.length>PAGES_MAX)await Promise.all(ks.slice(0,ks.length-PAGES_MAX).map(q=>c.delete(q)))}).catch(()=>{}),5000)};
@@ -16,6 +16,9 @@ self.addEventListener("fetch",e=>{
   const same=u.origin===self.location.origin;
   const lib=u.hostname==="www.gstatic.com"&&u.pathname.startsWith("/firebasejs/");
   const font=u.hostname==="fonts.googleapis.com"||u.hostname==="fonts.gstatic.com";
+  /* vCard: the app puts the contact into the «crew-vc» cache and opens ./vc/<id>.vcf – served here as a real
+     contact file (the phone shows «Kontakt hinzufügen»); nothing goes over the network, no crew data in the address */
+  if(same&&/\/vc\/[0-9a-z]+\.vcf$/.test(u.pathname)){e.respondWith(caches.open("crew-vc").then(c=>c.match(r.url)).then(res=>res||new Response("",{status:404})).catch(()=>new Response("",{status:404})));return}
   if(same&&/data\.enc\.json$/.test(u.pathname))return;
   /* small status files are asked for with «?t=…» every few minutes: never stored, otherwise the cache grows without end */
   if(same&&u.search&&/\/(stamp\.json|status\.json|version\.txt|script\.enc\.json)$/.test(u.pathname))return;

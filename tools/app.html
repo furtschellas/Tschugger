@@ -1147,15 +1147,25 @@ function saveVCard(p,g){
   if(/Android/i.test(navigator.userAgent)){
     const x=(k,v)=>v?"S."+k+"="+encodeURIComponent(String(v).trim())+";":"";
     location.href="intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;"+x("name",p.name)+x("phone",p.phone&&String(p.phone).replace(/[^\d+]/g,""))+"i.phone_type=2;"+x("email",p.email)+x("job_title",p.role)+x("company","TSCHUGGER Tigerblood")+"end";
+    /* if the contacts app did not open (browser blocks intents), fall back to the .vcf file */
+    setTimeout(()=>{if(document.visibilityState==="visible"&&document.hasFocus())saveVcf(vCardText(p,g),String(p.name||"").replace(/[\\/:*?"<>|]/g,"").trim()||"Kontakt",true)},1500);
     return;
   }
   saveVcf(vCardText(p,g),String(p.name||"").replace(/[\\/:*?"<>|]/g,"").trim()||"Kontakt");
 }
 function allVCards(){let out="",n=0;for(const g of S.crew)for(const p of (g.people||[]))if(p.name&&(p.phone||p.email)){out+=vCardText(p,g);n++}return {text:out,n}}
-function saveVcf(v,name){
-  const fn=name+".vcf";
+function saveVcf(v,name,file){
+  const fn=name+".vcf",dataUrl=()=>{location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(v)};
   const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-  if(ios){location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(v);return}
+  /* iPhone: newer iOS versions block opening «data:» addresses (nothing happened) – the service worker serves the
+     contact as a real .vcf from this site instead; «data:» only when no service worker is running */
+  if(ios&&!file){
+    if(window.caches&&navigator.serviceWorker&&navigator.serviceWorker.controller){
+      const url=new URL("vc/"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)+".vcf",location.href).href;
+      caches.open("crew-vc").then(async c=>{for(const k of await c.keys())await c.delete(k);
+        await c.put(url,new Response(v,{headers:{"Content-Type":"text/vcard;charset=utf-8","Content-Disposition":"inline; filename*=UTF-8''"+encodeURIComponent(fn)}}));location.href=url}).catch(dataUrl);
+    }else dataUrl();
+    return}
   try{const u=URL.createObjectURL(new Blob([v],{type:"text/vcard;charset=utf-8"}));const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
   catch(_){location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(v)}
 }
