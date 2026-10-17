@@ -16,7 +16,7 @@ window.addEventListener("unhandledrejection",e=>{console.warn("unhandled",e.reas
 window.addEventListener("error",e=>{console.warn("error",e.message);try{if(!document.getElementById("view").innerHTML.trim())render()}catch(_){}});
 /* ---------- start ---------- */
 applyStatic();
-loadCache();
+window.CACHEOK=loadCache();
 render();
 (async()=>{
   const b=$("#refresh");b.hidden=false;

@@ -46,6 +46,8 @@ const PENDING_KEY="crewprofile:pending";
 const splitName=n=>{const p=String(n||"").trim().split(/\s+/).filter(Boolean);return p.length?{firstName:p[0],lastName:p.slice(1).join(" ")}:{firstName:"",lastName:""}};
 function crewPerson(email){const e=lc(email);if(!e)return null;for(const g of S.crew)for(const p of (g.people||[]))if(lc(p.email)===e)return p;return null}
 let FB=null,ME=null,MEMBER=null,DATAKEY=null,LASTSTAMP=null;
+/* stamp of the data this device has stored: if the file online has the same stamp, the 0.8 MB file is neither loaded nor decrypted again */
+try{if(localStorage.getItem(CACHE_KEY))LASTSTAMP=localStorage.getItem("dstamp:v1")||null}catch(_){}
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const lc=s=>String(s||"").trim().toLowerCase();
 /* main admin is fixed; further admins are listed by the main admin in Firestore admins/{email} */

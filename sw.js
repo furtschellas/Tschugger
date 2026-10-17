@@ -5,14 +5,19 @@ const CACHE="crew-app-v9";
 const PAGES_MAX=4000;   /* PDF pages and floorplans kept for offline use: at most this many, the oldest go first */
 const SHELL=["./","index.html","manifest.webmanifest","clap.svg","clap-180.png","clap-192.png","clap-512.png","clap-maskable-512.png","n-termin.png","n-change.png","n-push.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});
-self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=="crew-vc").map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=="crew-vc"&&k!=="crew-good").map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 let TRIMT=null;
 const trimSoon=()=>{clearTimeout(TRIMT);TRIMT=setTimeout(()=>caches.open(CACHE).then(async c=>{const ks=(await c.keys()).filter(q=>/\/blk\//.test(q.url));
   if(ks.length>PAGES_MAX)await Promise.all(ks.slice(0,ks.length-PAGES_MAX).map(q=>c.delete(q)))}).catch(()=>{}),5000)};
 const put=(r,res)=>{if(res&&(res.ok||res.type==="opaque")){const cp=res.clone();caches.open(CACHE).then(c=>c.put(r,cp)).catch(()=>{})}return res};
+/* the last app version that started without any error is kept («crew-good»); if a new version does not start,
+   the page reloads itself with «?safe=1» and gets that version instead */
+self.addEventListener("message",e=>{if(!e.data||!e.data.good)return;const url=e.source&&e.source.url||"";
+  e.waitUntil(caches.open(CACHE).then(c=>c.match(url,{ignoreSearch:true}).then(m=>m||c.match("index.html",{ignoreSearch:true}))).then(m=>m?caches.open("crew-good").then(g=>g.put("good.html",m.clone())):null).catch(()=>{}))});
 self.addEventListener("fetch",e=>{
   const r=e.request;if(r.method!=="GET")return;
   const u=new URL(r.url);
+  if(r.mode==="navigate"&&u.searchParams.has("safe")){e.respondWith(caches.open("crew-good").then(g=>g.match("good.html")).then(m=>m||fetch(r)).catch(()=>fetch(r)));return}
   const same=u.origin===self.location.origin;
   const lib=u.hostname==="www.gstatic.com"&&u.pathname.startsWith("/firebasejs/");
   const font=u.hostname==="fonts.googleapis.com"||u.hostname==="fonts.gstatic.com";

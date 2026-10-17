@@ -269,6 +269,18 @@ async def owner_tests(p, port):
       for(const t of tabsOn().concat(['acct','admin','my'])){S.tab=t;render();await new Promise(r=>setTimeout(r,60));scan()}for(const k of ['users','roles','docs','set','log']){S.tab='admin';ADM.sub=k;render();await new Promise(r=>setTimeout(r,60));scan()}S.tab='today';render();return [...bad].slice(0,12)})()""")
     check("Alle Symbol-Knöpfe zeigen beim Darüberfahren ihre Funktion", nt == [], nt, public=True)
 
+    # stability: errors are reported without data (once), the worker version is checked, unchanged data is not loaded again
+    er = await E("""(async()=>{ERRN=0;ERRSENT.clear();localStorage.removeItem('errsent:v1');__ERRS.push({m:'boom at x@y.ch +41 79 123 45 67',f:'12-admin.js',l:7,t:Date.now()});
+      await errReport();const a=Object.values(window.__db).filter(d=>d&&d.op==='error');const one=a.length;__ERRS.push({m:'boom at x@y.ch +41 79 123 45 67',f:'12-admin.js',l:7});await errReport();
+      const s=(a[0]||{}).sum||'';return {one,again:Object.values(window.__db).filter(d=>d&&d.op==='error').length,clean:!/@|\\d{3} \\d{2}/.test(s),file:s.includes('12-admin.js')}})()""")
+    check("Stabilität: Fehler werden ohne Daten einmal an die Owner gemeldet (Log)", er == {"one": 1, "again": 1, "clean": True, "file": True}, er, public=True)
+    ww = await E("(()=>{WK.v='2000-01-01';WK.at=Date.now();S.tab='admin';ADM.sub='log';render();const w=!!document.querySelector('#view .wkwarn');WK.v=window.WORKERVER;render();const n=!document.querySelector('#view .wkwarn');return {warn:w,ok:n}})()")
+    check("Stabilität: veralteter Worker wird in Log/Tests gemeldet, aktueller nicht", ww == {"warn": True, "ok": True}, ww, public=True)
+    sk = await E("""(async()=>{const st=LASTSTAMP;let enc=0;const oF=fetchEnc,oS=fetchStamp;fetchEnc=async()=>{enc++;return oF()};fetchStamp=async()=>({s:'x1'});LASTSTAMP='x1';window.CACHEOK=true;
+      const r=await loadOnce(false);fetchEnc=oF;fetchStamp=oS;LASTSTAMP=st;return {r,enc}})()""")
+    check("Performance: unveränderte Daten werden nicht nochmals geladen und entschlüsselt", sk == {"r": True, "enc": 0}, sk, public=True)
+    check("Stabilität: Rückfall auf die letzte funktionierende Version vorbereitet (Wächter, App-Version)", await E("typeof window.__ERRS==='object'&&!!window.APPVER&&window.APPVER.length>=8&&!!window.__APPOK"))
+
     # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
     ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
       r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")

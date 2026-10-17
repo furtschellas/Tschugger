@@ -999,3 +999,10 @@ Object.assign(I18N,{
 Object.assign(I18N,{
 "Die App ist auf diesem Gerät installiert – öffne sie am besten über das App-Icon.":{fr:"L’app est installée sur cet appareil – ouvre-la plutôt avec l’icône de l’app.",it:"L’app è installata su questo dispositivo – aprila meglio dall’icona dell’app.",en:"The app is installed on this device – best open it from the app icon."}
 });
+Object.assign(I18N,{
+ "App-Fehler":{fr:"Erreur de l’app",it:"Errore dell’app",en:"App error"},
+ "gemeldet":{fr:"signalée",it:"segnalato",en:"reported"},
+ "Cloudflare Worker veraltet":{fr:"Worker Cloudflare obsolète",it:"Worker Cloudflare obsoleto",en:"Cloudflare worker out of date"},
+ "Er läuft mit Version {a}, die App erwartet {b}. Bitte den Code aus tools/chat_worker.js in Cloudflare einsetzen.":{fr:"Il tourne en version {a}, l’app attend {b}. Merci de copier le code de tools/chat_worker.js dans Cloudflare.",it:"Gira con la versione {a}, l’app si aspetta {b}. Inserisci il codice di tools/chat_worker.js in Cloudflare.",en:"It runs version {a}, the app expects {b}. Please paste the code from tools/chat_worker.js into Cloudflare."},
+ "unbekannt":{fr:"inconnue",it:"sconosciuta",en:"unknown"}
+});
