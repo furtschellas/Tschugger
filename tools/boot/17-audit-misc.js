@@ -44,7 +44,7 @@ document.addEventListener("input",e=>{const i=e.target.closest("[data-audq]");if
 document.addEventListener("click",e=>{if(e.target.closest("[data-audre]")){AUD.list=null;render()}});
 /* the change log to open (closed by default; stays open while you work on the page) */
 function auditSec(){const h=auditSecInner();if(!AUD.list)return h;
-  return '<details class="tstsec audd"'+(AUD.open||AUD.q?' open':'')+'><summary><b>'+esc(L("Log"))+'</b> · <span class="tsth">'+AUD.list.length+' '+esc(L("Einträge"))+'</span></summary>'+h+'</details>'}
+  return '<details class="tstsec audd"'+(AUD.open||AUD.q?' open':'')+' data-lsec="aud"><summary><b>'+esc(L("Log"))+'</b> · <span class="tsth">'+AUD.list.length+' '+esc(L("Einträge"))+'</span></summary>'+h+'</details>'}
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("audd"))AUD.open=e.target.open},true);
 Object.assign(I18N,{
  "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi appuntamenti",hi:"मेरे अगले कार्यक्रम"},
@@ -146,7 +146,7 @@ function testsSec(){
   const dt=new Date(d.at||0),when=dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit"})+" "+dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"});
   const suites=Array.isArray(d.suites)&&d.suites.length?d.suites:[{name:"",ok:d.ok,n:d.n,fail:d.fail,checks:d.checks||[]}];
   const head=d.crash?'✗ '+L("Tests abgebrochen"):d.ok?'✓ '+L("{n} von {n} bestanden").split("{n}").join(d.n):'✗ '+L("{f} von {n} fehlgeschlagen").replace("{f}",d.fail).replace("{n}",d.n);
-  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(d.ok||TST.closed?'':' open')+(TST.open?' open':'')+'><summary><b>'+esc(L("Automatische Tests"))+'</b>'+'<button type="button" class="tstall" data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'+' · <span class="tsth">'+esc(head)+'</span> · '+esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':'')+'</summary>'+
+  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(TST.open?' open':'')+' data-lsec="tst"><summary><b>'+esc(L("Automatische Tests"))+'</b>'+'<button type="button" class="tstall" data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'+' · <span class="tsth">'+esc(head)+'</span> · '+esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':'')+'</summary>'+
     '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
     suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
       return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'" data-su="'+esc(su.name)+'"'+(TST.su[su.name]?' open':'')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
@@ -157,10 +157,16 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d
 
 /* open/close everything in the test box; start the tests by hand (through the worker: GitHub «Website veröffentlichen» with all tests) */
 document.addEventListener("click",e=>{const a=e.target.closest("[data-tstall]");if(!a)return;e.preventDefault();e.stopPropagation();const box=a.closest(".tstsec");if(!box)return;
-  const all=[box,...box.querySelectorAll("details")];const open=!all.every(d=>d.open);all.forEach(d=>{d.open=open;if(d.dataset.su)TST.su[d.dataset.su]=open});TST.open=open;TST.closed=!open},true);
+  const all=[box,...box.querySelectorAll("details")];const open=!all.every(d=>d.open);all.forEach(d=>{d.open=open;if(d.dataset.su)TST.su[d.dataset.su]=open});TST.open=open},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="tst")TST.open=d.open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.su)TST.su[d.dataset.su]=d.open},true);
 document.addEventListener("click",async e=>{if(!e.target.closest("[data-tstrun]")||!isAdmin()||TST.run)return;TST.run=true;TST.msg="";render();
   try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/tests",{method:"POST",headers:{Authorization:"Bearer "+tok}});const j=await r.json().catch(()=>({}));
     TST.msg=r.ok?L("Tests gestartet – das Ergebnis erscheint hier in etwa 10–15 Minuten."):r.status===404?L("Der Worker kennt diese Funktion noch nicht – bitte den neuen Code aus tools/chat_worker.js einsetzen."):(j.error||("HTTP "+r.status));
     if(r.ok){const t0=Date.now(),before=TST.d&&TST.d.at;const poll=async()=>{if(Date.now()-t0>25*60e3){TST.run=false;render();return}TST.d=null;await testsLoad();if(TST.d&&TST.d.at&&TST.d.at!==before){TST.run=false;TST.msg="";render();return}setTimeout(poll,60e3)};setTimeout(poll,90e3)}else TST.run=false}
   catch(err){TST.run=false;TST.msg=L("Fehler:")+" "+(err.message||err)}render()});
+
+/* Log/Tests: all boxes closed when the page is opened; one button opens or closes all of them (open state only for this visit) */
+window.logTopHTML=function(){return '<div class="logtop"><button type="button" class="pillbtn" data-logall>'+TST_ALL+' '+esc(L("Alle auf- oder zuklappen"))+'</button></div>'};
+document.addEventListener("click",e=>{if(!e.target.closest("[data-logall]"))return;const v=document.getElementById("view");const ds=[...v.querySelectorAll("details[data-lsec]")];const open=!ds.every(d=>d.open);
+  ds.forEach(d=>{d.open=open});TST.open=open;AUD.open=open;if(typeof RTS!=="undefined")RTS.open=open;if(typeof DCK!=="undefined")DCK.open=open});

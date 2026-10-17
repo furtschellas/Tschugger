@@ -774,3 +774,4 @@ html body :is(#view,.a2box) .arb{display:flex;flex-wrap:wrap;gap:8px;align-items
 html body #view :is(.asec,.asetd,.setgrp,.paccd,.docd,.tstsec,.bcdev,.catbox){border-radius:var(--r-card);margin:10px 0}
 html[data-theme="light"]{--field-bg:#fff}
 .audd .admins.audit{border:0;background:transparent;padding:0;margin:6px 0 0}.audd .admins.audit>h3{display:none}.audd:not(.bad) .tsth{color:var(--muted)!important;font-weight:400}
+.logtop{display:flex;justify-content:flex-end;margin:6px 0 4px}

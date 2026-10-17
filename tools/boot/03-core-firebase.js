@@ -50,8 +50,10 @@ const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const lc=s=>String(s||"").trim().toLowerCase();
 /* main admin is fixed; further admins are listed by the main admin in Firestore admins/{email} */
 let COADMIN=false;
-const isOwner=()=>!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
-const isAdmin=()=>isOwner()||!!(COADMIN&&ME&&ME.emailVerified);
+/* SIMROLE: App-Verwaltung → Log → «Rollen testen» looks at the app with the rights of another role for a moment */
+let SIMROLE=null;
+const isOwner=()=>!SIMROLE&&!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
+const isAdmin=()=>SIMROLE?!!SIMROLE.adm:(isOwner()||!!(COADMIN&&ME&&ME.emailVerified));
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
 /* permissions, grouped by main topic (topic in capitals, short labels so they fit on one line on phones) */
 const PERMS=[["view.plan","Drehplan sehen","Drehplan"],["view.prep","Prep sehen","Drehplan"],["view.dispo","Callsheet sehen","Drehplan"],["view.script","Drehbuch sehen","Drehbuch"],["view.blocking","Blocking sehen","Drehbuch"],["view.crew","Crewliste sehen","Crewliste"],["view.phone","Telefon sehen","Crewliste"],["view.email","E-Mail sehen","Crewliste"],["contacts.extra","Externe Kontakte sehen","Crewliste"],["crew.food","Essen sehen","Crewliste"],["crew.bday","Geburtstage sehen","Crewliste"],["crew.vcf","VCF exportieren","Crewliste"],["view.mycal","Meine Termine sehen","Termine"],["mycal.all","Alle Termine sehen","Termine"],["push.send","Push-Nachrichten senden","Termine"],["events.add","Eigene Termine erstellen","Termine"],["users.view","Benutzer sehen","Benutzer"],["users.edit","Benutzer ändern","Benutzer"],["users.invite","Benutzer einladen","Benutzer"],["users.requests","Anfragen freischalten","Benutzer"],["roles.view","Rollen sehen","Benutzer"],["roles.assign","Rollen pflegen","Benutzer"],["roles.edit","Rollen bearbeiten","Benutzer"],["settings","Einstellungen ändern","App"],["audit.view","Protokoll sehen","App"],["data.check","Dokumente prüfen","App"]];
