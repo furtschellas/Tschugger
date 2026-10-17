@@ -170,13 +170,19 @@ document.addEventListener("click",e=>{const ae=document.activeElement;if(ae&&/^(
 document.addEventListener("change",e=>{if(!e.target.matches||!e.target.matches("select"))return;const ae=document.activeElement;if(ae&&ae!==e.target&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&ae.form&&!ae.form.contains(e.target))try{ae.blur()}catch(_){}},true);
 /* main topics (bottom bar): English names in every language except Hindi */
 function hiTabs(){document.querySelectorAll("nav.tabs button[data-tab] .lbl").forEach(l=>{if(!l.dataset.orig)l.dataset.orig=l.textContent.trim();const o=l.dataset.orig;if(!l.dataset.so&&l.dataset.s)l.dataset.so=l.dataset.s;const hi=LANG==="hi"&&I18N[o]&&I18N[o].hi;l.textContent=hi?I18N[o].hi:o;if(l.dataset.so)l.dataset.s=hi?I18N[o].hi:l.dataset.so})}
-{const _r=render;render=function(){const x=_r.apply(this,arguments);try{hiTabs()}catch(_){}try{chatFab()}catch(_){}try{bcButton()}catch(_){}return x}}
+{const _r=render;render=function(){const x=_r.apply(this,arguments);try{hiTabs()}catch(_){}try{chatFab()}catch(_){}try{bcButton()}catch(_){}try{iconTitles()}catch(_){}return x}}
+/* every button that shows only a symbol gets a tooltip with its function (from its label for screen readers) */
+function iconTitles(){document.querySelectorAll("button[aria-label]:not([title]),a[aria-label]:not([title])").forEach(b=>{b.title=b.getAttribute("aria-label")})}
+window.iconTitles=iconTitles;document.addEventListener("DOMContentLoaded",()=>{try{iconTitles()}catch(_){}});new MutationObserver(()=>{try{iconTitles()}catch(_){}}).observe(document.documentElement,{childList:true,subtree:true});
 
 /* results of the automatic tests (GitHub, before every release of new code): App-Verwaltung → Log, collapsible */
 const TST={d:null,busy:false,run:false,msg:"",open:false,closed:false,su:{}}; /* parts stay closed until opened (only for this visit) */
 const TST_RUN='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10"/><path d="M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/></svg>';
 const TST_ALL='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>';
 async function testsLoad(){if(TST.busy)return;TST.busy=true;try{const r=await fetch("./tests.json?t="+Date.now(),{cache:"no-store"});TST.d=r.ok?await r.json():{none:true}}catch(_){TST.d={none:true}}TST.busy=false;render()}
+/* buttons in Log/Tests: only the symbol (the text is the tooltip and for screen readers) */
+const TST_LOAD='<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>';
+const tstIco=(attr,ic,t,dis)=>'<button type="button" class="cico tsticon" '+attr+(dis?' disabled':'')+' aria-label="'+esc(L(t))+'" title="'+esc(L(t))+'">'+ic+'</button>';window.tstIco=tstIco;
 /* open/close button at the right end of every box in Log/Tests */
 /* while a test runs, the button shows the progress as a ring around it (pct = percent, null = running, unknown how far) */
 function tstAllBtn(pg){const p=pg&&pg.pct!=null?Math.max(0,Math.min(100,pg.pct)):null;
@@ -192,12 +198,13 @@ function testsSec(){
     suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
       return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'" data-su="'+esc(su.name)+'"'+(TST.su[su.name]?' open':'')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
         '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+(c.e?'<br><small>'+esc(c.e)+'</small>':'')+'</li>').join("")+'</ul>'+(su.name?'</details>':'')}).join("")+
-    '<div class="arb tstbtns">'+(window.CHATURL&&isAdmin()?'<button type="button" class="pillbtn" data-tstrun'+(TST.run?' disabled':'')+'>'+TST_RUN+esc(L(TST.run?"Tests laufen …":"Tests jetzt starten"))+'</button>':'')+'<button type="button" class="pillbtn" data-tstre>↻ '+esc(L("Neu laden"))+'</button></div>'+(TST.msg?'<p class="ghint">'+esc(TST.msg)+'</p>':'')+'</details>';
+    '<div class="arb tstbtns">'+(window.CHATURL&&isAdmin()?tstIco("data-tstrun",TST_RUN,TST.run?"Tests laufen …":"Tests jetzt starten",TST.run):'')+tstIco("data-tstre",TST_LOAD,"Resultate neu laden")+'</div>'+(TST.msg?'<p class="ghint">'+esc(TST.msg)+'</p>':'')+'</details>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d=null;render()}});
 
 /* open/close everything in the test box; start the tests by hand (through the worker: GitHub «Website veröffentlichen» with all tests) */
-document.addEventListener("click",e=>{const a=e.target.closest("[data-tstall]");if(!a)return;e.preventDefault();e.stopPropagation();const box=a.closest(".tstsec");if(!box)return;
+document.addEventListener("click",e=>{const a=e.target.closest("[data-tstall]");if(!a)return;e.preventDefault();e.stopPropagation();const box=a.closest(".tstsec,.dckflat");if(!box)return;
+  if(box.tagName!=="DETAILS"){const ds=[...box.querySelectorAll("details")],op=!ds.every(d=>d.open);ds.forEach(d=>{d.open=op;if(d.dataset.su)TST.su[d.dataset.su]=op});return}   /* own tab «Test»: the areas themselves */
   const open=!box.open;box.open=open;if(!open)box.querySelectorAll("details").forEach(d=>{d.open=false;if(d.dataset.su)TST.su[d.dataset.su]=false});
   const k=box.dataset.lsec;if(k==="tst")TST.open=open;else if(k==="aud")AUD.open=open;else if(k==="rt"&&typeof RTS!=="undefined")RTS.open=open;else if(k==="dck"&&typeof DCK!=="undefined")DCK.open=open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="tst")TST.open=d.open},true);

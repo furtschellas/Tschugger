@@ -838,3 +838,8 @@ html body #view .tstall.prog.ind::before{background:conic-gradient(var(--accent)
 @keyframes tstspin{to{transform:rotate(1turn)}}
 @media (prefers-reduced-motion:reduce){html body #view .tstall.prog.ind::before{animation-duration:3s}}
 html body #view .today .tloc .tlocad{min-height:0;height:auto;padding:0;border:0;background:none;width:auto;text-align:left;font-size:inherit;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+/* results in colour: parts in order green, with problems red, notes in the accent colour */
+html body #view .tstsu:not(.bad)>summary{color:#2e9d5b}html body #view .tstsu.bad>summary{color:#d6455d}
+html body #view .lsum .tsth{font-weight:600}html body #view .tstsec:not(.bad) .lsum .tsth,html body #view .dckflat:not(.bad) .lsum .tsth{color:#2e9d5b}html body #view .tstsec.bad .lsum .tsth,html body #view .dckflat.bad .lsum .tsth{color:#d6455d}
+html body #view .dckflat .lsum{margin:0 0 8px}
+html body #view .tstbtns{justify-content:flex-end;gap:8px}html body #view .tstbtns .tsticon{width:36px;height:36px;min-height:0;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--accent)}
