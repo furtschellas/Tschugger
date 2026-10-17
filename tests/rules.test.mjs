@@ -119,6 +119,12 @@ await check("Sicherheit: Nachricht an alle – Empfänger nachträglich nicht ä
 await check("Sicherheit: Protokoll nur im eigenen Namen", assertFails(addDoc(collection(as("crew"), "audit"), { by: "other@test.ch", at: 1, op: "x", col: "x", id: "x", sum: "x" })));
 await check("Sicherheit: Protokolleinträge nicht änderbar", assertFails(updateDoc(doc(as("owner"), "audit/a1"), { sum: "y" })));
 
+await check("Push-Bild: ohne «Push senden» nicht hochladen", assertFails(addDoc(collection(as("crew"), "bcimg"), { c: "x", at: serverTimestamp(), by: "uCrew" })));
+await check("Push-Bild: mit «Push senden» hochladen", assertSucceeds(addDoc(collection(as("power"), "bcimg"), { c: "x", at: serverTimestamp(), by: "uPower" })));
+await check("Push-Bild: Crew darf es ansehen", assertSucceeds(getDocs(collection(as("crew"), "bcimg"))));
+await check("Push-Bild: nicht eingeladene Person nicht", assertFails(getDocs(collection(as("stranger"), "bcimg"))));
+await check("Push-Bild: zu gross wird abgelehnt", assertFails(addDoc(collection(as("power"), "bcimg"), { c: "x".repeat(950000), at: serverTimestamp(), by: "uPower" })));
+
 // ---------- prefs, log, everything else ----------
 await check("Einstellungen der Person: nur die eigenen", assertFails(getDoc(doc(as("crew"), "prefs/uOther"))));
 await check("Einstellungen der Person: höchstens 16 Felder", assertFails(setDoc(doc(as("crew"), "prefs/uCrew"), Object.fromEntries([...Array(17)].map((_, i) => ["k" + i, "v"])))));

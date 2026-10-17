@@ -33,7 +33,7 @@ const API_KEY = "AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ";
 const SITE = "https://furtschellas.github.io/Tschugger/";
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
-const VERSION = "2026-10-17";
+const VERSION = "2026-10-17b";
 
 let JWKS = null, JWKS_AT = 0;
 const b64u = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
@@ -264,7 +264,7 @@ async function broadcast(req, env, origin, ctx) {
     const part = todo.slice(i, Math.min(i + 10, i + lim - tried)); tried += part.length;
     await Promise.all(part.map(async ([did, p]) => {
       try {
-        const st = await sendPush(env, p.sub, { title: b.title || "", body: b.body || "", url: "./", tag: "b" + id }, p.k);
+        const st = await sendPush(env, p.sub, { title: b.title || "", body: b.body || "", url: /^\.\/#bc=/.test(b.url || "") ? b.url : "./", tag: "b" + id, icon: "push" }, p.k);
         if (st >= 200 && st < 300) { n++; done.push(did); } else if (st === 404 || st === 410) { gone.push(did); done.push(did); } else fail++;
       } catch (_) { fail++; }
     }));

@@ -77,16 +77,16 @@ function bcHistHTML(){
   if(!BC.hist.length)return '<p class="ghint">'+L("Noch keine Push-Nachrichten gesendet.")+'</p>';
   return '<div class="bchist">'+BC.hist.map(b=>{const dt=new Date(b.at||0);
     return '<div class="bch"><div class="bchd"><span class="bct">'+esc(dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",year:"numeric"}))+' · '+esc(dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"}))+'</span>'+(b.n!=null?'<span class="ust role">'+esc(L("{n} Geräte").replace("{n}",b.n))+'</span>':'')+'</div>'+
-      '<b class="bctt">'+esc(b.title||"")+'</b><p class="bcb">'+esc(b.body||"")+'</p>'+
+      '<b class="bctt">'+esc(b.title||"")+'</b><p class="bcb">'+esc(b.body||"")+'</p>'+(b.img?bcThumb(b.img):'')+
       '<div class="bcm"><span>'+esc(L("An"))+': '+esc(bcWho(b))+'</span>'+(b.ch?'<span>'+esc(["push","wa","sms","mail"].filter(k=>b.ch[k]).map(k=>({push:"Push",wa:"WhatsApp",sms:"SMS",mail:L("E-Mail")})[k]).join(" · "))+'</span>':'')+'<span>'+esc(L("Von"))+': '+esc(b.by||"")+'</span></div>'+bcRcptHTML(b)+
       '<div class="arb"><button type="button" class="pillbtn" data-bcre="'+esc(b.id)+'">↻ '+L("Erneut senden")+'</button></div></div>'}).join("")+'</div>';
 }
 document.addEventListener("click",async e=>{if(!e.target.closest("[data-bcclr]")||!isAdmin())return;if(!confirmSafe(L("Den ganzen Verlauf der Push-Nachrichten löschen?")))return;
-  try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"broadcasts"));for(const d of q.docs)await F.deleteDoc(F.doc(db,"broadcasts",d.id));BC.hist=[];showMsg(L("Verlauf geleert."),3000);render()}
+  try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"broadcasts"));for(const d of q.docs)await F.deleteDoc(F.doc(db,"broadcasts",d.id));try{const qi=await F.getDocs(F.collection(db,"bcimg"));for(const d of qi.docs)await F.deleteDoc(F.doc(db,"bcimg",d.id))}catch(_){}BC.hist=[];showMsg(L("Verlauf geleert."),3000);render()}
   catch(err){showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}});
 document.addEventListener("click",async e=>{const bt=e.target.closest("[data-bcre]");if(!bt||!can("push.send")||BC.busy)return;const b=(BC.hist||[]).find(x=>x.id===bt.dataset.bcre);if(!b)return;
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+bcWho(b)+"?"))return;BC.busy=true;bt.disabled=true;
-  try{const pl={title:b.title,body:b.body,roles:b.roles||null,depts:b.depts||null,by:ME.email,at:Date.now(),re:b.id};
+  try{const pl={title:b.title,body:b.body,roles:b.roles||null,depts:b.depts||null,by:ME.email,at:Date.now(),re:b.id};if(b.img){pl.img=b.img;pl.url=b.url||bcLink(b.img,b.title,b.body)}
     const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(pl))));
     const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
     const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});showMsg(await bcDeliver(ref.id),5000);BC.hist=null}
@@ -99,6 +99,7 @@ VIEWS.bcast=function(){
   return '<section class="mypage bcpage"><h2 class="pgt">'+L("Push-Nachricht senden")+'</h2><p class="ghint">'+L("Geht sofort als Push-Nachricht an alle, die Push-Nachrichten eingeschaltet haben.")+'</p>'+
     '<form class="bcform" data-bc novalidate><label>'+L("Titel")+'<input name="bt" maxlength="60" required placeholder="'+esc(L("z. B. Drehplan geändert"))+'"></label>'+
     '<label>'+L("Nachricht")+'<textarea name="bb" rows="4" maxlength="300" required placeholder="'+esc(L("Kurz und klar, max. 300 Zeichen"))+'"></textarea></label>'+
+    '<div class="bcimgf"><span class="bcil">'+esc(L("Bild (optional)"))+'</span>'+(BC.img?'<div class="bcprev"><img src="'+BC.img.url+'" alt=""><span>'+esc(Math.round(BC.img.kb))+' KB · '+BC.img.w+'×'+BC.img.h+'</span><button type="button" class="lnk" data-bcimgx>'+esc(L("Entfernen"))+'</button></div>':'<label class="pillbtn bcpick"><input type="file" accept="image/*" data-bcimg hidden>'+esc(L("Bild wählen"))+'</label>')+'<p class="ghint">'+esc(L("Wird automatisch verkleinert. Im App-Fenster der Nachricht gross sichtbar."))+'</p></div>'+
     '<fieldset class="efood"><legend>'+L("Empfänger")+'</legend><label class="ck"><input type="radio" name="bm" value="all"'+(BC.mode==="all"?' checked':'')+'> '+L("Alle")+'</label><label class="ck"><input type="radio" name="bm" value="sel"'+(BC.mode==="sel"?' checked':'')+'> '+L("Auswahl nach Rolle und/oder Abteilung")+'</label>'+
       (BC.mode==="sel"?'<p class="ahint"><b>'+L("Rollen")+'</b></p><div class="bcchk">'+roles.map(r=>ck("roles",r.id,r.name)).join("")+'</div><p class="ahint"><b>'+L("Abteilungen")+'</b></p><div class="bcchk">'+bcDepts().map(d=>ck("depts",d,HIT(d))).join("")+'</div><p class="ghint">'+L("Wer zu einer gewählten Rolle ODER Abteilung gehört, bekommt die Nachricht.")+'</p>':'')+'</fieldset>'+
     '<fieldset class="efood bcch"><legend>'+L("Senden als")+'</legend><div class="bcchk">'+
@@ -118,11 +119,44 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form[data
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+who.join(", ")+"?"))return;
   BC.busy=true;f.querySelector("button[type=submit]").disabled=true;
   try{const pl={title,body,roles:sel?BC.sel.roles:null,depts:sel?BC.sel.depts:null,by:ME.email,at:Date.now(),ch:BC.ch,push:BC.ch.push};
+    if(BC.img){const iid=await bcImgSave(BC.img.url);pl.img=iid;pl.url=bcLink(iid,title,body)}
     const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(pl))));
     const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
     const {F,db,auth}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});
-    const r=BC.ch.push?await bcDeliver(ref.id):L("Gespeichert.");if(BC.ch.mail)bcMail(pl);if(BC.sms)setTimeout(()=>bcSms(pl),BC.ch.mail?1500:0);BC.waList=BC.wa?{text:pl.title+"\n"+pl.body,list:bcRecips(pl)}:null;BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";BC.ch={push:true};f.reset();BC.hist=null}
+    const r=BC.ch.push?await bcDeliver(ref.id):L("Gespeichert.");if(BC.ch.mail)bcMail(pl);if(BC.sms)setTimeout(()=>bcSms(pl),BC.ch.mail?1500:0);BC.waList=BC.wa?{text:pl.title+"\n"+pl.body,list:bcRecips(pl)}:null;BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";BC.ch={push:true};BC.img=null;f.reset();BC.hist=null}
   catch(err){console.error(err);BC.ok=false;BC.msg=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}
   BC.busy=false;render()});
 
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("bcdev"))BC.devOpen=e.target.open},true); /* only in memory: closed again after reloading */
+
+/* ---------- pictures with push messages: made smaller on the device (max. 1280 px, JPEG), stored encrypted in bcimg/{id};
+   the message links to it (./#bc=id&t=…&b=…), tapping the notification shows text and picture in the app ---------- */
+function bcShrink(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);
+  let W=im.naturalWidth,H=im.naturalHeight,max=1280;const out=q=>{const s=Math.min(1,max/Math.max(W,H)),w=Math.round(W*s),h=Math.round(H*s);const c=document.createElement("canvas");c.width=w;c.height=h;
+    const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);return {url:c.toDataURL("image/jpeg",q),w,h}};
+  let q=.78,r=out(q);while(r.url.length>420000&&(q>.45||max>640)){if(q>.45)q-=.1;else max=Math.round(max*.8);r=out(q)}
+  r.kb=r.url.length*.75/1024;res(r)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("kein Bild"))};im.src=u})}
+async function bcImgSave(dataUrl){const {F,db}=await fb();const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(dataUrl)));const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);
+  let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
+  const ref=await F.addDoc(F.collection(db,"bcimg"),{c:btoa(bin),at:F.serverTimestamp(),by:ME.uid});return ref.id}
+const BCIMG={};
+async function bcImgLoad(id){if(BCIMG[id])return BCIMG[id];const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"bcimg",id));if(!d.exists())throw new Error("weg");
+  const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0)),key=await getDataKey();
+  BCIMG[id]=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12)));return BCIMG[id]}
+const bcLink=(id,t,b)=>"./#bc="+encodeURIComponent(id)+"&t="+encodeURIComponent(String(t||"").slice(0,60))+"&b="+encodeURIComponent(String(b||"").slice(0,300));
+function bcThumb(id){if(BCIMG[id])return '<img class="bcthumb" src="'+BCIMG[id]+'" alt="" data-bcview="'+esc(id)+'">';bcImgLoad(id).then(()=>render()).catch(()=>{});return '<span class="bcthumb ld"></span>'}
+document.addEventListener("change",async e=>{const i=e.target.closest("input[data-bcimg]");if(!i||!i.files||!i.files[0])return;const f=i.closest("form");const keep=f?{bt:f.bt.value,bb:f.bb.value}:null;
+  try{BC.img=await bcShrink(i.files[0])}catch(_){showMsg(L("Dieses Bild kann nicht gelesen werden."),4000);return}
+  render();const g=document.querySelector("[data-bc]");if(g&&keep){g.bt.value=keep.bt;g.bb.value=keep.bb}});
+document.addEventListener("click",e=>{if(e.target.closest("[data-bcimgx]")){const f=e.target.closest("form");const keep=f?{bt:f.bt.value,bb:f.bb.value}:null;BC.img=null;render();const g=document.querySelector("[data-bc]");if(g&&keep){g.bt.value=keep.bt;g.bb.value=keep.bb}return}
+  const v=e.target.closest("[data-bcview]");if(v)bcShow(v.dataset.bcview,"","")});
+/* message with picture: opened from the notification (or the history) */
+async function bcShow(id,t,b){const d=document.createElement("div");d.className="a2hs";d.id="bcview";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  d.innerHTML='<div class="a2box bcvbox">'+(t?'<h3>'+esc(t)+'</h3>':'')+(b?'<p>'+esc(b)+'</p>':'')+'<div class="bcvimg"><p class="ghint">'+esc(L("Lade …"))+'</p></div><div class="a2b"><button type="button" class="pri" data-bcvx>'+esc(L("Schliessen"))+'</button></div></div>';
+  d.addEventListener("click",ev=>{if(ev.target.closest("[data-bcvx]")||ev.target===d)d.remove()});document.body.appendChild(d);
+  try{const u=await bcImgLoad(id);d.querySelector(".bcvimg").innerHTML='<img src="'+u+'" alt="">'}catch(_){d.querySelector(".bcvimg").innerHTML='<p class="ghint">'+esc(L("Bild nicht verfügbar."))+'</p>'}}
+function bcGo(h){const m=String(h||"").match(/#bc=([^&]+)(?:&t=([^&]*))?(?:&b=([^&]*))?/);if(!m)return false;try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}
+  const dec=x=>{try{return decodeURIComponent(x||"")}catch(_){return ""}};const go=()=>{if(!ME){setTimeout(go,500);return}bcShow(dec(m[1]),dec(m[2]),dec(m[3]))};setTimeout(go,600);return true}
+bcGo(location.hash);
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const o=e.data&&e.data.open;if(o)bcGo(o);const p=e.data&&e.data.push;if(p&&/#bc=/.test(p.url||"")){setTimeout(()=>{const pp=[...document.querySelectorAll(".pushpop")].pop();if(pp)pp.addEventListener("click",()=>bcGo(p.url),{once:true})},50)}});
