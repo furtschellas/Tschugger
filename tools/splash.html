@@ -1,0 +1,16 @@
+<div id="splash" aria-hidden="true"><div class="spw"><svg class="spr" viewBox="0 0 160 160"><circle cx="80" cy="80" r="74" class="spt"/><circle cx="80" cy="80" r="74" class="spp" id="splp"/></svg><img src="clap.svg" alt="" width="119" height="119"></div></div>
+<style>#splash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#110d1c;transition:opacity .18s}#splash.out{opacity:0;pointer-events:none}
+#splash .spw{position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center}#splash img{width:119px;height:119px;border-radius:50%}
+#splash .spr{position:absolute;inset:0;transform:rotate(-90deg)}#splash circle{fill:none;stroke-width:5}#splash .spt{stroke:rgba(255,255,255,.12)}
+#splash .spp{stroke:#ff2e8a;stroke-linecap:round;stroke-dasharray:465;stroke-dashoffset:465;transition:stroke-dashoffset .25s}
+@media (prefers-color-scheme:light){html:not([data-theme="dark"]) #splash{background:#f6f2ea}}</style>
+<script>/* start screen: the logo (about the size of a five-franc coin); the ring shows how far the app has loaded and the page
+   appears the moment it is ready – also on reload. It never blocks the app: at the latest after 8 s it disappears. */
+(function(){var el=document.getElementById("splash"),c=document.getElementById("splp"),t0=Date.now(),cur=0,done=false;
+  function set(p){if(p>cur){cur=p;c.style.strokeDashoffset=String(465*(1-p/100))}}
+  function end(){if(done)return;done=true;set(100);setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove()},200)},120)}
+  function st(){if(done)return;var p=10;try{if(document.readyState!=="loading")p=30;if(window.FB)p=50;
+      var g=document.getElementById("gate");if(g&&!g.hidden&&g.offsetParent!==null&&Date.now()-t0>300)return end();
+      if(typeof S!=="undefined"&&S){if(typeof ME!=="undefined"&&ME)p=75;if(S.loaded&&(S.days||[]).length){var v=document.getElementById("view");if(v&&v.children.length)return end()}}}catch(e){}
+    set(Math.max(p,Math.min(90,cur+1)));if(Date.now()-t0>8000)return end();setTimeout(st,80)}
+  window.splashEnd=end;st()})();</script>

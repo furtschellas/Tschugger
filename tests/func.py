@@ -260,6 +260,10 @@ async def owner_tests(p, port):
     check("Anfahrt: zwei runde Knöpfe, Hotelname direkt unter «Vom Hotel», gleich hoch", len(rp) == 2 and "Hotel Moxy Sion" in rp[0]["t"] and abs(rp[0]["gap"]) <= 8 and abs(rp[0]["h"] - rp[1]["h"]) <= 2, rp)
     check("Mein Konto → App: Titel «App-Icon und App installieren»", "App-Icon und App installieren" in await E("(()=>{S.tab='acct';ACSUB='app';render();return document.getElementById('view').innerText})()"))
 
+    # Today → first location: the address opens the choice «Vom Hotel» / «Vom aktuellen Standort»
+    fl = await E("(()=>{S.tab='today';render();const b=document.querySelector('#view .tloc [data-route]');if(!b)return null;b.click();const n=document.querySelectorAll('#routepop .rtpill').length;document.querySelectorAll('#routepop').forEach(x=>x.remove());return n})()")
+    check("Today: Adresse der ersten Location öffnet die Auswahl (Hotel / Standort)", fl in (None, 2), fl, public=True)
+
     # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
     ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
       r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")

@@ -11,7 +11,7 @@ parts=sorted((T/"boot").glob("*.js"))
 assert parts, "tools/boot/*.js fehlt"
 boot=(T/"a2hs.js").read_text()+"\n"+"".join(p.read_text() for p in parts)
 body=src[:i]+"\n"+boot+"\n"+src[j:]
-body=body.replace("</style>",(T/"web_style.css").read_text()+"\n</style>\n</head>\n<body>",1)
+body=body.replace("</style>",(T/"web_style.css").read_text()+"\n</style>\n</head>\n<body>\n"+(T/"splash.html").read_text(),1)   # start screen first
 assert "claude.use" not in body.split("<script>",2)[-1].split("/* ---------- web boot")[1]
 out=(T/"web_head.html").read_text()+body.replace('<meta name="claude:viewport-fit-sides" content="cover">\n',"")+"\n</body>\n</html>\n"
 # optional: minify inline scripts/styles with esbuild (whitespace + syntax only, global names stay intact)
