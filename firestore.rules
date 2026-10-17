@@ -87,7 +87,8 @@ service cloud.firestore {
 
     // Weitere Admins: nur der Haupt-Admin verwaltet sie
     match /admins/{email} {
-      allow read: if isAdmin();
+      // die Liste (nur Adressen) sehen auch alle, die Benutzende oder Rollen sehen – sonst erscheinen Admins bei ihnen als «Keine Rolle»
+      allow read: if isAdmin() || can('users.view') || can('users.edit') || can('roles.assign') || can('roles.edit') || can('roles.view');
       allow get: if verified() && myEmail() == email;
       allow delete: if (isOwner() && !isRoot(email)) || (isAdmin() && !ownerEmail(email) && email != myEmail());
       allow create, update: if ((isOwner() && !isRoot(email)) || (isAdmin() && !ownerEmail(email))) && email != myEmail()
@@ -96,7 +97,7 @@ service cloud.firestore {
 
     // Owner: der feste Owner und alle, die ein Owner hier einträgt; nur Owner verwalten Owner
     match /owners/{email} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || can('users.view') || can('users.edit') || can('roles.assign') || can('roles.edit') || can('roles.view');
       allow get: if verified() && myEmail() == email;
       allow create, update: if isOwner() && !isRoot(email) && request.resource.data.keys().hasOnly(['addedAt']);
       allow delete: if isOwner() && !isRoot(email);
