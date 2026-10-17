@@ -214,7 +214,7 @@ async def owner_tests(p, port):
     check("Eigene Termine: Empfänger nach Person (Name oder E-Mail) und Abteilung", vis == [True, True, True, False, False], vis)
 
     # new script version: header (after the schedule version), Today (3 days, unread, opens the script), push setting
-    await E("S.meta.scriptVersion='v13';S.meta.scriptChange={at:new Date().toISOString(),v:'v13',prev:'v12',scenes:['5','6','184CA'],log:'Sc5 deleted: Football\nSc6 changed: Sweets\nSc184CA added: Woman with dog'};localStorage.setItem('chgseen:v1','0');renderHeader();S.tab='today';render()"); await pg.wait_for_timeout(300)
+    await E("S.meta.scriptVersion='v13';S.meta.scriptChange={at:new Date().toISOString(),v:'v13',prev:'v12',scenes:['5','6','184CA'],log:'Sc5 deleted: Football\\nSc6 changed: Sweets\\nSc184CA added: Woman with dog'};localStorage.setItem('chgseen:v1','0');renderHeader();S.tab='today';render()"); await pg.wait_for_timeout(300)
     check("Kopf: Drehbuch-Version nach der Sched-Version", "Drehbuch v13" in await E("document.getElementById('stand').innerText"))
     check("Handy: Zeile über dem Titel («Dreh Wallis …») ausgeblendet", await E("innerWidth<=600&&document.getElementById('sub').getBoundingClientRect().height===0"))
     td = await E("(()=>{const l=document.querySelector('#view .tchg [data-tscript]');return {t:l?l.innerText:'',dot:(document.querySelector('#view .tchg .chgdot')||{}).innerText||''}})()")
