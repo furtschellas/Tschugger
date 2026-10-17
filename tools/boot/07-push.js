@@ -149,7 +149,13 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 /* opened from a notification: go to «Meine Termine» */
 function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo|prep|script):(\d{4}-\d{2}-\d{2})/);if(!m)return false;
   try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}
-  if(m[1]==="script"){setTimeout(()=>{S.tab=vok("script")?"script":"today";try{store("tab",S.tab)}catch(_){}window.scrollTo(0,0);render()},400);return true}
+  /* new script version: jump to the changes in Today (or, if Today does not show them, the message with the changelog) */
+  if(m[1]==="script"){let n=0;const go=()=>{const sx=S.meta&&S.meta.scriptChange;if(!sx&&n++<15){setTimeout(go,400);return}
+      const inToday=typeof todayOn==="function"&&todayOn()&&(typeof tShow!=="function"||tShow("chg"))&&typeof scriptChg==="function"&&!!scriptChg();
+      if(inToday){S.tab="today";try{store("tab","today")}catch(_){}render();const c=document.querySelector("#view .tchg");if(c){c.classList.add("tjump");c.scrollIntoView({block:"start",behavior:"smooth"});setTimeout(()=>c.classList.remove("tjump"),2500)}}
+      else if(sx&&vok("script")&&typeof showScriptNews==="function"){document.querySelectorAll("#scrnews").forEach(x=>x.remove());showScriptNews(sx)}
+      else{S.tab=vok("script")?"script":"today";render()}};
+    setTimeout(go,400);return true}
   let n=0;const go=()=>{ /* wait for the data (up to 6 s), so a new shooting day is found */
     const has=(S.days||[]).some(d=>d.id===m[2]||d.date===m[2]);if(m[1]==="plan"&&!has&&n++<15){setTimeout(go,400);return}
     S.want=null;S.srcOpen=false;if(m[1]==="dispo"){S.tab="dispo";S.dday=m[2]}else{S.tab="plan";S.day=m[1]==="prep"||!has?"prep:"+m[2]:m[2]}
