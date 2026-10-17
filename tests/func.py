@@ -371,7 +371,7 @@ async def owner_tests(p, port):
     await E("document.querySelectorAll('#view details').forEach(d=>d.open=false)")
     # roles tested one after the other with their rights (nothing is changed)
     await E("document.querySelector('#view [data-rtrun]').click()"); await pg.wait_for_timeout(5000)
-    rt = await E("(RTS.res||[]).map(x=>({n:x.name,i:x.issues.length,t:x.tabs.length}))")
+    rt = await E("(RTS.res||[]).map(x=>({n:x.name,i:x.issues.length,t:x.tabs.length,why:x.issues.join(' | ').slice(0,120)}))")
     check("Berechtigungen testen: jede Stufe geprüft, ohne Probleme", len(rt) >= 4 and all(x["i"] == 0 for x in rt), rt)
     for x in rt:
         check(f"Berechtigungen testen: {x['n']} – Seiten, Telefon/E-Mail und Kopf-Symbole stimmen", x["i"] == 0, x, public=True)
