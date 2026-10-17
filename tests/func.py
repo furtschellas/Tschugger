@@ -332,6 +332,9 @@ async def owner_tests(p, port):
           const pop=!!document.getElementById('routepop');history.back();await w(300);const closed=!document.getElementById('routepop'),tab1=S.tab;
           history.back();await w(300);return {pop,closed,tab1,tab2:S.tab}})()""")
         check("Zurück-Knopf: schliesst zuerst das Fenster, dann zurück zur vorherigen Seite (Drehbuch → Drehplan)", bk == {"pop": True, "closed": True, "tab1": "script", "tab2": "plan"}, bk, public=True)
+        ex = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));let n=0;while(!(history.state&&history.state.base)&&n++<60){history.back();await w(120)}
+          const base=!!(history.state&&history.state.base);const msg=(document.getElementById('refmsg')||{}).textContent||'';await w(2800);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base)}})()""")
+        check("Zurück-Knopf auf der ersten Seite: Hinweis, erst zweimal zurück verlässt die App", ex["base"] and ex["hint"] and ex["guard"], ex, public=True)
         # script search with a long role badge: the scene title stays on one line (not one letter per line)
         sl = await E("""(()=>{const b=document.createElement('div');b.id='view2';b.style.width='380px';b.innerHTML='<ul class=sclist><li class=scard><button class=scli><span class=sclin>2</span><span class=sclih>INT. KAPELLE - EVENING</span><span class=sctag>ABEND</span><span class=rbadges><span class="rbadge warn"><b>Bax</b> ⚠ spricht im Drehbuch, fehlt im Drehplan</span></span></button></li></ul>';
           document.getElementById('view').appendChild(b);const h=b.querySelector('.sclih').getBoundingClientRect(),r=b.querySelector('.rbadges').getBoundingClientRect(),t=b.querySelector('.sclih');const lh=parseFloat(getComputedStyle(t).lineHeight)||20;b.remove();return {lines:Math.round(h.height/lh),below:r.top>=h.bottom-1}})()""")
