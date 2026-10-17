@@ -315,7 +315,7 @@ h3.dh{font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing
 
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--sheet);border-top:1px solid var(--rule);
   padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-nav.tabs .in{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(var(--ntabs,6),1fr)}
+nav.tabs .in{max-width:760px;margin:0 auto;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)} /* always one row, however many areas are on (also before the script has counted them) */
 nav.tabs button[hidden]{display:none}
 nav.tabs button{border:0;background:transparent;padding:6px 2px 8px;min-height:58px;cursor:pointer;display:grid;justify-items:center;align-content:center;gap:3px;color:var(--muted);-webkit-tap-highlight-color:transparent}
 nav.tabs .ico{display:grid;place-items:center;width:46px;height:30px;border-radius:99px}

@@ -172,6 +172,8 @@ async def main():
                     check("Kopf-Symbole nicht verkleinert", await E("!document.querySelector('header .hbtns').style.getPropertyValue('--bs')"))
                     lab = await E("[...document.querySelectorAll('nav.tabs button[data-tab]')].filter(b=>!b.hidden).map(b=>{const l=b.querySelector('.lbl');return getComputedStyle(l).fontSize==='0px'?getComputedStyle(l,'::after').content.replace(/\"/g,''):l.textContent})")
                     check("Hauptmenü auf dem Handy kurz (Sched, Call, Loc)", "Sched" in lab and "Loc" in lab, lab)
+                    one = await E("(()=>{const n=document.querySelector('nav.tabs .in');const v=n.style.getPropertyValue('--ntabs');n.style.removeProperty('--ntabs');const t=new Set([...n.querySelectorAll('button')].filter(b=>b.offsetParent).map(b=>Math.round(b.getBoundingClientRect().top)));if(v)n.style.setProperty('--ntabs',v);return t.size})()")
+                    check("Hauptmenü schon beim Laden einzeilig (vor dem Zählen der Bereiche)", one == 1, one)
                     # search modes in one row, short labels
                     await pg.click("#searchBtn"); await pg.wait_for_timeout(400)
                     one = await E("(()=>{const r=document.querySelector('.gsearch .smodes');if(!r)return false;const k=[...r.children];return k[k.length-1].offsetTop===k[0].offsetTop})()")

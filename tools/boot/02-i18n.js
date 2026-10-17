@@ -714,6 +714,7 @@ Object.assign(I18N,{
  "Hinzugefügte Termine":{fr:"Rendez-vous ajoutés",it:"Appuntamenti aggiunti",en:"Added appointments"},
  "Für":{fr:"Pour",it:"Per",en:"For"},
  "Noch keine kommenden Termine hinzugefügt.":{fr:"Aucun rendez-vous à venir ajouté pour l’instant.",it:"Nessun appuntamento in arrivo aggiunto finora.",en:"No upcoming appointments added yet."},
+ "Sicherheit":{fr:"Sécurité",it:"Sicurezza",en:"Security"},
  "Bei Änderungen benachrichtigen":{fr:"Me prévenir en cas de changement",it:"Avvisami in caso di modifiche",en:"Notify me about changes"},
  "Änderungen am Drehplan":{fr:"Changements du plan de tournage",it:"Modifiche al piano di riprese",en:"Changes to the shooting schedule"},
  "Neue und geänderte Callsheets":{fr:"Feuilles de service nouvelles ou modifiées",it:"Ordini del giorno nuovi o modificati",en:"New and updated callsheets"},
