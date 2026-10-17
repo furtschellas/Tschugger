@@ -167,3 +167,7 @@ window.a2Uninstall=a2Uninstall;
 setTimeout(async()=>{try{if(typeof isStandalone==="function"&&isStandalone())return;if(sessionStorage.getItem("instHint"))return;
   if(typeof window.a2hsCheck!=="function"||await window.a2hsCheck()!=="installed")return;sessionStorage.setItem("instHint","1");
   if(typeof showMsg==="function")showMsg(L("Die App ist auf diesem Gerät installiert – öffne sie am besten über das App-Icon."),7000)}catch(_){}},4000);
+/* «Über die App» (Mein Konto → App): the same versions as on the start screen and the copyright */
+function aboutHTML(){const m=S.meta||{};
+  return '<section class="psec about"><h4>'+L("Über die App")+'</h4><p class="abv">'+(m.scheduleVersion?esc(m.scheduleVersion)+'<br>':'')+(m.scriptVersion&&vok("script")?esc(L("Drehbuch"))+' '+esc(m.scriptVersion)+'<br>':'')+'App '+esc(window.APPVER||"")+'<br>© <b class="mrk">MrK</b> 2026</p></section>'}
+{const _a=acctInnerAll;acctInnerAll=function(){return _a()+aboutHTML()}}

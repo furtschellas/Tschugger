@@ -324,6 +324,8 @@ async def owner_tests(p, port):
           S.meta.floorplans=[{name:'Testplan',file:'tp.pdf',url:'https://www.dropbox.com/tp',rule:{set:[it.set]}}];const h=blkRow(it.sc);S.meta.floorplans=kf;return h.includes('Testplan')})()""")
         check("Drehbuch-Szene: Knopf für den Floorplan der Location", fpx in (None, True), fpx, public=True)
 
+        ab = await E("(()=>{S.tab='acct';ACSUB='app';render();const a=document.querySelector('#view .psec.about');return a?a.innerText:''})()")
+        check("Mein Konto → App: «Über die App» mit App-Version und © MrK 2026", "MrK 2026" in ab and "App " in ab)
         # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
         ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
           r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")

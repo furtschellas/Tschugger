@@ -18,6 +18,8 @@ async def main():
         n = await pg.evaluate("document.querySelectorAll('script').length")
         if n < 15: errs.append("App-Teile nicht getrennt (nur %d Skripte)" % n)
         sv = await pg.evaluate("(document.getElementById('spv')||{}).innerHTML||''")
+        vis = await pg.evaluate("(()=>{const t=document.getElementById('spv');if(!t)return 0;const r=t.getBoundingClientRect(),c=getComputedStyle(t);return r.height>10&&c.visibility!=='hidden'&&+c.opacity>0?1:0})()")
+        if not vis: errs.append("Startbildschirm: Versionen nicht sichtbar")
         if "MrK" not in sv or "App " not in sv or "<br>©" not in sv: errs.append("Startbildschirm ohne Version/©: " + sv[:80])
         await pg.wait_for_timeout(8600)   # the start screen never stays: at the latest after 8 s it is gone
         ok = ok and await pg.evaluate("!document.getElementById('splash')")
