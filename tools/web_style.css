@@ -817,8 +817,16 @@ html body #view .today .tchg .tscrlog>summary{min-height:0;padding:2px 0;line-he
 .a2ol{margin:8px 0 10px;padding-left:20px;line-height:1.5}.a2ol li{margin:2px 0}
 
 /* route choice: round buttons; the hotel button with its name right below the title (no gap), both the same height */
-html body .rtopts .rtpill{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:54px;height:auto;padding:7px 18px;line-height:1.2;text-align:center}
-html body .rtopts .rtpill b{font-size:16px;line-height:1.2}
-html body .rtopts .rtpill small{display:block;margin:0;font-size:13px;line-height:1.2;font-weight:500;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body .rtopts .rtpill{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-height:56px!important;height:auto!important;padding:6px 18px!important;line-height:1.15;text-align:center}
+html body .rtopts .rtpill b{font-size:16px;line-height:1.15;margin:0!important;padding:0!important}
+html body .rtopts .rtpill small{display:block;margin:0!important;padding:0!important;font-size:13px;line-height:1.2;font-weight:500;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:600px){html body #view .today .chglist li.cdh{padding:4px 0 0;line-height:1.3;font-size:12px}html body #view .today .chglist li.cdh:first-child{padding-top:0}}
 .today .tcard.tjump{box-shadow:0 0 0 2px var(--accent);transition:box-shadow .4s}
+
+/* Log/Tests: title line of every box – title and last result on the left, the open/close button always top right;
+   on the phone the result goes on a second line */
+html body #view .tstsec>summary.lsum,html body #view .lsum{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:8px}
+.lsum .lsh{min-width:0;line-height:1.4;padding-top:4px}
+.lsum .lss::before,.lsum .lst::before{content:" · "}
+html body #view .lsum .tstall{margin:0;align-self:start}
+@media (max-width:600px){.lsum .lsh b{display:block}.lsum .lss,.lsum .lst{display:block;font-size:12px;color:var(--muted)}.lsum .lss::before,.lsum .lst::before{content:none}}
