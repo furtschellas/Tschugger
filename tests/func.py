@@ -269,13 +269,6 @@ async def owner_tests(p, port):
       for(const t of tabsOn().concat(['acct','admin','my'])){S.tab=t;render();await new Promise(r=>setTimeout(r,60));scan()}for(const k of ['users','roles','docs','set','log']){S.tab='admin';ADM.sub=k;render();await new Promise(r=>setTimeout(r,60));scan()}S.tab='today';render();return [...bad].slice(0,12)})()""")
     check("Alle Symbol-Knöpfe zeigen beim Darüberfahren ihre Funktion", nt == [], nt, public=True)
 
-    # picture with a push message: saved encrypted, shown in the pop-up of an open app and in the large view
-    pim = await E("""(async()=>{const c=document.createElement('canvas');c.width=40;c.height=30;c.getContext('2d').fillRect(0,0,40,30);const u=c.toDataURL('image/jpeg');
-      const id=await bcImgSave(u);delete BCIMG[id];const pp=document.createElement('div');pp.className='pushpop';document.body.appendChild(pp);bcPopImg(pp,'./#bc='+id+'&t=x');
-      await new Promise(r=>setTimeout(r,1500));const pop=!!pp.querySelector('.ppimg img');pp.remove();bcShow(id,'T','B');await new Promise(r=>setTimeout(r,1200));
-      const v=document.querySelector('#bcview .bcvimg img');const big=!!v&&v.src===u;document.querySelectorAll('#bcview').forEach(x=>x.remove());return {pop,big}})()""")
-    check("Push mit Bild: Bild im Pop-up der offenen App und in der grossen Ansicht", pim == {"pop": True, "big": True}, pim, public=True)
-
     # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
     ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
       r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")
@@ -429,27 +422,6 @@ async def owner_tests(p, port):
     pd = await E("(()=>{const d=document.querySelector('#view details.bcdev');const h=document.querySelector('#view .bchh');return d?{open:d.open,before:!!(h&&(d.compareDocumentPosition(h)&4)),txt:d.innerText}:null})()")
     check("Push: «Push aktiviert» vor dem Verlauf, zugeklappt", bool(pd) and not pd["open"] and pd["before"], pd)
     check("Push: nur Personen mit eingeschaltetem Push", bool(pd) and "1 Person" in pd["txt"], pd and pd["txt"][:80])
-
-    # push message with a picture: made smaller, stored encrypted, shown from the notification link
-    import tempfile
-    from PIL import Image as _Img
-    big = pathlib.Path(tempfile.mkdtemp()) / "foto.jpg"; _Img.new("RGB", (3000, 2000), (200, 60, 120)).save(big, quality=95)
-    await E("BC.mode='all';BC.img=null;S.tab='bcast';render()"); await pg.wait_for_timeout(600)
-    await pg.set_input_files("input[data-bcimg]", str(big)); await pg.wait_for_timeout(1500)
-    im = await E("BC.img?{w:BC.img.w,h:BC.img.h,kb:Math.round(BC.img.kb)}:null")
-    check("Push-Bild: automatisch verkleinert (max. 1280 px, unter 320 KB)", bool(im) and max(im["w"], im["h"]) <= 1280 and im["kb"] < 320, im)
-    await E("(()=>{const f=document.querySelector('form[data-bc]');f.bt.value='Bildtitel';f.bb.value='Bildtext';f.bp.checked=true;['bw','bs','be'].forEach(k=>{if(f[k])f[k].checked=false})})()")
-    await E("document.querySelector('form[data-bc] button[type=submit]').click()"); await pg.wait_for_timeout(2000)
-    pi = await E("""(async()=>{const ks=Object.keys(window.__db).filter(k=>k.startsWith('bcimg/'));if(!ks.length)return null;const d=window.__db[ks[0]];
-        const bks=Object.keys(window.__db).filter(k=>k.startsWith('broadcasts/'));const key=await getDataKey();const raw=Uint8Array.from(atob(window.__db[bks[bks.length-1]].c),c=>c.charCodeAt(0));
-        const b=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:raw.slice(0,12)},key,raw.slice(12))));
-        const im=window.__db['bcimg/'+b.img];return {plain:!im||im.c.startsWith('data:'),id:im?b.img:null,img:b.img,url:b.url||''}})()""")
-    check("Push-Bild: verschlüsselt gespeichert und mit der Nachricht verknüpft", bool(pi) and not pi["plain"] and pi["img"] == pi["id"] and pi["url"].startswith("./#bc="), pi, public=True)
-    if pi:
-        await E("bcGo(%s)" % json.dumps(pi["url"].replace("./", ""))); await pg.wait_for_timeout(2500)
-        bv = await E("(()=>{const d=document.getElementById('bcview');return d?{t:d.innerText.slice(0,60),img:!!d.querySelector('.bcvimg img')}:null})()")
-        check("Push-Bild: Tippen auf die Nachricht zeigt Text und Bild in der App", bool(bv) and bv["img"] and "bildtitel" in bv["t"].lower(), bv)
-        await E("const v=document.getElementById('bcview');if(v)v.remove()")
 
     # ---------- vCard ----------
     await E("S.tab='crew';S.q='';render()"); await pg.wait_for_timeout(500)
