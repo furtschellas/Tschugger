@@ -1993,7 +1993,7 @@ function renderSearch(){
   const rIds=S.gm==="role"?rolesFor(terms).map(r=>r.id):[];const castNm=(S.meta&&S.meta.cast)||{};
   sec(cap(L("Szenen")),R.sc,r=>add(r,'<b>'+hl(r.it.sc,terms)+'</b> · '+hl(r.it.set||"",terms),esc((r.d.short||r.d.label)+' '+fmtDate(r.d.date).slice(0,-5)+' · '+(r.it.t||"")+(r.u==="2"?' · 2nd Unit':''))+(S.gm==="role"?'<br>'+arr(r.it.cast).filter(c=>rIds.includes(String(c))).map(c=>'<mark>'+esc(castNm[c]||c)+'</mark>').join(", "):'')+'<br>'+hl(TX(r.it,"d"),terms)+'<br>'+hl(r.ad||"",terms)));
   sec("Locations",R.loc,r=>add(r,hl(r.g.title,terms),hl(r.g.s5?L("Salgesch, mehrere Adressen"):[r.g.venue,r.g.address].filter(Boolean).join(", "),terms)));
-  sec("Crew",R.crew,r=>add(r,hl(r.p.name,terms),hl([TX(r.p,"role"),TX(r.dep,"dept"),r.p.phone].filter(Boolean).join(" · "),terms)));
+  sec("Crew",R.crew,r=>add(r,hl(r.p.name,terms),hl([TX(r.p,"role"),TX(r.dep,"dept"),vok("phone")?r.p.phone:""].filter(Boolean).join(" · "),terms)));  /* phone only with the right to see it */
   sec("Callsheet",R.dispo,r=>add(r,esc((r.x.label||"Callsheet")+' · '+fmtDate(r.x.date)),'Callsheet'));
   sec("Info",R.info,r=>add(r,hl(r.it.name,terms),hl([TX(r.c,"cat"),r.it.address].filter(Boolean).join(" · "),terms)));
   box.innerHTML=n?h:'<p class="shint">'+L('Nichts gefunden für')+' «'+esc(q)+'».</p>';

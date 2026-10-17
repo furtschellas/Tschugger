@@ -1,5 +1,14 @@
 /* ---- membership: invited addresses join once (members/{uid}); blocked = active:false ---- */
+/* the result is kept on this device: an offline start keeps the role (otherwise crew lost the shooting schedule without network) */
+const memKey=()=>"mc:v1:"+(ME&&ME.uid);
+function memSave(){try{localStorage.setItem(memKey(),JSON.stringify({r:MYROLE,p:MYPERMS,a:COADMIN,ap:ADMINPERMS,o:ADMINS.includes(lc(ME.email)),m:MEMBER}))}catch(_){}}
+function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"null");if(!c)return false;MYROLE=c.r||"";MYPERMS=Array.isArray(c.p)?c.p:[];COADMIN=!!c.a;if(Array.isArray(c.ap))ADMINPERMS=c.ap;if(c.m)MEMBER=c.m;if(c.o&&!ADMINS.includes(lc(ME.email)))ADMINS.push(lc(ME.email));return true}catch(_){return false}}
 async function checkMember(){
+  if(navigator.onLine===false){memRestore();throw Object.assign(new Error("offline"),{code:"unavailable"})}
+  try{const st=await checkMember0();if(st==="ok")memSave();return st}
+  catch(err){if(isOffline(err))memRestore();throw err}
+}
+async function checkMember0(){
   const {F,db}=await fb();const u=ME;
   if(!isOwner()&&u.emailVerified){try{if((await F.getDoc(F.doc(db,"owners",lc(u.email)))).exists()&&!ADMINS.includes(lc(u.email)))ADMINS.push(lc(u.email))}catch(_){}}
   if(!isOwner()&&u.emailVerified){try{COADMIN=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(_){COADMIN=false}}
@@ -24,7 +33,7 @@ async function checkMember(){
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
   MEMBER=m;return "ok";
 }
-function clearLocal(){try{localStorage.removeItem("dk:v1");localStorage.removeItem(CACHE_KEY);localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
+function clearLocal(){try{localStorage.removeItem(memKey());localStorage.removeItem("dk:v1");localStorage.removeItem(CACHE_KEY);localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
 /* ---- sign-in screen ---- */
 let AUTHMODE="login";
 const errText=e=>{const c=(e&&e.code)||"";
