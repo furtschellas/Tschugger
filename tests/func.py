@@ -296,7 +296,7 @@ async def offline_test(p, port):
 async def hidden_data(p, port):
     """C11: what a role may not see is really not there – also not in the search or the vCard"""
     phones = None
-    for who in ("crew", "catering", "norole"):
+    for who in ("crew", "catering", "power", "norole"):
         b, pg, errs = await smoke.session(p, port, who)
         E = pg.evaluate
         perms = await E("({phone:vok('phone'),email:vok('email'),crew:vok('crew'),food:can('crew.food'),bday:can('crew.bday'),adm:isAdmin()})")
@@ -323,7 +323,8 @@ async def hidden_data(p, port):
         await E("S.tab='crew';render()"); await pg.wait_for_timeout(300)
         adm = await E("({food:!!document.querySelector('#view [data-admv=\"food\"],#view .efood-tog'),bday:!!document.querySelector('#view [data-admv=\"bday\"]'),btn:!!(document.getElementById('admBtn')&&!document.getElementById('admBtn').hidden)})")
         check(f"{who}: Catering-Zahlen nur mit Recht", adm["food"] == perms["food"], adm)
-        check(f"{who}: App-Verwaltung nur für Admins", adm["btn"] == perms["adm"], adm)
+        adm_ok = await E("isAdmin()||['users.view','users.edit','users.invite','users.requests','roles.assign','roles.edit','settings','audit.view'].some(p=>can(p))")
+        check(f"{who}: App-Verwaltung nur mit Verwaltungsrecht", adm["btn"] == adm_ok, adm)
         await E("tourStart(false)"); await pg.wait_for_timeout(1500)
         tt = await E("TOUR.steps.map(s=>s.t)")
         await E("if(TOUR.el)TOUR.el.remove();TOUR.el=null;document.querySelectorAll('#tour').forEach(x=>x.remove())")

@@ -43,7 +43,7 @@ addEventListener("pagehide",()=>{sessionStorage.setItem("fakeusers",JSON.stringi
 const P=%(people)s;const VP=["view.plan","view.prep","view.dispo","view.script","view.blocking","view.crew","view.phone","view.email","view.mycal"];
 window.__db['roles/crew']={name:'Crew',perms:VP};
 window.__db['roles/catering']={name:'Catering',perms:["view.plan","view.dispo","view.crew","crew.food","view.mycal"]};
-window.__db['roles/power']={name:'Power',perms:VP.concat(["users.view","users.edit","roles.assign","roles.edit","push.send","audit.view","crew.bday"])};
+window.__db['roles/power']={name:'Power',perms:VP.concat(["users.view","users.edit","roles.assign","roles.edit","push.send","audit.view","crew.bday","data.check"])};
 window.__db['admins/'+P.admin]={addedAt:'x'};
 let i=0;for(const k in P){const e=P[k];if(k==='owner')continue;i++;const uid='u_'+k;
   window.__users[e]={uid,email:e,pw:'geheim123',verified:true};
