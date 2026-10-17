@@ -355,16 +355,20 @@ async def owner_tests(p, port):
     # opening Log/Tests starts the tests again; while a test runs, its open/close button shows the progress as a ring
     await E("RTS.at=0;S.tab='today';render()"); await pg.wait_for_timeout(100); await E("S.tab='admin';ADM.sub='log';render()"); await pg.wait_for_timeout(2500)
     check("Log/Tests öffnen startet «Berechtigungen testen» und «Dokumente prüfen» neu", await E("Date.now()-RTS.at<10000&&Date.now()-DCK.at<10000&&S.tab==='admin'&&ADM.sub==='log'"))
-    gs = await E("""(async()=>{window.__ts=0;const o=tstStart;tstStart=function(){__ts++};const w=ms=>new Promise(r=>setTimeout(r,ms));
-      S.tab='today';render();await w(50);S.tab='admin';ADM.sub='log';render();await w(1200);const a=__ts;
-      const d=document.querySelector('#view details[data-lsec="tst"]');d.open=true;await w(400);const b=__ts;render();await w(400);const c=__ts;tstStart=o;return {log:a,open:b,redraw:c}})()""")
-    check("Automatische Tests: starten erst beim Aufklappen ihres Menüs (nicht beim Tipp auf Log, nicht beim Neuzeichnen)", gs == {"log": 0, "open": 1, "redraw": 1}, gs, public=True)
+    await E("new Promise(r=>{const t=setInterval(()=>{if(!RTS.busy&&!DCK.busy){clearInterval(t);r()}},50);setTimeout(()=>{clearInterval(t);r()},8000)})")   # background tests finished
     await E("RTS.at=0;window.__rtp=[];const o=render;window.__rtw=setInterval(()=>{if(RTS.busy)__rtp.push(!!document.querySelector('#view details[data-lsec=\"rt\"] .tstall.prog'))},40);document.querySelector('[data-asub=\"log\"]')&&document.querySelector('[data-asub=\"log\"]').click()"); await pg.wait_for_timeout(3000)
     rp2 = await E("(()=>{clearInterval(__rtw);return {again:Date.now()-RTS.at<8000,ring:__rtp.some(Boolean),tab:S.tab+'/'+ADM.sub}})()")
     check("Erneuter Tipp auf «Log» startet die Tests wieder, Berechtigungstest mit Fortschrittsring", rp2["again"] and rp2["ring"] and rp2["tab"] == "admin/log", rp2, public=True)
     check("Log/Tests: Menüs bleiben nach dem automatischen Test zugeklappt", await E("[...document.querySelectorAll('#view details[data-lsec]')].every(d=>!d.open)"))
     rg = await E("(()=>{RTS.busy=true;render();const a=!!document.querySelector('#view details[data-lsec=\"rt\"] .tstall.prog');RTS.busy=false;GH.run={status:'in_progress',created_at:new Date().toISOString()};GH.jobs=[{name:'test',steps:[{name:'Werkzeuge',status:'completed'},{name:'Funktionen',status:'in_progress'},{name:'Sicherheit',status:'queued'},{name:'x',status:'queued'}]}];render();const b=document.querySelector('#view details[data-lsec=\"tst\"] .tstall.prog');const t=document.querySelector('#view details[data-lsec=\"tst\"] summary').textContent;GH.run=null;GH.jobs=[];render();return {rt:a,ring:!!b,p:b?b.style.getPropertyValue('--p'):'',t}})()")
     check("Fortschritt als Ring im Auf-/Zuklapp-Knopf (läuft: Prozent und aktueller Schritt)", rg["rt"] and rg["ring"] and rg["p"].strip() == "25" and "Funktionen" in rg["t"], rg)
+    await E("new Promise(r=>{const t=setInterval(()=>{if(!RTS.busy&&!DCK.busy){clearInterval(t);r()}},50);setTimeout(()=>{clearInterval(t);r()},8000)})")   # background tests finished
+    gs = await E("""(async()=>{window.__ts=0;const o=tstStart;tstStart=function(){__ts++};const w=ms=>new Promise(r=>setTimeout(r,ms));
+      S.tab='today';render();await w(50);S.tab='admin';ADM.sub='log';render();await w(1200);const a=__ts;
+      const d=document.querySelector('#view details[data-lsec="tst"]');d.open=true;await w(400);const b=__ts;render();await w(400);const c=__ts;tstStart=o;return {log:a,open:b,redraw:c}})()""")
+    check("Automatische Tests: starten erst beim Aufklappen ihres Menüs (nicht beim Tipp auf Log, nicht beim Neuzeichnen)", gs == {"log": 0, "open": 1, "redraw": 1}, gs, public=True)
+    await E("new Promise(r=>{const t=setInterval(()=>{if(!RTS.busy&&!DCK.busy){clearInterval(t);r()}},50);setTimeout(()=>{clearInterval(t);r()},8000)})")   # background tests finished
+    await E("document.querySelectorAll('#view details').forEach(d=>d.open=false)")
     # roles tested one after the other with their rights (nothing is changed)
     await E("document.querySelector('#view [data-rtrun]').click()"); await pg.wait_for_timeout(5000)
     rt = await E("(RTS.res||[]).map(x=>({n:x.name,i:x.issues.length,t:x.tabs.length}))")

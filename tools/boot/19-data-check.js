@@ -18,6 +18,8 @@ const dsc=x=>String(x||"").toUpperCase().replace(/\s+/g,"").replace(/^SC/,"");
 const dbase=s=>{const m=String(s).match(/^(\d+[A-Z]?)(?:PT|SL|PART|TEIL)\d*[A-Z]?$/);return m?m[1]:s};const dnum=s=>(String(s).match(/^\d+/)||[""])[0];
 const dhas=(set,s)=>set.has(s)||set.has(dbase(s))||set.has(dnum(s));
 const dday=d=>{try{const dt=new Date(d+"T12:00:00");return WDL(dt)+" "+pad2(dt.getDate())+"."+pad2(dt.getMonth()+1)+"."}catch(_){return d}};
+/* a page drawn for a test only (not shown, the visible page stays as it is); an error in the page throws */
+function offView(t){const d=document.createElement("div");d.innerHTML=VIEWS[t]?VIEWS[t]():"";return d}
 async function dckRun(auto){
   if(DCK.busy)return;DCK.busy=true;const t0=Date.now();render();
   const out=[],w=(lvl,area,text)=>out.push({lvl,area,text});   /* lvl: warn = Unstimmigkeit, info = Hinweis, ok = in Ordnung */
@@ -112,7 +114,7 @@ async function dckRun(auto){
     {const m=S.meta||{},at=Date.parse((typeof lastCheck==="function"?lastCheck(m):m.updatedAt)||"");if(at&&Date.now()-at>6*3600e3)w("warn",L("Aktualität"),L("Die Daten wurden seit über 6 Stunden nicht mehr aus der Dropbox geprüft."));
       else if(at)w("ok",L("Aktualität"),L("Zuletzt mit der Dropbox abgeglichen:")+" "+new Date(at).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))}
     /* 8) self test of the app on this device */
-    {const bad=[],keep=S.tab;for(const tb of tabsOn()){S.tab=tb;try{render();if(/konnte nicht angezeigt/.test(document.getElementById("view").innerText))bad.push(tb)}catch(_){bad.push(tb)}}S.tab=keep;
+    {const bad=[],keep=S.tab;for(const tb of tabsOn()){S.tab=tb;try{offView(tb)}catch(_){bad.push(tb)}}S.tab=keep;
       let key=false;try{key=!!(await getDataKey())}catch(_){}
       const sw=!!(navigator.serviceWorker&&navigator.serviceWorker.controller);
       w(bad.length||!key?"warn":"ok",L("Selbsttest der App"),(key?"✓ "+L("Schlüssel"):"✗ "+L("Schlüssel"))+" · "+(bad.length?"✗ "+L("Seiten mit Fehler")+": "+bad.join(", "):"✓ "+tabsOn().length+" "+L("Seiten"))+" · "+(sw?"✓ ":"– ")+L("Offline-Speicher")+" · "+(navigator.onLine?"✓ ":"– ")+L("Verbindung"))}
@@ -154,7 +156,7 @@ async function roleTestRun(auto){
   try{let k=0;for(const ro of roles){RTS.prog=Math.round(k++/roles.length*100);here={tab:S.tab,sub:ADM.sub};mid=true;
     SIMROLE={adm:!!ro.adm};MYPERMS=ro.adm?[]:ro.perms.filter(p=>PERMS.some(x=>x[0]===p));MYROLE=ro.adm?"":ro.id;if(ro.adm)ADMINPERMS=ro.perms;
     const issues=[],tabs=tabsOn();
-    for(const t of tabs){S.tab=t;try{render();const v=document.getElementById("view");
+    for(const t of tabs){S.tab=t;try{const v=offView(t);
         if(/konnte nicht angezeigt/.test(v.innerText))issues.push(L("Seite mit Fehler")+": "+(RTN[t]||t));
         if(!vok("phone")&&v.querySelector('a[href^="tel:"]')&&t==="crew")issues.push(L("Telefonnummern sichtbar ohne Recht"));
         if(!vok("email")&&v.querySelector('a[href^="mailto:"]')&&t==="crew")issues.push(L("E-Mail-Adressen sichtbar ohne Recht"))}catch(err){issues.push((RTN[t]||t)+": "+(err&&err.message||err))}}
@@ -168,7 +170,8 @@ async function roleTestRun(auto){
       vok("phone")&&L("Telefon"),vok("email")&&L("E-Mail"),canAdm()&&L("App-Verwaltung"),can("data.check")&&L("Dokumente prüfen")].filter(Boolean);
     out.push({name:ro.name,tabs:tabs.map(t=>RTN[t]||t),extra,issues});
     /* back to the real rights for a moment and show the progress (the role's pages were drawn without being shown) */
-    SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}render();   /* always draw the page the person is on (the role's pages were drawn in between) */
+    SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}
+    if(S.tab==="admin"&&ADM.sub==="log")render();   /* only the progress on Log/Tests; the visible page is never touched by the test */
     await new Promise(r=>setTimeout(r,180))}}
   catch(err){out.push({name:L("Fehler"),tabs:[],extra:[],issues:[String(err&&err.message||err)]})}
   finally{SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;try{const ad=await (async()=>ADM.adminPerms)();ADMINPERMS=isOwner()?ADMIN_DEFAULT.slice():(ad||ADMINPERMS)}catch(_){}
