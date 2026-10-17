@@ -136,7 +136,7 @@ function hiTabs(){document.querySelectorAll("nav.tabs button[data-tab] .lbl").fo
 {const _r=render;render=function(){const x=_r.apply(this,arguments);try{hiTabs()}catch(_){}try{chatFab()}catch(_){}try{bcButton()}catch(_){}return x}}
 
 /* results of the automatic tests (GitHub, before every release of new code): App-Verwaltung → Log, collapsible */
-const TST={d:null,busy:false,run:false,msg:"",open:false,closed:false};
+const TST={d:null,busy:false,run:false,msg:"",open:false,closed:false,su:{}}; /* parts stay closed until opened (only for this visit) */
 const TST_RUN='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10"/><path d="M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/></svg>';
 const TST_ALL='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>';
 async function testsLoad(){if(TST.busy)return;TST.busy=true;try{const r=await fetch("./tests.json?t="+Date.now(),{cache:"no-store"});TST.d=r.ok?await r.json():{none:true}}catch(_){TST.d={none:true}}TST.busy=false;render()}
@@ -149,7 +149,7 @@ function testsSec(){
   return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(d.ok||TST.closed?'':' open')+(TST.open?' open':'')+'><summary><b>'+esc(L("Automatische Tests"))+'</b>'+'<button type="button" class="tstall" data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'+' · <span class="tsth">'+esc(head)+'</span> · '+esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':'')+'</summary>'+
     '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
     suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
-      return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'"'+(su.ok?'':' open')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
+      return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'" data-su="'+esc(su.name)+'"'+(TST.su[su.name]?' open':'')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
         '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+(c.e?'<br><small>'+esc(c.e)+'</small>':'')+'</li>').join("")+'</ul>'+(su.name?'</details>':'')}).join("")+
     '<div class="arb tstbtns">'+(window.CHATURL&&isAdmin()?'<button type="button" class="pillbtn" data-tstrun'+(TST.run?' disabled':'')+'>'+TST_RUN+esc(L(TST.run?"Tests laufen …":"Tests jetzt starten"))+'</button>':'')+'<button type="button" class="pillbtn" data-tstre>↻ '+esc(L("Neu laden"))+'</button></div>'+(TST.msg?'<p class="ghint">'+esc(TST.msg)+'</p>':'')+'</details>';
 }
@@ -157,7 +157,8 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d
 
 /* open/close everything in the test box; start the tests by hand (through the worker: GitHub «Website veröffentlichen» with all tests) */
 document.addEventListener("click",e=>{const a=e.target.closest("[data-tstall]");if(!a)return;e.preventDefault();e.stopPropagation();const box=a.closest(".tstsec");if(!box)return;
-  const all=[box,...box.querySelectorAll("details")];const open=!all.every(d=>d.open);all.forEach(d=>d.open=open);TST.open=open;TST.closed=!open},true);
+  const all=[box,...box.querySelectorAll("details")];const open=!all.every(d=>d.open);all.forEach(d=>{d.open=open;if(d.dataset.su)TST.su[d.dataset.su]=open});TST.open=open;TST.closed=!open},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.su)TST.su[d.dataset.su]=d.open},true);
 document.addEventListener("click",async e=>{if(!e.target.closest("[data-tstrun]")||!isAdmin()||TST.run)return;TST.run=true;TST.msg="";render();
   try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/tests",{method:"POST",headers:{Authorization:"Bearer "+tok}});const j=await r.json().catch(()=>({}));
     TST.msg=r.ok?L("Tests gestartet – das Ergebnis erscheint hier in etwa 10–15 Minuten."):r.status===404?L("Der Worker kennt diese Funktion noch nicht – bitte den neuen Code aus tools/chat_worker.js einsetzen."):(j.error||("HTTP "+r.status));
