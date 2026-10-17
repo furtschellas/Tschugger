@@ -8,6 +8,7 @@ import base64, datetime, json, os, secrets, sys, tempfile, pathlib, time
 
 HERE = pathlib.Path(__file__).resolve().parent; ROOT = HERE.parent
 sys.path.insert(0, str(HERE)); sys.path.insert(0, str(ROOT / "tools"))
+import common  # noqa: E402
 from common import check, done  # noqa: E402
 
 # never the real Firestore: no service account, a throw-away crew key
@@ -50,6 +51,7 @@ class FakeFS:
 
 
 # ====================================================================== Dropbox-Aktualisierung
+common.GROUP = 'Dropbox-Aktualisierung'
 import update_from_dropbox as U  # noqa: E402
 import shutil as _sh, subprocess as _sp  # noqa: E402
 if _sh.which("node"):   # a syntax error in one part stops the whole app: check every part on its own (names the file)
@@ -113,6 +115,7 @@ check("Info: fehlende Telefonnummer ergänzt, ausgeblendete entfernt", it["Spita
 check("Info: Casthotel nicht doppelt", sum(1 for c in data["places"] for i in c["items"] if i["name"] == "Holiday Inn Express") == 1)
 
 # ====================================================================== automatische Push-Nachrichten
+common.GROUP = 'automatische Push-Nachrichten'
 import notify_changes as N  # noqa: E402
 N.ROOT = str(TMP)
 fs = FakeFS().install()
@@ -144,6 +147,7 @@ check("Changelog: keine Telefonnummern oder E-Mail-Adressen im Text", "+41" not 
 check("Changelog: passend zur Drehbuch-Version gewählt", (U.pick_changelog(_fs, "v13") or {}).get("name", "").endswith("Changelog v13 261017.pdf") and U.pick_changelog(_fs, "v12") is None)
 
 # ====================================================================== Push-Versand
+common.GROUP = 'Push-Versand'
 import push_send as P  # noqa: E402
 P.SENT = str(TMP / "sent.json"); P.vapid_keys = lambda key: ["pem"]
 fs = FakeFS().install()
@@ -176,6 +180,7 @@ check("Push-Versand: zweiter Lauf schickt nur noch an das fehlgeschlagene Gerät
 check("Push-Versand: danach erledigt", b1.get("fin") is True and "dErr" in b1.get("done"))
 
 # ====================================================================== Google Kalender
+common.GROUP = 'Google Kalender'
 import gcal_sync as G  # noqa: E402
 dd = lambda n: (datetime.date.today() + datetime.timedelta(days=n)).strftime("%Y%m%d")
 ics = "\r\n".join(["BEGIN:VCALENDAR", "VERSION:2.0",
@@ -194,6 +199,7 @@ check("Google Kalender: geänderte Zeit und Titel werden nachgeführt, Empfänge
 check("Google Kalender: im Kalender gelöscht → aus der App entfernt; eigene Termine unberührt", dl == ["e2"] and "e3" not in u, (dl, list(u)))
 
 # ====================================================================== Alarm
+common.GROUP = 'Alarm'
 import fail_alarm as A  # noqa: E402
 A.ROOT = str(TMP)
 def alarm_run(cfg=None, st=None):

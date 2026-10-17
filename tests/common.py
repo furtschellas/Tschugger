@@ -3,12 +3,24 @@ die können Crew-Daten enthalten). Mit TESTS_OUT=<datei> schreibt done() die Res
 import json, os, time
 
 RESULTS, FAILS = [], []
+GROUP = ""   # theme of the checks that follow (shown as a sub-part in the app)
+
+
+def _numbers_only(x):
+    """True when the detail holds only numbers, yes/no and keys – then it can be shown publicly"""
+    if isinstance(x, bool) or x is None or isinstance(x, (int, float)): return True
+    if isinstance(x, dict): return all(isinstance(k, str) and len(k) < 30 and _numbers_only(v) for k, v in x.items())
+    if isinstance(x, (list, tuple)): return all(_numbers_only(v) for v in x)
+    return False
 
 
 def check(name, ok, info="", public=False):
     """public=True: the detail of a failed check contains no crew data (only numbers/flags) and is kept in the results"""
     r = {"n": name, "ok": bool(ok)}
-    if not ok and info and ("lief durch" in name or public):   # a part that crashed: the reason (without addresses or numbers) helps to fix it
+    if GROUP: r["g"] = GROUP
+    if not ok and info not in ("", None) and not ("lief durch" in name or public) and _numbers_only(info):
+        r["e"] = json.dumps(info, ensure_ascii=False)[:160]   # only numbers/yes-no: never crew data
+    elif not ok and info and ("lief durch" in name or public):   # a part that crashed: the reason (without addresses or numbers) helps to fix it
         import re as _re
         r["e"] = _re.sub(r"[\w.+-]+@[\w-]+\.[\w.]+|\+?\d[\d ]{6,}", "…", str(info))[:160]
     RESULTS.append(r)

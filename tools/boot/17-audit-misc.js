@@ -109,6 +109,22 @@ const tstIco=(attr,ic,t,dis,pg)=>{const p=pg&&pg.pct!=null?Math.max(0,Math.min(1
 /* while a test runs, the button shows the progress as a ring around it (pct = percent, null = running, unknown how far) */
 function tstAllBtn(pg){const p=pg&&pg.pct!=null?Math.max(0,Math.min(100,pg.pct)):null;
   return '<button type="button" class="lbtn tstall'+(pg?' prog'+(p==null?' ind':''):'')+'"'+(pg&&p!=null?' style="--p:'+p+'"':'')+' data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+(pg?' · '+esc(L("läuft"))+(p!=null?' '+p+' %':''):'')+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'}
+/* the checks of one test part, tidied up: by theme (group from the test run, else the word before «:»), and the same
+   check for several permission levels (crew, catering …) as ONE line with a mark per level */
+const TST_ROLE=/^(owner|admin|crew|catering|power|norole): (.+)$/,TST_RN={owner:"Owner",admin:"Admin",crew:"Crew",catering:"Catering",power:"Power",norole:"ohne Rolle"};
+function tstGroupsHTML(suite,cs){
+  const rows=[],byTxt=new Map();
+  for(const c of cs){const m=c.n.match(TST_ROLE);
+    if(m){let r=byTxt.get(m[2]);if(!r){r={n:m[2],ok:true,roles:[],e:"",g:c.g||""};byTxt.set(m[2],r);rows.push(r)}r.roles.push([m[1],c.ok]);if(!c.ok){r.ok=false;if(c.e&&!r.e)r.e=c.e}}
+    else rows.push({n:c.n,ok:c.ok,e:c.e||"",g:c.g||""})}
+  const pre={};for(const r of rows){const m=!r.g&&r.n.match(/^([^:]{2,40}): /);r.k=r.g||(m?m[1]:"");if(r.k)pre[r.k]=(pre[r.k]||0)+1}
+  for(const r of rows)if(!r.g&&pre[r.k]<3)r.k="";
+  const groups=new Map();for(const r of rows){const k=r.k||L("Weitere");if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r)}
+  const li=r=>'<li class="'+(r.ok?'ok':'no')+'">'+(r.ok?'✓':'✗')+' '+esc(r.g||!r.k?r.n:r.n.slice(r.k.length+2))+
+    (r.roles?' <span class="tstroles">'+r.roles.map(([k,o])=>'<span class="'+(o?'ok':'no')+'">'+esc(L(TST_RN[k]||k))+' '+(o?'✓':'✗')+'</span>').join("")+'</span>':'')+(r.e?'<br><small>'+esc(r.e)+'</small>':'')+'</li>';
+  if(groups.size<2)return '<ul class="tstl">'+rows.sort((a,b)=>a.ok-b.ok).map(li).join("")+'</ul>';
+  return [...groups].sort((a,b)=>a[1].every(r=>r.ok)-b[1].every(r=>r.ok)).map(([k,l])=>{const bad=l.filter(r=>!r.ok).length,key="tg:"+suite+":"+k;
+    return '<details class="tstsu tstgrp'+(bad?' bad':'')+'" data-su="'+esc(key)+'"'+logSu(key)+'><summary>'+(bad?'✗ ':'✓ ')+esc(k)+' · '+(bad?(l.length-bad)+'/'+l.length:l.length)+'</summary><ul class="tstl">'+l.sort((a,b)=>a.ok-b.ok).map(li).join("")+'</ul></details>'}).join("")}
 function testsSec(){
   if(!TST.d){testsLoad();return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("Lade …")))+'</summary></details>'}
   const d=TST.d;if(d.none)return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("noch keine Resultate")))+'</summary></details>';
@@ -119,7 +135,7 @@ function testsSec(){
     '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
     suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
       return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'" data-su="'+esc(su.name)+'"'+(TST.su[su.name]?' open':'')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
-        '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+(c.e?'<br><small>'+esc(c.e)+'</small>':'')+'</li>').join("")+'</ul>'+(su.name?'</details>':'')}).join("")+
+        tstGroupsHTML(su.name,cs)+(su.name?'</details>':'')}).join("")+
     '<div class="arb tstbtns">'+(window.CHATURL&&isAdmin()?tstIco("data-tstrun",TST_RUN,TST.run||ghProgress()?"Tests laufen …":"Tests jetzt starten",TST.run,(()=>{const g=ghProgress();return g?{pct:g.pct}:TST.run?{pct:null}:null})()):'')+tstIco("data-tstre",TST_LOAD,"Resultate neu laden")+'</div>'+(TST.msg?'<p class="ghint">'+esc(TST.msg)+'</p>':'')+'</details>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d=null;render()}});
