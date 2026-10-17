@@ -103,10 +103,12 @@ def main():
             if f.get("sent") and "n" not in f and age < 180: continue   # the worker is sending it right now
             if not f.get("sent") and age < 60 and not b.get("kind"): continue   # just written: the worker sends it
             if not f.get("sent") and sa and not fsadmin.patch_doc("broadcasts/" + bid, {"sent": True}, update_time=ut): continue   # somebody else took it
+            b["_n"] = f.get("n") or 0
             bcs.append((bid, b, set(f.get("done") or []), ut))
     except Exception as e:
         print("• Nachrichten nicht lesbar:", type(e).__name__)
 
+    got = {}   # message → devices that received it now (saved in «done»: the history shows who got it)
     bad = set()   # messages with failed devices: not finished, tried again next run
     try:
         for did, f, _ in fsadmin.list_docs("push"):
@@ -131,7 +133,7 @@ def main():
                 tx = (b.get("i18n") or {}).get(p.get("lang") or "de") or b
                 r = send(sub, json.dumps({"title": tx.get("title", ""), "body": tx.get("body", ""), "url": b.get("url") or "./", "tag": "b" + bid}, ensure_ascii=False), pems, 86400)
                 if r == "gone": gone = True; break
-                if r == "ok": n_sent += 1; sent[k] = NOW
+                if r == "ok": n_sent += 1; sent[k] = NOW; got.setdefault(bid, []).append(did)
                 else: n_err += 1; bad.add(bid)   # not marked: tried again in the next run
             for it in ([] if gone else p.get("items", [])):
                 at = it.get("at", 0) / 1000
@@ -148,7 +150,11 @@ def main():
                 n_gone += 1
                 if sa: fsadmin.delete_doc("push/" + did)   # the device removed the app or turned push off in the browser
         for bid, b, done, ut in bcs:
-            if sa and bid not in bad: fsadmin.patch_doc("broadcasts/" + bid, {"fin": True})   # with failures: again next run
+            if not sa: continue
+            upd = {} if bid in bad else {"fin": True}   # with failures: again next run
+            if got.get(bid):
+                upd["done"] = sorted(done | set(got[bid]))[:1000]; upd["n"] = int(b.get("_n") or 0) + len(got[bid])
+            if upd: fsadmin.patch_doc("broadcasts/" + bid, upd)
     finally:   # always remember what was sent, also after an error or timeout – nothing is sent twice
         json.dump(sent, open(SENT, "w"))
     print(f"• {n_dev} Geräte · {n_sent} verschickt · {n_err} Fehler (nächster Lauf) · {n_late} zu spät verworfen · {n_gone} abgemeldet"

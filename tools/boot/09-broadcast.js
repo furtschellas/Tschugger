@@ -49,9 +49,21 @@ async function bcDeliver(id){
   return L("Gespeichert – die Nachricht geht mit dem nächsten Lauf (spätestens in 15 Minuten) raus.");
 }
 /* history: every message with date, time, recipients and sender; can be sent again */
-async function bcLoadHist(){BC.hist=[];try{const {F,db}=await fb();let q;try{q=await F.getDocs(F.query(F.collection(db,"broadcasts"),F.orderBy("at","desc"),F.limit(100)))}catch(_){q=await F.getDocs(F.collection(db,"broadcasts"))}const key=await getDataKey();
-  const out=[];for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));out.push(Object.assign({id:d.id,sent:d.data().sent,n:d.data().n},JSON.parse(new TextDecoder().decode(pt))))}catch(_){}}
+async function bcLoadHist(){BC.hist=[];BC.dev=null;try{const {F,db}=await fb();let q;try{q=await F.getDocs(F.query(F.collection(db,"broadcasts"),F.orderBy("at","desc"),F.limit(100)))}catch(_){q=await F.getDocs(F.collection(db,"broadcasts"))}const key=await getDataKey();
+  const out=[];for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));out.push(Object.assign({id:d.id,sent:d.data().sent,n:d.data().n,done:d.data().done||null},JSON.parse(new TextDecoder().decode(pt))))}catch(_){}}
   BC.hist=out.sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,100)}catch(err){console.warn("bc hist",err&&err.code||err);BC.histErr=String((err&&err.code)||err)}render()}
+/* who got it: «done» holds the devices; admins may read the device list (push/…) and see whose device it is */
+async function bcLoadDev(){if(BC.dev||!isAdmin())return;BC.dev={};try{const {F,db}=await fb();const key=await getDataKey();const q=await F.getDocs(F.collection(db,"push"));
+  for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));const w=(JSON.parse(new TextDecoder().decode(pt)).who)||{};BC.dev[d.id]=lc(w.email)}catch(_){}}}catch(err){console.warn("bc dev",err&&err.code||err)}render()}
+function bcPerson(em){if(!em)return "";for(const g of (S.crew||[]))for(const p of (g.people||[]))if(p.name&&lc(p.email)===em)return p.name;
+  const m=(typeof ADM!=="undefined"&&ADM.mem||[]).find(x=>lc(x.email)===em);const n=m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);return n||em}
+function bcRcptHTML(b){if(!isAdmin()||b.push===false)return "";
+  if(!b.done||!b.done.length)return '<div class="bcr">'+esc(L("Empfänger nicht erfasst (vor dem 17.10.2026 gesendet oder noch unterwegs)."))+'</div>';
+  if(!BC.dev){bcLoadDev();return '<div class="bcr">'+esc(L("Lade …"))+'</div>'}
+  const names=new Map();let unk=0;for(const did of b.done){const em=BC.dev[did];if(!em){unk++;continue}const n=bcPerson(em);names.set(n,(names.get(n)||0)+1)}
+  const list=[...names.keys()].sort((a,c)=>a.localeCompare(c,"de"));
+  return '<details class="bcr"><summary>'+esc(L("Empfänger"))+' ('+list.length+(unk?' + '+unk+' '+L("ohne Zuordnung"):'')+')</summary><div class="bcrl">'+list.map(n=>'<span>'+esc(n)+(names.get(n)>1?' <small>×'+names.get(n)+'</small>':'')+'</span>').join("")+
+    (unk?'<span class="muted">'+esc(L("{n} Geräte inzwischen abgemeldet").replace("{n}",unk))+'</span>':'')+'</div></details>'}
 const bcWho=b=>b.roles||b.depts?[].concat((b.roles||[]).map(r=>r==="owner"?L("Owner"):r==="admin"?L("Admin"):r===""?L("Keine Rolle"):((BC.roles||[]).find(x=>x.id===r)||{}).name||r),(b.depts||[]).map(HIT)).join(", "):L("Alle");
 function bcHistHTML(){
   if(!BC.hist){bcLoadHist();return '<p class="ghint">'+L("Lade …")+'</p>'}
@@ -59,7 +71,7 @@ function bcHistHTML(){
   return '<div class="bchist">'+BC.hist.map(b=>{const dt=new Date(b.at||0);
     return '<div class="bch"><div class="bchd"><span class="bct">'+esc(dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",year:"numeric"}))+' · '+esc(dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"}))+'</span>'+(b.n!=null?'<span class="ust role">'+esc(L("{n} Geräte").replace("{n}",b.n))+'</span>':'')+'</div>'+
       '<b class="bctt">'+esc(b.title||"")+'</b><p class="bcb">'+esc(b.body||"")+'</p>'+
-      '<div class="bcm"><span>'+esc(L("An"))+': '+esc(bcWho(b))+'</span>'+(b.ch?'<span>'+esc(["push","wa","sms","mail"].filter(k=>b.ch[k]).map(k=>({push:"Push",wa:"WhatsApp",sms:"SMS",mail:L("E-Mail")})[k]).join(" · "))+'</span>':'')+'<span>'+esc(L("Von"))+': '+esc(b.by||"")+'</span></div>'+
+      '<div class="bcm"><span>'+esc(L("An"))+': '+esc(bcWho(b))+'</span>'+(b.ch?'<span>'+esc(["push","wa","sms","mail"].filter(k=>b.ch[k]).map(k=>({push:"Push",wa:"WhatsApp",sms:"SMS",mail:L("E-Mail")})[k]).join(" · "))+'</span>':'')+'<span>'+esc(L("Von"))+': '+esc(b.by||"")+'</span></div>'+bcRcptHTML(b)+
       '<div class="arb"><button type="button" class="pillbtn" data-bcre="'+esc(b.id)+'">↻ '+L("Erneut senden")+'</button></div></div>'}).join("")+'</div>';
 }
 document.addEventListener("click",async e=>{if(!e.target.closest("[data-bcclr]")||!isAdmin())return;if(!confirmSafe(L("Den ganzen Verlauf der Push-Nachrichten löschen?")))return;
