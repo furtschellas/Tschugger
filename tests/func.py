@@ -239,6 +239,7 @@ async def owner_tests(p, port):
     tt = await E("({t:TOUR.steps.map(s=>s.t),intro:tourIntro()})")
     check("Tour: beginnt mit «Deine Tour» und nennt die Rolle", tt["t"][:1] == ["Deine Tour"] and "Owner" in tt["intro"], tt["intro"])
     check("Tour (Owner): zeigt «Termin hinzufügen» und «Push-Nachricht senden»", "Termin hinzufügen" in tt["t"] and "Push-Nachricht senden" in tt["t"], tt["t"])
+    check("Tour (Owner): Einstellungen und jeder Teil der App-Verwaltung kurz erklärt", all(x in tt["t"] for x in ("Profil", "App-Einstellungen", "App-Verwaltung", "User", "Access", "Docs", "Log/Tests")), tt["t"])
     await E("if(TOUR.el)TOUR.el.remove();TOUR.el=null;document.querySelectorAll('#tour').forEach(x=>x.remove())")
 
     # documents compared (App-Verwaltung → Log)
@@ -385,7 +386,14 @@ async def hidden_data(p, port):
             rv = await E("({tab:!!document.querySelector('[data-asub=\"roles\"]')||ADM.sub==='roles',view:!!document.querySelector('#view .pacc'),edit:document.querySelectorAll('#view [data-redit],#view [data-paccedit]').length,gear:!document.getElementById('admBtn').hidden})")
             check("Rollen sehen: Access sichtbar, aber nichts änderbar", rv["view"] and rv["edit"] == 0 and rv["gear"], rv)
             await E("MYPERMS.splice(MYPERMS.indexOf('roles.view'),1);try{acctButton(true)}catch(_){};S.tab='today';render()")
-        check(f"{who}: Tour ohne Schritte für fehlende Rechte", "Termin hinzufügen" not in tt and ("Schedule" in tt) == (who != "norole") and ("Lunch-Menüs" in tt) == (who == "catering"), tt)
+        if who == "catering":
+            # role changed (here: catering gets «Push senden»): message with what is new, offered once
+            await E("(()=>{const k=memKey();const c=JSON.parse(localStorage.getItem(k)||'{}');c.p=(c.p||[]).filter(p=>p!=='view.dispo');localStorage.setItem(k,JSON.stringify(c))})()")
+            await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
+            rc = await E("(()=>{const d=document.getElementById('rolechg');return d?d.innerText:''})()")
+            check("Rolle geändert: Nachricht mit den neuen Rechten", "Callsheet sehen" in rc and "Catering" in rc, rc[:120])
+            await E("const r=document.getElementById('rolechg');if(r)r.remove()")
+        check(f"{who}: Tour ohne Schritte für fehlende Rechte", "Termin hinzufügen" not in tt and ("App-Verwaltung" in tt) == (who == "power") and ("Schedule" in tt) == (who != "norole") and ("Lunch-Menüs" in tt) == (who == "catering"), tt)
         await b.close()
 
 
