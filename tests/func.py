@@ -213,10 +213,42 @@ async def owner_tests(p, port):
         return [ownFor({people:[{k:nmk('Anna Muster')}]},me),ownFor({people:[{email:'anna@x.ch'}]},me),ownFor({depts:['Kamera']},me),ownFor({depts:['Ton']},me),ownFor({people:[{k:'otto'}],depts:['Licht']},me)]})()""")
     check("Eigene Termine: Empfänger nach Person (Name oder E-Mail) und Abteilung", vis == [True, True, True, False, False], vis)
 
+    # new script version: header (after the schedule version), Today (3 days, unread, opens the script), push setting
+    await E("S.meta.scriptVersion='v13';S.meta.scriptChange={at:new Date().toISOString(),v:'v13',prev:'v12'};localStorage.setItem('chgseen:v1','0');renderHeader();S.tab='today';render()"); await pg.wait_for_timeout(300)
+    check("Kopf: Drehbuch-Version nach der Sched-Version", "Drehbuch v13" in await E("document.getElementById('stand').innerText"))
+    check("Handy: Zeile über dem Titel («Dreh Wallis …») ausgeblendet", await E("innerWidth<=600&&document.getElementById('sub').getBoundingClientRect().height===0"))
+    td = await E("(()=>{const l=document.querySelector('#view .tchg [data-tscript]');return {t:l?l.innerText:'',dot:(document.querySelector('#view .tchg .chgdot')||{}).innerText||''}})()")
+    check("Today: neue Drehbuch-Version unter «Änderungen» (mit vorheriger Version, als neu markiert)", "v13" in td["t"] and "v12" in td["t"] and "neu" in td["dot"], td)
+    await E("document.querySelector('#view [data-tscript]').click()"); await pg.wait_for_timeout(300)
+    check("Today: Tippen auf die Drehbuch-Änderung öffnet das Drehbuch", await E("S.tab") == "script")
+    await E("S.meta.scriptChange.at=new Date(Date.now()-4*864e5).toISOString();S.tab='today';render()"); await pg.wait_for_timeout(200)
+    check("Today: Drehbuch-Änderung nach 3 Tagen nicht mehr angezeigt", not await E("!!document.querySelector('#view [data-tscript]')"))
+    check("Push-Link «#go=script» öffnet das Drehbuch", await E("(()=>{S.tab='today';return pushGo('./#go=script:2026-10-17')})()")); await pg.wait_for_timeout(700)
+    check("Push-Link «#go=script»: Drehbuch-Seite", await E("S.tab") == "script")
+    await E("S.tab='acct';ACSUB='note';render()"); await pg.wait_for_timeout(300)
+    check("Mein Konto → Push: Schalter «Neue Drehbuch-Versionen»", await E("!!document.querySelector('[data-pushnews=\"script\"]')"))
+    await E("const c=pushCfg();c.news.script=false;pushSave(c)")
+    check("Push: Drehbuch-Meldung abbestellbar (geht so ans Gerät)", await E("newsFor(pushCfg()).script===false&&newsFor(Object.assign(pushCfg(),{news:{script:true}})).script===true"))
+    await E("const c=pushCfg();c.news.script=true;pushSave(c)")
+
+    # Today: the person chooses the parts in Mein Konto → App
+    await E("localStorage.setItem('today','1');S.tab='acct';ACSUB='app';render()"); await pg.wait_for_timeout(300)
+    tp = await E("[...document.querySelectorAll('#view [data-todaypart]')].map(x=>x.dataset.todaypart)")
+    check("Mein Konto → App: Teile von «Today» wählbar", {"my", "time", "menu", "scs", "chg", "off", "wx", "drive", "loc"} <= set(tp), tp)
+    await E("for(const k of ['scs','off','chg']){const c=document.querySelector('#view [data-todaypart=\"'+k+'\"]');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}))}"); await pg.wait_for_timeout(200)
+    await E("S.tab='today';render()"); await pg.wait_for_timeout(300)
+    th = await E("({scs:!!document.querySelector('#view .tscs'),off:!!document.querySelector('#view .toff'),chg:!!document.querySelector('#view .tchg'),v:localStorage.getItem('today'),on:todayOn()})")
+    check("Today: abgewählte Teile ausgeblendet, Today bleibt eingeschaltet", not th["scs"] and not th["off"] and not th["chg"] and th["on"] and th["v"].startswith("1|"), th)
+    await E("S.tab='acct';ACSUB='app';render();const c=document.querySelector('#view [data-todayon]');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}))"); await pg.wait_for_timeout(200)
+    await E("S.tab='acct';ACSUB='app';render();const c=document.querySelector('#view [data-todayon]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))"); await pg.wait_for_timeout(200)
+    check("Today aus- und wieder einschalten: die Auswahl der Teile bleibt", await E("todayHidden().has('scs')&&todayOn()"))
+    await E("localStorage.setItem('today','1');S.tab='today';render()")
+
     # first push prompt: also offers changes to schedule, callsheet and prep
     await E("localStorage.removeItem('pushask:'+ME.uid);window.pushOK=()=>true;try{Object.defineProperty(Notification,'permission',{get:()=>'default',configurable:true})}catch(_){};WELCOME_OPEN=false;ONBOARD=false;TOUR.el=null;maybePushHint()")
     await pg.wait_for_timeout(400)
-    check("Push-Abfrage: Drehplan-, Callsheet- und Prep-Änderungen wählbar", await E("document.querySelectorAll('#pushhint [data-phnews]').length") == 3)
+    check("Push-Abfrage: Drehplan-, Callsheet-, Prep- und Drehbuch-Änderungen wählbar", await E("[...document.querySelectorAll('#pushhint [data-phnews]')].map(x=>x.dataset.phnews).join()") == "plan,cs,prep,script")
+    check("Push-Abfrage: Text nennt Drehbuch-Versionen", "Drehbuch" in await E("(document.getElementById('pushhint')||{}).innerText||''"))
     await E("const h=document.getElementById('pushhint');if(h)h.remove()")
 
     # phone: long addresses get «str.»

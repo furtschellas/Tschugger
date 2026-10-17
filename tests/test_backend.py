@@ -124,6 +124,15 @@ check("Auto-Push Callsheet: auch an Personen ohne Rolle", "" in (cs[0]["roles"] 
 check("Auto-Push: höchstens 6 Tage, Version und Drehtag im Text", plan.get("body", "").startswith("V7 · DT 5 · ") and plan["body"].count(",") == 5, plan.get("body"))
 check("Auto-Push: in allen 4 Sprachen, Tippen öffnet den Tag", set(plan.get("i18n") or {}) == {"de", "fr", "it", "en"} and plan.get("url") == "./#go=plan:" + D(1))
 check("Auto-Push: Auftragsdatei danach weg (nichts doppelt)", not (TMP / "pending_push.json").exists())
+(TMP / "pending_push.json").write_text(json.dumps({"news": [{"kind": "script", "dates": [D(0)], "version": "v13"}], "days": []}))
+fs.d["roles/crew"] = {"perms": ["view.plan", "view.script"]}
+n0 = len(fs.col("broadcasts")); N.main()
+sm = [dec(v["c"]) for v in fs.col("broadcasts").values() if dec(v["c"]).get("kind") == "script"]
+s0 = sm[0] if sm else {}
+check("Auto-Push Drehbuch: Nachricht «Neue Drehbuch-Version» mit Version", s0.get("title") == "Neue Drehbuch-Version" and "v13" in s0.get("body", ""), s0.get("body"))
+check("Auto-Push Drehbuch: nur Rollen mit «Drehbuch sehen», nicht ohne Rolle", sorted(s0.get("roles") or []) == ["admin", "crew", "owner"], s0.get("roles"))
+check("Auto-Push Drehbuch: alle Sprachen, Tippen öffnet das Drehbuch", set(s0.get("i18n") or {}) == {"de", "fr", "it", "en"} and (s0.get("url") or "").startswith("./#go=script:"))
+check("Drehbuch-Version aus dem Dateinamen", U.script_version("01_Script/261017_Tschugger_Tigerblood_v13 CLEAN.pdf") == "v13" and U.script_version("x.pdf") == "")
 
 # ====================================================================== Push-Versand
 import push_send as P  # noqa: E402

@@ -490,6 +490,11 @@ def pick_schedule(files):
         return (d.group(1) if d else "", int(v.group(1)) if v else 0, var, f["modified"] or "")
     return max(c, key=key) if c else None
 
+def script_version(name):
+    """«…_v13 CLEAN.pdf» → «v13» (shown in the header after the schedule version)"""
+    m = re.search(r"(?:^|[ _-])v(\d+)(?:[ _.-]|$)", name.rsplit("/", 1)[-1].lower())
+    return "v" + m.group(1) if m else ""
+
 def pick_script(files):
     """always the newest CLEAN version (without revision marks): highest «vNN» in the file name; a version without CLEAN is never
     used (it is usually uploaded a few minutes before the CLEAN one); never translations, changelogs, SPP or landscape versions"""
@@ -847,12 +852,18 @@ def main():
     f = pick_script(files)
     if f:
         sources.append({"kind": "script", "name": f["name"], "modified": f["modified"]})
+        if not meta.get("scriptVersion") or not is_new("script", f): meta["scriptVersion"] = script_version(f["name"])
         if is_new("script", f) and may_try("script", f):
           log("Drehbuch: neu, wird eingelesen")
           try:
             sc = script_from_pdf(dbx.download(f["id"]))
             if len(sc) >= max(20, int(len(scr) * 0.7)):
-                scr = sc; changed = True; log("Drehbuch:", len(sc), "Szenen")
+                had = bool(scr); scr = sc; changed = True; log("Drehbuch:", len(sc), "Szenen")
+                sv = script_version(f["name"]); pv = meta.get("scriptVersion") or ""
+                if had and not FORCE:   # a new version (or a new revision of the same one): Today and push
+                    meta["scriptChange"] = {"at": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"), "v": sv, "prev": pv}
+                    NEWS.append({"kind": "script", "dates": [TODAY], "version": sv})
+                meta["scriptVersion"] = sv
             else:
                 failed("script", f, "zu wenige Szenen erkannt (%d) – bisheriges bleibt" % len(sc))
           except Exception as e: failed("script", f, e)

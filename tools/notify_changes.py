@@ -20,12 +20,14 @@ TXT = {
     "plan": {"de": "Drehplan geändert", "fr": "Plan de tournage modifié", "it": "Piano di riprese modificato", "en": "Shooting schedule changed"},
     "cs": {"de": "Neues Callsheet", "fr": "Nouvelle feuille de service", "it": "Nuovo foglio di chiamata", "en": "New callsheet"},
     "csu": {"de": "Callsheet aktualisiert", "fr": "Feuille de service mise à jour", "it": "Foglio di chiamata aggiornato", "en": "Callsheet updated"},
+    "script": {"de": "Neue Drehbuch-Version", "fr": "Nouvelle version du scénario", "it": "Nuova versione della sceneggiatura", "en": "New script version"},
     "prep": {"de": "Prep-Planung geändert", "fr": "Planning de préparation modifié", "it": "Pianificazione prep modificata", "en": "Prep schedule changed"},
 }
 # which role may see what (like the app: no role sees callsheets and prep, but not the shooting schedule)
-VIEW = {"plan": "view.plan", "cs": "view.dispo", "prep": "view.prep"}
-NOROLE = {"plan": False, "cs": True, "prep": True}
-GO = {"plan": "plan", "cs": "dispo", "prep": "prep"}
+VIEW = {"plan": "view.plan", "cs": "view.dispo", "prep": "view.prep", "script": "view.script"}
+NOROLE = {"plan": False, "cs": True, "prep": True, "script": False}
+GO = {"plan": "plan", "cs": "dispo", "prep": "prep", "script": "script"}
+SCRIPTBODY = {"de": "Drehbuch {v} ist in der App", "fr": "Le scénario {v} est dans l’app", "it": "La sceneggiatura {v} è nell’app", "en": "Script {v} is in the app"}
 
 
 def log(*a): print("•", *a, flush=True)
@@ -65,7 +67,8 @@ def main():
         rl = ["owner", "admin"] + [r for r, perms in roles.items() if perm in perms and r != "admin"] + ([""] if NOROLE[kind] else [])
         i18n = {}
         for lang in ("de", "fr", "it", "en"):
-            body = ", ".join(fmt(d, lang, labels if kind != "prep" else {}) for d in dates)
+            body = SCRIPTBODY[lang].replace("{v}", g.get("version") or "").replace("  ", " ") if kind == "script" else \
+                ", ".join(fmt(d, lang, labels if kind != "prep" else {}) for d in dates)
             if kind == "plan" and g.get("version"): body = g["version"] + " · " + body
             i18n[lang] = {"title": TXT[k][lang], "body": body[:180]}
         at = int(time.time() * 1000)
