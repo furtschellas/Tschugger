@@ -263,7 +263,7 @@ async def owner_tests(p, port):
     check("Log: Testresultate je Teil, Fehler offen", lg == {"su": 2, "bad": 1, "open": True}, lg)
     await E("window.CHATURL=window.CHATURL||'https://worker.test';render()"); await pg.wait_for_timeout(300)
     await E("document.querySelector('#view [data-tstall]').click()"); await pg.wait_for_timeout(200)
-    al = await E("[...document.querySelectorAll('#view .tstsec details, #view .tstsec')].every(d=>d.open)")
+    al = await E("(()=>{const b=document.querySelector('#view [data-tstall]').closest('.tstsec');return [b,...b.querySelectorAll('details')].every(d=>d.open)})()")
     check("Log: Knopf «alles aufklappen» öffnet alle Teile", al)
     check("Log: Knopf «Tests jetzt starten» (Kreis-Pfeile) für Admins", await E("!!document.querySelector('#view [data-tstrun] svg')"))
     await E("TST.d=null")

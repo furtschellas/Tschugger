@@ -3,6 +3,14 @@
    dazu ein kurzer Selbsttest der App. Alles läuft im Browser mit den Daten, die die Person sehen darf – nichts geht weg.
    Sichtbar für Admins in App-Verwaltung → Log, für alle mit dem Recht «Dokumente prüfen» in Mein Konto → App. */
 const DCK={res:null,busy:false,at:0};
+try{const l=JSON.parse(localStorage.getItem("dck:last")||"null");if(l&&Array.isArray(l.res)){DCK.res=l.res;DCK.at=l.at||0}}catch(_){} /* the last check of this device is shown again */
+/* screenplay text: action lines (and speaker cues) vs. what is said – a name inside dialogue does not put the person on set */
+function dckSplit(t){const act=[],dlg=[];let inD=false;for(const raw of String(t||"").split("\n")){const l=raw.trim();
+    if(!l){inD=false;continue}
+    if(/^[A-ZÄÖÜ][A-ZÄÖÜ'\-]+(?: [A-ZÄÖÜ][A-ZÄÖÜ'\-]+)?\s*(\([^)]*\))?\s*$/.test(l)){act.push(l);inD=true;continue}
+    if(/^\(.*\)$/.test(l)&&inD)continue;(inD?dlg:act).push(l)}
+  return {a:fold(act.join(" ")),d:fold(dlg.join(" "))}}
+const dckAction=t=>dckSplit(t).a,dckDialog=t=>dckSplit(t).d;
 const dckMay=()=>!!ME&&(isAdmin()||can("data.check"));
 const dnz=t=>fold(String(t||"")).replace(/[^a-z0-9]+/g," ").trim();
 const dsc=x=>String(x||"").toUpperCase().replace(/\s+/g,"").replace(/^SC/,"");
@@ -43,15 +51,15 @@ async function dckRun(){
         const todP=v=>{const t=String(v||"").split("/").pop().toUpperCase();return /^N/.test(t)?"N":/^(EV|DUSK|A)/.test(t)?"E":/^(D|M|MO|AM|PM|DAWN)/.test(t)?"D":""};
         const todS=h=>{const t=String(h||"").toUpperCase().split(/\s[-–]\s/).pop();return /(NIGHT|NACHT)/.test(t)?"N":/(EVENING|ABEND|DUSK|DÄMMERUNG)/.test(t)?"E":/(DAY|TAG|MORNING|MORGEN|AFTERNOON|NACHMITTAG|MITTAG|DAWN)/.test(t)?"D":""};
         const TODN={D:L("Tag"),N:L("Nacht"),E:L("Abend")};
-        const ieBad=[],todBad=[],castMiss=[],castNear=[],speakMiss=[];const seen=new Set();
+        const ieBad=[],todBad=[],castMiss=[],castNear=[],castDlg=[],speakMiss=[];const seen=new Set();
         for(const [d,it] of items)for(const s of scs(it)){const part=dbase(s)!==s;const x=byS.get(s)||byS.get(dbase(s));if(!x||seen.has(s)||part)continue;seen.add(s);const tag=s+" ("+(d.short||d.label)+")"; /* scene parts (PT/SL) may be shot inside and outside: not compared */
           const a=ieP(it.ie),b=ieS(x.head);if(a&&b&&a!==b&&!(a==="IE"||b==="IE"))ieBad.push(tag+": "+L("Drehplan")+" "+a+", "+L("Drehbuch")+" "+b);
           const ta=todP(it.ie),tb=todS(x.head);if(ta&&tb&&ta!==tb)todBad.push(tag+": "+L("Drehplan")+" "+TODN[ta]+", "+L("Drehbuch")+" "+TODN[tb]);
-          const txt=fold(x.text||"")+" "+fold(x.head||"");
+          const txt=dckAction(x.text)+" "+fold(x.head||""),dlg=dckDialog(x.text);
           /* cast not named in the scene: look at the scene before and after in the script – often the person is there without dialogue (a note, never an error) */
-          const xi=sl.indexOf(x),near=[sl[xi-1],sl[xi+1]].filter(Boolean).map(y=>fold(y.text||"")+" "+fold(y.head||"")).join(" ");
+          const xi=sl.indexOf(x),near=[sl[xi-1],sl[xi+1]].filter(Boolean).map(y=>dckAction(y.text)+" "+fold(y.head||"")).join(" ");
           for(const c of arr(it.cast)){const n=String(cast[c]||"").trim();const first=fold(n.split(/\s+/).pop()||"");const nm=fold(n);const has=t=>t.includes(nm)||(first.length>2&&t.includes(first));
-            if(n&&!has(txt))(has(near)?castNear:castMiss).push(tag+": "+n)}
+            if(n&&!has(txt))(has(near)?castNear:has(dlg)?castDlg:castMiss).push(tag+": "+n)}
           const castN=arr(it.cast).map(c=>fold(String(cast[c]||""))).filter(Boolean);
           const spk=new Set([...String(x.text||"").matchAll(/^\s*([A-ZÄÖÜ][A-ZÄÖÜ'\-]+(?: [A-ZÄÖÜ][A-ZÄÖÜ'\-]+)?)\s*(\([^)]*\))?\s*$/gm)].filter(m=>!/(O\.?\s?S\.?|V\.?\s?O\.?|O\.?\s?C\.?|\bOFF\b|TEL|PHONE|STIMME|VOICE|RADIO|FUNK)/i.test(m[2]||"")).map(m=>m[1].trim()).filter(n=>n.length>2&&!/^(INT|EXT|CUT|SCHNITT|ENDE|FADE|OFF|ZWISCHENSCHNITT|RÜCKBLENDE|FLASHBACK|MONTAGE|SPÄTER|CONTINUOUS)$/.test(n)));
           const allCast=Object.values(cast).map(c=>fold(String(c)));
@@ -59,6 +67,7 @@ async function dckRun(){
         if(ieBad.length)w("warn",L("Drehplan ↔ Drehbuch"),L("Innen/Aussen stimmt nicht überein:")+" "+ieBad.slice(0,12).join(" · "));
         if(todBad.length)w("warn",L("Drehplan ↔ Drehbuch"),L("Tageszeit stimmt nicht überein:")+" "+todBad.slice(0,12).join(" · "));
         if(castMiss.length)w("info",L("Drehplan ↔ Drehbuch"),L("Cast laut Drehplan, im Drehbuch der Szene nicht gefunden:")+" "+castMiss.slice(0,15).join(" · "));
+        if(castDlg.length)w("info",L("Drehplan ↔ Drehbuch"),L("Cast laut Drehplan, im Drehbuch nur im Dialog erwähnt – muss nicht anwesend sein:")+" "+castDlg.slice(0,15).join(" · "));
         if(castNear.length)w("info",L("Drehplan ↔ Drehbuch"),L("Cast laut Drehplan, in der Szene ohne Text, aber in der Szene davor oder danach – vermutlich dabei ohne Dialog:")+" "+castNear.slice(0,15).join(" · "));
         if(speakMiss.length)w("info",L("Drehplan ↔ Drehbuch"),L("Sprechen im Drehbuch (laut Cast-Liste), fehlen im Cast des Drehplans:")+" "+speakMiss.slice(0,15).join(" · "));
         if(!ieBad.length&&!todBad.length)w("ok",L("Drehplan ↔ Drehbuch"),L("Innen/Aussen und Tageszeit stimmen bei allen {n} Szenen überein.").replace("{n}",seen.size))}
@@ -108,7 +117,7 @@ async function dckRun(){
       const sw=!!(navigator.serviceWorker&&navigator.serviceWorker.controller);
       w(bad.length||!key?"warn":"ok",L("Selbsttest der App"),(key?"✓ "+L("Schlüssel"):"✗ "+L("Schlüssel"))+" · "+(bad.length?"✗ "+L("Seiten mit Fehler")+": "+bad.join(", "):"✓ "+tabsOn().length+" "+L("Seiten"))+" · "+(sw?"✓ ":"– ")+L("Offline-Speicher")+" · "+(navigator.onLine?"✓ ":"– ")+L("Verbindung"))}
   }catch(err){w("warn",L("Prüfung"),L("Fehler:")+" "+(err&&err.message||err))}
-  DCK.res=out;DCK.at=Date.now();DCK.busy=false;render();
+  DCK.res=out;DCK.at=Date.now();DCK.busy=false;try{localStorage.setItem("dck:last",JSON.stringify({res:out,at:DCK.at}))}catch(_){}render();
 }
 window.dataCheckSec=function(flat){if(!dckMay())return "";
   const r=DCK.res||[],nw=r.filter(x=>x.lvl==="warn").length,ni=r.filter(x=>x.lvl==="info").length;
@@ -117,6 +126,7 @@ window.dataCheckSec=function(flat){if(!dckMay())return "";
   /* Mein Konto → App: always open (the section already has the title); App-Verwaltung → Log: to open like the other boxes */
   return (flat?'<div class="dcksec dckflat'+(nw?' bad':'')+'">'+(sum?'<p class="dcksum">'+sum+'</p>':''):'<details class="tstsec dcksec'+(nw?' bad':'')+'"'+(DCK.res?' open':'')+'><summary><b>'+esc(L("Dokumente prüfen"))+'</b>'+(sum?' · '+sum:'')+'</summary>')+
     '<p class="ghint">'+esc(L("Vergleicht die Dokumente aus der Dropbox untereinander (Drehplan, Locations, Drehbuch, Cast-Liste, Prep Weekly/Daily, Callsheets, Crewliste) und prüft die App auf diesem Gerät. Es werden nur Bereiche verglichen, die du sehen darfst."))+'</p>'+
+    (DCK.res&&DCK.at?'<p class="ghint">'+esc(L("Letzte Prüfung"))+': '+esc(new Date(DCK.at).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))+'</p>':'')+
     '<div class="arb"><button type="button" class="pillbtn" data-dckrun'+(DCK.busy?' disabled':'')+'>'+esc(L(DCK.busy?"Prüfe …":DCK.res?"Nochmals prüfen":"Jetzt prüfen"))+'</button></div>'+
     (DCK.res?'<ul class="dckl">'+r.slice().sort((a,b)=>({warn:0,info:1,ok:2})[a.lvl]-({warn:0,info:1,ok:2})[b.lvl]).map(x=>'<li class="'+x.lvl+'"><span class="dcki">'+ic[x.lvl]+'</span><span><b>'+esc(x.area)+'</b><br>'+esc(x.text)+'</span></li>').join("")+'</ul>':'')+(flat?'</div>':'</details>')};
 document.addEventListener("click",e=>{if(e.target.closest("[data-dckrun]")&&dckMay())dckRun()});
