@@ -6,7 +6,7 @@ const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher
 const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
 function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
   const nd=c.on===false?false:true;  /* reminders were switched off: change pushes start off too */
-  return {hint:c.hint||0,news:Object.assign({plan:nd,cs:nd,prep:nd},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
+  return {hint:c.hint||0,news:Object.assign({plan:nd,cs:nd,prep:nd,script:nd},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
 function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
 const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
@@ -110,7 +110,7 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-pstat]")){PST.d
 window.pushBell=function(e){const c=pushCfg();if(!c.on||!c.types.my||!pushOK())return "";const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));const off=!!c.off[id];
   return '<button type="button" class="pbell'+(off?' off':'')+'" data-pushev="'+id+'" data-pushdate="'+esc(e.date)+'" aria-pressed="'+(!off)+'" aria-label="'+esc(L(off?"Push-Nachricht einschalten":"Push-Nachricht ausschalten"))+'" title="'+esc(L(off?"Push-Nachricht aus":"Push-Nachricht an"))+'"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'+(off?'<path d="M3 3l18 18"/>':'')+'</svg></button>'};
 /* push on changes (sent automatically after the Dropbox update): only what the person may see, each can be turned off */
-const PUSH_NEWS=[["plan","Änderungen am Drehplan","plan"],["cs","Neue und geänderte Callsheets","dispo"],["prep","Änderungen der Prep-Planung","prep"]];
+const PUSH_NEWS=[["plan","Änderungen am Drehplan","plan"],["cs","Neue und geänderte Callsheets","dispo"],["prep","Änderungen der Prep-Planung","prep"],["script","Neue Drehbuch-Versionen","script"]];
 function newsFor(c){const o={};for(const [k,,v] of PUSH_NEWS)o[k]=!!c.news[k]&&vok(v);return o}
 function newsAny(c){return PUSH_NEWS.some(([k,,v])=>c.news[k]&&vok(v))}
 function pushSec(){
@@ -147,8 +147,9 @@ document.addEventListener("change",e=>{const t=e.target;
   else if(t.matches("[data-pushev2]")){pushToggleEv(t.dataset.pushev2,t.dataset.pushdate,t.checked);const s=t.closest("details").querySelector("summary");if(s){const c=pushCfg(),ev=pushEvents(c).filter(x=>pushStart(x)>Date.now()).slice(0,40);s.textContent=L("Kommende Termine")+" ("+ev.filter(x=>!c.off[x.id]).length+"/"+ev.length+")"}}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pushSyncSoon()});
 /* opened from a notification: go to «Meine Termine» */
-function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo|prep):(\d{4}-\d{2}-\d{2})/);if(!m)return false;
+function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo|prep|script):(\d{4}-\d{2}-\d{2})/);if(!m)return false;
   try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}
+  if(m[1]==="script"){setTimeout(()=>{S.tab=vok("script")?"script":"today";try{store("tab",S.tab)}catch(_){}window.scrollTo(0,0);render()},400);return true}
   let n=0;const go=()=>{ /* wait for the data (up to 6 s), so a new shooting day is found */
     const has=(S.days||[]).some(d=>d.id===m[2]||d.date===m[2]);if(m[1]==="plan"&&!has&&n++<15){setTimeout(go,400);return}
     S.want=null;S.srcOpen=false;if(m[1]==="dispo"){S.tab="dispo";S.dday=m[2]}else{S.tab="plan";S.day=m[1]==="prep"||!has?"prep:"+m[2]:m[2]}

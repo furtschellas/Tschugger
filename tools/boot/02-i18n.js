@@ -634,6 +634,13 @@ Object.assign(I18N,{
 });
 const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"],["hi","हिन्दी"]];
 Object.assign(I18N,{
+ "Die App erinnert dich auf Wunsch vor deinen Terminen und meldet neue Drehpläne, Callsheets und Drehbuch-Versionen – auch wenn sie geschlossen ist.":{fr:"Sur demande, l’app te rappelle tes rendez-vous et signale les nouveaux plans de tournage, feuilles de service et versions du scénario – même fermée.",it:"Su richiesta l’app ti ricorda i tuoi appuntamenti e segnala nuovi piani di riprese, ordini del giorno e versioni della sceneggiatura – anche quando è chiusa.",en:"If you like, the app reminds you before your appointments and tells you about new shooting schedules, callsheets and script versions – even when it is closed."},
+ "Neue Drehbuch-Versionen":{fr:"Nouvelles versions du scénario",it:"Nuove versioni della sceneggiatura",en:"New script versions"},
+ "Neue Drehbuch-Version":{fr:"Nouvelle version du scénario",it:"Nuova versione della sceneggiatura",en:"New script version"},
+ "Was zeigt «Today»?":{fr:"Que montre « Today » ?",it:"Cosa mostra «Today»?",en:"What does “Today” show?"},
+ "Zeiten (Call, Drehbeginn, Wrap, Sonne)":{fr:"Horaires (convocation, début, wrap, soleil)",it:"Orari (convocazione, inizio, wrap, sole)",en:"Times (call, shoot start, wrap, sun)"},
+ "vorher":{fr:"avant",it:"prima",en:"before"},
+ "überarbeitet":{fr:"révisé",it:"rivisto",en:"revised"},
  "Die App erinnert dich auf Wunsch vor deinen Terminen und meldet neue Drehpläne und Callsheets – auch wenn sie geschlossen ist.":{fr:"Sur demande, l’app te rappelle tes rendez-vous et signale les nouveaux plans de tournage et feuilles de service – même fermée.",it:"Su richiesta l’app ti ricorda i tuoi appuntamenti e segnala nuovi piani di riprese e ordini del giorno – anche quando è chiusa.",en:"If you like, the app reminds you before your appointments and tells you about new shooting schedules and callsheets – even when it is closed."},
  "Automatische Tests":{fr:"Tests automatiques",it:"Test automatici",en:"Automatic tests"},
  "noch keine Resultate":{fr:"pas encore de résultats",it:"ancora nessun risultato",en:"no results yet"},

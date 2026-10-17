@@ -185,7 +185,7 @@ async def main():
                     check("App-Verwaltung: Bereiche auf einer Zeile", rowsA == 1, rowsA)
                     # push settings
                     await E("S.tab='acct';ACSUB='note';render()"); await pg.wait_for_timeout(400)
-                    check("Mein Konto → Push: drei Schalter «Bei Änderungen»", await E("document.querySelectorAll('[data-pushnews]').length") == 3)
+                    check("Mein Konto → Push: Schalter «Bei Änderungen» inkl. Drehbuch", await E("document.querySelectorAll('[data-pushnews]').length===PUSH_NEWS.filter(x=>vok(x[2])).length&&(!vok('script')||!!document.querySelector('[data-pushnews=\"script\"]'))"))
                     # deep links from push messages
                     await E("pushGo('#go=dispo:2026-10-21')"); await pg.wait_for_timeout(700)
                     check("Push-Link öffnet das Callsheet", await E("S.tab+' '+S.dday") == "dispo 2026-10-21")

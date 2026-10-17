@@ -637,6 +637,9 @@ nav.tabs .lbl{white-space:nowrap;overflow:hidden;max-width:100%}
 nav.tabs.short .lbl[data-s]{font-size:0}nav.tabs.short .lbl[data-s]::after{content:attr(data-s);font-size:10px}
 /* Kopf: «· geprüft …» bleibt zusammen – passt es nicht, kommt es als Ganzes auf die nächste Zeile (Umbruch nach der Sched-Version) */
 #stand .chk{white-space:nowrap;display:inline-block}
+#stand .scv{white-space:nowrap}
+/* phone: no «Dreh Wallis …» line above the title */
+@media (max-width:600px){#sub{visibility:hidden;height:0;overflow:hidden}}
 /* Kopf-Symbole (Suche, Termine, Push …) etwas grösser */
 /* die Symbolleiste behält ihre Breite (der Titel daneben weicht aus), damit die Symbole nicht automatisch schrumpfen */
 html body header .hbtns{flex:none}
@@ -1532,7 +1535,9 @@ function renderHeader(){
   const m=S.meta;
   if(m){
     const c=lastCheck(m);
-    $("#stand").innerHTML='<b>'+esc(m.scheduleVersion||"–")+'</b>'+(c?' <span class="chk">· '+L('geprüft')+' '+esc(fmtStamp(c))+'</span>':'');
+    /* after the schedule version: the script version (only for people who see the script) */
+    const sv=m.scriptVersion&&vok("script")?' <span class="scv">· '+esc(L("Drehbuch"))+' '+esc(m.scriptVersion)+'</span>':'';
+    $("#stand").innerHTML='<b>'+esc(m.scheduleVersion||"–")+'</b>'+sv+(c?' <span class="chk">· '+L('geprüft')+' '+esc(fmtStamp(c))+'</span>':'');
     if(m.subtitle)$("#sub").innerHTML=subT(m).split(" · ").map((x,i)=>"<span>"+(i?"· ":"")+esc(x)+"</span>").join(" ");
   }else if(S.loaded){$("#stand").textContent=L("Noch keine Daten eingespielt.")}
 }
