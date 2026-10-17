@@ -51,6 +51,10 @@ class FakeFS:
 
 # ====================================================================== Dropbox-Aktualisierung
 import update_from_dropbox as U  # noqa: E402
+import shutil as _sh, subprocess as _sp  # noqa: E402
+if _sh.which("node"):   # a syntax error in one part stops the whole app: check every part on its own (names the file)
+    _bad = [f.name for f in sorted((pathlib.Path(__file__).resolve().parent.parent / "tools" / "boot").glob("*.js")) if _sp.run(["node", "--check", str(f)], capture_output=True).returncode]
+    check("App-Teile (tools/boot) ohne Syntaxfehler", not _bad, _bad)
 _sf = lambda n, m="2026-10-01": {"name": n, "modified": m}
 _fs = [_sf("01_Script/261017_Tschugger_Tigerblood_v13 CLEAN.pdf"), _sf("01_Script/261017_Tschugger_Tigerblood_v13.pdf"), _sf("01_Script/Tschugger Script Changelog v13 261017.pdf"),
        _sf("01_Script/250901_Tschugger_Tigerblood_v12 CLEAN.pdf"), _sf("01_Script/English translation v12/Tschugger_v12 EN.pdf"), _sf("01_Script/Tschugger_v14 SPP.pdf")]

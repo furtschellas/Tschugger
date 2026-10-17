@@ -340,8 +340,8 @@ async def owner_tests(p, port):
     # roles tested one after the other with their rights (nothing is changed)
     await E("document.querySelector('#view [data-rtrun]').click()"); await pg.wait_for_timeout(5000)
     rt = await E("(RTS.res||[]).map(x=>({n:x.name,i:x.issues.length,t:x.tabs.length}))")
-    check("Rollen testen: jede Rolle geprüft, ohne Probleme", len(rt) >= 4 and all(x["i"] == 0 for x in rt), rt)
-    check("Rollen testen: danach wieder eigene Rechte (Owner)", await E("isOwner()&&!SIMROLE&&tabsOn().includes('plan')"))
+    check("Berechtigungen testen: jede Stufe geprüft, ohne Probleme", len(rt) >= 4 and all(x["i"] == 0 for x in rt), rt)
+    check("Berechtigungen testen: danach wieder eigene Rechte (Owner)", await E("isOwner()&&!SIMROLE&&tabsOn().includes('plan')"))
     await E("document.querySelector('#view [data-tstall]').click()"); await pg.wait_for_timeout(200)
     al = await E("(()=>{const b=document.querySelector('#view [data-tstall]').closest('.tstsec');return [b,...b.querySelectorAll('details')].every(d=>d.open)})()")
     check("Log: Knopf «alles aufklappen» öffnet alle Teile", al)
@@ -358,6 +358,7 @@ async def owner_tests(p, port):
     lb = await E("""(()=>{const r={};for(const [k,sel] of [['tst','details[data-lsec="tst"]'],['rt','details[data-lsec="rt"]'],['dck','details[data-lsec="dck"]'],['aud','details[data-lsec="aud"]']]){const d=document.querySelector('#view '+sel);if(!d){r[k]=null;continue}
       const sm=d.querySelector(':scope>summary').textContent;r[k]={time:/\\d\\d\\.\\d\\d\\.? \\d\\d:\\d\\d/.test(sm),su:d.querySelectorAll('details.tstsu').length,run:!!d.querySelector('.tstbtns button')}}return r})()""")
     check("Log: jedes Menü wie «Automatische Tests» (Zeit im Titel, Unterteile, Knopf unten)", all(lb[k] and lb[k]["time"] and lb[k]["su"] > 0 for k in ("tst", "rt", "dck", "aud")) and lb["rt"]["run"] and lb["dck"]["run"], lb)
+    check("Log: «Berechtigungen testen» heisst so (nicht «Rollen testen» – keine Verwechslung mit dem Cast)", await E("(()=>{const t=document.getElementById('view').innerText;return t.includes('Berechtigungen testen')&&!t.includes('Rollen testen')})()"))
     await E("document.querySelectorAll('#view details').forEach(d=>d.open=true)"); await pg.wait_for_timeout(200)
     await E("S.tab='today';render()"); await pg.wait_for_timeout(200); await E("S.tab='admin';ADM.sub='log';render()"); await pg.wait_for_timeout(300)
     check("Log: nach erneutem Öffnen alles zugeklappt (nichts gemerkt)", await E("[...document.querySelectorAll('#view details')].every(d=>!d.open)"))

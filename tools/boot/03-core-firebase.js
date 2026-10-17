@@ -50,7 +50,7 @@ const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const lc=s=>String(s||"").trim().toLowerCase();
 /* main admin is fixed; further admins are listed by the main admin in Firestore admins/{email} */
 let COADMIN=false;
-/* SIMROLE: App-Verwaltung → Log → «Rollen testen» looks at the app with the rights of another role for a moment */
+/* SIMROLE: App-Verwaltung → Log → «Berechtigungen testen» looks at the app with the rights of another role for a moment */
 let SIMROLE=null;
 const isOwner=()=>!SIMROLE&&!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
 const isAdmin=()=>SIMROLE?!!SIMROLE.adm:(isOwner()||!!(COADMIN&&ME&&ME.emailVerified));
