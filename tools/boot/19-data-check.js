@@ -125,11 +125,12 @@ async function dckRun(auto){
 window.dataCheckSec=function(flat){if(!dckMay())return "";
   const r=DCK.res||[],nw=r.filter(x=>x.lvl==="warn").length,ni=r.filter(x=>x.lvl==="info").length;
   const ic={warn:"⚠",info:"ℹ",ok:"✓"},ord={warn:0,info:1,ok:2};
-  const sum=DCK.res?'<span class="tsth">'+(nw?'⚠ '+nw+' '+esc(L(nw===1?"Unstimmigkeit":"Unstimmigkeiten")):'✓ '+esc(L("keine Unstimmigkeiten")))+(ni?', '+ni+' '+esc(L(ni===1?"Hinweis":"Hinweise")):'')+'</span>':'<span class="tsth">'+esc(L("noch nicht geprüft"))+'</span>',tm=DCK.res&&DCK.at?esc(logWhen(DCK.at)):"";
+  /* colours: discrepancies red, notes orange, all in order green */
+  const sum=DCK.res?'<span class="tsth">'+(nw?'<span class="dw">⚠ '+nw+' '+esc(L(nw===1?"Unstimmigkeit":"Unstimmigkeiten"))+'</span>':'<span class="dk">✓ '+esc(L("keine Unstimmigkeiten"))+'</span>')+(ni?', <span class="dn">'+ni+' '+esc(L(ni===1?"Hinweis":"Hinweise"))+'</span>':'')+'</span>':'<span class="tsth">'+esc(L("noch nicht geprüft"))+'</span>',tm=DCK.res&&DCK.at?esc(logWhen(DCK.at)):"";
   /* by area like the test parts: ✓/⚠ name · count, closed until opened */
   const areas=new Map();for(const x of r){if(!areas.has(x.area))areas.set(x.area,[]);areas.get(x.area).push(x)}
   const parts=[...areas].map(([a,l])=>{l=l.slice().sort((x,y)=>ord[x.lvl]-ord[y.lvl]);const w=l.filter(x=>x.lvl==="warn").length,n=l.filter(x=>x.lvl==="info").length;
-    return '<details class="tstsu'+(w?' bad':'')+'" data-su="dck:'+esc(a)+'"'+logSu("dck:"+a)+'><summary>'+(w?'⚠ ':'✓ ')+esc(a)+' · '+(w?w+' '+esc(L(w===1?"Unstimmigkeit":"Unstimmigkeiten")):n?n+' '+esc(L(n===1?"Hinweis":"Hinweise")):esc(L("in Ordnung")))+'</summary>'+
+    return '<details class="tstsu'+(w?' bad':n?' note':'')+'" data-su="dck:'+esc(a)+'"'+logSu("dck:"+a)+'><summary>'+(w?'⚠ ':n?'ℹ ':'✓ ')+esc(a)+' · '+(w?w+' '+esc(L(w===1?"Unstimmigkeit":"Unstimmigkeiten")):n?n+' '+esc(L(n===1?"Hinweis":"Hinweise")):esc(L("in Ordnung")))+'</summary>'+
       '<ul class="dckl">'+l.map(x=>'<li class="'+x.lvl+'"><span class="dcki">'+ic[x.lvl]+'</span><span>'+esc(x.text)+'</span></li>').join("")+'</ul></details>'}).sort((a,b)=>(b.includes('tstsu bad')?1:0)-(a.includes('tstsu bad')?1:0)).join("");
   const body='<p class="ghint">'+esc(L("Vergleicht die Dokumente aus der Dropbox untereinander (Drehplan, Locations, Drehbuch, Cast-Liste, Prep Weekly/Daily, Callsheets, Crewliste) und prüft die App auf diesem Gerät. Es werden nur Bereiche verglichen, die du sehen darfst."))+'</p>'+parts+
     '<div class="arb tstbtns">'+tstIco("data-dckrun",TST_RUN,DCK.busy?"Prüfe …":"Jetzt prüfen",DCK.busy)+'</div>';
