@@ -64,7 +64,7 @@ service cloud.firestore {
     }
     match /userroles/{email} {
       allow get: if (verified() && myEmail() == email) || isAdmin();
-      allow list: if isAdmin() || can('roles.assign') || can('roles.edit');
+      allow list: if isAdmin() || can('roles.assign') || can('roles.edit') || can('roles.view');
       allow write: if ((isOwner() && !isRoot(email)) || (isAdmin() && !ownerEmail(email))) && email != myEmail()
         && (request.resource == null || request.resource.data.keys().hasOnly(['role', 'at']));
       // «Rollen pflegen»: Rollen zuweisen, aber nicht an Owner oder Admins und nicht sich selbst
