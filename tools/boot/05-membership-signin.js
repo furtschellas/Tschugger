@@ -5,7 +5,8 @@ function memSave(){try{localStorage.setItem(memKey(),JSON.stringify({r:MYROLE,p:
 function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"null");if(!c)return false;MYROLE=c.r||"";MYPERMS=Array.isArray(c.p)?c.p:[];COADMIN=!!c.a;if(Array.isArray(c.ap))ADMINPERMS=c.ap;if(c.m)MEMBER=c.m;if(c.o&&!ADMINS.includes(lc(ME.email)))ADMINS.push(lc(ME.email));return true}catch(_){return false}}
 async function checkMember(){
   if(navigator.onLine===false){memRestore();throw Object.assign(new Error("offline"),{code:"unavailable"})}
-  try{const st=await checkMember0();if(st==="ok")memSave();return st}
+  let prev=null;try{prev=JSON.parse(localStorage.getItem(memKey())||"null")}catch(_){}
+  try{const st=await checkMember0();if(st==="ok"){roleChanged(prev);memSave()}return st}
   catch(err){if(isOffline(err))memRestore();throw err}
 }
 async function checkMember0(){
@@ -191,3 +192,18 @@ async function onGateClick(e){
       else gateMsg(errText(err),true)}
   }
 }
+
+/* the role or the rights of this person were changed: a short welcome with what is new (and what is gone), once */
+function roleChanged(prev){if(!prev||!ME)return;const was=prev.a?"admin":(prev.r||""),now=isOwner()?"owner":COADMIN?"admin":(MYROLE||"");
+  const pp=new Set(prev.a?(prev.ap||[]):(prev.p||[])),np=new Set(now==="admin"?ADMINPERMS:now==="owner"?PERMS.map(x=>x[0]):MYPERMS);
+  const add=[...np].filter(k=>!pp.has(k)),rem=[...pp].filter(k=>!np.has(k));if(was===now&&!add.length&&!rem.length)return;
+  setTimeout(()=>showRoleChange(now,add,rem),2500)}
+function showRoleChange(role,add,rem){if(document.getElementById("rolechg"))return;
+  const lbl=k=>{const x=PERMS.find(p=>p[0]===k);return x?L(x[1]):k};
+  const rn=role==="owner"?L("Owner"):role==="admin"?L("Admin"):role?((typeof OWN!=="undefined"&&(OWN.roles||[]).find(r=>r.id===role))||{}).name||role.charAt(0).toUpperCase()+role.slice(1):L("Keine Rolle");
+  const d=document.createElement("div");d.id="rolechg";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  d.innerHTML='<div class="a2box wlbox"><h3>'+esc(L("Deine Rechte wurden geändert"))+'</h3><p>'+esc(L("Deine Rolle"))+': <b>'+esc(rn)+'</b></p>'+
+    (add.length?'<p><b>'+esc(L("Neu für dich"))+':</b> '+esc(add.map(lbl).join(", "))+'</p>':'')+(rem.length?'<p><b>'+esc(L("Nicht mehr"))+':</b> '+esc(rem.map(lbl).join(", "))+'</p>':'')+
+    '<p class="ghint">'+esc(L("Die Tour zeigt dir, was du jetzt nutzen kannst."))+'</p><div class="a2b"><button type="button" data-rctour>'+esc(L("Tour ansehen"))+'</button><button type="button" class="pri" data-rcok>'+esc(L("OK"))+'</button></div></div>';
+  d.addEventListener("click",e=>{if(e.target.closest("[data-rcok]"))d.remove();else if(e.target.closest("[data-rctour]")){d.remove();if(typeof tourStart==="function")tourStart(false)}});
+  document.body.appendChild(d);try{render()}catch(_){}}
