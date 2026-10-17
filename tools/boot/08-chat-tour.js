@@ -125,15 +125,33 @@ function tourDoneLocal(){try{return !!(localStorage.getItem("tourDone:"+(ME&&ME.
 function a2stCheck(){if(typeof window.a2hsCheck!=="function")return;const now=Date.now();if(window.A2ST&&(window.A2ST.busy||now-window.A2ST.at<20000))return;
   window.A2ST=Object.assign({},window.A2ST,{busy:true,at:now});window.a2hsCheck().then(v=>{const ch=!window.A2ST||window.A2ST.v!==v;window.A2ST={v,at:Date.now(),busy:false};if(ch)render()}).catch(()=>{window.A2ST={v:"unknown",at:Date.now(),busy:false}})}
 async function tourMark(how){
+  store("nv",NEWS_VER);savePrefs(); /* new people get to know the new features in the tour */
   const at=new Date().toISOString(),v=how+"|"+at;try{localStorage.setItem("tourDone:"+(ME&&ME.uid),v)}catch(_){}store("tour",v);
   try{if(MEMBER&&ME){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{tour:how,tourAt:at});MEMBER.tour=how;MEMBER.tourAt=at}}catch(err){console.warn("tour",err&&err.code||err)}
+}
+/* «Neu in der Crew-App»: shown once to everybody who already used the app (did or skipped the tour) – new people see it in the tour */
+const NEWS_VER="2026-10-17";
+const NEWS_TXT={
+ de:{t:"Neu in der Crew-App 🎬",p:["<b>Today:</b> Alles für heute auf einer Seite – deine Termine, Drehzeit, Anfahrt mit Route, Wetter und die Szenen.","<b>Push bei Änderungen:</b> Du wirst benachrichtigt, wenn sich der Drehplan ändert oder ein neues Callsheet da ist. Ein Tipp öffnet direkt den Tag.","<b>Offline am Set:</b> PDF-Seiten und Floorplans aller Tage sind auch ohne Empfang da."],f:"Einstellen kannst du alles unter <b>Mein Konto → Push</b> bzw. <b>App</b>.",tour:"Kurze Tour ansehen",ok:"Los geht’s"},
+ fr:{t:"Nouveau dans l’app 🎬",p:["<b>Today :</b> tout pour aujourd’hui sur une page – tes rendez-vous, l’heure de tournage, le trajet avec itinéraire, la météo et les scènes.","<b>Push en cas de changement :</b> tu es prévenu quand le plan de tournage change ou qu’une nouvelle feuille de service est là. Un tap ouvre directement le jour.","<b>Hors ligne sur le tournage :</b> pages PDF et plans de tous les jours, même sans réseau."],f:"Tout se règle sous <b>Mon compte → Push</b> ou <b>App</b>.",tour:"Voir la visite guidée",ok:"C’est parti"},
+ it:{t:"Novità nell’app 🎬",p:["<b>Today:</b> tutto per oggi in una pagina – i tuoi appuntamenti, l’orario di ripresa, il tragitto con percorso, il meteo e le scene.","<b>Push in caso di modifiche:</b> vieni avvisato quando cambia il piano di riprese o arriva un nuovo foglio di chiamata. Un tocco apre direttamente il giorno.","<b>Offline sul set:</b> pagine PDF e planimetrie di tutti i giorni, anche senza rete."],f:"Puoi impostare tutto in <b>Il mio account → Push</b> o <b>App</b>.",tour:"Guarda il tour",ok:"Si parte"},
+ en:{t:"New in the crew app 🎬",p:["<b>Today:</b> everything for today on one page – your appointments, shooting time, the drive with route, weather and the scenes.","<b>Push on changes:</b> you get notified when the shooting schedule changes or a new callsheet is out. A tap opens the day.","<b>Offline on set:</b> PDF pages and floorplans of all days, even without reception."],f:"You can set everything under <b>My account → Push</b> or <b>App</b>.",tour:"Take the short tour",ok:"Let’s go"}};
+function newsDue(){let v="";try{v=localStorage.getItem("nv")||""}catch(_){}return v!==NEWS_VER&&!document.getElementById("news")}
+function showNews(){
+  const T=NEWS_TXT[LANG]||NEWS_TXT.en,d=document.createElement("div");d.id="news";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  d.innerHTML='<div class="a2box wlbox"><h3>'+esc(T.t)+'</h3>'+T.p.map(x=>'<p>'+x+'</p>').join("")+'<p class="ghint">'+T.f+'</p><div class="a2b"><button type="button" data-nwtour>'+esc(T.tour)+'</button><button type="button" class="pri" data-nwok>'+esc(T.ok)+'</button></div></div>';
+  const done=()=>{store("nv",NEWS_VER);savePrefs();d.remove()};
+  d.addEventListener("click",e=>{if(e.target.closest("[data-nwok]")){done();setTimeout(maybePushHint,600)}else if(e.target.closest("[data-nwtour]")){done();tourStart(false)}});
+  document.body.appendChild(d);
+  /* closed in any way (also ✕): seen */
+  const ob=new MutationObserver(()=>{if(!d.isConnected||d.hidden){ob.disconnect();store("nv",NEWS_VER);savePrefs()}});ob.observe(document.body,{childList:true});ob.observe(d,{attributes:true,attributeFilter:["hidden"]});
 }
 async function maybeTour(){
   if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||TOUR.pending)return;
   if(typeof a2hsDue==="function"&&a2hsDue()&&!TOUR.a2asked&&typeof a2hsAuto==="function"&&a2hsAuto()){TOUR.a2asked=true} /* install dialog comes by itself with the next tap */
   if(typeof a2hsDue==="function"&&a2hsDue()&&!TOUR.a2asked){TOUR.a2asked=true;showA2hs();const s=document.getElementById("a2hs");if(s){const ob=new MutationObserver(()=>{if(s.hidden||!s.isConnected){ob.disconnect();setTimeout(maybeTour,400)}});ob.observe(s,{attributes:true,attributeFilter:["hidden"]})}return}
   if(pushHintDue()){TOUR.afterHint=true;maybePushHint();return}
-  if(!window.TOUREN||(MEMBER&&MEMBER.tour)||tourDoneLocal()){setTimeout(maybePushHint,800);return}
+  if(!window.TOUREN||(MEMBER&&MEMBER.tour)||tourDoneLocal()){if(newsDue()){showNews();return}setTimeout(maybePushHint,800);return}
   TOUR.pending=true;setTimeout(()=>{TOUR.pending=false;if(!TOUR.el&&!tourDoneLocal()&&!(MEMBER&&MEMBER.tour)){tourMark("shown");tourStart(true)}},700);
 }
 function tourStart(ask){
