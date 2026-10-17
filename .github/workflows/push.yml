@@ -31,13 +31,20 @@ jobs:
           path: sent.json
           key: push-sent-${{ github.run_id }}
           restore-keys: push-sent-
-      - run: pip install -q cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1
+      - run: pip install -q cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1 icalendar==6.1.0 recurring-ical-events==3.3.3
       - name: Fällige Erinnerungen schicken
         env:
           CREW_KEY: ${{ secrets.CREW_KEY }}
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
         run: python tools/push_send.py
+      # Google Kalender → App (Auswahl in «Meine Termine»; übernommene Termine werden nachgeführt)
+      - name: Google Kalender lesen
+        continue-on-error: true
+        env:
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: python tools/gcal_sync.py
       - name: Verschickte merken
         if: always()
         uses: actions/cache/save@v4

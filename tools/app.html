@@ -993,6 +993,9 @@ function myEvents(me){
     const st=hm(call&&call.t)||hm(dp.crewCall)||hm(dp.generalCall)||"",en=hm(dp.wrap);
     const loc=arr(dp.locations).map(l=>l.name||l.address).filter(Boolean).join(", ")||(d.kind?dayPlaces(d).join(", "):"");
     out.push({date:dp.date,t:st,end:en,n:(d.short||dp.label||d.label||"")+" · "+L("Drehtag")+(call&&call.dept?" ("+call.dept+")":""),where:loc,map:(arr(dp.locations)[0]||{}).map||"",src:"Callsheet"+(dp.version?" "+dp.version:""),go:d.id||dp.date})}
+  /* own and Google Calendar events (tools/boot/18-own-events.js); the same appointment twice (same day, same start, same title) is shown once */
+  try{if(window.ownEvents){const tn=x=>fold(x||"").replace(/[^a-z0-9]+/g," ").trim(),same=(a,b)=>a.date===b.date&&(hm(a.t)||"")===(hm(b.t)||"")&&(()=>{const x=tn(a.n),y=tn(b.n);return x===y||(x.length>=4&&y.length>=4&&(x.includes(y)||y.includes(x)))})();
+    for(const e of window.ownEvents(me))if(!out.some(o=>same(o,e)))out.push(e)}}catch(_){}
   const tk=e=>/^\d\d:\d\d$/.test(e.t)?e.t:"00:00";
   return out.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:tk(a).localeCompare(tk(b)));
 }
@@ -1015,14 +1018,14 @@ function renderMy(){
   MCNAMES=names;
   const sel=!myAdmin()?'<p class="mcsel">'+esc(L("Termine für"))+' <b>'+esc(me?me.name:"–")+'</b></p>':'<div class="mcpick"><label class="mcsel">'+esc(L("Termine für"))+' <input type="search" list="mcnames" data-mcme autocomplete="off" placeholder="'+esc(L("Name tippen …"))+'" value="'+esc(me?me.name:"")+'"></label><datalist id="mcnames">'+names.map(n=>'<option value="'+esc(n)+'"></option>').join("")+'</datalist><button type="button" class="pillbtn mcself" data-mcself aria-label="'+esc(L("Meine eigenen Termine"))+'" title="'+esc(L("Meine eigenen Termine"))+'"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg></button></div>';
   MYEV=me?myEvents(me).filter(evRecent):[];
-  let h='<section class="mypage"><div class="myhead"><h2 class="pgt">'+esc(L("Meine Termine"))+'</h2></div><div class="myrow">'+sel+(me&&MYEV.length?'<button type="button" class="pillbtn" data-mcall>'+esc(L("Alle in den Kalender"))+' ('+MYEV.length+')</button>':'')+'</div>';
+  let h='<section class="mypage"><div class="myhead"><h2 class="pgt">'+esc(L("Meine Termine"))+'</h2>'+'<span class="oebtns">'+(window.gcalBtn?window.gcalBtn():'')+(window.ownEvAddBtn?window.ownEvAddBtn():'')+'</span>'+'</div><div class="myrow">'+sel+(me&&MYEV.length?'<button type="button" class="pillbtn" data-mcall>'+esc(L("Alle in den Kalender"))+' ('+MYEV.length+')</button>':'')+'</div>';
   if(!me)h+='<p class="ghint">'+esc(L(myAdmin()?"Bitte oben deinen Namen wählen.":"Dein Name wurde in der Crewliste nicht gefunden."))+'</p>';
   else{
     if(me.src||me.role)h+='<p class="ghint">'+esc([me.role,me.src].filter(Boolean).join(" · "))+'</p>';
     if(!MYEV.length)h+='<p class="ghint">'+esc(L("Keine kommenden Termine gefunden."))+'</p>';
     let last="";
     MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'.</h4>';last=e.date}
-      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}
+      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}
   return h+'</section>';
 }
 function openMyCal(){S.tab="my";S.srcOpen=false;window.scrollTo(0,0);render()}
