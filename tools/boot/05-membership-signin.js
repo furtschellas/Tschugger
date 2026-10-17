@@ -197,13 +197,13 @@ async function onGateClick(e){
 function roleChanged(prev){if(!prev||!ME)return;const was=prev.a?"admin":(prev.r||""),now=isOwner()?"owner":COADMIN?"admin":(MYROLE||"");
   const pp=new Set(prev.a?(prev.ap||[]):(prev.p||[])),np=new Set(now==="admin"?ADMINPERMS:now==="owner"?PERMS.map(x=>x[0]):MYPERMS);
   const add=[...np].filter(k=>!pp.has(k)),rem=[...pp].filter(k=>!np.has(k));if(was===now&&!add.length&&!rem.length)return;
-  setTimeout(()=>showRoleChange(now,add,rem,prev),2500)}
-function showRoleChange(role,add,rem,prev){if(document.getElementById("rolechg"))return;
+  setTimeout(()=>showRoleChange(now,add,rem),2500)}
+function showRoleChange(role,add,rem){if(document.getElementById("rolechg"))return;
   const lbl=k=>{const x=PERMS.find(p=>p[0]===k);return x?L(x[1]):k};
   const rn=role==="owner"?L("Owner"):role==="admin"?L("Admin"):role?((typeof OWN!=="undefined"&&(OWN.roles||[]).find(r=>r.id===role))||{}).name||role.charAt(0).toUpperCase()+role.slice(1):L("Keine Rolle");
   const d=document.createElement("div");d.id="rolechg";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
   d.innerHTML='<div class="a2box wlbox"><h3>'+esc(L("Deine Rechte wurden geändert"))+'</h3><p>'+esc(L("Deine Rolle"))+': <b>'+esc(rn)+'</b></p>'+
     (add.length?'<p><b>'+esc(L("Neu für dich"))+':</b> '+esc(add.map(lbl).join(", "))+'</p>':'')+(rem.length?'<p><b>'+esc(L("Nicht mehr"))+':</b> '+esc(rem.map(lbl).join(", "))+'</p>':'')+
-    (add.length?'<p class="ghint">'+esc(L("Die Tour zeigt dir, was du jetzt neu nutzen kannst."))+'</p>':'')+'<div class="a2b">'+(add.length?'<button type="button" data-rctour>'+esc(L("Tour ansehen"))+'</button>':'')+'<button type="button" class="pri" data-rcok>'+esc(L("OK"))+'</button></div></div>';
-  d.addEventListener("click",e=>{if(e.target.closest("[data-rcok]"))d.remove();else if(e.target.closest("[data-rctour]")){d.remove();if(typeof tourStart==="function")tourStart(false,{prev})}});
+    '<div class="a2b"><button type="button" class="pri" data-rcok>'+esc(L("OK"))+'</button></div></div>';
+  d.addEventListener("click",e=>{if(e.target.closest("[data-rcok]"))d.remove()});
   document.body.appendChild(d);try{render()}catch(_){}}

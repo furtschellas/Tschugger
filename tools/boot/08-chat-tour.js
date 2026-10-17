@@ -184,22 +184,13 @@ async function maybeTour(){
   if(!window.TOUREN||(MEMBER&&MEMBER.tour)||tourDoneLocal()){if(newsDue()){showNews();return}setTimeout(maybePushHint,800);return}
   TOUR.pending=true;setTimeout(()=>{TOUR.pending=false;if(!TOUR.el&&!tourDoneLocal()&&!(MEMBER&&MEMBER.tour)){tourMark("shown");tourStart(true)}},700);
 }
-/* after a change of rights: only the steps that were not there with the earlier rights (prev = cached membership) */
-function tourOldSteps(prev,fil){const keep={sr:SIMROLE,p:MYPERMS,r:MYROLE,ap:ADMINPERMS};let out=new Set();
-  try{SIMROLE={adm:!!prev.a};MYPERMS=prev.a?[]:arr(prev.p).slice();MYROLE=prev.a?"":(prev.r||"");if(prev.a)ADMINPERMS=arr(prev.ap).length?arr(prev.ap).slice():ADMIN_DEFAULT.slice();
-    try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}
-    out=new Set(TOUR_STEPS.filter(fil))}catch(_){}
-  finally{SIMROLE=keep.sr;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}}
-  return out}
-function tourStart(ask,opt){
+function tourStart(ask){
   if(TOUR.el)TOUR.el.remove();if(CHAT.open){CHAT.open=false;chatPanel()}
   TOUR.prev={tab:S.tab,day:S.day};
   /* show a shooting day so the display options and unit buttons can be explained */
   {const t=todayISO(),cur=S.days.find(x=>x.id===S.day);if(S.tab!=="plan"||!cur||cur.kind!=="shoot"){const sd=S.days.filter(x=>x.kind==="shoot");const d=sd.find(x=>x.date>=t)||sd[0];S.tab="plan";if(d)S.day=d.id;render()}}
   {const keep=S.tab,navOn=t=>{const b=document.querySelector('nav.tabs [data-tab="'+t+'"]');return !!(b&&!b.hidden)};
-    const fil=st=>{try{if(st.need&&!st.need())return false;return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}};
-    const was=opt&&opt.prev?tourOldSteps(opt.prev,fil):null;
-    TOUR.steps=TOUR_STEPS.filter(st=>fil(st)&&!(was&&was.has(st)));TOUR.only=!!was;S.tab=keep;render()}
+    TOUR.steps=TOUR_STEPS.filter(st=>{try{if(st.need&&!st.need())return false;return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}});S.tab=keep;render()}
   window.scrollTo(0,0);TOUR.i=ask?-1:0;
   const o=document.createElement("div");o.id="tour";o.className="tour";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML='<div class="tspot"></div><div class="tour-card" role="document"></div>';
   o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;
@@ -213,7 +204,7 @@ function tourGo(i){
   if(i<0){sp.hidden=true;c.className="tour-card center";
     c.innerHTML='<h3>'+L("Kurze Tour durch die App?")+'</h3><p>'+L("In einer Minute zeigen wir dir die wichtigsten Funktionen. Du kannst die Tour später jederzeit unter «Mein Konto» starten.")+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><button type="button" class="pri" data-tour="next">'+L("Tour starten")+'</button></div>';return}
   if(i>=n){sp.hidden=true;c.className="tour-card center";
-    c.innerHTML='<h3>'+L("Fertig!")+'</h3><p>'+(TOUR.only?(n?L("Das war alles, was für dich neu ist. Die ganze Tour findest du jederzeit unter «Mein Konto»."):L("Deine neuen Rechte brauchen keine eigene Erklärung – die ganze Tour findest du jederzeit unter «Mein Konto».")):L("Viel Spass mit der App. Die Tour findest du jederzeit wieder unter «Mein Konto»."))+'</p><div class="tbtns"><button type="button" class="pri" data-tour="done">'+L("Los geht's")+'</button></div>';return}
+    c.innerHTML='<h3>'+L("Fertig!")+'</h3><p>'+L("Viel Spass mit der App. Die Tour findest du jederzeit wieder unter «Mein Konto».")+'</p><div class="tbtns"><button type="button" class="pri" data-tour="done">'+L("Los geht's")+'</button></div>';return}
   const s=TOUR.steps[i];tourDemo(s);if(!tourShow(s)){const dir=i>=(TOUR.last==null?-1:TOUR.last)?1:-1;TOUR.steps.splice(i,1);return tourGo(dir>0?i:i-1)}TOUR.last=i;sp.hidden=false;c.className="tour-card";
   c.innerHTML='<div class="tprog">'+(i+1)+' / '+n+'</div><h3>'+esc(L(s.t))+'</h3><p>'+esc(typeof s.x==="function"?s.x():L(s.x))+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><span></span>'+(i>0?'<button type="button" class="sec" data-tour="back">'+L("Zurück")+'</button>':'')+'<button type="button" class="pri" data-tour="next">'+L(i===n-1?"Fertig":"Weiter")+'</button></div>';
   tourPlace();try{c.querySelector(".pri").focus({preventScroll:true})}catch(_){}
