@@ -95,8 +95,14 @@ jobs:
           gh api -X POST repos/${{ github.repository }}/actions/workflows/push.yml/dispatches -f ref=main || true
       - name: Status bei Fehler veröffentlichen
         if: failure()
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           git checkout -- data.enc.json script.enc.json 2>/dev/null || true
+          python tools/fail_alarm.py || true
+          [ -f .alarm_sent ] && gh api -X POST repos/${{ github.repository }}/actions/workflows/push.yml/dispatches -f ref=main || true
           git diff --quiet -- status.json && exit 0
           git config user.name "Crew-App Aktualisierung"
           git config user.email "actions@users.noreply.github.com"
