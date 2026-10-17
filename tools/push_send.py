@@ -131,7 +131,7 @@ def main():
                     if not ((who.get("role", "") in (roles or [])) or (bool(who.get("dept")) and who.get("dept") in (depts or []))): continue
                 if b.get("kind") and (p.get("news") or {}).get(b["kind"], True) is False: continue   # automatic message the person turned off
                 tx = (b.get("i18n") or {}).get(p.get("lang") or "de") or b
-                r = send(sub, json.dumps({"title": tx.get("title", ""), "body": tx.get("body", ""), "url": b.get("url") or "./", "tag": "b" + bid}, ensure_ascii=False), pems, 86400)
+                r = send(sub, json.dumps({"title": tx.get("title", ""), "body": tx.get("body", ""), "url": b.get("url") or "./", "tag": "b" + bid, "icon": "change" if b.get("kind") else "push"}, ensure_ascii=False), pems, 86400)
                 if r == "gone": gone = True; break
                 if r == "ok": n_sent += 1; sent[k] = NOW; got.setdefault(bid, []).append(did)
                 else: n_err += 1; bad.add(bid)   # not marked: tried again in the next run
@@ -142,7 +142,7 @@ def main():
                 if k in sent or at > NOW + EARLY or start < NOW - 60: continue
                 if at < NOW - LATE:
                     n_late += 1; sent[k] = NOW; continue
-                r = send(sub, json.dumps({"title": it.get("title", ""), "body": it.get("body", ""), "url": it.get("url", "./#my"), "tag": str(it.get("id", ""))}, ensure_ascii=False), pems, 3600)
+                r = send(sub, json.dumps({"title": it.get("title", ""), "body": it.get("body", ""), "url": it.get("url", "./#my"), "tag": str(it.get("id", "")), "icon": "termin"}, ensure_ascii=False), pems, 3600)
                 if r == "gone": gone = True; break
                 if r == "ok": n_sent += 1; sent[k] = NOW
                 else: n_err += 1
