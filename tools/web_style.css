@@ -825,3 +825,4 @@ html body #view .today .tchg .tscrlog>summary{min-height:0;padding:2px 0;line-he
 .rtopt .rttx small{font-size:13px;line-height:1.3;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rtopt .rtgo{font-size:22px;color:var(--accent);line-height:1}
 @media (max-width:600px){html body #view .today .chglist li.cdh{padding:4px 0 0;line-height:1.3;font-size:12px}html body #view .today .chglist li.cdh:first-child{padding-top:0}}
+.today .tcard.tjump{box-shadow:0 0 0 2px var(--accent);transition:box-shadow .4s}
