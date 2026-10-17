@@ -814,3 +814,14 @@ html body .clog .clsc{min-height:0;height:auto;padding:0;border:0;background:non
 .scrbox{max-height:85vh;overflow:auto}.scrbox .scrsc .lnk{min-height:0;height:auto;padding:0;border:0;background:none;width:auto;font-size:inherit}
 .scrbox .scrlog{margin:8px 0}.scrbox .scrlog>summary{cursor:pointer;color:var(--accent);font-size:14px}
 html body #view .today .tchg .tscrlog>summary{min-height:0;padding:2px 0;line-height:1.3}
+.a2ol{margin:8px 0 10px;padding-left:20px;line-height:1.5}.a2ol li{margin:2px 0}
+
+/* route choice: two option rows (icon, title + start point, arrow) instead of round buttons */
+.rtopts .rtopt{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--rule);border-radius:var(--r-card,14px);background:var(--field-bg,transparent);color:var(--ink);text-decoration:none}
+.rtopts .rtopt:hover,.rtopts .rtopt:focus-visible{border-color:var(--accent)}
+.rtopt .rtic{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--acc-tint);color:var(--accent)}
+.rtopt .rttx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rtopt .rttx b{font-size:15px;line-height:1.25;color:var(--ink)}
+.rtopt .rttx small{font-size:13px;line-height:1.3;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rtopt .rtgo{font-size:22px;color:var(--accent);line-height:1}
+@media (max-width:600px){html body #view .today .chglist li.cdh{padding:4px 0 0;line-height:1.3;font-size:12px}html body #view .today .chglist li.cdh:first-child{padding-top:0}}
