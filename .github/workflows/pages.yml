@@ -165,6 +165,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -193,4 +195,25 @@ jobs:
             git diff --cached --quiet && break
             git commit -q -m "$msg" && git push -q origin HEAD:main && break
             sleep 5
+          done
+      # tests failed: nothing was published – push to the owners right away and an e-mail (GitHub issue → mail to the owner)
+      - name: Alarm bei fehlgeschlagenen Tests
+        if: needs.test.result == 'failure' || needs.rules.result == 'failure'
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          pip install -q cryptography==43.0.3 requests==2.32.3 || true
+          python3 tools/test_alarm.py /tmp/tests.json "$RUN_URL" || true
+          gh api -X POST repos/${{ github.repository }}/actions/workflows/push.yml/dispatches -f ref=main || true
+          body=$(python3 -c "import sys;sys.path.insert(0,'tools');import test_alarm as T;n,s,f=T.message('/tmp/tests.json');print('Die App wurde NICHT veröffentlicht – die laufende App ist unverändert.\n\nFehlgeschlagen ('+str(n)+'):\n'+'\n'.join('- '+x for x in f[:20]))")
+          gh issue create -R ${{ github.repository }} -t "Tests fehlgeschlagen – App nicht veröffentlicht (${GITHUB_SHA::7})" -b "$body"$'\n\n'"$RUN_URL" -a furtschellas || gh issue create -R ${{ github.repository }} -t "Tests fehlgeschlagen – App nicht veröffentlicht (${GITHUB_SHA::7})" -b "$body"$'\n\n'"$RUN_URL" || true
+      - name: Alarm erledigt (Tests wieder grün)
+        if: needs.test.result == 'success' && (needs.rules.result == 'success' || needs.rules.result == 'skipped')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list -R ${{ github.repository }} --state open --search "Tests fehlgeschlagen in:title" --json number -q '.[].number' 2>/dev/null); do
+            gh issue close -R ${{ github.repository }} "$n" -c "Tests wieder grün (${GITHUB_SHA::7}) – App veröffentlicht." || true
           done
