@@ -40,8 +40,6 @@ jobs:
 
   test:
     needs: changes
-    permissions:
-      contents: write
     if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -60,20 +58,11 @@ jobs:
           CREW_KEY: ${{ secrets.CREW_KEY }}
           SMOKE_OUT: tests.json
         run: python tests/smoke.py
-      # results (only check names and ✓/✗) for App-Verwaltung → Log; also when the tests fail
-      - name: Resultate für das Log
+      - name: Resultate sichern
         if: always()
         run: |
           [ -s tests.json ] || echo "{\"at\": $(date +%s)000, \"sha\": \"${GITHUB_SHA::7}\", \"ok\": false, \"crash\": true, \"n\": 0, \"fail\": 0, \"checks\": []}" > tests.json
-          git config user.name "Crew-App Tests"
-          git config user.email "actions@users.noreply.github.com"
           cp tests.json /tmp/tests.json
-          for i in 1 2 3; do
-            git fetch -q origin main && git reset -q --hard origin/main && cp /tmp/tests.json tests.json && git add tests.json
-            git diff --cached --quiet && break
-            git commit -q -m "Testresultate" && git push -q origin HEAD:main && break
-            sleep 5
-          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -101,3 +90,30 @@ jobs:
           path: .
       - id: d
         uses: actions/deploy-pages@v4
+
+  # results (only check names and ✓/✗) for App-Verwaltung → Log; also when the tests fail.
+  # Committed only AFTER the deployment, otherwise the two Pages deployments get in each other's way.
+  results:
+    needs: [test, deploy]
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          name: tests
+          path: /tmp/res
+      - name: Ins Repository
+        run: |
+          git config user.name "Crew-App Tests"
+          git config user.email "actions@users.noreply.github.com"
+          for i in 1 2 3; do
+            git fetch -q origin main && git reset -q --hard origin/main && cp /tmp/res/tests.json tests.json && git add tests.json
+            git diff --cached --quiet && break
+            git commit -q -m "Testresultate" && git push -q origin HEAD:main && break
+            sleep 5
+          done
