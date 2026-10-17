@@ -1,3 +1,5 @@
 __pycache__/
 pending_push.json
 .alarm_sent
+tests/node_modules/
+tests/package-lock.json

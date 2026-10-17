@@ -54,8 +54,8 @@ def parse(ics, today=None):
             date, t, end = s.isoformat(), "", ""
         if date < today.isoformat(): continue
         uid = str(ev.get("UID") or "")[:280]
-        out.append({"uid": uid, "title": str(ev.get("SUMMARY") or "")[:120], "date": date, "t": t, "end": end,
-                    "where": str(ev.get("LOCATION") or "")[:200], "note": str(ev.get("DESCRIPTION") or "")[:300]})
+        out.append({"uid": uid, "title": str(ev.get("SUMMARY") or "")[:150], "date": date, "t": t, "end": end,
+                    "where": str(ev.get("LOCATION") or "")[:200], "note": str(ev.get("DESCRIPTION") or "")[:2000]})
     n = {}
     for x in out: n[x["uid"]] = n.get(x["uid"], 0) + 1
     for x in out:   # recurring events: one entry per day («uid|date»), a single event keeps its uid (so a moved date is followed)

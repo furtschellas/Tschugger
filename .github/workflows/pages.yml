@@ -37,12 +37,15 @@ jobs:
               - 'tools/web_style.css'
               - 'tools/a2hs.js'
               - 'tests/**'
+              - 'tools/*.py'
+              - 'firestore.rules'
+              - '.github/workflows/pages.yml'
 
   test:
     needs: changes
     if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -50,40 +53,77 @@ jobs:
           python-version: "3.12"
       - name: Werkzeuge
         run: |
-          pip install -q playwright==1.48.0 cryptography==43.0.3 requests==2.32.3
+          pip install -q playwright==1.48.0 cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1 icalendar==6.1.0 recurring-ical-events==3.3.3
           python -m playwright install --with-deps chromium >/dev/null
-      - name: Tests
+      # alle Teile laufen, auch wenn einer fehlschlägt; am Schluss zählt das Gesamtergebnis
+      - name: Hintergrund (Dropbox-Aktualisierung, Push, Alarm, Google Kalender)
+        id: t1
+        continue-on-error: true
+        env:
+          TESTS_OUT: /tmp/t-backend.json
+        run: python tests/test_backend.py
+      - name: App (sechs Rollen, Handy und Desktop)
+        id: t2
+        continue-on-error: true
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           CREW_KEY: ${{ secrets.CREW_KEY }}
-          SMOKE_OUT: tests.json
+          TESTS_OUT: /tmp/t-app.json
         run: python tests/smoke.py
-      - name: Resultate sichern
-        if: always()
-        run: |
-          [ -s tests.json ] || echo "{\"at\": $(date +%s)000, \"sha\": \"${GITHUB_SHA::7}\", \"ok\": false, \"crash\": true, \"n\": 0, \"fail\": 0, \"checks\": []}" > tests.json
-          cp tests.json /tmp/tests.json
+      - name: Funktionen (Suche, Drehplan, Termine, Konto, Push, vCard, offline, Rechte, Sprachen)
+        id: t3
+        continue-on-error: true
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+          TESTS_OUT: /tmp/t-func.json
+        run: python tests/func.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tests
-          path: /tmp/tests.json
+          name: tests-app
+          path: /tmp/t-*.json
+      - name: Gesamtergebnis
+        if: steps.t1.outcome != 'success' || steps.t2.outcome != 'success' || steps.t3.outcome != 'success'
+        run: exit 1
+
+  rules:
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Werkzeuge
+        working-directory: tests
+        run: npm install --no-audit --no-fund --loglevel=error
+      - name: Firestore-Regeln im Emulator
+        working-directory: tests
+        env:
+          TESTS_OUT: /tmp/t-rules.json
+        run: npx firebase emulators:exec --only firestore --project demo-tschugger --config firebase.json "node rules.test.mjs"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tests-rules
+          path: /tmp/t-rules.json
 
   deploy:
-    needs: [changes, test]
-    if: always() && needs.changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs: [changes, test, rules]
+    if: always() && needs.changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.rules.result == 'success' || needs.rules.result == 'skipped')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.d.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        if: needs.test.result == 'success'
-        continue-on-error: true
-        with:
-          name: tests
-          path: .
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -94,8 +134,8 @@ jobs:
   # results (only check names and ✓/✗) for App-Verwaltung → Log; also when the tests fail.
   # Committed only AFTER the deployment, otherwise the two Pages deployments get in each other's way.
   results:
-    needs: [test, deploy]
-    if: always() && (needs.test.result == 'success' || needs.test.result == 'failure')
+    needs: [test, rules, deploy]
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'failure' || needs.rules.result == 'success' || needs.rules.result == 'failure')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -104,15 +144,17 @@ jobs:
         with:
           ref: main
       - uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
-          name: tests
           path: /tmp/res
+          merge-multiple: true
       - name: Ins Repository
         run: |
+          python3 tests/merge_results.py /tmp/tests.json "Hintergrund=/tmp/res/t-backend.json" "App=/tmp/res/t-app.json" "Funktionen=/tmp/res/t-func.json" "Firestore-Regeln=/tmp/res/t-rules.json"
           git config user.name "Crew-App Tests"
           git config user.email "actions@users.noreply.github.com"
           for i in 1 2 3; do
-            git fetch -q origin main && git reset -q --hard origin/main && cp /tmp/res/tests.json tests.json && git add tests.json
+            git fetch -q origin main && git reset -q --hard origin/main && cp /tmp/tests.json tests.json && git add tests.json
             git diff --cached --quiet && break
             git commit -q -m "Testresultate" && git push -q origin HEAD:main && break
             sleep 5
