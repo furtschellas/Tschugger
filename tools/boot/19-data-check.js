@@ -145,7 +145,7 @@ const RTN={today:"Today",plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:
 try{const l=JSON.parse(localStorage.getItem("rt:last")||"null");if(l&&Array.isArray(l.res)){RTS.res=l.res;RTS.at=l.at||0}}catch(_){} /* the last test of this device is shown again */
 async function roleTestRun(auto){
   if(RTS.busy||!isAdmin())return;RTS.busy=true;render();
-  const keep={p:MYPERMS.slice(),r:MYROLE,tab:S.tab,sub:ADM.sub,ac:typeof ACSUB!=="undefined"?ACSUB:null};
+  const keep={p:MYPERMS.slice(),r:MYROLE,tab:S.tab,sub:ADM.sub,ac:typeof ACSUB!=="undefined"?ACSUB:null,ap:ADMINPERMS};
   const roles=[{id:"admin",name:L("Admin"),adm:true,perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}].concat((ADM.roles||[]).map(r=>({id:r.id,name:r.name||r.id,perms:arr(r.perms)}))).concat([{id:"",name:L("Keine Rolle"),perms:[]}]);
   const out=[];
   try{let k=0;for(const ro of roles){RTS.prog=Math.round(k++/roles.length*100);
@@ -163,7 +163,10 @@ async function roleTestRun(auto){
     if(!ro.adm&&ro.id&&(tabs.includes("plan")!==can("view.plan")))issues.push(L("Drehplan sichtbar, obwohl das Recht fehlt (oder umgekehrt)"));
     const extra=[can("push.send")&&L("Push senden"),can("events.add")&&L("Termine erstellen"),vok("mycal")&&L("Meine Termine"),can("mycal.all")&&L("Termine anderer"),can("crew.food")&&L("Essen"),can("crew.bday")&&L("Geburtstage"),
       vok("phone")&&L("Telefon"),vok("email")&&L("E-Mail"),canAdm()&&L("App-Verwaltung"),can("data.check")&&L("Dokumente prüfen")].filter(Boolean);
-    out.push({name:ro.name,tabs:tabs.map(t=>RTN[t]||t),extra,issues})}}
+    out.push({name:ro.name,tabs:tabs.map(t=>RTN[t]||t),extra,issues});
+    /* back to the real rights for a moment and show the progress (the role's pages were drawn without being shown) */
+    SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=keep.tab;ADM.sub=keep.sub;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}render();
+    await new Promise(r=>setTimeout(r,180))}}
   catch(err){out.push({name:L("Fehler"),tabs:[],extra:[],issues:[String(err&&err.message||err)]})}
   finally{SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;try{const ad=await (async()=>ADM.adminPerms)();ADMINPERMS=isOwner()?ADMIN_DEFAULT.slice():(ad||ADMINPERMS)}catch(_){}
     S.tab=keep.tab;ADM.sub=keep.sub;try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}}
