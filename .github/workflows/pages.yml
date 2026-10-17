@@ -1,7 +1,8 @@
 name: Website veröffentlichen
 
-# Jede Änderung am Code wird zuerst getestet (tests/smoke.py: sechs Rollen, Handy und Desktop) und nur veröffentlicht,
-# wenn alles klappt. Reine Daten-Aktualisierungen (Dropbox) gehen ohne Test gleich online.
+# Die App (index.html) wird HIER gebaut, getestet und nur bei bestandenen Tests veröffentlicht: erst dann wird die gebaute
+# index.html nach main geschrieben (von dort holt sie GitHub Pages). Im Repository wird index.html nie von Hand geändert –
+# schlägt ein Test fehl, bleibt die laufende App unverändert. Reine Daten-Aktualisierungen (Dropbox) gehen ohne Test gleich online.
 # Einmalig nötig: Repository → Settings → Pages → Source: «GitHub Actions».
 on:
   push:
@@ -55,6 +56,18 @@ jobs:
         run: |
           pip install -q playwright==1.48.0 cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1 icalendar==6.1.0 recurring-ical-events==3.3.3 pillow==11.0.0
           python -m playwright install --with-deps chromium >/dev/null
+      # the app is built here from tools/ (never taken from a hand-made index.html) and must start without any script error
+      - name: App bauen
+        run: |
+          npm install -g esbuild@0.24.0 --no-audit --no-fund --loglevel=error || true
+          ESBUILD=$(command -v esbuild || true) python tools/make_site.py
+          mkdir -p /tmp/site && cp index.html version.txt /tmp/site/
+      - name: App startet ohne Fehler
+        run: python tests/boot_check.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: /tmp/site/
       # alle Teile laufen, auch wenn einer fehlschlägt; am Schluss zählt das Gesamtergebnis
       - name: Hintergrund (Dropbox-Aktualisierung, Push, Alarm, Google Kalender)
         id: t1
@@ -132,6 +145,11 @@ jobs:
       url: ${{ steps.d.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: site
+          path: .
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -156,6 +174,12 @@ jobs:
         with:
           path: /tmp/res
           merge-multiple: true
+      - uses: actions/download-artifact@v4
+        if: needs.test.result == 'success' && (needs.rules.result == 'success' || needs.rules.result == 'skipped')
+        continue-on-error: true
+        with:
+          name: site
+          path: /tmp/site
       - name: Ins Repository
         run: |
           python3 tests/merge_results.py /tmp/tests.json "Hintergrund=/tmp/res/t-backend.json" "App=/tmp/res/t-app.json" "Funktionen=/tmp/res/t-func.json" "Sicherheit=/tmp/res/t-sec.json" "Firestore-Regeln=/tmp/res/t-rules.json"
@@ -163,7 +187,10 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           for i in 1 2 3; do
             git fetch -q origin main && git reset -q --hard origin/main && cp /tmp/tests.json tests.json && git add tests.json
+            # all tests passed: the tested app goes live (GitHub Pages takes index.html from main)
+            msg="Testresultate"
+            if [ -f /tmp/site/index.html ]; then cp /tmp/site/index.html /tmp/site/version.txt . && git add index.html version.txt && msg="App veröffentlicht (alle Tests bestanden) · Testresultate"; fi
             git diff --cached --quiet && break
-            git commit -q -m "Testresultate" && git push -q origin HEAD:main && break
+            git commit -q -m "$msg" && git push -q origin HEAD:main && break
             sleep 5
           done
