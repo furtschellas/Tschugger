@@ -27,7 +27,7 @@ async function auditLoad(){AUD.busy=true;try{const {F,db}=await fb();let q;
   catch(err){AUD.list=[];AUD.err=(err&&err.code)||String(err)}AUD.busy=false;AUD.at=Date.now();render()}
 const AUDLBL={roles:"Rolle",userroles:"Rolle zugewiesen",admins:"Admin",owners:"Owner",invites:"Einladung",members:"Profil",menus:"Menü",config:"Einstellungen",broadcasts:"Push-Nachricht",starts:"Startpasswort",requests:"Zugangsanfrage"};
 const AUDOP={set:"gespeichert",update:"geändert",delete:"gelöscht",add:"erstellt"};
-function auditSec(){
+function auditSecInner(){
   if(!AUD.list&&!AUD.busy)auditLoad();
   if(!AUD.list)return '<div class="empty">'+L("Lade Protokoll …")+'</div>';
   const nameOf=e=>{const cp=typeof crewPerson==="function"?crewPerson(e):null;const m=(ADM.mem||[]).find(x=>x.email===e);return (cp&&cp.name)||(m&&[m.firstName,m.lastName].filter(Boolean).join(" "))||e};
@@ -42,6 +42,10 @@ function auditSec(){
 }
 document.addEventListener("input",e=>{const i=e.target.closest("[data-audq]");if(!i)return;AUD.q=i.value;clearTimeout(AUD.t);AUD.t=setTimeout(()=>{const v=document.querySelector("#view");const pos=i.selectionStart;render();const n=document.querySelector("[data-audq]");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}},250)});
 document.addEventListener("click",e=>{if(e.target.closest("[data-audre]")){AUD.list=null;render()}});
+/* the change log to open (closed by default; stays open while you work on the page) */
+function auditSec(){const h=auditSecInner();if(!AUD.list)return h;
+  return '<details class="tstsec audd"'+(AUD.open||AUD.q?' open':'')+'><summary><b>'+esc(L("Log"))+'</b> · <span class="tsth">'+AUD.list.length+' '+esc(L("Einträge"))+'</span></summary>'+h+'</details>'}
+document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("audd"))AUD.open=e.target.open},true);
 Object.assign(I18N,{
  "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi appuntamenti",hi:"मेरे अगले कार्यक्रम"},
  "Alle meine Termine":{en:"All my events",fr:"Tous mes rendez-vous",it:"Tutti i miei appuntamenti",hi:"मेरे सभी कार्यक्रम"},
@@ -146,7 +150,7 @@ function testsSec(){
     '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
     suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
       return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'"'+(su.ok?'':' open')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
-        '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+'</li>').join("")+'</ul>'+(su.name?'</details>':'')}).join("")+
+        '<ul class="tstl">'+cs.map(c=>'<li class="'+(c.ok?'ok':'no')+'">'+(c.ok?'✓':'✗')+' '+esc(c.n)+(c.e?'<br><small>'+esc(c.e)+'</small>':'')+'</li>').join("")+'</ul>'+(su.name?'</details>':'')}).join("")+
     '<div class="arb tstbtns">'+(window.CHATURL&&isAdmin()?'<button type="button" class="pillbtn" data-tstrun'+(TST.run?' disabled':'')+'>'+TST_RUN+esc(L(TST.run?"Tests laufen …":"Tests jetzt starten"))+'</button>':'')+'<button type="button" class="pillbtn" data-tstre>↻ '+esc(L("Neu laden"))+'</button></div>'+(TST.msg?'<p class="ghint">'+esc(TST.msg)+'</p>':'')+'</details>';
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d=null;render()}});
