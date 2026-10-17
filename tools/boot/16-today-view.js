@@ -82,7 +82,7 @@ VIEWS.today=function(){
   /* first location + drive */
   const first=canPlan&&tShow("loc")?arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc)):null;
   if(first){let ad="";try{ad=addrForItem(first)}catch(_){ad=first.loc}
-    h+=card("tloc",esc(L("Erste Location")),'<div class="tbig">'+esc(first.set||first.loc)+'</div>'+(ad&&!/^tba$/i.test(ad)?'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>':''))}
+    h+=card("tloc",esc(L("Erste Location")),'<div class="tbig">'+esc(first.set||first.loc)+'</div>'+(ad&&!/^tba$/i.test(ad)?'<button type="button" class="lnk tlocad" data-route="'+esc(JSON.stringify({h:"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent((d.drive&&d.drive.from)||"Hotel")+"&destination="+encodeURIComponent(ad),c:"https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(ad),from:(d.drive&&d.drive.from)||"Hotel",to:ad}))+'">'+esc(ad)+'</button>':''))}   /* tap: choose «Vom Hotel» / «Vom aktuellen Standort» */
   /* menu */
   if(tShow("menu"))try{const mn=window.menuFor?window.menuFor(d.date,"all"):"";if(mn)h+=card("tmenu",esc(L("Mittagessen")),mn)}catch(_){}
   /* scenes */

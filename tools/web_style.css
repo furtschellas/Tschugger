@@ -837,3 +837,4 @@ html body #view .tstall.prog::before{content:"";position:absolute;inset:-3px;bor
 html body #view .tstall.prog.ind::before{background:conic-gradient(var(--accent) 0 25%,var(--rule) 25%);animation:tstspin 1s linear infinite}
 @keyframes tstspin{to{transform:rotate(1turn)}}
 @media (prefers-reduced-motion:reduce){html body #view .tstall.prog.ind::before{animation-duration:3s}}
+html body #view .today .tloc .tlocad{min-height:0;height:auto;padding:0;border:0;background:none;width:auto;text-align:left;font-size:inherit;color:var(--accent);text-decoration:underline;text-underline-offset:2px}

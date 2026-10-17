@@ -54,7 +54,7 @@ window.logWhen=logWhen;
 /* sub-parts (data-su) are open only while you stay on the page: every new visit of Log/Tests starts with everything closed */
 const logSu=k=>TST.su[k]?' open':'';window.logSu=logSu;
 function logReset(){TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false}
-{let last="";const _r=render;render=function(){if(typeof RTS!=="undefined"&&RTS.busy)return _r.apply(this,arguments);
+{let last="";const _r=render;render=function(){if((typeof RTS!=="undefined"&&RTS.busy)||(typeof DCK!=="undefined"&&DCK.busy))return _r.apply(this,arguments);   /* the tests switch pages for a moment: not a new visit */
   const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test")?ADM.sub:"";if(now&&now!==last){logReset();setTimeout(()=>logAutoRun(now),250)}last=now;return _r.apply(this,arguments)}}
 /* opening Log/Tests starts all tests again: permissions and documents right here, the automatic tests on GitHub
    (at most every 30 minutes and never while a run is going – each run takes 10–15 minutes); the progress is shown */

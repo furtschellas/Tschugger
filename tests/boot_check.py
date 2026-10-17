@@ -14,6 +14,8 @@ async def main():
         await pg.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
         await pg.goto((ROOT / "index.html").as_uri()); await pg.wait_for_timeout(2500)
         ok = await pg.evaluate("typeof render==='function'&&typeof VIEWS==='object'")
+        await pg.wait_for_timeout(8600)   # the start screen never stays: at the latest after 8 s it is gone
+        ok = ok and await pg.evaluate("!document.getElementById('splash')")
         await b.close()
     if errs or not ok:
         print("✗ App startet nicht:", errs or "render/VIEWS fehlen"); return 1
