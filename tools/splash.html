@@ -27,9 +27,10 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
 (function(){var el=document.getElementById("splash"),c=document.getElementById("splp"),t0=Date.now(),cur=0,done=false;
   var shut=false;function clap(){if(shut)return;shut=true;el.classList.add("shut");try{if(navigator.vibrate)navigator.vibrate([18,40,24])}catch(e){}}
   function set(p){if(p>cur){cur=p;c.style.strokeDashoffset=String(465*(1-p/100));if(p>=80)clap()}}
-  function end(){if(done)return;done=true;var w=shut?120:480;set(100);setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove()},200)},w)}
+  function end(){if(done)return;if(!rel&&Date.now()-t0<1400){setTimeout(end,1400-(Date.now()-t0));return}done=true;var w=shut?120:480;set(100);setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove()},200)},w)}
   /* below the logo (only when the app starts, not on a reload): schedule version, script version, app version and © */
-  var rel=false;try{var nv=performance.getEntriesByType("navigation")[0];rel=nv&&nv.type==="reload"}catch(e){}
+  /* «start» = first page of this visit (a new tab or the app opened anew); a reload in the same visit shows only the logo */
+  var rel=false;try{var nv=performance.getEntriesByType("navigation")[0];rel=(nv&&nv.type==="reload")||sessionStorage.getItem("splashSeen")==="1";sessionStorage.setItem("splashSeen","1")}catch(e){}
   var tv=document.getElementById("spv"),SCR={de:"Drehbuch",fr:"Scénario",it:"Sceneggiatura",en:"Script"},lg="de";try{lg=localStorage.getItem("lang")||"de"}catch(e){}
   function txt(){if(rel||!tv)return;var m=null;try{m=typeof S!=="undefined"&&S&&S.meta}catch(e){}
     var h=(m&&m.scheduleVersion?esc2(m.scheduleVersion)+"<br>":"")+(m&&m.scriptVersion?(SCR[lg]||SCR.en)+" "+esc2(m.scriptVersion)+"<br>":"")+"App __APP_VER__<br>© <b>MrK</b> 2026";if(tv.innerHTML!==h)tv.innerHTML=h}

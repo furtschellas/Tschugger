@@ -312,6 +312,18 @@ async def owner_tests(p, port):
         check("Performance: unveränderte Daten werden nicht nochmals geladen und entschlüsselt", sk == {"r": True, "enc": 0}, sk, public=True)
         check("Stabilität: Rückfall auf die letzte funktionierende Version vorbereitet (Wächter, App-Version)", await E("typeof window.__ERRS==='object'&&!!window.APPVER&&window.APPVER.length>=8&&!!window.__APPOK"))
 
+        # scene PDFs (Auflösung): one button per PDF, opening its pages right in the app; the script reader shows the floorplan too
+        pd = await E("""(()=>{const keep=S.meta.blocking,kb=S.meta.bm,kf=S.meta.floorplans;
+          const b={name:'TEST 167',sc:['167'],url:'https://www.dropbox.com/x',media:[{g:'pdf',t:'img',n:'Scene_167 · 1/2',f:'blk/aa',u:'u'},{g:'pdf',t:'img',n:'Scene_167 · 2/2',f:'blk/ab',u:'u'},{g:'pdf',t:'img',n:'Scene_167B · 1/1',f:'blk/ac',u:'u'}],pdfs:[{l:'167',u:'https://www.dropbox.com/p1'},{l:'99',u:'https://www.dropbox.com/p2'}]};
+          S.meta.blocking=[b];const btn=pdfBtns(b);const n=btn.length,inApp=btn.filter(x=>x.includes('data-blkpdf')).length;
+          const w=document.createElement('div');w.innerHTML=btn.join('');document.body.appendChild(w);w.querySelector('[data-blkpdf]').click();
+          const g=document.getElementById('blkgal');const t=g?g.querySelector('h3').textContent:'';document.querySelectorAll('#blkgal').forEach(x=>x.remove());w.remove();
+          S.meta.blocking=keep;S.meta.bm=kb;return {n,inApp,t}})()""")
+        check("Auflösung: ein Knopf je PDF, öffnet die Seiten direkt in der App", pd["n"] == 3 and pd["inApp"] == 2 and "167" in pd["t"] and "2" in pd["t"], pd, public=True)
+        fpx = await E("""(()=>{const d=S.days.find(d=>arr(d.items).some(i=>i.sc&&i.set));if(!d)return null;const it=arr(d.items).find(i=>i.sc&&i.set);const kf=S.meta.floorplans;
+          S.meta.floorplans=[{name:'Testplan',file:'tp.pdf',url:'https://www.dropbox.com/tp',rule:{set:[it.set]}}];const h=blkRow(it.sc);S.meta.floorplans=kf;return h.includes('Testplan')})()""")
+        check("Drehbuch-Szene: Knopf für den Floorplan der Location", fpx in (None, True), fpx, public=True)
+
         # App-Icon: not installed → only «Als App installieren»; installed → only «App deinstallieren» (with the steps for this device)
         ai = await E("""(()=>{const r={};for(const v of ['missing','installed','standalone']){window.A2ST={v,at:Date.now(),busy:false};S.tab='acct';ACSUB='app';render();
           r[v]={inst:!!document.querySelector('#view [data-ac="a2hs"]:not([data-more])'),un:!!document.querySelector('#view [data-ac="a2un"]')}}return r})()""")
