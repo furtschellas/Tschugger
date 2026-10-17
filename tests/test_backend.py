@@ -133,6 +133,10 @@ check("Auto-Push Drehbuch: Nachricht «Neue Drehbuch-Version» mit Version", s0.
 check("Auto-Push Drehbuch: nur Rollen mit «Drehbuch sehen», nicht ohne Rolle", sorted(s0.get("roles") or []) == ["admin", "crew", "owner"], s0.get("roles"))
 check("Auto-Push Drehbuch: alle Sprachen, Tippen öffnet das Drehbuch", set(s0.get("i18n") or {}) == {"de", "fr", "it", "en"} and (s0.get("url") or "").startswith("./#go=script:"))
 check("Drehbuch-Version aus dem Dateinamen", U.script_version("01_Script/261017_Tschugger_Tigerblood_v13 CLEAN.pdf") == "v13" and U.script_version("x.pdf") == "")
+_cl = U.changelog_parse("CHANGELOG v13\n\nSc5 deleted: Kids (Sc5pt4)\nSc6 SL changed: Sc6 SL4\nSc184CA added: Woman with dog\nSc5 again\n\n\n\nArnold B, +41 78 000 00 00, a@b.ch\n")
+check("Changelog: Szenen in Reihenfolge, ohne Doppel (auch 184CA)", _cl["scenes"] == ["5", "6", "184CA"], _cl["scenes"])
+check("Changelog: keine Telefonnummern oder E-Mail-Adressen im Text", "+41" not in _cl["log"] and "@" not in _cl["log"] and "Woman with dog" in _cl["log"])
+check("Changelog: passend zur Drehbuch-Version gewählt", (U.pick_changelog(_fs, "v13") or {}).get("name", "").endswith("Changelog v13 261017.pdf") and U.pick_changelog(_fs, "v12") is None)
 
 # ====================================================================== Push-Versand
 import push_send as P  # noqa: E402

@@ -495,6 +495,27 @@ def script_version(name):
     m = re.search(r"(?:^|[ _-])v(\d+)(?:[ _.-]|$)", name.rsplit("/", 1)[-1].lower())
     return "v" + m.group(1) if m else ""
 
+def pick_changelog(files, version):
+    """the changelog that belongs to the script version in the app («Tschugger Script Changelog v13 261017.pdf»)"""
+    c = [f for f in files if low(f).startswith("01_script/") and "changelog" in low(f).rsplit("/", 1)[-1] and low(f).endswith(".pdf")
+         and version and script_version(f["name"]) == version]
+    return max(c, key=lambda f: f["modified"] or "") if c else None
+
+def changelog_parse(txt):
+    """scenes named in the changelog (in order) and the text itself – without contact lines (phone numbers, e-mail addresses)"""
+    lines = [x.rstrip() for x in txt.replace("\r", "").split("\n")]
+    lines = [x for x in lines if not re.search(r"[\w.+-]+@[\w-]+\.[\w.]+|\+?\d[\d ]{8,}", x)]
+    t = re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+    sc = []
+    for m in re.finditer(r"\bSc\s?(\d+[A-Z]{0,3})\b", t):
+        if m.group(1) not in sc: sc.append(m.group(1))
+    return {"scenes": sc[:200], "log": t[:8000]}
+
+def pdf_text(raw):
+    with tempfile.TemporaryDirectory() as td:
+        p = pathlib.Path(td) / "c.pdf"; p.write_bytes(raw)
+        return subprocess.run(["pdftotext", "-layout", str(p), "-"], capture_output=True, timeout=120).stdout.decode("utf-8", "replace")
+
 def pick_script(files):
     """always the newest CLEAN version (without revision marks): highest «vNN» in the file name; a version without CLEAN is never
     used (it is usually uploaded a few minutes before the CLEAN one); never translations, changelogs, SPP or landscape versions"""
@@ -861,12 +882,29 @@ def main():
                 had = bool(scr); scr = sc; changed = True; log("Drehbuch:", len(sc), "Szenen")
                 sv = script_version(f["name"]); pv = meta.get("scriptVersion") or ""
                 if had and not FORCE:   # a new version (or a new revision of the same one): Today and push
-                    meta["scriptChange"] = {"at": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"), "v": sv, "prev": pv}
+                    old = meta.get("scriptChange") or {}
+                    meta["scriptChange"] = {"at": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"), "v": sv, "prev": pv,
+                                            **({k: old[k] for k in ("scenes", "log") if k in old} if old.get("v") == sv else {})}
                     NEWS.append({"kind": "script", "dates": [TODAY], "version": sv})
                 meta["scriptVersion"] = sv
             else:
                 failed("script", f, "zu wenige Szenen erkannt (%d) – bisheriges bleibt" % len(sc))
           except Exception as e: failed("script", f, e)
+
+    # changelog of the script version: scenes and text for «Änderungen» in Today (no push of its own)
+    cl = pick_changelog(files, meta.get("scriptVersion"))
+    if cl:
+        sources.append({"kind": "changelog", "name": cl["name"], "modified": cl["modified"]})
+        if is_new("changelog", cl) and may_try("changelog", cl):
+            try:
+                info = changelog_parse(pdf_text(dbx.download(cl["id"])))
+                sx = dict(meta.get("scriptChange") or {}); sv = meta.get("scriptVersion") or ""
+                if sx.get("v") != sv:   # the script was already read (or read without a changelog): the change counts from the changelog
+                    n = int(sv[1:]) if sv[1:].isdigit() else 0
+                    sx = {"at": cl["modified"] or datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"), "v": sv, "prev": ("v%d" % (n - 1)) if n > 1 else ""}
+                sx.update(info); meta["scriptChange"] = sx; changed = True
+                log("Changelog:", len(info["scenes"]), "Szenen")
+            except Exception as e: failed("changelog", cl, e)
 
     # prep / rehearsal planning (shared folder «3D» → 11_Planning Prep Rehearsals): every «Weekly Schedule» and «Daily Schedule»
     # is read on its own (only new or changed files go to Claude); per day the document with the newest «stand» wins,
