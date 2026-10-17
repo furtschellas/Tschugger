@@ -744,3 +744,33 @@ html body #view .abtn{margin-top:6px}
 .dckflat .dcksum{margin:0 0 6px;font-size:13px}.dckflat.bad .tsth{color:#d6455d}.dckflat:not(.bad) .tsth{color:#2e9d5b}
 .tstsec>summary{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.tstsec .tstall{margin-left:auto;border:1px solid var(--rule);background:transparent;color:var(--accent);width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .tstsec .tstbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;margin-top:10px}
+
+/* ===================================================================================================
+   Einheitliche Gestaltung: Knöpfe, Eingabefelder, Auswahlfelder, Aufklapper und Abstände überall gleich
+   =================================================================================================== */
+:root{--r-card:14px;--r-field:10px;--pad-card:14px 16px;--gap:12px;--btn-h:44px;--btn-sm-h:36px}
+/* cards */
+html body #view :is(.psec,.admins,.arole,.bch,.menuf,.catbox,.tstsec,.bcdev,.oeday){border-radius:var(--r-card)}
+html body #view .psec{padding:var(--pad-card);margin:var(--gap) 0}
+html body #view .psec>h4{margin:0 0 10px;font-size:15px}
+/* text fields, selects, text areas */
+html body :is(#view,.a2box) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),select,textarea){font:inherit;font-size:16px;font-weight:400;color:var(--ink);background-color:var(--field-bg,var(--paper));border:1px solid var(--rule);border-radius:var(--r-field);padding:10px 12px;min-height:var(--btn-h);box-sizing:border-box;max-width:100%}
+html body :is(#view,.a2box) textarea{min-height:88px;line-height:1.4;resize:vertical}
+html body :is(#view,.a2box) :is(input,select,textarea):focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+html body :is(#view,.a2box) input#q.search{min-height:var(--btn-h)}
+/* check boxes and radio buttons: one size, one colour, same distance to the text */
+html body :is(#view,.a2box) :is(input[type=checkbox],input[type=radio]){width:20px;height:20px;min-width:20px;margin:0;accent-color:var(--accent);flex:none;cursor:pointer}
+html body :is(#view,.a2box) label.ck{display:flex;align-items:flex-start;gap:10px;font-size:15px;line-height:1.35;margin:6px 0;cursor:pointer}
+html body :is(#view,.a2box) label.ck>:is(input[type=checkbox],input[type=radio]){margin-top:1px}
+/* buttons: main action filled, everything else as outlined pill – same heights everywhere */
+html body :is(#view,.a2box) :is(button[type=submit]:not(.sbtn),button.pri,.gbtn){min-height:var(--btn-h);padding:0 22px;border-radius:999px;font-size:15px;font-weight:700;background:var(--accent);color:var(--accent-ink,#fff);border:1px solid var(--accent);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+html body :is(#view,.a2box) :is(button[type=submit]:not(.sbtn),button.pri,.gbtn):disabled{opacity:.55;cursor:default}
+html body :is(#view,.a2box) .pillbtn{min-height:var(--btn-sm-h);padding:0 14px;border-radius:999px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+html body :is(#view,.a2box) button.lnk{min-height:var(--btn-sm-h)}
+html body :is(#view,.a2box) .arb{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+@media (max-width:600px){html body #view form .arb>button[type=submit]{flex:1 1 100%}}
+@media (min-width:601px){html body #view form .arb>button[type=submit]{min-width:200px}}
+/* collapsibles: same corners and spacing (their own title rows stay) */
+html body #view :is(.asec,.asetd,.setgrp,.paccd,.docd,.tstsec,.bcdev,.catbox){border-radius:var(--r-card);margin:10px 0}
+html[data-theme="light"]{--field-bg:#fff}
+.audd .admins.audit{border:0;background:transparent;padding:0;margin:6px 0 0}.audd .admins.audit>h3{display:none}.audd:not(.bad) .tsth{color:var(--muted)!important;font-weight:400}

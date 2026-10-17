@@ -6,7 +6,11 @@ RESULTS, FAILS = [], []
 
 
 def check(name, ok, info=""):
-    RESULTS.append({"n": name, "ok": bool(ok)})
+    r = {"n": name, "ok": bool(ok)}
+    if not ok and info and "lief durch" in name:   # a part that crashed: the reason (without addresses or numbers) helps to fix it
+        import re as _re
+        r["e"] = _re.sub(r"[\w.+-]+@[\w-]+\.[\w.]+|\+?\d[\d ]{6,}", "…", str(info))[:160]
+    RESULTS.append(r)
     print(("✓ " if ok else "✗ ") + name + ("" if ok or not info else "  – " + str(info)[:160]), flush=True)
     if not ok: FAILS.append(name)
     return bool(ok)
