@@ -248,6 +248,12 @@ async def owner_tests(p, port):
     check("Dokumente prüfen: Vergleich läuft und meldet Ergebnisse je Bereich", dk["n"] >= 4 and "Drehplan ↔ Drehbuch" in dk["areas"] and dk["self"], dk)
     sy = await E("""(()=>{const keep=[S.days,S.locs];S.locs=JSON.parse(JSON.stringify(S.locs));S.locs.forEach(l=>(l.sets||[]).forEach(st=>st.scenes=[]));return 1})()""")
     await E("dckRun()"); await pg.wait_for_timeout(5000)
+    sd2 = await E(r"""(async()=>{const sl=await scriptData();const ok=i=>i.sc&&/^\d+[A-Z]?$/.test(i.sc)&&/^I\/(?!E)/.test(i.ie||'');
+        const d=S.days.find(d=>d.kind==='shoot'&&(d.items||[]).some(ok));if(!d)return null;const it=d.items.find(ok);
+        const x=sl.find(y=>String(y.sc).toUpperCase()===String(it.sc).toUpperCase());if(!x)return null;
+        const keep=x.head;x.head='EXT. TESTORT - NACHT';await dckRun();x.head=keep;return (DCK.res||[]).some(r=>r.lvl==='warn'&&r.text.includes('Innen/Aussen')&&r.text.includes(it.sc+' ('))})()""")
+    if sd2 is not None:
+        check("Dokumente prüfen: Drehplan ↔ Drehbuch erkennt Innen/Aussen-Widerspruch", sd2)
     check("Dokumente prüfen: erkennt Szenen ohne Location als Unstimmigkeit", await E("(DCK.res||[]).some(x=>x.lvl==='warn'&&x.area==='Drehplan ↔ Locations')"))
 
     # App-Verwaltung → Log: results of the automatic tests, one part per suite
