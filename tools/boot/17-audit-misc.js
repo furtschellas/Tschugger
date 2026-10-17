@@ -44,7 +44,7 @@ document.addEventListener("input",e=>{const i=e.target.closest("[data-audq]");if
 document.addEventListener("click",e=>{if(e.target.closest("[data-audre]")){AUD.list=null;render()}});
 /* the change log to open (closed by default; stays open while you work on the page) */
 function auditSec(){const h=auditSecInner();if(!AUD.list)return h;
-  return '<details class="tstsec audd"'+(AUD.open||AUD.q?' open':'')+' data-lsec="aud"><summary><b>'+esc(L("Log"))+'</b> · <span class="tsth">'+AUD.list.length+' '+esc(L("Einträge"))+'</span></summary>'+h+'</details>'}
+  return '<details class="tstsec audd"'+(AUD.open||AUD.q?' open':'')+' data-lsec="aud"><summary><b>'+esc(L("Log"))+'</b> · <span class="tsth">'+AUD.list.length+' '+esc(L("Einträge"))+'</span>'+tstAllBtn()+'</summary>'+h+'</details>'}
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("audd"))AUD.open=e.target.open},true);
 Object.assign(I18N,{
  "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi appuntamenti",hi:"मेरे अगले कार्यक्रम"},
@@ -140,13 +140,15 @@ const TST={d:null,busy:false,run:false,msg:"",open:false,closed:false,su:{}}; /*
 const TST_RUN='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10"/><path d="M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/></svg>';
 const TST_ALL='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>';
 async function testsLoad(){if(TST.busy)return;TST.busy=true;try{const r=await fetch("./tests.json?t="+Date.now(),{cache:"no-store"});TST.d=r.ok?await r.json():{none:true}}catch(_){TST.d={none:true}}TST.busy=false;render()}
+/* open/close button at the right end of every box in Log/Tests */
+function tstAllBtn(){return '<button type="button" class="tstall" data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'}
 function testsSec(){
-  if(!TST.d){testsLoad();return '<details class="tstsec"><summary>'+esc(L("Automatische Tests"))+' · '+esc(L("Lade …"))+'</summary></details>'}
+  if(!TST.d){testsLoad();return '<details class="tstsec"><summary><b>'+esc(L("Automatische Tests"))+'</b> · '+esc(L("Lade …"))+'</summary></details>'}
   const d=TST.d;if(d.none)return '<details class="tstsec"><summary>'+esc(L("Automatische Tests"))+' · '+esc(L("noch keine Resultate"))+'</summary></details>';
   const dt=new Date(d.at||0),when=dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit"})+" "+dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"});
   const suites=Array.isArray(d.suites)&&d.suites.length?d.suites:[{name:"",ok:d.ok,n:d.n,fail:d.fail,checks:d.checks||[]}];
   const head=d.crash?'✗ '+L("Tests abgebrochen"):d.ok?'✓ '+L("{n} von {n} bestanden").split("{n}").join(d.n):'✗ '+L("{f} von {n} fehlgeschlagen").replace("{f}",d.fail).replace("{n}",d.n);
-  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(TST.open?' open':'')+' data-lsec="tst"><summary><b>'+esc(L("Automatische Tests"))+'</b>'+'<button type="button" class="tstall" data-tstall aria-label="'+esc(L("Alles auf- oder zuklappen"))+'" title="'+esc(L("Alles auf- oder zuklappen"))+'">'+TST_ALL+'</button>'+' · <span class="tsth">'+esc(head)+'</span> · '+esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':'')+'</summary>'+
+  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(TST.open?' open':'')+' data-lsec="tst"><summary><b>'+esc(L("Automatische Tests"))+'</b>'+' · <span class="tsth">'+esc(head)+'</span> · '+esc(when)+(d.sha?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':'')+tstAllBtn()+'</summary>'+
     '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
     suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
       return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'" data-su="'+esc(su.name)+'"'+(TST.su[su.name]?' open':'')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
@@ -157,7 +159,8 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d
 
 /* open/close everything in the test box; start the tests by hand (through the worker: GitHub «Website veröffentlichen» with all tests) */
 document.addEventListener("click",e=>{const a=e.target.closest("[data-tstall]");if(!a)return;e.preventDefault();e.stopPropagation();const box=a.closest(".tstsec");if(!box)return;
-  const all=[box,...box.querySelectorAll("details")];const open=!all.every(d=>d.open);all.forEach(d=>{d.open=open;if(d.dataset.su)TST.su[d.dataset.su]=open});TST.open=open},true);
+  const all=[box,...box.querySelectorAll("details")];const open=!all.every(d=>d.open);all.forEach(d=>{d.open=open;if(d.dataset.su)TST.su[d.dataset.su]=open});
+  const k=box.dataset.lsec;if(k==="tst")TST.open=open;else if(k==="aud")AUD.open=open;else if(k==="rt"&&typeof RTS!=="undefined")RTS.open=open;else if(k==="dck"&&typeof DCK!=="undefined")DCK.open=open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="tst")TST.open=d.open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.su)TST.su[d.dataset.su]=d.open},true);
 document.addEventListener("click",async e=>{if(!e.target.closest("[data-tstrun]")||!isAdmin()||TST.run)return;TST.run=true;TST.msg="";render();

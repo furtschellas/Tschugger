@@ -124,7 +124,7 @@ window.dataCheckSec=function(flat){if(!dckMay())return "";
   const ic={warn:"⚠",info:"ℹ",ok:"✓"};
   const sum=DCK.res?'<span class="tsth">'+(nw?nw+' '+esc(L(nw===1?"Unstimmigkeit":"Unstimmigkeiten")):esc(L("keine Unstimmigkeiten")))+(ni?', '+ni+' '+esc(L(ni===1?"Hinweis":"Hinweise")):'')+'</span>':'';
   /* Mein Konto → App: always open (the section already has the title); App-Verwaltung → Log: to open like the other boxes */
-  return (flat?'<div class="dcksec dckflat'+(nw?' bad':'')+'">'+(sum?'<p class="dcksum">'+sum+'</p>':''):'<details class="tstsec dcksec'+(nw?' bad':'')+'"'+(DCK.open?' open':'')+' data-lsec="dck"><summary><b>'+esc(L("Dokumente prüfen"))+'</b>'+(sum?' · '+sum:'')+'</summary>')+
+  return (flat?'<div class="dcksec dckflat'+(nw?' bad':'')+'">'+(sum?'<p class="dcksum">'+sum+'</p>':''):'<details class="tstsec dcksec'+(nw?' bad':'')+'"'+(DCK.open?' open':'')+' data-lsec="dck"><summary><b>'+esc(L("Dokumente prüfen"))+'</b>'+(sum?' · '+sum:'')+tstAllBtn()+'</summary>')+
     '<p class="ghint">'+esc(L("Vergleicht die Dokumente aus der Dropbox untereinander (Drehplan, Locations, Drehbuch, Cast-Liste, Prep Weekly/Daily, Callsheets, Crewliste) und prüft die App auf diesem Gerät. Es werden nur Bereiche verglichen, die du sehen darfst."))+'</p>'+
     (DCK.res&&DCK.at?'<p class="ghint">'+esc(L("Letzte Prüfung"))+': '+esc(new Date(DCK.at).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))+'</p>':'')+
     '<div class="arb"><button type="button" class="pillbtn" data-dckrun'+(DCK.busy?' disabled':'')+'>'+esc(L(DCK.busy?"Prüfe …":DCK.res?"Nochmals prüfen":"Jetzt prüfen"))+'</button></div>'+
@@ -164,7 +164,7 @@ async function roleTestRun(){
     S.tab=keep.tab;ADM.sub=keep.sub;try{acctButton(true);if(typeof bcButton==="function")bcButton()}catch(_){}}
   RTS.res=out;RTS.at=Date.now();RTS.busy=false;RTS.open=true;render()}
 window.roleTestSec=function(){if(!isAdmin()||SIMROLE)return "";const r=RTS.res||[],bad=r.filter(x=>x.issues.length).length;
-  return '<details class="tstsec rtsec'+(bad?' bad':'')+'"'+(RTS.open?' open':'')+' data-lsec="rt"><summary><b>'+esc(L("Rollen testen"))+'</b>'+(RTS.res?' · <span class="tsth">'+(bad?bad+' '+esc(L(bad===1?"Rolle mit Problemen":"Rollen mit Problemen")):r.length+' '+esc(L("Rollen in Ordnung")))+'</span>':'')+'</summary>'+
+  return '<details class="tstsec rtsec'+(bad?' bad':'')+'"'+(RTS.open?' open':'')+' data-lsec="rt"><summary><b>'+esc(L("Rollen testen"))+'</b>'+(RTS.res?' · <span class="tsth">'+(bad?bad+' '+esc(L(bad===1?"Rolle mit Problemen":"Rollen mit Problemen")):r.length+' '+esc(L("Rollen in Ordnung")))+'</span>':'')+tstAllBtn()+'</summary>'+
     '<p class="ghint">'+esc(L("Zeigt die App einen Moment mit den Rechten jeder Rolle: welche Bereiche sie sieht, welche Zusatzrechte sie hat, ob alle Seiten ohne Fehler erscheinen und ob Telefon, E-Mail und Kopf-Symbole nur mit Recht sichtbar sind. Es wird nichts geändert."))+'</p>'+
     (RTS.res&&RTS.at?'<p class="ghint">'+esc(L("Letzte Prüfung"))+': '+esc(new Date(RTS.at).toLocaleString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))+'</p>':'')+
     '<div class="arb"><button type="button" class="pillbtn" data-rtrun'+(RTS.busy?' disabled':'')+'>'+esc(L(RTS.busy?"Prüfe …":RTS.res?"Nochmals prüfen":"Jetzt prüfen"))+'</button></div>'+
