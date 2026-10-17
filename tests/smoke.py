@@ -100,8 +100,26 @@ async def session(p, port, who, width=390, extra=""):
     return b, pg, errs
 
 
+# shared building blocks (same meaning everywhere); any OTHER class name used in two modules is a collision risk
+SHARED = set("""ghint pillbtn a2hs a2box ck ahint amsg lnk a2b empty arb pgt chk role mypage admins ok psec off pri refresh efood
+xclose gbtn lang glink hasreq smodes pok pushsec amap wlbox sec wlbeta cath3 catchip reg catchips myhead asub n acbox warn cico
+em search src dh on ico spin ttile fact v ust""".split())
+
+def class_collisions():
+    """class names that two different modules (tools/boot/*.js, app.html) use – except the shared building blocks"""
+    import re, collections
+    use = collections.defaultdict(set)
+    for f in sorted((ROOT / "tools" / "boot").glob("*.js")) + [ROOT / "tools" / "app.html", ROOT / "tools" / "a2hs.js"]:
+        s = f.read_text()
+        for m in re.finditer(r"""class(?:Name)?\s*=\s*\\?["']([^"'<>]{1,200})["']""", s):
+            for c in re.findall(r"[a-zA-Z][\w-]*", m.group(1)): use[c].add(f.stem)
+    return {c: sorted(v) for c, v in use.items() if len(v) > 1 and c not in SHARED}
+
+
 async def main():
     from playwright.async_api import async_playwright
+    col = class_collisions()
+    check("Keine Klassennamen, die zwei Bereiche unterschiedlich verwenden", not col, col)
     port = free_port()
     srv = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", str(ROOT)],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -155,7 +173,7 @@ async def main():
                     # tour
                     await E("tourStart(false)"); await pg.wait_for_timeout(600)
                     n = await E("TOUR.steps.length")
-                    w = await E("Math.round(document.querySelector('#tour .tcard').getBoundingClientRect().width)")
+                    w = await E("Math.round(document.querySelector('#tour .tour-card').getBoundingClientRect().width)")
                     check("Tour startet", n >= 20, n)
                     check("Tour-Fenster unverändert breit", w >= 250, w)
                     await E("tourEnd&&tourEnd('skip',true)") if await E("typeof tourEnd==='function'") else None

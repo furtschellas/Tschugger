@@ -51,12 +51,12 @@ VIEWS.today=function(){
   if(scs.length)h+=card("tscs",esc(L("Szenen"))+' <small>'+scs.length+'</small>','<ul class="tsclist">'+scs.map(([u,it])=>{const cg=window.chgFor(d.date,u,it.sc);
     /* one line per scene: time, scene, set and – as far as there is room – the description (cut with «…») */
     const set=String(it.set||"").replace(/^VALAIS\s*[–-]\s*/i,""),ds=String((LANG==="en"?it.d:(it["d_"+LANG]||it.d))||"").trim();
-    return '<li'+(cg?' class="chg" title="'+esc(cg)+'"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset" title="'+esc([set,ds].filter(Boolean).join(" – "))+'">'+(u!=="1"?'<span class="ust">'+esc(UNAME[u])+'</span> ':'')+esc(set)+(ds?'<span class="tds"> · '+esc(ds)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
+    return '<li'+(cg?' class="chg" title="'+esc(cg)+'"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset" title="'+esc([set,ds].filter(Boolean).join(" – "))+'">'+(u!=="1"?'<span class="td-unit">'+esc(UNAME[u])+'</span> ':'')+esc(set)+(ds?'<span class="tds"> · '+esc(ds)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
   /* my events */
   /* changes */
   const cl=canPlan?chgList():[];
   if(canPlan)h+='<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(cl.some(c=>c.unread)?' <span class="chgdot">'+cl.filter(c=>c.unread).length+' '+esc(L("neu"))+'</span>':'')+'</div>'+
-    (cl.length?'<ul class="chglist">'+cl.map(c=>'<li'+(c.unread?' class="unread"':'')+'><span class="cd">'+esc(dmy(c.date))+'</span><span class="cw">'+(c.sc?'<b>'+esc(L("Szene"))+' '+esc(c.sc)+'</b>'+(c.u&&c.u!=="1"?' <span class="ust">'+esc(UNAME[c.u])+'</span>':'')+' · ':'')+esc(c.txt)+'</span></li>').join("")+'</ul>'+
+    (cl.length?'<ul class="chglist">'+cl.map(c=>'<li'+(c.unread?' class="unread"':'')+'><span class="cd">'+esc(dmy(c.date))+'</span><span class="cw">'+(c.sc?'<b>'+esc(L("Szene"))+' '+esc(c.sc)+'</b>'+(c.u&&c.u!=="1"?' <span class="td-unit">'+esc(UNAME[c.u])+'</span>':'')+' · ':'')+esc(c.txt)+'</span></li>').join("")+'</ul>'+
       '<div class="tacts">'+(cl.some(c=>c.unread)?'<button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button>':'')+(can("push.send")?'<button type="button" class="pillbtn" data-chgpush>'+esc(L("Als Push-Nachricht senden"))+'</button>':'')+'</div>'
       :'<p class="ghint">'+esc(L("Seit deinem letzten Besuch hat sich am Drehplan nichts geändert."))+'</p>')+'</div>';
   /* offline */
