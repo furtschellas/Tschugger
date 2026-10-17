@@ -38,13 +38,23 @@ function auditSecInner(){
   return '<div class="admins audit"><h3>'+L("Log")+' <small>'+AUD.list.length+'</small></h3><p class="ahint">'+L("Wer hat wann Rollen, Benutzende, Menüs, Einstellungen oder Push-Nachrichten geändert – die letzten 300 Einträge.")+'</p>'+
     (AUD.err?'<p class="amsg">'+esc(L("Protokoll nicht lesbar – bitte die neuen Firestore-Regeln veröffentlichen."))+' ('+esc(AUD.err)+')</p>':'')+
     '<div class="audbar"><input type="search" data-audq placeholder="'+esc(L("Suchen: Person, Rolle, Menü …"))+'" value="'+esc(AUD.q)+'"><button type="button" class="cico" data-audre aria-label="'+esc(L("Neu laden"))+'" title="'+esc(L("Neu laden"))+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button></div>'+
-    (rows.length?'<ul class="audlist">'+rows.map(x=>'<li><div class="audh"><b>'+esc(x.what)+'</b>'+(x.tgt?' <span class="audt">'+esc(x.tgt)+'</span>':'')+'<span class="audw">'+esc(x.ms?new Date(x.ms).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"")+'</span></div><div class="audb">'+esc(x.who)+(x.sum?' · <span class="ghint">'+esc(x.sum)+'</span>':'')+'</div></li>').join("")+'</ul>':'<p class="ghint">'+L("Noch keine Einträge.")+'</p>')+'</div>';
+    (rows.length?audDays(rows,x=>'<li><div class="audh"><b>'+esc(x.what)+'</b>'+(x.tgt?' <span class="audt">'+esc(x.tgt)+'</span>':'')+'<span class="audw">'+esc(x.ms?new Date(x.ms).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"")+'</span></div><div class="audb">'+esc(x.who)+(x.sum?' · <span class="ghint">'+esc(x.sum)+'</span>':'')+'</div></li>')):'<p class="ghint">'+L("Noch keine Einträge.")+'</p>')+'</div>';
 }
+/* the log by day: one closed sub-part per day (open while searching) */
+function audDays(rows,li){const g=new Map();for(const x of rows){const k=x.ms?new Date(x.ms).toISOString().slice(0,10):"–";if(!g.has(k))g.set(k,[]);g.get(k).push(x)}
+  return [...g].map(([k,l])=>'<details class="tstsu" data-su="aud:'+esc(k)+'"'+(AUD.q?' open':logSu("aud:"+k))+'><summary>'+esc(k==="–"?"–":dmy(k))+' · '+l.length+' '+esc(L(l.length===1?"Eintrag":"Einträge"))+'</summary><ul class="audlist">'+l.map(li).join("")+'</ul></details>').join("")}
 document.addEventListener("input",e=>{const i=e.target.closest("[data-audq]");if(!i)return;AUD.q=i.value;clearTimeout(AUD.t);AUD.t=setTimeout(()=>{const v=document.querySelector("#view");const pos=i.selectionStart;render();const n=document.querySelector("[data-audq]");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}},250)});
 document.addEventListener("click",e=>{if(e.target.closest("[data-audre]")){AUD.list=null;render()}});
 /* the change log to open (closed by default; stays open while you work on the page) */
-function auditSec(){const h=auditSecInner();if(!AUD.list)return h;
-  return '<details class="tstsec audd"'+(AUD.open||AUD.q?' open':'')+' data-lsec="aud"><summary><b>'+esc(L("Log"))+'</b> · <span class="tsth">'+AUD.list.length+' '+esc(L("Einträge"))+'</span>'+tstAllBtn()+'</summary>'+h+'</details>'}
+function auditSec(){const h=auditSecInner();if(!AUD.list)return h;const nw=AUD.list[0]&&AUD.list[0].ms;
+  return '<details class="tstsec audd"'+(AUD.open||AUD.q?' open':'')+' data-lsec="aud"><summary><b>'+esc(L("Log"))+'</b> · <span class="tsth">'+AUD.list.length+' '+esc(L("Einträge"))+'</span>'+(nw?' · '+esc(logWhen(nw)):'')+tstAllBtn()+'</summary>'+h+'</details>'}
+/* time in the title line of every box (like «Automatische Tests») */
+function logWhen(ms){const dt=new Date(ms);return dt.toLocaleDateString(LOC[LANG]||"de-CH",{day:"2-digit",month:"2-digit"})+" "+dt.toLocaleTimeString(LOC[LANG]||"de-CH",{hour:"2-digit",minute:"2-digit"})}
+window.logWhen=logWhen;
+/* sub-parts (data-su) are open only while you stay on the page: every new visit of Log/Tests starts with everything closed */
+const logSu=k=>TST.su[k]?' open':'';window.logSu=logSu;
+function logReset(){TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false}
+{let inLog=false;const _r=render;render=function(){const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test");if(now&&!inLog)logReset();inLog=now;return _r.apply(this,arguments)}}
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("audd"))AUD.open=e.target.open},true);
 Object.assign(I18N,{
  "Meine nächsten Termine":{en:"My next events",fr:"Mes prochains rendez-vous",it:"I miei prossimi appuntamenti",hi:"मेरे अगले कार्यक्रम"},

@@ -84,14 +84,11 @@ async function offlinePrep(force){
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-offprep]"))offlinePrep(true)});
 /* route: from the crew hotel or from where I am right now */
-const RT_HOTEL='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V9l9-5 9 5v11"/><path d="M9 20v-5h6v5"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></svg>';
-const RT_HERE='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>';
-/* one option: icon · title with the start point below it · arrow */
-const rtOpt=(href,ic,t,sub)=>'<a class="rtopt" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" data-rtx><span class="rtic">'+ic+'</span><span class="rttx"><b>'+esc(t)+'</b>'+(sub?'<small>'+esc(sub)+'</small>':'')+'</span><span class="rtgo" aria-hidden="true">›</span></a>';
 document.addEventListener("click",e=>{const b=e.target.closest("[data-route]");if(!b)return;let r={};try{r=JSON.parse(b.dataset.route)}catch(_){return}
   let o=document.getElementById("routepop");if(o)o.remove();o=document.createElement("div");o.id="routepop";o.className="a2hs";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");
   o.innerHTML='<div class="a2box rtbox"><button type="button" class="xclose" data-rtx aria-label="'+esc(L("Schliessen"))+'">×</button><h3>'+esc(L("Route in Google Maps"))+'</h3><p class="ghint">'+esc(L("Ziel"))+': '+esc(r.to||"")+'</p>'+
-    '<div class="rtopts">'+rtOpt(r.h,RT_HOTEL,L("Vom Hotel"),r.from||"")+rtOpt(r.c,RT_HERE,L("Vom aktuellen Standort"),L("Dein Standort jetzt"))+'</div></div>';
+    '<div class="rtopts"><a class="pillbtn rtpill" href="'+esc(r.h)+'" target="_blank" rel="noopener noreferrer" data-rtx><b>'+esc(L("Vom Hotel"))+'</b>'+(r.from?'<small>'+esc(r.from)+'</small>':'')+'</a>'+
+    '<a class="pillbtn rtpill" href="'+esc(r.c)+'" target="_blank" rel="noopener noreferrer" data-rtx><b>'+esc(L("Vom aktuellen Standort"))+'</b></a></div></div>';
   document.body.appendChild(o);o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest("[data-rtx]"))setTimeout(()=>o.remove(),50)})});
 document.addEventListener("change",e=>{const c=e.target.closest("[data-offauto]");if(!c)return;store("offline",c.checked?"1":"0");if(c.checked)offlinePrep(false);render()});
 document.addEventListener("click",e=>{if(!e.target.closest("[data-tomy]"))return;if(typeof openMyCal==="function")openMyCal();else{S.tab="my";render();scrollTo(0,0)}});
