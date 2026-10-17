@@ -1569,6 +1569,8 @@ window.addEventListener("resize",()=>{clearTimeout(window.__fnT);window.__fnT=se
 function render(){
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form")){S.rpend=true;return}} /* never wipe a form someone is typing in – catch up when the field is left */
   S.rpend=false;
+  /* a page without access (e.g. the last page of an account whose rights were changed): back to the start page instead of «Kein Zugang» */
+  try{if(typeof ME!=="undefined"&&ME&&((S.tab==="my"&&!vok("mycal"))||(S.tab==="bcast"&&!(can("push.send")&&window.PUSHEN!==false))||(S.tab==="admin"&&typeof canAdm==="function"&&!canAdm()))){S.tab=(typeof tabsOn==="function"&&tabsOn()[0])||"plan";try{store("tab",S.tab)}catch(_){}}}catch(_){}
   /* «Today» comes with the website part that loads a moment later: until then show nothing instead of flashing the schedule */
   if(S.tab==="today"&&!VIEWS.today&&!S.todayGone){const v0=$("#view");if(v0&&!v0.dataset.wait){v0.dataset.wait="1";v0.innerHTML='<div class="empty"></div>'}document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab==="today"));
     if(!S.todayWaitT)S.todayWaitT=setTimeout(()=>{if(!VIEWS.today){S.todayGone=true;render()}},6000);return}
