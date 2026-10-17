@@ -214,15 +214,16 @@ function maybePushHint(){
   const ios=!pushOK()&&isIOS()&&!pushStandalone();if(!pushOK()&&!ios)return;
   if(pushOK()&&Notification.permission!=="default"){hintMark();return}
   const d=document.createElement("div");d.id="pushhint";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
-  const types=PUSH_TYPES.filter(x=>vok(x[2]));
-  d.innerHTML='<div class="a2box phbox"><span class="wlbeta">'+L("Neu")+'</span><h3>'+L("Push-Nachrichten")+'</h3><p>'+L("Die App erinnert dich jetzt auf Wunsch vor deinen Terminen – auch wenn sie geschlossen ist.")+'</p>'+
+  const types=PUSH_TYPES.filter(x=>vok(x[2])),nws=PUSH_NEWS.filter(x=>vok(x[2]));
+  d.innerHTML='<div class="a2box phbox"><span class="wlbeta">'+L("Neu")+'</span><h3>'+L("Push-Nachrichten")+'</h3><p>'+L("Die App erinnert dich auf Wunsch vor deinen Terminen und meldet neue Drehpläne und Callsheets – auch wenn sie geschlossen ist.")+'</p>'+
     (ios?'<p class="ghint">'+L("Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.")+'</p><div class="a2b"><button type="button" class="pri" data-ph="ok">'+L("OK")+'</button></div>':
     '<label class="phl">'+L("Erinnern")+'<select data-phlead>'+PUSH_LEADS.map(([v,t])=>'<option value="'+v+'"'+(v===c.lead?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
     '<p class="ahint"><b>'+L("Für welche Termine?")+'</b></p>'+types.map(([k,t])=>'<label class="ck"><input type="checkbox" data-phtype="'+k+'"'+(c.types[k]?' checked':'')+'> '+L(t)+'</label>').join("")+
+    (nws.length?'<p class="ahint"><b>'+L("Bei Änderungen benachrichtigen")+'</b></p>'+nws.map(([k,t])=>'<label class="ck"><input type="checkbox" data-phnews="'+k+'" checked> '+L(t)+'</label>').join(""):'')+
     '<p class="ghint">'+L("Einzelne Termine schaltest du mit der Glocke in «Meine Termine» aus; alles Weitere unter «Mein Konto».")+'</p>'+
     '<div class="a2b"><button type="button" class="lnk" data-ph="no">'+L("Nicht jetzt")+'</button><button type="button" class="pri" data-ph="on">'+L("Einschalten")+'</button></div>')+'</div>';
   d.addEventListener("click",async e=>{const b=e.target.closest("[data-ph]");if(!b){if(e.target.closest("button")&&!e.target.closest("select")){const c=pushCfg();c.hint=1;pushSave(c);d.remove()}return}const c=pushCfg();c.hint=1;
-    if(b.dataset.ph==="on"){c.lead=+(d.querySelector("[data-phlead]")||{value:c.lead}).value||c.lead;d.querySelectorAll("[data-phtype]").forEach(x=>c.types[x.dataset.phtype]=x.checked);c.on=true;pushSave(c);const cont=TOUR.afterHint;TOUR.afterHint=false;d.remove();await pushEnable();if(cont)setTimeout(maybeTour,600);if(Notification.permission==="granted")showMsg(L("Push-Nachrichten sind eingeschaltet."),3500)}
+    if(b.dataset.ph==="on"){c.lead=+(d.querySelector("[data-phlead]")||{value:c.lead}).value||c.lead;d.querySelectorAll("[data-phtype]").forEach(x=>c.types[x.dataset.phtype]=x.checked);d.querySelectorAll("[data-phnews]").forEach(x=>c.news[x.dataset.phnews]=x.checked);c.on=true;pushSave(c);const cont=TOUR.afterHint;TOUR.afterHint=false;d.remove();await pushEnable();if(cont)setTimeout(maybeTour,600);if(Notification.permission==="granted")showMsg(L("Push-Nachrichten sind eingeschaltet."),3500)}
     else{pushSave(c);d.remove();if(b.dataset.ph==="no")showMsg(L("Du kannst Push-Nachrichten jederzeit unter «Mein Konto» einschalten."),4000)}});
   hintMark();const obs=new MutationObserver(()=>{if(!d.isConnected){obs.disconnect();if(TOUR.afterHint){TOUR.afterHint=false;setTimeout(maybeTour,400)}}});obs.observe(document.body,{childList:true});
   document.body.appendChild(d);
