@@ -1,20 +1,27 @@
-<div id="splash" aria-hidden="true"><div class="spw"><svg class="spr" viewBox="0 0 160 160"><circle cx="80" cy="80" r="74" class="spt"/><circle cx="80" cy="80" r="74" class="spp" id="splp"/></svg><img src="clap.svg" alt="" width="119" height="119"></div><div class="spv" id="spv"></div></div>
+<div id="splash" aria-hidden="true"><div class="spw"><svg class="spr" viewBox="0 0 160 160"><circle cx="80" cy="80" r="74" class="spt"/><circle cx="80" cy="80" r="74" class="spp" id="splp"/></svg><svg class="splogo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="119" height="119"><defs><radialGradient id="spg" cx=".85" cy="0" r="1"><stop offset="0" stop-color="#ff2e8a" stop-opacity=".42"/><stop offset=".62" stop-color="#ff2e8a" stop-opacity="0"/></radialGradient><clipPath id="spc"><path d="M110 196h292v30H110z"/></clipPath><clipPath id="spt2"><path d="M0-36h300v36H0z"/></clipPath></defs><rect width="512" height="512" rx="112" fill="#110d1c"/><rect width="512" height="512" rx="112" fill="url(#spg)"/><rect x="104" y="214" width="304" height="206" rx="26" fill="#f4ead6"/><rect x="104" y="196" width="304" height="52" rx="10" fill="#1d1730"/><g clip-path="url(#spc)" transform="translate(0 15)"><g fill="#f4ead6"><path d="M128 181h34l-26 60h-34z"/><path d="M198 181h34l-26 60h-34z"/><path d="M268 181h34l-26 60h-34z"/><path d="M338 181h34l-26 60h-34z"/></g></g><g class="clstick"><rect x="0" y="-40" width="300" height="44" rx="10" fill="#ff2e8a"/><g clip-path="url(#spt2)" transform="translate(0 -4)"><g fill="#110d1c"><path d="M34-36h34l-26 36H8z"/><path d="M104-36h34l-26 36H78z"/><path d="M174-36h34l-26 36h-34z"/><path d="M244-36h34l-26 36h-34z"/></g></g></g><circle cx="122" cy="196" r="15" fill="#f4ead6" stroke="#110d1c" stroke-width="6"/><g fill="#1d1730"><rect x="138" y="280" width="236" height="14" rx="7"/><rect x="138" y="318" width="156" height="14" rx="7"/><rect x="138" y="356" width="196" height="14" rx="7"/></g></svg>
+</div><div class="spv" id="spv"></div></div>
 <style>#splash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#110d1c;transition:opacity .18s}#splash.out{opacity:0;pointer-events:none}
 #splash{flex-direction:column;gap:18px}#splash .spv{min-height:3.9em;text-align:center;font:500 12px/1.3 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.04em;color:rgba(255,255,255,.62)}#splash .spv b{color:#ff2e8a;font-weight:700}
-#splash .spw{position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center}#splash img{width:119px;height:119px;border-radius:50%}
+#splash .spw{position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center}#splash .splogo{width:119px;height:119px;border-radius:26px;overflow:visible}
+#splash .clstick{transform-box:view-box;transform-origin:112px 186px;transform:translate(112px,186px) rotate(-17deg);transition:transform .14s cubic-bezier(.5,0,.9,.4)}
+#splash.shut .clstick{transform:translate(112px,186px) rotate(0deg)}
+#splash.shut .spw{animation:spshake .32s .12s}
+@keyframes spshake{0%,100%{transform:translate(0,0)}20%{transform:translate(-3px,1px) rotate(-1.5deg)}40%{transform:translate(3px,-1px) rotate(1.5deg)}60%{transform:translate(-2px,0) rotate(-1deg)}80%{transform:translate(2px,0) rotate(.6deg)}}
+@media (prefers-reduced-motion:reduce){#splash.shut .spw{animation:none}}
 #splash .spr{position:absolute;inset:0;transform:rotate(-90deg)}#splash circle{fill:none;stroke-width:5}#splash .spt{stroke:rgba(255,255,255,.12)}
 #splash .spp{stroke:#ff2e8a;stroke-linecap:round;stroke-dasharray:465;stroke-dashoffset:465;transition:stroke-dashoffset .25s}
 @media (prefers-color-scheme:light){html:not([data-theme="dark"]) #splash{background:#f6f2ea}html:not([data-theme="dark"]) #splash .spv{color:rgba(0,0,0,.55)}}</style>
 <script>/* start screen: the logo (about the size of a five-franc coin); the ring shows how far the app has loaded and the page
    appears the moment it is ready – also on reload. It never blocks the app: at the latest after 8 s it disappears. */
 (function(){var el=document.getElementById("splash"),c=document.getElementById("splp"),t0=Date.now(),cur=0,done=false;
-  function set(p){if(p>cur){cur=p;c.style.strokeDashoffset=String(465*(1-p/100))}}
-  function end(){if(done)return;done=true;set(100);setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove()},200)},120)}
+  var shut=false;function clap(){if(shut)return;shut=true;el.classList.add("shut");try{if(navigator.vibrate)navigator.vibrate([18,40,24])}catch(e){}}
+  function set(p){if(p>cur){cur=p;c.style.strokeDashoffset=String(465*(1-p/100));if(p>=80)clap()}}
+  function end(){if(done)return;done=true;var w=shut?120:480;set(100);setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove()},200)},w)}
   /* below the logo (only when the app starts, not on a reload): schedule version, script version, app version and © */
   var rel=false;try{var nv=performance.getEntriesByType("navigation")[0];rel=nv&&nv.type==="reload"}catch(e){}
   var tv=document.getElementById("spv"),SCR={de:"Drehbuch",fr:"Scénario",it:"Sceneggiatura",en:"Script"},lg="de";try{lg=localStorage.getItem("lang")||"de"}catch(e){}
   function txt(){if(rel||!tv)return;var m=null;try{m=typeof S!=="undefined"&&S&&S.meta}catch(e){}
-    var h=(m&&m.scheduleVersion?esc2(m.scheduleVersion)+"<br>":"")+(m&&m.scriptVersion?(SCR[lg]||SCR.en)+" "+esc2(m.scriptVersion)+"<br>":"")+"App __APP_VER__ · © <b>MrK</b> 2026";if(tv.innerHTML!==h)tv.innerHTML=h}
+    var h=(m&&m.scheduleVersion?esc2(m.scheduleVersion)+"<br>":"")+(m&&m.scriptVersion?(SCR[lg]||SCR.en)+" "+esc2(m.scriptVersion)+"<br>":"")+"App __APP_VER__<br>© <b>MrK</b> 2026";if(tv.innerHTML!==h)tv.innerHTML=h}
   function esc2(x){return String(x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
   function st(){if(done)return;txt();var p=10;try{if(document.readyState!=="loading")p=30;if(window.FB)p=50;
       var g=document.getElementById("gate");if(g&&!g.hidden&&g.offsetParent!==null&&Date.now()-t0>300)return end();

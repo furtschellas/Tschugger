@@ -343,7 +343,7 @@ async def owner_tests(p, port):
     if sd2 is not None:
         check("Dokumente prüfen: Drehplan ↔ Drehbuch erkennt Innen/Aussen-Widerspruch", sd2)
     check("Dokumente prüfen: erkennt Szenen ohne Location als Unstimmigkeit", await E("(DCK.res||[]).some(x=>x.lvl==='warn'&&x.area==='Drehplan ↔ Locations')"))
-    oc = await E("(()=>{DCK.res=[{lvl:'info',area:'A',text:'x'},{lvl:'warn',area:'B',text:'y'},{lvl:'ok',area:'C',text:'z'}];S.tab='admin';ADM.sub='log';render();const c=x=>{const e=document.querySelector(x);return e?getComputedStyle(e).color:''};return {note:c('#view details.tstsu.note>summary'),hint:c('#view .lsum .tsth .dn'),bad:c('#view details.tstsu.bad>summary')}})()")
+    oc = await E("(()=>{DCK.res=[{lvl:'info',area:'A',text:'x'},{lvl:'warn',area:'B',text:'y'},{lvl:'ok',area:'C',text:'z'}];S.tab='admin';ADM.sub='log';render();const c=x=>{const e=document.querySelector(x);return e?getComputedStyle(e).color:''};return {note:c('#view details.tstsu.note>summary'),hint:c('#view .lsum .tsth .dckn'),bad:c('#view details.tstsu.bad>summary')}})()")
     check("Dokumente prüfen: Hinweise orange, Unstimmigkeiten rot", oc["note"] == "rgb(240, 138, 36)" and oc["hint"] == "rgb(240, 138, 36)" and oc["bad"] == "rgb(214, 69, 93)", oc, public=True)
 
     # App-Verwaltung → Log: results of the automatic tests, one part per suite
@@ -368,7 +368,7 @@ async def owner_tests(p, port):
     gs = await E("""(async()=>{window.__ts=0;const o=tstStart;tstStart=function(){__ts++};const w=ms=>new Promise(r=>setTimeout(r,ms));
       S.tab='today';render();await w(50);S.tab='admin';ADM.sub='log';render();await w(1200);const a=__ts;
       const d=document.querySelector('#view details[data-lsec="tst"]');d.open=true;await w(400);const b=__ts;render();await w(400);const c=__ts;tstStart=o;return {log:a,open:b,redraw:c}})()""")
-    check("Automatische Tests: starten erst beim Aufklappen ihres Menüs (nicht beim Tipp auf Log, nicht beim Neuzeichnen)", gs == {"log": 0, "open": 1, "redraw": 1}, gs, public=True)
+    check("Automatische Tests starten nie von selbst (nicht bei Log, Aufklappen oder Neuzeichnen) – nur mit dem Start-Knopf", gs == {"log": 0, "open": 0, "redraw": 0}, gs, public=True)
     await E("new Promise(r=>{const t=setInterval(()=>{if(!RTS.busy&&!DCK.busy){clearInterval(t);r()}},50);setTimeout(()=>{clearInterval(t);r()},8000)})")   # background tests finished
     await E("document.querySelectorAll('#view details').forEach(d=>d.open=false)")
     # roles tested one after the other with their rights (nothing is changed)
