@@ -126,14 +126,14 @@ window.dataCheckSec=function(flat){if(!dckMay())return "";
   const r=DCK.res||[],nw=r.filter(x=>x.lvl==="warn").length,ni=r.filter(x=>x.lvl==="info").length;
   const ic={warn:"⚠",info:"ℹ",ok:"✓"},ord={warn:0,info:1,ok:2};
   /* colours: discrepancies red, notes orange, all in order green */
-  const sum=DCK.res?'<span class="tsth">'+(nw?'<span class="dw">⚠ '+nw+' '+esc(L(nw===1?"Unstimmigkeit":"Unstimmigkeiten"))+'</span>':'<span class="dk">✓ '+esc(L("keine Unstimmigkeiten"))+'</span>')+(ni?', <span class="dn">'+ni+' '+esc(L(ni===1?"Hinweis":"Hinweise"))+'</span>':'')+'</span>':'<span class="tsth">'+esc(L("noch nicht geprüft"))+'</span>',tm=DCK.res&&DCK.at?esc(logWhen(DCK.at)):"";
+  const sum=DCK.res?'<span class="tsth">'+(nw?'<span class="dckw">⚠ '+nw+' '+esc(L(nw===1?"Unstimmigkeit":"Unstimmigkeiten"))+'</span>':'<span class="dckk">✓ '+esc(L("keine Unstimmigkeiten"))+'</span>')+(ni?', <span class="dckn">'+ni+' '+esc(L(ni===1?"Hinweis":"Hinweise"))+'</span>':'')+'</span>':'<span class="tsth">'+esc(L("noch nicht geprüft"))+'</span>',tm=DCK.res&&DCK.at?esc(logWhen(DCK.at)):"";
   /* by area like the test parts: ✓/⚠ name · count, closed until opened */
   const areas=new Map();for(const x of r){if(!areas.has(x.area))areas.set(x.area,[]);areas.get(x.area).push(x)}
   const parts=[...areas].map(([a,l])=>{l=l.slice().sort((x,y)=>ord[x.lvl]-ord[y.lvl]);const w=l.filter(x=>x.lvl==="warn").length,n=l.filter(x=>x.lvl==="info").length;
     return '<details class="tstsu'+(w?' bad':n?' note':'')+'" data-su="dck:'+esc(a)+'"'+logSu("dck:"+a)+'><summary>'+(w?'⚠ ':n?'ℹ ':'✓ ')+esc(a)+' · '+(w?w+' '+esc(L(w===1?"Unstimmigkeit":"Unstimmigkeiten")):n?n+' '+esc(L(n===1?"Hinweis":"Hinweise")):esc(L("in Ordnung")))+'</summary>'+
       '<ul class="dckl">'+l.map(x=>'<li class="'+x.lvl+'"><span class="dcki">'+ic[x.lvl]+'</span><span>'+esc(x.text)+'</span></li>').join("")+'</ul></details>'}).sort((a,b)=>(b.includes('tstsu bad')?1:0)-(a.includes('tstsu bad')?1:0)).join("");
   const body='<p class="ghint">'+esc(L("Vergleicht die Dokumente aus der Dropbox untereinander (Drehplan, Locations, Drehbuch, Cast-Liste, Prep Weekly/Daily, Callsheets, Crewliste) und prüft die App auf diesem Gerät. Es werden nur Bereiche verglichen, die du sehen darfst."))+'</p>'+parts+
-    '<div class="arb tstbtns">'+tstIco("data-dckrun",TST_RUN,DCK.busy?"Prüfe …":"Jetzt prüfen",DCK.busy)+'</div>';
+    '<div class="arb tstbtns">'+tstIco("data-dckrun",TST_RUN,DCK.busy?"Prüfe …":"Jetzt prüfen",DCK.busy,DCK.busy?{pct:null}:null)+'</div>';
   /* own tab «Test»: the box without the outer collapse (the tab is the topic) */
   if(flat)return '<div class="dcksec dckflat'+(nw?' bad':'')+'"><p class="dcksum lsum">'+logHead(esc(L("Dokumente prüfen")),sum,tm,DCK.busy?{pct:null}:null)+'</p>'+body+'</div>';
   return '<details class="tstsec dcksec'+(nw?' bad':'')+'"'+(DCK.open?' open':'')+' data-lsec="dck"><summary class="lsum">'+logHead(esc(L("Dokumente prüfen")),sum,tm,DCK.busy?{pct:null}:null)+'</summary>'+body+'</details>'};
@@ -185,7 +185,7 @@ window.roleTestSec=function(){if(!isAdmin()||SIMROLE)return "";const r=RTS.res||
     '<p class="ghint">'+esc(L("Zeigt die App einen Moment mit den Rechten jeder Rolle: welche Bereiche sie sieht, welche Zusatzrechte sie hat, ob alle Seiten ohne Fehler erscheinen und ob Telefon, E-Mail und Kopf-Symbole nur mit Recht sichtbar sind. Es wird nichts geändert."))+'</p>'+
     r.slice().sort((a,b)=>b.issues.length-a.issues.length).map(x=>'<details class="tstsu'+(x.issues.length?' bad':'')+'" data-su="rt:'+esc(x.name)+'"'+logSu("rt:"+x.name)+'><summary>'+(x.issues.length?'⚠ ':'✓ ')+esc(x.name)+' · '+(x.issues.length?x.issues.length+' '+esc(L(x.issues.length===1?"Problem":"Probleme")):esc(L("in Ordnung")))+'</summary>'+
       '<ul class="tstl"><li class="ok">'+esc(L("Sieht"))+': '+esc(x.tabs.join(", ")||"–")+'</li>'+(x.extra.length?'<li class="ok">'+esc(L("Darf"))+': '+esc(x.extra.join(", "))+'</li>':'')+x.issues.map(t=>'<li class="no">✗ '+esc(t)+'</li>').join("")+'</ul></details>').join("")+
-    '<div class="arb tstbtns">'+tstIco("data-rtrun",TST_RUN,RTS.busy?"Prüfe …":"Jetzt prüfen",RTS.busy)+'</div></details>'};
+    '<div class="arb tstbtns">'+tstIco("data-rtrun",TST_RUN,RTS.busy?"Prüfe …":"Jetzt prüfen",RTS.busy,RTS.busy?{pct:RTS.prog||null}:null)+'</div></details>'};
 document.addEventListener("click",e=>{if(e.target.closest("[data-rtrun]")&&isAdmin()&&!SIMROLE)roleTestRun()});
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("rtsec"))RTS.open=e.target.open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="dck")DCK.open=d.open},true);
