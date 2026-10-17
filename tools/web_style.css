@@ -680,3 +680,14 @@ html[data-theme="light"] #oedlg input[type=date],html[data-theme="light"] #oedlg
 .tstsec .tstsu{margin:6px 0;padding:4px 0;border-top:1px solid var(--rule)}.tstsec .tstsu>summary{font-weight:600}.tstsec .tstsu.bad>summary{color:#d6455d}
 html body #view .mci .ppx{white-space:pre-line;overflow-wrap:anywhere}
 #oedlg textarea{min-height:110px}
+/* eigene Termine im Drehplan und in der Prep-Planung */
+html body #view .oeday{margin:14px 0;border:1px solid var(--rule);border-radius:14px;padding:10px 14px;background:var(--sheet)}
+html body #view .oeday .uh{margin:0 0 6px}
+html body #view .oerowd{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:10px;align-items:start;padding:8px 0;border-top:1px solid var(--rule);font-size:14px}
+html body #view .oerowd:first-of-type{border-top:0}
+html body #view .oerowd .oet{font-variant-numeric:tabular-nums;color:var(--muted)}
+html body #view .oerowd .oeb{display:flex;flex-direction:column;gap:2px;min-width:0}
+html body #view .oerowd .oew,html body #view .oerowd .oes{font-size:12px;color:var(--muted)}
+html body #view .oerowd .oen{white-space:pre-line;overflow-wrap:anywhere;font-size:13px}
+html body #view .oerowd .calbtn{position:static}
+html body #view .oerowd{grid-template-columns:96px minmax(0,1fr) auto}html body #view .oerowd .oet{white-space:nowrap}

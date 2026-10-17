@@ -1094,7 +1094,7 @@ function renderPlan(){
   /* a non-shooting day that is also a prep day appears only once (as PREP) */
   const ppDates=new Set(PP.map(d=>d.date));
   let h=dayNav(PD.filter(d=>d.kind==="shoot"||!ppDates.has(d.date)),d=>d.id===S.day,"data-day","id",null,ppChips);
-  if(ppDay)return h+renderPrePro(ppDay);
+  if(ppDay){let o='';try{if(window.ownDayHTML)o=window.ownDayHTML(ppDay.date)}catch(_){}return h+renderPrePro(ppDay)+o}
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const d=S.days.find(x=>x.id===S.day);
   h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
@@ -1112,6 +1112,7 @@ function renderPlan(){
   }
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
   h+='</div>';
+  try{if(window.ownDayHTML)h+=window.ownDayHTML(d.date)}catch(_){} /* own and Google Calendar appointments of this day */
   if(d.kind!=="shoot"){
     h+='<div class="offday"><b>'+(d.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(d,"info"))+'</div>';
     return h;
