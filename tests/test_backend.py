@@ -139,6 +139,7 @@ b1 = fs.d["broadcasts/b1"]
 check("Push-Versand: nur an Rollen der Nachricht (Catering bekommt den Drehplan nicht)", "https://push/catering" not in eps and "https://push/crew" in eps, eps)
 check("Push-Versand: abbestellte Art wird nicht geschickt", eps.count("https://push/crew") == 1, eps)
 check("Push-Versand: Text in der Sprache des Geräts", any(d["title"] == "TF" for e, d in calls if e == "https://push/crew"))
+check("Push-Versand: Bild je nach Thema (Änderung → Pfeile)", all(d.get("icon") == "change" for e, d in calls if d.get("tag", "").startswith("b")))
 check("Push-Versand: Empfänger werden gespeichert", "dCrew" in (b1.get("done") or []) and "dOff" not in (b1.get("done") or []), b1.get("done"))
 check("Push-Versand: mit Fehler nicht erledigt (nächster Lauf versucht es nochmals)", not b1.get("fin"))
 check("Push-Versand: abgemeldetes Gerät wird gelöscht", "push/dGone" not in fs.d)
