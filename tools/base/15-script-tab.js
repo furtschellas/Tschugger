@@ -151,6 +151,7 @@ function render(){
     else if(st&&first&&!(sel&&sel.dataset.dt&&sel.dataset.dt<tdy)){st.scrollLeft=Math.max(0,first.offsetLeft-st.offsetLeft-2);
       if(sel&&sel.offsetLeft+sel.offsetWidth>st.scrollLeft+st.clientWidth+st.offsetLeft)sel.scrollIntoView({block:"nearest",inline:"end"})}
     else if(sel)sel.scrollIntoView({block:"nearest",inline:"center"})}
+  try{bdSep()}catch(_){}
   try{renderHeader()}catch(err){console.error(err)}
   try{fitNav()}catch(_){}
   try{fitRows(document.querySelector("header.top"))}catch(_){}
