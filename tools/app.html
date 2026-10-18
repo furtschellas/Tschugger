@@ -30,6 +30,9 @@ a{color:var(--accent)}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+.sidesb{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.sidesb .pillbtn svg{vertical-align:-2px}.sidesg{font-size:12px;color:var(--muted);margin:0 4px}
+.dlines p{margin:0 0 6px;line-height:1.45}.csorig{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.xnotes{margin-top:6px;display:grid;gap:4px}.xn{font-size:12.5px;padding:4px 8px;border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:4px}
 .u2src{display:inline-block;margin-left:4px;padding:1px 8px;border-radius:999px;font-size:11.5px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--ink)}
 header.top{padding-block:calc(14px + env(safe-area-inset-top,0px)) 10px;border-bottom:1px solid var(--rule);position:relative}
 /* back button (top left): one step back, like the phone's back button */
@@ -807,7 +810,7 @@ function itemHTML(it){
   return '<li class="row'+(cg?' chg':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
-    (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+
+    (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
     castChips(it.cast)+
     (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
     '</div></li>';
@@ -1132,7 +1135,13 @@ function renderPlan(){
     window.__mctx={date:d.date,u:u};
     if(u==="1"){if(heads)h+='<h3 class="uh">1st Unit</h3>';h+='<ol class="tl">'+(d.items||[]).map(itemHTML).join("")+'</ol>';continue}
     if(hasU(d,u)){
-      const x=d["unit"+u];
+      let x=d["unit"+u];
+      /* 2nd unit planning: only the scenes; a note that names a scene («Ton für Sc185») is shown at that scene, other notes not */
+      if(x.src==="2nd"){const its=x.items.filter(i=>i&&i.sc).map(i=>Object.assign({},i,{xn:[]}));
+        const key=sc=>String(sc).toLowerCase().replace(/\s+/g,"").replace(/^0+/,"");
+        const refs=n=>{const out=new Set(),t=String(n).toLowerCase().replace(/(\d)\s+(pt|sl)/g,"$1$2");for(const m of t.matchAll(/(?:sc(?:ene|ène|ena)?\.?\s*|szene\s*|#)0*(\d+(?:(?:pt|sl)\d+|[a-z]\b)?)/g))out.add(m[1]);return out};
+        for(const n of TXA(x,"notes")){const r=refs(n);if(!r.size)continue;for(const i of its){const k=key(i.sc),b=k.replace(/(pt|sl)\d+$/,"");if(r.has(k)||r.has(b))i.xn.push(n)}}
+        x=Object.assign({},x,{items:its,notes:[],notes_fr:[],notes_en:[],notes_it:[],notes_hi:[]})}
       if(heads)h+='<h3 class="uh u'+u+'">'+UNAME[u]+' Unit</h3>';
       h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+
         (x.src==="2nd"?' <span class="u2src">'+esc(L("genaue Reihenfolge laut 2nd-Unit-Planung"))+'</span>':'')+'</div>';
@@ -1371,6 +1380,15 @@ function locResults(gs){
       return cards.length?cards.join(""):'<div class="empty">'+esc(L("Nichts gefunden für"))+' «'+esc(S.lq)+'»</div>';
     })();
 }
+/* Sides (the script pages of a shooting day) and the original callsheet pages: as pictures in the app (gallery, also offline) */
+function sidesHTML(date){const all=arr(S.meta&&S.meta.sides),mine=all.map((s,i)=>[s,i]).filter(([s])=>s.date===date),gen=all.map((s,i)=>[s,i]).filter(([s])=>!s.date);
+  if(!mine.length&&!gen.length)return "";const b=([s,i])=>'<button type="button" class="pillbtn" data-sides="'+i+'">'+ICAM+' '+esc(s.name)+' <small>'+arr(s.pg).length+'</small></button>';
+  return '<section class="dsec"><h3 class="dh">Sides</h3><p class="ghint">'+esc(L("Die Drehbuchseiten des Tages."))+'</p><div class="sidesb">'+mine.map(b).join("")+(gen.length?(mine.length?'<span class="sidesg">'+esc(L("Weitere"))+'</span>':'')+gen.map(b).join(""):'')+'</div></section>'}
+document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[data-cspg]");if(!a||typeof window.blkImg!=="function")return;e.preventDefault();
+  if(a.dataset.sides!==undefined){const s=arr(S.meta&&S.meta.sides)[+a.dataset.sides];if(!s)return;
+    openGallery({name:"sides:"+s.name,title:"Sides · "+s.name,sc:[],url:s.url,media:arr(s.pg).map((p,i)=>({n:s.name+" · "+(i+1)+"/"+s.pg.length,t:"img",f:p,u:s.url}))});return}
+  const x=S.dispos.find(d=>d.date===a.dataset.cspg);if(!x)return;
+  openGallery({name:"cs:"+x.date,title:"Callsheet · "+(x.label||x.date),sc:[],url:x.link,media:arr(x.pg).map((p,i)=>({n:"Callsheet · "+(i+1)+"/"+x.pg.length,t:"img",f:p,u:x.link}))})});
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   const t=todayISO(),PD=planDays();
@@ -1385,7 +1403,7 @@ function renderDispo(){
   if(day.kind&&day.kind!=="shoot")return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+fmtDate(day.date)+'</span>'+UNITBAR+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
   if(!x){
     return h+(UNITBAR?'<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>':'')+'<div class="dsp-empty"><div class="eh">'+esc(day.label||"")+' · '+(day.date?fmtDate(day.date):'')+'</div><b>'+L('Callsheet folgt')+'</b><p>'+L('Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.')+'</p>'+
-      (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>';
+      (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>'+sidesHTML(day.date);
   }
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>':'';
   h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date drow"><span>'+fmtDate(x.date)+(x.version?' · '+esc(x.version):'')+'</span>'+UNITBAR+'</div></div></div>';
@@ -1409,7 +1427,14 @@ function renderDispo(){
       (x.hospital?'<div class="p"><div class="hd"><span class="nm">'+esc(x.hospital.name||L("Spital"))+'</span><span class="role">'+L('Nächstes Spital')+'</span></div>'+(x.hospital.address?'<div class="ct"><a href="'+maps([x.hospital.name,x.hospital.address].filter(Boolean).join(", "))+'" target="_blank" rel="noopener noreferrer">'+esc(x.hospital.address)+'</a></div>':'')+(x.hospital.phone?'<div class="ct"><a href="tel:'+esc(x.hospital.phone.replace(/\s/g,""))+'"><span>'+esc(x.hospital.phone)+'</span></a></div>':'')+'</div>':'')+
       (x.contacts||[]).map(c=>'<div class="p"><div class="hd"><span class="nm">'+esc(c.name||"")+'</span><span class="role">'+esc(c.role||"")+'</span></div>'+(c.phone?'<div class="ct"><a href="tel:'+esc(c.phone.replace(/\s/g,""))+'"><span>'+esc(c.phone)+'</span></a></div>':'')+'</div>').join("")+'</div></section>';
   }
-  if(x.link)h+='<p><a class="bigbtn" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer">'+L('Original-Callsheet öffnen')+'</a></p>';
+  /* everything else on the callsheet, section by section as in the original */
+  for(const sec of arr(x.sections)){const rows=arr(sec&&sec.rows).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(c=>String(c==null?"":c).trim()));if(!rows.length)continue;
+    const w=Math.max(...rows.map(r=>r.length));
+    h+='<section class="dsec"><h3 class="dh">'+esc(String(sec.title||""))+'</h3>'+(w>1?'<div class="tblw"><table class="dtbl"><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(String(c==null?"":c))+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>'
+      :'<div class="dlines">'+rows.map(r=>'<p>'+esc(String(r[0]))+'</p>').join("")+'</div>')+'</section>'}
+  h+=sidesHTML(x.date);
+  if(arr(x.pg).length||x.link)h+='<p class="csorig">'+(arr(x.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="bigbtn" data-cspg="'+esc(x.date)+'">'+L('Original-Callsheet ansehen')+' <small>'+x.pg.length+'</small></button> ':'')+
+    (x.link?'<a class="pillbtn" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer">'+L('In Dropbox öffnen')+'</a>':'')+'</p>';
   return h;
 }
 function renderInfo(){

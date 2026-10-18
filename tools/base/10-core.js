@@ -135,7 +135,7 @@ function itemHTML(it){
   return '<li class="row'+(cg?' chg':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
-    (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+
+    (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
     castChips(it.cast)+
     (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
     '</div></li>';

@@ -536,7 +536,19 @@ def pick_info(files):
     return max(c, key=lambda f: f["modified"] or "") if c else None
 
 def pick_dispos(files):
-    return [f for f in files if low(f).startswith("06_callsheets/") and "_archiv" not in low(f) and low(f).endswith(".pdf")]
+    """callsheets – not the «Sides» (the script pages of a day, in 06_Callsheets/SIDES)"""
+    return [f for f in files if low(f).startswith("06_callsheets/") and "_archiv" not in low(f) and low(f).endswith(".pdf") and "/sides/" not in low(f)]
+
+def pick_sides(files):
+    return [f for f in files if low(f).startswith("06_callsheets/") and "/sides/" in low(f) and "_archiv" not in low(f) and low(f).endswith(".pdf")]
+
+def sides_date(name):
+    """«…_DT 4_Sunday, 25.10.2026.pdf» / «…_DT2_Tuesday, 10.21.2026.pdf» (also US order) → 2026-10-25; none → """""
+    m = re.search(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", name)
+    if not m: return ""
+    a, b, y = int(m.group(1)), int(m.group(2)), m.group(3)
+    d, mo = (b, a) if a <= 12 < b else (a, b)
+    return "%s-%02d-%02d" % (y, mo, d) if 1 <= mo <= 12 and 1 <= d <= 31 else ""
 
 # ---------- Claude ----------
 SPEC = None
@@ -925,15 +937,18 @@ def main():
           except Exception as e: failed("info", f, e)
 
     # callsheets: every new or changed file, newest per shooting day wins
-    dispos = {d.get("date") or d.get("id"): d for d in (data.get("dispos") or [])}
+    dispos = {d.get("date") or d.get("id"): d for d in (data.get("dispos") or []) if "/sides/" not in str(d.get("file") or "").lower()}
+    if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
         if not is_new("dispo", f) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
             d = claude([pdf_block(dbx.download(f["id"]))],
-                "Erzeuge aus dieser Tagesdispo ein JSON-Objekt gemäss Collection \"dispos\" (Feld \"date\" = Drehtag YYYY-MM-DD), mit den Übersetzungsfeldern. file = \"%s\", link = \"https://www.dropbox.com/preview/TSCHUGGER%%20Tigerblood%%20-%%20DISTRO/%s\"."
-                % (f["name"], requests.utils.quote(f["name"])), 16000)
+                "Erzeuge aus dieser Tagesdispo ein JSON-Objekt gemäss Collection \"dispos\" (Feld \"date\" = Drehtag YYYY-MM-DD), mit den Übersetzungsfeldern. file = \"%s\", link = \"https://www.dropbox.com/preview/TSCHUGGER%%20Tigerblood%%20-%%20DISTRO/%s\". "
+                "Zusätzlich Feld \"sections\": ALLE übrigen Angaben des Callsheets, die in keinem anderen Feld stehen, vollständig und in der Reihenfolge des Dokuments – "
+                "als Liste von {\"title\": Abschnittstitel wie im Dokument, \"rows\": [[Zelle, Zelle, …], …]} (Tabellen zeilenweise, Fliesstext als einzelne Zeilen). Nichts weglassen."
+                % (f["name"], requests.utils.quote(f["name"])), 32000)
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
                 prev = dispos.get(d["date"])
                 if not prev or (prev.get("_mod") or "") <= (f["modified"] or ""):
@@ -941,7 +956,34 @@ def main():
                     if d["date"] >= TODAY and (not prev or cs_sig(prev) != cs_sig(d)): NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})
             else: failed("dispo", f, "kein Drehtag erkannt")
         except Exception as e: failed("dispo", f, e)
-    if dispos: data["dispos"] = sorted(dispos.values(), key=lambda d: d.get("date", ""))
+    # the original pages of every callsheet and the Sides (script pages of the day) as pictures in the app (also offline)
+    spc = dict(meta.get("sidesPages") or {}); used = set()
+    try:
+        byfile = {f["name"]: f for f in pick_dispos(files)}
+        for d in dispos.values():
+            f = byfile.get(d.get("file") or "")
+            if not f: continue
+            k, pg = _pdf_pages(dbx, f, spc); used.add(k); WANT.update(pg)
+            if pg and d.get("pg") != pg: d["pg"] = pg; changed = True
+        sides = []
+        shoot = {}
+        for d in data.get("days") or []:
+            m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or ""))
+            if d.get("kind") == "shoot" and m: shoot[int(m.group(1))] = d.get("date")
+        for f in sorted(pick_sides(files), key=lambda f: f["name"]):
+            k, pg = _pdf_pages(dbx, f, spc); used.add(k); WANT.update(pg)
+            if not pg: continue
+            nm = f["name"].split("/")[-1]
+            m = re.search(r"(?i)DT\s*#?\s*(\d+)", nm)
+            date = sides_date(nm) or (shoot.get(int(m.group(1))) if m else "") or ""
+            title = re.sub(r"(?i)^tschugger_|\.pdf$", "", nm).replace("_", " ").strip()
+            sides.append({"date": date, "name": title[:80], "pg": pg, "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(f["name"])})
+        if sides != (meta.get("sides") or []): meta["sides"] = sides; changed = True
+        spc = {k: v for k, v in spc.items() if k in used}
+        if spc != (meta.get("sidesPages") or {}): meta["sidesPages"] = spc; changed = True
+        print("::notice::Sides: %d · Callsheet-Seiten: %d" % (len(sides), sum(1 for d in dispos.values() if d.get("pg"))))
+    except Exception as e: print("::warning::Sides/Callsheet-Seiten nicht erzeugt: " + type(e).__name__)
+    if dispos or data.get("dispos"): data["dispos"] = sorted(dispos.values(), key=lambda d: d.get("date", ""))
 
     # screenplay
     f = pick_script(files)

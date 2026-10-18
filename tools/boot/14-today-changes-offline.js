@@ -20,18 +20,22 @@ function chgLoad(){try{return JSON.parse(localStorage.getItem("chg:v1")||"[]")||
 function chgSave(l){try{localStorage.setItem("chg:v1",JSON.stringify(l.slice(0,120)))}catch(_){}}
 function chgDetect(){
   if(!(S.days||[]).length)return;
-  const now=chgSnap();let old=null;try{old=JSON.parse(localStorage.getItem("snap:v1")||"null")}catch(_){}
+  const now=chgSnap();now.v2=1;let old=null;try{old=JSON.parse(localStorage.getItem("snap:v1")||"null")}catch(_){}
   try{localStorage.setItem("snap:v1",JSON.stringify(now))}catch(_){}
+  /* the first takeover of the 2nd unit planning (18.10.) is not a change: removed, and once not compared;
+     every later change of the 2nd unit is shown again */
+  {const cut=Date.parse("2026-10-18T10:45:00Z"),l=chgLoad(),k=l.filter(c=>!(c.u==="2"&&c.at<cut));if(k.length!==l.length)chgSave(k)}
   if(!old||!old.sc)return;
+  const skipU2=old.v2!==1;
   const t=todayISO(),out=[],at=Date.now();
   const add=(o)=>out.push(Object.assign({id:Math.random().toString(36).slice(2,9),at},o));
-  for(const k in now.sc){const a=old.sc[k],b=now.sc[k];
+  for(const k in now.sc){const a=old.sc[k],b=now.sc[k];if(skipU2&&(b.u==="2"||(a&&a.u==="2")))continue;
     if(!a){add({date:b.date,u:b.u,sc:b.sc,kind:"new",txt:L("Neu im Drehplan")+(b.t?" · "+b.t:"")});continue}
     if(a.date!==b.date){add({date:b.date,u:b.u,sc:b.sc,kind:"move",txt:L("verschoben")+": "+dmy(a.date)+" → "+dmy(b.date)+(b.t?" · "+b.t:"")});continue}
     if(a.t!==b.t&&(a.t||b.t))add({date:b.date,u:b.u,sc:b.sc,kind:"time",txt:L("Zeit")+": "+(a.t||"–")+" → "+(b.t||"–")});
     if(a.loc!==b.loc)add({date:b.date,u:b.u,sc:b.sc,kind:"loc",txt:L("Ort")+": "+(b.loc||"–")});
   }
-  for(const k in old.sc){const a=old.sc[k];if(!now.sc[k]&&a.date>=t&&!Object.values(now.sc).some(b=>b.u===a.u&&scKey(b.sc)===scKey(a.sc)))add({date:a.date,u:a.u,sc:a.sc,kind:"gone",txt:L("nicht mehr im Drehplan")})}
+  for(const k in old.sc){const a=old.sc[k];if(skipU2&&a.u==="2")continue;if(!now.sc[k]&&a.date>=t&&!Object.values(now.sc).some(b=>b.u===a.u&&scKey(b.sc)===scKey(a.sc)))add({date:a.date,u:a.u,sc:a.sc,kind:"gone",txt:L("nicht mehr im Drehplan")})}
   for(const dte in now.dp){const a=(old.dp||{})[dte],b=now.dp[dte];
     if(!a){add({date:dte,kind:"cs",txt:L("Neues Callsheet")+(b.call?" · Crew Call "+b.call:"")});continue}
     if(a.call!==b.call&&(a.call||b.call))add({date:dte,kind:"cs",txt:"Crew Call: "+(a.call||"–")+" → "+(b.call||"–")});
