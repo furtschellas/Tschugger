@@ -28,7 +28,7 @@ function renderScript(){
   let last="";try{last=localStorage.getItem("lastsc")||""}catch(_){}
   const lx=last&&SCRIPT.find(x=>x.sc===last);
   return '<div class="svwrap '+svClasses()+'"><h3 class="dh">'+esc(L("Drehbuch"))+'</h3>'+(lx?'<button class="lastsc" data-scene="'+esc(lx.sc)+'"><span>'+esc(L("Zuletzt gelesen"))+'</span><b>'+esc(lx.sc)+' · '+esc(spHead(lx))+'</b><i aria-hidden="true">›</i></button>':'')+
-    '<div class="svb svtab">'+svToggles()+'<span class="svfill"></span>'+ufButtons()+'</div>'+
+    '<div class="svb svtab">'+ufButtons()+'<span class="svfill"></span>'+svToggles()+'</div>'+
     searchBox("sq",S.sq,L("Szene, Motiv, Rolle, Text …"))+modeChips(S.sqm,"data-sqm")+'<div id="scres">'+scriptResults()+'</div></div>';
 }
 /* search field with a search button; Enter / the keyboard's search key run the search right away */
@@ -151,7 +151,6 @@ function render(){
     else if(st&&first&&!(sel&&sel.dataset.dt&&sel.dataset.dt<tdy)){st.scrollLeft=Math.max(0,first.offsetLeft-st.offsetLeft-2);
       if(sel&&sel.offsetLeft+sel.offsetWidth>st.scrollLeft+st.clientWidth+st.offsetLeft)sel.scrollIntoView({block:"nearest",inline:"end"})}
     else if(sel)sel.scrollIntoView({block:"nearest",inline:"center"})}
-  try{bdSep()}catch(_){}
   try{renderHeader()}catch(err){console.error(err)}
   try{fitNav()}catch(_){}
   try{fitRows(document.querySelector("header.top"))}catch(_){}

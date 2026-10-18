@@ -328,13 +328,13 @@ async def owner_tests(p, port):
           S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{FX:'Double BJ'},c:[['Crew',['Lifeguard']],['Props',['Knife','Stone (soft, dummy)']],['Mup/Hair',['Mike dying']],['Notes',['a','b']]]}};
           S.tab='plan';S.day=d.id;render();const v=document.querySelector('#view');const vis=e=>!!e&&getComputedStyle(e).display!=='none';
           const keys=[...v.querySelectorAll('.pvb [data-pv]')].map(b=>b.dataset.pv).join(',');
-          const g=k=>[...v.querySelectorAll('.bd-'+k)].map(x=>x.textContent).join(' | ');const art=v.querySelector('.bd-art');
-          const txt={art:g('art'),hmu:g('hmu'),inf:g('inf'),u:!!(art&&art.querySelector('u')),one:v.querySelectorAll('.sc .bdt').length===1,sep:getComputedStyle(v.querySelector('.bd-hmu'),'::before').content};
+          const bt=v.querySelector('.sc .bdt'),txt=bt&&bt.textContent,u=!!(bt&&bt.querySelector('u')),sep=bt?getComputedStyle(bt.querySelectorAll('.bdi')[1],'::before').content:'';
+          const last=bt&&bt.parentElement.lastElementChild===bt;
           const chg=()=>vis(v.querySelector('.chgtxt'));const c1=chg();
-          v.querySelector('[data-pv="g"]').click();const c0=chg();v.querySelector('[data-pv="art"]').click();const a0=vis(v.querySelector('.bd-art'))||!vis(v.querySelector('.bd-hmu'));
-          S.pv=pv;store('pv',JSON.stringify(pv));pvApply();chgSave(o);S.meta.bd=keep;render();return {keys,txt,c1,c0,a0}})()""")
-        check("Drehplan: runde Knöpfe für Art-Department, HMU, Info und Änderungen; Details als Fliesstext unten in der Szene",
-              ct in (None, {"keys": "i,d,c,a,b,art,hmu,inf,g", "txt": {"art": "Props: Knife, Stone (soft, dummy)", "hmu": "Mup/Hair: Mike dying", "inf": "FX: Double BJ | Crew: Lifeguard | Notes: a / b", "u": True, "one": True, "sep": '" // "'}, "c1": True, "c0": False, "a0": False}), ct, public=True)
+          v.querySelector('[data-pv="g"]').click();const c0=chg();v.querySelector('[data-pv="inf"]').click();const d0=vis(v.querySelector('.sc .bdt'));
+          S.pv=pv;store('pv',JSON.stringify(pv));pvApply();chgSave(o);S.meta.bd=keep;render();return {keys,txt,u,sep,last,c1,c0,d0}})()""")
+        check("Drehplan: Szenen-Details als Fliesstext zuunterst (« // »), runder Info-Knopf und Änderungen-Knopf",
+              ct in (None, {"keys": "i,d,c,a,b,inf,g", "txt": "FX: Double BJCrew: LifeguardProps: Knife, Stone (soft, dummy)Mup/Hair: Mike dyingNotes: a / b", "u": True, "sep": '" // "', "last": True, "c1": True, "c0": False, "d0": False}), ct, public=True)
         sim = await E("""(async()=>{if(typeof admLoad==='function'&&!ADM.loaded)await admLoad();const em=Object.keys(ADM.ur||{}).find(e=>ADM.ur[e]&&ADM.ur[e]!=='admin'&&!ADMINS.includes(e)&&lc(e)!==lc(ME.email));
           if(!em)return null;const btn=simBtn(em).includes('data-simstart');simStart(em);const r={btn,adm:isAdmin(),bar:!!document.getElementById('simbar'),tab:S.tab,who:simEmail()===em,perms:MYPERMS.length===arr((ADM.roles.find(x=>x.id===ADM.ur[em])||{}).perms).length};
           const f=document.createElement('form');document.body.appendChild(f);let saved=true;f.addEventListener('submit',()=>{saved=true});saved=false;f.dispatchEvent(new Event('submit',{cancelable:true}));f.remove();r.blocked=!saved;
