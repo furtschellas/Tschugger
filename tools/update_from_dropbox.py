@@ -793,12 +793,13 @@ def sheet_csv(url, gid):
     m = re.search(r"/spreadsheets/d/([\w-]+)", url)
     if not m: return ""
     r = requests.get("https://docs.google.com/spreadsheets/d/%s/export?format=csv&gid=%s" % (m.group(1), gid), timeout=60)
-    if r.status_code != 200: print("::notice::Tabelle: Export HTTP %d" % r.status_code); return ""
+    if r.status_code != 200: print("::warning::Tabelle: Export HTTP %d" % r.status_code); return ""
     r.encoding = "utf-8"
     rows = [" | ".join(c.strip() for c in row) for row in csv.reader(io.StringIO(r.text)) if sum(1 for c in row if c.strip()) >= 2]
     return "\n".join(rows)
 
 GREEN = []   # the 2nd unit tabs were chosen by their green colour
+U2SUM = []   # parts of the one 2nd unit line in the run overview
 SHEET_HIDDEN = []   # names of the hidden sheets of the last sheet_tabs() call
 
 def _is_green(rgb):
@@ -818,7 +819,7 @@ def sheet_colors(url=None, raw=None):
         m = re.search(r"/spreadsheets/d/([\w-]+)", url or "")
         if not m: return {}
         r = requests.get("https://docs.google.com/spreadsheets/d/%s/export?format=xlsx" % m.group(1), timeout=120)
-        if r.status_code != 200: print("::notice::Tabelle: xlsx-Export HTTP %d" % r.status_code); return {}
+        if r.status_code != 200: print("::warning::Tabelle: xlsx-Export HTTP %d" % r.status_code); return {}
         raw = r.content
     z = zipfile.ZipFile(io.BytesIO(raw))
     wb = z.read("xl/workbook.xml").decode("utf-8", "replace")
@@ -1044,31 +1045,25 @@ def main():
                     m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")) if d.get("kind") == "shoot" else None
                     for k, v in (pb.get(int(m.group(1))) or {}).items() if m else []: bd[d["date"] + "|" + k] = v
                 if bd and bd != (meta.get("bd") or {}): meta["bd"] = bd; changed = True
-                print("::notice::Szenen-Details: %d Szenen an %d Drehtagen" % (len(bd), len({k.split("|")[0] for k in bd})))
+                # missing: a scene of the app without details from the PDF (on its day or, as fallback in the app, on another day)
+                have = {k.split("|", 1)[1] for k in bd}
                 miss = []
                 for d in data.get("days") or []:
                     if d.get("kind") != "shoot": continue
                     for its in [d.get("items") or []] + [(d.get(u) or {}).get("items") or [] for u in ("unit2", "unit3") if isinstance(d.get(u), dict)]:
                         for it in its:
                             k = re.sub(r"\s+", "", str(it.get("sc") or "")).lower().lstrip("0")
-                            if k and d["date"] + "|" + k not in bd: miss.append("%s %s" % (d.get("short") or d["date"], it.get("sc")))
-                if miss: log("Szenen-Details fehlen (%d): %s" % (len(miss), ", ".join(miss[:60])))
-                # check: every «Topic:» in the PDF text must have landed in exactly one scene (counts only)
-                tt = _bd_join(re.sub(r"(?m)^Tschugger Sched - .*page # \d+[ \t]*$", "", stxt.replace("\f", "\n")))
+                            if k and d["date"] + "|" + k not in bd and k not in have: miss.append("%s %s" % (d.get("short") or d["date"], it.get("sc")))
+                # check: every «Topic:» of a scene in the PDF text must have landed in exactly one scene (lines of the day plan «12:00: …» are no scenes)
+                tt = _bd_join(re.sub(r"(?m)^\s*\d{1,2}:\d{2}:.*$", "", re.sub(r"(?m)^Tschugger Sched - .*page # \d+[ \t]*$", "", stxt.replace("\f", "\n"))))
                 diff = []
                 for lab in BD_LABELS:
                     if lab == "Loc": continue   # «Loc:» also starts the location line of every scene
                     n_txt = len(re.findall(r"(?:^|[\s,])%s:\s" % re.escape(lab).replace(r"\ ", r"\s+"), tt))
                     n_bd = sum(1 for day in pb.values() for v in day.values() for c in v.get("c") or [] if c[0] == lab or c[0].startswith(lab + ": ") or c[0].endswith(": " + lab))
                     if n_txt != n_bd: diff.append("%s %d/%d" % (lab, n_bd, n_txt))
-                print("::notice::Szenen-Details Kontrolle (übernommen/im PDF): " + (", ".join(diff) if diff else "alles übernommen"))
-
-                miss = []
-                for d in data.get("days") or []:
-                    for it in (d.get("items") or []) + ((d.get("unit2") or {}).get("items") or [] if isinstance(d.get("unit2"), dict) else []):
-                        k = re.sub(r"\s+", "", str(it.get("sc") or "")).lower().lstrip("0")
-                        if k and d["date"] + "|" + k not in bd: miss.append((d.get("short") or "") + ":" + k)
-                if miss: print("::notice::Szenen-Details fehlen bei %d Szenen: %s" % (len(miss), ", ".join(miss[:60])))
+                print("::notice::Szenen-Details: %d Szenen an %d Drehtagen%s%s" % (len(bd), len({k.split("|")[0] for k in bd}),
+                      (" · FEHLEN: " + ", ".join(miss[:40])) if miss else "", (" · KONTROLLE (übernommen/im PDF): " + ", ".join(diff)) if diff else ""))
             except Exception as e: print("::notice::Szenen-Details nicht gelesen: " + type(e).__name__)
             if UD and fix_units(data.get("days") or [], None, UD): changed = True
         except Exception as e: log("Drehplan-Text nicht gelesen:", type(e).__name__)
@@ -1125,7 +1120,7 @@ def main():
             if cols:   # strictly: green tabs only, all others ignored (no green tab → the 2nd unit of the main schedule)
                 skip = [n for _, n in tabs if not (cols.get(n) or {}).get("green")]
                 tabs = [(g, n) for g, n in tabs if (cols.get(n) or {}).get("green")]; GREEN[:] = [1]
-                print("::notice::2nd Unit: %d grüne/orange Blätter verwendet (davon %d ausgeblendet; Drehtag %s), %d andere ignoriert (Drehtag %s)"
+                U2SUM.append("%d grüne/orange Blätter (davon %d ausgeblendet; Tag %s), %d andere ignoriert (Tag %s)"
                       % (len(tabs), sum(1 for _, n in tabs if (cols.get(n) or {}).get("hidden")), ",".join(sorted({dn(n) for _, n in tabs}, key=lambda x: (len(x), x))) or "–",
                          len(skip), ",".join(sorted({dn(n) for n in skip}, key=lambda x: (len(x), x))) or "–"))
             else:   # colours not readable: nothing changes, the last good result stays
@@ -1139,11 +1134,11 @@ def main():
                 day = next((d for d in shoot if dayno(d) == no), None)
                 if not day: continue
                 txt = "\n\n".join("BLATT %s:\n%s" % (n, sheet_csv(url, g) or read_sheet(url.split("#")[0].split("?")[0] + "?gid=" + g) or "") for g, n in v)
-                if len(txt) < 40: print("::notice::2nd Unit Tag %d: Blatt leer (%d Zeichen)" % (no, len(txt))); continue
+                if len(txt) < 40: log("2nd Unit Tag %d: Blatt leer (%d Zeichen)" % (no, len(txt))); continue
                 h = hashlib.sha256(txt.encode()).hexdigest()[:16]
                 old2 = cache.get(gid) or {}
                 if old2.get("h") == h and old2.get("u2") and not FORCE: newc[gid] = old2; continue
-                if not may_try("unit2", {"name": "2nd-unit-" + name, "modified": h}): print("::notice::2nd Unit Tag %d: übersprungen" % no); continue
+                if not may_try("unit2", {"name": "2nd-unit-" + name, "modified": h}): log("2nd Unit Tag %d: übersprungen" % no); continue
                 try:
                     u2 = claude([{"type": "text", "text": "2ND-UNIT SHOOTING ORDER «%s» (Tabelle, Zellen mit | getrennt):\n%s" % (name, txt[:60000])}],
                         "Erzeuge aus dieser genauen Drehreihenfolge der 2nd Unit für Drehtag %d (%s) ein JSON-Objekt für das Feld \"unit2\" eines Tages gemäss Collection \"days\": "
@@ -1155,8 +1150,8 @@ def main():
                         u2["src"] = "2nd"; newc[gid] = {"h": h, "no": no, "u2": u2}; log("2nd Unit: Blatt", no, "gelesen,", len(u2["items"]), "Einträge")
                     else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
                 except Exception as e:
-                    print("::notice::2nd Unit Tag %d: %s" % (no, type(e).__name__)); failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
-            print("::notice::2nd Unit: %d Blätter, Drehtage %s in der Tabelle, %d gelesen · laut Drehplan an Tag %s"
+                    log("2nd Unit Tag %d: %s" % (no, type(e).__name__)); failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
+            U2SUM.append("%d Blätter, Tage %s in der Tabelle, %d gelesen · laut Drehplan an Tag %s"
                   % (len(tabs), ",".join(str(k) for k in sorted(byday)), len(newc), ",".join(str(k) for k in sorted(UD.get("unit2") or [])) or "?"))
             cache = newc
             # the date comes from the main schedule: each sheet goes to the day whose 2nd unit has the same scenes
@@ -1185,7 +1180,8 @@ def main():
                 if isinstance(d.get("unit2"), dict) and d["unit2"].get("src") == "2nd" and d["date"] not in mainU2:
                     d.pop("unit2", None); changed = True; log("2nd Unit: Tag", dayno(d), "hat laut Drehplan keine 2nd Unit – entfernt")
             if mainU2 != (meta.get("unit2Main") or {}): meta["unit2Main"] = mainU2; changed = True
-            print("::notice::2nd Unit in der App: Tag " + (",".join(str(dayno(d)) for d in shoot if d.get("unit2")) or "keiner"))
+            U2SUM.append("in der App an Tag " + (",".join(str(dayno(d)) for d in shoot if d.get("unit2")) or "keinem"))
+            print("::notice::2nd Unit: " + " · ".join(U2SUM))
             sources.append({"kind": "unit2", "name": "Google Sheet «2nd Unit Shooting Order»", "link": url, "modified": NOW})
         if cache != (meta.get("unit2Sheet") or {}): meta["unit2Sheet"] = cache; changed = True
     except Exception as e: print("::warning::2nd-Unit-Planung nicht gelesen: " + type(e).__name__)
@@ -1499,15 +1495,6 @@ def main():
             changed = add_more_blocking(dbx, blk, meta, want_files, data.get("days") or [], data.get("locations") or [], [(x, next((e for e in fl if e["name"] == x.get("file")), None)) for x in fps]) or changed
         except Exception as ex:
             log("Auflösung/Seiten nicht gelesen:", str(ex)[:160]); PARTIAL.append("auf")
-        # check (numbers only): which pictures each 186 entry carries, by group and part
-        try:
-            for b in blk:
-                if any(str(x).lower().startswith("186") for x in b.get("sc") or []):
-                    cnt = {}
-                    for m in b.get("media") or []:
-                        k = (m.get("g") or "eigen") + ("/" + m["p"] if m.get("p") else ""); cnt[k] = cnt.get(k, 0) + 1
-                    print("::notice::Blocking-Kontrolle %s sc=%s: %s · PDFs %s" % (b["name"][:30], ",".join(map(str, b.get("sc") or [])), cnt, [p.get("l") for p in b.get("pdfs") or []]))
-        except Exception: pass
         # store every picture once (meta.bm) and let the scenes refer to it by number – keeps the data file small
         bm, idx = [], {}
         for b in blk:
