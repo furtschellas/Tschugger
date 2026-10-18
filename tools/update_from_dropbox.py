@@ -652,6 +652,17 @@ def read_sheet(url):
     rows = [" | ".join(c for c in row) for row in p.rows if sum(1 for c in row if c.strip()) >= 2]
     return "\n".join(rows)
 
+def sheet_csv(url, gid):
+    """one tab of a public Google Sheet as text (cells with | separated), via the CSV export"""
+    import csv, io
+    m = re.search(r"/spreadsheets/d/([\w-]+)", url)
+    if not m: return ""
+    r = requests.get("https://docs.google.com/spreadsheets/d/%s/export?format=csv&gid=%s" % (m.group(1), gid), timeout=60)
+    if r.status_code != 200: print("::notice::Tabelle: Export HTTP %d" % r.status_code); return ""
+    r.encoding = "utf-8"
+    rows = [" | ".join(c.strip() for c in row) for row in csv.reader(io.StringIO(r.text)) if sum(1 for c in row if c.strip()) >= 2]
+    return "\n".join(rows)
+
 def sheet_tabs(url):
     """[(gid, tab name)] of a public Google Sheet (from its html view)"""
     m = re.search(r"/spreadsheets/d/([\w-]+)", url)
@@ -850,7 +861,7 @@ def main():
                 if not m or re.search(r"(?i)\balt\b|\bold\b", name): continue
                 no = int(m.group(1)); day = next((d for d in shoot if dayno(d) == no), None)
                 if not day: continue
-                txt = read_sheet(url.split("#")[0].split("?")[0] + "?gid=" + gid) or ""
+                txt = sheet_csv(url, gid) or read_sheet(url.split("#")[0].split("?")[0] + "?gid=" + gid) or ""
                 if len(txt) < 40: print("::notice::2nd Unit Tag %d: Blatt leer (%d Zeichen)" % (no, len(txt))); continue
                 h = hashlib.sha256(txt.encode()).hexdigest()[:16]
                 old2 = cache.get(gid) or {}
