@@ -838,12 +838,14 @@ def main():
         if lk:
             m = re.search(rb"https://[^\s\"'<>]+", dbx.download(lk[-1]["id"])); url = m.group(0).decode() if m else ""
         cache = dict(meta.get("unit2Sheet") or {})
+        if not url: print("::notice::2nd Unit: kein Link in der Dropbox gefunden (%d .web-Dateien)" % sum(1 for f in files if f["name"].lower().endswith(".web")))
         if url and "docs.google.com/spreadsheets" in url:
             shoot = [d for d in data.get("days") or [] if d.get("kind") == "shoot"]
             def dayno(d):
                 m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")); return int(m.group(1)) if m else None
             newc = {}
-            for gid, name in sheet_tabs(url):
+            tabs = sheet_tabs(url)
+            for gid, name in tabs:
                 m = re.match(r"\s*#\s*(\d+)\b", name)
                 if not m or re.search(r"(?i)\balt\b|\bold\b", name): continue
                 no = int(m.group(1)); day = next((d for d in shoot if dayno(d) == no), None)
@@ -865,13 +867,15 @@ def main():
                         u2["src"] = "2nd"; newc[gid] = {"h": h, "no": no, "u2": u2}; log("2nd Unit: Tag", no, "übernommen,", len(u2["items"]), "Einträge")
                     else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
                 except Exception as e: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
+            print("::notice::2nd Unit: %d Blätter, %d Drehtage zugeordnet, %d gespeichert, Drehtage im Plan: %s"
+                  % (len(tabs), sum(1 for g, n in tabs if re.match(r"\s*#\s*\d+", n)), len(newc), ",".join(str(dayno(d)) for d in shoot)[:120]))
             cache = newc
             for c in cache.values():   # also after a new Drehplan: the detailed 2nd unit order stays on its day
                 day = next((d for d in shoot if dayno(d) == c["no"]), None)
                 if day and day.get("unit2") != c["u2"]: day["unit2"] = c["u2"]; changed = True
             sources.append({"kind": "unit2", "name": "Google Sheet «2nd Unit Shooting Order»", "link": url, "modified": NOW})
         if cache != (meta.get("unit2Sheet") or {}): meta["unit2Sheet"] = cache; changed = True
-    except Exception as e: log("2nd-Unit-Planung nicht gelesen:", type(e).__name__)
+    except Exception as e: print("::warning::2nd-Unit-Planung nicht gelesen: " + type(e).__name__)
 
     # crew
     f = pick_crew(files)
