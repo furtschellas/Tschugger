@@ -119,7 +119,7 @@ function factsHTML(hits){
     return '<div class="spf1">'+(it.set?'<div class="spfs">'+esc(it.set)+'</div>':'')+'<div class="spfd"><span class="spfdd"><b>'+esc(d.short||d.label)+'</b> · '+esc(WD[dt.getDay()]+" "+ddmm(dt))+'</span>'+(it.t?'<span class="spft">'+esc(it.t)+(endTime(it.t,it.dur)?'–'+endTime(it.t,it.dur):'')+'</span>':'')+(u!=="1"?'<span class="spfu">'+UNAME[u]+' Unit</span>':'')+'</div>'+
       '<div class="spfk">'+kv.map(k=>'<span><i>'+esc(cap(String(k[0])))+'</i>'+esc(k[1])+'</span>').join("")+'</div>'+
       (it.d?'<div class="spfx">'+esc(TX(it,"d"))+'</div>':'')+
-      (it.cast&&it.cast.length?'<div class="spfc">'+castChips(it.cast)+'</div>':'')+
+      (it.cast&&it.cast.length?'<div class="spfc">'+castChips(it.cast)+'</div>':'')+bdXX(d.date,it.sc)+
       bdHTML(d.date,it.sc)+(it.loc?(()=>{const ad=addrForItem(it);return '<div class="spfa">'+(/^tba$/i.test(ad)?esc(L('Ort: TBA')):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it)+'</div>';
   }).join("")+'</div>';
 }
