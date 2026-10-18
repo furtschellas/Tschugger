@@ -1052,7 +1052,7 @@ def main():
                         for it in its:
                             k = re.sub(r"\s+", "", str(it.get("sc") or "")).lower().lstrip("0")
                             if k and d["date"] + "|" + k not in bd: miss.append("%s %s" % (d.get("short") or d["date"], it.get("sc")))
-                if miss: print("::notice::Szenen-Details fehlen (%d): %s" % (len(miss), ", ".join(miss[:60])))
+                if miss: log("Szenen-Details fehlen (%d): %s" % (len(miss), ", ".join(miss[:60])))
                 # check: every «Topic:» in the PDF text must have landed in exactly one scene (counts only)
                 tt = _bd_join(re.sub(r"(?m)^Tschugger Sched - .*page # \d+[ \t]*$", "", stxt.replace("\f", "\n")))
                 diff = []
@@ -1062,8 +1062,7 @@ def main():
                     n_bd = sum(1 for day in pb.values() for v in day.values() for c in v.get("c") or [] if c[0] == lab or c[0].startswith(lab + ": ") or c[0].endswith(": " + lab))
                     if n_txt != n_bd: diff.append("%s %d/%d" % (lab, n_bd, n_txt))
                 print("::notice::Szenen-Details Kontrolle (übernommen/im PDF): " + (", ".join(diff) if diff else "alles übernommen"))
-                pk = sorted({"D%d %s" % (n, k) for n, v in pb.items() for k in v})
-                print("::notice::Szenen-Details im PDF gefunden: %s" % ", ".join(pk[:120]))
+
                 miss = []
                 for d in data.get("days") or []:
                     for it in (d.get("items") or []) + ((d.get("unit2") or {}).get("items") or [] if isinstance(d.get("unit2"), dict) else []):
