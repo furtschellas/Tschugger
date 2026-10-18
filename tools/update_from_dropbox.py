@@ -975,8 +975,8 @@ def main():
                     else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
                 except Exception as e:
                     print("::notice::2nd Unit Tag %d: %s" % (no, type(e).__name__)); failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
-            print("::notice::2nd Unit: %d Blätter, Drehtage %s in der Tabelle, %d übernommen"
-                  % (len(tabs), ",".join(str(k) for k in sorted(byday)), len(newc)))
+            print("::notice::2nd Unit: %d Blätter, Drehtage %s in der Tabelle, %d gelesen · laut Drehplan an Tag %s"
+                  % (len(tabs), ",".join(str(k) for k in sorted(byday)), len(newc), ",".join(str(k) for k in sorted(UD.get("unit2") or [])) or "?"))
             cache = newc
             # the date comes from the main schedule: each sheet goes to the day whose 2nd unit has the same scenes
             # (the tab number only when no scene matches); date, hours, pages and extras stay as in the main schedule
@@ -998,6 +998,7 @@ def main():
                 if isinstance(d.get("unit2"), dict) and d["unit2"].get("src") == "2nd" and d["date"] not in mainU2:
                     d.pop("unit2", None); changed = True; log("2nd Unit: Tag", dayno(d), "hat laut Drehplan keine 2nd Unit – entfernt")
             if mainU2 != (meta.get("unit2Main") or {}): meta["unit2Main"] = mainU2; changed = True
+            print("::notice::2nd Unit in der App: Tag " + (",".join(str(dayno(d)) for d in shoot if d.get("unit2")) or "keiner"))
             sources.append({"kind": "unit2", "name": "Google Sheet «2nd Unit Shooting Order»", "link": url, "modified": NOW})
         if cache != (meta.get("unit2Sheet") or {}): meta["unit2Sheet"] = cache; changed = True
     except Exception as e: print("::warning::2nd-Unit-Planung nicht gelesen: " + type(e).__name__)
