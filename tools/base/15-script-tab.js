@@ -142,7 +142,7 @@ function render(){
   if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   scallLabel();
   {const sel=v.querySelector('.chip[aria-selected="true"]'),st=v.querySelector(".strip.in"),tdy=todayISO();
-    const first=st&&[...st.querySelectorAll(".chip[data-dt]")].find(c=>c.dataset.dt>=tdy);
+    const first=st&&([...st.querySelectorAll(".chip[data-dt]")].find(c=>c.dataset.dt>=tdy&&(!onlyU()||c.classList.contains("u2day")))||[...st.querySelectorAll(".chip[data-dt]")].find(c=>c.dataset.dt>=tdy));
     if(st&&first&&!(sel&&sel.dataset.dt&&sel.dataset.dt<tdy)){st.scrollLeft=Math.max(0,first.offsetLeft-st.offsetLeft-2);
       if(sel&&sel.offsetLeft+sel.offsetWidth>st.scrollLeft+st.clientWidth+st.offsetLeft)sel.scrollIntoView({block:"nearest",inline:"end"})}
     else if(sel)sel.scrollIntoView({block:"nearest",inline:"center"})}

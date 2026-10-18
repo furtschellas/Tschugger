@@ -188,12 +188,12 @@ def _enc_write(fn, data):
     open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, data, None))
 
 def small_jpeg(data):
-    """photo previews: at most 1024 px, JPEG quality 70 (PDF pages are not touched); unchanged if that is not smaller"""
+    """photo previews: at most 2048 px, JPEG quality 82 (PDF pages are not touched); unchanged if that is not smaller"""
     try:
         import io
         from PIL import Image
-        im = Image.open(io.BytesIO(data)).convert("RGB"); im.thumbnail((1024, 1024))
-        o = io.BytesIO(); im.save(o, "JPEG", quality=70, optimize=True, progressive=True)
+        im = Image.open(io.BytesIO(data)).convert("RGB"); im.thumbnail((2048, 2048))
+        o = io.BytesIO(); im.save(o, "JPEG", quality=82, optimize=True, progressive=True)
         return o.getvalue() if len(o.getvalue()) < len(data) * 0.92 else data
     except Exception:
         return data
@@ -205,14 +205,14 @@ def _thumb(dbx, e, fn):
     PIC_BUDGET[0] -= 1
     try:
         r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps(
-            {"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
+            {"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w2048h1536", "mode": "fitone_bestfit"})}))
         r.raise_for_status(); _enc_write(fn, small_jpeg(r.content)); return True
     except Exception as ex:
         log("Vorschau fehlt:", _h(e["name"]), type(ex).__name__); return False
 
 def _pdf_pages(dbx, e, cache):
     """every page of a PDF as an encrypted JPEG (blk/<key>p<i>.bin); the page count is kept in meta.pdfPages"""
-    key = _key(e, "|pdf")
+    key = _key(e, "|pdfhd")   # «hd»: pages in full resolution (the earlier 1280 px pages were too blurry for floorplans)
     n = cache.get(key)
     if n is not None and all(blk_have("blk/%sp%d.bin" % (key, i)) for i in range(n)):
         return key, ["blk/%sp%d.bin" % (key, i) for i in range(n)]
@@ -221,7 +221,7 @@ def _pdf_pages(dbx, e, cache):
     try:
         with tempfile.TemporaryDirectory() as td:
             src = os.path.join(td, "in.pdf"); open(src, "wb").write(dbx.download(e["id"]))
-            subprocess.run(["pdftoppm", "-jpeg", "-jpegopt", "quality=78", "-scale-to", "1280", "-l", "40", src, os.path.join(td, "p")], check=True, timeout=300)
+            subprocess.run(["pdftoppm", "-jpeg", "-jpegopt", "quality=88", "-scale-to", "2400", "-l", "40", src, os.path.join(td, "p")], check=True, timeout=300)
             pages = sorted(f for f in os.listdir(td) if f.startswith("p") and f.endswith(".jpg"))
             out = []
             for i, f in enumerate(pages):
@@ -318,7 +318,7 @@ def add_recce(dbx, days, add):
                     hit.append(sc); break
         if not hit: continue
         for e in sorted(files, key=lambda e: e["name"].lower())[:40]:
-            fn = "blk/" + _key(e) + ".bin"
+            fn = "blk/" + _key(e, "|hd") + ".bin"
             if not _thumb(dbx, e, fn): continue
             WANT.add(fn); n += 1
             it = {"n": e["name"], "t": "img", "f": fn, "u": _web(folder, e["name"]), "g": "recce", "l": label}
@@ -395,7 +395,7 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
         if e["name"].lower().endswith(".pdf"):
             key, files = _pdf_pages(dbx, e, cache); used.add(key)
         else:
-            fn = "blk/" + _key(e, "|fp") + "p0.bin"; files = [fn] if _thumb(dbx, e, fn) else []
+            fn = "blk/" + _key(e, "|fphd") + "p0.bin"; files = [fn] if _thumb(dbx, e, fn) else []
         if files:
             want_files.update(files)
             if fp.get("pg") != files: fp["pg"] = files; changed = True
@@ -1135,13 +1135,13 @@ def main():
             items = []
             folder = b.get("url") or bdir
             for e in sorted(bmed.get(b["name"], []), key=lambda e: e["name"].lower()):
-                key = hashlib.sha1((str(e.get("id")) + "|" + str(e.get("modified"))).encode()).hexdigest()[:20]
+                key = hashlib.sha1((str(e.get("id")) + "|" + str(e.get("modified")) + "|hd").encode()).hexdigest()[:20]
                 fn = "blk/" + key + ".bin"; want_files.add(fn)
                 if not blk_have(fn):
                     if time.time() > PIC_DEADLINE or PIC_BUDGET[0] <= 0: want_files.discard(fn); continue   # follows in the next run
                     PIC_BUDGET[0] -= 1
                     try:
-                        r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps({"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w960h640", "mode": "fitone_bestfit"})}))
+                        r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps({"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w2048h1536", "mode": "fitone_bestfit"})}))
                         r.raise_for_status()
                         iv = secrets.token_bytes(12)
                         open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, small_jpeg(r.content), None)); changed = True

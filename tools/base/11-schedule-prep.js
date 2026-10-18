@@ -13,7 +13,12 @@ const hasSelU=d=>(S.pu["2"]&&hasU(d,"2"))||(S.pu["3"]&&hasU(d,"3"));
 document.addEventListener("click",e=>{if(!onlyU())return;const b=e.target.closest("[data-day],[data-dday]");if(!b||b.disabled)return;
   const d=S.days.find(x=>x.id===b.dataset.day||x.date===b.dataset.dday);if(!d||d.kind!=="shoot"||hasSelU(d))return;
   S.pu=Object.assign({},S.pu,{"1":true});store("pu",JSON.stringify(S.pu));
-  showMsg(L("An diesem Tag findet keine 2nd Unit statt – die 1st Unit ist wieder eingeschaltet."),3500)},true);
+  toast(L("An diesem Tag findet keine 2nd Unit statt – die 1st Unit ist wieder eingeschaltet."))},true);
+/* short note in the middle of the screen that disappears by itself */
+function toast(t,ms){let o=document.getElementById("toast");if(o)o.remove();o=document.createElement("div");o.id="toast";o.className="toast";o.setAttribute("role","status");o.textContent=t;
+  document.body.appendChild(o);requestAnimationFrame(()=>o.classList.add("in"));setTimeout(()=>{o.classList.remove("in");setTimeout(()=>o.remove(),300)},ms||2600)}
+/* the next day of the chosen units from today on (only 2nd → next 2nd unit day, else next shooting day of the 1st unit) */
+function nextUnitDay(){const t=todayISO(),ok=d=>d.kind==="shoot"&&(onlyU()?hasSelU(d):(d.items||[]).some(i=>i.sc));const l=S.days.filter(ok);return (l.find(d=>d.date>=t)||l[l.length-1]||null)}
 function townOf(ad){const p=String(ad).split(",").map(x=>x.trim()).filter(Boolean);const last=p[p.length-1]||"";return last.replace(/^\d{4}\s*/,"").replace(/\s*\(.*\)$/,"")}
 function dayPlaces(d){
   const out=[];
