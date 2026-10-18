@@ -335,7 +335,7 @@ try{ADM.sub=localStorage.getItem("admsub")||"users"}catch(_){ADM.sub="users"}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
 VIEWS.admin=function(){
   if(!canAdm())return '<div class="empty">'+L("Für die App-Verwaltung fehlt die Berechtigung.")+'</div>';
-  if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>60000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
+  if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>300000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
   if(!ADM.loaded){admLoad().catch(err=>{console.error(err);showMsg(L("Liste der Benutzer:innen konnte nicht geladen werden:")+" "+(err.message||err),6000)});return '<div class="empty">'+L("Lade Benutzer:innen …")+'</div>'}
   const memBy={};ADM.mem.forEach(m=>memBy[m.email]=m);
   const invBy={};ADM.inv.forEach(i=>invBy[i.id]=i);

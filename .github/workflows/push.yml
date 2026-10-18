@@ -44,7 +44,10 @@ jobs:
         env:
           CREW_KEY: ${{ secrets.CREW_KEY }}
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
-        run: python tools/gcal_sync.py
+        # every 30 minutes is enough (saves Firebase reads): only in the runs at :00–:09 and :30–:39
+        run: |
+          M=$(date -u +%M); if [ $((10#$M % 30)) -ge 10 ]; then echo "Google Kalender: nächster Abgleich zur halben/vollen Stunde"; exit 0; fi
+          python tools/gcal_sync.py
       - name: Verschickte merken
         if: always()
         uses: actions/cache/save@v4

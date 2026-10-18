@@ -40,6 +40,7 @@ class FakeFS:
         fsadmin.crew_key_b64 = lambda: KEY_B64
         fsadmin.get_doc = lambda p: self.d.get(p)
         fsadmin.list_docs = lambda col: [(k.split("/", 1)[1], dict(v), "t") for k, v in list(self.d.items()) if k.split("/")[0] == col]
+        fsadmin.query_since = lambda col, field, iso: fsadmin.list_docs(col)
         def patch(p, f, update_time=None): self.d.setdefault(p, {}).update(f); return True
         fsadmin.patch_doc = patch
         def create(col, f, raw=None): self.n += 1; self.d[f"{col}/x{self.n}"] = dict(f); return f"x{self.n}"

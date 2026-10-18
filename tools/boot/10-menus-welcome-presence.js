@@ -1,12 +1,18 @@
 /* ---- lunch menus: catering enters a menu per shooting day and unit (permission «Menüs eingeben»);
    the schedule shows it at «Lunch» of that day and unit ---- */
 window.MENUS={};try{window.MENUS=JSON.parse(localStorage.getItem("menus")||"{}")||{}}catch(_){}
-let MENUAT=0;
-async function menusLoad(force){if(!ME||(!force&&Date.now()-MENUAT<600e3))return;MENUAT=Date.now();
-  try{const {F,db}=await fb();const from=new Date(Date.now()-864e5).toISOString().slice(0,10);
+let MENUAT=0,MENUSUB=null,MENUFROM="";
+/* realtime listener on the menus from yesterday on: Firebase sends only changes (no more reading all every few minutes) */
+function menusApply(docs,from){const m={};docs.forEach(d=>{if(d.id>=from)m[d.id]=d.data()});
+  if(JSON.stringify(m)!==JSON.stringify(window.MENUS)){window.MENUS=m;try{localStorage.setItem("menus",JSON.stringify(m))}catch(_){}render()}}
+async function menusLoad(force){if(!ME)return;const from=new Date(Date.now()-864e5).toISOString().slice(0,10);
+  if(MENUSUB&&MENUFROM===from&&!force)return;
+  if(!force&&!MENUSUB&&Date.now()-MENUAT<600e3)return;MENUAT=Date.now();
+  try{const {F,db}=await fb();
+    if(typeof F.onSnapshot==="function"&&!(MENUSUB&&MENUFROM===from)){if(MENUSUB)try{MENUSUB()}catch(_){}MENUFROM=from;
+      MENUSUB=F.onSnapshot(F.query(F.collection(db,"menus"),F.where(F.documentId(),">=",from)),q=>menusApply(q.docs,from),err=>{console.warn("menus",err&&err.code||err);MENUSUB=null});if(!force)return}
     let q;try{q=await F.getDocs(F.query(F.collection(db,"menus"),F.where(F.documentId(),">=",from)))}catch(_){q=await F.getDocs(F.collection(db,"menus"))}
-    const m={};q.docs.forEach(d=>{if(d.id>=from)m[d.id]=d.data()});
-    if(JSON.stringify(m)!==JSON.stringify(window.MENUS)){window.MENUS=m;try{localStorage.setItem("menus",JSON.stringify(m))}catch(_){}render()}}catch(err){console.warn("menus",err&&err.code||err)}}
+    menusApply(q.docs,from)}catch(err){console.warn("menus",err&&err.code||err)}}
 /* two menu options per day and unit (u1a/u1b, u2a/u2b …; the older single field u1 counts as option 1) */
 const menuOpts=(m,u)=>{if(m.tog)u="1";return [String(m["u"+u+"a"]||m["u"+u]||"").trim(),String(m["u"+u+"b"]||"").trim()].filter(Boolean)};
 window.menuFor=(date,u)=>{const m=(window.MENUS||{})[date];if(!m)return "";
