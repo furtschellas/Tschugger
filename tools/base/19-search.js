@@ -31,12 +31,16 @@ function roleList(){return memo("roles",()=>{const c=(S.meta&&S.meta.cast)||{};
 function rolesFor(terms){return roleList().filter(r=>terms.every(t=>r.id===t||fold(r.name).includes(t)||r.al.some(a=>a.includes(t))))}
 function planRoles(sc){const s=new Set();for(const h of (schedIndex()[norm(sc)]||[]))for(const c of arr(h.it.cast))s.add(String(c));return s}
 /* who appears in each script scene: sp = the role speaks (dialogue heading in capitals), mt = the role is only mentioned in the text */
-const SPK=/^[ \t]*([A-ZÄÖÜÉÈÀ][A-ZÄÖÜÉÈÀ0-9 .'’\-\/]{1,40}?)(?:\s*\([^)]*\))?[ \t]*$/gm;
+const SPK=/^[ \t]*([A-ZÄÖÜÉÈÀ][A-ZÄÖÜÉÈÀ0-9 .'’\-\/]{1,40}?)(?:\s*\(([^)]*)\))?[ \t]*$/gm;
+/* voice-over / off: «IDA (V.O.)», «ARMIN (O.S.)» – the role speaks, but need not be on set */
+const VO_RE=/\b(v\.?\s?o\.?|o\.?\s?s\.?|o\.?\s?c\.?|voice[\s-]?over|off|telefon|phone|radio|funk)\b/i;
 function scriptRoles(){return memo("scroles:"+(SCRIPT?SCRIPT.length:0),()=>{const R=roleList().map(r=>({id:r.id,al:r.al,re:r.al.map(a=>new RegExp("(^|[^a-z0-9])"+escRe(a)+"($|[^a-z0-9])"))}));const out={};
   for(const x of (SCRIPT||[])){const k=norm(x.sc),o=out[k]||{sp:new Set(),mt:new Set()};const txt=String(x.text||"");
-    const spk=[...txt.matchAll(SPK)].map(m=>fold(m[1]).replace(/\./g,"").trim()).filter(n=>n&&!/^(continued|cont|int|ext|i\/e|cut to|fade)/.test(n));
+    const lines=[...txt.matchAll(SPK)].map(m=>({n:fold(m[1]).replace(/\./g,"").trim(),vo:VO_RE.test(m[2]||"")})).filter(x=>x.n&&!/^(continued|cont|int|ext|i\/e|cut to|fade)/.test(x.n)),spk=lines.map(x=>x.n);
+    o.vo=o.vo||new Set();
     const t=fold((x.head||"")+"\n"+txt);
-    for(const r of R){if(spk.some(n=>r.al.some(a=>n===a||(" "+n+" ").includes(" "+a+" "))))o.sp.add(r.id);else if(r.re.some(re=>re.test(t)))o.mt.add(r.id)}
+    const isR=(r,n)=>r.al.some(a=>n===a||(" "+n+" ").includes(" "+a+" "));
+    for(const r of R){const mine=lines.filter(x=>isR(r,x.n));if(mine.length){o.sp.add(r.id);if(mine.every(x=>x.vo))o.vo.add(r.id)}else if(r.re.some(re=>re.test(t)))o.mt.add(r.id)}
     out[k]=o}return out})}
 const inScript=(o,id)=>!!o&&(o.sp.has(id)||o.mt.has(id));
 /* actors (callsheets) → role ids */
@@ -49,12 +53,13 @@ function roleOverview(withScript,attr){
   const sched=schedIndex(),sr=withScript&&SCRIPT?scriptRoles():null,R=roleList();if(!R.length)return '<p class="shint">'+esc(L("Keine Rollen in der Besetzungsliste."))+'</p>';
   const plan={};for(const k in sched)for(const h of sched[k])for(const c of arr(h.it.cast)){(plan[c]=plan[c]||new Set()).add(k)}
   return '<div class="rolegrid">'+R.map(r=>{const P=plan[r.id]||new Set();let B=0,diff=0;
-    if(sr){for(const k in sr){const o=sr[k],inB=inScript(o,r.id),inP=P.has(k);if(inB)B++;if(sched[k]&&((o.sp.has(r.id)&&!inP)||(inP&&!inB)))diff++}}
+    if(sr){for(const k in sr){const o=sr[k],inB=inScript(o,r.id),inP=P.has(k);if(inB)B++;if(sched[k]&&((o.sp.has(r.id)&&!(o.vo&&o.vo.has(r.id))&&!inP)||(inP&&!inB)))diff++}}
     return '<button type="button" class="rolerow" '+attr+'="'+esc(r.name)+'"><span class="rn"><i>'+esc(r.id)+'</i>'+esc(r.name)+'</span><span class="rc">'+esc(L("Drehplan"))+' '+P.size+(sr?' · '+esc(L("Drehbuch"))+' '+B:'')+(diff?' · <b class="rdiff">⚠ '+diff+'</b>':'')+'</span></button>'}).join("")+'</div>'+(sr?'<p class="shint">⚠ = '+esc(L("Geplante Szenen, in denen die Rolle laut Drehbuch spricht, aber nicht im Drehplan steht – oder im Drehplan steht, im Drehbuch aber nicht vorkommt."))+'</p>':'');
 }
 function roleBadges(sc,ids){const P=planRoles(sc),o=SCRIPT?(scriptRoles()[norm(sc)]||{sp:new Set(),mt:new Set()}):null,planned=(schedIndex()[norm(sc)]||[]).length>0,R=roleList();
   return '<span class="rbadges">'+ids.map(id=>{const r=R.find(x=>x.id===id);if(!r)return"";const inP=P.has(id),sp=o?o.sp.has(id):null,mt=o?o.mt.has(id):null;
-    const st=!planned?(sp?L("spricht im Drehbuch"):mt?L("erwähnt im Drehbuch"):""):o===null?(inP?L("im Drehplan"):""):inP&&(sp||mt)?"✓ "+L("Drehplan und Drehbuch"):inP?"⚠ "+L("nur im Drehplan"):sp?"⚠ "+L("spricht im Drehbuch, fehlt im Drehplan"):mt?L("nur erwähnt, nicht im Drehplan"):"";
+    const vo=o&&o.vo?o.vo.has(id):false;
+    const st=!planned?(vo?L("Voice-over im Drehbuch"):sp?L("spricht im Drehbuch"):mt?L("erwähnt im Drehbuch"):""):o===null?(inP?L("im Drehplan"):""):inP&&(sp||mt)?"✓ "+L("Drehplan und Drehbuch")+(vo?" ("+L("Voice-over")+")":""):inP?"⚠ "+L("nur im Drehplan"):vo?L("Voice-over – muss nicht am Set sein"):sp?"⚠ "+L("spricht im Drehbuch, fehlt im Drehplan"):mt?L("nur erwähnt, nicht im Drehplan"):"";
     return st?'<span class="rbadge'+(/⚠/.test(st)?' warn':'')+'"><b>'+esc(r.name)+'</b> '+esc(st)+'</span>':""}).join("")+'</span>'}
 /* ---------- global search ---------- */
 const nrm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
