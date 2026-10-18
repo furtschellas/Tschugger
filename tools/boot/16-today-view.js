@@ -34,7 +34,7 @@ function clogHTML(t){const intro=[],items=[];let cur=null;
 window.clogHTML=clogHTML;
 function scriptChg(){const sx=S.meta&&S.meta.scriptChange,at=sx?Date.parse(sx.at):0;
   if(!sx||!at||!vok("script")||Date.now()-at>=3*864e5)return null;const seen=+(localStorage.getItem("chgseen:v1")||0);if(chgSeenGone(at,seen))return null;
-  return {date:new Date(at).toISOString().slice(0,10),at,unread:at>seen,script:1,sx,txt:L("Neue Drehbuch-Version")+" "+(sx.v||"")+(sx.prev&&sx.prev!==sx.v?" ("+L("vorher")+" "+sx.prev+")":sx.prev===sx.v?" ("+L("überarbeitet")+")":"")}}
+  return {date:localISO(at),at,unread:at>seen,script:1,sx,txt:L("Neue Drehbuch-Version")+" "+(sx.v||"")+(sx.prev&&sx.prev!==sx.v?" ("+L("vorher")+" "+sx.prev+")":sx.prev===sx.v?" ("+L("überarbeitet")+")":"")}}
 function scriptChgHTML(c){const sx=c.sx||{},sc=arr(sx.scenes);
   return '<button type="button" class="lnk tscr" data-tscript>'+esc(c.txt)+'</button>'+
     (sc.length?'<span class="tscrsc">'+esc(L(sc.length===1?"Szene":"Szenen"))+': '+sc.map(x=>'<button type="button" class="lnk" data-scene="'+esc(x)+'">'+esc(x)+'</button>').join(", ")+'</span>':'')+
@@ -45,7 +45,7 @@ VIEWS.today=function(){
   const d=todayDay(),t=todayISO();
   if(!d){const sc=tShow("chg")?scriptChg():null;
     return '<section class="today"><h2 class="pgt">'+L("Heute")+'</h2><p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>'+
-      (sc?'<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(sc.unread?' <span class="chgdot">1 '+esc(L("neu"))+'</span>':'')+'</div>chgListHTML([sc])+'+
+      (sc?'<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(sc.unread?' <span class="chgdot">1 '+esc(L("neu"))+'</span>':'')+'</div>'+chgListHTML([sc])+''+
         (sc.unread?'<div class="tacts"><button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button></div>':'')+'</div>':'')+'</section>'}
   const isToday=d.date===t,dt=new Date(d.date+"T12:00:00");
   /* only what the person may see: schedule parts need «Drehplan sehen», callsheet parts «Callsheet sehen» */

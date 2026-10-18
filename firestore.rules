@@ -2,46 +2,60 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+    // Pfad zu einem Dokument (statt den langen Pfad überall auszuschreiben)
+    function d(col, id) { return /databases/$(database)/documents/$(col)/$(id); }
     // bestätigt = E-Mail bestätigt ODER Konto vom Besitzer mit Startpasswort angelegt (starts/{email})
     function verified() { return signedIn() && (request.auth.token.email_verified == true
-      || exists(/databases/$(database)/documents/starts/$(request.auth.token.email.lower()))); }
+      || exists(d('starts', request.auth.token.email.lower()))); }
     function myEmail() { return request.auth.token.email.lower(); }
     // Besitzer (fest) und weitere Admins, die der Besitzer unter admins/{email} einträgt
     function isRoot(e) { return e in ['furtschellas@gmail.com']; }
-    function ownerEmail(e) { return isRoot(e) || exists(/databases/$(database)/documents/owners/$(e)); }
+    function ownerEmail(e) { return isRoot(e) || exists(d('owners', e)); }
     function isOwner() { return verified() && ownerEmail(myEmail()); }
     function isAdmin() {
       return isOwner()
-        || (verified() && exists(/databases/$(database)/documents/admins/$(myEmail())));
+        || (verified() && exists(d('admins', myEmail())));
     }
     // Rollen: der Besitzer legt roles/{id} (name, perms) an und weist sie unter userroles/{email} zu.
     // can(p): Besitzer alles; Admins alles ausser 'settings'; sonst die Berechtigungen der eigenen Rolle
-    function rolePerms() {
-      return get(/databases/$(database)/documents/roles/$(get(/databases/$(database)/documents/userroles/$(myEmail())).data.role)).data.perms;
-    }
+    function hasRole() { return exists(d('userroles', myEmail())); }
+    function myRole() { return get(d('userroles', myEmail())).data.role; }
+    function rolePerms() { return get(d('roles', myRole())).data.perms; }
     // Admin-Rechte: Standard alles ausser 'settings'; der Besitzer kann sie unter roles/admin anpassen
-    function adminHas(p) {
-      return (!exists(/databases/$(database)/documents/roles/admin) && p != 'settings')
-        || (exists(/databases/$(database)/documents/roles/admin) && p in get(/databases/$(database)/documents/roles/admin).data.perms);
+    function adminHasAny(ps) {
+      // ohne roles/admin: alles ausser 'settings'; sonst die dort eingetragenen Berechtigungen
+      return exists(d('roles', 'admin')) ? get(d('roles', 'admin')).data.perms.hasAny(ps) : ps.removeAll(['settings']).size() > 0;
     }
-    function can(p) {
-      return isOwner() || (isAdmin() && adminHas(p))
-        || (verified() && exists(/databases/$(database)/documents/userroles/$(myEmail())) && p in rolePerms());
+    // canAny([..]): mindestens eine der Berechtigungen (eine Liste statt vieler einzelner can(..) || can(..))
+    function canAny(ps) {
+      return isOwner() || (isAdmin() && adminHasAny(ps))
+        || (verified() && hasRole() && rolePerms().hasAny(ps));
     }
+    function can(p) { return canAny([p]); }
+    // wer Benutzende oder Rollen sieht (dieselbe Liste an mehreren Stellen)
+    function seesUsers() { return isAdmin() || canAny(['users.view', 'users.edit', 'roles.assign', 'roles.edit', 'roles.view']); }
     // Catering: wer eine Rolle hat, deren Kennung «cater» enthält (z. B. catering)
-    function isCatering() {
-      return verified() && exists(/databases/$(database)/documents/userroles/$(myEmail()))
-        && get(/databases/$(database)/documents/userroles/$(myEmail())).data.role.matches('.*cater.*');
-    }
+    function isCatering() { return verified() && hasRole() && myRole().matches('.*cater.*'); }
     function isMember() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/members/$(request.auth.uid))
-        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.active == true;
+      return signedIn() && exists(d('members', request.auth.uid)) && get(d('members', request.auth.uid)).data.active == true;
     }
+    // Crew = freigeschaltetes Mitglied oder Admin
+    function crew() { return isMember() || isAdmin(); }
+    // eigenes Gerät (Push): Dokument-ID = uid + '_' + 10 Zeichen
+    function ownDevice(id) { return signedIn() && id.matches(request.auth.uid + '_[a-z0-9]{10}'); }
+    // verschlüsselter Inhalt c: Text bis zur Grösse max
+    function cOk(max) { return request.resource.data.c is string && request.resource.data.c.size() < max; }
+    // Felder, die nur aus dieser Liste stammen dürfen (neu) bzw. nur diese ändern (Änderung)
+    function only(keys) { return request.resource.data.keys().hasOnly(keys); }
+    function changesOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    // Profilfelder der Mitglieder (an mehreren Stellen gleich)
+    function profile() { return ['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'func']; }
+    // Menütext höchstens 300 Zeichen
+    function short(f) { return request.resource.data.get(f, '').size() <= 300; }
 
     // Schlüssel für die Crew-Daten: nur für freigeschaltete Mitglieder und Admins
     match /secret/key {
-      allow get: if isAdmin() || isMember();
+      allow get: if crew();
       allow list, write: if false;
     }
 
@@ -55,67 +69,68 @@ service cloud.firestore {
       allow read: if signedIn();
       // Rollen anlegen/ändern/löschen: Admins, oder wer «Rollen bearbeiten» hat (nicht die Admin-Rolle)
       // nicht die eigene Rolle und nur Berechtigungen, die man selbst hat (keine Selbst-Beförderung)
-      allow write: if (isAdmin() || (can('roles.edit') && id != 'admin'
-          && !(exists(/databases/$(database)/documents/userroles/$(myEmail())) && get(/databases/$(database)/documents/userroles/$(myEmail())).data.role == id)
+      // die Admin-Rolle (Rechte der Admins) passt nur der Owner an – sonst könnte sich ein Admin selbst «Einstellungen» geben
+      allow write: if ((isAdmin() && (id != 'admin' || isOwner())) || (can('roles.edit') && id != 'admin'
+          && !(hasRole() && myRole() == id)
           && (request.resource == null || request.resource.data.perms.hasOnly(rolePerms()))))
-        && (request.resource == null || (request.resource.data.keys().hasOnly(['name', 'perms', 'at'])
+        && (request.resource == null || (only(['name', 'perms', 'at'])
             && request.resource.data.name is string && request.resource.data.name.size() <= 40
             && request.resource.data.perms is list && request.resource.data.perms.size() <= 40));
     }
     match /userroles/{email} {
       allow get: if (verified() && myEmail() == email) || isAdmin();
-      allow list: if isAdmin() || can('roles.assign') || can('roles.edit') || can('roles.view');
+      allow list: if isAdmin() || canAny(['roles.assign', 'roles.edit', 'roles.view']);
       allow write: if ((isOwner() && !isRoot(email)) || (isAdmin() && !ownerEmail(email))) && email != myEmail()
-        && (request.resource == null || request.resource.data.keys().hasOnly(['role', 'at']));
+        && (request.resource == null || only(['role', 'at']));
       // «Rollen pflegen»: Rollen zuweisen, aber nicht an Owner oder Admins und nicht sich selbst
       allow write: if can('roles.assign') && email != myEmail() && !ownerEmail(email)
-        && !exists(/databases/$(database)/documents/admins/$(email))
-        && (request.resource == null || (request.resource.data.keys().hasOnly(['role', 'at']) && request.resource.data.role != 'admin'));
+        && !exists(d('admins', email))
+        && (request.resource == null || (only(['role', 'at']) && request.resource.data.role != 'admin'));
       // wer einladen darf, gibt neuen Benutzenden automatisch die Rolle «Crew»
       allow create: if can('users.invite') && !ownerEmail(email)
-        && request.resource.data.keys().hasOnly(['role', 'at']) && request.resource.data.role == 'crew';
+        && only(['role', 'at']) && request.resource.data.role == 'crew';
     }
 
     // Geburtstagsliste (nur Name + Tag/Monat): jede Person pflegt ihren eigenen Eintrag, der Haupt-Admin gleicht ab;
     // lesen dürfen Admins immer, alle anderen Mitglieder nur, wenn der Haupt-Admin sie freigegeben hat
     match /bdays/{uid} {
       allow read: if can('crew.bday')
-        || (isMember() && get(/databases/$(database)/documents/config/app).data.get('bdayPublic', false) == true);
+        || (isMember() && get(d('config', 'app')).data.get('bdayPublic', false) == true);
       allow write: if isOwner() || (verified() && request.auth.uid == uid
-        && (request.resource == null || request.resource.data.keys().hasOnly(['name', 'md'])));
+        && (request.resource == null || only(['name', 'md'])));
     }
 
     // Weitere Admins: nur der Haupt-Admin verwaltet sie
     match /admins/{email} {
       // die Liste (nur Adressen) sehen auch alle, die Benutzende oder Rollen sehen – sonst erscheinen Admins bei ihnen als «Keine Rolle»
-      allow read: if isAdmin() || can('users.view') || can('users.edit') || can('roles.assign') || can('roles.edit') || can('roles.view');
+      allow read: if seesUsers();
       allow get: if verified() && myEmail() == email;
       allow delete: if (isOwner() && !isRoot(email)) || (isAdmin() && !ownerEmail(email) && email != myEmail());
       allow create, update: if ((isOwner() && !isRoot(email)) || (isAdmin() && !ownerEmail(email))) && email != myEmail()
-        && request.resource.data.keys().hasOnly(['addedAt']);
+        && only(['addedAt']);
     }
 
     // Owner: der feste Owner und alle, die ein Owner hier einträgt; nur Owner verwalten Owner
     match /owners/{email} {
-      allow read: if isAdmin() || can('users.view') || can('users.edit') || can('roles.assign') || can('roles.edit') || can('roles.view');
+      allow read: if seesUsers();
       allow get: if verified() && myEmail() == email;
-      allow create, update: if isOwner() && !isRoot(email) && request.resource.data.keys().hasOnly(['addedAt']);
+      allow create, update: if isOwner() && !isRoot(email) && only(['addedAt']);
       allow delete: if isOwner() && !isRoot(email);
     }
 
     // Einladungen (E-Mail-Adresse = Dokument-ID): verwalten alle Admins
     match /invites/{email} {
-      allow read: if can('users.view') || can('users.invite') || can('contacts.extra');
+      allow read: if canAny(['users.view', 'users.invite', 'contacts.extra']);
       allow delete: if can('users.invite');
-      allow create: if (can('users.invite') || can('users.requests')) && request.resource.data.keys().hasOnly(['name', 'role', 'addedAt']);
-      allow update: if (can('users.invite') || can('users.edit')) && request.resource.data.keys().hasOnly(['name', 'role', 'addedAt']);
+      allow create: if canAny(['users.invite', 'users.requests']) && only(['name', 'role', 'addedAt']);
+      allow update: if canAny(['users.invite', 'users.edit']) && only(['name', 'role', 'addedAt']);
       allow get: if verified() && myEmail() == email;
     }
 
     // Zugangsanfragen: wer nicht auf der Liste ist, fragt mit der eigenen (bestätigten) Adresse an; alle Admins sehen und erledigen sie
     match /requests/{email} {
       allow create, update: if verified() && myEmail() == email
-        && request.resource.data.keys().hasOnly(['name', 'role', 'note', 'at'])
+        && only(['name', 'role', 'note', 'at'])
         && request.resource.data.name is string && request.resource.data.name.size() <= 80
         && (!('note' in request.resource.data) || request.resource.data.note.size() <= 280);
       allow get: if (verified() && myEmail() == email) || isAdmin();
@@ -126,9 +141,9 @@ service cloud.firestore {
     match /starts/{email} {
       allow get: if isOwner() || (signedIn() && request.auth.token.email.lower() == email);
       allow list, delete: if isOwner();
-      allow create: if isOwner() && request.resource.data.keys().hasOnly(['mustChange', 'at']);
+      allow create: if isOwner() && only(['mustChange', 'at']);
       allow update: if isOwner() || (signedIn() && request.auth.token.email.lower() == email
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange'])
+        && changesOnly(['mustChange'])
         && request.resource.data.mustChange == false);
     }
 
@@ -140,21 +155,21 @@ service cloud.firestore {
 
     // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren und entfernen kann nur der Haupt-Admin
     match /members/{uid} {
-      allow read: if can('users.view') || can('users.edit') || can('crew.food') || can('crew.bday') || can('contacts.extra');
+      allow read: if canAny(['users.view', 'users.edit', 'crew.food', 'crew.bday', 'contacts.extra']);
       // der Haupt-Admin selbst kann nicht gesperrt oder gelöscht werden
       allow update, delete: if isOwner() && !isRoot(resource.data.email);
       // alle Admins dürfen die Profildaten der Benutzenden ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
       allow update: if can('users.edit') && (isOwner() || !ownerEmail(resource.data.email))
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'func']);
+        && changesOnly(profile());
       allow get: if signedIn() && request.auth.uid == uid;
       allow create: if isOwner() || (isAdmin() && request.auth.uid == uid) || (verified() && request.auth.uid == uid
-        && exists(/databases/$(database)/documents/invites/$(myEmail()))
-        && request.resource.data.keys().hasOnly(['active', 'email', 'name', 'joinedAt', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'tour', 'tourAt', 'func'])
+        && exists(d('invites', myEmail()))
+        && only(profile().concat(['active', 'email', 'joinedAt', 'tour', 'tourAt']))
         && request.resource.data.active == true
         && request.resource.data.email == myEmail());
       allow update: if verified() && request.auth.uid == uid
         && resource.data.active == true
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'lastSeen', 'tour', 'tourAt', 'func'])
+        && changesOnly(profile().concat(['email', 'lastSeen', 'tour', 'tourAt']))
         && request.resource.data.email == myEmail()
         && request.resource.data.active == true;
     }
@@ -162,22 +177,18 @@ service cloud.firestore {
     // Push-Erinnerungen pro Gerät: mit dem Crew-Schlüssel verschlüsselt; Worker und GitHub lesen sie mit dem Dienstkonto (FIREBASE_SA),
     // in der App nur das eigene Gerät und die Admins (Push-Status)
     match /push/{id} {
-      allow get: if signedIn() && id.matches(request.auth.uid + '_[a-z0-9]{10}');
+      allow get: if ownDevice(id);
       allow read: if isAdmin();
-      allow create, update: if signedIn() && id.matches(request.auth.uid + '_[a-z0-9]{10}')
-        && (isMember() || isAdmin())
-        && request.resource.data.keys().hasOnly(['c', 'at'])
-        && request.resource.data.c is string && request.resource.data.c.size() < 60000;
-      allow delete: if signedIn() && id.matches(request.auth.uid + '_[a-z0-9]{10}');
+      allow create, update: if ownDevice(id) && crew() && only(['c', 'at']) && cOk(60000);
+      allow delete: if ownDevice(id);
     }
 
     // Push-Nachrichten an alle (verschlüsselt mit dem Crew-Schlüssel); nur mit Berechtigung «push.send»
     match /broadcasts/{id} {
-      allow read: if can('push.send') || isAdmin();
-      allow create: if can('push.send') && request.resource.data.keys().hasOnly(['c', 'at'])
-        && request.resource.data.c is string && request.resource.data.c.size() < 4000;
+      allow read: if isAdmin() || can('push.send');
+      allow create: if can('push.send') && only(['c', 'at']) && cOk(4000);
       // der Worker markiert im Namen der sendenden Person: sent (einmalig), n, done (Geräte), fin (alle erledigt)
-      allow update: if can('push.send') && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sent', 'n', 'done', 'fin'])
+      allow update: if can('push.send') && changesOnly(['sent', 'n', 'done', 'fin'])
         && (!('done' in request.resource.data) || (request.resource.data.done is list && request.resource.data.done.size() <= 1000));
       allow delete: if isAdmin();
     }
@@ -191,13 +202,11 @@ service cloud.firestore {
     // anlegen mit «Eigene Termine erstellen», ändern und löschen nur, wer ihn angelegt hat, und Admins.
     // gc = Termin-ID im Google Kalender (übernommene Termine; der GitHub-Lauf führt sie nach)
     match /events/{id} {
-      allow read: if isMember() || isAdmin();
-      allow create: if (can('events.add') || isAdmin()) && request.resource.data.keys().hasOnly(['c', 'at', 'by', 'gc'])
-        && request.resource.data.by == request.auth.uid
-        && request.resource.data.c is string && request.resource.data.c.size() < 20000;
+      allow read: if crew();
+      allow create: if (isAdmin() || can('events.add')) && only(['c', 'at', 'by', 'gc'])
+        && request.resource.data.by == request.auth.uid && cOk(20000);
       allow update: if ((resource.data.by == request.auth.uid && can('events.add')) || isAdmin())
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['c'])
-        && request.resource.data.c is string && request.resource.data.c.size() < 20000;
+        && changesOnly(['c']) && cOk(20000);
       allow delete: if resource.data.by == request.auth.uid || isAdmin();
     }
 
@@ -207,24 +216,22 @@ service cloud.firestore {
       allow read, write: if can('settings');
     }
     match /gcal/{doc} {
-      allow read: if can('events.add') || isAdmin();
+      allow read: if isAdmin() || can('events.add');
       allow write: if false;
     }
 
     // Lunch-Menüs und Zwischenverpflegung pro Drehtag und Unit: nur Catering-Rolle und Admins
     match /menus/{date} {
-      allow read: if isMember() || isAdmin();
+      allow read: if crew();
       allow write: if (isAdmin() || isCatering()) && date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && (request.resource == null || (request.resource.data.keys().hasOnly(['u1', 'u2', 'u3', 'u1a', 'u1b', 'u2a', 'u2b', 'u3a', 'u3b', 'tog', 'zw', 'by', 'at'])
-          && request.resource.data.get('zw', '').size() <= 300 && request.resource.data.get('u1a', '').size() <= 300 && request.resource.data.get('u1b', '').size() <= 300
-          && request.resource.data.get('u2a', '').size() <= 300 && request.resource.data.get('u2b', '').size() <= 300
-          && request.resource.data.get('u3a', '').size() <= 300 && request.resource.data.get('u3b', '').size() <= 300));
+        && (request.resource == null || (only(['u1', 'u2', 'u3', 'u1a', 'u1b', 'u2a', 'u2b', 'u3a', 'u3b', 'tog', 'zw', 'by', 'at'])
+          && short('zw') && short('u1a') && short('u1b') && short('u2a') && short('u2b') && short('u3a') && short('u3b')));
     }
 
     // Protokoll: jede angemeldete Person aus der Crew schreibt ihre eigenen Verwaltungs-Änderungen mit; lesen nur Admins oder «Protokoll sehen»
     match /audit/{id} {
-      allow create: if verified() && (isMember() || isAdmin())
-        && request.resource.data.keys().hasOnly(['by', 'at', 'op', 'col', 'id', 'sum'])
+      allow create: if verified() && crew()
+        && only(['by', 'at', 'op', 'col', 'id', 'sum'])
         && request.resource.data.by == myEmail()
         && request.resource.data.sum is string && request.resource.data.sum.size() <= 300
         && request.resource.data.id is string && request.resource.data.id.size() <= 120;

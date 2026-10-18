@@ -291,7 +291,7 @@ document.addEventListener("change",async e=>{const sl=e.target.closest("select[d
 const initials=n=>String(n||"?").split(/[\s@._-]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
 function userList(rows,vis,o){
   const F=[["all","Alle"],["online","Online"],["act","Aktiv"],["inv","Eingeladen"],["off","Gesperrt"],["adm","Mit Rolle"]];
-  const chips='<div class="ufil" role="group">'+F.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>'<button type="button" data-uf="'+k+'" aria-pressed="'+(ADM.uf===k)+'">'+L(t)+' <span>'+ADM.cnt[k]+'</span></button>').join("")+'</div>';
+  const chips='<div class="ufil" role="group">'+F.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>'<button type="button" data-auf="'+k+'" aria-pressed="'+(ADM.uf===k)+'">'+L(t)+' <span>'+ADM.cnt[k]+'</span></button>').join("")+'</div>';
   const card=r=>{
     const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.open.has(r.email),nm=r.name||cp.name||"";
     const badge=o.isAdm(r.email)?'<span class="ust adm">'+L(isOwn?"Owner":"Admin")+'</span>':(o.roleOf(r.email)?'<span class="ust role">'+esc(o.roleName(o.roleOf(r.email)))+'</span>':'<span class="ust norole">'+esc(L("Keine Rolle"))+'</span>');
@@ -325,7 +325,7 @@ function userList(rows,vis,o){
     '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'<button type="button" class="cico uall" data-uall aria-label="'+esc(L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen"))+'" title="'+esc(L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(vis.length&&vis.every(r=>ADM.open.has(r.email))?'<path d="m7 11 5-5 5 5M7 18l5-5 5 5"/>':'<path d="m7 6 5 5 5-5M7 13l5 5 5-5"/>')+'</svg></button></div>'+
     (vis.length?'<div class="ucards">'+vis.map(card).join("")+'</div>':'<p class="ahint">'+L("Keine Treffer.")+'</p>')+'</div>';
 }
-document.addEventListener("click",e=>{const b=e.target.closest("[data-uf]");if(b){ADM.uf=b.dataset.uf;render();return}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-auf]");if(b){ADM.uf=b.dataset.auf;render();return}
   const t=e.target.closest("[data-uact]");if(t){const em=t.dataset.uact;const was=ADM.open.has(em)||ADM.edit===em;if(was){ADM.open.delete(em);if(ADM.edit===em)ADM.edit=""}else ADM.open.add(em);ADM.act=em;render();return}
   const all=e.target.closest("[data-uall]");if(all){const ems=[...document.querySelectorAll(".ucards [data-uact]")].map(x=>x.dataset.uact);const anyClosed=ems.some(x=>!ADM.open.has(x));ADM.open=new Set(anyClosed?ems:[]);if(!anyClosed)ADM.edit="";render()}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dorefresh]");if(!b)return;const r=$("#refresh");if(r)r.click()});

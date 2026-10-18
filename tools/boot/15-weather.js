@@ -40,7 +40,7 @@ async function wxLoad(d){
     const j=await fetch(u).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()});
     WX[key]={at:Date.now(),p,ll,j,busy:false};try{localStorage.setItem("wx:"+key,JSON.stringify({at:Date.now(),ll,j}))}catch(_){}
   }catch(err){WX[key]=Object.assign({},WX[key],{busy:false,err:String(err&&err.message||err)})}
-  if(S.tab==="today"||S.tab==="plan")render();if(document.getElementById("wxpop"))wxPopup(d.date);
+  if(S.tab==="today"||S.tab==="plan")render();if(document.getElementById("wxpop")&&window.WXPOPD===d.date)wxPopup(d.date);
   return WX[key];
 }
 function wxGet(d){const p=wxPlace(d);if(!p)return null;const w=WX[d.date+"|"+p.town];if(!w||(!w.busy&&Date.now()-w.at>3600e3))wxLoad(d);
@@ -54,7 +54,7 @@ function wxTile(d){
 /* compact weather chip for the schedule's day facts */
 window.wxFact=function(d){const w=wxGet(d);if(!w)return "";const dl=w.j&&w.j.daily;if(!dl||!dl.time||!dl.time.length)return "";
   return '<button type="button" class="fact factw" data-wx="'+esc(d.date)+'" title="'+esc(L("Wetterbericht")+" · "+w.p.town)+'">'+WXI(dl.weather_code[0],14)+'<span class="v">'+Math.round(dl.temperature_2m_min[0])+'–'+Math.round(dl.temperature_2m_max[0])+'°'+(dl.precipitation_probability_max[0]!=null?'\u2009'+ICDROP(10)+dl.precipitation_probability_max[0]+'%':'')+'</span></button>'};
-function wxPopup(date){
+function wxPopup(date){window.WXPOPD=date;
   const d=(S.days||[]).find(x=>x.date===date);if(!d)return;const w=wxGet(d);if(!w)return;
   let o=document.getElementById("wxpop");if(!o){o=document.createElement("div");o.id="wxpop";o.className="a2hs";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o);
     o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-wxx]"))o.remove()})}

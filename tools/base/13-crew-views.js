@@ -1,3 +1,5 @@
+/* day.month. without weekday (any language) */
+const dmShort=iso=>{const [,m,d]=String(iso||'').split('-');return d&&m?d+'.'+m+'.':''};
 /* vCard 3.0 for one crew member, so it can be added to the phone's contacts */
 const vEsc=t=>String(t||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/([,;])/g,"\\$1");
 function vCardText(p,g){
@@ -160,7 +162,7 @@ function s5Card(g0){
   const al=s5Addresses(g);
   const tc=x=>String(x).toLowerCase().replace(/(^|[\s–\-\/])(\p{L})/gu,(m,a,c)=>a+c.toUpperCase());
   const motName=ps=>[...new Set(ps.map(p=>tc(String(p.it.set||"").replace(/^VALAIS – /,""))))].join(" / ");
-  const li=p=>'<li><b>'+esc(p.it.sc)+'</b><button class="pd" data-goto="'+esc(p.d.id)+'">'+esc(p.d.short||p.d.label)+' '+fmtDate(p.d.date).slice(3,-5)+'.'+(p.u!=="1"?'<i>'+p.u+'U</i>':'')+'</button><span class="ie '+ieClass(p.it.ie)+'">'+esc(p.it.ie||"")+'</span><span class="pdesc">'+esc(TX(p.it,"d"))+' <button class="scbtn" data-scene="'+esc(p.it.sc)+'">Script</button></span></li>';
+  const li=p=>'<li><b>'+esc(p.it.sc)+'</b><button class="pd" data-goto="'+esc(p.d.id)+'">'+esc(p.d.short||p.d.label)+' '+dmShort(p.d.date)+(p.u!=="1"?'<i>'+p.u+'U</i>':'')+'</button><span class="ie '+ieClass(p.it.ie)+'">'+esc(p.it.ie||"")+'</span><span class="pdesc">'+esc(TX(p.it,"d"))+' <button class="scbtn" data-scene="'+esc(p.it.sc)+'">Script</button></span></li>';
   const body='<div class="mot">'+al.map(([ad,ps])=>'<div><b>'+esc(motName(ps))+'</b><span class="addr" style="font-size:13px">'+esc(ad)+' · <a href="'+esc(partsHref(ps,ad))+'" target="_blank" rel="noopener noreferrer">Maps</a></span><ul class="plot">'+ps.map(li).join("")+'</ul></div>').join("")+'</div>';
   const days=[...new Map(g.parts.map(p=>[p.d.id,p.d])).values()].sort((x,y)=>x.date<y.date?-1:1).map(d=>d.short||d.label).join(" · ");
   const n=g.parts.length;
@@ -189,7 +191,7 @@ function sceneTexts(scenes,uf){
 }
 function plotHTML(scenes){
   const t=sceneTexts(scenes);if(!t.length)return"";
-  return '<ul class="plot">'+t.map(({it,d,u})=>'<li><b>'+esc(it.sc)+'</b><button class="pd" data-goto="'+esc(d.id)+'">'+esc(d.short||d.label)+' '+fmtDate(d.date).slice(3,-5)+'.'+(u!=="1"?'<i>'+u+'U</i>':'')+'</button><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="pdesc">'+esc(TX(it,"d"))+'</span>'+fpLinks([],blkFor(it.sc),'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+'</li>').join("")+'</ul>';
+  return '<ul class="plot">'+t.map(({it,d,u})=>'<li><b>'+esc(it.sc)+'</b><button class="pd" data-goto="'+esc(d.id)+'">'+esc(d.short||d.label)+' '+dmShort(d.date)+(u!=="1"?'<i>'+u+'U</i>':'')+'</button><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="pdesc">'+esc(TX(it,"d"))+'</span>'+fpLinks([],blkFor(it.sc),'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+'</li>').join("")+'</ul>';
 }
 function locCard(g0){
   if(g0.s5)return s5Card(g0);

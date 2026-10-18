@@ -5,7 +5,7 @@
 const NAV={last:null,pop:false,skip:0,open:0};
 /* windows that the back button may close (the welcome, the tour and the start screen are left alone) */
 function navDialogs(){const l=[];
-  document.querySelectorAll("body > .a2hs").forEach(d=>{if(!d.hidden&&d.isConnected&&!["welcome","gate","splash"].includes(d.id)&&getComputedStyle(d).display!=="none")l.push(d)});
+  document.querySelectorAll("body > .a2hs").forEach(d=>{if(!d.hidden&&d.isConnected&&!["welcome","gate","splash"].includes(d.id)&&!(d.id==="acct"&&typeof ONBOARD!=="undefined"&&ONBOARD)&&getComputedStyle(d).display!=="none")l.push(d)});
   const g=document.getElementById("blkgal");if(g&&!l.includes(g))l.push(g);
   const sc=document.getElementById("scn");if(sc&&!sc.hidden)l.push(sc);
   const se=document.getElementById("search");if(se&&!se.hidden)l.push(se);

@@ -56,7 +56,7 @@ const sceneMap=()=>memo("scmap",()=>{const m=new Map();for(const l of S.locs){if
 const partsHref=(ps,ad)=>{const m=sceneMap();for(const p of ps){const u=m.get(norm(p.it.sc||""));if(u)return u}return maps(ad)};
 /* only https links from the data ever become clickable */
 const safeUrl=u=>/^https?:\/\/[^\s"'<>]+$/i.test(String(u||""))?String(u):"#";
-const maps=q=>locMapIndex().get(norm(q))||mapsSearch(q);
+const maps=q=>{const u=locMapIndex().get(norm(q));return u?safeUrl(u):mapsSearch(q)};   /* safeUrl: no quotes or javascript: from the documents */
 /* a location's own link first (two motifs can share an address but have different pins) */
 const locHref=(l,ad)=>(l&&/^https:\/\//.test(l.map||""))?l.map:maps(ad);
 const mapsSearch=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
@@ -70,7 +70,7 @@ try{const t=localStorage.getItem("tab");if(t)S.tab=({map:"loc",music:"plan"})[t]
 /* the app always opens on «Heute» (unless a link asks for another page) */
 /* start page: every time the app is started or opened anew it shows «Today»; with Today switched off the Drehplan at
    today (or the next day). A reload while using the app (window.__REL, from the start screen) keeps the page. */
-window.startTab=()=>{try{const v=localStorage.getItem("today")||"";return (v==="0"||v.startsWith("0|"))?"plan":"today"}catch(_){return "today"}};
+window.startTab=()=>{if(!window.APPVER)return "plan";/* Claude-app version: no «Today» */try{const v=localStorage.getItem("today")||"";return (v==="0"||v.startsWith("0|"))?"plan":"today"}catch(_){return "today"}};
 if(!location.hash&&!window.__REL)S.tab=startTab();
 
 function castChips(ids){

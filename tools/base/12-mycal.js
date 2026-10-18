@@ -142,7 +142,7 @@ function renderPlan(){
   let h=dayNav(PD.filter(d=>d.kind==="shoot"||!ppDates.has(d.date)),d=>d.id===S.day,"data-day","id",null,ppChips);
   if(ppDay){let o='';try{if(window.ownDayHTML)o=window.ownDayHTML(ppDay.date)}catch(_){}return h+renderPrePro(ppDay)+o}
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
-  const d=S.days.find(x=>x.id===S.day);
+  const d=S.days.find(x=>x.id===S.day)||PD[0];if(!d)return h+'<div class="empty">'+L('Noch keine Drehtage.')+'</div>';
   h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
   if(d.kind==="shoot"){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];

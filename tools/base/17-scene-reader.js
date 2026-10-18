@@ -48,14 +48,14 @@ function sceneSheet(){
   let s=document.getElementById("scn");
   if(!s){s=document.createElement("div");s.id="scn";s.className="scrn";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
     s.addEventListener("click",e=>{const n=e.target.closest("[data-scene]");if(n){e.stopPropagation();openScene(n.dataset.scene);return}if(e.target===s||e.target.closest("[data-scnclose]"))closeScene()});
-    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!s.hidden)closeScene()})}
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!e.defaultPrevented&&!s.hidden)closeScene()})}
   return s;
 }
 function closeScene(){const s=document.getElementById("scn");if(s){s.hidden=true;s.innerHTML=""}document.body.style.overflow=""}
 /* schedule facts for the scene shown in the script viewer (day, time, unit, pages, duration, cast …) */
 /* "09:00" + "3h30" -> "12:30" */
 function endTime(t,dur){
-  const a=/^(\d{1,2})[:.](\d{2})/.exec(t||""),b=/^(\d+)\s*h\s*(\d{1,2})?$/i.exec(String(dur||"").trim())||(/^(\d+)\s*min$/i.exec(String(dur||"").trim())?[0,0,/^(\d+)/.exec(dur)[1]]:null);
+  const a=/^(\d{1,2})[:.](\d{2})/.exec(t||""),ds=String(dur||"").trim(),mm=/^(\d+)\s*min$/i.exec(ds),b=/^(\d+)\s*h\s*(\d{1,2})?$/i.exec(ds)||(mm?[0,0,mm[1]]:null);
   if(!a||!b)return"";const m=(+a[1]*60+ +a[2]+(+b[1]||0)*60+(+b[2]||0))%1440;return pad2(Math.floor(m/60))+":"+pad2(m%60);
 }
 function schedIndex(){return memo("scsched",()=>{const m={};for(const d of S.days)for(const [u,its] of unitLists(d))for(const it of its){if(!it.sc)continue;const k=norm(it.sc);(m[k]=m[k]||[]).push({d,u,it})}return m})}
@@ -84,7 +84,7 @@ function fpLinks(fps,blk,lead){const l=(lead?[lead]:[]).concat(arr(fps).map(f=>'
    a PDF whose pages are not in the app yet opens in Dropbox as before */
 const pdfLbl=n=>String(n).replace(/\.pdf$/i,"").replace(/^scene[\s_]*/i,"").replace(/(^|[^0-9A-Za-z])0+(?=\d)/g,"$1");
 function pdfDocs(b){const docs=new Map();for(const m of bmed(b))if(m.g==="pdf"){const k=String(m.n).split(" · ")[0];if(!docs.has(k))docs.set(k,0);docs.set(k,docs.get(k)+1)}return docs}
-function pdfBtns(b){const docs=pdfDocs(b),out=[],done=new Set();
+function pdfBtns(b){const docs=typeof window.blkImg==="function"?pdfDocs(b):[],out=[],done=new Set();   /* in-app pages only where the viewer exists, else the Dropbox links */
   for(const [k,n] of docs){done.add(pdfLbl(k));out.push('<button type="button" class="fpl scp" data-blkpdf="'+esc(b.name)+'" data-pdfn="'+esc(k)+'" title="'+esc(k+" · "+n+" "+L(n===1?"Seite":"Seiten"))+'">'+esc(pdfLbl(k))+'</button>')}
   for(const f of arr(b.pdfs))if(!done.has(f.l))out.push('<a class="fpl scp" href="'+esc(safeUrl(f.u))+'" target="_blank" rel="noopener noreferrer">'+esc(f.l)+'</a>');
   return out}

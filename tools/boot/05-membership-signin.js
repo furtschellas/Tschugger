@@ -34,7 +34,7 @@ async function checkMember0(){
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
   MEMBER=m;return "ok";
 }
-function clearLocal(){try{localStorage.removeItem(memKey());localStorage.removeItem("dk:v1");localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
+function clearLocal(){try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();OWNSUB=null}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();MENUSUB=null}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{localStorage.removeItem(memKey());localStorage.removeItem("dk:v1");localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
 /* ---- sign-in screen ---- */
 let AUTHMODE="login";
 const errText=e=>{const c=(e&&e.code)||"";
