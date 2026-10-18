@@ -1057,6 +1057,7 @@ def main():
                 tt = _bd_join(re.sub(r"(?m)^Tschugger Sched - .*page # \d+[ \t]*$", "", stxt.replace("\f", "\n")))
                 diff = []
                 for lab in BD_LABELS:
+                    if lab == "Loc": continue   # «Loc:» also starts the location line of every scene
                     n_txt = len(re.findall(r"(?:^|[\s,])%s:\s" % re.escape(lab).replace(r"\ ", r"\s+"), tt))
                     n_bd = sum(1 for day in pb.values() for v in day.values() for c in v.get("c") or [] if c[0] == lab or c[0].startswith(lab + ": ") or c[0].endswith(": " + lab))
                     if n_txt != n_bd: diff.append("%s %d/%d" % (lab, n_bd, n_txt))
