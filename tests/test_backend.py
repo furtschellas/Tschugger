@@ -252,4 +252,43 @@ check("2nd Unit: Grün- und Orangetöne zählen, Rot/Gelb/Blau/Weiss nicht",
       [U._is_green(c) for c in ("FF34A853", "00FF00", "B7E1CD", "0B8043", "FF9900", "E69138", "F6B26B", "FCE5CD", "FF0000", "FFFF00", "4285F4", "FFFFFF", "999999")]
       == [True] * 8 + [False] * 5, [U._is_green(c) for c in ("FCE5CD",)])
 
+# scene details from the schedule PDF text (also split scene numbers «186 / pt1A», FX/XX names in the head, Loc under Special)
+_st = """Day #1 - SR: 7:55 SS: 18:37 - Tue 20/10/2026
+12:00: Shoot B-Cam only:
+
+186
+pt1A
+
+3/8 pgs E/Ev VALAIS - TANNEN FOREST 1, 2
+
+12:00
+0h45m
+
+Bax + Pirmin crossing thick bushes.
+Loc: Tannenwald Kieswerk Muster E
+
+Crew: Armourer/SFX, Props: Branch (dummy soft),
+Weapons police in holster, Notes: shoot on other part / no drone, Story Date:
+02.11.2032
+
+Day #10 - SR 7:11 SS: 17:18
+184E 1 1/8 pgs E/N VALAIS - LAKE - SHORE 1, 2 / FX: Double BJ (in water), Stunt
+Double Pirmin / 6 XX: 6xPolice Officer
+Valais
+
+20:15
+1h45m
+
+Fight. Loc: Collombey-Murat
+
+Crew: Lifeguard, Special:
+Cam Boat or Platform, Loc: Warmup Tent, Stunt: Stone (soft dummy, from stunt), Props: Postcard with QR-
+code
+"""
+_pb = U.parse_breakdown(_st)
+check("Szenen-Details: Abteilungen je Szene aus dem Drehplan gelesen",
+      _pb.get(1, {}).get("186pt1a", {}).get("c") == [["Crew", ["Armourer/SFX"]], ["Props", ["Branch (dummy soft)", "Weapons police in holster"]], ["Notes", ["shoot on other part", "no drone"]], ["Story Date", ["02.11.2032"]]]
+      and _pb.get(10, {}).get("184e", {}).get("h") == {"FX": "Double BJ (in water), Stunt Double Pirmin", "XX": "6xPolice Officer Valais"}
+      and _pb[10]["184e"]["c"] == [["Crew", ["Lifeguard"]], ["Special", ["Cam Boat or Platform"]], ["Loc", ["Warmup Tent"]], ["Stunt", ["Stone (soft dummy, from stunt)"]], ["Props", ["Postcard with QR-code"]]], _pb)
+
 sys.exit(done("Hintergrund"))

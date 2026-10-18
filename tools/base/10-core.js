@@ -120,6 +120,20 @@ function pvApply(){const b=document.body;for(const k of ["i","d","c","a","b"])b.
 function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","a","b"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" '+ariaTip(L(PVLBL[k]))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+(post?'<span class="pvsep"></span>'+post:'')+'</span>'}
 /* drive time shown: up to 20 min +3 min buffer, longer drives +15 % (rounded up) */
 function driveMin(m){m=+m||0;return m>20?Math.ceil(m*1.15):m+3}
+/* scene details from the schedule (Crew, Stunt, Props, Vehicles, SFX, VFX, Mup/Hair, Costume, Notes …): meta.bd["date|scene"] */
+const bdKey=sc=>String(sc||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,"");
+function bdOn(){try{return localStorage.getItem("bdshow")!=="0"}catch(_){return true}}
+let BDF="";   /* department filter in the schedule ("" = all) */
+function bdFor(date,sc){const m=(S.meta&&S.meta.bd)||{};return m[date+"|"+bdKey(sc)]||null}
+function bdHTML(date,sc){if(!bdOn()||!date)return "";const b=bdFor(date,sc);if(!b)return "";
+  const h=b.h||{},cs=arr(b.c).filter(c=>!BDF||c[0]===BDF);
+  const hd=(!BDF||BDF==="FX")&&h.FX?[["FX",[h.FX]]]:[];const hx=(!BDF||BDF==="XX")&&h.XX?[["XX",[h.XX]]]:[];
+  const rows=hd.concat(hx,cs);if(!rows.length)return "";
+  return '<details class="bd"'+(BDF?' open':'')+'><summary>'+esc(L("Details"))+(BDF?' · '+esc(BDF):'')+'</summary><dl class="bdl">'+rows.map(([k,v])=>'<div class="bdr"><dt>'+esc(k)+'</dt><dd>'+arr(v).map(x=>'<span>'+esc(x)+'</span>').join("")+'</dd></div>').join("")+'</dl></details>'}
+/* the departments of one day (for the filter chips) */
+function bdDepts(date){const m=(S.meta&&S.meta.bd)||{},seen=[];for(const k in m){if(!k.startsWith(date+"|"))continue;const b=m[k];if((b.h||{}).FX&&!seen.includes("FX"))seen.push("FX");if((b.h||{}).XX&&!seen.includes("XX"))seen.push("XX");arr(b.c).forEach(c=>{if(!seen.includes(c[0]))seen.push(c[0])})}
+  const order=["Crew","Stunt","FX","XX","Special","Loc","Elec","Grip","Prod","Set Dec","Set dressing","Props","Vehicles","SFX","VFX","PreProd Footage","Mup/Hair","Costume","Sound","Animals","Notes","Story Date"];
+  return seen.sort((a,b)=>(order.indexOf(a)+1||99)-(order.indexOf(b)+1||99))}
 function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
@@ -136,7 +150,7 @@ function itemHTML(it){
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
     (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
-    castChips(it.cast)+
+    castChips(it.cast)+bdHTML(window.__mctx&&window.__mctx.date,it.sc)+
     (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
     '</div></li>';
 }
