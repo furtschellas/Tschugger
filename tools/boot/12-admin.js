@@ -183,7 +183,7 @@ const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).n
 const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Keine Rolle (eingeschränkt)")+'</option>'+(isOwner()?'<option value="owner"'+(roleOf(r.email)==="owner"?' selected':'')+'>'+L("Owner")+'</option>':'')+(isAdmin()?'<option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>':'')+ADM.roles.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(x=>'<option value="'+esc(x.id)+'"'+(roleOf(r.email)===x.id?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join("")+'</select></label>';
 function editForm(r,withRole){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
-  return (withRole&&canRole(r.email)?'<div class="aerole">'+roleSel(r)+'</div>':'')+'<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
+  return (window.simBtn?window.simBtn(r.email):'')+(withRole&&canRole(r.email)?'<div class="aerole">'+roleSel(r)+'</div>':'')+'<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
     (m?'<label>'+L("Vorname")+'<input name="fn" maxlength="60" value="'+v(m.firstName)+'"></label><label>'+L("Nachname")+'<input name="ln" maxlength="60" value="'+v(m.lastName)+'"></label>'+
        '<label>'+L("Funktion")+'<input name="rl" maxlength="80" value="'+v(i.role||r.role||(m&&m.func))+'"></label>'+
        '<label>'+L("Sprache der App")+langSel("lg",m.lang||"de")+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" value="'+v(m.birthday)+'"></label><label>'+L("Geschlecht (optional)")+genderSel("gd",m.gender||"")+'</label>'+contactFields(m,"e")+

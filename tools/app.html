@@ -693,6 +693,7 @@ html[data-theme="light"] .scbtn,html[data-theme="light"] .pillbtn{border-color:v
 .chgu{border-top:1px solid var(--rule);padding:6px 0}.chgu:first-of-type{border-top:0}.chgu>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;padding:4px 0}.chgu>summary::-webkit-details-marker{display:none}.chgu>summary::before{content:"▸";color:var(--accent);width:12px}.chgu[open]>summary::before{content:"▾"}.chgu .chgn{font-size:12px;color:var(--muted);font-weight:400}.chgu[data-chgu="2"]>summary .chgun{color:var(--accent)}
 button.factc{font:inherit;cursor:pointer;color:var(--muted)}button.factc.on{color:var(--accent);border-color:var(--accent)}
 .bd{margin-top:6px;font-size:13px}.bd>summary{list-style:none;cursor:pointer;color:var(--muted);font-weight:600}.bd>summary::-webkit-details-marker{display:none}.bd>summary::before{content:"▸ ";color:var(--accent)}.bd[open]>summary::before{content:"▾ "}.bdl{margin:6px 0 0;display:grid;gap:4px}.bdr{display:grid;grid-template-columns:minmax(92px,auto) 1fr;gap:8px;align-items:baseline}.bdr dt{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent)}.bdr dd{margin:0;display:flex;flex-wrap:wrap;gap:2px 0}.bdr dd span:not(:last-child)::after{content:" · ";color:var(--muted)}.bdf{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.bdfb{font:inherit;font-size:12px;padding:4px 10px;border-radius:14px;border:1px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer}.bdfb.on{border-color:var(--accent);color:var(--accent);font-weight:600}@media(max-width:520px){.bdr{grid-template-columns:1fr;gap:0}}
+#simbar{position:fixed;left:0;right:0;top:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:calc(env(safe-area-inset-top) + 6px) 12px 6px;background:var(--accent);color:#fff;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.25)}#simbar button{font:inherit;font-weight:700;border:1px solid #fff;background:transparent;color:#fff;border-radius:14px;padding:3px 12px;cursor:pointer}body.simming{padding-top:calc(env(safe-area-inset-top) + 40px)}.simbtn{margin:0 0 10px}
 </style>
 
 <div class="wrap">
@@ -1042,7 +1043,7 @@ const NOSET=/^(postprod|verleih|buchhalt|autor|casting)/i;
 const myAdmin=()=>{try{return typeof window.canPerm!=="function"||window.canPerm("mycal.all")}catch(_){return false}};
 function myIdentity(){
   const people=mailPeople();let nm="",em="";
-  try{if(typeof ME!=="undefined"&&ME&&ME.email)em=String(ME.email).toLowerCase()}catch(_){}
+  try{em=String(window.simEmail?window.simEmail():(typeof ME!=="undefined"&&ME&&ME.email)||"").toLowerCase()}catch(_){}
   try{if(typeof MEMBER!=="undefined"&&MEMBER)nm=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
   let pick="";try{if(myAdmin())pick=localStorage.getItem("myname")||""}catch(_){}
   let p=null;

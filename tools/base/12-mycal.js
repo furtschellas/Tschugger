@@ -3,7 +3,7 @@ const NOSET=/^(postprod|verleih|buchhalt|autor|casting)/i;
 const myAdmin=()=>{try{return typeof window.canPerm!=="function"||window.canPerm("mycal.all")}catch(_){return false}};
 function myIdentity(){
   const people=mailPeople();let nm="",em="";
-  try{if(typeof ME!=="undefined"&&ME&&ME.email)em=String(ME.email).toLowerCase()}catch(_){}
+  try{em=String(window.simEmail?window.simEmail():(typeof ME!=="undefined"&&ME&&ME.email)||"").toLowerCase()}catch(_){}
   try{if(typeof MEMBER!=="undefined"&&MEMBER)nm=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
   let pick="";try{if(myAdmin())pick=localStorage.getItem("myname")||""}catch(_){}
   let p=null;

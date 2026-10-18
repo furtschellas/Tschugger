@@ -26,7 +26,7 @@ async function ownLoad(force){
   OWN.busy=false}
 /* is this event for the person «me» (identity from the crew list)? */
 function ownFor(ev,me){
-  const em=lc(me.email),self=ME&&em&&em===lc(ME.email);
+  const em=lc(me.email),self=ME&&em&&em===lc(window.simEmail());
   if(self&&ev.byEmail&&lc(ev.byEmail)===em)return true;   /* who made it always sees it */
   if(!ev.roles&&!ev.depts&&!ev.people)return true;
   if((ev.people||[]).some(p=>(p.email&&em&&lc(p.email)===em)||(p.k&&p.k===me.k)))return true;
@@ -48,7 +48,7 @@ function ownPeople(){const seen=new Set();return mailPeople().filter(p=>p.name&&
 /* below «Speichern»: the appointments already added (own ones; admins: all) – tap one to change it */
 function ownAud(ev){if(!ev.roles&&!ev.depts&&!ev.people)return L("Alle");const r=(ev.roles||[]).map(x=>x==="owner"?L("Owner"):x==="admin"?L("Admin"):x===""?L("Keine Rolle"):((OWN.roles||[]).find(y=>y.id===x)||{}).name||x);
   return r.concat((ev.depts||[]).map(x=>HIT(x))).concat((ev.people||[]).map(p=>p.name)).join(", ")}
-function ownListHTML(cur){const t=todayISO(),mine=(OWN.list||[]).filter(ev=>ev.date>=t&&(isAdmin()||(ev.byEmail&&lc(ev.byEmail)===lc(ME.email)))).sort((a,b)=>(a.date+(a.t||"")).localeCompare(b.date+(b.t||"")));
+function ownListHTML(cur){const t=todayISO(),mine=(OWN.list||[]).filter(ev=>ev.date>=t&&(isAdmin()||(ev.byEmail&&lc(ev.byEmail)===lc(window.simEmail())))).sort((a,b)=>(a.date+(a.t||"")).localeCompare(b.date+(b.t||"")));
   return '<div class="oelist"><h4>'+esc(L("Hinzugefügte Termine"))+' ('+mine.length+')</h4>'+(mine.length?mine.map(ev=>{const dt=new Date(ev.date+"T12:00:00");
     return '<button type="button" class="oeli'+(ev.id===cur?' on':'')+'" data-oego="'+esc(ev.id)+'"><span class="oeld">'+WDL(dt)+' '+ddmm(dt)+(ev.t?'<br>'+esc(ev.t):'')+'</span><span class="oelb"><b>'+esc(ev.title||"")+'</b><small>'+esc(L("Für"))+': '+esc(ownAud(ev))+(ev.gc?' · '+esc(L("Google Kalender")):'')+'</small></span></button>'}).join(""):'<p class="ghint">'+esc(L("Noch keine kommenden Termine hinzugefügt."))+'</p>')+'</div>'}
 async function ownDialog(id,pre){

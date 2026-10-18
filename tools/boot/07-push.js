@@ -42,7 +42,7 @@ async function pushSub(create){const reg=await pushReg();let sub=await reg.pushM
   if(sub&&sub.options&&sub.options.applicationServerKey&&b64uOf(sub.options.applicationServerKey)!==k){try{await sub.unsubscribe()}catch(_){}sub=null;create=true;try{localStorage.removeItem("pushlast")}catch(_){}}
   if(!sub&&create)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u8(k)});if(sub)sub.__k=k;return sub}
 async function pushSync(){
-  if(!ME||!ME.uid||!pushOK()||PUSHBUSY)return;PUSHBUSY=true;
+  if(!ME||!ME.uid||!pushOK()||PUSHBUSY||(window.simOn&&window.simOn()))return;PUSHBUSY=true;   /* never while viewing as another person */
   try{const c=pushCfg(),{F,db}=await fb(),ref=F.doc(db,"push",ME.uid+"_"+pushDev());let last="";try{last=localStorage.getItem("pushlast")||""}catch(_){}
     if(!(c.on||newsAny(c))||Notification.permission!=="granted"){if(last){await F.deleteDoc(ref).catch(()=>{});try{localStorage.removeItem("pushlast")}catch(_){}}return}
     const sub=await pushSub(true);if(!sub)return;

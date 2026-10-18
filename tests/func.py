@@ -337,6 +337,11 @@ async def owner_tests(p, port):
           v().querySelector('[data-bdtog]').click();const off=!v().querySelector('details.bd')&&!v().querySelector('[data-bdf]');
           v().querySelector('[data-bdtog]').click();const on=!!v().querySelector('details.bd');BDF='';S.meta.bd=keep;localStorage.removeItem('bdshow');render();return {a,chips,only,off,on}})()""")
         check("Drehplan: Szenen-Details (zu), Filter nach Abteilung, Knopf Details ein/aus", bdt in (None, {"a": True, "chips": ",Crew,FX,Props", "only": True, "off": True, "on": True}), bdt, public=True)
+        sim = await E("""(async()=>{if(typeof admLoad==='function'&&!ADM.loaded)await admLoad();const em=Object.keys(ADM.ur||{}).find(e=>ADM.ur[e]&&ADM.ur[e]!=='admin'&&!ADMINS.includes(e)&&lc(e)!==lc(ME.email));
+          if(!em)return null;const btn=simBtn(em).includes('data-simstart');simStart(em);const r={btn,adm:isAdmin(),bar:!!document.getElementById('simbar'),tab:S.tab,who:simEmail()===em,perms:MYPERMS.length===arr((ADM.roles.find(x=>x.id===ADM.ur[em])||{}).perms).length};
+          const f=document.createElement('form');document.body.appendChild(f);let saved=true;f.addEventListener('submit',()=>{saved=true});saved=false;f.dispatchEvent(new Event('submit',{cancelable:true}));f.remove();r.blocked=!saved;
+          simEnd();r.back=isOwner()&&!document.getElementById('simbar')&&simEmail()===ME.email;return r})()""")
+        check("Benutzer: Ansicht als andere Person (Rechte der Rolle, Balken, nichts speichern, zurück)", sim in (None, {"btn": True, "adm": False, "bar": True, "tab": "today", "who": True, "perms": True, "blocked": True, "back": True}), sim, public=True)
         # blocking per scene: parts get their own part + the general pictures, never another part; slideshow scenes «25 SL2» never scene 25
         bf = await E("""(()=>{const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
           S.meta.blocking=[{name:'Scene_186',sc:['186'],media:[{f:'a'},{f:'b',p:'186pt1'},{f:'c',p:'186pt2'}],pdfs:[{l:'186 pt1'},{l:'186 pt2'}]},
