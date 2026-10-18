@@ -22,9 +22,6 @@ function chgDetect(){
   if(!(S.days||[]).length)return;
   const now=chgSnap();now.v2=1;let old=null;try{old=JSON.parse(localStorage.getItem("snap:v1")||"null")}catch(_){}
   try{localStorage.setItem("snap:v1",JSON.stringify(now))}catch(_){}
-  /* the first takeover of the 2nd unit planning (18.10.) is not a change: removed, and once not compared;
-     every later change of the 2nd unit is shown again */
-  {const cut=Date.parse("2026-10-18T10:45:00Z"),l=chgLoad(),k=l.filter(c=>!(c.u==="2"&&c.at<cut));if(k.length!==l.length)chgSave(k)}
   if(!old||!old.sc)return;
   const skipU2=old.v2!==1;
   const t=todayISO(),out=[],at=Date.now();
@@ -53,7 +50,6 @@ const chgSeenGone=(at,seen)=>at<=seen&&Date.now()-seen>2*864e5;
 function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem("chgseen:v1")||0);return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t&&!chgSeenGone(c.at,seen)).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>b.at-a.at||String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
 /* used by the schedule (itemHTML): mark a changed scene */
 /* change marks in the schedule: switched on/off with the round button «Änderungen» (S.pv.g, CSS .pv-no-g) */
-window.chgOn=()=>S.pv.g!==false;
 window.chgFor=(date,u,sc)=>{const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};
 document.addEventListener("click",e=>{if(!e.target.closest("[data-chgseen]"))return;try{localStorage.setItem("chgseen:v1",String(Date.now()))}catch(_){}render()});
 
