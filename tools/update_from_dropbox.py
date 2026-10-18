@@ -669,8 +669,10 @@ def sheet_tabs(url):
     if not m: return []
     r = requests.get("https://docs.google.com/spreadsheets/d/%s/htmlview" % m.group(1), timeout=60)
     if r.status_code != 200: return []
-    tabs = re.findall(r'id="sheet-button-(\d+)"[^>]*>\s*<a[^>]*>([^<]+)</a>', r.text)
-    if not tabs: tabs = [(g, n) for n, g in re.findall(r'name:\s*"([^"]+)"[^}]*?gid:\s*"?(\d+)', r.text)]
+    tabs = re.findall(r'id="sheet-button-(\d+)".*?<a[^>]*>(.*?)</a>', r.text, re.S)
+    more = [(g, n) for n, g in re.findall(r'name:\s*"((?:[^"\\]|\\.)+)"[^}]*?gid:\s*"?(\d+)', r.text)]
+    have = {g for g, _ in tabs}; tabs += [(g, n) for g, n in more if g not in have]
+    tabs = [(g, re.sub(r"<[^>]+>", "", n)) for g, n in tabs]
     import html as _html
     return [(g, _html.unescape(n).strip()) for g, n in tabs]
 
@@ -855,13 +857,15 @@ def main():
             def dayno(d):
                 m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")); return int(m.group(1)) if m else None
             newc = {}
-            tabs = sheet_tabs(url)
-            for gid, name in tabs:
+            tabs = sheet_tabs(url); byday = {}
+            for gid, name in tabs:   # several tabs of one day (e.g. «#11-Lake-Hospital» and «#11-AuntsHouse») are read together
                 m = re.match(r"\s*#\s*(\d+)\b", name)
-                if not m or re.search(r"(?i)\balt\b|\bold\b", name): continue
-                no = int(m.group(1)); day = next((d for d in shoot if dayno(d) == no), None)
+                if m and not re.search(r"(?i)\balt\b|\bold\b", name): byday.setdefault(int(m.group(1)), []).append((gid, name))
+            for no, v in sorted(byday.items()):
+                gid, name = "+".join(g for g, _ in v), " + ".join(n for _, n in v)
+                day = next((d for d in shoot if dayno(d) == no), None)
                 if not day: continue
-                txt = sheet_csv(url, gid) or read_sheet(url.split("#")[0].split("?")[0] + "?gid=" + gid) or ""
+                txt = "\n\n".join("BLATT %s:\n%s" % (n, sheet_csv(url, g) or read_sheet(url.split("#")[0].split("?")[0] + "?gid=" + g) or "") for g, n in v)
                 if len(txt) < 40: print("::notice::2nd Unit Tag %d: Blatt leer (%d Zeichen)" % (no, len(txt))); continue
                 h = hashlib.sha256(txt.encode()).hexdigest()[:16]
                 old2 = cache.get(gid) or {}
@@ -879,8 +883,8 @@ def main():
                     else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
                 except Exception as e:
                     print("::notice::2nd Unit Tag %d: %s" % (no, type(e).__name__)); failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
-            print("::notice::2nd Unit: %d Blätter, %d Drehtage zugeordnet, %d gespeichert, Drehtage im Plan: %s"
-                  % (len(tabs), sum(1 for g, n in tabs if re.match(r"\s*#\s*\d+", n)), len(newc), ",".join(str(dayno(d)) for d in shoot)[:120]))
+            print("::notice::2nd Unit: %d Blätter, Drehtage %s in der Tabelle, %d übernommen"
+                  % (len(tabs), ",".join(str(k) for k in sorted(byday)), len(newc)))
             cache = newc
             for c in cache.values():   # also after a new Drehplan: the detailed 2nd unit order stays on its day
                 day = next((d for d in shoot if dayno(d) == c["no"]), None)
