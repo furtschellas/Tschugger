@@ -98,9 +98,12 @@ async function maybeWelcome(){
 }
 /* ---- presence: signed-in members leave a «last seen» mark every 2 minutes while the app is open (shown to admins) ---- */
 let SEENT=null,SEENAT=0;
+/* «app-ios», «web-android» …: installed app or browser, and the kind of device (shown to admins in the user list) */
+const appKind=()=>{const ua=navigator.userAgent||"",inst=typeof isStandalone==="function"&&isStandalone();
+  const dev=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)?"ios":/Android/i.test(ua)?"android":"desktop";return (inst?"app-":"web-")+dev};
 async function markSeen(){
   if(!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
-  try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{lastSeen:F.serverTimestamp()})}catch(err){console.warn("seen",err&&err.code||err)}
+  try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{lastSeen:F.serverTimestamp(),app:appKind()})}catch(err){console.warn("seen",err&&err.code||err)}
 }
 setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading&&Date.now()-(ADM.at||0)>=300e3){ADM.at=Date.now();ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
 function startSeen(){clearInterval(SEENT);SEENAT=0;markSeen();SEENT=setInterval(markSeen,120e3)}

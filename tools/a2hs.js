@@ -74,7 +74,10 @@ async function a2hsCheck(){
   if(DEFERRED){if(a2hsState()==="done")a2hsSet("removed:"+Date.now());return "missing"}
   return "unknown";
 }
-function a2hsDue(){return !isStandalone()&&!a2hsState()}   /* any stored state (asked, later, done) means: never ask again by itself */
+function a2hsDue(){if(isStandalone())return false;const st=a2hsState();if(!st)return true;
+  /* App-Verwaltung → App: «immer wieder auffordern» – everyone without the installed app is asked again every 3 days */
+  if(window.A2AGAIN===true&&st!=="done"){const t=+(String(st).match(/\d{10,}/)||[0])[0];return !t||Date.now()-t>3*864e5}
+  return false}   /* any stored state (asked, later, done) means: never ask again by itself */
 function showA2hs(steps){
   if(!steps&&!a2hsState())a2hsSet("asked:"+Date.now()); /* ask only once per device (desktop or home screen); later only from «Mein Konto» */
   let s=document.getElementById("a2hs");
