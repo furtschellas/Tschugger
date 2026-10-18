@@ -420,6 +420,12 @@ async def owner_tests(p, port):
             const keep=x.head;x.head='EXT. TESTORT - NACHT';await dckRun();x.head=keep;return (DCK.res||[]).some(r=>r.lvl==='warn'&&r.text.includes('Innen/Aussen')&&r.text.includes(it.sc+' ('))})()""")
         if sd2 is not None:
             check("Dokumente prüfen: Drehplan ↔ Drehbuch erkennt Innen/Aussen-Widerspruch", sd2)
+        # the other way round: a scene that is only in the script is reported; one marked as omitted is not
+        rv = await E(r"""(async()=>{const sl=await scriptData();if(!sl.length)return null;sl.push({sc:'9997',head:'INT. TESTORT - TAG',text:'x'},{sc:'9998',head:'OMITTED',text:''});
+            await dckRun();sl.splice(-2,2);const r=(DCK.res||[]).filter(x=>x.area==='Drehbuch ↔ Drehplan');await dckRun();
+            return {hit:r.some(x=>x.lvl==='warn'&&x.text.includes('9997')),omit:!r.some(x=>x.text.includes('9998'))}})()""")
+        if rv is not None:
+            check("Dokumente prüfen: Szenen im Drehbuch, die im Drehplan fehlen", rv == {"hit": True, "omit": True}, rv, public=True)
         check("Dokumente prüfen: erkennt Szenen ohne Location als Unstimmigkeit", await E("(DCK.res||[]).some(x=>x.lvl==='warn'&&x.area==='Drehplan ↔ Locations')"))
         oc = await E("(()=>{DCK.res=[{lvl:'info',area:'A',text:'x'},{lvl:'warn',area:'B',text:'y'},{lvl:'ok',area:'C',text:'z'}];S.tab='admin';ADM.sub='log';render();const c=x=>{const e=document.querySelector(x);return e?getComputedStyle(e).color:''};return {note:c('#view details.tstsu.note>summary'),hint:c('#view .lsum .tsth .dckn'),bad:c('#view details.tstsu.bad>summary')}})()")
         check("Dokumente prüfen: Hinweise orange, Unstimmigkeiten rot", oc["note"] == "rgb(240, 138, 36)" and oc["hint"] == "rgb(240, 138, 36)" and oc["bad"] == "rgb(214, 69, 93)", oc, public=True)
