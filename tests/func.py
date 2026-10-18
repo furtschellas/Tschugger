@@ -361,7 +361,7 @@ async def owner_tests(p, port):
         check("App installiert: Gerät erkannt, Aufforderung alle 3 Tage nur wenn eingeschaltet", ua == {"kind": True, "again": True, "notyet": True, "off": True}, ua, public=True)
         # 2nd unit planning: only scenes; a note naming a scene is shown at that scene, others not
         u2 = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;const keep=d.unit2,ku=S.pu;S.pu={"1":true,"2":true,"3":true};
-          d.unit2={src:'2nd',items:[{t:'07:00',d:'Rig Polizeiauto'},{t:'08:00',sc:'185',set:'ROAD'},{t:'09:00',sc:'5pt13',set:'ROAD1'}],notes:['Ton für Sc185: 1 Person','Grip: 2 Personen','Szene 5 pt13: Rollator']};
+          d.unit2={src:'2nd',items:[{t:'07:00',n:'Rig Polizeiauto'},{t:'08:00',sc:'185',set:'ROAD'},{t:'09:00',sc:'5pt13',set:'ROAD1'}],notes:['Ton für Sc185: 1 Person','Grip: 2 Personen','Szene 5 pt13: Rollator']};
           S.tab='plan';S.day=d.id;render();const v=document.getElementById('view').innerText;const r={rig:v.includes('Rig Polizeiauto'),grip:v.includes('Grip: 2'),
           ton:[...document.querySelectorAll('#view .xn')].map(x=>x.textContent)};if(keep)d.unit2=keep;else delete d.unit2;S.pu=ku;render();return r})()""")
         if u2 is not None:
