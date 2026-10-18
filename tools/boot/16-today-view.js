@@ -17,6 +17,12 @@ document.addEventListener("change",e=>{const c=e.target.closest("[data-todaypart
 function chgListHTML(cl){let last="";
   return '<ul class="chglist">'+cl.map(c=>{const dh=c.date!==last?'<li class="cdh"><span class="cd">'+esc(dmy(c.date))+'</span></li>':'';last=c.date;
     return dh+'<li class="chgi'+(c.unread?' unread':'')+'"><span class="cw">'+(c.sc?'<b>'+esc(L("Szene"))+' '+esc(c.sc)+'</b>'+(c.u&&c.u!=="1"?' <span class="td-unit">'+esc(UNAME[c.u])+'</span>':'')+' · ':'')+(c.script?scriptChgHTML(c):esc(c.txt))+'</span></li>'}).join("")+'</ul>'}
+/* changes split by unit: 1st Unit (and script) open, 2nd/3rd Unit closed – each can be opened and closed (kept while the app is open) */
+const CHGOPEN={"1":true};
+function chgUnitsHTML(cl){const g={};cl.forEach(c=>{const u=c.script||!c.u?"1":String(c.u);(g[u]=g[u]||[]).push(c)});
+  return Object.keys(g).sort().map(u=>{const l=g[u],nu=l.filter(c=>c.unread).length;
+    return '<details class="chgu" data-chgu="'+u+'"'+(CHGOPEN[u]?' open':'')+'><summary><span class="chgun">'+esc((UNAME&&UNAME[u]?UNAME[u]:u)+" Unit")+'</span> <span class="chgn">'+l.length+'</span>'+(nu?' <span class="chgdot">'+nu+' '+esc(L("neu"))+'</span>':'')+'</summary>'+chgListHTML(l)+'</details>'}).join("")}
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.matches("details[data-chgu]"))CHGOPEN[d.dataset.chgu]=d.open},true);
 /* changelog text → one line per scene, with «added / deleted / changed / clarified» marked (lines broken by the PDF are joined again) */
 const CLOGK={added:"add",deleted:"del",changed:"chg",clarified:"clr"},CLOGDE={added:"neu hinzugefügt",deleted:"gestrichen",changed:"geändert",clarified:"präzisiert"};
 function clogHTML(t){const intro=[],items=[];let cur=null;
@@ -94,7 +100,7 @@ VIEWS.today=function(){
   const cl=canPlan?chgList():[];
   {const sc=scriptChg();if(sc){cl.push(sc);cl.sort((a,b)=>(b.at||0)-(a.at||0))}}
   if((canPlan||cl.length)&&tShow("chg"))h+='<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(cl.some(c=>c.unread)?' <span class="chgdot">'+cl.filter(c=>c.unread).length+' '+esc(L("neu"))+'</span>':'')+'</div>'+
-    (cl.length?chgListHTML(cl)+
+    (cl.length?chgUnitsHTML(cl)+
       '<div class="tacts">'+(cl.some(c=>c.unread)?'<button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button>':'')+(can("push.send")&&cl.some(c=>!c.script)?'<button type="button" class="pillbtn" data-chgpush>'+esc(L("Als Push-Nachricht senden"))+'</button>':'')+'</div>'
       :'<p class="ghint">'+esc(L("Seit deinem letzten Besuch hat sich am Drehplan nichts geändert."))+'</p>')+'</div>';
   /* offline */
