@@ -835,9 +835,11 @@ def main():
 
     # schedule
     f = pick_schedule(files)
+    # once: the 2nd unit of the main schedule was overwritten by the sheet before it was kept → read the schedule again (no push)
+    need_main = any(isinstance(d.get("unit2"), dict) and d["unit2"].get("src") == "2nd" for d in data.get("days") or []) and not meta.get("unit2Main")
     if f:
         sources.append({"kind": "schedule", "name": f["name"], "modified": f["modified"]})
-        if is_new("schedule", f) and may_try("schedule", f):
+        if (is_new("schedule", f) or need_main) and may_try("schedule", f):
           log("Drehplan: neu, wird ausgelesen")
           try:
             res = claude([pdf_block(dbx.download(f["id"]))],
@@ -848,7 +850,7 @@ def main():
                 for i, d in enumerate(sorted(days, key=lambda d: d.get("date", ""))): d["order"] = i; d["id"] = d.get("date") or d.get("id")
                 ch = changed_days(data.get("days"), days, TODAY) if data.get("days") else []
                 data["days"] = days; meta["scheduleVersion"] = res.get("scheduleVersion") or meta.get("scheduleVersion")
-                if ch: NEWS.append({"kind": "plan", "dates": ch, "version": meta.get("scheduleVersion") or ""})
+                if ch and not need_main: NEWS.append({"kind": "plan", "dates": ch, "version": meta.get("scheduleVersion") or ""})
                 if res.get("cast"): meta["cast"] = {str(k): v for k, v in res["cast"].items()}
                 if res.get("subtitle"): meta["subtitle"] = res["subtitle"]
                 changed = True; log("Drehplan:", len(days), "Tage")
@@ -867,6 +869,13 @@ def main():
         if not url: print("::notice::2nd Unit: kein Link in der Dropbox gefunden (%d .web-Dateien)" % sum(1 for f in files if f["name"].lower().endswith(".web")))
         if url and "docs.google.com/spreadsheets" in url:
             shoot = [d for d in data.get("days") or [] if d.get("kind") == "shoot"]
+            # the 2nd unit as in the main schedule (kept, because the days below get the detailed order from the sheet)
+            mainU2 = dict(meta.get("unit2Main") or {})
+            for d in shoot:
+                if isinstance(d.get("unit2"), dict) and d["unit2"].get("src") != "2nd": mainU2[d["date"]] = d["unit2"]
+            mainU2 = {k: v for k, v in mainU2.items() if any(d["date"] == k for d in shoot)}
+            def scs(u):
+                return {re.sub(r"\s+", "", str(i.get("sc") or "")).lower() for i in (u or {}).get("items") or [] if i.get("sc")}
             def dayno(d):
                 m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")); return int(m.group(1)) if m else None
             newc = {}
@@ -892,16 +901,29 @@ def main():
                         "Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisheriger 2nd-Unit-Teil dieses Tages aus dem Drehplan (Cast-Nummern und Schreibweisen übernehmen): %s"
                         % (no, day.get("date"), json.dumps(day.get("unit2") or {}, ensure_ascii=False)[:20000]), 32000)
                     if isinstance(u2, dict) and isinstance(u2.get("items"), list) and u2["items"]:
-                        u2["src"] = "2nd"; newc[gid] = {"h": h, "no": no, "u2": u2}; log("2nd Unit: Tag", no, "übernommen,", len(u2["items"]), "Einträge")
+                        u2["src"] = "2nd"; newc[gid] = {"h": h, "no": no, "u2": u2}; log("2nd Unit: Blatt", no, "gelesen,", len(u2["items"]), "Einträge")
                     else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
                 except Exception as e:
                     print("::notice::2nd Unit Tag %d: %s" % (no, type(e).__name__)); failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
             print("::notice::2nd Unit: %d Blätter, Drehtage %s in der Tabelle, %d übernommen"
                   % (len(tabs), ",".join(str(k) for k in sorted(byday)), len(newc)))
             cache = newc
-            for c in cache.values():   # also after a new Drehplan: the detailed 2nd unit order stays on its day
-                day = next((d for d in shoot if dayno(d) == c["no"]), None)
-                if day and day.get("unit2") != c["u2"]: day["unit2"] = c["u2"]; changed = True
+            # the date comes from the main schedule: each sheet goes to the day whose 2nd unit has the same scenes
+            # (the tab number only when no scene matches); date, hours, pages and extras stay as in the main schedule
+            for c in cache.values():
+                want = scs(c["u2"]); best, bn = None, 0
+                for d in shoot:
+                    n = len(want & scs(mainU2.get(d["date"])))
+                    if n > bn: best, bn = d, n
+                day = best or next((d for d in shoot if dayno(d) == c["no"]), None)
+                if not day: continue
+                base = mainU2.get(day["date"]) or {}
+                u2 = dict(c["u2"])
+                for k in ("hours", "length", "pages", "extras"):
+                    if base.get(k): u2[k] = base[k]
+                    else: u2.pop(k, None)
+                if day.get("unit2") != u2: day["unit2"] = u2; changed = True
+            if mainU2 != (meta.get("unit2Main") or {}): meta["unit2Main"] = mainU2; changed = True
             sources.append({"kind": "unit2", "name": "Google Sheet «2nd Unit Shooting Order»", "link": url, "modified": NOW})
         if cache != (meta.get("unit2Sheet") or {}): meta["unit2Sheet"] = cache; changed = True
     except Exception as e: print("::warning::2nd-Unit-Planung nicht gelesen: " + type(e).__name__)
