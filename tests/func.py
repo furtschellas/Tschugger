@@ -421,8 +421,8 @@ async def owner_tests(p, port):
         if sd2 is not None:
             check("Dokumente prüfen: Drehplan ↔ Drehbuch erkennt Innen/Aussen-Widerspruch", sd2)
         # the other way round: a scene that is only in the script is reported; one marked as omitted is not
-        rv = await E(r"""(async()=>{const sl=await scriptData();if(!sl.length)return null;sl.push({sc:'9997',head:'INT. TESTORT - TAG',text:'x'},{sc:'9998',head:'OMITTED',text:''});
-            await dckRun();sl.splice(-2,2);const r=(DCK.res||[]).filter(x=>x.area==='Drehbuch ↔ Drehplan');await dckRun();
+        rv = await E(r"""(async()=>{const sl=await scriptData();if(!sl.length)return null;const keep=sl.slice();sl.unshift({sc:'9997',head:'INT. TESTORT - TAG',text:'x'},{sc:'9998',head:'OMITTED',text:''});
+            await dckRun();sl.length=0;keep.forEach(x=>sl.push(x));const r=(DCK.res||[]).filter(x=>x.area==='Drehbuch ↔ Drehplan');await dckRun();
             return {hit:r.some(x=>x.lvl==='warn'&&x.text.includes('9997')),omit:!r.some(x=>x.text.includes('9998'))}})()""")
         if rv is not None:
             check("Dokumente prüfen: Szenen im Drehbuch, die im Drehplan fehlen", rv == {"hit": True, "omit": True}, rv, public=True)
