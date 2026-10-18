@@ -737,18 +737,25 @@ def sheet_csv(url, gid):
     rows = [" | ".join(c.strip() for c in row) for row in csv.reader(io.StringIO(r.text)) if sum(1 for c in row if c.strip()) >= 2]
     return "\n".join(rows)
 
+SHEET_HIDDEN = []   # names of the hidden sheets of the last sheet_tabs() call
+
 def sheet_tabs(url):
     """[(gid, tab name)] of a public Google Sheet (from its html view)"""
     m = re.search(r"/spreadsheets/d/([\w-]+)", url)
     if not m: return []
     r = requests.get("https://docs.google.com/spreadsheets/d/%s/htmlview" % m.group(1), timeout=60)
     if r.status_code != 200: return []
-    tabs = re.findall(r'id="sheet-button-(\d+)".*?<a[^>]*>(.*?)</a>', r.text, re.S)
-    more = [(g, n) for n, g in re.findall(r'name:\s*"((?:[^"\\]|\\.)+)"[^}]*?gid:\s*"?(\d+)', r.text)]
-    have = {g for g, _ in tabs}; tabs += [(g, n) for g, n in more if g not in have]
-    tabs = [(g, re.sub(r"<[^>]+>", "", n)) for g, n in tabs]
     import html as _html
-    return [(g, _html.unescape(n).strip()) for g, n in tabs]
+    clean = lambda n: _html.unescape(re.sub(r"<[^>]+>", "", n)).replace('\\"', '"').strip()
+    tabs = re.findall(r'id="sheet-button-(\d+)".*?<a[^>]*>(.*?)</a>', r.text, re.S)
+    # every sheet of the script list; hidden sheets have no tab button (or are marked hidden) → ignored
+    items = re.findall(r'\{[^{}]*?name:\s*"((?:[^"\\]|\\.)+)"[^{}]*?gid:\s*"?(\d+)[^{}]*\}', r.text)
+    hid = {g for n, g in items if re.search(r'(?i)hidden\s*:\s*true', next((m.group(0) for m in re.finditer(r'\{[^{}]*?gid:\s*"?' + g + r'\b[^{}]*\}', r.text)), ""))}
+    have = {g for g, _ in tabs}
+    if not tabs: tabs = [(g, n) for n, g in items]   # no tab bar in the html (very old layout): all sheets of the list
+    out = [(g, clean(n)) for g, n in tabs if g not in hid]
+    SHEET_HIDDEN[:] = [clean(n) for n, g in items if g not in have or g in hid]
+    return out
 
 # ---------- main ----------
 PREP_PLAN_RE = re.compile(r"(?i)weekly|wochen|daily|tages")
@@ -975,11 +982,14 @@ def main():
                     else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
                 except Exception as e:
                     print("::notice::2nd Unit Tag %d: %s" % (no, type(e).__name__)); failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
+            hd = sorted({int(m.group(1)) for n in SHEET_HIDDEN for m in [re.match(r"\s*#\s*(\d+)", n)] if m})
+            print("::notice::2nd Unit: %d ausgeblendete Blätter ignoriert%s" % (len(SHEET_HIDDEN), (" (Drehtag " + ",".join(map(str, hd)) + ")") if hd else ""))
             print("::notice::2nd Unit: %d Blätter, Drehtage %s in der Tabelle, %d gelesen · laut Drehplan an Tag %s"
                   % (len(tabs), ",".join(str(k) for k in sorted(byday)), len(newc), ",".join(str(k) for k in sorted(UD.get("unit2") or [])) or "?"))
             cache = newc
             # the date comes from the main schedule: each sheet goes to the day whose 2nd unit has the same scenes
             # (the tab number only when no scene matches); date, hours, pages and extras stay as in the main schedule
+            used = set()
             for c in cache.values():
                 want = scs(c["u2"]); best, bn = None, 0
                 for d in shoot:
@@ -993,7 +1003,11 @@ def main():
                 for k in ("hours", "length", "pages", "extras"):
                     if mu.get(k): u2[k] = mu[k]
                     else: u2.pop(k, None)
+                used.add(day["date"])
                 if day.get("unit2") != u2: day["unit2"] = u2; changed = True
+            for d in shoot:   # a sheet that is gone or hidden now: back to the 2nd unit of the main schedule
+                if isinstance(d.get("unit2"), dict) and d["unit2"].get("src") == "2nd" and d["date"] not in used and d["date"] in mainU2:
+                    d["unit2"] = mainU2[d["date"]]; changed = True
             for d in shoot:   # a 2nd unit from the sheet on a day without a 2nd unit in the main schedule: remove
                 if isinstance(d.get("unit2"), dict) and d["unit2"].get("src") == "2nd" and d["date"] not in mainU2:
                     d.pop("unit2", None); changed = True; log("2nd Unit: Tag", dayno(d), "hat laut Drehplan keine 2nd Unit – entfernt")
