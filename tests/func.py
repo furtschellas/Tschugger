@@ -339,6 +339,12 @@ async def owner_tests(p, port):
           for(const m of ['sc','day','loc','person','all']){S.sqm=m;render();r[m]=document.querySelectorAll('#view [data-sqpick]').length>0}
           S.sqm='all';render();r.more=!document.querySelector('#view [data-sqmore]');return r})()""")
         check("Drehbuch-Suche: Vorauswahl für Szene, Tag, Motiv (Person wenn Callsheets da), nicht bei Alle; immer alle Szenen", pko in (None, {"sc": True, "day": True, "loc": True, "person": pko and pko.get("person"), "all": False, "more": True}), pko, public=True)
+        scr = await E("""(async()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d||typeof openScene!=='function')return null;const it=arr(d.items).find(i=>i.sc);const keep=S.meta.bd,sv=Object.assign({},S.sv);
+          S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{},c:[['Props',['Knife']]]}};S.sv.inf=false;await openScene(it.sc);await new Promise(r=>setTimeout(r,400));
+          const box=document.getElementById('scn');if(!box)return 'kein Fenster';const vis=e=>!!e&&getComputedStyle(e).display!=='none';const a=vis(box.querySelector('.spf1 .bdt'));
+          const b=box.querySelector('[data-sv="inf"]');if(b)b.click();const on=vis(document.getElementById('scn').querySelector('.spf1 .bdt'));
+          const c=document.querySelector('#scn [data-scnclose]');if(c)c.click();S.sv=sv;store('sv',JSON.stringify(sv));S.meta.bd=keep;render();return {a,btn:!!b,on}})()""")
+        check("Drehbuch-Fenster: Info-Knopf zeigt die Szenen-Details", scr in (None, {"a": False, "btn": True, "on": True}), scr, public=True)
         sct = await E("""(async()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);const keep=S.meta.bd,sv=Object.assign({},S.sv);
           S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{},c:[['Props',['Knife']]]}};S.tab='script';S.sq=String(it.sc);S.sqm='sc';render();await new Promise(r=>setTimeout(r,300));render();
           const v=document.querySelector('#view');const vis=e=>!!e&&getComputedStyle(e).display!=='none';const b=v.querySelector('.spf1 .bdt');const a=vis(b);
