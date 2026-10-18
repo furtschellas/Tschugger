@@ -20,7 +20,7 @@ sys.path.insert(0, HERE)
 import fsadmin  # noqa: E402
 
 
-def log(*a): print("•", *a, flush=True)
+log = fsadmin.log
 
 
 def vapid():

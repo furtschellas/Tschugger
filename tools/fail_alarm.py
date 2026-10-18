@@ -50,9 +50,7 @@ def _alarm(st, send):
             b = {"title": i18n["de"]["title"], "body": i18n["de"]["body"], "i18n": i18n, "roles": ["owner", "admin"], "push": True,
                  "kind": "alarm", "by": "Automatisch", "at": int(time.time() * 1000), "ch": {"push": True},
                  "url": "https://github.com/furtschellas/Tschugger/actions/workflows/dropbox-update.yml"}
-            iv = secrets.token_bytes(12)
-            c = base64.b64encode(iv + AESGCM(key).encrypt(iv, json.dumps(b, ensure_ascii=False).encode(), None)).decode()
-            if fsadmin.create_doc("broadcasts", {"c": c}, raw={"at": {"timestampValue": st["at"]}}):
+            if fsadmin.new_broadcast(key, b):
                 st["alarmAt"] = st["at"]; print("• Alarm an Owner und Admins angelegt"); open(os.path.join(ROOT, ".alarm_sent"), "w").write("1")
         else:
             print("• Alarm in den App-Einstellungen ausgeschaltet")

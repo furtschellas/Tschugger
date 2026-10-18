@@ -25,24 +25,54 @@ def sa():
 def _b64u(b): return base64.urlsafe_b64encode(b).rstrip(b"=").decode()
 
 
-def token():
-    """OAuth access token of the service account (cached ~50 min); None without FIREBASE_SA"""
+def sa_token(scope):
+    """OAuth access token of the service account for one scope (no cache); None without FIREBASE_SA"""
     acc = sa()
     if not acc: return None
-    if _TOK[0] and time.time() < _TOK[1]: return _TOK[0]
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import padding
     now = int(time.time())
     h = _b64u(json.dumps({"alg": "RS256", "typ": "JWT"}).encode())
-    p = _b64u(json.dumps({"iss": acc["client_email"], "scope": "https://www.googleapis.com/auth/datastore",
+    p = _b64u(json.dumps({"iss": acc["client_email"], "scope": scope,
                           "aud": "https://oauth2.googleapis.com/token", "iat": now, "exp": now + 3600}).encode())
     key = serialization.load_pem_private_key(acc["private_key"].encode(), None)
     sig = _b64u(key.sign((h + "." + p).encode(), padding.PKCS1v15(), hashes.SHA256()))
     r = requests.post("https://oauth2.googleapis.com/token", timeout=30,
                       data={"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer", "assertion": h + "." + p + "." + sig})
     r.raise_for_status()
-    _TOK[0], _TOK[1] = r.json()["access_token"], time.time() + 3000
-    return _TOK[0]
+    return r.json()["access_token"]
+
+
+def token():
+    """OAuth access token for Firestore (cached ~50 min); None without FIREBASE_SA"""
+    if _TOK[0] and time.time() < _TOK[1]: return _TOK[0]
+    t = sa_token("https://www.googleapis.com/auth/datastore")
+    if t: _TOK[0], _TOK[1] = t, time.time() + 3000
+    return t
+
+
+# ---- encryption with the crew key (AES-GCM, base64: iv + ciphertext) – the same format as in the app ----
+def enc_json(key, o):
+    import secrets
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    iv = secrets.token_bytes(12)
+    return base64.b64encode(iv + AESGCM(key).encrypt(iv, json.dumps(o, ensure_ascii=False).encode(), None)).decode()
+
+
+def dec_json(key, c):
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    raw = base64.b64decode(c)
+    return json.loads(AESGCM(key).decrypt(raw[:12], raw[12:], None))
+
+
+def new_broadcast(key, b):
+    """automatic «message to everybody»: encrypted, with the server time as «at» (only the last 24 h are sent)"""
+    import datetime
+    ts = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+    return create_doc("broadcasts", {"c": enc_json(key, b)}, raw={"at": {"timestampValue": ts}})
+
+
+def log(*a): print("•", *a, flush=True)
 
 
 def _auth():

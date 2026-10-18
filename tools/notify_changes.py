@@ -30,7 +30,7 @@ GO = {"plan": "plan", "cs": "dispo", "prep": "prep", "script": "script"}
 SCRIPTBODY = {"de": "Drehbuch {v} ist in der App", "fr": "Le scénario {v} est dans l’app", "it": "La sceneggiatura {v} è nell’app", "en": "Script {v} is in the app"}
 
 
-def log(*a): print("•", *a, flush=True)
+log = fsadmin.log
 
 
 def fmt(date, lang, labels):
@@ -74,10 +74,7 @@ def main():
         at = int(time.time() * 1000)
         b = {"title": i18n["de"]["title"], "body": i18n["de"]["body"], "i18n": i18n, "roles": rl, "push": True, "kind": kind,
              "by": "Automatisch", "at": at, "ch": {"push": True}, "url": "./#go=" + GO[kind] + ":" + dates[0]}
-        iv = secrets.token_bytes(12)
-        c = base64.b64encode(iv + AESGCM(key).encrypt(iv, json.dumps(b, ensure_ascii=False).encode(), None)).decode()
-        ts = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
-        if fsadmin.create_doc("broadcasts", {"c": c}, raw={"at": {"timestampValue": ts}}): made += 1
+        if fsadmin.new_broadcast(key, b): made += 1
     os.remove(p)
     log("Automatische Push-Nachrichten angelegt:", made)
     return 0

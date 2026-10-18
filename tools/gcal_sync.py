@@ -21,17 +21,7 @@ DAYS = 120
 TZ = "Europe/Zurich"
 
 
-def log(*a): print("•", *a, flush=True)
-
-
-def enc(key, o):
-    iv = secrets.token_bytes(12)
-    return base64.b64encode(iv + AESGCM(key).encrypt(iv, json.dumps(o, ensure_ascii=False).encode(), None)).decode()
-
-
-def dec(key, c):
-    raw = base64.b64decode(c)
-    return json.loads(AESGCM(key).decrypt(raw[:12], raw[12:], None))
+log, enc, dec = fsadmin.log, fsadmin.enc_json, fsadmin.dec_json
 
 
 def parse(ics, today=None):
