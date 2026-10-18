@@ -38,7 +38,7 @@ render();
     if(typeof A.isSignInWithEmailLink==="function"&&A.isSignInWithEmailLink(auth,location.href)){
       const q=new URLSearchParams(location.search);let em=q.get("em")||"";try{em=em||localStorage.getItem("emailForSignIn")||""}catch(_){}
       if(!em)em=(prompt(L("Bitte bestätige deine E-Mail-Adresse:"))||"").trim();
-      if(em){window.__justSignedIn=true;if(window.resetViewState)window.resetViewState();A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(null,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
+      if(em){window.__justSignedIn=true;if(window.resetViewState)window.resetViewState();A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(history.state,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
     }
     A.onAuthStateChanged(auth,u=>{
       if(!u){ME=null;MYPERMS=[];{const w=document.getElementById("welcome");if(w)w.remove();WELCOME_OPEN=false}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();

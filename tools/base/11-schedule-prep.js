@@ -31,7 +31,7 @@ function dayNav(PD,isSel,attr,key,extra,pre){
   return h+'</div></div>';
 }
 /* PREP: preparation / rehearsal week before the first shooting day (data "prepro": one entry per date; meta.prepro: source, contacts) */
-function ppWhere(w,m){if(!w)return'';const q=m||(/\d{4}\s+\S/.test(w)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(w.replace(/^On location:\s*/i,"")):"");return '<div class="ppl">'+(q?'<a href="'+esc(q)+'" target="_blank" rel="noopener">'+esc(w)+'</a>':esc(w))+'</div>'}
+function ppWhere(w,m){if(!w)return'';const sm=m?safeUrl(m):"";const q=(sm&&sm!=="#"?sm:"")||(/\d{4}\s+\S/.test(w)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(w.replace(/^On location:\s*/i,"")):"");return '<div class="ppl">'+(q?'<a href="'+esc(q)+'" target="_blank" rel="noopener">'+esc(w)+'</a>':esc(w))+'</div>'}
 function ppItem(i,date,grp,k){return '<div class="ppi'+(i.hl?' hl':'')+'">'+(date&&(i.crew||i.cast)&&vok("email")?'<button type="button" class="calbtn mailbtn" data-ppmail="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("E-Mail-Verteiler"))+'" title="'+esc(L("E-Mail-Verteiler"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></button>':'')+(date?'<button type="button" class="calbtn" data-cal="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("In den Kalender"))+'" title="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>':'')+'<div class="ppt">'+esc(i.t||"")+(i.end?'<br>'+esc(i.end):'')+'</div><div class="ppb"><div class="ppn">'+esc(TX(i,"n")||"")+'</div>'+
   ppParts(i)+(i.who?'<div class="ppw">'+esc(i.who)+'</div>':'')+ppWhere(i.where,i.map)+fpLinks(fpFor(i.n,i.where),[])+(TX(i,"note")?'<div class="ppx">'+esc(TX(i,"note"))+'</div>':'')+'</div></div>'}
 /* participants: collapsible; people with phone or e-mail open a contact card */
@@ -65,8 +65,9 @@ function ppItems(list,date,grp){return '<div class="pplist">'+list.map((it,k)=>p
 function zurichUTC(date,hm){
   const [y,mo,d]=date.split("-").map(Number),[h,mi]=hm.split(":").map(Number);
   let ts=Date.UTC(y,mo-1,d,h,mi)-2*3600e3;
-  for(let n=0;n<2;n++){const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Zurich",hour:"2-digit",minute:"2-digit",hourCycle:"h23",day:"2-digit"}).formatToParts(new Date(ts));
-    const g=t=>+(p.find(x=>x.type===t)||{}).value;ts+=((h-g("hour"))*60+(mi-g("minute")))*60e3+((d-g("day"))*1440*60e3)}
+  const want=Date.UTC(y,mo-1,d,h,mi);
+  for(let n=0;n<2;n++){const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Zurich",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(ts));
+    const g=t=>+(p.find(x=>x.type===t)||{}).value;ts+=want-Date.UTC(g("year"),g("month")-1,g("day"),g("hour"),g("minute"))}   /* whole date compared: also right on the 1st of a month */
   return new Date(ts);
 }
 function icsDate(dt){return dt.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"")}

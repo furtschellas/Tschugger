@@ -148,7 +148,7 @@ document.addEventListener("change",e=>{const t=e.target;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pushSyncSoon()});
 /* opened from a notification: go to «Meine Termine» */
 function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo|prep|script):(\d{4}-\d{2}-\d{2})/);if(!m)return false;
-  try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}
+  try{history.replaceState(history.state,"",location.pathname+location.search)}catch(_){}
   /* new script version: jump to the changes in Today (or, if Today does not show them, the message with the changelog) */
   if(m[1]==="script"){let n=0;const go=()=>{const sx=S.meta&&S.meta.scriptChange;if(!sx&&n++<15){setTimeout(go,400);return}
       const inToday=typeof todayOn==="function"&&todayOn()&&(typeof tShow!=="function"||tShow("chg"))&&typeof scriptChg==="function"&&!!scriptChg();

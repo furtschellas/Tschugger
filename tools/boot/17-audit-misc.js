@@ -41,7 +41,7 @@ function auditSecInner(){
     (rows.length?audDays(rows,x=>'<li><div class="audh"><b>'+esc(x.what)+'</b>'+(x.tgt?' <span class="audt">'+esc(x.tgt)+'</span>':'')+'<span class="audw">'+esc(x.ms?fmtDT(x.ms):"")+'</span></div><div class="audb">'+esc(x.who)+(x.sum?' · <span class="ghint">'+esc(x.sum)+'</span>':'')+'</div></li>'):'<p class="ghint">'+L("Noch keine Einträge.")+'</p>')+'</div>';
 }
 /* the log by day: one closed sub-part per day (open while searching) */
-function audDays(rows,li){const g=new Map();for(const x of rows){const k=x.ms?new Date(x.ms).toISOString().slice(0,10):"–";if(!g.has(k))g.set(k,[]);g.get(k).push(x)}
+function audDays(rows,li){const g=new Map();for(const x of rows){const k=x.ms?localISO(x.ms):"–";if(!g.has(k))g.set(k,[]);g.get(k).push(x)}
   return [...g].map(([k,l])=>'<details class="tstsu" data-su="aud:'+esc(k)+'"'+(AUD.q?' open':logSu("aud:"+k))+'><summary>'+esc(k==="–"?"–":dmy(k))+' · '+l.length+' '+esc(L(l.length===1?"Eintrag":"Einträge"))+'</summary><ul class="audlist">'+l.map(li).join("")+'</ul></details>').join("")}
 document.addEventListener("input",e=>{const i=e.target.closest("[data-audq]");if(!i)return;AUD.q=i.value;clearTimeout(AUD.t);AUD.t=setTimeout(()=>{const v=document.querySelector("#view");const pos=i.selectionStart;render();const n=document.querySelector("[data-audq]");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}},250)});
 document.addEventListener("click",e=>{if(e.target.closest("[data-audre]")){AUD.list=null;render()}});

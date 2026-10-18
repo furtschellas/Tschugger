@@ -14,7 +14,7 @@ const escRe=t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 function normQ(q){
   let qq=nrm(q).replace(/[,;]/g," ").trim();
   const iso=d=>d.getDate()+"."+(d.getMonth()+1)+".";
-  const now=new Date(),tmr=new Date(Date.now()+864e5);
+  const now=new Date(),tmr=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
   qq=qq.replace(/\b(heute|today|aujourd'?hui|oggi)\b/g,iso(now)).replace(/\b(morgen|tomorrow|demain|domani)\b/g,iso(tmr));
   qq=qq.replace(/\b(drehtag|day|tag|dt|jour|giorno|j)\s*#?\s*(\d{1,2})\b/g,"d$2").replace(/#(\d{1,2})\b/g,"d$1");
   qq=qq.replace(/\b(\d{1,2})[./](\d{1,2})\.?(?:\d{2,4})?\b/g,(m,a,b)=>(+a)+"."+(+b)+".");
@@ -145,7 +145,7 @@ $("#gres").addEventListener("click",e=>{const pk=e.target.closest("[data-gpick]"
   let scrollSel=null;
   if(r.k==="day"){S.tab="plan";S.day=r.d.id;const qv=nrm(LASTQ);S.pu=(/\b(3rd|3u|third|dritte|3\.)\b|3rd ?unit|unit ?3/.test(qv)&&hasU(r.d,"3"))?{"1":false,"2":false,"3":true}:(/\b(2nd|2u|second|zweite|2\.)\b|2nd ?unit|unit ?2/.test(qv)&&hasU(r.d,"2"))?{"1":false,"2":true,"3":false}:{"1":true,"2":false,"3":false}}
   else if(r.k==="sc"){S.tab="plan";S.day=r.d.id;S.pu={"1":r.u==="1","2":r.u==="2","3":r.u==="3"}}
-  else if(r.k==="loc"){S.tab="loc";S.uf={"1":true,"2":true,"3":true};const key="card:"+(r.g.key==="szene-5"?"s5":r.g.key);S.openSc[key]=true;scrollSel='[data-sckey="'+key+'"]'}
+  else if(r.k==="loc"){S.tab="loc";S.uf={"1":true,"2":true,"3":true};const key="card:"+(r.g.key==="szene-5"?"s5":r.g.key);S.openSc[key]=true;scrollSel='[data-sckey="'+(window.CSS&&CSS.escape?CSS.escape(key):key.replace(/["\\]/g,"\\$&"))+'"]'}
   else if(r.k==="crew"){S.tab="crew";S.q=r.p.name}
   else if(r.k==="dispo"){S.tab="dispo";S.dday=r.x.date}
   else if(r.k==="info"){S.tab="info"}

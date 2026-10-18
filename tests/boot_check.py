@@ -10,7 +10,7 @@ async def spv_text(pg):
     """text below the logo while the start screen is there (read as soon as it exists)"""
     for _ in range(40):
         try:
-            h = await pg.evaluate("(()=>{const t=document.getElementById('spv');return t?t.innerHTML:null})()")
+            h = await pg.evaluate("(()=>{const t=document.getElementById('spv');return t?t.innerHTML:(window.__SPV||null)})()")
             if h is not None:
                 await pg.wait_for_timeout(150)
                 return await pg.evaluate("(document.getElementById('spv')||{}).innerHTML||window.__SPV||''")
@@ -39,11 +39,12 @@ async def main():
         n = await pg.evaluate("document.querySelectorAll('script').length")
         if n < 15: errs.append("App-Teile nicht getrennt (nur %d Skripte)" % n)
         # reopened after a long pause (the phone had closed the app – technically a reload): versions shown
-        await pg.evaluate("sessionStorage.setItem('bcLV',String(Date.now()-5*60e3))")
+        # the old page must not write «seen just now» while it unloads (on a phone there is no old page after a restart)
+        await pg.evaluate("sessionStorage.setItem('bcLV',String(Date.now()-5*60e3));Storage.prototype.setItem=function(){}")
         await pg.reload(wait_until="commit")
         if "MrK" not in await spv_text(pg): errs.append("Startbildschirm nach langer Pause ohne Versionen")
         # reloaded while using the app: only the logo
-        await pg.evaluate("sessionStorage.setItem('bcLV',String(Date.now()))")
+        await pg.evaluate("sessionStorage.setItem('bcLV',String(Date.now()));Storage.prototype.setItem=function(){}")
         await pg.reload(wait_until="commit")
         if "MrK" in await spv_text(pg): errs.append("Startbildschirm beim Neuladen mit Text")
         await pg.wait_for_timeout(8600)   # the start screen never stays: at the latest after 8 s it is gone

@@ -29,7 +29,7 @@ function bcMail(pl){const ems=[...new Set(bcRecips(Object.assign({},pl,{withMail
 function bcRecips(pl){
   const roleOfE=e=>{e=lc(e||"");if(ADMINS.includes(e))return "owner";if((ADM.adm||[]).includes(e))return "admin";return (ADM.ur||{})[e]||""};
   const out=[];for(const g of S.crew||[])for(const p of arr(g.people)){const ph=String(p.phone||"").split(/[\/,;]/)[0].replace(/[^\d+]/g,"");if(ph.length<6&&!(pl.withMail&&p.email))continue;
-    if(pl.roles||pl.depts){const ok=(pl.depts||[]).includes(g.dept)||(p.email&&(pl.roles||[]).includes(roleOfE(p.email)));if(!ok)continue}if(!out.some(x=>x.ph===ph))out.push({ph,name:p.name||ph,dept:g.dept||"",email:lc(p.email||"")})}
+    if(pl.roles||pl.depts){const ok=(pl.depts||[]).includes(g.dept)||(p.email&&(pl.roles||[]).includes(roleOfE(p.email)));if(!ok)continue}const uk=ph||lc(p.email||"");if(!out.some(x=>(x.ph||x.email)===uk))out.push({ph,name:p.name||ph,dept:g.dept||"",email:lc(p.email||"")})}
   return out;
 }
 /* WhatsApp: WhatsApp has no way to send to many people at once from a web page – one tap per person opens the chat with the text ready */
@@ -91,7 +91,7 @@ document.addEventListener("click",async e=>{const bt=e.target.closest("[data-bcr
     const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
     const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});showMsg(await bcDeliver(ref.id),5000);BC.hist=null}
   catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}BC.busy=false;render()});
-VIEWS.bcast=function(){
+VIEWS.bcast=function(){try{if(isAdmin()&&typeof ensureAdm==="function")ensureAdm()}catch(_){}
   if(!ME||!can("push.send"))return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!BC.roles)bcLoadRoles();
   const roles=[{id:"owner",name:L("Owner")},{id:"admin",name:L("Admin")}].concat(BC.roles||[]).concat([{id:"",name:L("Keine Rolle")}]);

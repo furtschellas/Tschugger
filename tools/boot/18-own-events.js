@@ -11,17 +11,19 @@ async function ownEnc(o){const key=await getDataKey(),iv=crypto.getRandomValues(
 /* the events come through a realtime listener: Firebase sends only what changed (instead of reading all of them every
    5 minutes – that used up the free Firebase quota). force (after saving) reads once directly. */
 let OWNSUB=null;
-async function ownApply(docs,key){const out=[];for(const d of docs){try{const x=d.data();out.push(Object.assign(await ownDec(key,x.c),{id:d.id,byUid:x.by,gc:x.gc||""}))}catch(_){}}
+let OWNSEQ=0;
+async function ownApply(docs,key){const seq=++OWNSEQ;const out=[];for(const d of docs){try{const x=d.data();out.push(Object.assign(await ownDec(key,x.c),{id:d.id,byUid:x.by,gc:x.gc||""}))}catch(_){}}
+  if(seq!==OWNSEQ)return;   /* a newer update already arrived */
   const same=OWN.list&&JSON.stringify(OWN.list)===JSON.stringify(out);OWN.list=out;OWN.at=Date.now();if(same)return;
   try{localStorage.setItem("ownev:v1",JSON.stringify(out))}catch(_){}try{pushSyncSoon()}catch(_){}render()}
 async function ownLoad(force){
   if(!ME||!ownOn()||OWN.busy)return;
-  if(OWNSUB&&!force)return;
+  if(OWNSUB)return;
   OWN.busy=true;
   try{const {F,db}=await fb();const key=await getDataKey();
-    if(!OWNSUB&&typeof F.onSnapshot==="function"){OWN.busy=false;
+    if(typeof F.onSnapshot==="function"){OWN.busy=false;if(OWNSUB)return;   /* the listener delivers every change itself */
       OWNSUB=F.onSnapshot(F.collection(db,"events"),q=>{ownApply(q.docs,key)},err=>{console.warn("events",err&&err.code||err);OWNSUB=null;if(!OWN.list){try{OWN.list=JSON.parse(localStorage.getItem("ownev:v1")||"[]")}catch(_){OWN.list=[]}render()}});
-      if(!force)return}
+      return}
     OWN.busy=true;const q=await F.getDocs(F.collection(db,"events"));await ownApply(q.docs,key)}
   catch(err){console.warn("events",err&&err.code||err);if(!OWN.list)try{OWN.list=JSON.parse(localStorage.getItem("ownev:v1")||"[]")}catch(_){OWN.list=[]}render()}
   OWN.busy=false}

@@ -12,7 +12,7 @@ function showScriptNews(sx){
   const sc=arr(sx.scenes),dt=new Date(Date.parse(sx.at));
   const d=document.createElement("div");d.id="scrnews";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
   d.innerHTML='<div class="a2box wlbox scrbox"><span class="wlbeta">'+esc(L("Neu"))+'</span><h3>'+esc(L("Neue Drehbuch-Version"))+' '+esc(sx.v||"")+'</h3>'+
-    '<p>'+esc(L("Seit {d} ist das Drehbuch {v} in der App.").replace("{d}",dmy(dt.toISOString().slice(0,10))).replace("{v}",sx.v||""))+(sx.prev&&sx.prev!==sx.v?' '+esc(L("Vorher")+": "+sx.prev+"."):'')+'</p>'+
+    '<p>'+esc(L("Seit {d} ist das Drehbuch {v} in der App.").replace("{d}",dmy(localISO(dt))).replace("{v}",sx.v||""))+(sx.prev&&sx.prev!==sx.v?' '+esc(L("Vorher")+": "+sx.prev+"."):'')+'</p>'+
     (sc.length?'<p class="scrsc"><b>'+esc(L(sc.length===1?"Geänderte Szene":"Geänderte Szenen"))+':</b> '+sc.map(x=>'<button type="button" class="lnk" data-scene="'+esc(x)+'">'+esc(x)+'</button>').join(", ")+'</p>':'')+
     (sx.log?'<details class="scrlog"><summary>'+esc(L("Ganzes Changelog"))+'</summary>'+clogHTML(sx.log)+'</details>':'')+
     '<div class="a2b"><button type="button" data-scrn="open">'+esc(L("Drehbuch öffnen"))+'</button><button type="button" class="pri" data-scrn="ok">'+esc(L("OK"))+'</button></div></div>';
