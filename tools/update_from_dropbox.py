@@ -905,6 +905,27 @@ def main():
         if cache != (meta.get("unit2Sheet") or {}): meta["unit2Sheet"] = cache; changed = True
     except Exception as e: print("::warning::2nd-Unit-Planung nicht gelesen: " + type(e).__name__)
 
+    # the original schedule PDF: every page as a picture, and on which page each shooting day starts («Day #5 …»)
+    try:
+        sf = pick_schedule(files)
+        if sf:
+            spg = dict(meta.get("schedPages") or {})
+            k, pg = _pdf_pages(dbx, sf, spg); WANT.update(pg)
+            sp_old = meta.get("schedPdf") or {}
+            if pg and (sp_old.get("key") != k or sp_old.get("pg") != pg):
+                day = {}
+                with tempfile.TemporaryDirectory() as td:
+                    src = os.path.join(td, "s.pdf"); open(src, "wb").write(dbx.download(sf["id"]))
+                    for i in range(len(pg)):
+                        t = subprocess.run(["pdftotext", "-layout", "-f", str(i + 1), "-l", str(i + 1), src, "-"], capture_output=True, text=True, timeout=60).stdout
+                        for m in re.finditer(r"(?im)^\s*Day\s*#\s*(\d+)\b", t): day.setdefault(m.group(1), i)
+                meta["schedPdf"] = {"key": k, "pg": pg, "day": day, "name": sf["name"].split("/")[-1],
+                                    "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(sf["name"])}
+                changed = True
+            if {k: spg[k]} != (meta.get("schedPages") or {}) and k in spg: meta["schedPages"] = {k: spg[k]}; changed = True
+            print("::notice::Drehplan-PDF: %d Seiten, %d Drehtage gefunden" % (len(pg), len((meta.get("schedPdf") or {}).get("day") or {})))
+    except Exception as e: print("::warning::Drehplan-PDF-Seiten nicht erzeugt: " + type(e).__name__)
+
     # crew
     f = pick_crew(files)
     if f:

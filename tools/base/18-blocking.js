@@ -4,6 +4,12 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-fpg]");if(
   e.preventDefault();e.stopPropagation();openGallery({name:"fp:"+f.name,title:"Floorplan · "+f.name,sc:[],url:f.url,media:arr(f.pg).map((p,i)=>({n:f.name+(f.pg.length>1?" · "+(i+1)+"/"+f.pg.length:""),t:"img",f:p,u:f.url}))})},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkg]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkg);if(!b||!bmed(b).length)return;e.preventDefault();e.stopPropagation();openGallery(b)},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkpdf]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkpdf);if(!b)return;e.preventDefault();e.stopPropagation();openGallery(b,0,a.dataset.pdfn)},true);
+document.addEventListener("click",e=>{const a=e.target.closest("[data-schedpdf]");if(!a||typeof window.blkImg!=="function")return;const sp=S.meta&&S.meta.schedPdf;if(!sp)return;e.preventDefault();
+  openGallery({name:"sched",title:L("Drehplan")+" · "+String(sp.name||"").replace(/\.pdf$/i,""),sc:[],url:sp.url,media:arr(sp.pg).map((p,i)=>({n:L("Seite")+" "+(i+1)+"/"+sp.pg.length,t:"img",f:p,u:sp.url}))},+a.dataset.schedpdf||0)});
+/* several Dropbox folders for one scene: one button, then the choice */
+document.addEventListener("click",e=>{const a=e.target.closest("[data-folders]");if(!a)return;e.preventDefault();let l=[];try{l=JSON.parse(a.dataset.folders)}catch(_){return}
+  const o=mkDialog("fldpick",'<div class="a2box"><h3>'+esc(L("Welchen Ordner öffnen?"))+'</h3><div class="fldl">'+l.map(f=>'<a class="pillbtn" href="'+esc(safeUrl(f.u))+'" target="_blank" rel="noopener noreferrer">'+esc(f.n)+'</a>').join("")+'</div></div>',{replace:true});
+  o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest(".fldl a"))setTimeout(()=>o.remove(),0)});document.body.appendChild(o)});
 function openGallery(b,start,pdf){
   let d=mkDialog("blkgal",null,{replace:true});
   const all=pdf?bmed(b).filter(m=>m.g==="pdf"&&String(m.n).split(" · ")[0]===pdf):bmed(b),title=pdf?L("Auflösung")+" "+pdfLbl(pdf):(b.title||(L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ")));

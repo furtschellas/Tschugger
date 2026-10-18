@@ -68,8 +68,14 @@ h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-tr
 html body .stripwrap>.pub.dpub button{width:var(--ubw)!important;min-width:var(--ubw);height:var(--ubh)!important;min-height:var(--ubh)!important;border-radius:6px!important;font-size:var(--ubf);line-height:1;padding:0!important;letter-spacing:-.02em}
 .stripwrap{padding-block:6px}.stripwrap .chip{padding:4px 7px;min-height:calc(2*var(--ubh) + 4px);display:flex;flex-direction:column;justify-content:center}
 .lbs{display:none}@media (max-width:600px){.lbl{display:none}.lbs{display:inline}}
-.stripwrap>.pub{position:relative;z-index:3;gap:4px;border-right:0;padding-right:18px;margin-right:-18px;background:linear-gradient(to right,var(--paper) 55%,transparent)}
-.stripwrap>.strip.in{padding-left:20px}
+.stripwrap>.pub{position:relative;z-index:3;gap:4px;border-right:0;padding-right:10px;margin-right:-10px;background:linear-gradient(to right,var(--paper) 60%,transparent)}
+.stripwrap>.strip.in{padding-left:12px}
+html body .stripwrap{padding-left:max(6px,env(safe-area-inset-left,0px))}
+/* phone: the day row from the very left edge over the whole screen width, no gaps */
+@media (max-width:600px){html body .stripwrap{margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px))) calc(-1*max(16px,env(safe-area-inset-right,0px)));padding-left:env(safe-area-inset-left,0px);padding-right:0}
+  .stripwrap>.pub{padding-left:3px}.stripwrap>.strip.in{padding-right:max(6px,env(safe-area-inset-right,0px))}}
+.wdl{display:none}@media (min-width:601px){.wds{display:none}.wdl{display:block;font-size:10.5px;letter-spacing:.02em;text-transform:none;opacity:.85}}
+.fldl{display:grid;gap:8px;margin-top:10px}
 .pub button.u2[aria-pressed="false"]{border-color:var(--accent);color:var(--accent)}
 .chip.u2day{border:2px solid var(--accent)}.chip.nou{opacity:.4;filter:grayscale(1)}
 /* buttons that do something: pink frame */
