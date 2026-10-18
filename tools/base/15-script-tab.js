@@ -76,7 +76,8 @@ function renderHeader(){
     /* after the schedule version: the script version (only for people who see the script) */
     const sv=m.scriptVersion&&vok("script")?' <span class="scv">· '+esc(L("Drehbuch"))+' '+esc(m.scriptVersion)+'</span>':'';
     $("#stand").innerHTML='<b>'+esc(m.scheduleVersion||"–")+'</b>'+sv+(c?' <span class="chk">· '+L('geprüft')+' '+esc(fmtStamp(c))+'</span>':'');
-    if(m.subtitle)$("#sub").innerHTML=subT(m).split(" · ").map((x,i)=>"<span>"+(i?"· ":"")+esc(x)+"</span>").join(" ");
+    /* year short (2026 → 26); phone: two lines without the dot */
+    if(m.subtitle)$("#sub").innerHTML=subT(m).replace(/\b20(\d\d)\b/g,"$1").split(" · ").map((x,i)=>'<span class="subp">'+(i?'<span class="subsep">· </span>':'')+esc(x)+"</span>").join(" ");
   }else if(S.loaded){$("#stand").textContent=L("Noch keine Daten eingespielt.")}
 }
 /* the main admin can switch the 2nd unit off (website: window.UNIT2=false); then only the 1st unit is shown and the unit buttons disappear */
