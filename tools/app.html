@@ -695,6 +695,7 @@ html[data-theme="light"] .scbtn,html[data-theme="light"] .pillbtn{border-color:v
 .simpick{margin:10px 0 14px}.simpick label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:600}.simpick select{font:inherit;font-weight:400;padding:6px 10px;border-radius:10px;border:1px solid var(--accent);background:var(--sheet);color:var(--ink);max-width:100%}
 .bdt{margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--ink)}.bdt u{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--accent);font-weight:600}.bdt+.bdt{margin-top:4px}
 .pv-no-art .sc>.bd-art,.pv-no-hmu .sc>.bd-hmu,.pv-no-inf .sc>.bd-inf,.pv-no-g .chgtxt{display:none}.pv-no-g li.chg{background:none!important;border-color:var(--rule)!important;box-shadow:none!important}
+.spf1>.bdt{font-size:12.5px}.sv-no-art .spf1>.bd-art,.sv-no-hmu .spf1>.bd-hmu,.sv-no-inf .spf1>.bd-inf{display:none}
 </style>
 
 <div class="wrap">
@@ -818,8 +819,8 @@ try{const x=JSON.parse(localStorage.getItem("uf")||"null");if(x&&typeof x==="obj
 S.ppo=false;try{const v=localStorage.getItem("ppo");S.ppo=v===null?!!(window.matchMedia&&matchMedia("(min-width: 820px)").matches):v==="1"}catch(_){}
 S.pv={i:true,d:true,a:true,c:true,b:true,art:true,hmu:true,inf:true,g:true};try{const x=JSON.parse(localStorage.getItem("pv")||"null");if(x&&typeof x==="object")for(const k of ["i","d","c","a","b","art","hmu","inf","g"])if(typeof x[k]==="boolean")S.pv[k]=x[k]}catch(_){}
 const PVICO={art:'<path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v4H3z"/><path d="M5 17v2M19 17v2"/>',hmu:'<rect x="7.5" y="12" width="9" height="9" rx="1.2"/><path d="M9 12V8.5L15 4v8"/><path d="M7.5 15.5h9"/>',inf:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/>',g:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',b:'<path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>',i:'<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',d:'<path d="M4 6h16M4 10h16M4 14h10M4 18h7"/>',a:'<path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/>',c:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.6c3 .1 5.5 2 5.5 5.4"/>'};
-S.sv={box:true,t:true,e:true,i:true,d:true,c:true,a:true,b:true};try{const x=JSON.parse(localStorage.getItem("sv")||"null");if(x&&typeof x==="object")for(const k in S.sv)if(typeof x[k]==="boolean")S.sv[k]=x[k]}catch(_){}
-const SVKEYS=["t","e","i","d","c","a","b"];
+S.sv={box:true,t:true,e:true,i:true,d:true,c:true,a:true,b:true,art:true,hmu:true,inf:true};try{const x=JSON.parse(localStorage.getItem("sv")||"null");if(x&&typeof x==="object")for(const k in S.sv)if(typeof x[k]==="boolean")S.sv[k]=x[k]}catch(_){}
+const SVKEYS=["t","e","i","d","c","a","b","art","hmu","inf"];
 const SVICO={t:'<rect x="3" y="5" width="13" height="12" rx="2"/><path d="M3 9h13M7 3v4M12 3v4"/><circle cx="17" cy="17" r="4.5"/><path d="M17 15v2.2l1.4 1"/>'};
 SVICO.e='<text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" font-family="system-ui,sans-serif" fill="currentColor" stroke="none">EN</text>';
 const SVLBL={t:"Drehtag & Zeit",e:"Englische Szenenbezeichnung"};
@@ -837,7 +838,7 @@ function svButtons(nav){
     '<button type="button" class="thmb spthm" data-spt aria-pressed="'+(spTheme()==="light")+'" '+ariaTip(L("Drehbuch hell / dunkel"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle class="sunc" cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg></button></div>';
 }
 function svToggles(){
-  const btn=(k,ico,lbl,cls)=>'<button class="pvbtn'+(cls||'')+'" data-sv="'+k+'" aria-pressed="'+S.sv[k]+'" '+ariaTip(L(lbl))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ico+'</svg></button>';
+  const btn=(k,ico,lbl,cls)=>'<button class="pvbtn'+(cls||'')+'" data-sv="'+k+'" aria-pressed="'+S.sv[k]+'" '+ariaTip(L(lbl))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ico+'</svg></button>';
   return btn("box",'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/>',"Infobox"," svbox")+'<span class="svsep" aria-hidden="true"></span>'+SVKEYS.map(k=>btn(k,SVICO[k]||PVICO[k],SVLBL[k]||PVLBL[k],"")).join("");
 }
 function svApply(){document.querySelectorAll(".svwrap").forEach(w=>w.className="svwrap "+svClasses());document.querySelectorAll(".svwrap [data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const s=document.getElementById("scn");if(!s)return;s.className="scrn "+svClasses();s.querySelectorAll("[data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const t=s.querySelector("[data-spt]");if(t)t.setAttribute("aria-pressed",String(spTheme()==="light"))}
@@ -1879,7 +1880,7 @@ function factsHTML(hits){
       '<div class="spfk">'+kv.map(k=>'<span><i>'+esc(cap(String(k[0])))+'</i>'+esc(k[1])+'</span>').join("")+'</div>'+
       (it.d?'<div class="spfx">'+esc(TX(it,"d"))+'</div>':'')+
       (it.cast&&it.cast.length?'<div class="spfc">'+castChips(it.cast)+'</div>':'')+
-      (it.loc?(()=>{const ad=addrForItem(it);return '<div class="spfa">'+(/^tba$/i.test(ad)?esc(L('Ort: TBA')):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it)+'</div>';
+      (it.loc?(()=>{const ad=addrForItem(it);return '<div class="spfa">'+(/^tba$/i.test(ad)?esc(L('Ort: TBA')):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it)+bdHTML(d.date,it.sc)+'</div>';
   }).join("")+'</div>';
 }
 const TOD_RE=/[-–]\s*(DAY|NIGHT|EVENING|MORNING|DAWN|DUSK|CONTINUOUS|LATER|SAME|NOON|MIDDAY|AFTERNOON|SUNSET|SUNRISE|TAG|NACHT|ABEND|MORGEN)\b/i;

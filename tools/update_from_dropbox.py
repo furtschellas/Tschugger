@@ -1135,6 +1135,7 @@ def main():
                 if not day: continue
                 mu = mainU2.get(day["date"]) or {}
                 u2 = dict(c["u2"])
+                for k in ("notes", "notes_en", "notes_fr", "notes_it"): u2.pop(k, None)   # the notes of the sheet are not used
                 for k in ("hours", "length", "pages", "extras"):
                     if mu.get(k): u2[k] = mu[k]
                     else: u2.pop(k, None)
