@@ -543,7 +543,7 @@ def _bd_join(t):
 
 def parse_breakdown(txt):
     """schedule PDF text → {day number: {scene key «186pt1a»: {"h": {"FX": "...", "XX": "..."}, "c": [[label, [values]], ...]}}}"""
-    t = re.sub(r"(?m)^Tschugger Sched - .*page # \d+\s*$", "", txt or "")
+    t = re.sub(r"(?m)^Tschugger Sched - .*page # \d+[ \t]*$", "", (txt or "").replace("\f", "\n"))   # page footers out, page breaks (\f) as new lines
     days = [(m.start(), int(m.group(1))) for m in re.finditer(r"(?m)^\s*Day\s*#\s*(\d+)\b", t)]
     if not days: return {}
     heads = list(_BD_HEAD.finditer(t))
@@ -1031,10 +1031,11 @@ def main():
                     except Exception: pass
                 pb = {}
                 for no in set().union(*[set(c) for c in cands]) if cands else []:
-                    best = max(cands, key=lambda c: (len(set(c.get(no, {})) & want.get(no, set())), sum(len(v.get("c") or []) for v in c.get(no, {}).values())))
+                    best = max(cands, key=lambda c: (len(set(c.get(no, {})) & want.get(no, set())), -cands.index(c)))   # most scenes of the day; same → plain text before raw before layout
                     pb[no] = dict(best.get(no, {}))
                     for c in cands:   # scenes the best reading missed, from the others
                         for k, v in (c.get(no) or {}).items(): pb[no].setdefault(k, v)
+                    if want.get(no): pb[no] = {k: v for k, v in pb[no].items() if k in want[no]}   # only scenes the day really has (no misread numbers)
                 bd = {}
                 for d in data.get("days") or []:
                     m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")) if d.get("kind") == "shoot" else None

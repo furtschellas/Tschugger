@@ -303,10 +303,12 @@ Crew: Lifeguard, Special:
 Cam Boat or Platform, Loc: Warmup Tent, Stunt: Stone (soft dummy, from stunt), Props: Postcard with QR-
 code
 """
-_pb = U.parse_breakdown(_st)
+_pb = U.parse_breakdown(_st.replace("Day #10", "Tschugger Sched - Sched 261018 - Schedule AB - page # 7\n\n\f\fDay #10"))
 check("Szenen-Details: Abteilungen je Szene aus dem Drehplan gelesen",
       _pb.get(1, {}).get("186pt1a", {}).get("c") == [["Crew", ["Armourer/SFX"]], ["Props", ["Branch (dummy soft)", "Weapons police in holster"]], ["Notes", ["shoot on other part", "no drone"]], ["Story Date", ["02.11.2032"]]]
       and _pb.get(10, {}).get("184e", {}).get("h") == {"FX": "Double BJ (in water), Stunt Double Pirmin", "XX": "6xPolice Officer Valais"}
       and _pb[10]["184e"]["c"] == [["Crew", ["Lifeguard"]], ["Special", ["Cam Boat or Platform"]], ["Loc", ["Warmup Tent"]], ["Stunt", ["Stone (soft dummy, from stunt)"]], ["Props", ["Postcard with QR-code"]]], _pb)
+_pb2 = U.parse_breakdown("Day #8 - SR\n22:00\nTschugger Sched - Sched 261018 - page # 8\n\n\f27 4/8 pgs I/N VALAIS - POLICE STATION - OPEN SPACE\nOFFICE\n\n1, 10\n\n19:15\n1h\n\nPeter interrogating Bax.\nLoc: Salgesch\n\nProps: Flight Tickets, Handcuffs, Story Date: 20.10.2032\n")
+check("Szenen-Details: Szene direkt nach einem Seitenumbruch (27 auf D8) wird gefunden", (_pb2.get(8, {}).get("27") or {}).get("c") == [["Props", ["Flight Tickets", "Handcuffs"]], ["Story Date", ["20.10.2032"]]], _pb2)
 
 sys.exit(done("Hintergrund"))
