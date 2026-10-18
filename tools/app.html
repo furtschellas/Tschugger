@@ -724,6 +724,11 @@ html body .dtitle{flex-wrap:nowrap}html body .dtitle .pvb{display:flex;justify-c
 /* schedule facts on the phone: compact, as few lines as possible (time and drive first) */
 @media (max-width:600px){html body .facts{gap:5px!important}html body .facts .fact{padding:3px 7px!important;gap:5px!important;border-radius:7px!important;min-height:0!important}
   html body .facts .fact .k{font-size:9px!important}html body .facts .fact .v,html body .facts .fact .v *{font-size:13.5px!important;line-height:1.25}html body .facts .fact svg{width:14px!important;height:14px!important}}
+html body #blkgal.galpdf{padding:0!important;padding-top:env(safe-area-inset-top,0px)!important;padding-bottom:env(safe-area-inset-bottom,0px)!important}
+html body #blkgal.galpdf .galbox{width:100vw!important;max-width:none!important;height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;border-radius:0!important;padding:6px 6px 4px!important;border:0!important}
+html body #blkgal.galpdf .galstage{margin-top:4px;border-radius:4px}
+html body #blkgal.galpdf .galstage img{max-width:100%;max-height:calc(100dvh - 96px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+html body #blkgal.galpdf h3{margin:0;font-size:15px}
 </style>
 
 <div class="wrap">
@@ -1883,6 +1888,9 @@ function bmed(b){if(!b)return[];const bm=arr(S.meta&&S.meta.bm);const all=Array.
 function scParts(s){const t=String(s||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,""),m=t.match(/^(\d+[a-z]{0,2}?)(?:(pt|sl)(\d*)[a-z]?)?$/);return m?{b:m[1],k:m[2]||"",n:m[3]||"",t}:{b:t,k:"",n:"",t}}
 /* blocking for a scene: its own entry; a part «186pt1A» also gets the part «186pt1» and the general pictures of 186 – never those of another part (186pt2);
    a slideshow picture «25SL2» only «25SL»/«25SL2», never scene 25 */
+/* the gallery opens exactly the pictures the button belongs to (for «186pt1A» only part 1 and the general ones – never the whole folder) */
+const BLKREG=new Map();let BLKN=0;
+function blkReg(b){for(const [k,v] of BLKREG)if(v===b)return k;const k="g"+(++BLKN)+":"+b.name;BLKREG.set(k,b);if(BLKREG.size>400)BLKREG.delete(BLKREG.keys().next().value);return k}
 function blkFor(sc){const N=scParts(sc);if(!N.t)return[];
   const hit=x=>{const X=scParts(x);if(X.t===N.t)return true;if(!N.k||X.b!==N.b)return false;
     if(N.k==="pt")return !X.k||(X.k==="pt"&&X.n===N.n);return X.k==="sl"&&(!X.n||X.n===N.n)};
@@ -1900,7 +1908,7 @@ function fpLinks(fps,blk,lead){const bl=vok("blocking")?arr(blk):[];
   /* camera per picture folder; the Dropbox folder only once – with several folders the button asks which one */
   const fl=bl.filter(b=>b.url).map(b=>({n:b.title||b.name,u:b.url})).filter((f,i,a)=>a.findIndex(x=>x.u===f.u)===i);
   const fold=!fl.length?[]:['<a class="fpl blk fold" href="'+esc(safeUrl(fl[0].u))+'"'+(fl.length>1?' data-folders="'+esc(JSON.stringify(fl))+'"':'')+' target="_blank" rel="noopener noreferrer" '+ariaTip(L("Ordner in Dropbox öffnen"))+'>'+IFOLD+'</a>'];
-  const pink=(lead?[lead]:[]).concat(bl.filter(b=>bmed(b).length).map(b=>'<a class="fpl blk hasm" href="'+esc(safeUrl(b.url))+'" data-blkg="'+esc(b.name)+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>'),fold);
+  const pink=(lead?[lead]:[]).concat(bl.filter(b=>bmed(b).length).map(b=>'<a class="fpl blk hasm" href="'+esc(safeUrl(b.url))+'" data-blkg="'+esc(blkReg(b))+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>'),fold);
   const white=arr(fps).map(f=>'<a class="fpl" href="'+esc(safeUrl(f.url))+'"'+(arr(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat(bl.flatMap(b=>pdfBtns(b)));
   const l=pink.concat(white);return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
 /* the PDFs of a scene (Auflösung): one button each, opening the PDF pages directly in the app (encrypted copies, also offline);
@@ -1957,7 +1965,7 @@ function spTod(x){
 /* floorplans: the pages are stored as pictures with the app – they open in the gallery (also offline) */
 document.addEventListener("click",e=>{const a=e.target.closest("[data-fpg]");if(!a||typeof window.blkImg!=="function")return;const f=arr(S.meta&&S.meta.floorplans).find(x=>(x.file||x.name)===a.dataset.fpg);if(!f||!arr(f.pg).length)return;
   e.preventDefault();e.stopPropagation();openGallery({name:"fp:"+f.name,title:"Floorplan · "+f.name,sc:[],url:f.url,media:arr(f.pg).map((p,i)=>({n:f.name+(f.pg.length>1?" · "+(i+1)+"/"+f.pg.length:""),t:"img",f:p,u:f.url}))})},true);
-document.addEventListener("click",e=>{const a=e.target.closest("[data-blkg]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkg);if(!b||!bmed(b).length)return;e.preventDefault();e.stopPropagation();openGallery(b)},true);
+document.addEventListener("click",e=>{const a=e.target.closest("[data-blkg]");if(!a||typeof window.blkImg!=="function")return;const b=BLKREG.get(a.dataset.blkg)||arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkg);if(!b||!bmed(b).length)return;e.preventDefault();e.stopPropagation();openGallery(b)},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkpdf]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkpdf);if(!b)return;e.preventDefault();e.stopPropagation();openGallery(b,0,a.dataset.pdfn)},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-schedpdf]");if(!a||typeof window.blkImg!=="function")return;const sp=S.meta&&S.meta.schedPdf;if(!sp)return;e.preventDefault();
   /* the real PDF, opened at the page of this shooting day */
@@ -1969,7 +1977,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-folders]")
   const o=mkDialog("fldpick",'<div class="a2box"><h3>'+esc(L("Welchen Ordner öffnen?"))+'</h3><div class="fldl">'+l.map(f=>'<a class="pillbtn" href="'+esc(safeUrl(f.u))+'" target="_blank" rel="noopener noreferrer">'+esc(f.n)+'</a>').join("")+'</div></div>',{replace:true});
   o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest(".fldl a"))setTimeout(()=>o.remove(),0)});document.body.appendChild(o)});
 function openGallery(b,start,pdf){
-  let d=mkDialog("blkgal",null,{replace:true});
+  let d=mkDialog("blkgal",null,{replace:true});if(pdf)d.classList.add("galpdf");   /* PDF pages: the whole screen, narrow margins */
   const all=pdf?bmed(b).filter(m=>m.g==="pdf"&&String(m.n).split(" · ")[0]===pdf):bmed(b),title=pdf?L("Auflösung")+" "+pdfLbl(pdf):(b.title||(L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ")));
   /* view options: size (small / large / list), filter (all / photos / videos), slideshow; size is remembered */
   let gv="m",gf="all",timer=null;try{gv=localStorage.getItem("galview")||"m"}catch(_){}
