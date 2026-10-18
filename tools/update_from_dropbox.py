@@ -737,7 +737,57 @@ def sheet_csv(url, gid):
     rows = [" | ".join(c.strip() for c in row) for row in csv.reader(io.StringIO(r.text)) if sum(1 for c in row if c.strip()) >= 2]
     return "\n".join(rows)
 
+GREEN = []   # the 2nd unit tabs were chosen by their green colour
 SHEET_HIDDEN = []   # names of the hidden sheets of the last sheet_tabs() call
+
+def _is_green(rgb):
+    """«FF34A853» → True: tab colour in the green range (hue 75–170°, clearly coloured)"""
+    import colorsys
+    h = re.sub(r"[^0-9A-Fa-f]", "", str(rgb or ""))[-6:]
+    if len(h) != 6: return False
+    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    hu, li, sa = colorsys.rgb_to_hls(r, g, b)
+    return 75 <= hu * 360 <= 170 and sa >= 0.25 and 0.12 <= li <= 0.9
+
+def sheet_colors(url=None, raw=None):
+    """{tab name: {"hidden": bool, "green": bool}} of a public Google Sheet (from the xlsx export: tab colour and visibility)"""
+    import io, zipfile, html as _html
+    if raw is None:
+        m = re.search(r"/spreadsheets/d/([\w-]+)", url or "")
+        if not m: return {}
+        r = requests.get("https://docs.google.com/spreadsheets/d/%s/export?format=xlsx" % m.group(1), timeout=120)
+        if r.status_code != 200: print("::notice::Tabelle: xlsx-Export HTTP %d" % r.status_code); return {}
+        raw = r.content
+    z = zipfile.ZipFile(io.BytesIO(raw))
+    wb = z.read("xl/workbook.xml").decode("utf-8", "replace")
+    rels = z.read("xl/_rels/workbook.xml.rels").decode("utf-8", "replace")
+    tgt = {a: b for a, b in re.findall(r'<Relationship[^>]*?Id="([^"]+)"[^>]*?Target="([^"]+)"', rels)}
+    tgt.update({a: b for b, a in re.findall(r'<Relationship[^>]*?Target="([^"]+)"[^>]*?Id="([^"]+)"', rels)})
+    theme = {}
+    try:   # theme colours (accent1…6 etc.), if the tab colour is given as theme
+        th = z.read("xl/theme/theme1.xml").decode("utf-8", "replace")
+        sch = re.search(r"<a:clrScheme.*?</a:clrScheme>", th, re.S).group(0)
+        for i, (tag, val) in enumerate(re.findall(r"<a:(dk1|lt1|dk2|lt2|accent\d|hlink|folHlink)>.*?(?:srgbClr val|lastClr)=\"([0-9A-Fa-f]{6})\"", sch, re.S)):
+            theme[{0: 1, 1: 0, 2: 3, 3: 2}.get(i, i)] = val   # Excel counts lt1, dk1, lt2, dk2, accent1… (the file lists dk1 first)
+    except Exception: pass
+    out = {}
+    for tag in re.findall(r"<sheet\b[^>]*/?>", wb):
+        name = _html.unescape((re.search(r'name="([^"]*)"', tag) or [None, ""])[1])
+        hidden = bool(re.search(r'state="(hidden|veryHidden)"', tag))
+        rid = (re.search(r'r:id="([^"]+)"', tag) or [None, ""])[1]
+        path = tgt.get(rid, "")
+        path = "xl/" + path.lstrip("/").replace("xl/", "", 1) if path else ""
+        green = False
+        try:
+            x = z.read(path).decode("utf-8", "replace")[:4000]
+            tc = re.search(r"<tabColor\b([^>]*)/?>", x)
+            if tc:
+                rgb = re.search(r'rgb="([0-9A-Fa-f]{6,8})"', tc.group(1))
+                thm = re.search(r'theme="(\d+)"', tc.group(1))
+                green = _is_green(rgb.group(1) if rgb else theme.get(int(thm.group(1))) if thm else "")
+        except Exception: pass
+        out[name] = {"hidden": hidden, "green": green}
+    return out
 
 def sheet_tabs(url):
     """[(gid, tab name)] of a public Google Sheet (from its html view)"""
@@ -753,9 +803,9 @@ def sheet_tabs(url):
     hid = {g for n, g in items if re.search(r'(?i)hidden\s*:\s*true', next((m.group(0) for m in re.finditer(r'\{[^{}]*?gid:\s*"?' + g + r'\b[^{}]*\}', r.text)), ""))}
     have = {g for g, _ in tabs}
     if not tabs: tabs = [(g, n) for n, g in items]   # no tab bar in the html (very old layout): all sheets of the list
-    out = [(g, clean(n)) for g, n in tabs if g not in hid]
     SHEET_HIDDEN[:] = [clean(n) for n, g in items if g not in have or g in hid]
-    return out
+    seen = {g for g, _ in tabs}
+    return [(g, clean(n)) for g, n in tabs] + [(g, clean(n)) for n, g in items if g not in seen and not seen.add(g)]
 
 # ---------- main ----------
 PREP_PLAN_RE = re.compile(r"(?i)weekly|wochen|daily|tages")
@@ -956,10 +1006,24 @@ def main():
             def scs(u):
                 return {re.sub(r"\s+", "", str(i.get("sc") or "")).lower() for i in (u or {}).get("items") or [] if i.get("sc")}
             newc = {}
-            tabs = sheet_tabs(url); byday = {}
+            # only the GREEN tabs count (also hidden ones); without readable colours: the shown tabs, as before
+            tabs = sheet_tabs(url); byday = {}; GREEN.clear()
+            try: cols = sheet_colors(url)
+            except Exception as e: cols = {}; print("::notice::2nd Unit: Blattfarben nicht lesbar (%s)" % type(e).__name__)
+            def dn(n):
+                m = re.match(r"\s*#\s*(\d+)", n); return m.group(1) if m else "–"
+            if cols and any(v["green"] for v in cols.values()):
+                skip = [n for _, n in tabs if not (cols.get(n) or {}).get("green")]
+                tabs = [(g, n) for g, n in tabs if (cols.get(n) or {}).get("green")]; GREEN[:] = [1]
+                print("::notice::2nd Unit: %d grüne Blätter verwendet (davon %d ausgeblendet; Drehtag %s), %d nicht grüne ignoriert (Drehtag %s)"
+                      % (len(tabs), sum(1 for _, n in tabs if (cols.get(n) or {}).get("hidden")), ",".join(sorted({dn(n) for _, n in tabs}, key=lambda x: (len(x), x))) or "–",
+                         len(skip), ",".join(sorted({dn(n) for n in skip}, key=lambda x: (len(x), x))) or "–"))
+            else:
+                print("::notice::2nd Unit: keine grünen Blätter erkannt (%d Farben gelesen) – nur eingeblendete Blätter verwendet" % len(cols))
+                tabs = [(g, n) for g, n in tabs if n not in SHEET_HIDDEN]
             for gid, name in tabs:   # several tabs of one day (e.g. «#11-Lake-Hospital» and «#11-AuntsHouse») are read together
                 m = re.match(r"\s*#\s*(\d+)\b", name)
-                if m and not re.search(r"(?i)\balt\b|\bold\b", name): byday.setdefault(int(m.group(1)), []).append((gid, name))
+                if m and (GREEN or not re.search(r"(?i)\balt\b|\bold\b", name)): byday.setdefault(int(m.group(1)), []).append((gid, name))
             for no, v in sorted(byday.items()):
                 gid, name = "+".join(g for g, _ in v), " + ".join(n for _, n in v)
                 day = next((d for d in shoot if dayno(d) == no), None)
@@ -982,8 +1046,6 @@ def main():
                     else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
                 except Exception as e:
                     print("::notice::2nd Unit Tag %d: %s" % (no, type(e).__name__)); failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
-            hd = sorted({int(m.group(1)) for n in SHEET_HIDDEN for m in [re.match(r"\s*#\s*(\d+)", n)] if m})
-            print("::notice::2nd Unit: %d ausgeblendete Blätter ignoriert%s" % (len(SHEET_HIDDEN), (" (Drehtag " + ",".join(map(str, hd)) + ")") if hd else ""))
             print("::notice::2nd Unit: %d Blätter, Drehtage %s in der Tabelle, %d gelesen · laut Drehplan an Tag %s"
                   % (len(tabs), ",".join(str(k) for k in sorted(byday)), len(newc), ",".join(str(k) for k in sorted(UD.get("unit2") or [])) or "?"))
             cache = newc
