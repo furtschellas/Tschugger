@@ -248,6 +248,8 @@ _bio = _io.BytesIO(); _wb.save(_bio)
 _col = U.sheet_colors(raw=_bio.getvalue())
 check("2nd Unit: grüne Blätter erkannt, auch ausgeblendete; rote und ungefärbte nicht",
       {k: (v["green"], v["hidden"]) for k, v in _col.items()} == {"#5-Salgesch": (False, False), "#6 Pfyn": (True, True), "#7 alt": (True, False), "#8 ohne Farbe": (False, False)}, _col)
-check("2nd Unit: Grüntöne", [U._is_green(c) for c in ("FF34A853", "00FF00", "B7E1CD", "0B8043", "FF0000", "FFFF00", "4285F4", "FFFFFF")] == [True, True, True, True, False, False, False, False])
+check("2nd Unit: Grün- und Orangetöne zählen, Rot/Gelb/Blau/Weiss nicht",
+      [U._is_green(c) for c in ("FF34A853", "00FF00", "B7E1CD", "0B8043", "FF9900", "E69138", "F6B26B", "FCE5CD", "FF0000", "FFFF00", "4285F4", "FFFFFF", "999999")]
+      == [True] * 8 + [False] * 5, [U._is_green(c) for c in ("FCE5CD",)])
 
 sys.exit(done("Hintergrund"))

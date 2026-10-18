@@ -741,13 +741,14 @@ GREEN = []   # the 2nd unit tabs were chosen by their green colour
 SHEET_HIDDEN = []   # names of the hidden sheets of the last sheet_tabs() call
 
 def _is_green(rgb):
-    """«FF34A853» → True: tab colour in the green range (hue 75–170°, clearly coloured)"""
+    """tab colours that count for the 2nd unit planning: green (hue 75–170°) and orange (hue 18–48°), clearly coloured
+    («FF34A853» green, «FF9900» orange → True; red, yellow, blue, grey → False)"""
     import colorsys
     h = re.sub(r"[^0-9A-Fa-f]", "", str(rgb or ""))[-6:]
     if len(h) != 6: return False
     r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
     hu, li, sa = colorsys.rgb_to_hls(r, g, b)
-    return 75 <= hu * 360 <= 170 and sa >= 0.25 and 0.12 <= li <= 0.9
+    return (75 <= hu * 360 <= 170 or 18 <= hu * 360 <= 48) and sa >= 0.25 and 0.12 <= li <= 0.92
 
 def sheet_colors(url=None, raw=None):
     """{tab name: {"hidden": bool, "green": bool}} of a public Google Sheet (from the xlsx export: tab colour and visibility)"""
@@ -1006,7 +1007,7 @@ def main():
             def scs(u):
                 return {re.sub(r"\s+", "", str(i.get("sc") or "")).lower() for i in (u or {}).get("items") or [] if i.get("sc")}
             newc = {}
-            # only the GREEN tabs count (also hidden ones); without readable colours: the shown tabs, as before
+            # only GREEN and ORANGE tabs count (also hidden ones); without readable colours: the shown tabs, as before
             tabs = sheet_tabs(url); byday = {}; GREEN.clear()
             try: cols = sheet_colors(url)
             except Exception as e: cols = {}; print("::notice::2nd Unit: Blattfarben nicht lesbar (%s)" % type(e).__name__)
@@ -1015,7 +1016,7 @@ def main():
             if cols:   # strictly: green tabs only, all others ignored (no green tab → the 2nd unit of the main schedule)
                 skip = [n for _, n in tabs if not (cols.get(n) or {}).get("green")]
                 tabs = [(g, n) for g, n in tabs if (cols.get(n) or {}).get("green")]; GREEN[:] = [1]
-                print("::notice::2nd Unit: %d grüne Blätter verwendet (davon %d ausgeblendet; Drehtag %s), %d nicht grüne ignoriert (Drehtag %s)"
+                print("::notice::2nd Unit: %d grüne/orange Blätter verwendet (davon %d ausgeblendet; Drehtag %s), %d andere ignoriert (Drehtag %s)"
                       % (len(tabs), sum(1 for _, n in tabs if (cols.get(n) or {}).get("hidden")), ",".join(sorted({dn(n) for _, n in tabs}, key=lambda x: (len(x), x))) or "–",
                          len(skip), ",".join(sorted({dn(n) for n in skip}, key=lambda x: (len(x), x))) or "–"))
             else:   # colours not readable: nothing changes, the last good result stays
