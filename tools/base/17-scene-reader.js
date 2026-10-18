@@ -126,6 +126,14 @@ function factsHTML(hits){
 }
 const TOD_RE=/[-–]\s*(DAY|NIGHT|EVENING|MORNING|DAWN|DUSK|CONTINUOUS|LATER|SAME|NOON|MIDDAY|AFTERNOON|SUNSET|SUNRISE|TAG|NACHT|ABEND|MORGEN)\b/i;
 /* slugline as in the script; if it has no time of day, add it from the schedule (D/N/Ev/Mo) */
+/* English scene heading from the schedule («EXT. VALAIS - SIDE VALLEY ROAD - MORNING»); shown instead of the German one with the EN button */
+function spHeadEn(x){const want=norm(x.sc);let it=null;
+  for(const d of S.days){for(const [,its] of unitLists(d)){it=its.find(i=>i.sc&&norm(i.sc)===want&&i.set);if(it)break}if(it)break}
+  if(!it)return "";const ie=String(it.ie||""),io=(ie.split("/")[0]||"").toUpperCase(),t=ie.split("/")[1]||"";
+  const pre=/I\+E|E\+I/.test(io)?"INT./EXT.":io.startsWith("I")?"INT.":io.startsWith("E")?"EXT.":"";
+  const tod=/^N/i.test(t)?"NIGHT":/^Ev/i.test(t)?"EVENING":/^Mo/i.test(t)?"MORNING":/^D/i.test(t)?"DAY":"";
+  return [pre,String(it.set).trim()].filter(Boolean).join(" ")+(tod?" - "+tod:"")}
+function spTitle(x){const de=spHead(x),en=spHeadEn(x);return '<span class="sct'+(en?' en':'')+'"><span class="hde">'+esc(de)+'</span>'+(en?'<span class="hen">'+esc(en)+'</span>':'')+'</span>'}
 function spHead(x){
   const h=String(x.head||"").trim();if(!h||TOD_RE.test(h))return h;
   const want=norm(x.sc);let ie="";

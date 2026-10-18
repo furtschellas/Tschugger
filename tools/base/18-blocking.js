@@ -76,7 +76,7 @@ function openGallery(b,start,pdf){
 /* the scene in the shooting schedule (for the floorplan of its location) */
 function scItem(sc){const k=String(sc||"").toLowerCase().replace(/\s+/g,"");if(!k)return null;for(const d of S.days||[])for(const it of arr(d.items).concat(arr((d.unit2||{}).items),arr((d.unit3||{}).items)))if(String(it.sc||"").toLowerCase().replace(/\s+/g,"")===k)return it;return null}
 function blkRow(sc){const it=scItem(sc);const h=fpLinks(it?fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")):[],blkFor(sc));return h?'<div class="spblk">'+h+'</div>':''}
-function spPage(x,ctx,list,reqSc){const f=sceneFacts(reqSc||x.sc,x,list);return '<div class="sp-scene">'+(f||blkRow(x.sc))+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+esc(spHead(x))+'</span><span class="spr">'+spTod(x)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
+function spPage(x,ctx,list,reqSc){const f=sceneFacts(reqSc||x.sc,x,list);return '<div class="sp-scene">'+(f||blkRow(x.sc))+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+spTitle(x)+'</span><span class="spr">'+spTod(x)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
 function spMore(dir,list,j){
   const y=list[j];if(!y)return'';
   return '<button type="button" class="sp-more" data-spmore="'+dir+'" data-spi="'+j+'">'+(dir==="prev"?'▲ ':'')+esc(L(dir==="prev"?"Vorherige Szene lesen":"Folgende Szene lesen"))+' · '+esc(y.sc)+(dir==="next"?' ▼':'')+'</button>';
@@ -140,6 +140,8 @@ const ACTIONS=[
   ["[data-spt]",()=>{const nx=spTheme()==="light"?"dark":"light";SPT=nx===getTheme()?null:nx;store("spt",SPT||"");svApply()}],
   ["[data-lv]",b=>{const k=b.dataset.lv;S.lv=Object.assign({},S.lv,{[k]:!S.lv[k]});store("lv",JSON.stringify(S.lv));document.querySelectorAll(".lvwrap").forEach(w=>w.className="lvwrap "+lvClasses());document.querySelectorAll("[data-lv]").forEach(x=>x.setAttribute("aria-pressed",String(S.lv[x.dataset.lv])))}],
   ["[data-sv]",b=>{const k=b.dataset.sv;S.sv=Object.assign({},S.sv,{[k]:!S.sv[k]});store("sv",JSON.stringify(S.sv));svApply()}],
+  ["[data-pvall]",b=>{const on=!PVKEYS.every(k=>S.pv[k]);S.pv=Object.assign({},S.pv);PVKEYS.forEach(k=>S.pv[k]=on);store("pv",JSON.stringify(S.pv));pvApply();render()}],
+  ["[data-svall]",b=>{const ks=SVKEYS.filter(k=>k!=="e").concat("box"),on=!ks.every(k=>S.sv[k]);S.sv=Object.assign({},S.sv);ks.forEach(k=>S.sv[k]=on);store("sv",JSON.stringify(S.sv));svApply();render()}],
   ["[data-pv]",b=>{const k=b.dataset.pv;S.pv=Object.assign({},S.pv,{[k]:!S.pv[k]});store("pv",JSON.stringify(S.pv));pvApply()}],
   ["[data-goto]",b=>{S.day=b.dataset.goto;S.tab="plan";S.pu={"1":true,"2":true,"3":true};window.scrollTo(0,0);render()}],
 ];

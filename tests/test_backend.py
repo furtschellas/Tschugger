@@ -151,6 +151,7 @@ check("Changelog: passend zur Drehbuch-Version gewählt", (U.pick_changelog(_fs,
 common.GROUP = 'Push-Versand'
 import push_send as P  # noqa: E402
 P.SENT = str(TMP / "sent.json"); P.vapid_keys = lambda key: ["pem"]
+P.DEVS = str(TMP / "nodir" / "devices.json")   # the device cache is tested on its own below (here: always all devices)
 fs = FakeFS().install()
 dev = lambda role, **k: {"c": enc(dict({"sub": {"endpoint": "https://push/" + role}, "on": True, "lang": "fr", "who": {"role": role, "email": role + "@t"}}, **k))}
 fs.d["push/dCrew"] = dev("crew"); fs.d["push/dCat"] = dev("catering"); fs.d["push/dOff"] = dev("crew", news={"plan": False})
@@ -179,6 +180,23 @@ calls.clear(); res["admin"] = "ok"; P.main()
 eps = [e for e, _ in calls]; b1 = fs.d["broadcasts/b1"]
 check("Push-Versand: zweiter Lauf schickt nur noch an das fehlgeschlagene Gerät", eps == ["https://push/admin"], eps)
 check("Push-Versand: danach erledigt", b1.get("fin") is True and "dErr" in b1.get("done"))
+
+# registered devices: all of them at most once an hour, in between only the changed ones (fewer Firebase reads)
+_dp = TMP / "devs.json"; P.DEVS = str(_dp)
+_calls = {"list": 0, "q": 0}
+_ol, _oq = P.fsadmin.list_docs, P.fsadmin.query_since
+def _fl(col): _calls["list"] += 1; return iter([("a", {"c": "A"}, None), ("b", {"c": "B"}, None)])
+def _fq(col, field, iso): _calls["q"] += 1; return iter([("b", {"c": "B2"}, None)])
+P.fsadmin.list_docs, P.fsadmin.query_since = _fl, _fq
+try:
+    if _dp.exists(): _dp.unlink()
+    P.PEND_DEVS.clear(); d1 = dict((k, v) for k, v, _ in P.push_devices()); P.save_devices()
+    P.PEND_DEVS.clear(); d2 = dict((k, v) for k, v, _ in P.push_devices()); P.save_devices()
+    c = json.loads(_dp.read_text()); c["full"] -= 4000; _dp.write_text(json.dumps(c))
+    P.PEND_DEVS.clear(); P.push_devices()
+finally:
+    P.fsadmin.list_docs, P.fsadmin.query_since = _ol, _oq
+check("Push-Versand: Geräte stündlich ganz gelesen, dazwischen nur geänderte", d1 == {"a": {"c": "A"}, "b": {"c": "B"}} and d2 == {"a": {"c": "A"}, "b": {"c": "B2"}} and _calls == {"list": 2, "q": 1}, (d1, d2, _calls))
 
 # ====================================================================== Google Kalender
 common.GROUP = 'Google Kalender'

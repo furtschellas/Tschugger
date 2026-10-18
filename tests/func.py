@@ -334,7 +334,18 @@ async def owner_tests(p, port):
           v.querySelector('[data-pv="g"]').click();const c0=chg();v.querySelector('[data-pv="inf"]').click();const d0=vis(v.querySelector('.sc .bdt'));
           S.pv=pv;store('pv',JSON.stringify(pv));pvApply();chgSave(o);S.meta.bd=keep;render();return {keys,txt,u,sep,last,c1,c0,d0}})()""")
         check("Drehplan: Szenen-Details als Fliesstext zuunterst (« // »), runder Info-Knopf und Änderungen-Knopf",
-              ct in (None, {"keys": "i,d,c,a,b,inf,g", "txt": "FX: Double BJCrew: LifeguardProps: Knife, Stone (soft, dummy)Mup/Hair: Mike dyingNotes: a / b", "u": True, "sep": '" // "', "last": True, "c1": True, "c0": False, "d0": False}), ct, public=True)
+              ct in (None, {"keys": "i,d,c,inf,a,b,g", "txt": "FX: Double BJCrew: LifeguardProps: Knife, Stone (soft, dummy)Mup/Hair: Mike dyingNotes: a / b", "u": True, "sep": '" // "', "last": True, "c1": True, "c0": False, "d0": False}), ct, public=True)
+        pva = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;const pv=Object.assign({},S.pv);S.tab='plan';S.day=d.id;render();
+          const q=()=>document.querySelector('#view [data-pvall]');if(!q())return 'kein Knopf';const last=q().parentElement.querySelector('.pvbtn:last-of-type')===q()||!q().nextElementSibling||q().nextElementSibling.classList.contains('pvunits');
+          q().click();const off=PVKEYS.every(k=>!S.pv[k]);q().click();const on=PVKEYS.every(k=>S.pv[k]);S.pv=pv;store('pv',JSON.stringify(pv));pvApply();render();return {last,off,on}})()""")
+        check("Drehplan: Knopf «alles auf-/zuklappen» rechts von den Knöpfen", pva in (None, {"last": True, "off": True, "on": True}), pva, public=True)
+        sct = await E("""(async()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);const keep=S.meta.bd,sv=Object.assign({},S.sv);
+          S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{},c:[['Props',['Knife']]]}};S.tab='script';S.sq=String(it.sc);S.sqm='sc';render();await new Promise(r=>setTimeout(r,300));render();
+          const v=document.querySelector('#view');const vis=e=>!!e&&getComputedStyle(e).display!=='none';const b=v.querySelector('.spf1 .bdt');const a=vis(b);
+          const before=!!b&&!!b.nextElementSibling&&b.nextElementSibling.classList.contains('spfa')||!!b&&!v.querySelector('.spf1 .spfa');
+          const btn=v.querySelector('.svtab [data-sv="inf"]');if(btn)btn.click();const off=!vis(v.querySelector('.spf1 .bdt'));const btn2=document.querySelector('#view .svtab [data-sv="inf"]');if(btn2)btn2.click();const on=vis(document.querySelector('#view .spf1 .bdt'));
+          S.sv=sv;store('sv',JSON.stringify(sv));S.meta.bd=keep;S.sq='';render();return {a,before,btn:!!btn,off,on}})()""")
+        check("Drehbuch: Szenen-Details über der Adresse, Info-Knopf blendet sie aus und ein", sct in (None, {"a": True, "before": True, "btn": True, "off": True, "on": True}), sct, public=True)
         sim = await E("""(async()=>{if(typeof admLoad==='function'&&!ADM.loaded)await admLoad();const em=Object.keys(ADM.ur||{}).find(e=>ADM.ur[e]&&ADM.ur[e]!=='admin'&&!ADMINS.includes(e)&&lc(e)!==lc(ME.email));
           if(!em)return null;const btn=simBtn(em).includes('data-simstart');simStart(em);const r={btn,adm:isAdmin(),bar:!!document.getElementById('simbar'),tab:S.tab,who:simEmail()===em,perms:MYPERMS.length===arr((ADM.roles.find(x=>x.id===ADM.ur[em])||{}).perms).length};
           const f=document.createElement('form');document.body.appendChild(f);let saved=true;f.addEventListener('submit',()=>{saved=true});saved=false;f.dispatchEvent(new Event('submit',{cancelable:true}));f.remove();r.blocked=!saved;
