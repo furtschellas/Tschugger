@@ -101,7 +101,7 @@ VIEWS.today=function(){
   {const sc=scriptChg();if(sc){cl.push(sc);cl.sort((a,b)=>(b.at||0)-(a.at||0))}}
   if((canPlan||cl.length)&&tShow("chg"))h+='<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(cl.some(c=>c.unread)?' <span class="chgdot">'+cl.filter(c=>c.unread).length+' '+esc(L("neu"))+'</span>':'')+'</div>'+
     (cl.length?chgUnitsHTML(cl)+
-      '<div class="tacts">'+(cl.some(c=>c.unread)?'<button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button>':'')+(can("push.send")&&cl.some(c=>!c.script)?'<button type="button" class="pillbtn" data-chgpush>'+esc(L("Als Push-Nachricht senden"))+'</button>':'')+'</div>'
+      '<div class="tacts">'+(cl.some(c=>c.unread)?'<button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button>':'')+'</div>'
       :'<p class="ghint">'+esc(L("Seit deinem letzten Besuch hat sich am Drehplan nichts geändert."))+'</p>')+'</div>';
   /* offline */
   const st=offState(),on=navigator.onLine!==false;
