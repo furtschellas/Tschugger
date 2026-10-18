@@ -568,9 +568,12 @@ def parse_breakdown(txt):
         if first:
             blk = body[first.start():].strip()
             parts = re.split(r"(?:^|,\s+|(?<=:\s)|\s+(?=(?:%s):\s))(%s):\s+" % (_BD_LAB, _BD_LAB), blk)   # also «Special: Elec: …»
+            pre = ""
             for i in range(1, len(parts) - 1, 2):
                 lab = re.sub(r"\s+", " ", parts[i]); val = parts[i + 1].strip(" ,")
-                if not val: continue
+                if not val:   # «Special: Loc: Road block» stays together as in the PDF
+                    pre = lab + ": " if lab == "Special" else ""; continue
+                lab, pre = pre + lab, ""
                 vals = [val] if lab == "Story Date" else _bd_split(val, " / " if lab == "Notes" else ",")
                 for c in cats:
                     if c[0] == lab: c[1] += vals; break
@@ -1054,9 +1057,8 @@ def main():
                 tt = _bd_join(re.sub(r"(?m)^Tschugger Sched - .*page # \d+[ \t]*$", "", stxt.replace("\f", "\n")))
                 diff = []
                 for lab in BD_LABELS:
-                    if lab == "Loc": continue
                     n_txt = len(re.findall(r"(?:^|[\s,])%s:\s" % re.escape(lab).replace(r"\ ", r"\s+"), tt))
-                    n_bd = sum(1 for v in {kk: vv for day in pb.values() for kk, vv in day.items() for kk in [kk + str(id(day))]}.values() for c in v.get("c") or [] if c[0] == lab)
+                    n_bd = sum(1 for day in pb.values() for v in day.values() for c in v.get("c") or [] if c[0] == lab or c[0].startswith(lab + ": ") or c[0].endswith(": " + lab))
                     if n_txt != n_bd: diff.append("%s %d/%d" % (lab, n_bd, n_txt))
                 print("::notice::Szenen-Details Kontrolle (übernommen/im PDF): " + (", ".join(diff) if diff else "alles übernommen"))
                 pk = sorted({"D%d %s" % (n, k) for n, v in pb.items() for k in v})

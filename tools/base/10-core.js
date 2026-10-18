@@ -128,8 +128,10 @@ function bdFor(date,sc){const m=(S.meta&&S.meta.bd)||{},k=bdKey(sc);if(!k)return
   for(const x in m)if(x.slice(x.indexOf("|")+1)===k)return m[x];return null}
 const BDG={art:["Set Dec","Set dressing","Props","Vehicles"],hmu:["Mup/Hair","Costume"]};
 const bdGroup=k=>BDG.art.includes(k)?"art":BDG.hmu.includes(k)?"hmu":"inf";
+/* the extras (XX) go with the cast: shown and hidden with the cast button */
+function bdXX(date,sc){if(!date)return "";const b=bdFor(date,sc);const x=b&&b.h&&b.h.XX;return x?'<div class="bdx"><u>XX:</u> '+esc(x)+'</div>':""}
 function bdHTML(date,sc){if(!date)return "";const b=bdFor(date,sc);if(!b)return "";
-  const h=b.h||{},its=[];if(h.FX)its.push(["FX",[h.FX]]);if(h.XX)its.push(["XX",[h.XX]]);arr(b.c).forEach(c=>its.push(c));
+  const h=b.h||{},its=[];if(h.FX)its.push(["FX",[h.FX]]);arr(b.c).forEach(c=>its.push(c));
   return its.length?'<p class="bdt">'+its.map(([t,v])=>'<span class="bdi"><u>'+esc(t)+':</u> '+esc(arr(v).join(t==="Notes"?" / ":", "))+'</span>').join("")+'</p>':""}
 function itemHTML(it){
   if(!it.sc){
@@ -147,7 +149,7 @@ function itemHTML(it){
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
     (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
-    castChips(it.cast)+
+    castChips(it.cast)+bdXX(window.__mctx&&window.__mctx.date,it.sc)+
     bdHTML(window.__mctx&&window.__mctx.date,it.sc)+(it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
     '</div></li>';
 }
