@@ -652,6 +652,17 @@ def read_sheet(url):
     rows = [" | ".join(c for c in row) for row in p.rows if sum(1 for c in row if c.strip()) >= 2]
     return "\n".join(rows)
 
+def sheet_tabs(url):
+    """[(gid, tab name)] of a public Google Sheet (from its html view)"""
+    m = re.search(r"/spreadsheets/d/([\w-]+)", url)
+    if not m: return []
+    r = requests.get("https://docs.google.com/spreadsheets/d/%s/htmlview" % m.group(1), timeout=60)
+    if r.status_code != 200: return []
+    tabs = re.findall(r'id="sheet-button-(\d+)"[^>]*>\s*<a[^>]*>([^<]+)</a>', r.text)
+    if not tabs: tabs = [(g, n) for n, g in re.findall(r'name:\s*"([^"]+)"[^}]*?gid:\s*"?(\d+)', r.text)]
+    import html as _html
+    return [(g, _html.unescape(n).strip()) for g, n in tabs]
+
 # ---------- main ----------
 PREP_PLAN_RE = re.compile(r"(?i)weekly|wochen|daily|tages")
 def prep_stand(e):
@@ -818,6 +829,49 @@ def main():
             else:
                 failed("schedule", f, "Ergebnis unvollständig – bisherige Daten bleiben")
           except Exception as e: failed("schedule", f, e)
+
+    # 2nd unit: the detailed shooting order (Google Sheet, linked in the Dropbox as «…2nd_Unit…SHOOTING_ORDER….web»)
+    # replaces the 2nd unit part of each shooting day in the Drehplan; one sheet tab per day («#5-Salgesch»; «ALT» tabs ignored)
+    try:
+        lk = sorted([f for f in files if f["name"].lower().endswith(".web") and re.search(r"(?i)2nd.?unit", f["name"])], key=lambda f: f["modified"] or "")
+        url = ""
+        if lk:
+            m = re.search(rb"https://[^\s\"'<>]+", dbx.download(lk[-1]["id"])); url = m.group(0).decode() if m else ""
+        cache = dict(meta.get("unit2Sheet") or {})
+        if url and "docs.google.com/spreadsheets" in url:
+            shoot = [d for d in data.get("days") or [] if d.get("kind") == "shoot"]
+            def dayno(d):
+                m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")); return int(m.group(1)) if m else None
+            newc = {}
+            for gid, name in sheet_tabs(url):
+                m = re.match(r"\s*#\s*(\d+)\b", name)
+                if not m or re.search(r"(?i)\balt\b|\bold\b", name): continue
+                no = int(m.group(1)); day = next((d for d in shoot if dayno(d) == no), None)
+                if not day: continue
+                txt = read_sheet(url.split("#")[0].split("?")[0] + "?gid=" + gid) or ""
+                if len(txt) < 40: continue
+                h = hashlib.sha256(txt.encode()).hexdigest()[:16]
+                old2 = cache.get(gid) or {}
+                if old2.get("h") == h and old2.get("u2") and not FORCE: newc[gid] = old2; continue
+                if not may_try("unit2", {"name": "2nd-unit-" + name, "modified": h}): continue
+                try:
+                    u2 = claude([{"type": "text", "text": "2ND-UNIT SHOOTING ORDER «%s» (Tabelle, Zellen mit | getrennt):\n%s" % (name, txt[:60000])}],
+                        "Erzeuge aus dieser genauen Drehreihenfolge der 2nd Unit für Drehtag %d (%s) ein JSON-Objekt für das Feld \"unit2\" eines Tages gemäss Collection \"days\": "
+                        "Arbeitszeit, und \"items\" in der Reihenfolge der Tabelle mit Uhrzeit, Szene, Innen/Aussen und Tageszeit, Seiten, Motiv/Adresse, Cast/Komparsen und Bemerkungen "
+                        "(Setups wie A-1/B-2, Rigging, Umbau, Move, Lunch und Wrap als Einträge ohne Szene). Fahrzeuge, Blocker, Grip, Ton und weitere Logistik als \"notes\". "
+                        "Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisheriger 2nd-Unit-Teil dieses Tages aus dem Drehplan (Cast-Nummern und Schreibweisen übernehmen): %s"
+                        % (no, day.get("date"), json.dumps(day.get("unit2") or {}, ensure_ascii=False)[:20000]), 32000)
+                    if isinstance(u2, dict) and isinstance(u2.get("items"), list) and u2["items"]:
+                        u2["src"] = "2nd"; newc[gid] = {"h": h, "no": no, "u2": u2}; log("2nd Unit: Tag", no, "übernommen,", len(u2["items"]), "Einträge")
+                    else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
+                except Exception as e: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
+            cache = newc
+            for c in cache.values():   # also after a new Drehplan: the detailed 2nd unit order stays on its day
+                day = next((d for d in shoot if dayno(d) == c["no"]), None)
+                if day and day.get("unit2") != c["u2"]: day["unit2"] = c["u2"]; changed = True
+            sources.append({"kind": "unit2", "name": "Google Sheet «2nd Unit Shooting Order»", "link": url, "modified": NOW})
+        if cache != (meta.get("unit2Sheet") or {}): meta["unit2Sheet"] = cache; changed = True
+    except Exception as e: log("2nd-Unit-Planung nicht gelesen:", type(e).__name__)
 
     # crew
     f = pick_crew(files)
@@ -1101,7 +1155,17 @@ def main():
             meta["floorplans"], meta["blocking"] = fps, blk; changed = True; log("Floorplans:", len(fps), "· Blocking:", len(blk))
 
     # location list (Google Sheet chosen by the main admin)
-    sheet = cfg.get("locSheet") or DEFAULT_SHEET
+    # Motivliste: the link set in the app, else a Google-Sheets link in the Dropbox («….web» with Motiv/Location in the name)
+    sheet = cfg.get("locSheet") or ""
+    if not sheet:
+        try:
+            lk = sorted([f for f in files if f["name"].lower().endswith(".web") and re.search(r"(?i)motiv|location", f["name"].split("/")[-1])
+                         and not re.search(r"(?i)2nd.?unit|shooting.?order", f["name"])], key=lambda f: f["modified"] or "")
+            if lk:
+                m = re.search(rb"https://docs\.google\.com/spreadsheets/[^\s\"'<>]+", dbx.download(lk[-1]["id"]))
+                if m: sheet = m.group(0).decode()
+        except Exception as e: log("Motivliste-Link aus der Dropbox nicht gelesen:", type(e).__name__)
+    sheet = sheet or DEFAULT_SHEET
     try:
         txt = read_sheet(sheet)
     except Exception: txt = None
