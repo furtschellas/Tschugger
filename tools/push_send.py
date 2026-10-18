@@ -71,12 +71,20 @@ def send(sub, data, pems, ttl):
     return "err"
 
 
+def _note(what, e):
+    """error note for the run summary: only the error type and line, never data"""
+    import traceback
+    tb = traceback.extract_tb(e.__traceback__)
+    where = ", ".join(f"{os.path.basename(t.filename)}:{t.lineno}" for t in tb[-3:])
+    print(f"::warning::{what}: {type(e).__name__} ({where})")
+
+
 def main():
     import signal
     signal.signal(signal.SIGTERM, lambda *a: sys.exit(1))   # job timeout: still save sent.json (finally below)
     kb64 = fsadmin.crew_key_b64()
     if not kb64:
-        print("• Kein Crew-Schlüssel"); return 1
+        print("::error::Kein Crew-Schlüssel"); return 1
     key = base64.b64decode(kb64)
     try:
         sent = json.load(open(SENT))
@@ -85,7 +93,7 @@ def main():
     sent = {k: v for k, v in sent.items() if v > NOW - 3 * 86400}
     pems = vapid_keys(key)
     if not pems:
-        print("• Kein VAPID-Schlüssel"); return 1
+        print("::error::Kein VAPID-Schlüssel"); return 1
     sa = bool(fsadmin.sa())
     n_dev = n_sent = n_gone = n_late = n_err = 0
 
@@ -112,6 +120,7 @@ def main():
     bad = set()   # messages with failed devices: not finished, tried again next run
     try:
         for did, f, _ in fsadmin.list_docs("push"):
+          try:
             c = f.get("c")
             if not c: continue
             try:
@@ -136,8 +145,8 @@ def main():
                 if r == "ok": n_sent += 1; sent[k] = NOW; got.setdefault(bid, []).append(did)
                 else: n_err += 1; bad.add(bid)   # not marked: tried again in the next run
             for it in ([] if gone else p.get("items", [])):
-                at = it.get("at", 0) / 1000
-                start = it.get("start", it.get("at", 0)) / 1000
+                at = (it.get("at") or 0) / 1000
+                start = (it.get("start") or it.get("at") or 0) / 1000
                 k = did + "|" + str(it.get("id")) + "|" + str(int(at))
                 if k in sent or at > NOW + EARLY or start < NOW - 60: continue
                 if at < NOW - LATE:
@@ -149,6 +158,8 @@ def main():
             if gone:
                 n_gone += 1
                 if sa: fsadmin.delete_doc("push/" + did)   # the device removed the app or turned push off in the browser
+          except Exception as e:   # one faulty device or entry must not stop the others
+            n_err += 1; _note("Gerät übersprungen", e)
         for bid, b, done, ut in bcs:
             if not sa: continue
             upd = {} if bid in bad else {"fin": True}   # with failures: again next run
@@ -162,4 +173,12 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except Exception as e:
+        import traceback
+        tb = traceback.extract_tb(e.__traceback__)
+        print("::error::Push-Versand abgebrochen: " + type(e).__name__ + " (" + ", ".join(f"{os.path.basename(t.filename)}:{t.lineno}" for t in tb[-4:]) + ")")
+        sys.exit(1)
