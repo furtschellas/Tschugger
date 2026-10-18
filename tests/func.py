@@ -342,6 +342,12 @@ async def owner_tests(p, port):
           const f=document.createElement('form');document.body.appendChild(f);let saved=true;f.addEventListener('submit',()=>{saved=true});saved=false;f.dispatchEvent(new Event('submit',{cancelable:true}));f.remove();r.blocked=!saved;
           simEnd();r.back=isOwner()&&!document.getElementById('simbar')&&simEmail()===ME.email;return r})()""")
         check("Benutzer: Ansicht als andere Person (Rechte der Rolle, Balken, nichts speichern, zurück)", sim in (None, {"btn": True, "adm": False, "bar": True, "tab": "today", "who": True, "perms": True, "blocked": True, "back": True}), sim, public=True)
+        simr = await E("""(async()=>{if(typeof admLoad==='function'&&!ADM.loaded)await admLoad();const ro=(ADM.roles||[])[0];if(!ro)return null;
+          S.tab='admin';ADM.sub='roles';render();const pick=document.querySelector('#view [data-simpick]');const opt=!!pick&&!!pick.querySelector('option[value="role:'+ro.id+'"]')&&!!pick.querySelector('option[value="role:"]');
+          pick.value='role:'+ro.id;pick.dispatchEvent(new Event('change',{bubbles:true}));
+          const r={opt,adm:isAdmin(),bar:(document.getElementById('simbar')||{}).textContent.includes(ro.name||ro.id),perms:MYPERMS.length===arr(ro.perms).filter(p=>PERMS.some(x=>x[0]===p)).length,role:MYROLE===ro.id};
+          simEnd();simStartRole('');r.none=MYROLE===''&&MYPERMS.length===0&&!isAdmin();simEnd();r.back=isOwner()&&!document.getElementById('simbar');return r})()""")
+        check("Verwaltung: Ansicht als Rolle (ohne Person) und «Keine Rolle» simulieren", simr in (None, {"opt": True, "adm": False, "bar": True, "perms": True, "role": True, "none": True, "back": True}), simr, public=True)
         # blocking per scene: parts get their own part + the general pictures, never another part; slideshow scenes «25 SL2» never scene 25
         bf = await E("""(()=>{const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
           S.meta.blocking=[{name:'Scene_186',sc:['186'],media:[{f:'a'},{f:'b',p:'186pt1'},{f:'c',p:'186pt2'}],pdfs:[{l:'186 pt1'},{l:'186 pt2'}]},
