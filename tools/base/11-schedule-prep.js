@@ -5,7 +5,15 @@ const hasU=(d,u)=>{const x=d["unit"+u];return !!(x&&x.items&&x.items.length)};
 const unitLists=d=>[["1",d.items||[]],["2",(d.unit2&&d.unit2.items)||[]],["3",(d.unit3&&d.unit3.items)||[]]];
 /* units offered: 2nd unless the main admin switched it off; 3rd when switched on (website) or, in the Claude app, when the schedule has one */
 function unitsOn(){const u=["1"];if(window.UNIT2!==false)u.push("2");if(window.UNIT3===true||(window.UNIT3===undefined&&S.days.some(d=>hasU(d,"3"))))u.push("3");return u}
-function planDays(){return S.days.filter(d=>(S.pu["1"]&&(d.kind!=="shoot"||(d.items||[]).some(i=>i.sc)))||(S.pu["2"]&&hasU(d,"2"))||(S.pu["3"]&&hasU(d,"3")))}
+/* only the 2nd (or 3rd) unit chosen: still all shooting days and days off are listed – the unit's days have a pink frame */
+const onlyU=()=>!S.pu["1"]&&(S.pu["2"]||S.pu["3"]);
+function planDays(){const all=onlyU();return S.days.filter(d=>((S.pu["1"]||all)&&(d.kind!=="shoot"||(d.items||[]).some(i=>i.sc)))||(S.pu["2"]&&hasU(d,"2"))||(S.pu["3"]&&hasU(d,"3")))}
+const hasSelU=d=>(S.pu["2"]&&hasU(d,"2"))||(S.pu["3"]&&hasU(d,"3"));
+/* a day without the chosen unit is tapped: short note, the 1st unit is switched on again (before the normal day switch) */
+document.addEventListener("click",e=>{if(!onlyU())return;const b=e.target.closest("[data-day],[data-dday]");if(!b||b.disabled)return;
+  const d=S.days.find(x=>x.id===b.dataset.day||x.date===b.dataset.dday);if(!d||d.kind!=="shoot"||hasSelU(d))return;
+  S.pu=Object.assign({},S.pu,{"1":true});store("pu",JSON.stringify(S.pu));
+  showMsg(L("An diesem Tag findet keine 2nd Unit statt – die 1st Unit ist wieder eingeschaltet."),3500)},true);
 function townOf(ad){const p=String(ad).split(",").map(x=>x.trim()).filter(Boolean);const last=p[p.length-1]||"";return last.replace(/^\d{4}\s*/,"").replace(/\s*\(.*\)$/,"")}
 function dayPlaces(d){
   const out=[];
@@ -19,13 +27,14 @@ function dayNav(PD,isSel,attr,key,extra,pre){
   const sel=PD.find(isSel)||{};
   const ub=u=>{if(u==="1")return '<button data-pu="1" aria-pressed="'+!!S.pu["1"]+'" aria-label="1st Unit">1st</button>';const has=hasU(sel,u);return '<button data-pu="'+u+'" class="u'+u+(has?'':' none')+'" aria-pressed="'+!!S.pu[u]+'" aria-label="'+UNAME[u]+' Unit"'+(has?'':' title="'+esc(L("Keine "+UNAME[u]+" Unit an diesem Tag."))+'"')+'>'+UNAME[u]+'</button>'};
   const uo=unitsOn();
-  UNITBAR=uo.length>1?'<div class="pub dpub" role="group" aria-label="'+L("Unit filtern")+'">'+uo.map(ub).join("")+'</div>':'';
-  let h='<div class="stripwrap"><div class="strip in" role="tablist" aria-label="'+esc(L("Tage"))+'">'+(pre||"");
+  /* the unit buttons stay at the top with the days (they do not scroll away) */
+  const ubar=uo.length>1?'<div class="pub dpub" role="group" aria-label="'+L("Unit filtern")+'">'+uo.map(ub).join("")+'</div>':'';UNITBAR="";
+  let h='<div class="stripwrap">'+ubar+'<div class="strip in" role="tablist" aria-label="'+esc(L("Tage"))+'">'+(pre||"");
   for(const d of PD){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
     const ex=extra?extra(d):{cls:"",mark:""};
-    h+='<button class="chip'+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.kind==="travel"?" trav":"")+(d.date===t?" isnow":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"||d.kind==="travel"?' disabled aria-disabled="true"':'')+'>'+
+    h+='<button class="chip'+(onlyU()&&d.kind==="shoot"&&hasSelU(d)?" u2day":"")+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.kind==="travel"?" trav":"")+(d.date===t?" isnow":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"||d.kind==="travel"?' disabled aria-disabled="true"':'')+'>'+
        '<div class="lb">'+esc(padD(lb))+'/'+WD[dt.getDay()].toUpperCase()+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
   }
   return h+'</div></div>';
