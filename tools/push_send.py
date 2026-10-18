@@ -187,5 +187,8 @@ if __name__ == "__main__":
         msg = ""
         try: msg = (e.response.json().get("error") or {}).get("status", "")[:60]
         except Exception: pass
+        if st == 429:   # free Firebase quota used up for today: no failure (no e-mail every 10 minutes), next run tries again
+            print("::warning::Firebase-Tageskontingent aufgebraucht – Push wartet bis zur Rücksetzung (ca. 09:00), dann geht es von selbst weiter")
+            sys.exit(0)
         print("::error::Push-Versand abgebrochen: " + type(e).__name__ + (f" HTTP {st} {msg}" if st else "") + " (" + ", ".join(f"{os.path.basename(t.filename)}:{t.lineno}" for t in tb[-4:]) + ")")
         sys.exit(1)
