@@ -147,7 +147,8 @@ function render(){
   scallLabel();
   {const sel=v.querySelector('.chip[aria-selected="true"]'),st=v.querySelector(".strip.in"),tdy=todayISO();
     const first=st&&([...st.querySelectorAll(".chip[data-dt]")].find(c=>c.dataset.dt>=tdy&&(!onlyU()||c.classList.contains("u2day")))||[...st.querySelectorAll(".chip[data-dt]")].find(c=>c.dataset.dt>=tdy));
-    if(st&&first&&!(sel&&sel.dataset.dt&&sel.dataset.dt<tdy)){st.scrollLeft=Math.max(0,first.offsetLeft-st.offsetLeft-2);
+    if(st&&sel&&onlyU()&&sel.classList.contains("u2day"))st.scrollLeft=Math.max(0,sel.offsetLeft-st.offsetLeft-2);   /* only 2nd unit: its day at the very left */
+    else if(st&&first&&!(sel&&sel.dataset.dt&&sel.dataset.dt<tdy)){st.scrollLeft=Math.max(0,first.offsetLeft-st.offsetLeft-2);
       if(sel&&sel.offsetLeft+sel.offsetWidth>st.scrollLeft+st.clientWidth+st.offsetLeft)sel.scrollIntoView({block:"nearest",inline:"end"})}
     else if(sel)sel.scrollIntoView({block:"nearest",inline:"center"})}
   try{renderHeader()}catch(err){console.error(err)}
