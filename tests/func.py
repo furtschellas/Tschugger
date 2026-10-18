@@ -339,6 +339,10 @@ async def owner_tests(p, port):
           const q=()=>document.querySelector('#view [data-pvall]');if(!q())return 'kein Knopf';const last=q().parentElement.querySelector('.pvbtn:last-of-type')===q()||!q().nextElementSibling||q().nextElementSibling.classList.contains('pvunits');
           q().click();const off=PVKEYS.every(k=>!S.pv[k]);q().click();const on=PVKEYS.every(k=>S.pv[k]);S.pv=pv;store('pv',JSON.stringify(pv));pvApply();render();return {last,off,on}})()""")
         check("Drehplan: Knopf «alles auf-/zuklappen» rechts von den Knöpfen", pva in (None, {"last": True, "off": True, "on": True}), pva, public=True)
+        pko = await E("""(async()=>{if(typeof scriptData==='function')await scriptData().catch(()=>{});if(!window.SCRIPT&&typeof SCRIPT==='undefined')return null;S.tab='script';S.sq='';const r={};
+          for(const m of ['sc','day','loc','person','all']){S.sqm=m;render();r[m]=document.querySelectorAll('#view [data-sqpick]').length>0}
+          S.sqm='all';render();r.more=!document.querySelector('#view [data-sqmore]');return r})()""")
+        check("Drehbuch-Suche: Vorauswahl für Szene, Tag, Motiv (Person wenn Callsheets da), nicht bei Alle; immer alle Szenen", pko in (None, {"sc": True, "day": True, "loc": True, "person": pko and pko.get("person"), "all": False, "more": True}), pko, public=True)
         sct = await E("""(async()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);const keep=S.meta.bd,sv=Object.assign({},S.sv);
           S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{},c:[['Props',['Knife']]]}};S.tab='script';S.sq=String(it.sc);S.sqm='sc';render();await new Promise(r=>setTimeout(r,300));render();
           const v=document.querySelector('#view');const vis=e=>!!e&&getComputedStyle(e).display!=='none';const b=v.querySelector('.spf1 .bdt');const a=vis(b);
