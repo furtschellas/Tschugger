@@ -2,7 +2,7 @@
    the schedule shows it at «Lunch» of that day and unit ---- */
 window.MENUS={};try{window.MENUS=JSON.parse(localStorage.getItem("menus")||"{}")||{}}catch(_){}
 let MENUAT=0;
-async function menusLoad(force){if(!ME||(!force&&Date.now()-MENUAT<120e3))return;MENUAT=Date.now();
+async function menusLoad(force){if(!ME||(!force&&Date.now()-MENUAT<600e3))return;MENUAT=Date.now();
   try{const {F,db}=await fb();const from=new Date(Date.now()-864e5).toISOString().slice(0,10);
     let q;try{q=await F.getDocs(F.query(F.collection(db,"menus"),F.where(F.documentId(),">=",from)))}catch(_){q=await F.getDocs(F.collection(db,"menus"))}
     const m={};q.docs.forEach(d=>{if(d.id>=from)m[d.id]=d.data()});
@@ -14,7 +14,7 @@ window.menuFor=(date,u)=>{const m=(window.MENUS||{})[date];if(!m)return "";
   const block=x=>{const o=menuOpts(m,x);return o.length?(u==="all"&&units.length>1?'<div class="mu">'+esc(UNAME&&UNAME[x]?UNAME[x]+" Unit":x)+'</div>':'')+o.map((t,i)=>'<div class="mtxt">'+(o.length>1?'<span class="mopt">'+esc(L("Menü"))+' '+(i+1)+'</span> ':'')+esc(t).replace(/\n/g,"<br>")+'</div>').join(""):""};
   const zw=String(m.zw||"").trim();const body=units.map(block).join("")+(zw?'<div class="mtxt mzw"><span class="mopt">'+esc(L("Zwischenverpflegung"))+'</span> '+esc(zw).replace(/\n/g,"<br>")+'</div>':"");if(!body)return "";
   return '<div class="menu"><span class="mico" aria-hidden="true">🍽</span><div><b>'+esc(L("Menü"))+'</b>'+(m.tog&&(u==="all"||u!=="1")?'<div class="mu">'+esc(L("Alle Units essen zusammen"))+'</div>':'')+body+'</div></div>'};
-setInterval(()=>{if(document.visibilityState==="visible")menusLoad()},60e3);
+setInterval(()=>{if(document.visibilityState==="visible")menusLoad()},120e3);   /* reads at most every 10 min (Firebase quota) */
 /* who eats on a shooting day: crew of the departments called in that day's callsheet (all active crew if there is
    no callsheet yet), plus the cast of the callsheet and the extras; split by diet */
 function dayEaters(d){const c=caterData(),dp=(S.dispos||[]).find(x=>x&&x.date===d.date),fd=x=>String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
@@ -96,7 +96,7 @@ async function markSeen(){
   if(!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
   try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{lastSeen:F.serverTimestamp()})}catch(err){console.warn("seen",err&&err.code||err)}
 }
-setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
+setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading&&Date.now()-(ADM.at||0)>=300e3){ADM.at=Date.now();ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
 function startSeen(){clearInterval(SEENT);SEENAT=0;markSeen();SEENT=setInterval(markSeen,120e3)}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")markSeen()});
 const seenMs=m=>{const j=m&&m.lastSeen;return j?(j.seconds?j.seconds*1000:(j.toMillis?j.toMillis():Date.parse(j)||0)):0};
