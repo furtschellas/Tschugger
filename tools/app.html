@@ -30,6 +30,7 @@ a{color:var(--accent)}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+.u2src{display:inline-block;margin-left:4px;padding:1px 8px;border-radius:999px;font-size:11.5px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--ink)}
 header.top{padding-block:calc(14px + env(safe-area-inset-top,0px)) 10px;border-bottom:1px solid var(--rule);position:relative}
 /* back button (top left): one step back, like the phone's back button */
 .navback{flex:none;width:32px;height:32px;margin-right:2px;border-radius:50%;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
@@ -1128,7 +1129,8 @@ function renderPlan(){
     if(hasU(d,u)){
       const x=d["unit"+u];
       if(heads)h+='<h3 class="uh u'+u+'">'+UNAME[u]+' Unit</h3>';
-      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+'</div>';
+      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+
+        (x.src==="2nd"?' <span class="u2src">'+esc(L("genaue Reihenfolge laut 2nd-Unit-Planung"))+'</span>':'')+'</div>';
       if(TXA(x,"notes").length)h+='<div class="notes" style="margin-top:8px">'+TXA(x,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
       h+='<ol class="tl">'+x.items.map(itemHTML).join("")+'</ol>';
     }else if(!shown.length)h+='<div class="empty">'+L('Keine '+UNAME[u]+' Unit an diesem Tag.')+'</div>';
@@ -1791,7 +1793,10 @@ function openGallery(b,start,pdf){
     const fl=e.target.closest("[data-gfl]");if(fl){gf=fl.dataset.gfl;setF();show();return}
     if(e.target.closest("[data-gshow]")){if(timer){stopShow();show(+d.dataset.i||0);return}const st=d.dataset.i===""?0:+d.dataset.i;timer=setInterval(()=>{const pv=d.querySelector("video");if(pv&&!pv.paused&&!pv.ended)return;const i=((+d.dataset.i||0)+1)%media.length;d.innerHTML=view(i);d.dataset.i=String(i);fill()},3500);show(st);return}const t=e.target.closest("[data-gi]");if(t){show(+t.dataset.gi);return}const n=e.target.closest("[data-gnav]");if(n){show(+n.dataset.gnav);return}if(e.target.closest("[data-gback]"))show()});
   d.addEventListener("keydown",e=>{if(d.dataset.i==="")return;const i=+d.dataset.i;if(e.key==="ArrowRight")show((i+1)%media.length);if(e.key==="ArrowLeft")show((i-1+media.length)%media.length)});
-  let tx=null;d.addEventListener("touchstart",e=>{tx=e.touches[0].clientX},{passive:true});d.addEventListener("touchend",e=>{if(tx===null||d.dataset.i==="")return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)<50)return;const i=+d.dataset.i;show(dx<0?(i+1)%media.length:(i-1+media.length)%media.length)});
+  /* swipe = next / previous picture – but never while zooming (two fingers, or the page is zoomed in) */
+  let tx=null,multi=false;const zoomed=()=>!!(window.visualViewport&&visualViewport.scale>1.05);
+  d.addEventListener("touchstart",e=>{if(e.touches.length>1){multi=true;tx=null;return}if(!multi)tx=e.touches[0].clientX},{passive:true});
+  d.addEventListener("touchend",e=>{if(e.touches.length===0){const m=multi;multi=false;if(m){tx=null;return}}if(tx===null||d.dataset.i===""||zoomed())return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)<50)return;const i=+d.dataset.i;show(dx<0?(i+1)%media.length:(i-1+media.length)%media.length)});
   document.body.appendChild(d);show(start);d.tabIndex=-1;d.focus();
 }
 /* blocking of a script scene that is not (yet) in the schedule */

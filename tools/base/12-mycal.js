@@ -173,7 +173,8 @@ function renderPlan(){
     if(hasU(d,u)){
       const x=d["unit"+u];
       if(heads)h+='<h3 class="uh u'+u+'">'+UNAME[u]+' Unit</h3>';
-      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+'</div>';
+      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+
+        (x.src==="2nd"?' <span class="u2src">'+esc(L("genaue Reihenfolge laut 2nd-Unit-Planung"))+'</span>':'')+'</div>';
       if(TXA(x,"notes").length)h+='<div class="notes" style="margin-top:8px">'+TXA(x,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
       h+='<ol class="tl">'+x.items.map(itemHTML).join("")+'</ol>';
     }else if(!shown.length)h+='<div class="empty">'+L('Keine '+UNAME[u]+' Unit an diesem Tag.')+'</div>';

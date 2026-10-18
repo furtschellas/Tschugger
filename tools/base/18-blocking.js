@@ -34,7 +34,10 @@ function openGallery(b,start,pdf){
     const fl=e.target.closest("[data-gfl]");if(fl){gf=fl.dataset.gfl;setF();show();return}
     if(e.target.closest("[data-gshow]")){if(timer){stopShow();show(+d.dataset.i||0);return}const st=d.dataset.i===""?0:+d.dataset.i;timer=setInterval(()=>{const pv=d.querySelector("video");if(pv&&!pv.paused&&!pv.ended)return;const i=((+d.dataset.i||0)+1)%media.length;d.innerHTML=view(i);d.dataset.i=String(i);fill()},3500);show(st);return}const t=e.target.closest("[data-gi]");if(t){show(+t.dataset.gi);return}const n=e.target.closest("[data-gnav]");if(n){show(+n.dataset.gnav);return}if(e.target.closest("[data-gback]"))show()});
   d.addEventListener("keydown",e=>{if(d.dataset.i==="")return;const i=+d.dataset.i;if(e.key==="ArrowRight")show((i+1)%media.length);if(e.key==="ArrowLeft")show((i-1+media.length)%media.length)});
-  let tx=null;d.addEventListener("touchstart",e=>{tx=e.touches[0].clientX},{passive:true});d.addEventListener("touchend",e=>{if(tx===null||d.dataset.i==="")return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)<50)return;const i=+d.dataset.i;show(dx<0?(i+1)%media.length:(i-1+media.length)%media.length)});
+  /* swipe = next / previous picture – but never while zooming (two fingers, or the page is zoomed in) */
+  let tx=null,multi=false;const zoomed=()=>!!(window.visualViewport&&visualViewport.scale>1.05);
+  d.addEventListener("touchstart",e=>{if(e.touches.length>1){multi=true;tx=null;return}if(!multi)tx=e.touches[0].clientX},{passive:true});
+  d.addEventListener("touchend",e=>{if(e.touches.length===0){const m=multi;multi=false;if(m){tx=null;return}}if(tx===null||d.dataset.i===""||zoomed())return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)<50)return;const i=+d.dataset.i;show(dx<0?(i+1)%media.length:(i-1+media.length)%media.length)});
   document.body.appendChild(d);show(start);d.tabIndex=-1;d.focus();
 }
 /* blocking of a script scene that is not (yet) in the schedule */
