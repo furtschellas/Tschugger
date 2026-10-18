@@ -169,6 +169,9 @@ def main():
         json.dump(sent, open(SENT, "w"))
     print(f"• {n_dev} Geräte · {n_sent} verschickt · {n_err} Fehler (nächster Lauf) · {n_late} zu spät verworfen · {n_gone} abgemeldet"
           + ("" if sa else " · ohne Dienstkonto (FIREBASE_SA fehlt)"))
+    if bcs:   # visible in the run overview (only numbers): which message reached how many devices
+        print("::notice::Push: %d Nachricht(en) · %d Geräte · %d verschickt · %d Fehler · %d abgemeldet · Arten: %s"
+              % (len(bcs), n_dev, n_sent, n_err, n_gone, ", ".join(sorted({b.get("kind") or "von Hand" for _, b, _, _ in bcs}))))
 
 
 if __name__ == "__main__":

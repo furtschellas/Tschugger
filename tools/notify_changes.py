@@ -77,6 +77,7 @@ def main():
         if fsadmin.new_broadcast(key, b): made += 1
     os.remove(p)
     log("Automatische Push-Nachrichten angelegt:", made)
+    print("::notice::Push bei Änderungen: %d von %d Nachrichten angelegt (%s)" % (made, len(groups), ", ".join(sorted(groups)) or "–"))
     return 0
 
 

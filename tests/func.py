@@ -320,6 +320,13 @@ async def owner_tests(p, port):
           const g=document.getElementById('blkgal');const t=g?g.querySelector('h3').textContent:'';document.querySelectorAll('#blkgal').forEach(x=>x.remove());w.remove();
           S.meta.blocking=keep;S.meta.bm=kb;return {n,inApp,t}})()""")
         check("Auflösung: ein Knopf je PDF, öffnet die Seiten direkt in der App", pd["n"] == 3 and pd["inApp"] == 2 and "167" in pd["t"] and "2" in pd["t"], pd, public=True)
+        # blocking per scene: parts get their own part + the general pictures, never another part; slideshow scenes «25 SL2» never scene 25
+        bf = await E("""(()=>{const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
+          S.meta.blocking=[{name:'Scene_186',sc:['186'],media:[{f:'a'},{f:'b',p:'186pt1'},{f:'c',p:'186pt2'}],pdfs:[{l:'186 pt1'},{l:'186 pt2'}]},
+            {name:'Scene_025',sc:['25'],media:[{f:'d'}]},{name:'AUF 25SL',sc:['25SL'],media:[{f:'e'}]},{name:'AUF 186pt1',sc:['186pt1'],media:[{f:'i',g:'s'}]},{name:'Scene_005 CAR',sc:['5'],media:[{f:'g'}]}];
+          const f=s=>blkFor(s).map(b=>bmed(b).map(m=>m.f).join('')+'/'+arr(b.pdfs).map(p=>p.l).join('|')).join(' ');
+          const r={p1:f('186pt1A'),p2:f('186 pt2'),all:f('186'),sl:f('25 SL2'),s25:f('25'),pt:f('5 pt13'),no:f('186A')};S.meta.blocking=keep;S.meta.bm=kb;return r})()""")
+        check("Blocking: Szenenteile (186pt1A) ohne Bilder anderer Teile, Slideshow (25 SL2) ohne Szene 25", bf == {"p1": "ab/186 pt1 i/", "p2": "ac/186 pt2", "all": "abc/186 pt1|186 pt2", "sl": "e/", "s25": "d/", "pt": "g/", "no": ""}, bf, public=True)
         fpx = await E("""(()=>{const d=S.days.find(d=>arr(d.items).some(i=>i.sc&&i.set));if(!d)return null;const it=arr(d.items).find(i=>i.sc&&i.set);const kf=S.meta.floorplans;
           S.meta.floorplans=[{name:'Testplan',file:'tp.pdf',url:'https://www.dropbox.com/tp',rule:{set:[it.set]}}];const h=blkRow(it.sc);S.meta.floorplans=kf;return h.includes('Testplan')})()""")
         check("Drehbuch-Szene: Knopf für den Floorplan der Location", fpx in (None, True), fpx, public=True)
