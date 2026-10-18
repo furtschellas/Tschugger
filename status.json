@@ -1,6 +1,7 @@
 {
- "state": "error",
- "msg": "TypeError: 'dict' object is not callable",
- "at": "2026-10-18T14:47:25Z",
- "fails": 1
+ "state": "ok",
+ "msg": "Läuft",
+ "updatedAt": "2026-10-18T15:00:04Z",
+ "version": "Sched 261018",
+ "at": "2026-10-18T15:04:29Z"
 }
