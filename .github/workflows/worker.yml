@@ -27,13 +27,34 @@ jobs:
           NAME: ${{ vars.CF_WORKER_NAME }}
         run: |
           if [ -z "$TOKEN" ] || [ -z "$ACC" ] || [ -z "$NAME" ]; then
-            echo "Nicht eingerichtet (CF_API_TOKEN, CF_ACCOUNT_ID, CF_WORKER_NAME fehlen) – Code bitte von Hand in Cloudflare einsetzen."; exit 0; fi
+            echo "Nicht eingerichtet: es fehlt$([ -z "$TOKEN" ] && echo ' CF_API_TOKEN (Secret)')$([ -z "$ACC" ] && echo ' CF_ACCOUNT_ID (Secret)')$([ -z "$NAME" ] && echo ' CF_WORKER_NAME (Variable)')"; exit 0; fi
+          # tolerant: spaces/line breaks removed; a full address (https://name.konto.workers.dev) becomes just the name
+          TOKEN=$(printf %s "$TOKEN" | tr -d '[:space:]')
+          ACC=$(printf %s "$ACC" | tr -d '[:space:]')
+          NAME=$(printf %s "$NAME" | tr -d '[:space:]' | sed -E 's#^https?://##; s#/.*$##; s#\.workers\.dev$##; s#\..*$##' | tr 'A-Z' 'a-z')
+          ok=1
+          if ! printf %s "$ACC" | grep -Eq '^[0-9a-f]{32}$'; then ok=0
+            echo "::error::CF_ACCOUNT_ID hat nicht das richtige Format: es muss die Account ID sein (32 Zeichen, nur 0-9 und a-f; jetzt ${#ACC} Zeichen). Cloudflare → Workers & Pages → rechts «Account ID» kopieren."; fi
+          if ! printf %s "$NAME" | grep -Eq '^[a-z0-9][a-z0-9_-]{0,62}$'; then ok=0
+            echo "::error::CF_WORKER_NAME ist kein gültiger Worker-Name (erlaubt: a-z, 0-9, - und _). Den Namen genau wie in Cloudflare → Workers & Pages eintragen, ohne Leerzeichen."; fi
+          [ "$ok" = 1 ] || exit 1
+          echo "Worker: $NAME"
           node --check tools/chat_worker.js
           V=$(grep -o 'const VERSION = "[^"]*"' tools/chat_worker.js | cut -d'"' -f2)
+          set +e
           code=$(curl -s -o /tmp/r.json -w "%{http_code}" -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/$ACC/workers/scripts/$NAME/content" \
             -H "Authorization: Bearer $TOKEN" \
             -F 'metadata={"main_module":"worker.js"};type=application/json' \
             -F "worker.js=@tools/chat_worker.js;type=application/javascript+module")
+          rc=$?; set -e
+          if [ $rc -ne 0 ]; then echo "::error::Verbindung zu Cloudflare fehlgeschlagen (curl $rc)"; exit 1; fi
           ok=$(python3 -c "import json;print(json.load(open('/tmp/r.json')).get('success'))" 2>/dev/null || echo False)
-          if [ "$code" = "200" ] && [ "$ok" = "True" ]; then echo "Worker aktualisiert auf Version $V"; else echo "Fehler $code"; python3 -c "import json;print([e.get('message') for e in json.load(open('/tmp/r.json')).get('errors',[])])" || true; exit 1; fi
+          if [ "$code" = "200" ] && [ "$ok" = "True" ]; then echo "Worker aktualisiert auf Version $V"; exit 0; fi
+          case "$code" in
+            401|403) echo "::error::Cloudflare lehnt den Token ab ($code): CF_API_TOKEN falsch oder ohne Recht «Workers Scripts: Edit» (Vorlage «Edit Cloudflare Workers»).";;
+            404) echo "::error::Nicht gefunden (404): Worker «$NAME» gibt es in diesem Konto nicht – Worker-Name oder Account ID prüfen.";;
+            *) echo "::error::Fehler $code";;
+          esac
+          python3 -c "import json;print([e.get('message') for e in json.load(open('/tmp/r.json')).get('errors',[])])" || true
+          exit 1
