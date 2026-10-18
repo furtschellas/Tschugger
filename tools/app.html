@@ -1733,7 +1733,7 @@ try{const v=JSON.parse(localStorage.getItem("viewstate")||"null");if(v&&window._
 document.addEventListener("pointerdown",()=>{VS_AT=Date.now()},true);document.addEventListener("keydown",()=>{VS_AT=Date.now()},true);
 function saveView(){try{localStorage.setItem("viewstate",JSON.stringify({at:VS_AT,tab:S.tab,day:S.day,dday:S.dday,openSc:S.openSc}))}catch(_){}}
 window.resetViewState=()=>{try{localStorage.removeItem("viewstate")}catch(_){}S.day=null;S.dday=null;S.openSc={}};
-window.addEventListener("pagehide",saveView);const RESUME=10*60e3;let HID_AT=0;
+window.addEventListener("pagehide",saveView);const RESUME=30*60e3;   /* back after more than 30 minutes: start page; shorter: the same page */let HID_AT=0;
 window.goStart=()=>{S.want=null;S.srcOpen=false;S.tab=startTab();S.day=null;S.dday=null;S.openSc={};VS_AT=Date.now();store("tab",S.tab);window.scrollTo(0,0);render()};
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){saveView();HID_AT=Date.now()}else{if(HID_AT&&Date.now()-HID_AT>=RESUME&&!(typeof navDialogs==="function"&&navDialogs().length))goStart();HID_AT=0}});
 function store(k,v){try{localStorage.setItem(k,v)}catch(_){}}
@@ -1878,6 +1878,9 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-fpg]");if(
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkg]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkg);if(!b||!bmed(b).length)return;e.preventDefault();e.stopPropagation();openGallery(b)},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkpdf]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkpdf);if(!b)return;e.preventDefault();e.stopPropagation();openGallery(b,0,a.dataset.pdfn)},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-schedpdf]");if(!a||typeof window.blkImg!=="function")return;const sp=S.meta&&S.meta.schedPdf;if(!sp)return;e.preventDefault();
+  /* the real PDF, opened at the page of this shooting day */
+  if(sp.pdf){const pgn=(+a.dataset.schedpdf||0)+1,w=window.open("","_blank");
+    window.blkImg(sp.pdf).then(u=>{const url=u+"#page="+pgn;if(w&&!w.closed)w.location.href=url;else location.href=url}).catch(()=>{if(w&&!w.closed)w.location.href=sp.url;else window.open(sp.url,"_blank")});return}
   openGallery({name:"sched",title:L("Drehplan")+" · "+String(sp.name||"").replace(/\.pdf$/i,""),sc:[],url:sp.url,media:arr(sp.pg).map((p,i)=>({n:L("Seite")+" "+(i+1)+"/"+sp.pg.length,t:"img",f:p,u:sp.url}))},+a.dataset.schedpdf||0)});
 /* several Dropbox folders for one scene: one button, then the choice */
 document.addEventListener("click",e=>{const a=e.target.closest("[data-folders]");if(!a)return;e.preventDefault();let l=[];try{l=JSON.parse(a.dataset.folders)}catch(_){return}

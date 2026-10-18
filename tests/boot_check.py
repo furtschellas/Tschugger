@@ -38,9 +38,9 @@ async def main():
         # every part in its own script: a broken part must not stop the others
         n = await pg.evaluate("document.querySelectorAll('script').length")
         if n < 15: errs.append("App-Teile nicht getrennt (nur %d Skripte)" % n)
-        # reopened after a long pause (the phone had closed the app – technically a reload): versions shown
+        # reopened after more than 30 minutes (the phone had closed the app – technically a reload): logo with versions
         # the old page must not write «seen just now» while it unloads (on a phone there is no old page after a restart)
-        await pg.evaluate("sessionStorage.setItem('bcLV',String(Date.now()-5*60e3));Storage.prototype.setItem=function(){}")
+        await pg.evaluate("sessionStorage.setItem('bcLV',String(Date.now()-40*60e3));Storage.prototype.setItem=function(){}")
         await pg.reload(wait_until="commit")
         if "MrK" not in await spv_text(pg): errs.append("Startbildschirm nach langer Pause ohne Versionen")
         # reloaded while using the app: only the logo

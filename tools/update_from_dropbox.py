@@ -917,10 +917,10 @@ def main():
                     if n > bn: best, bn = d, n
                 day = best or next((d for d in shoot if dayno(d) == c["no"]), None)
                 if not day: continue
-                base = mainU2.get(day["date"]) or {}
+                mu = mainU2.get(day["date"]) or {}
                 u2 = dict(c["u2"])
                 for k in ("hours", "length", "pages", "extras"):
-                    if base.get(k): u2[k] = base[k]
+                    if mu.get(k): u2[k] = mu[k]
                     else: u2.pop(k, None)
                 if day.get("unit2") != u2: day["unit2"] = u2; changed = True
             if mainU2 != (meta.get("unit2Main") or {}): meta["unit2Main"] = mainU2; changed = True
@@ -934,7 +934,12 @@ def main():
         if sf:
             spg = dict(meta.get("schedPages") or {})
             k, pg = _pdf_pages(dbx, sf, spg); WANT.update(pg)
+            # the PDF itself (encrypted with the app): the button opens the real PDF at the page of the day
+            pfn = "blk/%s.pdf.bin" % k
+            if not blk_have(pfn): _enc_write(pfn, dbx.download(sf["id"]))
+            WANT.add(pfn)
             sp_old = meta.get("schedPdf") or {}
+            if pg and sp_old.get("pdf") != pfn and sp_old.get("key") == k: sp_old = dict(sp_old, pdf=pfn); meta["schedPdf"] = sp_old; changed = True
             if pg and (sp_old.get("key") != k or sp_old.get("pg") != pg):
                 day = {}
                 with tempfile.TemporaryDirectory() as td:
@@ -942,7 +947,7 @@ def main():
                     for i in range(len(pg)):
                         t = subprocess.run(["pdftotext", "-layout", "-f", str(i + 1), "-l", str(i + 1), src, "-"], capture_output=True, text=True, timeout=60).stdout
                         for m in re.finditer(r"(?im)^\s*Day\s*#\s*(\d+)\b", t): day.setdefault(m.group(1), i)
-                meta["schedPdf"] = {"key": k, "pg": pg, "day": day, "name": sf["name"].split("/")[-1],
+                meta["schedPdf"] = {"key": k, "pg": pg, "pdf": pfn, "day": day, "name": sf["name"].split("/")[-1],
                                     "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(sf["name"])}
                 changed = True
             if {k: spg[k]} != (meta.get("schedPages") or {}) and k in spg: meta["schedPages"] = {k: spg[k]}; changed = True

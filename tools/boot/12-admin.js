@@ -557,7 +557,7 @@ window.blkImg=function(f){
       if(/^HTTP/.test(err.message||""))throw err;
       try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.open(k).then(c=>c.delete(u))))}catch(_){}
       pt=await dec(await get("reload"))}
-    return URL.createObjectURL(new Blob([pt],{type:/\.mp4\.bin$/.test(f)?"video/mp4":"image/jpeg"}))})().catch(err=>{BLKIMG.delete(f);throw err}));
+    return URL.createObjectURL(new Blob([pt],{type:/\.mp4\.bin$/.test(f)?"video/mp4":/\.pdf\.bin$/.test(f)?"application/pdf":"image/jpeg"}))})().catch(err=>{BLKIMG.delete(f);throw err}));
   return BLKIMG.get(f);
 };
 /* crew list: phone / e-mail from the app profile when the crew list has none (people allowed to see contacts outside the crew list) */
