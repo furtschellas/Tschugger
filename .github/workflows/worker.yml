@@ -56,5 +56,5 @@ jobs:
             404) echo "::error::Nicht gefunden (404): Worker «$NAME» gibt es in diesem Konto nicht – Worker-Name oder Account ID prüfen.";;
             *) echo "::error::Fehler $code";;
           esac
-          python3 -c "import json;print([e.get('message') for e in json.load(open('/tmp/r.json')).get('errors',[])])" || true
+          python3 -c "import json;[print('::error::Cloudflare: '+str(e.get('code',''))+' '+str(e.get('message',''))[:300]) for e in json.load(open('/tmp/r.json')).get('errors',[])]" || head -c 300 /tmp/r.json
           exit 1
