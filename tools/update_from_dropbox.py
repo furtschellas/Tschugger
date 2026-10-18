@@ -851,11 +851,11 @@ def main():
                 no = int(m.group(1)); day = next((d for d in shoot if dayno(d) == no), None)
                 if not day: continue
                 txt = read_sheet(url.split("#")[0].split("?")[0] + "?gid=" + gid) or ""
-                if len(txt) < 40: continue
+                if len(txt) < 40: print("::notice::2nd Unit Tag %d: Blatt leer (%d Zeichen)" % (no, len(txt))); continue
                 h = hashlib.sha256(txt.encode()).hexdigest()[:16]
                 old2 = cache.get(gid) or {}
                 if old2.get("h") == h and old2.get("u2") and not FORCE: newc[gid] = old2; continue
-                if not may_try("unit2", {"name": "2nd-unit-" + name, "modified": h}): continue
+                if not may_try("unit2", {"name": "2nd-unit-" + name, "modified": h}): print("::notice::2nd Unit Tag %d: übersprungen" % no); continue
                 try:
                     u2 = claude([{"type": "text", "text": "2ND-UNIT SHOOTING ORDER «%s» (Tabelle, Zellen mit | getrennt):\n%s" % (name, txt[:60000])}],
                         "Erzeuge aus dieser genauen Drehreihenfolge der 2nd Unit für Drehtag %d (%s) ein JSON-Objekt für das Feld \"unit2\" eines Tages gemäss Collection \"days\": "
@@ -866,7 +866,8 @@ def main():
                     if isinstance(u2, dict) and isinstance(u2.get("items"), list) and u2["items"]:
                         u2["src"] = "2nd"; newc[gid] = {"h": h, "no": no, "u2": u2}; log("2nd Unit: Tag", no, "übernommen,", len(u2["items"]), "Einträge")
                     else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
-                except Exception as e: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
+                except Exception as e:
+                    print("::notice::2nd Unit Tag %d: %s" % (no, type(e).__name__)); failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
             print("::notice::2nd Unit: %d Blätter, %d Drehtage zugeordnet, %d gespeichert, Drehtage im Plan: %s"
                   % (len(tabs), sum(1 for g, n in tabs if re.match(r"\s*#\s*\d+", n)), len(newc), ",".join(str(dayno(d)) for d in shoot)[:120]))
             cache = newc
