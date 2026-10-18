@@ -46,10 +46,22 @@ function scriptMatch(x,i,mode,terms,idx,sched){
   if(mode==="role"||mode==="person"){const ids=mode==="role"?rolesFor(terms).map(r=>r.id):actorRoles(terms);if(!ids.length)return false;const P=planRoles(x.sc);return ids.some(id=>P.has(id))}
   return terms.every(t=>idx[i].includes(t)||fold(x.sc)===t);
 }
+/* a ready-made choice under the search field (like the roles): scenes, shooting days, actors, locations */
+function pickOverview(mode,sched){
+  const row=(q,n,c)=>'<button type="button" class="rolerow" data-sqpick="'+esc(q)+'"><span class="rn">'+n+'</span>'+(c?'<span class="rc">'+c+'</span>':'')+'</button>';
+  if(mode==="sc"&&SCRIPT)return '<div class="scpick">'+SCRIPT.map(x=>'<button type="button" class="scpk'+((sched[norm(x.sc)]||[]).length?'':' np')+'" data-sqpick="'+esc(x.sc)+'">'+esc(x.sc)+'</button>').join("")+'</div>';
+  if(mode==="day"){const ds=S.days.filter(d=>d.kind==="shoot");if(!ds.length)return "";
+    return '<div class="rolegrid">'+ds.map(d=>{const n=unitLists(d).reduce((a,[,its])=>a+its.filter(i=>i.sc).length,0),dt=new Date(d.date+"T12:00:00");
+      return row(String(d.short||d.label),'<i>'+esc(d.short||d.label)+'</i>'+esc(WD[dt.getDay()]+" "+ddmm(dt)),n+' '+esc(L(n===1?"Szene":"Szenen")))}).join("")+'</div>'}
+  if(mode==="person"){const m=new Map();for(const dp of S.dispos)for(const c of arr(dp&&dp.cast)){const a=String(c.actor||"").trim();if(a&&!m.has(a))m.set(a,String(c.role||""))}
+    if(!m.size)return "";return '<div class="rolegrid">'+[...m].sort((a,b)=>a[0].localeCompare(b[0],LANG)).map(([a,r])=>row(a,esc(a),esc(r))).join("")+'</div>'}
+  if(mode==="loc"){const m=new Map();for(const k in sched)for(const h of sched[k]){const t=String(h.it.set||"").trim();if(!t)continue;if(!m.has(t))m.set(t,new Set());m.get(t).add(k)}
+    if(!m.size)return "";return '<div class="rolegrid">'+[...m].sort((a,b)=>a[0].localeCompare(b[0],LANG)).map(([t,ks])=>row(t,esc(t),ks.size+' '+esc(L(ks.size===1?"Szene":"Szenen")))).join("")+'</div>'}
+  return ""}
 function scriptResults(){
   const sched=schedIndex(),mode=S.sqm||"all";
   const terms=(mode==="day"?normQ(S.sq||""):fold(S.sq||"")).split(/\s+/).filter(Boolean);
-  if(!terms.length&&mode!=="all")return (mode==="role"?roleOverview(true,"data-sqpick"):'')+'<p class="shint">'+esc(L(mode==="person"?"Name der Schauspielerin oder des Schauspielers eingeben (aus den Callsheets).":mode==="text"?"Wörter aus dem Drehbuchtext eingeben.":SHINT[mode]))+'</p>';
+  if(!terms.length&&mode!=="all")return (mode==="role"?roleOverview(true,"data-sqpick"):pickOverview(mode,sched))+'<p class="shint">'+esc(L(mode==="person"?"Name der Schauspielerin oder des Schauspielers eingeben (aus den Callsheets).":mode==="text"?"Wörter aus dem Drehbuchtext eingeben.":SHINT[mode]))+'</p>';
   const uo=unitsOn(),sel=uo.filter(u=>S.uf[u]),allU=terms.length||!sel.length||sel.length===uo.length; /* a search always looks through all units */
   const hitsOf=x=>(sched[norm(x.sc)]||[]).filter(h=>allU||sel.includes(h.u));
   const idx=scriptIndex(sched);
@@ -59,7 +71,7 @@ function scriptResults(){
   let rbOn=true;try{rbOn=localStorage.getItem("rbadges")!=="0"}catch(_){}
   const cnt='<p class="sccount">'+rows.length+' '+esc(L(rows.length===1?"Szene":"Szenen"))+(rIds.length?' <button type="button" class="pillbtn rbtog" data-rbtog aria-pressed="'+rbOn+'">'+(rbOn?'✓ ':'')+esc(L("Abgleich mit Drehbuch"))+'</button>':'')+'</p>';
   if(!rows.length)return cnt+'<div class="empty">'+esc(L("Nichts gefunden für"))+' «'+esc(S.sq)+'»</div>';
-  const vis=rows.slice(0,S.sqn||(terms.length?100:40));
+  const vis=rows;   /* always all scenes */
   return cnt+'<ul class="sclist">'+vis.map(x=>{
     const hits=hitsOf(x);
     return '<li class="scard"><button class="scli" data-scene="'+esc(x.sc)+'"><span class="sclin">'+esc(x.sc)+'</span><span class="sclih">'+spTitle(x)+'</span>'+spTod(x)+
