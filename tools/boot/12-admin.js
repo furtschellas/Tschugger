@@ -383,7 +383,7 @@ VIEWS.admin=function(){
   /* order: requests, who is online right now, the people, inviting, admins at the end */
   const onl=rows.filter(r=>r.m&&isOnline(r.m));
   const actSec=!cView?'':'<div class="admins uact"><h3><span class="odot" aria-hidden="true"></span>'+L("Gerade aktiv")+' <span class="ust">'+onl.length+'</span></h3>'+(onl.length?'<div class="uactl">'+onl.map(r=>{const nm=r.name||(crewPerson(r.email)||{}).name||r.email;return '<span class="uactp"><span class="uav on" aria-hidden="true">'+esc(initials(nm))+'</span>'+esc(nm)+'</span>'}).join("")+'</div>':'<p class="ghint">'+L("Gerade ist niemand aktiv.")+'</p>')+'</div>';
-  h+=(window.simPicker?window.simPicker():"")+(can("users.requests")?reqSec():'')+actSec+(!cView?'':userList(rows,vis,{own,cInv,cEd,isAdm,roleOf,roleName,roleSel,st,mail}))+(!cInv?'':
+  h+=(can("users.requests")?reqSec():'')+actSec+(!cView?'':userList(rows,vis,{own,cInv,cEd,isAdm,roleOf,roleName,roleSel,st,mail}))+(!cInv?'':
     '<div class="admins"><h3>'+L("Benutzer:innen einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
     '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>')+admSec+'</section>';
