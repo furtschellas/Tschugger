@@ -17,7 +17,6 @@ async function checkMember0(){
   if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())ADMINPERMS=(ad.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}catch(_){}}
   if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){MYROLE=String(ur.data().role||"");const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())MYPERMS=(rd.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}}catch(_){}
   }
-  if(isOwner())setTimeout(migrateCrew,1500);
   const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){
     let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
@@ -154,7 +153,7 @@ function vmKey(u){return "vm:"+(u&&u.uid||"")}
 function vmStatus(){
   if(VM.busy)return '<p class="gok">'+L("Mail wird gesendet …")+'</p>';
   if(VM.err)return '<p class="gerr">'+L("Bestätigungs-Mail konnte nicht gesendet werden:")+' '+esc(VM.err)+'</p>';
-  if(VM.at)return '<p class="gok">'+L("Mail gesendet um")+' '+new Date(VM.at).toLocaleTimeString(LANG==="en"?"en-GB":LANG+"-CH",{hour:"2-digit",minute:"2-digit"})+'.</p>';
+  if(VM.at)return '<p class="gok">'+L("Mail gesendet um")+' '+fmtT(VM.at)+'.</p>';
   return '';
 }
 async function sendVerify(u,manual){
@@ -204,9 +203,9 @@ function roleChanged(prev){if(!prev||!ME)return;const was=prev.a?"admin":(prev.r
 function showRoleChange(role,add,rem){if(document.getElementById("rolechg"))return;
   const lbl=k=>{const x=PERMS.find(p=>p[0]===k);return x?L(x[1]):k};
   const rn=role==="owner"?L("Owner"):role==="admin"?L("Admin"):role?((typeof OWN!=="undefined"&&(OWN.roles||[]).find(r=>r.id===role))||{}).name||role.charAt(0).toUpperCase()+role.slice(1):L("Keine Rolle");
-  const d=document.createElement("div");d.id="rolechg";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  const d=mkDialog("rolechg");
   d.innerHTML='<div class="a2box wlbox"><h3>'+esc(L("Deine Rechte wurden geändert"))+'</h3><p>'+esc(L("Deine Rolle"))+': <b>'+esc(rn)+'</b></p>'+
     (add.length?'<p><b>'+esc(L("Neu für dich"))+':</b> '+esc(add.map(lbl).join(", "))+'</p>':'')+(rem.length?'<p><b>'+esc(L("Nicht mehr"))+':</b> '+esc(rem.map(lbl).join(", "))+'</p>':'')+
-    '<div class="a2b"><button type="button" class="pri" data-rcok>'+esc(L("OK"))+'</button></div></div>';
+    '<div class="a2b">'+dlgBtn("pri",'data-rcok',"OK")+'</div></div>';
   d.addEventListener("click",e=>{if(e.target.closest("[data-rcok]"))d.remove()});
   document.body.appendChild(d);try{render()}catch(_){}}

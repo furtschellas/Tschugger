@@ -12,7 +12,7 @@ const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManag
 const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
 function pushDev(){let d="";try{d=localStorage.getItem("pushdev")||""}catch(_){}if(!/^[a-z0-9]{10}$/.test(d)){d=Array.from(crypto.getRandomValues(new Uint8Array(10)),x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");try{localStorage.setItem("pushdev",d)}catch(_){}}return d}
 const pushId=s=>{let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)};
-const hmOf=t=>{const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?String(+m[1]).padStart(2,"0")+":"+m[2]:""};
+const hmOf=t=>{const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""};
 /* all events the device would remind of, by kind; each with a stable id */
 function pushEvents(c){
   c=c||pushCfg();const out=[],seen=new Set(),t=todayISO(),add=(kind,e)=>{const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));if(seen.has(id))return;seen.add(id);out.push(Object.assign({id,kind},e))};
@@ -26,7 +26,7 @@ function pushEvents(c){
 const pushStart=e=>new Date(e.date+"T"+(e.t||"08:00")+":00").getTime();
 function pushItems(c){c=c||pushCfg();const now=Date.now(),lim=now+15*864e5;
   return pushEvents(c).filter(e=>!c.off[e.id]).map(e=>{const st=pushStart(e),at=st-c.lead*60e3;
-    const dt=new Date(st),day=WDL(dt)+" "+String(dt.getDate()).padStart(2,"0")+"."+String(dt.getMonth()+1).padStart(2,"0")+".";
+    const dt=new Date(st),day=WDL(dt)+" "+ddmm(dt);
     return {id:e.id,at,start:st,title:e.n||L("Termin"),body:[day+(e.t?" "+e.t:""),e.where].filter(Boolean).join(" · "),url:"./#my"}}).filter(x=>x.start>now&&x.start<lim).slice(0,80)}
 let PUSHT=null,PUSHBUSY=false;
 function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>{try{pushLocalSchedule()}catch(_){}pushSync().catch(err=>console.warn("push",err&&err.code||err))},2500)}
@@ -49,9 +49,8 @@ async function pushSync(){
     let dept="";try{const me=typeof myIdentity==="function"&&myIdentity();dept=me&&me.src||""}catch(_){}
     const pl={on:true,sub:sub.toJSON(),k:sub.__k||vapidPub(),lang:LANG,items:c.on?pushItems(c):[],news:newsFor(c),who:{email:lc(ME.email),role:isOwner()?"owner":isAdmin()?"admin":(MYROLE||""),dept}};const js=JSON.stringify(pl),h=pushId(js)+"|"+Math.floor(Date.now()/216e5);
     if(h===last)return;
-    const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(js)));
-    const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
-    await F.setDoc(ref,{c:btoa(bin),at:F.serverTimestamp()});try{localStorage.setItem("pushlast",h)}catch(_){}
+    const enc=await ownEnc(pl);
+    await F.setDoc(ref,{c:enc,at:F.serverTimestamp()});try{localStorage.setItem("pushlast",h)}catch(_){}
   }finally{PUSHBUSY=false}
 }
 async function pushEnable(){
@@ -130,7 +129,7 @@ function pushSec(){
     (c.on?dev+'<label>'+L("Erinnern")+'<select data-pushlead>'+PUSH_LEADS.map(([v,t])=>'<option value="'+v+'"'+(v===c.lead?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
       '<p class="ahint"><b>'+L("Für welche Termine?")+'</b></p>'+types.map(([k,t])=>'<label class="ck"><input type="checkbox" data-pushtype="'+k+'"'+(c.types[k]?' checked':'')+'> '+L(t)+'</label>').join("")+
       '<details class="pushlist" data-sec="pushlist"'+(SECS.pushlist?' open':'')+'><summary>'+L("Kommende Termine")+' ('+ev.filter(e=>!c.off[e.id]).length+'/'+ev.length+')</summary>'+
-      (ev.length?ev.map(e=>{const dt=new Date(e.date+"T12:00:00");return '<label class="ck pev"><input type="checkbox" data-pushev2="'+e.id+'" data-pushdate="'+esc(e.date)+'"'+(c.off[e.id]?'':' checked')+'> <span><b>'+WDL(dt)+' '+String(dt.getDate()).padStart(2,"0")+'.'+String(dt.getMonth()+1).padStart(2,"0")+'.'+(e.t?' '+esc(e.t):'')+'</b> '+esc(e.n||"")+'</span></label>'}).join(""):'<p class="ghint">'+L("Keine kommenden Termine gefunden.")+'</p>')+
+      (ev.length?ev.map(e=>{const dt=new Date(e.date+"T12:00:00");return '<label class="ck pev"><input type="checkbox" data-pushev2="'+e.id+'" data-pushdate="'+esc(e.date)+'"'+(c.off[e.id]?'':' checked')+'> <span><b>'+WDL(dt)+' '+ddmm(dt)+(e.t?' '+esc(e.t):'')+'</b> '+esc(e.n||"")+'</span></label>'}).join(""):'<p class="ghint">'+L("Keine kommenden Termine gefunden.")+'</p>')+
       '<p class="ahint">'+L("Hier oder mit der Glocke in «Meine Termine» schaltest du einzelne Termine aus.")+'</p></details>':'')+
     '</section>';
 }

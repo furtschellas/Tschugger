@@ -45,7 +45,7 @@ function acctInnerAll(){
       return '<p class="ghint">'+(st==="missing"?'<b>'+L("Die App ist auf diesem Gerät nicht installiert.")+'</b> ':!st?L("Prüfe, ob die App installiert ist …")+' ':'')+L("Installiere die Crew-App auf dem Startbildschirm oder Desktop – dann öffnet sie sich wie eine normale App.")+'</p><button type="button" class="pillbtn" data-ac="a2hs">'+L("Als App installieren")+'</button> '})()+'<button type="button" class="pillbtn" data-ac="a2hs" data-more="1">+ '+L("Weiteres Icon erstellen")+'</button>'+'</section>'+'<section class="psec"><h4>'+L("Offline-Daten")+'</h4><label class="ck"><input type="checkbox" data-offauto'+(offAuto()?' checked':'')+'> '+L("Offline-Daten immer automatisch laden")+'</label><p class="ghint">'+L("Blocking-PDFs und Floorplans aller Drehtage werden auf diesem Gerät gespeichert (keine Fotos). Ausgeschaltet nur auf Knopfdruck in «Today».")+'</p><button type="button" class="pillbtn" data-offprep>'+L("Jetzt für offline laden")+'</button></section>'+'<section class="psec"><h4>'+L("Startseite «Today»")+'</h4><label class="ck"><input type="checkbox" data-todayon'+(todayOn()?' checked':'')+'> '+L("«Today» anzeigen und die App dort öffnen")+'</label><p class="ghint">'+L("Ausgeschaltet öffnet die App mit dem Drehplan.")+'</p>'+(window.todayPartsHTML?window.todayPartsHTML():'')+'</section>'+(window.TOUREN?'<section class="psec"><h4>'+L("Einführungstour")+'</h4><p class="ghint">'+esc(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?' · '+esc(fmtD(MEMBER.tourAt)):'')+'</p><button type="button" class="pillbtn" data-ac="tour">'+L("Tour starten")+'</button></section>':'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Sprache")+'</h4><div class="thm lngset" role="group" aria-label="'+esc(L("Sprache"))+'">'+(typeof APPLANGS!=="undefined"?APPLANGS:["de","fr","it","en"]).map(l=>'<button type="button" data-lang="'+l+'" aria-pressed="'+(LANG===l)+'">'+({de:"Deutsch",fr:"Français",it:"Italiano",en:"English",hi:"हिन्दी"}[l]||l.toUpperCase())+'</button>').join("")+'</div></section>'+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell")+'</button></div></section>'+
     (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
     '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label><button type="submit">'+L("Speichern")+'</button><p class="amsg" role="alert"></p></form></details>')+
-    '';
+    ''+aboutHTML();
 }
 /* «Mein Konto» in groups like the app management: Profil (with password/e-mail) · Essen · Benachrichtigungen · App */
 const ACSUBS=[["pro","Profil"],["food","Essen"],["note","Push"],["app","App"]];
@@ -87,7 +87,7 @@ function showAcct(needProfile){
   ONBOARD=needProfile===true&&!!MEMBER;
   if(ONBOARD){
     let s=document.getElementById("acct");
-    if(!s){s=document.createElement("div");s.id="acct";s.className="a2hs";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
+    if(!s){s=mkDialog("acct");document.body.appendChild(s);
       s.addEventListener("click",onAcctClick);s.addEventListener("submit",onAcctSubmit)}
     s.innerHTML='<div class="a2box acbox"><h3>'+L("Willkommen!")+'</h3><p>'+L("Bitte fülle vor dem ersten Start dein Profil aus.")+'</p><p class="ghint">'+esc(ME.email)+'</p>'+profileForm(true)+'<div class="a2b"><button class="lnk" data-ac="signout">'+L("Abmelden")+'</button></div></div>';s.hidden=false;markNeed(s);return}
   wireAcctPage();S.tab="acct";S.srcOpen=false;window.scrollTo(0,0);render();
@@ -155,12 +155,11 @@ function a2Uninstall(){let d=document.getElementById("a2un");if(d)d.remove();
     and?["Halte das App-Icon auf dem Startbildschirm gedrückt.","Tippe auf «Deinstallieren» (oder «App-Info» → «Deinstallieren»)."]:
     mac&&saf?["Öffne im Finder den Ordner «Programme» (bzw. «~/Programme»).","Ziehe «Tschugger Tigerblood» in den Papierkorb."]:
     ["Öffne die installierte App.","Klicke oben rechts auf das Menü (⋮ bzw. …).",edge?"Wähle «Deinstallieren».":"Wähle «Tschugger Tigerblood deinstallieren»."];
-  d=document.createElement("div");d.id="a2un";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  d=mkDialog("a2un");
   d.innerHTML='<div class="a2box"><h3>'+esc(L("App deinstallieren"))+'</h3><ol class="a2ol">'+st.map(x=>'<li>'+esc(L(x))+'</li>').join("")+'</ol>'+
-    '<p class="ghint">'+esc(L("Dein Konto und deine Einstellungen bleiben erhalten – du kannst die App jederzeit im Browser öffnen oder wieder installieren."))+'</p><div class="a2b"><button type="button" class="pri" data-a2unok>'+esc(L("OK"))+'</button></div></div>';
+    '<p class="ghint">'+esc(L("Dein Konto und deine Einstellungen bleiben erhalten – du kannst die App jederzeit im Browser öffnen oder wieder installieren."))+'</p><div class="a2b">'+dlgBtn("pri",'data-a2unok',"OK")+'</div></div>';
   d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-a2unok]")){d.remove();try{localStorage.removeItem("a2hs:v1")}catch(_){}window.A2ST=null;render()}});
   document.body.appendChild(d)}
-window.a2Uninstall=a2Uninstall;
 
 /* the app is installed but opened in the browser: point to the installed app once per session
    (a web page cannot switch to the installed app itself; links and push messages open it where the browser supports it) */
@@ -170,4 +169,3 @@ setTimeout(async()=>{try{if(typeof isStandalone==="function"&&isStandalone())ret
 /* «Über die App» (Mein Konto → App): the same versions as on the start screen and the copyright */
 function aboutHTML(){const m=S.meta||{};
   return '<section class="psec about"><h4>'+L("Über die App")+'</h4><p class="abv">'+(m.scheduleVersion?esc(m.scheduleVersion)+'<br>':'')+(m.scriptVersion&&vok("script")?esc(L("Drehbuch"))+' '+esc(m.scriptVersion)+'<br>':'')+'App '+esc(window.APPVER||"")+'<br>© <b class="mrk">MrK</b> 2026</p></section>'}
-{const _a=acctInnerAll;acctInnerAll=function(){return _a()+aboutHTML()}}

@@ -10,12 +10,12 @@ function scrNewsBusy(){return (typeof ONBOARD!=="undefined"&&ONBOARD)||(typeof W
 function showScriptNews(sx){
   store("scrv",scrNewsKey(sx));if(typeof savePrefsSoon==="function")savePrefsSoon();
   const sc=arr(sx.scenes),dt=new Date(Date.parse(sx.at));
-  const d=document.createElement("div");d.id="scrnews";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  const d=mkDialog("scrnews");
   d.innerHTML='<div class="a2box wlbox scrbox"><span class="wlbeta">'+esc(L("Neu"))+'</span><h3>'+esc(L("Neue Drehbuch-Version"))+' '+esc(sx.v||"")+'</h3>'+
     '<p>'+esc(L("Seit {d} ist das Drehbuch {v} in der App.").replace("{d}",dmy(localISO(dt))).replace("{v}",sx.v||""))+(sx.prev&&sx.prev!==sx.v?' '+esc(L("Vorher")+": "+sx.prev+"."):'')+'</p>'+
     (sc.length?'<p class="scrsc"><b>'+esc(L(sc.length===1?"Geänderte Szene":"Geänderte Szenen"))+':</b> '+sc.map(x=>'<button type="button" class="lnk" data-scene="'+esc(x)+'">'+esc(x)+'</button>').join(", ")+'</p>':'')+
     (sx.log?'<details class="scrlog"><summary>'+esc(L("Ganzes Changelog"))+'</summary>'+clogHTML(sx.log)+'</details>':'')+
-    '<div class="a2b"><button type="button" data-scrn="open">'+esc(L("Drehbuch öffnen"))+'</button><button type="button" class="pri" data-scrn="ok">'+esc(L("OK"))+'</button></div></div>';
+    '<div class="a2b"><button type="button" data-scrn="open">'+esc(L("Drehbuch öffnen"))+'</button>'+dlgBtn("pri",'data-scrn="ok"',"OK")+'</div></div>';
   d.addEventListener("click",e=>{const b=e.target.closest("[data-scrn]");if(e.target.closest("[data-scene]")){d.remove();return}if(!b)return;d.remove();
     if(b.dataset.scrn==="open"){S.tab="script";try{store("tab","script")}catch(_){}window.scrollTo(0,0);render()}});
   document.body.appendChild(d)}

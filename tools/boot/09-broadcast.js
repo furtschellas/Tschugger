@@ -28,7 +28,7 @@ function bcMail(pl){const ems=[...new Set(bcRecips(Object.assign({},pl,{withMail
 /* recipients with phone number: exactly the persons chosen in the message (all, or roles / departments) */
 function bcRecips(pl){
   const roleOfE=e=>{e=lc(e||"");if(ADMINS.includes(e))return "owner";if((ADM.adm||[]).includes(e))return "admin";return (ADM.ur||{})[e]||""};
-  const out=[];for(const g of S.crew||[])for(const p of arr(g.people)){const ph=String(p.phone||"").split(/[\/,;]/)[0].replace(/[^\d+]/g,"");if(ph.length<6&&!(pl.withMail&&p.email))continue;
+  const out=[];for(const g of S.crew||[])for(const p of arr(g.people)){const ph=telNum(String(p.phone||"").split(/[\/,;]/)[0]);if(ph.length<6&&!(pl.withMail&&p.email))continue;
     if(pl.roles||pl.depts){const ok=(pl.depts||[]).includes(g.dept)||(p.email&&(pl.roles||[]).includes(roleOfE(p.email)));if(!ok)continue}const uk=ph||lc(p.email||"");if(!out.some(x=>(x.ph||x.email)===uk))out.push({ph,name:p.name||ph,dept:g.dept||"",email:lc(p.email||"")})}
   return out;
 }
@@ -50,11 +50,11 @@ async function bcDeliver(id){
 }
 /* history: every message with date, time, recipients and sender; can be sent again */
 async function bcLoadHist(){BC.hist=[];BC.dev=null;BC.devOn=null;try{const {F,db}=await fb();let q;try{q=await F.getDocs(F.query(F.collection(db,"broadcasts"),F.orderBy("at","desc"),F.limit(100)))}catch(_){q=await F.getDocs(F.collection(db,"broadcasts"))}const key=await getDataKey();
-  const out=[];for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));out.push(Object.assign({id:d.id,sent:d.data().sent,n:d.data().n,done:d.data().done||null},JSON.parse(new TextDecoder().decode(pt))))}catch(_){}}
+  const out=[];for(const d of q.docs){try{out.push(Object.assign({id:d.id,sent:d.data().sent,n:d.data().n,done:d.data().done||null},await ownDec(key,d.data().c)))}catch(_){}}
   BC.hist=out.sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,100)}catch(err){console.warn("bc hist",err&&err.code||err);BC.histErr=String((err&&err.code)||err)}render()}
 /* who got it: «done» holds the devices; admins may read the device list (push/…) and see whose device it is */
 async function bcLoadDev(){if(BC.dev||!isAdmin())return;BC.dev={};try{const {F,db}=await fb();const key=await getDataKey();const q=await F.getDocs(F.collection(db,"push"));
-  for(const d of q.docs){try{const raw=Uint8Array.from(atob(d.data().c),ch=>ch.charCodeAt(0));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12));const pl=JSON.parse(new TextDecoder().decode(pt)),w=pl.who||{};BC.dev[d.id]=lc(w.email);(BC.devOn=BC.devOn||{})[d.id]={em:lc(w.email),on:pl.on!==false&&!!pl.sub,rem:!!(pl.items||[]).length,news:pl.news||{},at:+d.data().at||0}}catch(_){}}}catch(err){console.warn("bc dev",err&&err.code||err)}render()}
+  for(const d of q.docs){try{const pl=await ownDec(key,d.data().c),w=pl.who||{};BC.dev[d.id]=lc(w.email);(BC.devOn=BC.devOn||{})[d.id]={em:lc(w.email),on:pl.on!==false&&!!pl.sub,rem:!!(pl.items||[]).length,news:pl.news||{},at:+d.data().at||0}}catch(_){}}}catch(err){console.warn("bc dev",err&&err.code||err)}render()}
 function bcPerson(em){if(!em)return "";for(const g of (S.crew||[]))for(const p of (g.people||[]))if(p.name&&lc(p.email)===em)return p.name;
   const m=(typeof ADM!=="undefined"&&ADM.mem||[]).find(x=>lc(x.email)===em);const n=m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);return n||em}
 /* who has push switched on on a device (admins): collapsible, always closed when the page is opened */
@@ -82,14 +82,13 @@ function bcHistHTML(){
       '<div class="arb"><button type="button" class="pillbtn" data-bcre="'+esc(b.id)+'">↻ '+L("Erneut senden")+'</button></div></div>'}).join("")+'</div>';
 }
 document.addEventListener("click",async e=>{if(!e.target.closest("[data-bcclr]")||!isAdmin())return;if(!confirmSafe(L("Den ganzen Verlauf der Push-Nachrichten löschen?")))return;
-  try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"broadcasts"));for(const d of q.docs)await F.deleteDoc(F.doc(db,"broadcasts",d.id));try{const qi=await F.getDocs(F.collection(db,"bcimg"));for(const d of qi.docs)await F.deleteDoc(F.doc(db,"bcimg",d.id))}catch(_){}BC.hist=[];showMsg(L("Verlauf geleert."),3000);render()}
+  try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"broadcasts"));for(const d of q.docs)await F.deleteDoc(F.doc(db,"broadcasts",d.id));BC.hist=[];showMsg(L("Verlauf geleert."),3000);render()}
   catch(err){showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}});
 document.addEventListener("click",async e=>{const bt=e.target.closest("[data-bcre]");if(!bt||!can("push.send")||BC.busy)return;const b=(BC.hist||[]).find(x=>x.id===bt.dataset.bcre);if(!b)return;
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+bcWho(b)+"?"))return;BC.busy=true;bt.disabled=true;
   try{const pl={title:b.title,body:b.body,roles:b.roles||null,depts:b.depts||null,by:ME.email,at:Date.now(),re:b.id}
-    const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(pl))));
-    const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
-    const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});showMsg(await bcDeliver(ref.id),5000);BC.hist=null}
+    const enc=await ownEnc(pl);
+    const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});showMsg(await bcDeliver(ref.id),5000);BC.hist=null}
   catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}BC.busy=false;render()});
 VIEWS.bcast=function(){try{if(isAdmin()&&typeof ensureAdm==="function")ensureAdm()}catch(_){}
   if(!ME||!can("push.send"))return '<div class="empty">'+L("Kein Zugang")+'</div>';
@@ -118,9 +117,8 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form[data
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+who.join(", ")+"?"))return;
   BC.busy=true;f.querySelector("button[type=submit]").disabled=true;
   try{const pl={title,body,roles:sel?BC.sel.roles:null,depts:sel?BC.sel.depts:null,by:ME.email,at:Date.now(),ch:BC.ch,push:BC.ch.push};
-    const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(pl))));
-    const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));
-    const {F,db,auth}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:btoa(bin),at:F.serverTimestamp()});
+    const enc=await ownEnc(pl);
+    const {F,db,auth}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});
     const r=BC.ch.push?await bcDeliver(ref.id):L("Gespeichert.");if(BC.ch.mail)bcMail(pl);if(BC.sms)setTimeout(()=>bcSms(pl),BC.ch.mail?1500:0);BC.waList=BC.wa?{text:pl.title+"\n"+pl.body,list:bcRecips(pl)}:null;BC.ok=true;BC.msg=r;BC.sel={roles:[],depts:[]};BC.mode="all";BC.ch={push:true};f.reset();BC.hist=null}
   catch(err){console.error(err);BC.ok=false;BC.msg=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}
   BC.busy=false;render()});

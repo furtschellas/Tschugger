@@ -5,7 +5,7 @@ let MENUAT=0,MENUSUB=null,MENUFROM="";
 /* realtime listener on the menus from yesterday on: Firebase sends only changes (no more reading all every few minutes) */
 function menusApply(docs,from){const m={};docs.forEach(d=>{if(d.id>=from)m[d.id]=d.data()});
   if(JSON.stringify(m)!==JSON.stringify(window.MENUS)){window.MENUS=m;try{localStorage.setItem("menus",JSON.stringify(m))}catch(_){}render()}}
-async function menusLoad(force){if(!ME)return;const from=new Date(Date.now()-864e5).toISOString().slice(0,10);
+async function menusLoad(force){if(!ME)return;const from=localISO(Date.now()-864e5);
   if(MENUSUB&&MENUFROM===from)return;
   if(!force&&!MENUSUB&&Date.now()-MENUAT<600e3)return;MENUAT=Date.now();
   try{const {F,db}=await fb();
@@ -50,7 +50,7 @@ function menuSec(){
     /* units: 1st always; 2nd/3rd when they shoot that day, when a menu was entered for them, or when catering adds them by hand («+ 3rd Unit») */
     const us=["1","2","3"].filter(u=>u==="1"||(typeof hasU==="function"&&hasU(d,u))||m["u"+u+"a"]||m["u"+u+"b"]||MENUX.has(d.date+"|"+u));const multi=us.length>1;
     const addU=["2","3"].filter(u=>!us.includes(u));
-    return '<form class="menuf" data-menu="'+esc(d.date)+'"><div class="menuh"><div class="menuhd"><b>'+esc(d.short||d.label||"")+'</b> <span>'+esc(WDL(dt)+" "+String(dt.getDate()).padStart(2,"0")+"."+String(dt.getMonth()+1).padStart(2,"0")+".")+'</span></div>'+dayEatHTML(d)+'</div>'+
+    return '<form class="menuf" data-menu="'+esc(d.date)+'"><div class="menuh"><div class="menuhd"><b>'+esc(d.short||d.label||"")+'</b> <span>'+esc(WDL(dt)+" "+ddmm(dt))+'</span></div>'+dayEatHTML(d)+'</div>'+
       (multi?'<label class="ck menutog"><input type="checkbox" name="tog"'+(m.tog?' checked':'')+'> '+L("Alle Units essen zusammen (ein gemeinsames Menü)")+'</label>':'')+
       us.filter(u=>u==="1"||!m.tog).map(u=>'<div class="menuu" data-mu="'+u+'"><div class="menuul">'+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'</div>'+["a","b"].map((k,i)=>'<label>'+L("Menü")+' '+(i+1)+'<input name="u'+u+k+'" maxlength="300" placeholder="'+esc(L(i?"z. B. vegetarisch: Gemüsecurry":"z. B. Risotto mit Pilzen"))+'" value="'+esc(k==="a"?(m["u"+u+"a"]||m["u"+u]||""):(m["u"+u+"b"]||""))+'"></label>').join("")+'</div>').join("")+
       (addU.length&&!m.tog?'<div class="menuadd">'+addU.map(u=>'<button type="button" class="pillbtn" data-menux="'+esc(d.date)+'|'+u+'">+ '+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'</button>').join("")+'</div>':'')+
@@ -86,7 +86,7 @@ async function maybeWelcome(){
   WELCOME_OPEN=true;let T=WTXT[LANG]||(LANG==="hi"?WTXT.en:WTXT.de);
   if(LANG==="de"||docRaw("welcome").custom||docRaw("disclaimer").custom){const w=docGet("welcome",{});const dis=docRaw("disclaimer").body.trim();
     T=Object.assign({},WTXT[LANG]||(LANG==="hi"?WTXT.en:WTXT.de),{t:w.subject,p:w.body.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean)});T.warnIdx=T.p.findIndex(x=>x===dis)}
-  const d=document.createElement("div");d.id="welcome";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  const d=mkDialog("welcome");
   d.innerHTML='<div class="a2box wlbox"><span class="wlbeta">BETA</span><h3>'+esc(T.t)+'</h3>'+T.p.map((x,i)=>'<p'+(i===(T.warnIdx!==undefined?T.warnIdx:1)?' class="wlwarn"':'')+'>'+esc(x)+'</p>').join("")+
     '<label class="wlchk"><input type="checkbox" data-wlok> '+esc(T.c)+'</label><div class="a2b"><button type="button" class="pri" data-wlgo disabled>'+esc(T.b)+'</button></div><p class="amsg" role="alert"></p></div>';
   d.addEventListener("change",e=>{if(e.target.matches("[data-wlok]"))d.querySelector("[data-wlgo]").disabled=!e.target.checked});

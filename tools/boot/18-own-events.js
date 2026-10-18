@@ -5,9 +5,6 @@
    Ein- und ausschalten: App-Verwaltung → App → Termine (config/app.ownEvents). */
 const OWN={list:null,busy:false,at:0,roles:null};
 const ownOn=()=>window.OWNEV!==false;
-async function ownDec(key,c){const raw=Uint8Array.from(atob(c),ch=>ch.charCodeAt(0));return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12))))}
-async function ownEnc(o){const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(o))));
-  const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));return btoa(bin)}
 /* the events come through a realtime listener: Firebase sends only what changed (instead of reading all of them every
    5 minutes – that used up the free Firebase quota). force (after saving) reads once directly. */
 let OWNSUB=null;
@@ -42,8 +39,8 @@ window.ownEvents=function(me){
   return OWN.list.filter(ev=>ev.date>=t&&ownFor(ev,me)).map(ev=>({date:ev.date,t:ev.t||"",end:ev.end||"",n:ev.title,where:ev.where||"",map:"",note:ev.note||"",
     src:(ev.gc?L("Google Kalender"):L("Eigener Termin"))+(ev.byName?" · "+ev.byName:""),go:"",own:ev.id,byEmail:ev.byEmail}))};
 const ownMay=()=>ME&&ownOn()&&can("events.add");
-window.ownEvAddBtn=()=>ownMay()?'<button type="button" class="pillbtn oeadd" data-oeadd aria-label="'+esc(L("Termin hinzufügen"))+'" title="'+esc(L("Termin hinzufügen"))+'">+ '+esc(L("Termin"))+'</button>':'';
-window.ownEvEditBtn=e=>e&&e.own&&ME&&(isAdmin()||(e.byEmail&&lc(e.byEmail)===lc(ME.email)))?'<button type="button" class="calbtn oeed" data-oeed="'+esc(e.own)+'" aria-label="'+esc(L("Termin bearbeiten"))+'" title="'+esc(L("Termin bearbeiten"))+'"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'';
+window.ownEvAddBtn=()=>ownMay()?'<button type="button" class="pillbtn oeadd" data-oeadd '+ariaTip(L("Termin hinzufügen"))+'>+ '+esc(L("Termin"))+'</button>':'';
+window.ownEvEditBtn=e=>e&&e.own&&ME&&(isAdmin()||(e.byEmail&&lc(e.byEmail)===lc(ME.email)))?'<button type="button" class="calbtn oeed" data-oeed="'+esc(e.own)+'" '+ariaTip(L("Termin bearbeiten"))+'><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'';
 
 /* ---------- dialog: new / edit ---------- */
 async function ownRoles(){if(OWN.roles)return OWN.roles;OWN.roles=[];try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"roles"));OWN.roles=q.docs.filter(d=>d.id!=="admin").map(d=>({id:d.id,name:String(d.data().name||d.id)})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}catch(_){}return OWN.roles}
@@ -53,13 +50,13 @@ function ownAud(ev){if(!ev.roles&&!ev.depts&&!ev.people)return L("Alle");const r
   return r.concat((ev.depts||[]).map(x=>HIT(x))).concat((ev.people||[]).map(p=>p.name)).join(", ")}
 function ownListHTML(cur){const t=todayISO(),mine=(OWN.list||[]).filter(ev=>ev.date>=t&&(isAdmin()||(ev.byEmail&&lc(ev.byEmail)===lc(ME.email)))).sort((a,b)=>(a.date+(a.t||"")).localeCompare(b.date+(b.t||"")));
   return '<div class="oelist"><h4>'+esc(L("Hinzugefügte Termine"))+' ('+mine.length+')</h4>'+(mine.length?mine.map(ev=>{const dt=new Date(ev.date+"T12:00:00");
-    return '<button type="button" class="oeli'+(ev.id===cur?' on':'')+'" data-oego="'+esc(ev.id)+'"><span class="oeld">'+WDL(dt)+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'.'+(ev.t?'<br>'+esc(ev.t):'')+'</span><span class="oelb"><b>'+esc(ev.title||"")+'</b><small>'+esc(L("Für"))+': '+esc(ownAud(ev))+(ev.gc?' · '+esc(L("Google Kalender")):'')+'</small></span></button>'}).join(""):'<p class="ghint">'+esc(L("Noch keine kommenden Termine hinzugefügt."))+'</p>')+'</div>'}
+    return '<button type="button" class="oeli'+(ev.id===cur?' on':'')+'" data-oego="'+esc(ev.id)+'"><span class="oeld">'+WDL(dt)+' '+ddmm(dt)+(ev.t?'<br>'+esc(ev.t):'')+'</span><span class="oelb"><b>'+esc(ev.title||"")+'</b><small>'+esc(L("Für"))+': '+esc(ownAud(ev))+(ev.gc?' · '+esc(L("Google Kalender")):'')+'</small></span></button>'}).join(""):'<p class="ghint">'+esc(L("Noch keine kommenden Termine hinzugefügt."))+'</p>')+'</div>'}
 async function ownDialog(id,pre){
   const ev=id?(OWN.list||[]).find(x=>x.id===id):(pre?{title:pre.title,date:pre.date,t:pre.t,end:pre.end,where:pre.where,note:pre.note,gcNew:pre.uid}:null);if(id&&!ev)return;const isNew=!ev||!ev.id;
   const roles=[{id:"owner",name:L("Owner")},{id:"admin",name:L("Admin")}].concat(await ownRoles()).concat([{id:"",name:L("Keine Rolle")}]);
   const depts=[...new Set((S.crew||[]).map(g=>g.dept).filter(Boolean))],ppl=ownPeople();
   const st={sel:!!(ev&&(ev.roles||ev.depts||ev.people)),roles:(ev&&ev.roles)||[],depts:(ev&&ev.depts)||[],people:((ev&&ev.people)||[]).slice()};
-  const d=document.createElement("div");d.id="oedlg";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  const d=mkDialog("oedlg");
   const ck=(k,v,t)=>'<label class="ck"><input type="checkbox" data-oek="'+k+'" value="'+esc(v)+'"'+(st[k].includes(v)?' checked':'')+'> '+esc(t)+'</label>';
   const pchips=()=>st.people.map((p,i)=>'<span class="oechip">'+esc(p.name)+'<button type="button" data-oerm="'+i+'" aria-label="'+esc(L("Entfernen"))+'">×</button></span>').join("");
   const selBox=()=>'<p class="ahint"><b>'+L("Rollen")+'</b></p><div class="bcchk">'+roles.map(r=>ck("roles",r.id,r.name)).join("")+'</div>'+
@@ -72,7 +69,7 @@ async function ownDialog(id,pre){
     '<label>'+L("Ort")+'<input name="wh" maxlength="300" value="'+esc(ev?ev.where:"")+'"></label>'+
     '<label>'+L("Notiz")+'<textarea name="no" rows="4" maxlength="2000">'+esc(ev?ev.note:"")+'</textarea></label>'+
     '<fieldset class="efood"><legend>'+L("Wer sieht den Termin?")+'</legend><label class="ck"><input type="radio" name="oem" value="all"'+(st.sel?'':' checked')+'> '+L("Alle")+'</label><label class="ck"><input type="radio" name="oem" value="sel"'+(st.sel?' checked':'')+'> '+L("Auswahl nach Rolle, Abteilung oder Person")+'</label><div class="oesel"'+(st.sel?'':' hidden')+'>'+selBox()+'</div></fieldset>'+
-    '<p class="amsg" role="status"></p><div class="a2b">'+(!isNew?'<button type="button" class="lnk oedel" data-oedel>'+L("Löschen")+'</button>':'')+'<button type="button" class="lnk" data-oex>'+L("Abbrechen")+'</button><button type="submit" class="pri">'+L("Speichern")+'</button></div></form>'+ownListHTML(ev&&ev.id)+'</div>';
+    '<p class="amsg" role="status"></p><div class="a2b">'+(!isNew?'<button type="button" class="lnk oedel" data-oedel>'+L("Löschen")+'</button>':'')+dlgBtn("lnk",'data-oex',"Abbrechen")+'<button type="submit" class="pri">'+L("Speichern")+'</button></div></form>'+ownListHTML(ev&&ev.id)+'</div>';
   const redrawPeople=()=>{const pl=d.querySelector(".oepl");if(pl)pl.innerHTML=pchips()};
   d.addEventListener("change",e=>{const t=e.target;
     if(t.name==="oem"){st.sel=t.value==="sel";d.querySelector(".oesel").hidden=!st.sel}
@@ -109,18 +106,18 @@ async function gcLoad(force){if(GC.busy||(!force&&GC.feed))return;GC.busy=true;
   try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"gcal","feed"));const x=d.exists()?d.data():{};
     GC.feed={at:x.at||0,chk:x.chk||0,err:x.err||"",items:x.c?await ownDec(await getDataKey(),x.c):[]}}
   catch(err){GC.feed={items:[],err:String(err&&err.code||err)}}GC.busy=false;render()}
-window.gcalBtn=()=>ownMay()&&window.GCALON?'<button type="button" class="pillbtn oegc" data-oegc aria-label="'+esc(L("Google Kalender"))+'" title="'+esc(L("Google Kalender"))+'">'+esc(L("Google Kalender"))+'</button>':'';
+window.gcalBtn=()=>ownMay()&&window.GCALON?'<button type="button" class="pillbtn oegc" data-oegc '+ariaTip(L("Google Kalender"))+'>'+esc(L("Google Kalender"))+'</button>':'';
 async function gcDialog(){
   await gcLoad(true);await ownLoad(true);
   const taken=new Map((OWN.list||[]).filter(x=>x.gc).map(x=>[x.gc,x]));const t=todayISO();
   const items=(GC.feed.items||[]).filter(x=>x.date>=t);
-  const d=document.createElement("div");d.id="gcdlg";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
-  let last="";const rows=items.map((x,i)=>{const dt=new Date(x.date+"T12:00:00");const hd=x.date!==last?'<h4 class="mcd">'+WDL(dt)+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'.</h4>':'';last=x.date;const tk=taken.get(x.uid);
+  const d=mkDialog("gcdlg");
+  let last="";const rows=items.map((x,i)=>{const dt=new Date(x.date+"T12:00:00");const hd=x.date!==last?'<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>':'';last=x.date;const tk=taken.get(x.uid);
     return hd+'<div class="gcrow'+(tk?' on':'')+'"><span class="gct">'+esc(x.t||L("ganztags"))+(x.end?'–'+esc(x.end):'')+'</span><span class="gcn"><b>'+esc(x.title||"–")+'</b>'+(x.where?'<br><small>'+esc(x.where)+'</small>':'')+(tk?'<br><small class="gcw">✓ '+esc(L("in der App"))+'</small>':'')+'</span>'+
       (tk?'<button type="button" class="pillbtn" data-gced="'+esc(tk.id)+'">'+esc(L("Bearbeiten"))+'</button>':'<button type="button" class="pillbtn" data-gcadd="'+i+'">'+esc(L("Übernehmen"))+'</button>')+'</div>'}).join("");
   d.innerHTML='<div class="a2box gcbox"><h3>'+esc(L("Google Kalender"))+'</h3><p class="ghint">'+esc(L("Wähle, welche Termine in die App kommen und wer sie sieht. Änderungen im Google Kalender (Zeit, Titel, Ort) werden automatisch nachgeführt; dort gelöschte Termine verschwinden aus der App."))+'</p>'+
     (GC.feed.err?'<p class="ghint">⚠ '+esc(GC.feed.err)+'</p>':'')+(items.length?'<div class="gclist">'+rows+'</div>':'<p class="ghint">'+esc(L("Keine kommenden Termine im Google Kalender."))+'</p>')+
-    '<p class="ghint">'+esc(L("Stand"))+': '+(GC.feed.chk||GC.feed.at?esc(fmtDT(Math.max(GC.feed.chk||0,GC.feed.at||0))):'–')+'</p><div class="a2b"><button type="button" class="pri" data-gcx>'+esc(L("Schliessen"))+'</button></div></div>';
+    '<p class="ghint">'+esc(L("Stand"))+': '+(GC.feed.chk||GC.feed.at?esc(fmtDT(Math.max(GC.feed.chk||0,GC.feed.at||0))):'–')+'</p><div class="a2b">'+dlgBtn("pri",'data-gcx',"Schliessen")+'</div></div>';
   d.addEventListener("click",e=>{if(e.target.closest("[data-gcx]")){d.remove();return}
     const a=e.target.closest("[data-gcadd]");if(a){d.remove();ownDialog(null,items[+a.dataset.gcadd]);return}
     const b=e.target.closest("[data-gced]");if(b){d.remove();ownDialog(b.dataset.gced)}});

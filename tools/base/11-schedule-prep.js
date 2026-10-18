@@ -32,7 +32,7 @@ function dayNav(PD,isSel,attr,key,extra,pre){
 }
 /* PREP: preparation / rehearsal week before the first shooting day (data "prepro": one entry per date; meta.prepro: source, contacts) */
 function ppWhere(w,m){if(!w)return'';const sm=m?safeUrl(m):"";const q=(sm&&sm!=="#"?sm:"")||(/\d{4}\s+\S/.test(w)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(w.replace(/^On location:\s*/i,"")):"");return '<div class="ppl">'+(q?'<a href="'+esc(q)+'" target="_blank" rel="noopener">'+esc(w)+'</a>':esc(w))+'</div>'}
-function ppItem(i,date,grp,k){return '<div class="ppi'+(i.hl?' hl':'')+'">'+(date&&(i.crew||i.cast)&&vok("email")?'<button type="button" class="calbtn mailbtn" data-ppmail="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("E-Mail-Verteiler"))+'" title="'+esc(L("E-Mail-Verteiler"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></button>':'')+(date?'<button type="button" class="calbtn" data-cal="'+esc(date)+'|'+grp+'|'+k+'" aria-label="'+esc(L("In den Kalender"))+'" title="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>':'')+'<div class="ppt">'+esc(i.t||"")+(i.end?'<br>'+esc(i.end):'')+'</div><div class="ppb"><div class="ppn">'+esc(TX(i,"n")||"")+'</div>'+
+function ppItem(i,date,grp,k){return '<div class="ppi'+(i.hl?' hl':'')+'">'+(date&&(i.crew||i.cast)&&vok("email")?'<button type="button" class="calbtn mailbtn" data-ppmail="'+esc(date)+'|'+grp+'|'+k+'" '+ariaTip(L("E-Mail-Verteiler"))+'><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></button>':'')+(date?'<button type="button" class="calbtn" data-cal="'+esc(date)+'|'+grp+'|'+k+'" '+ariaTip(L("In den Kalender"))+'><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>':'')+'<div class="ppt">'+esc(i.t||"")+(i.end?'<br>'+esc(i.end):'')+'</div><div class="ppb"><div class="ppn">'+esc(TX(i,"n")||"")+'</div>'+
   ppParts(i)+(i.who?'<div class="ppw">'+esc(i.who)+'</div>':'')+ppWhere(i.where,i.map)+fpLinks(fpFor(i.n,i.where),[])+(TX(i,"note")?'<div class="ppx">'+esc(TX(i,"note"))+'</div>':'')+'</div></div>'}
 /* participants: collapsible; people with phone or e-mail open a contact card */
 function ppNames(t){return String(t||"").split(",").map(x=>x.trim()).filter(Boolean)}
@@ -52,11 +52,11 @@ function ppParts(i){
 let PPPEOPLE=null;
 function ppContact(v){
   let [name,email,phone,role,dept]=v.split("|");
-  let b=document.getElementById("ppcbox");if(b)b.remove();b=document.createElement("div");b.id="ppcbox";b.className="a2hs";b.setAttribute("role","dialog");b.setAttribute("aria-modal","true");
-  if(!vok("phone"))phone="";if(!vok("email"))email="";const tel=String(phone||"").replace(/[^\d+]/g,"");
+  let b=mkDialog("ppcbox",null,{replace:true});
+  if(!vok("phone"))phone="";if(!vok("email"))email="";const tel=telNum(phone);
   b.innerHTML='<div class="a2box mbox"><h3>'+esc(name)+'</h3>'+(role||(dept&&dept!=="user")?'<p class="ghint">'+esc([role,dept!=="user"?dept:""].filter(Boolean).join(" · "))+'</p>':'')+
     '<div class="ppcl">'+(phone?'<a class="gbtn" href="tel:'+esc(tel)+'">📞 '+esc(phone)+'</a><a class="gbtn sec" href="sms:'+esc(tel)+'">💬 SMS</a>':'')+(email?'<a class="gbtn sec" href="mailto:'+esc(email)+'">✉ '+esc(email)+'</a>':'')+'</div>'+
-    '<div class="a2b"><button type="button" class="lnk" data-ppcx>'+esc(L("Schliessen"))+'</button></div></div>';
+    '<div class="a2b">'+dlgBtn("lnk",'data-ppcx',"Schliessen")+'</div></div>';
   b.addEventListener("click",e=>{if(e.target===b||e.target.closest("[data-ppcx]"))b.remove()});
   document.body.appendChild(b);
 }
@@ -118,17 +118,17 @@ function ppMail(key){if(!vok("email"))return;
   for(const n of names){const g=groupPeople(n,people);if(g){groups.push(n);for(const p of g.list)if(p.email&&!have.has(p.email)){have.add(p.email);found.push(p)}continue}
     const p=findPerson(n,people.filter(x=>x.email))||findPerson(n,people);
     if(p&&p.email){if(!have.has(p.email)){have.add(p.email);found.push(Object.assign({},p,{asked:n}))}}else if(p)noMail.push(p.name);else missing.push(n)}
-  const dt=new Date(date+"T12:00:00"),when=WDL(dt)+" "+pad2(dt.getDate())+"."+pad2(dt.getMonth()+1)+"."+(i.t&&/\d/.test(i.t)?" "+i.t+(i.end?"–"+i.end:""):"");
+  const dt=new Date(date+"T12:00:00"),when=WDL(dt)+" "+ddmm(dt)+(i.t&&/\d/.test(i.t)?" "+i.t+(i.end?"–"+i.end:""):"");
   const subj="TSCHUGGER Tigerblood – "+(i.n||"Prep")+" – "+when;
   const body=(i.n||"")+"\n"+when+(i.where?"\n"+i.where:"")+(i.map?"\n"+i.map:"");
   const to=found.map(p=>p.email).join(",");
-  let b=document.getElementById("mailbox");if(b)b.remove();b=document.createElement("div");b.id="mailbox";b.className="a2hs";b.setAttribute("role","dialog");b.setAttribute("aria-modal","true");
+  let b=mkDialog("mailbox",null,{replace:true});
   b.innerHTML='<div class="a2box mbox"><h3>'+esc(L("E-Mail-Verteiler"))+'</h3><p class="mbt"><b>'+esc(i.n||"")+'</b><br>'+esc(when)+'</p>'+
     (groups.length?'<p class="mbg">'+esc(L("Gruppen"))+': '+groups.map(esc).join(", ")+'</p>':'')+
     '<div class="mbl">'+(found.length?found.map(p=>'<div class="mbr"><span>'+esc(p.name)+(p.role?' <small>'+esc(p.role)+'</small>':'')+'</span><a href="mailto:'+esc(p.email)+'">'+esc(p.email)+'</a></div>').join(""):'<p class="ghint">'+esc(L("Keine Adressen gefunden."))+'</p>')+'</div>'+
     (noMail.length?'<div class="mbmiss nm"><b>'+esc(L("In der Crewliste, aber ohne E-Mail"))+' ('+noMail.length+')</b><ul>'+noMail.map(n=>'<li>'+esc(n)+'</li>').join("")+'</ul></div>':'')+
     (missing.length?'<div class="mbmiss"><b>'+esc(L("Nicht in Crewliste oder bei den Benutzer:innen"))+' ('+missing.length+')</b><ul>'+missing.map(n=>'<li>'+esc(n)+'</li>').join("")+'</ul></div>':'')+
-    '<div class="a2b">'+(found.length?'<a class="gbtn" href="mailto:'+to.split(",").map(encodeURIComponent).join(",")+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body)+'">'+esc(L("Mail an alle"))+' ('+found.length+')</a><button type="button" data-mb="copy">'+esc(L("Adressen kopieren"))+'</button>':'')+'<button type="button" class="lnk" data-mb="close">'+esc(L("Schliessen"))+'</button></div></div>';
+    '<div class="a2b">'+(found.length?'<a class="gbtn" href="mailto:'+to.split(",").map(encodeURIComponent).join(",")+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body)+'">'+esc(L("Mail an alle"))+' ('+found.length+')</a><button type="button" data-mb="copy">'+esc(L("Adressen kopieren"))+'</button>':'')+dlgBtn("lnk",'data-mb="close"',"Schliessen")+'</div></div>';
   b.addEventListener("click",async e=>{const x=e.target.closest("[data-mb]");if(e.target===b||(x&&x.dataset.mb==="close")){b.remove();return}
     if(x&&x.dataset.mb==="copy"){try{await navigator.clipboard.writeText(found.map(p=>p.email).join(", "));x.textContent=L("Kopiert")}catch(_){prompt("",found.map(p=>p.email).join(", "))}}});
   document.body.appendChild(b);

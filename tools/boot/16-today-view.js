@@ -1,7 +1,6 @@
 /* ---------- 1) «Heute»: everything for today (or the next working day) on one page ---------- */
 /* «Today» on/off per person (profile, synced with the view settings) */
 function todayOn(){try{const v=localStorage.getItem("today")||"";return !(v==="0"||v.startsWith("0|"))}catch(_){return true}}
-window.todayOn=todayOn;
 /* which parts Today shows (profile → App): stored with the on/off value, «1|menu,off» = on, without lunch and offline */
 const TODAY_PARTS=[["my","Meine nächsten Termine",()=>vok("mycal")],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
   ["loc","Erste Location",()=>vok("plan")],["menu","Mittagessen",()=>true],["scs","Szenen",()=>vok("plan")],["chg","Änderungen",()=>vok("plan")||vok("script")],["off","Offline am Set",()=>vok("blocking")||vok("plan")]];
@@ -31,7 +30,6 @@ function clogHTML(t){const intro=[],items=[];let cur=null;
     else intro.push(x)}
   return (intro.length?'<p class="clogi">'+intro.map(esc).join("<br>")+'</p>':'')+'<ul class="clog">'+items.map(i=>'<li><button type="button" class="lnk clsc" data-scene="'+esc(i.sc)+'">Sc'+esc(i.sc)+'</button><span class="clp">'+
     i.parts.map(p=>'<span class="clr">'+(p.k?'<span class="clk '+CLOGK[p.k]+'">'+(p.sl?'SL ':'')+esc(L(CLOGDE[p.k]))+'</span> ':'')+esc(p.t)+'</span>').join("")+'</span></li>').join("")+'</ul>'}
-window.clogHTML=clogHTML;
 function scriptChg(){const sx=S.meta&&S.meta.scriptChange,at=sx?Date.parse(sx.at):0;
   if(!sx||!at||!vok("script")||Date.now()-at>=3*864e5)return null;const seen=+(localStorage.getItem("chgseen:v1")||0);if(chgSeenGone(at,seen))return null;
   return {date:localISO(at),at,unread:at>seen,script:1,sx,txt:L("Neue Drehbuch-Version")+" "+(sx.v||"")+(sx.prev&&sx.prev!==sx.v?" ("+L("vorher")+" "+sx.prev+")":sx.prev===sx.v?" ("+L("überarbeitet")+")":"")}}
@@ -52,7 +50,7 @@ VIEWS.today=function(){
   const canPlan=vok("plan"),canDispo=vok("dispo");
   const dp=canDispo?((S.dispos||[]).find(x=>x&&x.date===d.date)||null):null;
   const card=(cls,title,body)=>body?'<div class="tcard '+cls+'"><div class="tch">'+title+'</div>'+body+'</div>':'';
-  const thead='<div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+".")+'</span></div>';
+  const thead='<div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+ddmm(dt))+'</span></div>';
   let h='<section class="today">';
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */

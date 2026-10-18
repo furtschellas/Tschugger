@@ -14,7 +14,7 @@ const APPHELP=`So ist die App aufgebaut (unten die Bereiche, oben die Knöpfe):
 function chatCtx(){
   const out=[APPHELP];const J=x=>JSON.stringify(x,(k,v)=>v===""||v===null||(Array.isArray(v)&&!v.length)||/_(fr|it|en|hi)$/.test(k)?undefined:v);
   /* from yesterday on (past days only as a short list), translations left out – keeps the question fast and cheap */
-  const y=new Date(Date.now()-864e5).toISOString().slice(0,10),cur=a=>arr(a).filter(d=>d&&String(d.date||"")>=y);
+  const y=localISO(Date.now()-864e5),cur=a=>arr(a).filter(d=>d&&String(d.date||"")>=y);
   try{if(vok("plan")){out.push("DREHPLAN (days, ab gestern): "+J(cur(S.days)));const past=S.days.filter(d=>d&&String(d.date||"")<y);if(past.length)out.push("FRÜHERE DREHTAGE (nur Datum/Titel): "+J(past.map(d=>({date:d.date,label:d.label||d.short,kind:d.kind}))))}}catch(_){}
   try{if(vok("dispo"))out.push("CALLSHEETS (dispos, ab gestern): "+J(cur(S.dispos)))}catch(_){}
   try{if(vok("prep"))out.push("PREP / WEEKLY SCHEDULE (ab gestern): "+J(cur(S.prepro)))}catch(_){}
@@ -167,7 +167,7 @@ const NEWS_TXT={de:{t:"Neu in der Crew-App",f:"Die Tour zeigt dir alles, was du 
  en:{t:"New in the crew app",f:"The tour shows you everything you can use with your rights.",tour:"Take the tour",ok:"Let’s go"}};
 function newsDue(){let v="";try{v=localStorage.getItem("nv")||""}catch(_){}return v!==NEWS_VER&&!document.getElementById("news")}
 function showNews(){
-  const T=Object.assign({},NEWS_TXT[LANG]||NEWS_TXT.en,{p:NEWS_ITEMS.filter(([ok])=>{try{return ok()}catch(_){return false}}).map(([,tx])=>tx[LANG]||tx.en)}),d=document.createElement("div");d.id="news";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  const T=Object.assign({},NEWS_TXT[LANG]||NEWS_TXT.en,{p:NEWS_ITEMS.filter(([ok])=>{try{return ok()}catch(_){return false}}).map(([,tx])=>tx[LANG]||tx.en)}),d=mkDialog("news");
   d.innerHTML='<div class="a2box wlbox"><h3>'+esc(T.t)+'</h3>'+T.p.map(x=>'<p>'+x+'</p>').join("")+'<p class="ghint">'+T.f+'</p><div class="a2b"><button type="button" data-nwtour>'+esc(T.tour)+'</button><button type="button" class="pri" data-nwok>'+esc(T.ok)+'</button></div></div>';
   const done=()=>{store("nv",NEWS_VER);savePrefs();d.remove()};
   d.addEventListener("click",e=>{if(e.target.closest("[data-nwok]")){done();setTimeout(maybePushHint,600)}else if(e.target.closest("[data-nwtour]")){done();tourStart(false)}});
@@ -191,7 +191,7 @@ function tourStart(ask){
   {const keep=S.tab,navOn=t=>{const b=document.querySelector('nav.tabs [data-tab="'+t+'"]');return !!(b&&!b.hidden)};
     TOUR.steps=TOUR_STEPS.filter(st=>{try{if(st.need&&!st.need())return false;return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}});S.tab=keep;render()}
   window.scrollTo(0,0);TOUR.i=ask?-1:0;
-  const o=document.createElement("div");o.id="tour";o.className="tour";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML='<div class="tspot"></div><div class="tour-card" role="document"></div>';
+  const o=mkDialog("tour",'<div class="tspot"></div><div class="tour-card" role="document"></div>',{cls:"tour"});
   o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;
     if(a==="next")tourGo(TOUR.i+1);else if(a==="back")tourGo(TOUR.i-1);else if(a==="skip")tourSkipInfo();else if(a==="skipok")tourEnd("skip",true);else if(a==="done")tourEnd("done")});
   document.body.appendChild(o);TOUR.el=o;tourGo(TOUR.i);
@@ -222,7 +222,7 @@ function tourSkipInfo(){
   const o=TOUR.el;if(!o){tourEnd("skip");return}tourDemo(null);tourMark("skip");
   if(TOUR.prev){if(TOUR.prev.day)S.day=TOUR.prev.day;S.tab=["acct","admin"].includes(TOUR.prev.tab)?TOUR.prev.tab:"plan";render();window.scrollTo(0,0)}
   const e=document.getElementById("acctBtn"),sp=o.querySelector(".tspot"),c=o.querySelector(".tour-card");
-  c.className="tour-card";c.innerHTML='<h3>'+L("Tour übersprungen")+'</h3><p>'+L("Kein Problem – du kannst die Tour jederzeit neu starten: oben auf «Mein Konto» tippen und dort «Tour starten» wählen.")+'</p><div class="tbtns"><span></span><button type="button" class="pri" data-tour="skipok">'+L("OK")+'</button></div>';
+  c.className="tour-card";c.innerHTML='<h3>'+L("Tour übersprungen")+'</h3><p>'+L("Kein Problem – du kannst die Tour jederzeit neu starten: oben auf «Mein Konto» tippen und dort «Tour starten» wählen.")+'</p><div class="tbtns"><span></span>'+dlgBtn("pri",'data-tour="skipok"',"OK")+'</div>';
   if(e&&!e.hidden){const r=e.getBoundingClientRect(),pad=6;sp.hidden=false;Object.assign(sp.style,{left:(r.left-pad)+"px",top:(r.top-pad)+"px",width:(r.width+2*pad)+"px",height:(r.height+2*pad)+"px"});
     const cw=Math.min(340,innerWidth-24);c.style.width=cw+"px";c.style.top=(r.bottom+14)+"px";c.style.left=Math.min(innerWidth-cw-12,Math.max(12,r.left+r.width/2-cw/2))+"px"}
   else{sp.hidden=true;c.className="tour-card center"}
@@ -242,10 +242,10 @@ function maybePushHint(){
   if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||document.getElementById("pushhint")||window.PUSHEN===false||hintDone())return;const c=pushCfg();if(!c.on&&c.hint)return;
   const ios=!pushOK()&&isIOS()&&!pushStandalone();if(!pushOK()&&!ios)return;
   if(pushOK()&&Notification.permission!=="default"){hintMark();return}
-  const d=document.createElement("div");d.id="pushhint";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  const d=mkDialog("pushhint");
   const types=PUSH_TYPES.filter(x=>vok(x[2])),nws=PUSH_NEWS.filter(x=>vok(x[2]));
   d.innerHTML='<div class="a2box phbox"><span class="wlbeta">'+L("Neu")+'</span><h3>'+L("Push-Nachrichten")+'</h3><p>'+L("Die App erinnert dich auf Wunsch vor deinen Terminen und meldet neue Drehpläne, Callsheets und Drehbuch-Versionen – auch wenn sie geschlossen ist.")+'</p>'+
-    (ios?'<p class="ghint">'+L("Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.")+'</p><div class="a2b"><button type="button" class="pri" data-ph="ok">'+L("OK")+'</button></div>':
+    (ios?'<p class="ghint">'+L("Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.")+'</p><div class="a2b">'+dlgBtn("pri",'data-ph="ok"',"OK")+'</div>':
     '<label class="phl">'+L("Erinnern")+'<select data-phlead>'+PUSH_LEADS.map(([v,t])=>'<option value="'+v+'"'+(v===c.lead?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
     '<p class="ahint"><b>'+L("Für welche Termine?")+'</b></p>'+types.map(([k,t])=>'<label class="ck"><input type="checkbox" data-phtype="'+k+'"'+(c.types[k]?' checked':'')+'> '+L(t)+'</label>').join("")+
     (nws.length?'<p class="ahint"><b>'+L("Bei Änderungen benachrichtigen")+'</b></p>'+nws.map(([k,t])=>'<label class="ck"><input type="checkbox" data-phnews="'+k+'" checked> '+L(t)+'</label>').join(""):'')+

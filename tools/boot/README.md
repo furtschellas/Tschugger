@@ -1,14 +1,14 @@
 # Website-Teil der Crew-App (früher tools/web_boot.js)
 
 Die Dateien werden von `tools/make_site.py` in Namensreihenfolge **ohne Trennzeichen** aneinandergehängt
-und zusammen mit `tools/app.html` (Claude-App) zu `index.html` gebaut. Es ist also ein einziges Skript:
+und zusammen mit `tools/app.html` (Grundteil aus `tools/base`) zu `index.html` gebaut. Es ist also ein einziges Skript:
 alles teilt denselben globalen Bereich, die Reihenfolge zählt (Nummern vorne).
 
 | Datei | Inhalt |
 |---|---|
-| 01-config | Firebase-Version, Besitzer, Datendatei, Abfrage-Takt |
+| 01-config | Datums-Formate (fmtDT, fmtD, fmtT), Firebase-Version, Besitzer, Datendatei, Abfrage-Takt |
 | 02-i18n | Übersetzungen (fr/it/en) der Website-Texte |
-| 03-core-firebase | Sprachen, Berechtigungen (PERMS), Rollen, Firebase laden |
+| 03-core-firebase | Sprachen, Berechtigungen (PERMS), Rollen, Firebase laden, Verschlüsselung mit dem Crew-Schlüssel (ownEnc/ownDec) |
 | 04-data | verschlüsselte Datendatei, stamp.json, Schlüssel |
 | 05-membership-signin | Mitgliedschaft, Anmeldung, Zugangsanfragen |
 | 06-prefs-docs | Ansichts-Einstellungen, Dokumente/Mails |

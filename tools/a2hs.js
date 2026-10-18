@@ -74,12 +74,11 @@ async function a2hsCheck(){
   if(DEFERRED){if(a2hsState()==="done")a2hsSet("removed:"+Date.now());return "missing"}
   return "unknown";
 }
-window.a2hsCheck=a2hsCheck;
 function a2hsDue(){return !isStandalone()&&!a2hsState()}   /* any stored state (asked, later, done) means: never ask again by itself */
 function showA2hs(steps){
   if(!steps&&!a2hsState())a2hsSet("asked:"+Date.now()); /* ask only once per device (desktop or home screen); later only from «Mein Konto» */
   let s=document.getElementById("a2hs");
-  if(!s){s=document.createElement("div");s.id="a2hs";s.className="a2hs";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
+  if(!s){s=mkDialog("a2hs");document.body.appendChild(s);
     s.addEventListener("click",async e=>{
       const b=e.target.closest("[data-a2]");if(!b){if(e.target===s){a2hsSet(String(Date.now()));hideA2hs()}return}
       const a=b.dataset.a2;
