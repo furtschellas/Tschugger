@@ -323,6 +323,12 @@ async def owner_tests(p, port):
         cu = await E("""(()=>{const w=document.createElement('div');w.innerHTML=chgUnitsHTML([{date:'2026-10-26',sc:'5 pt2',u:'2',txt:'x',unread:true},{date:'2026-10-26',sc:'157',txt:'y'},{date:'2026-10-27',sc:'107 pt1',u:'1',txt:'z'}]);
           const d=[...w.querySelectorAll('details[data-chgu]')];return d.map(x=>x.dataset.chgu+':'+(x.open?'auf':'zu')+':'+x.querySelectorAll('.chgi').length).join(' ')})()""")
         check("Today/Änderungen: 1st Unit (offen) und 2nd Unit (zu) getrennt aufklappbar", cu == "1:auf:2 2:zu:1", cu, public=True)
+        ct = await E("""(()=>{const o=chgLoad();const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);
+          chgSave([{id:'t1',at:Date.now(),date:d.date,u:'1',sc:it.sc,txt:'Test'}]);const a=!!window.chgFor(d.date,'1',it.sc);
+          localStorage.setItem('chgmark','0');const b=!!window.chgFor(d.date,'1',it.sc);
+          S.tab='plan';S.day=d.id;render();const btn=document.querySelector('#view [data-chgtog]');const off=btn?btn.getAttribute('aria-pressed'):'';
+          if(btn)btn.click();const c=!!window.chgFor(d.date,'1',it.sc);chgSave(o);localStorage.removeItem('chgmark');return {a,b,off,c}})()""")
+        check("Drehplan: Knopf schaltet die Änderungs-Markierung aus und wieder ein", ct in (None, {"a": True, "b": False, "off": "false", "c": True}), ct, public=True)
         # blocking per scene: parts get their own part + the general pictures, never another part; slideshow scenes «25 SL2» never scene 25
         bf = await E("""(()=>{const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
           S.meta.blocking=[{name:'Scene_186',sc:['186'],media:[{f:'a'},{f:'b',p:'186pt1'},{f:'c',p:'186pt2'}],pdfs:[{l:'186 pt1'},{l:'186 pt2'}]},

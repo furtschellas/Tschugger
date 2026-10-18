@@ -52,7 +52,10 @@ function chgDetect(){
 const chgSeenGone=(at,seen)=>at<=seen&&Date.now()-seen>2*864e5;
 function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem("chgseen:v1")||0);return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t&&!chgSeenGone(c.at,seen)).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>b.at-a.at||String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
 /* used by the schedule (itemHTML): mark a changed scene */
-window.chgFor=(date,u,sc)=>{const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};
+/* change marks in the schedule can be switched off (button in the schedule, kept on this device) */
+window.chgOn=()=>{try{return localStorage.getItem("chgmark")!=="0"}catch(_){return true}};
+document.addEventListener("click",e=>{if(!e.target.closest("[data-chgtog]"))return;try{localStorage.setItem("chgmark",window.chgOn()?"0":"1")}catch(_){}render()});
+window.chgFor=(date,u,sc)=>{if(!window.chgOn())return "";const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};
 document.addEventListener("click",e=>{if(!e.target.closest("[data-chgseen]"))return;try{localStorage.setItem("chgseen:v1",String(Date.now()))}catch(_){}render()});
 
 /* ---------- 3) offline on set: data key, today's + tomorrow's blocking pictures and the script stay on the device ---------- */

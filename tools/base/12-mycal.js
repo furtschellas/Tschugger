@@ -163,6 +163,8 @@ function renderPlan(){
     /* weather (website): compact chip after the drive, tap → report */
     try{const wf=window.wxFact?window.wxFact(d):"";if(wf)fx.splice(d.hours?(dv?2:1):0,0,wf)}catch(_){}
     if(spBtn)fx.push(spBtn);   /* direct link to the schedule PDF, after «Sonne» */
+    /* schedule changes: marks in the schedule on/off (kept on this device) */
+    if(typeof window.chgOn==="function"){const on=window.chgOn();fx.push('<button type="button" class="fact factc'+(on?' on':'')+'" data-chgtog aria-pressed="'+on+'" '+ariaTip(L(on?"Änderungen im Drehplan ausblenden":"Änderungen im Drehplan markieren"))+'><span class="k">'+esc(L("Änderungen"))+'</span><span class="v">'+esc(L(on?"ein":"aus"))+'</span></button>')}
     h+='<div class="facts">'+fx.join("")+'</div>';
   }
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
