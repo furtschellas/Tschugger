@@ -6,7 +6,8 @@ function setOpen(btn,open){
 }
 function scallLabel(){const b=document.getElementById("scall");if(!b)return;const ks=[...document.querySelectorAll("[data-sckey]")].map(x=>x.dataset.sckey);const all=ks.length>0&&ks.every(k=>S.openSc[k]);b.setAttribute("aria-expanded",all);b.classList.toggle("on",all)}
 /* tapping the tab you are already on jumps back to today; switching tabs keeps the last chosen day */
-function goTab(tab){S.want=null;const again=S.tab===tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;if(again&&tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
+function goTab(tab){S.want=null;const again=S.tab===tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;if(again&&tab==="dispo")S.dday=null;if(tab==="script"){S.sqm="all";S.sq="";S.sqn=0}   /* the script search always starts again with «Alle» */
+store("tab",tab);window.scrollTo(0,0)}
 /* last chosen day (Schedule, Callsheet), page and open scenes are kept on a reload; a new start, or coming back after
    at least 10 minutes in the background, opens the start page (Today, or the Drehplan at today) */
 const VS_TTL=2*3600*1000;let VS_AT=Date.now();

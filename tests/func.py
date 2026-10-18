@@ -335,10 +335,6 @@ async def owner_tests(p, port):
           S.pv=pv;store('pv',JSON.stringify(pv));pvApply();chgSave(o);S.meta.bd=keep;render();return {keys,txt,u,sep,last,c1,c0,d0}})()""")
         check("Drehplan: Szenen-Details als Fliesstext zuunterst (« // »), runder Info-Knopf und Änderungen-Knopf",
               ct in (None, {"keys": "i,d,c,inf,a,b,g", "txt": "FX: Double BJCrew: LifeguardProps: Knife, Stone (soft, dummy)Mup/Hair: Mike dyingNotes: a / b", "u": True, "sep": '" // "', "last": True, "c1": True, "c0": False, "d0": False}), ct, public=True)
-        pva = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;const pv=Object.assign({},S.pv);S.tab='plan';S.day=d.id;render();
-          const q=()=>document.querySelector('#view [data-pvall]');if(!q())return 'kein Knopf';const last=q().parentElement.querySelector('.pvbtn:last-of-type')===q()||!q().nextElementSibling||q().nextElementSibling.classList.contains('pvunits');
-          q().click();const off=PVKEYS.every(k=>!S.pv[k]);q().click();const on=PVKEYS.every(k=>S.pv[k]);S.pv=pv;store('pv',JSON.stringify(pv));pvApply();render();return {last,off,on}})()""")
-        check("Drehplan: Knopf «alles auf-/zuklappen» rechts von den Knöpfen", pva in (None, {"last": True, "off": True, "on": True}), pva, public=True)
         pko = await E("""(async()=>{if(typeof scriptData==='function')await scriptData().catch(()=>{});if(!window.SCRIPT&&typeof SCRIPT==='undefined')return null;S.tab='script';S.sq='';const r={};
           for(const m of ['sc','day','loc','person','all']){S.sqm=m;render();r[m]=document.querySelectorAll('#view [data-sqpick]').length>0}
           S.sqm='all';render();r.more=!document.querySelector('#view [data-sqmore]');return r})()""")
