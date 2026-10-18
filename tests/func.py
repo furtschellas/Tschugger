@@ -336,6 +336,11 @@ async def owner_tests(p, port):
         nb = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));const b=document.getElementById('navback');if(!b)return null;
           S.tab='loc';render();await w(150);const en=!b.disabled;b.click();await w(350);return {ok:true,en,tab:S.tab,top:b.getBoundingClientRect().left<80}})()""")
         check("Zurück-Knopf oben links: ein Schritt zurück (Locations → Drehplan)", nb == {"ok": True, "en": True, "tab": "plan", "top": True}, nb, public=True)
+        # user list: who uses the installed app; App-Verwaltung option «keep asking to install»
+        ua = await E("""(()=>{const k=appKind();window.A2AGAIN=true;const st=localStorage.getItem('a2hs:v1');localStorage.setItem('a2hs:v1','asked:'+(Date.now()-4*864e5));const again=a2hsDue();
+          localStorage.setItem('a2hs:v1','asked:'+Date.now());const notyet=!a2hsDue();window.A2AGAIN=false;localStorage.setItem('a2hs:v1','asked:1000000000000');const off=!a2hsDue();
+          if(st==null)localStorage.removeItem('a2hs:v1');else localStorage.setItem('a2hs:v1',st);return {kind:/^(app|web)-(ios|android|desktop)$/.test(k),again,notyet,off}})()""")
+        check("App installiert: Gerät erkannt, Aufforderung alle 3 Tage nur wenn eingeschaltet", ua == {"kind": True, "again": True, "notyet": True, "off": True}, ua, public=True)
         ex = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));let n=0;while(!(history.state&&history.state.base)&&n++<60){history.back();await w(120)}
           const base=!!(history.state&&history.state.base);const msg=(document.getElementById('refmsg')||{}).textContent||'';await w(2800);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base)}})()""")
         check("Zurück-Knopf auf der ersten Seite: Hinweis, erst zweimal zurück verlässt die App", ex["base"] and ex["hint"] and ex["guard"], ex, public=True)
