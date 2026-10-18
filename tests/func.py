@@ -339,6 +339,16 @@ async def owner_tests(p, port):
         o2 = await E("""(()=>{const ku=S.pu;S.tab='plan';S.pu={"1":true,"2":true};render();const n1=document.querySelectorAll('#view .strip .chip').length;
           S.pu={"2":true};render();const n2=document.querySelectorAll('#view .strip .chip').length,grey=document.querySelectorAll('#view .strip .chip.nou').length+document.querySelectorAll('#view .strip .chip.u2day').length,
           ub=!!document.querySelector('#view .stripwrap > .pub [data-pu]');S.pu=ku;render();return {same:n1===n2,grey:grey>0,ub}})()""")
+        # script search by role: the scenes where the role is cast in the Drehplan; the comparison can be switched off
+        rs = await E("""(async()=>{try{await scriptData()}catch(_){}if(!SCRIPT||!SCRIPT.length)return null;const R=roleList();if(!R.length)return null;
+          const r=R.find(x=>Object.keys(schedIndex()).some(k=>planRoles(k).has(x.id)));if(!r)return null;
+          const keep=[S.tab,S.sq,S.sqm];S.tab='script';S.sqm='role';S.sq=r.name;render();
+          const scs=[...document.querySelectorAll('#view .scli')].map(b=>b.dataset.scene);const allPlanned=scs.length>0&&scs.every(sc=>planRoles(sc).has(r.id));
+          const tog=!!document.querySelector('#view [data-rbtog]');document.querySelector('#view [data-rbtog]').click();await new Promise(r=>setTimeout(r,100));
+          const hidden=!document.querySelector('#view .rbadges');document.querySelector('#view [data-rbtog]').click();
+          [S.tab,S.sq,S.sqm]=keep;render();return {allPlanned,tog,hidden}})()""")
+        if rs is not None:
+            check("Drehbuch-Suche nach Rolle: nur Szenen laut Drehplan, Abgleich ein-/ausblendbar", rs == {"allPlanned": True, "tog": True, "hidden": True}, rs, public=True)
         check("Nur 2nd Unit: alle Tage bleiben, andere Drehtage grau, Unit-Knöpfe in der fixen Kalenderzeile", o2 == {"same": True, "grey": True, "ub": True}, o2, public=True)
         check("Zurück-Knopf oben links: ein Schritt zurück (Locations → Drehplan)", nb == {"ok": True, "en": True, "tab": "plan", "top": True}, nb, public=True)
         # gallery (floorplan, Auflösung, Sides): pinch zooms the picture and never turns the page; a one-finger swipe does

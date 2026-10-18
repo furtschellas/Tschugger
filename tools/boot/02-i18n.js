@@ -674,6 +674,7 @@ Object.assign(I18N,{
  "An diesem Tag findet keine 2nd Unit statt – die 1st Unit ist wieder eingeschaltet.":{fr:"Pas de 2nd unit ce jour-là – la 1st unit est réactivée.",it:"Nessuna 2nd unit in questo giorno – la 1st unit è di nuovo attiva.",en:"No 2nd unit on this day – the 1st unit is switched on again."},
  "Welchen Ordner öffnen?":{fr:"Quel dossier ouvrir ?",it:"Quale cartella aprire?",en:"Which folder?"},
  "Drehplan als PDF (Originalseite dieses Drehtags)":{fr:"Plan de tournage en PDF (page de ce jour)",it:"Piano di lavorazione in PDF (pagina di questo giorno)",en:"Schedule as PDF (page of this shooting day)"},
+ "Abgleich mit Drehbuch":{fr:"Comparaison avec le scénario",it:"Confronto con la sceneggiatura",en:"Compare with script"},
  "Bilder ansehen":{fr:"Voir les images",it:"Vedere le immagini",en:"View pictures"},
  "Noch keine Drehtage.":{fr:"Pas encore de jours de tournage.",it:"Ancora nessun giorno di riprese.",en:"No shooting days yet."},
  "Drehplan ↔ Drehbuch":{fr:"Plan ↔ scénario",it:"Piano ↔ sceneggiatura",en:"Schedule ↔ script"},
