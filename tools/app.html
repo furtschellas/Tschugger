@@ -473,7 +473,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .lvb .mapbtn,.lvb .scall{min-height:var(--circ);height:var(--circ);padding:0 12px;font-size:13px;font-weight:600;background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:99px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 @media (max-width:420px){.lvb .mapbtn,.lvb .scall{padding:0 8px;font-size:12px;gap:3px}.lvb .mapbtn svg{width:13px;height:13px}.lvpills{gap:4px}.lvb .scuf{margin-left:2px}}
 .spfd>span+span::before{content:" · "}
-.sv-no-t .spfd{display:none}
+.sv-no-i .spfd{display:none}
 .sv-no-e .spfs{display:none}
 .sv-no-t.sv-no-e.sv-no-i.sv-no-d.sv-no-c.sv-no-a .spf{display:none}
 .lv-no-i .lcm,.lv-no-a .adl,.lv-no-m .scb,.lv-no-m #scall{display:none!important}
@@ -699,7 +699,7 @@ html[data-theme="light"] .scbtn,html[data-theme="light"] .pillbtn{border-color:v
 .bdi+.bdi::before{content:" // ";color:var(--muted);white-space:pre}.bdt{overflow-wrap:anywhere}
 .pvbtn svg,.svb .pvbtn svg{width:66%!important;height:66%!important}
 .dtitle{flex-wrap:wrap}.dtitle .pvb{margin-left:auto;justify-content:flex-end;flex-wrap:wrap}
-.smodes{justify-content:flex-start!important;gap:8px!important;padding:8px 12px!important}.smodes>button:first-child{margin-left:auto}.smodes>button:last-child{margin-right:auto}
+.smodes{justify-content:flex-start!important;gap:8px!important;padding:8px 12px!important}
 html body .smodes button{min-height:36px;min-width:44px;padding:0 15px;font-weight:600;letter-spacing:.01em;border-color:var(--rule);transition:background .15s,border-color .15s}
 html body .smodes button[aria-pressed="true"]{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
 /* selected page in the bottom navigation: round circle around the icon (all themes) */
@@ -715,6 +715,9 @@ html{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--accent) 55%,tr
 ::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:padding-box}::-webkit-scrollbar-button,::-webkit-scrollbar-corner{display:none;background:transparent}
 .sct .hen{display:none}.svwrap:not(.sv-no-e) .sct.en .hde,.scrn:not(.sv-no-e) .sct.en .hde{display:none}.svwrap:not(.sv-no-e) .sct.en .hen,.scrn:not(.sv-no-e) .sct.en .hen{display:inline}
 .sv-no-box .svb .sven{opacity:1!important;pointer-events:auto!important}
+html body .dtitle .pvb{display:flex;justify-content:flex-end;flex:1 1 auto;margin-left:auto}
+@media (max-width:600px){html body .smodes{gap:5px!important;padding:8px 0!important;overflow:visible!important}html body .smodes button{flex:1 1 auto;min-width:0;padding:0 4px;font-size:clamp(11px,3.4vw,14px);min-height:34px}}
+@media (min-width:601px){.smodes{justify-content:center!important}}
 </style>
 
 <div class="wrap">
@@ -839,7 +842,7 @@ S.ppo=false;try{const v=localStorage.getItem("ppo");S.ppo=v===null?!!(window.mat
 S.pv={i:true,d:true,a:true,c:true,b:true,inf:true,g:true};try{const x=JSON.parse(localStorage.getItem("pv")||"null");if(x&&typeof x==="object")for(const k of ["i","d","c","inf","a","b","g"])if(typeof x[k]==="boolean")S.pv[k]=x[k]}catch(_){}
 const PVICO={art:'<rect x="5" y="3" width="14" height="16" rx="1.5"/><path d="M12 3v16M10 10v2.5M14 10v2.5M7 19v2M17 19v2"/>',hmu:'<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>',inf:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/>',g:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',b:'<path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>',i:'<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',d:'<path d="M4 6h16M4 10h16M4 14h10M4 18h7"/>',a:'<path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/>',c:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.6c3 .1 5.5 2 5.5 5.4"/>'};
 S.sv={box:true,t:true,e:false,i:true,d:true,c:true,a:true,b:true,inf:true};try{const x=JSON.parse(localStorage.getItem("sv")||"null");if(x&&typeof x==="object")for(const k in S.sv)if(typeof x[k]==="boolean")S.sv[k]=x[k]}catch(_){}
-const SVKEYS=["t","e","i","d","c","inf","a","b"];
+const SVKEYS=["e","i","d","c","inf","a","b"];
 const SVICO={t:'<rect x="3" y="5" width="13" height="12" rx="2"/><path d="M3 9h13M7 3v4M12 3v4"/><circle cx="17" cy="17" r="4.5"/><path d="M17 15v2.2l1.4 1"/>'};
 SVICO.e='<rect x="3" y="6" width="18" height="12" rx="1.6" fill="#fff" stroke="none"/><path d="M12 6v12M3 12h18" stroke="#cf142b" stroke-width="3" stroke-linecap="butt"/><rect x="3" y="6" width="18" height="12" rx="1.6" stroke="currentColor" stroke-width="1.2"/>';
 const SVLBL={t:"Drehtag & Zeit",e:"Englische Szenentitel"};
@@ -2115,7 +2118,7 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 const SMODES=[["all","Alle"],["role","Rolle"],["sc","Szene"],["day","Drehtag"],["person","Person"],["loc","Motiv"],["text","Text"]];
 const SMODE_OK=k=>SMODES.some(x=>x[0]===k);
 /* auf dem Handy kürzer: Szene = SZ, Drehtag = Tag, Motiv = Loc */
-const SMODE_SH={de:{sc:"SZ",day:"Tag",loc:"Loc"},en:{sc:"Sc",day:"Day",loc:"Loc"},fr:{sc:"Sc",day:"Jour",loc:"Loc"},it:{sc:"Sc",day:"Gior.",loc:"Loc"}};
+const SMODE_SH={de:{sc:"SZ",day:"Tag",loc:"Loc",person:"Pers"},en:{sc:"Sc",day:"Day",loc:"Loc"},fr:{sc:"Sc",day:"Jour",loc:"Loc"},it:{sc:"Sc",day:"Gior.",loc:"Loc"}};
 try{S.gm=localStorage.getItem("gm")||"all";S.sqm=localStorage.getItem("sqm")||"all"}catch(_){S.gm=S.sqm="all"}
 if(!SMODE_OK(S.gm))S.gm="all";if(!SMODE_OK(S.sqm))S.sqm="all";
 const modeChips=(cur,attr)=>'<div class="smodes" role="group" aria-label="'+esc(L("Suchen nach"))+'">'+SMODES.map(([k,t])=>{const sh=(SMODE_SH[LANG]||SMODE_SH.en)[k];return '<button type="button" '+attr+'="'+k+'" aria-pressed="'+(cur===k)+'"'+(sh?' aria-label="'+esc(L(t))+'"':'')+'>'+(sh?'<span class="sm-l">'+esc(L(t))+'</span><span class="sm-s">'+esc(sh)+'</span>':esc(L(t)))+'</button>'}).join("")+'</div>';
