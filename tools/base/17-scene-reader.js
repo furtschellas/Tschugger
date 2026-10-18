@@ -121,7 +121,7 @@ function factsHTML(hits){
       '<div class="spfk">'+kv.map(k=>'<span><i>'+esc(cap(String(k[0])))+'</i>'+esc(k[1])+'</span>').join("")+'</div>'+
       (it.d?'<div class="spfx">'+esc(TX(it,"d"))+'</div>':'')+
       (it.cast&&it.cast.length?'<div class="spfc">'+castChips(it.cast)+'</div>':'')+
-      (it.loc?(()=>{const ad=addrForItem(it);return '<div class="spfa">'+(/^tba$/i.test(ad)?esc(L('Ort: TBA')):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it)+'</div>';
+      (it.loc?(()=>{const ad=addrForItem(it);return '<div class="spfa">'+(/^tba$/i.test(ad)?esc(L('Ort: TBA')):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it)+bdHTML(d.date,it.sc)+'</div>';
   }).join("")+'</div>';
 }
 const TOD_RE=/[-–]\s*(DAY|NIGHT|EVENING|MORNING|DAWN|DUSK|CONTINUOUS|LATER|SAME|NOON|MIDDAY|AFTERNOON|SUNSET|SUNRISE|TAG|NACHT|ABEND|MORGEN)\b/i;
