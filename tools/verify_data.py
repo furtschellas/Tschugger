@@ -141,10 +141,15 @@ def main():
 
     head = "## Abgleich App ↔ Dropbox: " + ("alles in Ordnung ✅" if not BAD else "%d Abweichung(en) ❌" % len(BAD))
     text = head + "\n" + "\n".join(OUT) + "\n"
-    print(text)
     p = os.environ.get("GITHUB_STEP_SUMMARY")
     if p: open(p, "a", encoding="utf-8").write(text)
-    print("::notice::Abgleich App ↔ Dropbox: " + ("alles in Ordnung" if not BAD else "%d Abweichung(en): %s" % (len(BAD), " | ".join(BAD))[:900]))
+    # one line per section in the run overview (at most 10 are shown)
+    sec, cur = [], None
+    for line in OUT:
+        if line.startswith("\n### "): cur = [line.strip("\n# ")]; sec.append(cur)
+        elif cur is not None: cur.append(line[2:])
+    for c in sec: print("::notice::" + c[0] + " → " + " | ".join(c[1:])[:3500])
+    print("::notice::" + head.lstrip("# "))
     return 0
 
 

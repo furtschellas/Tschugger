@@ -29,4 +29,4 @@ jobs:
           DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
           DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
           DROPBOX_ROOT: ${{ vars.DROPBOX_ROOT }}
-        run: python tools/verify_data.py > /dev/null
+        run: python tools/verify_data.py
