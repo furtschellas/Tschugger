@@ -180,5 +180,9 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
         tb = traceback.extract_tb(e.__traceback__)
-        print("::error::Push-Versand abgebrochen: " + type(e).__name__ + " (" + ", ".join(f"{os.path.basename(t.filename)}:{t.lineno}" for t in tb[-4:]) + ")")
+        st = getattr(getattr(e, "response", None), "status_code", None)
+        msg = ""
+        try: msg = (e.response.json().get("error") or {}).get("status", "")[:60]
+        except Exception: pass
+        print("::error::Push-Versand abgebrochen: " + type(e).__name__ + (f" HTTP {st} {msg}" if st else "") + " (" + ", ".join(f"{os.path.basename(t.filename)}:{t.lineno}" for t in tb[-4:]) + ")")
         sys.exit(1)
