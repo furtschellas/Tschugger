@@ -54,13 +54,6 @@ function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem
 /* used by the schedule (itemHTML): mark a changed scene */
 window.chgFor=(date,u,sc)=>{const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};
 document.addEventListener("click",e=>{if(!e.target.closest("[data-chgseen]"))return;try{localStorage.setItem("chgseen:v1",String(Date.now()))}catch(_){}render()});
-document.addEventListener("click",e=>{const b=e.target.closest("[data-chgpush]");if(!b||!can("push.send"))return;
-  const l=chgList();const body=l.slice(0,8).map(c=>dmy(c.date)+(c.sc?" · "+L("Szene")+" "+c.sc:"")+": "+c.txt).join("\n").slice(0,300);
-  try{sessionStorage.setItem("bcpre",JSON.stringify({t:L("Änderungen im Drehplan"),b:body}))}catch(_){}
-  S.tab="bcast";store("tab","bcast");render();scrollTo(0,0);
-  setTimeout(()=>{let pr=null;try{pr=JSON.parse(sessionStorage.getItem("bcpre")||"null");sessionStorage.removeItem("bcpre")}catch(_){}
-    const f=document.querySelector("#view form");if(!f||!pr)return;const ti=f.querySelector("input[name=bt]"),bo=f.querySelector("textarea[name=bb]");
-    if(ti){ti.value=pr.t;ti.dataset.dirty="1"}if(bo){bo.value=pr.b;bo.dataset.dirty="1"}},60)});
 
 /* ---------- 3) offline on set: data key, today's + tomorrow's blocking pictures and the script stay on the device ---------- */
 const OFF={busy:false};
