@@ -482,7 +482,8 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
 # ---------- choosing the newest files (same rules as the Claude task) ----------
 def low(f): return f["name"].lower()
 def pick_schedule(files):
-    c = [f for f in files if low(f).startswith("02_schedule/ch/") and "_archiv" not in low(f) and low(f).endswith(".pdf")]
+    # the Swiss schedule: in 02_Schedule or a subfolder (formerly 02_Schedule/CH) – not the archive and not India
+    c = [f for f in files if low(f).startswith("02_schedule/") and "_archiv" not in low(f) and "india" not in low(f) and low(f).endswith(".pdf")]
     def key(f):
         n = f["name"].rsplit("/", 1)[-1]
         d = re.search(r"(\d{6})", n); v = re.search(r"v(\d+)", n, re.I)
