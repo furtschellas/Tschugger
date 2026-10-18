@@ -226,6 +226,15 @@ function locResults(gs){
       return cards.length?cards.join(""):'<div class="empty">'+esc(L("Nichts gefunden für"))+' «'+esc(S.lq)+'»</div>';
     })();
 }
+/* Sides (the script pages of a shooting day) and the original callsheet pages: as pictures in the app (gallery, also offline) */
+function sidesHTML(date){const all=arr(S.meta&&S.meta.sides),mine=all.map((s,i)=>[s,i]).filter(([s])=>s.date===date),gen=all.map((s,i)=>[s,i]).filter(([s])=>!s.date);
+  if(!mine.length&&!gen.length)return "";const b=([s,i])=>'<button type="button" class="pillbtn" data-sides="'+i+'">'+ICAM+' '+esc(s.name)+' <small>'+arr(s.pg).length+'</small></button>';
+  return '<section class="dsec"><h3 class="dh">Sides</h3><p class="ghint">'+esc(L("Die Drehbuchseiten des Tages."))+'</p><div class="sidesb">'+mine.map(b).join("")+(gen.length?(mine.length?'<span class="sidesg">'+esc(L("Weitere"))+'</span>':'')+gen.map(b).join(""):'')+'</div></section>'}
+document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[data-cspg]");if(!a||typeof window.blkImg!=="function")return;e.preventDefault();
+  if(a.dataset.sides!==undefined){const s=arr(S.meta&&S.meta.sides)[+a.dataset.sides];if(!s)return;
+    openGallery({name:"sides:"+s.name,title:"Sides · "+s.name,sc:[],url:s.url,media:arr(s.pg).map((p,i)=>({n:s.name+" · "+(i+1)+"/"+s.pg.length,t:"img",f:p,u:s.url}))});return}
+  const x=S.dispos.find(d=>d.date===a.dataset.cspg);if(!x)return;
+  openGallery({name:"cs:"+x.date,title:"Callsheet · "+(x.label||x.date),sc:[],url:x.link,media:arr(x.pg).map((p,i)=>({n:"Callsheet · "+(i+1)+"/"+x.pg.length,t:"img",f:p,u:x.link}))})});
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   const t=todayISO(),PD=planDays();
@@ -240,7 +249,7 @@ function renderDispo(){
   if(day.kind&&day.kind!=="shoot")return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+fmtDate(day.date)+'</span>'+UNITBAR+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
   if(!x){
     return h+(UNITBAR?'<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>':'')+'<div class="dsp-empty"><div class="eh">'+esc(day.label||"")+' · '+(day.date?fmtDate(day.date):'')+'</div><b>'+L('Callsheet folgt')+'</b><p>'+L('Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.')+'</p>'+
-      (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>';
+      (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>'+sidesHTML(day.date);
   }
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>':'';
   h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date drow"><span>'+fmtDate(x.date)+(x.version?' · '+esc(x.version):'')+'</span>'+UNITBAR+'</div></div></div>';
@@ -264,7 +273,14 @@ function renderDispo(){
       (x.hospital?'<div class="p"><div class="hd"><span class="nm">'+esc(x.hospital.name||L("Spital"))+'</span><span class="role">'+L('Nächstes Spital')+'</span></div>'+(x.hospital.address?'<div class="ct"><a href="'+maps([x.hospital.name,x.hospital.address].filter(Boolean).join(", "))+'" target="_blank" rel="noopener noreferrer">'+esc(x.hospital.address)+'</a></div>':'')+(x.hospital.phone?'<div class="ct"><a href="tel:'+esc(x.hospital.phone.replace(/\s/g,""))+'"><span>'+esc(x.hospital.phone)+'</span></a></div>':'')+'</div>':'')+
       (x.contacts||[]).map(c=>'<div class="p"><div class="hd"><span class="nm">'+esc(c.name||"")+'</span><span class="role">'+esc(c.role||"")+'</span></div>'+(c.phone?'<div class="ct"><a href="tel:'+esc(c.phone.replace(/\s/g,""))+'"><span>'+esc(c.phone)+'</span></a></div>':'')+'</div>').join("")+'</div></section>';
   }
-  if(x.link)h+='<p><a class="bigbtn" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer">'+L('Original-Callsheet öffnen')+'</a></p>';
+  /* everything else on the callsheet, section by section as in the original */
+  for(const sec of arr(x.sections)){const rows=arr(sec&&sec.rows).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(c=>String(c==null?"":c).trim()));if(!rows.length)continue;
+    const w=Math.max(...rows.map(r=>r.length));
+    h+='<section class="dsec"><h3 class="dh">'+esc(String(sec.title||""))+'</h3>'+(w>1?'<div class="tblw"><table class="dtbl"><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(String(c==null?"":c))+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>'
+      :'<div class="dlines">'+rows.map(r=>'<p>'+esc(String(r[0]))+'</p>').join("")+'</div>')+'</section>'}
+  h+=sidesHTML(x.date);
+  if(arr(x.pg).length||x.link)h+='<p class="csorig">'+(arr(x.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="bigbtn" data-cspg="'+esc(x.date)+'">'+L('Original-Callsheet ansehen')+' <small>'+x.pg.length+'</small></button> ':'')+
+    (x.link?'<a class="pillbtn" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer">'+L('In Dropbox öffnen')+'</a>':'')+'</p>';
   return h;
 }
 function renderInfo(){

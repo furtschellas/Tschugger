@@ -175,7 +175,13 @@ function renderPlan(){
     window.__mctx={date:d.date,u:u};
     if(u==="1"){if(heads)h+='<h3 class="uh">1st Unit</h3>';h+='<ol class="tl">'+(d.items||[]).map(itemHTML).join("")+'</ol>';continue}
     if(hasU(d,u)){
-      const x=d["unit"+u];
+      let x=d["unit"+u];
+      /* 2nd unit planning: only the scenes; a note that names a scene («Ton für Sc185») is shown at that scene, other notes not */
+      if(x.src==="2nd"){const its=x.items.filter(i=>i&&i.sc).map(i=>Object.assign({},i,{xn:[]}));
+        const key=sc=>String(sc).toLowerCase().replace(/\s+/g,"").replace(/^0+/,"");
+        const refs=n=>{const out=new Set(),t=String(n).toLowerCase().replace(/(\d)\s+(pt|sl)/g,"$1$2");for(const m of t.matchAll(/(?:sc(?:ene|ène|ena)?\.?\s*|szene\s*|#)0*(\d+(?:(?:pt|sl)\d+|[a-z]\b)?)/g))out.add(m[1]);return out};
+        for(const n of TXA(x,"notes")){const r=refs(n);if(!r.size)continue;for(const i of its){const k=key(i.sc),b=k.replace(/(pt|sl)\d+$/,"");if(r.has(k)||r.has(b))i.xn.push(n)}}
+        x=Object.assign({},x,{items:its,notes:[],notes_fr:[],notes_en:[],notes_it:[],notes_hi:[]})}
       if(heads)h+='<h3 class="uh u'+u+'">'+UNAME[u]+' Unit</h3>';
       h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+
         (x.src==="2nd"?' <span class="u2src">'+esc(L("genaue Reihenfolge laut 2nd-Unit-Planung"))+'</span>':'')+'</div>';
