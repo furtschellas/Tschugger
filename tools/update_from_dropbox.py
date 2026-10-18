@@ -567,7 +567,7 @@ def parse_breakdown(txt):
         cats = []
         if first:
             blk = body[first.start():].strip()
-            parts = re.split(r"(?:^|,\s+|\s+(?=(?:%s):\s))(%s):\s+" % (_BD_LAB, _BD_LAB), blk)
+            parts = re.split(r"(?:^|,\s+|(?<=:\s)|\s+(?=(?:%s):\s))(%s):\s+" % (_BD_LAB, _BD_LAB), blk)   # also «Special: Elec: …»
             for i in range(1, len(parts) - 1, 2):
                 lab = re.sub(r"\s+", " ", parts[i]); val = parts[i + 1].strip(" ,")
                 if not val: continue
