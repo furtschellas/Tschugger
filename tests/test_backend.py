@@ -232,4 +232,12 @@ U.fix_units(_d, _txt)
 check("2nd Unit: B-Cam-Zeilen wieder in der 1st Unit (nach Zeit eingereiht), echte 2nd Unit bleibt",
       "unit2" not in _d[0] and [i["sc"] for i in _d[0]["items"]] == ["2", "186pt1A", "186pt1B"] and "unit2" in _d[1] and "unit2" not in _d[2] and _d[2]["items"] == [], _d)
 
+# 2nd unit sheet: only the sheets shown in the tab bar; hidden ones are ignored
+class _R: status_code = 200; text = ('<li id="sheet-button-11"><a>#5-Salgesch</a></li><script>items.push({name: "#5-Salgesch", gid: "11"});'
+                                     'items.push({name: "#1-Tannen", gid: "33"});items.push({name: "#7", gid: "44", hidden: true});</script>')
+_g = U.requests.get; U.requests.get = lambda *a, **k: _R()
+try: _t = U.sheet_tabs("https://docs.google.com/spreadsheets/d/abc/edit")
+finally: U.requests.get = _g
+check("2nd Unit: nur eingeblendete Blätter, ausgeblendete ignoriert", _t == [("11", "#5-Salgesch")] and U.SHEET_HIDDEN == ["#1-Tannen", "#7"], (_t, U.SHEET_HIDDEN))
+
 sys.exit(done("Hintergrund"))
