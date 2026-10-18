@@ -36,8 +36,9 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   /* «start» = first page of this visit (a new tab or the app opened anew); a reload in the same visit shows only the logo */
   /* «reload» = the person reloaded while using the app (the page was visible within the last minute). Phones also «reload»
      an installed app they had closed in the background – that is a start, so the versions are shown then. */
-  var rel=false;try{var nv=performance.getEntriesByType("navigation")[0],lv=+localStorage.getItem("lastVis")||0;rel=!!(nv&&nv.type==="reload")&&Date.now()-lv<60000}catch(e){}
-  window.__REL=rel;/* the app uses this too: a reload keeps the page, a start opens the start page */
+  /* back within 30 minutes (also when the phone had closed the app): straight on, without the logo, on the same page */
+  var rel=false;try{var lv=+localStorage.getItem("lastVis")||0;rel=!!lv&&Date.now()-lv<30*60000}catch(e){}
+  window.__REL=rel;if(rel){el.style.display="none";done=true;setTimeout(function(){try{el.remove()}catch(e){}},0)}/* the app uses this too: a reload keeps the page, a start opens the start page */
   function seen(){try{localStorage.setItem("lastVis",String(Date.now()))}catch(e){}}
   setInterval(function(){if(document.visibilityState==="visible")seen()},15000);
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")seen()});addEventListener("pagehide",seen);
