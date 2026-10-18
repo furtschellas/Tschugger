@@ -232,12 +232,22 @@ U.fix_units(_d, _txt)
 check("2nd Unit: B-Cam-Zeilen wieder in der 1st Unit (nach Zeit eingereiht), echte 2nd Unit bleibt",
       "unit2" not in _d[0] and [i["sc"] for i in _d[0]["items"]] == ["2", "186pt1A", "186pt1B"] and "unit2" in _d[1] and "unit2" not in _d[2] and _d[2]["items"] == [], _d)
 
-# 2nd unit sheet: only the sheets shown in the tab bar; hidden ones are ignored
+# 2nd unit sheet: tab list (shown and hidden) and the tab colours from the xlsx export – only GREEN tabs count
 class _R: status_code = 200; text = ('<li id="sheet-button-11"><a>#5-Salgesch</a></li><script>items.push({name: "#5-Salgesch", gid: "11"});'
                                      'items.push({name: "#1-Pfyn", gid: "33"});items.push({name: "#7", gid: "44", hidden: true});</script>')
 _g = U.requests.get; U.requests.get = lambda *a, **k: _R()
 try: _t = U.sheet_tabs("https://docs.google.com/spreadsheets/d/abc/edit")
 finally: U.requests.get = _g
-check("2nd Unit: nur eingeblendete Blätter, ausgeblendete ignoriert", _t == [("11", "#5-Salgesch")] and U.SHEET_HIDDEN == ["#1-Pfyn", "#7"], (_t, U.SHEET_HIDDEN))
+check("2nd Unit: alle Blätter bekannt, ausgeblendete markiert", [n for _, n in _t] == ["#5-Salgesch", "#1-Pfyn", "#7"] and U.SHEET_HIDDEN == ["#1-Pfyn", "#7"], (_t, U.SHEET_HIDDEN))
+import io as _io, openpyxl as _ox  # noqa: E402
+_wb = _ox.Workbook(); _a = _wb.active; _a.title = "#5-Salgesch"; _a.sheet_properties.tabColor = "FF0000"
+_b = _wb.create_sheet("#6 Pfyn"); _b.sheet_properties.tabColor = "34A853"; _b.sheet_state = "hidden"
+_c = _wb.create_sheet("#7 alt"); _c.sheet_properties.tabColor = "00FF00"
+_wb.create_sheet("#8 ohne Farbe")
+_bio = _io.BytesIO(); _wb.save(_bio)
+_col = U.sheet_colors(raw=_bio.getvalue())
+check("2nd Unit: grüne Blätter erkannt, auch ausgeblendete; rote und ungefärbte nicht",
+      {k: (v["green"], v["hidden"]) for k, v in _col.items()} == {"#5-Salgesch": (False, False), "#6 Pfyn": (True, True), "#7 alt": (True, False), "#8 ohne Farbe": (False, False)}, _col)
+check("2nd Unit: Grüntöne", [U._is_green(c) for c in ("FF34A853", "00FF00", "B7E1CD", "0B8043", "FF0000", "FFFF00", "4285F4", "FFFFFF")] == [True, True, True, True, False, False, False, False])
 
 sys.exit(done("Hintergrund"))
