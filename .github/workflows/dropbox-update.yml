@@ -1,9 +1,9 @@
 name: Daten aus der Dropbox
 
-# zweimal pro Stunde (GitHub startet geplante Läufe oft verspätet oder lässt einzelne aus) und von Hand über «Run workflow»
+# vom Cloudflare Worker alle 30 Minuten gestartet; der eigene Zeitplan (stündlich) ist nur die Reserve; von Hand über «Run workflow»
 on:
   schedule:
-    - cron: "7,37 * * * *"
+    - cron: "37 * * * *"   # only the reserve: the Cloudflare worker starts this every 30 minutes (else everything ran twice)
   workflow_dispatch:
     inputs:
       force:
@@ -80,6 +80,7 @@ jobs:
       # Push bei Änderungen (Drehplan, Callsheet, Prep): erst wenn die neuen Daten online sind
       - name: Push bei Änderungen
         if: success() && hashFiles('pending_push.json') != ''
+        continue-on-error: true   # the data is already online: a failed push must not count as a failed update
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           CREW_KEY: ${{ secrets.CREW_KEY }}

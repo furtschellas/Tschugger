@@ -62,9 +62,9 @@ await check("Rollen: Admin-Rolle nur für Admins", assertFails(setDoc(doc(as("po
 await check("Rollen: Admin kann sich nicht über die Admin-Rolle «Einstellungen» geben", assertFails(setDoc(doc(as("admin"), "roles/admin"), { name: "Admin", perms: ["settings"] })));
 await check("Rollen: Admin darf andere Rollen ändern", assertSucceeds(setDoc(doc(as("admin"), "roles/crew"), { name: "Crew", perms: ["view.plan"] })));
 await check("Rollen: Owner passt die Admin-Rolle an", assertSucceeds(setDoc(doc(as("owner"), "roles/admin"), { name: "Admin", perms: ["users.view"] })));
-await check("Rollen: Admin hat danach nur die Rechte der Admin-Rolle", assertFails(getDocs(collection(as("admin"), "invites"))));
+await check("Rollen: Admin hat danach nur die Rechte der Admin-Rolle", assertFails(getDocs(collection(as("admin"), "requests"))));
 await check("Rollen: Admin-Rolle wieder entfernen (Owner)", assertSucceeds(deleteDoc(doc(as("owner"), "roles/admin"))));
-await check("Rollen: ohne Admin-Rolle hat der Admin wieder alles ausser «Einstellungen»", assertSucceeds(getDocs(collection(as("admin"), "invites"))));
+await check("Rollen: ohne Admin-Rolle hat der Admin wieder alles ausser «Einstellungen»", assertSucceeds(getDocs(collection(as("admin"), "requests"))));
 await check("Mitglied: Crew kann sich nicht selbst sperren/entsperren (active)", assertFails(updateDoc(doc(as("crew"), "members/uCrew"), { active: false })));
 await check("Mitglied: eigenes Profil ändern geht", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { phone: "+41 79 000 00 00" })));
 await check("Mitglied: fremdes Profil nicht", assertFails(updateDoc(doc(as("crew"), "members/uOther"), { phone: "1" })));

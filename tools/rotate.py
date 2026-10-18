@@ -37,7 +37,11 @@ def vapid():
 
 
 def reenc(old, new, raw):
-    pt = AESGCM(old).decrypt(raw[:12], raw[12:], None)
+    """re-encrypt with the new key; already done (readable with the new key: an interrupted earlier run) → None"""
+    try: pt = AESGCM(old).decrypt(raw[:12], raw[12:], None)
+    except Exception:
+        AESGCM(new).decrypt(raw[:12], raw[12:], None)   # raises if neither key fits
+        return None
     iv = secrets.token_bytes(12)
     return iv + AESGCM(new).encrypt(iv, pt, None)
 
@@ -45,14 +49,23 @@ def reenc(old, new, raw):
 def crew():
     old_b64 = fsadmin.crew_key_b64()
     if not old_b64: sys.exit("Kein bisheriger Schlüssel")
-    old = base64.b64decode(old_b64); new = secrets.token_bytes(32); new_b64 = base64.b64encode(new).decode()
+    old = base64.b64decode(old_b64)
+    # the new key is saved FIRST (secret/keynext, only the service account reads it): if the run stops halfway,
+    # the next run continues with the same key – nothing that was already re-encrypted is lost
+    nx = (fsadmin.get_doc("secret/keynext") or {}).get("k")
+    new = base64.b64decode(nx) if nx else secrets.token_bytes(32); new_b64 = base64.b64encode(new).decode()
+    if not nx and not fsadmin.patch_doc("secret/keynext", {"k": new_b64, "at": int(time.time())}):
+        sys.exit("secret/keynext nicht geschrieben – nichts geändert")
     # 1. encrypted JSON files in the repository
     n = 0
     for p in [os.path.join(ROOT, f) for f in ("data.enc.json", "script.enc.json")] + glob.glob(os.path.join(HERE, "*.enc.json")):
         try: e = json.load(open(p))
         except Exception: continue
         if "iv" not in e or "ct" not in e: continue
-        pt = AESGCM(old).decrypt(base64.b64decode(e["iv"]), base64.b64decode(e["ct"]), None)
+        iv0, ct0 = base64.b64decode(e["iv"]), base64.b64decode(e["ct"])
+        try: pt = AESGCM(old).decrypt(iv0, ct0, None)
+        except Exception:
+            AESGCM(new).decrypt(iv0, ct0, None); continue   # already re-encrypted in an interrupted run
         iv = secrets.token_bytes(12)
         e["iv"] = base64.b64encode(iv).decode(); e["ct"] = base64.b64encode(AESGCM(new).encrypt(iv, pt, None)).decode()
         if "stamp" in e: e["stamp"] = hashlib.sha256(new + pt).hexdigest()[:16]
@@ -74,6 +87,7 @@ def crew():
             raw = s3.get_object(Bucket=bucket, Key=k)["Body"].read()
             try: raw = reenc(old, new, raw)
             except Exception: return
+            if raw is None: return
             s3.put_object(Bucket=bucket, Key=k, Body=raw, ContentType="application/octet-stream", CacheControl="public, max-age=31536000, immutable")
         with ThreadPoolExecutor(16) as ex: list(ex.map(one, keys))
         log("Bilder in R2 neu verschlüsselt:", len(keys))
@@ -84,6 +98,7 @@ def crew():
             raw = open(p, "rb").read()   # read first: opening for writing would empty the file
             try: out = reenc(old, new, raw)
             except Exception: bad += 1; continue
+            if out is None: continue
             open(p, "wb").write(out)
         log("Bilder in blk/ neu verschlüsselt:", len(files) - bad, "· nicht lesbar:", bad, "(ohne R2 wächst das Repository dadurch einmal um ihre Grösse)")
     # 3. push devices and messages in Firestore
@@ -92,13 +107,17 @@ def crew():
         for did, f, _ in fsadmin.list_docs(col):
             c = f.get("c")
             if not c: continue
-            try: nc = base64.b64encode(reenc(old, new, base64.b64decode(c))).decode()
+            try: r = reenc(old, new, base64.b64decode(c))
             except Exception: continue
+            if r is None: continue
+            nc = base64.b64encode(r).decode()
             if fsadmin.patch_doc(col + "/" + did, {"c": nc}): m += 1
     log("Push-Einträge neu verschlüsselt:", m)
     # 4. the key itself (last); the old one stays for the service account only
     fsadmin.patch_doc("secret/keyprev", {"k": old_b64, "at": int(time.time())})
     if not fsadmin.patch_doc("secret/key", {"k": new_b64}): sys.exit("secret/key nicht geschrieben – Dateien NICHT veröffentlichen")
+    try: fsadmin.delete_doc("secret/keynext")
+    except Exception: pass
     log("Neuer Crew-Schlüssel ist aktiv. Das GitHub-Secret CREW_KEY und das Worker-Secret CREW_KEY werden nicht mehr gebraucht (Dienstkonto).")
 
 

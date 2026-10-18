@@ -21,7 +21,7 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   if(ok&&!safe)try{sessionStorage.removeItem("safeTry")}catch(_){}
   if(!ok&&!safe){try{if(!sessionStorage.getItem("safeTry")){sessionStorage.setItem("safeTry","1");location.replace(location.pathname+"?safe=1"+location.hash);return}}catch(_){}}
   /* good: no error while starting and the page drew itself → keep this version as the fallback */
-  if(ok&&!safe&&!__ERRS.length){var c=navigator.serviceWorker&&navigator.serviceWorker.controller;if(c)try{c.postMessage({good:1})}catch(_){}}},5000)});
+  if(ok&&!safe&&!__ERRS.length){var c=navigator.serviceWorker&&navigator.serviceWorker.controller;if(c)try{c.postMessage({good:1,v:window.APPVER})}catch(_){}}},5000)});
 </script>
 <script>/* start screen: the logo (about the size of a five-franc coin); the ring shows how far the app has loaded and the page
    appears the moment it is ready – also on reload. It never blocks the app: at the latest after 8 s it disappears. */
