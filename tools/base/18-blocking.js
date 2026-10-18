@@ -118,7 +118,9 @@ const ACTIONS=[
   ["[data-ppmail]",b=>ppMail(b.dataset.ppmail)],
   ["[data-ppc]",b=>ppContact(b.dataset.ppc)],
   ["[data-ppo]",b=>{S.ppo=!S.ppo;store("ppo",S.ppo?"1":"0");b.setAttribute("aria-pressed",String(S.ppo));document.querySelectorAll(".ppparts").forEach(d=>d.open=S.ppo)}],
-  ["[data-pu]",b=>{const k=b.dataset.pu;S.pu=Object.assign({},S.pu,{[k]:!S.pu[k]});store("pu",JSON.stringify(S.pu));render()}],
+  ["[data-pu]",b=>{const k=b.dataset.pu;S.pu=Object.assign({},S.pu,{[k]:!S.pu[k]});store("pu",JSON.stringify(S.pu));
+    /* only 2nd unit → the next 2nd unit day; 1st unit switched on → the next 1st unit day */
+    if(onlyU()||(k==="1"&&S.pu["1"])){const nd=nextUnitDay();if(nd){S.day=nd.id;S.dday=nd.date}}render()}],
   ["[data-scene]",b=>openScene(b.dataset.scene)],
   ["[data-spmore]",b=>spLoadMore(b)],
   ["[data-sqm]",b=>{S.sqm=b.dataset.sqm;S.sqn=0;try{localStorage.setItem("sqm",S.sqm)}catch(_){}document.querySelectorAll("[data-sqm]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));runSearch("sq",false)}],
