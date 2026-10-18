@@ -320,6 +320,9 @@ async def owner_tests(p, port):
           const g=document.getElementById('blkgal');const t=g?g.querySelector('h3').textContent:'';document.querySelectorAll('#blkgal').forEach(x=>x.remove());w.remove();
           S.meta.blocking=keep;S.meta.bm=kb;return {n,inApp,t}})()""")
         check("Auflösung: ein Knopf je PDF, öffnet die Seiten direkt in der App", pd["n"] == 3 and pd["inApp"] == 2 and "167" in pd["t"] and "2" in pd["t"], pd, public=True)
+        cu = await E("""(()=>{const w=document.createElement('div');w.innerHTML=chgUnitsHTML([{date:'2026-10-26',sc:'5 pt2',u:'2',txt:'x',unread:true},{date:'2026-10-26',sc:'157',txt:'y'},{date:'2026-10-27',sc:'107 pt1',u:'1',txt:'z'}]);
+          const d=[...w.querySelectorAll('details[data-chgu]')];return d.map(x=>x.dataset.chgu+':'+(x.open?'auf':'zu')+':'+x.querySelectorAll('.chgi').length).join(' ')})()""")
+        check("Today/Änderungen: 1st Unit (offen) und 2nd Unit (zu) getrennt aufklappbar", cu == "1:auf:2 2:zu:1", cu, public=True)
         # blocking per scene: parts get their own part + the general pictures, never another part; slideshow scenes «25 SL2» never scene 25
         bf = await E("""(()=>{const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
           S.meta.blocking=[{name:'Scene_186',sc:['186'],media:[{f:'a'},{f:'b',p:'186pt1'},{f:'c',p:'186pt2'}],pdfs:[{l:'186 pt1'},{l:'186 pt2'}]},
