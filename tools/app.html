@@ -69,7 +69,12 @@ h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-tr
 .pub button.none{opacity:.45}
 .stripwrap>.pub{align-items:center;align-self:center;flex-direction:column;gap:4px}
 /* the unit buttons (normal size) one above the other; from their middle to the right they fade out, the days slide under them */
-.stripwrap{padding-block:8px}.stripwrap .chip{padding:8px 7px;min-height:calc(2*var(--circ) + 4px);display:flex;flex-direction:column;justify-content:center}
+/* unit buttons: square corners; phone as narrow as possible, desktop 20 % larger; the day row follows their height */
+:root{--ubw:48px;--ubh:30px;--ubf:14px}
+@media (max-width:600px){:root{--ubw:30px;--ubh:24px;--ubf:11px}}
+html body .stripwrap>.pub.dpub button{width:var(--ubw)!important;min-width:var(--ubw);height:var(--ubh)!important;min-height:var(--ubh)!important;border-radius:6px!important;font-size:var(--ubf);line-height:1;padding:0!important;letter-spacing:-.02em}
+.stripwrap{padding-block:6px}.stripwrap .chip{padding:4px 7px;min-height:calc(2*var(--ubh) + 4px);display:flex;flex-direction:column;justify-content:center}
+.lbs{display:none}@media (max-width:600px){.lbl{display:none}.lbs{display:inline}}
 .stripwrap>.pub{position:relative;z-index:3;gap:4px;border-right:0;padding-right:18px;margin-right:-18px;background:linear-gradient(to right,var(--paper) 55%,transparent)}
 .stripwrap>.strip.in{padding-left:20px}
 .pub button.u2[aria-pressed="false"]{border-color:var(--accent);color:var(--accent)}
@@ -875,9 +880,10 @@ function dayNav(PD,isSel,attr,key,extra,pre){
   for(const d of PD){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
+    const lbh=d.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':esc(padD(lb));   /* phone: short label */
     const ex=extra?extra(d):{cls:"",mark:""};
     h+='<button data-dt="'+esc(d.date)+'" class="chip'+(onlyU()&&d.kind==="shoot"?(hasSelU(d)?" u2day":" nou"):"")+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.kind==="travel"?" trav":"")+(d.date===t?" isnow":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"||d.kind==="travel"?' disabled aria-disabled="true"':'')+'>'+
-       '<div class="lb">'+esc(padD(lb))+'/'+WD[dt.getDay()].toUpperCase()+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
+       '<div class="lb">'+lbh+'/'+WD[dt.getDay()].toUpperCase()+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
   }
   return h+'</div></div>';
 }
@@ -1121,8 +1127,8 @@ function renderPlan(){
   const ppDay=String(S.day||"").startsWith("prep:")?PPA.find(d=>"prep:"+d.date===S.day):null;
   const ppChips=PP.map(d=>{const dt=new Date(d.date+"T12:00:00"),off=ppOff(d),rest=ppRest(d),sd=S.days.find(x=>x.date===d.date);
     /* a day from the shooting schedule (travel / off) keeps its label and colour; the weekly schedule fills in its content */
-    if(sd){const k=sd.kind==="travel"?"travp":"free";return '<button data-dt="'+esc(d.date)+'" class="chip off '+k+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(sd.kind==="travel"?"TRAVEL":"OFF")+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}
-    return '<button data-dt="'+esc(d.date)+'" class="chip pre'+(rest?" off free":"")+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(rest?'OFF':'PREP')+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");
+    if(sd){const k=sd.kind==="travel"?"travp":"free";return '<button data-dt="'+esc(d.date)+'" class="chip off '+k+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(sd.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':"OFF")+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}
+    return '<button data-dt="'+esc(d.date)+'" class="chip pre'+(rest?" off free":"")+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(rest?'OFF':'<span class="lbl">PREP</span><span class="lbs">PRE</span>')+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");
   /* a non-shooting day that is also a prep day appears only once (as PREP) */
   const ppDates=new Set(PP.map(d=>d.date));
   let h=dayNav(PD.filter(d=>d.kind==="shoot"||!ppDates.has(d.date)),d=>d.id===S.day,"data-day","id",null,ppChips);
