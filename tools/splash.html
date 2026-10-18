@@ -4,9 +4,9 @@
 #splash .spw,#splash .spv{opacity:0;transition:opacity .15s}#splash.vis .spw,#splash.vis .spv{opacity:1}
 #splash{flex-direction:column;gap:18px}#splash .spv{min-height:3.9em;text-align:center;font:500 13px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.04em;color:rgba(255,255,255,.78)}#splash .spv b{color:#ff2e8a;font-weight:700}
 #splash .spw{position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center}#splash .splogo{width:140px;height:140px;border-radius:50%;overflow:visible}
-#splash .clstick{transform-box:view-box;transform-origin:112px 186px;transform:translate(112px,186px) rotate(-17deg);transition:transform .14s cubic-bezier(.5,0,.9,.4)}
+#splash .clstick{transform-box:view-box;transform-origin:112px 186px;transform:translate(112px,186px) rotate(-17deg);transition:transform .06s cubic-bezier(.7,0,1,.5)}
 #splash.shut .clstick{transform:translate(112px,186px) rotate(0deg)}
-#splash.shut .spw{animation:spshake .32s .12s}
+#splash.shut .spw{animation:spshake .28s .05s}
 @keyframes spshake{0%,100%{transform:translate(0,0)}20%{transform:translate(-3px,1px) rotate(-1.5deg)}40%{transform:translate(3px,-1px) rotate(1.5deg)}60%{transform:translate(-2px,0) rotate(-1deg)}80%{transform:translate(2px,0) rotate(.6deg)}}
 @media (prefers-reduced-motion:reduce){#splash.shut .spw{animation:none}}
 #splash .spr{position:absolute;inset:0;transform:rotate(-90deg)}#splash circle{fill:none;stroke-width:5}#splash .spt{stroke:rgba(255,255,255,.12)}
@@ -26,7 +26,7 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
 <script>/* start screen: the logo (about the size of a five-franc coin); the ring shows how far the app has loaded and the page
    appears the moment it is ready – also on reload. It never blocks the app: at the latest after 8 s it disappears. */
 (function(){var el=document.getElementById("splash"),c=document.getElementById("splp"),t0=Date.now(),cur=0,done=false;
-  var shut=false;function clap(){if(shut)return;shut=true;el.classList.add("shut");try{if(navigator.vibrate)navigator.vibrate([18,40,24])}catch(e){}}
+  var shut=false;function clap(){if(shut)return;shut=true;el.classList.add("shut");try{if(navigator.vibrate)navigator.vibrate([22,30,18])}catch(e){}}
   function set(p){if(p>cur){cur=p;c.style.strokeDashoffset=String(465*(1-p/100));if(p>=80&&el.classList.contains("vis"))clap()}}
   /* the logo only appears when the app really has to load: if it is ready within 250 ms, only the background fades away */
   setTimeout(function(){if(!done)el.classList.add("vis")},250);
