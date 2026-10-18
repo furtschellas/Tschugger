@@ -29,9 +29,7 @@ NOW = time.time()
 CLAIM = "mailto:furtschellas@gmail.com"
 
 
-def dec(key, c):
-    raw = base64.b64decode(c)
-    return json.loads(AESGCM(key).decrypt(raw[:12], raw[12:], None))
+dec = fsadmin.dec_json
 
 
 def vapid_keys(key):

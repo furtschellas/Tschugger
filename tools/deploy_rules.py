@@ -8,28 +8,12 @@ from pathlib import Path
 
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import fsadmin  # noqa: E402
+
 PROJECT = "tschugger-83692"
 API = f"https://firebaserules.googleapis.com/v1/projects/{PROJECT}"
 RELEASE = f"projects/{PROJECT}/releases/cloud.firestore"
-
-
-def _b64u(b): return base64.urlsafe_b64encode(b).rstrip(b"=").decode()
-
-
-def token(acc):
-    from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.asymmetric import padding
-    now = int(time.time())
-    h = _b64u(json.dumps({"alg": "RS256", "typ": "JWT"}).encode())
-    p = _b64u(json.dumps({"iss": acc["client_email"], "scope": "https://www.googleapis.com/auth/cloud-platform",
-                          "aud": "https://oauth2.googleapis.com/token", "iat": now, "exp": now + 3600}).encode())
-    key = serialization.load_pem_private_key(acc["private_key"].encode(), None)
-    sig = _b64u(key.sign((h + "." + p).encode(), padding.PKCS1v15(), hashes.SHA256()))
-    r = requests.post("https://oauth2.googleapis.com/token", timeout=30,
-                      data={"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer", "assertion": h + "." + p + "." + sig})
-    if r.status_code != 200:
-        sys.exit("::error::Anmeldung mit FIREBASE_SA fehlgeschlagen (%d)" % r.status_code)
-    return r.json()["access_token"]
 
 
 def fail(what, r):
@@ -47,10 +31,10 @@ def main():
     raw = os.environ.get("FIREBASE_SA", "").strip()
     if not raw:
         print("Nicht eingerichtet: Secret FIREBASE_SA fehlt – Regeln bitte von Hand in Firebase einsetzen."); return
-    try: acc = json.loads(raw)
-    except Exception: acc = json.loads(base64.b64decode(raw))
     src = Path(__file__).resolve().parent.parent.joinpath("firestore.rules").read_text(encoding="utf-8")
-    H = {"Authorization": "Bearer " + token(acc)}
+    t = fsadmin.sa_token("https://www.googleapis.com/auth/cloud-platform")
+    if not t: sys.exit("::error::Anmeldung mit FIREBASE_SA fehlgeschlagen")
+    H = {"Authorization": "Bearer " + t}
 
     # rules that are live now – nothing to do when they are the same
     r = requests.get(f"https://firebaserules.googleapis.com/v1/{RELEASE}", headers=H, timeout=30)

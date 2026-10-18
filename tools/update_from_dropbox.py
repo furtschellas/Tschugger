@@ -49,7 +49,7 @@ TRIGGER = os.environ.get("TRIGGER", "")   # «cron» when the Cloudflare Worker 
 NOW = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 DEFAULT_SHEET = "https://docs.google.com/spreadsheets/d/1-90uPfHztMs7i0u_zW473Jd0CUHdC7nlxZrzfgBqqJg/edit?gid=1204350231"
 
-def log(*a): print("•", *a, flush=True)
+log = fsadmin.log
 
 def write_stamp():
     """stamp.json (public, tiny): the app polls this instead of the whole data file. s = stamp of data.enc.json,

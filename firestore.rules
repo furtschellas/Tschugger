@@ -193,11 +193,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Bilder zu Push-Nachrichten: Funktion entfernt – nur noch alte Bilder löschen (Admins, beim Leeren des Verlaufs)
-    match /bcimg/{id} {
-      allow delete: if isAdmin();
-    }
-
     // Eigene Termine (verschlüsselt mit dem Crew-Schlüssel; wer sie sieht, steht verschlüsselt darin): lesen alle aus der Crew,
     // anlegen mit «Eigene Termine erstellen», ändern und löschen nur, wer ihn angelegt hat, und Admins.
     // gc = Termin-ID im Google Kalender (übernommene Termine; der GitHub-Lauf führt sie nach)

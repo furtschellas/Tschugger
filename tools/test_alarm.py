@@ -43,10 +43,7 @@ def main():
     i18n = {l: {"title": t, "body": b.format(n=n, f=short)} for l, (t, b) in TXT.items()}
     b = {"title": i18n["de"]["title"], "body": i18n["de"]["body"], "i18n": i18n, "roles": ["owner"], "push": True,
          "kind": "alarm", "by": "Automatisch", "at": int(time.time() * 1000), "ch": {"push": True}, "url": url or "./"}
-    iv = secrets.token_bytes(12)
-    c = base64.b64encode(iv + AESGCM(key).encrypt(iv, json.dumps(b, ensure_ascii=False).encode(), None)).decode()
-    ts = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
-    ok = fsadmin.create_doc("broadcasts", {"c": c}, raw={"at": {"timestampValue": ts}})
+    ok = fsadmin.new_broadcast(key, b)
     print("• Alarm an Owner:", "angelegt" if ok else "nicht angelegt", "·", n, "Fehler")
     return 0
 
