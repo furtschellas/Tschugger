@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.f.outputs.code }}
+      rules: ${{ steps.f.outputs.rules }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -41,6 +42,9 @@ jobs:
               - 'tools/*.py'
               - 'firestore.rules'
               - '.github/workflows/pages.yml'
+            rules:
+              - 'firestore.rules'
+              - 'tools/deploy_rules.py'
 
   test:
     needs: changes
@@ -135,6 +139,32 @@ jobs:
         with:
           name: tests-rules
           path: /tmp/t-rules.json
+
+  # the Firestore rules go to Firebase automatically – only after the rule tests (emulator) AND the app tests passed
+  rules_deploy:
+    needs: [changes, test, rules]
+    if: always() && needs.rules.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.changes.outputs.rules == 'true' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q cryptography==43.0.3 requests==2.32.3
+      - name: Firestore-Regeln übertragen
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: python tools/deploy_rules.py
+      - name: Alarm (E-Mail an Owner über ein Issue)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create -R ${{ github.repository }} -t "Firestore-Regeln nicht übertragen (${GITHUB_SHA::7})" -b "Die Regeln haben alle Tests bestanden, konnten aber nicht nach Firebase übertragen werden. In Firebase gelten weiter die bisherigen Regeln. Details ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" -a furtschellas || true
 
   deploy:
     needs: [changes, test, rules]
