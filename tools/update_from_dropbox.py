@@ -1125,6 +1125,21 @@ def main():
     elif oldkind.get("locations"):
         log("Motivliste nicht lesbar – bisherige bleibt"); sources.append(oldkind["locations"])
 
+    # web links («.web» shortcuts in the Dropbox, e.g. the 2nd unit shooting order as Google Sheet): shown in the app
+    try:
+        wl, have = [], {x.get("file"): x for x in (meta.get("webLinks") or [])}
+        for f in files:
+            if not f["name"].lower().endswith(".web") or f.get("size", 0) > 4096: continue
+            o = have.get(f["name"])
+            if o and o.get("m") == f["modified"]: wl.append(o); continue
+            m = re.search(rb"https://[^\s\"'<>]+", dbx.download(f["id"]))
+            if not m: continue
+            nm = re.sub(r"(?i)\.web$", "", f["name"].split("/")[-1])
+            wl.append({"file": f["name"], "m": f["modified"], "url": m.group(0).decode()[:500], "name": nm[:120],
+                       "kind": "2nd" if re.search(r"(?i)2nd.?unit", nm) else ""})
+        if wl != (meta.get("webLinks") or []): meta["webLinks"] = wl; changed = True; log("Web-Links:", len(wl))
+    except Exception as e: log("Web-Links nicht gelesen:", type(e).__name__)
+
     meta["sources"] = [x for x in sources if x]; meta.pop("checkedAt", None)   # «last checked» lives in stamp.json (otherwise the data file changes every run)
     fails = {k: v for k, v in fails.items() if k in seen}
     if fails: meta["fails"] = fails
