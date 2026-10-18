@@ -1026,6 +1026,12 @@ def main():
                     for k, v in (pb.get(int(m.group(1))) or {}).items() if m else []: bd[d["date"] + "|" + k] = v
                 if bd and bd != (meta.get("bd") or {}): meta["bd"] = bd; changed = True
                 print("::notice::Szenen-Details: %d Szenen an %d Drehtagen" % (len(bd), len({k.split("|")[0] for k in bd})))
+                miss = []
+                for d in data.get("days") or []:
+                    for it in (d.get("items") or []) + ((d.get("unit2") or {}).get("items") or [] if isinstance(d.get("unit2"), dict) else []):
+                        k = re.sub(r"\s+", "", str(it.get("sc") or "")).lower().lstrip("0")
+                        if k and d["date"] + "|" + k not in bd: miss.append((d.get("short") or "") + ":" + k)
+                if miss: print("::notice::Szenen-Details fehlen bei %d Szenen: %s" % (len(miss), ", ".join(miss[:60])))
             except Exception as e: print("::notice::Szenen-Details nicht gelesen: " + type(e).__name__)
             if UD and fix_units(data.get("days") or [], None, UD): changed = True
         except Exception as e: log("Drehplan-Text nicht gelesen:", type(e).__name__)
