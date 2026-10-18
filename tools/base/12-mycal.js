@@ -117,6 +117,7 @@ function renderPlan(){
   if(!S.days.length)return emptyHTML("Planung");
   const PD=planDays();
   const t=todayISO();
+  if(onlyU()){const cd=S.days.find(x=>x.id===S.day);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.day=nd.id}}
   /* one PREP button per prep day from today on; past prep days disappear */
   /* weekly-schedule days that fall on a shooting day get no PREP button; they appear below that day's schedule */
   const shootDates=new Set(S.days.filter(d=>d.kind==="shoot").map(d=>d.date));
@@ -149,7 +150,7 @@ function renderPlan(){
   h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
   if(d.kind==="shoot"){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
-    if(d.extras)f.push([L("Kompars:innen"),d.extras]);
+    if(d.extras)f.push(["Extras",d.extras]);
     /* drive from the crew hotel: +3 min buffer (over 20 min: +15 %); the route itself only when opened; shown next to the shooting time */
     /* the drive to the first set: tap → route from the hotel or from where you are (like in «Today») */
     const dv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
@@ -188,7 +189,7 @@ function renderPlan(){
         for(const n of TXA(x,"notes")){const r=refs(n);if(!r.size)continue;for(const i of its){if(!i.sc)continue;const k=key(i.sc),b=k.replace(/(pt|sl)\d+$/,"");if(r.has(k)||r.has(b))i.xn.push(n)}}
         x=Object.assign({},x,{items:its,notes:[],notes_fr:[],notes_en:[],notes_it:[],notes_hi:[]})}
       if(heads)h+='<h3 class="uh u'+u+'">'+UNAME[u]+' Unit</h3>';
-      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+
+      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" Extras"].filter(Boolean).map(esc).join(" · ")+
         (x.src==="2nd"?' <span class="u2src">'+esc(L("genaue Reihenfolge laut 2nd-Unit-Planung"))+'</span>':'')+'</div>';
       if(TXA(x,"notes").length)h+='<div class="notes" style="margin-top:8px">'+TXA(x,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
       h+='<ol class="tl">'+x.items.map(itemHTML).join("")+'</ol>';

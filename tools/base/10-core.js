@@ -130,7 +130,7 @@ function itemHTML(it){
   if(it.dur)meta.push('<span class="m">'+esc(it.dur)+'</span>');
   if(it.dir)meta.push('<span>'+L('Regie')+' '+esc(it.dir)+'</span>');
   if(it.fx)meta.push('<span>'+esc(it.fx)+' FX</span>');
-  if(it.xx)meta.push('<span>'+esc(it.xx)+' '+L('Kompars.')+'</span>');
+  if(it.xx)meta.push('<span>'+esc(it.xx)+' Extras'+'</span>');
   const cg=window.chgFor&&window.__mctx?window.chgFor(window.__mctx.date,window.__mctx.u,it.sc):"";
   return '<li class="row'+(cg?' chg':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+

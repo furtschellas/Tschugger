@@ -852,7 +852,7 @@ function itemHTML(it){
   if(it.dur)meta.push('<span class="m">'+esc(it.dur)+'</span>');
   if(it.dir)meta.push('<span>'+L('Regie')+' '+esc(it.dir)+'</span>');
   if(it.fx)meta.push('<span>'+esc(it.fx)+' FX</span>');
-  if(it.xx)meta.push('<span>'+esc(it.xx)+' '+L('Kompars.')+'</span>');
+  if(it.xx)meta.push('<span>'+esc(it.xx)+' Extras'+'</span>');
   const cg=window.chgFor&&window.__mctx?window.chgFor(window.__mctx.date,window.__mctx.u,it.sc):"";
   return '<li class="row'+(cg?' chg':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
@@ -1139,6 +1139,7 @@ function renderPlan(){
   if(!S.days.length)return emptyHTML("Planung");
   const PD=planDays();
   const t=todayISO();
+  if(onlyU()){const cd=S.days.find(x=>x.id===S.day);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.day=nd.id}}
   /* one PREP button per prep day from today on; past prep days disappear */
   /* weekly-schedule days that fall on a shooting day get no PREP button; they appear below that day's schedule */
   const shootDates=new Set(S.days.filter(d=>d.kind==="shoot").map(d=>d.date));
@@ -1171,7 +1172,7 @@ function renderPlan(){
   h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
   if(d.kind==="shoot"){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
-    if(d.extras)f.push([L("Kompars:innen"),d.extras]);
+    if(d.extras)f.push(["Extras",d.extras]);
     /* drive from the crew hotel: +3 min buffer (over 20 min: +15 %); the route itself only when opened; shown next to the shooting time */
     /* the drive to the first set: tap → route from the hotel or from where you are (like in «Today») */
     const dv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
@@ -1210,7 +1211,7 @@ function renderPlan(){
         for(const n of TXA(x,"notes")){const r=refs(n);if(!r.size)continue;for(const i of its){if(!i.sc)continue;const k=key(i.sc),b=k.replace(/(pt|sl)\d+$/,"");if(r.has(k)||r.has(b))i.xn.push(n)}}
         x=Object.assign({},x,{items:its,notes:[],notes_fr:[],notes_en:[],notes_it:[],notes_hi:[]})}
       if(heads)h+='<h3 class="uh u'+u+'">'+UNAME[u]+' Unit</h3>';
-      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" "+L("Kompars.")].filter(Boolean).map(esc).join(" · ")+
+      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" Extras"].filter(Boolean).map(esc).join(" · ")+
         (x.src==="2nd"?' <span class="u2src">'+esc(L("genaue Reihenfolge laut 2nd-Unit-Planung"))+'</span>':'')+'</div>';
       if(TXA(x,"notes").length)h+='<div class="notes" style="margin-top:8px">'+TXA(x,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
       h+='<ol class="tl">'+x.items.map(itemHTML).join("")+'</ol>';
@@ -1459,6 +1460,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[da
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   const t=todayISO(),PD=planDays();
+  if(onlyU()){const cd=S.days.find(x=>x.date===S.dday);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.dday=nd.date}}
   const by={};S.dispos.forEach(x=>by[x.date]=x);
   const pick=PD.filter(d=>d.kind!=="off"&&d.kind!=="travel");
   if(!S.dday||!pick.some(d=>d.date===S.dday)){
@@ -1704,7 +1706,8 @@ function render(){
   scallLabel();
   {const sel=v.querySelector('.chip[aria-selected="true"]'),st=v.querySelector(".strip.in"),tdy=todayISO();
     const first=st&&([...st.querySelectorAll(".chip[data-dt]")].find(c=>c.dataset.dt>=tdy&&(!onlyU()||c.classList.contains("u2day")))||[...st.querySelectorAll(".chip[data-dt]")].find(c=>c.dataset.dt>=tdy));
-    if(st&&first&&!(sel&&sel.dataset.dt&&sel.dataset.dt<tdy)){st.scrollLeft=Math.max(0,first.offsetLeft-st.offsetLeft-2);
+    if(st&&sel&&onlyU()&&sel.classList.contains("u2day"))st.scrollLeft=Math.max(0,sel.offsetLeft-st.offsetLeft-2);   /* only 2nd unit: its day at the very left */
+    else if(st&&first&&!(sel&&sel.dataset.dt&&sel.dataset.dt<tdy)){st.scrollLeft=Math.max(0,first.offsetLeft-st.offsetLeft-2);
       if(sel&&sel.offsetLeft+sel.offsetWidth>st.scrollLeft+st.clientWidth+st.offsetLeft)sel.scrollIntoView({block:"nearest",inline:"end"})}
     else if(sel)sel.scrollIntoView({block:"nearest",inline:"center"})}
   try{renderHeader()}catch(err){console.error(err)}

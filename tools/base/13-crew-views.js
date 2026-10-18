@@ -238,6 +238,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[da
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   const t=todayISO(),PD=planDays();
+  if(onlyU()){const cd=S.days.find(x=>x.date===S.dday);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.dday=nd.date}}
   const by={};S.dispos.forEach(x=>by[x.date]=x);
   const pick=PD.filter(d=>d.kind!=="off"&&d.kind!=="travel");
   if(!S.dday||!pick.some(d=>d.date===S.dday)){

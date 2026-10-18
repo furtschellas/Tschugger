@@ -35,7 +35,7 @@ function dayEatHTML(d){let e;try{e=dayEaters(d)}catch(_){return ""}if(!e.total)r
   const chips=[reg?'<span class="catchip reg"><b>'+reg+'</b> '+esc(L("Regulär"))+'</span>':'']
     .concat(DIETS.filter(x=>x[0]!=="none"&&e.cnt[x[0]]).map(x=>'<span class="catchip"><b>'+e.cnt[x[0]]+'</b> '+esc(L(x[1]))+'</span>'))
     .concat(INTOL.filter(x=>e.intol[x[0]]).map(x=>'<span class="catchip"><b>'+e.intol[x[0]]+'</b> '+esc(L(x[1]))+'</span>')).join("");
-  const tip=e.crew+" Crew"+(e.cast?" · "+e.cast+" Cast":"")+(e.ex?" · "+e.ex+" "+L("Kompars."):"")+" · "+L(e.src==="dispo"?"laut Callsheet":"noch kein Callsheet – ganze Crew");
+  const tip=e.crew+" Crew"+(e.cast?" · "+e.cast+" Cast":"")+(e.ex?" · "+e.ex+" Extras":"")+" · "+L(e.src==="dispo"?"laut Callsheet":"noch kein Callsheet – ganze Crew");
   return '<div class="meat" title="'+esc(tip)+'"><span class="mtot"><b>'+e.total+'</b> '+esc(L("Personen"))+'</span><div class="catchips">'+chips+'</div><span class="msrc">'+esc(tip)+'</span></div>'}
 const MENUX=new Set();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-menux]");if(!b)return;
