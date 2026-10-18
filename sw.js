@@ -3,7 +3,7 @@
    its own last copy – and nothing from Firebase sign-in or the database is cached. */
 const CACHE="crew-app-v9";
 const PAGES_MAX=4000;   /* PDF pages and floorplans kept for offline use: at most this many, the oldest go first */
-const SHELL=["./","index.html","manifest.webmanifest","clap.svg","clap-180.png","clap-192.png","clap-512.png","clap-maskable-512.png","n-termin.png","n-change.png","n-push.png"];
+const SHELL=["./","index.html","manifest.webmanifest","clap.svg","fav.svg","fav-32.png","clap-180.png","clap-192.png","clap-512.png","clap-maskable-512.png","n-termin.png","n-change.png","n-push.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=="crew-vc"&&k!=="crew-good").map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 let TRIMT=null;
