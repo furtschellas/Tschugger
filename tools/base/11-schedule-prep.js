@@ -41,7 +41,7 @@ function dayNav(PD,isSel,attr,key,extra,pre){
     const lbh=d.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':esc(padD(lb));   /* phone: short label */
     const ex=extra?extra(d):{cls:"",mark:""};
     h+='<button data-dt="'+esc(d.date)+'" class="chip'+(onlyU()&&d.kind==="shoot"?(hasSelU(d)?" u2day":" nou"):"")+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.kind==="travel"?" trav":"")+(d.date===t?" isnow":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"||d.kind==="travel"?' disabled aria-disabled="true"':'')+'>'+
-       '<div class="lb">'+lbh+'/'+WD[dt.getDay()].toUpperCase()+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
+       '<div class="lb">'+lbh+'<span class="wds">/'+WD[dt.getDay()].toUpperCase()+'</span><span class="wdl">'+esc(WDL(dt))+'</span>'+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
   }
   return h+'</div></div>';
 }

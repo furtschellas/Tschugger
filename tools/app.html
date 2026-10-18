@@ -75,8 +75,14 @@ h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-tr
 html body .stripwrap>.pub.dpub button{width:var(--ubw)!important;min-width:var(--ubw);height:var(--ubh)!important;min-height:var(--ubh)!important;border-radius:6px!important;font-size:var(--ubf);line-height:1;padding:0!important;letter-spacing:-.02em}
 .stripwrap{padding-block:6px}.stripwrap .chip{padding:4px 7px;min-height:calc(2*var(--ubh) + 4px);display:flex;flex-direction:column;justify-content:center}
 .lbs{display:none}@media (max-width:600px){.lbl{display:none}.lbs{display:inline}}
-.stripwrap>.pub{position:relative;z-index:3;gap:4px;border-right:0;padding-right:18px;margin-right:-18px;background:linear-gradient(to right,var(--paper) 55%,transparent)}
-.stripwrap>.strip.in{padding-left:20px}
+.stripwrap>.pub{position:relative;z-index:3;gap:4px;border-right:0;padding-right:10px;margin-right:-10px;background:linear-gradient(to right,var(--paper) 60%,transparent)}
+.stripwrap>.strip.in{padding-left:12px}
+html body .stripwrap{padding-left:max(6px,env(safe-area-inset-left,0px))}
+/* phone: the day row from the very left edge over the whole screen width, no gaps */
+@media (max-width:600px){html body .stripwrap{margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px))) calc(-1*max(16px,env(safe-area-inset-right,0px)));padding-left:env(safe-area-inset-left,0px);padding-right:0}
+  .stripwrap>.pub{padding-left:3px}.stripwrap>.strip.in{padding-right:max(6px,env(safe-area-inset-right,0px))}}
+.wdl{display:none}@media (min-width:601px){.wds{display:none}.wdl{display:block;font-size:10.5px;letter-spacing:.02em;text-transform:none;opacity:.85}}
+.fldl{display:grid;gap:8px;margin-top:10px}
 .pub button.u2[aria-pressed="false"]{border-color:var(--accent);color:var(--accent)}
 .chip.u2day{border:2px solid var(--accent)}.chip.nou{opacity:.4;filter:grayscale(1)}
 /* buttons that do something: pink frame */
@@ -883,7 +889,7 @@ function dayNav(PD,isSel,attr,key,extra,pre){
     const lbh=d.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':esc(padD(lb));   /* phone: short label */
     const ex=extra?extra(d):{cls:"",mark:""};
     h+='<button data-dt="'+esc(d.date)+'" class="chip'+(onlyU()&&d.kind==="shoot"?(hasSelU(d)?" u2day":" nou"):"")+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.kind==="travel"?" trav":"")+(d.date===t?" isnow":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"||d.kind==="travel"?' disabled aria-disabled="true"':'')+'>'+
-       '<div class="lb">'+lbh+'/'+WD[dt.getDay()].toUpperCase()+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
+       '<div class="lb">'+lbh+'<span class="wds">/'+WD[dt.getDay()].toUpperCase()+'</span><span class="wdl">'+esc(WDL(dt))+'</span>'+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
   }
   return h+'</div></div>';
 }
@@ -1127,15 +1133,18 @@ function renderPlan(){
   const ppDay=String(S.day||"").startsWith("prep:")?PPA.find(d=>"prep:"+d.date===S.day):null;
   const ppChips=PP.map(d=>{const dt=new Date(d.date+"T12:00:00"),off=ppOff(d),rest=ppRest(d),sd=S.days.find(x=>x.date===d.date);
     /* a day from the shooting schedule (travel / off) keeps its label and colour; the weekly schedule fills in its content */
-    if(sd){const k=sd.kind==="travel"?"travp":"free";return '<button data-dt="'+esc(d.date)+'" class="chip off '+k+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(sd.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':"OFF")+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}
-    return '<button data-dt="'+esc(d.date)+'" class="chip pre'+(rest?" off free":"")+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(rest?'OFF':'<span class="lbl">PREP</span><span class="lbs">PRE</span>')+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");
+    if(sd){const k=sd.kind==="travel"?"travp":"free";return '<button data-dt="'+esc(d.date)+'" class="chip off '+k+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(sd.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':"OFF")+'<span class="wds">/'+WD[dt.getDay()].toUpperCase()+'</span><span class="wdl">'+esc(WDL(dt))+'</span></div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}
+    return '<button data-dt="'+esc(d.date)+'" class="chip pre'+(rest?" off free":"")+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(rest?'OFF':'<span class="lbl">PREP</span><span class="lbs">PRE</span>')+'<span class="wds">/'+WD[dt.getDay()].toUpperCase()+'</span><span class="wdl">'+esc(WDL(dt))+'</span></div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");
   /* a non-shooting day that is also a prep day appears only once (as PREP) */
   const ppDates=new Set(PP.map(d=>d.date));
   let h=dayNav(PD.filter(d=>d.kind==="shoot"||!ppDates.has(d.date)),d=>d.id===S.day,"data-day","id",null,ppChips);
   if(ppDay){let o='';try{if(window.ownDayHTML)o=window.ownDayHTML(ppDay.date)}catch(_){}return h+renderPrePro(ppDay)+o}
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const d=S.days.find(x=>x.id===S.day)||PD[0];if(!d)return h+'<div class="empty">'+L('Noch keine Drehtage.')+'</div>';
-  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
+  /* round button: the original schedule PDF, opened at the page of this shooting day */
+  const sp=S.meta&&S.meta.schedPdf,dno=(String(d.short||d.label||"").match(/\d+/)||[])[0],spi=sp&&sp.day&&dno!==undefined?sp.day[String(+dno)]:undefined;
+  const spBtn=sp&&arr(sp.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="pvbtn sppdf" data-schedpdf="'+(spi===undefined?0:spi)+'" '+ariaTip(L("Drehplan als PDF (Originalseite dieses Drehtags)"))+'><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></button>':'';
+  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+spBtn+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
   if(d.kind==="shoot"){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
     if(d.extras)f.push([L("Kompars:innen"),d.extras]);
@@ -1784,8 +1793,10 @@ function blkFor(sc){const n=String(sc||"").toLowerCase().replace(/\s+/g,"");retu
 const ICAM='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 const IFOLD='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a1.5 1.5 0 0 1 1.5-1.5H9l2 2.2h8.5A1.5 1.5 0 0 1 21 9.7V17.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>';
 function fpLinks(fps,blk,lead){const bl=vok("blocking")?arr(blk):[];
-  const pink=(lead?[lead]:[]).concat(bl.flatMap(b=>{const g=bmed(b).length,fold='<a class="fpl blk fold" href="'+esc(safeUrl(b.url))+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Ordner in Dropbox öffnen"))+'>'+IFOLD+'</a>';
-    return g?['<a class="fpl blk hasm" href="'+esc(safeUrl(b.url))+'" data-blkg="'+esc(b.name)+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>',fold]:[fold]}));
+  /* camera per picture folder; the Dropbox folder only once – with several folders the button asks which one */
+  const fl=bl.filter(b=>b.url).map(b=>({n:b.title||b.name,u:b.url})).filter((f,i,a)=>a.findIndex(x=>x.u===f.u)===i);
+  const fold=!fl.length?[]:['<a class="fpl blk fold" href="'+esc(safeUrl(fl[0].u))+'"'+(fl.length>1?' data-folders="'+esc(JSON.stringify(fl))+'"':'')+' target="_blank" rel="noopener noreferrer" '+ariaTip(L("Ordner in Dropbox öffnen"))+'>'+IFOLD+'</a>'];
+  const pink=(lead?[lead]:[]).concat(bl.filter(b=>bmed(b).length).map(b=>'<a class="fpl blk hasm" href="'+esc(safeUrl(b.url))+'" data-blkg="'+esc(b.name)+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>'),fold);
   const white=arr(fps).map(f=>'<a class="fpl" href="'+esc(safeUrl(f.url))+'"'+(arr(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat(bl.flatMap(b=>pdfBtns(b)));
   const l=pink.concat(white);return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
 /* the PDFs of a scene (Auflösung): one button each, opening the PDF pages directly in the app (encrypted copies, also offline);
@@ -1837,6 +1848,12 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-fpg]");if(
   e.preventDefault();e.stopPropagation();openGallery({name:"fp:"+f.name,title:"Floorplan · "+f.name,sc:[],url:f.url,media:arr(f.pg).map((p,i)=>({n:f.name+(f.pg.length>1?" · "+(i+1)+"/"+f.pg.length:""),t:"img",f:p,u:f.url}))})},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkg]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkg);if(!b||!bmed(b).length)return;e.preventDefault();e.stopPropagation();openGallery(b)},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkpdf]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkpdf);if(!b)return;e.preventDefault();e.stopPropagation();openGallery(b,0,a.dataset.pdfn)},true);
+document.addEventListener("click",e=>{const a=e.target.closest("[data-schedpdf]");if(!a||typeof window.blkImg!=="function")return;const sp=S.meta&&S.meta.schedPdf;if(!sp)return;e.preventDefault();
+  openGallery({name:"sched",title:L("Drehplan")+" · "+String(sp.name||"").replace(/\.pdf$/i,""),sc:[],url:sp.url,media:arr(sp.pg).map((p,i)=>({n:L("Seite")+" "+(i+1)+"/"+sp.pg.length,t:"img",f:p,u:sp.url}))},+a.dataset.schedpdf||0)});
+/* several Dropbox folders for one scene: one button, then the choice */
+document.addEventListener("click",e=>{const a=e.target.closest("[data-folders]");if(!a)return;e.preventDefault();let l=[];try{l=JSON.parse(a.dataset.folders)}catch(_){return}
+  const o=mkDialog("fldpick",'<div class="a2box"><h3>'+esc(L("Welchen Ordner öffnen?"))+'</h3><div class="fldl">'+l.map(f=>'<a class="pillbtn" href="'+esc(safeUrl(f.u))+'" target="_blank" rel="noopener noreferrer">'+esc(f.n)+'</a>').join("")+'</div></div>',{replace:true});
+  o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest(".fldl a"))setTimeout(()=>o.remove(),0)});document.body.appendChild(o)});
 function openGallery(b,start,pdf){
   let d=mkDialog("blkgal",null,{replace:true});
   const all=pdf?bmed(b).filter(m=>m.g==="pdf"&&String(m.n).split(" · ")[0]===pdf):bmed(b),title=pdf?L("Auflösung")+" "+pdfLbl(pdf):(b.title||(L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ")));
