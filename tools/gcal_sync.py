@@ -9,7 +9,7 @@ und ändern sie, App-Verwaltung → App → Termine). Dieses Skript
     werden nachgeführt (die gewählten Empfänger bleiben), im Kalender gelöschte Termine verschwinden aus der App.
 Braucht das Dienstkonto (FIREBASE_SA). Das Repository ist öffentlich: im Protokoll stehen nur Zahlen.
 """
-import base64, datetime, json, os, secrets, sys, time
+import base64, datetime, json, os, secrets, sys, time, zoneinfo
 
 import requests
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -41,6 +41,7 @@ def parse(ics, today=None):
     today = today or datetime.datetime.now(tz).date()
     cal = icalendar.Calendar.from_ical(ics)
     out = []
+    series = {str(v.get("UID") or "")[:280] for v in cal.walk("VEVENT") if v.get("RRULE") or v.get("RDATE") or v.get("RECURRENCE-ID")}
     for ev in recurring_ical_events.of(cal).between(today, today + datetime.timedelta(days=DAYS)):
         s, e = ev.get("DTSTART"), ev.get("DTEND")
         s = s.dt if s else None; e = e.dt if e else None
@@ -54,26 +55,31 @@ def parse(ics, today=None):
             date, t, end = s.isoformat(), "", ""
         if date < today.isoformat(): continue
         uid = str(ev.get("UID") or "")[:280]
-        out.append({"uid": uid, "title": str(ev.get("SUMMARY") or "")[:150], "date": date, "t": t, "end": end,
+        rec = uid in series
+        out.append({"rec": rec, "uid": uid, "title": str(ev.get("SUMMARY") or "")[:150], "date": date, "t": t, "end": end,
                     "where": str(ev.get("LOCATION") or "")[:200], "note": str(ev.get("DESCRIPTION") or "")[:2000]})
     n = {}
     for x in out: n[x["uid"]] = n.get(x["uid"], 0) + 1
-    for x in out:   # recurring events: one entry per day («uid|date»), a single event keeps its uid (so a moved date is followed)
-        if n[x["uid"]] > 1: x["uid"] += "|" + x["date"]
+    for x in out:   # recurring events: always one entry per day («uid|date», also when only one date of the series is in range);
+        # a single event keeps its uid (so a moved date is followed)
+        if x.pop("rec") or n[x["uid"]] > 1: x["uid"] += "|" + x["date"]
     return sorted(out, key=lambda x: (x["date"], x["t"]))
 
 
 def sync(key, items, events):
     """events: [(id, fields)] from Firestore; returns (updates {id: new c}, deletes [id]) for events imported from the calendar"""
     by = {x["uid"]: x for x in items}
-    today = datetime.date.today().isoformat()
+    today = datetime.datetime.now(zoneinfo.ZoneInfo(TZ)).date().isoformat()   # Swiss date (the runner runs in UTC)
     upd, dele = {}, []
+    gcnew = sync.gcnew = {}
     for eid, f in events:
         gc = f.get("gc")
         if not gc: continue
         try: o = dec(key, f.get("c") or "")
         except Exception: continue
         x = by.get(gc)
+        if not x and "|" not in gc and by.get(gc + "|" + o.get("date", "")):   # imported before the series rule: same date
+            x = by[gc + "|" + o.get("date", "")]; gcnew[eid] = x["uid"]
         if not x:
             if o.get("date", "") >= today: dele.append(eid)   # deleted (or moved out of range) in the calendar
             continue
@@ -90,11 +96,12 @@ def main():
     cfg = fsadmin.get_doc("secret/gcal") or {}
     url = str(cfg.get("url") or "").strip()
     if not url: return 0
-    if not url.startswith("https://calendar.google.com/") and not url.startswith("https://"):
+    if url.lower().startswith("webcal://"): url = "https://" + url[9:]   # iCloud gives webcal:// addresses
+    if not url.startswith("https://"):
         log("Kalender-Adresse ungültig"); return 0
     key = base64.b64decode(fsadmin.crew_key_b64())
     try:
-        r = requests.get(url.replace("webcal://", "https://"), timeout=30)
+        r = requests.get(url, timeout=30)
         r.raise_for_status()
         items = parse(r.content)
     except Exception as e:
@@ -103,11 +110,18 @@ def main():
     old = fsadmin.get_doc("gcal/feed") or {}
     c = enc(key, items)
     sig = __import__("hashlib").sha1(json.dumps(items, sort_keys=True).encode()).hexdigest()[:16]
+    now = int(time.time() * 1000)
+    # the imported events are only compared when the calendar changed, at midnight (date) or at the latest every 6 hours –
+    # reading all events every half hour used up the free Firebase quota
+    full = old.get("sig") != sig or now - int(old.get("synced") or 0) > 6 * 3600e3 or time.strftime("%H") == "22"
     if old.get("sig") != sig:
-        fsadmin.patch_doc("gcal/feed", {"c": c, "sig": sig, "n": len(items), "at": int(time.time() * 1000), "err": ""})
+        fsadmin.patch_doc("gcal/feed", {"c": c, "sig": sig, "n": len(items), "at": now, "err": "", **({"synced": now} if full else {})})
     else:
-        fsadmin.patch_doc("gcal/feed", {"chk": int(time.time() * 1000), "err": ""})
+        fsadmin.patch_doc("gcal/feed", {"chk": now, "err": "", **({"synced": now} if full else {})})
+    if not full:
+        log(f"Google Kalender: {len(items)} Termine · unverändert"); return 0
     upd, dele = sync(key, items, [(i, f) for i, f, _ in fsadmin.list_docs("events")])
+    for i, g in sync.gcnew.items(): fsadmin.patch_doc("events/" + i, {"gc": g})
     for i, cc in upd.items(): fsadmin.patch_doc("events/" + i, {"c": cc})
     for i in dele: fsadmin.delete_doc("events/" + i)
     log(f"Google Kalender: {len(items)} Termine · {len(upd)} nachgeführt · {len(dele)} entfernt")

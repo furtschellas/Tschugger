@@ -33,7 +33,7 @@ const API_KEY = "AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ";
 const SITE = "https://furtschellas.github.io/Tschugger/";
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
-const VERSION = "2026-10-17c";
+const VERSION = "2026-10-18a";
 
 let JWKS = null, JWKS_AT = 0;
 const b64u = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
@@ -67,7 +67,8 @@ async function requireMember(req) {
   const t = MEMBERS.get(user.sub);
   if (t && Date.now() - t < 10 * 60e3) return { user, tok };
   const r = await fetch(FS + "/secret/key", { headers: { Authorization: "Bearer " + tok } });
-  if (r.status !== 200) { MEMBERS.delete(user.sub); throw Object.assign(new Error("not a member"), { status: 403 }); }
+  if (r.status === 403 || r.status === 404) { MEMBERS.delete(user.sub); throw Object.assign(new Error("not a member"), { status: 403 }); }
+  if (r.status !== 200) throw Object.assign(new Error("firestore " + r.status), { status: 503 });   /* e.g. quota used up: not «no access» */
   MEMBERS.set(user.sub, Date.now());
   if (MEMBERS.size > 2000) MEMBERS.clear();
   return { user, tok };
@@ -85,7 +86,9 @@ async function isAdminUser(g) {
 }
 async function guard(req, origin) {
   try { return await requireMember(req); }
-  catch (e) { return { err: e.status === 403 ? json({ error: "Kein Zugang (nicht freigeschaltet)." }, 403, origin) : json({ error: "Nicht angemeldet." }, 401, origin) }; }
+  catch (e) { return { err: e.status === 403 ? json({ error: "Kein Zugang (nicht freigeschaltet)." }, 403, origin)
+    : e.status === 503 ? json({ error: "Datenbank gerade nicht erreichbar – bitte später nochmals." }, 503, origin)
+    : json({ error: "Nicht angemeldet." }, 401, origin) }; }
 }
 
 /* ---------- limits per person (per worker instance; plus the optional Rate-Limiting binding CHAT_RL) ---------- */
@@ -171,8 +174,10 @@ async function vapidFromPem(pem) {
   return { priv, pub: b64uenc(u8cat(new Uint8Array([4]), b64u(jwk.x), b64u(jwk.y))) };
 }
 /* [current, older]: Firestore secret/vapid (service account) or VAPID_PRIVATE, then the old encrypted file (devices not yet moved) */
+let VAPIDS_FAIL = 0;
 async function vapids(env) {
   if (VAPIDS && Date.now() - VAPIDS_AT < 10 * 60e3) return VAPIDS;
+  if (!VAPIDS && Date.now() - VAPIDS_FAIL < 5 * 60e3) throw new Error("Kein Push-Schlüssel.");   /* failures are not retried on every request */
   const pems = [];
   if (saJson(env)) for (const path of ["secret/vapid", "secret/vapidprev"]) { try { const r = await fsReq(env, path); if (r.ok) { const p = fv(((await r.json()).fields || {}).priv); if (p) pems.push(p); } } catch (_) {} }
   if (env.VAPID_PRIVATE) pems.push(String(env.VAPID_PRIVATE));
@@ -182,7 +187,7 @@ async function vapids(env) {
   } catch (_) {}
   const out = [];
   for (const p of [...new Set(pems)]) { try { out.push(await vapidFromPem(p)); } catch (_) {} }
-  if (!out.length) throw new Error("Kein Push-Schlüssel.");
+  if (!out.length) { VAPIDS_FAIL = Date.now(); throw new Error("Kein Push-Schlüssel."); }
   VAPIDS = out; VAPIDS_AT = Date.now(); return out;
 }
 async function vapidAuth(v, endpoint) {

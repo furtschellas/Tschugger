@@ -13,7 +13,7 @@ const put=(r,res)=>{if(res&&(res.ok||res.type==="opaque")){const cp=res.clone();
 /* the last app version that started without any error is kept («crew-good»); if a new version does not start,
    the page reloads itself with «?safe=1» and gets that version instead */
 self.addEventListener("message",e=>{if(!e.data||!e.data.good)return;const url=e.source&&e.source.url||"";
-  e.waitUntil(caches.open(CACHE).then(c=>c.match(url,{ignoreSearch:true}).then(m=>m||c.match("index.html",{ignoreSearch:true}))).then(m=>m?caches.open("crew-good").then(g=>g.put("good.html",m.clone())):null).catch(()=>{}))});
+  e.waitUntil(caches.open(CACHE).then(c=>c.match(url,{ignoreSearch:true}).then(m=>m||c.match("index.html",{ignoreSearch:true}))).then(m=>!m?null:m.clone().text().then(t=>(!e.data.v||t.indexOf(e.data.v)>=0)?caches.open("crew-good").then(g=>g.put("good.html",m.clone())):null))   /* only the version that really started */.catch(()=>{}))});
 self.addEventListener("fetch",e=>{
   const r=e.request;if(r.method!=="GET")return;
   const u=new URL(r.url);

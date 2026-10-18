@@ -3,7 +3,7 @@ name: Push-Nachrichten
 # wird vom Cloudflare Worker alle 10 Minuten gestartet (zuverlässig); der eigene Zeitplan ist nur die Reserve
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "17 * * * *"   # only the reserve (hourly): the Cloudflare worker starts this every 10 minutes (else every run happened twice)
   workflow_dispatch:
 
 permissions:

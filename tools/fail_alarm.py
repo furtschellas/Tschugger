@@ -33,6 +33,14 @@ def main():
     try: last = datetime.datetime.fromisoformat(str(st.get("alarmAt", "")).replace("Z", "+00:00"))
     except Exception: last = None
     if last and (now - last).total_seconds() < 6 * 3600: send = False
+    try: _alarm(st, send)
+    except Exception as e:   # Firebase not reachable (e.g. quota): the status below is still saved
+        print("• Alarm nicht angelegt:", type(e).__name__)
+    json.dump(st, open(p, "w"), ensure_ascii=False, indent=1); open(p, "a").write("\n")
+    print("• Fehlläufe hintereinander:", st["fails"])
+
+
+def _alarm(st, send):
     if send and fsadmin.sa():
         cfg = fsadmin.get_doc("config/app") or {}
         if cfg.get("failAlarm") is not False:
@@ -48,8 +56,6 @@ def main():
                 st["alarmAt"] = st["at"]; print("• Alarm an Owner und Admins angelegt"); open(os.path.join(ROOT, ".alarm_sent"), "w").write("1")
         else:
             print("• Alarm in den App-Einstellungen ausgeschaltet")
-    json.dump(st, open(p, "w"), ensure_ascii=False, indent=1); open(p, "a").write("\n")
-    print("• Fehlläufe hintereinander:", st["fails"])
 
 
 if __name__ == "__main__":
