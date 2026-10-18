@@ -13,7 +13,7 @@ async def spv_text(pg):
             h = await pg.evaluate("(()=>{const t=document.getElementById('spv');return t?t.innerHTML:null})()")
             if h is not None:
                 await pg.wait_for_timeout(150)
-                return await pg.evaluate("(document.getElementById('spv')||{}).innerHTML||''")
+                return await pg.evaluate("(document.getElementById('spv')||{}).innerHTML||window.__SPV||''")
         except Exception:
             pass
         await pg.wait_for_timeout(50)

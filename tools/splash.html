@@ -43,7 +43,7 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")seen()});addEventListener("pagehide",seen);
   var tv=document.getElementById("spv"),SCR={de:"Drehbuch",fr:"Scénario",it:"Sceneggiatura",en:"Script"},lg="de";try{lg=localStorage.getItem("lang")||"de"}catch(e){}
   function txt(){if(rel||!tv)return;var m=null;try{m=typeof S!=="undefined"&&S&&S.meta}catch(e){}
-    var h=(m&&m.scheduleVersion?esc2(m.scheduleVersion)+"<br>":"")+(m&&m.scriptVersion?(SCR[lg]||SCR.en)+" "+esc2(m.scriptVersion)+"<br>":"")+"App __APP_VER__<br>© <b>MrK</b> 2026";if(tv.innerHTML!==h)tv.innerHTML=h}
+    var h=(m&&m.scheduleVersion?esc2(m.scheduleVersion)+"<br>":"")+(m&&m.scriptVersion?(SCR[lg]||SCR.en)+" "+esc2(m.scriptVersion)+"<br>":"")+"App __APP_VER__<br>© <b>MrK</b> 2026";if(tv.innerHTML!==h)tv.innerHTML=h;window.__SPV=h}
   function esc2(x){return String(x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
   function st(){if(done)return;txt();var p=10;try{if(document.readyState!=="loading")p=30;if(window.FB)p=50;
       var g=document.getElementById("gate");if(g&&!g.hidden&&g.offsetParent!==null&&Date.now()-t0>300)return end();
