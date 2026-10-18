@@ -34,10 +34,33 @@ function openGallery(b,start,pdf){
     const fl=e.target.closest("[data-gfl]");if(fl){gf=fl.dataset.gfl;setF();show();return}
     if(e.target.closest("[data-gshow]")){if(timer){stopShow();show(+d.dataset.i||0);return}const st=d.dataset.i===""?0:+d.dataset.i;timer=setInterval(()=>{const pv=d.querySelector("video");if(pv&&!pv.paused&&!pv.ended)return;const i=((+d.dataset.i||0)+1)%media.length;d.innerHTML=view(i);d.dataset.i=String(i);fill()},3500);show(st);return}const t=e.target.closest("[data-gi]");if(t){show(+t.dataset.gi);return}const n=e.target.closest("[data-gnav]");if(n){show(+n.dataset.gnav);return}if(e.target.closest("[data-gback]"))show()});
   d.addEventListener("keydown",e=>{if(d.dataset.i==="")return;const i=+d.dataset.i;if(e.key==="ArrowRight")show((i+1)%media.length);if(e.key==="ArrowLeft")show((i-1+media.length)%media.length)});
-  /* swipe = next / previous picture – but never while zooming (two fingers, or the page is zoomed in) */
-  let tx=null,multi=false;const zoomed=()=>!!(window.visualViewport&&visualViewport.scale>1.05);
-  d.addEventListener("touchstart",e=>{if(e.touches.length>1){multi=true;tx=null;return}if(!multi)tx=e.touches[0].clientX},{passive:true});
-  d.addEventListener("touchend",e=>{if(e.touches.length===0){const m=multi;multi=false;if(m){tx=null;return}}if(tx===null||d.dataset.i===""||zoomed())return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)<50)return;const i=+d.dataset.i;show(dx<0?(i+1)%media.length:(i-1+media.length)%media.length)});
+  /* zoom inside the picture (iPhone, Android): two fingers zoom, one finger moves the zoomed picture, double tap zooms in / back.
+     Swipe = next / previous picture – only at normal size. The page itself is never zoomed (fixed pop-ups get stuck on the iPhone). */
+  const Z={s:1,x:0,y:0,p0:null,s0:1,c0:null,last:null,tap:0,moved:false,maxT:0,t0:0,y0:0};
+  const zimg=()=>d.querySelector(".galstage img");
+  const zset=()=>{const im=zimg();if(!im)return;if(Z.s<=1.02){Z.s=1;Z.x=0;Z.y=0}
+    const r=im.getBoundingClientRect(),w=r.width/((im._zs)||1),h=r.height/((im._zs)||1),mx=Math.max(0,(w*Z.s-w)/2),my=Math.max(0,(h*Z.s-h)/2);
+    Z.x=Math.min(mx,Math.max(-mx,Z.x));Z.y=Math.min(my,Math.max(-my,Z.y));im._zs=Z.s;im.style.transform=Z.s===1?"":"translate("+Z.x+"px,"+Z.y+"px) scale("+Z.s+")";d.classList.toggle("zoomed",Z.s>1)};
+  const zreset=()=>{Z.s=1;Z.x=0;Z.y=0;const im=zimg();if(im){im._zs=1;im.style.transform=""}d.classList.remove("zoomed")};
+  const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  let tx=null;
+  d.addEventListener("touchstart",e=>{if(d.dataset.i==="")return;
+    /* a gesture starts with the first finger; every further finger marks it as zoom – never a swipe */
+    if(e.touches.length===1){Z.maxT=1;Z.t0=Date.now();Z.y0=e.touches[0].clientY}else Z.maxT=Math.max(Z.maxT,e.touches.length);
+    if(!e.target.closest(".galstage"))return;Z.moved=false;
+    if(e.touches.length===2){Z.p0=dist(e.touches);Z.s0=Z.s;tx=null;e.preventDefault();return}
+    Z.last={x:e.touches[0].clientX,y:e.touches[0].clientY};tx=Z.s===1?e.touches[0].clientX:null},{passive:false});
+  d.addEventListener("touchmove",e=>{if(d.dataset.i===""||!e.target.closest(".galstage"))return;
+    if(e.touches.length===2&&Z.p0){e.preventDefault();Z.moved=true;Z.s=Math.min(5,Math.max(1,Z.s0*dist(e.touches)/Z.p0));zset();return}
+    if(e.touches.length===1&&Z.s>1&&Z.last){e.preventDefault();Z.moved=true;const t=e.touches[0];Z.x+=t.clientX-Z.last.x;Z.y+=t.clientY-Z.last.y;Z.last={x:t.clientX,y:t.clientY};zset()}},{passive:false});
+  d.addEventListener("touchend",e=>{if(d.dataset.i==="")return;if(e.touches.length<2)Z.p0=null;if(e.touches.length)return;
+    const t=e.changedTouches[0];
+    if(!Z.moved&&e.target.closest(".galstage img")){const now=Date.now();if(now-Z.tap<300){Z.tap=0;e.preventDefault();if(Z.s>1)zreset();else{Z.s=2.5;zset()}return}Z.tap=now}
+    /* swipe only: one finger the whole time, normal size, page not zoomed, clearly sideways and quick */
+    const pz=!!(window.visualViewport&&visualViewport.scale>1.05);
+    if(tx===null||Z.s>1||Z.maxT!==1||pz)return;const dx=t.clientX-tx,dy=t.clientY-Z.y0;tx=null;if(Math.abs(dx)<60||Math.abs(dx)<2*Math.abs(dy)||Date.now()-Z.t0>700)return;const i=+d.dataset.i;show(dx<0?(i+1)%media.length:(i-1+media.length)%media.length)});
+  /* a new picture always starts at normal size */
+  new MutationObserver(()=>{if(!zimg()||zimg()._zs===undefined)zreset()}).observe(d,{childList:true});
   document.body.appendChild(d);show(start);d.tabIndex=-1;d.focus();
 }
 /* blocking of a script scene that is not (yet) in the schedule */

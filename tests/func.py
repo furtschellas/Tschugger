@@ -336,6 +336,24 @@ async def owner_tests(p, port):
         nb = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));const b=document.getElementById('navback');if(!b)return null;
           S.tab='loc';render();await w(150);const en=!b.disabled;b.click();await w(350);return {ok:true,en,tab:S.tab,top:b.getBoundingClientRect().left<80}})()""")
         check("Zurück-Knopf oben links: ein Schritt zurück (Locations → Drehplan)", nb == {"ok": True, "en": True, "tab": "plan", "top": True}, nb, public=True)
+        # gallery (floorplan, Auflösung, Sides): pinch zooms the picture and never turns the page; a one-finger swipe does
+        zt = await E(r"""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));
+  openGallery({name:"ztest",title:"Z",sc:[],url:"https://x",media:[{n:"a",t:"img",f:"blk/x1.bin"},{n:"b",t:"img",f:"blk/x2.bin"},{n:"c",t:"img",f:"blk/x3.bin"}]},0);await w(100);
+  const d=document.getElementById("blkgal"),img=()=>d.querySelector(".galstage img");if(!img())return {err:"noimg"};
+  const T=(id,x,y)=>new Touch({identifier:id,target:img(),clientX:x,clientY:y});
+  const ev=(type,touches,changed)=>img().dispatchEvent(new TouchEvent(type,{bubbles:true,cancelable:true,touches,targetTouches:touches,changedTouches:changed}));
+  /* pinch: first finger, then second, spread apart, release one by one (fingers also drift sideways a lot) */
+  let a=T(0,150,300);ev("touchstart",[a],[a]);let b=T(1,250,300);ev("touchstart",[a,b],[b]);
+  for(let k=1;k<=5;k++){a=T(0,150-30*k,300);b=T(1,250+30*k+40*k,300);ev("touchmove",[a,b],[a,b])}
+  ev("touchend",[b],[a]);ev("touchend",[],[b]);await w(50);
+  const afterPinch=d.dataset.i,zoomed=/scale/.test(img().style.transform||"");
+  /* double tap = back to normal size */
+  let c=T(2,200,300);ev("touchstart",[c],[c]);ev("touchend",[],[c]);await w(80);c=T(3,200,300);ev("touchstart",[c],[c]);ev("touchend",[],[c]);await w(50);
+  const reset=!/scale/.test(img().style.transform||"");
+  /* one-finger swipe to the left = next picture */
+  await w(350);let s=T(4,300,300);ev("touchstart",[s],[s]);s=T(4,120,305);ev("touchmove",[s],[s]);ev("touchend",[],[s]);await w(50);
+  const afterSwipe=d.dataset.i;d.remove();return {afterPinch,zoomed,reset,afterSwipe}})()""")
+        check("Galerie: Zoomen mit zwei Fingern blättert nie weiter, Doppeltipp zurück, Wischen blättert", zt == {"afterPinch": "0", "zoomed": True, "reset": True, "afterSwipe": "1"}, zt, public=True)
         # user list: who uses the installed app; App-Verwaltung option «keep asking to install»
         ua = await E("""(()=>{const k=appKind();window.A2AGAIN=true;const st=localStorage.getItem('a2hs:v1');localStorage.setItem('a2hs:v1','asked:'+(Date.now()-4*864e5));const again=a2hsDue();
           localStorage.setItem('a2hs:v1','asked:'+Date.now());const notyet=!a2hsDue();window.A2AGAIN=false;localStorage.setItem('a2hs:v1','asked:1000000000000');const off=!a2hsDue();
@@ -347,7 +365,7 @@ async def owner_tests(p, port):
           S.tab='plan';S.day=d.id;render();const v=document.getElementById('view').innerText;const r={rig:v.includes('Rig Polizeiauto'),grip:v.includes('Grip: 2'),
           ton:[...document.querySelectorAll('#view .xn')].map(x=>x.textContent)};if(keep)d.unit2=keep;else delete d.unit2;S.pu=ku;render();return r})()""")
         if u2 is not None:
-            check("2nd Unit: nur Szenen, Hinweise bei der genannten Szene", u2 == {"rig": False, "grip": False, "ton": ["Ton für Sc185: 1 Person", "Szene 5 pt13: Rollator"]}, u2, public=True)
+            check("2nd Unit: alle Zeilen (auch Rigging), Hinweise nur bei der genannten Szene", u2 == {"rig": True, "grip": False, "ton": ["Ton für Sc185: 1 Person", "Szene 5 pt13: Rollator"]}, u2, public=True)
         ex = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));let n=0;while(!(history.state&&history.state.base)&&n++<60){history.back();await w(120)}
           const base=!!(history.state&&history.state.base);const msg=(document.getElementById('refmsg')||{}).textContent||'';await w(2800);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base)}})()""")
         check("Zurück-Knopf auf der ersten Seite: Hinweis, erst zweimal zurück verlässt die App", ex["base"] and ex["hint"] and ex["guard"], ex, public=True)
