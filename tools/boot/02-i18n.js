@@ -862,6 +862,7 @@ Object.assign(I18N,{
  "Szeneninfo":{en:"Scene info",fr:"Infos de scène",it:"Info scena",hi:"सीन जानकारी"},
  "Art-Department":{en:"Art department",fr:"Département artistique",it:"Reparto scenografia",hi:"आर्ट डिपार्टमेंट"},
  "HMU":{en:"HMU",fr:"HMC",it:"Trucco e costumi",hi:"HMU"},
+ "Szenen-Details":{en:"Scene details",fr:"Détails des scènes",it:"Dettagli delle scene",hi:"सीन विवरण"},
  "Änderungen im Drehplan":{en:"Schedule changes",fr:"Modifications du planning",it:"Modifiche al piano",hi:"Schedule में बदलाव"},
  "Seit deinem letzten Besuch hat sich am Drehplan nichts geändert.":{en:"Nothing in the schedule has changed since your last visit.",fr:"Rien n’a changé dans le planning depuis ta dernière visite.",it:"Nulla è cambiato nel piano dalla tua ultima visita.",hi:"आपकी पिछली विज़िट के बाद Schedule में कुछ नहीं बदला।"},
  "Offline am Set":{en:"Offline on set",fr:"Hors ligne sur le tournage",it:"Offline sul set",hi:"सेट पर ऑफ़लाइन"},

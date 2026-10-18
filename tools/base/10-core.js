@@ -89,10 +89,10 @@ function castChips(ids){
 try{const x=JSON.parse(localStorage.getItem("uf")||"null");if(x&&typeof x==="object")for(const k of ["1","2","3"])if(typeof x[k]==="boolean")S.uf[k]=x[k]}catch(_){}
 /* participants on PREP: hidden by default on phones, shown on wider screens; the choice is kept per device */
 S.ppo=false;try{const v=localStorage.getItem("ppo");S.ppo=v===null?!!(window.matchMedia&&matchMedia("(min-width: 820px)").matches):v==="1"}catch(_){}
-S.pv={i:true,d:true,a:true,c:true,b:true,art:true,hmu:true,inf:true,g:true};try{const x=JSON.parse(localStorage.getItem("pv")||"null");if(x&&typeof x==="object")for(const k of ["i","d","c","a","b","art","hmu","inf","g"])if(typeof x[k]==="boolean")S.pv[k]=x[k]}catch(_){}
+S.pv={i:true,d:true,a:true,c:true,b:true,inf:true,g:true};try{const x=JSON.parse(localStorage.getItem("pv")||"null");if(x&&typeof x==="object")for(const k of ["i","d","c","a","b","inf","g"])if(typeof x[k]==="boolean")S.pv[k]=x[k]}catch(_){}
 const PVICO={art:'<rect x="5" y="3" width="14" height="16" rx="1.5"/><path d="M12 3v16M10 10v2.5M14 10v2.5M7 19v2M17 19v2"/>',hmu:'<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>',inf:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/>',g:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',b:'<path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>',i:'<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',d:'<path d="M4 6h16M4 10h16M4 14h10M4 18h7"/>',a:'<path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/>',c:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.6c3 .1 5.5 2 5.5 5.4"/>'};
-S.sv={box:true,t:true,e:true,i:true,d:true,c:true,a:true,b:true,art:true,hmu:true,inf:true};try{const x=JSON.parse(localStorage.getItem("sv")||"null");if(x&&typeof x==="object")for(const k in S.sv)if(typeof x[k]==="boolean")S.sv[k]=x[k]}catch(_){}
-const SVKEYS=["t","e","i","d","c","a","b","art","hmu","inf"];
+S.sv={box:true,t:true,e:true,i:true,d:true,c:true,a:true,b:true,inf:true};try{const x=JSON.parse(localStorage.getItem("sv")||"null");if(x&&typeof x==="object")for(const k in S.sv)if(typeof x[k]==="boolean")S.sv[k]=x[k]}catch(_){}
+const SVKEYS=["t","e","i","d","c","a","b","inf"];
 const SVICO={t:'<rect x="3" y="5" width="13" height="12" rx="2"/><path d="M3 9h13M7 3v4M12 3v4"/><circle cx="17" cy="17" r="4.5"/><path d="M17 15v2.2l1.4 1"/>'};
 SVICO.e='<text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" font-family="system-ui,sans-serif" fill="currentColor" stroke="none">EN</text>';
 const SVLBL={t:"Drehtag & Zeit",e:"Englische Szenenbezeichnung"};
@@ -113,11 +113,11 @@ function svToggles(){
   const btn=(k,ico,lbl,cls)=>'<button class="pvbtn'+(cls||'')+'" data-sv="'+k+'" aria-pressed="'+S.sv[k]+'" '+ariaTip(L(lbl))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ico+'</svg></button>';
   return btn("box",'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/>',"Infobox"," svbox")+'<span class="svsep" aria-hidden="true"></span>'+SVKEYS.map(k=>btn(k,SVICO[k]||PVICO[k],SVLBL[k]||PVLBL[k],"")).join("");
 }
-function svApply(){setTimeout(()=>{try{bdSep()}catch(_){}},0);document.querySelectorAll(".svwrap").forEach(w=>w.className="svwrap "+svClasses());document.querySelectorAll(".svwrap [data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const s=document.getElementById("scn");if(!s)return;s.className="scrn "+svClasses();s.querySelectorAll("[data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const t=s.querySelector("[data-spt]");if(t)t.setAttribute("aria-pressed",String(spTheme()==="light"))}
-const PVLBL={i:"Szeneninfo",d:"Szenenbeschrieb",a:"Adresse",c:"Cast",b:"Blocking",art:"Art-Department",hmu:"HMU",inf:"Info",g:"Änderungen"};
+function svApply(){document.querySelectorAll(".svwrap").forEach(w=>w.className="svwrap "+svClasses());document.querySelectorAll(".svwrap [data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const s=document.getElementById("scn");if(!s)return;s.className="scrn "+svClasses();s.querySelectorAll("[data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const t=s.querySelector("[data-spt]");if(t)t.setAttribute("aria-pressed",String(spTheme()==="light"))}
+const PVLBL={i:"Szeneninfo",d:"Szenenbeschrieb",a:"Adresse",c:"Cast",b:"Blocking",inf:"Szenen-Details",g:"Änderungen"};
 /* schedule display options only toggle CSS classes: no re-render, no scroll jump */
-function pvApply(){setTimeout(()=>{try{bdSep()}catch(_){}},0);const b=document.body;for(const k of ["i","d","c","a","b","art","hmu","inf","g"])b.classList.toggle("pv-no-"+k,!S.pv[k]);document.querySelectorAll("[data-pv]").forEach(x=>x.setAttribute("aria-pressed",String(!!S.pv[x.dataset.pv])))}
-function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","a","b","art","hmu","inf","g"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" '+ariaTip(L(PVLBL[k]))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+(post?'<span class="pvsep"></span>'+post:'')+'</span>'}
+function pvApply(){const b=document.body;for(const k of ["i","d","c","a","b","inf","g"])b.classList.toggle("pv-no-"+k,!S.pv[k]);document.querySelectorAll("[data-pv]").forEach(x=>x.setAttribute("aria-pressed",String(!!S.pv[x.dataset.pv])))}
+function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","a","b","inf","g"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" '+ariaTip(L(PVLBL[k]))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+(post?'<span class="pvunits">'+post+'</span>':'')+'</span>'}
 /* drive time shown: up to 20 min +3 min buffer, longer drives +15 % (rounded up) */
 function driveMin(m){m=+m||0;return m>20?Math.ceil(m*1.15):m+3}
 /* scene details from the schedule: meta.bd["date|scene"], shown at the end of each scene as running text («Topic:» underlined, as in the PDF),
@@ -127,13 +127,8 @@ function bdFor(date,sc){const m=(S.meta&&S.meta.bd)||{};return m[date+"|"+bdKey(
 const BDG={art:["Set Dec","Set dressing","Props","Vehicles"],hmu:["Mup/Hair","Costume"]};
 const bdGroup=k=>BDG.art.includes(k)?"art":BDG.hmu.includes(k)?"hmu":"inf";
 function bdHTML(date,sc){if(!date)return "";const b=bdFor(date,sc);if(!b)return "";
-  const h=b.h||{},g={art:[],hmu:[],inf:[]};
-  if(h.FX)g.inf.push(["FX",[h.FX]]);if(h.XX)g.inf.push(["XX",[h.XX]]);
-  arr(b.c).forEach(c=>g[bdGroup(c[0])].push(c));
-  const its=["art","hmu","inf"].flatMap(k=>g[k].map(([t,v])=>'<span class="bdi bd-'+k+'"><u>'+esc(t)+':</u> '+esc(arr(v).join(t==="Notes"?" / ":", "))+'</span>'));
-  return its.length?'<p class="bdt">'+its.join("")+'</p>':""}
-/* « // » only between topics that are shown (first shown topic of each text has no separator) */
-function bdSep(){document.querySelectorAll(".bdt").forEach(p=>{let first=true;p.querySelectorAll(".bdi").forEach(x=>{const vis=getComputedStyle(x).display!=="none";x.classList.toggle("f",vis&&first);if(vis)first=false})})}
+  const h=b.h||{},its=[];if(h.FX)its.push(["FX",[h.FX]]);if(h.XX)its.push(["XX",[h.XX]]);arr(b.c).forEach(c=>its.push(c));
+  return its.length?'<p class="bdt">'+its.map(([t,v])=>'<span class="bdi"><u>'+esc(t)+':</u> '+esc(arr(v).join(t==="Notes"?" / ":", "))+'</span>').join("")+'</p>':""}
 function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
