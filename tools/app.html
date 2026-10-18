@@ -65,7 +65,13 @@ h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-tr
 .pub button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#1a1206}
 .pub button.u2[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .pub button.none{opacity:.45}
-.stripwrap>.pub{align-items:center;align-self:center}.chip.u2day{border:2px solid var(--accent)}
+.stripwrap>.pub{align-items:stretch;align-self:center;flex-direction:column;gap:3px}
+html body .stripwrap>.pub.dpub button{width:42px!important;min-width:42px;height:27px!important;min-height:27px!important;border-radius:7px!important;font-size:12px;line-height:1}
+/* a slightly higher calendar row: room for the two unit buttons one above the other */
+.stripwrap{padding-block:8px}.stripwrap .chip{padding:8px 7px;min-height:58px;display:flex;flex-direction:column;justify-content:center}
+.chip.u2day{border:2px solid var(--accent)}.chip.nou{opacity:.4;filter:grayscale(1)}
+/* buttons that do something: pink frame */
+.facts button.fact,.ttiles button.ttile{border-color:var(--accent)}
 body.no-script .scbtn{display:none!important}
 body.no-u2 .pub,body.no-u2 button.uf{display:none!important}
 .pub button.u3[aria-pressed="true"],.uf.u3[aria-pressed="true"]{background:var(--u3);border-color:var(--u3);color:#140c24}
@@ -861,7 +867,7 @@ function dayNav(PD,isSel,attr,key,extra,pre){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
     const ex=extra?extra(d):{cls:"",mark:""};
-    h+='<button class="chip'+(onlyU()&&d.kind==="shoot"&&hasSelU(d)?" u2day":"")+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.kind==="travel"?" trav":"")+(d.date===t?" isnow":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"||d.kind==="travel"?' disabled aria-disabled="true"':'')+'>'+
+    h+='<button data-dt="'+esc(d.date)+'" class="chip'+(onlyU()&&d.kind==="shoot"?(hasSelU(d)?" u2day":" nou"):"")+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.kind==="travel"?" trav":"")+(d.date===t?" isnow":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"||d.kind==="travel"?' disabled aria-disabled="true"':'')+'>'+
        '<div class="lb">'+esc(padD(lb))+'/'+WD[dt.getDay()].toUpperCase()+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
   }
   return h+'</div></div>';
@@ -1106,8 +1112,8 @@ function renderPlan(){
   const ppDay=String(S.day||"").startsWith("prep:")?PPA.find(d=>"prep:"+d.date===S.day):null;
   const ppChips=PP.map(d=>{const dt=new Date(d.date+"T12:00:00"),off=ppOff(d),rest=ppRest(d),sd=S.days.find(x=>x.date===d.date);
     /* a day from the shooting schedule (travel / off) keeps its label and colour; the weekly schedule fills in its content */
-    if(sd){const k=sd.kind==="travel"?"travp":"free";return '<button class="chip off '+k+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(sd.kind==="travel"?"TRAVEL":"OFF")+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}
-    return '<button class="chip pre'+(rest?" off free":"")+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(rest?'OFF':'PREP')+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");
+    if(sd){const k=sd.kind==="travel"?"travp":"free";return '<button data-dt="'+esc(d.date)+'" class="chip off '+k+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(sd.kind==="travel"?"TRAVEL":"OFF")+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}
+    return '<button data-dt="'+esc(d.date)+'" class="chip pre'+(rest?" off free":"")+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(rest?'OFF':'PREP')+'/'+WD[dt.getDay()].toUpperCase()+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");
   /* a non-shooting day that is also a prep day appears only once (as PREP) */
   const ppDates=new Set(PP.map(d=>d.date));
   let h=dayNav(PD.filter(d=>d.kind==="shoot"||!ppDates.has(d.date)),d=>d.id===S.day,"data-day","id",null,ppChips);
@@ -1643,8 +1649,11 @@ function render(){
     vals.forEach((x,i)=>{const el=els[i];if(!el||el.name!==x[0]||!x[3])return;if(x[2]!==null)el.checked=x[2];else el.value=x[1];el.dataset.dirty="1"})});
   if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   scallLabel();
-  const sel=v.querySelector('.chip[aria-selected="true"]');
-  if(sel)sel.scrollIntoView({block:"nearest",inline:"center"});
+  {const sel=v.querySelector('.chip[aria-selected="true"]'),st=v.querySelector(".strip.in"),tdy=todayISO();
+    const first=st&&[...st.querySelectorAll(".chip[data-dt]")].find(c=>c.dataset.dt>=tdy);
+    if(st&&first&&!(sel&&sel.dataset.dt&&sel.dataset.dt<tdy)){st.scrollLeft=Math.max(0,first.offsetLeft-st.offsetLeft-2);
+      if(sel&&sel.offsetLeft+sel.offsetWidth>st.scrollLeft+st.clientWidth+st.offsetLeft)sel.scrollIntoView({block:"nearest",inline:"end"})}
+    else if(sel)sel.scrollIntoView({block:"nearest",inline:"center"})}
   try{renderHeader()}catch(err){console.error(err)}
   try{fitNav()}catch(_){}
   try{fitRows(document.querySelector("header.top"))}catch(_){}
@@ -1760,7 +1769,8 @@ function blkFor(sc){const n=String(sc||"").toLowerCase().replace(/\s+/g,"");retu
 const ICAM='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 const IFOLD='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a1.5 1.5 0 0 1 1.5-1.5H9l2 2.2h8.5A1.5 1.5 0 0 1 21 9.7V17.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>';
 function fpLinks(fps,blk,lead){const bl=vok("blocking")?arr(blk):[];
-  const pink=(lead?[lead]:[]).concat(bl.map(b=>{const g=bmed(b).length;return '<a class="fpl blk'+(g?' hasm':' fold')+'" href="'+esc(safeUrl(b.url))+'"'+(g?' data-blkg="'+esc(b.name)+'"':'')+' target="_blank" rel="noopener noreferrer" '+ariaTip(L(g?"Bilder ansehen":"Ordner in Dropbox öffnen"))+'>'+(g?ICAM:IFOLD)+'</a>'}));
+  const pink=(lead?[lead]:[]).concat(bl.flatMap(b=>{const g=bmed(b).length,fold='<a class="fpl blk fold" href="'+esc(safeUrl(b.url))+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Ordner in Dropbox öffnen"))+'>'+IFOLD+'</a>';
+    return g?['<a class="fpl blk hasm" href="'+esc(safeUrl(b.url))+'" data-blkg="'+esc(b.name)+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>',fold]:[fold]}));
   const white=arr(fps).map(f=>'<a class="fpl" href="'+esc(safeUrl(f.url))+'"'+(arr(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat(bl.flatMap(b=>pdfBtns(b)));
   const l=pink.concat(white);return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
 /* the PDFs of a scene (Auflösung): one button each, opening the PDF pages directly in the app (encrypted copies, also offline);
