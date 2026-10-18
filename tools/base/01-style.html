@@ -58,7 +58,13 @@ h1 span{display:inline-block;font-family:var(--f-marker);font-weight:400;text-tr
 .pub button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#1a1206}
 .pub button.u2[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .pub button.none{opacity:.45}
-.stripwrap>.pub{align-items:center;align-self:center}.chip.u2day{border:2px solid var(--accent)}
+.stripwrap>.pub{align-items:stretch;align-self:center;flex-direction:column;gap:3px}
+html body .stripwrap>.pub.dpub button{width:42px!important;min-width:42px;height:27px!important;min-height:27px!important;border-radius:7px!important;font-size:12px;line-height:1}
+/* a slightly higher calendar row: room for the two unit buttons one above the other */
+.stripwrap{padding-block:8px}.stripwrap .chip{padding:8px 7px;min-height:58px;display:flex;flex-direction:column;justify-content:center}
+.chip.u2day{border:2px solid var(--accent)}.chip.nou{opacity:.4;filter:grayscale(1)}
+/* buttons that do something: pink frame */
+.facts button.fact,.ttiles button.ttile{border-color:var(--accent)}
 body.no-script .scbtn{display:none!important}
 body.no-u2 .pub,body.no-u2 button.uf{display:none!important}
 .pub button.u3[aria-pressed="true"],.uf.u3[aria-pressed="true"]{background:var(--u3);border-color:var(--u3);color:#140c24}

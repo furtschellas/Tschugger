@@ -335,6 +335,11 @@ async def owner_tests(p, port):
         # back button top left in the app: the same step back
         nb = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));const b=document.getElementById('navback');if(!b)return null;
           S.tab='loc';render();await w(150);const en=!b.disabled;b.click();await w(350);return {ok:true,en,tab:S.tab,top:b.getBoundingClientRect().left<80}})()""")
+        # only the 2nd unit chosen: all days stay in the strip, days without it are grey; unit buttons sit in the fixed strip
+        o2 = await E("""(()=>{const ku=S.pu;S.tab='plan';S.pu={"1":true,"2":true};render();const n1=document.querySelectorAll('#view .strip .chip').length;
+          S.pu={"2":true};render();const n2=document.querySelectorAll('#view .strip .chip').length,grey=document.querySelectorAll('#view .strip .chip.nou').length+document.querySelectorAll('#view .strip .chip.u2day').length,
+          ub=!!document.querySelector('#view .stripwrap > .pub [data-pu]');S.pu=ku;render();return {same:n1===n2,grey:grey>0,ub}})()""")
+        check("Nur 2nd Unit: alle Tage bleiben, andere Drehtage grau, Unit-Knöpfe in der fixen Kalenderzeile", o2 == {"same": True, "grey": True, "ub": True}, o2, public=True)
         check("Zurück-Knopf oben links: ein Schritt zurück (Locations → Drehplan)", nb == {"ok": True, "en": True, "tab": "plan", "top": True}, nb, public=True)
         # gallery (floorplan, Auflösung, Sides): pinch zooms the picture and never turns the page; a one-finger swipe does
         zt = await E(r"""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));
