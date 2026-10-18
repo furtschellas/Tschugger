@@ -85,6 +85,19 @@ def list_docs(col):
         if not tok: break
 
 
+def query_since(col, field, iso):
+    """yields (id, fields, updateTime) of the documents whose timestamp field is >= iso – reads only those documents
+    (listing the whole collection every 10 minutes used up the free Firebase quota)"""
+    h, q = _auth()
+    body = {"structuredQuery": {"from": [{"collectionId": col}],
+                                "where": {"fieldFilter": {"field": {"fieldPath": field}, "op": "GREATER_THAN_OR_EQUAL", "value": {"timestampValue": iso}}}}}
+    r = requests.post(BASE + ":runQuery", headers=h, params=q, json=body, timeout=30)
+    r.raise_for_status()
+    for x in r.json():
+        d = x.get("document")
+        if d: yield d["name"].rsplit("/", 1)[1], {k: val(v) for k, v in (d.get("fields") or {}).items()}, d.get("updateTime")
+
+
 def get_doc(path):
     h, q = _auth()
     r = requests.get(BASE + "/" + path, headers=h, params=q, timeout=30)

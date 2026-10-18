@@ -8,13 +8,22 @@ const ownOn=()=>window.OWNEV!==false;
 async function ownDec(key,c){const raw=Uint8Array.from(atob(c),ch=>ch.charCodeAt(0));return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12))))}
 async function ownEnc(o){const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(o))));
   const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));return btoa(bin)}
+/* the events come through a realtime listener: Firebase sends only what changed (instead of reading all of them every
+   5 minutes – that used up the free Firebase quota). force (after saving) reads once directly. */
+let OWNSUB=null;
+async function ownApply(docs,key){const out=[];for(const d of docs){try{const x=d.data();out.push(Object.assign(await ownDec(key,x.c),{id:d.id,byUid:x.by,gc:x.gc||""}))}catch(_){}}
+  OWN.list=out;OWN.at=Date.now();try{localStorage.setItem("ownev:v1",JSON.stringify(out))}catch(_){}try{pushSyncSoon()}catch(_){}render()}
 async function ownLoad(force){
-  if(!ME||!ownOn()||OWN.busy||(!force&&OWN.list&&Date.now()-OWN.at<300e3))return;OWN.busy=true;
-  try{const {F,db}=await fb();const key=await getDataKey();const q=await F.getDocs(F.collection(db,"events"));const out=[];
-    for(const d of q.docs){try{const x=d.data();out.push(Object.assign(await ownDec(key,x.c),{id:d.id,byUid:x.by,gc:x.gc||""}))}catch(_){}}
-    OWN.list=out;OWN.at=Date.now();try{localStorage.setItem("ownev:v1",JSON.stringify(out))}catch(_){}}
-  catch(err){console.warn("events",err&&err.code||err);if(!OWN.list)try{OWN.list=JSON.parse(localStorage.getItem("ownev:v1")||"[]")}catch(_){OWN.list=[]}}
-  OWN.busy=false;try{pushSyncSoon()}catch(_){}render()}
+  if(!ME||!ownOn()||OWN.busy)return;
+  if(OWNSUB&&!force)return;
+  OWN.busy=true;
+  try{const {F,db}=await fb();const key=await getDataKey();
+    if(!OWNSUB&&typeof F.onSnapshot==="function"){OWN.busy=false;
+      OWNSUB=F.onSnapshot(F.collection(db,"events"),q=>{ownApply(q.docs,key)},err=>{console.warn("events",err&&err.code||err);OWNSUB=null;if(!OWN.list){try{OWN.list=JSON.parse(localStorage.getItem("ownev:v1")||"[]")}catch(_){OWN.list=[]}render()}});
+      if(!force)return}
+    OWN.busy=true;const q=await F.getDocs(F.collection(db,"events"));await ownApply(q.docs,key)}
+  catch(err){console.warn("events",err&&err.code||err);if(!OWN.list)try{OWN.list=JSON.parse(localStorage.getItem("ownev:v1")||"[]")}catch(_){OWN.list=[]}render()}
+  OWN.busy=false}
 /* is this event for the person «me» (identity from the crew list)? */
 function ownFor(ev,me){
   const em=lc(me.email),self=ME&&em&&em===lc(ME.email);
@@ -89,7 +98,7 @@ async function ownDialog(id,pre){
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-oeadd]")){e.preventDefault();if(ownMay())ownDialog(null)}
   const b=e.target.closest("[data-oeed]");if(b){e.preventDefault();e.stopPropagation();ownDialog(b.dataset.oeed)}},true);
-setInterval(()=>{if(document.visibilityState==="visible"&&ME&&ownOn())ownLoad()},300e3);
+setInterval(()=>{if(document.visibilityState==="visible"&&ME&&ownOn()&&!OWNSUB)ownLoad()},300e3);   /* only when the listener is not running */
 
 /* ---------- Google Kalender: Termine auswählen, die in die App kommen (gcal/feed, vom GitHub-Lauf alle 10 Minuten gelesen) ---------- */
 const GC={feed:null,busy:false,url:null};

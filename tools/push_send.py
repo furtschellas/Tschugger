@@ -100,7 +100,10 @@ def main():
     # messages to everybody / selected roles and departments, at most 24 h old, not yet finished by the worker
     bcs = []
     try:
-        for bid, f, ut in fsadmin.list_docs("broadcasts"):
+        since = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(NOW - 86400))
+        try: rows = list(fsadmin.query_since("broadcasts", "at", since))   # only the last 24 h (older ones are never sent)
+        except Exception: rows = list(fsadmin.list_docs("broadcasts"))
+        for bid, f, ut in rows:
             if f.get("fin") or (f.get("sent") and not sa and not f.get("done")): continue
             try:
                 b = dec(key, f.get("c") or "")
