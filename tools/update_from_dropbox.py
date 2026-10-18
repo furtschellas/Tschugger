@@ -487,7 +487,7 @@ def pick_schedule(files):
     def key(f):
         n = f["name"].rsplit("/", 1)[-1]
         d = re.search(r"(\d{6})", n); v = re.search(r"v(\d+)", n, re.I)
-        var = 2 if "oneline" in n.lower() else (1 if re.search(r"\bch\b", n.lower()) else 0)
+        var = 0 if "oneline" in n.lower() else (2 if re.search(r"\bch\b", n.lower()) else 1)   # the full schedule first, the Oneline only when there is no other
         return (d.group(1) if d else "", int(v.group(1)) if v else 0, var, f["modified"] or "")
     return max(c, key=key) if c else None
 

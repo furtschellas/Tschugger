@@ -42,7 +42,8 @@ function scriptMatch(x,i,mode,terms,idx,sched){
   if(mode==="text")return terms.every(t=>fold(x.text||"").includes(t));
   if(mode==="loc"){const f=fold([x.head].concat(hits.map(h=>{let a="";try{a=addrForItem(h.it)}catch(_){}return [h.it.set,h.it.loc,a].join(" ")})).join(" "));return terms.every(t=>f.includes(t))}
   if(mode==="day"){if(!hits.length)return false;const f=hits.map(h=>dayKeys(h.d)).join(" ").split(/\s+/);return terms.every(t=>f.some(w=>w===t||(t.length>2&&w.startsWith(t))))}
-  if(mode==="role"||mode==="person"){const ids=mode==="role"?rolesFor(terms).map(r=>r.id):actorRoles(terms);if(!ids.length)return false;const P=planRoles(x.sc),o=scriptRoles()[norm(x.sc)];return ids.some(id=>P.has(id)||inScript(o,id))}
+  /* roles: the scenes where the role is cast in the Drehplan (not a text search in the script) */
+  if(mode==="role"||mode==="person"){const ids=mode==="role"?rolesFor(terms).map(r=>r.id):actorRoles(terms);if(!ids.length)return false;const P=planRoles(x.sc);return ids.some(id=>P.has(id))}
   return terms.every(t=>idx[i].includes(t)||fold(x.sc)===t);
 }
 function scriptResults(){
@@ -54,13 +55,15 @@ function scriptResults(){
   const idx=scriptIndex(sched);
   const rows=SCRIPT.filter((x,i)=>(allU||hitsOf(x).length)&&(!terms.length||scriptMatch(x,i,mode,terms,idx,sched)));
   const rIds=mode==="role"?rolesFor(terms).map(r=>r.id):mode==="person"?actorRoles(terms):[];
-  const cnt='<p class="sccount">'+rows.length+' '+esc(L(rows.length===1?"Szene":"Szenen"))+'</p>';
+  /* own button with a tick: show / hide the comparison with the script for each role («✓ Drehplan und Drehbuch») */
+  let rbOn=true;try{rbOn=localStorage.getItem("rbadges")!=="0"}catch(_){}
+  const cnt='<p class="sccount">'+rows.length+' '+esc(L(rows.length===1?"Szene":"Szenen"))+(rIds.length?' <button type="button" class="pillbtn rbtog" data-rbtog aria-pressed="'+rbOn+'">'+(rbOn?'✓ ':'')+esc(L("Abgleich mit Drehbuch"))+'</button>':'')+'</p>';
   if(!rows.length)return cnt+'<div class="empty">'+esc(L("Nichts gefunden für"))+' «'+esc(S.sq)+'»</div>';
   const vis=rows.slice(0,S.sqn||(terms.length?100:40));
   return cnt+'<ul class="sclist">'+vis.map(x=>{
     const hits=hitsOf(x);
     return '<li class="scard"><button class="scli" data-scene="'+esc(x.sc)+'"><span class="sclin">'+esc(x.sc)+'</span><span class="sclih">'+esc(spHead(x))+'</span>'+spTod(x)+
-      (hits.length?'':'<span class="sclid"><i>'+esc(L("nicht geplant"))+'</i></span>')+(rIds.length?roleBadges(x.sc,rIds):'')+(terms.length&&!rIds.length?(snippet(x.text,terms)||'<span class="sclsn">'+esc(L("Treffer im Drehplan (Motiv, Cast oder Beschreibung)"))+'</span>'):'')+'</button>'+(hits.length?factsHTML(hits):blkRow(x.sc))+'</li>';
+      (hits.length?'':'<span class="sclid"><i>'+esc(L("nicht geplant"))+'</i></span>')+(rIds.length&&rbOn?roleBadges(x.sc,rIds):'')+(terms.length&&!rIds.length?(snippet(x.text,terms)||'<span class="sclsn">'+esc(L("Treffer im Drehplan (Motiv, Cast oder Beschreibung)"))+'</span>'):'')+'</button>'+(hits.length?factsHTML(hits):blkRow(x.sc))+'</li>';
   }).join("")+'</ul>'+(rows.length>vis.length?'<button class="sp-more" data-sqmore>'+esc(L("Weitere Szenen anzeigen"))+' ('+(rows.length-vis.length)+')</button>':'');
 }
 function fmtStamp(iso){try{return new Date(iso).toLocaleString(LOC[LANG],{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}catch(_){return ""}}
