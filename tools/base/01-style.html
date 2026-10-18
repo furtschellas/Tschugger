@@ -76,6 +76,9 @@ html body .stripwrap{padding-left:max(6px,env(safe-area-inset-left,0px))}
   .stripwrap>.pub{padding-left:3px}.stripwrap>.strip.in{padding-right:max(6px,env(safe-area-inset-right,0px))}}
 .wdl{display:none}@media (min-width:601px){.wds{display:none}.wdl{display:block;font-size:10.5px;letter-spacing:.02em;text-transform:none;opacity:.85}}
 .fldl{display:grid;gap:8px;margin-top:10px}
+button.factp{font:inherit;color:var(--accent);cursor:pointer;align-items:center}button.factp svg{flex:none}
+/* phone: unit buttons compact, close to the screen edge */
+@media (max-width:600px){:root{--ubw:27px;--ubh:21px;--ubf:10.5px}.stripwrap>.pub{padding-left:4px;gap:3px}}
 .pub button.u2[aria-pressed="false"]{border-color:var(--accent);color:var(--accent)}
 .chip.u2day{border:2px solid var(--accent)}.chip.nou{opacity:.4;filter:grayscale(1)}
 /* buttons that do something: pink frame */
