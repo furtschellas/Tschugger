@@ -81,6 +81,9 @@ function bmed(b){if(!b)return[];const bm=arr(S.meta&&S.meta.bm);const all=Array.
 function scParts(s){const t=String(s||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,""),m=t.match(/^(\d+[a-z]{0,2}?)(?:(pt|sl)(\d*)[a-z]?)?$/);return m?{b:m[1],k:m[2]||"",n:m[3]||"",t}:{b:t,k:"",n:"",t}}
 /* blocking for a scene: its own entry; a part «186pt1A» also gets the part «186pt1» and the general pictures of 186 – never those of another part (186pt2);
    a slideshow picture «25SL2» only «25SL»/«25SL2», never scene 25 */
+/* the gallery opens exactly the pictures the button belongs to (for «186pt1A» only part 1 and the general ones – never the whole folder) */
+const BLKREG=new Map();let BLKN=0;
+function blkReg(b){for(const [k,v] of BLKREG)if(v===b)return k;const k="g"+(++BLKN)+":"+b.name;BLKREG.set(k,b);if(BLKREG.size>400)BLKREG.delete(BLKREG.keys().next().value);return k}
 function blkFor(sc){const N=scParts(sc);if(!N.t)return[];
   const hit=x=>{const X=scParts(x);if(X.t===N.t)return true;if(!N.k||X.b!==N.b)return false;
     if(N.k==="pt")return !X.k||(X.k==="pt"&&X.n===N.n);return X.k==="sl"&&(!X.n||X.n===N.n)};
@@ -98,7 +101,7 @@ function fpLinks(fps,blk,lead){const bl=vok("blocking")?arr(blk):[];
   /* camera per picture folder; the Dropbox folder only once – with several folders the button asks which one */
   const fl=bl.filter(b=>b.url).map(b=>({n:b.title||b.name,u:b.url})).filter((f,i,a)=>a.findIndex(x=>x.u===f.u)===i);
   const fold=!fl.length?[]:['<a class="fpl blk fold" href="'+esc(safeUrl(fl[0].u))+'"'+(fl.length>1?' data-folders="'+esc(JSON.stringify(fl))+'"':'')+' target="_blank" rel="noopener noreferrer" '+ariaTip(L("Ordner in Dropbox öffnen"))+'>'+IFOLD+'</a>'];
-  const pink=(lead?[lead]:[]).concat(bl.filter(b=>bmed(b).length).map(b=>'<a class="fpl blk hasm" href="'+esc(safeUrl(b.url))+'" data-blkg="'+esc(b.name)+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>'),fold);
+  const pink=(lead?[lead]:[]).concat(bl.filter(b=>bmed(b).length).map(b=>'<a class="fpl blk hasm" href="'+esc(safeUrl(b.url))+'" data-blkg="'+esc(blkReg(b))+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>'),fold);
   const white=arr(fps).map(f=>'<a class="fpl" href="'+esc(safeUrl(f.url))+'"'+(arr(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat(bl.flatMap(b=>pdfBtns(b)));
   const l=pink.concat(white);return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
 /* the PDFs of a scene (Auflösung): one button each, opening the PDF pages directly in the app (encrypted copies, also offline);

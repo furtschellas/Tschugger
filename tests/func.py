@@ -345,6 +345,12 @@ async def owner_tests(p, port):
           const b=box.querySelector('[data-sv="inf"]');if(b)b.click();const on=vis(document.getElementById('scn').querySelector('.spf1 .bdt'));
           const c=document.querySelector('#scn [data-scnclose]');if(c)c.click();S.sv=sv;store('sv',JSON.stringify(sv));S.meta.bd=keep;render();return {a,btn:!!b,on}})()""")
         check("Drehbuch-Fenster: Info-Knopf zeigt die Szenen-Details", scr in (None, {"a": False, "btn": True, "on": True}), scr, public=True)
+        gal = await E("""(()=>{if(typeof window.blkImg!=='function')return null;const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
+          S.meta.blocking=[{name:'Scene_186',sc:['186'],url:'https://www.dropbox.com/x',media:[{t:'img',n:'allg',f:'blk/a',u:'u'},{t:'img',n:'teil1',f:'blk/b',u:'u',p:'186pt1'},{t:'img',n:'party',f:'blk/c',u:'u',p:'186pt2'}]}];
+          const w=document.createElement('div');w.innerHTML=fpLinks([],blkFor('186pt1A'));document.body.appendChild(w);const a=w.querySelector('[data-blkg]');if(a)a.click();
+          const g=document.getElementById('blkgal');const txt=g?g.textContent:'';const r={open:!!g,party:txt.includes('party')||(!!g&&(g.innerHTML.includes('blk/c')||g.innerHTML.includes('party'))),teil:txt.includes('teil1')||(g&&g.innerHTML.includes('blk/b'))};
+          document.querySelectorAll('#blkgal').forEach(x=>x.remove());w.remove();S.meta.blocking=keep;S.meta.bm=kb;return r})()""")
+        check("Galerie: Szene 186pt1A zeigt keine Bilder von 186pt2", gal in (None, {"open": True, "party": False, "teil": gal and gal.get("teil")}), gal, public=True)
         sct = await E("""(async()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);const keep=S.meta.bd,sv=Object.assign({},S.sv);
           S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{},c:[['Props',['Knife']]]}};S.tab='script';S.sq=String(it.sc);S.sqm='sc';render();await new Promise(r=>setTimeout(r,300));render();
           const v=document.querySelector('#view');const vis=e=>!!e&&getComputedStyle(e).display!=='none';const b=v.querySelector('.spf1 .bdt');const a=vis(b);
