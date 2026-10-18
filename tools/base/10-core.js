@@ -94,7 +94,7 @@ const PVICO={art:'<rect x="5" y="3" width="14" height="16" rx="1.5"/><path d="M1
 S.sv={box:true,t:true,e:false,i:true,d:true,c:true,a:true,b:true,inf:true};try{const x=JSON.parse(localStorage.getItem("sv")||"null");if(x&&typeof x==="object")for(const k in S.sv)if(typeof x[k]==="boolean")S.sv[k]=x[k]}catch(_){}
 const SVKEYS=["e","i","d","c","inf","a","b"];
 const SVICO={t:'<rect x="3" y="5" width="13" height="12" rx="2"/><path d="M3 9h13M7 3v4M12 3v4"/><circle cx="17" cy="17" r="4.5"/><path d="M17 15v2.2l1.4 1"/>'};
-SVICO.e='<rect x="3" y="6" width="18" height="12" rx="1.6" fill="#fff" stroke="none"/><path d="M12 6v12M3 12h18" stroke="#cf142b" stroke-width="3" stroke-linecap="butt"/><rect x="3" y="6" width="18" height="12" rx="1.6" stroke="currentColor" stroke-width="1.2"/>';
+SVICO.e='<rect x="3" y="6" width="18" height="12" rx="1.4"/><path d="M10.5 6v4.5H3M3 13.5h7.5V18M13.5 18v-4.5H21M21 10.5h-7.5V6"/><path d="M3.6 6.4l6.1 4.1M20.4 6.4l-6.1 4.1M3.6 17.6l6.1-4.1M20.4 17.6l-6.1-4.1" stroke-width="1.3"/>';
 const SVLBL={t:"Drehtag & Zeit",e:"Englische Szenentitel"};
 S.lv={i:true,a:true};try{const x=JSON.parse(localStorage.getItem("lv")||"null");if(x&&typeof x==="object")for(const k in S.lv)if(typeof x[k]==="boolean")S.lv[k]=x[k]}catch(_){}
 const LVICO={m:'<path d="M3.5 20.5h17"/><path d="M5.5 20.5V9l6.5-4.5L18.5 9v11.5"/><path d="M10 20.5v-5h4v5"/>'};
@@ -106,12 +106,11 @@ let SPT=null;try{SPT=localStorage.getItem("spt")}catch(_){} /* script page theme
 const spTheme=()=>SPT==="light"||SPT==="dark"?SPT:getTheme();
 function svClasses(){return Object.keys(S.sv).filter(k=>!S.sv[k]).map(k=>"sv-no-"+k).concat("sp-"+spTheme()).join(" ")}
 function svButtons(nav){
-  return '<div class="svb">'+svToggles()+'<span class="svfill"></span>'+(nav||'')+
-    '<button type="button" class="thmb spthm" data-spt aria-pressed="'+(spTheme()==="light")+'" '+ariaTip(L("Drehbuch hell / dunkel"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle class="sunc" cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg></button></div>';
+  return '<div class="svb">'+'<button type="button" class="thmb spthm" data-spt aria-pressed="'+(spTheme()==="light")+'" '+ariaTip(L("Drehbuch hell / dunkel"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle class="sunc" cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg></button>'+'<span class="svfill"></span>'+(nav||'')+svToggles(true)+'</div>';
 }
-function svToggles(){
+function svToggles(noEn){
   const btn=(k,ico,lbl,cls)=>'<button class="pvbtn'+(cls||'')+'" data-sv="'+k+'" aria-pressed="'+S.sv[k]+'" '+ariaTip(L(lbl))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ico+'</svg></button>';
-  return btn("e",SVICO.e,SVLBL.e," sven")+btn("box",'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/>',"Infobox"," svbox")+'<span class="svsep" aria-hidden="true"></span>'+SVKEYS.filter(k=>k!=="e").map(k=>btn(k,SVICO[k]||PVICO[k],SVLBL[k]||PVLBL[k],"")).join("")+pvAllBtn("data-svall",SVKEYS.filter(k=>k!=="e").every(k=>S.sv[k])&&S.sv.box);
+  return (noEn?'':btn("e",SVICO.e,SVLBL.e," sven"))+btn("box",'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/>',"Infobox"," svbox")+'<span class="svsep" aria-hidden="true"></span>'+SVKEYS.filter(k=>k!=="e").map(k=>btn(k,SVICO[k]||PVICO[k],SVLBL[k]||PVLBL[k],"")).join("")+pvAllBtn("data-svall",SVKEYS.filter(k=>k!=="e").every(k=>S.sv[k])&&S.sv.box);
 }
 function svApply(){document.querySelectorAll(".svwrap").forEach(w=>w.className="svwrap "+svClasses());document.querySelectorAll(".svwrap [data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const s=document.getElementById("scn");if(!s)return;s.className="scrn "+svClasses();s.querySelectorAll("[data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const t=s.querySelector("[data-spt]");if(t)t.setAttribute("aria-pressed",String(spTheme()==="light"))}
 const PVLBL={i:"Szeneninfo",d:"Szenenbeschrieb",a:"Adresse",c:"Cast",b:"Blocking",inf:"Szenen-Details",g:"Änderungen"};
