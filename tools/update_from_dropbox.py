@@ -1012,15 +1012,15 @@ def main():
             except Exception as e: cols = {}; print("::notice::2nd Unit: Blattfarben nicht lesbar (%s)" % type(e).__name__)
             def dn(n):
                 m = re.match(r"\s*#\s*(\d+)", n); return m.group(1) if m else "–"
-            if cols and any(v["green"] for v in cols.values()):
+            if cols:   # strictly: green tabs only, all others ignored (no green tab → the 2nd unit of the main schedule)
                 skip = [n for _, n in tabs if not (cols.get(n) or {}).get("green")]
                 tabs = [(g, n) for g, n in tabs if (cols.get(n) or {}).get("green")]; GREEN[:] = [1]
                 print("::notice::2nd Unit: %d grüne Blätter verwendet (davon %d ausgeblendet; Drehtag %s), %d nicht grüne ignoriert (Drehtag %s)"
                       % (len(tabs), sum(1 for _, n in tabs if (cols.get(n) or {}).get("hidden")), ",".join(sorted({dn(n) for _, n in tabs}, key=lambda x: (len(x), x))) or "–",
                          len(skip), ",".join(sorted({dn(n) for n in skip}, key=lambda x: (len(x), x))) or "–"))
-            else:
-                print("::notice::2nd Unit: keine grünen Blätter erkannt (%d Farben gelesen) – nur eingeblendete Blätter verwendet" % len(cols))
-                tabs = [(g, n) for g, n in tabs if n not in SHEET_HIDDEN]
+            else:   # colours not readable: nothing changes, the last good result stays
+                print("::warning::2nd Unit: Blattfarben nicht lesbar – bisherige 2nd-Unit-Planung bleibt")
+                raise RuntimeError("Blattfarben")
             for gid, name in tabs:   # several tabs of one day (e.g. «#11-Lake-Hospital» and «#11-AuntsHouse») are read together
                 m = re.match(r"\s*#\s*(\d+)\b", name)
                 if m and (GREEN or not re.search(r"(?i)\balt\b|\bold\b", name)): byday.setdefault(int(m.group(1)), []).append((gid, name))
