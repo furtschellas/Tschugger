@@ -1500,6 +1500,15 @@ def main():
             changed = add_more_blocking(dbx, blk, meta, want_files, data.get("days") or [], data.get("locations") or [], [(x, next((e for e in fl if e["name"] == x.get("file")), None)) for x in fps]) or changed
         except Exception as ex:
             log("Auflösung/Seiten nicht gelesen:", str(ex)[:160]); PARTIAL.append("auf")
+        # check (numbers only): which pictures each 186 entry carries, by group and part
+        try:
+            for b in blk:
+                if any(str(x).lower().startswith("186") for x in b.get("sc") or []):
+                    cnt = {}
+                    for m in b.get("media") or []:
+                        k = (m.get("g") or "eigen") + ("/" + m["p"] if m.get("p") else ""); cnt[k] = cnt.get(k, 0) + 1
+                    print("::notice::Blocking-Kontrolle %s sc=%s: %s · PDFs %s" % (b["name"][:30], ",".join(map(str, b.get("sc") or [])), cnt, [p.get("l") for p in b.get("pdfs") or []]))
+        except Exception: pass
         # store every picture once (meta.bm) and let the scenes refer to it by number – keeps the data file small
         bm, idx = [], {}
         for b in blk:
