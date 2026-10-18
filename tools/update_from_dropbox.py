@@ -525,7 +525,7 @@ UD = {}   # unit_days() of the current schedule PDF
 BD_LABELS = ["Crew", "Special", "Loc", "Elec", "Grip", "Prod", "Stunt", "Set Dec", "Set dressing", "Props", "Vehicles", "SFX", "VFX",
              "PreProd Footage", "Mup/Hair", "Costume", "Sound", "Animals", "Notes", "Story Date"]
 _BD_LAB = "|".join(re.escape(x).replace(r"\ ", r"\s+") for x in sorted(BD_LABELS, key=len, reverse=True))
-_BD_HEAD = re.compile(r"^(?P<sc>\d{1,3}[A-Z]{0,2})(?:[ \t]*\n?[ \t]*(?P<pt>(?:pt|SL)[ \t]*\d*[A-Z]?))?[ \t\n]+(?:(?:\d+[ \t]+)?\d/\d[ \t]+|\d+[ \t]+)?pgs\b", re.M)
+_BD_HEAD = re.compile(r"^[ \t]*(?P<sc>\d{1,3}[A-Z]{0,2})(?:\s{0,6}(?P<pt>(?:pt|SL)[ \t]*\d*[A-Z]?)(?![a-z]))?\s{1,8}(?:(?:\d+[ \t]+)?\d/\d[ \t]+|\d+[ \t]+)?pgs\b", re.M)
 
 def _bd_split(v, sep=","):
     out, cur, depth = [], "", 0
@@ -634,7 +634,7 @@ def changelog_parse(txt):
 def pdf_text(raw, layout=True):
     with tempfile.TemporaryDirectory() as td:
         p = pathlib.Path(td) / "c.pdf"; p.write_bytes(raw)
-        return subprocess.run(["pdftotext", *(["-layout"] if layout else []), str(p), "-"], capture_output=True, timeout=120).stdout.decode("utf-8", "replace")
+        return subprocess.run(["pdftotext", *(["-layout"] if layout is True else ["-raw"] if layout == "raw" else []), str(p), "-"], capture_output=True, timeout=120).stdout.decode("utf-8", "replace")
 
 def pick_script(files):
     """always the newest CLEAN version (without revision marks): highest «vNN» in the file name; a version without CLEAN is never
@@ -1020,7 +1020,22 @@ def main():
         try:   # which days have their own 2nd/3rd unit (checked every run, without AI)
             raw_sched = dbx.download(f["id"]); stxt = pdf_text(raw_sched, False); UD.update(unit_days(stxt) or {})
             try:   # scene details (Crew, Stunt, Props, Vehicles, SFX, VFX, Mup/Hair, Costume, Notes …) per date and scene
-                pb = parse_breakdown(stxt); bd = {}
+                # the PDF text comes out differently depending on the mode: read it in all three and take, per day, the richest result
+                want = {}
+                for d in data.get("days") or []:
+                    m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")) if d.get("kind") == "shoot" else None
+                    if m: want[int(m.group(1))] = {re.sub(r"\s+", "", str(it.get("sc") or "")).lower().lstrip("0") for its in [d.get("items") or []] + [(d.get(u) or {}).get("items") or [] for u in ("unit2", "unit3") if isinstance(d.get(u), dict)] for it in its if it.get("sc")}
+                cands = []
+                for mode in (False, "raw", True):
+                    try: cands.append(parse_breakdown(stxt if mode is False else pdf_text(raw_sched, mode)))
+                    except Exception: pass
+                pb = {}
+                for no in set().union(*[set(c) for c in cands]) if cands else []:
+                    best = max(cands, key=lambda c: (len(set(c.get(no, {})) & want.get(no, set())), sum(len(v.get("c") or []) for v in c.get(no, {}).values())))
+                    pb[no] = dict(best.get(no, {}))
+                    for c in cands:   # scenes the best reading missed, from the others
+                        for k, v in (c.get(no) or {}).items(): pb[no].setdefault(k, v)
+                bd = {}
                 for d in data.get("days") or []:
                     m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")) if d.get("kind") == "shoot" else None
                     for k, v in (pb.get(int(m.group(1))) or {}).items() if m else []: bd[d["date"] + "|" + k] = v

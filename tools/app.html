@@ -875,7 +875,9 @@ function driveMin(m){m=+m||0;return m>20?Math.ceil(m*1.15):m+3}
 /* scene details from the schedule: meta.bd["date|scene"], shown at the end of each scene as running text («Topic:» underlined, as in the PDF),
    in three groups that the round buttons switch on and off: Art-Department, HMU, Info (everything else) */
 const bdKey=sc=>String(sc||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,"");
-function bdFor(date,sc){const m=(S.meta&&S.meta.bd)||{};return m[date+"|"+bdKey(sc)]||null}
+function bdFor(date,sc){const m=(S.meta&&S.meta.bd)||{},k=bdKey(sc);if(!k)return null;if(m[date+"|"+k])return m[date+"|"+k];
+  /* the scene is shot on another day too (e.g. details of 5 pt2 again in the 2nd unit): its details from that day */
+  for(const x in m)if(x.slice(x.indexOf("|")+1)===k)return m[x];return null}
 const BDG={art:["Set Dec","Set dressing","Props","Vehicles"],hmu:["Mup/Hair","Costume"]};
 const bdGroup=k=>BDG.art.includes(k)?"art":BDG.hmu.includes(k)?"hmu":"inf";
 function bdHTML(date,sc){if(!date)return "";const b=bdFor(date,sc);if(!b)return "";
