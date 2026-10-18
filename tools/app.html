@@ -1820,13 +1820,13 @@ function bmed(b){if(!b)return[];const bm=arr(S.meta&&S.meta.bm);const all=Array.
   /* recce photos only when the scene has no other pictures – never mixed */
   const other=all.filter(m=>m.g!=="recce");return other.length?other:all}
 /* scene key → {b: base scene, k: "pt"|"sl"|"", n: part number}: «186pt1A» → 186/pt/1, «25 SL2» → 25/sl/2 (slideshow – its own scene, not part of 25), «184C» → 184c */
-function scKey(s){const t=String(s||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,""),m=t.match(/^(\d+[a-z]{0,2}?)(?:(pt|sl)(\d*)[a-z]?)?$/);return m?{b:m[1],k:m[2]||"",n:m[3]||"",t}:{b:t,k:"",n:"",t}}
+function scParts(s){const t=String(s||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,""),m=t.match(/^(\d+[a-z]{0,2}?)(?:(pt|sl)(\d*)[a-z]?)?$/);return m?{b:m[1],k:m[2]||"",n:m[3]||"",t}:{b:t,k:"",n:"",t}}
 /* blocking for a scene: its own entry; a part «186pt1A» also gets the part «186pt1» and the general pictures of 186 – never those of another part (186pt2);
    a slideshow picture «25SL2» only «25SL»/«25SL2», never scene 25 */
-function blkFor(sc){const N=scKey(sc);if(!N.t)return[];
-  const hit=x=>{const X=scKey(x);if(X.t===N.t)return true;if(!N.k||X.b!==N.b)return false;
+function blkFor(sc){const N=scParts(sc);if(!N.t)return[];
+  const hit=x=>{const X=scParts(x);if(X.t===N.t)return true;if(!N.k||X.b!==N.b)return false;
     if(N.k==="pt")return !X.k||(X.k==="pt"&&X.n===N.n);return X.k==="sl"&&(!X.n||X.n===N.n)};
-  const other=v=>{if(!v||!N.k)return false;const P=scKey(v);return P.b===N.b&&P.k&&(P.k!==N.k||(P.n&&N.n&&P.n!==N.n))};
+  const other=v=>{if(!v||!N.k)return false;const P=scParts(v);return P.b===N.b&&P.k&&(P.k!==N.k||(P.n&&N.n&&P.n!==N.n))};
   const lab=f=>String(f.l||"").replace(/^scene/i,"");
   return arr(S.meta&&S.meta.blocking).filter(b=>arr(b.sc).some(hit)).map(b=>{if(!N.k)return b;
     const media=bmed(b).filter(m=>!other(m.p)),pdfs=arr(b.pdfs).filter(f=>!other(lab(f)));
