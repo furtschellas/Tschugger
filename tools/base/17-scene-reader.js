@@ -77,7 +77,19 @@ function fpFor(set,loc){const st=fpk(set),lc=fpk(loc);return arr(S.meta&&S.meta.
 function bmed(b){if(!b)return[];const bm=arr(S.meta&&S.meta.bm);const all=Array.isArray(b.media)?b.media:arr(b.mi).map(i=>bm[i]).filter(Boolean);
   /* recce photos only when the scene has no other pictures – never mixed */
   const other=all.filter(m=>m.g!=="recce");return other.length?other:all}
-function blkFor(sc){const n=String(sc||"").toLowerCase().replace(/\s+/g,"");return n?arr(S.meta&&S.meta.blocking).filter(b=>arr(b.sc).some(x=>{x=String(x).toLowerCase();return x===n||(n.startsWith(x+"pt")&&!/pt/.test(x))||(n.startsWith(x+"sl")&&!/sl/.test(x))})).map(b=>{if(!/pt/.test(n))return b;const k=f=>String(f.l).toLowerCase().replace(/\s+/g,""),p=arr(b.pdfs).filter(f=>!/pt/.test(k(f))||n.startsWith(k(f))||k(f).startsWith(n));return p.length?Object.assign({},b,{pdfs:p}):b}).filter((b,_,all)=>{/* recce only when no other pictures exist for the scene */const rec=x=>{const m=bmed(x);return m.length&&m.every(y=>y.g==="recce")};return !rec(b)||!all.some(o=>o!==b&&bmed(o).length&&!rec(o))}):[]}
+/* scene key → {b: base scene, k: "pt"|"sl"|"", n: part number}: «186pt1A» → 186/pt/1, «25 SL2» → 25/sl/2 (slideshow – its own scene, not part of 25), «184C» → 184c */
+function scParts(s){const t=String(s||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,""),m=t.match(/^(\d+[a-z]{0,2}?)(?:(pt|sl)(\d*)[a-z]?)?$/);return m?{b:m[1],k:m[2]||"",n:m[3]||"",t}:{b:t,k:"",n:"",t}}
+/* blocking for a scene: its own entry; a part «186pt1A» also gets the part «186pt1» and the general pictures of 186 – never those of another part (186pt2);
+   a slideshow picture «25SL2» only «25SL»/«25SL2», never scene 25 */
+function blkFor(sc){const N=scParts(sc);if(!N.t)return[];
+  const hit=x=>{const X=scParts(x);if(X.t===N.t)return true;if(!N.k||X.b!==N.b)return false;
+    if(N.k==="pt")return !X.k||(X.k==="pt"&&X.n===N.n);return X.k==="sl"&&(!X.n||X.n===N.n)};
+  const other=v=>{if(!v||!N.k)return false;const P=scParts(v);return P.b===N.b&&P.k&&(P.k!==N.k||(P.n&&N.n&&P.n!==N.n))};
+  const lab=f=>String(f.l||"").replace(/^scene/i,"");
+  return arr(S.meta&&S.meta.blocking).filter(b=>arr(b.sc).some(hit)).map(b=>{if(!N.k)return b;
+    const media=bmed(b).filter(m=>!other(m.p)),pdfs=arr(b.pdfs).filter(f=>!other(lab(f)));
+    return Object.assign({},b,{media,pdfs})}).filter(b=>bmed(b).length||arr(b.pdfs).length||!N.k)
+  .filter((b,_,all)=>{/* recce only when no other pictures exist for the scene */const rec=x=>{const m=bmed(x);return m.length&&m.every(y=>y.g==="recce")};return !rec(b)||!all.some(o=>o!==b&&bmed(o).length&&!rec(o))})}
 /* buttons of a scene: the pink ones first (Script, gallery / folder), then the white ones (floorplans, scene PDFs).
    Camera = opens the pictures in the app (gallery); folder = opens the Dropbox folder directly (no pictures in the app) */
 const ICAM='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';

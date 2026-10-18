@@ -218,4 +218,18 @@ check("Alarm: höchstens alle 6 Stunden", not fs.col("broadcasts") and st["fails
 fs, st = alarm_run(cfg={"failAlarm": False}, st={"state": "error", "fails": 4})
 check("Alarm: in den App-Einstellungen ausgeschaltet – kein Alarm", not fs.col("broadcasts"))
 
+# blocking: scene numbers in folder and file names (parts and slideshow pictures keep their number)
+check("Blocking: «Scene 186 pt1 A_B_C» → 186pt1, «Scene_25sl2» → 25sl2, «Scene 012 v2» → 12", [U.scene_key(x) for x in ("Scene 186 pt1 A_B_C", "Scene_25sl2", "Scene 012 v2.pdf", "Scene 184C.pdf")] == ["186pt1", "25sl2", "12", "184C"])
+check("Blocking: Bilder im Teil-Ordner gehören zu diesem Teil", U.blk_top({"path": "/3D/0_BlockingFloorplans/Scene_186/Scene 186 pt2/a.jpeg"}) == ("Scene_186", ["Scene 186 pt2"], "186pt2"))
+check("Auflösung: Ordnername mit Slideshow-Szenen wird gelesen", U.scenes_in_name("09 OFFICE 25sl2_021 CH") == ["25sl2", "21"], U.scenes_in_name("09 OFFICE 25sl2_021 CH"))
+# 2nd unit only where the schedule has a «2nd unit:» part (a B-Cam of the 1st unit is none)
+_txt = "Day #1 - SR: 7:55 - Tue 20/10/2026\n12:00: Shoot B-Cam only:\n186 pt1A\nDay #2 - SR\n2nd unit: 06:45–17:00\nDay Off - SR\n"
+check("2nd Unit: Tage mit eigener «2nd unit:»-Zeile erkannt", U.unit_days(_txt) == {"unit2": {2}, "unit3": set()}, U.unit_days(_txt))
+_d = [{"kind": "shoot", "short": "D1", "items": [{"t": "09:00", "sc": "2"}, {"t": "14:30", "sc": "186pt1B"}], "unit2": {"items": [{"t": "12:00", "sc": "186pt1A"}]}},
+      {"kind": "shoot", "short": "D2", "items": [], "unit2": {"items": [{"t": "07:00", "sc": "5"}]}},
+      {"kind": "shoot", "short": "D3", "items": [], "unit2": {"src": "2nd", "items": [{"t": "07:00", "sc": "9"}]}}]
+U.fix_units(_d, _txt)
+check("2nd Unit: B-Cam-Zeilen wieder in der 1st Unit (nach Zeit eingereiht), echte 2nd Unit bleibt",
+      "unit2" not in _d[0] and [i["sc"] for i in _d[0]["items"]] == ["2", "186pt1A", "186pt1B"] and "unit2" in _d[1] and "unit2" not in _d[2] and _d[2]["items"] == [], _d)
+
 sys.exit(done("Hintergrund"))

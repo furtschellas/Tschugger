@@ -235,6 +235,27 @@ def _norm_sc(x):
     x = re.sub(r"^0+(?=\d)", "", str(x).strip()).lower().replace(" ", "")
     return re.sub(r"(?<=\d)([a-z]{1,2})$", lambda m: m.group(1).upper(), x)   # 184c → 184C, 107pt1 stays
 
+SC_RE = r"0*(\d{1,3})(?:\s*((?:pt|sl)\s*\d*)(?![A-Za-z])|([A-Za-z]{1,2})(?![A-Za-z0-9]))?"
+
+def scene_key(s, need_word=True):
+    """scene number at the start of a folder or file name: «Scene 186 pt1 A_B_C» → 186pt1, «Scene_25sl2» → 25sl2,
+    «Scene 184C.pdf» → 184C, «Scene 012 v2.pdf» → 12 (never «186PT» or «25SL» without the part number)"""
+    m = re.match(r"(?i)\s*x?scene[\s_]*" + SC_RE if need_word else r"(?i)\s*" + SC_RE, str(s or ""))
+    if not m: return None
+    return _norm_sc(m.group(1) + re.sub(r"\s+", "", m.group(2) or m.group(3) or ""))
+
+def is_part(k):
+    return bool(re.search(r"(?i)\d(pt|sl)", str(k or "")))
+
+def blk_top(e):
+    """blocking entry → (scene folder «Scene_186», sub folders below it, part key of the first sub folder like «186pt1» or None)"""
+    pp = e["path"].split("/")
+    j = next((i for i, x in enumerate(pp[:-1]) if x.lower().startswith("scene_")), None)
+    if j is None: return None, [], None
+    subs = pp[j + 1:-1]
+    k = scene_key(subs[0]) if subs else None
+    return pp[j], subs, (k if is_part(k) else None)
+
 def scenes_in_name(name):
     """scene numbers in a location folder name: «06 LAKE PoliceCar 010_14_16_184C_D_E CH» → 10, 14, 16, 184c, 184d, 184e"""
     out = []
@@ -245,7 +266,7 @@ def scenes_in_name(name):
         got, prev = [], None
         for p in parts:
             p = re.sub(r"(?i)(?<=\d)(pp|optional)$", "", p)
-            m = re.fullmatch(r"(\d{1,3})((?:pt\d)|[A-Za-z]{0,2})", p, re.I)
+            m = re.fullmatch(r"(\d{1,3})((?:pt|sl)\d*|[A-Za-z]{0,2})", p, re.I)
             if m:
                 prev = m.group(1); got.append(_norm_sc(m.group(1) + (m.group(2) or "")))
             elif prev and re.fullmatch(r"[A-Za-z]", p):
@@ -385,9 +406,13 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
     for b in blk:
         folder = b.get("url") or ""
         for e in sorted(BPDFE.get(b["name"], []), key=lambda e: e["name"].lower()):
-            u = folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else (folder or _web(os.path.dirname(e["path"]), e["name"]))
+            _, subs, part = blk_top(e)
+            u = folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder and not subs else _web(os.path.dirname(e["path"]), e["name"])
+            part = part or (lambda k: k if is_part(k) else None)(scene_key(e["name"]))
             for it in pdf_items(e, re.sub(r"\.pdf$", "", e["name"], flags=re.I), u):
-                for sc in b.get("sc") or []: add(_norm_sc(sc), "pdf", it)
+                if part: add(part, "pdf", dict(it, p=part))   # a part PDF only for its part
+                else:
+                    for sc in b.get("sc") or []: add(_norm_sc(sc), "pdf", it)
 
     # (a2) floorplans: every page as a picture (blk/…p<i>.bin), so they open in the app and offline
     for fp, e in fpe:
@@ -414,18 +439,17 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
     for e in files:
         parts = e["rel"].split("/")
         if len(parts) < 2:                   # loose file in the root: only scene PDFs («Scene 047.pdf»)
-            m = re.match(r"(?i)scene[\s_]*([0-9]{1,3}[A-Za-z]{0,2}(?:\s*pt\s*\d)?)", e["name"])
-            if m and e["name"].lower().endswith(".pdf"):
-                for it in pdf_items(e, re.sub(r"\.pdf$", "", e["name"], flags=re.I), _web(os.path.dirname(e["path"]), e["name"])): add(_norm_sc(m.group(1)), "pdf", it)
+            k = scene_key(e["name"])
+            if k and e["name"].lower().endswith(".pdf"):
+                for it in pdf_items(e, re.sub(r"\.pdf$", "", e["name"], flags=re.I), _web(os.path.dirname(e["path"]), e["name"])): add(k, "pdf", it)
             continue
         top = parts[0]; scs = tops.setdefault(top, scenes_in_name(top))
         sub = parts[1] if len(parts) > 2 else ""
-        msub = re.fullmatch(r"(?i)x?scene[\s_]*([0-9]{1,3}[A-Za-z]{0,2}(?:\s*pt\s*\d)?)", sub.strip()) if sub else None
-        mfile = re.match(r"(?i)x?scene[\s_]*([0-9]{1,3}[A-Za-z]{0,2}(?:\s*pt\s*\d)?)", e["name"])
+        msub = scene_key(sub) if sub else None        # «Scene 186 pt1 A_B_C» → 186pt1
+        mfile = scene_key(e["name"])
         if e["name"].lower().endswith(".pdf"):
-            m = msub or mfile
-            if not m: continue
-            sc = _norm_sc(m.group(1))
+            sc = msub or mfile
+            if not sc: continue
             for it in pdf_items(e, re.sub(r"\.pdf$", "", e["name"], flags=re.I), _web(os.path.dirname(e["path"]), e["name"])): add(sc, "pdf", it)
         elif IMG_RE.search(e["name"]):
             fn = "blk/" + _key(e) + ".bin"
@@ -433,7 +457,7 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
             want_files.add(fn)
             it = {"n": e["name"], "t": "img", "f": fn, "u": _web(os.path.dirname(e["path"]), e["name"])}
             if msub:
-                add(_norm_sc(msub.group(1)), "s", dict(it, g="s"))
+                add(msub, "s", dict(it, g="s"))
             else:
                 for sc in scs: add(sc, "loc", dict(it, g="loc", l=re.sub(r"^\d+\w?\s+", "", sub or top)))
     # (c) RECCE: «RECCE/zRECCE 202609 Wallis/20260917 Wallis/05 Sion POLIZEISTATION EXT/…» – matched to the scenes shot there
@@ -468,7 +492,7 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
     for b in blk:
         if b["_new"]:
             for sc in b.get("sc") or []: has.add(_norm_sc(sc).lower())
-    def base(sc): return re.sub(r"(pt|sl)\w*$", "", _norm_sc(sc).lower())
+    def base(sc): return re.sub(r"pt\w*$", "", _norm_sc(sc).lower())   # «5 pt3» belongs to scene 5; «25 SL2» (slideshow) not to scene 25
     for b in blk:
         new = b.pop("_new"); rec = b.pop("_rec")
         if not new and not any(_norm_sc(sc).lower() in has or base(sc) in has for sc in b.get("sc") or []): new = rec
@@ -481,6 +505,43 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
 
 # ---------- choosing the newest files (same rules as the Claude task) ----------
 def low(f): return f["name"].lower()
+SCHED_NEW = []   # the main schedule was read again in this run
+
+def unit_days(txt):
+    """shooting days of the schedule PDF text that have their own «2nd unit: …» / «3rd unit: …» section → {"unit2": {3, 5}, "unit3": set()}"""
+    out = {"unit2": set(), "unit3": set()}; no = None; seen = False
+    for line in (txt or "").splitlines():
+        m = re.match(r"\s*Day\s*#\s*(\d+)\b", line)
+        if m: no = int(m.group(1)); seen = True; continue
+        if re.match(r"\s*Day Off\b", line): no = None; continue
+        if no is not None:
+            if re.match(r"(?i)\s*2nd\s+unit\s*:", line): out["unit2"].add(no)
+            if re.match(r"(?i)\s*3rd\s+unit\s*:", line): out["unit3"].add(no)
+    return out if seen else None
+
+UD = {}   # unit_days() of the current schedule PDF
+
+def fix_units(days, txt=None, ud=None):
+    """a 2nd/3rd unit only where the schedule has a «2nd unit:» section (a B-Cam of the 1st unit is no 2nd unit)"""
+    ud = ud or unit_days(txt)
+    if not ud or not ud["unit2"]: return False   # nothing recognised: better leave everything as it is
+    ch = False
+    for d in days:
+        if d.get("kind") != "shoot": continue
+        m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or ""))
+        no = int(m.group(1)) if m else None
+        for u in ("unit2", "unit3"):
+            if d.get(u) and no is not None and no not in ud[u]:
+                if isinstance(d[u], dict) and d[u].get("src") != "2nd":   # read from the schedule: the rows go back to the day
+                    its = d.setdefault("items", [])
+                    for it in d[u].get("items") or []:   # by time, between the rows of the day
+                        t = str(it.get("t") or "")
+                        at = next((i for i, x in enumerate(its) if t and str(x.get("t") or "") > t), len(its))
+                        its.insert(at, it)
+                d.pop(u, None); ch = True
+                log("Drehplan: Tag %d hat keine %s – Einträge zur 1st Unit" % (no, u))
+    return ch
+
 def pick_schedule(files):
     # the Swiss schedule: in 02_Schedule or a subfolder (formerly 02_Schedule/CH) – not the archive and not India
     c = [f for f in files if low(f).startswith("02_schedule/") and "_archiv" not in low(f) and "india" not in low(f) and low(f).endswith(".pdf")]
@@ -512,10 +573,10 @@ def changelog_parse(txt):
         if m.group(1) not in sc: sc.append(m.group(1))
     return {"scenes": sc[:200], "log": t[:8000]}
 
-def pdf_text(raw):
+def pdf_text(raw, layout=True):
     with tempfile.TemporaryDirectory() as td:
         p = pathlib.Path(td) / "c.pdf"; p.write_bytes(raw)
-        return subprocess.run(["pdftotext", "-layout", str(p), "-"], capture_output=True, timeout=120).stdout.decode("utf-8", "replace")
+        return subprocess.run(["pdftotext", *(["-layout"] if layout else []), str(p), "-"], capture_output=True, timeout=120).stdout.decode("utf-8", "replace")
 
 def pick_script(files):
     """always the newest CLEAN version (without revision marks): highest «vNN» in the file name; a version without CLEAN is never
@@ -839,14 +900,23 @@ def main():
     need_main = any(isinstance(d.get("unit2"), dict) and d["unit2"].get("src") == "2nd" for d in data.get("days") or []) and not meta.get("unit2Main")
     if f:
         sources.append({"kind": "schedule", "name": f["name"], "modified": f["modified"]})
+        raw_sched = None
+        try:   # which days have their own 2nd/3rd unit (checked every run, without AI)
+            raw_sched = dbx.download(f["id"]); UD.update(unit_days(pdf_text(raw_sched, False)) or {})
+            if UD and fix_units(data.get("days") or [], None, UD): changed = True
+        except Exception as e: log("Drehplan-Text nicht gelesen:", type(e).__name__)
         if (is_new("schedule", f) or need_main) and may_try("schedule", f):
           log("Drehplan: neu, wird ausgelesen")
           try:
-            res = claude([pdf_block(dbx.download(f["id"]))],
+            raw_sched = raw_sched or dbx.download(f["id"])
+            res = claude([pdf_block(raw_sched)],
+                "WICHTIG: \"unit2\" nur für Tage, an denen der Drehplan eine eigene Zeile «2nd unit: …» hat. «B-Cam», «A+B-Cam», «Shoot B-Cam only» oder «Move B-Cam» sind eine zweite Kamera der 1st Unit und gehören zu den normalen items des Tages, nie in unit2. "
                 "Erzeuge aus diesem Drehplan ein JSON-Objekt {\"scheduleVersion\": \"Sched …\" (aus dem Dateinamen: %s), \"subtitle\": \"Dreh Wallis · TT.MM.–TT.MM.JJJJ\", \"cast\": {Rollennummer: Rollenname}, \"days\": [ein Objekt pro Kalendertag gemäss Collection \"days\", jeweils mit Feld \"id\" = Datum]}. Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisherige Übersetzungen zum Wiederverwenden (gleicher Text = gleiche Übersetzung): %s"
                 % (f["name"].rsplit("/", 1)[-1], json.dumps(strip_ids(data.get("days"))[:40], ensure_ascii=False)[:60000]), 64000)
             days = (res.get("days") if isinstance(res, dict) else None) or []
+            fix_units(days, None, UD)
             if len(days) >= max(3, len(data.get("days") or []) // 2):
+                SCHED_NEW.append(1)
                 for i, d in enumerate(sorted(days, key=lambda d: d.get("date", ""))): d["order"] = i; d["id"] = d.get("date") or d.get("id")
                 ch = changed_days(data.get("days"), days, TODAY) if data.get("days") else []
                 data["days"] = days; meta["scheduleVersion"] = res.get("scheduleVersion") or meta.get("scheduleVersion")
@@ -870,14 +940,14 @@ def main():
         if url and "docs.google.com/spreadsheets" in url:
             shoot = [d for d in data.get("days") or [] if d.get("kind") == "shoot"]
             # the 2nd unit as in the main schedule (kept, because the days below get the detailed order from the sheet)
-            mainU2 = dict(meta.get("unit2Main") or {})
-            for d in shoot:
-                if isinstance(d.get("unit2"), dict) and d["unit2"].get("src") != "2nd": mainU2[d["date"]] = d["unit2"]
-            mainU2 = {k: v for k, v in mainU2.items() if any(d["date"] == k for d in shoot)}
-            def scs(u):
-                return {re.sub(r"\s+", "", str(i.get("sc") or "")).lower() for i in (u or {}).get("items") or [] if i.get("sc")}
             def dayno(d):
                 m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")); return int(m.group(1)) if m else None
+            mainU2 = {} if SCHED_NEW else dict(meta.get("unit2Main") or {})   # after a new schedule only what it says
+            for d in shoot:
+                if isinstance(d.get("unit2"), dict) and d["unit2"].get("src") != "2nd": mainU2[d["date"]] = d["unit2"]
+            mainU2 = {k: v for k, v in mainU2.items() if any(d["date"] == k and (not UD.get("unit2") or dayno(d) in UD["unit2"]) for d in shoot)}
+            def scs(u):
+                return {re.sub(r"\s+", "", str(i.get("sc") or "")).lower() for i in (u or {}).get("items") or [] if i.get("sc")}
             newc = {}
             tabs = sheet_tabs(url); byday = {}
             for gid, name in tabs:   # several tabs of one day (e.g. «#11-Lake-Hospital» and «#11-AuntsHouse») are read together
@@ -915,7 +985,8 @@ def main():
                 for d in shoot:
                     n = len(want & scs(mainU2.get(d["date"])))
                     if n > bn: best, bn = d, n
-                day = best or next((d for d in shoot if dayno(d) == c["no"]), None)
+                # without a 2nd unit in the main schedule the day gets none (the tab number alone is not enough)
+                day = best or next((d for d in shoot if dayno(d) == c["no"] and d["date"] in mainU2), None)
                 if not day: continue
                 mu = mainU2.get(day["date"]) or {}
                 u2 = dict(c["u2"])
@@ -923,6 +994,9 @@ def main():
                     if mu.get(k): u2[k] = mu[k]
                     else: u2.pop(k, None)
                 if day.get("unit2") != u2: day["unit2"] = u2; changed = True
+            for d in shoot:   # a 2nd unit from the sheet on a day without a 2nd unit in the main schedule: remove
+                if isinstance(d.get("unit2"), dict) and d["unit2"].get("src") == "2nd" and d["date"] not in mainU2:
+                    d.pop("unit2", None); changed = True; log("2nd Unit: Tag", dayno(d), "hat laut Drehplan keine 2nd Unit – entfernt")
             if mainU2 != (meta.get("unit2Main") or {}): meta["unit2Main"] = mainU2; changed = True
             sources.append({"kind": "unit2", "name": "Google Sheet «2nd Unit Shooting Order»", "link": url, "modified": NOW})
         if cache != (meta.get("unit2Sheet") or {}): meta["unit2Sheet"] = cache; changed = True
@@ -1146,11 +1220,11 @@ def main():
         fl = [e for e in dbx.list_path(ROOT3D + "/0_BlockingFloorplans/floorplans locations") if e["tag"] == "file" and re.search(r"\.(pdf|png|jpe?g)$", e["name"], re.I)]
         allb = dbx.list_path(ROOT3D + "/0_BlockingFloorplans", True)
         bl = [e for e in allb if e["tag"] == "folder" and e["name"].lower().startswith("scene_") and e["path"].count("/") <= 3]
-        bpdf = {}  # scene folder name → PDFs directly inside it
+        bpdf = {}  # scene folder name → PDFs inside it (also in part folders «Scene_186/Scene 186 pt1 A_B_C/»)
         bpdfe = {}  # the same as Dropbox entries
         for e in allb:
-            pp = e["path"].split("/")
-            if e["tag"] == "file" and e["name"].lower().endswith(".pdf") and len(pp) >= 2 and pp[-2].lower().startswith("scene_"): bpdf.setdefault(pp[-2], []).append(e["name"]); bpdfe.setdefault(pp[-2], []).append(e)
+            top = blk_top(e)[0] if e["tag"] == "file" else None
+            if top and e["name"].lower().endswith(".pdf"): bpdf.setdefault(top, []).append(e); bpdfe.setdefault(top, []).append(e)
     except Exception: fl = bl = []; bpdf = {}; bpdfe = {}
     if fl or bl:
         known = {x.get("file"): x for x in meta.get("floorplans") or []}
@@ -1168,16 +1242,16 @@ def main():
                         "rule": {"set": [w for w in words if w not in TOWNS], "loc": [w for w in words if w in TOWNS]}})
         blk = []
         for e in sorted(bl, key=lambda e: e["name"]):
-            if e["name"] in kb: blk.append(kb[e["name"]]); continue
-            sc = [re.sub(r"^0+", "", p) for p in e["name"][6:].replace(" CAR", "").split("_") if p]
+            sc = [_norm_sc(p) for p in e["name"][6:].replace(" CAR", "").split("_") if p]
+            if e["name"] in kb: kb[e["name"]]["sc"] = sc; blk.append(kb[e["name"]]); continue
             blk.append({"name": e["name"], "sc": sc, "url": bdir})
         def plabel(n): return re.sub(r"(?<![0-9A-Za-z])0+(?=\d)", "", re.sub(r"(?i)^scene[\s_]*", "", n[:-4]))
         # blocking photos and videos: encrypted preview images in blk/ (binary: 12-byte IV + AES-GCM), shown in the app's gallery
         bmed = {}
         for e in allb:
-            pp = e["path"].split("/")
-            if e["tag"] == "file" and len(pp) >= 2 and pp[-2].lower().startswith("scene_") and re.search(r"\.(jpe?g|png|heic|mov|mp4|m4v)$", e["name"], re.I):
-                bmed.setdefault(pp[-2], []).append(e)
+            top = blk_top(e)[0] if e["tag"] == "file" else None
+            if top and re.search(r"\.(jpe?g|png|heic|mov|mp4|m4v)$", e["name"], re.I):
+                bmed.setdefault(top, []).append(e)
         os.makedirs("blk", exist_ok=True)
         want_files = set()
         for b in blk:
@@ -1223,8 +1297,9 @@ def main():
                             open(vf, "wb").write(iv + AESGCM(KEY).encrypt(iv, vbytes, None)); changed = True
                         except Exception as ex:
                             log("Film nicht umgewandelt:", _h(e["name"]), str(ex)[:60]); want_files.discard(vf); vf = None
-                items.append({"n": e["name"], "t": "vid" if vid else "img", "f": fn, **({"v": vf} if vf else {}),
-                              "u": folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder})
+                _, subs, part = blk_top(e)
+                items.append({"n": e["name"], "t": "vid" if vid else "img", "f": fn, **({"v": vf} if vf else {}), **({"p": part} if part else {}),
+                              "u": _web(os.path.dirname(e["path"]), e["name"]) if subs else folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder})
             if items != [m for m in (b.get("media") or []) if not m.get("g")]:
                 b["media"] = items + [m for m in (b.get("media") or []) if m.get("g")]; changed = True
         # ---- more pictures behind the camera button ----
@@ -1256,11 +1331,11 @@ def main():
             else:
                 for fn in gone: BLKS.remove(fn); changed = True
         for b in blk:  # every scene PDF as its own button (preview inside the shared scene folder)
-            names = sorted(bpdf.get(b["name"], []))
-            if not names: continue
+            ents = sorted(bpdf.get(b["name"], []), key=lambda e: e["name"].lower())
+            if not ents: continue
             old_pdfs = b.get("pdfs") or []
             folder = b.get("url") or bdir
-            pdfs = [{"l": plabel(n), "u": folder.replace("&dl=0", "&preview=" + requests.utils.quote(n.replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder} for n in names]
+            pdfs = [{"l": plabel(e["name"]), "u": _web(os.path.dirname(e["path"]), e["name"]) if blk_top(e)[1] else folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder} for e in ents]
             if pdfs != old_pdfs: b["pdfs"] = pdfs; changed = True
         if [x.get("file") for x in fps] != [x.get("file") for x in meta.get("floorplans") or []] or [x.get("name") for x in blk] != [x.get("name") for x in meta.get("blocking") or []]:
             meta["floorplans"], meta["blocking"] = fps, blk; changed = True; log("Floorplans:", len(fps), "· Blocking:", len(blk))
