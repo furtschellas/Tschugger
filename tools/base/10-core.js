@@ -68,8 +68,10 @@ const memo=(k,f)=>{if(MEMO.has(k))return MEMO.get(k);const v=f();MEMO.set(k,v);r
 try{const pu=JSON.parse(localStorage.getItem("pu")||"null");if(pu&&typeof pu==="object")S.pu={"1":!!pu["1"],"2":!!pu["2"],"3":!!pu["3"]}}catch(e){}
 try{const t=localStorage.getItem("tab");if(t)S.tab=({map:"loc",music:"plan"})[t]||t}catch(e){}
 /* the app always opens on «Heute» (unless a link asks for another page) */
-/* «Today» when the app is opened again after at least 2 hours (otherwise the last page stays) */
-try{const la=+(localStorage.getItem("lastActive")||0);if(!location.hash&&localStorage.getItem("today")!=="0"&&(!la||Date.now()-la>=2*3600e3))S.tab="today"}catch(_){}
+/* start page: every time the app is started or opened anew it shows «Today»; with Today switched off the Drehplan at
+   today (or the next day). A reload while using the app (window.__REL, from the start screen) keeps the page. */
+window.startTab=()=>{try{const v=localStorage.getItem("today")||"";return (v==="0"||v.startsWith("0|"))?"plan":"today"}catch(_){return "today"}};
+if(!location.hash&&!window.__REL)S.tab=startTab();
 
 function castChips(ids){
   const m=(S.meta&&S.meta.cast)||{};

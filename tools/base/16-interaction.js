@@ -7,11 +7,14 @@ function setOpen(btn,open){
 function scallLabel(){const b=document.getElementById("scall");if(!b)return;const ks=[...document.querySelectorAll("[data-sckey]")].map(x=>x.dataset.sckey);const all=ks.length>0&&ks.every(k=>S.openSc[k]);b.setAttribute("aria-expanded",all);b.classList.toggle("on",all)}
 /* tapping the tab you are already on jumps back to today; switching tabs keeps the last chosen day */
 function goTab(tab){S.want=null;const again=S.tab===tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;if(again&&tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
-/* last chosen day (Schedule, Callsheet), page and open scenes are remembered; after 2 hours without use or a new sign-in it starts at today again */
+/* last chosen day (Schedule, Callsheet), page and open scenes are kept on a reload; a new start, or coming back after
+   at least 10 minutes in the background, opens the start page (Today, or the Drehplan at today) */
 const VS_TTL=2*3600*1000;let VS_AT=Date.now();
-try{const v=JSON.parse(localStorage.getItem("viewstate")||"null");if(v&&Date.now()-(+v.at||0)<VS_TTL){if(v.day)S.day=v.day;if(v.dday)S.dday=v.dday;if(v.openSc&&typeof v.openSc==="object")S.openSc=v.openSc;if(v.tab)S.tab=v.tab;VS_AT=+v.at}}catch(_){}
+try{const v=JSON.parse(localStorage.getItem("viewstate")||"null");if(v&&window.__REL&&!location.hash&&Date.now()-(+v.at||0)<VS_TTL){if(v.day)S.day=v.day;if(v.dday)S.dday=v.dday;if(v.openSc&&typeof v.openSc==="object")S.openSc=v.openSc;if(v.tab)S.tab=v.tab;VS_AT=+v.at}}catch(_){}
 document.addEventListener("pointerdown",()=>{VS_AT=Date.now()},true);document.addEventListener("keydown",()=>{VS_AT=Date.now()},true);
 function saveView(){try{localStorage.setItem("viewstate",JSON.stringify({at:VS_AT,tab:S.tab,day:S.day,dday:S.dday,openSc:S.openSc}))}catch(_){}}
 window.resetViewState=()=>{try{localStorage.removeItem("viewstate")}catch(_){}S.day=null;S.dday=null;S.openSc={}};
-window.addEventListener("pagehide",saveView);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveView();else if(Date.now()-VS_AT>VS_TTL){S.day=null;S.dday=null;VS_AT=Date.now();render()}});
+window.addEventListener("pagehide",saveView);const RESUME=10*60e3;let HID_AT=0;
+window.goStart=()=>{S.want=null;S.srcOpen=false;S.tab=startTab();S.day=null;S.dday=null;S.openSc={};VS_AT=Date.now();store("tab",S.tab);window.scrollTo(0,0);render()};
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){saveView();HID_AT=Date.now()}else{if(HID_AT&&Date.now()-HID_AT>=RESUME&&!(typeof navDialogs==="function"&&navDialogs().length))goStart();HID_AT=0}});
 function store(k,v){try{localStorage.setItem(k,v)}catch(_){}}
