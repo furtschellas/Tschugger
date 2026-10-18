@@ -148,7 +148,11 @@ function renderPlan(){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
     if(d.extras)f.push([L("Kompars:innen"),d.extras]);
     /* drive from the crew hotel: +3 min buffer (over 20 min: +15 %); the route itself only when opened; shown next to the shooting time */
-    const dv=d.drive&&d.drive.min?'<details class="fact factd"><summary><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc(driveMin(d.drive.min)+"′"+(d.drive.km?"\u2009·\u2009"+Math.round(d.drive.km)+"\u2009km":""))+'</span></summary><span class="fsub">'+esc((d.drive.from||"Hotel")+" → "+(d.drive.to||""))+'</span></details>':'';
+    /* the drive to the first set: tap → route from the hotel or from where you are (like in «Today») */
+    const dv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
+      const from=d.drive.from||"Hotel",url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(from)+"&destination="+encodeURIComponent(dest),
+        here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(dest);
+      return '<button type="button" class="fact factr" data-route="'+esc(JSON.stringify({h:url,c:here,from,to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc(driveMin(d.drive.min)+"′"+(d.drive.km?"\u2009·\u2009"+Math.round(d.drive.km)+"\u2009km":""))+' ›</span></button>'})():'';
     /* the drive to the set sits right next to the shooting time */
     const fx=f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>');
     if(dv)fx.splice(d.hours?1:0,0,dv);

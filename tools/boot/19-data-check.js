@@ -49,7 +49,9 @@ async function dckRun(auto){
       /* the other way round: every scene of the script is planned (scenes marked as cut/omitted do not count) */
       if(sl.length){const ps=new Set(items.flatMap(([,it])=>scs(it)).flatMap(s=>[s,dbase(s),dnum(s)]));
         const cut=x=>/\b(omit+ed|gestrichen|entf(ä|ae)llt|fällt weg|supprimée?|tagliata)\b/i.test(String(x.head||"")+" "+String(x.text||x.body||"").slice(0,160));
-        const nip=[...new Set(sl.filter(x=>x&&x.sc&&!cut(x)).map(x=>dsc(x.sc)))].filter(s=>s&&!dhas(ps,s));
+        /* scenes set in India are shot there (own schedule) – not expected in the Swiss Drehplan */
+        const india=x=>/\b(INDIA|INDIEN|INDE|MUMBAI|BOMBAY|DELHI|GOA|JAIPUR|RAJASTHAN|KERALA|VARANASI)\b/i.test(String(x.head||""));
+        const nip=[...new Set(sl.filter(x=>x&&x.sc&&!cut(x)&&!india(x)).map(x=>dsc(x.sc)))].filter(s=>s&&!dhas(ps,s));
         if(nip.length)w("warn",L("Drehbuch ↔ Drehplan"),L("Szenen im Drehbuch, die im Drehplan fehlen:")+" "+nip.slice(0,30).join(", ")+(nip.length>30?" …":""));
         else w("ok",L("Drehbuch ↔ Drehplan"),L("Alle Szenen des Drehbuchs stehen im Drehplan."))}
       /* scene by scene: inside/outside, time of day and the cast against the scene in the script */
