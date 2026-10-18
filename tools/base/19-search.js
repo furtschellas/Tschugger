@@ -21,7 +21,7 @@ function normQ(q){
   return qq;
 }
 const WDALL=[["sonntag","sunday","dimanche","domenica"],["montag","monday","lundi","lunedi"],["dienstag","tuesday","mardi","martedi"],["mittwoch","wednesday","mercredi","mercoledi"],["donnerstag","thursday","jeudi","giovedi"],["freitag","friday","vendredi","venerdi"],["samstag","saturday","samedi","sabato"]];
-function dayKeys(d){const x=new Date(d.date+"T12:00:00");return nrm([d.short,d.label,x.getDate()+"."+(x.getMonth()+1)+".",pad2(x.getDate())+"."+pad2(x.getMonth()+1)+".",WDALL[x.getDay()].join(" "),WD[x.getDay()]].join(" "))}
+function dayKeys(d){const x=new Date(d.date+"T12:00:00");return nrm([d.short,d.label,x.getDate()+"."+(x.getMonth()+1)+".",ddmm(x),WDALL[x.getDay()].join(" "),WD[x.getDay()]].join(" "))}
 /* roles (characters of the cast list) with the names they go by in the script */
 const GENW=new Set(["mafioso","teenager","aunt","tante","dr","neighbour","nachbar","fisherman","fischer","karate","the","der","die"]);
 function roleList(){return memo("roles",()=>{const c=(S.meta&&S.meta.cast)||{};
@@ -66,7 +66,7 @@ function searchAll(q,mode){
   const isNum=t=>/^\d+[a-z]*$/.test(t)&&!/^\d+(st|nd|rd|th)$/.test(t);
   const digits=x=>String(x||"").replace(/\D/g,"");
   const phoneVars=ph=>{const d=digits(ph);if(!d)return "";const loc=d.startsWith("41")?"0"+d.slice(2):d;return d+" "+loc};
-  const dshort=d=>{const x=new Date(d.date+"T12:00:00");return x.getDate()+"."+(x.getMonth()+1)+". "+String(x.getDate()).padStart(2,"0")+"."+String(x.getMonth()+1).padStart(2,"0")+". "+WD[x.getDay()]};
+  const dshort=d=>{const x=new Date(d.date+"T12:00:00");return x.getDate()+"."+(x.getMonth()+1)+". "+ddmm(x)+" "+WD[x.getDay()]};
   const cast=(S.meta&&S.meta.cast)||{};
   /* text terms: substring anywhere; numeric terms: only scene numbers, day codes, dates, phone numbers */
   const qd=terms.every(t=>/^\+?\d+$/.test(t))?terms.join("").replace(/\D/g,""):"";

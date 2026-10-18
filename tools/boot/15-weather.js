@@ -10,8 +10,7 @@ const P_SNOW='<path d="M7 15h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 
 const P_FOG='<path d="M7 13h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 7 13z"/><path d="M4 17h16M6 20.5h12"/>';
 const P_STORM='<path d="M7 15h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 7 15z"/><path d="M12.5 15l-2 3.5h3l-2 3.5"/>';
 const P_DROP='<path d="M12 3.5s-6 6.6-6 10.5a6 6 0 0 0 12 0c0-3.9-6-10.5-6-10.5z"/>';
-const P_CAR='<path d="M5 16V11.5l1.8-4.2A2 2 0 0 1 8.6 6h6.8a2 2 0 0 1 1.8 1.3L19 11.5V16"/><path d="M4 16h16v2.5H4z"/><circle cx="7.5" cy="13.5" r=".8"/><circle cx="16.5" cy="13.5" r=".8"/><path d="M6.5 18.5V20M17.5 18.5V20M5 11.5h14"/>';
-window.ICCAR=(sz)=>ICS(P_CAR,sz||18,"lcar");window.ICDROP=(sz)=>ICS(P_DROP,sz||14,"ldrop");
+window.ICDROP=(sz)=>ICS(P_DROP,sz||14,"ldrop");
 const WXI=(c,sz)=>ICS(c===0?P_SUN:c<=2?P_PART:c===3?P_CLOUD:c<=48?P_FOG:c<=57?P_DRIZ:c<=67?P_RAIN:c<=77?P_SNOW:c<=82?P_RAIN:c<=86?P_SNOW:P_STORM,sz||20,"lwx");
 const WXT=c=>L(c===0?"sonnig":c<=2?"leicht bewölkt":c===3?"bedeckt":c<=48?"Nebel":c<=57?"Niesel":c<=67?"Regen":c<=77?"Schnee":c<=82?"Regenschauer":c<=86?"Schneeschauer":"Gewitter");
 const WX={};
@@ -23,10 +22,10 @@ function wxPlace(d){
   const town=(ad.match(/\b\d{4}\s+([^,]+)/)||[])[1]||String(it.loc).split(/\s+/)[0];
   return {ll,town:town.trim(),name:(it.set||"").replace(/^VALAIS\s*–\s*/i,"")||it.loc,loc:it.loc,addr:ad,sc:it.sc,t:it.t||""};
 }
-try{const lim=new Date(Date.now()-2*864e5).toISOString().slice(0,10);for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.startsWith("wx:")&&k.slice(3,13)<lim)localStorage.removeItem(k)}}catch(_){}
+try{const lim=localISO(Date.now()-2*864e5);for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.startsWith("wx:")&&k.slice(3,13)<lim)localStorage.removeItem(k)}}catch(_){}
 async function wxLoad(d){
   const p=wxPlace(d);if(!p)return null;const key=d.date+"|"+p.town;
-  {const t0=new Date(Date.now()-864e5).toISOString().slice(0,10),t1=new Date(Date.now()+15*864e5).toISOString().slice(0,10);if(d.date<t0||d.date>t1)return null}
+  {const t0=localISO(Date.now()-864e5),t1=localISO(Date.now()+15*864e5);if(d.date<t0||d.date>t1)return null}
   if(WX[key]&&(WX[key].busy||Date.now()-WX[key].at<3600e3))return WX[key];
   let cached=null;try{cached=JSON.parse(localStorage.getItem("wx:"+key)||"null")}catch(_){}
   WX[key]=Object.assign({busy:true,at:Date.now(),p},cached||{});
@@ -56,7 +55,7 @@ window.wxFact=function(d){const w=wxGet(d);if(!w)return "";const dl=w.j&&w.j.dai
   return '<button type="button" class="fact factw" data-wx="'+esc(d.date)+'" title="'+esc(L("Wetterbericht")+" · "+w.p.town)+'">'+WXI(dl.weather_code[0],14)+'<span class="v">'+Math.round(dl.temperature_2m_min[0])+'–'+Math.round(dl.temperature_2m_max[0])+'°'+(dl.precipitation_probability_max[0]!=null?'\u2009'+ICDROP(10)+dl.precipitation_probability_max[0]+'%':'')+'</span></button>'};
 function wxPopup(date){window.WXPOPD=date;
   const d=(S.days||[]).find(x=>x.date===date);if(!d)return;const w=wxGet(d);if(!w)return;
-  let o=document.getElementById("wxpop");if(!o){o=document.createElement("div");o.id="wxpop";o.className="a2hs";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o);
+  let o=document.getElementById("wxpop");if(!o){o=mkDialog("wxpop");document.body.appendChild(o);
     o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-wxx]"))o.remove()})}
   const dt=new Date(date+"T12:00:00"),dp=(S.dispos||[]).find(x=>x&&x.date===date);
   let body='<p class="ghint">'+esc(L("Wird geladen …"))+'</p>';
@@ -68,7 +67,7 @@ function wxPopup(date){window.WXPOPD=date;
       rows.map(({h:hh,i})=>'<div class="wxr'+(w.p.t&&hh.slice(0,2)===String(w.p.t).slice(0,2)?' wxnow':'')+'"><span>'+hh+'</span><span>'+WXI(h.weather_code[i])+'</span><span>'+Math.round(h.temperature_2m[i])+'°</span><span>'+(h.precipitation_probability[i]??"–")+'%</span><span>'+(h.precipitation[i]||0)+'</span><span>'+Math.round(h.wind_speed_10m[i])+(h.wind_gusts_10m[i]>40?' <small>('+Math.round(h.wind_gusts_10m[i])+')</small>':'')+'</span></div>').join("")+'</div>'+
       '<p class="ghint wxsrc">'+esc(L("Vorhersage"))+': Open-Meteo · '+esc(L("Stand"))+' '+fmtT(w.at)+'</p>'}
   else if(w.err)body='<p class="ghint">'+esc(L("Wetter nicht verfügbar"))+' ('+esc(w.err)+')</p>';
-  o.innerHTML='<div class="a2box wxbox"><button type="button" class="xclose" data-wxx aria-label="'+esc(L("Schliessen"))+'">×</button><h3>'+esc(L("Wetter"))+' · '+esc(WDL(dt)+" "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+".")+'</h3>'+
+  o.innerHTML='<div class="a2box wxbox">'+xBtn("data-wxx")+'<h3>'+esc(L("Wetter"))+' · '+esc(WDL(dt)+" "+ddmm(dt))+'</h3>'+
     '<p class="wxplace">'+ICS('<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',15,"lpin")+' <b>'+esc(w.p.town)+'</b> · '+esc(w.p.name)+(w.p.sc?' · '+esc(L("Szene"))+' '+esc(w.p.sc)+(w.p.t?' '+esc(w.p.t):''):'')+'</p>'+body+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-wx]");if(b)wxPopup(b.dataset.wx)});

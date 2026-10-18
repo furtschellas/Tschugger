@@ -5,7 +5,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-fpg]");if(
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkg]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkg);if(!b||!bmed(b).length)return;e.preventDefault();e.stopPropagation();openGallery(b)},true);
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkpdf]");if(!a||typeof window.blkImg!=="function")return;const b=arr(S.meta&&S.meta.blocking).find(x=>x.name===a.dataset.blkpdf);if(!b)return;e.preventDefault();e.stopPropagation();openGallery(b,0,a.dataset.pdfn)},true);
 function openGallery(b,start,pdf){
-  let d=document.getElementById("blkgal");if(d)d.remove();d=document.createElement("div");d.id="blkgal";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  let d=mkDialog("blkgal",null,{replace:true});
   const all=pdf?bmed(b).filter(m=>m.g==="pdf"&&String(m.n).split(" · ")[0]===pdf):bmed(b),title=pdf?L("Auflösung")+" "+pdfLbl(pdf):(b.title||(L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ")));
   /* view options: size (small / large / list), filter (all / photos / videos), slideshow; size is remembered */
   let gv="m",gf="all",timer=null;try{gv=localStorage.getItem("galview")||"m"}catch(_){}

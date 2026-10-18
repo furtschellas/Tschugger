@@ -1,8 +1,7 @@
 /* =====================================================================
    HEUTE · ÄNDERUNGEN · OFFLINE · PROTOKOLL
    ===================================================================== */
-const pad2x=pad2;   /* kept as a name for older parts */
-const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+", "+pad2x(dt.getDate())+"."+pad2x(dt.getMonth()+1)+"."};
+const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+", "+ddmm(dt)};
 const scKey=x=>String(x||"").toLowerCase().replace(/\s+/g,"");
 const unitItems=d=>[["1",arr(d.items)],["2",arr((d.unit2||{}).items)],["3",arr((d.unit3||{}).items)]];
 
@@ -86,8 +85,8 @@ async function offlinePrep(force){
 document.addEventListener("click",e=>{if(e.target.closest("[data-offprep]"))offlinePrep(true)});
 /* route: from the crew hotel or from where I am right now */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-route]");if(!b)return;let r={};try{r=JSON.parse(b.dataset.route)}catch(_){return}
-  let o=document.getElementById("routepop");if(o)o.remove();o=document.createElement("div");o.id="routepop";o.className="a2hs";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");
-  o.innerHTML='<div class="a2box rtbox"><button type="button" class="xclose" data-rtx aria-label="'+esc(L("Schliessen"))+'">×</button><h3>'+esc(L("Route in Google Maps"))+'</h3><p class="ghint">'+esc(L("Ziel"))+': '+esc(r.to||"")+'</p>'+
+  let o=mkDialog("routepop",null,{replace:true});
+  o.innerHTML='<div class="a2box rtbox">'+xBtn("data-rtx")+'<h3>'+esc(L("Route in Google Maps"))+'</h3><p class="ghint">'+esc(L("Ziel"))+': '+esc(r.to||"")+'</p>'+
     '<div class="rtopts"><a class="pillbtn rtpill" href="'+esc(r.h)+'" target="_blank" rel="noopener noreferrer" data-rtx><b>'+esc(L("Vom Hotel"))+'</b>'+(r.from?'<small>'+esc(r.from)+'</small>':'')+'</a>'+
     '<a class="pillbtn rtpill" href="'+esc(r.c)+'" target="_blank" rel="noopener noreferrer" data-rtx><b>'+esc(L("Vom aktuellen Standort"))+'</b></a></div></div>';
   document.body.appendChild(o);o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest("[data-rtx]"))setTimeout(()=>o.remove(),50)})});

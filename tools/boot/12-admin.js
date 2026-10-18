@@ -153,11 +153,11 @@ async function createStartAccount(em,nm){
   return pw;
 }
 function showStartPw(em,nm,pw){
-  let d=document.getElementById("pwbox");if(d)d.remove();d=document.createElement("div");d.id="pwbox";d.className="a2hs";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");
+  let d=mkDialog("pwbox",null,{replace:true});
   const app=location.origin+location.pathname;
   const body=L("Hallo")+" "+String(nm||"").split(/\s+/)[0]+",\n\n"+L("dein Konto für die Crew-App von TSCHUGGER Tigerblood ist bereit:")+"\n"+app+"\n\n"+L("E-Mail")+": "+em+"\n"+L("Startpasswort")+": "+pw+"\n\n"+L("Beim ersten Anmelden legst du ein eigenes Passwort fest.")+"\n\n"+L("Bis bald am Set!");
   d.innerHTML='<div class="a2box acbox"><h3>'+L("Startpasswort")+'</h3><p>'+esc(nm||em)+'<br><small>'+esc(em)+'</small></p><p class="pwshow">'+esc(pw)+'</p><p class="ahint">'+L("Gilt nur für die erste Anmeldung. Danach muss die Person ein eigenes Passwort festlegen. Das Startpasswort wird nirgends gespeichert – jetzt weitergeben.")+'</p>'+
-    '<div class="a2b"><button type="button" data-pw="copy">'+L("Kopieren")+'</button><a class="lnk" href="'+esc(mailto(em,"startpw",{vorname:String(nm||"").split(/\s+/)[0],name:nm||"",passwort:pw}))+'">'+L("Per Mail schicken")+'</a><button type="button" class="lnk" data-pw="close">'+L("Schliessen")+'</button></div></div>';
+    '<div class="a2b"><button type="button" data-pw="copy">'+L("Kopieren")+'</button><a class="lnk" href="'+esc(mailto(em,"startpw",{vorname:String(nm||"").split(/\s+/)[0],name:nm||"",passwort:pw}))+'">'+L("Per Mail schicken")+'</a>'+dlgBtn("lnk",'data-pw="close"',"Schliessen")+'</div></div>';
   d.addEventListener("click",async e=>{const b=e.target.closest("[data-pw]");if(e.target===d||(b&&b.dataset.pw==="close")){d.remove();return}
     if(b&&b.dataset.pw==="copy"){try{await navigator.clipboard.writeText(pw);showMsg(L("Kopiert"),2000)}catch(_){showMsg(pw,8000)}}});
   document.body.appendChild(d);
@@ -167,7 +167,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pwshow]");
 function userInfo(r){
   const m=r.m;if(!m||!(isAdmin()||can("users.view")))return"";
   const g=(GENDERS.find(x=>x[0]===m.gender)||[])[1];const row=(k,v)=>v?'<div class="udl"><span>'+esc(L(k))+'</span><b>'+v+'</b></div>':'';
-  return row("Telefon",m.phone?'<a href="tel:'+esc(String(m.phone).replace(/[^\d+]/g,""))+'">'+esc(m.phone)+'</a>':"")+
+  return row("Telefon",m.phone?'<a href="tel:'+esc(telNum(m.phone))+'">'+esc(m.phone)+'</a>':"")+
     row("Kontakt-E-Mail",m.contactEmail&&m.contactEmail!==m.email?'<a href="mailto:'+esc(m.contactEmail)+'">'+esc(m.contactEmail)+'</a>':"")+
     row("Geburtsdatum",m.birthday?esc(m.birthday.split("-").reverse().join(".")):"")+row("Geschlecht",g?esc(L(g)):"")+row("Essen",esc(dietText(m)))+
     row("Willkommen",esc(m.welcomeAck?L("bestätigt")+" "+fmtD(m.welcomeAck):L("noch nicht bestätigt")));
@@ -176,18 +176,6 @@ function userInfo(r){
 /* new users get the role «Crew» automatically (an invitation creates userroles/{email} = crew) */
 async function assignCrew(em){em=lc(em);if(!em||ADMINS.includes(em)||(ADM.adm||[]).includes(em)||(ADM.ur||{})[em])return;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"userroles",em),{role:"crew",at:F.serverTimestamp()});ADM.ur=ADM.ur||{};ADM.ur[em]="crew"}catch(err){console.warn("crew role",err&&err.code||err)}}
-/* once (owner): everyone already in the app without a role gets «Crew», so nobody loses access */
-async function migrateCrew(){
-  if(!isOwner())return;try{if(localStorage.getItem("crewMigrated")==="1")return}catch(_){}
-  try{const {F,db}=await fb();const cfg=await F.getDoc(F.doc(db,"config","app"));if(cfg.exists()&&cfg.data().crewMigrated){try{localStorage.setItem("crewMigrated","1")}catch(_){}return}
-    const [m,i,a,u]=await Promise.all([F.getDocs(F.collection(db,"members")),F.getDocs(F.collection(db,"invites")),F.getDocs(F.collection(db,"admins")),F.getDocs(F.collection(db,"userroles"))]);
-    const has=new Set(u.docs.map(d=>d.id)),adm=new Set(a.docs.map(d=>d.id));
-    const ems=[...new Set(m.docs.map(d=>lc(d.data().email||"")).concat(i.docs.map(d=>d.id)))].filter(e=>e&&!has.has(e)&&!adm.has(e)&&!ADMINS.includes(e));
-    for(let k=0;k<ems.length;k+=400){const b=F.writeBatch(db);ems.slice(k,k+400).forEach(e=>b.set(F.doc(db,"userroles",e),{role:"crew",at:F.serverTimestamp()}));await b.commit()}
-    await F.setDoc(F.doc(db,"config","app"),{crewMigrated:true},{merge:true});try{localStorage.setItem("crewMigrated","1")}catch(_){}
-    if(ems.length)console.info("crew role assigned to",ems.length);ADM.loaded=false}
-  catch(err){console.warn("crew migration",err&&err.code||err)}
-}
 /* role picker (owner): Benutzer:in, Admin or one of the custom roles */
 const canRole=e=>!!e&&!ROOT_OWNERS.includes(e)&&!(ME&&lc(ME.email)===e)&&(isOwner()||(isAdmin()&&!ADMINS.includes(e))||(can("roles.assign")&&!ADMINS.includes(e)&&!ADM.adm.includes(e)));
 const roleOf=e=>{if(ADMINS.includes(e))return "owner";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
@@ -226,7 +214,7 @@ function rolesSec(){
     '<div class="arole fixed"><div class="arh"><div class="arn"><b>'+L("Owner")+'</b><small>'+L("Alles, auch Rollen, Admins, Sperren und Backup")+'</small></div></div></div>'+
     row("admin",L("Admin"),ADM.adminPerms||ADMIN_DEFAULT,true)+
     roles.map(ro=>row(ro.id,ro.name||ro.id,arr(ro.perms),false)).join("")+
-    (ADM.redit==="new"?'<form class="arolef new" data-role=""><h4>'+L("Neue Rolle")+'</h4><label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'"></label>'+permBoxes(VIEWPERMS)+'<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button><button type="button" class="lnk" data-redit="new">'+L("Abbrechen")+'</button></div></form>':
+    (ADM.redit==="new"?'<form class="arolef new" data-role=""><h4>'+L("Neue Rolle")+'</h4><label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'"></label>'+permBoxes(VIEWPERMS)+'<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button>'+dlgBtn("lnk",'data-redit="new"',"Abbrechen")+'</div></form>':
       (canRoleEdit()?'<button type="button" class="abtn" data-redit="new">+ '+L("Neue Rolle")+'</button>':''))+'</div>'+permAccessSec();
 }
 /* who has which permission: every option can be opened and lists the people (owners, admins, roles; people without a role where allowed) */
@@ -245,7 +233,7 @@ function permAccessSec(){
         .concat((ADM.roles||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(r=>[r.id,r.name||r.id,arr(r.perms).includes(k),canRoleEdit()&&(isAdmin()||(r.id!==MYROLE&&MYPERMS.includes(k)))]));
       const nr=noRoleOK(k);if(nr)rl.push(['',L("Keine Rolle"),!!(window.PUBV&&window.PUBV[nr]),false]);
       const edit=ADM.paccEdit===k,canEd=rl.some(x=>x[3]);
-      return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]||edit?' open':'')+'><summary><span>'+esc(L(t))+'</span>'+(canEd?'<button type="button" class="paccpen'+(edit?' on':'')+'" data-paccedit="'+k+'" aria-label="'+esc(L("Rollen ändern"))+'" title="'+esc(L("Rollen ändern"))+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'')+'<b class="pacn">'+w.length+'</b></summary>'+
+      return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]||edit?' open':'')+'><summary><span>'+esc(L(t))+'</span>'+(canEd?'<button type="button" class="paccpen'+(edit?' on':'')+'" data-paccedit="'+k+'" '+ariaTip(L("Rollen ändern"))+'><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'')+'<b class="pacn">'+w.length+'</b></summary>'+
         (edit?'<div class="paccr">'+rl.map(([id,n,on,ed])=>'<label class="ck paccrole'+(ed?'':' plock')+'"><input type="checkbox" data-pacc="'+esc(id)+'" data-perm="'+k+'"'+(on?' checked':'')+(ed?'':' disabled')+'> '+esc(n)+'</label>').join("")+'</div>'
           :'<div class="paccr">'+(rl.filter(x=>x[2]).map(x=>'<span class="ust role">'+esc(x[1])+'</span>').join("")||'<span class="ghint">'+esc(L("Keine Rolle"))+'</span>')+'</div>')+
         '<details class="paccp" data-sec="paccp-'+k+'"'+(SECS["paccp-"+k]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+w.length+')</summary>'+
@@ -296,7 +284,7 @@ function userList(rows,vis,o){
     const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.open.has(r.email),nm=r.name||cp.name||"";
     const badge=o.isAdm(r.email)?'<span class="ust adm">'+L(isOwn?"Owner":"Admin")+'</span>':(o.roleOf(r.email)?'<span class="ust role">'+esc(o.roleName(o.roleOf(r.email)))+'</span>':'<span class="ust norole">'+esc(L("Keine Rolle"))+'</span>');
     const acts=[
-      o.cEd&&(own||!isOwn)?'<button class="cico'+(ADM.edit===r.email?' on':'')+'" data-adm="edit" data-em="'+esc(r.email)+'" aria-label="'+esc(L(ADM.edit===r.email?"Schliessen":"Bearbeiten"))+'" title="'+esc(L(ADM.edit===r.email?"Schliessen":"Bearbeiten"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ADM.edit===r.email?'<path d="M18 6 6 18M6 6l12 12"/>':'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>')+'</svg></button>':'',
+      o.cEd&&(own||!isOwn)?'<button class="cico'+(ADM.edit===r.email?' on':'')+'" data-adm="edit" data-em="'+esc(r.email)+'" '+ariaTip(L(ADM.edit===r.email?"Schliessen":"Bearbeiten"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ADM.edit===r.email?'<path d="M18 6 6 18M6 6l12 12"/>':'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>')+'</svg></button>':'',
       own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'',
       own&&!r.m&&!isOwn?'<button data-adm="nomail" data-em="'+esc(r.email)+'">'+L("Ohne Bestätigungs-Mail freischalten")+'</button>':'',
       own&&!r.m&&!isOwn?'<button data-adm="startpw" data-em="'+esc(r.email)+'" data-nm="'+esc(r.name||"")+'">'+L("Startpasswort erzeugen")+'</button>':'',
@@ -312,8 +300,8 @@ function userList(rows,vis,o){
       (r.m&&r.m?'<div class="udl"><span>'+L("Einführungstour")+'</span><b>'+esc(tourInfo(r.m))+'</b></div>':'')+userInfo(r)+'</div>';
     return '<div class="ucard'+(r.m&&r.m.active!==true?' blocked':'')+(open?' open':'')+'">'+
       '<div class="uhd"><span class="uav'+(r.m&&isOnline(r.m)?' on':'')+'" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b></div><div class="ubadges">'+o.st(r)+badge+'</div>'+
-      (()=>{const ph=(r.m&&r.m.phone)||cp.phone||"",ce=(r.m&&r.m.contactEmail)||r.email;const bits=[r.m&&seenText(r.m)?'<span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'',ph?'<a href="tel:'+esc(String(ph).replace(/[^\d+]/g,""))+'">'+esc(ph)+'</a>':'',ce?'<a href="mailto:'+esc(ce)+'">'+esc(ce)+'</a>':''].filter(Boolean);return bits.length?'<div class="usub">'+bits.join(' · ')+'</div>':''})()+'</div>'+
-      (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" aria-label="'+esc(L("Aktionen"))+'" title="'+esc(L("Aktionen"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
+      (()=>{const ph=(r.m&&r.m.phone)||cp.phone||"",ce=(r.m&&r.m.contactEmail)||r.email;const bits=[r.m&&seenText(r.m)?'<span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'',ph?'<a href="tel:'+esc(telNum(ph))+'">'+esc(ph)+'</a>':'',ce?'<a href="mailto:'+esc(ce)+'">'+esc(ce)+'</a>':''].filter(Boolean);return bits.length?'<div class="usub">'+bits.join(' · ')+'</div>':''})()+'</div>'+
+      (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" '+ariaTip(L("Aktionen"))+'><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
       (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
       (open?'<div class="ubody">'+det+(o.cEd&&ADM.edit===r.email?editForm(r,true):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
     '</div>'};
@@ -322,7 +310,7 @@ function userList(rows,vis,o){
   const onl=rows.filter(r=>r.m&&isOnline(r.m)).map(r=>r.name||(crewPerson(r.email)||{}).name||r.email);
   return '<div class="admins ulist"><h3>'+L("Alle Benutzenden")+' <span class="ust">'+rows.length+'</span></h3>'+
 
-    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'<button type="button" class="cico uall" data-uall aria-label="'+esc(L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen"))+'" title="'+esc(L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(vis.length&&vis.every(r=>ADM.open.has(r.email))?'<path d="m7 11 5-5 5 5M7 18l5-5 5 5"/>':'<path d="m7 6 5 5 5-5M7 13l5 5 5-5"/>')+'</svg></button></div>'+
+    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'<button type="button" class="cico uall" data-uall '+ariaTip(L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(vis.length&&vis.every(r=>ADM.open.has(r.email))?'<path d="m7 11 5-5 5 5M7 18l5-5 5 5"/>':'<path d="m7 6 5 5 5-5M7 13l5 5 5-5"/>')+'</svg></button></div>'+
     (vis.length?'<div class="ucards">'+vis.map(card).join("")+'</div>':'<p class="ahint">'+L("Keine Treffer.")+'</p>')+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-auf]");if(b){ADM.uf=b.dataset.auf;render();return}
@@ -367,7 +355,7 @@ VIEWS.admin=function(){
   const srcInner=()=>{const x=typeof srcHTML==="function"?srcHTML():"";return x?x.replace(/^<details[^>]*><summary>[\s\S]*?<\/summary>/,'<div class="src srcin">').replace(/<\/details>$/,'</div>'):'<p class="ghint">–</p>'};
   /* Einstellungen: one form (id setform) whose fields sit in collapsible groups – all open by default */
   const sv='<div class="arb"><button type="submit" form="setform">'+L("Speichern")+'</button></div>';
-  const grp=(k,t,body)=>'<details class="admins asetd setgrp alangs" data-sec="set-'+k+'"'+(SECS["set-"+k]!==false?' open':'')+'><summary>'+L(t)+'</summary>'+(k==="up"?'<button type="button" class="uprf" data-dorefresh aria-label="'+esc(L("Daten jetzt aktualisieren"))+'" title="'+esc(L("Daten jetzt aktualisieren"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>':'')+body+'</details>';
+  const grp=(k,t,body)=>'<details class="admins asetd setgrp alangs" data-sec="set-'+k+'"'+(SECS["set-"+k]!==false?' open':'')+'><summary>'+L(t)+'</summary>'+(k==="up"?'<button type="button" class="uprf" data-dorefresh '+ariaTip(L("Daten jetzt aktualisieren"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>':'')+body+'</details>';
   const setSec=can("settings")?'<form id="setform" class="alangs" data-adm="langs" novalidate></form>'+
     grp("up","Aktualisieren",(own?upSec():'')+'<p class="ahint"><b>Dropbox</b> – '+L("Eingeschaltet werden Drehplan, Drehbuch, Crewliste, Callsheets und Motivliste jede Stunde automatisch neu geladen (nur gelesen).")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="au"'+(window.AUTOUPD!==false?' checked':'')+'> '+L("Daten aus der Dropbox automatisch laden")+'</label><label class="ck"><input form="setform" type="checkbox" name="fa"'+(window.FAILALARM!==false?' checked':'')+'> '+L("Alarm an Owner und Admins, wenn die Aktualisierung zweimal hintereinander fehlschlägt (Push-Nachricht)")+'</label></div>'+'<p class="ahint"><b>'+L("Motivliste")+'</b> – '+L("Link zum Google Sheet mit den Motiven (Spalten SCRIPT NAME, ADRESSE, SCENES, LINK; «Jeder mit dem Link darf ansehen»). Wird bei der nächsten stündlichen Aktualisierung übernommen. Leer = bisherige Liste.")+'</p><input form="setform" class="amap" type="url" name="sheet" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/…" value="'+esc(window.LOCSHEET||"")+'">'+sv)+
     grp("events","Termine",'<p class="ahint"><b>'+L("Eigene Termine")+'</b> – '+L("Wer das Recht «Eigene Termine erstellen» hat, kann in «Meine Termine» mit + Termine anlegen und wählen, wer sie sieht (alle, Rollen, Abteilungen oder Personen).")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="oe"'+(window.OWNEV!==false?' checked':'')+'> '+L("Eigene Termine erlauben")+'</label></div>'+(typeof gcalSetSec==="function"?gcalSetSec():'')+sv)+
@@ -507,7 +495,7 @@ function bdayHTML(){
   const ds=S.days.map(d=>d.date).filter(Boolean).sort();if(!ds.length)return"";
   const y=ds[0].slice(0,4),from=ds[0].slice(5),to=ds[ds.length-1].slice(5);
   const hits=bdayEntries().filter(x=>/^\d\d-\d\d$/.test(x.md||"")&&x.md>=from&&x.md<=to).sort((a,b)=>a.md<b.md?-1:a.md>b.md?1:String(a.name).localeCompare(String(b.name)));
-  return secOpen("bcal",L("Geburtstage während des Drehs")+(hits.length?" · "+hits.length:""),(hits.length?hits.map(x=>{const d=new Date(y+"-"+x.md+"T12:00:00");return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+pad2(d.getDate())+"."+pad2(d.getMonth()+1)+".")+'</span><b>'+esc(x.name)+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>'));
+  return secOpen("bcal",L("Geburtstage während des Drehs")+(hits.length?" · "+hits.length:""),(hits.length?hits.map(x=>{const d=new Date(y+"-"+x.md+"T12:00:00");return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+ddmm(d))+'</span><b>'+esc(x.name)+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>'));
 }
 /* birthday list for everyone (when the main admin allows it): bdays/{uid} = {name, md "MM-DD"}; no year, no other data */
 const PUBB={list:[],loaded:false,loading:false};
@@ -536,12 +524,12 @@ async function syncBdays(force){
   }catch(err){console.warn("bday sync",err)}
 }
 const ICO={acct:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6 1.6 0 3 .5 4.1 1.3M15.5 17.5l2 2 4-4.5"/>',bcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13.5c-.7-.7-.7-1.6 0-2.3.7.7.7 1.6 0 2.3zM12 14v3"/>',food:'<path d="M7 2v8M4 2v5a3 3 0 0 0 6 0V2M7 10v12M17 2c-2 1.5-3 4-3 7h3v13"/>',bday:'<path d="M4 21h16M5 21v-8h14v8M12 13V9M12 6.5c-1-1-1-2.5 0-3.5 1 1 1 2.5 0 3.5zM5 16c2.3 1.5 4.7 1.5 7 0s4.7-1.5 7 0"/>'};
-const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'" aria-pressed="'+ADMV[k]+'" aria-label="'+esc(L(t))+'" title="'+esc(L(t))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICO[k]+'</svg></button>';
+const togBtn=(k,t)=>'<button type="button" class="foodtog ico" data-admv="'+k+'" aria-pressed="'+ADMV[k]+'" '+ariaTip(L(t))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICO[k]+'</svg></button>';
 const AV=k=>!!ADMV[k]&&can(k==="food"?"crew.food":k==="bday"?"crew.bday":"users.view");
 window.crewHead=function(){
   if(!(can("crew.food")||can("crew.bday")||can("crew.vcf")||can("users.edit"))){if(!window.BDAYPUB||!ME)return"";if(!PUBB.loaded)loadPubBdays();return PUBB.loaded?bdayHTML():""}
   ensureAdm();
-  return '<div class="admv">'+(can("crew.food")?togBtn("food","Essen"):"")+(ADM.err?'<span class="admerr">'+L("Daten der Benutzer:innen nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+(can("crew.bday")?togBtn("bday","Geburtstage"):"")+(isOwner()||can("users.edit")?togBtn("acct","Kontoinfos"):"")+(!can("crew.vcf")?"":'<button type="button" class="foodtog ico vcall" data-vcall aria-label="'+esc(L("Alle Kontakte als VCF"))+'" title="'+esc(L("Alle Kontakte als VCF"))+'"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>')+'</div>'+(ADM.loaded?(AV("bday")?bdayHTML():"")+(AV("food")?cateringHTML():""):"");
+  return '<div class="admv">'+(can("crew.food")?togBtn("food","Essen"):"")+(ADM.err?'<span class="admerr">'+L("Daten der Benutzer:innen nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+(can("crew.bday")?togBtn("bday","Geburtstage"):"")+(isOwner()||can("users.edit")?togBtn("acct","Kontoinfos"):"")+(!can("crew.vcf")?"":'<button type="button" class="foodtog ico vcall" data-vcall '+ariaTip(L("Alle Kontakte als VCF"))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>')+'</div>'+(ADM.loaded?(AV("bday")?bdayHTML():"")+(AV("food")?cateringHTML():""):"");
 };
 document.addEventListener("click",e=>{if(!e.target.closest("[data-vcall]")||!can("crew.vcf"))return;const {text,n}=allVCards();if(!n)return;saveVcf(text,"TSCHUGGER Tigerblood Crew");showMsg(n+" "+L("Kontakte als VCF gespeichert."),4000)});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";if(ADMV[k]&&!ADM.loading&&Date.now()-(ADM.at||0)>60000)ADM.loaded=false;try{localStorage.setItem("admv2:"+k,ADMV[k]?"1":"0")}catch(_){}render()});
@@ -579,7 +567,7 @@ window.crewFill=function(p){
   return {phone:String(m.phone||"").trim(),email:String(m.contactEmail||m.email||"").trim()};
 };
 const CICO={edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',close:'<path d="M18 6 6 18M6 6l12 12"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',add:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5"/><path d="M19 8v6M16 11h6"/>'};
-const cico=(k,label,attrs,extra)=>'<button type="button" class="cico'+(extra||"")+'" '+attrs+' aria-label="'+esc(label)+'" title="'+esc(label)+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+CICO[k]+'</svg></button>';
+const cico=(k,label,attrs,extra)=>'<button type="button" class="cico'+(extra||"")+'" '+attrs+' '+ariaTip(label)+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+CICO[k]+'</svg></button>';
 window.crewExtra=function(p){
   /* «Kontoinfos» (owner and everyone allowed to change user data): account status, edit user data, role */
   const ACC=ADMV.acct&&(isOwner()||can("users.edit"));

@@ -59,7 +59,7 @@ function renderMy(){
   const me=myIdentity();const people=mailPeople().filter(x=>x.src&&x.src!=="user");
   const names=[...new Set(people.map(p=>p.name))].sort((a,c)=>a.localeCompare(c,LANG));
   MCNAMES=names;
-  const sel=!myAdmin()?'<p class="mcsel">'+esc(L("Termine für"))+' <b>'+esc(me?me.name:"–")+'</b></p>':'<div class="mcpick"><label class="mcsel">'+esc(L("Termine für"))+' <input type="search" list="mcnames" data-mcme autocomplete="off" placeholder="'+esc(L("Name tippen …"))+'" value="'+esc(me?me.name:"")+'"></label><datalist id="mcnames">'+names.map(n=>'<option value="'+esc(n)+'"></option>').join("")+'</datalist><button type="button" class="pillbtn mcself" data-mcself aria-label="'+esc(L("Meine eigenen Termine"))+'" title="'+esc(L("Meine eigenen Termine"))+'"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg></button></div>';
+  const sel=!myAdmin()?'<p class="mcsel">'+esc(L("Termine für"))+' <b>'+esc(me?me.name:"–")+'</b></p>':'<div class="mcpick"><label class="mcsel">'+esc(L("Termine für"))+' <input type="search" list="mcnames" data-mcme autocomplete="off" placeholder="'+esc(L("Name tippen …"))+'" value="'+esc(me?me.name:"")+'"></label><datalist id="mcnames">'+names.map(n=>'<option value="'+esc(n)+'"></option>').join("")+'</datalist><button type="button" class="pillbtn mcself" data-mcself '+ariaTip(L("Meine eigenen Termine"))+'><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg></button></div>';
   MYEV=me?myEvents(me).filter(evRecent):[];
   let h='<section class="mypage"><div class="myhead"><h2 class="pgt">'+esc(L("Meine Termine"))+'</h2>'+'<span class="oebtns">'+(window.gcalBtn?window.gcalBtn():'')+(window.ownEvAddBtn?window.ownEvAddBtn():'')+'</span>'+'</div><div class="myrow">'+sel+(me&&MYEV.length?'<button type="button" class="pillbtn" data-mcall>'+esc(L("Alle in den Kalender"))+' ('+MYEV.length+')</button>':'')+'</div>';
   if(!me)h+='<p class="ghint">'+esc(L(myAdmin()?"Bitte oben deinen Namen wählen.":"Dein Name wurde in der Crewliste nicht gefunden."))+'</p>';
@@ -67,7 +67,7 @@ function renderMy(){
     if(me.src||me.role)h+='<p class="ghint">'+esc([me.role,me.src].filter(Boolean).join(" · "))+'</p>';
     if(!MYEV.length)h+='<p class="ghint">'+esc(L("Keine kommenden Termine gefunden."))+'</p>';
     let last="";
-    MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'.</h4>';last=e.date}
+    MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>';last=e.date}
       h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}
   return h+'</section>';
 }
@@ -89,11 +89,11 @@ function renderPrePro(one,embedded){PPPEOPLE=null;
   /* admins: also use the app's user database (people not on the crew list); loads once, then re-renders */
   try{if(typeof window.canPerm==="function"&&perm("contacts.extra")&&typeof ADM!=="undefined"&&!ADM.loaded&&typeof ensureAdm==="function")ensureAdm()}catch(_){}
   const first=S.days.find(d=>d.kind==="shoot"),pm=(S.meta&&S.meta.prepro)||{};
-  const ppoBtn='<span class="pvb"><button class="pvbtn" data-ppo aria-pressed="'+!!S.ppo+'" aria-label="'+esc(L("Teilnehmende ein-/ausblenden"))+'" title="'+esc(L("Teilnehmende ein-/ausblenden"))+'"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.8.2 5 2 5 4.9"/></svg></button></span>';
+  const ppoBtn='<span class="pvb"><button class="pvbtn" data-ppo aria-pressed="'+!!S.ppo+'" '+ariaTip(L("Teilnehmende ein-/ausblenden"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.8.2 5 2 5 4.9"/></svg></button></span>';
   let h=embedded?'<section class="wkemb"><div class="dtitle"><h3 class="wkh">'+HIT('Weekly Schedule')+'</h3>'+ppoBtn+'</div>':'<div class="dayhead"><div><div class="dtitle"><h2>'+HIT('Prep')+'</h2>'+ppoBtn+'</div></div></div>';
   if(S.prepro.length){
     for(const d of (one?[one]:S.prepro)){const dt=new Date(d.date+"T12:00:00");
-      h+='<section class="ppday">'+(embedded?'':'<h3 class="ppd">'+WDL(dt)+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'.'+(d.label?' · '+esc(TX(d,"label")):'')+'</h3>')+
+      h+='<section class="ppday">'+(embedded?'':'<h3 class="ppd">'+WDL(dt)+' '+ddmm(dt)+(d.label?' · '+esc(TX(d,"label")):'')+'</h3>')+
         (d.older?'<p class="ghint ppold">'+esc(L("Aus einer älteren Version der Wochenplanung"))+': '+esc(String(d.older).replace(/\.pdf$/i,""))+'</p>':'')+
         (TXA(d,"notes").length?'<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>':'')+ppItems(d.items,d.date,'i');
       if(arr(d.parallel).length)h+='<h4 class="pph">'+L("Parallel")+'</h4>'+ppItems(arr(d.parallel),d.date,'p');
@@ -107,7 +107,7 @@ function renderPrePro(one,embedded){PPPEOPLE=null;
     if(pm.source)h+='<p class="ppsrc">'+L("Quelle")+': '+esc(Array.isArray(pm.sources)&&pm.sources.length>1?pm.sources.join(" · "):pm.source)+(pm.issued?' · '+L("Stand")+' '+esc(pm.issued):'')+'</p>';
   }else{
     h+='<div class="empty">'+L("Die Wochenplanung für Vorbereitung und Proben folgt, sobald sie in der Dropbox der Produktion verfügbar ist.")+'</div>';
-    for(const d of S.days.filter(d=>first&&d.date<first.date&&d.kind!=="shoot")){const dt=new Date(d.date+"T12:00:00");h+='<div class="offday"><b>'+WD[dt.getDay()]+' '+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'. · '+esc(d.label||"")+'</b>'+esc(TX(d,"info"))+'</div>'}
+    for(const d of S.days.filter(d=>first&&d.date<first.date&&d.kind!=="shoot")){const dt=new Date(d.date+"T12:00:00");h+='<div class="offday"><b>'+WD[dt.getDay()]+' '+ddmm(dt)+' · '+esc(d.label||"")+'</b>'+esc(TX(d,"info"))+'</div>'}
   }
   return h;
 }

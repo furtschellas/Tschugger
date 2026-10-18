@@ -6,7 +6,7 @@ function vCardText(p,g){
   const parts=String(p.name||"").trim().split(/\s+/),first=parts[0]||"",last=parts.slice(1).join(" ");
   const L1=["BEGIN:VCARD","VERSION:3.0","N:"+vEsc(last)+";"+vEsc(first)+";;;","FN:"+vEsc(p.name||""),"ORG:"+vEsc("TSCHUGGER Tigerblood")+(g&&g.dept?";"+vEsc(g.dept):"")];
   if(p.role)L1.push("TITLE:"+vEsc(p.role));
-  if(p.phone)L1.push("TEL;TYPE=CELL:"+String(p.phone).replace(/[^\d+]/g,""));
+  if(p.phone)L1.push("TEL;TYPE=CELL:"+telNum(p.phone));
   if(p.email)L1.push("EMAIL;TYPE=INTERNET:"+String(p.email).trim());
   L1.push("NOTE:"+vEsc("TSCHUGGER Tigerblood"+(p.role?" – "+p.role:"")),"END:VCARD");
   return L1.join("\r\n")+"\r\n";
@@ -15,7 +15,7 @@ function vCardText(p,g){
 function saveVCard(p,g){
   if(/Android/i.test(navigator.userAgent)){
     const x=(k,v)=>v?"S."+k+"="+encodeURIComponent(String(v).trim())+";":"";
-    location.href="intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;"+x("name",p.name)+x("phone",p.phone&&String(p.phone).replace(/[^\d+]/g,""))+"i.phone_type=2;"+x("email",p.email)+x("job_title",p.role)+x("company","TSCHUGGER Tigerblood")+"end";
+    location.href="intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;"+x("name",p.name)+x("phone",p.phone&&telNum(p.phone))+"i.phone_type=2;"+x("email",p.email)+x("job_title",p.role)+x("company","TSCHUGGER Tigerblood")+"end";
     /* if the contacts app did not open (browser blocks intents), fall back to the .vcf file */
     setTimeout(()=>{if(document.visibilityState==="visible"&&document.hasFocus())saveVcf(vCardText(p,g),String(p.name||"").replace(/[\\/:*?"<>|]/g,"").trim()||"Kontakt",true)},1500);
     return;
@@ -50,7 +50,7 @@ function renderCrew(){
     const gi=S.crew.indexOf(g);
     h+='<section class="dept"><h3 class="dh">'+esc(TX(g,"dept"))+'</h3><div class="people">'+ppl.map(p=>{
       /* vCard only on the website: the Claude viewer cannot save .vcf files, so there the copy button stays */
-      let ct='';const web=typeof window.crewHead==="function";const vc=!web?'':(p.phone||p.email)?'<button class="copy vcbtn" data-vc="'+gi+':'+g.people.indexOf(p)+'" aria-label="'+esc(L("Kontakt ins Telefon übernehmen"))+'" title="'+esc(L("Kontakt ins Telefon übernehmen"))+'"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard</button>':'';
+      let ct='';const web=typeof window.crewHead==="function";const vc=!web?'':(p.phone||p.email)?'<button class="copy vcbtn" data-vc="'+gi+':'+g.people.indexOf(p)+'" '+ariaTip(L("Kontakt ins Telefon übernehmen"))+'><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard</button>':'';
       /* wide screens: vCard after the job title; phones: next to the phone number */
       const vcW=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-wide"'),vcN=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-narrow"');
       const showP=vok("phone"),showE=vok("email");const vcW0=vcW;
@@ -283,7 +283,7 @@ function emptyHTML(what){
 function srcHTML(){
   const m=S.meta;if(!m||!m.sources)return"";
   const KIND={schedule:"Drehplan",crew:"Crewliste",locations:"Motivliste",info:"Infos",script:"Drehbuch",callsheet:"Callsheet",dispo:"Callsheet",prep:"Prep-Wochenplanung",fp:"Floorplans"};
-  const when=iso=>{const t=new Date(iso);return isNaN(t)?"":pad2(t.getDate())+"."+pad2(t.getMonth()+1)+". "+pad2(t.getHours())+":"+pad2(t.getMinutes())};
+  const when=iso=>{const t=new Date(iso);return isNaN(t)?"":ddmm(t)+" "+pad2(t.getHours())+":"+pad2(t.getMinutes())};
   const pm=m.prepro;const srcs=m.sources.slice();
   if(arr(m.floorplans).length&&!srcs.some(x=>x.kind==="fp"))srcs.push({kind:"fp",name:"3D/0_BlockingFloorplans/floorplans locations",stand:arr(m.floorplans).length+" PDF · "+arr(m.blocking).length+" Blocking"});
   if(pm&&pm.source&&!srcs.some(x=>x.kind==="prep"))srcs.push({kind:"prep",name:"3D/11_Planning Prep Rehearsals/"+pm.source,stand:pm.issued});

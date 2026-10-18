@@ -49,6 +49,10 @@ let FB=null,ME=null,MEMBER=null,DATAKEY=null,LASTSTAMP=null;
 /* stamp of the data this device has stored: if the file online has the same stamp, the 0.8 MB file is neither loaded nor decrypted again */
 try{if(localStorage.getItem(CACHE_KEY))LASTSTAMP=localStorage.getItem("dstamp:v1")||null}catch(_){}
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+/* JSON encrypted with the crew key (AES-GCM, 12-byte IV + ciphertext, base64): own events, push devices, broadcasts, calendar feed */
+async function ownDec(key,c){const raw=b64(c);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:raw.slice(0,12)},key,raw.slice(12))))}
+async function ownEnc(o){const key=await getDataKey(),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(o))));
+  const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);let bin="";for(let i=0;i<all.length;i+=8192)bin+=String.fromCharCode.apply(null,all.subarray(i,i+8192));return btoa(bin)}
 const lc=s=>String(s||"").trim().toLowerCase();
 /* main admin is fixed; further admins are listed by the main admin in Firestore admins/{email} */
 let COADMIN=false;

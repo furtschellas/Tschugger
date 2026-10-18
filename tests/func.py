@@ -332,6 +332,10 @@ async def owner_tests(p, port):
           const pop=!!document.getElementById('routepop');history.back();await w(300);const closed=!document.getElementById('routepop'),tab1=S.tab;
           history.back();await w(300);return {pop,closed,tab1,tab2:S.tab}})()""")
         check("Zurück-Knopf: schliesst zuerst das Fenster, dann zurück zur vorherigen Seite (Drehbuch → Drehplan)", bk == {"pop": True, "closed": True, "tab1": "script", "tab2": "plan"}, bk, public=True)
+        # back button top left in the app: the same step back
+        nb = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));const b=document.getElementById('navback');if(!b)return null;
+          S.tab='loc';render();await w(150);const en=!b.disabled;b.click();await w(350);return {ok:true,en,tab:S.tab,top:b.getBoundingClientRect().left<80}})()""")
+        check("Zurück-Knopf oben links: ein Schritt zurück (Locations → Drehplan)", nb == {"ok": True, "en": True, "tab": "plan", "top": True}, nb, public=True)
         ex = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));let n=0;while(!(history.state&&history.state.base)&&n++<60){history.back();await w(120)}
           const base=!!(history.state&&history.state.base);const msg=(document.getElementById('refmsg')||{}).textContent||'';await w(2800);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base)}})()""")
         check("Zurück-Knopf auf der ersten Seite: Hinweis, erst zweimal zurück verlässt die App", ex["base"] and ex["hint"] and ex["guard"], ex, public=True)
@@ -437,7 +441,6 @@ async def owner_tests(p, port):
         lg = await E("(()=>{const b=document.querySelector('#view details[data-lsec=\"tst\"]');return {su:b.querySelectorAll('.tstsu').length,bad:b.querySelectorAll('.tstsu.bad[open]').length,open:b.open}})()")
         check("Log: Testresultate je Teil, alles zugeklappt bis man es öffnet", lg == {"su": 2, "bad": 0, "open": False}, lg, public=True)
         await E("window.CHATURL=window.CHATURL||'https://worker.test';render()"); await pg.wait_for_timeout(300)
-        check("Log/Tests: kein Knopf «Alle auf- oder zuklappen» oben (jedes Menü hat seinen eigenen)", not await E("!!document.querySelector('#view [data-logall]')"))
         # opening Log/Tests starts the tests again; while a test runs, its open/close button shows the progress as a ring
         await E("RTS.at=0;S.tab='today';render()"); await pg.wait_for_timeout(100); await E("S.tab='admin';ADM.sub='log';render()"); await pg.wait_for_timeout(2500)
         check("Log/Tests öffnen startet «Berechtigungen testen» und «Dokumente prüfen» neu", await E("Date.now()-RTS.at<10000&&Date.now()-DCK.at<10000&&S.tab==='admin'&&ADM.sub==='log'"))

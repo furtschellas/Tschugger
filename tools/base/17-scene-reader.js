@@ -5,7 +5,6 @@ function scriptData(){
   if(!SCRIPTP)SCRIPTP=(async()=>{
     let list=null;
     if(typeof window.loadScriptData==="function")list=await window.loadScriptData();
-    else if(DB){const q=await DB.collection("script").orderBy("order").get();list=rows(q)}
     list=Array.isArray(list)?list:[];if(list.length)SCRIPT=list; /* never cache an empty result */
     return list;
   })().finally(()=>{SCRIPTP=null});
@@ -46,7 +45,7 @@ function scriptHTML(t){
 }
 function sceneSheet(){
   let s=document.getElementById("scn");
-  if(!s){s=document.createElement("div");s.id="scn";s.className="scrn";s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");document.body.appendChild(s);
+  if(!s){s=mkDialog("scn",null,{cls:"scrn"});document.body.appendChild(s);
     s.addEventListener("click",e=>{const n=e.target.closest("[data-scene]");if(n){e.stopPropagation();openScene(n.dataset.scene);return}if(e.target===s||e.target.closest("[data-scnclose]"))closeScene()});
     document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!e.defaultPrevented&&!s.hidden)closeScene()})}
   return s;
@@ -88,7 +87,6 @@ function pdfBtns(b){const docs=typeof window.blkImg==="function"?pdfDocs(b):[],o
   for(const [k,n] of docs){done.add(pdfLbl(k));out.push('<button type="button" class="fpl scp" data-blkpdf="'+esc(b.name)+'" data-pdfn="'+esc(k)+'" title="'+esc(k+" · "+n+" "+L(n===1?"Seite":"Seiten"))+'">'+esc(pdfLbl(k))+'</button>')}
   for(const f of arr(b.pdfs))if(!done.has(f.l))out.push('<a class="fpl scp" href="'+esc(safeUrl(f.u))+'" target="_blank" rel="noopener noreferrer">'+esc(f.l)+'</a>');
   return out}
-window.pdfBtns=pdfBtns;
 function itemFp(it,lead){return fpLinks(fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")),blkFor(it.sc),lead)}
 function factsHTML(hits){
   const show=hits.slice().sort((a,b)=>a.d.date<b.d.date?-1:a.d.date>b.d.date?1:String(a.it.t).localeCompare(String(b.it.t)));
@@ -96,7 +94,7 @@ function factsHTML(hits){
   return '<div class="spf">'+show.map(({d,u,it})=>{
     const dt=new Date(d.date+"T12:00:00");
     const kv=[[L("Szene"),it.sc],["I/E",it.ie],[L("Seiten"),it.pg],[L("Drehzeit"),it.dur],[L("Regie"),it.dir],["FX",it.fx],[L("Kompars:innen"),it.xx]].filter(k=>k[1]);
-    return '<div class="spf1"><div class="spfd"><span class="spfdd"><b>'+esc(d.short||d.label)+'</b> · '+esc(WD[dt.getDay()]+" "+pad2(dt.getDate())+"."+pad2(dt.getMonth()+1)+".")+'</span>'+(it.t?'<span class="spft">'+esc(it.t)+(endTime(it.t,it.dur)?'–'+endTime(it.t,it.dur):'')+'</span>':'')+(u!=="1"?'<span class="spfu">'+UNAME[u]+' Unit</span>':'')+'</div>'+
+    return '<div class="spf1"><div class="spfd"><span class="spfdd"><b>'+esc(d.short||d.label)+'</b> · '+esc(WD[dt.getDay()]+" "+ddmm(dt))+'</span>'+(it.t?'<span class="spft">'+esc(it.t)+(endTime(it.t,it.dur)?'–'+endTime(it.t,it.dur):'')+'</span>':'')+(u!=="1"?'<span class="spfu">'+UNAME[u]+' Unit</span>':'')+'</div>'+
       (it.set?'<div class="spfs">'+esc(it.set)+'</div>':'')+
       '<div class="spfk">'+kv.map(k=>'<span><i>'+esc(cap(String(k[0])))+'</i>'+esc(k[1])+'</span>').join("")+'</div>'+
       (it.d?'<div class="spfx">'+esc(TX(it,"d"))+'</div>':'')+
