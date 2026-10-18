@@ -659,6 +659,7 @@ Object.assign(I18N,{
  "Alle Szenen des Drehplans stehen in der Motivliste.":{fr:"Toutes les scènes du plan figurent dans la liste des décors.",it:"Tutte le scene del piano sono nella lista location.",en:"All scenes of the schedule are in the location list."},
  "Motive im Drehplan ohne passenden Eintrag in der Motivliste:":{fr:"Décors du plan sans entrée correspondante dans la liste :",it:"Location nel piano senza voce corrispondente nella lista:",en:"Locations in the schedule without a matching entry in the location list:"},
  "Szenen in der Motivliste, die (noch) nicht im Drehplan stehen:":{fr:"Scènes de la liste des décors pas (encore) au plan :",it:"Scene nella lista location non (ancora) nel piano:",en:"Scenes in the location list not (yet) in the schedule:"},
+ "genaue Reihenfolge laut 2nd-Unit-Planung":{fr:"ordre exact selon le planning 2nd unit",it:"ordine esatto secondo il piano 2nd unit",en:"exact order from the 2nd unit planning"},
  "Noch keine Drehtage.":{fr:"Pas encore de jours de tournage.",it:"Ancora nessun giorno di riprese.",en:"No shooting days yet."},
  "Drehplan ↔ Drehbuch":{fr:"Plan ↔ scénario",it:"Piano ↔ sceneggiatura",en:"Schedule ↔ script"},
  "Szenen im Drehbuch, die im Drehplan fehlen:":{fr:"Scènes du scénario absentes du plan :",it:"Scene della sceneggiatura assenti dal piano:",en:"Script scenes missing from the schedule:"},
