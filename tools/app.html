@@ -713,6 +713,8 @@ html{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--accent) 55%,tr
 ::-webkit-scrollbar{width:8px;height:8px;background:transparent}::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--accent) 50%,transparent);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:padding-box}::-webkit-scrollbar-button,::-webkit-scrollbar-corner{display:none;background:transparent}
+.sct .hen{display:none}.svwrap:not(.sv-no-e) .sct.en .hde,.scrn:not(.sv-no-e) .sct.en .hde{display:none}.svwrap:not(.sv-no-e) .sct.en .hen,.scrn:not(.sv-no-e) .sct.en .hen{display:inline}
+.sv-no-box .svb .sven{opacity:1!important;pointer-events:auto!important}
 </style>
 
 <div class="wrap">
@@ -834,13 +836,13 @@ function castChips(ids){
 try{const x=JSON.parse(localStorage.getItem("uf")||"null");if(x&&typeof x==="object")for(const k of ["1","2","3"])if(typeof x[k]==="boolean")S.uf[k]=x[k]}catch(_){}
 /* participants on PREP: hidden by default on phones, shown on wider screens; the choice is kept per device */
 S.ppo=false;try{const v=localStorage.getItem("ppo");S.ppo=v===null?!!(window.matchMedia&&matchMedia("(min-width: 820px)").matches):v==="1"}catch(_){}
-S.pv={i:true,d:true,a:true,c:true,b:true,inf:true,g:true};try{const x=JSON.parse(localStorage.getItem("pv")||"null");if(x&&typeof x==="object")for(const k of ["i","d","c","a","b","inf","g"])if(typeof x[k]==="boolean")S.pv[k]=x[k]}catch(_){}
+S.pv={i:true,d:true,a:true,c:true,b:true,inf:true,g:true};try{const x=JSON.parse(localStorage.getItem("pv")||"null");if(x&&typeof x==="object")for(const k of ["i","d","c","inf","a","b","g"])if(typeof x[k]==="boolean")S.pv[k]=x[k]}catch(_){}
 const PVICO={art:'<rect x="5" y="3" width="14" height="16" rx="1.5"/><path d="M12 3v16M10 10v2.5M14 10v2.5M7 19v2M17 19v2"/>',hmu:'<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>',inf:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/>',g:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',b:'<path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>',i:'<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',d:'<path d="M4 6h16M4 10h16M4 14h10M4 18h7"/>',a:'<path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/>',c:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.6c3 .1 5.5 2 5.5 5.4"/>'};
-S.sv={box:true,t:true,e:true,i:true,d:true,c:true,a:true,b:true,inf:true};try{const x=JSON.parse(localStorage.getItem("sv")||"null");if(x&&typeof x==="object")for(const k in S.sv)if(typeof x[k]==="boolean")S.sv[k]=x[k]}catch(_){}
-const SVKEYS=["t","e","i","d","c","a","b","inf"];
+S.sv={box:true,t:true,e:false,i:true,d:true,c:true,a:true,b:true,inf:true};try{const x=JSON.parse(localStorage.getItem("sv")||"null");if(x&&typeof x==="object")for(const k in S.sv)if(typeof x[k]==="boolean")S.sv[k]=x[k]}catch(_){}
+const SVKEYS=["t","e","i","d","c","inf","a","b"];
 const SVICO={t:'<rect x="3" y="5" width="13" height="12" rx="2"/><path d="M3 9h13M7 3v4M12 3v4"/><circle cx="17" cy="17" r="4.5"/><path d="M17 15v2.2l1.4 1"/>'};
-SVICO.e='<text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" font-family="system-ui,sans-serif" fill="currentColor" stroke="none">EN</text>';
-const SVLBL={t:"Drehtag & Zeit",e:"Englische Szenenbezeichnung"};
+SVICO.e='<rect x="3" y="6" width="18" height="12" rx="1.6" fill="#fff" stroke="none"/><path d="M12 6v12M3 12h18" stroke="#cf142b" stroke-width="3" stroke-linecap="butt"/><rect x="3" y="6" width="18" height="12" rx="1.6" stroke="currentColor" stroke-width="1.2"/>';
+const SVLBL={t:"Drehtag & Zeit",e:"Englische Szenentitel"};
 S.lv={i:true,a:true};try{const x=JSON.parse(localStorage.getItem("lv")||"null");if(x&&typeof x==="object")for(const k in S.lv)if(typeof x[k]==="boolean")S.lv[k]=x[k]}catch(_){}
 const LVICO={m:'<path d="M3.5 20.5h17"/><path d="M5.5 20.5V9l6.5-4.5L18.5 9v11.5"/><path d="M10 20.5v-5h4v5"/>'};
 const LVLBL={i:"Info",a:"Adresse",m:"Motive"};
@@ -856,13 +858,16 @@ function svButtons(nav){
 }
 function svToggles(){
   const btn=(k,ico,lbl,cls)=>'<button class="pvbtn'+(cls||'')+'" data-sv="'+k+'" aria-pressed="'+S.sv[k]+'" '+ariaTip(L(lbl))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ico+'</svg></button>';
-  return btn("box",'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/>',"Infobox"," svbox")+'<span class="svsep" aria-hidden="true"></span>'+SVKEYS.map(k=>btn(k,SVICO[k]||PVICO[k],SVLBL[k]||PVLBL[k],"")).join("");
+  return btn("e",SVICO.e,SVLBL.e," sven")+btn("box",'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/>',"Infobox"," svbox")+'<span class="svsep" aria-hidden="true"></span>'+SVKEYS.filter(k=>k!=="e").map(k=>btn(k,SVICO[k]||PVICO[k],SVLBL[k]||PVLBL[k],"")).join("")+pvAllBtn("data-svall",SVKEYS.filter(k=>k!=="e").every(k=>S.sv[k])&&S.sv.box);
 }
 function svApply(){document.querySelectorAll(".svwrap").forEach(w=>w.className="svwrap "+svClasses());document.querySelectorAll(".svwrap [data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const s=document.getElementById("scn");if(!s)return;s.className="scrn "+svClasses();s.querySelectorAll("[data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const t=s.querySelector("[data-spt]");if(t)t.setAttribute("aria-pressed",String(spTheme()==="light"))}
 const PVLBL={i:"Szeneninfo",d:"Szenenbeschrieb",a:"Adresse",c:"Cast",b:"Blocking",inf:"Szenen-Details",g:"Änderungen"};
 /* schedule display options only toggle CSS classes: no re-render, no scroll jump */
-function pvApply(){const b=document.body;for(const k of ["i","d","c","a","b","inf","g"])b.classList.toggle("pv-no-"+k,!S.pv[k]);document.querySelectorAll("[data-pv]").forEach(x=>x.setAttribute("aria-pressed",String(!!S.pv[x.dataset.pv])))}
-function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","a","b","inf","g"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" '+ariaTip(L(PVLBL[k]))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+(post?'<span class="pvunits">'+post+'</span>':'')+'</span>'}
+function pvApply(){const b=document.body;for(const k of ["i","d","c","inf","a","b","g"])b.classList.toggle("pv-no-"+k,!S.pv[k]);document.querySelectorAll("[data-pv]").forEach(x=>x.setAttribute("aria-pressed",String(!!S.pv[x.dataset.pv])));document.querySelectorAll("[data-pvall]").forEach(x=>x.outerHTML=pvAllBtn("data-pvall",PVKEYS.every(k=>S.pv[k])))}
+function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","inf","a","b","g"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" '+ariaTip(L(PVLBL[k]))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+pvAllBtn("data-pvall",PVKEYS.every(k=>S.pv[k]))+(post?'<span class="pvunits">'+post+'</span>':'')+'</span>'}
+/* «everything on / off» at the right end of a button row */
+const PVKEYS=["i","d","c","inf","a","b","g"];
+function pvAllBtn(attr,on){return '<button class="pvbtn pvall" '+attr+' aria-pressed="'+on+'" '+ariaTip(L(on?"Alles zuklappen":"Alles aufklappen"))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(on?'<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>':'<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>')+'</svg></button>'}
 /* drive time shown: up to 20 min +3 min buffer, longer drives +15 % (rounded up) */
 function driveMin(m){m=+m||0;return m>20?Math.ceil(m*1.15):m+3}
 /* scene details from the schedule: meta.bd["date|scene"], shown at the end of each scene as running text («Topic:» underlined, as in the PDF),
@@ -1618,7 +1623,7 @@ function renderScript(){
   }
   let last="";try{last=localStorage.getItem("lastsc")||""}catch(_){}
   const lx=last&&SCRIPT.find(x=>x.sc===last);
-  return '<div class="svwrap '+svClasses()+'"><h3 class="dh">'+esc(L("Drehbuch"))+'</h3>'+(lx?'<button class="lastsc" data-scene="'+esc(lx.sc)+'"><span>'+esc(L("Zuletzt gelesen"))+'</span><b>'+esc(lx.sc)+' · '+esc(spHead(lx))+'</b><i aria-hidden="true">›</i></button>':'')+
+  return '<div class="svwrap '+svClasses()+'"><h3 class="dh">'+esc(L("Drehbuch"))+'</h3>'+(lx?'<button class="lastsc" data-scene="'+esc(lx.sc)+'"><span>'+esc(L("Zuletzt gelesen"))+'</span><b>'+esc(lx.sc)+' · '+spTitle(lx)+'</b><i aria-hidden="true">›</i></button>':'')+
     '<div class="svb svtab">'+ufButtons()+'<span class="svfill"></span>'+svToggles()+'</div>'+
     searchBox("sq",S.sq,L("Szene, Motiv, Rolle, Text …"))+modeChips(S.sqm,"data-sqm")+'<div id="scres">'+scriptResults()+'</div></div>';
 }
@@ -1653,7 +1658,7 @@ function scriptResults(){
   const vis=rows.slice(0,S.sqn||(terms.length?100:40));
   return cnt+'<ul class="sclist">'+vis.map(x=>{
     const hits=hitsOf(x);
-    return '<li class="scard"><button class="scli" data-scene="'+esc(x.sc)+'"><span class="sclin">'+esc(x.sc)+'</span><span class="sclih">'+esc(spHead(x))+'</span>'+spTod(x)+
+    return '<li class="scard"><button class="scli" data-scene="'+esc(x.sc)+'"><span class="sclin">'+esc(x.sc)+'</span><span class="sclih">'+spTitle(x)+'</span>'+spTod(x)+
       (hits.length?'':'<span class="sclid"><i>'+esc(L("nicht geplant"))+'</i></span>')+(rIds.length&&rbOn?roleBadges(x.sc,rIds):'')+(terms.length&&!rIds.length?(snippet(x.text,terms)||'<span class="sclsn">'+esc(L("Treffer im Drehplan (Motiv, Cast oder Beschreibung)"))+'</span>'):'')+'</button>'+(hits.length?factsHTML(hits):blkRow(x.sc))+'</li>';
   }).join("")+'</ul>'+(rows.length>vis.length?'<button class="sp-more" data-sqmore>'+esc(L("Weitere Szenen anzeigen"))+' ('+(rows.length-vis.length)+')</button>':'');
 }
@@ -1900,6 +1905,14 @@ function factsHTML(hits){
 }
 const TOD_RE=/[-–]\s*(DAY|NIGHT|EVENING|MORNING|DAWN|DUSK|CONTINUOUS|LATER|SAME|NOON|MIDDAY|AFTERNOON|SUNSET|SUNRISE|TAG|NACHT|ABEND|MORGEN)\b/i;
 /* slugline as in the script; if it has no time of day, add it from the schedule (D/N/Ev/Mo) */
+/* English scene heading from the schedule («EXT. VALAIS - SIDE VALLEY ROAD - MORNING»); shown instead of the German one with the EN button */
+function spHeadEn(x){const want=norm(x.sc);let it=null;
+  for(const d of S.days){for(const [,its] of unitLists(d)){it=its.find(i=>i.sc&&norm(i.sc)===want&&i.set);if(it)break}if(it)break}
+  if(!it)return "";const ie=String(it.ie||""),io=(ie.split("/")[0]||"").toUpperCase(),t=ie.split("/")[1]||"";
+  const pre=/I\+E|E\+I/.test(io)?"INT./EXT.":io.startsWith("I")?"INT.":io.startsWith("E")?"EXT.":"";
+  const tod=/^N/i.test(t)?"NIGHT":/^Ev/i.test(t)?"EVENING":/^Mo/i.test(t)?"MORNING":/^D/i.test(t)?"DAY":"";
+  return [pre,String(it.set).trim()].filter(Boolean).join(" ")+(tod?" - "+tod:"")}
+function spTitle(x){const de=spHead(x),en=spHeadEn(x);return '<span class="sct'+(en?' en':'')+'"><span class="hde">'+esc(de)+'</span>'+(en?'<span class="hen">'+esc(en)+'</span>':'')+'</span>'}
 function spHead(x){
   const h=String(x.head||"").trim();if(!h||TOD_RE.test(h))return h;
   const want=norm(x.sc);let ie="";
@@ -1996,7 +2009,7 @@ function openGallery(b,start,pdf){
 /* the scene in the shooting schedule (for the floorplan of its location) */
 function scItem(sc){const k=String(sc||"").toLowerCase().replace(/\s+/g,"");if(!k)return null;for(const d of S.days||[])for(const it of arr(d.items).concat(arr((d.unit2||{}).items),arr((d.unit3||{}).items)))if(String(it.sc||"").toLowerCase().replace(/\s+/g,"")===k)return it;return null}
 function blkRow(sc){const it=scItem(sc);const h=fpLinks(it?fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")):[],blkFor(sc));return h?'<div class="spblk">'+h+'</div>':''}
-function spPage(x,ctx,list,reqSc){const f=sceneFacts(reqSc||x.sc,x,list);return '<div class="sp-scene">'+(f||blkRow(x.sc))+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+esc(spHead(x))+'</span><span class="spr">'+spTod(x)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
+function spPage(x,ctx,list,reqSc){const f=sceneFacts(reqSc||x.sc,x,list);return '<div class="sp-scene">'+(f||blkRow(x.sc))+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+spTitle(x)+'</span><span class="spr">'+spTod(x)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
 function spMore(dir,list,j){
   const y=list[j];if(!y)return'';
   return '<button type="button" class="sp-more" data-spmore="'+dir+'" data-spi="'+j+'">'+(dir==="prev"?'▲ ':'')+esc(L(dir==="prev"?"Vorherige Szene lesen":"Folgende Szene lesen"))+' · '+esc(y.sc)+(dir==="next"?' ▼':'')+'</button>';
@@ -2060,6 +2073,8 @@ const ACTIONS=[
   ["[data-spt]",()=>{const nx=spTheme()==="light"?"dark":"light";SPT=nx===getTheme()?null:nx;store("spt",SPT||"");svApply()}],
   ["[data-lv]",b=>{const k=b.dataset.lv;S.lv=Object.assign({},S.lv,{[k]:!S.lv[k]});store("lv",JSON.stringify(S.lv));document.querySelectorAll(".lvwrap").forEach(w=>w.className="lvwrap "+lvClasses());document.querySelectorAll("[data-lv]").forEach(x=>x.setAttribute("aria-pressed",String(S.lv[x.dataset.lv])))}],
   ["[data-sv]",b=>{const k=b.dataset.sv;S.sv=Object.assign({},S.sv,{[k]:!S.sv[k]});store("sv",JSON.stringify(S.sv));svApply()}],
+  ["[data-pvall]",b=>{const on=!PVKEYS.every(k=>S.pv[k]);S.pv=Object.assign({},S.pv);PVKEYS.forEach(k=>S.pv[k]=on);store("pv",JSON.stringify(S.pv));pvApply();render()}],
+  ["[data-svall]",b=>{const ks=SVKEYS.filter(k=>k!=="e").concat("box"),on=!ks.every(k=>S.sv[k]);S.sv=Object.assign({},S.sv);ks.forEach(k=>S.sv[k]=on);store("sv",JSON.stringify(S.sv));svApply();render()}],
   ["[data-pv]",b=>{const k=b.dataset.pv;S.pv=Object.assign({},S.pv,{[k]:!S.pv[k]});store("pv",JSON.stringify(S.pv));pvApply()}],
   ["[data-goto]",b=>{S.day=b.dataset.goto;S.tab="plan";S.pu={"1":true,"2":true,"3":true};window.scrollTo(0,0);render()}],
 ];

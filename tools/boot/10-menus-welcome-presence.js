@@ -105,7 +105,7 @@ async function markSeen(){
   if(!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
   try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{lastSeen:F.serverTimestamp(),app:appKind()})}catch(err){console.warn("seen",err&&err.code||err)}
 }
-setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading&&Date.now()-(ADM.at||0)>=300e3){ADM.at=Date.now();ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
+setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading&&Date.now()-(ADM.at||0)>=900e3){   /* the user list is read again at most every 15 minutes (Firebase quota) */ADM.at=Date.now();ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
 function startSeen(){clearInterval(SEENT);SEENAT=0;markSeen();SEENT=setInterval(markSeen,120e3)}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")markSeen()});
 const seenMs=m=>{const j=m&&m.lastSeen;return j?(j.seconds?j.seconds*1000:(j.toMillis?j.toMillis():Date.parse(j)||0)):0};

@@ -132,7 +132,9 @@ async function notifyApproved(em,q){
 setInterval(()=>{if(ME&&isAdmin()&&document.visibilityState==="visible")checkRequests()},300000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&can("users.requests"))checkRequests()});
 async function checkRequests(){
-  try{const {F,db}=await fb();const r=await F.getDocs(F.collection(db,"requests"));const n=r.size||r.docs.length;
+  try{const {F,db}=await fb();let n=0;   /* only the number: one read instead of all requests (Firebase quota) */
+    if(typeof F.getCountFromServer==="function"){try{n=(await F.getCountFromServer(F.collection(db,"requests"))).data().count||0}catch(_){const r=await F.getDocs(F.collection(db,"requests"));n=r.size||r.docs.length}}
+    else{const r=await F.getDocs(F.collection(db,"requests"));n=r.size||r.docs.length}
     const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",n>0);b.dataset.n=n||"";b.setAttribute("aria-label",L("App-Verwaltung")+(n?" · "+n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."):""))}
     if(n&&!checkRequests.told){checkRequests.told=true;showMsg(n+" "+L(n===1?"offene Zugangsanfrage – siehe App-Verwaltung.":"offene Zugangsanfragen – siehe App-Verwaltung."),7000)}}catch(_){}
 }

@@ -90,7 +90,11 @@ async function fbInit(){
   const base="https://www.gstatic.com/firebasejs/"+FB_V+"/";
   const [app,auth,fs]=await withTimeout(Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]),20000,"firebase");
   const a=app.initializeApp(FB_CONFIG);
-  FB={app:a,AP:app,A:auth,F:auditWrap(fs),auth:auth.getAuth(a),db:fs.getFirestore(a)};
+  /* data cache on the device (per signed-in person): reopening the app reads only what changed instead of everything (Firebase quota);
+     if the browser cannot keep it, Firebase falls back to memory by itself */
+  let db=null;try{if(fs.initializeFirestore&&fs.persistentLocalCache)db=fs.initializeFirestore(a,{localCache:fs.persistentLocalCache(fs.persistentMultipleTabManager?{tabManager:fs.persistentMultipleTabManager()}:{})})}catch(_){db=null}
+  if(!db)db=fs.getFirestore(a);
+  FB={app:a,AP:app,A:auth,F:auditWrap(fs),auth:auth.getAuth(a),db};
   FB.auth.languageCode=LANG;
   return FB;
 }

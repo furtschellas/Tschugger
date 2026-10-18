@@ -77,6 +77,50 @@ def _note(what, e):
     print(f"::warning::{what}: {type(e).__name__} ({where})")
 
 
+DEVS = os.environ.get("PUSH_DEVS", "devices.json")
+DEVGONE = set()
+
+
+def push_devices():
+    """the registered devices: all of them at most once an hour (Firebase quota); in between only the ones changed since the last
+    run (query on «at», which the app sets on every change) – kept in devices.json (contents stay encrypted with the crew key)"""
+    now = time.time()
+    try: c = json.load(open(DEVS))
+    except Exception: c = None
+    docs = None
+    if c and now - c.get("full", 0) < 3600 and c.get("docs") is not None:
+        try:
+            since = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(c.get("at", now) - 120))
+            docs = dict((d["id"], d["f"]) for d in c["docs"])
+            n = 0
+            for did, f, _ in fsadmin.query_since("push", "at", since): docs[did] = f; n += 1
+            c["at"] = now
+            print("• Geräte aus dem Zwischenspeicher (%d), %d geändert" % (len(docs), n))
+        except Exception as e:
+            print("• Geräte-Zwischenspeicher nicht nutzbar:", type(e).__name__); docs = None
+    if docs is None:
+        docs = {did: f for did, f, _ in fsadmin.list_docs("push")}
+        c = {"full": now, "at": now}
+        print("• Alle Geräte gelesen (%d)" % len(docs))
+    out = [(k, v, None) for k, v in docs.items()]
+    try:
+        c["docs"] = [{"id": k, "f": v} for k, v in docs.items() if k not in DEVGONE]
+        PEND_DEVS[:] = [c]
+    except Exception: pass
+    return out
+
+
+PEND_DEVS = []
+
+
+def save_devices():
+    try:
+        if PEND_DEVS:
+            c = PEND_DEVS[0]; c["docs"] = [d for d in c.get("docs") or [] if d["id"] not in DEVGONE]
+            json.dump(c, open(DEVS, "w"), default=str)
+    except Exception: pass
+
+
 def main():
     import signal
     signal.signal(signal.SIGTERM, lambda *a: sys.exit(1))   # job timeout: still save sent.json (finally below)
@@ -118,7 +162,7 @@ def main():
     got = {}   # message → devices that received it now (saved in «done»: the history shows who got it)
     bad = set()   # messages with failed devices: not finished, tried again next run
     try:
-        for did, f, _ in fsadmin.list_docs("push"):
+        for did, f, _ in push_devices():
           try:
             c = f.get("c")
             if not c: continue
@@ -157,6 +201,7 @@ def main():
             if gone:
                 n_gone += 1
                 if sa: fsadmin.delete_doc("push/" + did)   # the device removed the app or turned push off in the browser
+                DEVGONE.add(did)
           except Exception as e:   # one faulty device or entry must not stop the others
             n_err += 1; _note("Gerät übersprungen", e)
         for bid, b, done, ut in bcs:
@@ -167,6 +212,7 @@ def main():
             if upd: fsadmin.patch_doc("broadcasts/" + bid, upd)
     finally:   # always remember what was sent, also after an error or timeout – nothing is sent twice
         json.dump(sent, open(SENT, "w"))
+        save_devices()
     print(f"• {n_dev} Geräte · {n_sent} verschickt · {n_err} Fehler (nächster Lauf) · {n_late} zu spät verworfen · {n_gone} abgemeldet"
           + ("" if sa else " · ohne Dienstkonto (FIREBASE_SA fehlt)"))
     if bcs:   # visible in the run overview (only numbers): which message reached how many devices

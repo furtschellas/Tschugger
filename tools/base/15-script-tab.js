@@ -27,7 +27,7 @@ function renderScript(){
   }
   let last="";try{last=localStorage.getItem("lastsc")||""}catch(_){}
   const lx=last&&SCRIPT.find(x=>x.sc===last);
-  return '<div class="svwrap '+svClasses()+'"><h3 class="dh">'+esc(L("Drehbuch"))+'</h3>'+(lx?'<button class="lastsc" data-scene="'+esc(lx.sc)+'"><span>'+esc(L("Zuletzt gelesen"))+'</span><b>'+esc(lx.sc)+' · '+esc(spHead(lx))+'</b><i aria-hidden="true">›</i></button>':'')+
+  return '<div class="svwrap '+svClasses()+'"><h3 class="dh">'+esc(L("Drehbuch"))+'</h3>'+(lx?'<button class="lastsc" data-scene="'+esc(lx.sc)+'"><span>'+esc(L("Zuletzt gelesen"))+'</span><b>'+esc(lx.sc)+' · '+spTitle(lx)+'</b><i aria-hidden="true">›</i></button>':'')+
     '<div class="svb svtab">'+ufButtons()+'<span class="svfill"></span>'+svToggles()+'</div>'+
     searchBox("sq",S.sq,L("Szene, Motiv, Rolle, Text …"))+modeChips(S.sqm,"data-sqm")+'<div id="scres">'+scriptResults()+'</div></div>';
 }
@@ -62,7 +62,7 @@ function scriptResults(){
   const vis=rows.slice(0,S.sqn||(terms.length?100:40));
   return cnt+'<ul class="sclist">'+vis.map(x=>{
     const hits=hitsOf(x);
-    return '<li class="scard"><button class="scli" data-scene="'+esc(x.sc)+'"><span class="sclin">'+esc(x.sc)+'</span><span class="sclih">'+esc(spHead(x))+'</span>'+spTod(x)+
+    return '<li class="scard"><button class="scli" data-scene="'+esc(x.sc)+'"><span class="sclin">'+esc(x.sc)+'</span><span class="sclih">'+spTitle(x)+'</span>'+spTod(x)+
       (hits.length?'':'<span class="sclid"><i>'+esc(L("nicht geplant"))+'</i></span>')+(rIds.length&&rbOn?roleBadges(x.sc,rIds):'')+(terms.length&&!rIds.length?(snippet(x.text,terms)||'<span class="sclsn">'+esc(L("Treffer im Drehplan (Motiv, Cast oder Beschreibung)"))+'</span>'):'')+'</button>'+(hits.length?factsHTML(hits):blkRow(x.sc))+'</li>';
   }).join("")+'</ul>'+(rows.length>vis.length?'<button class="sp-more" data-sqmore>'+esc(L("Weitere Szenen anzeigen"))+' ('+(rows.length-vis.length)+')</button>':'');
 }

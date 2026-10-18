@@ -31,6 +31,12 @@ jobs:
           path: sent.json
           key: push-sent-${{ github.run_id }}
           restore-keys: push-sent-
+      - name: Geräte-Zwischenspeicher holen
+        uses: actions/cache/restore@v4
+        with:
+          path: devices.json
+          key: push-devs-${{ github.run_id }}
+          restore-keys: push-devs-
       - run: pip install -q cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1 icalendar==6.1.0 recurring-ical-events==3.3.3
       - name: Fällige Erinnerungen schicken
         env:
@@ -54,3 +60,9 @@ jobs:
         with:
           path: sent.json
           key: push-sent-${{ github.run_id }}
+      - name: Geräte-Zwischenspeicher merken
+        if: always() && hashFiles('devices.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: devices.json
+          key: push-devs-${{ github.run_id }}
