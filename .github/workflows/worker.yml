@@ -46,7 +46,7 @@ jobs:
             "https://api.cloudflare.com/client/v4/accounts/$ACC/workers/scripts/$NAME/content" \
             -H "Authorization: Bearer $TOKEN" \
             -F 'metadata={"main_module":"worker.js"};type=application/json' \
-            -F "worker.js=@tools/chat_worker.js;type=application/javascript+module")
+            -F "worker.js=@tools/chat_worker.js;filename=worker.js;type=application/javascript+module")
           rc=$?; set -e
           if [ $rc -ne 0 ]; then echo "::error::Verbindung zu Cloudflare fehlgeschlagen (curl $rc)"; exit 1; fi
           ok=$(python3 -c "import json;print(json.load(open('/tmp/r.json')).get('success'))" 2>/dev/null || echo False)
