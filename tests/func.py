@@ -329,7 +329,7 @@ async def owner_tests(p, port):
           S.tab='plan';S.day=d.id;render();const v=document.querySelector('#view');const vis=e=>!!e&&getComputedStyle(e).display!=='none';
           const keys=[...v.querySelectorAll('.pvb [data-pv]')].map(b=>b.dataset.pv).join(',');
           const bt=v.querySelector('.sc .bdt'),txt=bt&&bt.textContent,u=!!(bt&&bt.querySelector('u')),sep=bt?getComputedStyle(bt.querySelectorAll('.bdi')[1],'::before').content:'';
-          const last=bt&&bt.parentElement.lastElementChild===bt;
+          const nx=bt&&bt.nextElementSibling,last=!!bt&&(!nx||nx.classList.contains('loc')||nx.classList.contains('fpls'));
           const chg=()=>vis(v.querySelector('.chgtxt'));const c1=chg();
           v.querySelector('[data-pv="g"]').click();const c0=chg();v.querySelector('[data-pv="inf"]').click();const d0=vis(v.querySelector('.sc .bdt'));
           S.pv=pv;store('pv',JSON.stringify(pv));pvApply();chgSave(o);S.meta.bd=keep;render();return {keys,txt,u,sep,last,c1,c0,d0}})()""")
