@@ -28,7 +28,7 @@ async def main():
         await pg.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
         # the test sets «last seen» before the page's own scripts run (a reload itself counts as «seen just now»)
         await pg.add_init_script("try{const v=sessionStorage.getItem('bcLV');if(v)localStorage.setItem('lastVis',v)}catch(e){}")
-        sp = "(()=>{const t=document.getElementById('spv');if(!t)return {h:'',vis:0};const r=t.getBoundingClientRect(),c=getComputedStyle(t);return {h:t.innerHTML,vis:r.height>10&&c.visibility!=='hidden'&&+c.opacity>0?1:0}})()"
+        sp = "(()=>{const t=document.getElementById('spv');if(!t)return {h:'',vis:0};const r=t.getBoundingClientRect(),c=getComputedStyle(t);const sp=document.getElementById('splash');return {h:t.innerHTML,vis:!sp||!sp.classList.contains('vis')||(r.height>10&&c.visibility!=='hidden'&&+c.opacity>0)?1:0}})()"
         await pg.goto((ROOT / "index.html").as_uri()); await pg.wait_for_timeout(300)
         first = await pg.evaluate(sp)
         if not first["vis"]: errs.append("Startbildschirm: Versionen nicht sichtbar")

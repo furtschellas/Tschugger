@@ -109,12 +109,5 @@ VIEWS.today=function(){
 };
 
 /* the app opens on «Today» (unless a link asks for another page) */
-/* the app opens on «Today» when it was not used for at least 2 hours (on start and when it comes back to the front) */
-const TODAY_AFTER=2*3600e3;
-const lastActive=()=>{try{return +(localStorage.getItem("lastActive")||0)}catch(_){return 0}};
-const markActive=()=>{try{localStorage.setItem("lastActive",String(Date.now()))}catch(_){}};
-if(!location.hash&&!window.__todayStart&&todayOn()){window.__todayStart=true;const la=lastActive();if(!la||Date.now()-la>=TODAY_AFTER){S.tab="today";try{render()}catch(_){}}}
-markActive();setInterval(()=>{if(document.visibilityState==="visible")markActive()},60e3);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){const la=lastActive();if(la&&Date.now()-la>=TODAY_AFTER&&todayOn()&&S.tab!=="today"){S.tab="today";scrollTo(0,0);render()}markActive()}else markActive()});
 
 document.addEventListener("click",e=>{if(!e.target.closest("[data-tscript]")||!vok("script"))return;S.tab="script";try{store("tab","script")}catch(_){}window.scrollTo(0,0);render()});
