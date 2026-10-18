@@ -21,6 +21,23 @@ function simStart(em){em=lc(em);if(!simCan(em))return;
   S.tab="today";simRefreshChrome();simBar();render();scrollTo(0,0)}
 function simEnd(){if(!SIMUSER)return;const k=SIMUSER.keep;SIMUSER=null;SIMROLE=null;MYPERMS=k.p;MYROLE=k.r;ADMINPERMS=k.ap;try{MEMBER=k.mem}catch(_){}
   S.tab=k.tab||"admin";ADM.sub=k.sub;simRefreshChrome();simBar();render()}
+/* a role without a specific person: «role:<id>» ("" = no role, "admin") – shows exactly what everybody with that role sees */
+function simRoleCan(id){return isAdmin()&&!SIMROLE&&!SIMUSER&&(id!=="admin"||isOwner())}
+function simStartRole(id){if(!simRoleCan(id))return;
+  const ro=id==="admin"?{id:"admin",name:L("Admin"),perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:id?((ADM.roles||[]).find(x=>x.id===id)||null):{id:"",name:L("Keine Rolle"),perms:[]};
+  if(!ro)return;
+  SIMUSER={email:"",name:L("Rolle")+" «"+(ro.name||ro.id||L("Keine Rolle"))+"»",rname:L("ohne Person"),keep:{p:MYPERMS.slice(),r:MYROLE,ap:ADMINPERMS.slice(),mem:typeof MEMBER!=="undefined"?MEMBER:null,tab:S.tab,sub:ADM.sub}};
+  SIMROLE={adm:id==="admin",user:""};MYPERMS=id==="admin"?[]:arr(ro.perms).filter(p=>PERMS.some(x=>x[0]===p));MYROLE=id==="admin"?"":ro.id;if(id==="admin")ADMINPERMS=ro.perms;
+  try{MEMBER=null}catch(_){}
+  S.tab="today";simRefreshChrome();simBar();render();scrollTo(0,0)}
+/* quick picker «Ansicht als …» (roles and people) for the admin pages */
+window.simPicker=()=>{if(!isAdmin()||SIMROLE||SIMUSER)return "";
+  const roles=[["role:",L("Keine Rolle")]].concat(isOwner()?[["role:admin",L("Admin")]]:[],(ADM.roles||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(r=>["role:"+r.id,r.name||r.id]));
+  const ppl=[];const seen=new Set();for(const m of (ADM.mem||[])){const em=lc(m.email||"");if(!em||seen.has(em)||!simCan(em))continue;seen.add(em);ppl.push([em,[m.firstName,m.lastName].filter(Boolean).join(" ")||em])}
+  ppl.sort((a,b)=>a[1].localeCompare(b[1],LANG));
+  return '<div class="simpick"><label>'+esc(L("Ansicht simulieren"))+' <select data-simpick><option value="">'+esc(L("Rolle oder Person wählen …"))+'</option><optgroup label="'+esc(L("Rollen"))+'">'+roles.map(([v,n])=>'<option value="'+esc(v)+'">'+esc(n)+'</option>').join("")+'</optgroup>'+
+    (ppl.length?'<optgroup label="'+esc(L("Personen"))+'">'+ppl.map(([v,n])=>'<option value="'+esc(v)+'">'+esc(n)+'</option>').join("")+'</optgroup>':'')+'</select></label></div>'};
+document.addEventListener("change",e=>{const s=e.target.closest("[data-simpick]");if(!s||!s.value)return;const v=s.value;s.value="";if(v.startsWith("role:"))simStartRole(v.slice(5));else simStart(v)});
 window.simBtn=em=>simCan(em)?'<button type="button" class="pillbtn simbtn" data-simstart="'+esc(em)+'">'+esc(L("Ansicht als diese Person"))+'</button>':'';
 document.addEventListener("click",e=>{const s=e.target.closest("[data-simstart]");if(s){e.preventDefault();simStart(s.dataset.simstart);return}if(e.target.closest("[data-simend]"))simEnd()});
 /* nothing is saved while simulating */
