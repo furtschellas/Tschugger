@@ -140,8 +140,6 @@ const ACTIONS=[
   ["[data-spt]",()=>{const nx=spTheme()==="light"?"dark":"light";SPT=nx===getTheme()?null:nx;store("spt",SPT||"");svApply()}],
   ["[data-lv]",b=>{const k=b.dataset.lv;S.lv=Object.assign({},S.lv,{[k]:!S.lv[k]});store("lv",JSON.stringify(S.lv));document.querySelectorAll(".lvwrap").forEach(w=>w.className="lvwrap "+lvClasses());document.querySelectorAll("[data-lv]").forEach(x=>x.setAttribute("aria-pressed",String(S.lv[x.dataset.lv])))}],
   ["[data-sv]",b=>{const k=b.dataset.sv;S.sv=Object.assign({},S.sv,{[k]:!S.sv[k]});store("sv",JSON.stringify(S.sv));svApply()}],
-  ["[data-pvall]",b=>{const on=!PVKEYS.every(k=>S.pv[k]);S.pv=Object.assign({},S.pv);PVKEYS.forEach(k=>S.pv[k]=on);store("pv",JSON.stringify(S.pv));pvApply();render()}],
-  ["[data-svall]",b=>{const ks=SVKEYS.filter(k=>k!=="e").concat("box"),on=!ks.every(k=>S.sv[k]);S.sv=Object.assign({},S.sv);ks.forEach(k=>S.sv[k]=on);store("sv",JSON.stringify(S.sv));svApply();render()}],
   ["[data-pv]",b=>{const k=b.dataset.pv;S.pv=Object.assign({},S.pv,{[k]:!S.pv[k]});store("pv",JSON.stringify(S.pv));pvApply()}],
   ["[data-goto]",b=>{S.day=b.dataset.goto;S.tab="plan";S.pu={"1":true,"2":true,"3":true};window.scrollTo(0,0);render()}],
 ];

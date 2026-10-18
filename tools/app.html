@@ -697,7 +697,7 @@ html[data-theme="light"] .scbtn,html[data-theme="light"] .pillbtn{border-color:v
 .pv-no-inf .sc .bdt,.pv-no-g .chgtxt{display:none}.pv-no-g li.chg{background:none!important;border-color:var(--rule)!important;box-shadow:none!important}
 .spf1>.bdt{font-size:12.5px}.sv-no-inf .spf1 .bdt{display:none}
 .bdi+.bdi::before{content:" // ";color:var(--muted);white-space:pre}.bdt{overflow-wrap:anywhere}
-.pvbtn svg,.svb .pvbtn svg{width:66%!important;height:66%!important}
+.pvbtn svg,.svb .pvbtn svg{width:76%!important;height:76%!important}
 .dtitle{flex-wrap:wrap}.dtitle .pvb{margin-left:auto;justify-content:flex-end;flex-wrap:wrap}
 .smodes{justify-content:flex-start!important;gap:8px!important;padding:8px 12px!important}
 html body .smodes button{min-height:36px;min-width:44px;padding:0 15px;font-weight:600;letter-spacing:.01em;border-color:var(--rule);transition:background .15s,border-color .15s}
@@ -862,16 +862,14 @@ function svButtons(nav){
 }
 function svToggles(noEn){
   const btn=(k,ico,lbl,cls)=>'<button class="pvbtn'+(cls||'')+'" data-sv="'+k+'" aria-pressed="'+S.sv[k]+'" '+ariaTip(L(lbl))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ico+'</svg></button>';
-  return (noEn?'':btn("e",SVICO.e,SVLBL.e," sven"))+btn("box",'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/>',"Infobox"," svbox")+'<span class="svsep" aria-hidden="true"></span>'+SVKEYS.filter(k=>k!=="e").map(k=>btn(k,SVICO[k]||PVICO[k],SVLBL[k]||PVLBL[k],"")).join("")+pvAllBtn("data-svall",SVKEYS.filter(k=>k!=="e").every(k=>S.sv[k])&&S.sv.box);
+  return (noEn?'':btn("e",SVICO.e,SVLBL.e," sven"))+btn("box",'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/>',"Infobox"," svbox")+'<span class="svsep" aria-hidden="true"></span>'+SVKEYS.filter(k=>k!=="e").map(k=>btn(k,SVICO[k]||PVICO[k],SVLBL[k]||PVLBL[k],"")).join("");
 }
 function svApply(){document.querySelectorAll(".svwrap").forEach(w=>w.className="svwrap "+svClasses());document.querySelectorAll(".svwrap [data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const s=document.getElementById("scn");if(!s)return;s.className="scrn "+svClasses();s.querySelectorAll("[data-sv]").forEach(b=>b.setAttribute("aria-pressed",String(S.sv[b.dataset.sv])));const t=s.querySelector("[data-spt]");if(t)t.setAttribute("aria-pressed",String(spTheme()==="light"))}
 const PVLBL={i:"Szeneninfo",d:"Szenenbeschrieb",a:"Adresse",c:"Cast",b:"Blocking",inf:"Szenen-Details",g:"Änderungen"};
 /* schedule display options only toggle CSS classes: no re-render, no scroll jump */
-function pvApply(){const b=document.body;for(const k of ["i","d","c","inf","a","b","g"])b.classList.toggle("pv-no-"+k,!S.pv[k]);document.querySelectorAll("[data-pv]").forEach(x=>x.setAttribute("aria-pressed",String(!!S.pv[x.dataset.pv])));document.querySelectorAll("[data-pvall]").forEach(x=>x.outerHTML=pvAllBtn("data-pvall",PVKEYS.every(k=>S.pv[k])))}
-function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","inf","a","b","g"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" '+ariaTip(L(PVLBL[k]))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+pvAllBtn("data-pvall",PVKEYS.every(k=>S.pv[k]))+(post?'<span class="pvunits">'+post+'</span>':'')+'</span>'}
-/* «everything on / off» at the right end of a button row */
+function pvApply(){const b=document.body;for(const k of ["i","d","c","inf","a","b","g"])b.classList.toggle("pv-no-"+k,!S.pv[k]);document.querySelectorAll("[data-pv]").forEach(x=>x.setAttribute("aria-pressed",String(!!S.pv[x.dataset.pv])))}
+function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","inf","a","b","g"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" '+ariaTip(L(PVLBL[k]))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+(post?'<span class="pvunits">'+post+'</span>':'')+'</span>'}
 const PVKEYS=["i","d","c","inf","a","b","g"];
-function pvAllBtn(attr,on){return '<button class="pvbtn pvall" '+attr+' aria-pressed="'+on+'" '+ariaTip(L(on?"Alles zuklappen":"Alles aufklappen"))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(on?'<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>':'<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>')+'</svg></button>'}
 /* drive time shown: up to 20 min +3 min buffer, longer drives +15 % (rounded up) */
 function driveMin(m){m=+m||0;return m>20?Math.ceil(m*1.15):m+3}
 /* scene details from the schedule: meta.bd["date|scene"], shown at the end of each scene as running text («Topic:» underlined, as in the PDF),
@@ -1781,7 +1779,8 @@ function setOpen(btn,open){
 }
 function scallLabel(){const b=document.getElementById("scall");if(!b)return;const ks=[...document.querySelectorAll("[data-sckey]")].map(x=>x.dataset.sckey);const all=ks.length>0&&ks.every(k=>S.openSc[k]);b.setAttribute("aria-expanded",all);b.classList.toggle("on",all)}
 /* tapping the tab you are already on jumps back to today; switching tabs keeps the last chosen day */
-function goTab(tab){S.want=null;const again=S.tab===tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;if(again&&tab==="dispo")S.dday=null;store("tab",tab);window.scrollTo(0,0)}
+function goTab(tab){S.want=null;const again=S.tab===tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;if(again&&tab==="dispo")S.dday=null;if(tab==="script"){S.sqm="all";S.sq="";S.sqn=0}   /* the script search always starts again with «Alle» */
+store("tab",tab);window.scrollTo(0,0)}
 /* last chosen day (Schedule, Callsheet), page and open scenes are kept on a reload; a new start, or coming back after
    at least 10 minutes in the background, opens the start page (Today, or the Drehplan at today) */
 const VS_TTL=2*3600*1000;let VS_AT=Date.now();
@@ -2088,8 +2087,6 @@ const ACTIONS=[
   ["[data-spt]",()=>{const nx=spTheme()==="light"?"dark":"light";SPT=nx===getTheme()?null:nx;store("spt",SPT||"");svApply()}],
   ["[data-lv]",b=>{const k=b.dataset.lv;S.lv=Object.assign({},S.lv,{[k]:!S.lv[k]});store("lv",JSON.stringify(S.lv));document.querySelectorAll(".lvwrap").forEach(w=>w.className="lvwrap "+lvClasses());document.querySelectorAll("[data-lv]").forEach(x=>x.setAttribute("aria-pressed",String(S.lv[x.dataset.lv])))}],
   ["[data-sv]",b=>{const k=b.dataset.sv;S.sv=Object.assign({},S.sv,{[k]:!S.sv[k]});store("sv",JSON.stringify(S.sv));svApply()}],
-  ["[data-pvall]",b=>{const on=!PVKEYS.every(k=>S.pv[k]);S.pv=Object.assign({},S.pv);PVKEYS.forEach(k=>S.pv[k]=on);store("pv",JSON.stringify(S.pv));pvApply();render()}],
-  ["[data-svall]",b=>{const ks=SVKEYS.filter(k=>k!=="e").concat("box"),on=!ks.every(k=>S.sv[k]);S.sv=Object.assign({},S.sv);ks.forEach(k=>S.sv[k]=on);store("sv",JSON.stringify(S.sv));svApply();render()}],
   ["[data-pv]",b=>{const k=b.dataset.pv;S.pv=Object.assign({},S.pv,{[k]:!S.pv[k]});store("pv",JSON.stringify(S.pv));pvApply()}],
   ["[data-goto]",b=>{S.day=b.dataset.goto;S.tab="plan";S.pu={"1":true,"2":true,"3":true};window.scrollTo(0,0);render()}],
 ];
@@ -2130,7 +2127,7 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 const SMODES=[["all","Alle"],["role","Rolle"],["sc","Szene"],["day","Drehtag"],["person","Person"],["loc","Motiv"],["text","Text"]];
 const SMODE_OK=k=>SMODES.some(x=>x[0]===k);
 /* auf dem Handy kürzer: Szene = SZ, Drehtag = Tag, Motiv = Loc */
-const SMODE_SH={de:{sc:"SZ",day:"Tag",loc:"Loc",person:"Pers"},en:{sc:"Sc",day:"Day",loc:"Loc"},fr:{sc:"Sc",day:"Jour",loc:"Loc"},it:{sc:"Sc",day:"Gior.",loc:"Loc"}};
+const SMODE_SH={de:{sc:"SZ",day:"Tag",loc:"Loc",person:"Pers",text:"Txt"},en:{sc:"Sc",day:"Day",loc:"Loc"},fr:{sc:"Sc",day:"Jour",loc:"Loc"},it:{sc:"Sc",day:"Gior.",loc:"Loc"}};
 try{S.gm=localStorage.getItem("gm")||"all";S.sqm=localStorage.getItem("sqm")||"all"}catch(_){S.gm=S.sqm="all"}
 if(!SMODE_OK(S.gm))S.gm="all";if(!SMODE_OK(S.sqm))S.sqm="all";
 const modeChips=(cur,attr)=>'<div class="smodes" role="group" aria-label="'+esc(L("Suchen nach"))+'">'+SMODES.map(([k,t])=>{const sh=(SMODE_SH[LANG]||SMODE_SH.en)[k];return '<button type="button" '+attr+'="'+k+'" aria-pressed="'+(cur===k)+'"'+(sh?' aria-label="'+esc(L(t))+'"':'')+'>'+(sh?'<span class="sm-l">'+esc(L(t))+'</span><span class="sm-s">'+esc(sh)+'</span>':esc(L(t)))+'</button>'}).join("")+'</div>';
