@@ -691,6 +691,8 @@ html[data-theme="light"] nav.tabs button[aria-selected="true"] .ico{background:v
 html[data-theme="light"] .pvbtn{background:var(--accent);color:#fff;border-color:var(--accent)}
 html[data-theme="light"] .scbtn,html[data-theme="light"] .pillbtn{border-color:var(--accent);color:var(--accent)}
 .chgu{border-top:1px solid var(--rule);padding:6px 0}.chgu:first-of-type{border-top:0}.chgu>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;padding:4px 0}.chgu>summary::-webkit-details-marker{display:none}.chgu>summary::before{content:"▸";color:var(--accent);width:12px}.chgu[open]>summary::before{content:"▾"}.chgu .chgn{font-size:12px;color:var(--muted);font-weight:400}.chgu[data-chgu="2"]>summary .chgun{color:var(--accent)}
+button.factc{font:inherit;cursor:pointer;color:var(--muted)}button.factc.on{color:var(--accent);border-color:var(--accent)}
+.bd{margin-top:6px;font-size:13px}.bd>summary{list-style:none;cursor:pointer;color:var(--muted);font-weight:600}.bd>summary::-webkit-details-marker{display:none}.bd>summary::before{content:"▸ ";color:var(--accent)}.bd[open]>summary::before{content:"▾ "}.bdl{margin:6px 0 0;display:grid;gap:4px}.bdr{display:grid;grid-template-columns:minmax(92px,auto) 1fr;gap:8px;align-items:baseline}.bdr dt{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent)}.bdr dd{margin:0;display:flex;flex-wrap:wrap;gap:2px 0}.bdr dd span:not(:last-child)::after{content:" · ";color:var(--muted)}.bdf{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.bdfb{font:inherit;font-size:12px;padding:4px 10px;border-radius:14px;border:1px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer}.bdfb.on{border-color:var(--accent);color:var(--accent);font-weight:600}@media(max-width:520px){.bdr{grid-template-columns:1fr;gap:0}}
 </style>
 
 <div class="wrap">
@@ -843,6 +845,20 @@ function pvApply(){const b=document.body;for(const k of ["i","d","c","a","b"])b.
 function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+["i","d","c","a","b"].map(k=>'<button class="pvbtn" data-pv="'+k+'" aria-pressed="'+S.pv[k]+'" '+ariaTip(L(PVLBL[k]))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+PVICO[k]+'</svg></button>').join("")+(post?'<span class="pvsep"></span>'+post:'')+'</span>'}
 /* drive time shown: up to 20 min +3 min buffer, longer drives +15 % (rounded up) */
 function driveMin(m){m=+m||0;return m>20?Math.ceil(m*1.15):m+3}
+/* scene details from the schedule (Crew, Stunt, Props, Vehicles, SFX, VFX, Mup/Hair, Costume, Notes …): meta.bd["date|scene"] */
+const bdKey=sc=>String(sc||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,"");
+function bdOn(){try{return localStorage.getItem("bdshow")!=="0"}catch(_){return true}}
+let BDF="";   /* department filter in the schedule ("" = all) */
+function bdFor(date,sc){const m=(S.meta&&S.meta.bd)||{};return m[date+"|"+bdKey(sc)]||null}
+function bdHTML(date,sc){if(!bdOn()||!date)return "";const b=bdFor(date,sc);if(!b)return "";
+  const h=b.h||{},cs=arr(b.c).filter(c=>!BDF||c[0]===BDF);
+  const hd=(!BDF||BDF==="FX")&&h.FX?[["FX",[h.FX]]]:[];const hx=(!BDF||BDF==="XX")&&h.XX?[["XX",[h.XX]]]:[];
+  const rows=hd.concat(hx,cs);if(!rows.length)return "";
+  return '<details class="bd"'+(BDF?' open':'')+'><summary>'+esc(L("Details"))+(BDF?' · '+esc(BDF):'')+'</summary><dl class="bdl">'+rows.map(([k,v])=>'<div class="bdr"><dt>'+esc(k)+'</dt><dd>'+arr(v).map(x=>'<span>'+esc(x)+'</span>').join("")+'</dd></div>').join("")+'</dl></details>'}
+/* the departments of one day (for the filter chips) */
+function bdDepts(date){const m=(S.meta&&S.meta.bd)||{},seen=[];for(const k in m){if(!k.startsWith(date+"|"))continue;const b=m[k];if((b.h||{}).FX&&!seen.includes("FX"))seen.push("FX");if((b.h||{}).XX&&!seen.includes("XX"))seen.push("XX");arr(b.c).forEach(c=>{if(!seen.includes(c[0]))seen.push(c[0])})}
+  const order=["Crew","Stunt","FX","XX","Special","Loc","Elec","Grip","Prod","Set Dec","Set dressing","Props","Vehicles","SFX","VFX","PreProd Footage","Mup/Hair","Costume","Sound","Animals","Notes","Story Date"];
+  return seen.sort((a,b)=>(order.indexOf(a)+1||99)-(order.indexOf(b)+1||99))}
 function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
@@ -859,7 +875,7 @@ function itemHTML(it){
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
     (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
-    castChips(it.cast)+
+    castChips(it.cast)+bdHTML(window.__mctx&&window.__mctx.date,it.sc)+
     (it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
     '</div></li>';
 }
@@ -1186,7 +1202,15 @@ function renderPlan(){
     /* weather (website): compact chip after the drive, tap → report */
     try{const wf=window.wxFact?window.wxFact(d):"";if(wf)fx.splice(d.hours?(dv?2:1):0,0,wf)}catch(_){}
     if(spBtn)fx.push(spBtn);   /* direct link to the schedule PDF, after «Sonne» */
+    /* schedule changes: marks in the schedule on/off (kept on this device) */
+    if(typeof window.chgOn==="function"){const on=window.chgOn();fx.push('<button type="button" class="fact factc'+(on?' on':'')+'" data-chgtog aria-pressed="'+on+'" '+ariaTip(L(on?"Änderungen im Drehplan ausblenden":"Änderungen im Drehplan markieren"))+'><span class="k">'+esc(L("Änderungen"))+'</span><span class="v">'+esc(L(on?"ein":"aus"))+'</span></button>')}
+    /* scene details from the schedule: on/off (kept on this device) */
+    const bdd=bdDepts(d.date);
+    if(bdd.length){const on=bdOn();fx.push('<button type="button" class="fact factc'+(on?' on':'')+'" data-bdtog aria-pressed="'+on+'" '+ariaTip(L(on?"Szenen-Details ausblenden":"Szenen-Details einblenden"))+'><span class="k">'+esc(L("Details"))+'</span><span class="v">'+esc(L(on?"ein":"aus"))+'</span></button>')}
     h+='<div class="facts">'+fx.join("")+'</div>';
+    /* department filter: only Props, only Stunt … for all scenes of the day */
+    if(bdd.length&&bdOn()){if(BDF&&!bdd.includes(BDF))BDF="";
+      h+='<div class="bdf" role="group" aria-label="'+esc(L("Abteilung"))+'">'+['<button type="button" class="bdfb'+(!BDF?' on':'')+'" data-bdf="" aria-pressed="'+!BDF+'">'+esc(L("Alle"))+'</button>'].concat(bdd.map(k=>'<button type="button" class="bdfb'+(BDF===k?' on':'')+'" data-bdf="'+esc(k)+'" aria-pressed="'+(BDF===k)+'">'+esc(k)+'</button>')).join("")+'</div>'}
   }
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
   h+='</div>';

@@ -55,6 +55,8 @@ function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem
 /* change marks in the schedule can be switched off (button in the schedule, kept on this device) */
 window.chgOn=()=>{try{return localStorage.getItem("chgmark")!=="0"}catch(_){return true}};
 document.addEventListener("click",e=>{if(!e.target.closest("[data-chgtog]"))return;try{localStorage.setItem("chgmark",window.chgOn()?"0":"1")}catch(_){}render()});
+document.addEventListener("click",e=>{if(e.target.closest("[data-bdtog]")){try{localStorage.setItem("bdshow",bdOn()?"0":"1")}catch(_){}render();return}
+  const f=e.target.closest("[data-bdf]");if(f){BDF=f.dataset.bdf||"";render()}});
 window.chgFor=(date,u,sc)=>{if(!window.chgOn())return "";const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};
 document.addEventListener("click",e=>{if(!e.target.closest("[data-chgseen]"))return;try{localStorage.setItem("chgseen:v1",String(Date.now()))}catch(_){}render()});
 

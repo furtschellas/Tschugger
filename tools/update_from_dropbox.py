@@ -521,6 +521,64 @@ def unit_days(txt):
 
 UD = {}   # unit_days() of the current schedule PDF
 
+# ---------- scene details from the schedule PDF (Crew, Stunt, Props, Vehicles, SFX, VFX, Mup/Hair, Costume, Notes …) ----------
+BD_LABELS = ["Crew", "Special", "Loc", "Elec", "Grip", "Prod", "Stunt", "Set Dec", "Set dressing", "Props", "Vehicles", "SFX", "VFX",
+             "PreProd Footage", "Mup/Hair", "Costume", "Sound", "Animals", "Notes", "Story Date"]
+_BD_LAB = "|".join(re.escape(x).replace(r"\ ", r"\s+") for x in sorted(BD_LABELS, key=len, reverse=True))
+_BD_HEAD = re.compile(r"^(?P<sc>\d{1,3}[A-Z]{0,2})(?:[ \t]*\n?[ \t]*(?P<pt>(?:pt|SL)[ \t]*\d*[A-Z]?))?[ \t\n]+(?:(?:\d+[ \t]+)?\d/\d[ \t]+|\d+[ \t]+)?pgs\b", re.M)
+
+def _bd_split(v, sep=","):
+    out, cur, depth = [], "", 0
+    if sep != ",": return [x.strip(" ,") for x in v.split(sep) if x.strip(" ,")]
+    for ch in v:
+        depth += (ch == "(") - (ch == ")")
+        if ch == "," and depth <= 0: out.append(cur); cur = ""
+        else: cur += ch
+    out.append(cur)
+    return [x.strip(" ,") for x in out if x.strip(" ,")]
+
+def _bd_join(t):
+    t = re.sub(r"(?<=[A-Za-z])-\n(?=[A-Za-z])", "-", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+def parse_breakdown(txt):
+    """schedule PDF text → {day number: {scene key «186pt1a»: {"h": {"FX": "...", "XX": "..."}, "c": [[label, [values]], ...]}}}"""
+    t = re.sub(r"(?m)^Tschugger Sched - .*page # \d+\s*$", "", txt or "")
+    days = [(m.start(), int(m.group(1))) for m in re.finditer(r"(?m)^\s*Day\s*#\s*(\d+)\b", t)]
+    if not days: return {}
+    heads = list(_BD_HEAD.finditer(t))
+    stops = sorted([m.start() for m in re.finditer(r"(?m)^\s*(?:\d{1,2}:\d{2}:\s|Day\s*#|Day Off\b|2nd unit:|3rd unit:)", t)] + [h.start() for h in heads] + [len(t)])
+    out = {}
+    for h in heads:
+        no = next((n for p, n in reversed(days) if p < h.start()), None)
+        if no is None: continue
+        end = next(x for x in stops if x > h.start())
+        seg = t[h.end():end]
+        key = re.sub(r"\s+", "", (h.group("sc") + (h.group("pt") or ""))).lower().lstrip("0")
+        tm = re.search(r"(?m)^\s*\d{1,2}:\d{2}\s*$", seg)
+        head = _bd_join(t[h.end():h.end() + (tm.start() if tm else 0)])
+        hd = {}
+        fx = re.search(r"\bFX:\s*(.*?)(?=\s/\s*\d*\s*XX:|$)", head)
+        xx = re.search(r"\bXX:\s*(.*)$", head)
+        if fx: hd["FX"] = fx.group(1).strip(" /")
+        if xx: hd["XX"] = xx.group(1).strip(" /")
+        body = _bd_join(seg[tm.end():] if tm else seg)
+        first = re.search(r"(?:^|\s)(?!Loc:)(%s):\s" % _BD_LAB, body)
+        cats = []
+        if first:
+            blk = body[first.start():].strip()
+            parts = re.split(r"(?:^|,\s+|\s+(?=(?:%s):\s))(%s):\s+" % (_BD_LAB, _BD_LAB), blk)
+            for i in range(1, len(parts) - 1, 2):
+                lab = re.sub(r"\s+", " ", parts[i]); val = parts[i + 1].strip(" ,")
+                if not val: continue
+                vals = [val] if lab == "Story Date" else _bd_split(val, " / " if lab == "Notes" else ",")
+                for c in cats:
+                    if c[0] == lab: c[1] += vals; break
+                else: cats.append([lab, vals])
+        if cats or hd:
+            out.setdefault(no, {})[key] = {"h": hd, "c": cats}
+    return out
+
 def fix_units(days, txt=None, ud=None):
     """a 2nd/3rd unit only where the schedule has a «2nd unit:» section (a B-Cam of the 1st unit is no 2nd unit)"""
     ud = ud or unit_days(txt)
@@ -960,7 +1018,15 @@ def main():
         sources.append({"kind": "schedule", "name": f["name"], "modified": f["modified"]})
         raw_sched = None
         try:   # which days have their own 2nd/3rd unit (checked every run, without AI)
-            raw_sched = dbx.download(f["id"]); UD.update(unit_days(pdf_text(raw_sched, False)) or {})
+            raw_sched = dbx.download(f["id"]); stxt = pdf_text(raw_sched, False); UD.update(unit_days(stxt) or {})
+            try:   # scene details (Crew, Stunt, Props, Vehicles, SFX, VFX, Mup/Hair, Costume, Notes …) per date and scene
+                pb = parse_breakdown(stxt); bd = {}
+                for d in data.get("days") or []:
+                    m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or "")) if d.get("kind") == "shoot" else None
+                    for k, v in (pb.get(int(m.group(1))) or {}).items() if m else []: bd[d["date"] + "|" + k] = v
+                if bd and bd != (meta.get("bd") or {}): meta["bd"] = bd; changed = True
+                print("::notice::Szenen-Details: %d Szenen an %d Drehtagen" % (len(bd), len({k.split("|")[0] for k in bd})))
+            except Exception as e: print("::notice::Szenen-Details nicht gelesen: " + type(e).__name__)
             if UD and fix_units(data.get("days") or [], None, UD): changed = True
         except Exception as e: log("Drehplan-Text nicht gelesen:", type(e).__name__)
         if (is_new("schedule", f) or need_main) and may_try("schedule", f):

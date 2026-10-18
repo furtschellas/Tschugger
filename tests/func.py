@@ -329,6 +329,14 @@ async def owner_tests(p, port):
           S.tab='plan';S.day=d.id;render();const btn=document.querySelector('#view [data-chgtog]');const off=btn?btn.getAttribute('aria-pressed'):'';
           if(btn)btn.click();const c=!!window.chgFor(d.date,'1',it.sc);chgSave(o);localStorage.removeItem('chgmark');return {a,b,off,c}})()""")
         check("Drehplan: Knopf schaltet die Änderungs-Markierung aus und wieder ein", ct in (None, {"a": True, "b": False, "off": "false", "c": True}), ct, public=True)
+        bdt = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);const keep=S.meta.bd;
+          S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{FX:'Double BJ'},c:[['Crew',['Lifeguard']],['Props',['Knife','Stone (soft, dummy)']]]}};localStorage.removeItem('bdshow');BDF='';
+          S.tab='plan';S.day=d.id;render();const v=()=>document.querySelector('#view');const det=v().querySelector('details.bd');const a=!!det&&!det.open&&det.textContent.includes('Stone (soft, dummy)');
+          const chips=[...v().querySelectorAll('[data-bdf]')].map(b=>b.dataset.bdf).join(',');
+          v().querySelector('[data-bdf="Props"]').click();const p=v().querySelector('details.bd');const only=!!p&&p.open&&!p.textContent.includes('Lifeguard')&&p.textContent.includes('Knife');
+          v().querySelector('[data-bdtog]').click();const off=!v().querySelector('details.bd')&&!v().querySelector('[data-bdf]');
+          v().querySelector('[data-bdtog]').click();const on=!!v().querySelector('details.bd');BDF='';S.meta.bd=keep;localStorage.removeItem('bdshow');render();return {a,chips,only,off,on}})()""")
+        check("Drehplan: Szenen-Details (zu), Filter nach Abteilung, Knopf Details ein/aus", bdt in (None, {"a": True, "chips": ",Crew,FX,Props", "only": True, "off": True, "on": True}), bdt, public=True)
         # blocking per scene: parts get their own part + the general pictures, never another part; slideshow scenes «25 SL2» never scene 25
         bf = await E("""(()=>{const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
           S.meta.blocking=[{name:'Scene_186',sc:['186'],media:[{f:'a'},{f:'b',p:'186pt1'},{f:'c',p:'186pt2'}],pdfs:[{l:'186 pt1'},{l:'186 pt2'}]},

@@ -165,7 +165,13 @@ function renderPlan(){
     if(spBtn)fx.push(spBtn);   /* direct link to the schedule PDF, after «Sonne» */
     /* schedule changes: marks in the schedule on/off (kept on this device) */
     if(typeof window.chgOn==="function"){const on=window.chgOn();fx.push('<button type="button" class="fact factc'+(on?' on':'')+'" data-chgtog aria-pressed="'+on+'" '+ariaTip(L(on?"Änderungen im Drehplan ausblenden":"Änderungen im Drehplan markieren"))+'><span class="k">'+esc(L("Änderungen"))+'</span><span class="v">'+esc(L(on?"ein":"aus"))+'</span></button>')}
+    /* scene details from the schedule: on/off (kept on this device) */
+    const bdd=bdDepts(d.date);
+    if(bdd.length){const on=bdOn();fx.push('<button type="button" class="fact factc'+(on?' on':'')+'" data-bdtog aria-pressed="'+on+'" '+ariaTip(L(on?"Szenen-Details ausblenden":"Szenen-Details einblenden"))+'><span class="k">'+esc(L("Details"))+'</span><span class="v">'+esc(L(on?"ein":"aus"))+'</span></button>')}
     h+='<div class="facts">'+fx.join("")+'</div>';
+    /* department filter: only Props, only Stunt … for all scenes of the day */
+    if(bdd.length&&bdOn()){if(BDF&&!bdd.includes(BDF))BDF="";
+      h+='<div class="bdf" role="group" aria-label="'+esc(L("Abteilung"))+'">'+['<button type="button" class="bdfb'+(!BDF?' on':'')+'" data-bdf="" aria-pressed="'+!BDF+'">'+esc(L("Alle"))+'</button>'].concat(bdd.map(k=>'<button type="button" class="bdfb'+(BDF===k?' on':'')+'" data-bdf="'+esc(k)+'" aria-pressed="'+(BDF===k)+'">'+esc(k)+'</button>')).join("")+'</div>'}
   }
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
   h+='</div>';
