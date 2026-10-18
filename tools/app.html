@@ -698,7 +698,7 @@ html[data-theme="light"] .scbtn,html[data-theme="light"] .pillbtn{border-color:v
 .spf1>.bdt{font-size:12.5px}.sv-no-inf .spf1 .bdt{display:none}
 .bdi+.bdi::before{content:" // ";color:var(--muted);white-space:pre}.bdt{overflow-wrap:anywhere}
 .pvbtn svg,.svb .pvbtn svg{width:76%!important;height:76%!important}
-.dtitle{flex-wrap:wrap}.dtitle .pvb{margin-left:auto;justify-content:flex-end;flex-wrap:wrap}
+
 .smodes{justify-content:flex-start!important;gap:8px!important;padding:8px 12px!important}
 html body .smodes button{min-height:36px;min-width:44px;padding:0 15px;font-weight:600;letter-spacing:.01em;border-color:var(--rule);transition:background .15s,border-color .15s}
 html body .smodes button[aria-pressed="true"]{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
@@ -715,7 +715,7 @@ html{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--accent) 55%,tr
 ::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:padding-box}::-webkit-scrollbar-button,::-webkit-scrollbar-corner{display:none;background:transparent}
 .sct .hen{display:none}.svwrap:not(.sv-no-e) .sct.en .hde,.scrn:not(.sv-no-e) .sct.en .hde{display:none}.svwrap:not(.sv-no-e) .sct.en .hen,.scrn:not(.sv-no-e) .sct.en .hen{display:inline}
 .sv-no-box .svb .sven{opacity:1!important;pointer-events:auto!important}
-html body .dtitle .pvb{display:flex;justify-content:flex-end;flex:1 1 auto;margin-left:auto}
+html body .dtitle{flex-wrap:nowrap}html body .dtitle .pvb{display:flex;justify-content:flex-end;flex:1 1 auto;margin-left:auto;flex-wrap:nowrap;min-width:0}
 @media (max-width:600px){html body .smodes{gap:5px!important;padding:8px 0!important;overflow:visible!important}html body .smodes button{flex:1 1 auto;min-width:0;padding:0 4px;font-size:clamp(11px,3.4vw,14px);min-height:34px}}
 @media (min-width:601px){.smodes{justify-content:center!important}}
 .scpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px;margin:8px 0 12px}.scpk{font:inherit;font-weight:600;font-size:13px;min-height:34px;border-radius:10px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}.scpk.np{color:var(--muted)}.scpk:hover{border-color:var(--accent);color:var(--accent)}
