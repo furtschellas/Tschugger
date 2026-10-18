@@ -12,7 +12,8 @@ async function ownEnc(o){const key=await getDataKey(),iv=crypto.getRandomValues(
    5 minutes – that used up the free Firebase quota). force (after saving) reads once directly. */
 let OWNSUB=null;
 async function ownApply(docs,key){const out=[];for(const d of docs){try{const x=d.data();out.push(Object.assign(await ownDec(key,x.c),{id:d.id,byUid:x.by,gc:x.gc||""}))}catch(_){}}
-  OWN.list=out;OWN.at=Date.now();try{localStorage.setItem("ownev:v1",JSON.stringify(out))}catch(_){}try{pushSyncSoon()}catch(_){}render()}
+  const same=OWN.list&&JSON.stringify(OWN.list)===JSON.stringify(out);OWN.list=out;OWN.at=Date.now();if(same)return;
+  try{localStorage.setItem("ownev:v1",JSON.stringify(out))}catch(_){}try{pushSyncSoon()}catch(_){}render()}
 async function ownLoad(force){
   if(!ME||!ownOn()||OWN.busy)return;
   if(OWNSUB&&!force)return;
