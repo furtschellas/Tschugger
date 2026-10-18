@@ -138,7 +138,7 @@ async function afterSignIn(u){
   if(window.__justSignedIn)window.__justSignedIn=false;
 }
 /* names come from the crew list (matched by e-mail) when the profile has none yet */
-const crewNames=()=>{const p=ME&&crewPerson(ME.email);if(!p||!p.name)return null;const sp=splitName(p.name);return sp.firstName?{firstName:clean(sp.firstName),lastName:clean(sp.lastName||"")}:null};
+const crewNames=()=>{const p=ME&&crewPerson(window.simEmail());if(!p||!p.name)return null;const sp=splitName(p.name);return sp.firstName?{firstName:clean(sp.firstName),lastName:clean(sp.lastName||"")}:null};
 async function fillNamesFromCrew(){
   if(!MEMBER||!ME)return;
   const cn=crewNames();if(!cn||(MEMBER.firstName===cn.firstName&&(MEMBER.lastName||"")===cn.lastName))return;
