@@ -42,6 +42,10 @@ async def owner_tests(p, port):
     b, pg, errs = await smoke.session(p, port, "owner")
     E = pg.evaluate
     pg.on("dialog", lambda d: asyncio.ensure_future(d.accept()))
+    # start screen: the loading status ends by itself as soon as the current data is shown (not only after 20 s)
+    await pg.wait_for_timeout(2500)
+    sp = await E("(()=>{const s=document.getElementById('splash');return s?(document.getElementById('splog')||{}).textContent||'da':''})()")
+    check("Startbildschirm: verschwindet, sobald alles geladen ist (alle Schritte ✓)", sp == "", sp, public=True)
 
     # the scene used by search and schedule
     sd = await E("""(()=>{const d=S.days.find(d=>d.kind==='shoot'&&(d.items||[]).some(i=>i.sc));const it=d.items.find(i=>i.sc);
