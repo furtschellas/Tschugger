@@ -218,6 +218,11 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[da
     openGallery({name:"sides:"+s.name,title:"Sides · "+s.name,sc:[],url:s.url,media:arr(s.pg).map((p,i)=>({n:s.name+" · "+(i+1)+"/"+s.pg.length,t:"img",f:p,u:s.url}))});return}
   const x=S.dispos.find(d=>d.date===a.dataset.cspg);if(!x)return;
   openGallery({name:"cs:"+x.date,title:"Callsheet · "+(x.label||x.date),sc:[],url:x.link,media:arr(x.pg).map((p,i)=>({n:"Callsheet · "+(i+1)+"/"+x.pg.length,t:"img",f:p,u:x.link}))})});
+/* risk assessments (Gefährdungsbeurteilung) of the day: only with the right «Gefährdungsbeurteilung sehen», below the Sides,
+   folded when the callsheet opens */
+function raHTML(date){if(!vok("ra"))return "";const l=arr(S.meta&&S.meta.ra).filter(r=>r.date===date);if(!l.length)return "";
+  return '<details class="dsec rasec"><summary><h3 class="dh">'+esc(L("Gefährdungsbeurteilung"))+' · '+l.length+'</h3></summary><p class="ghint">'+esc(L("Gefährdungsbeurteilungen des Tages (Sicherheit am Set)."))+'</p><div class="sidesb">'+
+    l.map(r=>'<a class="pillbtn" href="'+esc(safeUrl(r.url))+'" target="_blank" rel="noopener noreferrer">⚠️ '+esc(r.name)+'</a>').join("")+'</div></details>'}
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   const t=todayISO(),PD=planDays();
@@ -232,8 +237,8 @@ function renderDispo(){
   const day=S.days.find(d=>d.date===S.dday)||{},x=by[S.dday];
   if(day.kind&&day.kind!=="shoot")return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+fmtDate(day.date)+'</span>'+UNITBAR+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
   if(!x){
-    return h+(UNITBAR?'<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>':'')+'<div class="dsp-empty"><div class="eh">'+esc(day.label||"")+' · '+(day.date?fmtDate(day.date):'')+'</div><b>'+L('Callsheet folgt')+'</b><p>'+L('Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.')+'</p>'+
-      (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>'+sidesHTML(day.date);
+    return h+(UNITBAR?'<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>':'')+'<div class="dsp-empty"><div class="eh">'+esc(day.label||"")+' · '+(day.date?fmtDate(day.date):'')+'</div><b>'+L('Callsheet folgt')+'</b><p>'+L('Das Callsheet erscheint hier automatisch, sobald es im Callsheet-Ordner der Dropbox liegt, meist am Vorabend.')+'</p>'+
+      (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>'+sidesHTML(day.date)+raHTML(day.date);
   }
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>':'';
   h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date drow"><span>'+fmtDate(x.date)+(x.version?' · '+esc(x.version):'')+'</span>'+UNITBAR+'</div></div></div>';
@@ -262,7 +267,7 @@ function renderDispo(){
     const w=Math.max(...rows.map(r=>r.length));
     h+='<section class="dsec"><h3 class="dh">'+esc(String(sec.title||""))+'</h3>'+(w>1?'<div class="tblw"><table class="dtbl"><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(String(c==null?"":c))+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>'
       :'<div class="dlines">'+rows.map(r=>'<p>'+esc(String(r[0]))+'</p>').join("")+'</div>')+'</section>'}
-  h+=sidesHTML(x.date);
+  h+=sidesHTML(x.date)+raHTML(x.date);
   if(arr(x.pg).length||x.link)h+='<p class="csorig">'+(arr(x.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="bigbtn" data-cspg="'+esc(x.date)+'">'+L('Original-Callsheet ansehen')+' <small>'+x.pg.length+'</small></button> ':'')+
     (x.link?'<a class="pillbtn" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer">'+L('In Dropbox öffnen')+'</a>':'')+'</p>';
   return h;
