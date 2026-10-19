@@ -28,11 +28,10 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
 (function(){var el=document.getElementById("splash"),c=document.getElementById("splp"),t0=Date.now(),cur=0,done=false;
   var shut=false;function clap(){if(shut)return;shut=true;el.classList.add("shut");try{if(navigator.vibrate)navigator.vibrate([22,30,18])}catch(e){}}
   function set(p){if(p>cur){cur=p;c.style.strokeDashoffset=String(465*(1-p/100));if(p>=80&&el.classList.contains("vis"))clap()}}
-  /* on a start the logo, the versions and the © are always shown (at least MINSHOW ms, so they can be read);
-     the app keeps loading behind it, so this costs no loading time */
-  var MINSHOW=1400;el.classList.add("vis");
+  /* on a start the logo, the versions and the © are shown right away – only as long as the app is loading */
+  el.classList.add("vis");
   var tp=0;requestAnimationFrame(function(){tp=Date.now()});
-  function end(){if(done)return;var base=tp||Date.now();if(!tp){requestAnimationFrame(function(){tp=Date.now();end()});return}/* as short as possible: away as soon as the app is ready (the versions are also under Mein Konto → App) */var left=MINSHOW-(Date.now()-t0);if(left>0&&!(document.getElementById("gate")||{}).offsetParent){setTimeout(end,left);return}done=true;var w=shut?60:160;set(100);setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove()},200)},w)}
+  function end(){if(done)return;var base=tp||Date.now();if(!tp){requestAnimationFrame(function(){tp=Date.now();end()});return}/* as short as possible: away as soon as the app is ready (the versions are also under Mein Konto → App) */done=true;var w=shut?60:160;set(100);setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove()},200)},w)}
   /* below the logo (only when the app starts, not on a reload): schedule version, script version, app version and © */
   /* «start» = first page of this visit (a new tab or the app opened anew); a reload in the same visit shows only the logo */
   /* «reload» = the person reloaded while using the app (the page was visible within the last minute). Phones also «reload»
