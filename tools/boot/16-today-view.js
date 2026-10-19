@@ -43,7 +43,9 @@ function scriptChgHTML(c){const sx=c.sx||{},sc=arr(sx.scenes);
   return '<button type="button" class="lnk tscr" data-tscript>'+esc(c.txt)+'</button>'+
     (sc.length?'<span class="tscrsc">'+esc(L(sc.length===1?"Szene":"Szenen"))+': '+sc.map(x=>'<button type="button" class="lnk" data-scene="'+esc(x)+'">'+esc(x)+'</button>').join(", ")+'</span>':'')+
     (sx.log?'<details class="tscrlog"><summary>'+esc(L("Ganzes Changelog"))+'</summary>'+clogHTML(sx.log)+'</details>':'')}
-function todayDay(){const t=todayISO();const ds=(S.days||[]).filter(d=>d.date);return ds.find(d=>d.date===t)||ds.find(d=>d.date>t&&d.kind==="shoot")||ds.find(d=>d.date>t)||null}
+/* the shooting day shown in «Today»: today when shooting, else the next shooting day (a travel or free day today is shown above it) */
+function todayDay(){const t=todayISO();const ds=(S.days||[]).filter(d=>d.date);const td=ds.find(d=>d.date===t);
+  return (td&&td.kind==="shoot"?td:null)||ds.find(d=>d.date>t&&d.kind==="shoot")||td||ds.find(d=>d.date>t)||null}
 VIEWS.today=function(){
   if(!S.loaded&&!(S.days||[]).length)return '<div class="empty">'+L("Daten werden geladen …")+'</div>';
   const d=todayDay(),t=todayISO();
@@ -62,6 +64,9 @@ VIEWS.today=function(){
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
   try{if(me&&vok("mycal")&&tShow("my")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
     h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'<button type="button" class="tmyall" data-tomy>'+esc(L("Alle"))+' ›</button></div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· '+esc(L("Fahrer:in"))+': '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+'</div>'}}catch(_){}
+  /* today a travel or free day: short note above the next shooting day */
+  {const td=d.date!==t?(S.days||[]).find(x=>x.date===t&&x.kind!=="shoot"):null;
+    if(td)h+='<div class="tcard tinfo"><div class="tch">'+esc(L("Heute"))+' · '+esc(L(td.label||""))+'</div>'+(TX(td,"info")?'<p class="tsub">'+esc(TX(td,"info"))+'</p>':'')+'</div>'}
   /* title of the (next) shooting day below my events */
   h+=thead;
   /* calls */

@@ -24,8 +24,11 @@ def check(name, ok, info="", public=False):
         import re as _re
         r["e"] = _re.sub(r"[\w.+-]+@[\w-]+\.[\w.]+|\+?\d[\d ]{6,}", "…", str(info))[:160]
     RESULTS.append(r)
-    print(("✓ " if ok else "✗ ") + name + ("" if ok or not info else "  – " + str(info)[:160]), flush=True)
-    if not ok: FAILS.append(name)
+    # the public log only gets the name (and the cleaned detail above) – never raw details, they can contain crew data
+    print(("✓ " if ok else "✗ ") + name + ("" if ok or "e" not in r else "  – " + r["e"]), flush=True)
+    if not ok:
+        FAILS.append(name)
+        if len(FAILS) <= 8: print("::error title=Test::" + name.replace("\n", " ")[:200] + ("" if "e" not in r else " – " + r["e"].replace("\n", " ")), flush=True)
     return bool(ok)
 
 
