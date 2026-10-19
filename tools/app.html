@@ -2090,8 +2090,8 @@ function csCallPlace(c,me,call){const ct=hm(call.t);
      return Object.assign({},p,{how:L("Fahrer")+" "+[r.vehicle,r.t1&&(L("ab")+" "+hm(r.t1)),r.to&&("→ "+r.to)].filter(Boolean).join(" ")})}}const rides=csA(c.transport).filter(r=>me.hit(r.passengers)||me.hit(r.driver)).concat(csA(c.crewTransport).filter(r=>me.hit(r.people)));
   const r=rides.filter(r=>hm(r.t2)).sort((a,b)=>hm(a.t2).localeCompare(hm(b.t2)))[0];
   if(r){const p=csPlace(c,r.to);if(p){p.how=L("mit")+" "+[r.vehicle,r.from&&(L("ab")+" "+r.from),r.t1].filter(Boolean).join(" ");return p}}
-  if(ct){let at=null;for(const o of csA((c.order||{}).rows)){const m=String(o.text||"").match(/@\s*(loc\.?\s*\d+)/i);if(m&&hm(o.t)&&hm(o.t)<=ct)at=m[1]}if(at)return csPlace(c,at)}
-  const l=csA(c.locations)[0];return l?{name:'Set '+(l.no||"1")+' · '+(l.name||""),map:l.map||""}:null}
+  /* no ride: the place is not on the callsheet – nothing is guessed */
+  return null}
 /* Base, Lunch and Dinner as locations of their own (in the document they are lines of a set: «W / H / M Cast + Lunch: Restaurant Hermitage …») */
 function csLocs(c){const sets=[],extra=new Map();
   for(const l of csA(c.locations)){const items=[];for(const i of csA(l.items)){const lab=String(i.label||"");
@@ -2103,6 +2103,8 @@ function csLocs(c){const sets=[],extra=new Map();
       for(const k of grp)if(!e.kinds.includes(k))e.kinds.push(k);if(!e.map&&i.map)e.map=i.map;const rest=String(i.text).split(",").slice(1).join(",").trim();if(rest&&!e.notes.includes(rest))e.notes.push(rest);
       e.items.push({label:lab,text:""});extra.set(key,e)}}
     sets.push(Object.assign({},l,{items}))}
+  /* a set without a number on the callsheet («ER SET», read wrongly) gets its position: 1, 2, 3 … (as «Loc. 3» elsewhere in the document) */
+  sets.forEach((l,i)=>{if(!/^\d+[a-z]?$/i.test(String(l.no||"").trim()))l.no=String(i+1)});
   return sets.concat([...extra.values()].map(e=>Object.assign(e,{no:e.kinds.join(" · "),items:e.items.filter(x=>x.label).map(x=>({label:x.label,text:""}))})))}
 /* short code of a place for the call list: S1, S2, Base, P1 … */
 function csShort(p){const n=String(p&&p.name||"");let m=n.match(/^Set\s*(\w+)/i);if(m)return "S"+m[1];if(/base|lunch|hermitage/i.test(n))return "Base";m=n.match(/park\w*\s*loc\.?\s*(\d+)/i);if(m)return "P"+m[1];m=n.match(/loc\.?\s*(\d+)/i);if(m)return "S"+m[1];return n.split(/[ ,·]/)[0].slice(0,8)}
@@ -2145,7 +2147,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
     +(()=>{if(!me)return"";const call=csA(c.calls).find(r=>me.hit(r.name));let pl=null;try{pl=call?csCallPlace(c,me,call):null}catch(_){}if(!pl)return"";
       const ad=(csA(pl.notes).map(String).find(t=>/\d{4}/.test(t))||"").split(/\.\s/)[0];const to=(ad||String(pl.name||"").replace(/^[^:]*:\s*/,"").replace(/^Set\s*\w+\s*·\s*/,"")).trim();if(!to&&!pl.map)return"";
       const from=(day&&day.drive&&day.drive.from)||"Hotel",enc=encodeURIComponent,url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+enc(from)+"&destination="+enc(to),here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+enc(to);
-      return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc(csShort(pl)||L("Route"))+' ›</div></button>'})()+'</div>';
+      return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc((()=>{const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})())+' ›</div></button>'})()+'</div>';
   /* contact on set: the name itself is the call link (only with the phone right) */
   if(c.contact&&(c.contact.name||c.contact.phone)){const ct=c.contact,tel=String(ct.phone||"").replace(/[^\d+]/g,""),nm=esc(ct.name||ct.phone||"");
     h+='<div class="cscontact"><b>'+esc(L("Kontakt am Set"))+':</b> '+(tel&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'" title="'+esc(L("Anrufen"))+'">'+CSI.phone+nm+'</a>':nm)+(ct.role?' <small>· '+esc(ct.role)+'</small>':'')+'</div>'}
@@ -2168,8 +2170,11 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
     SU.calls=sm([[L("Personen"),uniq(csA(c.calls).map(r=>r.name))],[L("Abteilungen"),uniq(csA(c.calls).map(r=>r.dept))]]);
     SU.notes=sm([[L("Notizen"),csA(c.notes).length],["Funk",c.radio?"✓":""]])}
   let csCnt="";{const nCast=csA(c.cast).length,nCrew=new Set(csA(c.calls).map(r=>nmk(String(r.name||""))).filter(Boolean)).size,nEx=csA(c.extras).reduce((a,r)=>a+(parseInt(r.count,10)||0),0);
-   const cnt=nCast||nCrew||nEx?'<div class="cscount">'+[["Cast",nCast],["Crew",nCrew],[L("Komparsen"),nEx],["Total",nCast+nCrew+nEx]].filter(x=>x[1]).map(([k,v])=>'<span><b>'+v+'</b> '+esc(k)+'</span>').join("")+'</div>':'';
-   csCnt=cnt}
+   /* the callsheet's own totals line («TOTAL: 62 || CREW: 46 CAST: 11 EXTRAS: 0 ZUSATZ: 5») wins over counting rows */
+   const tl=String(c.total||"")+" "+csA(c.notes).join(" ");const g=re=>{const m=tl.match(re);return m?+m[1]:null};
+   const T={tot:g(/TOTAL:?\s*(\d+)/i),crew:g(/CREW:?\s*(\d+)/i),cast:g(/CAST:?\s*(\d+)/i),ex:g(/EXTRAS:?\s*(\d+)/i),zu:g(/ZUSATZ:?\s*(\d+)/i)};
+   const parts=T.tot!=null?[["Cast",T.cast],["Crew",T.crew],[L("Komparsen"),T.ex],[L("Zusatz"),T.zu],["Total",T.tot]]:[["Cast",nCast],["Crew",nCrew],[L("Komparsen"),nEx],["Total",nCast+nCrew+nEx]];
+   const pp=parts.filter(x=>x[1]);csCnt=pp.length?'<div class="cscount">'+pp.map(([k,v])=>'<span><b>'+v+'</b> '+esc(k)+'</span>').join("")+'</div>':''}
   h+=csSec(L("Team des Tages"),csA(c.key).length||c.office||csCnt?'<div class="cskey">'+(c.office?'<div><span class="k">'+esc(L("Produktionsbüro"))+'</span>'+csTx(c.office)+'</div>':'')+csA(c.key).map(k=>{const tel=String(k.phone||"").replace(/[^\d+]/g,"");
       /* the name is the call link (with the phone right) */
       return '<div><span class="k">'+esc(k.role||"")+'</span>'+(tel.length>6&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'" title="'+esc(k.phone)+'">'+CSI.phone+esc(k.name||k.phone)+'</a>':'<span>'+esc(k.name||"")+(tel&&!vok("phone")?' '+csTx(k.phone):'')+'</span>')+'</div>'}).join("")+'</div>'+
