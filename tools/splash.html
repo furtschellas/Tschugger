@@ -38,7 +38,10 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
      an installed app they had closed in the background – that is a start, so the versions are shown then. */
   /* back within 30 minutes (also when the phone had closed the app): straight on, without the logo, on the same page */
   var rel=false;try{var lv=+localStorage.getItem("lastVis")||0;rel=!!lv&&Date.now()-lv<30*60000}catch(e){}
-  window.__REL=rel;if(rel){el.style.display="none";done=true;setTimeout(function(){try{el.remove()}catch(e){}},0)}/* the app uses this too: a reload keeps the page, a start opens the start page */
+  /* a reload shows the logo and the loading status too (only the versions are left out) – before, the logo was hidden
+     completely when the app had been used in the last 30 minutes, so most starts showed no logo and no loading status */
+  window.__REL=rel;/* the app uses this too: a reload keeps the page, a start opens the start page */
+  if(rel){var tv0=document.getElementById("spv");if(tv0)tv0.style.display="none"}
   function seen(){try{localStorage.setItem("lastVis",String(Date.now()))}catch(e){}}
   setInterval(function(){if(document.visibilityState==="visible")seen()},15000);
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")seen()});addEventListener("pagehide",seen);
