@@ -93,7 +93,7 @@ function makeICS(date,i){
   const tm=/^\d{1,2}:\d{2}$/.test(i.t||""),te=/^\d{1,2}:\d{2}$/.test(i.end||"");
   const L2=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Tschugger Crew//PREP//DE","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT",
     "UID:prep-"+date+"-"+String(i.n||"").replace(/\W+/g,"").slice(0,30)+"-"+(i.t||"").replace(/\W/g,"")+"@tschugger-crew","DTSTAMP:"+icsDate(new Date())];
-  if(tm){const st=zurichUTC(date,i.t);const en=te?zurichUTC(date,i.end):new Date(st.getTime()+3600e3);L2.push("DTSTART:"+icsDate(st),"DTEND:"+icsDate(en))}
+  if(tm){const st=zurichUTC(date,i.t);let en=te?zurichUTC(date,i.end):new Date(st.getTime()+3600e3);if(en<=st)en=new Date(en.getTime()+864e5); /* night shoot: end after midnight */L2.push("DTSTART:"+icsDate(st),"DTEND:"+icsDate(en))}
   else{const d0=date.replace(/-/g,""),nx=new Date(date+"T12:00:00Z");nx.setUTCDate(nx.getUTCDate()+1);L2.push("DTSTART;VALUE=DATE:"+d0,"DTEND;VALUE=DATE:"+nx.toISOString().slice(0,10).replace(/-/g,""))}
   const desc=[i.t&&!tm?i.t:"",i.crew?"Crew: "+i.crew:"",i.cast?"Cast: "+i.cast:"",i.map||"","TSCHUGGER Tigerblood – Prep"].filter(Boolean).join("\n");
   L2.push("SUMMARY:"+icsEsc((tm?"":"("+(i.t||"TBA")+") ")+(i.n||"Prep")),i.where?"LOCATION:"+icsEsc(i.where):"","DESCRIPTION:"+icsEsc(desc),i.map?"URL:"+i.map:"");
@@ -115,12 +115,15 @@ function findPerson(name,people){
   let hit=people.find(p=>p.k===k);if(hit)return hit;
   const [f,...r]=k.split(" "),l=r.join(" ");
   const ok=p=>{const [pf,...pr]=p.k.split(" ");const pl=pr.join(" ");return (pf===f&&lev(pl,l)<=1)||(pl===l&&(lev(pf,f)<=2||pf.startsWith(f)||f.startsWith(pf)))};
-  return people.find(p=>p.email&&ok(p))||people.find(ok)||null;
+  const cand=people.filter(p=>p.k); /* entries without a name never match (else every first name went to them) */
+  return cand.find(p=>p.email&&ok(p))||cand.find(ok)||null;
 }
 function groupPeople(term,people){
   const t=nmk(term);
-  if(/^(everyone|all crew|crew cast|crew and cast|alle)/.test(t)||/all crew who/.test(t))return {all:true,list:people.filter(p=>p.src!=="user")};
-  const dm=[[/art dep|ausstattung|szenenbild/,/ausstattung|art/],[/licht|grip|light/,/licht|grip/],[/kamera|camera/,/kamera/],[/kost|costume/,/kost/],[/mask|make ?up/,/mask/],[/ton|sound/,/^ton/]];
+  /* whole words only: names like «Anton», «Allegra» or «Lichtsteiner» are people, not departments */
+  if(/^(everyone|all crew|crew cast|crew and cast|alle)( |$)/.test(t)||/all crew who/.test(t))return {all:true,list:people.filter(p=>p.src!=="user")};
+  const W=w=>new RegExp("(^| )("+w+")( |$)");
+  const dm=[[W("art dep|art department|art dept|ausstattung|szenenbild"),/ausstattung|art/],[W("licht|light|lighting|grip|grips"),/licht|grip/],[W("kamera|camera"),/kamera/],[W("kostum|kostume|kostumbild|costume|costumes|wardrobe"),/kost/],[W("maske|make up|makeup|hmu|hair make up"),/mask/],[W("ton|sound"),/^ton/]];
   for(const [re,dep] of dm)if(re.test(t)){const g=S.crew.filter(x=>dep.test(fold(x.dept)));if(g.length)return {all:false,list:people.filter(p=>g.some(x=>fold(x.dept)===fold(p.src)))}}
   return null;
 }

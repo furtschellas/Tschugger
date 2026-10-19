@@ -15,10 +15,13 @@ function auditWrap(fs){
     if(col==="members"&&id===ME.uid)return; /* own profile, last seen */
     if(col==="requests"&&id===lc(ME.email))return;
     fs.addDoc(fs.collection(FB.db,"audit"),{by:lc(ME.email),at:fs.serverTimestamp(),op,col,id:String(id||"").slice(0,120),sum:auditSum(col,data,op)}).catch(()=>{})}catch(_){}};
-  F.setDoc=async(ref,data,o)=>{const r=await fs.setDoc(ref,data,o);log("set",ref,data);return r};
-  F.updateDoc=async(ref,data)=>{const r=await fs.updateDoc(ref,data);log("update",ref,data);return r};
-  F.deleteDoc=async(ref)=>{const r=await fs.deleteDoc(ref);log("delete",ref,null);return r};
-  F.addDoc=async(col,data)=>{const r=await fs.addDoc(col,data);if(col&&col.path!=="audit")log("add",{path:col.path+"/"+(r&&r.id||"")},data);return r};
+  /* «Ansicht als …» (simulation): nothing is written – not only forms, also buttons, switches and selections */
+  const sim=()=>{if(typeof SIMUSER!=="undefined"&&SIMUSER){throw Object.assign(new Error(L("Nur Ansicht – in der Simulation wird nichts gespeichert.")),{code:"simulation"})}};
+  F.setDoc=async(ref,data,o)=>{sim();const r=await fs.setDoc(ref,data,o);log("set",ref,data);return r};
+  F.updateDoc=async(ref,data)=>{sim();const r=await fs.updateDoc(ref,data);log("update",ref,data);return r};
+  F.deleteDoc=async(ref)=>{sim();const r=await fs.deleteDoc(ref);log("delete",ref,null);return r};
+  F.writeBatch=db=>{sim();return fs.writeBatch(db)};
+  F.addDoc=async(col,data)=>{sim();const r=await fs.addDoc(col,data);if(col&&col.path!=="audit")log("add",{path:col.path+"/"+(r&&r.id||"")},data);return r};
   return F;
 }
 const AUD={list:null,busy:false,q:"",at:0};

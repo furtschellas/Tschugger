@@ -68,6 +68,11 @@ const locHref=(l,ad)=>(l&&/^https:\/\//.test(l.map||""))?l.map:maps(ad);
 const mapsSearch=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
 const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};
 const norm=s=>String(s).toLowerCase().replace(/\s+/g,"");
+/* search hits marked in a text: ranges found in the raw text, then escaped piece by piece (marking inside escaped HTML broke «&#39;» and earlier marks) */
+function markTerms(text,terms,min){text=String(text||"");const r=[];
+  for(const q of terms||[]){if(!q||q.length<(min||1))continue;const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"gi");let m;while((m=re.exec(text))){if(!m[0].length){re.lastIndex++;continue}r.push([m.index,m.index+m[0].length])}}
+  if(!r.length)return esc(text);r.sort((a,b)=>a[0]-b[0]);const g=[r[0].slice()];for(const x of r.slice(1)){const l=g[g.length-1];if(x[0]<=l[1])l[1]=Math.max(l[1],x[1]);else g.push(x.slice())}
+  let out="",p=0;for(const [a,b] of g){out+=esc(text.slice(p,a))+"<mark>"+esc(text.slice(a,b))+"</mark>";p=b}return out+esc(text.slice(p))}
 /* derived-data cache: cleared whenever data changes, so lookups run once per data version */
 const MEMO=new Map();
 const memo=(k,f)=>{if(MEMO.has(k))return MEMO.get(k);const v=f();MEMO.set(k,v);return v};

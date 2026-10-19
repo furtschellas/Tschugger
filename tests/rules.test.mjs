@@ -40,7 +40,8 @@ await env.withSecurityRulesDisabled(async c => {
   await setDoc(doc(db, "userroles/view@test.ch"), { role: "viewer" });
   await setDoc(doc(db, "secret/keyscript"), { k: "s" });
   await setDoc(doc(db, "secret/keycontacts"), { k: "c" });
-  await setDoc(doc(db, "roles/reader"), { name: "Reader", perms: ["view.plan", "view.script", "view.phone"] });
+  await setDoc(doc(db, "roles/reader"), { name: "Reader", perms: ["view.plan", "view.script", "view.phone", "roles.assign"] });
+  await setDoc(doc(db, "roles/minimal"), { name: "Minimal", perms: ["view.plan"] });
   await setDoc(doc(db, "userroles/read@test.ch"), { role: "reader" });
   for (const k of ["crew", "power", "other", "viewer", "reader", "norole"]) await setDoc(doc(db, "members/" + U[k][0]), { active: true, email: U[k][1], name: k });
   await setDoc(doc(db, "events/evPower"), { c: "x", at: 1, by: "uPower" });
@@ -70,6 +71,15 @@ await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(
 await check("Kontakt-Schlüssel: ohne Rolle mit Freigabe «Telefonnummern für alle»", assertSucceeds(getDoc(doc(as("norole"), "secret/keycontacts"))));
 await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "config/app"), { phonePublic: false }, { merge: true }); });
 await check("Bereichs-Schlüssel: niemand darf sie ändern", assertFails(setDoc(doc(as("owner"), "secret/keyscript"), { k: "x" })));
+
+// ---------- assigning and editing roles: never more rights than one has ----------
+await check("Rollen zuweisen: Rolle mit eigenen Rechten geht", assertSucceeds(setDoc(doc(as("reader"), "userroles/other@test.ch"), { role: "minimal" })));
+await check("Rollen zuweisen: Rolle mit Rechten, die man nicht hat, nicht", assertFails(setDoc(doc(as("reader"), "userroles/other@test.ch"), { role: "power" })));
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "userroles/other@test.ch"), { role: "crew" }); });
+await check("Rolle bearbeiten: fremde vorhandene Rechte bleiben erhalten", assertSucceeds(setDoc(doc(as("power"), "roles/minimal"), { name: "Minimal 2", perms: ["view.plan"] })));
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "roles/withscript"), { name: "S", perms: ["view.plan", "view.script"] }); });
+await check("Rolle bearbeiten: Rolle mit fremdem Recht umbenennen geht (Recht bleibt)", assertSucceeds(setDoc(doc(as("power"), "roles/withscript"), { name: "S2", perms: ["view.plan", "view.script"] })));
+await check("Rolle bearbeiten: neues fremdes Recht hinzufügen nicht", assertFails(setDoc(doc(as("power"), "roles/withscript"), { name: "S2", perms: ["view.plan", "view.script", "settings"] })));
 
 // ---------- no self-promotion ----------
 await check("Rollen: Crew kann sich nicht selbst Admin machen", assertFails(setDoc(doc(as("crew"), "admins/crew@test.ch"), { addedAt: 1 })));

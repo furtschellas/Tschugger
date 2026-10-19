@@ -383,7 +383,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .scbtn:active{background:var(--accent);color:var(--accent-ink)}
 .scrn{position:fixed;inset:0;z-index:60;background:rgba(5,3,12,.72);display:flex;align-items:flex-end;justify-content:center;padding-top:env(safe-area-inset-top,0px)}
 .scrn[hidden]{display:none}
-.scnbox{background:var(--sheet);border:1px solid var(--rule);border-radius:16px 16px 0 0;width:100%;max-width:760px;height:92vh;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.5)}
+.scnbox{background:var(--sheet);border:1px solid var(--rule);border-radius:16px 16px 0 0;width:100%;max-width:760px;height:92vh;height:92dvh;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.5)}
 @media (min-width:768px){.scrn{align-items:center}.scnbox{border-radius:16px}}
 .scnhd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;row-gap:10px;padding:12px 16px;border-bottom:1px solid var(--rule)}
 .svb{flex-basis:100%;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0}
@@ -831,6 +831,11 @@ const locHref=(l,ad)=>(l&&/^https:\/\//.test(l.map||""))?l.map:maps(ad);
 const mapsSearch=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
 const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};
 const norm=s=>String(s).toLowerCase().replace(/\s+/g,"");
+/* search hits marked in a text: ranges found in the raw text, then escaped piece by piece (marking inside escaped HTML broke «&#39;» and earlier marks) */
+function markTerms(text,terms,min){text=String(text||"");const r=[];
+  for(const q of terms||[]){if(!q||q.length<(min||1))continue;const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"gi");let m;while((m=re.exec(text))){if(!m[0].length){re.lastIndex++;continue}r.push([m.index,m.index+m[0].length])}}
+  if(!r.length)return esc(text);r.sort((a,b)=>a[0]-b[0]);const g=[r[0].slice()];for(const x of r.slice(1)){const l=g[g.length-1];if(x[0]<=l[1])l[1]=Math.max(l[1],x[1]);else g.push(x.slice())}
+  let out="",p=0;for(const [a,b] of g){out+=esc(text.slice(p,a))+"<mark>"+esc(text.slice(a,b))+"</mark>";p=b}return out+esc(text.slice(p))}
 /* derived-data cache: cleared whenever data changes, so lookups run once per data version */
 const MEMO=new Map();
 const memo=(k,f)=>{if(MEMO.has(k))return MEMO.get(k);const v=f();MEMO.set(k,v);return v};
@@ -1016,7 +1021,7 @@ function makeICS(date,i){
   const tm=/^\d{1,2}:\d{2}$/.test(i.t||""),te=/^\d{1,2}:\d{2}$/.test(i.end||"");
   const L2=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Tschugger Crew//PREP//DE","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT",
     "UID:prep-"+date+"-"+String(i.n||"").replace(/\W+/g,"").slice(0,30)+"-"+(i.t||"").replace(/\W/g,"")+"@tschugger-crew","DTSTAMP:"+icsDate(new Date())];
-  if(tm){const st=zurichUTC(date,i.t);const en=te?zurichUTC(date,i.end):new Date(st.getTime()+3600e3);L2.push("DTSTART:"+icsDate(st),"DTEND:"+icsDate(en))}
+  if(tm){const st=zurichUTC(date,i.t);let en=te?zurichUTC(date,i.end):new Date(st.getTime()+3600e3);if(en<=st)en=new Date(en.getTime()+864e5); /* night shoot: end after midnight */L2.push("DTSTART:"+icsDate(st),"DTEND:"+icsDate(en))}
   else{const d0=date.replace(/-/g,""),nx=new Date(date+"T12:00:00Z");nx.setUTCDate(nx.getUTCDate()+1);L2.push("DTSTART;VALUE=DATE:"+d0,"DTEND;VALUE=DATE:"+nx.toISOString().slice(0,10).replace(/-/g,""))}
   const desc=[i.t&&!tm?i.t:"",i.crew?"Crew: "+i.crew:"",i.cast?"Cast: "+i.cast:"",i.map||"","TSCHUGGER Tigerblood – Prep"].filter(Boolean).join("\n");
   L2.push("SUMMARY:"+icsEsc((tm?"":"("+(i.t||"TBA")+") ")+(i.n||"Prep")),i.where?"LOCATION:"+icsEsc(i.where):"","DESCRIPTION:"+icsEsc(desc),i.map?"URL:"+i.map:"");
@@ -1038,12 +1043,15 @@ function findPerson(name,people){
   let hit=people.find(p=>p.k===k);if(hit)return hit;
   const [f,...r]=k.split(" "),l=r.join(" ");
   const ok=p=>{const [pf,...pr]=p.k.split(" ");const pl=pr.join(" ");return (pf===f&&lev(pl,l)<=1)||(pl===l&&(lev(pf,f)<=2||pf.startsWith(f)||f.startsWith(pf)))};
-  return people.find(p=>p.email&&ok(p))||people.find(ok)||null;
+  const cand=people.filter(p=>p.k); /* entries without a name never match (else every first name went to them) */
+  return cand.find(p=>p.email&&ok(p))||cand.find(ok)||null;
 }
 function groupPeople(term,people){
   const t=nmk(term);
-  if(/^(everyone|all crew|crew cast|crew and cast|alle)/.test(t)||/all crew who/.test(t))return {all:true,list:people.filter(p=>p.src!=="user")};
-  const dm=[[/art dep|ausstattung|szenenbild/,/ausstattung|art/],[/licht|grip|light/,/licht|grip/],[/kamera|camera/,/kamera/],[/kost|costume/,/kost/],[/mask|make ?up/,/mask/],[/ton|sound/,/^ton/]];
+  /* whole words only: names like «Anton», «Allegra» or «Lichtsteiner» are people, not departments */
+  if(/^(everyone|all crew|crew cast|crew and cast|alle)( |$)/.test(t)||/all crew who/.test(t))return {all:true,list:people.filter(p=>p.src!=="user")};
+  const W=w=>new RegExp("(^| )("+w+")( |$)");
+  const dm=[[W("art dep|art department|art dept|ausstattung|szenenbild"),/ausstattung|art/],[W("licht|light|lighting|grip|grips"),/licht|grip/],[W("kamera|camera"),/kamera/],[W("kostum|kostume|kostumbild|costume|costumes|wardrobe"),/kost/],[W("maske|make up|makeup|hmu|hair make up"),/mask/],[W("ton|sound"),/^ton/]];
   for(const [re,dep] of dm)if(re.test(t)){const g=S.crew.filter(x=>dep.test(fold(x.dept)));if(g.length)return {all:false,list:people.filter(p=>g.some(x=>fold(x.dept)===fold(p.src)))}}
   return null;
 }
@@ -1125,8 +1133,9 @@ let MYEV=[],MCNAMES=[];
 /* «Meine Termine»: only upcoming events, events that started at most 5 hours ago and events still running (end time);
    events without a time stay visible for their whole day */
 function evRecent(e){const ok=x=>/^\d\d:\d\d$/.test(x||"");if(!ok(e.t)&&!ok(e.end))return e.date>=todayISO();
-  const ms=x=>new Date(e.date+"T"+x+":00").getTime(),now=Date.now();
-  return (ok(e.t)&&ms(e.t)>=now-5*3600e3)||(ok(e.end)&&ms(e.end)>=now)}
+  const ms=x=>zurichUTC(e.date,x).getTime(),now=Date.now();
+  let end=ok(e.end)?ms(e.end):0;if(end&&ok(e.t)&&end<=ms(e.t))end+=864e5; /* night shoot: end after midnight */
+  return (ok(e.t)&&ms(e.t)>=now-5*3600e3)||(end&&end>=now)}
 function renderMy(){
   if(!vok("mycal"))return '<div class="empty">'+esc(L("Kein Zugang"))+'</div>';
   const me=myIdentity();const people=mailPeople().filter(x=>x.src&&x.src!=="user");
@@ -1513,7 +1522,7 @@ function renderDispo(){
   const place=(lbl,p)=>p&&(p.name||p.address)?'<div class="dbox"><div class="dk">'+lbl+'</div><div class="dn">'+esc(p.name||"")+'</div>'+(p.address?'<a href="'+maps([p.name,p.address].filter(Boolean).join(", "))+'" target="_blank" rel="noopener noreferrer">'+esc(p.address)+'</a>':'')+(p.parking?'<div class="ds">'+L('Parken')+': '+esc(p.parking)+'</div>':'')+(p.note?'<div class="ds">'+esc(p.note)+'</div>':'')+'</div>':'';
   h+='<section class="dsec"><h3 class="dh">'+L('Treffpunkt & Orte')+'</h3><div class="dgrid">'+place(L("Base / Treffpunkt"),x.base)+(x.locations||[]).map(l=>place(L("Drehort"),l)).join("")+'</div></section>';
   if((x.meals||[]).length||(x.calls||[]).length){
-    const tl=[...(x.meals||[]).map(m=>({t:m.t,n:m.what+(m.where?' · '+m.where:''),k:"meal"})),...(x.calls||[]).map(c=>({t:c.t,n:c.dept+(c.note?' · '+c.note:''),k:"call"}))].sort((a,b)=>String(a.t).localeCompare(String(b.t)));
+    const tl=[...(x.meals||[]).map(m=>({t:m.t,n:m.what+(m.where?' · '+m.where:''),k:"meal"})),...(x.calls||[]).map(c=>({t:c.t,n:c.dept+(c.note?' · '+c.note:''),k:"call"}))].sort((a,b)=>(hm(a.t)||String(a.t||"")).localeCompare(hm(b.t)||String(b.t||""))) /* 9:00 before 10:00 */;
     h+='<section class="dsec"><h3 class="dh">'+L('Zeiten')+'</h3><ol class="tl">'+tl.map(r=>{const mn=r.k==="meal"&&/\b(lunch|mittag|pranzo|déjeuner)\b/i.test(r.n)&&window.menuFor?window.menuFor(x.date,"all"):"";return '<li class="row ev'+(mn?' lunch':'')+'"><div class="t">'+esc(r.t||"")+'</div><div class="what'+(r.k==="meal"?' meal':'')+'">'+esc(r.n)+mn+'</div></li>'}).join("")+'</ol></section>';
   }
   if((x.scenes||[]).length){
@@ -1607,8 +1616,7 @@ function snippet(text,terms){
   for(const q of terms){const i=f.indexOf(q);if(i>=0&&(pos<0||i<pos)){pos=i;len=q.length}}
   if(pos<0)return"";
   const a=Math.max(0,pos-50),b=Math.min(t.length,pos+len+80);
-  let out=esc(t.slice(a,b).replace(/\s+/g," "));
-  for(const q of terms){if(q.length<2)continue;const re=new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");out=out.replace(re,"<mark>$1</mark>")}
+  const out=markTerms(t.slice(a,b).replace(/\s+/g," "),terms,2);
   return '<span class="sclsn">'+(a>0?'… ':'')+out+(b<t.length?' …':'')+'</span>';
 }
 function renderScript(){
@@ -1916,8 +1924,9 @@ function factsHTML(hits){
 const TOD_RE=/[-–]\s*(DAY|NIGHT|EVENING|MORNING|DAWN|DUSK|CONTINUOUS|LATER|SAME|NOON|MIDDAY|AFTERNOON|SUNSET|SUNRISE|TAG|NACHT|ABEND|MORGEN)\b/i;
 /* slugline as in the script; if it has no time of day, add it from the schedule (D/N/Ev/Mo) */
 /* English scene heading from the schedule («EXT. VALAIS - SIDE VALLEY ROAD - MORNING»); shown instead of the German one with the EN button */
-function spHeadEn(x){const want=norm(x.sc);let it=null;
-  for(const d of S.days){for(const [,its] of unitLists(d)){it=its.find(i=>i.sc&&norm(i.sc)===want&&i.set);if(it)break}if(it)break}
+/* first scheduling of a scene with a given field (same order as the schedule) – from the memoised index, not a scan per scene */
+function schedFirst(sc,f){const l=schedIndex()[norm(sc)]||[];const h=l.find(o=>o.it[f]);return h?h.it:null}
+function spHeadEn(x){const it=schedFirst(x.sc,"set");
   if(!it)return "";const ie=String(it.ie||""),io=(ie.split("/")[0]||"").toUpperCase(),t=ie.split("/")[1]||"";
   const pre=/I\+E|E\+I/.test(io)?"INT./EXT.":io.startsWith("I")?"INT.":io.startsWith("E")?"EXT.":"";
   const tod=/^N/i.test(t)?"NIGHT":/^Ev/i.test(t)?"EVENING":/^Mo/i.test(t)?"MORNING":/^D/i.test(t)?"DAY":"";
@@ -1925,15 +1934,13 @@ function spHeadEn(x){const want=norm(x.sc);let it=null;
 function spTitle(x){const de=spHead(x),en=spHeadEn(x);return '<span class="sct'+(en?' en':'')+'"><span class="hde">'+esc(de)+'</span>'+(en?'<span class="hen">'+esc(en)+'</span>':'')+'</span>'}
 function spHead(x){
   const h=String(x.head||"").trim();if(!h||TOD_RE.test(h))return h;
-  const want=norm(x.sc);let ie="";
-  for(const d of S.days){for(const [,its] of unitLists(d)){const it=its.find(i=>i.sc&&norm(i.sc)===want&&i.ie);if(it){ie=it.ie;break}}if(ie)break}
+  const ie=(schedFirst(x.sc,"ie")||{}).ie||"";
   const t=(ie.split("/")[1]||"");const tod=/^N/i.test(t)?"NIGHT":/^Ev/i.test(t)?"EVENING":/^Mo/i.test(t)?"MORNING":/^D/i.test(t)?"DAY":"";
   return tod?h+" - "+tod:h;
 }
 /* day/night marker for the slugline: schedule I/E first, else the time word in the heading */
 function spTod(x){
-  const want=norm(x.sc);let t="";
-  for(const d of S.days){for(const [,its] of unitLists(d)){const it=its.find(i=>i.sc&&norm(i.sc)===want&&i.ie);if(it){t=it.ie.split("/")[1]||"";break}}if(t)break}
+  const t=(((schedFirst(x.sc,"ie")||{}).ie||"").split("/")[1]||"");
   const h=String(x.head||"").toUpperCase();
   const k=/^N/i.test(t)?"n":/^Ev/i.test(t)?"ev":/^Mo/i.test(t)?"mo":/^D/i.test(t)?"d":
     /\b(NIGHT|NACHT)\b/.test(h)?"n":/\b(EVENING|DUSK|ABEND|SUNSET)\b/.test(h)?"ev":/\b(MORNING|DAWN|MORGEN|SUNRISE)\b/.test(h)?"mo":/\b(DAY|TAG|NOON|MIDDAY|AFTERNOON)\b/.test(h)?"d":"";
@@ -2181,7 +2188,7 @@ function roleBadges(sc,ids){const P=planRoles(sc),o=SCRIPT?(scriptRoles()[norm(s
     return st?'<span class="rbadge'+(/⚠/.test(st)?' warn':'')+'"><b>'+esc(r.name)+'</b> '+esc(st)+'</span>':""}).join("")+'</span>'}
 /* ---------- global search ---------- */
 const nrm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-function hl(text,terms){let h=esc(text);for(const t of terms){if(!t)continue;const re=new RegExp("("+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig");h=h.replace(re,"<mark>$1</mark>")}return h}
+function hl(text,terms){return markTerms(text,terms,1)}
 function searchAll(q,mode){
   mode=mode||"all";const M=k=>mode==="all"||mode===k;
   const qq=normQ(q);
@@ -2203,7 +2210,7 @@ function searchAll(q,mode){
     const sc1=(d.items||[]).filter(i=>i.sc).length,sc2=((d.unit2&&d.unit2.items)||[]).filter(i=>i.sc).length,sc3=((d.unit3&&d.unit3.items)||[]).filter(i=>i.sc).length;
     const kindw=d.kind==="shoot"?"drehtag shooting day tournage riprese":d.kind==="off"?"drehfrei frei day off off-day libre libero":"reise reisetag travel voyage viaggio";
     const text=[d.label,d.short,kindw,WDL[x.getDay()].join(" "),WD[x.getDay()],dshort(d),(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info"),dayPlaces(d).join(" "),sc2?"2nd unit":"",sc3?"3rd unit":"",sc1?"1st unit":""].join(" ");
-    if(mode==="text"?terms.every(t=>nrm([(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info")].join(" ")).includes(t)):match(text,nrm(d.short||"")+" "+dshort(d)))R.day.push({k:"day",d,sc1,sc2});
+    if(mode==="text"?terms.every(t=>nrm([(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info")].join(" ")).includes(t)):match(text,nrm(d.short||"")+" "+dshort(d)))R.day.push({k:"day",d,sc1,sc2,sc3});
   }
   for(const d of (okPlan?S.days:[]))for(const [u,list] of unitLists(d))for(const it of list){
     if(!it.sc)continue;if(!unitsOn().includes(u))continue;const ad=addrForItem(it);
@@ -2238,9 +2245,9 @@ function renderSearch(){
   const {R,terms}=res;let h="",n=0;
   const add=(o,t1,t2)=>{SR.push(o);h+='<button class="sr" data-sr="'+(SR.length-1)+'"><span class="t1">'+t1+'</span>'+(t2?'<span class="t2">'+t2+'</span>':'')+'</button>';n++};
   const sec=(title,arr,fn)=>{if(!arr.length)return;h+='<h3 class="dh">'+title+' · '+arr.length+'</h3>';arr.slice(0,40).forEach(fn)};
-  sec(L("Drehtage"),R.day,r=>add(r,'<b>'+esc(r.d.label)+'</b> · '+esc(fmtDate(r.d.date)),esc([r.d.hours,dayPlaces(r.d).join(", "),r.d.kind==="shoot"?(r.sc1+r.sc2)+" "+L("Szenen")+(r.sc2?" · 2nd Unit":""):(r.d.kind==="off"?L("Drehfrei"):(TX(r.d,"info")||L("Reisetag")))].filter(Boolean).join(" · "))));
+  sec(L("Drehtage"),R.day,r=>add(r,'<b>'+esc(r.d.label)+'</b> · '+esc(fmtDate(r.d.date)),esc([r.d.hours,dayPlaces(r.d).join(", "),r.d.kind==="shoot"?(r.sc1+r.sc2+(r.sc3||0))+" "+L("Szenen")+(r.sc2?" · 2nd Unit":"")+(r.sc3?" · 3rd Unit":""):(r.d.kind==="off"?L("Drehfrei"):(TX(r.d,"info")||L("Reisetag")))].filter(Boolean).join(" · "))));
   const rIds=S.gm==="role"?rolesFor(terms).map(r=>r.id):[];const castNm=(S.meta&&S.meta.cast)||{};
-  sec(cap(L("Szenen")),R.sc,r=>add(r,'<b>'+hl(r.it.sc,terms)+'</b> · '+hl(r.it.set||"",terms),esc((r.d.short||r.d.label)+' '+fmtDate(r.d.date).slice(0,-5)+' · '+(r.it.t||"")+(r.u==="2"?' · 2nd Unit':''))+(S.gm==="role"?'<br>'+arr(r.it.cast).filter(c=>rIds.includes(String(c))).map(c=>'<mark>'+esc(castNm[c]||c)+'</mark>').join(", "):'')+'<br>'+hl(TX(r.it,"d"),terms)+'<br>'+hl(r.ad||"",terms)));
+  sec(cap(L("Szenen")),R.sc,r=>add(r,'<b>'+hl(r.it.sc,terms)+'</b> · '+hl(r.it.set||"",terms),esc((r.d.short||r.d.label)+' '+fmtDate(r.d.date).slice(0,-5)+' · '+(r.it.t||"")+(r.u==="2"?' · 2nd Unit':r.u==="3"?' · 3rd Unit':''))+(S.gm==="role"?'<br>'+arr(r.it.cast).filter(c=>rIds.includes(String(c))).map(c=>'<mark>'+esc(castNm[c]||c)+'</mark>').join(", "):'')+'<br>'+hl(TX(r.it,"d"),terms)+'<br>'+hl(r.ad||"",terms)));
   sec("Locations",R.loc,r=>add(r,hl(r.g.title,terms),hl(r.g.s5?[((S.meta&&S.meta.locCfg||{}).s5||{}).village,L("Mehrere Adressen")].filter(Boolean).join(", "):[r.g.venue,r.g.address].filter(Boolean).join(", "),terms)));
   sec("Crew",R.crew,r=>add(r,hl(r.p.name,terms),hl([TX(r.p,"role"),TX(r.dep,"dept"),vok("phone")?r.p.phone:""].filter(Boolean).join(" · "),terms)));  /* phone only with the right to see it */
   sec("Callsheet",R.dispo,r=>add(r,esc((r.x.label||"Callsheet")+' · '+fmtDate(r.x.date)),'Callsheet'));
@@ -2292,7 +2299,9 @@ const CLEAN={
   places:list=>list.map(c=>Object.assign({},c,{items:arr(c.items)})),
   /* callsheets come from a language model: lists always lists, phone numbers always text (else the whole view breaks) */
   dispos:list=>list.filter(x=>x&&typeof x.date==="string").map(x=>Object.assign({},x,{scenes:arr(x.scenes).filter(o=>o&&typeof o==="object").map(sc=>Object.assign({},sc,{cast:arr(sc.cast)})),
-    locations:arr(x.locations),cast:arr(x.cast).filter(o=>o&&typeof o==="object").map(c=>Object.assign({},c,{phone:c.phone==null?"":String(c.phone)})),
+    locations:arr(x.locations).filter(o=>o&&typeof o==="object"),
+    contacts:arr(x.contacts).filter(o=>o&&typeof o==="object").map(c=>Object.assign({},c,{phone:c.phone==null?"":String(c.phone)})),
+    calls:arr(x.calls).filter(o=>o&&typeof o==="object"),meals:arr(x.meals).filter(o=>o&&typeof o==="object"),cast:arr(x.cast).filter(o=>o&&typeof o==="object").map(c=>Object.assign({},c,{phone:c.phone==null?"":String(c.phone)})),
     hospital:x.hospital&&typeof x.hospital==="object"?Object.assign({},x.hospital,{phone:x.hospital.phone==null?"":String(x.hospital.phone)}):x.hospital})),
   prepro:list=>list.filter(d=>d&&typeof d.date==="string").map(d=>Object.assign({},d,{items:arr(d.items).filter(x=>x&&typeof x==="object"),notes:arr(d.notes).filter(x=>typeof x==="string")})).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:String(a.t||"").localeCompare(String(b.t||""))),
 };
@@ -2302,7 +2311,7 @@ function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>{try{localStorag
 function loadCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(!c||!Array.isArray(c.days))return false;S.meta=c.meta||null;for(const k of ["days","crew","locs","places","dispos","prepro"])S[k]=(CLEAN[k]||(x=>x))(arr(c[k]));MEMO.clear();return true}catch(_){return false}}
 /* several snapshots arrive together on start: draw once per frame */
 let RQ=0;function scheduleRender(){if(RQ)return;RQ=1;const go=()=>{if(!RQ)return;RQ=0;render()};requestAnimationFrame(go);setTimeout(go,120)}
-function showMsg(text,ms){const m=$("#refmsg");m.hidden=false;m.textContent=text;if(ms)setTimeout(()=>{m.hidden=true},ms)}
+let MSGT=null;function showMsg(text,ms){const m=$("#refmsg");m.hidden=false;m.textContent=text;clearTimeout(MSGT);MSGT=ms?setTimeout(()=>{m.hidden=true},ms):null} /* a newer message is not hidden by the timer of an older one */
 
 applyStatic();
 loadCache();

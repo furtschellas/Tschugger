@@ -12,7 +12,9 @@ const CLEAN={
   places:list=>list.map(c=>Object.assign({},c,{items:arr(c.items)})),
   /* callsheets come from a language model: lists always lists, phone numbers always text (else the whole view breaks) */
   dispos:list=>list.filter(x=>x&&typeof x.date==="string").map(x=>Object.assign({},x,{scenes:arr(x.scenes).filter(o=>o&&typeof o==="object").map(sc=>Object.assign({},sc,{cast:arr(sc.cast)})),
-    locations:arr(x.locations),cast:arr(x.cast).filter(o=>o&&typeof o==="object").map(c=>Object.assign({},c,{phone:c.phone==null?"":String(c.phone)})),
+    locations:arr(x.locations).filter(o=>o&&typeof o==="object"),
+    contacts:arr(x.contacts).filter(o=>o&&typeof o==="object").map(c=>Object.assign({},c,{phone:c.phone==null?"":String(c.phone)})),
+    calls:arr(x.calls).filter(o=>o&&typeof o==="object"),meals:arr(x.meals).filter(o=>o&&typeof o==="object"),cast:arr(x.cast).filter(o=>o&&typeof o==="object").map(c=>Object.assign({},c,{phone:c.phone==null?"":String(c.phone)})),
     hospital:x.hospital&&typeof x.hospital==="object"?Object.assign({},x.hospital,{phone:x.hospital.phone==null?"":String(x.hospital.phone)}):x.hospital})),
   prepro:list=>list.filter(d=>d&&typeof d.date==="string").map(d=>Object.assign({},d,{items:arr(d.items).filter(x=>x&&typeof x==="object"),notes:arr(d.notes).filter(x=>typeof x==="string")})).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:String(a.t||"").localeCompare(String(b.t||""))),
 };
@@ -22,7 +24,7 @@ function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>{try{localStorag
 function loadCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(!c||!Array.isArray(c.days))return false;S.meta=c.meta||null;for(const k of ["days","crew","locs","places","dispos","prepro"])S[k]=(CLEAN[k]||(x=>x))(arr(c[k]));MEMO.clear();return true}catch(_){return false}}
 /* several snapshots arrive together on start: draw once per frame */
 let RQ=0;function scheduleRender(){if(RQ)return;RQ=1;const go=()=>{if(!RQ)return;RQ=0;render()};requestAnimationFrame(go);setTimeout(go,120)}
-function showMsg(text,ms){const m=$("#refmsg");m.hidden=false;m.textContent=text;if(ms)setTimeout(()=>{m.hidden=true},ms)}
+let MSGT=null;function showMsg(text,ms){const m=$("#refmsg");m.hidden=false;m.textContent=text;clearTimeout(MSGT);MSGT=ms?setTimeout(()=>{m.hidden=true},ms):null} /* a newer message is not hidden by the timer of an older one */
 
 applyStatic();
 loadCache();

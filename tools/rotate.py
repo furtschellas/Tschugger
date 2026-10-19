@@ -158,17 +158,21 @@ def crew():
 
 
 def members():
-    return {did for did, _, _ in fsadmin.list_docs("members")}
+    """everybody who can get the crew key: active members (m:uid) plus admins and owners (a:email) –
+    blocking somebody (active=false) or removing an admin also counts as «gone»"""
+    out = {"m:" + did for did, f, _ in fsadmin.list_docs("members") if f.get("active") is True}
+    for col in ("admins", "owners"): out |= {"a:" + did for did, _, _ in fsadmin.list_docs(col)}
+    return out
 
 
 def due():
     """nightly check: was somebody removed since the last key change? then the old key must not open new data any more.
     secret/keymeta.uids = people with access at the last key change (+ everybody added since); only the service account reads it"""
     cur = members(); meta = fsadmin.get_doc("secret/keymeta") or {}
-    known = set(meta.get("uids") or [])
+    known = {x if ":" in x else "m:" + x for x in meta.get("uids") or []}   # older entries: plain member uids
     gone = known - cur if meta else set()
     if not gone: fsadmin.patch_doc("secret/keymeta", {"uids": sorted(known | cur), "at": int(meta.get("at") or time.time())})
-    print("::notice::Schlüsselwechsel: %s" % ("%d Person(en) entfernt seit dem letzten Wechsel – neuer Crew-Schlüssel wird erstellt" % len(gone) if gone else "nicht nötig"))
+    print("::notice::Schlüsselwechsel: %s" % ("%d Person(en) entfernt oder gesperrt seit dem letzten Wechsel – neuer Crew-Schlüssel wird erstellt" % len(gone) if gone else "nicht nötig"))
     o = os.environ.get("GITHUB_OUTPUT")
     if o: open(o, "a").write("due=%s\n" % ("true" if gone else "false"))
 

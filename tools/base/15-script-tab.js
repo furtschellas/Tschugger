@@ -16,8 +16,7 @@ function snippet(text,terms){
   for(const q of terms){const i=f.indexOf(q);if(i>=0&&(pos<0||i<pos)){pos=i;len=q.length}}
   if(pos<0)return"";
   const a=Math.max(0,pos-50),b=Math.min(t.length,pos+len+80);
-  let out=esc(t.slice(a,b).replace(/\s+/g," "));
-  for(const q of terms){if(q.length<2)continue;const re=new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");out=out.replace(re,"<mark>$1</mark>")}
+  const out=markTerms(t.slice(a,b).replace(/\s+/g," "),terms,2);
   return '<span class="sclsn">'+(a>0?'… ':'')+out+(b<t.length?' …':'')+'</span>';
 }
 function renderScript(){

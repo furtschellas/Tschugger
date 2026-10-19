@@ -129,8 +129,9 @@ function factsHTML(hits){
 const TOD_RE=/[-–]\s*(DAY|NIGHT|EVENING|MORNING|DAWN|DUSK|CONTINUOUS|LATER|SAME|NOON|MIDDAY|AFTERNOON|SUNSET|SUNRISE|TAG|NACHT|ABEND|MORGEN)\b/i;
 /* slugline as in the script; if it has no time of day, add it from the schedule (D/N/Ev/Mo) */
 /* English scene heading from the schedule («EXT. VALAIS - SIDE VALLEY ROAD - MORNING»); shown instead of the German one with the EN button */
-function spHeadEn(x){const want=norm(x.sc);let it=null;
-  for(const d of S.days){for(const [,its] of unitLists(d)){it=its.find(i=>i.sc&&norm(i.sc)===want&&i.set);if(it)break}if(it)break}
+/* first scheduling of a scene with a given field (same order as the schedule) – from the memoised index, not a scan per scene */
+function schedFirst(sc,f){const l=schedIndex()[norm(sc)]||[];const h=l.find(o=>o.it[f]);return h?h.it:null}
+function spHeadEn(x){const it=schedFirst(x.sc,"set");
   if(!it)return "";const ie=String(it.ie||""),io=(ie.split("/")[0]||"").toUpperCase(),t=ie.split("/")[1]||"";
   const pre=/I\+E|E\+I/.test(io)?"INT./EXT.":io.startsWith("I")?"INT.":io.startsWith("E")?"EXT.":"";
   const tod=/^N/i.test(t)?"NIGHT":/^Ev/i.test(t)?"EVENING":/^Mo/i.test(t)?"MORNING":/^D/i.test(t)?"DAY":"";
@@ -138,15 +139,13 @@ function spHeadEn(x){const want=norm(x.sc);let it=null;
 function spTitle(x){const de=spHead(x),en=spHeadEn(x);return '<span class="sct'+(en?' en':'')+'"><span class="hde">'+esc(de)+'</span>'+(en?'<span class="hen">'+esc(en)+'</span>':'')+'</span>'}
 function spHead(x){
   const h=String(x.head||"").trim();if(!h||TOD_RE.test(h))return h;
-  const want=norm(x.sc);let ie="";
-  for(const d of S.days){for(const [,its] of unitLists(d)){const it=its.find(i=>i.sc&&norm(i.sc)===want&&i.ie);if(it){ie=it.ie;break}}if(ie)break}
+  const ie=(schedFirst(x.sc,"ie")||{}).ie||"";
   const t=(ie.split("/")[1]||"");const tod=/^N/i.test(t)?"NIGHT":/^Ev/i.test(t)?"EVENING":/^Mo/i.test(t)?"MORNING":/^D/i.test(t)?"DAY":"";
   return tod?h+" - "+tod:h;
 }
 /* day/night marker for the slugline: schedule I/E first, else the time word in the heading */
 function spTod(x){
-  const want=norm(x.sc);let t="";
-  for(const d of S.days){for(const [,its] of unitLists(d)){const it=its.find(i=>i.sc&&norm(i.sc)===want&&i.ie);if(it){t=it.ie.split("/")[1]||"";break}}if(t)break}
+  const t=(((schedFirst(x.sc,"ie")||{}).ie||"").split("/")[1]||"");
   const h=String(x.head||"").toUpperCase();
   const k=/^N/i.test(t)?"n":/^Ev/i.test(t)?"ev":/^Mo/i.test(t)?"mo":/^D/i.test(t)?"d":
     /\b(NIGHT|NACHT)\b/.test(h)?"n":/\b(EVENING|DUSK|ABEND|SUNSET)\b/.test(h)?"ev":/\b(MORNING|DAWN|MORGEN|SUNRISE)\b/.test(h)?"mo":/\b(DAY|TAG|NOON|MIDDAY|AFTERNOON)\b/.test(h)?"d":"";
