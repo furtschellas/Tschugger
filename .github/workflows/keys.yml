@@ -15,17 +15,31 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
-# nie gleichzeitig mit der Dropbox-Aktualisierung (die würde sonst mit dem alten Schlüssel schreiben)
+# eigene Gruppe: in der Gruppe der Dropbox-Aktualisierung wurde ein wartender Wechsel vom nächsten Aufruf gestrichen.
+# Nie gleichzeitig mit ihr: der Wechsel wartet zuerst, bis keine Aktualisierung mehr läuft, und während des Wechsels
+# (secret/keynext gesetzt) überspringt die Aktualisierung sich selbst
 concurrency:
-  group: dropbox-update
+  group: keys
   cancel-in-progress: false
 
 jobs:
   rotate:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 70
     steps:
+      - name: Warten, bis keine Dropbox-Aktualisierung läuft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 60); do
+            n=$(gh api "repos/${{ github.repository }}/actions/workflows/dropbox-update.yml/runs?status=in_progress&per_page=5" -q '.total_count' 2>/dev/null || echo 0)
+            q=$(gh api "repos/${{ github.repository }}/actions/workflows/dropbox-update.yml/runs?status=queued&per_page=5" -q '.total_count' 2>/dev/null || echo 0)
+            [ "$n" = "0" ] && [ "$q" = "0" ] && exit 0
+            sleep 20
+          done
+          echo "::warning::Dropbox-Aktualisierung läuft noch nach 20 Minuten – Wechsel startet trotzdem (die Aktualisierung überspringt sich während des Wechsels)"
       - uses: actions/checkout@v4
         with:
           ref: main   # always the newest data (a waiting run would otherwise re-encrypt an old state)

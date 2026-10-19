@@ -86,7 +86,9 @@ document.addEventListener("click",async e=>{if(!e.target.closest("[data-bcclr]")
   catch(err){showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}});
 document.addEventListener("click",async e=>{const bt=e.target.closest("[data-bcre]");if(!bt||!can("push.send")||BC.busy)return;const b=(BC.hist||[]).find(x=>x.id===bt.dataset.bcre);if(!b)return;
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+bcWho(b)+"?"))return;BC.busy=true;bt.disabled=true;
-  try{const pl={title:b.title,body:b.body,roles:b.roles||null,depts:b.depts||null,by:ME.email,at:Date.now(),re:b.id}
+  try{const pl=Object.assign({title:b.title,body:b.body,roles:b.roles||null,depts:b.depts||null,by:ME.email,at:Date.now(),re:b.id},
+      /* same channels as the original (a WhatsApp/SMS-only message is not resent as a push to everyone) */
+      b.push===false?{push:false}:{},b.ch?{ch:b.ch}:{},b.i18n?{i18n:b.i18n}:{},b.users?{users:b.users}:{},b.url?{url:b.url}:{})
     const enc=await ownEnc(pl);
     const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});showMsg(await bcDeliver(ref.id),5000);BC.hist=null}
   catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}BC.busy=false;render()});

@@ -152,12 +152,13 @@ function s5Card(g0){
   const top='<div class="adl"><div><span class="addr">'+esc(one||((LOCCFG().s5||{}).village||"")+(((LOCCFG().s5||{}).village)?' · ':'')+al.length+' '+L('Adressen im Dorf'))+'</span> <a href="'+esc(one?partsHref(al[0][1],one):maps((LOCCFG().s5||{}).village||""))+'" target="_blank" rel="noopener noreferrer">Maps</a></div></div>';
   return cardWrap("card:"+(g.key==="szene-5"?"s5":g.key),head,top,body);
 }
-/* every scene with a synopsis, first occurrence only, in schedule order */
+/* every scene with a synopsis, first occurrence, in schedule order; «occ» = all its schedulings (unit filter: a scene of the
+   1st unit picked up later by the 2nd unit also shows when only the 2nd unit is selected) */
 const allScenes=()=>memo("allsc",()=>{
-  const seen=new Set(),out=[];
+  const by=new Map(),out=[];
   for(const d of S.days)for(const [u,list] of unitLists(d))for(const it of list){
     if(!it.sc||!it.d)continue;const n=norm(it.sc);
-    if(seen.has(n))continue;seen.add(n);out.push({it,d,u,n});
+    if(by.has(n)){by.get(n).occ.push({it,d,u});continue}const x={it,d,u,n,occ:[{it,d,u}]};by.set(n,x);out.push(x);
   }
   return out;
 });
@@ -167,7 +168,8 @@ function sceneTexts(scenes,uf){
   return memo("st|"+uk+"|"+scenes.join(","),()=>{
     const want=scenes.map(norm);
     const out=allScenes().filter(x=>want.some(w=>x.n===w||x.n.startsWith(w+"pt")));
-    return uf?out.filter(x=>uf[x.u]):out;
+    if(!uf)return out;
+    return out.map(x=>{const o=x.occ.find(y=>uf[y.u]);return o?Object.assign({},x,o):null}).filter(Boolean);
   });
 }
 function plotHTML(scenes){

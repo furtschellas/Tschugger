@@ -353,4 +353,12 @@ check("Schlüsselwechsel: Datei mit früherem Schlüssel (abgebrochener Lauf) wi
 check("Sides: Datum im US-Format mit Wochentag richtig gelesen (Tuesday 10.06. = 6. Oktober)",
       [U.sides_date(x) for x in ("x_DT2_Tuesday, 10.06.2026.pdf", "x_DT 4_Sunday, 25.10.2026.pdf", "x_Montag, 05.10.2026.pdf")] == ["2026-10-06", "2026-10-25", "2026-10-05"])
 
+# a scene of the 1st unit (B-Cam) also with the 2nd unit (wish of the production): added once, also after several runs
+_days = [{"kind": "shoot", "short": "D1", "items": [{"sc": "186pt1A", "t": "08:00"}, {"sc": "5"}]}]
+U.u2_also_add(_days); U.u2_also_strip(_days); U.u2_also_add(_days); U.u2_also_add(_days)
+check("2nd Unit: Szene 186pt1A an Tag 1 zusätzlich (1st Unit bleibt, nur einmal)",
+      [i["sc"] for i in _days[0]["unit2"]["items"]] == ["186pt1A"] and len(_days[0]["items"]) == 2 and _days[0]["unit2"]["src"] == "also", _days)
+U.fix_units(_days, ud={"unit2": {5}, "unit3": set()})
+check("2nd Unit: zusätzliche Szene wandert nicht doppelt zur 1st Unit", len(_days[0]["items"]) == 2, _days)
+
 sys.exit(done("Hintergrund"))
