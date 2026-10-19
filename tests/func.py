@@ -421,6 +421,15 @@ async def owner_tests(p, port):
           const h1=raHTML(d.date);const sim=SIMROLE,kr=MYROLE;SIMROLE={adm:false};MYROLE='testrolle';MYPERMS=['view.dispo'];const h2=raHTML(d.date);SIMROLE=sim;MYROLE=kr;MYPERMS=kp;S.meta.ra=keep;
           const w=document.createElement('div');w.innerHTML=h1;const det=w.querySelector('details.rasec');return {zu:!!det&&!det.open,txt:!!det&&det.textContent.includes('Szene 186'),ohne:h2===''}})()""")
         check("Callsheet: Gefährdungsbeurteilung aufklappbar, zugeklappt, nur mit Recht", ra in (None, {"zu": True, "txt": True, "ohne": True}), ra, public=True)
+        cs = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d||typeof renderCS!=='function')return null;
+          const x={date:d.date,label:'T',cs:{times:{crewCall:'08:00',wrap:'19:00'},contact:{name:'A',phone:'+41 79 000 00 00'},locations:[{no:'1',name:'CHAPEL',map:'https://maps.app.goo.gl/x'}],
+            order:{rows:[{t:'09:00',sc:'2',ie:'I/Ev',set:'CHAPEL',syn:'S'},{t:'12:15',text:'Lunch Break'}]},cast:[{no:'1',role:'BAX',actor:'X'}],calls:[{dept:'Camera',name:'Y',t:'08:10'}]}};
+          const w=document.createElement('div');w.innerHTML=renderCS(x,d);const open=[...w.querySelectorAll('details.cssec')].map(e=>[e.querySelector('.dh').textContent,e.open]);
+          const sim=SIMROLE,kr=MYROLE,kp=MYPERMS.slice();SIMROLE={adm:false};MYROLE='t';MYPERMS=['view.dispo'];const w2=document.createElement('div');w2.innerHTML=renderCS(x,d);SIMROLE=sim;MYROLE=kr;MYPERMS=kp;
+          return {tiles:w.textContent.includes('08:00')&&w.textContent.includes('19:00'),order:!!w.querySelector('.csorder [data-scene="2"]'),
+            locOpen:open.some(([t,o])=>/Location/i.test(t)&&o),castClosed:open.some(([t,o])=>t==='Cast'&&!o),tel:!!w.querySelector('a[href^="tel:"]'),noTel:!w2.querySelector('a[href^="tel:"]')&&!w2.textContent.includes('000 00 00')}})()""")
+        check("Callsheet wie das Dokument: Zeiten, Drehfolge, Locations offen, Cast zu, Telefon nur mit Recht",
+              cs in (None, {"tiles": True, "order": True, "locOpen": True, "castClosed": True, "tel": True, "noTel": True}), cs, public=True)
         # app settings: links that were not loaded are never written (else empty fields deleted them for everyone)
         pv = await E("""(async()=>{const keep=window.PRIVOK;window.PRIVOK=false;const before=JSON.stringify(window.__db['config/private']||null);
           const ll=loadLangs;loadLangs=async()=>{};S.tab='admin';ADM.sub='set';render();await new Promise(x=>setTimeout(x,300));
