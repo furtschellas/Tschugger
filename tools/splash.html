@@ -62,11 +62,15 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
      goes away the moment the page shows the current data – without connection as soon as the copy on the device is shown */
   function offline(){return navigator.onLine===false}
   function dataOK(){try{return typeof S!=="undefined"&&S&&(S.days||[]).length>0&&(S.loaded||(offline()&&window.CACHEOK))}catch(e){return false}}
-  function steps(){var v=document.getElementById("view");return [document.readyState!=="loading",!!window.FB||offline(),(typeof ME!=="undefined"&&!!ME)||offline(),dataOK(),dataOK()&&!!(v&&v.children.length)]}
+  /* every check in try: the app's variables (ME, S) do not exist yet while its scripts load – «typeof» throws then */
+  function chk(f){try{return !!f()}catch(e){return false}}
+  function steps(){return [document.readyState!=="loading",chk(function(){return window.FB})||offline(),chk(function(){return ME})||offline(),dataOK(),dataOK()&&chk(function(){var v=document.getElementById("view");return v&&v.children.length})]}
   function logSteps(st2){if(!lg2)return;var n=LT[lg]||LT.en,first=st2.indexOf(false);
     var h="";for(var i=0;i<n.length;i++)h+=(st2[i]?"✓ ":i===first?"<b>… </b>":"· ")+n[i]+"<br>";if(lg2.innerHTML!==h)lg2.innerHTML=h}
-  function st(){if(done)return;txt();var s2=steps();logSteps(s2);var k=s2.filter(Boolean).length;
-    try{var g=document.getElementById("gate");if(g&&!g.hidden&&g.offsetParent!==null&&Date.now()-t0>300)return end()}catch(e){}
-    if(k===s2.length||window.__LOADFAIL)return end();   /* loading failed: the message must be visible */
-    set(Math.max(10+k*16,Math.min(10+(k+1)*16-2,cur+0.5)));if(Date.now()-t0>20000)return end();setTimeout(st,80)}
+  function step(){try{txt()}catch(e){}var s2=steps();logSteps(s2);var k=s2.filter(Boolean).length;
+    try{var g=document.getElementById("gate");if(g&&!g.hidden&&g.getClientRects().length&&getComputedStyle(g).display!=="none"&&Date.now()-t0>300)return true}   /* sign-in screen (fixed: offsetParent is always null) */catch(e){}
+    if(k===s2.length||window.__LOADFAIL)return true;   /* loading failed: the message must be visible */
+    set(Math.max(10+k*16,Math.min(10+(k+1)*16-2,cur+0.5)));return false}
+  /* the loop can never die on an error: at the latest after 20 s the start screen is gone */
+  function st(){if(done)return;var fin=false;try{fin=step()}catch(e){}if(fin||Date.now()-t0>20000)return end();setTimeout(st,80)}
   st()})();</script>
