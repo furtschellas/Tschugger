@@ -789,4 +789,71 @@ html body #view .cstiles>.dt.cswx{padding:0;border:0;background:none}html body #
  html body #view .csview #csq{min-height:34px;padding:5px 10px;font-size:14px;border-radius:8px}
  html body #view .csview .dbox{padding:8px 10px}
 }
+
+/* font size «Gross» */
+html.fs-l #view{zoom:1.13}
+/* offline bar above the tabs */
+#offbar{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--sheet);color:var(--ink);border:1px solid var(--accent);border-radius:999px;padding:4px 12px;font-size:12px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.25);pointer-events:none}
+body>#offbar{position:fixed;bottom:12px}
+/* day bar always on top, callsheet bar right below it */
+html body #view .stripwrap{position:sticky;top:env(safe-area-inset-top,0px);z-index:6}
+html body #view .csview .csjump{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--striph,0px));z-index:5}
+html body #view .csview [id^="cs-"]{scroll-margin-top:calc(var(--striph,0px) + var(--csjh,0px) + 8px)}
+/* swipe feedback */
+#view.swl{animation:swl .25s ease}#view.swr{animation:swr .25s ease}
+@keyframes swl{from{transform:translateX(18px);opacity:.6}to{transform:none;opacity:1}}@keyframes swr{from{transform:translateX(-18px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){#view.swl,#view.swr{animation:none}}
+/* callsheet jump bar: icons with a tiny label, one line */
+html body #view .csview .csjb{display:flex;gap:2px;justify-content:space-between;overflow-x:auto;padding:0}
+html body #view .csview .csjb button{flex:1 0 auto;min-width:44px;display:flex;flex-direction:column;align-items:center;gap:1px;border:0;border-radius:10px;padding:5px 4px;min-height:44px;background:transparent;color:var(--accent);font-size:10px;line-height:1.1}
+html body #view .csview .csjb button .csi{width:20px;height:20px}
+html body #view .csview .csjb button span{color:var(--muted);white-space:nowrap}
+html body #view .csview .csjb button:active,html body #view .csview .csjb button[aria-pressed="true"]{background:var(--accent-soft)}
+html body #view .csview .csjump{padding:2px 0;margin:4px 0;border-bottom:1px solid var(--rule)}
+html body #view .csview #csq{margin:4px 0 2px}
+/* cast: table or cards */
+.cstview{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;margin:0 0 6px}
+html body #view .csview #cs-cast.cs-astbl .cs-tbl{display:block}html body #view .csview #cs-cast.cs-astbl .cs-cards{display:none}
+html body #view .csview #cs-cast:not(.cs-astbl) .cs-tbl{display:none}
+html body #view .csview #cs-cast.cs-astbl .tblw{overflow-x:auto;max-width:100%}
+html body #view .csview #cs-cast.cs-astbl .dtbl{font-size:12.5px;white-space:nowrap}
+html body #view .csview #cs-cast.cs-astbl .dtbl td,html body #view .csview #cs-cast.cs-astbl .dtbl th{padding:4px 7px}
+@media (min-width:761px){html body #view .csview #cs-cast:not(.cs-astbl) .cs-cards{display:grid}}
+/* phone: Mein Tag, cast, transport and calls compact */
+@media (max-width:760px){
+ html body #view .csview .csme{padding:8px 10px;border-radius:10px}
+ html body #view .csview .csme .dh{font-size:15px;margin:0 0 4px}
+ html body #view .csview .csme-r{display:grid;grid-template-columns:62px minmax(0,1fr);gap:0 8px;align-items:baseline;padding:2px 0;font-size:13.5px;line-height:1.3}
+ html body #view .csview .csme-r .k{font-size:11px;min-width:0}
+ html body #view .csview .csme-r .v{min-width:0}
+ html body #view .csview .csme-r .csmap{width:24px;height:24px;vertical-align:-6px;margin:0 4px;display:inline-flex}
+ html body #view .csview .csme-r .csmap svg{width:13px;height:13px}
+ html body #view .csview .csme-r small{color:var(--muted);font-size:12px}
+ html body #view .csview .cs-card{padding:5px 9px;margin:4px 0;border-radius:8px}
+ html body #view .csview .cs-ct{font-size:13.5px;margin-bottom:1px}
+ html body #view .csview .cs-card .cs-kv{font-size:12.5px;margin-right:8px}
+ html body #view .csview .cs-card .cs-kv .k{font-size:10.5px}
+ html body #view .csview .cscall-d{font-size:11px;margin:6px 0 2px}
+ html body #view .csview .cscall-r{padding:2px 0;font-size:13px;gap:6px;min-height:0}
+ html body #view .csview .cscall-r small{font-size:11.5px}
+ html body #view .csview .cscontact{margin:4px 0 2px}
+}
+
+/* callsheet: main parts open/close with the round chevron symbol at the right */
+html body #view .cssec>summary::before{content:none;display:none}
+html body #view .cssec>summary{justify-content:space-between;gap:10px}
+.csexp{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 65%,transparent);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;transition:background .15s}
+.cssec[open]>summary .csexp{background:var(--accent-soft)}
+.cssec>summary:hover .csexp{border-color:var(--accent)}
+html body #view .csall{display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+html body #view .csall .csexp{width:26px;height:26px}html body #view .csall .csexp svg{width:14px;height:14px}
+
+/* jump bar: all icons fit in one line, labels shortened */
+html body #view .csview .csjb button{flex:1 1 0;min-width:0;padding:5px 1px}
+html body #view .csview .csjb button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:9.5px}
+/* team of the day: one line per person */
+html body #view .csview .cskey>div{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:baseline;gap:8px;padding:2px 0;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body #view .csview .cskey>div .k{flex:0 0 38%;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
+html body #view .csview .cskey>div a{white-space:nowrap}
+html body #view .csview .cslist{margin:4px 0;font-size:13px}
 </style>

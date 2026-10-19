@@ -141,6 +141,29 @@ def class_collisions():
     return {c: sorted(v) for c, v in use.items() if len(v) > 1 and c not in SHARED}
 
 
+# phone test: a page wider than the screen (sideways scrolling) – only a warning, never blocks publishing
+OVERFLOW = "document.documentElement.scrollWidth>innerWidth+1"
+OVER = {}
+
+
+async def phone_widths(p, port):
+    """all pages of the owner at Android width (360) and iPhone width (390), every day bar page also on a shooting day"""
+    for w in (360, 390):
+        b, pg, errs = await session(p, port, "owner", width=w)
+        E = pg.evaluate
+        for t in await E("tabsOn()"):
+            await E(f"S.tab='{t}';render()"); await pg.wait_for_timeout(250)
+            if await E(OVERFLOW): OVER.setdefault(t, set()).add(str(w))
+        for t in ("plan", "dispo"):
+            await E(f"(()=>{{const d=(S.days||[]).find(d=>d.kind==='shoot');if(!d)return;S.tab='{t}';S.day=d.id;S.dday=d.date;render()}})()"); await pg.wait_for_timeout(300)
+            if await E(OVERFLOW): OVER.setdefault(t + " (Drehtag)", set()).add(str(w))
+        await b.close()
+    msg = ", ".join(f"{k} ({'/'.join(sorted(v))} px)" for k, v in sorted(OVER.items()))
+    print("✓ Handy-Test 360/390 px: " + ("kein seitliches Scrollen" if not msg else "Warnung – seitliches Scrollen auf " + msg), flush=True)
+    if msg and os.environ.get("GITHUB_ACTIONS"):
+        print(f"::warning title=Handy-Test::Seitliches Scrollen auf {msg}", flush=True)
+
+
 async def main():
     from playwright.async_api import async_playwright
     col = class_collisions()
@@ -161,6 +184,7 @@ async def main():
                 for t in tabs:
                     await E(f"S.tab='{t}';render()"); await pg.wait_for_timeout(250)
                     if "konnte nicht angezeigt" in await E("document.getElementById('view').innerText"): bad.append(t)
+                    if await E(OVERFLOW): OVER.setdefault(t, set()).add("390")
                 check(f"{who}: alle Seiten ({len(tabs)}) ohne Anzeigefehler", not bad, bad)
                 if who == "norole":
                     check("ohne Rolle: kein Drehplan", "plan" not in tabs, tabs)
@@ -217,6 +241,9 @@ async def main():
                     await E("tourEnd&&tourEnd('skip',true)") if await E("typeof tourEnd==='function'") else None
                 check(f"{who}: keine Skriptfehler", not errs, errs[:2])
                 await b.close()
+            # ---------- phone: no sideways scrolling (warning only) ----------
+            try: await phone_widths(p, port)
+            except Exception as e: print("::warning title=Handy-Test::nicht gelaufen – " + type(e).__name__, flush=True)
             # ---------- desktop: long menu names ----------
             b, pg, errs = await session(p, port, "owner", width=1280)
             lab = await pg.evaluate("[...document.querySelectorAll('nav.tabs button[data-tab]')].filter(b=>!b.hidden).map(b=>b.querySelector('.lbl').textContent)")
