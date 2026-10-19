@@ -47,7 +47,6 @@ FORCE = os.environ.get("FORCE", "").lower() in ("ja", "yes", "true", "1")
 EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
 TRIGGER = os.environ.get("TRIGGER", "")   # «cron» when the Cloudflare Worker started the run on its schedule
 NOW = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-DEFAULT_SHEET = "https://docs.google.com/spreadsheets/d/1-90uPfHztMs7i0u_zW473Jd0CUHdC7nlxZrzfgBqqJg/edit?gid=1204350231"
 
 log = fsadmin.log
 
@@ -973,11 +972,38 @@ def add_drive_times(data):
     log("Anfahrt Hotel → erstes Motiv:", n, "Drehtage")
 
 
+LOCCFG_FILE = R / "tools" / "loc_cfg.json"   # one-time import only: afterwards the places live in the encrypted data (meta.locCfg)
+
+def move_private_links():
+    """the links to the motive list, map and chat belong in config/private (only the crew can read it), not in the public config/app;
+    moves them once (and the first values from tools/loc_cfg.json when nothing is set yet)"""
+    if not fsadmin.sa(): return
+    try:
+        app = fsadmin.get_doc("config/app") or {}; priv = fsadmin.get_doc("config/private") or {}
+        seed = {}
+        try: seed = json.loads(LOCCFG_FILE.read_text(encoding="utf-8")).get("links") or {}
+        except Exception: pass
+        mv = {}
+        for k in ("locSheet", "mapUrl", "chatUrl"):
+            v = priv.get(k) or app.get(k) or seed.get(k) or ""
+            if v and v != priv.get(k): mv[k] = v
+        if mv and not fsadmin.patch_doc("config/private", mv): log("config/private nicht geschrieben"); return
+        gone = [k for k in ("locSheet", "mapUrl", "chatUrl") if k in app]
+        if gone:   # remove from the public document (field in the mask, not in the body = deleted)
+            h, _ = fsadmin._auth()
+            r = requests.patch(fsadmin.BASE + "/config/app", headers=h, params=[("updateMask.fieldPaths", k) for k in gone], json={"fields": {}}, timeout=30)
+            log("Links aus der öffentlichen Einstellung entfernt:", len(gone), "· HTTP", r.status_code)
+        if mv: log("Links in config/private:", ", ".join(sorted(mv)))
+    except Exception as e: log("Links nicht umgezogen:", type(e).__name__)
+
 def main():
     cfg = {}
     try:
-        f = requests.get("https://firestore.googleapis.com/v1/projects/tschugger-83692/databases/(default)/documents/config/app", timeout=20).json().get("fields", {})
-        cfg = {k: list(v.values())[0] for k, v in f.items()}
+        if fsadmin.sa():
+            cfg = dict(fsadmin.get_doc("config/app") or {}); move_private_links(); cfg.update({k: v for k, v in (fsadmin.get_doc("config/private") or {}).items() if v})
+        else:
+            f = requests.get("https://firestore.googleapis.com/v1/projects/tschugger-83692/databases/(default)/documents/config/app", timeout=20).json().get("fields", {})
+            cfg = {k: list(v.values())[0] for k, v in f.items()}
     except Exception: log("App-Einstellungen nicht lesbar – Standard wird verwendet")
     if cfg.get("autoUpdate") is False and (EVENT == "schedule" or TRIGGER == "cron"):
         log("Automatische Aktualisierung ist in den App-Einstellungen ausgeschaltet."); status("off", "In den App-Einstellungen ausgeschaltet"); return
@@ -990,6 +1016,12 @@ def main():
     oldkind = {}
     for s in meta.get("sources", []): oldkind.setdefault(s.get("kind"), s)
     changed = False; sources = []
+    try:   # places, addresses and location groups: only in the encrypted data (imported once from tools/loc_cfg.json)
+        lc = json.loads(LOCCFG_FILE.read_text(encoding="utf-8"))
+        lc.pop("links", None)
+        if lc and meta.get("locCfg") != lc: meta["locCfg"] = lc; changed = True; log("Orte-Einstellungen übernommen")
+    except FileNotFoundError: pass
+    except Exception as e: log("Orte-Einstellungen nicht gelesen:", type(e).__name__)
 
     global BLKS
     BLKS = BlkStore()
@@ -1535,7 +1567,6 @@ def main():
                 m = re.search(rb"https://docs\.google\.com/spreadsheets/[^\s\"'<>]+", dbx.download(lk[-1]["id"]))
                 if m: sheet = m.group(0).decode()
         except Exception as e: log("Motivliste-Link aus der Dropbox nicht gelesen:", type(e).__name__)
-    sheet = sheet or DEFAULT_SHEET
     try:
         txt = read_sheet(sheet)
     except Exception: txt = None

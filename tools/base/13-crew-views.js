@@ -77,9 +77,9 @@ function scene5Parts(){
   }
   return out;
 }
-const BUNDLES=[{key:"pfyn",title:"Tannenwald",re:/pfyn/i},{key:"svr",title:"Side Valley Road",re:/rte de martigny/i}];
-const TITLES=[{re:/bahnhofstr(asse)?\s*40\b.*salgesch/i,title:"Aunt's House – Police Station – Hospital – Villa Biffiger – INT"},{re:/grand-champsec\s*22\b.*sion/i,title:"Police Station EXT"},{re:/vercorin\s*46\b.*chalais/i,title:"Aunt's House EXT"},{re:/^1922 salvan$/i,title:"Simplon"}];
-const bundleOf=l=>BUNDLES.find(b=>b.re.test([l.name,l.venue,l.address].join(" ")));
+const BUNDLES=()=>(LOCCFG().bundles||[]).map(b=>Object.assign({},b,{re:locRe(b)}));
+const TITLES=()=>(LOCCFG().titles||[]).map(t=>Object.assign({},t,{re:locRe(t)}));
+const bundleOf=l=>BUNDLES().find(b=>b.re.test([l.name,l.venue,l.address].join(" ")));
 function groupLocs(){return memo("groups",buildGroups)}
 function buildGroups(){
   const g=[],idx={};
@@ -95,47 +95,28 @@ function buildGroups(){
   for(const x of g){
     const f=x.items[0];
     x.address=f.address;x.venue=(x.items.find(l=>l.venue)||{}).venue;
-    const b=x.key.startsWith("b:")?BUNDLES.find(y=>"b:"+y.key===x.key):null;
+    const b=x.key.startsWith("b:")?BUNDLES().find(y=>"b:"+y.key===x.key):null;
     x.mixed=new Set(x.items.map(addrKey)).size>1;
-    const tt=TITLES.find(t=>t.re.test(String(f.address||"")));
+    const tt=TITLES().find(t=>t.re.test(String(f.address||"")));
     x.title=tt?tt.title:b&&x.items.length>1?b.title:(x.items.length===1?f.name:(x.venue||String(f.address||"").split(",")[0]));
   }
   const parts=scene5Parts();
   if(parts.length||s5locs.length){
-    const SPLIT=[{key:"leytron",title:"Salgesch Establisher",re:/leytron/i}];
+    const SPLIT=(LOCCFG().split||[]).map(x=>Object.assign({},x,{re:locRe(x)})),S5=LOCCFG().s5||{};
     const extra=SPLIT.map(x=>({key:x.key,s5:true,items:[],title:x.title,parts:parts.filter(p=>x.re.test(fullAddr(p.it.loc)))})).filter(x=>x.parts.length);
     const main=parts.filter(p=>!SPLIT.some(x=>x.re.test(fullAddr(p.it.loc))));
-    const grp={key:"szene-5",s5:true,parts:main,items:s5locs,title:"Salgesch",address:"3998 Musterdorf und Umgebung"};
+    const grp={key:"szene-5",s5:true,parts:main,items:s5locs,title:S5.title||L("Szene 5"),address:S5.address||""};
     g.splice(s5at<0?g.length:s5at,0,grp,...extra);
   }
   return g;
 }
-const S5ADDR={
-  "salgeschbahnhofstr40":"Bahnweg 40, 3998 Musterdorf",
-  "salgeschdorfstr2":"Dorfstrasse 2, 3998 Musterdorf",
-  "pfynwaldkieswerkvolkene":"Tannenwald, Kieswerk Muster (Ost), 3998 Musterdorf",
-  "pfynwaldkieswerkvolkenw":"Tannenwald, Kieswerk Muster (West), 3998 Musterdorf",
-  "pfynwaldpfyndenkmal":"Pfynwalddenkmal, Föhrenweg 68, 3999 Testdorf",
-  "collombey-muratetangdechauderet":"Étang de Chauderet, Rte du Cornet, 1893 Collombey-Muraz",
-  "collombey-muratetangdechauderetrteducornet":"Étang de Chauderet, Rte du Cornet, 1893 Collombey-Muraz",
-  "saxonpontdelapierreavoir":"Pont de la Pierre à Voir, 1907 Saxon",
-  "nearsionpontdesiles(tba)":"Nähe Autobahnbrücke Pont des Iles, 1950 Sion (TBA)",
-  "tba":"TBA",
-  "martignyversiliasports(tbc)":"Versilia Sports, 1920 Martigny (TBC)",
-  "salgeschrundkurs":"Rundkurs Dorfstr. – Kirchstr. – Klareistr. – Karrenstr. – Mulingstr., 3998 Musterdorf",
-  "salgeschbahnhofstr21":"Bahnhofstrasse 21, 3998 Musterdorf",
-  "salgeschfrohheim":"Ehem. Rest. Sonnenhof, Unterdorfstrasse 12, 3998 Musterdorf",
-  "salgeschpaschienstr12/22":"Pachienstrasse 12/22, 3998 Musterdorf",
-  "salgeschbahnhofstr44":"Bahnhofstrasse 44, 3998 Musterdorf",
-  "salgeschdorfstr10":"Dorfstrasse 10, 3998 Musterdorf",
-  "salgeschdorfstr5":"Dorfstrasse 5 / Sennereigasse 1, 3998 Musterdorf",
-  "salgeschdorfstr22":"Dorfstrasse 22, 3998 Musterdorf",
-  "salgeschschulhausplatz":"Turnhallenweg 4, 3998 Musterdorf",
-  "leytronchemdescarrieres":"Chem. des Carrières, 1912 Leytron"
-};
-const fullAddr=loc=>S5ADDR[norm(loc)]||loc;
+/* places, addresses and location groups come from the encrypted data (meta.locCfg) – never in the public code */
+const LOCCFG=()=>(S.meta&&S.meta.locCfg)||{};
+const locRe=x=>{try{return new RegExp(x.re,"i")}catch(_){return /$^/}};
+const LOCADDR=()=>LOCCFG().addr||{};
+const fullAddr=loc=>LOCADDR()[norm(loc)]||loc;
 function addrForItem(it){
-  const a=S5ADDR[norm(it.loc||"")];if(a)return a;
+  const a=LOCADDR()[norm(it.loc||"")];if(a)return a;
   return memo("ad|"+(it.sc||"")+"|"+(it.loc||""),()=>{
     const n=norm(it.sc||"");
     for(const l of S.locs)for(const st of (l.sets||[]))for(const w of (st.scenes||[]).map(norm))
@@ -168,7 +149,7 @@ function s5Card(g0){
   const n=g.parts.length;
   const head='<h4>'+esc(g.title)+unitBadges(g0.parts.map(p=>p.u))+'</h4><span class="lcm">'+(al.length>1?al.length+' '+L('Motive')+' · ':'')+n+' '+(n===1?L('Szene'):L('Szenen'))+(days?' · '+esc(days):'')+'</span>';
   const one=al.length===1?al[0][0]:null;
-  const top='<div class="adl"><div><span class="addr">'+esc(one||'3998 Musterdorf · '+al.length+' '+L('Adressen im Dorf'))+'</span> <a href="'+esc(one?partsHref(al[0][1],one):maps("3998 Musterdorf"))+'" target="_blank" rel="noopener noreferrer">Maps</a></div></div>';
+  const top='<div class="adl"><div><span class="addr">'+esc(one||((LOCCFG().s5||{}).village||"")+(((LOCCFG().s5||{}).village)?' · ':'')+al.length+' '+L('Adressen im Dorf'))+'</span> <a href="'+esc(one?partsHref(al[0][1],one):maps((LOCCFG().s5||{}).village||""))+'" target="_blank" rel="noopener noreferrer">Maps</a></div></div>';
   return cardWrap("card:"+(g.key==="szene-5"?"s5":g.key),head,top,body);
 }
 /* every scene with a synopsis, first occurrence only, in schedule order */
@@ -215,7 +196,7 @@ function locCard(g0){
 function renderLoc(){
   if(!S.locs.length)return emptyHTML("Motivliste");
   const gs=groupLocs().filter(g=>{if(!ufOn())return true;if(g.s5)return g.parts.some(p=>S.uf[p.u]);return sceneTexts(g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))).length>0});
-  return '<div class="lvwrap '+lvClasses()+'">'+lvButtons('<a class="mapbtn" href="'+esc(/^https:\/\//.test(window.MAPURL||"")?window.MAPURL:MYMAP)+'" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>Map</a><button class="scall" id="scall" data-scall="1" aria-expanded="false" aria-label="'+L("Alle Szenen auf- oder zuklappen")+'">'+cap(L("Szenen"))+'</button>')+
+  return '<div class="lvwrap '+lvClasses()+'">'+lvButtons((/^https:\/\//.test(window.MAPURL||"")?'<a class="mapbtn" href="'+esc(window.MAPURL)+'" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>Map</a>':'')+'<button class="scall" id="scall" data-scall="1" aria-expanded="false" aria-label="'+L("Alle Szenen auf- oder zuklappen")+'">'+cap(L("Szenen"))+'</button>')+
     searchBox("lq",S.lq,L("Location, Adresse, Szene …"))+'<div id="lqres">'+locResults(gs)+'</div></div>';
 }
 function locResults(gs){
@@ -310,8 +291,8 @@ function srcHTML(){
     const folder=gs?"Google Sheet":(raw.includes("/")?raw.split("/").slice(0,-1).join(" › "):"Dropbox");
     return '<li><b>'+esc(L(KIND[x.kind]||cap(String(x.kind||""))))+'</b><span class="srcf">'+esc(file)+'</span><span class="srcm">'+esc(folder)+(x.modified?' · '+L("Stand")+' '+esc(when(x.modified)):(x.stand?' · '+L("Stand")+' '+esc(x.stand):''))+'</span></li>';
   });
-  const mu=/^https:\/\//.test(window.MAPURL||"")?window.MAPURL:MYMAP;
+  const mu=/^https:\/\//.test(window.MAPURL||"")?window.MAPURL:"";
   const mapRow='<li><b>'+esc(L("Karte"))+'</b><a class="srcf" href="'+esc(mu)+'" target="_blank" rel="noopener noreferrer">Google My Maps ↗</a><span class="srcm">'+esc(L("Karte der Drehorte"))+'</span></li>';
-  const li=srcs.findIndex(x=>x.kind==="locations");rows.splice(li<0?rows.length:li+1,0,mapRow);
+  const li=srcs.findIndex(x=>x.kind==="locations");if(mu)rows.splice(li<0?rows.length:li+1,0,mapRow);
   return '<details class="src"'+(S.srcOpen?' open':'')+' data-srcd><summary><h4>'+L("Quellen")+' ('+rows.length+')</h4></summary><ul>'+rows.join("")+'</ul><p>'+L("Dropbox der Produktion, nur gelesen.")+(m.checkedAt?' '+L("Zuletzt geprüft")+' '+esc(when(m.checkedAt))+'.':'')+'</p></details>';
 }
