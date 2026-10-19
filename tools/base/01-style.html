@@ -764,4 +764,9 @@ html body #view .cstiles>.dt.cswx{padding:0;border:0;background:none}html body #
  .csview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 22px;align-items:start}.csview>.dsp-head,.csview>.dtiles,.csview>.cscontact,.csview>.csjump,.csview>.csme,.csview>#cs-order,.csview>#cs-cast,.csview>#cs-trans,.csview>#cs-calls{grid-column:1/-1}
  .csview #cs-calls>.cscall{display:inline-block;vertical-align:top;width:calc(50% - 14px);margin-right:14px}}
 @media (min-width:1200px){.csview #cs-order .csorder{columns:2 480px;column-gap:22px}.csview #cs-order .csorder>li{break-inside:avoid}}
+.csplace{font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:0 5px;text-decoration:none;min-width:30px;text-align:center}
+/* phone cards compact: the values side by side («P/UP 07:15 · Call 07:35 …»), long texts on their own line */
+@media (max-width:760px){html body #view .cs-card{padding:6px 10px;margin:5px 0}html body #view .cs-card .cs-kv{display:inline-flex;gap:4px;margin-right:10px;padding:0;font-size:13px;max-width:100%;flex-wrap:wrap}html body #view .csview{overflow-wrap:anywhere}
+ html body #view .cs-card .cs-kv .k{min-width:0;font-size:11.5px}html body #view .cs-card .cs-kv .v{flex:0 1 auto}
+ html body #view .cs-card .cs-kv:has(.v:not(:empty)) .v{white-space:normal}html body #view .cs-ct{font-size:14px;margin-bottom:2px}}
 </style>

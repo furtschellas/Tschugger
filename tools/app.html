@@ -771,6 +771,11 @@ html body #view .cstiles>.dt.cswx{padding:0;border:0;background:none}html body #
  .csview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 22px;align-items:start}.csview>.dsp-head,.csview>.dtiles,.csview>.cscontact,.csview>.csjump,.csview>.csme,.csview>#cs-order,.csview>#cs-cast,.csview>#cs-trans,.csview>#cs-calls{grid-column:1/-1}
  .csview #cs-calls>.cscall{display:inline-block;vertical-align:top;width:calc(50% - 14px);margin-right:14px}}
 @media (min-width:1200px){.csview #cs-order .csorder{columns:2 480px;column-gap:22px}.csview #cs-order .csorder>li{break-inside:avoid}}
+.csplace{font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:0 5px;text-decoration:none;min-width:30px;text-align:center}
+/* phone cards compact: the values side by side («P/UP 07:15 · Call 07:35 …»), long texts on their own line */
+@media (max-width:760px){html body #view .cs-card{padding:6px 10px;margin:5px 0}html body #view .cs-card .cs-kv{display:inline-flex;gap:4px;margin-right:10px;padding:0;font-size:13px;max-width:100%;flex-wrap:wrap}html body #view .csview{overflow-wrap:anywhere}
+ html body #view .cs-card .cs-kv .k{min-width:0;font-size:11.5px}html body #view .cs-card .cs-kv .v{flex:0 1 auto}
+ html body #view .cs-card .cs-kv:has(.v:not(:empty)) .v{white-space:normal}html body #view .cs-ct{font-size:14px;margin-bottom:2px}}
 </style>
 
 <div class="wrap">
@@ -1649,6 +1654,7 @@ const csMap=u=>u?'<a class="csmap" href="'+esc(safeUrl(u))+'" target="_blank" re
 /* translated text (locations, production information) in the language of the app; the original when none */
 let CSTR=null;const csL=t=>{const s2=String(t==null?"":t);return (CSTR&&CSTR[LANG]&&CSTR[LANG][s2])||s2};
 const csA=v=>Array.isArray(v)?v:(v==null||v===""?[]:[v]);
+const csRoute=(f,t1,to,t2)=>[[t1,f].filter(Boolean).join(" "),[t2,to].filter(Boolean).join(" ")].filter(Boolean).join(" → ");
 const csS=v=>Array.isArray(v)?v.join(", "):String(v==null?"":v);
 /* a part of the callsheet: open or folded */
 function csSec(title,body,open,cls,id){if(!body)return"";return '<details class="dsec cssec'+(cls?" "+cls:"")+'"'+(id?' id="cs-'+id+'"':'')+(open?' open':'')+'><summary><h3 class="dh">'+esc(title)+'</h3></summary>'+body+'</details>'}
@@ -1693,6 +1699,18 @@ function csCallPlace(c,me,call){const ct=hm(call.t);const rides=csA(c.transport)
   if(r){const p=csPlace(c,r.to);if(p){p.how=L("mit")+" "+[r.vehicle,r.from&&(L("ab")+" "+r.from),r.t1].filter(Boolean).join(" ");return p}}
   if(ct){let at=null;for(const o of csA((c.order||{}).rows)){const m=String(o.text||"").match(/@\s*(loc\.?\s*\d+)/i);if(m&&hm(o.t)&&hm(o.t)<=ct)at=m[1]}if(at)return csPlace(c,at)}
   const l=csA(c.locations)[0];return l?{name:'Set '+(l.no||"1")+' · '+(l.name||""),map:l.map||""}:null}
+/* Base, Lunch and Dinner as locations of their own (in the document they are lines of a set: «W / H / M Cast + Lunch: Restaurant Waldrand …») */
+function csLocs(c){const sets=[],extra=new Map();
+  for(const l of csA(c.locations)){const items=[];for(const i of csA(l.items)){const lab=String(i.label||"");
+      const kinds=[/\bbase\b|w\s*\/\s*h\s*\/\s*m/i.test(lab)&&"Base",/lunch|mittag/i.test(lab)&&"Lunch",/dinner|diner|abendessen/i.test(lab)&&"Dinner"].filter(Boolean);
+      if(!kinds.length||!String(i.text||"").trim()){items.push(i);continue}
+      const key=fold(String(i.text).split(",")[0]);const e=extra.get(key)||{no:"",kinds:[],name:String(i.text).split(",")[0].trim(),map:i.map||"",notes:[],items:[]};
+      for(const k of kinds)if(!e.kinds.includes(k))e.kinds.push(k);if(!e.map&&i.map)e.map=i.map;const rest=String(i.text).split(",").slice(1).join(",").trim();if(rest&&!e.notes.includes(rest))e.notes.push(rest);
+      e.items.push({label:lab,text:""});extra.set(key,e)}
+    sets.push(Object.assign({},l,{items}))}
+  return sets.concat([...extra.values()].map(e=>Object.assign(e,{no:e.kinds.join(" · "),items:e.items.filter(x=>x.label).map(x=>({label:x.label,text:""}))})))}
+/* short code of a place for the call list: S1, S2, Base, P1 … */
+function csShort(p){const n=String(p&&p.name||"");let m=n.match(/^Set\s*(\w+)/i);if(m)return "S"+m[1];if(/base|lunch|waldrand/i.test(n))return "Base";m=n.match(/park\w*\s*loc\.?\s*(\d+)/i);if(m)return "P"+m[1];m=n.match(/loc\.?\s*(\d+)/i);if(m)return "S"+m[1];return n.split(/[ ,·]/)[0].slice(0,8)}
 function csMine(c,me){const mine=[];if(!c||!me)return mine;
   const call=csA(c.calls).find(r=>me.hit(r.name));if(call){const pl=csCallPlace(c,me,call);
     mine.push('<div class="csme-r"><span class="k">'+esc(L("Mein Call"))+'</span><b>'+esc(call.t||"")+'</b> <small>'+esc([call.role,call.dept].filter(Boolean).join(" · "))+'</small></div>'+
@@ -1722,8 +1740,8 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
     csA(c.lists).map(l=>'<p class="cslist"><b>'+esc(l.title||"")+'</b> '+esc(csS(l.names))+'</p>').join(""):"",false);
   /* locations */
   /* locations: each one folds (name and map always visible), a button opens or closes all */
-  {const ls=csA(c.locations);
-   h+=csSec("Locations",ls.length?(ls.length>1?'<button type="button" class="lnk csall" data-csall>'+esc(L("Alle auf-/zuklappen"))+'</button>':'')+ls.map(l=>'<details class="dbox csloc"><summary><span class="dk">Set '+esc(l.no||"")+(l.scenes?' · '+esc(csS(l.scenes)):'')+'</span><span class="dn">'+esc(l.name||"")+'</span>'+
+  {const ls=csLocs(c);
+   h+=csSec("Locations",ls.length?(ls.length>1?'<button type="button" class="lnk csall" data-csall>'+esc(L("Alle auf-/zuklappen"))+'</button>':'')+ls.map(l=>'<details class="dbox csloc"><summary><span class="dk">'+(l.kinds?esc(l.no):'Set '+esc(l.no||""))+(l.scenes?' · '+esc(csS(l.scenes)):'')+'</span><span class="dn">'+esc(l.name||"")+'</span>'+
      csMap(l.map)+'</summary>'+
      csA(l.notes).map(n=>'<div class="ds">'+csTx(csL(n))+'</div>').join("")+csA(l.items).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csTx(csL(i.text||""))+(i.map?' '+csMap(i.map):'')+'</div>').join("")+'</details>').join(""):"",true,"","loc")}
   /* production information */
@@ -1736,18 +1754,20 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset])),false);
   h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false);
   /* transport and travel */
-  h+=csSec(L("Transport mit Fahrer"),(c.drivers?'<p class="ghint">'+csTx(c.drivers)+'</p>':'')+csTable([L("Fahrzeug"),L("Fahrer"),L("Mitfahrende"),L("Von"),L("Nach")],csA(c.transport).map(r=>[r.vehicle,r.driver,r.passengers,[r.t1,r.from].filter(Boolean).join(" "),[r.t2,r.to].filter(Boolean).join(" ")])),false,"","trans");
-  h+=csSec(L("Anreise Cast"),csTable([L("Name"),"",L("Von"),L("Nach"),L("Notiz")],csA(c.travel).map(r=>[r.name,r.how,[r.t1,r.from].filter(Boolean).join(" "),[r.t2,r.to].filter(Boolean).join(" "),r.note])),false);
+  h+=csSec(L("Transport mit Fahrer"),(c.drivers?'<p class="ghint">'+csTx(c.drivers)+'</p>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRoute(r.from,r.t1,r.to,r.t2),r.vehicle,r.driver,r.passengers]),1),false,"","trans");
+  h+=csSec(L("Anreise Cast"),csTable([L("Name"),"",L("Fahrt"),L("Notiz")],csA(c.travel).map(r=>[r.name,r.how,csRoute(r.from,r.t1,r.to,r.t2),r.note])),false);
   /* information by department */
   h+=csSec(L("Infos nach Abteilung"),csA(c.depts).filter(r=>String(r.text||"").trim()).map(r=>'<div class="csdep'+(me&&me.dep&&fold(r.dept||"").includes(me.dep)?' mine':'')+'"><b>'+esc(r.dept||"")+'</b> '+csTx(r.text)+'</div>').join(""),false);
-  h+=csSec(L("Transport Crew"),csTable([L("Fahrzeug"),L("Personen"),L("Von"),L("Nach")],csA(c.crewTransport).map(r=>[r.vehicle,r.people,[r.t1,r.from].filter(Boolean).join(" "),[r.t2,r.to].filter(Boolean).join(" ")])),false);
+  h+=csSec(L("Transport Crew"),csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,csRoute(r.from,r.t1,r.to,r.t2),r.people]),1),false);
   /* preview of the next day */
   const pv=c.prevision||{};
   h+=csSec(L("Vorschau")+(pv.title?' · '+pv.title.replace(/^PREVISION\s*-?\s*/i,""):''),csOrderRows(pv.rows),false);
   /* calls on set */
   /* calls on set: by department, one short line per person (time · name · job) */
   {const g=new Map();for(const r of csA(c.calls)){const k=r.dept||"";if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
-   h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>'<div class="cscall-r'+(me&&me.hit(r.name)?' mine':'')+'"><span class="t">'+esc(r.t||"")+'</span><b>'+esc(r.name||"")+'</b><small>'+esc(r.role||"")+'</small></div>').join("")+'</div>').join(""),false,"","calls")}
+   h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>{const who={hit:t=>{const a=nmk(String(t||"")),b=nmk(String(r.name||""));return !!b&&a.includes(b)}};let pl=null;try{pl=csCallPlace(c,who,r)}catch(_){}
+     const sc=pl?csShort(pl):"";const tag=sc?(pl.map?'<a class="csplace" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer" title="'+esc(pl.name)+'">'+esc(sc)+'</a>':'<span class="csplace" title="'+esc(pl.name)+'">'+esc(sc)+'</span>'):'';
+     return '<div class="cscall-r'+(me&&me.hit(r.name)?' mine':'')+'"><span class="t">'+esc(r.t||"")+'</span>'+tag+'<b>'+esc(r.name||"")+'</b><small>'+esc(r.role||"")+'</small></div>'}).join("")+'</div>').join(""),false,"","calls")}
   /* totals, notes, radio */
   const nb=[c.total?'<p><b>'+esc(c.total)+'</b></p>':'',...csA(c.notes).map(n=>'<p>'+csTx(n)+'</p>'),c.radio?'<p>📻 '+esc(c.radio)+'</p>':''].join("");
   h+=csSec(L("Notizen & Funk"),nb,false);
