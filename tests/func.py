@@ -374,6 +374,13 @@ async def owner_tests(p, port):
           const g=document.getElementById('blkgal');const txt=g?g.textContent:'';const r={open:!!g,party:txt.includes('party')||(!!g&&(g.innerHTML.includes('blk/c')||g.innerHTML.includes('party'))),teil:txt.includes('teil1')||(g&&g.innerHTML.includes('blk/b'))};
           document.querySelectorAll('#blkgal').forEach(x=>x.remove());w.remove();S.meta.blocking=keep;S.meta.bm=kb;return r})()""")
         check("Galerie: Szene 186pt1A zeigt keine Bilder von 186pt2", gal in (None, {"open": True, "party": False, "teil": gal and gal.get("teil")}), gal, public=True)
+        two = await E("""(()=>{if(typeof window.blkImg!=='function')return null;const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
+          S.meta.blocking=[{name:'Scene_77',sc:['77'],url:'https://www.dropbox.com/home/A/Scene_77',media:[{t:'img',n:'a',f:'blk/a',u:'u'}]},{name:'AUF 77',sc:['77'],url:'https://www.dropbox.com/home/B/AUF_77',media:[{t:'img',n:'b',f:'blk/b',u:'u'},{t:'img',n:'c',f:'blk/c',u:'u'}]}];
+          const w=document.createElement('div');w.innerHTML=fpLinks([],blkFor('77'));document.body.appendChild(w);const n=w.querySelectorAll('[data-blkg],[data-blkgs]').length;
+          const a=w.querySelector('[data-blkgs]');if(a)a.click();const p=document.getElementById('fldpick');const ch=p?p.querySelectorAll('[data-gi]').length:0;const txt=p?p.textContent:'';
+          if(p){p.querySelector('[data-gi="1"]').click()}const g=document.getElementById('blkgal');const open=!!g;
+          document.querySelectorAll('#blkgal,#fldpick').forEach(x=>x.remove());w.remove();S.meta.blocking=keep;S.meta.bm=kb;return {n,ch,path:txt.includes('AUF_77'),open}})()""")
+        check("Galerie: zwei Bilderordner → ein Kamera-Knopf, Auswahl mit Ordnerpfad", two in (None, {"n": 1, "ch": 2, "path": True, "open": True}), two, public=True)
         sct = await E("""(async()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);const keep=S.meta.bd,sv=Object.assign({},S.sv);
           S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{},c:[['Props',['Knife']]]}};S.tab='script';S.sq=String(it.sc);S.sqm='sc';render();await new Promise(r=>setTimeout(r,300));render();
           const v=document.querySelector('#view');const vis=e=>!!e&&getComputedStyle(e).display!=='none';const b=v.querySelector('.spf1 .bdt');const a=vis(b);
