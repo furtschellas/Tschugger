@@ -1110,8 +1110,8 @@ html body #view details.csloc>summary .csaddr .csi{width:12px;height:12px;flex:0
 </div>
 <nav class="tabs" aria-label="Bereiche" data-i18n-al="Bereiche"><div class="in" role="tablist">
   <button role="tab" data-tab="today" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="lbl" data-s="Today">Today</span></button>
-  <button role="tab" data-tab="plan" aria-selected="true"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><span class="lbl" data-s="Sched">Schedule</span></button>
   <button role="tab" data-tab="dispo" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9zM8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></span><span class="lbl" data-s="Call">Callsheet</span></button>
+  <button role="tab" data-tab="plan" aria-selected="true"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><span class="lbl" data-s="Sched">Schedule</span></button>
   <button role="tab" data-tab="loc" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.4"/></svg></span><span class="lbl" data-s="Loc">Location</span></button>
   <button role="tab" data-tab="crew" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.4 0 4.2 1.6 4.7 4.3"/></svg></span><span class="lbl" data-s="Crew">Crewlist</span></button>
   <button role="tab" data-tab="script" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7.5L19 8v12.5H7z"/><path d="M14.5 3.5V8H19"/><path d="M10 12h6M10 15.5h6M10 19h3.5"/><path d="M4.5 6.5v14"/></svg></span><span class="lbl" data-s="Script">Script</span></button>
@@ -1480,6 +1480,11 @@ function myEvents(me){
     const st=hm(call&&call.t)||hm(dp.crewCall)||hm(dp.generalCall)||"",en=hm(dp.wrap);
     const loc=arr(dp.locations).map(l=>l.name||l.address).filter(Boolean).join(", ")||(d.kind?dayPlaces(d).join(", "):"");
     out.push({date:dp.date,t:st,end:en,n:(d.short||dp.label||d.label||"")+" · "+L("Drehtag")+(call&&call.dept?" ("+call.dept+")":""),where:loc,map:(arr(dp.locations)[0]||{}).map||"",src:"Callsheet"+(dp.version?" "+dp.version:""),go:d.id||dp.date})}
+  /* my rides from the callsheets (driver, passenger, crew transport, travel) */
+  try{const cm=typeof csMe==="function"?csMe():null;if(cm)for(const dp of S.dispos){if(!dp||dp.date<t||!dp.cs)continue;const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};
+    const rides=[...arr(c.transport).filter(r=>cm.hit(r.driver)||cm.hit(r.passengers)).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>cm.hit(r.people)).map(r=>({r})),...arr(c.travel).filter(r=>cm.hit(r.name)).map(r=>({r,how:r.how}))];
+    for(const {r,drv,how} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();
+      out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date})}}}catch(_){}
   /* own and Google Calendar events (tools/boot/18-own-events.js); the same appointment twice (same day, same start, same title) is shown once */
   try{if(window.ownEvents){const tn=x=>fold(x||"").replace(/[^a-z0-9]+/g," ").trim(),same=(a,b)=>a.date===b.date&&(hm(a.t)||"")===(hm(b.t)||"")&&(()=>{const x=tn(a.n),y=tn(b.n);return x===y||(x.length>=4&&y.length>=4&&(x.includes(y)||y.includes(x)))})();
     for(const e of window.ownEvents(me))if(!out.some(o=>same(o,e)))out.push(e)}}catch(_){}
@@ -2042,7 +2047,13 @@ function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/\s+/g,"");co
       out.push(v);prev=v}}return out};
   return (sc&&ls.find(l=>list(l).includes(sc)))||ls.find(l=>l.name&&n(r.set).includes(n(l.name)))||null}
 /* address of a location: from the app's location list (by its scenes), else a note with a postcode («Föhrenweg 160, 3999 Testdorf») */
-function csLocAddr(c,l,date){let ad="";try{for(const r of csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it){ad=addrForItem(it)||"";if(ad)break}}}catch(_){}
+function csLocAddr(c,l,date){let ad="";
+  /* 1. the app's location list: a set there with one of the scenes of this location, or with the same name */
+  try{const scs=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>norm(r.sc));const nm=fold(String(l.name||"")).replace(/\(.*?\)/g,"").trim();
+    const hit=(S.locs||[]).find(x=>(x.sets||[]).some(st=>(st.scenes||[]).map(norm).some(w=>scs.some(n=>n===w||n.startsWith(w+"pt")))))||
+      (nm.length>3?(S.locs||[]).find(x=>(x.sets||[]).some(st=>fold(String(st.name||st.set||"")).includes(nm))||fold(String(x.name||x.venue||"")).includes(nm)):null);
+    if(hit)ad=[hit.venue,hit.address].filter(Boolean).join(", ")}catch(_){}
+  if(!ad)try{for(const r of csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it){ad=addrForItem(it)||"";if(ad)break}}}catch(_){}
   if(!ad||/^tba$/i.test(ad)){const n=csA(l.notes).map(String).concat(csA(l.items).map(i=>String(i.text||""))).find(t=>/\b\d{4}\b/.test(t)&&/[A-Za-zÀ-ÿ]{3,}/.test(t));ad=n?n.replace(/https?:\/\/\S+/g,"").split(/\.\s|\n/)[0].trim():""}
   return /^tba$/i.test(ad)?"":ad}
 function csOrderRows(rows,date,locs){if(!csA(rows).length)return"";const ni=date?csNowIdx(rows,date):-1;return '<ol class="tl csorder">'+csA(rows).map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
@@ -2249,7 +2260,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-csall]");i
 /* ---------- render ---------- */
 const VIEWS={my:()=>renderMy(),plan:()=>renderPlan(),dispo:()=>renderDispo(),loc:()=>renderLoc(),crew:()=>renderCrew(),script:()=>renderScript(),info:()=>renderInfo()};
 /* main topics the main admin has switched on (website: window.TABSON); the script tab also needs the script function */
-const ALLTABS=["today","plan","dispo","loc","crew","script","info"];
+const ALLTABS=["today","dispo","plan","loc","crew","script","info"];
 function tabOrder(){const o=Array.isArray(window.TABORDER)?window.TABORDER.filter(x=>ALLTABS.includes(x)):[];return o.concat(ALLTABS.filter(x=>!o.includes(x)))}
 /* role-based visibility (website): areas a role does not allow are hidden; in the artifact everything is visible */
 const vok=k=>{try{return typeof window.viewOK!=="function"||window.viewOK(k)}catch(_){return true}};
