@@ -146,6 +146,25 @@ def main():
             miss = [f for f in fl if f not in have]
             (ok if not miss else bad)("%s-Seiten: %d von %d Bildern vorhanden%s" % (lab, len(fl) - len(miss), len(fl), "" if not miss else " – %d fehlen" % len(miss)))
     except Exception as e: info("Bildspeicher nicht geprüft (%s)" % type(e).__name__)
+    # pictures through the Cloudflare worker (R2): reachable and readable with the crew key?
+    base = (os.environ.get("BLK_BASE") or meta.get("blkBase") or "").strip()
+    if base:
+        try:
+            import requests
+            if not base.endswith("/"): base += "/"
+            st = requests.get(base, timeout=20).json()
+            (ok if st.get("blk") else bad)("Worker: Bilder-Bucket verbunden (Binding BLK)" if st.get("blk") else "Worker: Binding BLK fehlt")
+            f0 = next((x.get("f") for x in bm if str(x.get("f") or "").startswith("blk/")), None)
+            if f0:
+                r = requests.get(base + f0, headers={"Origin": "https://furtschellas.github.io"}, timeout=30)
+                okd = False
+                if r.status_code == 200:
+                    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+                    try: AESGCM(U.KEY).decrypt(r.content[:12], r.content[12:], None); okd = True
+                    except Exception: okd = False
+                (ok if okd else bad)("Bild über den Worker: %s" % ("geladen und entschlüsselt" if okd else "HTTP %d%s" % (r.status_code, "" if r.status_code != 200 else ", nicht entschlüsselbar")))
+        except Exception as e: bad("Worker nicht erreichbar (%s)" % type(e).__name__)
+    else: info("Bilder über GitHub Pages (BLK_BASE nicht gesetzt)")
     fpl = meta.get("floorplans") or []
     info("Floorplans: %d in der App, davon %d mit Seiten für die App" % (len(fpl), sum(1 for x in fpl if x.get("pg"))))
 
