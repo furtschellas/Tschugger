@@ -931,4 +931,27 @@ html body #view .csview .cskey .csct{min-height:0}
  html body #view .cstiles>.dt .v{font-size:clamp(15px,1.4vw,21px)}
  html body #view .cstiles>.dt.big .v{font-size:clamp(19px,1.8vw,26px)}
 }
+
+/* locations: short code badge, name, scenes; map and open symbol same small size on the right */
+html body #view details.csloc>summary{flex-wrap:nowrap;gap:8px;align-items:center}
+html body #view details.csloc>summary .csloc-c{flex:0 0 auto;order:0;min-width:34px;text-align:center}
+html body #view details.csloc>summary .dn{flex:1 1 auto;min-width:0;order:0}
+html body #view details.csloc>summary .csloc-s{display:block;font-weight:400;font-size:11px;color:var(--muted);font-family:var(--f-mono,monospace)}
+html body #view details.csloc>summary .csloc-i{display:flex;gap:6px;margin-left:auto;flex:0 0 auto;order:0}
+html body #view details.csloc>summary .csloc-i .csmap,html body #view details.csloc>summary .csloc-i .csexp.sm{width:28px;height:28px;margin:0;border-width:1.5px}
+html body #view details.csloc>summary .csloc-i svg{width:14px;height:14px}
+/* shooting order folded: one very short line */
+.csosum{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:12.5px;font-family:var(--f-mono,monospace);color:var(--ink);flex:1 1 100%;order:3;margin-top:2px}
+.csoc i{font-style:normal;color:var(--muted);font-family:var(--f-body,inherit);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
+html body #view .cssec#cs-order>summary{flex-wrap:wrap}
+html body #view .cssec#cs-order[open] .csosum{display:none}
+html body #view .csscd>summary .csplace{font-size:11px;padding:0 5px;line-height:1.5}
+/* desktop: every part on its own full row; cast always as a table */
+@media (min-width:761px){
+ html body #view .csview{display:block}
+ html body #view .csview #cs-cast .cs-tbl{display:block!important}html body #view .csview #cs-cast .cs-cards{display:none!important}html body #view .csview #cs-cast .cstview{display:none}
+ html body #view .csview #cs-cast .dtbl{white-space:nowrap}
+}
+
+@media (max-width:760px){html body #view .csview details.csloc>summary>*,html body #view .csview details.csloc .csloc-i>*{order:0!important}html body #view .csview details.csloc>summary .dn{font-size:14px}html body #view .csview details.csloc>summary .csloc-i{margin-left:auto}}
 </style>
