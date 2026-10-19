@@ -919,13 +919,25 @@ html body #view .csview details.cssec details.csloc,html body #view .csview deta
 /* locations: open/close symbol right of the name (no arrow in front) */
 html body #view details.csloc>summary .dn::before,html body #view details.csloc[open]>summary .dn::before{content:none}
 html body #view details.csloc>summary .dn{flex:0 1 auto}
-html body #view details.csloc>summary .csexp.sm{margin-left:0;order:1}
+html body #view details.csloc>summary .csexp.sm{margin-left:0}
+@media (max-width:760px){html body #view details.csloc>summary .csexp.sm{order:1}}
+@media (min-width:761px){html body #view details.csloc>summary .csmap{margin-left:auto}}
 html body #view details.csloc>summary .dk{margin-left:auto}
 html body #view details.csloc[open]>summary .csexp.sm{background:var(--accent-soft)}
 @media (max-width:760px){html body #view .csview details.cssec{padding:2px 9px;border-radius:10px;margin:0 0 6px}html body #view .csview details.cssec[open]{padding-bottom:8px}}
 
 html body #view .csview .csme{margin:0 0 8px}
 html body #view .csview .cskey .csct{min-height:0}
+
+/* desktop: the time tiles fill the whole width of the page (grow from their content, never cut) */
+@media (min-width:761px){
+ html body #view .cstiles{flex-wrap:wrap}
+ html body #view .cstiles>.dt{flex:1 1 auto;min-width:max-content;padding:6px 12px}
+ html body #view .cstiles>.dt.cswx{flex:1.5 1 auto}
+ html body #view .cstiles>.dt.cswx .ttile{height:100%;box-sizing:border-box;padding:6px 12px}
+ html body #view .cstiles>.dt .v{font-size:clamp(15px,1.4vw,21px)}
+ html body #view .cstiles>.dt.big .v{font-size:clamp(19px,1.8vw,26px)}
+}
 </style>
 
 <div class="wrap">
