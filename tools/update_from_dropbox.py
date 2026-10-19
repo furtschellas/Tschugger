@@ -668,7 +668,7 @@ def u2_also_add(days):
         if u2 is None: u2 = d["unit2"] = {"src": "also", "items": []}
         if any(_norm_sc(i.get("sc") or "") == _norm_sc(sc) for i in u2.get("items") or []): continue
         u2.setdefault("items", []).append(dict(it, also=True))
-        log("2nd Unit: Szene", sc, "zusätzlich an Tag", no)
+        log("2nd Unit: Szene", sc, "zusätzlich an Tag", no); print("::notice::2nd Unit zusätzlich: Szene %s an Tag %d (auch bei der 1st Unit)" % (sc, no))
 
 def pick_schedule(files):
     # the Swiss schedule: in 02_Schedule or a subfolder (formerly 02_Schedule/CH) – not the archive and not India
