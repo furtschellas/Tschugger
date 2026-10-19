@@ -1185,10 +1185,11 @@ def main():
     def may_try(kind, f):
         k = fkey(kind, f); seen.add(k)
         if FORCE or fails.get(k, 0) < 3: return True
-        keep_old(kind, f); log(kind, "übersprungen nach 3 Fehlversuchen", _h(f["name"])); return False
+        keep_old(kind, f); log(kind, "übersprungen nach 3 Fehlversuchen", _h(f["name"])); print("::warning::%s übersprungen nach 3 Fehlversuchen" % kind); return False
     def failed(kind, f, why):
         k = fkey(kind, f); seen.add(k); fails[k] = fails.get(k, 0) + 1
         keep_old(kind, f); log(kind, "nicht übernommen (Versuch %d/3):" % fails[k], str(why)[:120])
+        print("::warning::%s nicht übernommen (Versuch %d/3): %s" % (kind, fails[k], why if isinstance(why, str) else type(why).__name__))
 
     # schedule
     f = pick_schedule(files)
