@@ -135,7 +135,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   /* locations */
   /* locations: each one folds (name and map always visible), a button opens or closes all */
   {const ls=csLocs(c);
-   h+=csSec("Locations",ls.length?(ls.length>1?'<button type="button" class="lnk csall" data-csall>'+CSEXP+'<span>'+esc(L("Alle auf-/zuklappen"))+'</span></button>':'')+ls.map(l=>'<details class="dbox csloc"><summary><span class="dk">'+(l.kinds?esc(l.no):'Set '+esc(l.no||""))+(l.scenes?' · '+esc(csS(l.scenes)):'')+'</span><span class="dn">'+esc(l.name||"")+'</span>'+
+   h+=csSec("Locations",ls.length?(ls.length>1?'<button type="button" class="lnk csall" data-csall>'+CSEXP+'<span>'+esc(L("Alle auf-/zuklappen"))+'</span></button>':'')+ls.map(l=>'<details class="dbox csloc"><summary><span class="dk">'+(l.kinds?esc(l.no):'Set '+esc(l.no||""))+(l.scenes?' · '+esc(csS(l.scenes)):'')+'</span><span class="dn">'+esc(l.name||"")+'</span>'+CSEXP.replace('class="csexp"','class="csexp sm"')+
      csMap(l.map)+'</summary>'+
      csA(l.notes).map(n=>'<div class="ds">'+csTx(csL(n))+'</div>').join("")+csA(l.items).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csTx(csL(i.text||""))+(i.map?' '+csMap(i.map):'')+'</div>').join("")+'</details>').join(""):"",true,"","loc")}
   /* production information */

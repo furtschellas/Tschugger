@@ -909,6 +909,23 @@ html body #view .csscd .csdur{font-family:var(--f-mono,monospace);font-size:12px
 }
 /* cast table: the number stays when scrolling sideways */
 html body #view .csview #cs-cast.cs-astbl .dtbl th:first-child,html body #view .csview #cs-cast.cs-astbl .dtbl td:first-child{position:sticky;left:0;z-index:1;background:var(--sheet);box-shadow:1px 0 0 var(--rule)}
+
+/* callsheet main parts in a frame like the locations */
+html body #view .csview details.cssec{border:1px solid var(--rule);border-radius:12px;background:var(--sheet);padding:4px 12px;margin:0 0 8px}
+html body #view .csview details.cssec[open]{padding-bottom:10px}
+html body #view .csview details.cssec>summary{padding:6px 0}
+html body #view .csview details.cssec .dh::after{display:none}
+html body #view .csview details.cssec details.csloc,html body #view .csview details.cssec .cs-card,html body #view .csview details.cssec .csorder>li.row>.sc{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+/* locations: open/close symbol right of the name (no arrow in front) */
+html body #view details.csloc>summary .dn::before,html body #view details.csloc[open]>summary .dn::before{content:none}
+html body #view details.csloc>summary .dn{flex:0 1 auto}
+html body #view details.csloc>summary .csexp.sm{margin-left:0;order:1}
+html body #view details.csloc>summary .dk{margin-left:auto}
+html body #view details.csloc[open]>summary .csexp.sm{background:var(--accent-soft)}
+@media (max-width:760px){html body #view .csview details.cssec{padding:2px 9px;border-radius:10px;margin:0 0 6px}html body #view .csview details.cssec[open]{padding-bottom:8px}}
+
+html body #view .csview .csme{margin:0 0 8px}
+html body #view .csview .cskey .csct{min-height:0}
 </style>
 
 <div class="wrap">
@@ -1911,7 +1928,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   /* locations */
   /* locations: each one folds (name and map always visible), a button opens or closes all */
   {const ls=csLocs(c);
-   h+=csSec("Locations",ls.length?(ls.length>1?'<button type="button" class="lnk csall" data-csall>'+CSEXP+'<span>'+esc(L("Alle auf-/zuklappen"))+'</span></button>':'')+ls.map(l=>'<details class="dbox csloc"><summary><span class="dk">'+(l.kinds?esc(l.no):'Set '+esc(l.no||""))+(l.scenes?' · '+esc(csS(l.scenes)):'')+'</span><span class="dn">'+esc(l.name||"")+'</span>'+
+   h+=csSec("Locations",ls.length?(ls.length>1?'<button type="button" class="lnk csall" data-csall>'+CSEXP+'<span>'+esc(L("Alle auf-/zuklappen"))+'</span></button>':'')+ls.map(l=>'<details class="dbox csloc"><summary><span class="dk">'+(l.kinds?esc(l.no):'Set '+esc(l.no||""))+(l.scenes?' · '+esc(csS(l.scenes)):'')+'</span><span class="dn">'+esc(l.name||"")+'</span>'+CSEXP.replace('class="csexp"','class="csexp sm"')+
      csMap(l.map)+'</summary>'+
      csA(l.notes).map(n=>'<div class="ds">'+csTx(csL(n))+'</div>').join("")+csA(l.items).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csTx(csL(i.text||""))+(i.map?' '+csMap(i.map):'')+'</div>').join("")+'</details>').join(""):"",true,"","loc")}
   /* production information */
