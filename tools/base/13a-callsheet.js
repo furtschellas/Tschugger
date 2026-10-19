@@ -188,8 +188,10 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   {const sc=csA(o.rows).filter(r=>r.sc).map(r=>String(r.sc)),ch=(k,v)=>v?'<span class="csoc"><i>'+esc(k)+'</i>'+esc(v)+'</span>':'';
    /* folded: Call · Probe · RTS · scenes · Lunch · Wrap in one short line */
    const sumx='<span class="csosum">'+ch("Call",t.crewCall||x.crewCall)+ch(L("Probe"),t.rehearsal)+ch("RTS",t.rts||x.shootCall)+(sc.length?ch(sc.length+" "+L("Szenen"),sc.length>1?sc[0]+"–"+sc[sc.length-1]:sc[0]):"")+ch("Lunch",t.lunch)+ch("Wrap",t.wrap||x.wrap)+'</span>'+
-     (sc.length?'<span class="csoscn">'+csA(o.rows).filter(r=>r.sc).map(r=>'<span>'+(hm(r.t)?'<i>'+esc(hm(r.t))+'</i>':'')+esc(String(r.sc))+'</span>').join("")+'</span>':'');
-   h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c)),x.date===todayISO(),"","order",sumx)}
+     (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c);return csA(o.rows).filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
+       /* one line per scene: time · scene · I/E · set code · set · duration */
+       return '<span class="cso1"><i>'+esc(hm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?'<span class="csplace">S'+esc(String(lo.no).trim())+'</span>':'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
+   h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c)),false,"","order",sumx)}
   /* cast, extras, vehicles */
   h+=csSec("Cast",(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Karten":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3),false,csCastMode()?"cs-astbl":"","cast",SU.cast);
   /* travel of the cast: one line per person (name · how · from → to · note), the place as short code (S1, Base …) with the map */
