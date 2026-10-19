@@ -170,8 +170,9 @@ service cloud.firestore {
         && request.resource.data.email == myEmail());
       allow update: if verified() && request.auth.uid == uid
         && resource.data.active == true
-        && changesOnly(profile().concat(['email', 'lastSeen', 'tour', 'tourAt', 'app']))
+        && changesOnly(profile().concat(['email', 'lastSeen', 'tour', 'tourAt', 'app', 'devs']))
         && (!('app' in request.resource.data) || (request.resource.data.app is string && request.resource.data.app.size() <= 20))
+        && (!('devs' in request.resource.data) || (request.resource.data.devs is map && request.resource.data.devs.size() <= 12))
         && request.resource.data.email == myEmail()
         && request.resource.data.active == true;
     }
