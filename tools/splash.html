@@ -44,7 +44,7 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   /* a reload shows the logo and the loading status too (only the versions are left out) – before, the logo was hidden
      completely when the app had been used in the last 30 minutes, so most starts showed no logo and no loading status */
   window.__REL=rel;/* the app uses this too: a reload keeps the page, a start opens the start page */
-  if(hard){var tv0=document.getElementById("spv");if(tv0)tv0.style.display="none"}
+  if(hard){var tv0=document.getElementById("spv");if(tv0)tv0.style.display="none";var cp0=document.getElementById("spcopy");if(cp0)cp0.style.display="none"}   /* reload: logo and loading status only */
   function seen(){try{localStorage.setItem("lastVis",String(Date.now()))}catch(e){}}
   setInterval(function(){if(document.visibilityState==="visible")seen()},15000);
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")seen()});addEventListener("pagehide",seen);

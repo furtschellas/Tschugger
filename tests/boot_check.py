@@ -48,7 +48,7 @@ async def main():
         await pg.evaluate("sessionStorage.setItem('bcLV',String(Date.now()));Storage.prototype.setItem=function(){}")
         await pg.reload(wait_until="commit")
         if "App " in await spv_text(pg): errs.append("Startbildschirm beim Neuladen mit Versionen")
-        if "MrK" not in await pg.evaluate("(document.getElementById('spcopy')||{}).textContent||''"): errs.append("Neuladen: Copyright unten fehlt")
+        if await pg.evaluate("(()=>{const c=document.getElementById('spcopy');return !!c&&getComputedStyle(c).display!=='none'})()"): errs.append("Neuladen: Copyright sichtbar (nur beim Start)")
         if not await pg.evaluate("(()=>{const s=document.getElementById('splash');return !!s&&getComputedStyle(s).display!=='none'})()"): errs.append("Neuladen: Logo mit Ladestatus fehlt")
         await pg.wait_for_timeout(20600)   # the start screen never stays: at the latest after 20 s it is gone
         ok = ok and await pg.evaluate("!document.getElementById('splash')")
