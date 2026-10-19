@@ -143,6 +143,7 @@ function itemHTML(it){
     return '<li class="row ev'+(mn?' lunch':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+mn+'</div></li>';
   }
   const meta=[];
+  if(it.cam)meta.push('<span class="cam">'+esc(it.cam)+'</span>'); /* which camera/unit shoots it (e.g. B-Cam of the 1st unit, setups of the 2nd unit) */
   if(it.pg)meta.push('<span class="m">'+esc(it.pg)+' pgs</span>');
   if(it.dur)meta.push('<span class="m">'+esc(it.dur)+'</span>');
   if(it.dir)meta.push('<span>'+L('Regie')+' '+esc(it.dir)+'</span>');
