@@ -142,7 +142,10 @@ def class_collisions():
 
 
 # phone test: a page wider than the screen (sideways scrolling) – only a warning, never blocks publishing
-OVERFLOW = "document.documentElement.scrollWidth>innerWidth+1"
+OVERFLOW = """(()=>{if(document.documentElement.scrollWidth<=innerWidth+1)return '';
+  /* the widest element that sticks out: only tag and class names (no crew data) */
+  const out=[...document.querySelectorAll('#view *')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&r.right>innerWidth+1&&!e.closest('.strip,.csjb,.tblw')});
+  const top=out.filter(e=>!out.includes(e.parentElement)).slice(0,2);return top.map(e=>e.tagName.toLowerCase()+'.'+String(e.getAttribute('class')||'').trim().split(/\\s+/).slice(0,2).join('.')).join(' ')||'?'})()"""
 OVER = {}
 
 
@@ -153,12 +156,14 @@ async def phone_widths(p, port):
         E = pg.evaluate
         for t in await E("tabsOn()"):
             await E(f"S.tab='{t}';render()"); await pg.wait_for_timeout(250)
-            if await E(OVERFLOW): OVER.setdefault(t, set()).add(str(w))
+            o = await E(OVERFLOW)
+            if o: OVER.setdefault(t, set()).add(f"{w} {o}")
         for t in ("plan", "dispo"):
             await E(f"(()=>{{const d=(S.days||[]).find(d=>d.kind==='shoot');if(!d)return;S.tab='{t}';S.day=d.id;S.dday=d.date;render()}})()"); await pg.wait_for_timeout(300)
-            if await E(OVERFLOW): OVER.setdefault(t + " (Drehtag)", set()).add(str(w))
+            o = await E(OVERFLOW)
+            if o: OVER.setdefault(t + " (Drehtag)", set()).add(f"{w} {o}")
         await b.close()
-    msg = ", ".join(f"{k} ({'/'.join(sorted(v))} px)" for k, v in sorted(OVER.items()))
+    msg = ", ".join(f"{k} ({'; '.join(sorted(v))})" for k, v in sorted(OVER.items()))
     print("✓ Handy-Test 360/390 px: " + ("kein seitliches Scrollen" if not msg else "Warnung – seitliches Scrollen auf " + msg), flush=True)
     if msg and os.environ.get("GITHUB_ACTIONS"):
         print(f"::warning title=Handy-Test::Seitliches Scrollen auf {msg}", flush=True)
@@ -184,7 +189,8 @@ async def main():
                 for t in tabs:
                     await E(f"S.tab='{t}';render()"); await pg.wait_for_timeout(250)
                     if "konnte nicht angezeigt" in await E("document.getElementById('view').innerText"): bad.append(t)
-                    if await E(OVERFLOW): OVER.setdefault(t, set()).add("390")
+                    o = await E(OVERFLOW)
+                    if o: OVER.setdefault(t, set()).add("390 " + o)
                 check(f"{who}: alle Seiten ({len(tabs)}) ohne Anzeigefehler", not bad, bad)
                 if who == "norole":
                     check("ohne Rolle: kein Drehplan", "plan" not in tabs, tabs)
