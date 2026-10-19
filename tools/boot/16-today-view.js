@@ -100,8 +100,8 @@ VIEWS.today=function(){
     const r=back?{h:gm(dest,hotel),c:gm("",hotel),from:dest,to:hotel,back:1}:{h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest};   /* no origin = current location */
     return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify(r))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′")+(d.drive.km?'<small class="tkm"> · '+Math.round(d.drive.km)+' km</small>':'')+'</b><span>'+esc(L(back?"Rückfahrt":"Anfahrt"))+' ›</span></button>'})():'';
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
-  /* from lunch on: the tiles of the next shooting day below (times, drive, weather) */
-  try{const la=d.kind==="shoot"&&lunchAt(d);if(canPlan&&la&&Date.now()>=la){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
+  /* from noon (or lunch, if earlier) on: the tiles of the next shooting day below (times, drive, weather) */
+  try{const la=d.kind==="shoot"&&lunchAt(d),noon=+new Date(d.date+"T12:00:00"),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
     if(nd){const ndt=new Date(nd.date+"T12:00:00"),nt=[];
       if(nd.hours)nt.push(['<b>'+esc(nd.hours)+'</b>',L("Dreh")]);if(nd.sr&&nd.ss)nt.push(['<b>'+esc(nd.sr+"–"+nd.ss)+'</b>',L("Sonnenzeit")]);
       let ndrv="";if(nd.drive&&nd.drive.min){const fi=arr(nd.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=nd.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
