@@ -317,6 +317,7 @@ Object.assign(I18N,{
  "Szenen":{fr:"Scènes",it:"Scene",en:"Scenes"},
  "Probe":{fr:"Répét.",it:"Prova",en:"Rehearsal"},
  "Infos":{fr:"Infos",it:"Info",en:"Info"},
+ "Laut Drehplan":{fr:"Selon le plan de tournage",it:"Secondo il piano di lavorazione",en:"According to the schedule"},
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
  "Links neu geladen – bitte prüfen und nochmals speichern.":{fr:"Liens rechargés – merci de vérifier et d’enregistrer à nouveau.",it:"Link ricaricati – controlla e salva di nuovo.",en:"Links reloaded – please check and save again."},
  "Links konnten nicht geladen werden – bitte später nochmals speichern.":{fr:"Les liens n’ont pas pu être chargés – merci d’enregistrer plus tard.",it:"Impossibile caricare i link – salva di nuovo più tardi.",en:"Links could not be loaded – please save again later."},

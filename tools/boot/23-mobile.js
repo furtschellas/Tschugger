@@ -19,6 +19,7 @@ function stickyH(){const w=document.querySelector("#view .stripwrap");const h=w?
   const j=document.querySelector("#view .csjump");document.documentElement.style.setProperty("--csjh",(j?Math.round(j.getBoundingClientRect().height):0)+"px")}
 try{new MutationObserver(()=>requestAnimationFrame(stickyH)).observe(document.getElementById("view")||document.body,{childList:true})}catch(_){}
 addEventListener("resize",stickyH);setTimeout(stickyH,800);
+{let rq=0;addEventListener("scroll",()=>{if(rq)return;rq=requestAnimationFrame(()=>{rq=0;stickyH()})},{passive:true})}
 /* swipe left/right over the page = next/previous day (pages with the day bar); not inside things that scroll sideways */
 {let sx=0,sy=0,st=0,ok=false;
  const scrollsX=el=>{for(let n=el;n&&n!==document.body;n=n.parentElement){if(n.matches&&n.matches(".stripwrap,.csjb,.tblw,input,textarea,select,[data-noswipe],.galstage,.mapbox"))return true;const cs=getComputedStyle(n);if(/(auto|scroll)/.test(cs.overflowX)&&n.scrollWidth>n.clientWidth+2)return true}return false};
