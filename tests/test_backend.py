@@ -381,4 +381,32 @@ _fs = [{"name": "02_Schedule/Tschugger Sched 261018 Colomns CH.pdf", "modified":
        {"name": "02_Schedule/Tschugger Sched 261018 Oneline CH.pdf", "modified": "2026-10-18T14:23:25Z"}]
 check("Drehplan: der normale «… CH.pdf» vor anderen Layouts derselben Version («Colomns», «Oneline»)", U.pick_schedule(_fs)["name"].endswith("261018 CH.pdf"))
 
+# key change running (secret/keynext of the last hour): the update writes nothing; an old leftover does not block it
+_og = fsadmin.get_doc; _os = fsadmin.sa
+fsadmin.sa = lambda: True
+fsadmin.get_doc = lambda p: {"k": "x", "at": int(time.time())} if p == "secret/keynext" else None
+_r1 = U.rotating()
+fsadmin.get_doc = lambda p: {"k": "x", "at": int(time.time()) - 7200} if p == "secret/keynext" else None
+_r2 = U.rotating()
+fsadmin.get_doc, fsadmin.sa = _og, _os
+check("Schlüsselwechsel läuft: Aktualisierung pausiert (alter Rest nach 1 Std. blockiert nicht)", _r1 is True and _r2 is False, (_r1, _r2))
+
+# Google calendar: an empty or cut answer deletes no imported events
+import gcal_sync as _G  # noqa: E402
+_src = open(ROOT / "tools" / "gcal_sync.py", encoding="utf-8").read() if "ROOT" in dir() else pathlib.Path(__file__).resolve().parent.parent.joinpath("tools", "gcal_sync.py").read_text(encoding="utf-8")
+check("Google Kalender: Schutz gegen Löschen bei leerer/abgeschnittener Antwort", "Löschungen ausgelassen" in _src and "len(items) < on * 0.5" in _src)
+
+# push devices: after a key change the cache is read anew (entries are encrypted with the old key)
+import push_send as _P  # noqa: E402
+_pd = pathlib.Path(tempfile.mkdtemp()) / "devices.json"
+json.dump({"full": time.time(), "at": time.time(), "kh": "alt", "docs": [{"id": "d1", "f": {"c": "x"}}]}, open(_pd, "w"))
+_odevs, _olist, _oq = _P.DEVS, fsadmin.list_docs, fsadmin.query_since
+_P.DEVS = str(_pd); _calls = []
+fsadmin.list_docs = lambda col: (_calls.append("full"), [("d2", {"c": "y"}, "")])[1]
+fsadmin.query_since = lambda *a: (_calls.append("since"), [])[1]
+_P.KEYB[:] = [b"neuer-schluessel"]
+_devs = _P.push_devices()
+_P.DEVS, fsadmin.list_docs, fsadmin.query_since = _odevs, _olist, _oq
+check("Push: nach Schlüsselwechsel alle Geräte neu gelesen", _calls == ["full"] and [d[0] for d in _devs] == ["d2"], (_calls, _devs))
+
 sys.exit(done("Hintergrund"))

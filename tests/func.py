@@ -385,6 +385,46 @@ async def owner_tests(p, port):
           if(p){p.querySelector('[data-gi="1"]').click()}const g=document.getElementById('blkgal');const open=!!g;
           document.querySelectorAll('#blkgal,#fldpick').forEach(x=>x.remove());w.remove();S.meta.blocking=keep;S.meta.bm=kb;return {n,ch,path:txt.includes('AUF_77'),open}})()""")
         check("Galerie: zwei Bilderordner → ein Kamera-Knopf, Auswahl mit Ordnerpfad", two in (None, {"n": 1, "ch": 2, "path": True, "open": True}), two, public=True)
+        # ---------- fixes from the code review (19.10.) ----------
+        fx = await E("""(async()=>{const r={};
+          /* contacts of the crew list: merged by position + name, values as text */
+          const cr=[{people:[{name:'A'},{name:'B'}]}];r.merge=contactsMerge(cr,[[0,0,'A',{phone:4179}],[0,1,'X',{phone:'1'}]])===1&&cr[0].people[0].phone==='4179'&&!cr[0].people[1].phone;
+          /* search highlighting: escaped once, overlapping terms in one mark */
+          r.mark=markTerms("l'ami mark",['ma','ar'],1)==="l&#39;ami <mark>mar</mark>k";
+          /* prep lists: names are people, not departments («Anton» ≠ Ton, «Allegra» ≠ alle) */
+          r.grp=groupPeople('Anton Meier',[])===null&&groupPeople('Allegra',[])===null&&!!groupPeople('Ton',mailPeople())===(S.crew.some(g=>/^ton/.test(fold(g.dept||''))))&&!!groupPeople('alle',[]);
+          r.find=findPerson('Sabine',[{name:'',email:'x@y.ch',k:''}])===null;
+          /* night shoot: end after midnight is the next day */
+          const ics=makeICS('2026-10-20',{t:'20:00',end:'03:00',n:'Nacht'});const ds=(ics.match(/DTSTART:(\\d+T\\d+)/)||[])[1],de=(ics.match(/DTEND:(\\d+T\\d+)/)||[])[1];r.night=!!ds&&!!de&&de>ds;
+          /* callsheet data from the language model: odd values do not break the view */
+          const cd=CLEAN.dispos([{date:'2026-10-20',contacts:[{name:'X',phone:4179}],calls:[null,{dept:'Cam',t:'9:00'}],meals:'x'}])[0];r.clean=cd.contacts[0].phone==='4179'&&cd.calls.length===1&&Array.isArray(cd.meals);
+          /* today = the date in Switzerland */
+          r.zh=localISO(Date.UTC(2026,9,19,22,30))==='2026-10-20';
+          /* simulation: nothing is written, not even through buttons */
+          const keep=SIMUSER;SIMUSER={email:'x'};let blocked=false;try{const {F,db}=await fb();await F.setDoc(F.doc(db,'prefs','simtest'),{a:1})}catch(e){blocked=e.code==='simulation'}SIMUSER=keep;r.sim=blocked&&!window.__db['prefs/simtest'];
+          /* weather: a failed try waits an hour (no endless reload without reception) */
+          const wk=Object.keys(WX)[0];r.wx=!wk||!WX[wk].err||Date.now()-WX[wk].at<3600e3;
+          /* messages: a newer one is not hidden by the timer of an older one */
+          showMsg('alt',50);showMsg('neu',0);await new Promise(x=>setTimeout(x,120));r.msg=!$('#refmsg').hidden&&$('#refmsg').textContent==='neu';$('#refmsg').hidden=true;
+          return r})()""")
+        for k, n in (("merge", "Kontakte: Telefon/E-Mail aus der eigenen Datei richtig zugeordnet"), ("mark", "Suche: Hervorhebung zerstört die Anzeige nicht"),
+                     ("grp", "Prep: Namen wie «Anton» oder «Allegra» sind Personen, keine Abteilung"), ("find", "Prep: Einträge ohne Namen passen zu keinem Vornamen"),
+                     ("night", "Nachtdreh: Ende nach Mitternacht am nächsten Tag (Kalender)"), ("clean", "Callsheet: ungewohnte Daten brechen die Ansicht nicht"),
+                     ("zh", "Heute: Datum nach Schweizer Zeit"), ("sim", "Simulation: es wird nichts gespeichert, auch nicht über Knöpfe"),
+                     ("wx", "Wetter: nach einem Fehler erst nach einer Stunde neu"), ("msg", "Meldungen: neuere Meldung bleibt stehen")):
+            check(n, bool(fx.get(k)), fx, public=True)
+        # app settings: links that were not loaded are never written (else empty fields deleted them for everyone)
+        pv = await E("""(async()=>{const keep=window.PRIVOK;window.PRIVOK=false;const before=JSON.stringify(window.__db['config/private']||null);
+          const ll=loadLangs;loadLangs=async()=>{};S.tab='admin';ADM.sub='set';render();await new Promise(x=>setTimeout(x,300));
+          const f=document.querySelector('[data-adm="langs"]');if(!f){loadLangs=ll;window.PRIVOK=keep;return null}
+          f.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));await new Promise(x=>setTimeout(x,500));
+          const after=JSON.stringify(window.__db['config/private']||null);loadLangs=ll;window.PRIVOK=keep;S.tab='today';render();return before===after})()""")
+        check("Einstellungen: nicht geladene Links werden nie überschrieben", pv in (None, True), pv, public=True)
+        # sign-out: the reminders of this person stop on this device
+        so = await E("""(async()=>{if(typeof window.pushSignOut!=='function')return 'fehlt';localStorage.setItem('push','{"on":true}');localStorage.setItem('pushlocal:x|1','1');
+          const id='push/'+ME.uid+'_'+pushDev();window.__db[id]={c:'x',at:1};const keep=JSON.parse(JSON.stringify({p:localStorage.getItem('push')}));
+          await window.pushSignOut();const r=!window.__db[id]&&!localStorage.getItem('push')&&!localStorage.getItem('pushlocal:x|1');localStorage.setItem('push',keep.p);return r})()""")
+        check("Abmelden: Erinnerungen dieser Person auf dem Gerät gestoppt", so is True, so, public=True)
         sct = await E("""(async()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);const keep=S.meta.bd,sv=Object.assign({},S.sv);
           S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{},c:[['Props',['Knife']]]}};S.tab='script';S.sq=String(it.sc);S.sqm='sc';render();await new Promise(r=>setTimeout(r,300));render();
           const v=document.querySelector('#view');const vis=e=>!!e&&getComputedStyle(e).display!=='none';const b=v.querySelector('.spf1 .bdt');const a=vis(b);
