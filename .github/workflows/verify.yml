@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - run: sudo apt-get install -y -q poppler-utils >/dev/null
       - run: pip install -q cryptography==43.0.3 requests==2.32.3 boto3==1.35.54
       - name: Abgleich
         env:

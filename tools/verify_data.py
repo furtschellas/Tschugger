@@ -33,6 +33,83 @@ def day_items(d):
         for it in its: yield u, it
 
 
+def _nrm(t):
+    """compare text without case, accents, spaces and typographic quotes"""
+    import unicodedata
+    t = unicodedata.normalize("NFD", str(t or "")).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[\s'’′`.,:;()\-–/|]+", "", t)
+
+
+def check_callsheets(data, dbx, files):
+    """every value the app shows from a callsheet must be found in the text of the PDF (only counts and field names in the report)"""
+    byname = {f["name"]: f for f in files}
+    n_cs = 0
+    for d in data.get("dispos") or []:
+        cs = d.get("cs")
+        if not isinstance(cs, dict): continue
+        f = byname.get(d.get("file") or "")
+        if not f: bad("Callsheet %s: PDF in der Dropbox nicht gefunden" % d.get("date")); continue
+        n_cs += 1
+        raw = dbx.download(f["id"]); txt = U.pdf_text(raw, False) + "\n" + U.pdf_text(raw, True)
+        T = _nrm(txt)
+        times = set(m.group(0).replace(".", ":").zfill(5) for m in re.finditer(r"\b\d{1,2}[:.]\d{2}\b", txt))
+        miss = {}
+        def need(part, field, i, v, kind="text"):
+            v = str(v or "").strip()
+            if not v or v.lower() in ("self", "o.p.d", "o.p.d.", "-", "–", "tba"): return
+            if kind == "time":
+                for m in re.finditer(r"\b\d{1,2}[:.]\d{2}\b", v):
+                    if m.group(0).replace(".", ":").zfill(5) not in times: miss.setdefault(part, []).append("%s #%d" % (field, i + 1))
+                return
+            v2 = re.sub(r"https?://\S+", "", v)
+            words = [w for w in re.split(r"[,;&+]| und | and ", v2) if _nrm(w)]
+            for w in words:
+                if _nrm(w) not in T: miss.setdefault(part, []).append("%s #%d" % (field, i + 1)); break
+        t = cs.get("times") or {}
+        for k in ("crewCall", "rehearsal", "rts", "lunch", "wrap"): need("Zeiten", k, 0, t.get(k), "time")
+        for i, l in enumerate(cs.get("locations") or []):
+            need("Locations", "Name", i, l.get("name"))
+            if l.get("map") and l["map"] not in txt: miss.setdefault("Locations", []).append("Karte #%d" % (i + 1))
+            for it in l.get("items") or []:
+                if it.get("map") and it["map"] not in txt: miss.setdefault("Locations", []).append("Karte Zeile #%d" % (i + 1))
+        for i, r in enumerate((cs.get("order") or {}).get("rows") or []):
+            need("Drehfolge", "Zeit", i, r.get("t"), "time")
+            if r.get("sc"): need("Drehfolge", "Szene", i, r.get("sc"))
+        mk_heads = {_nrm(m.group(1)) for m in re.finditer(r"(?:make\s*up|wardrobe|kost\w*|maske)\s*-\s*([A-Za-zÀ-ÿ]+)", txt, re.I)}
+        for i, r in enumerate(cs.get("cast") or []):
+            need("Cast", "Darsteller", i, r.get("actor")); need("Cast", "Rolle", i, r.get("role"))
+            for k in ("pickup", "call", "onset", "wardrobe", "makeup"): need("Cast", k, i, r.get(k), "time")
+            for k in ("wardrobe", "makeup"):
+                for seg in str(r.get(k) or "").split(";"):
+                    m = re.match(r"\s*([A-Za-zÀ-ÿ]+)\s+\d", seg)
+                    if m and _nrm(m.group(1)) not in mk_heads: miss.setdefault("Cast", []).append("%s-Person #%d" % (k, i + 1))
+        for i, r in enumerate(cs.get("extras") or []):
+            need("Komparsen", "Rolle", i, r.get("part")); need("Komparsen", "Call", i, r.get("call"), "time")
+        for i, r in enumerate(cs.get("transport") or []):
+            need("Transport", "Fahrer", i, r.get("driver")); need("Transport", "Von", i, r.get("from")); need("Transport", "Nach", i, r.get("to"))
+            need("Transport", "Zeit ab", i, r.get("t1"), "time"); need("Transport", "Zeit an", i, r.get("t2"), "time")
+            need("Transport", "Mitfahrende", i, r.get("passengers"))
+        for i, r in enumerate(cs.get("crewTransport") or []):
+            need("Transport Crew", "Fahrzeug", i, r.get("vehicle")); need("Transport Crew", "Zeit ab", i, r.get("t1"), "time"); need("Transport Crew", "Zeit an", i, r.get("t2"), "time")
+        for i, r in enumerate(cs.get("travel") or []):
+            need("Anreise", "Name", i, r.get("name")); need("Anreise", "Zeit ab", i, r.get("t1"), "time"); need("Anreise", "Zeit an", i, r.get("t2"), "time")
+        for i, r in enumerate(cs.get("calls") or []):
+            need("Calls", "Name", i, r.get("name")); need("Calls", "Zeit", i, r.get("t"), "time"); need("Calls", "Funktion", i, r.get("role"))
+        for i, r in enumerate(cs.get("depts") or []): need("Abteilungen", "Abteilung", i, r.get("dept"))
+        if cs.get("contact"): need("Kontakt", "Name", 0, (cs.get("contact") or {}).get("name"))
+        parts = ("Zeiten", "Locations", "Drehfolge", "Cast", "Komparsen", "Transport", "Transport Crew", "Anreise", "Calls", "Abteilungen", "Kontakt")
+        cnt = {"Locations": len(cs.get("locations") or []), "Drehfolge": len((cs.get("order") or {}).get("rows") or []), "Cast": len(cs.get("cast") or []),
+               "Transport": len(cs.get("transport") or []), "Calls": len(cs.get("calls") or [])}
+        for p in parts:
+            if p in miss: bad("Callsheet %s · %s: %d Wert(e) nicht im PDF – %s" % (d.get("date"), p, len(miss[p]), ", ".join(sorted(set(miss[p]))[:12])))
+        if not miss: ok("Callsheet %s: alle Werte im PDF gefunden (%s)" % (d.get("date"), ", ".join("%s %d" % kv for kv in cnt.items())))
+        # the totals line of the callsheet against the rows
+        m = re.search(r"CAST:\s*(\d+)", txt)
+        if m: info("Callsheet %s: Cast laut Totalzeile %s, Zeilen in der App %d" % (d.get("date"), m.group(1), len(cs.get("cast") or [])))
+    if not n_cs: info("Kein Callsheet mit Struktur in der App")
+
+
+
 def main():
     data = U.dec_file(U.R / "data.enc.json") or {}
     scr = (U.dec_area(U.R / "script.enc.json", "script") or {}).get("script", [])
@@ -58,6 +135,11 @@ def main():
         (ok if n_app >= min(n_dp, 1) else bad)("Callsheets: %d in der App, %d Kandidaten in der Dropbox" % (n_app, n_dp))
     except Exception as e: info("Callsheets: nicht geprüft (%s)" % type(e).__name__)
     info("Quellen in der App: " + ", ".join("%s %d" % (k, len(v)) for k, v in sorted(src.items())))
+
+    # ---------------- callsheet ↔ PDF ----------------
+    h("Callsheet – jeder Wert in der App steht so im PDF?")
+    try: check_callsheets(data, dbx, files)
+    except Exception as e: bad("Callsheet-Prüfung abgebrochen (%s)" % type(e).__name__)
 
     # ---------------- scenes ----------------
     h("Szenen – Drehplan ↔ Drehbuch und Szenen-Details")
