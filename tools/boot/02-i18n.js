@@ -856,6 +856,8 @@ Object.assign(I18N,{
  "Gerät":{en:"device",fr:"appareil",it:"dispositivo",hi:"डिवाइस"},
  "Geräte":{en:"devices",fr:"appareils",it:"dispositivi",hi:"डिवाइस"},
  "Szene 5":{en:"Scene 5",fr:"Scène 5",it:"Scena 5",hi:"सीन 5"},
+ "Rückfahrt":{en:"Drive back",fr:"Retour",it:"Ritorno",hi:"वापसी"},
+ "Vom Set":{en:"From the set",fr:"Depuis le plateau",it:"Dal set",hi:"सेट से"},
  "Szenen-Details":{en:"Scene details",fr:"Détails des scènes",it:"Dettagli delle scene",hi:"सीन विवरण"},
  "Englische Szenentitel":{en:"English scene titles",fr:"Titres de scène en anglais",it:"Titoli delle scene in inglese",hi:"अंग्रेज़ी सीन शीर्षक"},
  "Seit deinem letzten Besuch hat sich am Drehplan nichts geändert.":{en:"Nothing in the schedule has changed since your last visit.",fr:"Rien n’a changé dans le planning depuis ta dernière visite.",it:"Nulla è cambiato nel piano dalla tua ultima visita.",hi:"आपकी पिछली विज़िट के बाद Schedule में कुछ नहीं बदला।"},

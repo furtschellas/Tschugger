@@ -44,8 +44,19 @@ function scriptChgHTML(c){const sx=c.sx||{},sc=arr(sx.scenes);
     (sc.length?'<span class="tscrsc">'+esc(L(sc.length===1?"Szene":"Szenen"))+': '+sc.map(x=>'<button type="button" class="lnk" data-scene="'+esc(x)+'">'+esc(x)+'</button>').join(", ")+'</span>':'')+
     (sx.log?'<details class="tscrlog"><summary>'+esc(L("Ganzes Changelog"))+'</summary>'+clogHTML(sx.log)+'</details>':'')}
 /* the shooting day shown in «Today»: today when shooting, else the next shooting day (a travel or free day today is shown above it) */
-function todayDay(){const t=todayISO();const ds=(S.days||[]).filter(d=>d.date);const td=ds.find(d=>d.date===t);
-  return (td&&td.kind==="shoot"?td:null)||ds.find(d=>d.date>t&&d.kind==="shoot")||td||ds.find(d=>d.date>t)||null}
+/* start / end of a shooting day as time stamps («08:00–20:00», also over midnight «17:00–03:00») */
+function dayTimes(d){const m=String(d&&d.hours||"").match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/);if(!m)return null;
+  const b=new Date(d.date+"T00:00:00"),st=new Date(b),en=new Date(b);st.setHours(+m[1],+m[2]);en.setHours(+m[3],+m[4]);if(en<=st)en.setDate(en.getDate()+1);return {st:+st,en:+en}}
+/* lunch of the day (row «Lunch …»), else the middle of the shooting day – from then on the tile shows the drive back */
+function lunchAt(d){const dt=dayTimes(d);const it=arr(d.items).concat(arr((d.unit2||{}).items)).find(i=>!i.sc&&/\b(lunch|mittag)/i.test(String(i.n||""))&&/^\d{1,2}:\d{2}/.test(String(i.t||"")));
+  if(it){const x=new Date(d.date+"T00:00:00");const [h,mi]=String(it.t).split(":");x.setHours(+h,+mi);if(dt&&+x<dt.st)x.setDate(x.getDate()+1);return +x}return dt?dt.st+(dt.en-dt.st)/2:null}
+/* the shooting day shown in «Today»: the running one until 1 h after wrap (also over midnight), else the next shooting day;
+   on a free or travel day always the next shooting day (with a short note about today above it) */
+function todayDay(){const t=todayISO(),now=Date.now();const ds=(S.days||[]).filter(d=>d.date);
+  const run=ds.find(d=>d.kind==="shoot"&&d.date<=t&&(()=>{const x=dayTimes(d);return x&&now<x.en+3600e3&&(d.date===t||now<x.en+3600e3&&x.en>new Date(t+"T00:00:00"))})());
+  if(run)return run;
+  const td=ds.find(d=>d.date===t);
+  return ds.find(d=>d.kind==="shoot"&&(d.date>t||(d.date===t&&!(dayTimes(d)&&now>=dayTimes(d).en+3600e3))))||td||ds.find(d=>d.date>t)||null}
 VIEWS.today=function(){
   if(!S.loaded&&!(S.days||[]).length)return '<div class="empty">'+L("Daten werden geladen …")+'</div>';
   const d=todayDay(),t=todayISO();
@@ -83,10 +94,21 @@ VIEWS.today=function(){
   /* drive from the crew hotel (+3 min, over 20 min +15 %) and the weather come last */
   /* tap → route in Google Maps from the crew hotel to the first location */
   const drv=canPlan&&tShow("drive")&&d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
-    const url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(d.drive.from||"Hotel")+"&destination="+encodeURIComponent(dest);
-    const here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(dest); /* no origin = current location */
-    return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from:d.drive.from||"Hotel",to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′")+(d.drive.km?'<small class="tkm"> · '+Math.round(d.drive.km)+' km</small>':'')+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'})():'';
+    /* from lunch on (on the shooting day itself): the drive back to the hotel */
+    const hotel=d.drive.from||"Hotel",la=lunchAt(d),back=la&&Date.now()>=la&&Date.now()<((dayTimes(d)||{}).en||0)+3600e3;
+    const gm=(o,de)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+encodeURIComponent(o):"")+"&destination="+encodeURIComponent(de);
+    const r=back?{h:gm(dest,hotel),c:gm("",hotel),from:dest,to:hotel,back:1}:{h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest};   /* no origin = current location */
+    return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify(r))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′")+(d.drive.km?'<small class="tkm"> · '+Math.round(d.drive.km)+' km</small>':'')+'</b><span>'+esc(L(back?"Rückfahrt":"Anfahrt"))+' ›</span></button>'})():'';
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
+  /* from lunch on: the tiles of the next shooting day below (times, drive, weather) */
+  try{const la=d.kind==="shoot"&&lunchAt(d);if(canPlan&&la&&Date.now()>=la){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
+    if(nd){const ndt=new Date(nd.date+"T12:00:00"),nt=[];
+      if(nd.hours)nt.push(['<b>'+esc(nd.hours)+'</b>',L("Dreh")]);if(nd.sr&&nd.ss)nt.push(['<b>'+esc(nd.sr+"–"+nd.ss)+'</b>',L("Sonnenzeit")]);
+      let ndrv="";if(nd.drive&&nd.drive.min){const fi=arr(nd.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=nd.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
+        const gm=(o,de)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+encodeURIComponent(o):"")+"&destination="+encodeURIComponent(de),hotel=nd.drive.from||"Hotel";
+        ndrv='<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(nd.drive.min)+"′")+(nd.drive.km?'<small class="tkm"> · '+Math.round(nd.drive.km)+' km</small>':'')+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'}
+      const nwx=tShow("wx")?wxTile(nd):"";
+      if(nt.length||ndrv||nwx)h+='<div class="thead tnext"><h3 class="pgt">'+esc(L("Nächster Drehtag"))+'</h3><span class="tdate">'+esc((nd.short||nd.label||"")+" · "+WDL(ndt)+" "+ddmm(ndt))+'</span></div><div class="ttiles">'+nt.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+ndrv+nwx+'</div>'}}}catch(_){}
   if(!dp&&canDispo&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
   const first=canPlan&&tShow("loc")?arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc)):null;

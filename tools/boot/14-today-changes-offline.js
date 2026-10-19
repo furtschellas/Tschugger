@@ -82,7 +82,7 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-offprep]"))offl
 document.addEventListener("click",e=>{const b=e.target.closest("[data-route]");if(!b)return;let r={};try{r=JSON.parse(b.dataset.route)}catch(_){return}
   let o=mkDialog("routepop",null,{replace:true});
   o.innerHTML='<div class="a2box rtbox">'+xBtn("data-rtx")+'<h3>'+esc(L("Route in Google Maps"))+'</h3><p class="ghint">'+esc(L("Ziel"))+': '+esc(r.to||"")+'</p>'+
-    '<div class="rtopts"><a class="pillbtn rtpill" href="'+esc(r.h)+'" target="_blank" rel="noopener noreferrer" data-rtx><b>'+esc(L("Vom Hotel"))+'</b>'+(r.from?'<small>'+esc(r.from)+'</small>':'')+'</a>'+
+    '<div class="rtopts"><a class="pillbtn rtpill" href="'+esc(r.h)+'" target="_blank" rel="noopener noreferrer" data-rtx><b>'+esc(L(r.back?"Vom Set":"Vom Hotel"))+'</b>'+(r.from?'<small>'+esc(r.from)+'</small>':'')+'</a>'+
     '<a class="pillbtn rtpill" href="'+esc(r.c)+'" target="_blank" rel="noopener noreferrer" data-rtx><b>'+esc(L("Vom aktuellen Standort"))+'</b></a></div></div>';
   document.body.appendChild(o);o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest("[data-rtx]"))setTimeout(()=>o.remove(),50)})});
 document.addEventListener("change",e=>{const c=e.target.closest("[data-offauto]");if(!c)return;store("offline",c.checked?"1":"0");if(c.checked)offlinePrep(false);render()});
