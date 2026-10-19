@@ -34,7 +34,7 @@ for f, s in src.items():
         if not re.search(r"(furtschellas@gmail\.com|noreply|example|test\.ch|users\.noreply\.github\.com|gserviceaccount\.com|anthropic\.com|@\d|\.(png|jpg|svg|js|css)$)", m): emails.add(m)
 check("Repository: keine E-Mail-Adressen der Crew im Klartext", not emails, sorted(emails)[:5])
 
-for name in ("data.enc.json", "script.enc.json", "tools/places_extra.enc.json", "tools/spec.enc.json", "tools/vapid.enc.json"):
+for name in ("data.enc.json", "script.enc.json", "contacts.enc.json", "media.enc.json", "tools/places_extra.enc.json", "tools/spec.enc.json", "tools/vapid.enc.json"):
     p = ROOT / name
     if not p.exists(): continue
     try: e = json.loads(p.read_text()); ok = set(e) >= {"iv", "ct"} and len(base64.b64decode(e["ct"])) > 16

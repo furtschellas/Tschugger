@@ -66,24 +66,67 @@ def write_stamp():
 def _h(x): return "#" + hashlib.sha1(str(x).encode()).hexdigest()[:6]   # short anonymous tag instead of a file name (public log)
 
 # ---------- encryption (same format as tools/publish.py) ----------
-def dec_file(p):
+def dec_file(p, key=None):
     try:
         e = json.load(open(p))
-        pt = AESGCM(KEY).decrypt(base64.b64decode(e["iv"]), base64.b64decode(e["ct"]), None)
+        pt = AESGCM(key or KEY).decrypt(base64.b64decode(e["iv"]), base64.b64decode(e["ct"]), None)
         return json.loads(pt)
     except FileNotFoundError:
         return None
 
-def enc_file(p, obj):
+def enc_file(p, obj, key=None):
+    key = key or KEY
     pt = json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
-    stamp = hashlib.sha256(KEY + pt).hexdigest()[:16]
+    stamp = hashlib.sha256(key + pt).hexdigest()[:16]
     try:
         if json.load(open(p)).get("stamp") == stamp: return False
     except Exception: pass
     iv = secrets.token_bytes(12)
     json.dump({"v": 2, "stamp": stamp, "iv": base64.b64encode(iv).decode(),
-               "ct": base64.b64encode(AESGCM(KEY).encrypt(iv, pt, None)).decode(), "builtAt": NOW}, open(p, "w"))
+               "ct": base64.b64encode(AESGCM(key).encrypt(iv, pt, None)).decode(), "builtAt": NOW}, open(p, "w"))
     return True
+
+# ---------- own keys per area (Drehbuch, Telefon/E-Mail): only people with that right get the key ----------
+_AK = {}
+def area_key(area):
+    if area not in _AK:
+        try: k = fsadmin.area_key_b64(area)
+        except Exception as e: k = ""; log("Bereichsschlüssel", area, "nicht lesbar:", type(e).__name__)
+        _AK[area] = base64.b64decode(k) if k else None
+    return _AK[area]
+
+def dec_area(p, area):
+    """file of an area; before the first change it was still encrypted with the crew key"""
+    k = area_key(area)
+    if k:
+        try: return dec_file(p, k)
+        except Exception: pass
+    try: return dec_file(p)
+    except Exception: return None
+
+CONTACT_RE = re.compile(r"^(phone|e?mail|tel|mobil|natel)", re.I)
+
+def split_contacts(crew):
+    """crew list without phone numbers / e-mail addresses + the contacts on their own: [[group, person, name, {field: value}]]"""
+    out, cts = [], []
+    for gi, g in enumerate(crew or []):
+        g2 = dict(g); ppl = []
+        for pi, pp in enumerate(g.get("people") or []):
+            if isinstance(pp, dict):
+                c = {k: v for k, v in pp.items() if CONTACT_RE.search(k) and v}
+                if c: cts.append([gi, pi, pp.get("name") or "", c])
+                pp = {k: v for k, v in pp.items() if not CONTACT_RE.search(k)}
+            ppl.append(pp)
+        if "people" in g: g2["people"] = ppl
+        out.append(g2)
+    return out, cts
+
+def merge_contacts(crew, cts):
+    for gi, pi, name, c in cts or []:
+        try:
+            pp = crew[gi]["people"][pi]
+            if (pp.get("name") or "") == name: pp.update(c)
+        except (IndexError, KeyError, TypeError): pass
 
 # ---------- Dropbox (read-only) ----------
 class Dbx:
@@ -1011,7 +1054,8 @@ def main():
     data = dec_file(R / "data.enc.json") or {}
     if "bm" not in (data.get("meta") or {}) and (R / "media.enc.json").exists():   # picture list from its own file
         data.setdefault("meta", {})["bm"] = (dec_file(R / "media.enc.json") or {}).get("bm") or []
-    scr = (dec_file(R / "script.enc.json") or {}).get("script", [])
+    scr = (dec_area(R / "script.enc.json", "script") or {}).get("script", [])
+    if (R / "contacts.enc.json").exists(): merge_contacts(data.get("crew") or [], (dec_area(R / "contacts.enc.json", "contacts") or {}).get("c"))
     meta = data.get("meta") or {}
     base = lambda n: (n or "").rsplit("/", 1)[-1]
     old = {(s.get("kind"), base(s.get("name"))): s.get("modified") for s in meta.get("sources", [])}
@@ -1625,8 +1669,15 @@ def main():
     if bm is not None:
         meta["bmh"] = hashlib.sha256(json.dumps(bm, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:12]
         enc_file(R / "media.enc.json", {"bm": bm})
-    w1 = enc_file(R / "data.enc.json", data)
-    w2 = enc_file(R / "script.enc.json", {"script": [{k: d[k] for k in ("sc", "head", "text") if k in d} for d in scr]}) if scr else False
+    # phone numbers and e-mail addresses of the crew list and the screenplay with their own keys (only with that right)
+    ck, sk = area_key("contacts"), area_key("script")
+    if ck:
+        crew_pub, cts = split_contacts(data["crew"])
+        enc_file(R / "contacts.enc.json", {"c": cts}, ck)
+        w1 = enc_file(R / "data.enc.json", {**data, "crew": crew_pub})
+    else:
+        log("Kein Schlüssel für Telefon/E-Mail – Kontakte bleiben in den Crew-Daten"); w1 = enc_file(R / "data.enc.json", data)
+    w2 = enc_file(R / "script.enc.json", {"script": [{k: d[k] for k in ("sc", "head", "text") if k in d} for d in scr]}, sk) if scr else False
     log("Daten:", "geändert" if changed else "unverändert", "· Datei:", "neu geschrieben" if (w1 or w2) else "gleich")
     write_stamp()
     if NEWS and FORCE: log("Alles neu eingelesen – keine Push-Nachrichten bei Änderungen")

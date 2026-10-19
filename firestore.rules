@@ -58,6 +58,18 @@ service cloud.firestore {
       allow get: if crew();
       allow list, write: if false;
     }
+    // eigene Schlüssel pro Bereich: Drehbuch nur mit «Drehbuch sehen»; Telefon/E-Mail der Crewliste nur mit
+    // «Telefonnummern sehen» oder «E-Mail-Adressen sehen» (ohne Rolle: wenn in den Einstellungen für alle freigegeben)
+    match /secret/keyscript {
+      allow get: if crew() && can('view.script');
+      allow list, write: if false;
+    }
+    match /secret/keycontacts {
+      allow get: if crew() && (canAny(['view.phone', 'view.email'])
+        || (isMember() && !hasRole() && (get(d('config', 'app')).data.get('phonePublic', false) == true
+            || get(d('config', 'app')).data.get('emailPublic', false) == true)));
+      allow list, write: if false;
+    }
 
     // App-Einstellungen: «app» (Sprachen, Schalter) lesen alle – auch vor der Anmeldung;
     // «private» (Links zu Motivliste, Karte, Chat) nur die Crew; ändern nur mit dem Recht «Einstellungen»
