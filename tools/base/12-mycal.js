@@ -114,6 +114,28 @@ function renderPrePro(one,embedded){PPPEOPLE=null;
 }
 const WDL=dt=>({de:["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"],fr:["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"],it:["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"],en:["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],hi:["रविवार","सोमवार","मंगलवार","बुधवार","गुरुवार","शुक्रवार","शनिवार"]}[LANG]||[])[dt.getDay()]||WD[dt.getDay()];
 function telLinks(t){return esc(t).replace(/(\+?\d[\d ]{7,}\d)/g,m=>'<a href="tel:'+m.replace(/\s/g,"")+'">'+m+'</a>')}
+/* the facts of a shooting day (time, drive, weather, length, pages, sun, extras, PDF): schedule and callsheet without callsheet */
+function planPdfBtn(d){
+  const sp=S.meta&&S.meta.schedPdf,dno=(String(d.short||d.label||"").match(/\d+/)||[])[0],spi=sp&&sp.day&&dno!==undefined?sp.day[String(+dno)]:undefined;
+  const spBtn=sp&&arr(sp.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="fact factp" data-schedpdf="'+(spi===undefined?0:spi)+'" '+ariaTip(L("Drehplan als PDF (Originalseite dieses Drehtags)"))+'><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span class="v">PDF</span></button>':'';
+  return spBtn}
+function planFactsHTML(d,spBtn){
+    const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
+    if(d.extras)f.push(["Extras",d.extras]);
+    /* drive from the crew hotel: +3 min buffer (over 20 min: +15 %); the route itself only when opened; shown next to the shooting time */
+    /* the drive to the first set: tap → route from the hotel or from where you are (like in «Today») */
+    const dv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
+      const from=d.drive.from||"Hotel",url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(from)+"&destination="+encodeURIComponent(dest),
+        here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(dest);
+      return '<button type="button" class="fact factr" data-route="'+esc(JSON.stringify({h:url,c:here,from,to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc(driveMin(d.drive.min)+"′"+(d.drive.km?"\u2009·\u2009"+Math.round(d.drive.km)+"\u2009km":""))+' ›</span></button>'})():'';
+    /* the drive to the set sits right next to the shooting time */
+    const fx=f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>');
+    if(dv)fx.splice(d.hours?1:0,0,dv);
+    /* weather (website): compact chip after the drive, tap → report */
+    try{const wf=window.wxFact?window.wxFact(d):"";if(wf)fx.splice(d.hours?(dv?2:1):0,0,wf)}catch(_){}
+    if(spBtn)fx.push(spBtn);   /* direct link to the schedule PDF, after «Sonne» */
+    return '<div class="facts">'+fx.join("")+'</div>';
+}
 function renderPlan(){
   if(!S.days.length)return emptyHTML("Planung");
   const PD=planDays();
@@ -146,26 +168,9 @@ function renderPlan(){
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const d=S.days.find(x=>x.id===S.day)||PD[0];if(!d)return h+'<div class="empty">'+L('Noch keine Drehtage.')+'</div>';
   /* round button: the original schedule PDF, opened at the page of this shooting day */
-  const sp=S.meta&&S.meta.schedPdf,dno=(String(d.short||d.label||"").match(/\d+/)||[])[0],spi=sp&&sp.day&&dno!==undefined?sp.day[String(+dno)]:undefined;
-  const spBtn=sp&&arr(sp.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="fact factp" data-schedpdf="'+(spi===undefined?0:spi)+'" '+ariaTip(L("Drehplan als PDF (Originalseite dieses Drehtags)"))+'><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span class="v">PDF</span></button>':'';
+  const spBtn=planPdfBtn(d);
   h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
-  if(d.kind==="shoot"){
-    const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
-    if(d.extras)f.push(["Extras",d.extras]);
-    /* drive from the crew hotel: +3 min buffer (over 20 min: +15 %); the route itself only when opened; shown next to the shooting time */
-    /* the drive to the first set: tap → route from the hotel or from where you are (like in «Today») */
-    const dv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
-      const from=d.drive.from||"Hotel",url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(from)+"&destination="+encodeURIComponent(dest),
-        here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(dest);
-      return '<button type="button" class="fact factr" data-route="'+esc(JSON.stringify({h:url,c:here,from,to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc(driveMin(d.drive.min)+"′"+(d.drive.km?"\u2009·\u2009"+Math.round(d.drive.km)+"\u2009km":""))+' ›</span></button>'})():'';
-    /* the drive to the set sits right next to the shooting time */
-    const fx=f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>');
-    if(dv)fx.splice(d.hours?1:0,0,dv);
-    /* weather (website): compact chip after the drive, tap → report */
-    try{const wf=window.wxFact?window.wxFact(d):"";if(wf)fx.splice(d.hours?(dv?2:1):0,0,wf)}catch(_){}
-    if(spBtn)fx.push(spBtn);   /* direct link to the schedule PDF, after «Sonne» */
-    h+='<div class="facts">'+fx.join("")+'</div>';
-  }
+  if(d.kind==="shoot")h+=planFactsHTML(d,spBtn);
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
   h+='</div>';
   try{if(window.ownDayHTML)h+=window.ownDayHTML(d.date)}catch(_){} /* own and Google Calendar appointments of this day */
