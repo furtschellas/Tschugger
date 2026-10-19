@@ -13,6 +13,10 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-schedpdf]"
 document.addEventListener("click",e=>{const a=e.target.closest("[data-folders]");if(!a)return;e.preventDefault();let l=[];try{l=JSON.parse(a.dataset.folders)}catch(_){return}
   const o=mkDialog("fldpick",'<div class="a2box"><h3>'+esc(L("Welchen Ordner öffnen?"))+'</h3><div class="fldl">'+l.map(f=>'<a class="pillbtn" href="'+esc(safeUrl(f.u))+'" target="_blank" rel="noopener noreferrer">'+esc(f.n)+'</a>').join("")+'</div></div>',{replace:true});
   o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest(".fldl a"))setTimeout(()=>o.remove(),0)});document.body.appendChild(o)});
+/* several picture folders for one scene: one camera button, then the choice (folder path and number of pictures) */
+document.addEventListener("click",e=>{const a=e.target.closest("[data-blkgs]");if(!a||typeof window.blkImg!=="function")return;e.preventDefault();e.stopPropagation();let l=[];try{l=JSON.parse(a.dataset.blkgs)}catch(_){return}
+  const o=mkDialog("fldpick",'<div class="a2box"><h3>'+esc(L("Welche Bilder anzeigen?"))+'</h3><div class="fldl">'+l.map((f,i)=>'<button type="button" class="pillbtn fldg" data-gi="'+i+'"><b>'+esc(f.p||f.n)+'</b> · '+f.c+' '+esc(L("Bilder"))+'</button>').join("")+'</div></div>',{replace:true});
+  o.addEventListener("click",ev=>{const g=ev.target.closest("[data-gi]");if(g){const f=l[+g.dataset.gi],b=f&&BLKREG.get(f.k);setTimeout(()=>o.remove(),0);if(b)openGallery(b);return}if(ev.target===o)setTimeout(()=>o.remove(),0)});document.body.appendChild(o)},true);
 function openGallery(b,start,pdf){
   let d=mkDialog("blkgal",null,{replace:true});if(pdf)d.classList.add("galpdf");   /* PDF pages: the whole screen, narrow margins */
   const all=pdf?bmed(b).filter(m=>m.g==="pdf"&&String(m.n).split(" · ")[0]===pdf):bmed(b),title=pdf?L("Auflösung")+" "+pdfLbl(pdf):(b.title||(L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ")));

@@ -83,7 +83,9 @@ function scParts(s){const t=String(s||"").toLowerCase().replace(/\s+/g,"").repla
    a slideshow picture «25SL2» only «25SL»/«25SL2», never scene 25 */
 /* the gallery opens exactly the pictures the button belongs to (for «186pt1A» only part 1 and the general ones – never the whole folder) */
 const BLKREG=new Map();let BLKN=0;
-function blkReg(b){for(const [k,v] of BLKREG)if(v===b)return k;const k="g"+(++BLKN)+":"+b.name;BLKREG.set(k,b);if(BLKREG.size>400)BLKREG.delete(BLKREG.keys().next().value);return k}
+/* stable key: folder name + its pictures (the same gallery always gets the same key – no growing list, no lost buttons) */
+function blkReg(b){let h=5381;for(const m of bmed(b)){const t=String(m.f||m.n||"");for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0}
+  const k="g:"+b.name+"|"+(h>>>0).toString(36)+"|"+bmed(b).length;BLKREG.set(k,b);return k}
 function blkFor(sc){const N=scParts(sc);if(!N.t)return[];
   const hit=x=>{const X=scParts(x);if(X.t===N.t)return true;if(!N.k||X.b!==N.b)return false;
     if(N.k==="pt")return !X.k||(X.k==="pt"&&X.n===N.n);return X.k==="sl"&&(!X.n||X.n===N.n)};
@@ -97,11 +99,17 @@ function blkFor(sc){const N=scParts(sc);if(!N.t)return[];
    Camera = opens the pictures in the app (gallery); folder = opens the Dropbox folder directly (no pictures in the app) */
 const ICAM='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 const IFOLD='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a1.5 1.5 0 0 1 1.5-1.5H9l2 2.2h8.5A1.5 1.5 0 0 1 21 9.7V17.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>';
+/* folder path of a Dropbox link (last parts), shown in the choice of picture folders */
+function fldPath(u,name){try{const x=new URL(u);let p=decodeURIComponent(x.pathname+(x.searchParams.get("preview")?"":"")).replace(/^\/(home|preview|work\/[^/]+|scl\/fo\/[^/]+\/[^/]+)/,"");const parts=p.split("/").filter(Boolean);if(parts.length)return parts.slice(-3).join(" / ")}catch(_){}return String(name||"")}
 function fpLinks(fps,blk,lead){const bl=vok("blocking")?arr(blk):[];
   /* camera per picture folder; the Dropbox folder only once – with several folders the button asks which one */
   const fl=bl.filter(b=>b.url).map(b=>({n:b.title||b.name,u:b.url})).filter((f,i,a)=>a.findIndex(x=>x.u===f.u)===i);
   const fold=!fl.length?[]:['<a class="fpl blk fold" href="'+esc(safeUrl(fl[0].u))+'"'+(fl.length>1?' data-folders="'+esc(JSON.stringify(fl))+'"':'')+' target="_blank" rel="noopener noreferrer" '+ariaTip(L("Ordner in Dropbox öffnen"))+'>'+IFOLD+'</a>'];
-  const pink=(lead?[lead]:[]).concat(bl.filter(b=>bmed(b).length).map(b=>'<a class="fpl blk hasm" href="'+esc(safeUrl(b.url))+'" data-blkg="'+esc(blkReg(b))+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>'),fold);
+  /* one camera only: with several picture folders a tap shows the choice with their folder paths */
+  const gl=bl.filter(b=>bmed(b).length);
+  const cam=!gl.length?[]:gl.length===1?['<a class="fpl blk hasm" href="'+esc(safeUrl(gl[0].url))+'" data-blkg="'+esc(blkReg(gl[0]))+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>']
+    :['<a class="fpl blk hasm" href="'+esc(safeUrl(gl[0].url))+'" data-blkgs="'+esc(JSON.stringify(gl.map(b=>({k:blkReg(b),n:b.title||b.name,p:fldPath(b.url,b.name),c:bmed(b).length}))))+'" target="_blank" rel="noopener noreferrer" '+ariaTip(L("Bilder ansehen"))+'>'+ICAM+'</a>'];
+  const pink=(lead?[lead]:[]).concat(cam,fold);
   const white=arr(fps).map(f=>'<a class="fpl" href="'+esc(safeUrl(f.url))+'"'+(arr(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+(f.kind==="img"?"🖼 ":"📐 ")+esc(f.name)+'</a>').concat(bl.flatMap(b=>pdfBtns(b)));
   const l=pink.concat(white);return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
 /* the PDFs of a scene (Auflösung): one button each, opening the PDF pages directly in the app (encrypted copies, also offline);

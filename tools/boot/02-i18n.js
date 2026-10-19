@@ -681,6 +681,8 @@ Object.assign(I18N,{
  "Voice-over":{fr:"voix off",it:"voce fuori campo",en:"voice-over"},
  "Voice-over – muss nicht am Set sein":{fr:"Voix off – pas besoin d’être sur le plateau",it:"Voce fuori campo – non serve sul set",en:"Voice-over – not needed on set"},
  "Bilder ansehen":{fr:"Voir les images",it:"Vedere le immagini",en:"View pictures"},
+ "Welche Bilder anzeigen?":{fr:"Quelles images afficher ?",it:"Quali immagini mostrare?",en:"Which pictures to show?"},
+ "Bilder":{fr:"images",it:"immagini",en:"pictures"},
  "Noch keine Drehtage.":{fr:"Pas encore de jours de tournage.",it:"Ancora nessun giorno di riprese.",en:"No shooting days yet."},
  "Drehplan ↔ Drehbuch":{fr:"Plan ↔ scénario",it:"Piano ↔ sceneggiatura",en:"Schedule ↔ script"},
  "Szenen im Drehbuch, die im Drehplan fehlen:":{fr:"Scènes du scénario absentes du plan :",it:"Scene della sceneggiatura assenti dal piano:",en:"Script scenes missing from the schedule:"},
