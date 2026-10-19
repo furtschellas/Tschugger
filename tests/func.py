@@ -75,7 +75,7 @@ async def owner_tests(p, port):
     async def _p1():   # Drehplan
         # ---------- shooting schedule ----------
         await E("S.tab='plan';S.day=%s;render()" % json.dumps(sd["day"])); await pg.wait_for_timeout(300)
-        chips = await E("[...document.querySelectorAll('#view [data-day]')].map(x=>x.dataset.day)")
+        chips = await E("[...document.querySelectorAll('#view [data-day]:not([disabled])')].map(x=>x.dataset.day)")
         other = next((c for c in chips if c != sd["day"] and not c.startswith("prep:")), None)
         if other:
             await E("document.querySelector('#view [data-day=\"%s\"]').click()" % other); await pg.wait_for_timeout(250)
