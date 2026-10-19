@@ -738,7 +738,7 @@ html body #blkgal.galpdf h3{margin:0;font-size:15px}
 .cs-kv{display:flex;gap:8px;font-size:13.5px;padding:1px 0;overflow-wrap:anywhere}.cs-kv .k{color:var(--muted);min-width:78px;flex:0 0 auto;font-size:12.5px}.cs-kv .v{flex:1;min-width:0}
 @media (max-width:760px){.cs-tbl{display:none}.cs-cards{display:block}
  .cssec{padding-left:0;padding-right:0}.csme-r{flex-direction:column;gap:0}.csme-r .k{min-width:0}.cskey div{flex-direction:column;gap:0}
- .csorder .row{grid-template-columns:48px 1fr}.csorder .t{font-size:13px}.csloc .dn{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+ .csorder .row{grid-template-columns:48px 1fr}.csorder .t{font-size:13px}
  .dsec .dtbl{font-size:12.5px}.cscontact{font-size:13.5px}.csdep{font-size:13.5px}
  .dtiles{grid-template-columns:repeat(3,minmax(0,1fr))}.dtiles .dt .v{font-size:15px;overflow-wrap:anywhere}.dtiles .dt.big .v{font-size:26px}
  .cssec>summary .dh{font-size:15px}.dsp-head h2{font-size:20px}.csday{display:block;margin:2px 0 0}}
@@ -771,4 +771,22 @@ html body #view .cstiles>.dt.cswx{padding:0;border:0;background:none}html body #
  html body #view .cs-card .cs-kv:has(.v:not(:empty)) .v{white-space:normal}html body #view .cs-ct{font-size:14px;margin-bottom:2px}}
 .csdep{padding:8px 0}.csdep-h{display:inline-block;font-weight:800;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:4px}.csdep-t{font-size:14px;line-height:1.45}
 .csi{vertical-align:-3px;flex:0 0 auto}.csradio{display:flex;gap:6px;align-items:flex-start}
+
+/* phone: callsheet compact */
+@media (max-width:760px){
+ html body #view .csview details.csloc{padding:7px 10px;margin-bottom:5px;border-radius:10px}
+ html body #view .csview details.csloc>summary{flex-wrap:nowrap;gap:8px}
+ html body #view .csview details.csloc>summary .dk{flex-basis:auto;order:2;flex:0 0 auto;font-size:10px;letter-spacing:.06em;max-width:34%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ html body #view .csview details.csloc>summary .dn{order:1;font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+ html body #view .csview details.csloc>summary .csmap{order:3;width:30px;height:30px}
+ html body #view .csview .csmap{width:30px;height:30px}.csmap svg{width:15px;height:15px}
+ html body #view .csview .cssec{margin:4px 0}html body #view .csview .cssec>summary{padding:6px 0}
+ html body #view .csview .cssec>summary .dh{font-size:14px}
+ html body #view .csview .csall{margin:0 0 4px;font-size:12px}
+ html body #view .csview .csjump{padding:4px 0 6px;margin:4px 0}
+ html body #view .csview .csjb{gap:5px;padding-bottom:4px}
+ html body #view .csview .csjb button,html body #view .csview .csjb a{padding:4px 10px;font-size:13px;min-height:30px}
+ html body #view .csview #csq{min-height:34px;padding:5px 10px;font-size:14px;border-radius:8px}
+ html body #view .csview .dbox{padding:8px 10px}
+}
 </style>
