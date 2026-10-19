@@ -274,6 +274,8 @@ Object.assign(I18N,{
  "Dein Zugang zur TSCHUGGER Crew-App":{fr:"Ton accès à l’app d’équipe TSCHUGGER",it:"Il tuo accesso all’app crew TSCHUGGER",en:"Your access to the TSCHUGGER crew app"},
  "So geht's:":{fr:"Comment faire :",it:"Come fare:",en:"How it works:"},
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
+ "Links neu geladen – bitte prüfen und nochmals speichern.":{fr:"Liens rechargés – merci de vérifier et d’enregistrer à nouveau.",it:"Link ricaricati – controlla e salva di nuovo.",en:"Links reloaded – please check and save again."},
+ "Links konnten nicht geladen werden – bitte später nochmals speichern.":{fr:"Les liens n’ont pas pu être chargés – merci d’enregistrer plus tard.",it:"Impossibile caricare i link – salva di nuovo più tardi.",en:"Links could not be loaded – please save again later."},
  "Passwort-Link senden":{fr:"Envoyer un lien de mot de passe",it:"Invia link password",en:"Send password link"},
  "Startpasswort erzeugen":{fr:"Créer un mot de passe initial",it:"Crea password iniziale",en:"Create start password"},
  "Anzeigen":{fr:"Afficher",it:"Mostra",en:"Show"},

@@ -137,6 +137,14 @@ def main():
         for fp in meta.get("floorplans") or []: refs |= set(fp.get("pg") or [])
         missing = [r for r in refs if r not in have]
         (ok if not missing else bad)("Bilddateien: %d von %d vorhanden%s" % (len(refs) - len(missing), len(refs), "" if not missing else " – %d fehlen" % len(missing)))
+        # pages of the schedule PDF, the callsheets and the Sides (shown in the app as pictures)
+        sp = meta.get("schedPdf") or {}
+        pages = {"Drehplan": list(sp.get("pg") or []) + ([sp["pdf"]] if sp.get("pdf") else []),
+                 "Callsheets": [f for d in data.get("dispos") or [] for f in d.get("pg") or []],
+                 "Sides": [f for x in meta.get("sides") or [] for f in x.get("pg") or []]}
+        for lab, fl in pages.items():
+            miss = [f for f in fl if f not in have]
+            (ok if not miss else bad)("%s-Seiten: %d von %d Bildern vorhanden%s" % (lab, len(fl) - len(miss), len(fl), "" if not miss else " – %d fehlen" % len(miss)))
     except Exception as e: info("Bildspeicher nicht geprüft (%s)" % type(e).__name__)
     fpl = meta.get("floorplans") or []
     info("Floorplans: %d in der App, davon %d mit Seiten für die App" % (len(fpl), sum(1 for x in fpl if x.get("pg"))))
