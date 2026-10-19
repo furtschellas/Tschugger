@@ -636,7 +636,7 @@ def fix_units(days, txt=None, ud=None):
         no = int(m.group(1)) if m else None
         for u in ("unit2", "unit3"):
             if d.get(u) and no is not None and no not in ud[u]:
-                if isinstance(d[u], dict) and d[u].get("src") != "2nd":   # read from the schedule: the rows go back to the day
+                if isinstance(d[u], dict) and d[u].get("src") not in ("2nd", "also"):   # read from the schedule: the rows go back to the day
                     its = d.setdefault("items", [])
                     for it in d[u].get("items") or []:   # by time, between the rows of the day
                         t = str(it.get("t") or "")
@@ -645,6 +645,30 @@ def fix_units(days, txt=None, ud=None):
                 d.pop(u, None); ch = True
                 log("Drehplan: Tag %d hat keine %s – Einträge zur 1st Unit" % (no, u))
     return ch
+
+# scenes that are also shown with the 2nd unit although the schedule has them only with the 1st unit (B-Cam):
+# (shooting day number, scene) – wished by the production
+U2_ALSO = [(1, "186pt1A")]
+
+def u2_also_strip(days):
+    """remove what u2_also_add added in an earlier run (added again at the end of every run)"""
+    for d in days or []:
+        u2 = d.get("unit2")
+        if not isinstance(u2, dict): continue
+        if u2.get("src") == "also": d.pop("unit2", None); continue
+        if any(it.get("also") for it in u2.get("items") or []): u2["items"] = [it for it in u2["items"] if not it.get("also")]
+
+def u2_also_add(days):
+    for no, sc in U2_ALSO:
+        d = next((x for x in days or [] if x.get("kind") == "shoot" and re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")) and int(re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")).group(1)) == no), None)
+        if not d: continue
+        it = next((i for i in d.get("items") or [] if _norm_sc(i.get("sc") or "") == _norm_sc(sc)), None)
+        if not it: continue
+        u2 = d.get("unit2") if isinstance(d.get("unit2"), dict) else None
+        if u2 is None: u2 = d["unit2"] = {"src": "also", "items": []}
+        if any(_norm_sc(i.get("sc") or "") == _norm_sc(sc) for i in u2.get("items") or []): continue
+        u2.setdefault("items", []).append(dict(it, also=True))
+        log("2nd Unit: Szene", sc, "zusätzlich an Tag", no)
 
 def pick_schedule(files):
     # the Swiss schedule: in 02_Schedule or a subfolder (formerly 02_Schedule/CH) – not the archive and not India
@@ -1025,8 +1049,18 @@ def add_drive_times(data):
     log("Anfahrt Hotel → erstes Motiv:", n, "Drehtage")
 
 
+def rotating():
+    """a key change is running (secret/keynext written in the last hour): this run writes nothing – it would encrypt with the old key"""
+    if not fsadmin.sa(): return False
+    try:
+        nx = fsadmin.get_doc("secret/keynext") or {}
+        return bool(nx.get("k")) and time.time() - int(nx.get("at") or 0) < 3600
+    except Exception: return False
+
 def main():
     WANT.clear()
+    if rotating():
+        log("Schlüsselwechsel läuft – diese Aktualisierung wird übersprungen"); print("::notice::Schlüsselwechsel läuft – Aktualisierung übersprungen"); return
     cfg = {}
     try:
         if fsadmin.sa():
@@ -1043,6 +1077,7 @@ def main():
         data.setdefault("meta", {})["bm"] = (dec_file(R / "media.enc.json") or {}).get("bm") or []
     scr = (dec_area(R / "script.enc.json", "script") or {}).get("script", [])
     if (R / "contacts.enc.json").exists(): merge_contacts(data.get("crew") or [], (dec_area(R / "contacts.enc.json", "contacts") or {}).get("c"))
+    u2_also_strip(data.get("days"))
     meta = data.get("meta") or {}
     base = lambda n: (n or "").rsplit("/", 1)[-1]
     old = {(s.get("kind"), base(s.get("name"))): s.get("modified") for s in meta.get("sources", [])}
@@ -1640,11 +1675,17 @@ def main():
     data["meta"] = meta
     for k in ("days", "crew", "locations", "places", "dispos"): data.setdefault(k, [])
     if not data["days"] or not data["crew"]: sys.exit("Keine Drehtage oder Crew – nichts veröffentlicht")
+    try: u2_also_add(data["days"])
+    except Exception as e: log("2nd Unit zusätzlich nicht ergänzt:", type(e).__name__)
     try: apply_place_fixes(data)
     except Exception as e: log("Info-Ergänzungen nicht angewendet:", type(e).__name__)
     try: add_drive_times(data)
     except Exception as e: log("Anfahrt nicht berechnet:", type(e).__name__)
     if BLKS: BLKS.sync()   # R2: pictures first, so the new data never points to a picture that is not there yet
+    if rotating():   # a key change started while this run was reading: discard everything (old-key files must not be published)
+        try: subprocess.run(["git", "checkout", "--", "."], cwd=R, check=False); subprocess.run(["git", "clean", "-fdq", "blk"], cwd=R, check=False)
+        except Exception: pass
+        log("Schlüsselwechsel hat begonnen – nichts veröffentlicht"); print("::notice::Schlüsselwechsel begonnen – nichts veröffentlicht"); return
     # the picture list of the galleries (large) is a file of its own: the app starts with data.enc.json and loads it afterwards
     bm = meta.pop("bm", None)
     if bm is not None:

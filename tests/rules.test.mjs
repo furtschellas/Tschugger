@@ -189,6 +189,11 @@ await check("Sicherheit: Protokolleinträge nicht änderbar", assertFails(update
 
 
 // ---------- prefs, log, everything else ----------
+await check("Einstellungen der Person: nicht eingeladene Person kann nichts speichern", assertFails(setDoc(doc(as("stranger"), "prefs/uStr"), { theme: "dark" })));
+await check("Geburtstag: eigener Eintrag (Name, Tag/Monat) geht", assertSucceeds(setDoc(doc(as("crew"), "bdays/uCrew"), { name: "Crew", md: "03-14" })));
+await check("Geburtstag: falsches Format nicht", assertFails(setDoc(doc(as("crew"), "bdays/uCrew"), { name: "Crew", md: "x".repeat(50) })));
+await check("Geburtstag: nicht eingeladene Person nicht", assertFails(setDoc(doc(as("stranger"), "bdays/uStr"), { name: "Spam", md: "01-01" })));
+
 await check("Einstellungen der Person: nur die eigenen", assertFails(getDoc(doc(as("crew"), "prefs/uOther"))));
 await check("Einstellungen der Person: höchstens 16 Felder", assertFails(setDoc(doc(as("crew"), "prefs/uCrew"), Object.fromEntries([...Array(17)].map((_, i) => ["k" + i, "v"])))));
 await check("Protokoll: Crew kann es nicht lesen", assertFails(getDocs(collection(as("crew"), "audit"))));

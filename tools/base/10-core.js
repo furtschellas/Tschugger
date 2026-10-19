@@ -48,7 +48,9 @@ const dlgBtn=(cls,attr,t)=>'<button type="button" class="'+cls+'" '+attr+'>'+esc
 const xBtn=attr=>'<button type="button" class="xclose" '+attr+' aria-label="'+esc(L("Schliessen"))+'">×</button>';
 const WD=new Proxy([],{get:(t,k)=>k==="length"?7:(WDS[LANG]||WDS.de)[k]});
 /* YYYY-MM-DD in local time (toISOString would give the UTC day: after midnight Swiss time still the day before) */
-function localISO(t){const d=new Date(t);return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
+/* the date in Switzerland (the shoot), also on a phone set to another time zone */
+let ZDF=null;try{ZDF=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Zurich",year:"numeric",month:"2-digit",day:"2-digit"})}catch(_){}
+function localISO(t){const d=new Date(t);if(ZDF)try{const x=ZDF.format(d);if(/^\d{4}-\d\d-\d\d$/.test(x))return x}catch(_){}return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
 const todayISO=()=>localISO(Date.now());
 const pad2=n=>String(n).padStart(2,"0");
 const telNum=s=>String(s||"").replace(/[^\d+]/g,"");   /* phone number for tel:/sms:/vCard: only digits and + */

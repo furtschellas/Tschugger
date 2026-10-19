@@ -111,8 +111,10 @@ service cloud.firestore {
     match /bdays/{uid} {
       allow read: if can('crew.bday')
         || (isMember() && get(d('config', 'app')).data.get('bdayPublic', false) == true);
-      allow write: if isOwner() || (verified() && request.auth.uid == uid
-        && (request.resource == null || only(['name', 'md'])));
+      allow write: if isOwner() || (verified() && crew() && request.auth.uid == uid   // nur Crew, nur Name und Tag/Monat
+        && (request.resource == null || (only(['name', 'md'])
+          && request.resource.data.name is string && request.resource.data.name.size() <= 80
+          && request.resource.data.md is string && request.resource.data.md.matches('[0-1][0-9]-[0-3][0-9]'))));
     }
 
     // Weitere Admins: nur der Haupt-Admin verwaltet sie
@@ -165,7 +167,7 @@ service cloud.firestore {
     // Ansichts-Einstellungen pro Benutzer (Thema, Anzeige-Knöpfe, Units): jede Person nur ihre eigenen
     match /prefs/{uid} {
       allow get, delete: if signedIn() && request.auth.uid == uid;
-      allow create, update: if signedIn() && request.auth.uid == uid && request.resource.data.size() <= 16;
+      allow create, update: if signedIn() && request.auth.uid == uid && crew() && request.resource.data.size() <= 16;   // nur Crew
     }
 
     // Mitglieder: wer eingeladen ist, tritt einmal selbst bei; sperren und entfernen kann nur der Haupt-Admin
