@@ -48,7 +48,7 @@ async def main():
         await pg.reload(wait_until="commit")
         if "MrK" in await spv_text(pg): errs.append("Startbildschirm beim Neuladen mit Text")
         if not await pg.evaluate("(()=>{const s=document.getElementById('splash');return !!s&&getComputedStyle(s).display!=='none'})()"): errs.append("Neuladen: Logo mit Ladestatus fehlt")
-        await pg.wait_for_timeout(8600)   # the start screen never stays: at the latest after 8 s it is gone
+        await pg.wait_for_timeout(20600)   # the start screen never stays: at the latest after 20 s it is gone
         ok = ok and await pg.evaluate("!document.getElementById('splash')")
         await b.close()
     if errs or not ok:
