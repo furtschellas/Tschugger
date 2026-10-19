@@ -815,6 +815,16 @@ CS_B = (
 CS_RULES = ("Antworte mit genau diesem JSON-Objekt, kompakt (ohne Einrückung), in der Reihenfolge und Sprache des Dokuments: "
             "nicht übersetzen, keine Übersetzungsfelder, nichts erfinden, nichts weglassen, Zeiten und Namen genau wie im Dokument, leere Felder weglassen. ")
 
+def cs_texts(cs):
+    """texts of the callsheet that are translated: production information, location notes and the labels/texts of their items"""
+    out = [str(x) for x in cs.get("info") or [] if x]
+    for l in cs.get("locations") or []:
+        if not isinstance(l, dict): continue
+        out += [str(x) for x in l.get("notes") or [] if x]
+        for i in l.get("items") or []:
+            if isinstance(i, dict): out += [str(i.get(k)) for k in ("label", "text") if i.get(k)]
+    return list(dict.fromkeys(out))
+
 def cs_to_dispo(cs, date, f):
     """the fields the rest of the app uses (Today, Meine Termine, push) taken from the structure «cs»"""
     t = cs.get("times") or {}
@@ -1449,7 +1459,7 @@ def main():
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) for v in dispos.values())   # read before the full structure («cs»): again
+        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] for v in dispos.values())   # read before the full structure / translation: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
@@ -1460,6 +1470,16 @@ def main():
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
             md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
             date = str(cs.pop("date", "") or "") or (md and "%s-%s-%s" % md.groups()) or ""
+            # locations and production information in the languages of the app (names, places and streets stay as they are)
+            try:
+                src = [x for x in cs_texts(cs) if x]
+                if src:
+                    tr = claude([{"type": "text", "text": json.dumps(src, ensure_ascii=False)}],
+                        "Übersetze jeden Text dieser JSON-Liste nach de, fr, it, en und hi. Namen, Orte, Strassen, Motiv- und Szenentitel, Zeiten und Links unverändert lassen. "
+                        "Antworte kompakt mit {\"de\": [...], \"fr\": [...], \"it\": [...], \"en\": [...], \"hi\": [...]} – gleiche Anzahl und Reihenfolge wie die Liste.", 32000)
+                    if isinstance(tr, dict):
+                        cs["tr"] = {lg: {o: t for o, t in zip(src, tr.get(lg) or []) if isinstance(t, str) and t and t != o} for lg in ("de", "fr", "it", "en", "hi")}
+            except Exception as e: log("Callsheet-Übersetzung:", type(e).__name__)
             d = cs_to_dispo(cs, date, f)
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
                 prev = dispos.get(d["date"])
