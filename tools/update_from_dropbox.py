@@ -194,7 +194,10 @@ class BlkStore:
                                    aws_secret_access_key=sec, region_name="auto")
             for pg in self.r2.get_paginator("list_objects_v2").paginate(Bucket=self.bucket, Prefix="blk/"):
                 for o in pg.get("Contents", []): self.keys.add(o["Key"])
-            log("Bilder-Speicher: R2,", len(self.keys), "Dateien")
+            log("Bilder-Speicher: R2,", len(self.keys), "Dateien"); print("::notice::Bilder-Speicher: Cloudflare R2 (%d Dateien im Bucket)" % len(self.keys))
+        else:
+            miss = [k for k in ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY") if not os.environ.get(k, "").strip()]
+            print("::notice::Bilder-Speicher: Repository (für R2 fehlt: %s)" % ", ".join(miss))
     def have(self, fn): return fn in self.keys or os.path.exists(fn)
     def files(self):
         loc = {"blk/" + f for f in os.listdir("blk") if f.endswith(".bin")} if os.path.isdir("blk") else set()
@@ -713,7 +716,10 @@ def pick_schedule(files):
     def key(f):
         n = f["name"].rsplit("/", 1)[-1]
         d = re.search(r"(\d{6})", n); v = re.search(r"v(\d+)", n, re.I)
-        var = 0 if "oneline" in n.lower() else (2 if re.search(r"\bch\b", n.lower()) else 1)   # the full schedule first, the Oneline only when there is no other
+        # the plain full schedule «Tschugger Sched 261018 CH.pdf» first; other layouts of the same version («… Colomns CH»,
+        # «… Oneline CH») only when it is missing – their text is laid out differently (scene details, units not readable)
+        low_n = n.lower()
+        var = 3 if re.search(r"sched\s+\d{6}(\s*v\d+)?\s+ch\.pdf$", low_n) else 0 if "oneline" in low_n else 1 if re.search(r"colomn|column|spalte", low_n) else (2 if re.search(r"\bch\b", low_n) else 1)
         return (d.group(1) if d else "", int(v.group(1)) if v else 0, var, f["modified"] or "")
     return max(c, key=key) if c else None
 

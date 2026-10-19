@@ -376,4 +376,9 @@ _d4 = [{"kind": "shoot", "short": "D1", "items": [{"sc": "186pt1A"}]}]
 U.u2_also_add(_d4, _sh4)
 check("Kamera: 186pt1A in der 1st Unit «B-Cam», in der 2nd Unit mit Setups", _d4[0]["items"][0].get("cam") == "B-Cam · 1st Unit" and _d4[0]["unit2"]["items"][0].get("cam") == "2nd Unit · Setups A-1 · B-2", _d4)
 
+_fs = [{"name": "02_Schedule/Tschugger Sched 261018 Colomns CH.pdf", "modified": "2026-10-19T09:55:46Z"},
+       {"name": "02_Schedule/Tschugger Sched 261018 CH.pdf", "modified": "2026-10-18T14:23:25Z"},
+       {"name": "02_Schedule/Tschugger Sched 261018 Oneline CH.pdf", "modified": "2026-10-18T14:23:25Z"}]
+check("Drehplan: der normale «… CH.pdf» vor anderen Layouts derselben Version («Colomns», «Oneline»)", U.pick_schedule(_fs)["name"].endswith("261018 CH.pdf"))
+
 sys.exit(done("Hintergrund"))
