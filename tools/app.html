@@ -796,6 +796,73 @@ html body #view .cstiles>.dt.cswx{padding:0;border:0;background:none}html body #
  html body #view .csview #csq{min-height:34px;padding:5px 10px;font-size:14px;border-radius:8px}
  html body #view .csview .dbox{padding:8px 10px}
 }
+
+/* font size «Gross» */
+html.fs-l #view{zoom:1.13}
+/* offline bar above the tabs */
+#offbar{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--sheet);color:var(--ink);border:1px solid var(--accent);border-radius:999px;padding:4px 12px;font-size:12px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.25);pointer-events:none}
+body>#offbar{position:fixed;bottom:12px}
+/* day bar always on top, callsheet bar right below it */
+html body #view .stripwrap{position:sticky;top:env(safe-area-inset-top,0px);z-index:6}
+html body #view .csview .csjump{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--striph,0px));z-index:5}
+html body #view .csview [id^="cs-"]{scroll-margin-top:calc(var(--striph,0px) + var(--csjh,0px) + 8px)}
+/* swipe feedback */
+#view.swl{animation:swl .25s ease}#view.swr{animation:swr .25s ease}
+@keyframes swl{from{transform:translateX(18px);opacity:.6}to{transform:none;opacity:1}}@keyframes swr{from{transform:translateX(-18px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){#view.swl,#view.swr{animation:none}}
+/* callsheet jump bar: icons with a tiny label, one line */
+html body #view .csview .csjb{display:flex;gap:2px;justify-content:space-between;overflow-x:auto;padding:0}
+html body #view .csview .csjb button{flex:1 0 auto;min-width:44px;display:flex;flex-direction:column;align-items:center;gap:1px;border:0;border-radius:10px;padding:5px 4px;min-height:44px;background:transparent;color:var(--accent);font-size:10px;line-height:1.1}
+html body #view .csview .csjb button .csi{width:20px;height:20px}
+html body #view .csview .csjb button span{color:var(--muted);white-space:nowrap}
+html body #view .csview .csjb button:active,html body #view .csview .csjb button[aria-pressed="true"]{background:var(--accent-soft)}
+html body #view .csview .csjump{padding:2px 0;margin:4px 0;border-bottom:1px solid var(--rule)}
+html body #view .csview #csq{margin:4px 0 2px}
+/* cast: table or cards */
+.cstview{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;margin:0 0 6px}
+html body #view .csview #cs-cast.cs-astbl .cs-tbl{display:block}html body #view .csview #cs-cast.cs-astbl .cs-cards{display:none}
+html body #view .csview #cs-cast:not(.cs-astbl) .cs-tbl{display:none}
+html body #view .csview #cs-cast.cs-astbl .tblw{overflow-x:auto;max-width:100%}
+html body #view .csview #cs-cast.cs-astbl .dtbl{font-size:12.5px;white-space:nowrap}
+html body #view .csview #cs-cast.cs-astbl .dtbl td,html body #view .csview #cs-cast.cs-astbl .dtbl th{padding:4px 7px}
+@media (min-width:761px){html body #view .csview #cs-cast:not(.cs-astbl) .cs-cards{display:grid}}
+/* phone: Mein Tag, cast, transport and calls compact */
+@media (max-width:760px){
+ html body #view .csview .csme{padding:8px 10px;border-radius:10px}
+ html body #view .csview .csme .dh{font-size:15px;margin:0 0 4px}
+ html body #view .csview .csme-r{display:grid;grid-template-columns:62px minmax(0,1fr);gap:0 8px;align-items:baseline;padding:2px 0;font-size:13.5px;line-height:1.3}
+ html body #view .csview .csme-r .k{font-size:11px;min-width:0}
+ html body #view .csview .csme-r .v{min-width:0}
+ html body #view .csview .csme-r .csmap{width:24px;height:24px;vertical-align:-6px;margin:0 4px;display:inline-flex}
+ html body #view .csview .csme-r .csmap svg{width:13px;height:13px}
+ html body #view .csview .csme-r small{color:var(--muted);font-size:12px}
+ html body #view .csview .cs-card{padding:5px 9px;margin:4px 0;border-radius:8px}
+ html body #view .csview .cs-ct{font-size:13.5px;margin-bottom:1px}
+ html body #view .csview .cs-card .cs-kv{font-size:12.5px;margin-right:8px}
+ html body #view .csview .cs-card .cs-kv .k{font-size:10.5px}
+ html body #view .csview .cscall-d{font-size:11px;margin:6px 0 2px}
+ html body #view .csview .cscall-r{padding:2px 0;font-size:13px;gap:6px;min-height:0}
+ html body #view .csview .cscall-r small{font-size:11.5px}
+ html body #view .csview .cscontact{margin:4px 0 2px}
+}
+
+/* callsheet: main parts open/close with the round chevron symbol at the right */
+html body #view .cssec>summary::before{content:none;display:none}
+html body #view .cssec>summary{justify-content:space-between;gap:10px}
+.csexp{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 65%,transparent);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;transition:background .15s}
+.cssec[open]>summary .csexp{background:var(--accent-soft)}
+.cssec>summary:hover .csexp{border-color:var(--accent)}
+html body #view .csall{display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+html body #view .csall .csexp{width:26px;height:26px}html body #view .csall .csexp svg{width:14px;height:14px}
+
+/* jump bar: all icons fit in one line, labels shortened */
+html body #view .csview .csjb button{flex:1 1 0;min-width:0;padding:5px 1px}
+html body #view .csview .csjb button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:9.5px}
+/* team of the day: one line per person */
+html body #view .csview .cskey>div{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:baseline;gap:8px;padding:2px 0;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body #view .csview .cskey>div .k{flex:0 0 38%;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
+html body #view .csview .cskey>div a{white-space:nowrap}
+html body #view .csview .cslist{margin:4px 0;font-size:13px}
 </style>
 
 <div class="wrap">
@@ -826,6 +893,7 @@ html body #view .cstiles>.dt.cswx{padding:0;border:0;background:none}html body #
 </div></nav>
 
 <script>
+try{if(localStorage.getItem("fsize:v1")==="l")document.documentElement.classList.add("fs-l")}catch(_){} /* font size before the first paint */
 const I18N={"Location":{"hi":"लोकेशन"},"Crewlist":{"hi":"क्रू सूची"},"Meine eigenen Termine":{"fr":"Mes propres rendez-vous","en":"My own appointments","it":"I miei appuntamenti","hi":"मेरे अपने कार्यक्रम"},"Aus einer älteren Version der Wochenplanung":{"fr":"D’une ancienne version du planning hebdomadaire","en":"From an older version of the weekly schedule","it":"Da una versione precedente del piano settimanale","hi":"साप्ताहिक योजना के पुराने संस्करण से"},"Recce":{"fr":"Repérages","en":"Recce","it":"Sopralluoghi","hi":"Recce"},"Auflösung":{"fr":"Découpage","en":"Shot breakdown","it":"Découpage","hi":"शॉट ब्रेकडाउन"},"Blocking-PDF":{"fr":"Blocking (PDF)","en":"Blocking (PDF)","it":"Blocking (PDF)","hi":"Blocking (PDF)"},"Motiv & 3D":{"fr":"Décor & 3D","en":"Set & 3D","it":"Set & 3D","hi":"सेट और 3D"},"Min.": {"fr": "min", "en": "min", "it": "min", "hi": "मिनट"}, "Anfahrt": {"fr": "Trajet", "en": "Drive", "it": "Tragitto", "hi": "यात्रा समय"}, "Planung": {"fr": "Planning", "en": "Schedule", "it": "Programma"}, "Callsheet": {"fr": "Callsheet", "en": "Callsheet", "it": "Callsheet"}, "Locations": {"fr": "Lieux", "en": "Locations", "it": "Locations"}, "Crew": {"fr": "Équipe", "en": "Crew", "it": "Crew"}, "Infos": {"fr": "Infos", "en": "Info", "it": "Info"}, "Suchen": {"fr": "Rechercher", "en": "Search", "it": "Cerca"},   "Szene, Ort, Person, Cast …": {"fr": "Scène, lieu, personne, cast …", "en": "Scene, place, person, cast …", "it": "Scena, luogo, persona, cast …"}, "Daten werden geladen …": {"fr": "Chargement des données …", "en": "Loading data …", "it": "Caricamento dati …"}, "Regie": {"fr": "Réal.", "en": "Dir.", "it": "Regia"}, "Kompars.": {"fr": "figur.", "en": "extras", "it": "comparse"}, "Ort: TBA": {"fr": "Lieu : TBA", "en": "Location: TBA", "it": "Luogo: TBA"}, "Szene": {"fr": "scène", "en": "scene", "it": "scena"}, "Szenen": {"fr": "scènes", "en": "scenes", "it": "scene"}, "Motive": {"fr": "décors", "en": "sets", "it": "set"},  "Orte": {"fr": "lieux", "en": "places", "it": "luoghi"}, "Reise": {"fr": "Voyage", "en": "Travel", "it": "Viaggio"}, "Frei": {"fr": "Off", "en": "Off", "it": "Off"}, "Reisetag": {"fr": "Jour de voyage", "en": "Travel day", "it": "Giorno di viaggio"}, "Drehfrei": {"fr": "Jour de repos", "en": "Day off", "it": "Giorno libero"}, "Callsheet folgt": {"fr": "Callsheet à venir", "en": "Callsheet to follow", "it": "Callsheet in arrivo"},  "Dreh": {"fr": "Tournage", "en": "Shoot", "it": "Riprese"}, "Länge": {"fr": "Durée", "en": "Length", "it": "Durata"},  "Sonne": {"fr": "Soleil", "en": "Sun", "it": "Sole"}, "Kompars:innen": {"fr": "Figurants", "en": "Extras", "it": "Comparse"}, "Crew suchen": {"fr": "Rechercher dans l’équipe", "en": "Search crew", "it": "Cerca nella crew"}, "Niemand gefunden für": {"fr": "Aucune personne trouvée pour", "en": "Nobody found for", "it": "Nessuno trovato per"}, "Kopieren": {"fr": "Copier", "en": "Copy", "it": "Copia"}, "Kopiert": {"fr": "Copié", "en": "Copied", "it": "Copiato"}, "Szenenbeschrieb": {"fr": "Description de la scène", "en": "Scene description", "it": "Descrizione della scena"}, "Adresse": {"fr": "Adresse", "en": "Address", "it": "Indirizzo"}, "Cast": {"fr": "Cast", "en": "Cast", "it": "Cast"},  "Diese Szene ist im Drehbuch nicht gefunden worden.": {"fr": "Cette scène est introuvable dans le scénario.", "en": "This scene was not found in the script.", "it": "Questa scena non è stata trovata nella sceneggiatura."}, "Drehbuch konnte nicht geladen werden.": {"fr": "Impossible de charger le scénario.", "en": "Could not load the script.", "it": "Impossibile caricare la sceneggiatura."}, "Kontakt ins Telefon übernehmen": {"fr": "Ajouter le contact au téléphone", "en": "Add contact to phone", "it": "Aggiungi il contatto al telefono"}, "Adressen im Dorf": {"fr": "adresses au village", "en": "addresses in the village", "it": "indirizzi nel paese"}, "Keine Locations für diese Unit.": {"fr": "Aucun lieu pour cette unit.", "en": "No locations for this unit.", "it": "Nessuna location per questa unit."}, "Keine 2nd Unit an diesem Tag.": {"fr": "Pas de 2nd unit ce jour-là.", "en": "No 2nd unit on this day.", "it": "Nessuna 2nd unit in questo giorno."}, "Keine 3rd Unit an diesem Tag.": {"fr": "Pas de 3rd unit ce jour-là.", "en": "No 3rd unit on this day.", "it": "Nessuna 3rd unit in questo giorno."}, "Bitte mindestens eine Unit wählen.": {"fr": "Choisis au moins une unit.", "en": "Please select at least one unit.", "it": "Seleziona almeno una unit."}, "Alle Szenen auf- oder zuklappen": {"fr": "Ouvrir ou fermer toutes les scènes", "en": "Expand or collapse all scenes", "it": "Apri o chiudi tutte le scene"}, "Das Callsheet erscheint hier automatisch, sobald es im Dropbox-Ordner 06_Callsheets liegt, meist am Vorabend.": {"fr": "Le feuille de service apparaît ici automatiquement dès qu’il se trouve dans le dossier Dropbox 06_Callsheets, en général la veille.", "en": "The callsheet appears here automatically as soon as it is in the Dropbox folder 06_Callsheets, usually the evening before.", "it": "Il callsheet appare qui automaticamente non appena si trova nella cartella Dropbox 06_Callsheets, di solito la sera prima."}, "Laut Planung: Drehzeit": {"fr": "Selon le planning : tournage", "en": "Per schedule: shooting", "it": "Secondo il programma: riprese"}, "Planung ansehen": {"fr": "Voir le planning", "en": "View schedule", "it": "Vedi programma"}, "Drehbeginn": {"fr": "Début du tournage", "en": "First shot", "it": "Primo ciak"}, "Wetter": {"fr": "Météo", "en": "Weather", "it": "Meteo"}, "Parken": {"fr": "Parking", "en": "Parking", "it": "Parcheggio"}, "Treffpunkt & Orte": {"fr": "Rendez-vous & lieux", "en": "Meeting point & locations", "it": "Punto d’incontro & luoghi"}, "Base / Treffpunkt": {"fr": "Base / rendez-vous", "en": "Base / meeting point", "it": "Base / punto d’incontro"}, "Drehort": {"fr": "Lieu de tournage", "en": "Location", "it": "Location"},   "Darsteller:in": {"fr": "Comédien", "en": "Actor", "it": "Attore"}, "Maske": {"fr": "Maquillage", "en": "Make-up", "it": "Trucco"}, "Kostüm": {"fr": "Costume", "en": "Costume", "it": "Costumi"}, "Notfall & Kontakte": {"fr": "Urgences & contacts", "en": "Emergency & contacts", "it": "Emergenze & contatti"}, "Nächstes Spital": {"fr": "Hôpital le plus proche", "en": "Nearest hospital", "it": "Ospedale più vicino"}, "Spital": {"fr": "Hôpital", "en": "Hospital", "it": "Ospedale"}, "ist noch leer. Die Daten kommen automatisch aus der Dropbox der Produktion.": {"fr": "est encore vide. Les données arrivent automatiquement depuis la Dropbox de la production.", "en": "is still empty. Data comes in automatically from the production Dropbox.", "it": "è ancora vuoto. I dati arrivano automaticamente dalla Dropbox della produzione."}, "Lade": {"fr": "Chargement", "en": "Loading", "it": "Caricamento"}, "geprüft": {"fr": "vérifié", "en": "checked", "it": "verificato"}, "Noch keine Daten eingespielt.": {"fr": "Pas encore de données.", "en": "No data yet.", "it": "Ancora nessun dato."}, "Suche nach Szenennummer (z. B. 186), Drehtag (D5, Day 5, 26.10., Montag, heute, morgen), Motiv, Adresse, Rolle (z. B. Regina), Crew-Name, Funktion oder Telefonnummer.": {"fr": "Cherche un numéro de scène (p. ex. 186), un jour de tournage (D5, jour 5, 26.10., lundi, aujourd’hui, demain), un décor, une adresse, un rôle (p. ex. Regina), un nom, une fonction ou un numéro de téléphone.", "en": "Search for a scene number (e.g. 186), shooting day (D5, Day 5, 26.10., Monday, today, tomorrow), set, address, role (e.g. Regina), crew name, job or phone number.", "it": "Cerca per numero di scena (es. 186), giorno di riprese (D5, Day 5, 26.10., lunedì, oggi, domani), set, indirizzo, ruolo (es. Regina), nome, funzione o numero di telefono."}, "Drehtage": {"fr": "Jours de tournage", "en": "Shooting days", "it": "Giorni di riprese"}, "Mehrere Adressen": {"fr": "Plusieurs adresses", "en": "Several addresses", "it": "Più indirizzi"}, "Nichts gefunden für": {"fr": "Aucun résultat pour", "en": "Nothing found for", "it": "Nessun risultato per"}, "Neueste Daten geladen.": {"fr": "Données les plus récentes chargées.", "en": "Latest data loaded.", "it": "Dati più recenti caricati."}, "Dropbox zuletzt geprüft": {"fr": "Dropbox vérifiée le", "en": "Dropbox last checked", "it": "Dropbox verificata il"}, "Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen.": {"fr": "Impossible de charger les données. Vérifie la connexion internet.", "en": "Could not load data. Please check your internet connection.", "it": "Impossibile caricare i dati. Controlla la connessione internet."}, "Pause": {"fr": "Pause", "en": "Pause", "it": "Pausa"},  "Dunkler Modus": {"fr": "Mode sombre", "en": "Dark mode", "it": "Modalità scura"}, "Heller Modus": {"fr": "Mode clair", "en": "Light mode", "it": "Modalità chiara"}, "Vorherige Szene lesen": {"fr": "Lire la scène précédente", "en": "Read previous scene", "it": "Leggi la scena precedente"}, "Folgende Szene lesen": {"fr": "Lire la scène suivante", "en": "Read next scene", "it": "Leggi la scena successiva"}, "Vorherige Szene": {"fr": "Scène précédente", "en": "Previous scene", "it": "Scena precedente"}, "Folgende Szene": {"fr": "Scène suivante", "en": "Next scene", "it": "Scena successiva"}, "Quellen": {"fr": "Sources", "en": "Sources", "it": "Fonti"},     "Dropbox der Produktion, nur gelesen.": {"fr": "Dropbox de la production, en lecture seule.", "en": "Production Dropbox, read-only.", "it": "Dropbox della produzione, sola lettura."}, "Zuletzt geprüft": {"fr": "Dernière vérification", "en": "Last checked", "it": "Ultima verifica"},  "Karte der Drehorte": {"fr": "Carte des lieux de tournage", "en": "Map of the shooting locations", "it": "Mappa dei luoghi delle riprese"}, "Infobox": {"fr": "Encadré d’infos", "en": "Info box", "it": "Riquadro info"}, "Drehbuch hell / dunkel": {"fr": "Scénario clair / sombre", "en": "Script light / dark", "it": "Sceneggiatura chiara / scura"}, "Drehzeit": {"fr": "Temps de tournage", "en": "Shooting time", "it": "Tempo di ripresa"}, "Tag": {"fr": "Jour", "en": "Day", "it": "Giorno"},   "Szene, Motiv, Rolle, Text …": {"fr": "Scène, décor, rôle, texte …", "en": "Scene, set, role, text …", "it": "Scena, set, ruolo, testo …"}, "nicht geplant": {"fr": "pas planifiée", "en": "not scheduled", "it": "non pianificata"}, "Weitere Szenen anzeigen": {"fr": "Afficher plus de scènes", "en": "Show more scenes", "it": "Mostra altre scene"}, "Location, Adresse, Szene …": {"fr": "Lieu, adresse, scène …", "en": "Location, address, scene …", "it": "Location, indirizzo, scena …"},  "Drehtag": {"fr": "Jour de tournage", "en": "Shooting day", "it": "Giorno di riprese"}, "Treffer im Drehplan (Motiv, Cast oder Beschreibung)": {"fr": "Trouvé dans le plan de tournage (décor, cast ou description)", "en": "Match in the schedule (set, cast or description)", "it": "Trovato nel piano di lavorazione (set, cast o descrizione)"}, "Position": {"fr": "Position", "en": "Position", "it": "Posizione"}, "Die Wochenplanung für Vorbereitung und Proben folgt, sobald sie in der Dropbox der Produktion verfügbar ist.": {"fr": "Le planning de la semaine de préparation et de répétitions suivra dès qu’il sera disponible dans la Dropbox de la production.", "en": "The weekly plan for preparation and rehearsals will follow as soon as it is available in the production Dropbox.", "it": "Il programma settimanale di preparazione e prove arriverà appena disponibile nella Dropbox della produzione."}, "Parallel": {"fr": "En parallèle", "en": "Parallel", "it": "In parallelo"}, "Transport": {"fr": "Transport", "en": "Transport", "it": "Trasporto"}, "Fahrer:in": {"fr": "Chauffeur", "en": "Driver", "it": "Autista"}, "Kontakte": {"fr": "Contacts", "en": "Contacts", "it": "Contatti"}, "Quelle": {"fr": "Source", "en": "Source", "it": "Fonte"}, "Verteiler": {"fr": "Destinataires", "en": "Distribution list", "it": "Destinatari"}, "In den Kalender": {"fr": "Ajouter au calendrier", "en": "Add to calendar", "it": "Aggiungi al calendario"},  "Gruppen": {"fr": "Groupes", "en": "Groups", "it": "Gruppi"}, "Keine Adressen gefunden.": {"fr": "Aucune adresse trouvée.", "en": "No addresses found.", "it": "Nessun indirizzo trovato."}, "Nicht in Crewliste oder bei den Benutzer:innen": {"fr": "Absents de la liste d’équipe et des utilisateurs", "en": "Not in crew list or users", "it": "Non nella lista crew né tra gli utenti"}, "Mail an alle": {"fr": "Mail à tous", "en": "Mail to all", "it": "Mail a tutti"}, "Adressen kopieren": {"fr": "Copier les adresses", "en": "Copy addresses", "it": "Copia indirizzi"}, "In der Crewliste, aber ohne E-Mail": {"fr": "Dans la liste d’équipe, mais sans e-mail", "en": "In the crew list, but without e-mail", "it": "Nella lista crew, ma senza e-mail"}, "Teilnehmende": {"fr": "Participants", "en": "Participants", "it": "Partecipanti"}, "Teilnehmende ein-/ausblenden": {"fr": "Afficher/masquer les participants", "en": "Show/hide participants", "it": "Mostra/nascondi partecipanti"}, "Prep-Wochenplanung": {"fr": "Planning de préparation", "en": "Prep weekly schedule", "it": "Programma preparazione"}, "ab": {"fr": "départ", "en": "from", "it": "da"}, "Meine Termine": {"fr": "Mes rendez-vous", "en": "My appointments", "it": "I miei appuntamenti"}, "Termine für": {"fr": "Rendez-vous de", "en": "Schedule for", "it": "Impegni di"}, "Bitte oben deinen Namen wählen.": {"fr": "Choisis ton nom ci-dessus.", "en": "Please pick your name above.", "it": "Scegli il tuo nome qui sopra."}, "Keine kommenden Termine gefunden.": {"fr": "Aucun rendez-vous à venir.", "en": "No upcoming events found.", "it": "Nessun appuntamento in arrivo."}, "Alle in den Kalender": {"fr": "Tout ajouter au calendrier", "en": "Add all to calendar", "it": "Aggiungi tutto al calendario"}, "Dein Name wurde in der Crewliste nicht gefunden.": {"fr": "Ton nom n’a pas été trouvé dans la liste d’équipe.", "en": "Your name was not found in the crew list.", "it": "Il tuo nome non è stato trovato nella lista crew."}, "Diese Ansicht konnte nicht angezeigt werden.": {"fr": "Cette vue n’a pas pu être affichée.", "en": "This view could not be displayed.", "it": "Impossibile mostrare questa vista."}};
 I18N["Film wird geladen …"]=I18N["Film wird geladen …"]||{fr:"Chargement du film …",it:"Caricamento del video …",en:"Loading film …"};I18N["Film konnte nicht geladen werden."]=I18N["Film konnte nicht geladen werden."]||{fr:"Impossible de charger le film.",it:"Impossibile caricare il video.",en:"Film could not be loaded."};
 I18N["Klein"]=I18N["Klein"]||{fr:"Petit",it:"Piccolo",en:"Small"};I18N["Mittel"]=I18N["Mittel"]||{fr:"Moyen",it:"Medio",en:"Medium"};I18N["Gross"]=I18N["Gross"]||{fr:"Grand",it:"Grande",en:"Large"};I18N["Liste"]=I18N["Liste"]||{fr:"Liste",it:"Elenco",en:"List"};I18N["Fotos"]=I18N["Fotos"]||{fr:"Photos",it:"Foto",en:"Photos"};I18N["Videos"]=I18N["Videos"]||{fr:"Vidéos",it:"Video",en:"Videos"};
@@ -1669,7 +1737,17 @@ const CSI={phone:csI('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 
   radio:csI('<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M8 8l8-4"/><circle cx="9" cy="14" r="2"/><path d="M14 13h3M14 16h3"/>'),
   warn:csI('<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>'),
   doc:csI('<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M9.5 12h6M9.5 15.5h6"/>'),
-  lock:csI('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>')};
+  lock:csI('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+  clock:csI('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+  user:csI('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
+  pin:csI('<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>'),
+  film:csI('<rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9h17M8 5l-2 4M13 5l-2 4M18 5l-2 4"/>'),
+  cast:csI('<path d="M12 3.5l2.5 5.2 5.6.8-4 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4-4 5.6-.8z"/>'),
+  car:csI('<path d="M5 16V12l2-5h10l2 5v4"/><path d="M4 16h16v2H4z"/><circle cx="8" cy="16" r="1.6"/><circle cx="16" cy="16" r="1.6"/><path d="M5 12h14"/>'),
+  calls:csI('<path d="M4 10v4h3l6 4V6L7 10z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 7a7 7 0 0 1 0 10"/>'),
+  search:csI('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>'),
+  table:csI('<rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M3.5 10h17M3.5 14.5h17M9.5 5v14"/>'),
+  cards:csI('<rect x="4" y="4.5" width="16" height="6" rx="1.5"/><rect x="4" y="13.5" width="16" height="6" rx="1.5"/>')};
 window.CSI=CSI;
 const CSPH=/(\+\d[\d ()\/.-]{7,}\d)/g;
 /* text with phone numbers: callable with the right, else left out */
@@ -1685,7 +1763,9 @@ const csA=v=>Array.isArray(v)?v:(v==null||v===""?[]:[v]);
 const csRoute=(f,t1,to,t2)=>[[t1,f].filter(Boolean).join(" "),[t2,to].filter(Boolean).join(" ")].filter(Boolean).join(" → ");
 const csS=v=>Array.isArray(v)?v.join(", "):String(v==null?"":v);
 /* a part of the callsheet: open or folded */
-function csSec(title,body,open,cls,id){if(!body)return"";return '<details class="dsec cssec'+(cls?" "+cls:"")+'"'+(id?' id="cs-'+id+'"':'')+(open?' open':'')+'><summary><h3 class="dh">'+esc(title)+'</h3></summary>'+body+'</details>'}
+/* open/close symbol of the app (two chevrons in a round frame, as in Log/Tests) */
+const CSEXP='<span class="csexp" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span>';
+function csSec(title,body,open,cls,id){if(!body)return"";return '<details class="dsec cssec'+(cls?" "+cls:"")+'"'+(id?' id="cs-'+id+'"':'')+(open?' open':'')+'><summary><h3 class="dh">'+esc(title)+'</h3>'+CSEXP+'</summary>'+body+'</details>'}
 /* a table of the callsheet: on the computer a table, on the phone one card per row (title = first columns, the rest as «label value») */
 function csTable(head,rows,tc){rows=rows.filter(r=>r.some(c=>String(c||"").trim()));if(!rows.length)return"";tc=tc||2;
   const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csTx(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
@@ -1746,12 +1826,14 @@ function csMine(c,me){const mine=[];if(!c||!me)return mine;
   const cast=csA(c.cast).find(r=>me.hit(r.actor));if(cast)mine.push('<div class="csme-r"><span class="k">Cast</span>'+esc([cast.role,cast.pickup&&"P/UP "+cast.pickup,cast.call&&"Call "+cast.call,cast.onset&&"Set "+cast.onset].filter(Boolean).join(" · "))+'</div>');
   /* pickup: the first ride of the day (time and place first) */
   {const rides=csA(c.transport).filter(r=>me.hit(r.passengers)||me.hit(r.driver)).concat(csA(c.crewTransport).filter(r=>me.hit(r.people))).filter(r=>hm(r.t1)).sort((a,b)=>hm(a.t1).localeCompare(hm(b.t1)));
-   const pu=rides[0];if(pu&&!(cast&&cast.pickup))mine.splice(1,0,'<div class="csme-r"><span class="k">Pickup</span><b>'+esc(hm(pu.t1))+'</b> '+esc(pu.from||"")+' <small>'+esc([pu.vehicle,pu.driver].filter(Boolean).join(" · "))+'</small></div>')}
-  for(const r of csA(c.transport).filter(r=>me.hit(r.passengers)||me.hit(r.driver)))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+esc([r.to,r.t2].filter(Boolean).join(" "))+' <small>'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small></div>');
-  for(const r of csA(c.crewTransport).filter(r=>me.hit(r.people)))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+esc([r.to,r.t2].filter(Boolean).join(" "))+' <small>'+esc(r.vehicle||"")+'</small></div>');
+   var pu=rides[0];if(pu&&!(cast&&cast.pickup))mine.splice(1,0,'<div class="csme-r"><span class="k">Pickup</span><b>'+esc(hm(pu.t1))+'</b> '+esc(pu.from||"")+(pu.to?' → '+esc([pu.to,pu.t2].filter(Boolean).join(" ")):'')+' <small>'+esc([pu.vehicle,pu.driver].filter(Boolean).join(" · "))+'</small></div>');else pu=null}
+  /* the other rides (the pickup ride is already shown above) */
+  for(const r of csA(c.transport).filter(r=>(me.hit(r.passengers)||me.hit(r.driver))&&r!==pu))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+esc([r.to,r.t2].filter(Boolean).join(" "))+' <small>'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small></div>');
+  for(const r of csA(c.crewTransport).filter(r=>me.hit(r.people)&&r!==pu))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+esc([r.to,r.t2].filter(Boolean).join(" "))+' <small>'+esc(r.vehicle||"")+'</small></div>');
   for(const r of csA(c.travel).filter(r=>me.hit(r.name)))mine.push('<div class="csme-r"><span class="k">'+esc(L("Anreise"))+'</span>'+esc([r.how,r.from,r.t1].filter(Boolean).join(" "))+' → '+esc([r.to,r.t2].filter(Boolean).join(" "))+'</div>');
   if(me.dep)for(const r of csA(c.depts).filter(r=>fold(r.dept||"").includes(me.dep)&&String(r.text||"").trim()))mine.push('<div class="csme-r"><span class="k">'+esc(r.dept)+'</span>'+csTx(r.text)+'</div>');
-  return mine}
+  /* value in its own span (label | value side by side on the phone) */
+  return mine.map(x=>x.replace(/<div class="csme-r"><span class="k">(.*?)<\/span>(.*?)<\/div>/g,'<div class="csme-r"><span class="k">$1</span><span class="v">$2</span></div>'))}
 function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=c.tr||null;
   /* head: as the top of the callsheet */
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
@@ -1763,8 +1845,10 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
     h+='<div class="cscontact"><b>'+esc(L("Kontakt am Set"))+':</b> '+(tel&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'" title="'+esc(L("Anrufen"))+'">'+CSI.phone+nm+'</a>':nm)+(ct.role?' <small>· '+esc(ct.role)+'</small>':'')+'</div>'}
   /* jump bar (sticky) and search over the whole callsheet */
   {const has=k=>({mein:!!me&&csMine(c,me).length,loc:csA(c.locations).length,order:csA((c.order||{}).rows).length,cast:csA(c.cast).length,trans:csA(c.transport).length||csA(c.crewTransport).length,calls:csA(c.calls).length})[k];
-   const J=[["zeiten",L("Zeiten")],["mein",L("Mein Tag")],["loc","Locations"],["order",L("Drehfolge")],["cast","Cast"],["trans","Transport"],["calls","Calls"]].filter(([k])=>k==="zeiten"||has(k));
-   h+='<div class="csjump"><div class="csjb">'+J.map(([k,l])=>'<button type="button" data-csj="'+k+'">'+esc(l)+'</button>').join("")+'</div><input id="csq" type="search" autocomplete="off" placeholder="'+esc(L("Suchen: Name, Szene, Fahrzeug …"))+'"></div>'}
+   const J=[["zeiten",L("Zeiten"),"clock"],["mein",L("Mein Tag"),"user"],["loc","Locations","pin",L("Orte")],["order",L("Drehfolge"),"film",L("Szenen")],["cast","Cast","cast"],["trans","Transport","car",L("Fahrten")],["calls","Calls","calls"]].filter(([k])=>k==="zeiten"||has(k));
+   /* icons with a tiny label; the search opens from the magnifier (keeps the bar one line high) */
+   h+='<div class="csjump"><div class="csjb">'+J.map(([k,l,i,sh])=>'<button type="button" data-csj="'+k+'" aria-label="'+esc(l)+'" title="'+esc(l)+'">'+CSI[i]+'<span>'+esc(sh||l)+'</span></button>').join("")+
+     '<button type="button" class="csqb" data-csqb aria-label="'+esc(L("Suchen"))+'" title="'+esc(L("Suchen"))+'">'+CSI.search+'<span>'+esc(L("Suchen"))+'</span></button></div><input id="csq" type="search" autocomplete="off" hidden placeholder="'+esc(L("Suchen: Name, Szene, Fahrzeug …"))+'"></div>'}
   /* my day */
   if(me){const mine=csMine(c,me);if(mine.length)h+='<section class="dsec csme" id="cs-mein"><h3 class="dh">'+esc(L("Mein Tag"))+' <small>'+esc(me.name)+'</small></h3>'+mine.join("")+'</section>'}
   /* key people of the day */
@@ -1773,7 +1857,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   /* locations */
   /* locations: each one folds (name and map always visible), a button opens or closes all */
   {const ls=csLocs(c);
-   h+=csSec("Locations",ls.length?(ls.length>1?'<button type="button" class="lnk csall" data-csall>'+esc(L("Alle auf-/zuklappen"))+'</button>':'')+ls.map(l=>'<details class="dbox csloc"><summary><span class="dk">'+(l.kinds?esc(l.no):'Set '+esc(l.no||""))+(l.scenes?' · '+esc(csS(l.scenes)):'')+'</span><span class="dn">'+esc(l.name||"")+'</span>'+
+   h+=csSec("Locations",ls.length?(ls.length>1?'<button type="button" class="lnk csall" data-csall>'+CSEXP+'<span>'+esc(L("Alle auf-/zuklappen"))+'</span></button>':'')+ls.map(l=>'<details class="dbox csloc"><summary><span class="dk">'+(l.kinds?esc(l.no):'Set '+esc(l.no||""))+(l.scenes?' · '+esc(csS(l.scenes)):'')+'</span><span class="dn">'+esc(l.name||"")+'</span>'+
      csMap(l.map)+'</summary>'+
      csA(l.notes).map(n=>'<div class="ds">'+csTx(csL(n))+'</div>').join("")+csA(l.items).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csTx(csL(i.text||""))+(i.map?' '+csMap(i.map):'')+'</div>').join("")+'</details>').join(""):"",true,"","loc")}
   /* production information */
@@ -1782,7 +1866,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   const o=c.order||{};
   h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date),true,"","order");
   /* cast, extras, vehicles */
-  h+=csSec("Cast",csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3),false,"","cast");
+  h+=csSec("Cast",(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Karten":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3),false,csCastMode()?"cs-astbl":"","cast");
   h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset])),false);
   h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false);
   /* transport and travel */
@@ -1830,6 +1914,13 @@ function csPrevHTML(date){const p=csPrevFor(date);if(!p)return"";const ti=String
     '<div class="dtiles cstiles">'+tile(L("Beginn"),first?hm(first.t):"")+tile(cap(L("Szenen")),scenes?String(scenes):"")+tile("Pages",pg)+tile("Screen",scr)+tile(L("Komparsen"),ex)+'</div>'+csOrderRows(rows,date)+'</section>'}
 
 /* open or close all locations */
+/* search field opens from the magnifier */
+document.addEventListener("click",e=>{const b=e.target.closest("[data-csqb]");if(!b)return;const q=document.getElementById("csq");if(!q)return;q.hidden=!q.hidden;b.setAttribute("aria-pressed",String(!q.hidden));if(!q.hidden)q.focus();else if(q.value){q.value="";q.dispatchEvent(new Event("input",{bubbles:true}))}});
+/* cast: cards or table (remembered on this device) */
+function csCastMode(){try{return localStorage.getItem("cscast:v1")==="t"}catch(_){return false}}
+function csApplyCast(){const d=document.getElementById("cs-cast");if(!d)return;const t=csCastMode();d.classList.toggle("cs-astbl",t);const b=d.querySelector("[data-cstview]");
+  if(b)b.innerHTML=(t?CSI.cards:CSI.table)+'<span>'+esc(L(t?"Als Karten":"Als Tabelle"))+'</span>'}
+document.addEventListener("click",e=>{if(!e.target.closest("[data-cstview]"))return;try{localStorage.setItem("cscast:v1",csCastMode()?"c":"t")}catch(_){}csApplyCast()});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-csall]");if(!b)return;const ds=[...b.closest("details,section").querySelectorAll("details.csloc")];const open=!ds.every(d=>d.open);ds.forEach(d=>d.open=open)});
 /* ---------- render ---------- */
 const VIEWS={my:()=>renderMy(),plan:()=>renderPlan(),dispo:()=>renderDispo(),loc:()=>renderLoc(),crew:()=>renderCrew(),script:()=>renderScript(),info:()=>renderInfo()};

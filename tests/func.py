@@ -434,6 +434,11 @@ async def owner_tests(p, port):
           const keep=S.dispos;S.dispos=[{date:sh[0],cs:{prevision:{title:'PREVISION - D2 Extras: 12 Pages: 3 5/8 / Time Scree 03:30',rows:[{t:'09:15',sc:'12',set:'OFFICE'}]}}}];const h=csPrevHTML(sh[1]),h0=csPrevHTML(sh[0]);S.dispos=keep;
           return h.includes('09:15')&&h.includes('03:30')&&h.includes('3 5/8')&&h.includes('data-scene="12"')&&h0===''})()""")
         check("Callsheet: Vorschau erscheint beim Folgetag", pvw in (None, True), pvw, public=True)
+        ctv = await E("""(()=>{if(typeof renderCS!=='function')return null;const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;localStorage.removeItem('cscast:v1');
+          const x={date:d.date,cs:{cast:[{no:'1',role:'BAX',actor:'X'}]}};const w=document.createElement('div');w.id='view';const old=document.getElementById('view');old.id='view0';document.body.appendChild(w);w.innerHTML=renderCS(x,d);
+          const a=w.querySelector('#cs-cast').classList.contains('cs-astbl');w.querySelector('[data-cstview]').click();const b=w.querySelector('#cs-cast').classList.contains('cs-astbl');
+          const ic=w.querySelectorAll('.csjb button svg').length>0&&w.querySelectorAll('.cssec>summary .csexp').length>0;w.remove();old.id='view';localStorage.removeItem('cscast:v1');return !a&&b&&ic})()""")
+        check("Callsheet: Cast als Karten oder Tabelle, Symbol-Leiste, Auf-/Zuklapp-Symbol", ctv in (None, True), ctv, public=True)
         cj = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d||typeof renderCS!=='function')return null;
           const x={date:d.date,cs:{times:{crewCall:'08:00'},order:{rows:[{t:'09:00',sc:'2',set:'A'}]},cast:[{no:'1',role:'BAX',actor:'X'}],calls:[{dept:'Camera',name:'Filip Z',t:'08:10'},{dept:'Sound',name:'Pat S',t:'08:00'}]}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,d);document.body.appendChild(w);const jb=[...w.querySelectorAll('[data-csj]')].map(b=>b.dataset.csj);
@@ -743,6 +748,10 @@ async def offline_test(p, port):
     check("Offline: Drehplan zeigt Szenen", await E("(()=>{const d=S.days.find(d=>d.id===S.day)||{};const sc=((d.items||[]).find(i=>i.sc)||{}).sc;return !!sc&&document.getElementById('view').innerText.includes(String(sc).split(/[ ,\\/]/)[0])})()"))
     await E("S.tab='today';render()"); await pg.wait_for_timeout(300)
     check("Offline: Hinweis «offline» auf Today", "offline" in (await E("document.getElementById('view').innerText")).lower())
+    await E("offBar&&offBar()"); await pg.wait_for_timeout(100)
+    check("Offline: Leiste «Offline – Stand von …» auf jeder Seite", await E("(()=>{S.tab='plan';render();offBar();const b=document.getElementById('offbar');return !!b&&/offline/i.test(b.textContent)&&/\\d\\d:\\d\\d/.test(b.textContent)})()"))
+    fs = await E("(()=>{localStorage.setItem('fsize:v1','l');fsApply();const a=document.documentElement.classList.contains('fs-l');localStorage.setItem('fsize:v1','n');fsApply();return a&&!document.documentElement.classList.contains('fs-l')})()")
+    check("Schriftgrösse Normal/Gross umschaltbar", fs)
     await b.close()
 
 
