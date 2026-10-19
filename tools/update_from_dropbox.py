@@ -1426,7 +1426,7 @@ def main():
             if d.get("kind") == "shoot" and m: shoot[int(m.group(1))] = d.get("date")
         for f in sorted(pick_sides(files), key=lambda f: f["name"]):
             k, pg = _pdf_pages(dbx, f, spc); used.add(k); WANT.update(pg)
-            if not pg: continue
+            # no pages yet (picture budget of this run used up, e.g. after a folder was renamed): the button opens the PDF anyway
             nm = f["name"].split("/")[-1]
             m = re.search(r"(?i)DT\s*#?\s*(\d+)", nm)
             date = sides_date(nm) or (shoot.get(int(m.group(1))) if m else "") or ""
@@ -1444,7 +1444,7 @@ def main():
         if ras != (meta.get("ra") or []): meta["ra"] = ras; changed = True
         spc = {k: v for k, v in spc.items() if k in used}
         if spc != (meta.get("sidesPages") or {}): meta["sidesPages"] = spc; changed = True
-        print("::notice::Sides: %d · Gefährdungsbeurteilungen: %d · Callsheet-Seiten: %d" % (len(sides), len(ras), sum(1 for d in dispos.values() if d.get("pg"))))
+        print("::notice::Callsheets: %d · Sides: %d (%d mit Seitenbildern) · Gefährdungsbeurteilungen: %d · Callsheet-Seiten: %d" % (len(dispos), len(sides), sum(1 for x in sides if x.get("pg")), len(ras), sum(1 for d in dispos.values() if d.get("pg"))))
     except Exception as e: print("::warning::Sides/Callsheet-Seiten nicht erzeugt: " + type(e).__name__)
     if dispos or data.get("dispos"): data["dispos"] = sorted(dispos.values(), key=lambda d: d.get("date", ""))
 
