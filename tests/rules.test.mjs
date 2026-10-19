@@ -76,6 +76,12 @@ await check("Einstellungen: Owner darf ändern", assertSucceeds(setDoc(doc(as("o
 await check("Einstellungen: Admin ohne «Einstellungen» nicht", assertFails(setDoc(doc(as("admin"), "config/app"), { langs: ["de"] }, { merge: true })));
 await check("Einstellungen: Crew nicht", assertFails(setDoc(doc(as("crew"), "config/app"), { langs: ["de"] }, { merge: true })));
 await check("Geräte: eigene Geräteliste darf man selbst nachführen", assertSucceeds(updateDoc(doc(as("crew"), "members/" + U.crew[0]), { "devs.abc": "app-ios|1" })));
+// gesperrte Person: keine Rollenrechte mehr, keine Selbst-Einladung
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "members/" + U.power[0]), { active: false, email: U.power[1], name: "power" }); });
+await check("Gesperrt: Rollenrechte gelten nicht mehr (Rolle bearbeiten)", assertFails(setDoc(doc(as("power"), "roles/crew"), { name: "Crew", perms: ["view.plan"] })));
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "members/" + U.power[0]), { active: true, email: U.power[1], name: "power" }); });
+await check("Aktiv: dieselbe Rollenänderung geht wieder", assertSucceeds(setDoc(doc(as("power"), "roles/crew"), { name: "Crew", perms: ["view.plan"] })));
+await check("Einladung: niemand lädt sich selbst ein", assertFails(setDoc(doc(as("power"), "invites/" + U.power[1]), { name: "x", addedAt: 1 })));
 await check("Einstellungen: öffentlicher Teil ohne Anmeldung lesbar", assertSucceeds(getDoc(doc(anon, "config/app"))));
 await check("Links (Motivliste, Karte, Chat): ohne Anmeldung nicht lesbar", assertFails(getDoc(doc(anon, "config/private"))));
 await check("Links: nicht eingeladene Person nicht", assertFails(getDoc(doc(as("stranger"), "config/private"))));

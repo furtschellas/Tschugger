@@ -29,13 +29,13 @@ service cloud.firestore {
     // canAny([..]): mindestens eine der Berechtigungen (eine Liste statt vieler einzelner can(..) || can(..))
     function canAny(ps) {
       return isOwner() || (isAdmin() && adminHasAny(ps))
-        || (verified() && hasRole() && rolePerms().hasAny(ps));
+        || (verified() && hasRole() && isMember() && rolePerms().hasAny(ps));   // gesperrte oder entfernte Personen: keine Rollenrechte mehr
     }
     function can(p) { return canAny([p]); }
     // wer Benutzende oder Rollen sieht (dieselbe Liste an mehreren Stellen)
     function seesUsers() { return isAdmin() || canAny(['users.view', 'users.edit', 'roles.assign', 'roles.edit', 'roles.view']); }
     // Catering: wer eine Rolle hat, deren Kennung «cater» enthält (z. B. catering)
-    function isCatering() { return verified() && hasRole() && myRole().matches('.*cater.*'); }
+    function isCatering() { return verified() && hasRole() && isMember() && myRole().matches('.*cater.*'); }
     function isMember() {
       return signedIn() && exists(d('members', request.auth.uid)) && get(d('members', request.auth.uid)).data.active == true;
     }
@@ -123,7 +123,7 @@ service cloud.firestore {
     match /invites/{email} {
       allow read: if canAny(['users.view', 'users.invite', 'contacts.extra']);
       allow delete: if can('users.invite');
-      allow create: if canAny(['users.invite', 'users.requests']) && only(['name', 'role', 'addedAt']);
+      allow create: if canAny(['users.invite', 'users.requests']) && only(['name', 'role', 'addedAt']) && email != myEmail();   // niemand lädt sich selbst ein
       allow update: if canAny(['users.invite', 'users.edit']) && only(['name', 'role', 'addedAt']);
       allow get: if verified() && myEmail() == email;
     }
