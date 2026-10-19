@@ -70,7 +70,7 @@ function ppContact(v){
   let b=mkDialog("ppcbox",null,{replace:true});
   if(!vok("phone"))phone="";if(!vok("email"))email="";const tel=telNum(phone);
   b.innerHTML='<div class="a2box mbox"><h3>'+esc(name)+'</h3>'+(role||(dept&&dept!=="user")?'<p class="ghint">'+esc([role,dept!=="user"?dept:""].filter(Boolean).join(" · "))+'</p>':'')+
-    '<div class="ppcl">'+(phone?'<a class="gbtn" href="tel:'+esc(tel)+'">📞 '+esc(phone)+'</a><a class="gbtn sec" href="sms:'+esc(tel)+'">💬 SMS</a>':'')+(email?'<a class="gbtn sec" href="mailto:'+esc(email)+'">✉ '+esc(email)+'</a>':'')+'</div>'+
+    '<div class="ppcl">'+(phone?'<a class="gbtn" href="tel:'+esc(tel)+'">'+(window.CSI?CSI.phone:'')+' '+esc(phone)+'</a><a class="gbtn sec" href="sms:'+esc(tel)+'">💬 SMS</a>':'')+(email?'<a class="gbtn sec" href="mailto:'+esc(email)+'">✉ '+esc(email)+'</a>':'')+'</div>'+
     '<div class="a2b">'+dlgBtn("lnk",'data-ppcx',"Schliessen")+'</div></div>';
   b.addEventListener("click",e=>{if(e.target===b||e.target.closest("[data-ppcx]"))b.remove()});
   document.body.appendChild(b);
