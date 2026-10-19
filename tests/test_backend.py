@@ -409,12 +409,12 @@ _devs = _P.push_devices()
 _P.DEVS, fsadmin.list_docs, fsadmin.query_since = _odevs, _olist, _oq
 check("Push: nach Schlüsselwechsel alle Geräte neu gelesen", _calls == ["full"] and [d[0] for d in _devs] == ["d2"], (_calls, _devs))
 
-_cf = [{"name": n, "modified": ""} for n in ("00_Callsheets/DT1/TSCHUGGER_DT1_Tuesday, 20.10.2026.pdf", "00_Callsheets/DT1/RA_Tschugger_Tigerblood_Bild186_2026-10-20.pdf",
-       "00_Callsheets/DT1/TSCHUGGER_Sides_DT1_Tuesday, 20.10.2026_Sc2.pdf", "00_Callsheets/SIDES/TSCHUGGER_DT3_Saturday, 24.10.2026.pdf", "06_Callsheets/DT2/TSCHUGGER_DT2.pdf",
+_cf = [{"name": n, "modified": ""} for n in ("00_Callsheets/DT1/TBO_Dispo_DT01_20261020.pdf", "00_Callsheets/DT1/TSCHUGGER_Floorplans_DT1_20.10.2026.pdf", "00_Callsheets/DT1/RA_Tschugger_Tigerblood_Bild186_2026-10-20.pdf",
+       "00_Callsheets/DT1/TSCHUGGER_Sides_DT1_Tuesday, 20.10.2026_Sc2.pdf", "00_Callsheets/SIDES/TSCHUGGER_DT3_Saturday, 24.10.2026.pdf", "06_Callsheets/DT2/Callsheet_DT2.pdf",
        "00_Callsheets/DT2/Capture.png", "00_Callsheets/_Archiv/old.pdf")]
 _nm = lambda l: sorted(f["name"].split("/")[-1] for f in l)
 check("Callsheets: Ordner 00_/06_, Sides und Gefährdungsbeurteilungen getrennt",
-      _nm(U.pick_dispos(_cf)) == ["TSCHUGGER_DT1_Tuesday, 20.10.2026.pdf", "TSCHUGGER_DT2.pdf"]
+      _nm(U.pick_dispos(_cf)) == ["Callsheet_DT2.pdf", "TBO_Dispo_DT01_20261020.pdf"]
       and _nm(U.pick_sides(_cf)) == ["TSCHUGGER_DT3_Saturday, 24.10.2026.pdf", "TSCHUGGER_Sides_DT1_Tuesday, 20.10.2026_Sc2.pdf"]
       and _nm(U.pick_ra(_cf)) == ["RA_Tschugger_Tigerblood_Bild186_2026-10-20.pdf"], (_nm(U.pick_dispos(_cf)), _nm(U.pick_sides(_cf)), _nm(U.pick_ra(_cf))))
 

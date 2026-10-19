@@ -774,9 +774,12 @@ def _base(f): return low(f).rsplit("/", 1)[-1]
 def _is_sides(f): return "/sides/" in low(f) or re.search(r"(^|[_ -])sides([_ -]|$)", _base(f)) is not None
 def _is_ra(f): return re.match(r"ra[_ -]", _base(f)) is not None or re.search(r"gef(ä|ae)hrdungsbeurteilung|risk.?assessment", _base(f)) is not None
 
+def _is_fp(f): return re.search(r"floorplan|grundriss|lageplan|access.?map", _base(f)) is not None
+
 def pick_dispos(files):
-    """callsheets – not the «Sides» (script pages of a day) and not the risk assessments (RA_…)"""
-    return [f for f in files if _cs(f) and not _is_sides(f) and not _is_ra(f)]
+    """callsheets («TBO_Dispo_DT01_20261020.pdf», «…Callsheet…») – not the Sides, floorplans or risk assessments of a day folder"""
+    return [f for f in files if _cs(f) and not _is_sides(f) and not _is_ra(f) and not _is_fp(f)
+            and re.search(r"dispo|call.?sheet|tagesdispo", _base(f))]
 
 def pick_sides(files):
     return [f for f in files if _cs(f) and _is_sides(f) and not _is_ra(f)]
