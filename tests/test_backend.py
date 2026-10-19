@@ -358,6 +358,12 @@ _days = [{"kind": "shoot", "short": "D1", "items": [{"sc": "186pt1A", "t": "08:0
 U.u2_also_add(_days); U.u2_also_strip(_days); U.u2_also_add(_days); U.u2_also_add(_days)
 check("2nd Unit: Szene 186pt1A an Tag 1 zusätzlich (1st Unit bleibt, nur einmal)",
       [i["sc"] for i in _days[0]["unit2"]["items"]] == ["186pt1A"] and len(_days[0]["items"]) == 2 and _days[0]["unit2"]["src"] == "also", _days)
+_days2 = [{"kind": "shoot", "short": "D1", "items": [{"sc": "186pt1A", "t": "08:00"}]}]
+_sh = {"g1": {"no": 1, "u2": {"hours": "07:00-17:00", "items": [{"t": "07:00", "n": "Rigging"}, {"sc": "186 pt1A", "t": "09:30", "set": "Party"}, {"sc": "99", "t": "12:00"}]}}}
+U.u2_also_add(_days2, _sh)
+check("2nd Unit: 186pt1A mit der genauen Planung aus dem Sheet (Setups ja, andere Szenen nein)",
+      [(i.get("sc"), i.get("t")) for i in _days2[0]["unit2"]["items"]] == [(None, "07:00"), ("186 pt1A", "09:30")] and _days2[0]["unit2"].get("hours") == "07:00-17:00"
+      and _days2[0]["items"][0]["t"] == "08:00", _days2)
 U.fix_units(_days, ud={"unit2": {5}, "unit3": set()})
 check("2nd Unit: zusätzliche Szene wandert nicht doppelt zur 1st Unit", len(_days[0]["items"]) == 2, _days)
 
