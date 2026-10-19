@@ -93,6 +93,8 @@ async function fb(){
 async function fbInit(){
   const base="https://www.gstatic.com/firebasejs/"+FB_V+"/";
   const [app,auth,fs]=await withTimeout(Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]),20000,"firebase");
+  /* signed out on this device: the local Firebase copy (names, lists) is removed before Firebase opens it again */
+  try{if(localStorage.getItem("fsclear")){await new Promise(r=>{const q=indexedDB.deleteDatabase("firestore/[DEFAULT]/"+FB_CONFIG.projectId+"/main");q.onsuccess=q.onerror=q.onblocked=()=>r();setTimeout(r,1500)});localStorage.removeItem("fsclear")}}catch(_){}
   const a=app.initializeApp(FB_CONFIG);
   /* data cache on the device (per signed-in person): reopening the app reads only what changed instead of everything (Firebase quota);
      if the browser cannot keep it, Firebase falls back to memory by itself */

@@ -231,6 +231,9 @@ service cloud.firestore {
       allow create: if verified() && crew()
         && only(['by', 'at', 'op', 'col', 'id', 'sum'])
         && request.resource.data.by == myEmail()
+        && request.resource.data.at == request.time   // Zeit vom Server, nicht frei wählbar
+        && request.resource.data.op in ['set', 'update', 'delete', 'add', 'error']
+        && request.resource.data.col in ['roles', 'userroles', 'admins', 'owners', 'invites', 'members', 'menus', 'config', 'broadcasts', 'starts', 'requests', 'app']
         && request.resource.data.sum is string && request.resource.data.sum.size() <= 300
         && request.resource.data.id is string && request.resource.data.id.size() <= 120;
       allow read: if isAdmin() || can('audit.view');

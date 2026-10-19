@@ -709,7 +709,7 @@ def claude(parts, task, max_tokens=32000):
             return v
         except Truncated: raise
         except Exception as e:
-            log("Claude-Versuch", attempt + 1, "fehlgeschlagen:", str(e)[:160])
+            log("Claude-Versuch", attempt + 1, "fehlgeschlagen:", type(e).__name__, getattr(getattr(e, "response", None), "status_code", ""))
             time.sleep(10 * (attempt + 1))
     raise RuntimeError("Claude-API: keine gültige Antwort")
 
@@ -1579,7 +1579,7 @@ def main():
             try: res = claude([{"type": "text", "text": "MOTIVLISTE (Tabelle, Zellen mit | getrennt, Links in <…>):\n" + txt}],
                 "Erzeuge daraus ein JSON-Array gemäss Collection \"locations\" (Feld \"id\" = \"l00\", \"l01\" …). Bestehende Einträge (für fehlende Maps-Links übernehmen): %s"
                 % json.dumps(strip_ids(data.get("locations")), ensure_ascii=False)[:40000], 32000)
-            except Exception as e: res = None; log("Motivliste nicht übernommen:", str(e)[:120])
+            except Exception as e: res = None; log("Motivliste nicht übernommen:", type(e).__name__)
             oldn = len(data.get("locations") or [])
             if isinstance(res, list) and (len(res) >= int(oldn * 0.8) or sheet != (oldkind.get("locations") or {}).get("link")):
                 for i, d in enumerate(res): d["order"] = i; d["id"] = "l%02d" % i
@@ -1643,4 +1643,8 @@ if __name__ == "__main__":
         raise
     except Exception as e:
         # only the error type and a short text – never file contents (public repository)
-        status("error", (type(e).__name__ + ": " + str(e))[:160]); raise
+        # error text can quote file names or contents: only the type and where in our code it happened
+        import traceback
+        fr = [f for f in traceback.extract_tb(e.__traceback__) if "/tools/" in f.filename.replace("\\", "/")]
+        where = (" (%s:%d)" % (os.path.basename(fr[-1].filename), fr[-1].lineno)) if fr else ""
+        status("error", (type(e).__name__ + where)[:160]); raise
