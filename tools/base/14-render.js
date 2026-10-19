@@ -1,7 +1,7 @@
 /* ---------- render ---------- */
 const VIEWS={my:()=>renderMy(),plan:()=>renderPlan(),dispo:()=>renderDispo(),loc:()=>renderLoc(),crew:()=>renderCrew(),script:()=>renderScript(),info:()=>renderInfo()};
 /* main topics the main admin has switched on (website: window.TABSON); the script tab also needs the script function */
-const ALLTABS=["today","plan","dispo","loc","crew","script","info"];
+const ALLTABS=["today","dispo","plan","loc","crew","script","info"];
 function tabOrder(){const o=Array.isArray(window.TABORDER)?window.TABORDER.filter(x=>ALLTABS.includes(x)):[];return o.concat(ALLTABS.filter(x=>!o.includes(x)))}
 /* role-based visibility (website): areas a role does not allow are hidden; in the artifact everything is visible */
 const vok=k=>{try{return typeof window.viewOK!=="function"||window.viewOK(k)}catch(_){return true}};
