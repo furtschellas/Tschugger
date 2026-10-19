@@ -106,7 +106,7 @@ async function onAcctClick(e){
     catch(err){console.error(err);msg.textContent=errText(err)}b.disabled=false}
   else if(b.dataset.ac==="admin"){s.hidden=true;S.tab="admin";window.scrollTo(0,0);render()}
   else if(b.dataset.ac==="signout"){b.disabled=true;s.hidden=true;S.tab="plan";store("tab","plan");
-    try{const {A,auth}=await fb();await A.signOut(auth)}catch(err){console.error(err)}
+    try{const {A,auth}=await fb();await A.signOut(auth)}catch(err){console.error(err)}try{localStorage.setItem("fsclear","1")}catch(_){}
     /* straight to the sign-in screen (e-mail + password) */
     ME=null;MYPERMS=[];{const w=document.getElementById("welcome");if(w)w.remove();WELCOME_OPEN=false;if(TOUR.el){TOUR.el.remove();TOUR.el=null}}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();render();showGate("login")}
 }

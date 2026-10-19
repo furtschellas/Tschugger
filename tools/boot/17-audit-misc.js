@@ -4,7 +4,8 @@ function auditSum(col,data,op){
   if(op==="delete")return "";
   if(col==="broadcasts")return data&&data.c?L("Nachricht gesendet"):(data&&data.sent?L("versendet"):"");
   if(!data||typeof data!=="object")return "";
-  const out=[];for(const [k,v] of Object.entries(data)){if(["at","by","addedAt","joinedAt","lastSeen","c"].includes(k))continue;if(v&&typeof v==="object"&&!Array.isArray(v)&&(v._methodName||v.constructor&&/FieldValue|Sentinel/.test(v.constructor.name)))continue;
+  const keysOnly=col==="members"||col==="requests"; /* profile values (phone, address …) never into the log, only which fields changed */
+  const out=[];for(const [k,v] of Object.entries(data)){if(["at","by","addedAt","joinedAt","lastSeen","c"].includes(k))continue;if(keysOnly){out.push(k.split(".")[0]);continue}if(v&&typeof v==="object"&&!Array.isArray(v)&&(v._methodName||v.constructor&&/FieldValue|Sentinel/.test(v.constructor.name)))continue;
     let s=Array.isArray(v)?v.join(", "):typeof v==="object"?JSON.stringify(v):String(v);if(s.length>60)s=s.slice(0,57)+"…";out.push(k+": "+s)}
   return out.join(" · ").slice(0,280);
 }

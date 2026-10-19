@@ -9,10 +9,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# nur lesen; Pages-Rechte bekommt allein der Veröffentlichen-Job
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -26,7 +25,7 @@ jobs:
       rules: ${{ steps.f.outputs.rules }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad   # v3.0.4, fest (fremde Action)
         id: f
         with:
           filters: |
@@ -174,6 +173,10 @@ jobs:
     needs: [changes, test, rules]
     if: always() && needs.changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.rules.result == 'success' || needs.rules.result == 'skipped')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.d.outputs.page_url }}

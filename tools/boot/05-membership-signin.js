@@ -33,7 +33,7 @@ async function checkMember0(){
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
   MEMBER=m;return "ok";
 }
-function clearLocal(){try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();OWNSUB=null}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();MENUSUB=null}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{localStorage.removeItem(memKey());localStorage.removeItem("dk:v1");localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
+function clearLocal(){try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();OWNSUB=null}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();MENUSUB=null}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{sessionStorage.removeItem("chatmsgs");if(typeof CHAT!=="undefined")CHAT.msgs=[];if(window.caches)caches.delete("crew-vc").catch(()=>{})}catch(_){}try{localStorage.removeItem(memKey());localStorage.removeItem("dk:v1");localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}S.days=[];S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
 /* ---- sign-in screen ---- */
 let AUTHMODE="login";
 const errText=e=>{const c=(e&&e.code)||"";
@@ -179,7 +179,7 @@ async function onGateClick(e){
   const m=e.target.closest("[data-gmode]");if(m){showGate(m.dataset.gmode);return}
   const a=e.target.closest("[data-gact]");if(!a)return;
   const {A,auth}=await fb();
-  if(a.dataset.gact==="signout"){REQ={sent:false,err:""};await A.signOut(auth)}
+  if(a.dataset.gact==="signout"){REQ={sent:false,err:""};await A.signOut(auth);try{localStorage.setItem("fsclear","1")}catch(_){}}
   else if(a.dataset.gact==="resend"){a.disabled=true;await sendVerify(auth.currentUser,true);a.disabled=false}
   else if(a.dataset.gact==="retry"){if(auth.currentUser)afterSignIn(auth.currentUser)}
   else if(a.dataset.gact==="request"){a.disabled=true;await sendRequest()}

@@ -153,6 +153,9 @@ await check("Sicherheit: Menüs nur Catering und Admins", assertFails(setDoc(doc
 await check("Sicherheit: Push-Gerät nur unter eigener Kennung", assertFails(setDoc(doc(as("crew"), "push/uOther_abcdefghij"), { c: "x", at: 1 })));
 await check("Sicherheit: Nachricht an alle – Empfänger nachträglich nicht änderbar", assertFails(updateDoc(doc(as("power"), "broadcasts/b0"), { c: "y" })));
 await check("Sicherheit: Protokoll nur im eigenen Namen", assertFails(addDoc(collection(as("crew"), "audit"), { by: "other@test.ch", at: 1, op: "x", col: "x", id: "x", sum: "x" })));
+await check("Protokoll: eigener Eintrag mit Serverzeit geht", assertSucceeds(addDoc(collection(as("crew"), "audit"), { by: "crew@test.ch", at: serverTimestamp(), op: "set", col: "menus", id: "x", sum: "x" })));
+await check("Protokoll: selbst gewählte Zeit nicht", assertFails(addDoc(collection(as("crew"), "audit"), { by: "crew@test.ch", at: 1, op: "set", col: "menus", id: "x", sum: "x" })));
+await check("Protokoll: nur bekannte Aktionen und Bereiche", assertFails(addDoc(collection(as("crew"), "audit"), { by: "crew@test.ch", at: serverTimestamp(), op: "hack", col: "secret", id: "x", sum: "x" })));
 await check("Sicherheit: Protokolleinträge nicht änderbar", assertFails(updateDoc(doc(as("owner"), "audit/a1"), { sum: "y" })));
 
 
