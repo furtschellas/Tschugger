@@ -1087,4 +1087,16 @@ html body #view details.csloc>summary .csaddr .csi{width:12px;height:12px;flex:0
 /* «Mein Drehtag 1 · date» as title of the red box */
 html body #view .csview .csme .csme-h{font-family:var(--f-display);text-transform:uppercase;font-weight:800;letter-spacing:.02em;margin:0 0 6px;font-size:clamp(20px,2.6vw,30px);line-height:1.1;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px}
 html body #view .csview .csme .csme-h span{font-family:var(--f-body,inherit);font-size:clamp(13px,1.7vw,20px);font-weight:400;color:var(--ink);letter-spacing:0;text-transform:none}
+
+/* location: code and name on one line, icons right; address and scenes below, left aligned */
+html body #view details.csloc>summary{display:block}
+html body #view details.csloc .csl1{display:flex;align-items:center;gap:8px}
+html body #view details.csloc .csl1 .dn{flex:1 1 auto;min-width:0}
+html body #view details.csloc .csl1 .csloc-i{margin-left:auto}
+html body #view details.csloc>summary .csaddr{display:block;margin:4px 0 0;width:max-content;max-width:100%}
+html body #view details.csloc>summary .csloc-s{margin-top:4px}
+/* cast folded: role numbers */
+html body #view .cssec>summary .csnos>span.csno{display:inline-block;min-width:20px;text-align:center;margin-right:4px;padding:0 4px;border:1px solid var(--rule);border-radius:5px;font-family:var(--f-mono,monospace);font-size:11.5px;color:var(--ink)}
+
+html body #view .csview details.csloc .csl1>*{order:0!important}html body #view .csview details.csloc .csl1>.dn{flex:1 1 auto!important;min-width:0}html body #view .csview details.csloc .csl1>.csloc-i{margin-left:auto!important}
 </style>
