@@ -864,9 +864,9 @@ html body #view .csview .cscall-r{display:grid;grid-template-columns:50px 48px m
 html body #view .csview .cscall-r .t{min-width:0;font-family:var(--f-mono,monospace);font-size:13px;white-space:nowrap}
 html body #view .csview .cscall-r .t i{font-style:normal;font-size:10px;color:var(--muted);margin-left:2px}
 html body #view .csview .cscall-r .cp{display:flex}html body #view .csview .cscall-r .csplace{min-width:0;width:100%;box-sizing:border-box;padding:0 3px;white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:clip}
-html body #view .csview .cscall-r .cw{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body #view .csview .cscall-r .ccw{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 html body #view .csview .cscall-r.mine{padding:3px 6px}
-@media (max-width:760px){html body #view .csview .cscall-r{grid-template-columns:46px 40px minmax(0,1fr);gap:0 6px}html body #view .csview .cscall-r .cw{white-space:normal}html body #view .csview .cscall-r .w small{display:block;line-height:1.15}}
+@media (max-width:760px){html body #view .csview .cscall-r{grid-template-columns:46px 40px minmax(0,1fr);gap:0 6px}html body #view .csview .cscall-r .ccw{white-space:normal}html body #view .csview .cscall-r .w small{display:block;line-height:1.15}}
 /* phone: nothing wider than the screen */
 html body #view .csview,html body #view .csview *{max-width:100%}html body #view .csview{overflow-wrap:anywhere}
 html body #view .csview .cs-tbl .dtbl{max-width:none}
@@ -875,4 +875,31 @@ html body #view .csview .cs-tbl .dtbl{max-width:none}
 html body #view .csview .cskey>div{white-space:normal;overflow:visible}
 html body #view .csview .cskey>div{display:grid;grid-template-columns:36% minmax(0,1fr) auto;gap:0 8px}
 html body #view .csview .cskey>div a{white-space:nowrap}
+
+/* team of the day: role | name as call link */
+html body #view .csview .cskey>div{grid-template-columns:36% minmax(0,1fr)}
+/* headings never wider than the screen */
+html body #view summary .dh,html body #view .dh{min-width:0;overflow-wrap:anywhere}
+html body #view .cssec>summary .dh{flex:1 1 auto}
+/* shooting order: duration next to I/E, small open/close symbol, compact on the phone */
+html body #view .csscd>summary::after{content:none;display:none}
+html body #view .csscd>summary{flex-wrap:nowrap;align-items:center}
+html body #view .csscd>summary .l1{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px}
+html body #view .csscd>summary .l1 .set{flex-basis:100%}
+html body #view .csscd .csdur{font-family:var(--f-mono,monospace);font-size:12px;color:var(--muted);margin:0;white-space:nowrap}
+.csexp.sm{width:24px;height:24px;margin-left:auto;border-width:1.2px}.csexp.sm svg{width:12px;height:12px}
+.csscd[open]>summary .csexp.sm{background:var(--accent-soft)}
+@media (max-width:760px){
+ html body #view .csview .csorder>li.row{margin:0 0 4px;padding:0;min-height:0;gap:6px}
+ html body #view .csview .csorder>li.row>.t{font-size:12.5px;padding-top:6px;width:42px;min-width:42px}
+ html body #view .csview .csorder>li.row>.sc{padding:6px 9px;border-radius:9px}
+ html body #view .csview .csorder .csscd .l1 .scn{font-size:19px;line-height:1.1}
+ html body #view .csview .csorder .csscd .l1 .ie{font-size:11px;padding:1px 5px}
+ html body #view .csview .csorder .csscd .l1 .set{font-size:12.5px;line-height:1.2}
+ html body #view .csview .csorder>li.ev{margin:0 0 2px}
+ html body #view .csview .csorder>li.ev>.what{padding:2px 0 2px 9px;font-size:13px;line-height:1.3}
+ html body #view .csview .csorder>li.ev>.t{padding-top:2px}
+}
+/* cast table: the number stays when scrolling sideways */
+html body #view .csview #cs-cast.cs-astbl .dtbl th:first-child,html body #view .csview #cs-cast.cs-astbl .dtbl td:first-child{position:sticky;left:0;z-index:1;background:var(--sheet);box-shadow:1px 0 0 var(--rule)}
 </style>
