@@ -333,7 +333,7 @@ async def owner_tests(p, port):
           const chg=()=>vis(v.querySelector('.chgtxt'));const c1=chg();
           v.querySelector('[data-pv="g"]').click();const c0=chg();v.querySelector('[data-pv="inf"]').click();const d0=vis(v.querySelector('.sc .bdt'));
           S.pv=pv;store('pv',JSON.stringify(pv));pvApply();chgSave(o);S.meta.bd=keep;render();return {keys,txt,u,sep,last,c1,c0,d0}})()""")
-        check("Drehplan: Szenen-Details als Fliesstext zuunterst (« // »), runder Info-Knopf und Änderungen-Knopf",
+        check("Drehplan: Szenen-Details als Fliesstext über der Adresse (« // »), runder Info-Knopf und Änderungen-Knopf",
               ct in (None, {"keys": "i,d,c,inf,a,b,g", "txt": "FX: Double BJCrew: LifeguardProps: Knife, Stone (soft, dummy)Mup/Hair: Mike dyingNotes: a / b", "u": True, "sep": '" // "', "last": True, "c1": True, "c0": False, "d0": False}), ct, public=True)
         pko = await E("""(async()=>{if(typeof scriptData==='function')await scriptData().catch(()=>{});if(!window.SCRIPT&&typeof SCRIPT==='undefined')return null;S.tab='script';S.sq='';const r={};
           for(const m of ['sc','day','loc','person','all']){S.sqm=m;render();r[m]=document.querySelectorAll('#view [data-sqpick]').length>0}
