@@ -434,6 +434,12 @@ async def owner_tests(p, port):
           const keep=S.dispos;S.dispos=[{date:sh[0],cs:{prevision:{title:'PREVISION - D2',rows:[{t:'09:15',sc:'12',set:'OFFICE'}]}}}];const h=csPrevHTML(sh[1]),h0=csPrevHTML(sh[0]);S.dispos=keep;
           return h.includes('PREVISION - D2')&&h.includes('data-scene="12"')&&h0===''})()""")
         check("Callsheet: Vorschau erscheint beim Folgetag", pvw in (None, True), pvw, public=True)
+        cj = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d||typeof renderCS!=='function')return null;
+          const x={date:d.date,cs:{times:{crewCall:'08:00'},order:{rows:[{t:'09:00',sc:'2',set:'A'}]},cast:[{no:'1',role:'BAX',actor:'X'}],calls:[{dept:'Camera',name:'Filip Z',t:'08:10'},{dept:'Sound',name:'Pat S',t:'08:00'}]}};
+          const w=document.createElement('div');w.innerHTML=renderCS(x,d);document.body.appendChild(w);const jb=[...w.querySelectorAll('[data-csj]')].map(b=>b.dataset.csj);
+          const q=w.querySelector('#csq');q.value='filip';q.dispatchEvent(new Event('input',{bubbles:true}));const vis=[...w.querySelectorAll('.cscall-r')].filter(r=>!r.hidden).map(r=>r.textContent);
+          const castHidden=w.querySelector('#cs-cast').hidden;w.remove();return {jb:jb.join(','),vis:vis.length===1&&vis[0].includes('Filip'),castHidden}})()""")
+        check("Callsheet: Sprungleiste und Suche (nur Treffer sichtbar)", cj in (None, {"jb": "zeiten,order,cast,calls", "vis": True, "castHidden": True}), cj, public=True)
         # app settings: links that were not loaded are never written (else empty fields deleted them for everyone)
         pv = await E("""(async()=>{const keep=window.PRIVOK;window.PRIVOK=false;const before=JSON.stringify(window.__db['config/private']||null);
           const ll=loadLangs;loadLangs=async()=>{};S.tab='admin';ADM.sub='set';render();await new Promise(x=>setTimeout(x,300));

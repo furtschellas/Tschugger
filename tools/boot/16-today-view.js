@@ -102,7 +102,9 @@ VIEWS.today=function(){
     const gm=(o,de)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+encodeURIComponent(o):"")+"&destination="+encodeURIComponent(de);
     const r=back?{h:gm(dest,hotel),c:gm("",hotel),from:dest,to:hotel,back:1}:{h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest};   /* no origin = current location */
     return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify(r))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′")+(d.drive.km?'<small class="tkm"> · '+Math.round(d.drive.km)+' km</small>':'')+'</b><span>'+esc(L(back?"Rückfahrt":"Anfahrt"))+' ›</span></button>'})():'';
-  h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';
+  /* my day from the callsheet (call, ride, my department) right below the tiles */
+  let mineCard="";try{if(dp&&dp.cs&&typeof csMine==="function"){const me2=csMe();const mn=csMine(dp.cs,me2);if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein Tag"))+' · Callsheet<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button></div>'+mn.join("")+'</div>'}}catch(_){}
+  h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
   /* from noon (or lunch, if earlier) on: the tiles of the next shooting day below (times, drive, weather) */
   try{const la=d.kind==="shoot"&&lunchAt(d),noon=+new Date(d.date+"T12:00:00"),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
     if(nd){const ndt=new Date(nd.date+"T12:00:00"),nt=[];

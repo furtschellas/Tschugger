@@ -244,7 +244,7 @@ function renderDispo(){
   /* read in structure (as the document): the new view; older callsheets keep the view below */
   if(x.cs&&typeof x.cs==="object"&&typeof renderCS==="function"){h+=renderCS(x,day)+sidesHTML(x.date)+raHTML(x.date);
     if(arr(x.pg).length||x.link)h+='<p class="csorig">'+(arr(x.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="bigbtn" data-cspg="'+esc(x.date)+'">'+L('Original-Callsheet ansehen')+' <small>'+x.pg.length+'</small></button> ':'')+
-      (x.link?'<a class="pillbtn" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer">'+L('In Dropbox öffnen')+'</a>':'')+'</p>';
+      (x.link?'<a class="pillbtn csbig" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer">'+L('In Dropbox öffnen')+'</a>':'')+'</p>';
     return h}
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>':'';
   h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date drow"><span>'+fmtDate(x.date)+(x.version?' · '+esc(x.version):'')+'</span>'+UNITBAR+'</div></div></div>';
