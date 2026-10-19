@@ -923,7 +923,7 @@ html body #view .csview .csme{margin:0 0 8px}
 html body #view .csview .cskey .csct{min-height:0}
 
 /* desktop: the time tiles always in one row over the whole width (text scales with the width) */
-@media (min-width:600px){
+@media (min-width:480px){
  html body #view .cstiles{flex-wrap:nowrap;gap:clamp(4px,.6vw,8px)}
  html body #view .cstiles>.dt{flex:1 1 auto;min-width:0;padding:5px clamp(6px,.9vw,12px)}
  html body #view .cstiles>.dt.cswx{flex:1.3 1 auto}
@@ -1017,4 +1017,26 @@ html body #view .cssec>summary .cscount>span{margin-right:12px}
 html body #view .cssec#cs-order>summary{flex-wrap:wrap}
 
 @media (max-width:519px){html body #view .cssec>summary .dh{flex:1 1 0;min-width:0}html body #view .cssec>summary>.csexp{order:1;margin-left:auto}}
+
+/* sun next to the date in the head line */
+html body #view .csview .dsp-head .cssun{display:inline-flex;align-items:center;gap:5px;margin-left:12px;font-family:var(--f-mono,monospace);font-size:clamp(13px,1.5vw,20px);color:var(--muted)}
+html body #view .csview .dsp-head .cssun .csi{width:1.05em;height:1.05em;color:var(--accent)}
+
+/* phone: time tiles much smaller (several rows allowed) */
+@media (max-width:479px){html body #view .cstiles{gap:4px;margin-top:6px}html body #view .cstiles>.dt{padding:2px 7px;border-radius:7px}
+ html body #view .cstiles>.dt .k{font-size:8.5px;letter-spacing:.05em}html body #view .cstiles>.dt .v{font-size:13px;line-height:1.2}
+ html body #view .cstiles>.dt.big .v{font-size:15px}html body #view .cstiles>.dt.cswx .ttile{padding:2px 7px}html body #view .cstiles>.dt.cswx .ttile b{font-size:14px}html body #view .cstiles>.dt.cswx .ttile span{font-size:9px}}
+
+/* phone: Crew Call to Wrap in one row, weather below */
+@media (max-width:479px){html body #view .cstiles{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+ html body #view .cstiles>.dt{min-width:0;padding:3px 5px}html body #view .cstiles>.dt .v{font-size:12.5px;white-space:nowrap}html body #view .cstiles>.dt.big .v{font-size:14px}
+ html body #view .cstiles>.dt .k{white-space:nowrap;overflow:hidden;text-overflow:clip}
+ html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:1/-1}}
+
+/* sun: in the head line on wider screens, next to the weather on the phone */
+html body #view .cstiles>.dt.cssunt{display:none}
+@media (max-width:479px){html body #view .csview .dsp-head .cssun{display:none}
+ html body #view .cstiles>.dt.cssunt{display:block;grid-column:span 2}
+ html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:span 3}
+ html body #view .cstiles>.dt.cswx .ttile{width:100%;height:100%;box-sizing:border-box;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}}
 </style>
