@@ -37,6 +37,7 @@ def main():
     data = U.dec_file(U.R / "data.enc.json") or {}
     scr = (U.dec_file(U.R / "script.enc.json") or {}).get("script", [])
     meta = data.get("meta") or {}
+    if "bm" not in meta: meta["bm"] = (U.dec_file(U.R / "media.enc.json") or {}).get("bm") or []
     days = [d for d in data.get("days") or [] if d.get("kind") == "shoot"]
     dbx = U.Dbx(); files = dbx.list_all()
     base = lambda n: (n or "").rsplit("/", 1)[-1]

@@ -13,8 +13,18 @@ async function getDataKey(){
   DATAKEY=await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["encrypt","decrypt"]);
   return DATAKEY;
 }
+/* the picture list of the galleries comes from its own file (media.enc.json), loaded in the background after the start */
+let MEDIAP=null;
+window.loadMedia=function(){if(MEDIAP)return MEDIAP;MEDIAP=(async()=>{try{
+    const r=await fetch("media.enc.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);
+    const enc=await r.json();const key=await getDataKey();const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct));
+    const bm=(JSON.parse(new TextDecoder().decode(pt)).bm)||[];
+    if(S.meta){S.meta.bm=bm;S.meta.bmLoaded=S.meta.bmh||"";MEMO.clear();saveCache();scheduleRender();try{setTimeout(()=>offlinePrep(false),2000)}catch(_){}}
+    return true}catch(err){console.warn("media",err&&err.message||err);return false}finally{MEDIAP=null}})();return MEDIAP};
 function applyData(d){
-  S.meta=d.meta||null;
+  const prev=S.meta;S.meta=d.meta||null;
+  /* the new data has no picture list: keep the one on this device when it is still the same, else fetch it in the background */
+  if(S.meta&&!Array.isArray(S.meta.bm)){if(prev&&Array.isArray(prev.bm)&&prev.bmLoaded&&prev.bmLoaded===S.meta.bmh){S.meta.bm=prev.bm;S.meta.bmLoaded=prev.bmLoaded}else setTimeout(()=>window.loadMedia(),300)}
   for(const [k,src] of [["days","days"],["crew","crew"],["locs","locations"],["places","places"],["dispos","dispos"],["prepro","prepro"]])S[k]=(CLEAN[k]||(x=>x))(arr(d[src]));
   MEMO.clear();saveCache();S.loaded=true;
   try{chgDetect()}catch(err){console.warn("changes",err)}

@@ -364,6 +364,10 @@ async def owner_tests(p, port):
               nw is None or (nw.get("xx") and nw.get("xxOff") and nw.get("alle") and nw.get("noshow") and nw.get("pdf") and nw.get("de", True) and nw.get("en", True)), nw, public=True)
         acp = await E("""(()=>{if(typeof showAcct!=='function'||!ME)return null;ACSUB='app';showAcct();const r=ACSUB==='pro';S.tab='today';render();return r})()""")
         check("Mein Konto öffnet immer im Profil", acp in (None, True), acp, public=True)
+        med = await E("""(()=>{if(typeof window.loadMedia!=='function')return 'fehlt';const keep=S.meta;const bm=[{f:'blk/x'}];
+          S.meta=Object.assign({},keep,{bm,bmh:'h1',bmLoaded:'h1'});const d={days:S.days,crew:S.crew,locations:S.locs,places:S.places,dispos:S.dispos,meta:Object.assign({},keep,{bmh:'h1'})};delete d.meta.bm;
+          applyData(d);const same=S.meta.bm===bm;S.meta=keep;MEMO.clear();render();return same})()""")
+        check("Start: Bilderliste der Galerien als eigene Datei, gleiche Liste bleibt ohne Nachladen", med in (None, True), med, public=True)
         gal = await E("""(()=>{if(typeof window.blkImg!=='function')return null;const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
           S.meta.blocking=[{name:'Scene_186',sc:['186'],url:'https://www.dropbox.com/x',media:[{t:'img',n:'allg',f:'blk/a',u:'u'},{t:'img',n:'teil1',f:'blk/b',u:'u',p:'186pt1'},{t:'img',n:'party',f:'blk/c',u:'u',p:'186pt2'}]}];
           const w=document.createElement('div');w.innerHTML=fpLinks([],blkFor('186pt1A'));document.body.appendChild(w);const a=w.querySelector('[data-blkg]');if(a)a.click();
