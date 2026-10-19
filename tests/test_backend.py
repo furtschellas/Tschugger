@@ -360,11 +360,20 @@ check("2nd Unit: Szene 186pt1A an Tag 1 zusätzlich (1st Unit bleibt, nur einmal
       [i["sc"] for i in _days[0]["unit2"]["items"]] == ["186pt1A"] and len(_days[0]["items"]) == 2 and _days[0]["unit2"]["src"] == "also", _days)
 _days2 = [{"kind": "shoot", "short": "D1", "items": [{"sc": "186pt1A", "t": "08:00"}]}]
 _sh = {"g1": {"no": 1, "u2": {"hours": "07:00-17:00", "items": [{"t": "07:00", "n": "Rigging"}, {"sc": "186 pt1A", "t": "09:30", "set": "Party"}, {"sc": "99", "t": "12:00"}]}}}
+_keep = U.U2_DAY_ALSO; U.U2_DAY_ALSO = []
 U.u2_also_add(_days2, _sh)
+U.U2_DAY_ALSO = _keep
+_days3 = [{"kind": "shoot", "short": "D1", "items": [{"sc": "186pt1A", "t": "08:00"}]}]
+U.u2_also_add(_days3, _sh); U.u2_also_strip(_days3); U.u2_also_add(_days3, _sh)
+check("2nd Unit Ausnahme Tag 1: ganzes Sheet (auch andere Szenen), nur einmal", [i.get("sc") for i in _days3[0]["unit2"]["items"]] == [None, "186 pt1A", "99"], _days3)
 check("2nd Unit: 186pt1A mit der genauen Planung aus dem Sheet (Setups ja, andere Szenen nein)",
       [(i.get("sc"), i.get("t")) for i in _days2[0]["unit2"]["items"]] == [(None, "07:00"), ("186 pt1A", "09:30")] and _days2[0]["unit2"].get("hours") == "07:00-17:00"
       and _days2[0]["items"][0]["t"] == "08:00", _days2)
 U.fix_units(_days, ud={"unit2": {5}, "unit3": set()})
 check("2nd Unit: zusätzliche Szene wandert nicht doppelt zur 1st Unit", len(_days[0]["items"]) == 2, _days)
+_sh4 = {"g1": {"no": 1, "u2": {"items": [{"sc": "186pt1A", "t": "09:00"}, {"n": "A-1 Totale", "t": "09:10"}, {"n": "B-2 Nah", "t": "09:30"}, {"n": "Lunch"}]}}}
+_d4 = [{"kind": "shoot", "short": "D1", "items": [{"sc": "186pt1A"}]}]
+U.u2_also_add(_d4, _sh4)
+check("Kamera: 186pt1A in der 1st Unit «B-Cam», in der 2nd Unit mit Setups", _d4[0]["items"][0].get("cam") == "B-Cam · 1st Unit" and _d4[0]["unit2"]["items"][0].get("cam") == "2nd Unit · Setups A-1 · B-2", _d4)
 
 sys.exit(done("Hintergrund"))

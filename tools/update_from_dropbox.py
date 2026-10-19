@@ -649,6 +649,8 @@ def fix_units(days, txt=None, ud=None):
 # scenes that are also shown with the 2nd unit although the schedule has them only with the 1st unit (B-Cam):
 # (shooting day number, scene) – wished by the production
 U2_ALSO = [(1, "186pt1A")]
+# days whose whole 2nd-unit sheet is shown although the schedule has no «2nd unit:» section that day (exception wished by the production)
+U2_DAY_ALSO = [1]
 
 def u2_also_strip(days):
     """remove what u2_also_add added in an earlier run (added again at the end of every run)"""
@@ -661,6 +663,29 @@ def u2_also_strip(days):
 def u2_also_add(days, sheets=None):
     """the 2nd unit of that day: the detailed planning from the 2nd-unit sheet (setups, times, notes of the scene; other scenes
     of the sheet are left out); without a sheet the row of the 1st unit is copied"""
+    def cam2(items):   # 2nd unit: the camera setups of the sheet (rows like «A-1», «B-2» after a scene) shown with the scene
+        cur = None
+        for i in items:
+            if i.get("sc"): cur = i; cur["cam"] = "2nd Unit"; continue
+            m = re.match(r"\s*([A-Z]{1,2}\s?-?\s?\d+[a-z]?)\b", str(i.get("n") or ""))
+            if cur is not None and m:
+                cur["cam"] = (cur["cam"] + " · " if cur["cam"] != "2nd Unit" else "2nd Unit · Setups ") + m.group(1).replace(" ", "")
+        return items
+    for no, sc in U2_ALSO:   # the row of the 1st unit: second camera of the 1st unit
+        for d in days or []:
+            if d.get("kind") != "shoot": continue
+            m = re.search(r"(\d+)", str(d.get("short") or d.get("label") or ""))
+            if not m or int(m.group(1)) != no: continue
+            for i in d.get("items") or []:
+                if _norm_sc(i.get("sc") or "") == _norm_sc(sc) and not i.get("cam"): i["cam"] = "B-Cam · 1st Unit"
+    for no in U2_DAY_ALSO:   # the whole sheet of the day
+        d = next((x for x in days or [] if x.get("kind") == "shoot" and re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")) and int(re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")).group(1)) == no), None)
+        shs = [v.get("u2") for v in (sheets or {}).values() if isinstance(v, dict) and v.get("no") == no and isinstance(v.get("u2"), dict)]
+        if not d or not shs or isinstance(d.get("unit2"), dict): continue
+        u2 = {k: v for k, v in shs[0].items() if k not in ("items", "src")}
+        u2.update({"src": "also", "items": cam2([dict(i, also=True) for sh in shs for i in sh.get("items") or []])})
+        d["unit2"] = u2
+        print("::notice::2nd Unit Ausnahme: Tag %d mit dem ganzen 2nd-Unit-Sheet (%d Einträge)" % (no, len(u2["items"])))
     for no, sc in U2_ALSO:
         d = next((x for x in days or [] if x.get("kind") == "shoot" and re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")) and int(re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")).group(1)) == no), None)
         if not d: continue
@@ -671,7 +696,7 @@ def u2_also_add(days, sheets=None):
         u2 = d.get("unit2") if isinstance(d.get("unit2"), dict) else None
         if u2 and any(_norm_sc(i.get("sc") or "") == _norm_sc(sc) for i in u2.get("items") or []): continue
         if sh:
-            items = [dict(i, also=True) for i in sh.get("items") or [] if not i.get("sc") or _norm_sc(i.get("sc")) == _norm_sc(sc)]
+            items = cam2([dict(i, also=True) for i in sh.get("items") or [] if not i.get("sc") or _norm_sc(i.get("sc")) == _norm_sc(sc)])
             src = "Planung aus dem 2nd-Unit-Sheet"
         else:
             items = [dict(it, also=True)]; src = "Zeile der 1st Unit"
