@@ -59,10 +59,11 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
-    // App-Einstellungen (z. B. angebotene Sprachen): alle lesen, nur der Haupt-Admin ändert
+    // App-Einstellungen: «app» (Sprachen, Schalter) lesen alle – auch vor der Anmeldung;
+    // «private» (Links zu Motivliste, Karte, Chat) nur die Crew; ändern nur mit dem Recht «Einstellungen»
     match /config/{doc} {
-      allow read: if true;
-      allow write: if can('settings') && doc == 'app';
+      allow read: if doc != 'private' || crew();
+      allow write: if can('settings') && (doc == 'app' || doc == 'private');
     }
 
     match /roles/{id} {

@@ -75,6 +75,12 @@ await check("Mitglied: fremdes Profil nicht", assertFails(updateDoc(doc(as("crew
 await check("Einstellungen: Owner darf ändern", assertSucceeds(setDoc(doc(as("owner"), "config/app"), { langs: ["de"] }, { merge: true })));
 await check("Einstellungen: Admin ohne «Einstellungen» nicht", assertFails(setDoc(doc(as("admin"), "config/app"), { langs: ["de"] }, { merge: true })));
 await check("Einstellungen: Crew nicht", assertFails(setDoc(doc(as("crew"), "config/app"), { langs: ["de"] }, { merge: true })));
+await check("Einstellungen: öffentlicher Teil ohne Anmeldung lesbar", assertSucceeds(getDoc(doc(anon, "config/app"))));
+await check("Links (Motivliste, Karte, Chat): ohne Anmeldung nicht lesbar", assertFails(getDoc(doc(anon, "config/private"))));
+await check("Links: nicht eingeladene Person nicht", assertFails(getDoc(doc(as("stranger"), "config/private"))));
+await check("Links: Crew darf lesen", assertSucceeds(getDoc(doc(as("crew"), "config/private"))));
+await check("Links: Owner darf ändern, Crew nicht", Promise.all([assertSucceeds(setDoc(doc(as("owner"), "config/private"), { mapUrl: "https://x" }, { merge: true })), assertFails(setDoc(doc(as("crew"), "config/private"), { mapUrl: "https://x" }, { merge: true }))]));
+await check("Einstellungen: andere Dokumente nicht schreibbar", assertFails(setDoc(doc(as("owner"), "config/other"), { a: 1 })));
 
 // ---------- push ----------
 await check("Push: eigenes Gerät lesen", assertSucceeds(getDoc(doc(as("crew"), "push/uCrew_abcdefghij"))));

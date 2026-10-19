@@ -8,7 +8,7 @@ if(!SMODE_OK(S.gm))S.gm="all";if(!SMODE_OK(S.sqm))S.sqm="all";
 const modeChips=(cur,attr)=>'<div class="smodes" role="group" aria-label="'+esc(L("Suchen nach"))+'">'+SMODES.map(([k,t])=>{const sh=(SMODE_SH[LANG]||SMODE_SH.en)[k];return '<button type="button" '+attr+'="'+k+'" aria-pressed="'+(cur===k)+'"'+(sh?' aria-label="'+esc(L(t))+'"':'')+'>'+(sh?'<span class="sm-l">'+esc(L(t))+'</span><span class="sm-s">'+esc(sh)+'</span>':esc(L(t)))+'</button>'}).join("")+'</div>';
 const SHINT={all:"Suche nach Szenennummer (z. B. 186), Drehtag (D5, Day 5, 26.10., Montag, heute, morgen), Motiv, Adresse, Rolle (z. B. Regina), Crew-Name, Funktion oder Telefonnummer.",
   role:"Rolle eingeben, z. B. Regina oder 8. Leer lassen für die Liste aller Rollen.",sc:"Szenennummer eingeben, z. B. 186 oder 4A.",day:"Drehtag eingeben: D5, 26.10., Montag, heute oder morgen.",
-  person:"Name, Funktion oder Telefonnummer eingeben.",loc:"Motiv oder Adresse eingeben, z. B. Kapelle oder Salgesch.",text:"Wörter aus Szenenbeschrieb, Notizen oder Infos eingeben."};
+  person:"Name, Funktion oder Telefonnummer eingeben.",loc:"Motiv oder Adresse eingeben, z. B. Kapelle oder Ortsname.",text:"Wörter aus Szenenbeschrieb, Notizen oder Infos eingeben."};
 const escRe=t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 /* query normalising shared by both searches: today/tomorrow, D5/Day 5/#5, dates as d.m. */
 function normQ(q){
@@ -123,7 +123,7 @@ function renderSearch(){
   sec(L("Drehtage"),R.day,r=>add(r,'<b>'+esc(r.d.label)+'</b> · '+esc(fmtDate(r.d.date)),esc([r.d.hours,dayPlaces(r.d).join(", "),r.d.kind==="shoot"?(r.sc1+r.sc2)+" "+L("Szenen")+(r.sc2?" · 2nd Unit":""):(r.d.kind==="off"?L("Drehfrei"):(TX(r.d,"info")||L("Reisetag")))].filter(Boolean).join(" · "))));
   const rIds=S.gm==="role"?rolesFor(terms).map(r=>r.id):[];const castNm=(S.meta&&S.meta.cast)||{};
   sec(cap(L("Szenen")),R.sc,r=>add(r,'<b>'+hl(r.it.sc,terms)+'</b> · '+hl(r.it.set||"",terms),esc((r.d.short||r.d.label)+' '+fmtDate(r.d.date).slice(0,-5)+' · '+(r.it.t||"")+(r.u==="2"?' · 2nd Unit':''))+(S.gm==="role"?'<br>'+arr(r.it.cast).filter(c=>rIds.includes(String(c))).map(c=>'<mark>'+esc(castNm[c]||c)+'</mark>').join(", "):'')+'<br>'+hl(TX(r.it,"d"),terms)+'<br>'+hl(r.ad||"",terms)));
-  sec("Locations",R.loc,r=>add(r,hl(r.g.title,terms),hl(r.g.s5?L("Salgesch, mehrere Adressen"):[r.g.venue,r.g.address].filter(Boolean).join(", "),terms)));
+  sec("Locations",R.loc,r=>add(r,hl(r.g.title,terms),hl(r.g.s5?[((S.meta&&S.meta.locCfg||{}).s5||{}).village,L("Mehrere Adressen")].filter(Boolean).join(", "):[r.g.venue,r.g.address].filter(Boolean).join(", "),terms)));
   sec("Crew",R.crew,r=>add(r,hl(r.p.name,terms),hl([TX(r.p,"role"),TX(r.dep,"dept"),vok("phone")?r.p.phone:""].filter(Boolean).join(" · "),terms)));  /* phone only with the right to see it */
   sec("Callsheet",R.dispo,r=>add(r,esc((r.x.label||"Callsheet")+' · '+fmtDate(r.x.date)),'Callsheet'));
   sec("Info",R.info,r=>add(r,hl(r.it.name,terms),hl([TX(r.c,"cat"),r.it.address].filter(Boolean).join(" · "),terms)));

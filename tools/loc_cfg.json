@@ -1,0 +1,71 @@
+{
+ "addr": {
+  "salgeschbahnhofstr40": "Bahnhofstrasse 40, 3970 Salgesch",
+  "salgeschdorfstr2": "Dorfstrasse 2, 3970 Salgesch",
+  "pfynwaldkieswerkvolkene": "Pfynwald, Kieswerk Volken (Ost), 3970 Salgesch",
+  "pfynwaldkieswerkvolkenw": "Pfynwald, Kieswerk Volken (West), 3970 Salgesch",
+  "pfynwaldpfyndenkmal": "Pfynwalddenkmal, Pfynstrasse 68, 3952 Susten",
+  "collombey-muratetangdechauderet": "Étang de Chauderet, Rte du Cornet, 1893 Collombey-Muraz",
+  "collombey-muratetangdechauderetrteducornet": "Étang de Chauderet, Rte du Cornet, 1893 Collombey-Muraz",
+  "saxonpontdelapierreavoir": "Pont de la Pierre à Voir, 1907 Saxon",
+  "nearsionpontdesiles(tba)": "Nähe Autobahnbrücke Pont des Iles, 1950 Sion (TBA)",
+  "tba": "TBA",
+  "martignyversiliasports(tbc)": "Versilia Sports, 1920 Martigny (TBC)",
+  "salgeschrundkurs": "Rundkurs Dorfstr. – Kirchstr. – Klareistr. – Karrenstr. – Mulingstr., 3970 Salgesch",
+  "salgeschbahnhofstr21": "Bahnhofstrasse 21, 3970 Salgesch",
+  "salgeschfrohheim": "Ehem. Rest. Frohheim, Unterdorfstrasse 12, 3970 Salgesch",
+  "salgeschpaschienstr12/22": "Pachienstrasse 12/22, 3970 Salgesch",
+  "salgeschbahnhofstr44": "Bahnhofstrasse 44, 3970 Salgesch",
+  "salgeschdorfstr10": "Dorfstrasse 10, 3970 Salgesch",
+  "salgeschdorfstr5": "Dorfstrasse 5 / Sennereigasse 1, 3970 Salgesch",
+  "salgeschdorfstr22": "Dorfstrasse 22, 3970 Salgesch",
+  "salgeschschulhausplatz": "Schulhausplatz 4, 3970 Salgesch",
+  "leytronchemdescarrieres": "Chem. des Carrières, 1912 Leytron"
+ },
+ "bundles": [
+  {
+   "key": "pfyn",
+   "title": "Pfynwald",
+   "re": "pfyn"
+  },
+  {
+   "key": "svr",
+   "title": "Side Valley Road",
+   "re": "rte de martigny"
+  }
+ ],
+ "titles": [
+  {
+   "re": "bahnhofstr(asse)?\\s*40\\b.*salgesch",
+   "title": "Aunt's House – Police Station – Hospital – Villa Biffiger – INT"
+  },
+  {
+   "re": "grand-champsec\\s*22\\b.*sion",
+   "title": "Police Station EXT"
+  },
+  {
+   "re": "vercorin\\s*46\\b.*chalais",
+   "title": "Aunt's House EXT"
+  },
+  {
+   "re": "^1922 salvan$",
+   "title": "Simplon"
+  }
+ ],
+ "split": [
+  {
+   "key": "leytron",
+   "title": "Salgesch Establisher",
+   "re": "leytron"
+  }
+ ],
+ "s5": {
+  "title": "Salgesch",
+  "address": "3970 Salgesch und Umgebung",
+  "village": "3970 Salgesch"
+ },
+ "links": {
+  "locSheet": "https://docs.google.com/spreadsheets/d/1-90uPfHztMs7i0u_zW473Jd0CUHdC7nlxZrzfgBqqJg/edit?gid=1204350231",
+  "mapUrl": "https://www.google.com/maps/d/viewer?mid=18C7O5jJQPoQq4iwJmoi2iEUkvHg4wXs"
+ }
+}

@@ -27,8 +27,12 @@ async function loadLangs(){
     const au=d.exists()?d.data().autoUpdate!==false:true;if(window.AUTOUPD!==au){window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}}
     const so=d.exists()?d.data().script!==false:true;if(window.SCRIPTON!==so){window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}render()}
     const u3=d.exists()&&d.data().unit3===true;if(window.UNIT3!==u3){window.UNIT3=u3;try{localStorage.setItem("appunit3",u3?"1":"0")}catch(_){}render()}
-    window.LOCSHEET=(d.exists()&&typeof d.data().locSheet==="string")?d.data().locSheet:"";
-    const mu=(d.exists()&&typeof d.data().mapUrl==="string")?d.data().mapUrl:"";if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
+    /* links (motive list, map, chat) are in config/private – only for the crew; the older fields in config/app still count */
+    let pv={};try{const {auth}=await fb();if(auth.currentUser){const q=await F.getDoc(F.doc(db,"config","private"));if(q.exists())pv=q.data()}}catch(_){}
+    const cf=k=>typeof pv[k]==="string"&&pv[k]?pv[k]:(d.exists()&&typeof d.data()[k]==="string"?d.data()[k]:"");
+    window.LOCSHEET=cf("locSheet");
+    {const cu=cf("chatUrl");if(cu&&window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
+    const mu=cf("mapUrl");if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
   }catch(err){console.warn("langs",err)}
   applyLangs();
 }
