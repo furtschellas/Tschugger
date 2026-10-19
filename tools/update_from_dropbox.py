@@ -785,30 +785,52 @@ def pick_sides(files):
     return [f for f in files if _cs(f) and _is_sides(f) and not _is_ra(f)]
 
 # structure of a callsheet as the production writes it (TBO_Dispo_DT01_20261020.pdf) – the app shows it in this order
-CS_SCHEMA = (
-    '{"day": "1/34", "office": Produktionsbüro (eine Zeile), '
+CS_A = (
+    '{"date": Drehtag YYYY-MM-DD, "label": z. B. "Drehtag 1", "day": "1/34", "office": Produktionsbüro (eine Zeile), '
     '"key": [{"role": "Director"|"DoP"|"1st AD"|"Producer"|"Line Producer"|"Production Manager"|"Production coordinator"|"Harassment Reporting int."|"Harassment Reporting ext.", "name": …, "phone": …}], '
     '"times": {"crewCall", "rehearsal", "rts", "lunch", "wrap"}, "weather", "temp", "sunrise", "sunset", "script", "schedule", '
-    '"contact": {"role", "name", "phone"} (CONTACT on Set), '
+    '"contact": {"role", "name", "phone"} (CONTACT on Set), "hospital": {"name", "address", "phone"} (nur falls im Dokument), '
     '"lists": [{"title": "Paper"|"Extra Crew"|"Cast"|"Cast Prev."…, "names": Text}], '
     '"locations": [{"no": "1"|"ER"…, "name": "CHAPEL", "scenes": "186pt1A", "map": Karten-Link des Sets, "notes": [Text], '
     '"items": [{"label": "Tech Parking"|"Private Cars Crew"|"Base"|"W / H / M"|"WC"|"DIT/Prod"…, "text": Text, "map": Link}]}], '
     '"info": [Absätze von PRODUCTION INFORMATION], '
     '"order": {"title": Kopfzeile von SHOOTING ORDER, "extras", "pages", "screen", "rows": [Zeile für Zeile in Reihenfolge: '
-    'Szene = {"t": Beginn, "dur": Dauer, "dir": "DJ"|"D"…, "sc": Szene, "seq", "pgs", "time": Screen-Zeit, "ie": "I/Ev", "set": Motiv, "syn": Synopsis, '
+    'Szene = {"t": Beginn, "dur": Dauer, "dir": "DJ"|"D"…, "sc": Szene, "pgs", "time": Screen-Zeit, "ie": "I/Ev", "set": Motiv, "syn": Synopsis, '
     '"cast": Rollennummern, "extras": Komparsen/Fahrzeuge, "notes": Notes}; sonst = {"t": Zeit, "text": z. B. «Shoot A+B-Cam @ Loc1», «Lunch Break - 1h», «Move B-Cam …»}]}, '
     '"cast": [{"no", "role", "actor", "scenes": [Szenen mit x], "pickup", "call", "wardrobe", "makeup", "base", "onset"}] (CAST @ BASE), '
     '"extras": [{"count", "part", "scenes", "call", "wardrobe", "makeup", "onset"}], '
-    '"vehicles": [{"name", "scenes", "via", "call", "rts"}], '
-    '"drivers": Kopfzeile TRANSPORT with DRIVER, '
+    '"vehicles": [{"name", "scenes", "via", "call", "rts"}]}'
+)
+CS_B = (
+    '{"drivers": Kopfzeile TRANSPORT with DRIVER, '
     '"transport": [{"vehicle", "driver", "passengers", "from", "t1", "to", "t2"}] (jede Fahrt eine Zeile; Fahrzeug und Fahrer wiederholen), '
     '"travel": [{"how", "name", "from", "t1", "to", "t2", "note"}] (TRAVEL CAST), '
     '"depts": [{"dept": Abteilung, "text": Text}] (INDIVIDUAL INFORMATION BY DEPARTEMENT und die Abteilungszeilen nach PREVISION, z. B. Drone, Grip, Sound, Light, Costume, Make-Up/Hair, Armourer/SFX, Stunt), '
     '"crewTransport": [{"vehicle", "people", "from", "t1", "to", "t2"}] (TRANSPORT CREW), '
-    '"prevision": {"title": Kopfzeile PREVISION, "rows": wie order.rows}, '
+    '"prevision": {"title": Kopfzeile PREVISION, "rows": wie bei SHOOTING ORDER: Szene = {"t","dur","dir","sc","pgs","time","ie","set","syn","cast","extras","notes"}, sonst {"t","text"}}, '
     '"calls": [{"dept": Abteilung, "role", "name", "t": Zeit oder Text wie «i.e.d.»}] (CALLS ON SET, beide Spalten), '
-    '"total": TOTAL-Zeile, "notes": [Notes], "radio": Funkkanäle}'
+    '"total": TOTAL-Zeile, "notes": [Notes], "radio": Funkkanäle, '
+    '"sections": [{"title", "rows": [[Zelle, …], …]}] (nur was sonst nirgends passt)}'
 )
+CS_RULES = ("Antworte mit genau diesem JSON-Objekt, kompakt (ohne Einrückung), in der Reihenfolge und Sprache des Dokuments: "
+            "nicht übersetzen, keine Übersetzungsfelder, nichts erfinden, nichts weglassen, Zeiten und Namen genau wie im Dokument, leere Felder weglassen. ")
+
+def cs_to_dispo(cs, date, f):
+    """the fields the rest of the app uses (Today, Meine Termine, push) taken from the structure «cs»"""
+    t = cs.get("times") or {}
+    d = {"date": date, "label": cs.pop("label", "") or "", "file": f["name"],
+         "link": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(f["name"]),
+         "crewCall": t.get("crewCall") or "", "shootCall": t.get("rts") or "", "wrap": t.get("wrap") or "",
+         "sr": cs.get("sunrise") or "", "ss": cs.get("sunset") or "", "weather": " · ".join(x for x in (cs.get("weather"), cs.get("temp")) if x),
+         "calls": [{"dept": c.get("dept") or "", "t": c.get("t") or "", "note": " ".join(x for x in (c.get("role"), c.get("name")) if x)} for c in cs.get("calls") or [] if isinstance(c, dict)],
+         "cast": [{"no": c.get("no") or "", "role": c.get("role") or "", "actor": c.get("actor") or "", "pickup": c.get("pickup") or "",
+                   "makeup": c.get("makeup") or "", "costume": c.get("wardrobe") or "", "onset": c.get("onset") or ""} for c in cs.get("cast") or [] if isinstance(c, dict)],
+         "locations": [{"name": l.get("name") or "", "map": l.get("map") or ""} for l in cs.get("locations") or [] if isinstance(l, dict)],
+         "scenes": [{"sc": r.get("sc"), "ie": r.get("ie") or "", "set": r.get("set") or "", "pg": r.get("pgs") or "", "d": r.get("syn") or ""}
+                    for r in (cs.get("order") or {}).get("rows") or [] if isinstance(r, dict) and r.get("sc")],
+         "cs": cs}
+    if isinstance(cs.get("hospital"), dict) and cs["hospital"].get("name"): d["hospital"] = cs["hospital"]
+    return {k: v for k, v in d.items() if v not in ("", [], None)}
 
 def pick_ra(files):
     """risk assessments (Gefährdungsbeurteilung) in the callsheet folders, e.g. «DT1/RA_Tschugger_Tigerblood_Bild186_2026-10-20.pdf»"""
@@ -1431,11 +1453,14 @@ def main():
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
-            d = claude([pdf_block(dbx.download(f["id"]))],
-                ("Erzeuge aus dieser Tagesdispo ein JSON-Objekt gemäss Collection \"dispos\" (Feld \"date\" = Drehtag YYYY-MM-DD), mit den Übersetzungsfeldern. file = \"%s\", link = \"https://www.dropbox.com/preview/TSCHUGGER%%20Tigerblood%%20-%%20DISTRO/%s\". "
-                 % (f["name"], requests.utils.quote(f["name"]))) +
-                "Zusätzlich Feld \"cs\": das ganze Callsheet strukturiert, in der Reihenfolge und Sprache des Dokuments (nicht übersetzen, nichts weglassen, Zeiten und Namen genau wie im Dokument): " + CS_SCHEMA +
-                " Was in keines dieser Felder passt, kommt in \"sections\": [{\"title\": Abschnittstitel, \"rows\": [[Zelle, …], …]}].", 48000)
+            # the callsheet in two parts (one answer was too long): A = head … vehicles, B = transport … calls
+            blk = pdf_block(dbx.download(f["id"]))
+            a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A, 32000)
+            b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000)
+            cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
+            md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
+            date = str(cs.pop("date", "") or "") or (md and "%s-%s-%s" % md.groups()) or ""
+            d = cs_to_dispo(cs, date, f)
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
                 prev = dispos.get(d["date"])
                 if not prev or (prev.get("_mod") or "") <= (f["modified"] or ""):
@@ -1465,7 +1490,7 @@ def main():
             k, pg = _pdf_pages(dbx, f, spc); used.add(k); WANT.update(pg)
             # no pages yet (picture budget of this run used up, e.g. after a folder was renamed): the button opens the PDF anyway
             nm = f["name"].split("/")[-1]
-            m = re.search(r"(?i)DT\s*#?\s*(\d+)", nm)
+            m = re.search(r"(?i)DT\s*#?\s*(\d+)", nm) or re.search(r"(?i)/DT\s*(\d+)/", f["name"])   # the day folder (DT1/…) counts too
             date = sides_date(nm) or (shoot.get(int(m.group(1))) if m else "") or ""
             title = re.sub(r"(?i)^tschugger_|\.pdf$", "", nm).replace("_", " ").strip()
             sides.append({"date": date, "name": title[:80], "pg": pg, "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(f["name"])})

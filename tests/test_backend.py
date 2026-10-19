@@ -418,4 +418,10 @@ check("Callsheets: Ordner 00_/06_, Sides und Gefährdungsbeurteilungen getrennt"
       and _nm(U.pick_sides(_cf)) == ["TSCHUGGER_DT3_Saturday, 24.10.2026.pdf", "TSCHUGGER_Sides_DT1_Tuesday, 20.10.2026_Sc2.pdf"]
       and _nm(U.pick_ra(_cf)) == ["RA_Tschugger_Tigerblood_Bild186_2026-10-20.pdf"], (_nm(U.pick_dispos(_cf)), _nm(U.pick_sides(_cf)), _nm(U.pick_ra(_cf))))
 
+_d = U.cs_to_dispo({"label": "Drehtag 1", "times": {"crewCall": "08:00", "rts": "09:15", "wrap": "19:00"}, "sunrise": "07:55", "sunset": "18:37",
+                    "calls": [{"dept": "Camera", "role": "DOP", "name": "F", "t": "08:10"}], "cast": [{"no": "1", "role": "BAX", "actor": "D", "wardrobe": "07:40"}],
+                    "order": {"rows": [{"t": "09:00", "sc": "2", "ie": "I/Ev", "set": "CHAPEL"}, {"t": "12:15", "text": "Lunch"}]}}, "2026-10-20", {"name": "00_Callsheets/DT1/TBO_Dispo_DT01_20261020.pdf"})
+check("Callsheet: App-Felder aus der Struktur (Zeiten, Calls, Cast, Szenen, Link)", _d["crewCall"] == "08:00" and _d["shootCall"] == "09:15" and _d["calls"][0]["dept"] == "Camera"
+      and _d["cast"][0]["costume"] == "07:40" and [x["sc"] for x in _d["scenes"]] == ["2"] and _d["date"] == "2026-10-20" and "TBO_Dispo" in _d["link"] and "cs" in _d, _d)
+
 sys.exit(done("Hintergrund"))

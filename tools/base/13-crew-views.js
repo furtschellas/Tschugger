@@ -212,7 +212,8 @@ function locResults(gs){
 /* Sides (the script pages of a shooting day) and the original callsheet pages: as pictures in the app (gallery, also offline) */
 function sidesHTML(date){const all=arr(S.meta&&S.meta.sides),mine=all.map((s,i)=>[s,i]).filter(([s])=>s.date===date),gen=all.map((s,i)=>[s,i]).filter(([s])=>!s.date);
   if(!mine.length&&!gen.length)return "";const b=([s])=>'<a class="pillbtn" href="'+esc(safeUrl(s.url))+'" target="_blank" rel="noopener noreferrer">📄 '+esc(s.name)+'</a>';   /* opens the PDF itself */
-  return '<section class="dsec"><h3 class="dh">Sides</h3><p class="ghint">'+esc(L("Die Drehbuchseiten des Tages."))+'</p><div class="sidesb">'+mine.map(b).join("")+(gen.length?(mine.length?'<span class="sidesg">'+esc(L("Weitere"))+'</span>':'')+gen.map(b).join(""):'')+'</div></section>'}
+  /* folded, opened with a tap */
+  return '<details class="dsec cssec"><summary><h3 class="dh">Sides · '+(mine.length+gen.length)+'</h3></summary><p class="ghint">'+esc(L("Die Drehbuchseiten des Tages."))+'</p><div class="sidesb">'+mine.map(b).join("")+(gen.length?(mine.length?'<span class="sidesg">'+esc(L("Weitere"))+'</span>':'')+gen.map(b).join(""):'')+'</div></details>'}
 document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[data-cspg]");if(!a||typeof window.blkImg!=="function")return;e.preventDefault();
   if(a.dataset.sides!==undefined){const s=arr(S.meta&&S.meta.sides)[+a.dataset.sides];if(!s)return;
     openGallery({name:"sides:"+s.name,title:"Sides · "+s.name,sc:[],url:s.url,media:arr(s.pg).map((p,i)=>({n:s.name+" · "+(i+1)+"/"+s.pg.length,t:"img",f:p,u:s.url}))});return}
