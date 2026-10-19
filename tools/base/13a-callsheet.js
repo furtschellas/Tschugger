@@ -62,7 +62,11 @@ function csNowIdx(rows,date){if(date!==todayISO())return -1;const d=new Date(),n
   csA(rows).forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});return k}
 /* which set a scene is shot on: by the scenes listed at the location, else by the set name */
 function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/\s+/g,"");const sc=n(r.sc);const ls=csA(locs).filter(l=>!l.kinds&&l.no);
-  return ls.find(l=>sc&&n(csS(l.scenes)).split(/[,;]/).some(p=>p===sc||p.startsWith(sc+"/")||p.split("/")[0]===sc))||ls.find(l=>l.name&&n(r.set).includes(n(l.name)))||ls.find(l=>sc&&n(csS(l.scenes)).includes(sc))||null}
+  /* «186 PT1B/C/PT2» → 186pt1b, 186pt1c, 186pt2 */
+  const list=l=>{const out=[];for(const part of n(csS(l.scenes)).split(/[,;+&]/)){let prev="";for(const t of part.split("/")){if(!t)continue;let v=t;
+      if(prev&&/^[a-z]$/.test(t))v=prev.slice(0,-1)+t;else if(prev&&/^(pt|sl)\d/.test(t))v=(prev.match(/^\d+/)||[""])[0]+t;else if(prev&&/^\d+[a-z]?$/.test(t)&&/pt\d/.test(prev)&&t.length<=2)v=prev.replace(/\d+[a-z]?$/,"")+t;
+      out.push(v);prev=v}}return out};
+  return (sc&&ls.find(l=>list(l).includes(sc)))||ls.find(l=>l.name&&n(r.set).includes(n(l.name)))||null}
 function csOrderRows(rows,date,locs){if(!csA(rows).length)return"";const ni=date?csNowIdx(rows,date):-1;return '<ol class="tl csorder">'+csA(rows).map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
     if(!r.sc)return '<li class="row ev'+nw+'"><div class="t">'+esc(r.t||"")+nb+'</div><div class="what">'+csTx(r.text||r.syn||"")+'</div></li>';
     /* scenes look like in the schedule (same row, details, cast, buttons): the scheduled row of that day with the callsheet time */
@@ -171,7 +175,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
        return ad&&!/^tba$/i.test(ad)?'<a class="csaddr" href="'+esc(safeUrl(l.map||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(ad))))+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+esc(ad)+'</a>':''})()+(()=>{const mine=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>String(r.sc));const uniq=[...new Set(mine)];
        return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+'</span>'+
      '<span class="csloc-i">'+csMap(l.map)+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span></summary>'+
-     csA(l.notes).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",true,"","loc",SU.loc)}
+     csA(l.notes).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",false,"","loc",SU.loc)}
   /* production information */
   h+=csSec(L("Produktionsinfos"),csA(c.info).map(p=>'<p>'+csTx(csL(p))+'</p>').join(""),true,"csinfo","",SU.info);
   /* shooting order */
@@ -245,7 +249,7 @@ function csCastMode(){try{return localStorage.getItem("cscast:v1")==="t"}catch(_
 function csApplyCast(){const d=document.getElementById("cs-cast");if(!d)return;const t=csCastMode();d.classList.toggle("cs-astbl",t);const b=d.querySelector("[data-cstview]");
   if(b)b.innerHTML=(t?CSI.cards:CSI.table)+'<span>'+esc(L(t?"Als Karten":"Als Tabelle"))+'</span>'}
 document.addEventListener("click",e=>{if(!e.target.closest("[data-cstview]"))return;try{localStorage.setItem("cscast:v1",csCastMode()?"c":"t")}catch(_){}csApplyCast()});
-document.addEventListener("toggle",e=>{const d=e.target;if(!d||d.id!=="cs-loc")return;d.querySelectorAll("details.csloc").forEach(x=>x.open=d.open)},true);
+document.addEventListener("click",e=>{const sm=e.target.closest("#cs-loc>summary");if(!sm||e.target.closest("a,button"))return;const d=sm.parentElement;setTimeout(()=>d.querySelectorAll("details.csloc").forEach(x=>x.open=d.open),0)});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-cssc]");if(!b)return;e.preventDefault();e.stopPropagation();const sc=b.dataset.cssc;
   const od=document.getElementById("cs-order");if(!od)return;od.open=true;const li=[...od.querySelectorAll("li[data-sc]")].find(l=>l.dataset.sc===sc);if(!li)return;
   const d=li.querySelector("details.csscd");if(d)d.open=true;li.scrollIntoView({block:"center",behavior:"smooth"});li.classList.add("csflash");setTimeout(()=>li.classList.remove("csflash"),1600)},true);
