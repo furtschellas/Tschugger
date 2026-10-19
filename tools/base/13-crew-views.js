@@ -240,12 +240,11 @@ function renderDispo(){
   if(!x){
     /* no callsheet yet: the day from the schedule (facts and a short list of the scenes), with the note that the callsheet follows */
     const scn=arr(day.items).filter(i=>i&&i.sc).map(i=>({t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",dur:i.dur||"",pgs:i.pg||""}));
-    const pv=typeof csPrevHTML==="function"?csPrevHTML(day.date):"";
     return h+'<div class="dayhead csnoday"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+(day.date?fmtDate(day.date):'')+'</span>'+UNITBAR+'</div></div>'+
       (typeof planFactsHTML==="function"?planFactsHTML(day,typeof planPdfBtn==="function"?planPdfBtn(day):""):"")+'</div>'+
       '<div class="csfollow">'+(window.CSI?CSI.doc:'')+'<div><b>'+L('Callsheet folgt')+'</b> <span>'+L('Das Callsheet erscheint hier automatisch, sobald es im Callsheet-Ordner der Dropbox liegt, meist am Vorabend.')+'</span></div></div>'+
       (scn.length&&typeof csOrderRows==="function"?'<section class="dsec csview csplan"><h3 class="dh">'+esc(L("Laut Drehplan"))+' · '+scn.length+' '+esc(L("Szenen"))+'</h3>'+csOrderRows(scn,day.date)+'<button class="lnk" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+' ›</button></section>':'')+
-      pv+sidesHTML(day.date)+raHTML(day.date);
+      sidesHTML(day.date)+raHTML(day.date);
   }
   /* read in structure (as the document): the new view; older callsheets keep the view below */
   if(x.cs&&typeof x.cs==="object"&&typeof renderCS==="function"){h+=renderCS(x,day)+sidesHTML(x.date)+raHTML(x.date);

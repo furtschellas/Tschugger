@@ -434,6 +434,11 @@ async def owner_tests(p, port):
           const keep=S.dispos;S.dispos=[{date:sh[0],cs:{prevision:{title:'PREVISION - D2 Extras: 12 Pages: 3 5/8 / Time Scree 03:30',rows:[{t:'09:15',sc:'12',set:'OFFICE'}]}}}];const h=csPrevHTML(sh[1]),h0=csPrevHTML(sh[0]);S.dispos=keep;
           return h.includes('09:15')&&h.includes('03:30')&&h.includes('3 5/8')&&h.includes('data-scene="12"')&&h0===''})()""")
         check("Callsheet: Vorschau erscheint beim Folgetag", pvw in (None, True), pvw, public=True)
+        cpl = await E("""(()=>{if(typeof csCallPlace!=='function')return null;const c={locations:[{no:'1',name:'CHAPEL',items:[{label:'Base',text:'Restaurant Hermitage, Pfyn'}]}],
+          transport:[{from:'Holiday Inn',t1:'09:30',to:'Base',t2:'09:55',vehicle:'PW',driver:'Max Muster',passengers:'Anna Beispiel'}]};
+          const me=n=>({hit:t=>String(t||'').includes(n)});const call={t:'09:30'};
+          const d=csCallPlace(c,me('Max Muster'),call),p=csCallPlace(c,me('Anna Beispiel'),call);return {driver:/holiday/i.test(d.name),passenger:/base|hermitage/i.test(p.name)}})()""")
+        check("Callsheet: Call-Ort für Fahrer = Abfahrtsort, für Mitfahrende = Ziel", cpl in (None, {"driver": True, "passenger": True}), cpl, public=True)
         ctv = await E("""(()=>{if(typeof renderCS!=='function')return null;const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;localStorage.removeItem('cscast:v1');
           const x={date:d.date,cs:{cast:[{no:'1',role:'BAX',actor:'X'}]}};const w=document.createElement('div');w.id='view';const old=document.getElementById('view');old.id='view0';document.body.appendChild(w);w.innerHTML=renderCS(x,d);
           const a=w.querySelector('#cs-cast').classList.contains('cs-astbl');w.querySelector('[data-cstview]').click();const b=w.querySelector('#cs-cast').classList.contains('cs-astbl');
