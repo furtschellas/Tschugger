@@ -784,6 +784,32 @@ def pick_dispos(files):
 def pick_sides(files):
     return [f for f in files if _cs(f) and _is_sides(f) and not _is_ra(f)]
 
+# structure of a callsheet as the production writes it (TBO_Dispo_DT01_20261020.pdf) – the app shows it in this order
+CS_SCHEMA = (
+    '{"day": "1/34", "office": Produktionsbüro (eine Zeile), '
+    '"key": [{"role": "Director"|"DoP"|"1st AD"|"Producer"|"Line Producer"|"Production Manager"|"Production coordinator"|"Harassment Reporting int."|"Harassment Reporting ext.", "name": …, "phone": …}], '
+    '"times": {"crewCall", "rehearsal", "rts", "lunch", "wrap"}, "weather", "temp", "sunrise", "sunset", "script", "schedule", '
+    '"contact": {"role", "name", "phone"} (CONTACT on Set), '
+    '"lists": [{"title": "Paper"|"Extra Crew"|"Cast"|"Cast Prev."…, "names": Text}], '
+    '"locations": [{"no": "1"|"ER"…, "name": "CHAPEL", "scenes": "186pt1A", "map": Karten-Link des Sets, "notes": [Text], '
+    '"items": [{"label": "Tech Parking"|"Private Cars Crew"|"Base"|"W / H / M"|"WC"|"DIT/Prod"…, "text": Text, "map": Link}]}], '
+    '"info": [Absätze von PRODUCTION INFORMATION], '
+    '"order": {"title": Kopfzeile von SHOOTING ORDER, "extras", "pages", "screen", "rows": [Zeile für Zeile in Reihenfolge: '
+    'Szene = {"t": Beginn, "dur": Dauer, "dir": "DJ"|"D"…, "sc": Szene, "seq", "pgs", "time": Screen-Zeit, "ie": "I/Ev", "set": Motiv, "syn": Synopsis, '
+    '"cast": Rollennummern, "extras": Komparsen/Fahrzeuge, "notes": Notes}; sonst = {"t": Zeit, "text": z. B. «Shoot A+B-Cam @ Loc1», «Lunch Break - 1h», «Move B-Cam …»}]}, '
+    '"cast": [{"no", "role", "actor", "scenes": [Szenen mit x], "pickup", "call", "wardrobe", "makeup", "base", "onset"}] (CAST @ BASE), '
+    '"extras": [{"count", "part", "scenes", "call", "wardrobe", "makeup", "onset"}], '
+    '"vehicles": [{"name", "scenes", "via", "call", "rts"}], '
+    '"drivers": Kopfzeile TRANSPORT with DRIVER, '
+    '"transport": [{"vehicle", "driver", "passengers", "from", "t1", "to", "t2"}] (jede Fahrt eine Zeile; Fahrzeug und Fahrer wiederholen), '
+    '"travel": [{"how", "name", "from", "t1", "to", "t2", "note"}] (TRAVEL CAST), '
+    '"depts": [{"dept": Abteilung, "text": Text}] (INDIVIDUAL INFORMATION BY DEPARTEMENT und die Abteilungszeilen nach PREVISION, z. B. Drone, Grip, Sound, Light, Costume, Make-Up/Hair, Armourer/SFX, Stunt), '
+    '"crewTransport": [{"vehicle", "people", "from", "t1", "to", "t2"}] (TRANSPORT CREW), '
+    '"prevision": {"title": Kopfzeile PREVISION, "rows": wie order.rows}, '
+    '"calls": [{"dept": Abteilung, "role", "name", "t": Zeit oder Text wie «i.e.d.»}] (CALLS ON SET, beide Spalten), '
+    '"total": TOTAL-Zeile, "notes": [Notes], "radio": Funkkanäle}'
+)
+
 def pick_ra(files):
     """risk assessments (Gefährdungsbeurteilung) in the callsheet folders, e.g. «DT1/RA_Tschugger_Tigerblood_Bild186_2026-10-20.pdf»"""
     return [f for f in files if _cs(f) and _is_ra(f)]
@@ -1395,21 +1421,28 @@ def main():
 
     # callsheets: every new or changed file, newest per shooting day wins
     dispos = {d.get("date") or d.get("id"): d for d in (data.get("dispos") or []) if "/sides/" not in str(d.get("file") or "").lower()}
+    notcs = {f["name"] for f in files if _cs(f) and (_is_sides(f) or _is_ra(f) or _is_fp(f) or not re.search(r"dispo|call.?sheet|tagesdispo", _base(f)))}
+    dispos = {k: v for k, v in dispos.items() if str(v.get("file") or "") not in notcs and "_sides_" not in str(v.get("file") or "").lower()}
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        if not is_new("dispo", f) or not may_try("dispo", f): continue
+        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) for v in dispos.values())   # read before the full structure («cs»): again
+        if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
             d = claude([pdf_block(dbx.download(f["id"]))],
-                "Erzeuge aus dieser Tagesdispo ein JSON-Objekt gemäss Collection \"dispos\" (Feld \"date\" = Drehtag YYYY-MM-DD), mit den Übersetzungsfeldern. file = \"%s\", link = \"https://www.dropbox.com/preview/TSCHUGGER%%20Tigerblood%%20-%%20DISTRO/%s\". "
-                "Zusätzlich Feld \"sections\": ALLE übrigen Angaben des Callsheets, die in keinem anderen Feld stehen, vollständig und in der Reihenfolge des Dokuments – "
-                "als Liste von {\"title\": Abschnittstitel wie im Dokument, \"rows\": [[Zelle, Zelle, …], …]} (Tabellen zeilenweise, Fliesstext als einzelne Zeilen). Nichts weglassen."
-                % (f["name"], requests.utils.quote(f["name"])), 32000)
+                ("Erzeuge aus dieser Tagesdispo ein JSON-Objekt gemäss Collection \"dispos\" (Feld \"date\" = Drehtag YYYY-MM-DD), mit den Übersetzungsfeldern. file = \"%s\", link = \"https://www.dropbox.com/preview/TSCHUGGER%%20Tigerblood%%20-%%20DISTRO/%s\". "
+                 % (f["name"], requests.utils.quote(f["name"]))) +
+                "Zusätzlich Feld \"cs\": das ganze Callsheet strukturiert, in der Reihenfolge und Sprache des Dokuments (nicht übersetzen, nichts weglassen, Zeiten und Namen genau wie im Dokument): " + CS_SCHEMA +
+                " Was in keines dieser Felder passt, kommt in \"sections\": [{\"title\": Abschnittstitel, \"rows\": [[Zelle, …], …]}].", 48000)
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
                 prev = dispos.get(d["date"])
                 if not prev or (prev.get("_mod") or "") <= (f["modified"] or ""):
                     d["id"] = d["date"]; d["_mod"] = f["modified"]; dispos[d["date"]] = d; changed = True
+                    cs = d.get("cs") if isinstance(d.get("cs"), dict) else {}
+                    n = lambda k: len(cs.get(k) or []) if isinstance(cs.get(k), list) else 0
+                    print("::notice::Callsheet %s eingelesen: Locations %d · Drehfolge %d · Cast %d · Komparsen %d · Transport %d · Abteilungen %d · Calls %d · Vorschau %d"
+                          % (d["date"], n("locations"), len((cs.get("order") or {}).get("rows") or []), n("cast"), n("extras"), n("transport"), n("depts"), n("calls"), len((cs.get("prevision") or {}).get("rows") or [])))
                     if d["date"] >= TODAY and (not prev or cs_sig(prev) != cs_sig(d)): NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})
             else: failed("dispo", f, "kein Drehtag erkannt")
         except Exception as e: failed("dispo", f, e)
