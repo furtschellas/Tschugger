@@ -757,6 +757,10 @@ html body #view .dtiles>.dt.wide{flex:2 1 210px}
 .csview [id^="cs-"]{scroll-margin-top:110px}.csorder li.now>.sc,.csorder li.ev.now>.what{outline:2px solid var(--accent);border-radius:10px}.csnow{display:block;font-size:10.5px;color:#fff;background:var(--accent);border-radius:6px;padding:1px 5px;margin-top:3px;width:max-content}
 .csbig{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid var(--accent);color:var(--accent);text-decoration:none;font-weight:600;margin:4px 6px 4px 0}
 .tmine .csme-r{font-size:14px}
+html body #view .cstiles{display:flex!important;flex-wrap:wrap;gap:6px;margin-top:8px}
+html body #view .cstiles>.dt{flex:0 1 auto;min-width:0;padding:4px 10px;border-radius:8px}
+html body #view .cstiles>.dt .k{font-size:10px;letter-spacing:.06em}html body #view .cstiles>.dt .v{font-size:15px;line-height:1.25;white-space:nowrap}
+html body #view .cstiles>.dt.big .v{font-family:var(--f-mono);font-size:19px;font-weight:700;letter-spacing:0}html body #view .cstiles>.dt.big{box-shadow:none}html body #view .cstiles>.dt.wide{flex:0 1 auto}html body #view .cstiles>.dt.wide .v{white-space:normal;font-size:13.5px}
 </style>
 
 <div class="wrap">
@@ -1670,7 +1674,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";
   /* head: as the top of the callsheet */
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
   h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+(c.day?' <small class="csday">Shoot Day # '+esc(c.day)+'</small>':'')+'</h2><div class="date drow"><span>'+fmtDate(x.date)+(c.script?' · Script '+esc(c.script):'')+(c.schedule?' · '+esc(c.schedule):'')+'</span>'+UNITBAR+'</div></div></div>';
-  h+='<div class="dtiles" id="cs-zeiten">'+tile("Crew Call",t.crewCall||x.crewCall,true)+tile("Rehearsal",t.rehearsal)+tile("RTS",t.rts||x.shootCall)+tile("Lunch",t.lunch)+tile("Wrap",t.wrap||x.wrap)+
+  h+='<div class="dtiles cstiles" id="cs-zeiten">'+tile("Crew Call",t.crewCall||x.crewCall,true)+tile("Rehearsal",t.rehearsal)+tile("RTS",t.rts||x.shootCall)+tile("Lunch",t.lunch)+tile("Wrap",t.wrap||x.wrap)+
     tile(L("Wetter"),[c.weather,c.temp].filter(Boolean).join(" · ")).replace('class="dt"','class="dt wide"')+tile(L("Sonne"),c.sunrise&&c.sunset?c.sunrise+"–"+c.sunset:(x.sr&&x.ss?x.sr+"–"+x.ss:""))+'</div>';
   if(c.contact&&(c.contact.name||c.contact.phone))h+='<div class="cscontact"><b>'+esc(L("Kontakt am Set"))+':</b> '+esc([c.contact.name,c.contact.role].filter(Boolean).join(" · "))+
     (c.contact.phone&&vok("phone")?' <a class="csbig" href="tel:'+esc(String(c.contact.phone).replace(/[^\d+]/g,""))+'">📞 '+esc(L("Anrufen"))+'</a>':'')+'</div>';
