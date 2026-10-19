@@ -426,7 +426,8 @@ PARTIAL = []   # parts that could not be read in this run: then no picture is de
 def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
     changed = False
     prev = {x.get("name"): x for x in meta.get("blocking") or []}
-    WANT.clear()
+    # WANT is NOT cleared here: it already holds the pages of the schedule PDF, the callsheets and the Sides (registered earlier
+    # in this run) – clearing it made the clean-up below delete exactly those pictures in every run
     cache = dict(meta.get("pdfPages") or {})
     used = set()
     extra = {}  # scene → {"s": [...], "pdf": [...], "loc": [...]} (media items)
@@ -1040,6 +1041,7 @@ def move_private_links():
     except Exception as e: log("Links nicht umgezogen:", type(e).__name__)
 
 def main():
+    WANT.clear()
     cfg = {}
     try:
         if fsadmin.sa():

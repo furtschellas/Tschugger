@@ -73,6 +73,12 @@ async function pushTest(){
   catch(err){msg(L("Fehler:")+" "+(err.message||err))}}
 /* while the app is open (or in the background), reminders also come from the device itself – a backup when the server is late */
 let LOCALT=[];
+/* signing out: this device gets no more reminders of this person (server entry, timers on the device, settings) */
+window.pushSignOut=async function(){
+  try{LOCALT.forEach(clearTimeout);LOCALT=[];clearTimeout(PUSHT)}catch(_){}
+  try{if(ME&&ME.uid){const {F,db}=await fb();await withTimeout(F.deleteDoc(F.doc(db,"push",ME.uid+"_"+pushDev())),5000,"push").catch(()=>{})}}catch(_){}
+  try{for(const k of Object.keys(localStorage))if(k==="push"||k==="pushlast"||k.startsWith("pushlocal:"))localStorage.removeItem(k)}catch(_){}
+};
 function pushLocalSchedule(){LOCALT.forEach(clearTimeout);LOCALT=[];const c=pushCfg();if(!c.on||!pushOK()||Notification.permission!=="granted")return;
   const now=Date.now();for(const it of pushItems(c)){const d=it.at-now;if(d<-5*60e3||d>6*3600e3)continue;
     LOCALT.push(setTimeout(async()=>{const k="pushlocal:"+it.id+"|"+it.at;try{if(localStorage.getItem(k))return;localStorage.setItem(k,"1")}catch(_){}

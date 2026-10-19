@@ -28,7 +28,7 @@ async function wxLoad(d){
   {const t0=localISO(Date.now()-864e5),t1=localISO(Date.now()+15*864e5);if(d.date<t0||d.date>t1)return null}
   if(WX[key]&&(WX[key].busy||Date.now()-WX[key].at<3600e3))return WX[key];
   let cached=null;try{cached=JSON.parse(localStorage.getItem("wx:"+key)||"null")}catch(_){}
-  WX[key]=Object.assign({busy:true,at:Date.now(),p},cached||{});
+  WX[key]=Object.assign({},cached||{},{busy:true,at:Date.now(),p}); /* «at» = this try: after an error the next try waits an hour (no endless reload without reception) */
   try{
     let ll=p.ll;
     if(!ll){const g=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=de&country=CH&name="+encodeURIComponent(p.town)).then(r=>r.json());const x=g&&g.results&&g.results[0];if(x)ll=[x.latitude,x.longitude]}
