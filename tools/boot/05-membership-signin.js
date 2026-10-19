@@ -179,7 +179,7 @@ async function onGateClick(e){
   const m=e.target.closest("[data-gmode]");if(m){showGate(m.dataset.gmode);return}
   const a=e.target.closest("[data-gact]");if(!a)return;
   const {A,auth}=await fb();
-  if(a.dataset.gact==="signout"){REQ={sent:false,err:""};if(window.pushSignOut)await window.pushSignOut();await A.signOut(auth);try{localStorage.setItem("fsclear","1")}catch(_){}}
+  if(a.dataset.gact==="signout"){REQ={sent:false,err:""};if(window.pushSignOut)await window.pushSignOut();await A.signOut(auth);try{localStorage.setItem("fsclear","1");localStorage.removeItem("wasin")}catch(_){}}
   else if(a.dataset.gact==="resend"){a.disabled=true;await sendVerify(auth.currentUser,true);a.disabled=false}
   else if(a.dataset.gact==="retry"){if(auth.currentUser)afterSignIn(auth.currentUser)}
   else if(a.dataset.gact==="request"){a.disabled=true;await sendRequest()}

@@ -40,7 +40,13 @@ render();
       if(!em)em=(prompt(L("Bitte bestätige deine E-Mail-Adresse:"))||"").trim();
       if(em){window.__justSignedIn=true;if(window.resetViewState)window.resetViewState();A.signInWithEmailLink(auth,em,location.href).then(()=>history.replaceState(history.state,"",location.pathname)).catch(err=>{console.error(err);showGate("login",errText(err),true)})}
     }
+    /* someone who was signed in on this device: a first empty auth state right after the start (slow storage on some phones)
+       is not taken as «signed out» – wait a few seconds for the stored sign-in before showing the login */
+    const T0=Date.now();let waitedIn=false;
     A.onAuthStateChanged(auth,u=>{
+      if(u){try{localStorage.setItem("wasin","1")}catch(_){}}
+      if(!u&&!waitedIn&&Date.now()-T0<8000){let was=false;try{was=localStorage.getItem("wasin")==="1"}catch(_){}
+        if(was){waitedIn=true;if(!S.days.length)showGate("wait");setTimeout(()=>{if(!auth.currentUser){try{localStorage.removeItem("wasin")}catch(_){}ME=null;showGate("login")}},6000);return}}
       if(!u){ME=null;MYPERMS=[];{const w=document.getElementById("welcome");if(w)w.remove();WELCOME_OPEN=false}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
         /* the sign-in screen may already be open (person switched to «create account» while Firebase was starting): keep it and what was typed */
         const g=document.getElementById("gate");if(g&&!g.hidden&&["login","register","reset"].includes(AUTHMODE)&&g.querySelector("form"))return;
