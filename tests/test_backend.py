@@ -316,4 +316,25 @@ check("Szenen-Details: «Special: Elec: …» bleibt wie im PDF zusammen", (U.pa
 import verify_data as V  # noqa: E402
 check("Daten prüfen: Szenennummern normalisiert", [V.sc_key(x) for x in ("186pt1A", "25 SL2", "012")] == ["186pt1a", "25sl2", "12"])
 
+# key change: nightly check notices removed people; the Firestore entries (Termine, Kalender) are re-encrypted too
+import rotate as RT  # noqa: E402
+_store = {"secret/keymeta": {"uids": ["a", "b"], "at": 1}}
+_mem = ["a"]
+_o = (fsadmin.list_docs, fsadmin.get_doc, fsadmin.patch_doc)
+fsadmin.list_docs = lambda col: [(u, {}, "") for u in _mem] if col == "members" else []
+fsadmin.get_doc = lambda p: _store.get(p)
+fsadmin.patch_doc = lambda p, f, update_time=None: (_store.setdefault(p, {}).update(f), True)[1]
+_go = os.environ.pop("GITHUB_OUTPUT", None)
+_out = pathlib.Path(tempfile.mkdtemp()) / "o"; os.environ["GITHUB_OUTPUT"] = str(_out)
+RT.due(); _d1 = _out.read_text()
+_mem = ["a", "b", "c"]; _store["secret/keymeta"] = {"uids": ["a", "b"], "at": 1}; RT.due()
+check("Schlüsselwechsel: nach dem Entfernen einer Person nötig, sonst nicht (neue Personen werden gemerkt)",
+      _d1.strip() == "due=true" and _out.read_text().strip().endswith("due=false") and _store["secret/keymeta"]["uids"] == ["a", "b", "c"], (_d1, _store))
+fsadmin.list_docs, fsadmin.get_doc, fsadmin.patch_doc = _o
+os.environ.pop("GITHUB_OUTPUT", None)
+if _go: os.environ["GITHUB_OUTPUT"] = _go
+_rs = (ROOT_T := pathlib.Path(__file__).resolve().parent.parent / "tools" / "rotate.py").read_text()
+check("Schlüsselwechsel: Termine, Google-Kalender und Galerie-Bilderliste werden neu verschlüsselt",
+      '"events"' in _rs and '"gcal/feed"' in _rs and '"media.enc.json"' in _rs)
+
 sys.exit(done("Hintergrund"))
