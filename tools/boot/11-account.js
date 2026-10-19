@@ -90,6 +90,7 @@ function showAcct(needProfile){
     if(!s){s=mkDialog("acct");document.body.appendChild(s);
       s.addEventListener("click",onAcctClick);s.addEventListener("submit",onAcctSubmit)}
     s.innerHTML='<div class="a2box acbox"><h3>'+L("Willkommen!")+'</h3><p>'+L("Bitte fülle vor dem ersten Start dein Profil aus.")+'</p><p class="ghint">'+esc(ME.email)+'</p>'+profileForm(true)+'<div class="a2b"><button class="lnk" data-ac="signout">'+L("Abmelden")+'</button></div></div>';s.hidden=false;markNeed(s);return}
+  ACSUB="pro";   /* «Mein Konto» always opens on the profile */
   wireAcctPage();S.tab="acct";S.srcOpen=false;window.scrollTo(0,0);render();
 }
 async function onAcctClick(e){
