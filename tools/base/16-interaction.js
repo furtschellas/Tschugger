@@ -19,3 +19,6 @@ window.addEventListener("pagehide",saveView);const RESUME=30*60e3;   /* back aft
 window.goStart=()=>{S.want=null;S.srcOpen=false;S.tab=startTab();S.day=null;S.dday=null;S.openSc={};VS_AT=Date.now();store("tab",S.tab);window.scrollTo(0,0);render()};
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){saveView();HID_AT=Date.now()}else{if(HID_AT&&Date.now()-HID_AT>=RESUME&&!(typeof navDialogs==="function"&&navDialogs().length))goStart();HID_AT=0}});
 function store(k,v){try{localStorage.setItem(k,v)}catch(_){}}
+
+/* Today «Mein Tag» → the callsheet of that day */
+document.addEventListener("click",e=>{const b=e.target.closest("[data-tocs]");if(!b)return;S.dday=b.dataset.tocs;goTab("dispo")});
