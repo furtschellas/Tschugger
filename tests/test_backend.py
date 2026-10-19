@@ -321,7 +321,7 @@ import rotate as RT  # noqa: E402
 _store = {"secret/keymeta": {"uids": ["a", "b"], "at": 1}}
 _mem = ["a"]
 _o = (fsadmin.list_docs, fsadmin.get_doc, fsadmin.patch_doc)
-fsadmin.list_docs = lambda col: [(u, {}, "") for u in _mem] if col == "members" else []
+fsadmin.list_docs = lambda col: [(u, {"active": True}, "") for u in _mem] + [("blocked", {"active": False}, "")] if col == "members" else []
 fsadmin.get_doc = lambda p: _store.get(p)
 fsadmin.patch_doc = lambda p, f, update_time=None: (_store.setdefault(p, {}).update(f), True)[1]
 _go = os.environ.pop("GITHUB_OUTPUT", None)
@@ -329,7 +329,7 @@ _out = pathlib.Path(tempfile.mkdtemp()) / "o"; os.environ["GITHUB_OUTPUT"] = str
 RT.due(); _d1 = _out.read_text()
 _mem = ["a", "b", "c"]; _store["secret/keymeta"] = {"uids": ["a", "b"], "at": 1}; RT.due()
 check("Schlüsselwechsel: nach dem Entfernen einer Person nötig, sonst nicht (neue Personen werden gemerkt)",
-      _d1.strip() == "due=true" and _out.read_text().strip().endswith("due=false") and _store["secret/keymeta"]["uids"] == ["a", "b", "c"], (_d1, _store))
+      _d1.strip() == "due=true" and _out.read_text().strip().endswith("due=false") and _store["secret/keymeta"]["uids"] == ["m:a", "m:b", "m:c"], (_d1, _store))
 fsadmin.list_docs, fsadmin.get_doc, fsadmin.patch_doc = _o
 os.environ.pop("GITHUB_OUTPUT", None)
 if _go: os.environ["GITHUB_OUTPUT"] = _go
@@ -349,5 +349,8 @@ _tf = pathlib.Path(tempfile.mkdtemp()) / "x.enc.json"
 U.enc_file(_tf, {"a": 1}, _k1)
 check("Schlüsselwechsel: Datei mit früherem Schlüssel (abgebrochener Lauf) wird trotzdem neu verschlüsselt",
       RT.refile(_tf, [_k2, _k1], _k3) and json.loads(AESGCM(_k3).decrypt(base64.b64decode(json.loads(_tf.read_text())["iv"]), base64.b64decode(json.loads(_tf.read_text())["ct"]), None)) == {"a": 1} and RT.refile(_tf, [_k2], _k3) is False)
+
+check("Sides: Datum im US-Format mit Wochentag richtig gelesen (Tuesday 10.06. = 6. Oktober)",
+      [U.sides_date(x) for x in ("x_DT2_Tuesday, 10.06.2026.pdf", "x_DT 4_Sunday, 25.10.2026.pdf", "x_Montag, 05.10.2026.pdf")] == ["2026-10-06", "2026-10-25", "2026-10-05"])
 
 sys.exit(done("Hintergrund"))

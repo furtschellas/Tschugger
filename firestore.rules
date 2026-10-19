@@ -85,7 +85,8 @@ service cloud.firestore {
       // die Admin-Rolle (Rechte der Admins) passt nur der Owner an – sonst könnte sich ein Admin selbst «Einstellungen» geben
       allow write: if ((isAdmin() && (id != 'admin' || isOwner())) || (can('roles.edit') && id != 'admin'
           && !(hasRole() && myRole() == id)
-          && (request.resource == null || request.resource.data.perms.hasOnly(rolePerms()))))
+          && (request.resource == null || request.resource.data.perms.hasOnly(rolePerms())
+              || (resource != null && request.resource.data.perms.hasOnly(rolePerms().concat(resource.data.perms))))))   // vorhandene fremde Rechte bleiben
         && (request.resource == null || (only(['name', 'perms', 'at'])
             && request.resource.data.name is string && request.resource.data.name.size() <= 40
             && request.resource.data.perms is list && request.resource.data.perms.size() <= 40));
@@ -98,7 +99,8 @@ service cloud.firestore {
       // «Rollen pflegen»: Rollen zuweisen, aber nicht an Owner oder Admins und nicht sich selbst
       allow write: if can('roles.assign') && email != myEmail() && !ownerEmail(email)
         && !exists(d('admins', email))
-        && (request.resource == null || (only(['role', 'at']) && request.resource.data.role != 'admin'));
+        && (request.resource == null || (only(['role', 'at']) && request.resource.data.role != 'admin'
+          && (isAdmin() || get(d('roles', request.resource.data.role)).data.perms.hasOnly(rolePerms()))));   // nur Rollen mit eigenen Rechten vergeben
       // wer einladen darf, gibt neuen Benutzenden automatisch die Rolle «Crew»
       allow create: if can('users.invite') && !ownerEmail(email)
         && only(['role', 'at']) && request.resource.data.role == 'crew';

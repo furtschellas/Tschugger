@@ -103,7 +103,7 @@ def main():
     now = int(time.time() * 1000)
     # the imported events are only compared when the calendar changed, at midnight (date) or at the latest every 6 hours –
     # reading all events every half hour used up the free Firebase quota
-    full = old.get("sig") != sig or now - int(old.get("synced") or 0) > 6 * 3600e3 or time.strftime("%H") == "22"
+    full = old.get("sig") != sig or now - int(old.get("synced") or 0) > 6 * 3600e3 or datetime.datetime.now(zoneinfo.ZoneInfo(TZ)).hour == 0
     if old.get("sig") != sig:
         fsadmin.patch_doc("gcal/feed", {"c": c, "sig": sig, "n": len(items), "at": now, "err": "", **({"synced": now} if full else {})})
     else:
@@ -113,6 +113,11 @@ def main():
     upd, dele = sync(key, items, [(i, f) for i, f, _ in fsadmin.list_docs("events")])
     for i, g in sync.gcnew.items(): fsadmin.patch_doc("events/" + i, {"gc": g})
     for i, cc in upd.items(): fsadmin.patch_doc("events/" + i, {"c": cc})
+    # safety net: an empty or cut calendar answer must not delete all imported events (and who sees them)
+    on = int(old.get("n") or 0)
+    if dele and (not items or (on >= 6 and len(items) < on * 0.5)):
+        log(f"Google Kalender: {len(dele)} Löschungen ausgelassen – Kalender liefert nur {len(items)} statt {on} Termine")
+        dele = []
     for i in dele: fsadmin.delete_doc("events/" + i)
     log(f"Google Kalender: {len(items)} Termine · {len(upd)} nachgeführt · {len(dele)} entfernt")
     return 0

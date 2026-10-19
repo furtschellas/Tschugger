@@ -50,8 +50,11 @@ render();
   }catch(err){console.error(err);if(!S.days.length)showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);else{hideGate();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000)}}
   /* back online after starting without connection: start sign-in again */
   window.addEventListener("online",()=>{if(!FB&&!FBP)location.reload();else if(ME)tick()});
-  const tick=async()=>{
+  let lastTick=0;
+  const tick=async(e)=>{
     if(document.visibilityState!=="visible"||!ME||!(ME.emailVerified||START))return;
+    /* back to the app: at most every 3 minutes (switching apps all day used up the free Firebase quota) */
+    if(e&&e.type==="visibilitychange"&&Date.now()-lastTick<180e3)return;lastTick=Date.now();
     try{const st=await checkMember();if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}}catch(_){return}
     load(false).catch(()=>{});
   };

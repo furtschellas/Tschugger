@@ -180,7 +180,7 @@ async function assignCrew(em){em=lc(em);if(!em||ADMINS.includes(em)||(ADM.adm||[
 const canRole=e=>!!e&&!ROOT_OWNERS.includes(e)&&!(ME&&lc(ME.email)===e)&&(isOwner()||(isAdmin()&&!ADMINS.includes(e))||(can("roles.assign")&&!ADMINS.includes(e)&&!ADM.adm.includes(e)));
 const roleOf=e=>{if(ADMINS.includes(e))return "owner";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
 const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).name||"");
-const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Keine Rolle (eingeschränkt)")+'</option>'+(isOwner()?'<option value="owner"'+(roleOf(r.email)==="owner"?' selected':'')+'>'+L("Owner")+'</option>':'')+(isAdmin()?'<option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>':'')+ADM.roles.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(x=>'<option value="'+esc(x.id)+'"'+(roleOf(r.email)===x.id?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join("")+'</select></label>';
+const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Keine Rolle (eingeschränkt)")+'</option>'+(isOwner()?'<option value="owner"'+(roleOf(r.email)==="owner"?' selected':'')+'>'+L("Owner")+'</option>':'')+(isAdmin()?'<option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>':'')+ADM.roles.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(x=>{const mine=roleOf(r.email)===x.id,ok=isAdmin()||(x.perms||[]).every(p=>MYPERMS.includes(p));/* only roles with one's own rights can be given */return ok||mine?'<option value="'+esc(x.id)+'"'+(mine?' selected':'')+(ok?'':' disabled')+'>'+esc(x.name||x.id)+'</option>':''}).join("")+'</select></label>';
 function editForm(r,withRole){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
   return (window.simBtn?window.simBtn(r.email):'')+(withRole&&canRole(r.email)?'<div class="aerole">'+roleSel(r)+'</div>':'')+'<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
@@ -253,6 +253,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");i
   if(e.target.closest("[data-rreset]")&&canRoleEdit()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!canRoleEdit()||(f.dataset.role==="admin"&&!isAdmin()))return;
   const name=String(f.rn.value||"").trim().slice(0,40),perms=readBoxes(f,"rp").filter(p=>PERMS.some(x=>x[0]===p)&&(isAdmin()||MYPERMS.includes(p)));if(!name)return;
+  /* rights of this role the editor does not have himself (shown greyed out) stay as they are – they were silently removed before */
+  if(!isAdmin()&&f.dataset.role){const cur=((ADM.roles||[]).find(x=>x.id===f.dataset.role)||{}).perms||[];for(const p of cur)if(!MYPERMS.includes(p)&&!perms.includes(p))perms.push(p)}
   let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
   const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});ADM.redit="";showMsg(L("Rolle gespeichert."),2500);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();await admLoad()}
@@ -327,7 +329,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if
 VIEWS.admin=function(){
   if(!canAdm())return '<div class="empty">'+L("Für die App-Verwaltung fehlt die Berechtigung.")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>300000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
-  if(!ADM.loaded){admLoad().catch(err=>{console.error(err);showMsg(L("Liste der Benutzer:innen konnte nicht geladen werden:")+" "+(err.message||err),6000)});return '<div class="empty">'+L("Lade Benutzer:innen …")+'</div>'}
+  if(!ADM.loaded){if(!ADM.loading){ADM.loading=true;admLoad().catch(err=>{console.error(err);showMsg(L("Liste der Benutzer:innen konnte nicht geladen werden:")+" "+(err.message||err),6000)}).finally(()=>{ADM.loading=false})}return '<div class="empty">'+L("Lade Benutzer:innen …")+'</div>'}
   const memBy={};ADM.mem.forEach(m=>memBy[m.email]=m);
   const invBy={};ADM.inv.forEach(i=>invBy[i.id]=i);
   const rows=[];const seen=new Set();
@@ -400,8 +402,9 @@ document.addEventListener("submit",async e=>{
       if(m){const fn=g("fn"),ln=g("ln"),d={firstName:fn,lastName:ln,name:[fn,ln].filter(Boolean).join(" ")||m.name||"",lang:g("lg")||m.lang||"de",birthday:g("bd")||"",gender:g("gd")||"",phone:(g("eph")||"").slice(0,40),contactEmail:lc(g("ece")||"").slice(0,120),diet:g("edt")||"none",intol:readBoxes(sf,"eint"),allergies:(g("eal")||"").slice(0,200)};
         await F.updateDoc(F.doc(db,"members",m.uid),d)}
       if(inv||!m){const d={name:(m?[g("fn"),g("ln")].filter(Boolean).join(" "):g("nm"))||"",role:g("rl")||""};
-        if(inv)await F.updateDoc(F.doc(db,"invites",em),d);else await F.setDoc(F.doc(db,"invites",em),Object.assign(d,{addedAt:F.serverTimestamp()}));await assignCrew(em)}
-      else if(g("rl"))await F.setDoc(F.doc(db,"invites",em),{name:[g("fn"),g("ln")].filter(Boolean).join(" "),role:g("rl"),addedAt:F.serverTimestamp()});await assignCrew(em);
+        /* role «Crew» only for a NEW invitation – a deliberate «Keine Rolle» stays when the profile is edited later */
+        if(inv)await F.updateDoc(F.doc(db,"invites",em),d);else{await F.setDoc(F.doc(db,"invites",em),Object.assign(d,{addedAt:F.serverTimestamp()}));await assignCrew(em)}}
+      else if(g("rl"))await F.setDoc(F.doc(db,"invites",em),{name:[g("fn"),g("ln")].filter(Boolean).join(" "),role:g("rl"),addedAt:F.serverTimestamp()});
       ADM.edit="";ADM.cedit="";showMsg(L("Gespeichert."),3000);await admLoad();render()}
     catch(err){console.error(err);if(btn)btn.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
@@ -499,9 +502,11 @@ function bdayEntries(){
 }
 function bdayHTML(){
   const ds=S.days.map(d=>d.date).filter(Boolean).sort();if(!ds.length)return"";
-  const y=ds[0].slice(0,4),from=ds[0].slice(5),to=ds[ds.length-1].slice(5);
-  const hits=bdayEntries().filter(x=>/^\d\d-\d\d$/.test(x.md||"")&&x.md>=from&&x.md<=to).sort((a,b)=>a.md<b.md?-1:a.md>b.md?1:String(a.name).localeCompare(String(b.name)));
-  return secOpen("bcal",L("Geburtstage während des Drehs")+(hits.length?" · "+hits.length:""),(hits.length?hits.map(x=>{const d=new Date(y+"-"+x.md+"T12:00:00");return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+ddmm(d))+'</span><b>'+esc(x.name)+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>'));
+  /* full dates within the shoot (also over New Year: November to February) */
+  const y0=+ds[0].slice(0,4),y1=+ds[ds.length-1].slice(0,4),first=ds[0],last=ds[ds.length-1];
+  const hits=[];for(const x of bdayEntries()){if(!/^\d\d-\d\d$/.test(x.md||""))continue;for(let yy=y0;yy<=y1;yy++){const iso=yy+"-"+x.md;if(iso>=first&&iso<=last)hits.push(Object.assign({},x,{iso}))}}
+  hits.sort((a,b)=>a.iso<b.iso?-1:a.iso>b.iso?1:String(a.name).localeCompare(String(b.name)));
+  return secOpen("bcal",L("Geburtstage während des Drehs")+(hits.length?" · "+hits.length:""),(hits.length?hits.map(x=>{const d=new Date(x.iso+"T12:00:00");return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+ddmm(d))+'</span><b>'+esc(x.name)+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>'));
 }
 /* birthday list for everyone (when the main admin allows it): bdays/{uid} = {name, md "MM-DD"}; no year, no other data */
 const PUBB={list:[],loaded:false,loading:false};

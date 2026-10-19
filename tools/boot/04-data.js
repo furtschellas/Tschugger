@@ -35,7 +35,7 @@ async function decArea(enc,area){
 }
 /* phone numbers and e-mail addresses of the crew list: own file, loaded after the data (only with that right) */
 let CTP=null;
-function contactsMerge(crew,list){let n=0;for(const [gi,pi,name,c] of (list||[])){const g=crew[gi],p=g&&g.people&&g.people[pi];if(p&&(p.name||"")===name&&c&&typeof c==="object"){Object.assign(p,c);n++}}return n}
+function contactsMerge(crew,list){let n=0;for(const [gi,pi,name,c] of (list||[])){const g=crew[gi],p=g&&g.people&&g.people[pi];if(p&&(p.name||"")===name&&c&&typeof c==="object"){for(const k in c)if(c[k]!=null)p[k]=String(c[k]);n++}}return n}
 window.loadContacts=function(){if(CTP)return CTP;CTP=(async()=>{try{
     if(!MEMBER&&!isAdmin())return false;
     const r=await fetch("contacts.enc.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return false; /* not yet there: contacts are in the data */

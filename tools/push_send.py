@@ -88,7 +88,9 @@ def push_devices():
     try: c = json.load(open(DEVS))
     except Exception: c = None
     docs = None
-    if c and now - c.get("full", 0) < 3600 and c.get("docs") is not None:
+    kh = __import__("hashlib").sha256(KEYB[0]).hexdigest()[:8] if KEYB else ""
+    # after a key change (other crew key) everything is read anew: the cached entries are still encrypted with the old key
+    if c and now - c.get("full", 0) < 3600 and c.get("docs") is not None and c.get("kh", "") == kh:
         try:
             since = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(c.get("at", now) - 120))
             docs = dict((d["id"], d["f"]) for d in c["docs"])
@@ -100,7 +102,7 @@ def push_devices():
             print("• Geräte-Zwischenspeicher nicht nutzbar:", type(e).__name__); docs = None
     if docs is None:
         docs = {did: f for did, f, _ in fsadmin.list_docs("push")}
-        c = {"full": now, "at": now}
+        c = {"full": now, "at": now, "kh": kh}
         print("• Alle Geräte gelesen (%d)" % len(docs))
     out = [(k, v, None) for k, v in docs.items()]
     try:
@@ -111,6 +113,7 @@ def push_devices():
 
 
 PEND_DEVS = []
+KEYB = []   # the crew key of this run (to notice a key change)
 
 
 def save_devices():
@@ -127,7 +130,7 @@ def main():
     kb64 = fsadmin.crew_key_b64()
     if not kb64:
         print("::error::Kein Crew-Schlüssel"); return 1
-    key = base64.b64decode(kb64)
+    key = base64.b64decode(kb64); KEYB[:] = [key]
     try:
         sent = json.load(open(SENT))
     except Exception:

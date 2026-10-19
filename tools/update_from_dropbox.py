@@ -714,6 +714,15 @@ def sides_date(name):
     if not m: return ""
     a, b, y = int(m.group(1)), int(m.group(2)), m.group(3)
     d, mo = (b, a) if a <= 12 < b else (a, b)
+    if a <= 12 and b <= 12 and a != b:   # both orders possible (10.06.): the weekday in the name decides
+        wd = next((i for i, w in enumerate(("mon", "tue", "wed", "thu", "fri", "sat", "sun")) if re.search(r"(?<![a-z])" + w, name.lower())), None)
+        if wd is None:
+            wd = next((i for i, w in enumerate(("montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag")) if w in name.lower()), None)
+        if wd is not None:
+            for dd, mm in ((a, b), (b, a)):
+                try:
+                    if datetime.date(int(y), mm, dd).weekday() == wd: d, mo = dd, mm; break
+                except ValueError: pass
     return "%s-%02d-%02d" % (y, mo, d) if 1 <= mo <= 12 and 1 <= d <= 31 else ""
 
 # ---------- Claude ----------
@@ -1016,36 +1025,12 @@ def add_drive_times(data):
     log("Anfahrt Hotel → erstes Motiv:", n, "Drehtage")
 
 
-LOCCFG_FILE = R / "tools" / "loc_cfg.json"   # one-time import only: afterwards the places live in the encrypted data (meta.locCfg)
-
-def move_private_links():
-    """the links to the motive list, map and chat belong in config/private (only the crew can read it), not in the public config/app;
-    moves them once (and the first values from tools/loc_cfg.json when nothing is set yet)"""
-    if not fsadmin.sa(): return
-    try:
-        app = fsadmin.get_doc("config/app") or {}; priv = fsadmin.get_doc("config/private") or {}
-        seed = {}
-        try: seed = json.loads(LOCCFG_FILE.read_text(encoding="utf-8")).get("links") or {}
-        except Exception: pass
-        mv = {}
-        for k in ("locSheet", "mapUrl", "chatUrl"):
-            v = priv.get(k) or app.get(k) or seed.get(k) or ""
-            if v and v != priv.get(k): mv[k] = v
-        if mv and not fsadmin.patch_doc("config/private", mv): log("config/private nicht geschrieben"); return
-        gone = [k for k in ("locSheet", "mapUrl", "chatUrl") if k in app]
-        if gone:   # remove from the public document (field in the mask, not in the body = deleted)
-            h, _ = fsadmin._auth()
-            r = requests.patch(fsadmin.BASE + "/config/app", headers=h, params=[("updateMask.fieldPaths", k) for k in gone], json={"fields": {}}, timeout=30)
-            log("Links aus der öffentlichen Einstellung entfernt:", len(gone), "· HTTP", r.status_code)
-        if mv: log("Links in config/private:", ", ".join(sorted(mv)))
-    except Exception as e: log("Links nicht umgezogen:", type(e).__name__)
-
 def main():
     WANT.clear()
     cfg = {}
     try:
         if fsadmin.sa():
-            cfg = dict(fsadmin.get_doc("config/app") or {}); move_private_links(); cfg.update({k: v for k, v in (fsadmin.get_doc("config/private") or {}).items() if v})
+            cfg = dict(fsadmin.get_doc("config/app") or {}); cfg.update({k: v for k, v in (fsadmin.get_doc("config/private") or {}).items() if v})
         else:
             f = requests.get("https://firestore.googleapis.com/v1/projects/tschugger-83692/databases/(default)/documents/config/app", timeout=20).json().get("fields", {})
             cfg = {k: list(v.values())[0] for k, v in f.items()}
@@ -1064,12 +1049,6 @@ def main():
     oldkind = {}
     for s in meta.get("sources", []): oldkind.setdefault(s.get("kind"), s)
     changed = False; sources = []
-    try:   # places, addresses and location groups: only in the encrypted data (imported once from tools/loc_cfg.json)
-        lc = json.loads(LOCCFG_FILE.read_text(encoding="utf-8"))
-        lc.pop("links", None)
-        if lc and meta.get("locCfg") != lc: meta["locCfg"] = lc; changed = True; log("Orte-Einstellungen übernommen")
-    except FileNotFoundError: pass
-    except Exception as e: log("Orte-Einstellungen nicht gelesen:", type(e).__name__)
 
     global BLKS
     BLKS = BlkStore()

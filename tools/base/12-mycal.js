@@ -52,8 +52,9 @@ let MYEV=[],MCNAMES=[];
 /* «Meine Termine»: only upcoming events, events that started at most 5 hours ago and events still running (end time);
    events without a time stay visible for their whole day */
 function evRecent(e){const ok=x=>/^\d\d:\d\d$/.test(x||"");if(!ok(e.t)&&!ok(e.end))return e.date>=todayISO();
-  const ms=x=>new Date(e.date+"T"+x+":00").getTime(),now=Date.now();
-  return (ok(e.t)&&ms(e.t)>=now-5*3600e3)||(ok(e.end)&&ms(e.end)>=now)}
+  const ms=x=>zurichUTC(e.date,x).getTime(),now=Date.now();
+  let end=ok(e.end)?ms(e.end):0;if(end&&ok(e.t)&&end<=ms(e.t))end+=864e5; /* night shoot: end after midnight */
+  return (ok(e.t)&&ms(e.t)>=now-5*3600e3)||(end&&end>=now)}
 function renderMy(){
   if(!vok("mycal"))return '<div class="empty">'+esc(L("Kein Zugang"))+'</div>';
   const me=myIdentity();const people=mailPeople().filter(x=>x.src&&x.src!=="user");

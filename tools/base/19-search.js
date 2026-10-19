@@ -63,7 +63,7 @@ function roleBadges(sc,ids){const P=planRoles(sc),o=SCRIPT?(scriptRoles()[norm(s
     return st?'<span class="rbadge'+(/⚠/.test(st)?' warn':'')+'"><b>'+esc(r.name)+'</b> '+esc(st)+'</span>':""}).join("")+'</span>'}
 /* ---------- global search ---------- */
 const nrm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-function hl(text,terms){let h=esc(text);for(const t of terms){if(!t)continue;const re=new RegExp("("+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig");h=h.replace(re,"<mark>$1</mark>")}return h}
+function hl(text,terms){return markTerms(text,terms,1)}
 function searchAll(q,mode){
   mode=mode||"all";const M=k=>mode==="all"||mode===k;
   const qq=normQ(q);
@@ -85,7 +85,7 @@ function searchAll(q,mode){
     const sc1=(d.items||[]).filter(i=>i.sc).length,sc2=((d.unit2&&d.unit2.items)||[]).filter(i=>i.sc).length,sc3=((d.unit3&&d.unit3.items)||[]).filter(i=>i.sc).length;
     const kindw=d.kind==="shoot"?"drehtag shooting day tournage riprese":d.kind==="off"?"drehfrei frei day off off-day libre libero":"reise reisetag travel voyage viaggio";
     const text=[d.label,d.short,kindw,WDL[x.getDay()].join(" "),WD[x.getDay()],dshort(d),(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info"),dayPlaces(d).join(" "),sc2?"2nd unit":"",sc3?"3rd unit":"",sc1?"1st unit":""].join(" ");
-    if(mode==="text"?terms.every(t=>nrm([(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info")].join(" ")).includes(t)):match(text,nrm(d.short||"")+" "+dshort(d)))R.day.push({k:"day",d,sc1,sc2});
+    if(mode==="text"?terms.every(t=>nrm([(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info")].join(" ")).includes(t)):match(text,nrm(d.short||"")+" "+dshort(d)))R.day.push({k:"day",d,sc1,sc2,sc3});
   }
   for(const d of (okPlan?S.days:[]))for(const [u,list] of unitLists(d))for(const it of list){
     if(!it.sc)continue;if(!unitsOn().includes(u))continue;const ad=addrForItem(it);
@@ -120,9 +120,9 @@ function renderSearch(){
   const {R,terms}=res;let h="",n=0;
   const add=(o,t1,t2)=>{SR.push(o);h+='<button class="sr" data-sr="'+(SR.length-1)+'"><span class="t1">'+t1+'</span>'+(t2?'<span class="t2">'+t2+'</span>':'')+'</button>';n++};
   const sec=(title,arr,fn)=>{if(!arr.length)return;h+='<h3 class="dh">'+title+' · '+arr.length+'</h3>';arr.slice(0,40).forEach(fn)};
-  sec(L("Drehtage"),R.day,r=>add(r,'<b>'+esc(r.d.label)+'</b> · '+esc(fmtDate(r.d.date)),esc([r.d.hours,dayPlaces(r.d).join(", "),r.d.kind==="shoot"?(r.sc1+r.sc2)+" "+L("Szenen")+(r.sc2?" · 2nd Unit":""):(r.d.kind==="off"?L("Drehfrei"):(TX(r.d,"info")||L("Reisetag")))].filter(Boolean).join(" · "))));
+  sec(L("Drehtage"),R.day,r=>add(r,'<b>'+esc(r.d.label)+'</b> · '+esc(fmtDate(r.d.date)),esc([r.d.hours,dayPlaces(r.d).join(", "),r.d.kind==="shoot"?(r.sc1+r.sc2+(r.sc3||0))+" "+L("Szenen")+(r.sc2?" · 2nd Unit":"")+(r.sc3?" · 3rd Unit":""):(r.d.kind==="off"?L("Drehfrei"):(TX(r.d,"info")||L("Reisetag")))].filter(Boolean).join(" · "))));
   const rIds=S.gm==="role"?rolesFor(terms).map(r=>r.id):[];const castNm=(S.meta&&S.meta.cast)||{};
-  sec(cap(L("Szenen")),R.sc,r=>add(r,'<b>'+hl(r.it.sc,terms)+'</b> · '+hl(r.it.set||"",terms),esc((r.d.short||r.d.label)+' '+fmtDate(r.d.date).slice(0,-5)+' · '+(r.it.t||"")+(r.u==="2"?' · 2nd Unit':''))+(S.gm==="role"?'<br>'+arr(r.it.cast).filter(c=>rIds.includes(String(c))).map(c=>'<mark>'+esc(castNm[c]||c)+'</mark>').join(", "):'')+'<br>'+hl(TX(r.it,"d"),terms)+'<br>'+hl(r.ad||"",terms)));
+  sec(cap(L("Szenen")),R.sc,r=>add(r,'<b>'+hl(r.it.sc,terms)+'</b> · '+hl(r.it.set||"",terms),esc((r.d.short||r.d.label)+' '+fmtDate(r.d.date).slice(0,-5)+' · '+(r.it.t||"")+(r.u==="2"?' · 2nd Unit':r.u==="3"?' · 3rd Unit':''))+(S.gm==="role"?'<br>'+arr(r.it.cast).filter(c=>rIds.includes(String(c))).map(c=>'<mark>'+esc(castNm[c]||c)+'</mark>').join(", "):'')+'<br>'+hl(TX(r.it,"d"),terms)+'<br>'+hl(r.ad||"",terms)));
   sec("Locations",R.loc,r=>add(r,hl(r.g.title,terms),hl(r.g.s5?[((S.meta&&S.meta.locCfg||{}).s5||{}).village,L("Mehrere Adressen")].filter(Boolean).join(", "):[r.g.venue,r.g.address].filter(Boolean).join(", "),terms)));
   sec("Crew",R.crew,r=>add(r,hl(r.p.name,terms),hl([TX(r.p,"role"),TX(r.dep,"dept"),vok("phone")?r.p.phone:""].filter(Boolean).join(" · "),terms)));  /* phone only with the right to see it */
   sec("Callsheet",R.dispo,r=>add(r,esc((r.x.label||"Callsheet")+' · '+fmtDate(r.x.date)),'Callsheet'));
