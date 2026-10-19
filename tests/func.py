@@ -345,6 +345,25 @@ async def owner_tests(p, port):
           const b=box.querySelector('[data-sv="inf"]');if(b)b.click();const on=vis(document.getElementById('scn').querySelector('.spf1 .bdt'));
           const c=document.querySelector('#scn [data-scnclose]');if(c)c.click();S.sv=sv;store('sv',JSON.stringify(sv));S.meta.bd=keep;render();return {a,btn:!!b,on}})()""")
         check("Drehbuch-Fenster: Info-Knopf zeigt die Szenen-Details", scr in (None, {"a": False, "btn": True, "on": True}), scr, public=True)
+        nw = await E("""(async()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);const sv=Object.assign({},S.sv),keep=S.meta.bd,kb=S.meta.blocking,bm=S.meta.bm;
+          const r={};
+          /* extras (XX) go with the cast button */
+          S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{XX:'6xPolice'},c:[]}};S.tab='plan';S.day=d.id;render();const vis=e=>!!e&&getComputedStyle(e).display!=='none';
+          const x=document.querySelector('#view .sc .bdx');r.xx=vis(x);document.querySelector('#view [data-pv="c"]').click();r.xxOff=!vis(document.querySelector('#view .sc .bdx'));document.querySelector('#view [data-pv="c"]').click();
+          /* English scene titles with the flag button (script list) */
+          if(typeof spTitle==='function'&&typeof SCRIPT!=='undefined'&&SCRIPT){const sx=SCRIPT.find(y=>spHeadEn(y));if(sx){S.sv.e=false;S.tab='script';S.sq=String(sx.sc);S.sqm='sc';render();const t=document.querySelector('#view .sct.en');
+            r.de=vis(t&&t.querySelector('.hde'))&&!vis(t&&t.querySelector('.hen'));document.querySelector('#view .svtab [data-sv="e"]').click();const t2=document.querySelector('#view .sct.en');r.en=vis(t2&&t2.querySelector('.hen'))&&!vis(t2&&t2.querySelector('.hde'))}}
+          /* the search starts again with «Alle» when the script tab is opened */
+          S.sqm='role';goTab('script');r.alle=S.sqm==='all'&&!S.sq;
+          /* gallery: no slideshow; PDF pages fill the screen */
+          S.meta.bm=[];S.meta.blocking=[{name:'T',sc:['1'],url:'https://www.dropbox.com/x',media:[{t:'img',n:'a',f:'blk/a',u:'u'},{g:'pdf',t:'img',n:'P · 1/1',f:'blk/p',u:'u'}]}];
+          if(typeof openGallery==='function'){openGallery(S.meta.blocking[0]);r.noshow=!document.querySelector('#blkgal [data-gshow]');document.querySelectorAll('#blkgal').forEach(z=>z.remove());
+            openGallery(S.meta.blocking[0],0,'P');r.pdf=!!document.querySelector('#blkgal.galpdf');document.querySelectorAll('#blkgal').forEach(z=>z.remove())}
+          S.sv=sv;store('sv',JSON.stringify(sv));S.meta.bd=keep;S.meta.blocking=kb;S.meta.bm=bm;S.sq='';S.sqm='all';S.tab='plan';render();return r})()""")
+        check("Neu: Extras mit Cast-Knopf, englische Titel mit EN-Knopf, Suche startet bei «Alle», Galerie ohne Diashow, PDF bildschirmfüllend",
+              nw is None or (nw.get("xx") and nw.get("xxOff") and nw.get("alle") and nw.get("noshow") and nw.get("pdf") and nw.get("de", True) and nw.get("en", True)), nw, public=True)
+        acp = await E("""(()=>{if(typeof showAcct!=='function'||!ME)return null;ACSUB='app';showAcct();const r=ACSUB==='pro';S.tab='today';render();return r})()""")
+        check("Mein Konto öffnet immer im Profil", acp in (None, True), acp, public=True)
         gal = await E("""(()=>{if(typeof window.blkImg!=='function')return null;const keep=S.meta.blocking,kb=S.meta.bm;S.meta.bm=[];
           S.meta.blocking=[{name:'Scene_186',sc:['186'],url:'https://www.dropbox.com/x',media:[{t:'img',n:'allg',f:'blk/a',u:'u'},{t:'img',n:'teil1',f:'blk/b',u:'u',p:'186pt1'},{t:'img',n:'party',f:'blk/c',u:'u',p:'186pt2'}]}];
           const w=document.createElement('div');w.innerHTML=fpLinks([],blkFor('186pt1A'));document.body.appendChild(w);const a=w.querySelector('[data-blkg]');if(a)a.click();

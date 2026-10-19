@@ -312,4 +312,8 @@ _pb2 = U.parse_breakdown("Day #8 - SR\n22:00\nTschugger Sched - Sched 261018 - p
 check("Szenen-Details: Szene direkt nach einem Seitenumbruch (27 auf D8) wird gefunden", (_pb2.get(8, {}).get("27") or {}).get("c") == [["Props", ["Flight Tickets", "Handcuffs"]], ["Story Date", ["20.10.2032"]]], _pb2)
 check("Szenen-Details: «Special: Elec: …» bleibt wie im PDF zusammen", (U.parse_breakdown("Day #1\n186 pt2 1 2/8 pgs E/Ev X 1\n17:30\n\nParty.\nLoc: Pfyn\n\nCrew: Drone, Special: Elec: enhance beamer light, Set Dec: Film projection\n").get(1, {}).get("186pt2") or {}).get("c") == [["Crew", ["Drone"]], ["Special: Elec", ["enhance beamer light"]], ["Set Dec", ["Film projection"]]])
 
+# data check App ↔ Dropbox: scene numbers of the schedule belong to the script scene (parts, slideshow pictures)
+import verify_data as V  # noqa: E402
+check("Daten prüfen: Szenennummern normalisiert", [V.sc_key(x) for x in ("186pt1A", "25 SL2", "012")] == ["186pt1a", "25sl2", "12"])
+
 sys.exit(done("Hintergrund"))
