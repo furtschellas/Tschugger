@@ -1178,7 +1178,7 @@ def main():
     def is_new(kind, f): return FORCE or old.get((kind, base(f["name"]))) != f["modified"]
     olds = {(s.get("kind"), base(s.get("name"))): s for s in meta.get("sources", [])}
     fails = dict(meta.get("fails") or {}); seen = set()   # «kind|file|modified» → failed attempts (at most 3 per file version)
-    def fkey(kind, f): return kind + "|" + base(f["name"]) + "|" + str(f["modified"])
+    def fkey(kind, f): return kind + ("2" if kind == "dispo" else "") + "|" + base(f["name"]) + "|" + str(f["modified"])   # dispo2: new reading (structure «cs»), fresh tries
     def keep_old(kind, f):
         """the file could not be used: keep the previous entry in the sources, so the file is tried again in the next run"""
         sources[-1] = olds.get((kind, base(f["name"]))) if kind in ("dispo", "prep") else oldkind.get(kind)
