@@ -658,17 +658,29 @@ def u2_also_strip(days):
         if u2.get("src") == "also": d.pop("unit2", None); continue
         if any(it.get("also") for it in u2.get("items") or []): u2["items"] = [it for it in u2["items"] if not it.get("also")]
 
-def u2_also_add(days):
+def u2_also_add(days, sheets=None):
+    """the 2nd unit of that day: the detailed planning from the 2nd-unit sheet (setups, times, notes of the scene; other scenes
+    of the sheet are left out); without a sheet the row of the 1st unit is copied"""
     for no, sc in U2_ALSO:
         d = next((x for x in days or [] if x.get("kind") == "shoot" and re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")) and int(re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")).group(1)) == no), None)
         if not d: continue
         it = next((i for i in d.get("items") or [] if _norm_sc(i.get("sc") or "") == _norm_sc(sc)), None)
-        if not it: continue
+        sh = next((v.get("u2") for v in (sheets or {}).values() if isinstance(v, dict) and v.get("no") == no and isinstance(v.get("u2"), dict)
+                   and any(_norm_sc(i.get("sc") or "") == _norm_sc(sc) for i in v["u2"].get("items") or [])), None)
+        if not it and not sh: continue
         u2 = d.get("unit2") if isinstance(d.get("unit2"), dict) else None
-        if u2 is None: u2 = d["unit2"] = {"src": "also", "items": []}
-        if any(_norm_sc(i.get("sc") or "") == _norm_sc(sc) for i in u2.get("items") or []): continue
-        u2.setdefault("items", []).append(dict(it, also=True))
-        log("2nd Unit: Szene", sc, "zusätzlich an Tag", no); print("::notice::2nd Unit zusätzlich: Szene %s an Tag %d (auch bei der 1st Unit)" % (sc, no))
+        if u2 and any(_norm_sc(i.get("sc") or "") == _norm_sc(sc) for i in u2.get("items") or []): continue
+        if sh:
+            items = [dict(i, also=True) for i in sh.get("items") or [] if not i.get("sc") or _norm_sc(i.get("sc")) == _norm_sc(sc)]
+            src = "Planung aus dem 2nd-Unit-Sheet"
+        else:
+            items = [dict(it, also=True)]; src = "Zeile der 1st Unit"
+        if u2 is None:
+            u2 = d["unit2"] = {"src": "also", "items": []}
+            for k in ("hours", "notes", "notes_i18n"):
+                if sh and sh.get(k): u2[k] = sh[k]
+        u2.setdefault("items", []).extend(items)
+        log("2nd Unit: Szene", sc, "zusätzlich an Tag", no); print("::notice::2nd Unit zusätzlich: Szene %s an Tag %d – %s, %d Einträge (auch bei der 1st Unit)" % (sc, no, src, len(items)))
 
 def pick_schedule(files):
     # the Swiss schedule: in 02_Schedule or a subfolder (formerly 02_Schedule/CH) – not the archive and not India
@@ -1675,7 +1687,7 @@ def main():
     data["meta"] = meta
     for k in ("days", "crew", "locations", "places", "dispos"): data.setdefault(k, [])
     if not data["days"] or not data["crew"]: sys.exit("Keine Drehtage oder Crew – nichts veröffentlicht")
-    try: u2_also_add(data["days"])
+    try: u2_also_add(data["days"], meta.get("unit2Sheet"))
     except Exception as e: log("2nd Unit zusätzlich nicht ergänzt:", type(e).__name__)
     try: apply_place_fixes(data)
     except Exception as e: log("Info-Ergänzungen nicht angewendet:", type(e).__name__)
