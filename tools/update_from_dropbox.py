@@ -768,12 +768,22 @@ def pick_info(files):
     c = [f for f in files if "/" not in f["name"] and "good_to_know" in low(f) and low(f).endswith(".pdf")]
     return max(c, key=lambda f: f["modified"] or "") if c else None
 
+# the callsheet folder («06_Callsheets», since 19.10. «00_Callsheets»): the number in front does not matter
+def _cs(f): return bool(re.match(r"\d{1,2}_callsheets/", low(f))) and "_archiv" not in low(f) and low(f).endswith(".pdf")
+def _base(f): return low(f).rsplit("/", 1)[-1]
+def _is_sides(f): return "/sides/" in low(f) or re.search(r"(^|[_ -])sides([_ -]|$)", _base(f)) is not None
+def _is_ra(f): return re.match(r"ra[_ -]", _base(f)) is not None or re.search(r"gef(ä|ae)hrdungsbeurteilung|risk.?assessment", _base(f)) is not None
+
 def pick_dispos(files):
-    """callsheets – not the «Sides» (the script pages of a day, in 06_Callsheets/SIDES)"""
-    return [f for f in files if low(f).startswith("06_callsheets/") and "_archiv" not in low(f) and low(f).endswith(".pdf") and "/sides/" not in low(f)]
+    """callsheets – not the «Sides» (script pages of a day) and not the risk assessments (RA_…)"""
+    return [f for f in files if _cs(f) and not _is_sides(f) and not _is_ra(f)]
 
 def pick_sides(files):
-    return [f for f in files if low(f).startswith("06_callsheets/") and "/sides/" in low(f) and "_archiv" not in low(f) and low(f).endswith(".pdf")]
+    return [f for f in files if _cs(f) and _is_sides(f) and not _is_ra(f)]
+
+def pick_ra(files):
+    """risk assessments (Gefährdungsbeurteilung) in the callsheet folders, e.g. «DT1/RA_Tschugger_Tigerblood_Bild186_2026-10-20.pdf»"""
+    return [f for f in files if _cs(f) and _is_ra(f)]
 
 def sides_date(name):
     """«…_DT 4_Sunday, 25.10.2026.pdf» / «…_DT2_Tuesday, 10.21.2026.pdf» (also US order) → 2026-10-25; none → """""
@@ -1423,9 +1433,18 @@ def main():
             title = re.sub(r"(?i)^tschugger_|\.pdf$", "", nm).replace("_", " ").strip()
             sides.append({"date": date, "name": title[:80], "pg": pg, "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(f["name"])})
         if sides != (meta.get("sides") or []): meta["sides"] = sides; changed = True
+        ras = []   # risk assessments: one button each in the callsheet (only with the right «Gefährdungsbeurteilung sehen»)
+        for f in sorted(pick_ra(files), key=lambda f: f["name"]):
+            nm = f["name"].split("/")[-1]
+            md = re.search(r"(\d{4}-\d{2}-\d{2})", nm); m = re.search(r"(?i)DT\s*#?\s*(\d+)", f["name"])
+            date = (md.group(1) if md else "") or sides_date(nm) or (shoot.get(int(m.group(1))) if m else "") or ""
+            mb = re.search(r"(?i)bild\s*_?(\w+?)(?:_|\.pdf|$)", nm)
+            title = ("Szene " + mb.group(1)) if mb else re.sub(r"(?i)^ra_|\.pdf$", "", nm).replace("_", " ").strip()
+            ras.append({"date": date, "name": title[:80], "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(f["name"])})
+        if ras != (meta.get("ra") or []): meta["ra"] = ras; changed = True
         spc = {k: v for k, v in spc.items() if k in used}
         if spc != (meta.get("sidesPages") or {}): meta["sidesPages"] = spc; changed = True
-        print("::notice::Sides: %d · Callsheet-Seiten: %d" % (len(sides), sum(1 for d in dispos.values() if d.get("pg"))))
+        print("::notice::Sides: %d · Gefährdungsbeurteilungen: %d · Callsheet-Seiten: %d" % (len(sides), len(ras), sum(1 for d in dispos.values() if d.get("pg"))))
     except Exception as e: print("::warning::Sides/Callsheet-Seiten nicht erzeugt: " + type(e).__name__)
     if dispos or data.get("dispos"): data["dispos"] = sorted(dispos.values(), key=lambda d: d.get("date", ""))
 

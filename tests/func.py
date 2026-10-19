@@ -417,6 +417,10 @@ async def owner_tests(p, port):
           S.tab='today';MEMO.clear();render();const t=[...document.querySelectorAll('.today .ttile')].map(x=>x.textContent);d.hours=keep.h;if(keep.u===undefined)delete d.unit2;else d.unit2=keep.u;MEMO.clear();render();
           return t.some(x=>x.includes('07:00–19:00')&&x.includes('1st Unit'))&&t.some(x=>x.includes('08:00–18:00')&&x.includes('2nd Unit'))})()""")
         check("Today: Kachel Drehzeit (1st Unit) und Drehzeit 2nd Unit", tz in (None, True), tz, public=True)
+        ra = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;const keep=S.meta.ra,kp=MYPERMS.slice();S.meta.ra=[{date:d.date,name:'Szene 186',url:'https://www.dropbox.com/x'}];
+          const h1=raHTML(d.date);const sim=SIMROLE,kr=MYROLE;SIMROLE={adm:false};MYROLE='testrolle';MYPERMS=['view.dispo'];const h2=raHTML(d.date);SIMROLE=sim;MYROLE=kr;MYPERMS=kp;S.meta.ra=keep;
+          const w=document.createElement('div');w.innerHTML=h1;const det=w.querySelector('details.rasec');return {zu:!!det&&!det.open,txt:!!det&&det.textContent.includes('Szene 186'),ohne:h2===''}})()""")
+        check("Callsheet: Gefährdungsbeurteilung aufklappbar, zugeklappt, nur mit Recht", ra in (None, {"zu": True, "txt": True, "ohne": True}), ra, public=True)
         # app settings: links that were not loaded are never written (else empty fields deleted them for everyone)
         pv = await E("""(async()=>{const keep=window.PRIVOK;window.PRIVOK=false;const before=JSON.stringify(window.__db['config/private']||null);
           const ll=loadLangs;loadLangs=async()=>{};S.tab='admin';ADM.sub='set';render();await new Promise(x=>setTimeout(x,300));
