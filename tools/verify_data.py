@@ -35,8 +35,9 @@ def day_items(d):
 
 def main():
     data = U.dec_file(U.R / "data.enc.json") or {}
-    scr = (U.dec_file(U.R / "script.enc.json") or {}).get("script", [])
+    scr = (U.dec_area(U.R / "script.enc.json", "script") or {}).get("script", [])
     meta = data.get("meta") or {}
+    cts = (U.dec_area(U.R / "contacts.enc.json", "contacts") or {}).get("c") if (U.R / "contacts.enc.json").exists() else None
     if "bm" not in meta: meta["bm"] = (U.dec_file(U.R / "media.enc.json") or {}).get("bm") or []
     days = [d for d in data.get("days") or [] if d.get("kind") == "shoot"]
     dbx = U.Dbx(); files = dbx.list_all()
@@ -154,6 +155,8 @@ def main():
     except Exception as e: info("Einstellungen nicht geprüft (%s)" % type(e).__name__)
     lc = meta.get("locCfg") or {}
     (ok if lc.get("addr") else bad)("Orte-Einstellungen verschlüsselt in den Daten: %d Adressen, %d Gruppen" % (len(lc.get("addr") or {}), len(lc.get("bundles") or []) + len(lc.get("titles") or [])))
+    leak = sum(1 for g in data.get("crew") or [] for pp in g.get("people") or [] if isinstance(pp, dict) and any(U.CONTACT_RE.search(k) for k in pp))
+    (ok if cts is not None and not leak else bad)("Telefon/E-Mail der Crewliste mit eigenem Schlüssel: %s" % ("%d Kontakte, keine in den allgemeinen Daten" % len(cts) if cts is not None and not leak else "%d noch in den allgemeinen Daten" % leak))
     pubcode = (U.R / "index.html").read_text(encoding="utf-8", errors="ignore").lower()
     hits = [w for w in {re.sub(r",.*", "", v).lower() for v in (lc.get("addr") or {}).values()} if len(w) > 6 and w in pubcode]
     (ok if not hits else bad)("Adressen im öffentlichen App-Code: " + ("keine" if not hits else "%d gefunden" % len(hits)))

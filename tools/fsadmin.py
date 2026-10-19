@@ -4,7 +4,7 @@ A service account is not bound by the Firestore rules, so the push collections n
 everybody: the GitHub Actions read them with this account, delete devices that removed the app, and mark
 messages as sent. Without FIREBASE_SA everything falls back to the old public read (and nothing is deleted).
 """
-import base64, json, os, time
+import base64, json, os, secrets, time
 
 import requests
 
@@ -159,6 +159,20 @@ def delete_doc(path):
     h, _ = _auth()
     if not h: return False
     return requests.delete(BASE + "/" + path, headers=h, timeout=30).status_code in (200, 404)
+
+
+AREAS = ("script", "contacts")   # own keys: Drehbuch (only «Drehbuch sehen»), Telefon/E-Mail der Crewliste (only «Telefon/E-Mail sehen»)
+
+
+def area_key_b64(area, create=True):
+    """key of one area (secret/key<area>; the Firestore rules give it only to people with that right); created on first use"""
+    if area not in AREAS: raise ValueError(area)
+    if not sa(): return ""
+    d = get_doc("secret/key" + area) or {}
+    k = str(d.get("k") or "").strip()
+    if k or not create: return k
+    k = base64.b64encode(secrets.token_bytes(32)).decode()
+    return k if patch_doc("secret/key" + area, {"k": k, "at": int(time.time())}) else ""
 
 
 def crew_key_b64():

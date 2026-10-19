@@ -796,5 +796,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    smoke.KEY = smoke.crew_key()
+    smoke.KEY = smoke.crew_key(); smoke.AK = smoke.area_keys()
     sys.exit(asyncio.run(main()))

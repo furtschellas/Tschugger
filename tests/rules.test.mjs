@@ -22,6 +22,7 @@ const env = await initializeTestEnvironment({
 const U = {
   owner: ["uOwner", "furtschellas@gmail.com"], admin: ["uAdmin", "admin@test.ch"], crew: ["uCrew", "crew@test.ch"],
   power: ["uPower", "power@test.ch"], viewer: ["uView", "view@test.ch"], stranger: ["uStr", "str@test.ch"], other: ["uOther", "other@test.ch"],
+  reader: ["uRead", "read@test.ch"], norole: ["uNo", "no@test.ch"],
 };
 const as = k => env.authenticatedContext(U[k][0], { email: U[k][1], email_verified: true }).firestore();
 const anon = env.unauthenticatedContext().firestore();
@@ -37,7 +38,11 @@ await env.withSecurityRulesDisabled(async c => {
   await setDoc(doc(db, "userroles/other@test.ch"), { role: "crew" });
   await setDoc(doc(db, "roles/viewer"), { name: "Viewer", perms: ["roles.view"] });
   await setDoc(doc(db, "userroles/view@test.ch"), { role: "viewer" });
-  for (const k of ["crew", "power", "other", "viewer"]) await setDoc(doc(db, "members/" + U[k][0]), { active: true, email: U[k][1], name: k });
+  await setDoc(doc(db, "secret/keyscript"), { k: "s" });
+  await setDoc(doc(db, "secret/keycontacts"), { k: "c" });
+  await setDoc(doc(db, "roles/reader"), { name: "Reader", perms: ["view.plan", "view.script", "view.phone"] });
+  await setDoc(doc(db, "userroles/read@test.ch"), { role: "reader" });
+  for (const k of ["crew", "power", "other", "viewer", "reader", "norole"]) await setDoc(doc(db, "members/" + U[k][0]), { active: true, email: U[k][1], name: k });
   await setDoc(doc(db, "events/evPower"), { c: "x", at: 1, by: "uPower" });
   await setDoc(doc(db, "gcal/feed"), { c: "x" });
   await setDoc(doc(db, "secret/gcal"), { url: "https://calendar.google.com/x.ics" });
@@ -51,6 +56,20 @@ await check("Schlüssel: Crew-Mitglied darf lesen", assertSucceeds(getDoc(doc(as
 await check("Schlüssel: nicht eingeladene Person nicht", assertFails(getDoc(doc(as("stranger"), "secret/key"))));
 await check("Schlüssel: ohne Anmeldung nicht", assertFails(getDoc(doc(anon, "secret/key"))));
 await check("Schlüssel: niemand darf ihn ändern (auch Owner nicht)", assertFails(setDoc(doc(as("owner"), "secret/key"), { k: "y" })));
+
+// ---------- own keys per area ----------
+await check("Drehbuch-Schlüssel: mit «Drehbuch sehen»", assertSucceeds(getDoc(doc(as("reader"), "secret/keyscript"))));
+await check("Drehbuch-Schlüssel: Rolle ohne «Drehbuch sehen» nicht", assertFails(getDoc(doc(as("crew"), "secret/keyscript"))));
+await check("Drehbuch-Schlüssel: ohne Rolle nicht", assertFails(getDoc(doc(as("norole"), "secret/keyscript"))));
+await check("Drehbuch-Schlüssel: Owner und Admin", Promise.all([assertSucceeds(getDoc(doc(as("owner"), "secret/keyscript"))), assertSucceeds(getDoc(doc(as("admin"), "secret/keyscript")))]));
+await check("Drehbuch-Schlüssel: nicht eingeladene Person nicht", assertFails(getDoc(doc(as("stranger"), "secret/keyscript"))));
+await check("Kontakt-Schlüssel: mit «Telefonnummern sehen»", assertSucceeds(getDoc(doc(as("reader"), "secret/keycontacts"))));
+await check("Kontakt-Schlüssel: Rolle ohne Telefon/E-Mail nicht", assertFails(getDoc(doc(as("crew"), "secret/keycontacts"))));
+await check("Kontakt-Schlüssel: ohne Rolle nur, wenn für alle freigegeben", assertFails(getDoc(doc(as("norole"), "secret/keycontacts"))));
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "config/app"), { phonePublic: true }, { merge: true }); });
+await check("Kontakt-Schlüssel: ohne Rolle mit Freigabe «Telefonnummern für alle»", assertSucceeds(getDoc(doc(as("norole"), "secret/keycontacts"))));
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "config/app"), { phonePublic: false }, { merge: true }); });
+await check("Bereichs-Schlüssel: niemand darf sie ändern", assertFails(setDoc(doc(as("owner"), "secret/keyscript"), { k: "x" })));
 
 // ---------- no self-promotion ----------
 await check("Rollen: Crew kann sich nicht selbst Admin machen", assertFails(setDoc(doc(as("crew"), "admins/crew@test.ch"), { addedAt: 1 })));

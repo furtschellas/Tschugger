@@ -66,9 +66,9 @@ jobs:
             # Bilder liegen in Cloudflare R2: nicht mehr im Repository führen
             git rm -r -q --cached --ignore-unmatch blk
             grep -qx 'blk/' .gitignore 2>/dev/null || echo 'blk/' >> .gitignore
-            git add .gitignore; PATHS="data.enc.json media.enc.json script.enc.json status.json stamp.json"
+            git add .gitignore; PATHS="data.enc.json media.enc.json contacts.enc.json script.enc.json status.json stamp.json"
           else
-            git add -N status.json stamp.json blk 2>/dev/null || true; PATHS="data.enc.json media.enc.json script.enc.json status.json stamp.json blk"
+            git add -N status.json stamp.json blk 2>/dev/null || true; PATHS="data.enc.json media.enc.json contacts.enc.json script.enc.json status.json stamp.json blk"
           fi
           git add -A $PATHS 2>/dev/null || true
           if git diff --cached --quiet; then echo "nichts zu veröffentlichen"; exit 0; fi

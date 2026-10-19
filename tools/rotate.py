@@ -46,6 +46,24 @@ def reenc(old, new, raw):
     return iv + AESGCM(new).encrypt(iv, pt, None)
 
 
+def refile(p, old, new):
+    """re-encrypt one .enc.json file; old = key or list of keys (current, previous: a run that stopped after the key change);
+    False = already done (interrupted earlier run); raises if no key fits"""
+    e = json.load(open(p))
+    if "iv" not in e or "ct" not in e: return False
+    iv0, ct0 = base64.b64decode(e["iv"]), base64.b64decode(e["ct"])
+    pt = None
+    for k in (old if isinstance(old, list) else [old]):
+        try: pt = AESGCM(k).decrypt(iv0, ct0, None); break
+        except Exception: pass
+    if pt is None:
+        AESGCM(new).decrypt(iv0, ct0, None); return False
+    iv = secrets.token_bytes(12)
+    e["iv"] = base64.b64encode(iv).decode(); e["ct"] = base64.b64encode(AESGCM(new).encrypt(iv, pt, None)).decode()
+    if "stamp" in e: e["stamp"] = hashlib.sha256(new + pt).hexdigest()[:16]
+    json.dump(e, open(p, "w")); return True
+
+
 def crew():
     old_b64 = fsadmin.crew_key_b64()
     if not old_b64: sys.exit("Kein bisheriger Schlüssel")
@@ -58,18 +76,25 @@ def crew():
         sys.exit("secret/keynext nicht geschrieben – nichts geändert")
     # 1. encrypted JSON files in the repository
     n = 0
-    for p in [os.path.join(ROOT, f) for f in ("data.enc.json", "script.enc.json", "media.enc.json")] + glob.glob(os.path.join(HERE, "*.enc.json")):
-        try: e = json.load(open(p))
-        except Exception: continue
-        if "iv" not in e or "ct" not in e: continue
-        iv0, ct0 = base64.b64decode(e["iv"]), base64.b64decode(e["ct"])
-        try: pt = AESGCM(old).decrypt(iv0, ct0, None)
-        except Exception:
-            AESGCM(new).decrypt(iv0, ct0, None); continue   # already re-encrypted in an interrupted run
-        iv = secrets.token_bytes(12)
-        e["iv"] = base64.b64encode(iv).decode(); e["ct"] = base64.b64encode(AESGCM(new).encrypt(iv, pt, None)).decode()
-        if "stamp" in e: e["stamp"] = hashlib.sha256(new + pt).hexdigest()[:16]
-        json.dump(e, open(p, "w")); n += 1
+    cprev = (fsadmin.get_doc("secret/keyprev") or {}).get("k")
+    colds = [old] + ([base64.b64decode(cprev)] if cprev else [])
+    for p in [os.path.join(ROOT, f) for f in ("data.enc.json", "script.enc.json", "media.enc.json", "contacts.enc.json")] + glob.glob(os.path.join(HERE, "*.enc.json")):
+        try: n += 1 if refile(p, colds, new) else 0
+        except Exception: pass   # not a crew-key file (e.g. Drehbuch/Kontakte with their own key: below)
+    # own keys per area (Drehbuch, Telefon/E-Mail): new keys too, saved first in secret/keynext<area> (resumable)
+    anew = {}
+    for area, fn in (("script", "script.enc.json"), ("contacts", "contacts.enc.json")):
+        ao = fsadmin.area_key_b64(area, create=False)
+        if not ao: continue
+        nxa = (fsadmin.get_doc("secret/keynext" + area) or {}).get("k")
+        if not nxa:
+            nxa = base64.b64encode(secrets.token_bytes(32)).decode()
+            if not fsadmin.patch_doc("secret/keynext" + area, {"k": nxa, "at": int(time.time())}): sys.exit("secret/keynext" + area + " nicht geschrieben")
+        prev = (fsadmin.get_doc("secret/keyprev" + area) or {}).get("k")
+        olds = [base64.b64decode(ao)] + ([base64.b64decode(prev)] if prev else [])
+        try: n += 1 if refile(os.path.join(ROOT, fn), olds, base64.b64decode(nxa)) else 0
+        except FileNotFoundError: pass
+        anew[area] = nxa
     log("Dateien neu verschlüsselt:", n)
     try:   # the app polls stamp.json: new stamp, so devices load the newly encrypted data
         st = json.load(open(os.path.join(ROOT, "stamp.json"))); st["s"] = json.load(open(os.path.join(ROOT, "data.enc.json"))).get("stamp", "")
@@ -115,6 +140,12 @@ def crew():
     m += redo("gcal/feed", (fsadmin.get_doc("gcal/feed") or {}).get("c"))
     log("Firestore-Einträge neu verschlüsselt (Push, Nachrichten, Termine, Kalender):", m)
     # 4. the key itself (last); the old one stays for the service account only
+    for area, k in anew.items():
+        if k == fsadmin.area_key_b64(area, create=False): continue
+        fsadmin.patch_doc("secret/keyprev" + area, {"k": fsadmin.area_key_b64(area, create=False), "at": int(time.time())})
+        if not fsadmin.patch_doc("secret/key" + area, {"k": k, "at": int(time.time())}): sys.exit("secret/key" + area + " nicht geschrieben – Dateien NICHT veröffentlichen")
+        try: fsadmin.delete_doc("secret/keynext" + area)
+        except Exception: pass
     fsadmin.patch_doc("secret/keyprev", {"k": old_b64, "at": int(time.time())})
     if not fsadmin.patch_doc("secret/key", {"k": new_b64}): sys.exit("secret/key nicht geschrieben – Dateien NICHT veröffentlichen")
     try: fsadmin.delete_doc("secret/keynext")

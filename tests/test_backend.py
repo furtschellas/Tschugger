@@ -337,4 +337,17 @@ _rs = (ROOT_T := pathlib.Path(__file__).resolve().parent.parent / "tools" / "rot
 check("Schlüsselwechsel: Termine, Google-Kalender und Galerie-Bilderliste werden neu verschlüsselt",
       '"events"' in _rs and '"gcal/feed"' in _rs and '"media.enc.json"' in _rs)
 
+# own key for phone numbers / e-mail addresses: split from the crew list and merged back the same way
+_crew = [{"id": "c00", "people": [{"name": "A", "role": "x", "phone": "+41 1", "email": "a@test.ch", "hotel": "H"}, {"name": "B"}]}]
+_pub, _cts = U.split_contacts(_crew)
+check("Kontakte: Telefon/E-Mail nicht in den allgemeinen Daten, Rest bleibt",
+      _pub[0]["people"][0] == {"name": "A", "role": "x", "hotel": "H"} and _cts == [[0, 0, "A", {"phone": "+41 1", "email": "a@test.ch"}]] and _crew[0]["people"][0]["phone"] == "+41 1", (_pub, _cts))
+U.merge_contacts(_pub, _cts + [[0, 1, "falsch", {"phone": "9"}]])
+check("Kontakte: wieder zusammengeführt, nur bei gleichem Namen", _pub[0]["people"][0].get("phone") == "+41 1" and "phone" not in _pub[0]["people"][1])
+_k1, _k2, _k3 = secrets.token_bytes(32), secrets.token_bytes(32), secrets.token_bytes(32)
+_tf = pathlib.Path(tempfile.mkdtemp()) / "x.enc.json"
+U.enc_file(_tf, {"a": 1}, _k1)
+check("Schlüsselwechsel: Datei mit früherem Schlüssel (abgebrochener Lauf) wird trotzdem neu verschlüsselt",
+      RT.refile(_tf, [_k2, _k1], _k3) and json.loads(AESGCM(_k3).decrypt(base64.b64decode(json.loads(_tf.read_text())["iv"]), base64.b64decode(json.loads(_tf.read_text())["ct"]), None)) == {"a": 1} and RT.refile(_tf, [_k2], _k3) is False)
+
 sys.exit(done("Hintergrund"))

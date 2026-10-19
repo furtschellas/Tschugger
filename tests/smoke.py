@@ -30,13 +30,27 @@ def crew_key():
     return k
 
 
+def area_keys():
+    """keys of the areas (Drehbuch, Telefon/E-Mail) from Firestore – empty before they exist (files then use the crew key)"""
+    out = {}
+    if os.environ.get("FIREBASE_SA"):
+        try:
+            import fsadmin
+            for a in fsadmin.AREAS:
+                k = fsadmin.area_key_b64(a, create=False)
+                if k: out["secret/key" + a] = {"k": k}
+        except Exception: pass
+    return out
+
+
+AK = {}
 PEOPLE = {"owner": "furtschellas@gmail.com", "admin": "admin@test.ch", "crew": "crew@test.ch",
           "catering": "cater@test.ch", "power": "power@test.ch", "norole": "nor@test.ch"}
 
 SEED = r"""
 try{localStorage.setItem("welcomeAck","2026-01-01T00:00:00Z|1");localStorage.setItem("a2hs:v1","done");localStorage.setItem("nv","%(nv)s");
   if(!sessionStorage.getItem("tourtest")){const g=Storage.prototype.getItem;Storage.prototype.getItem=function(k){return /^tourDone:/.test(k)?"done|2026-01-01T00:00:00Z":g.call(this,k)}}}catch(_){}
-window.__db=JSON.parse(sessionStorage.getItem("fakedb")||"null")||{"secret/key":{k:%(key)s}};
+window.__db=JSON.parse(sessionStorage.getItem("fakedb")||"null")||Object.assign({"secret/key":{k:%(key)s}},%(ak)s);
 window.__users=JSON.parse(sessionStorage.getItem("fakeusers")||"null")||{"furtschellas@gmail.com":{uid:"owner1",email:"furtschellas@gmail.com",pw:"geheim123",verified:true}};
 addEventListener("pagehide",()=>{sessionStorage.setItem("fakeusers",JSON.stringify(window.__users));sessionStorage.setItem("fakedb",JSON.stringify(window.__db))});
 (function(){if(sessionStorage.getItem('seed'))return;sessionStorage.setItem('seed','1');
@@ -56,6 +70,8 @@ window.__deny=(path,op,d)=>{const e=(()=>{try{return JSON.parse(sessionStorage.g
   const owner=em==="furtschellas@gmail.com",admin=owner||!!window.__db["admins/"+em];const ur=window.__db["userroles/"+em],rp=ur&&window.__db["roles/"+ur.role]?window.__db["roles/"+ur.role].perms:[];
   const can=p=>owner||(admin&&p!=="settings")||rp.includes(p);const mem=!!(window.__db["members/"+u.uid]&&window.__db["members/"+u.uid].active);
   const [col,id]=path.split("/");
+  if(col==="secret"&&id==="keyscript")return !((mem||admin)&&can("view.script"));
+  if(col==="secret"&&id==="keycontacts"){const c=window.__db["config/app"]||{};return !((mem||admin)&&(can("view.phone")||can("view.email")||(mem&&!ur&&(c.phonePublic===true||c.emailPublic===true))))}
   if(col==="secret")return !(mem||admin);
   if(col==="members"&&op==="list")return !(can("users.view")||can("users.edit")||can("crew.food")||can("crew.bday"));
   if(col==="userroles"&&op==="list")return !(admin||can("roles.assign")||can("roles.edit"));
@@ -89,7 +105,7 @@ async def session(p, port, who, width=390, extra=""):
     nv = ""
     try: nv = (ROOT / "tools" / "boot" / "08-chat-tour.js").read_text().split('NEWS_VER="')[1].split('"')[0]
     except Exception: pass
-    await ctx.add_init_script(SEED % {"key": json.dumps(KEY), "people": json.dumps(PEOPLE), "nv": nv})
+    await ctx.add_init_script(SEED % {"key": json.dumps(KEY), "ak": json.dumps(AK), "people": json.dumps(PEOPLE), "nv": nv})
     if extra: await ctx.add_init_script(extra)
     await ctx.add_init_script("try{localStorage.setItem('lang','de')}catch(_){}")
     await ctx.add_init_script("window.__scrNewsOff=true")   # the message on a new script version is tested on its own (func.py)
@@ -221,5 +237,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    KEY = crew_key()
+    KEY = crew_key(); AK = area_keys()
     sys.exit(asyncio.run(main()))
