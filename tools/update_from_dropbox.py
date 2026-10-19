@@ -1009,6 +1009,8 @@ def main():
         log("Automatische Aktualisierung ist in den App-Einstellungen ausgeschaltet."); status("off", "In den App-Einstellungen ausgeschaltet"); return
 
     data = dec_file(R / "data.enc.json") or {}
+    if "bm" not in (data.get("meta") or {}) and (R / "media.enc.json").exists():   # picture list from its own file
+        data.setdefault("meta", {})["bm"] = (dec_file(R / "media.enc.json") or {}).get("bm") or []
     scr = (dec_file(R / "script.enc.json") or {}).get("script", [])
     meta = data.get("meta") or {}
     base = lambda n: (n or "").rsplit("/", 1)[-1]
@@ -1618,6 +1620,11 @@ def main():
     try: add_drive_times(data)
     except Exception as e: log("Anfahrt nicht berechnet:", type(e).__name__)
     if BLKS: BLKS.sync()   # R2: pictures first, so the new data never points to a picture that is not there yet
+    # the picture list of the galleries (large) is a file of its own: the app starts with data.enc.json and loads it afterwards
+    bm = meta.pop("bm", None)
+    if bm is not None:
+        meta["bmh"] = hashlib.sha256(json.dumps(bm, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:12]
+        enc_file(R / "media.enc.json", {"bm": bm})
     w1 = enc_file(R / "data.enc.json", data)
     w2 = enc_file(R / "script.enc.json", {"script": [{k: d[k] for k in ("sc", "head", "text") if k in d} for d in scr]}) if scr else False
     log("Daten:", "geändert" if changed else "unverändert", "· Datei:", "neu geschrieben" if (w1 or w2) else "gleich")
