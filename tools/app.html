@@ -930,7 +930,7 @@ html body #view .csview .csme{margin:0 0 8px}
 html body #view .csview .cskey .csct{min-height:0}
 
 /* desktop: the time tiles always in one row over the whole width (text scales with the width) */
-@media (min-width:600px){
+@media (min-width:480px){
  html body #view .cstiles{flex-wrap:nowrap;gap:clamp(4px,.6vw,8px)}
  html body #view .cstiles>.dt{flex:1 1 auto;min-width:0;padding:5px clamp(6px,.9vw,12px)}
  html body #view .cstiles>.dt.cswx{flex:1.3 1 auto}
@@ -1024,6 +1024,28 @@ html body #view .cssec>summary .cscount>span{margin-right:12px}
 html body #view .cssec#cs-order>summary{flex-wrap:wrap}
 
 @media (max-width:519px){html body #view .cssec>summary .dh{flex:1 1 0;min-width:0}html body #view .cssec>summary>.csexp{order:1;margin-left:auto}}
+
+/* sun next to the date in the head line */
+html body #view .csview .dsp-head .cssun{display:inline-flex;align-items:center;gap:5px;margin-left:12px;font-family:var(--f-mono,monospace);font-size:clamp(13px,1.5vw,20px);color:var(--muted)}
+html body #view .csview .dsp-head .cssun .csi{width:1.05em;height:1.05em;color:var(--accent)}
+
+/* phone: time tiles much smaller (several rows allowed) */
+@media (max-width:479px){html body #view .cstiles{gap:4px;margin-top:6px}html body #view .cstiles>.dt{padding:2px 7px;border-radius:7px}
+ html body #view .cstiles>.dt .k{font-size:8.5px;letter-spacing:.05em}html body #view .cstiles>.dt .v{font-size:13px;line-height:1.2}
+ html body #view .cstiles>.dt.big .v{font-size:15px}html body #view .cstiles>.dt.cswx .ttile{padding:2px 7px}html body #view .cstiles>.dt.cswx .ttile b{font-size:14px}html body #view .cstiles>.dt.cswx .ttile span{font-size:9px}}
+
+/* phone: Crew Call to Wrap in one row, weather below */
+@media (max-width:479px){html body #view .cstiles{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+ html body #view .cstiles>.dt{min-width:0;padding:3px 5px}html body #view .cstiles>.dt .v{font-size:12.5px;white-space:nowrap}html body #view .cstiles>.dt.big .v{font-size:14px}
+ html body #view .cstiles>.dt .k{white-space:nowrap;overflow:hidden;text-overflow:clip}
+ html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:1/-1}}
+
+/* sun: in the head line on wider screens, next to the weather on the phone */
+html body #view .cstiles>.dt.cssunt{display:none}
+@media (max-width:479px){html body #view .csview .dsp-head .cssun{display:none}
+ html body #view .cstiles>.dt.cssunt{display:block;grid-column:span 2}
+ html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:span 3}
+ html body #view .cstiles>.dt.cswx .ttile{width:100%;height:100%;box-sizing:border-box;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}}
 </style>
 
 <div class="wrap">
@@ -2029,9 +2051,9 @@ function csMine(c,me){const mine=[];if(!c||!me)return mine;
 function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=c.tr||null;
   /* head: as the top of the callsheet */
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
-  h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+(c.day?' <small class="csday">Shoot Day # '+esc(c.day)+'</small>':'')+'</h2><div class="date drow"><span>'+fmtDate(x.date)+'</span>'+UNITBAR+'</div></div></div>';
+  h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date drow"><span>'+fmtDate(x.date)+'</span>'+(()=>{const sr=c.sunrise&&c.sunset?c.sunrise+"–"+c.sunset:(x.sr&&x.ss?x.sr+"–"+x.ss:"");return sr?'<span class="cssun">'+csI('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>')+esc(sr)+'</span>':''})()+UNITBAR+'</div></div></div>';
   h+='<div class="dtiles cstiles" id="cs-zeiten">'+tile("Crew Call",t.crewCall||x.crewCall,true)+tile("Rehearsal",t.rehearsal)+tile("RTS",t.rts||x.shootCall)+tile("Lunch",t.lunch)+tile("Wrap",t.wrap||x.wrap)+
-    (typeof wxTile==="function"&&day&&day.date&&wxTile(day)?'<div class="dt cswx">'+wxTile(day)+'</div>':tile(L("Wetter"),[c.weather,c.temp].filter(Boolean).join(" · ")).replace('class="dt"','class="dt wide"'))+tile(L("Sonne"),c.sunrise&&c.sunset?c.sunrise+"–"+c.sunset:(x.sr&&x.ss?x.sr+"–"+x.ss:""))+'</div>';
+    (typeof wxTile==="function"&&day&&day.date&&wxTile(day)?'<div class="dt cswx">'+wxTile(day)+'</div>':tile(L("Wetter"),[c.weather,c.temp].filter(Boolean).join(" · ")).replace('class="dt"','class="dt wide"'))+tile(L("Sonne"),c.sunrise&&c.sunset?c.sunrise+"–"+c.sunset:(x.sr&&x.ss?x.sr+"–"+x.ss:"")).replace('class="dt"','class="dt cssunt"')+'</div>';
   /* contact on set: the name itself is the call link (only with the phone right) */
   if(c.contact&&(c.contact.name||c.contact.phone)){const ct=c.contact,tel=String(ct.phone||"").replace(/[^\d+]/g,""),nm=esc(ct.name||ct.phone||"");
     h+='<div class="cscontact"><b>'+esc(L("Kontakt am Set"))+':</b> '+(tel&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'" title="'+esc(L("Anrufen"))+'">'+CSI.phone+nm+'</a>':nm)+(ct.role?' <small>· '+esc(ct.role)+'</small>':'')+'</div>'}
