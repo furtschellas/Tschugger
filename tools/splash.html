@@ -46,8 +46,15 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   setInterval(function(){if(document.visibilityState==="visible")seen()},15000);
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")seen()});addEventListener("pagehide",seen);
   var tv=document.getElementById("spv"),SCR={de:"Drehbuch",fr:"Scénario",it:"Sceneggiatura",en:"Script",hi:"स्क्रिप्ट"},lg="de";try{lg=localStorage.getItem("lang")||"de"}catch(e){}
+  /* under the logo, centred, one line each: script version, schedule version, app version, Copyright MrK 2026 – only on a start.
+     The versions of the last start are kept on the device, so they show at once (before the data is read) */
+  var PLN={de:"Drehplan",fr:"Plan de tournage",it:"Piano di riprese",en:"Schedule",hi:"शूटिंग शेड्यूल"};
   function txt(){if(rel||!tv)return;var m=null;try{m=typeof S!=="undefined"&&S&&S.meta}catch(e){}
-    var h=(m&&m.scheduleVersion?esc2(m.scheduleVersion)+"<br>":"")+(m&&m.scriptVersion?(SCR[lg]||SCR.en)+" "+esc2(m.scriptVersion)+"<br>":"")+"App __APP_VER__<br>© <b>MrK</b> 2026";if(tv.innerHTML!==h)tv.innerHTML=h;window.__SPV=h}
+    var v={};try{v=JSON.parse(localStorage.getItem("spver")||"{}")||{}}catch(e){}
+    if(m&&(m.scriptVersion||m.scheduleVersion)){var nv={d:m.scriptVersion||"",s:m.scheduleVersion||""};if(nv.d!==v.d||nv.s!==v.s){v=nv;try{localStorage.setItem("spver",JSON.stringify(v))}catch(e){}}}
+    var pl=PLN[lg]||PLN.en,sv=String(v.s||"");
+    var h=(v.d?esc2((SCR[lg]||SCR.en)+" "+v.d)+"<br>":"")+(sv?esc2(sv.toLowerCase().indexOf(pl.toLowerCase())===0?sv:pl+" "+sv)+"<br>":"")+"App __APP_VER__<br>Copyright <b>MrK</b> 2026";
+    if(tv.innerHTML!==h)tv.innerHTML=h;window.__SPV=h}
   function esc2(x){return String(x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
   /* loading log under the logo: which step is done (✓) and which one is running */
   var lg2=document.getElementById("splog"),LT={de:["App","Verbindung","Anmeldung","Daten","Anzeige"],fr:["App","Connexion","Identification","Données","Affichage"],it:["App","Connessione","Accesso","Dati","Visualizzazione"],en:["App","Connection","Sign-in","Data","Display"],hi:["ऐप","कनेक्शन","लॉगिन","डेटा","दिखावट"]};

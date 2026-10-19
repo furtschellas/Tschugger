@@ -32,7 +32,7 @@ async def main():
         await pg.goto((ROOT / "index.html").as_uri()); await pg.wait_for_timeout(300)
         first = await pg.evaluate(sp)
         if not first["vis"]: errs.append("Startbildschirm: Versionen nicht sichtbar")
-        if "MrK" not in first["h"] or "App " not in first["h"] or "<br>©" not in first["h"]: errs.append("Startbildschirm ohne Version/©: " + first["h"][:80])
+        if "MrK" not in first["h"] or "App " not in first["h"] or "<br>Copyright <b>MrK</b> 2026" not in first["h"]: errs.append("Startbildschirm ohne Version/Copyright: " + first["h"][:80])
         await pg.wait_for_timeout(2200)
         ok = await pg.evaluate("typeof render==='function'&&typeof VIEWS==='object'")
         # every part in its own script: a broken part must not stop the others
@@ -47,6 +47,7 @@ async def main():
         await pg.evaluate("sessionStorage.setItem('bcLV',String(Date.now()));Storage.prototype.setItem=function(){}")
         await pg.reload(wait_until="commit")
         if "MrK" in await spv_text(pg): errs.append("Startbildschirm beim Neuladen mit Text")
+        if not await pg.evaluate("(()=>{const s=document.getElementById('splash');return !!s&&getComputedStyle(s).display!=='none'})()"): errs.append("Neuladen: Logo mit Ladestatus fehlt")
         await pg.wait_for_timeout(8600)   # the start screen never stays: at the latest after 8 s it is gone
         ok = ok and await pg.evaluate("!document.getElementById('splash')")
         await b.close()
