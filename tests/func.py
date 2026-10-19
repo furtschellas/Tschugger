@@ -739,7 +739,7 @@ async def hidden_data(p, port):
         texts = []
         for t in await E("tabsOn()"):
             await E(f"S.tab='{t}';render()"); await pg.wait_for_timeout(200)
-            texts.append(await E("document.getElementById('view').innerText+' '+[...document.querySelectorAll('#view a[href^=\"tel:\"],#view a[href^=\"mailto:\"]')].map(a=>a.href).join(' ')"))
+            texts.append(await E("(()=>{const v=document.getElementById('view'),hs=[...v.querySelectorAll('a.hosp')].map(a=>a.innerText);let t=v.innerText;for(const x of hs)t=t.split(x).join(' ');return t+' '+[...v.querySelectorAll('a[href^=\"tel:\"]:not(.hosp),a[href^=\"mailto:\"]')].map(a=>a.href).join(' ')})()"))  # the hospital (emergency) is shown to everyone
         await E("S.gm='all';openSearch();$('#gq').value='a';renderSearch()"); await pg.wait_for_timeout(200)
         texts.append(await E("$('#gres').innerText")); await E("closeSearch()")
         toks = {re.sub(r"\D", "", t)[-9:] for t in re.findall(r"\+?\d[\d .\-/]{7,}\d", " ".join(texts))}
