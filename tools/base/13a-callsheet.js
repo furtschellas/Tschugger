@@ -10,14 +10,20 @@ const csA=v=>Array.isArray(v)?v:(v==null||v===""?[]:[v]);
 const csS=v=>Array.isArray(v)?v.join(", "):String(v==null?"":v);
 /* a part of the callsheet: open or folded */
 function csSec(title,body,open,cls){if(!body)return"";return '<details class="dsec cssec'+(cls?" "+cls:"")+'"'+(open?' open':'')+'><summary><h3 class="dh">'+esc(title)+'</h3></summary>'+body+'</details>'}
-function csTable(head,rows){rows=rows.filter(r=>r.some(c=>String(c||"").trim()));if(!rows.length)return"";
-  return '<div class="tblw"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csTx(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>'}
+/* a table of the callsheet: on the computer a table, on the phone one card per row (title = first columns, the rest as «label value») */
+function csTable(head,rows,tc){rows=rows.filter(r=>r.some(c=>String(c||"").trim()));if(!rows.length)return"";tc=tc||2;
+  const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csTx(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
+  const cards='<div class="cs-cards">'+rows.map(r=>{const tt=r.slice(0,tc).map(c=>String(c||"").trim()).filter(Boolean);
+    const kv=r.slice(tc).map((c,i)=>[head[i+tc]||"",String(c||"").trim()]).filter(([,v])=>v);
+    /* from → to pairs read as one line */
+    return '<div class="cs-card"><div class="cs-ct">'+tt.map((x,i)=>i?'<span>'+csTx(x)+'</span>':'<b>'+csTx(x)+'</b>').join(" ")+'</div>'+kv.map(([k,v])=>'<div class="cs-kv">'+(k?'<span class="k">'+esc(k)+'</span>':'')+'<span class="v">'+csTx(v)+'</span></div>').join("")+'</div>'}).join("")+'</div>';
+  return tbl+cards}
 /* who am I on this callsheet: name and department (crew list / app profile) */
 function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.name)return null;
   const k=nmk(me.name),parts=k.split(" ").filter(w=>w.length>1),dep=fold(me.src||"").split(/[\s/]/)[0];
   const hit=t=>{const n=nmk(String(t||""));if(!n)return false;if(n.includes(k))return true;const f=parts[0],l=parts[parts.length-1];return parts.length>1&&n.includes(f)&&n.includes(l)};
   return {name:me.name,dep,hit}}
-function csOrderRows(rows){return '<ol class="tl csorder">'+csA(rows).map(r=>{
+function csOrderRows(rows){if(!csA(rows).length)return"";return '<ol class="tl csorder">'+csA(rows).map(r=>{
     if(!r.sc)return '<li class="row ev"><div class="t">'+esc(r.t||"")+'</div><div class="what">'+csTx(r.text||r.syn||"")+'</div></li>';
     const meta=[r.dur?'<span class="m">'+esc(r.dur)+'</span>':'',r.pgs?'<span class="m">'+esc(r.pgs)+' pgs</span>':'',r.time?'<span class="m">'+esc(r.time)+'</span>':'',r.dir?'<span>'+esc(r.dir)+'</span>':''].filter(Boolean);
     return '<li class="row"><div class="t">'+esc(r.t||"")+'</div><div class="sc"><div class="l1"><span class="scn">'+esc(r.sc)+'</span><span class="ie '+ieClass(r.ie)+'">'+esc(r.ie||"")+'</span><span class="set">'+esc(r.set||"")+'</span></div>'+
@@ -30,7 +36,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
   h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+(c.day?' <small class="csday">Shoot Day # '+esc(c.day)+'</small>':'')+'</h2><div class="date drow"><span>'+fmtDate(x.date)+(c.script?' · Script '+esc(c.script):'')+(c.schedule?' · '+esc(c.schedule):'')+'</span>'+UNITBAR+'</div></div></div>';
   h+='<div class="dtiles">'+tile("Crew Call",t.crewCall||x.crewCall,true)+tile("Rehearsal",t.rehearsal)+tile("RTS",t.rts||x.shootCall)+tile("Lunch",t.lunch)+tile("Wrap",t.wrap||x.wrap)+
-    tile(L("Wetter"),[c.weather,c.temp].filter(Boolean).join(" · "))+tile(L("Sonne"),c.sunrise&&c.sunset?c.sunrise+"–"+c.sunset:(x.sr&&x.ss?x.sr+"–"+x.ss:""))+'</div>';
+    tile(L("Wetter"),[c.weather,c.temp].filter(Boolean).join(" · ")).replace('class="dt"','class="dt wide"')+tile(L("Sonne"),c.sunrise&&c.sunset?c.sunrise+"–"+c.sunset:(x.sr&&x.ss?x.sr+"–"+x.ss:""))+'</div>';
   if(c.contact&&(c.contact.name||c.contact.phone))h+='<div class="cscontact"><b>'+esc(L("Kontakt am Set"))+':</b> '+esc([c.contact.name,c.contact.role].filter(Boolean).join(" · "))+' '+csTx(c.contact.phone||"")+'</div>';
   /* my day */
   if(me){const mine=[];
@@ -53,20 +59,22 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";
   const o=c.order||{};
   h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows),true);
   /* cast, extras, vehicles */
-  h+=csSec("Cast",csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset])),false);
+  h+=csSec("Cast",csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3),false);
   h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset])),false);
   h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false);
   /* transport and travel */
-  h+=csSec(L("Transport mit Fahrer"),(c.drivers?'<p class="ghint">'+csTx(c.drivers)+'</p>':'')+csTable([L("Fahrzeug"),L("Fahrer"),L("Mitfahrende"),L("Von"),"",L("Nach"),""],csA(c.transport).map(r=>[r.vehicle,r.driver,r.passengers,r.from,r.t1,r.to,r.t2])),false);
-  h+=csSec(L("Anreise Cast"),csTable(["",L("Name"),L("Von"),"",L("Nach"),"",L("Notiz")],csA(c.travel).map(r=>[r.how,r.name,r.from,r.t1,r.to,r.t2,r.note])),false);
+  h+=csSec(L("Transport mit Fahrer"),(c.drivers?'<p class="ghint">'+csTx(c.drivers)+'</p>':'')+csTable([L("Fahrzeug"),L("Fahrer"),L("Mitfahrende"),L("Von"),L("Nach")],csA(c.transport).map(r=>[r.vehicle,r.driver,r.passengers,[r.t1,r.from].filter(Boolean).join(" "),[r.t2,r.to].filter(Boolean).join(" ")])),false);
+  h+=csSec(L("Anreise Cast"),csTable([L("Name"),"",L("Von"),L("Nach"),L("Notiz")],csA(c.travel).map(r=>[r.name,r.how,[r.t1,r.from].filter(Boolean).join(" "),[r.t2,r.to].filter(Boolean).join(" "),r.note])),false);
   /* information by department */
   h+=csSec(L("Infos nach Abteilung"),csA(c.depts).filter(r=>String(r.text||"").trim()).map(r=>'<div class="csdep'+(me&&me.dep&&fold(r.dept||"").includes(me.dep)?' mine':'')+'"><b>'+esc(r.dept||"")+'</b> '+csTx(r.text)+'</div>').join(""),false);
-  h+=csSec(L("Transport Crew"),csTable([L("Fahrzeug"),L("Personen"),L("Von"),"",L("Nach"),""],csA(c.crewTransport).map(r=>[r.vehicle,r.people,r.from,r.t1,r.to,r.t2])),false);
+  h+=csSec(L("Transport Crew"),csTable([L("Fahrzeug"),L("Personen"),L("Von"),L("Nach")],csA(c.crewTransport).map(r=>[r.vehicle,r.people,[r.t1,r.from].filter(Boolean).join(" "),[r.t2,r.to].filter(Boolean).join(" ")])),false);
   /* preview of the next day */
   const pv=c.prevision||{};
   h+=csSec(L("Vorschau")+(pv.title?' · '+pv.title.replace(/^PREVISION\s*-?\s*/i,""):''),csOrderRows(pv.rows),false);
   /* calls on set */
-  h+=csSec("Calls on Set",csTable([L("Abteilung"),L("Funktion"),L("Name"),"IN"],csA(c.calls).map(r=>[r.dept,r.role,r.name,r.t])),false);
+  /* calls on set: by department, one short line per person (time · name · job) */
+  {const g=new Map();for(const r of csA(c.calls)){const k=r.dept||"";if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
+   h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>'<div class="cscall-r'+(me&&me.hit(r.name)?' mine':'')+'"><span class="t">'+esc(r.t||"")+'</span><b>'+esc(r.name||"")+'</b><small>'+esc(r.role||"")+'</small></div>').join("")+'</div>').join(""),false)}
   /* totals, notes, radio */
   const nb=[c.total?'<p><b>'+esc(c.total)+'</b></p>':'',...csA(c.notes).map(n=>'<p>'+csTx(n)+'</p>'),c.radio?'<p>📻 '+esc(c.radio)+'</p>':''].join("");
   h+=csSec(L("Notizen & Funk"),nb,false);
