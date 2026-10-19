@@ -139,6 +139,24 @@ def main():
     fpl = meta.get("floorplans") or []
     info("Floorplans: %d in der App, davon %d mit Seiten für die App" % (len(fpl), sum(1 for x in fpl if x.get("pg"))))
 
+    # ---------------- privacy ----------------
+    h("Datenschutz – nichts Vertrauliches öffentlich")
+    try:
+        import requests
+        pub = requests.get(U.fsadmin.BASE + "/config/app", params={"key": U.fsadmin.API_KEY}, timeout=20).json().get("fields", {})
+        leak = [k for k in ("locSheet", "mapUrl", "chatUrl") if k in pub]
+        (ok if not leak else bad)("Öffentliche Einstellungen ohne Links: " + ("ja" if not leak else "NEIN, offen: " + ", ".join(leak)))
+        r = requests.get(U.fsadmin.BASE + "/config/private", params={"key": U.fsadmin.API_KEY}, timeout=20)
+        (ok if r.status_code in (401, 403) else bad)("Links ohne Anmeldung gesperrt (HTTP %d)" % r.status_code)
+        priv = U.fsadmin.get_doc("config/private") or {}
+        info("Links für die Crew gesetzt: " + (", ".join(k for k in ("locSheet", "mapUrl", "chatUrl") if priv.get(k)) or "keine"))
+    except Exception as e: info("Einstellungen nicht geprüft (%s)" % type(e).__name__)
+    lc = meta.get("locCfg") or {}
+    (ok if lc.get("addr") else bad)("Orte-Einstellungen verschlüsselt in den Daten: %d Adressen, %d Gruppen" % (len(lc.get("addr") or {}), len(lc.get("bundles") or []) + len(lc.get("titles") or [])))
+    pubcode = (U.R / "index.html").read_text(encoding="utf-8", errors="ignore").lower()
+    hits = [w for w in {re.sub(r",.*", "", v).lower() for v in (lc.get("addr") or {}).values()} if len(w) > 6 and w in pubcode]
+    (ok if not hits else bad)("Adressen im öffentlichen App-Code: " + ("keine" if not hits else "%d gefunden" % len(hits)))
+
     head = "## Abgleich App ↔ Dropbox: " + ("alles in Ordnung ✅" if not BAD else "%d Abweichung(en) ❌" % len(BAD))
     text = head + "\n" + "\n".join(OUT) + "\n"
     p = os.environ.get("GITHUB_STEP_SUMMARY")
