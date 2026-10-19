@@ -37,7 +37,7 @@ await env.withSecurityRulesDisabled(async c => {
   await setDoc(doc(db, "userroles/other@test.ch"), { role: "crew" });
   await setDoc(doc(db, "roles/viewer"), { name: "Viewer", perms: ["roles.view"] });
   await setDoc(doc(db, "userroles/view@test.ch"), { role: "viewer" });
-  for (const k of ["crew", "power", "other"]) await setDoc(doc(db, "members/" + U[k][0]), { active: true, email: U[k][1], name: k });
+  for (const k of ["crew", "power", "other", "viewer"]) await setDoc(doc(db, "members/" + U[k][0]), { active: true, email: U[k][1], name: k });
   await setDoc(doc(db, "events/evPower"), { c: "x", at: 1, by: "uPower" });
   await setDoc(doc(db, "gcal/feed"), { c: "x" });
   await setDoc(doc(db, "secret/gcal"), { url: "https://calendar.google.com/x.ics" });

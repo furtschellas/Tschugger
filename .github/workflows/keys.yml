@@ -1,7 +1,10 @@
 name: Schlüssel wechseln
 
 # von Hand: Actions → «Schlüssel wechseln» → Run workflow. Braucht das Secret FIREBASE_SA (Dienstkonto).
+# nachts automatisch: wurde seit dem letzten Wechsel jemand entfernt, gibt es einen neuen Crew-Schlüssel
 on:
+  schedule:
+    - cron: "23 1 * * *"   # 03:23 Schweizer Sommerzeit – niemand arbeitet in der App
   workflow_dispatch:
     inputs:
       what:
@@ -28,7 +31,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -q cryptography==43.0.3 requests==2.32.3 boto3==1.35.54
+      - name: Wechsel nötig?
+        id: due
+        if: github.event_name == 'schedule'
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: python tools/rotate.py due
       - name: Schlüssel wechseln
+        id: rot
+        if: github.event_name == 'workflow_dispatch' || steps.due.outputs.due == 'true'
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           CREW_KEY: ${{ secrets.CREW_KEY }}
@@ -36,13 +47,13 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ vars.R2_BUCKET }}
-        run: python tools/rotate.py ${{ github.event.inputs.what }}
+        run: python tools/rotate.py ${{ github.event.inputs.what || 'crew' }}
       - name: Veröffentlichen
-        if: success() && github.event.inputs.what == 'crew'
+        if: success() && steps.rot.outcome == 'success' && (github.event.inputs.what || 'crew') == 'crew'
         run: |
           git config user.name "Crew-App Aktualisierung"
           git config user.email "actions@users.noreply.github.com"
-          git add -A data.enc.json script.enc.json stamp.json tools/*.enc.json
+          git add -A data.enc.json script.enc.json media.enc.json stamp.json tools/*.enc.json
           git ls-files --error-unmatch blk >/dev/null 2>&1 && git add -A blk || true
           git diff --cached --quiet && exit 0
           git commit -q -m "Neuer Crew-Schlüssel: Daten neu verschlüsselt"

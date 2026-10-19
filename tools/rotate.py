@@ -58,7 +58,7 @@ def crew():
         sys.exit("secret/keynext nicht geschrieben – nichts geändert")
     # 1. encrypted JSON files in the repository
     n = 0
-    for p in [os.path.join(ROOT, f) for f in ("data.enc.json", "script.enc.json")] + glob.glob(os.path.join(HERE, "*.enc.json")):
+    for p in [os.path.join(ROOT, f) for f in ("data.enc.json", "script.enc.json", "media.enc.json")] + glob.glob(os.path.join(HERE, "*.enc.json")):
         try: e = json.load(open(p))
         except Exception: continue
         if "iv" not in e or "ct" not in e: continue
@@ -103,22 +103,41 @@ def crew():
         log("Bilder in blk/ neu verschlüsselt:", len(files) - bad, "· nicht lesbar:", bad, "(ohne R2 wächst das Repository dadurch einmal um ihre Grösse)")
     # 3. push devices and messages in Firestore
     m = 0
-    for col in ("push", "broadcasts"):
-        for did, f, _ in fsadmin.list_docs(col):
-            c = f.get("c")
-            if not c: continue
-            try: r = reenc(old, new, base64.b64decode(c))
-            except Exception: continue
-            if r is None: continue
-            nc = base64.b64encode(r).decode()
-            if fsadmin.patch_doc(col + "/" + did, {"c": nc}): m += 1
-    log("Push-Einträge neu verschlüsselt:", m)
+    def redo(path, c):
+        if not c: return 0
+        try: r = reenc(old, new, base64.b64decode(c))
+        except Exception: return 0
+        if r is None: return 0
+        return 1 if fsadmin.patch_doc(path, {"c": base64.b64encode(r).decode()}) else 0
+    # push devices, messages and own events (Termine); gcal/feed = imported Google calendar
+    for col in ("push", "broadcasts", "events"):
+        for did, f, _ in fsadmin.list_docs(col): m += redo(col + "/" + did, f.get("c"))
+    m += redo("gcal/feed", (fsadmin.get_doc("gcal/feed") or {}).get("c"))
+    log("Firestore-Einträge neu verschlüsselt (Push, Nachrichten, Termine, Kalender):", m)
     # 4. the key itself (last); the old one stays for the service account only
     fsadmin.patch_doc("secret/keyprev", {"k": old_b64, "at": int(time.time())})
     if not fsadmin.patch_doc("secret/key", {"k": new_b64}): sys.exit("secret/key nicht geschrieben – Dateien NICHT veröffentlichen")
     try: fsadmin.delete_doc("secret/keynext")
     except Exception: pass
+    try: fsadmin.patch_doc("secret/keymeta", {"uids": sorted(members()), "at": int(time.time())})
+    except Exception: pass
     log("Neuer Crew-Schlüssel ist aktiv. Das GitHub-Secret CREW_KEY und das Worker-Secret CREW_KEY werden nicht mehr gebraucht (Dienstkonto).")
+
+
+def members():
+    return {did for did, _, _ in fsadmin.list_docs("members")}
+
+
+def due():
+    """nightly check: was somebody removed since the last key change? then the old key must not open new data any more.
+    secret/keymeta.uids = people with access at the last key change (+ everybody added since); only the service account reads it"""
+    cur = members(); meta = fsadmin.get_doc("secret/keymeta") or {}
+    known = set(meta.get("uids") or [])
+    gone = known - cur if meta else set()
+    if not gone: fsadmin.patch_doc("secret/keymeta", {"uids": sorted(known | cur), "at": int(meta.get("at") or time.time())})
+    print("::notice::Schlüsselwechsel: %s" % ("%d Person(en) entfernt seit dem letzten Wechsel – neuer Crew-Schlüssel wird erstellt" % len(gone) if gone else "nicht nötig"))
+    o = os.environ.get("GITHUB_OUTPUT")
+    if o: open(o, "a").write("due=%s\n" % ("true" if gone else "false"))
 
 
 if __name__ == "__main__":
@@ -126,4 +145,5 @@ if __name__ == "__main__":
     what = (sys.argv[1:] or [""])[0]
     if what == "vapid": vapid()
     elif what == "crew": crew()
-    else: sys.exit("vapid oder crew")
+    elif what == "due": due()
+    else: sys.exit("vapid, crew oder due")
