@@ -103,7 +103,12 @@ const appKind=()=>{const ua=navigator.userAgent||"",inst=typeof isStandalone==="
   const dev=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)?"ios":/Android/i.test(ua)?"android":"desktop";return (inst?"app-":"web-")+dev};
 async function markSeen(){
   if(!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
-  try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{lastSeen:F.serverTimestamp(),app:appKind()})}catch(err){console.warn("seen",err&&err.code||err)}
+  /* every device of the person once in «devs» (kind|last use) – the user list shows how many devices are in use; devices unused for 30 days drop out */
+  let id="";try{id=localStorage.getItem("devid")||"";if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem("devid",id)}}catch(_){}
+  try{const {F,db}=await fb();const up={lastSeen:F.serverTimestamp(),app:appKind()};
+    if(id){up["devs."+id]=appKind()+"|"+Date.now();const dv=(MEMBER&&MEMBER.devs)||{},old=Object.keys(dv).filter(k=>k!==id&&Date.now()-(+String(dv[k]).split("|")[1]||0)>30*864e5);
+      if(Object.keys(dv).length>=10)old.forEach(k=>{up["devs."+k]=F.deleteField()})}
+    await F.updateDoc(F.doc(db,"members",ME.uid),up)}catch(err){console.warn("seen",err&&err.code||err)}
 }
 setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading&&Date.now()-(ADM.at||0)>=900e3){   /* the user list is read again at most every 15 minutes (Firebase quota) */ADM.at=Date.now();ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
 function startSeen(){clearInterval(SEENT);SEENAT=0;markSeen();SEENT=setInterval(markSeen,120e3)}

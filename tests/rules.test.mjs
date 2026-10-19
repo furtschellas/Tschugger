@@ -75,6 +75,7 @@ await check("Mitglied: fremdes Profil nicht", assertFails(updateDoc(doc(as("crew
 await check("Einstellungen: Owner darf ändern", assertSucceeds(setDoc(doc(as("owner"), "config/app"), { langs: ["de"] }, { merge: true })));
 await check("Einstellungen: Admin ohne «Einstellungen» nicht", assertFails(setDoc(doc(as("admin"), "config/app"), { langs: ["de"] }, { merge: true })));
 await check("Einstellungen: Crew nicht", assertFails(setDoc(doc(as("crew"), "config/app"), { langs: ["de"] }, { merge: true })));
+await check("Geräte: eigene Geräteliste darf man selbst nachführen", assertSucceeds(updateDoc(doc(as("crew"), "members/" + U.crew[0]), { "devs.abc": "app-ios|1" })));
 await check("Einstellungen: öffentlicher Teil ohne Anmeldung lesbar", assertSucceeds(getDoc(doc(anon, "config/app"))));
 await check("Links (Motivliste, Karte, Chat): ohne Anmeldung nicht lesbar", assertFails(getDoc(doc(anon, "config/private"))));
 await check("Links: nicht eingeladene Person nicht", assertFails(getDoc(doc(as("stranger"), "config/private"))));
