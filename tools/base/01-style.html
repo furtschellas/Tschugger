@@ -1005,4 +1005,16 @@ html body #view .csview .dsp-head .date>span{font-size:clamp(14px,1.9vw,24px);co
 
 /* team of the day: counts next to the title when there is room */
 @media (min-width:520px){html body #view .cssec#cs-team>summary{flex-wrap:nowrap}html body #view .cssec#cs-team .cscount{flex:1 1 auto;order:0;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;margin-left:4px}html body #view .cssec#cs-team>summary .dh{flex:0 0 auto}}
+
+/* addresses as links (pin + text) */
+.csadl{display:inline-flex;align-items:baseline;gap:4px;color:var(--accent);text-decoration:underline;text-underline-offset:3px}.csadl .csi{width:13px;height:13px;flex:0 0 auto;align-self:center}.csadl span a{color:inherit}
+
+/* every main part: sums in one line (next to the title when there is room) */
+html body #view .cssec>summary{flex-wrap:wrap}
+html body #view .cssec>summary .cscount{flex:1 1 100%;order:3;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+html body #view .cssec>summary .cscount>span{margin-right:12px}
+@media (min-width:520px){html body #view .cssec>summary{flex-wrap:nowrap}html body #view .cssec>summary .cscount{flex:1 1 auto;order:0;margin-left:4px;min-width:0}html body #view .cssec>summary .dh{flex:0 0 auto}}
+html body #view .cssec#cs-order>summary{flex-wrap:wrap}
+
+@media (max-width:519px){html body #view .cssec>summary .dh{flex:1 1 0;min-width:0}html body #view .cssec>summary>.csexp{order:1;margin-left:auto}}
 </style>

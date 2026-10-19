@@ -28,6 +28,10 @@ const CSPH=/(\+\d[\d ()\/.-]{7,}\d)/g;
 function csTx(s){s=String(s==null?"":s);if(!s)return"";const ok=vok("phone");let out="",p=0;
   for(const m of s.matchAll(CSPH)){out+=esc(s.slice(p,m.index));out+=ok?'<a href="tel:'+esc(m[1].replace(/[^\d+]/g,""))+'">'+esc(m[1])+'</a>':'<span class="cshid" title="'+esc(L("Nur mit dem Recht «Telefon sehen»"))+'">'+CSI.lock+'</span>';p=m.index+m[0].length}
   return (out+esc(s.slice(p))).replace(/(https?:\/\/[^\s<]+)/g,u=>'<a href="'+esc(safeUrl(u.replace(/&amp;/g,"&")))+'" target="_blank" rel="noopener noreferrer">'+esc(u)+'</a>').replace(/<a href="([^"]+)" target="_blank" rel="noopener noreferrer">(https?:\/\/(?:maps\.app\.goo\.gl|[^"<]*google\.[a-z.]+\/maps)[^<]*)<\/a>/g,(m0,h)=>csMap(h.replace(/&amp;/g,"&")))}
+/* an address or place with a map link: the text itself is the link (instead of the round map button) */
+function csAdr(txt,map,fallback){const U=/(https?:\/\/[^\s<]+)/g;const s0=String(txt||"");const urls=s0.match(U)||[];const isMap=u=>/maps\.app\.goo\.gl|google\.[a-z.]+\/maps|goo\.gl\/maps/.test(u);
+  const u=map||urls.find(isMap)||"";const t=s0.replace(U,m=>isMap(m)?"":m).replace(/\s{2,}/g," ").replace(/[\s,:;–-]+$/,"").trim();if(!u)return csTx(s0);
+  return (t?'':'')+'<a class="csadl" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer">'+CSI.pin+'<span>'+csTx(t||fallback||L("Karte"))+'</span></a>'}
 /* map: a round button with a pin (like the other round buttons of the app) */
 const CSPIN='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
 const csMap=u=>u?'<a class="csmap" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(L("Karte"))+'" title="'+esc(L("Karte"))+'">'+CSPIN+'</a>':'';
@@ -138,6 +142,21 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
    h+='<div class="csjump"><div class="csjb">'+J.map(([k,l,i,sh])=>'<button type="button" data-csj="'+k+'" aria-label="'+esc(l)+'" title="'+esc(l)+'">'+CSI[i]+'<span>'+esc(sh||l)+'</span></button>').join("")+
      '<button type="button" class="csqb" data-csqb aria-label="'+esc(L("Suchen"))+'" title="'+esc(L("Suchen"))+'">'+CSI.search+'<span>'+esc(L("Suchen"))+'</span></button></div><input id="csq" type="search" autocomplete="off" hidden placeholder="'+esc(L("Suchen: Name, Szene, Fahrzeug …"))+'"></div>'}
   /* key people of the day */
+  /* folded parts: sums and short facts in one line */
+  const SU={};{const sm=a=>{a=a.filter(x=>x&&x[1]!==""&&x[1]!=null&&x[1]!==0);return a.length?'<span class="cscount">'+a.map(([k,v])=>'<span><b>'+esc(String(v))+'</b> '+esc(k)+'</span>').join("")+'</span>':''};
+    const first=(l,f)=>{const t=csA(l).map(r=>hm(String(f(r)||""))).filter(Boolean).sort();return t[0]||""};
+    const uniq=l=>new Set(l.map(x=>fold(String(x||"")).trim()).filter(Boolean)).size;
+    const ls=csLocs(c);SU.loc=sm([["Sets",ls.filter(l=>!l.kinds).length],[L("weitere Orte"),ls.filter(l=>l.kinds).length]]);
+    SU.info="";
+    SU.cast=sm([[L("Darsteller"),csA(c.cast).length],[L("erster Pickup"),first(c.cast,r=>r.pickup)],[L("erster Call"),first(c.cast,r=>r.call)]]);
+    SU.travel=sm([[L("Personen"),csA(c.travel).length]]);
+    SU.extras=sm([[L("Komparsen"),csA(c.extras).reduce((a,r)=>a+(parseInt(r.count,10)||0),0)],[L("Gruppen"),csA(c.extras).length],[L("erster Call"),first(c.extras,r=>r.call)]]);
+    SU.veh=sm([[L("Fahrzeuge"),csA(c.vehicles).length]]);
+    SU.trans=sm([[L("Fahrten"),csA(c.transport).length],[L("Fahrzeuge"),uniq(csA(c.transport).map(r=>r.vehicle))],[L("Fahrer"),uniq(csA(c.transport).map(r=>r.driver))],[L("erste"),first(c.transport,r=>r.t1)]]);
+    SU.ctrans=sm([[L("Fahrten"),csA(c.crewTransport).length],[L("Fahrzeuge"),uniq(csA(c.crewTransport).map(r=>r.vehicle))],[L("erste"),first(c.crewTransport,r=>r.t1)]]);
+    SU.dept=sm([[L("Abteilungen"),csA(c.depts).filter(r=>String(r.text||"").trim()).length]]);
+    SU.calls=sm([[L("Personen"),uniq(csA(c.calls).map(r=>r.name))],[L("Abteilungen"),uniq(csA(c.calls).map(r=>r.dept))],[L("erster Call"),first(c.calls,r=>r.t)]]);
+    SU.notes=sm([[L("Notizen"),csA(c.notes).length],["Funk",c.radio?"✓":""]])}
   let csCnt="";{const nCast=csA(c.cast).length,nCrew=new Set(csA(c.calls).map(r=>nmk(String(r.name||""))).filter(Boolean)).size,nEx=csA(c.extras).reduce((a,r)=>a+(parseInt(r.count,10)||0),0);
    const cnt=nCast||nCrew||nEx?'<div class="cscount">'+[["Cast",nCast],["Crew",nCrew],[L("Komparsen"),nEx],["Total",nCast+nCrew+nEx]].filter(x=>x[1]).map(([k,v])=>'<span><b>'+v+'</b> '+esc(k)+'</span>').join("")+'</div>':'';
    csCnt=cnt}
@@ -152,9 +171,9 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
        return ad&&!/^tba$/i.test(ad)?'<a class="csaddr" href="'+esc(safeUrl(l.map||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(ad))))+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+esc(ad)+'</a>':''})()+(()=>{const mine=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>String(r.sc));const uniq=[...new Set(mine)];
        return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+'</span>'+
      '<span class="csloc-i">'+csMap(l.map)+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span></summary>'+
-     csA(l.notes).map(n=>'<div class="ds">'+csTx(csL(n))+'</div>').join("")+csA(l.items).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csTx(csL(i.text||""))+(i.map?' '+csMap(i.map):'')+'</div>').join("")+'</details>'}).join(""):"",true,"","loc")}
+     csA(l.notes).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",true,"","loc",SU.loc)}
   /* production information */
-  h+=csSec(L("Produktionsinfos"),csA(c.info).map(p=>'<p>'+csTx(csL(p))+'</p>').join(""),true,"csinfo");
+  h+=csSec(L("Produktionsinfos"),csA(c.info).map(p=>'<p>'+csTx(csL(p))+'</p>').join(""),true,"csinfo","",SU.info);
   /* shooting order */
   const o=c.order||{};
   {const sc=csA(o.rows).filter(r=>r.sc).map(r=>String(r.sc)),ch=(k,v)=>v?'<span class="csoc"><i>'+esc(k)+'</i>'+esc(v)+'</span>':'';
@@ -163,22 +182,22 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
      (sc.length?'<span class="csoscn">'+csA(o.rows).filter(r=>r.sc).map(r=>'<span>'+(hm(r.t)?'<i>'+esc(hm(r.t))+'</i>':'')+esc(String(r.sc))+'</span>').join("")+'</span>':'');
    h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c)),x.date===todayISO(),"","order",sumx)}
   /* cast, extras, vehicles */
-  h+=csSec("Cast",(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Karten":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3),false,csCastMode()?"cs-astbl":"","cast");
+  h+=csSec("Cast",(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Karten":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3),false,csCastMode()?"cs-astbl":"","cast",SU.cast);
   /* travel of the cast: one line per person (name · how · from → to · note), the place as short code (S1, Base …) with the map */
   {const U=/(https?:\/\/[^\s<]+)/g;const clean=v=>String(v||"").replace(U,"").replace(/\s{2,}/g," ").trim();
    const badge=(txt,url)=>{let pl=null;try{pl=csPlace(c,clean(txt))}catch(_){}const code=pl?csShort(pl):"";const u=url||(pl&&pl.map)||"";if(!u)return code?'<span class="csplace">'+esc(code)+'</span>':'';
      return '<a class="csplace" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer" title="'+esc(pl&&pl.name||clean(txt)||L("Karte"))+'">'+esc(code||L("Karte"))+'</a>'};
    const rows=csA(c.travel).map(r=>{const urls=[r.from,r.to,r.note].join(" ").match(U)||[];
      return '<div class="cstrv"><b>'+esc(r.name||"")+'</b>'+(r.how?'<small>'+esc(r.how)+'</small>':'')+'<span class="r">'+esc(csRoute(clean(r.from),r.t1,clean(r.to),r.t2))+'</span>'+badge(r.to,urls[0])+(clean(r.note)?'<small class="n">'+csTx(clean(r.note))+'</small>':'')+'</div>'}).join("");
-   h+=csSec(L("Anreise Cast"),rows,false,"","travel")}
-  h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset])),false);
-  h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false);
+   h+=csSec(L("Anreise Cast"),rows,false,"","travel",SU.travel)}
+  h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset])),false,"","",SU.extras);
+  h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","",SU.veh);
   /* transport and travel */
   h+=csSec(L("Transport mit Fahrer"),(c.drivers?'<div class="csdrv">'+String(c.drivers).split(/\s*[|\n;]\s*/).filter(x=>x.trim()).map(x=>{const m=x.match(CSPH);const nm=m?x.replace(m[0],"").trim():x.trim();
-     return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRoute(r.from,r.t1,r.to,r.t2),r.vehicle,r.driver,r.passengers]),1),false,"","trans");
+     return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRoute(r.from,r.t1,r.to,r.t2),r.vehicle,r.driver,r.passengers]),1),false,"","trans",SU.trans);
   /* information by department */
-  h+=csSec(L("Transport Crew"),csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,csRoute(r.from,r.t1,r.to,r.t2),r.people]),1),false,"","ctrans");
-  h+=csSec(L("Infos nach Abteilung"),csA(c.depts).filter(r=>String(r.text||"").trim()).map(r=>'<div class="csdep'+(me&&me.dep&&fold(r.dept||"").includes(me.dep)?' mine':'')+'"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text)+'</div></div>').join(""),false,"","dept");
+  h+=csSec(L("Transport Crew"),csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,csRoute(r.from,r.t1,r.to,r.t2),r.people]),1),false,"","ctrans",SU.ctrans);
+  h+=csSec(L("Infos nach Abteilung"),csA(c.depts).filter(r=>String(r.text||"").trim()).map(r=>'<div class="csdep'+(me&&me.dep&&fold(r.dept||"").includes(me.dep)?' mine':'')+'"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text)+'</div></div>').join(""),false,"","dept",SU.dept);
   /* the preview (PREVISION) is shown only on the next day (csPrevHTML) */
   /* calls on set */
   /* calls on set: by department, one short line per person (time · name · job) */
@@ -186,10 +205,10 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
    h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>{const who={hit:t=>{const a=nmk(String(t||"")),b=nmk(String(r.name||""));return !!b&&a.includes(b)}};let pl=null;try{pl=csCallPlace(c,who,r)}catch(_){}
      const sc=pl?csShort(pl):"";const tag=sc?(pl.map?'<a class="csplace" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer" title="'+esc(pl.name)+'">'+esc(sc)+'</a>':'<span class="csplace" title="'+esc(pl.name)+'">'+esc(sc)+'</span>'):'';
      const tm=String(r.t||"").match(/^(\d{1,2}:\d{2})\s*(.*)$/);
-     return '<div class="cscall-r'+(me&&me.hit(r.name)?' mine':'')+'"><span class="t">'+esc(tm?tm[1]:(r.t||""))+(tm&&tm[2]?'<i>'+esc(tm[2])+'</i>':'')+'</span><span class="cp">'+tag+'</span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>'}).join("")+'</div>').join(""),false,"","calls")}
+     return '<div class="cscall-r'+(me&&me.hit(r.name)?' mine':'')+'"><span class="t">'+esc(tm?tm[1]:(r.t||""))+(tm&&tm[2]?'<i>'+esc(tm[2])+'</i>':'')+'</span><span class="cp">'+tag+'</span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>'}).join("")+'</div>').join(""),false,"","calls",SU.calls)}
   /* totals, notes, radio */
   const nb=[c.total?'<p><b>'+esc(c.total)+'</b></p>':'',...csA(c.notes).map(n=>'<p>'+csTx(n)+'</p>'),c.radio?'<p class="csradio">'+CSI.radio+' '+esc(c.radio)+'</p>':''].join("");
-  h+=csSec(L("Notizen & Funk"),nb,false);
+  h+=csSec(L("Notizen & Funk"),nb,false,"","",SU.notes);
   /* emergency (hospital) when the callsheet has it */
   if(x.hospital&&(x.hospital.name||x.hospital.phone))h+='<section class="dsec"><h3 class="dh">'+L('Notfall')+'</h3><div class="people"><div class="p"><div class="hd"><span class="nm">'+esc(x.hospital.name||L("Spital"))+'</span><span class="role">'+L('Nächstes Spital')+'</span></div>'+(x.hospital.address?'<div class="ct"><a href="'+maps([x.hospital.name,x.hospital.address].filter(Boolean).join(", "))+'" target="_blank" rel="noopener noreferrer">'+esc(x.hospital.address)+'</a></div>':'')+(x.hospital.phone?'<div class="ct"><a class="hosp" href="tel:'+esc(String(x.hospital.phone).replace(/\s/g,""))+'"><span>'+esc(x.hospital.phone)+'</span></a></div>':'')+'</div></div></section>';
   /* anything else of the document */
