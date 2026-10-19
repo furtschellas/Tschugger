@@ -1039,4 +1039,11 @@ html body #view .cstiles>.dt.cssunt{display:none}
  html body #view .cstiles>.dt.cssunt{display:block;grid-column:span 2}
  html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:span 3}
  html body #view .cstiles>.dt.cswx .ttile{width:100%;height:100%;box-sizing:border-box;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}}
+
+/* Today: «Mein Tag» like in the callsheet (label | value) */
+html body #view .tmine .csme-r{display:grid;grid-template-columns:96px minmax(0,1fr);gap:0 10px;align-items:baseline;padding:2px 0;font-size:14px;line-height:1.35}
+html body #view .tmine .csme-r .k{font-size:11.5px;color:var(--muted);min-width:0}
+html body #view .tmine .csme-r small{color:var(--muted)}
+html body #view .tmine .csme-r .csmap{width:24px;height:24px;vertical-align:-6px;margin:0 4px;display:inline-flex}html body #view .tmine .csme-r .csmap svg{width:13px;height:13px}
+@media (max-width:479px){html body #view .tmine .csme-r{grid-template-columns:62px minmax(0,1fr);gap:0 8px;font-size:13.5px}}
 </style>
