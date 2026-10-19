@@ -1079,4 +1079,8 @@ html body #view .dtiles.cstiles{align-items:stretch}
 @media (min-width:480px){html body #view .cstiles>.dt.cssunt br{display:none}}@media (max-width:479px){html body #view .cstiles>.dt.cssunt .sd{display:none}}
 
 html body #view .cstiles>.dt{align-self:stretch;margin:0}html body #view .cstiles>.dt.csdrv{box-sizing:border-box}
+
+/* location address as link, also on the phone and when folded */
+html body #view details.csloc>summary .csaddr{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--accent);text-decoration:underline;text-underline-offset:2px;font-weight:400;margin-top:2px}
+html body #view details.csloc>summary .csaddr .csi{width:12px;height:12px;flex:0 0 auto}
 </style>

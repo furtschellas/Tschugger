@@ -797,7 +797,9 @@ CS_A = (
     '"order": {"title": Kopfzeile von SHOOTING ORDER, "extras", "pages", "screen", "rows": [Zeile für Zeile in Reihenfolge: '
     'Szene = {"t": Beginn, "dur": Dauer, "dir": "DJ"|"D"…, "sc": Szene, "pgs", "time": Screen-Zeit, "ie": "I/Ev", "set": Motiv, "syn": Synopsis, '
     '"cast": Rollennummern, "extras": Komparsen/Fahrzeuge, "notes": Notes}; sonst = {"t": Zeit, "text": z. B. «Shoot A+B-Cam @ Loc1», «Lunch Break - 1h», «Move B-Cam …»}]}, '
-    '"cast": [{"no", "role", "actor", "scenes": [Szenen mit x], "pickup", "call", "wardrobe", "makeup", "base", "onset"}] (CAST @ BASE), '
+    '"cast": [{"no", "role", "actor", "scenes": [Szenen mit x], "pickup", "call", "wardrobe", "makeup", "base", "onset"}] (CAST @ BASE; '
+    'bei "wardrobe" und "makeup" jede belegte Spalte als «Name Zeit Dauer», Name = Personenname aus dem Spaltenkopf (Kopf «Make Up - Marina» → «Marina 07:55 - 08:10 15’»), '
+    'mehrere Spalten mit "; " getrennt, ohne Kommentare wie «auch dabei»; ohne Namen im Kopf nur «Zeit Dauer»), '
     '"extras": [{"count", "part", "scenes", "call", "wardrobe", "makeup", "onset"}], '
     '"vehicles": [{"name", "scenes", "via", "call", "rts"}]}'
 )
@@ -1459,7 +1461,7 @@ def main():
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] for v in dispos.values())   # read before the full structure / translation: again
+        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 2 for v in dispos.values())   # read before the full structure / translation: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
@@ -1468,6 +1470,7 @@ def main():
             a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A, 32000)
             b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000)
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
+            cs["v"] = 2   # version 2: wardrobe/make-up with the person of the column
             md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
             date = str(cs.pop("date", "") or "") or (md and "%s-%s-%s" % md.groups()) or ""
             # locations and production information in the languages of the app (names, places and streets stay as they are)
