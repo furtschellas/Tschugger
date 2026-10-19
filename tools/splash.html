@@ -38,10 +38,13 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
      an installed app they had closed in the background – that is a start, so the versions are shown then. */
   /* back within 30 minutes (also when the phone had closed the app): straight on, without the logo, on the same page */
   var rel=false;try{var lv=+localStorage.getItem("lastVis")||0;rel=!!lv&&Date.now()-lv<30*60000}catch(e){}
+  /* versions: shown on every start; left out only when the page is really reloaded while being used (reload button, last 2 minutes) –
+     reopening the app or the browser tab later is a start */
+  var hard=false;try{var ne=performance.getEntriesByType&&performance.getEntriesByType("navigation")[0];var lv2=+localStorage.getItem("lastVis")||0;hard=!!ne&&ne.type==="reload"&&!!lv2&&Date.now()-lv2<2*60000}catch(e){}
   /* a reload shows the logo and the loading status too (only the versions are left out) – before, the logo was hidden
      completely when the app had been used in the last 30 minutes, so most starts showed no logo and no loading status */
   window.__REL=rel;/* the app uses this too: a reload keeps the page, a start opens the start page */
-  if(rel){var tv0=document.getElementById("spv");if(tv0)tv0.style.display="none"}
+  if(hard){var tv0=document.getElementById("spv");if(tv0)tv0.style.display="none"}
   function seen(){try{localStorage.setItem("lastVis",String(Date.now()))}catch(e){}}
   setInterval(function(){if(document.visibilityState==="visible")seen()},15000);
   document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")seen()});addEventListener("pagehide",seen);
@@ -49,7 +52,7 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   /* under the logo, centred, one line each: script version, schedule version, app version, Copyright MrK 2026 – only on a start.
      The versions of the last start are kept on the device, so they show at once (before the data is read) */
   var PLN={de:"Drehplan",fr:"Plan de tournage",it:"Piano di riprese",en:"Schedule",hi:"शूटिंग शेड्यूल"};
-  function txt(){if(rel||!tv)return;var m=null;try{m=typeof S!=="undefined"&&S&&S.meta}catch(e){}
+  function txt(){if(hard||!tv)return;var m=null;try{m=typeof S!=="undefined"&&S&&S.meta}catch(e){}
     var v={};try{v=JSON.parse(localStorage.getItem("spver")||"{}")||{}}catch(e){}
     if(m&&(m.scriptVersion||m.scheduleVersion)){var nv={d:m.scriptVersion||"",s:m.scheduleVersion||""};if(nv.d!==v.d||nv.s!==v.s){v=nv;try{localStorage.setItem("spver",JSON.stringify(v))}catch(e){}}}
     var pl=PLN[lg]||PLN.en,sv=String(v.s||"");
@@ -64,7 +67,9 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   function dataOK(){try{return typeof S!=="undefined"&&S&&(S.days||[]).length>0&&(S.loaded||(offline()&&window.CACHEOK))}catch(e){return false}}
   /* every check in try: the app's variables (ME, S) do not exist yet while its scripts load – «typeof» throws then */
   function chk(f){try{return !!f()}catch(e){return false}}
-  function steps(){return [document.readyState!=="loading",chk(function(){return window.FB})||offline(),chk(function(){return ME})||offline(),dataOK(),dataOK()&&chk(function(){var v=document.getElementById("view");return v&&v.children.length})]}
+  /* FB and ME are «let» variables of the app (not window.FB): read them directly. A later step done = the earlier ones too */
+  function steps(){var a=[document.readyState!=="loading",chk(function(){return FB})||offline(),chk(function(){return ME})||offline(),dataOK(),dataOK()&&chk(function(){var v=document.getElementById("view");return v&&v.children.length})];
+    for(var i=a.length-2;i>=0;i--)if(a[i+1])a[i]=true;return a}
   function logSteps(st2){if(!lg2)return;var n=LT[lg]||LT.en,first=st2.indexOf(false);
     var h="";for(var i=0;i<n.length;i++)h+=(st2[i]?"✓ ":i===first?"<b>… </b>":"· ")+n[i]+"<br>";if(lg2.innerHTML!==h)lg2.innerHTML=h}
   function step(){try{txt()}catch(e){}var s2=steps();logSteps(s2);var k=s2.filter(Boolean).length;
