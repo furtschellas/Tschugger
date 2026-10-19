@@ -1028,7 +1028,7 @@ html body #view .csview .dsp-head .cssun .csi{width:1.05em;height:1.05em;color:v
  html body #view .cstiles>.dt.big .v{font-size:15px}html body #view .cstiles>.dt.cswx .ttile{padding:2px 7px}html body #view .cstiles>.dt.cswx .ttile b{font-size:14px}html body #view .cstiles>.dt.cswx .ttile span{font-size:9px}}
 
 /* phone: Crew Call to Wrap in one row, weather below */
-@media (max-width:479px){html body #view .cstiles{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+@media (max-width:479px){html body #view .dtiles.cstiles{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
  html body #view .cstiles>.dt{min-width:0;padding:3px 5px}html body #view .cstiles>.dt .v{font-size:12.5px;white-space:nowrap}html body #view .cstiles>.dt.big .v{font-size:14px}
  html body #view .cstiles>.dt .k{white-space:nowrap;overflow:hidden;text-overflow:clip}
  html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:1/-1}}
@@ -1046,4 +1046,14 @@ html body #view .tmine .csme-r .k{font-size:11.5px;color:var(--muted);min-width:
 html body #view .tmine .csme-r small{color:var(--muted)}
 html body #view .tmine .csme-r .csmap{width:24px;height:24px;vertical-align:-6px;margin:0 4px;display:inline-flex}html body #view .tmine .csme-r .csmap svg{width:13px;height:13px}
 @media (max-width:479px){html body #view .tmine .csme-r{grid-template-columns:62px minmax(0,1fr);gap:0 8px;font-size:13.5px}}
+
+/* drive to my call place */
+html body #view .cstiles>.dt.csdrv{font:inherit;text-align:left;cursor:pointer;color:inherit;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent)}
+html body #view .cstiles>.dt.csdrv .v{color:var(--accent)}
+@media (max-width:479px){html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:span 2}html body #view .cstiles>.dt.cssunt{grid-column:span 1}html body #view .cstiles>.dt.cssunt .v{font-size:11.5px;line-height:1.25}html body #view .cstiles>.dt.csdrv{grid-column:span 2}}
+html body #view .csview>.csjump:first-child{margin-top:0}
+
+@media (max-width:479px){html body #view .cstiles>.dt{justify-self:stretch;width:auto;box-sizing:border-box}html body #view .cstiles>.dt.cswx{display:flex;padding:0}html body #view .cstiles>.dt.cswx .ttile{width:100%}}
+
+@media (max-width:479px){html body #view .dtiles.cstiles>.dt.big{grid-column:auto}html body #view .dtiles.cstiles>.dt .k{font-size:8px;letter-spacing:.02em}}
 </style>
