@@ -736,16 +736,18 @@ async def hidden_data(p, port):
         perms = await E("({phone:vok('phone'),email:vok('email'),crew:vok('crew'),food:can('crew.food'),bday:can('crew.bday'),adm:isAdmin()})")
         if phones is None:
             phones = await E("S.crew.flatMap(g=>(g.people||[]).map(p=>String(p.phone||'').replace(/\\D/g,'')).filter(x=>x.length>=8)).slice(0,30)")
-        texts = []
+        texts = []; links = []
         for t in await E("tabsOn()"):
             await E(f"S.tab='{t}';render()"); await pg.wait_for_timeout(200)
-            texts.append(await E("(()=>{const v=document.getElementById('view'),hs=[...v.querySelectorAll('a.hosp')].map(a=>a.innerText);let t=v.innerText;for(const x of hs)t=t.split(x).join(' ');return t+' '+[...v.querySelectorAll('a[href^=\"tel:\"]:not(.hosp),a[href^=\"mailto:\"]')].map(a=>a.href).join(' ')})()"))  # the hospital (emergency) is shown to everyone
+            # the hospital (emergency number) is shown to everyone; «Hotel:» in a text is no phone link – only real tel: links count
+            r = await E("(()=>{const v=document.getElementById('view'),hs=[...v.querySelectorAll('a.hosp')].map(a=>a.innerText);let t=v.innerText;for(const x of hs)t=t.split(x).join(' ');return {t,l:[...v.querySelectorAll('a[href^=\"tel:\"]:not(.hosp)')].map(a=>a.getAttribute('href'))}})()")
+            texts.append(r["t"]); links += [t + ":" + x for x in r["l"]]
         await E("S.gm='all';openSearch();$('#gq').value='a';renderSearch()"); await pg.wait_for_timeout(200)
         texts.append(await E("$('#gres').innerText")); await E("closeSearch()")
         toks = {re.sub(r"\D", "", t)[-9:] for t in re.findall(r"\+?\d[\d .\-/]{7,}\d", " ".join(texts))}
         shown = [x for x in phones if x[-9:] in toks]
         if not perms["phone"]:
-            check(f"{who}: keine Telefonnummern (Seiten und Suche)", not shown and "tel:" not in " ".join(texts), len(shown))
+            check(f"{who}: keine Telefonnummern (Seiten und Suche)", not shown and not links, (len(shown), [x.split(":")[0] for x in links][:5]))
             vc = await E("typeof allVCards==='function'&&S.crew.length?vCardText(S.crew[0].people[0],S.crew[0]):''")
             check(f"{who}: vCard ohne Telefon", "TEL" not in vc)
         else:
