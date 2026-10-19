@@ -94,6 +94,8 @@ def crew():
         olds = [base64.b64decode(ao)] + ([base64.b64decode(prev)] if prev else [])
         try: n += 1 if refile(os.path.join(ROOT, fn), olds, base64.b64decode(nxa)) else 0
         except FileNotFoundError: pass
+        except Exception:   # file not (yet) with this key: keep the key, nothing breaks
+            log("Bereich", area, "übersprungen (Datei passt nicht zum Bereichsschlüssel)"); continue
         anew[area] = nxa
     log("Dateien neu verschlüsselt:", n)
     try:   # the app polls stamp.json: new stamp, so devices load the newly encrypted data
