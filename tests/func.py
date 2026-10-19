@@ -426,7 +426,7 @@ async def owner_tests(p, port):
             order:{rows:[{t:'09:00',sc:'2',ie:'I/Ev',set:'CHAPEL',syn:'S'},{t:'12:15',text:'Lunch Break'}]},cast:[{no:'1',role:'BAX',actor:'X'}],calls:[{dept:'Camera',name:'Y',t:'08:10'}]}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,d);const open=[...w.querySelectorAll('details.cssec')].map(e=>[e.querySelector('.dh').textContent,e.open]);
           const sim=SIMROLE,kr=MYROLE,kp=MYPERMS.slice();SIMROLE={adm:false};MYROLE='t';MYPERMS=['view.dispo'];const w2=document.createElement('div');w2.innerHTML=renderCS(x,d);SIMROLE=sim;MYROLE=kr;MYPERMS=kp;
-          return {tiles:w.textContent.includes('08:00')&&w.textContent.includes('19:00'),order:!!w.querySelector('.csorder [data-scene="2"]'),
+          return {tiles:w.textContent.includes('08:00')&&w.textContent.includes('19:00'),order:!!w.querySelector('.csorder details.csscd'),
             locOpen:open.some(([t,o])=>/Location/i.test(t)&&o),castClosed:open.some(([t,o])=>t==='Cast'&&!o),tel:!!w.querySelector('a[href^="tel:"]'),noTel:!w2.querySelector('a[href^="tel:"]')&&!w2.textContent.includes('000 00 00')}})()""")
         check("Callsheet wie das Dokument: Zeiten, Drehfolge, Locations offen, Cast zu, Telefon nur mit Recht",
               cs in (None, {"tiles": True, "order": True, "locOpen": True, "castClosed": True, "tel": True, "noTel": True}), cs, public=True)
