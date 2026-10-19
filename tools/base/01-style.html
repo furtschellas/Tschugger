@@ -1070,4 +1070,13 @@ html body #view .csoscn .cso1 .du{font-family:var(--f-mono,monospace);color:var(
 /* callsheet: bigger titles of the main parts */
 html body #view .csview .cssec>summary .dh{font-size:clamp(17px,2.2vw,22px);letter-spacing:.04em}
 @media (max-width:519px){html body #view .csview .cssec>summary .dh{font-size:17px}}
+
+/* sun tile everywhere (before the weather), drive as high as the weather */
+html body #view .cstiles>.dt.cssunt{display:block}
+html body #view .cstiles>.dt.csdrv{height:auto;align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+html body #view .dtiles.cstiles{align-items:stretch}
+
+@media (min-width:480px){html body #view .cstiles>.dt.cssunt br{display:none}}@media (max-width:479px){html body #view .cstiles>.dt.cssunt .sd{display:none}}
+
+html body #view .cstiles>.dt{align-self:stretch;margin:0}html body #view .cstiles>.dt.csdrv{box-sizing:border-box}
 </style>
