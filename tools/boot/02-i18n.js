@@ -303,6 +303,8 @@ Object.assign(I18N,{
  "Alle auf-/zuklappen":{fr:"Tout ouvrir/fermer",it:"Apri/chiudi tutto",en:"Open/close all"},
  "mit":{fr:"avec",it:"con",en:"with"},"ab":{fr:"de",it:"da",en:"from"},
  "Details Callsheet":{fr:"Détails feuille de service",it:"Dettagli ordine del giorno",en:"Callsheet details"},
+ "Das eigene Callsheet folgt.":{fr:"La feuille de service du jour suit.",it:"L’ordine del giorno segue.",en:"The day’s own callsheet follows."},
+ "Beginn":{fr:"Début",it:"Inizio",en:"Start"},
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
  "Links neu geladen – bitte prüfen und nochmals speichern.":{fr:"Liens rechargés – merci de vérifier et d’enregistrer à nouveau.",it:"Link ricaricati – controlla e salva di nuovo.",en:"Links reloaded – please check and save again."},
  "Links konnten nicht geladen werden – bitte später nochmals speichern.":{fr:"Les liens n’ont pas pu être chargés – merci d’enregistrer plus tard.",it:"Impossibile caricare i link – salva di nuovo più tardi.",en:"Links could not be loaded – please save again later."},
