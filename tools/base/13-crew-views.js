@@ -239,7 +239,7 @@ function renderDispo(){
   if(day.kind&&day.kind!=="shoot")return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+fmtDate(day.date)+'</span>'+UNITBAR+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
   if(!x){
     return h+(UNITBAR?'<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>':'')+'<div class="dsp-empty"><div class="eh">'+esc(day.label||"")+' · '+(day.date?fmtDate(day.date):'')+'</div><b>'+L('Callsheet folgt')+'</b><p>'+L('Das Callsheet erscheint hier automatisch, sobald es im Callsheet-Ordner der Dropbox liegt, meist am Vorabend.')+'</p>'+
-      (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>'+sidesHTML(day.date)+raHTML(day.date);
+      (day.hours?'<p class="m">'+L('Laut Planung: Drehzeit')+' '+esc(day.hours)+(day.sr?' · '+L('Sonne')+' '+esc(day.sr)+'–'+esc(day.ss):'')+'</p>':'')+'<button class="pd" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+'</button></div>'+(typeof csPrevHTML==="function"?csPrevHTML(day.date):"")+sidesHTML(day.date)+raHTML(day.date);
   }
   /* read in structure (as the document): the new view; older callsheets keep the view below */
   if(x.cs&&typeof x.cs==="object"&&typeof renderCS==="function"){h+=renderCS(x,day)+sidesHTML(x.date)+raHTML(x.date);

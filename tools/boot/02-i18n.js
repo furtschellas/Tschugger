@@ -295,6 +295,7 @@ Object.assign(I18N,{
  "Transport Crew":{fr:"Transport équipe",it:"Trasporto troupe",en:"Crew transport"},
  "Transport mit Fahrer":{fr:"Transport avec chauffeur",it:"Trasporto con autista",en:"Transport with driver"},
  "Vorschau":{fr:"Aperçu",it:"Anteprima",en:"Preview"},
+ "aus dem Callsheet vom":{fr:"de la feuille de service du",it:"dall’ordine del giorno del",en:"from the callsheet of"},
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
  "Links neu geladen – bitte prüfen und nochmals speichern.":{fr:"Liens rechargés – merci de vérifier et d’enregistrer à nouveau.",it:"Link ricaricati – controlla e salva di nuovo.",en:"Links reloaded – please check and save again."},
  "Links konnten nicht geladen werden – bitte später nochmals speichern.":{fr:"Les liens n’ont pas pu être chargés – merci d’enregistrer plus tard.",it:"Impossibile caricare i link – salva di nuovo più tardi.",en:"Links could not be loaded – please save again later."},

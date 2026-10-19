@@ -76,3 +76,9 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";
   for(const sec of csA(x.sections).concat(csA(c.sections))){const rows=csA(sec&&sec.rows).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(cc=>String(cc==null?"":cc).trim()));if(!rows.length)continue;
     h+=csSec(String(sec.title||""),rows.map(r=>'<p>'+r.map(cc=>csTx(cc)).join(" · ")+'</p>').join(""),false)}
   return h}
+
+/* preview (PREVISION) of a day from the callsheet of the shooting day before – shown on that day while its own callsheet is missing */
+function csPrevFor(date){const sh=S.days.filter(d=>d.kind==="shoot").map(d=>d.date).sort();const i=sh.indexOf(date);if(i<1)return null;
+  const prev=S.dispos.find(x=>x&&x.date===sh[i-1]&&x.cs&&x.cs.prevision&&csA(x.cs.prevision.rows).length);return prev?{from:prev,pv:prev.cs.prevision}:null}
+function csPrevHTML(date){const p=csPrevFor(date);if(!p)return"";
+  return '<section class="dsec csprev"><h3 class="dh">'+esc(L("Vorschau"))+' <small>'+esc(L("aus dem Callsheet vom"))+' '+esc(fmtDate(p.from.date))+'</small></h3>'+(p.pv.title?'<p class="ghint">'+esc(p.pv.title)+'</p>':'')+csOrderRows(p.pv.rows)+'</section>'}

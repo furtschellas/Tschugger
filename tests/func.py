@@ -430,6 +430,10 @@ async def owner_tests(p, port):
             locOpen:open.some(([t,o])=>/Location/i.test(t)&&o),castClosed:open.some(([t,o])=>t==='Cast'&&!o),tel:!!w.querySelector('a[href^="tel:"]'),noTel:!w2.querySelector('a[href^="tel:"]')&&!w2.textContent.includes('000 00 00')}})()""")
         check("Callsheet wie das Dokument: Zeiten, Drehfolge, Locations offen, Cast zu, Telefon nur mit Recht",
               cs in (None, {"tiles": True, "order": True, "locOpen": True, "castClosed": True, "tel": True, "noTel": True}), cs, public=True)
+        pvw = await E("""(()=>{if(typeof csPrevHTML!=='function')return null;const sh=S.days.filter(d=>d.kind==='shoot').map(d=>d.date).sort();if(sh.length<2)return null;
+          const keep=S.dispos;S.dispos=[{date:sh[0],cs:{prevision:{title:'PREVISION - D2',rows:[{t:'09:15',sc:'12',set:'OFFICE'}]}}}];const h=csPrevHTML(sh[1]),h0=csPrevHTML(sh[0]);S.dispos=keep;
+          return h.includes('PREVISION - D2')&&h.includes('data-scene="12"')&&h0===''})()""")
+        check("Callsheet: Vorschau erscheint beim Folgetag", pvw in (None, True), pvw, public=True)
         # app settings: links that were not loaded are never written (else empty fields deleted them for everyone)
         pv = await E("""(async()=>{const keep=window.PRIVOK;window.PRIVOK=false;const before=JSON.stringify(window.__db['config/private']||null);
           const ll=loadLangs;loadLangs=async()=>{};S.tab='admin';ADM.sub='set';render();await new Promise(x=>setTimeout(x,300));
