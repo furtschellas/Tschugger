@@ -157,9 +157,9 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
     const uniq=l=>new Set(l.map(x=>fold(String(x||"")).trim()).filter(Boolean)).size;
     const ls=csLocs(c);SU.loc=sm([["Sets",ls.filter(l=>!l.kinds).length],[L("weitere Orte"),ls.filter(l=>l.kinds).length]]);
     SU.info="";
-    SU.cast=sm([[L("Darsteller"),csA(c.cast).length],[L("erster Pickup"),first(c.cast,r=>r.pickup)],[L("erster Call"),first(c.cast,r=>r.call)]]);
+    SU.cast=sm([[L("Darsteller"),csA(c.cast).length]]);
     SU.travel=sm([[L("Personen"),csA(c.travel).length]]);
-    SU.extras=sm([[L("Komparsen"),csA(c.extras).reduce((a,r)=>a+(parseInt(r.count,10)||0),0)],[L("Gruppen"),csA(c.extras).length],[L("erster Call"),first(c.extras,r=>r.call)]]);
+    SU.extras=sm([[L("Komparsen"),csA(c.extras).reduce((a,r)=>a+(parseInt(r.count,10)||0),0)],[L("Gruppen"),csA(c.extras).length]]);
     SU.veh=sm([[L("Fahrzeuge"),csA(c.vehicles).length]]);
     SU.trans=sm([[L("Fahrten"),csA(c.transport).length],[L("Fahrzeuge"),uniq(csA(c.transport).map(r=>r.vehicle))],[L("Fahrer"),uniq(csA(c.transport).map(r=>r.driver))],[L("erste"),first(c.transport,r=>r.t1)]]);
     SU.ctrans=sm([[L("Fahrten"),csA(c.crewTransport).length],[L("Fahrzeuge"),uniq(csA(c.crewTransport).map(r=>r.vehicle))],[L("erste"),first(c.crewTransport,r=>r.t1)]]);
