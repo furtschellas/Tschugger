@@ -179,7 +179,7 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 
 /* the script text of a scene right in its row (schedule, callsheet, today): «Script» opens and closes it, «Vollbild» opens the reader */
 async function scInline(b){
-  const box=b.closest(".sc")&&b.closest(".sc").querySelector(":scope>.scinl");if(!box)return;
+  let el=b.parentElement;while(el&&!el.querySelector(":scope>.scinl")&&!el.matches("li,#view"))el=el.parentElement;const box=el&&el.querySelector(":scope>.scinl");if(!box)return;
   const open=box.hidden;box.hidden=!open;b.setAttribute("aria-expanded",String(open));b.classList.toggle("on",open);if(!open||box.dataset.ok)return;
   box.className="scinl svwrap "+svClasses();box.innerHTML='<p class="scnmsg">'+esc(L("Lade"))+' …</p>';
   try{const list=await scriptData();const x=findScene(list,b.dataset.scinl);
