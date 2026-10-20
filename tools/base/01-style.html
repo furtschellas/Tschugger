@@ -1114,4 +1114,18 @@ html body #view .tmine .tch{display:flex;align-items:center;gap:8px}
 }
 
 .beta{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#f5b400;color:#1a1300;font-size:10.5px;font-weight:800;letter-spacing:.08em;vertical-align:middle;line-height:1.5}
+
+/* Today «Heute»: tiles like in the callsheet (small label on top, time below in mono, Crew Call pink) */
+html body #view .today .ttiles.ttiles{display:flex!important;flex-wrap:wrap;gap:6px}
+html body #view .today .ttiles.ttiles>*{flex:1 1 auto;min-width:max-content}
+html body #view .today .ttiles.ttiles>.ttile{display:flex;flex-direction:column;justify-content:center;padding:4px 10px;min-height:0;border-radius:8px;line-height:1.2}
+html body #view .today .ttiles.ttiles>.ttile>span{order:-1;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 0 1px}
+html body #view .today .ttiles.ttiles>.ttile>b{font-family:var(--f-mono);font-size:clamp(15px,1.5vw,20px);font-weight:500;white-space:nowrap}
+html body #view .today .ttiles.ttiles>.ttile.big{background:linear-gradient(135deg,var(--accent),#c4126a);border:0;color:var(--accent-ink)}
+html body #view .today .ttiles.ttiles>.ttile.big>span{color:var(--accent-ink);opacity:.85}
+html body #view .today .ttiles.ttiles>.ttile.big>b{font-weight:700}
+html body #view .today .ttiles.ttiles>.twx b,html body #view .today .ttiles.ttiles>button b{font-size:clamp(15px,1.5vw,20px)}
+@media (max-width:600px){html body #view .today .ttiles.ttiles>*{min-width:0}html body #view .today .ttiles.ttiles{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:5px}
+ html body #view .today .ttiles.ttiles>.ttile{padding:3px 6px}html body #view .today .ttiles.ttiles>.ttile>span{font-size:8px;letter-spacing:.03em}
+ html body #view .today .ttiles.ttiles>.ttile>b{font-size:13px}html body #view .today .ttiles.ttiles>.ttile.big>b{font-size:16px}}
 </style>

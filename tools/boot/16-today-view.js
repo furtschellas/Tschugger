@@ -84,7 +84,7 @@ VIEWS.today=function(){
   let myCall="";try{if(me&&dp){const myDep=fold(me.src||"").split(/[\s/]/)[0];const c=myDep?arr(dp.calls).find(z=>fold(z.dept||"").includes(myDep)):null;if(c)myCall=hm(c.t)+" · "+c.dept}}catch(_){}
   const tiles=[],shT=tShow("time");
   if(shT&&myCall)tiles.push(['<b>'+esc(myCall.split(" · ")[0])+'</b>',L("Mein Call")+" · "+esc(myCall.split(" · ").slice(1).join(" · "))]);
-  if(shT&&dp&&(dp.crewCall||dp.generalCall))tiles.push(['<b>'+esc(dp.crewCall||dp.generalCall)+'</b>',"Crew Call"]);
+  if(shT&&dp&&(dp.crewCall||dp.generalCall))tiles.push(['<b>'+esc(dp.crewCall||dp.generalCall)+'</b>',"Crew Call","big"]);
   if(shT&&dp&&dp.shootCall)tiles.push(['<b>'+esc(dp.shootCall)+'</b>',L("Drehbeginn")]);
   /* shooting time always (also with a callsheet); with a 2nd unit that day its time as a tile of its own */
   const u2h=d.unit2&&typeof d.unit2==="object"&&d.unit2.hours?String(d.unit2.hours):"";
@@ -106,7 +106,7 @@ VIEWS.today=function(){
   /* «my day» from the callsheet: always (my own call, rides and department), also without the callsheet page; the link to it only with access */
   let mineCard="";try{const dpm=(S.dispos||[]).find(x=>x&&x.date===d.date);if(dpm&&dpm.cs&&typeof csMine==="function"){const me2=csMe();const mn=csMine(dpm.cs,me2);const toCs=canDispo&&typeof tabsOn==="function"&&tabsOn().includes("dispo");
     if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein Tag"))+' · Callsheet <span class="beta">BETA</span>'+(toCs?'<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button>':'')+'</div>'+mn.join("")+'</div>'}}catch(_){}
-  h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
+  h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k,cl])=>'<div class="ttile'+(cl?' '+cl:'')+'">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
   /* from noon (or lunch, if earlier) on: the tiles of the next shooting day below (times, drive, weather) */
   try{const la=d.kind==="shoot"&&lunchAt(d),noon=+new Date(d.date+"T12:00:00"),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
     if(nd){const ndt=new Date(nd.date+"T12:00:00"),nt=[];
