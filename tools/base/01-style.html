@@ -1228,4 +1228,10 @@ html body #view .csview .cslist{margin:3px 0;font-size:11.5px;line-height:1.35}
 /* a ride done for 20 minutes: its row grey */
 .cs-tbl tr:has(.ridest.rsold),.cs-card:has(.ridest.rsold){opacity:.45;filter:grayscale(1)}
 .ridest.rs0{color:var(--muted);opacity:.7}
+/* rides as a table on the desktop (switch «Als Kacheln / Als Tabelle»); on phones always tiles */
+.cstv{display:none}
+@media (min-width:761px){html body #view .csview details.cs-tblmode .cs-tbl{display:block}html body #view .csview details.cs-tblmode .cs-cards{display:none}
+ html body #view .csview details.cs-tblmode .dtbl{font-size:12.5px}html body #view .csview details.cs-tblmode .dtbl td,html body #view .csview details.cs-tblmode .dtbl th{padding:4px 7px;vertical-align:top}
+ .cstv{display:flex;align-items:center;gap:5px;margin:0 0 6px auto;width:max-content}.cstv svg{width:15px;height:15px}}
+button.ridest{font:inherit;cursor:pointer;padding:0;background:none;appearance:none}button.ridest.rs0{opacity:1;border-style:dashed}button.ridest:hover{box-shadow:0 0 0 3px color-mix(in srgb,currentColor 25%,transparent)}
 </style>
