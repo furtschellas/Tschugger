@@ -68,13 +68,16 @@ function csDriverByPhone(ph){const k=String(ph||"").replace(/\D/g,"").slice(-9);
   for(const d of arr(S.dispos)){const t=String(d&&d.cs&&d.cs.drivers||"");for(const x of t.split(/\s*[|\n;]\s*/)){const m=x.match(CSPH);if(m&&m[0].replace(/\D/g,"").slice(-9)===k){const n=x.replace(m[0],"").replace(/o\.\s*p\.\s*D.*$/i,"").trim();if(n)return n}}}
   for(const g of arr(S.crew))for(const p of arr(g.people))if(String(p.phone||"").replace(/\D/g,"").slice(-9)===k)return p.name||"";return ""}
 function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0,id="";try{id=typeof rideId==="function"?rideId(date,r):"";st=id&&window.rideState?rideState(id):0}catch(_){}
-  const I=window.RIDE_ICO||{},can=id&&typeof canPerm==="function"&&(canPerm("rides.confirm")||canPerm("rides.manage"));
+  const I=window.RIDE_ICO||{},mgr0=typeof canPerm==="function"&&canPerm("rides.manage");
+  /* clickable only for the Fahrten Manager (popup) and for the driver of this ride (accept / done) */
+  let drv=false;try{const me=typeof csMe==="function"?csMe():null;drv=!!(me&&r.driver&&me.hit(r.driver))}catch(_){}
+  const can=id&&(mgr0||drv);
   const cls='ridest rs'+st+(st===2&&window.rideAt&&Date.now()-rideAt(id)>20*60e3?' rsold':'');
   const tip=st===0?L("Fahrt noch nicht angenommen"):st===1?L("Fahrt läuft"):L("Fahrt ausgeführt");
   const ico=st===1?I.car||"":st===2?I[1]||"":"";
   /* AL, AD and production change the state right here: open → running → done → open */
-  const mgr=typeof canPerm==="function"&&canPerm("rides.manage");
-  const el=can?'<button type="button" class="'+cls+' rideack-cs'+(mgr?' rmgr':'')+'" data-rideack="'+esc(id)+'" data-rided="'+esc(date)+'" title="'+esc(tip+" – "+L(mgr?"Fahrt ändern":"antippen zum Ändern"))+'" aria-label="'+esc(tip+" – "+L(mgr?"Fahrt ändern":"antippen zum Ändern"))+'">'+ico+(mgr?'<span class="rmgri" aria-hidden="true"><svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/></svg></span>':'')+'</button>'
+  const mgr=mgr0;
+  const el=can?'<button type="button" class="'+cls+' rideack-cs'+(mgr?' rmgr':'')+'" data-rideack="'+esc(id)+'" data-rided="'+esc(date)+'"'+(drv?' data-rdrv="1"':'')+' title="'+esc(tip+" – "+L(mgr?"Fahrt ändern":"antippen zum Ändern"))+'" aria-label="'+esc(tip+" – "+L(mgr?"Fahrt ändern":"antippen zum Ändern"))+'">'+ico+(mgr?'<span class="rmgri" aria-hidden="true"><svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/></svg></span>':'')+'</button>'
     :'<span class="'+cls+'" title="'+esc(tip)+'">'+ico+'</span>';
   /* changed in the app (Fahrten Manager): marked, the original as tooltip */
   const o=r._orig,chg=o?' <span class="rchg" title="'+esc(L("Original")+": "+[csRoute(o.from,o.t1,o.to,o.t2),o.vehicle,o.driver,o.passengers||o.people].filter(Boolean).join(" · "))+'">'+esc(L("geändert"))+'</span>':'';
