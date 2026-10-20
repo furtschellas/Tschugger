@@ -237,8 +237,9 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
        return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+'</summary>'+
      csLocFp(c,l,x.date)+csA(l.notes).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",true,"","loc",SU.loc)}
   /* map of the day: every location on its own (code, scenes, name), parking and other points of the sets small */
-  {const geo=c.geo||{},pts=[];const rows=csA((c.order||{}).rows).filter(r=>r.sc);
-   const add=(u,code,name,sc,minor)=>{const g=geo[u];if(!g||!Array.isArray(g))return;if(pts.some(x=>x.c===code&&x.p.join(",")===g.join(",")))return;pts.push({p:g,c:code,n:name,s:sc||"",u,m:minor?1:0})};
+  {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const rows=csA((c.order||{}).rows).filter(r=>r.sc);
+   const add=(u,code,name,sc,minor)=>{const g=geo[u];if(!g||!Array.isArray(g)){if(!minor&&u&&!miss.some(x=>x.c===code))miss.push({c:code,n:name,s:sc||"",u});return}if(pts.some(x=>x.c===code&&x.p.join(",")===g.join(",")))return;
+     pts.push({p:g,c:code,n:name,s:sc||"",u,m:minor?1:0,r:gs[u]==="rough"||gs[u]==="near"?(gs[u]==="near"?2:1):0})};
    for(const l of csLocs(c)){const code=l.kinds?l.kinds.map(k=>k.replace(/\s+/g,"")).join("·"):"S"+String(l.no||"").trim();
      const sc=l.kinds?"":[...new Set(rows.filter(r=>csSceneLoc([l],r)===l).map(r=>String(r.sc)))].join(", ")||csS(l.scenes);add(l.map,code,l.name||"",sc,0);
      for(const i of csA(l.items))if(i.map)add(i.map,code+" · "+(String(i.label||"").trim()||"P"),[i.label,i.text].filter(Boolean).join(" · "),"",1)}
@@ -246,7 +247,8 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
    pts.forEach((p,i)=>{p.k=pts.slice(0,i).filter(x=>x.p.join(",")===p.p.join(",")).length});
    const main=pts.filter(p=>!p.m);
    if(pts.length)h+=csSec(L("Karte"),'<div class="csmapw"><button type="button" class="csmapbig" data-csmapbig aria-label="'+esc(L("Karte vergrössern"))+'" title="'+esc(L("Karte vergrössern"))+'">'+CSEXP+'</button><div class="csmap0" data-csmap="'+esc(JSON.stringify(pts))+'"></div>'+
-     '<div class="csmapl">'+main.map(p=>'<button type="button" class="csmapgo" data-csmapgo="'+pts.indexOf(p)+'"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+(p.s?' <small>'+esc(p.s)+'</small>':'')+'</button>').join("")+'</div></div>',
+     '<div class="csmapl">'+main.map(p=>'<button type="button" class="csmapgo" data-csmapgo="'+pts.indexOf(p)+'"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+(p.s?' <small>'+esc(p.s)+'</small>':'')+(p.r?' <small class="csmapr">'+esc(L("ungefähr"))+'</small>':'')+'</button>').join("")+
+     miss.map(p=>'<a class="csmapgo nopos" href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+(p.s?' <small>'+esc(p.s)+'</small>':'')+' <small class="csmapr">'+esc(L("ohne Position – Google Maps"))+'</small></a>').join("")+'</div></div>',
      false,"","karte",'<span class="cscount"><span><b>'+main.length+'</b> '+esc(L("Orte"))+'</span></span>')}
   /* production information */
   h+=csSec(L("Produktionsinfos"),csA(c.info).map(p=>'<p>'+csTx(csL(p))+'</p>').join(""),true,"csinfo");
@@ -350,8 +352,8 @@ function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(
     const sat=LF.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
     LF.control.layers({[L("Karte")]:osm,[L("Satellit")]:sat},null,{position:"bottomleft"}).addTo(m);
     const b=[];box.__mk=[];for(const p of pts){const lab=esc(p.c)+(p.s?" <i>"+esc(p.s)+"</i>":"");
-      const mk=LF.marker(p.p,{icon:LF.divIcon({className:"csmk"+(p.m?" min":""),html:'<span style="--k:'+(p.k||0)+'">'+lab+"</span>",iconSize:null}),zIndexOffset:p.m?0:1000}).addTo(m);
-      mk.bindPopup("<b>"+esc(p.c)+"</b> "+esc(p.n)+(p.s?"<br>"+esc(L("Szenen"))+": "+esc(p.s):"")+(p.u?'<br><a href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer">Google Maps</a>':""));box.__mk.push(mk);if(!p.m)b.push(p.p)}
+      const mk=LF.marker(p.p,{icon:LF.divIcon({className:"csmk"+(p.m?" min":"")+(p.r?" rough":""),html:'<span style="--k:'+(p.k||0)+'">'+lab+"</span>",iconSize:null}),zIndexOffset:p.m?0:1000}).addTo(m);
+      mk.bindPopup("<b>"+esc(p.c)+"</b> "+esc(p.n)+(p.s?"<br>"+esc(L("Szenen"))+": "+esc(p.s):"")+(p.r?"<br><i>"+esc(L(p.r===2?"Position ungefähr beim Set":"Position ungefähr"))+"</i>":"")+(p.u?'<br><a href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer">Google Maps</a>':""));box.__mk.push(mk);if(!p.m)b.push(p.p)}
     if(!b.length)pts.forEach(p=>b.push(p.p));
     if(b.length>1)m.fitBounds(b,{paddingTopLeft:[34,70],paddingBottomRight:[34,24],maxZoom:16});else m.setView(b[0],15)}).catch(()=>{box.innerHTML='<p class="ghint">'+esc(L("Karte nicht verfügbar (offline?)."))+'</p>'})}
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.id==="cs-karte"&&d.open)csMapInit(d.querySelector("[data-csmap]"))},true);

@@ -1,8 +1,8 @@
 /* ---- membership: invited addresses join once (members/{uid}); blocked = active:false ---- */
 /* the result is kept on this device: an offline start keeps the role (otherwise crew lost the shooting schedule without network) */
 const memKey=()=>"mc:v1:"+(ME&&ME.uid);
-function memSave(){try{localStorage.setItem(memKey(),JSON.stringify({r:MYROLE,p:MYPERMS,a:COADMIN,ap:ADMINPERMS,o:ADMINS.includes(lc(ME.email)),m:MEMBER}))}catch(_){}}
-function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"null");if(!c)return false;MYROLE=c.r||"";MYPERMS=Array.isArray(c.p)?c.p:[];COADMIN=!!c.a;if(Array.isArray(c.ap))ADMINPERMS=c.ap;if(c.m)MEMBER=c.m;if(c.o&&!ADMINS.includes(lc(ME.email)))ADMINS.push(lc(ME.email));return true}catch(_){return false}}
+function memSave(){try{localStorage.setItem(memKey(),JSON.stringify({r:MYROLE,rn:window.MYROLENAME||"",p:MYPERMS,a:COADMIN,ap:ADMINPERMS,o:ADMINS.includes(lc(ME.email)),m:MEMBER}))}catch(_){}}
+function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"null");if(!c)return false;MYROLE=c.r||"";window.MYROLENAME=c.rn||"";MYPERMS=Array.isArray(c.p)?c.p:[];COADMIN=!!c.a;if(Array.isArray(c.ap))ADMINPERMS=c.ap;if(c.m)MEMBER=c.m;if(c.o&&!ADMINS.includes(lc(ME.email)))ADMINS.push(lc(ME.email));return true}catch(_){return false}}
 async function checkMember(){
   if(navigator.onLine===false){memRestore();throw Object.assign(new Error("offline"),{code:"unavailable"})}
   let prev=null;try{prev=JSON.parse(localStorage.getItem(memKey())||"null")}catch(_){}
@@ -13,9 +13,9 @@ async function checkMember0(){
   const {F,db}=await fb();const u=ME;
   if(!isOwner()&&u.emailVerified){try{if((await F.getDoc(F.doc(db,"owners",lc(u.email)))).exists()&&!ADMINS.includes(lc(u.email)))ADMINS.push(lc(u.email))}catch(_){}}
   if(!isOwner()&&u.emailVerified){try{COADMIN=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(_){COADMIN=false}}
-  MYPERMS=[];MYROLE="";ADMINPERMS=ADMIN_DEFAULT.slice();
+  MYPERMS=[];MYROLE="";window.MYROLENAME="";ADMINPERMS=ADMIN_DEFAULT.slice();
   if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())ADMINPERMS=(ad.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}catch(_){}}
-  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){MYROLE=String(ur.data().role||"");const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())MYPERMS=(rd.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}}catch(_){}
+  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){MYROLE=String(ur.data().role||"");const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())window.MYROLENAME=String(rd.data().name||""),MYPERMS=(rd.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}}catch(_){}
   }
   const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){

@@ -82,7 +82,7 @@ async function welcomeDone(){
 }
 async function maybeWelcome(){
   if(!ME||WELCOME_OPEN||ONBOARD)return;
-  if(await welcomeDone()){maybeTour();return}
+  if(await welcomeDone()){maybeTestWelcome();return}
   WELCOME_OPEN=true;let T=WTXT[LANG]||(LANG==="hi"?WTXT.en:WTXT.de);
   if(LANG==="de"||docRaw("welcome").custom||docRaw("disclaimer").custom){const w=docGet("welcome",{});const dis=docRaw("disclaimer").body.trim();
     T=Object.assign({},WTXT[LANG]||(LANG==="hi"?WTXT.en:WTXT.de),{t:w.subject,p:w.body.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean)});T.warnIdx=T.p.findIndex(x=>x===dis)}
@@ -93,7 +93,31 @@ async function maybeWelcome(){
   d.addEventListener("click",async e=>{const b=e.target.closest("[data-wlgo]");if(!b||b.disabled)return;b.disabled=true;
     const at=new Date().toISOString();store("welcomeAck",at+"|"+WELCOME_VER);savePrefs();
     try{if(MEMBER){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{welcomeAck:at,welcomeVer:WELCOME_VER});MEMBER.welcomeAck=at;MEMBER.welcomeVer=WELCOME_VER}}catch(err){console.warn("welcome",err&&err.code||err)}
-    d.remove();WELCOME_OPEN=false;maybeTour()});
+    d.remove();WELCOME_OPEN=false;maybeTestWelcome()});
+  document.body.appendChild(d);
+}
+/* ---- test users (role with «Test» in its name): a one-time note that they see features not yet introduced; text under Einstellungen → Dokumente ---- */
+const twVer=()=>String(parseInt(((window.DOCS||{}).testwelcome||{}).ver,10)||1);
+const isTester=()=>!!(ME&&!SIMROLE&&!(typeof SIMUSER!=="undefined"&&SIMUSER)&&!isAdmin()&&/test/i.test((window.MYROLENAME||"")+" "+(MYROLE||"")));
+async function twDone(){const v=twVer();
+  if(MEMBER&&MEMBER.testAck&&String(MEMBER.testVer||"1")===v)return true;
+  let loc="";try{loc=localStorage.getItem("testAck")||""}catch(_){}
+  if(loc&&loc.split("|")[1]===v)return true;
+  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().testAck;if(w&&String(w).split("|")[1]===v){try{localStorage.setItem("testAck",w)}catch(_){}return true}}catch(_){}
+  return false}
+let TW_OPEN=false;
+async function maybeTestWelcome(){
+  if(!isTester()||TW_OPEN||WELCOME_OPEN||ONBOARD){maybeTour();return}
+  TW_OPEN=true;
+  if(await twDone()){TW_OPEN=false;maybeTour();return}
+  const v=twVer(),w=docGet("testwelcome",{vorname:(MEMBER&&(MEMBER.firstName||String(MEMBER.name||"").split(" ")[0]))||""});
+  const d=mkDialog("twelcome");
+  d.innerHTML='<div class="a2box wlbox"><span class="wlbeta">BETA</span><h3>'+esc(w.subject)+'</h3>'+w.body.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>'<p>'+esc(x).replace(/\n/g,"<br>")+'</p>').join("")+
+    '<div class="a2b"><button type="button" class="pri" data-twok>'+esc(L("Verstanden"))+'</button></div></div>';
+  d.addEventListener("click",async e=>{const b=e.target.closest("[data-twok]");if(!b)return;b.disabled=true;
+    const at=new Date().toISOString();store("testAck",at+"|"+v);savePrefs();
+    try{if(MEMBER){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{testAck:at,testVer:v});MEMBER.testAck=at;MEMBER.testVer=v}}catch(err){console.warn("testwelcome",err&&err.code||err)}
+    d.remove();TW_OPEN=false;maybeTour()});
   document.body.appendChild(d);
 }
 /* ---- presence: signed-in members leave a «last seen» mark every 2 minutes while the app is open (shown to admins) ---- */

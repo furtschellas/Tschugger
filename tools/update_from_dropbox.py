@@ -867,7 +867,7 @@ def map_pos(u):
             urls += inner
         if res: return res
         pu = urlparse(r.url); segs = [x for x in pu.path.split("/")[1:4] if x in ("maps", "place", "dir", "search", "sorry", "url", "index", "preview", "embed")]
-        diag = pu.netloc + "/" + "/".join(segs) + ("?" + ",".join(sorted(parse_qs(pu.query).keys()))[:60] if pu.query else "") + ("" if not inner else " +%d Maps-Links" % len(inner)) + " · HTTP %d · %d Weiterleitungen" % (r.status_code, len(r.history))
+        diag = urlparse(u).netloc + " → " + pu.netloc + "/" + "/".join(segs) + ("?" + ",".join(sorted(parse_qs(pu.query).keys()))[:60] if pu.query else "") + ("" if not inner else " +%d Maps-Links" % len(inner)) + " · HTTP %d · %d Weiterleitungen" % (r.status_code, len(r.history))
         for x in urls:   # a named place instead of coordinates
             try:
                 qs = parse_qs(urlparse(x).query); t = (qs.get("q") or qs.get("query") or [""])[0]
@@ -877,6 +877,28 @@ def map_pos(u):
             except Exception: pass
         return {"p": None, "q": "", "diag": diag, "t": int(time.time())}
     except Exception as e: log("Kartenlink nicht auflösbar:", type(e).__name__); return None
+
+
+def geocode_any(addr, cache):
+    """address → (position, exact): the whole address, then without the name in front, then street + PLZ + place, at last only PLZ + place (rough)"""
+    if not addr: return None, False
+    a = re.sub(r"\s+", " ", str(addr)).strip(" ,;")
+    parts = [x.strip() for x in a.split(",") if x.strip()]
+    tries = [a]
+    if len(parts) > 2: tries.append(", ".join(parts[1:]))
+    m = re.search(r"([A-Za-zÀ-ÿ.\- ]+?\s*\d+[a-z]?)\s*,?\s*(\d{4})\s+([A-Za-zÀ-ÿ\- ]+)", a)
+    if m: tries.append("%s, %s %s" % (m.group(1).strip(), m.group(2), m.group(3).strip()))
+    for t in dict.fromkeys(tries):
+        p = geocode(t, cache)
+        if p and in_ch(p): return p, True
+    m = re.search(r"\b(\d{4})\s+([A-Za-zÀ-ÿ\-]+(?:\s[A-Za-zÀ-ÿ\-]+)?)", a)
+    if m:
+        p = geocode("%s %s" % (m.group(1), m.group(2)), cache)
+        if p and in_ch(p): return p, False
+    return None, False
+
+
+ADDR_RE = re.compile(r"([A-Za-zÀ-ÿ.\-]+(?:[ \-][A-Za-zÀ-ÿ.\-]+)*\s+\d+[a-z]?\s*,\s*(?:\d{4}\s+)?[A-Za-zÀ-ÿ\-]+(?:\s[A-Za-zÀ-ÿ\-]+)?|\b\d{4}\s+[A-Za-zÀ-ÿ\-]+)")
 
 
 def geocode(addr, cache):
@@ -1577,7 +1599,7 @@ def main():
         except Exception as e: failed("dispo", f, e)
     # positions of the callsheet's map links for the map in the app – checked: inside Switzerland, close to the address of the
     # location (Motivliste or the address on the callsheet), not far from the other places of the day; otherwise the address
-    mg = meta.setdefault("mapGeo3", {}); meta.pop("mapGeo", None); meta.pop("mapGeo2", None); gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "none": 0}
+    mg = meta.setdefault("mapGeo4", {}); meta.pop("mapGeo", None); meta.pop("mapGeo2", None); meta.pop("mapGeo3", None); gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "near": 0, "none": 0}
     scene_addr, set_addr = {}, {}
     lcaddr = (meta.get("locCfg") or {}).get("addr") or {}
     day_items = {}
@@ -1596,6 +1618,7 @@ def main():
         cs = d.get("cs") if isinstance(d.get("cs"), dict) else None
         if not cs: continue
         cand = []   # (url, address)
+        parent = {}   # url of a point of a set → url of the set (a parking without position is shown roughly at its set)
         labs = {}   # url → short label for the diagnosis (S1, S2 … or the kind of item like «Tech Parking»)
         for li, l in enumerate(cs.get("locations") or []):
             if not isinstance(l, dict): continue
@@ -1612,26 +1635,34 @@ def main():
                     ad = lcaddr.get(re.sub(r"\s+", "", str(it["loc"]).lower()), "")
                     if ad: break
             ad = ad or next((scene_addr[k] for k in keys if scene_addr.get(k)), "") or set_addr.get(re.sub(r"[^a-z0-9]", "", str(l.get("name") or "").lower()), "")
+            if not ad:   # an address in the notes of the location on the callsheet
+                for nt in l.get("notes") or []:
+                    m = ADDR_RE.search(str(nt))
+                    if m: ad = m.group(1).strip(); break
+            if l.get("map"): parent[l["map"]] = l["map"]
             if l.get("map"): cand.append((l["map"], ad))
             for i in l.get("items") or []:
                 if isinstance(i, dict) and i.get("map"):
-                    m = re.search(r"([A-Za-zÀ-ÿ.\- ]+\d+[a-z]?\s*,\s*\d{4}\s+[A-Za-zÀ-ÿ\- ]+)", str(i.get("text") or ""))
+                    m = ADDR_RE.search(str(i.get("text") or ""))
                     cand.append((i["map"], m.group(1).strip() if m else ""))
+                    if l.get("map"): parent[i["map"]] = l["map"]
         g, src, pos = {}, {}, {}
         for u, ad in cand:
             if u not in mg or mg[u] is None or (not (mg[u] or {}).get("p") and ("diag" not in (mg[u] or {}) or time.time() - int((mg[u] or {}).get("t") or 0) > 6 * 3600)): mg[u] = map_pos(u)
             lp = (mg.get(u) or {}).get("p"); q = (mg.get(u) or {}).get("q")
             nm = (mg.get(u) or {}).get("name") or ""
-            ap = geocode(ad, gcache) if ad else (geocode(nm, gcache) if nm else None)
-            if lp and ap and dist_km(lp, ap) > 2: pos[u] = (ap, "addr")          # link and address disagree: the address wins
+            ap, exact = geocode_any(ad, gcache) if ad else (geocode_any(nm, gcache) if nm else (None, False))
+            if lp and ap and exact and dist_km(lp, ap) > 2: pos[u] = (ap, "addr")          # link and address disagree: the address wins
             elif lp: pos[u] = (lp, "link" if q in ("p", "q") else "rough")
-            elif ap: pos[u] = (ap, "addr")
+            elif ap: pos[u] = (ap, "addr" if exact else "rough")
+        for u, ad in cand:   # 3: a point of a set without any position: roughly at its set (marked in the app)
+            if u not in pos and parent.get(u) in pos and parent[u] != u: pos[u] = (pos[parent[u]][0], "near")
         rep = []
         for u, ad in cand:
             if u in pos: g[u] = pos[u][0]; src[u] = pos[u][1]; stat[pos[u][1]] += 1
             else: stat["none"] += 1
             v = mg.get(u) or {}
-            rep.append("%s: %s" % (labs.get(u, "?"), ("✓ " + {"link": "Link", "addr": "Adresse", "rough": "ungefähr"}[pos[u][1]]) if u in pos else
+            rep.append("%s: %s" % (labs.get(u, "?"), ("✓ " + {"link": "Link", "addr": "Adresse", "rough": "ungefähr", "near": "beim Set"}[pos[u][1]]) if u in pos else
                        "✗ Link ohne Position (%s)%s" % ((v.get("diag") or "?").split(" · ")[0], ", keine Adresse" if not ad else ", Adresse nicht gefunden")))
         print("::notice::Karte %s: %s" % (d.get("date"), " | ".join(rep)[:900]))
         if g != (cs.get("geo") or {}) or src != (cs.get("geoSrc") or {}): cs["geo"] = g; cs["geoSrc"] = src; changed = True
@@ -1639,7 +1670,7 @@ def main():
     for v in mg.values():
         if isinstance(v, dict) and not v.get("p"): k = (v.get("diag") or "?") + (" · Ortsname" if v.get("name") else ""); diags[k] = diags.get(k, 0) + 1
     print("::notice::Karte-Diagnose: Orte-Einstellungen %d Adressen, Motivliste %d Szenen mit Adresse · ohne Position: %s" % (len(lcaddr), sum(1 for v in scene_addr.values() if v), "; ".join("%s ×%d" % kv for kv in diags.items()) or "keine"))
-    if any(stat.values()): print("::notice::Karte: %d Orte aus dem Kartenlink, %d über die Adresse korrigiert/ergänzt, %d nur ungefähr, %d ohne Position" % (stat["link"], stat["addr"], stat["rough"], stat["none"]))
+    if any(stat.values()): print("::notice::Karte: %d Orte aus dem Kartenlink, %d über die Adresse korrigiert/ergänzt, %d nur ungefähr, %d beim Set, %d ohne Position" % (stat["link"], stat["addr"], stat["rough"], stat["near"], stat["none"]))
     # the original pages of every callsheet and the Sides (script pages of the day) as pictures in the app (also offline)
     spc = dict(meta.get("sidesPages") or {}); used = set()
     try:

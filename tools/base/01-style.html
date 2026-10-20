@@ -1189,4 +1189,16 @@ html body #view .csview .leaflet-container,html body #view .csview .leaflet-cont
 .cscol[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 html body #view #cs-cast.hide-role .dtbl th:nth-child(2),html body #view #cs-cast.hide-role .dtbl td:nth-child(2),html body #view #cs-cast.hide-role .cs-ct .c1{display:none}
 html body #view #cs-cast.hide-actor .dtbl th:nth-child(3),html body #view #cs-cast.hide-actor .dtbl td:nth-child(3),html body #view #cs-cast.hide-actor .cs-ct .c2{display:none}
+/* script text inline in a scene row */
+.scinl{margin:8px 0 2px;max-height:70vh;overflow:auto;border-radius:10px}
+.scinl .sp-page{margin:0}
+.scinl.sp-dark .sp-page{--sp-bg:#1d1729;--sp-ink:#ece4d4;--sp-mut:#b4a9c6;--sp-note:#ff8cbd;--sp-rule:#3a3052}
+.scinl.sp-light .sp-page{--sp-bg:#fffdf8;--sp-ink:#1b1712;--sp-mut:#5d5447;--sp-note:#9c1458;--sp-rule:#ddd5c6}
+.scinl:not(.sv-no-e) .sct.en .hde{display:none}.scinl:not(.sv-no-e) .sct.en .hen{display:inline}
+.scinlh{display:flex;justify-content:flex-end;margin:0 0 4px}
+.scbtn.on{background:var(--accent);color:var(--accent-ink)}
+body.no-script .scinl{display:none!important}
+.csmk.rough span{opacity:.8;border-style:dashed!important;filter:grayscale(.6)}
+.csmapr{opacity:.7;font-style:italic}
+.csmapgo.nopos{opacity:.75;text-decoration:none;color:inherit}
 </style>

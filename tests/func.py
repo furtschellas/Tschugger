@@ -81,7 +81,7 @@ async def owner_tests(p, port):
             await E("document.querySelector('#view [data-day=\"%s\"]').click()" % other); await pg.wait_for_timeout(250)
             check("Drehplan: Tag wechseln per Tages-Chip", await E("S.day") == other)
             await E("document.querySelector('#view [data-day=\"%s\"]').click()" % sd["day"]); await pg.wait_for_timeout(250)
-        scn_plan = await E("(()=>{const b=[...document.querySelectorAll('#view [data-scene]')].find(x=>x.offsetParent);return b?b.dataset.scene:''})()")
+        scn_plan = await E("(()=>{const b=[...document.querySelectorAll('#view [data-scinl]')].find(x=>x.offsetParent);return b?b.dataset.scinl:''})()")
         await E("S.tab='loc';render()"); await pg.wait_for_timeout(300)   # cards that open and close: Locations
         k = await E("(document.querySelector('#view [data-sckey]')||{}).dataset?.sckey||''")
         if k:
@@ -97,11 +97,26 @@ async def owner_tests(p, port):
         scn = scn_plan
         check("Drehplan: Script-Knopf vorhanden", bool(scn))
         if scn:
-            await E("[...document.querySelectorAll('#view [data-scene]')].find(x=>x.offsetParent).click()")
+            await E("[...document.querySelectorAll('#view [data-scinl]')].find(x=>x.offsetParent).click()")
             await pg.wait_for_timeout(2500)
+            txt = await E("(()=>{const b=[...document.querySelectorAll('#view [data-scinl]')].find(x=>x.offsetParent);const s=b&&b.closest('.sc').querySelector(':scope>.scinl');return s&&!s.hidden?s.innerText:''})()")
+            check("Drehplan: Script-Knopf zeigt den Drehbuchtext direkt in der Szene", bool(txt) and scn.split("/")[0].strip().lower() in txt.lower() and "nicht geladen" not in txt and "nicht gefunden" not in txt, (scn, txt[:80]))
+            await E("(()=>{const x=document.querySelector('#view .scinl:not([hidden]) [data-scene]');if(x)x.click()})()")
+            await pg.wait_for_timeout(1500)
             txt = await E("(()=>{const s=document.querySelector('.scrn');return s&&!s.hidden?s.innerText:''})()")
-            check("Drehplan: Script-Knopf öffnet das Drehbuch bei dieser Szene", bool(txt) and scn.split("/")[0].strip().lower() in txt.lower() and "nicht geladen" not in txt, (scn, txt[:80]))
+            check("Drehplan: «Vollbild» öffnet das Drehbuch bei dieser Szene", bool(txt) and scn.split("/")[0].strip().lower() in txt.lower() and "nicht geladen" not in txt, (scn, txt[:80]))
             await E("const x=document.querySelector('[data-scnclose]');if(x)x.click()")
+        # the callsheet: the same script text in a scene of the shooting order
+        cd = await E("(()=>{const d=(S.dispos||[]).find(x=>x.cs&&x.cs.order&&(x.cs.order.rows||[]).some(r=>r.sc));return d?d.date:''})()")
+        if cd:
+            await E("S.tab='dispo';S.dday=%s;render()" % json.dumps(cd)); await pg.wait_for_timeout(400)
+            sc2 = await E("""(()=>{const s=document.querySelector('#view details.cssec.csorder, #view .csorder');const d=[...document.querySelectorAll('#view details')].filter(x=>x.querySelector('.csorder'));d.forEach(x=>x.open=true);
+                const r=document.querySelector('#view .csorder li.csfold details.csscd');if(!r)return '';r.open=true;const b=r.querySelector('[data-scinl]');if(!b)return '-';b.click();return b.dataset.scinl})()""")
+            check("Callsheet: Script-Knopf in der Drehfolge", bool(sc2) and sc2 != "-", sc2)
+            if sc2 and sc2 != "-":
+                await pg.wait_for_timeout(2500)
+                txt = await E("(()=>{const s=document.querySelector('#view .csorder li.csfold .scinl');return s&&!s.hidden?s.innerText:''})()")
+                check("Callsheet: Drehbuchtext erscheint direkt in der Szene", bool(txt) and "nicht geladen" not in txt and "nicht gefunden" not in txt, (sc2, txt[:80]))
 
 
     async def _p2():   # Meine Termine und Konto
