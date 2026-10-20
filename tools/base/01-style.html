@@ -1233,4 +1233,14 @@ html body #view details.csloc>summary .csloc-i{order:9;margin-left:auto}
 .pv-no-d .sc>.scdet .camx{display:none}
 /* place codes L1, L2, Base … always as narrow as their text */
 html body .csplace{min-width:0!important;width:auto!important;flex:0 0 auto;padding:0 4px!important;justify-self:start;display:inline-block}
+/* team of the day on phones: compact (small labels, tight rows, smaller name lists) */
+@media (max-width:760px){
+html body #view .csview .cskey>div{grid-template-columns:31% minmax(0,1fr) auto!important;gap:0 6px;padding:1px 0;font-size:12.5px;line-height:1.3}
+html body #view .csview .cskey>div .k{font-size:10.5px;line-height:1.2;white-space:normal}
+html body #view .csview .cskey>div>*:not(.k),html body #view .csview .cskey>div>*:not(.k) *{font-size:12.5px!important;line-height:1.3}
+html body #view .csview .cskey a{text-underline-offset:2px}
+html body #view .csview .cskey svg{width:12px;height:12px}
+html body #view .csview .cslist{margin:3px 0;font-size:11.5px;line-height:1.35}
+html body #view .csview .cslist b{font-size:11.5px}
+}
 </style>
