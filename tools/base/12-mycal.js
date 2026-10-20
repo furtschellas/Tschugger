@@ -5,7 +5,7 @@ function myIdentity(){
   const people=mailPeople();let nm="",em="";
   try{em=String(window.simEmail?window.simEmail():(typeof ME!=="undefined"&&ME&&ME.email)||"").toLowerCase()}catch(_){}
   try{if(typeof MEMBER!=="undefined"&&MEMBER)nm=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
-  let pick="";try{if(myAdmin())pick=localStorage.getItem("myname")||""}catch(_){}
+  let pick="";try{if(myAdmin()&&!(window.simOn&&window.simOn()))pick=localStorage.getItem("myname")||""}catch(_){} /* simulating: always the simulated person, never my own pick */
   let p=null;
   if(pick)p=people.find(x=>x.name===pick)||{name:pick,k:nmk(pick)};
   if(!p&&em)p=people.find(x=>x.email===em&&x.src!=="user");
