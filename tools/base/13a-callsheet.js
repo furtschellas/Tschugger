@@ -354,7 +354,7 @@ function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(
     const osm=LF.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(m);
     const sat=LF.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
     LF.control.layers({[L("Karte")]:osm,[L("Satellit")]:sat},null,{position:"bottomleft"}).addTo(m);
-    const b=[];box.__mk=[];for(const p of pts){const lab=esc(p.c)+(p.s?" <i>"+esc(p.s)+"</i>":"");
+    const b=[];box.__mk=[];for(const p of pts){const lab=esc(p.c);   /* only the code on the map, the scenes with their times in the popup */
       const mk=LF.marker(p.p,{icon:LF.divIcon({className:"csmk"+(p.m?" min":"")+(p.r?" rough":""),html:'<span style="--k:'+(p.k||0)+'">'+lab+"</span>",iconSize:null}),zIndexOffset:p.m?0:1000}).addTo(m);
       mk.bindPopup("<b>"+esc(p.c)+"</b> "+esc(p.n)+(p.st&&p.st.length?'<div class="csmpst">'+p.st.map(x=>'<div>'+esc(x)+'</div>').join("")+'</div>':(p.s?"<br>"+esc(L("Szenen"))+": "+esc(p.s):""))+(p.r?"<br><i>"+esc(L(p.r===2?"Position ungefähr beim Set":"Position ungefähr"))+"</i>":"")+(p.u?'<br><a href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer">Google Maps</a>':""));box.__mk.push(mk);b.push(p.p)}
     box.__b=b;csMapFit(box)}).catch(()=>{box.innerHTML='<p class="ghint">'+esc(L("Karte nicht verfügbar (offline?)."))+'</p>'})}
