@@ -150,7 +150,7 @@ function csLocs0(c){const sets=[],extra=[];
       /* lines that belong to the place before them: «To set 1: 4’ with car …», «WC: on base …» */
       if(last&&/^(to set|zum set|nach set|wc\b)/i.test((lab+" "+txt).trim())&&!i.map){const n=[lab,txt].filter(Boolean).join(": ").replace(/:\s*:/,":");if(!last.notes.includes(n))last.notes.push(n);continue}
       const cm=txt.match(/^([^:,]{1,40}):\s*(.+)$/),head=cm?cm[1]:"",body=cm?cm[2]:txt,par=(body.match(/\(([^)]{1,30})\)/)||[])[1]||"";
-      const kinds=KIND.filter(([re])=>re.test(lab)||re.test(head)||re.test(par)).map(([,k])=>k);
+      const kinds=KIND.filter(([re,k])=>re.test(lab)||re.test(head)||re.test(par)||(k==="Base"&&re.test(body.split(",")[0]))).map(([,k])=>k);   /* «Base Church, Kirchplatz 5» is the Base too */
       if(!kinds.length||(!txt&&!i.map)){items.push(i);last=null;continue}
       const clean=body.replace(/\s*\([^)]{1,30}\)\s*/g," ").trim(),name=clean.split(",")[0].trim(),rest=clean.split(",").slice(1).join(",").trim();
       let e=place(name,i.map);
@@ -194,10 +194,12 @@ function csTilesHTML(x,day,c,me){const t=c.times||{};
   return '<div class="dtiles cstiles" id="cs-zeiten">'+tile("Crew Call",t.crewCall||x.crewCall,true)+tile("Rehearsal",t.rehearsal)+tile("RTS",t.rts||x.shootCall)+tile("Lunch",t.lunch)+tile("Wrap",t.wrap||x.wrap)+
     (()=>{const a=c.sunrise||x.sr,b=c.sunset||x.ss;return a&&b?'<div class="dt cssunt"><div class="k">'+esc(L("Sonne"))+'</div><div class="v">'+esc(a)+'<span class="sd">–</span><br>'+esc(b)+'</div></div>':''})()+(typeof wxTile==="function"&&day&&day.date&&wxTile(day)?'<div class="dt cswx">'+wxTile(day)+'</div>':tile(L("Wetter"),[c.weather,c.temp].filter(Boolean).join(" · ")).replace('class="dt"','class="dt wide"'))
     /* drive to my call place: route from the hotel or from where I am */
-    +(()=>{if(!me)return"";const call=csA(c.calls).find(r=>me.hit(r.name));let pl=null;try{pl=call?csCallPlace(c,me,call):null}catch(_){}if(!pl)return"";
-      const to=(String(pl.name||"").replace(/^[^:]*:\s*/,"").replace(/^Set\s*\w+\s*·\s*/,"")).trim();if(!to&&!pl.map)return"";if(!to)return '<a class="dt csdrv" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc(L("Karte"))+' ›</div></a>';
+    +(()=>{if(!me)return"";const call=csA(c.calls).find(r=>me.hit(r.name));let pl=null;try{pl=call?csCallPlace(c,me,call):null}catch(_){}/* no sure call place (no call or no ride): the way to the Base of the day, else to location 1 – marked as such */
+      if(!pl){const ls=csLocs(c),b=ls.find(l=>l.kinds&&l.kinds.includes("Base"))||ls.find(l=>!l.kinds);if(!b)return"";let ad="";try{ad=csLocAddr(c,b,x.date)}catch(_){}
+        pl={name:ad||b.name||"",map:b.map||"",fbk:b.kinds?"Base":"L"+String(b.no||"").trim(),fbn:String(b.name||"")}}
+      const to=(String(pl.name||"").replace(/^[^:]*:\s*/,"").replace(/^Set\s*\w+\s*·\s*/,"")).trim();if(!to&&!pl.map)return"";if(!to)return '<a class="dt csdrv" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc(L("Karte"))+' ›</div></a>';
       const from=(day&&day.drive&&day.drive.from)||"Hotel",enc=encodeURIComponent,url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+enc(from)+"&destination="+enc(to),here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+enc(to);
-      return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc((()=>{const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})())+' ›</div></button>'})()+'</div>';}
+      return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc((()=>{if(pl.fbk)return pl.fbn.slice(0,18)||L("Route");const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})())+' ›</div></button>'})()+'</div>';}
 /* parts of the callsheet (each one a folded section; c = callsheet, x = day of the dispo, me = me, SU = sums of the folded parts, t = times) */
 function csJumpBar(c,x,me,SU,t){let JB="";
   {const has=k=>({loc:csA(c.locations).length,order:csA((c.order||{}).rows).length,cast:csA(c.cast).length,trans:csA(c.transport).length||csA(c.crewTransport).length||csA(c.travel).length,dept:csA(c.depts).some(r=>String(r.text||"").trim()),calls:csA(c.calls).length})[k];
