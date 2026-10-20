@@ -144,7 +144,7 @@ function itemHTML(it){
     return '<li class="row ev'+(mn?' lunch':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+mn+'</div></li>';
   }
   const meta=[];
-  if(it.cam)meta.push('<span class="cam">'+esc(it.cam)+'</span>'); /* which camera/unit shoots it (e.g. B-Cam of the 1st unit, setups of the 2nd unit) */
+  if(it.cam)meta.push('<span class="cam">'+esc(arr(it.camx).length?String(it.cam).replace(/\s*·\s*Setups.*$/,""):it.cam)+'</span>'); /* which camera/unit shoots it (e.g. B-Cam of the 1st unit, setups of the 2nd unit) */
   if(it.pg)meta.push('<span class="m">'+esc(it.pg)+' pgs</span>');
   if(it.dur)meta.push('<span class="m">'+esc(it.dur)+'</span>');
   if(it.dir)meta.push('<span>'+L('Regie')+' '+esc(it.dir)+'</span>');
@@ -155,7 +155,7 @@ function itemHTML(it){
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
     (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
-    castChips(it.cast)+bdXX(window.__mctx&&window.__mctx.date,it.sc)+
+    castChips(it.cast)+(arr(it.camx).length?'<div class="camx"><b>'+esc(L("Kamera"))+'</b>'+arr(it.camx).map(c=>'<div class="cx">'+esc(c)+'</div>').join("")+'</div>':'')+bdXX(window.__mctx&&window.__mctx.date,it.sc)+
     bdHTML(window.__mctx&&window.__mctx.date,it.sc)+(it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
     '</div></li>';
 }
