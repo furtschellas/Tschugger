@@ -221,13 +221,13 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[da
   openGallery({name:"cs:"+x.date,title:"Callsheet · "+(x.label||x.date),sc:[],url:x.link,media:arr(x.pg).map((p,i)=>({n:"Callsheet · "+(i+1)+"/"+x.pg.length,t:"img",f:p,u:x.link}))})});
 /* risk assessments (Gefährdungsbeurteilung) of the day: only with the right «Gefährdungsbeurteilung sehen», below the Sides,
    folded when the callsheet opens */
-function raHTML(date){if(!vok("ra"))return "";const l=arr(S.meta&&S.meta.ra).filter(r=>r.date===date);if(!l.length)return "";
-  return '<details class="dsec cssec rasec"><summary><h3 class="dh">'+esc(L("Gefährdungsbeurteilung"))+' · '+l.length+'</h3>'+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L("Gefährdungsbeurteilungen des Tages (Sicherheit am Set)."))+'</p><div class="sidesb">'+
-    l.map(r=>'<a class="pillbtn" href="'+esc(safeUrl(r.url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI.warn:'')+' '+esc(r.name)+'</a>').join("")+'</div></details>'}
-/* set floorplans attached to the callsheet (files next to it in the day folder): only with the right «Setfloorpläne sehen» */
-function setfpHTML(date){if(!vok("setfp"))return "";const l=arr(S.meta&&S.meta.setfp).filter(r=>r.date===date);if(!l.length)return "";
-  return '<details class="dsec cssec rasec"><summary><h3 class="dh">'+esc(L("Setfloorpläne"))+' · '+l.length+'</h3>'+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L("Floorpläne der Sets, die dem Callsheet beiliegen."))+'</p><div class="sidesb">'+
-    l.map(r=>'<a class="pillbtn" href="'+esc(safeUrl(r.url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI.doc:'')+' '+esc(r.name)+'</a>').join("")+'</div></details>'}
+/* documents of the day as buttons in a folded part of the callsheet: risk assessments (right «Gefährdungsbeurteilung sehen»)
+   and set floorplans attached to the callsheet (right «Setfloorpläne sehen») */
+function docSecHTML(date,perm,key,title,hint,icon){if(!vok(perm))return "";const l=arr(S.meta&&S.meta[key]).filter(r=>r.date===date);if(!l.length)return "";
+  return '<details class="dsec cssec rasec"><summary><h3 class="dh">'+esc(L(title))+' · '+l.length+'</h3>'+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L(hint))+'</p><div class="sidesb">'+
+    l.map(r=>'<a class="pillbtn" href="'+esc(safeUrl(r.url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI[icon]:'')+' '+esc(r.name)+'</a>').join("")+'</div></details>'}
+const raHTML=date=>docSecHTML(date,"ra","ra","Gefährdungsbeurteilung","Gefährdungsbeurteilungen des Tages (Sicherheit am Set).","warn");
+const setfpHTML=date=>docSecHTML(date,"setfp","setfp","Setfloorpläne","Floorpläne der Sets, die dem Callsheet beiliegen.","doc");
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   const t=todayISO(),PD=planDays();
