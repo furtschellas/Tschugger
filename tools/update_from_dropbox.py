@@ -844,6 +844,7 @@ def map_pos(u):
     maps.app.goo.gl often answers with a page that forwards by script: the Google-Maps address in it is used.
     A link that only names a place («q=Restaurant Hermitage, Susten») gives that text back for the address search."""
     from urllib.parse import unquote, urlparse, parse_qs
+    inner = []
     pats = ((r"!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)", "p"), (r"[?&](?:q|ll|query|destination|center)=(-?\d{1,2}\.\d+)(?:,|%2C)\+?(-?\d{1,3}\.\d+)", "q"), (r"@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)", "c"))
     def look(urls):
         for p, q in pats:
@@ -865,14 +866,15 @@ def map_pos(u):
             res = look(inner)
             urls += inner
         if res: return res
+        diag = urlparse(r.url).netloc + ("" if not inner else " +%d Maps-Links" % len(inner)) + " · HTTP %d" % r.status_code
         for x in urls:   # a named place instead of coordinates
             try:
                 qs = parse_qs(urlparse(x).query); t = (qs.get("q") or qs.get("query") or [""])[0]
                 if not t:
                     m = re.search(r"/maps/place/([^/@?]+)", x); t = unquote(m.group(1)).replace("+", " ") if m else ""
-                if t and not re.fullmatch(r"[-\d.,\s]+", t): return {"p": None, "q": "", "name": t[:160]}
+                if t and not re.fullmatch(r"[-\d.,\s]+", t): return {"p": None, "q": "", "name": t[:160], "diag": diag, "t": int(time.time())}
             except Exception: pass
-        return {"p": None, "q": ""}
+        return {"p": None, "q": "", "diag": diag, "t": int(time.time())}
     except Exception as e: log("Kartenlink nicht auflösbar:", type(e).__name__); return None
 
 
@@ -1599,7 +1601,7 @@ def main():
                     cand.append((i["map"], m.group(1).strip() if m else ""))
         g, src, pos = {}, {}, {}
         for u, ad in cand:
-            if u not in mg or mg[u] is None: mg[u] = map_pos(u)
+            if u not in mg or mg[u] is None or (not (mg[u] or {}).get("p") and time.time() - int((mg[u] or {}).get("t") or 0) > 6 * 3600): mg[u] = map_pos(u)
             lp = (mg.get(u) or {}).get("p"); q = (mg.get(u) or {}).get("q")
             nm = (mg.get(u) or {}).get("name") or ""
             ap = geocode(ad, gcache) if ad else (geocode(nm, gcache) if nm else None)
@@ -1614,6 +1616,10 @@ def main():
             if u in pos: g[u] = pos[u][0]; src[u] = pos[u][1]; stat[pos[u][1]] += 1
             else: stat["none"] += 1
         if g != (cs.get("geo") or {}) or src != (cs.get("geoSrc") or {}): cs["geo"] = g; cs["geoSrc"] = src; changed = True
+    diags = {}
+    for v in mg.values():
+        if isinstance(v, dict) and not v.get("p"): k = (v.get("diag") or "?") + (" · Ortsname" if v.get("name") else ""); diags[k] = diags.get(k, 0) + 1
+    print("::notice::Karte-Diagnose: Motivliste %d Szenen / %d Sets mit Adresse · ohne Position: %s" % (len(scene_addr), len(set_addr), "; ".join("%s ×%d" % kv for kv in diags.items()) or "keine"))
     if any(stat.values()): print("::notice::Karte: %d Orte aus dem Kartenlink, %d über die Adresse korrigiert/ergänzt, %d nur ungefähr, %d ohne Position" % (stat["link"], stat["addr"], stat["rough"], stat["none"]))
     # the original pages of every callsheet and the Sides (script pages of the day) as pictures in the app (also offline)
     spc = dict(meta.get("sidesPages") or {}); used = set()
