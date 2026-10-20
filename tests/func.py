@@ -478,7 +478,12 @@ async def owner_tests(p, port):
             {no:'1',name:'CHAPEL',map:'https://g/a',items:[{label:'TECH PARKING',text:'10’ on foot',map:'https://g/b'},{label:'W / H / M',text:'Cast + Lunch: Restaurant Waldrand, Föhrenweg 160, 3999 Testdorf',map:'https://g/h'},{label:'',text:'To set 1: 4’ with car'},{label:'WC',text:'on base'},{label:'DIT/Prod',text:'',map:'https://g/h'}]},
             {no:'2',name:'FOREST',map:'https://g/d',items:[{label:'Private Cars Cast/ Extras',text:'Restaurant Waldrand (Base)',map:'https://g/h'}]}]};
           const ls=csLocs(c),k=ls.filter(l=>l.kinds);return {n:k.length,kinds:k[0]&&k[0].kinds.join('|'),name:k[0]&&k[0].name,notes:k[0]&&k[0].notes.length,set1:ls[0].items.length}})()""")
-        check("Callsheet: Base, W/H/M, Lunch und Prod am selben Ort als eine Location, Anfahrt/WC dort", bw in (None, {"n": 1, "kinds": "Base|W / H / M|Lunch|Prod", "name": "Restaurant Waldrand", "notes": 3, "set1": 1}), bw)
+        check("Callsheet: Base, W/H/M, Lunch und Prod am selben Ort als eine Location, Anfahrt/WC dort", bw in (None, {"n": 1, "kinds": "Base|W / H / M|Lunch|Prod|DIT", "name": "Restaurant Waldrand", "notes": 3, "set1": 1}), bw)
+        dit = await E("""(()=>{if(typeof csLocs!=='function')return null;const c={locations:[{no:'1',name:'OFFICE',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Dorfplatz 5 - 3998 Musterdorf',map:'https://g/b'}]},
+            {no:'2',name:'OPEN SPACE',items:[{label:'DIT',text:'Turnhallenweg 4 - 3998 Musterdorf',map:'https://g/s'}]}]};
+          const c2={locations:[{no:'1',name:'CHAPEL',items:[{label:'W / H / M',text:'Cast + Lunch: Restaurant Waldrand, Föhrenweg 160',map:'https://g/h'},{label:'DIT/Prod',text:'',map:'https://g/h'}]}]};
+          const a=csLocs(c).filter(l=>l.kinds).map(l=>l.kinds.join('|')),b=csLocs(c2).filter(l=>l.kinds).map(l=>l.kinds.join('|'));return {other:a,same:b}})()""")
+        check("Callsheet: DIT an anderem Ort = eigene Location, am selben Ort zusammen mit Base/Lunch", dit in (None, {"other": ["Base|W / H / M|Lunch", "DIT"], "same": ["W / H / M|Lunch|Prod|DIT"]}), dit)
         fb = await E("""(()=>{if(typeof csTilesHTML!=='function')return null;const me={name:'Anna Muster',hit:t=>/anna muster/i.test(String(t||''))};
           const c={times:{crewCall:'08:15'},calls:[{dept:'AD',name:'Anna Muster',t:'-'}],locations:[{no:'1',name:'OFFICE',map:'https://g/o',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Dorfplatz 5 - 3998 Musterdorf',map:'https://g/b'}]}]};
           const w=document.createElement('div');w.innerHTML=csTilesHTML({date:'2030-05-06'},{date:'2030-05-06'},c,me);const d=w.querySelector('.csdrv');return d?d.querySelector('.k').textContent:''})()""")
