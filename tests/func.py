@@ -11,7 +11,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import smoke  # noqa: E402
 import common  # noqa: E402
-from common import check, done  # noqa: E402
+from common import check, done, warn  # noqa: E402
 
 LANGS = ["de", "fr", "it", "en", "hi"]
 
@@ -434,6 +434,34 @@ async def owner_tests(p, port):
           const keep=S.dispos;S.dispos=[{date:sh[0],cs:{prevision:{title:'PREVISION - D2 Extras: 12 Pages: 3 5/8 / Time Scree 03:30',rows:[{t:'09:15',sc:'12',set:'OFFICE'}]}}}];const h=csPrevHTML(sh[1]),h0=csPrevHTML(sh[0]);S.dispos=keep;
           return h.includes('09:15')&&h.includes('03:30')&&h.includes('3 5/8')&&h.includes('data-scene="12"')&&h0===''})()""")
         check("Callsheet: Vorschau erscheint beim Folgetag", pvw in (None, True), pvw, public=True)
+        # ---------- callsheet ↔ other documents (schedule, cast list, crew list): differences are shown, they never block ----------
+        xd = await E(r"""(()=>{const out=[];const N=x=>String(x||"").replace(/\s+/g,"").toLowerCase().replace(/^0+/,"");
+          for(const dp of (S.dispos||[])){const c=dp&&dp.cs;if(!c)continue;const d=(S.days||[]).find(x=>x.date===dp.date);if(!d)continue;
+            const its=[].concat(arr(d.items),arr((d.unit2||{}).items),arr((d.unit3||{}).items)).filter(Boolean);
+            const scP=new Set(its.filter(i=>i.sc).map(i=>N(i.sc))),scC=new Set(arr((c.order||{}).rows).filter(r=>r.sc).map(r=>N(r.sc)));
+            const castP=new Set(its.flatMap(i=>arr(i.cast)).map(x=>String(x).trim()).filter(x=>/^\d+$/.test(x))),castC=new Set(arr(c.cast).map(r=>String(r.no||"").trim()).filter(x=>/^\d+$/.test(x)));
+            const people=[];for(const g of arr(S.crew))for(const p of arr(g.people))if(p&&p.name)people.push({name:p.name,k:nmk(p.name)});
+            const calls=arr(c.calls).filter(r=>r.name&&!/,/.test(r.name)),unk=calls.filter(r=>!findPerson(r.name,people)).length;
+            const sun=c.sunrise&&d.sr?(hm(c.sunrise)===hm(d.sr)&&hm(c.sunset)===hm(d.ss)):null;
+            const exC=parseInt((String((c.order||{}).title||"").match(/Extras:\s*(\d+)/i)||[])[1],10),exP=parseInt(d.extras,10);
+            out.push({date:dp.date,sc:[scC.size,[...scC].filter(x=>!scP.has(x)).length,[...scP].filter(x=>!scC.has(x)).length],
+              cast:[castC.size,[...castC].filter(x=>!castP.has(x)).length,[...castP].filter(x=>!castC.has(x)).length],calls:[calls.length,unk],sun,ex:[isNaN(exC)?null:exC,isNaN(exP)?null:exP]})}
+          return out})()""")
+        g0 = common.GROUP; common.GROUP = "Abgleich Callsheet"
+        for r in xd or []:
+            dt = r["date"]
+            a = r["sc"]
+            (check if not (a[1] or a[2]) else warn)(("Callsheet %s ↔ Drehplan: Szenen " % dt) + ("gleich (%d)" % a[0] if not (a[1] or a[2]) else "verschieden"), *([True] if not (a[1] or a[2]) else ["%d nur im Callsheet, %d nur im Drehplan" % (a[1], a[2])]))
+            a = r["cast"]
+            (check if not (a[1] or a[2]) else warn)(("Callsheet %s ↔ Drehplan: Rollen " % dt) + ("gleich (%d)" % a[0] if not (a[1] or a[2]) else "verschieden"), *([True] if not (a[1] or a[2]) else ["%d nur im Callsheet, %d nur in den Szenen des Drehplans" % (a[1], a[2])]))
+            a = r["calls"]
+            (check if not a[1] else warn)(("Callsheet %s ↔ Crewliste: Calls " % dt) + ("alle in der Crewliste (%d)" % a[0] if not a[1] else "nicht alle in der Crewliste"), *([True] if not a[1] else ["%d von %d Namen nicht gefunden" % (a[1], a[0])]))
+            if r["sun"] is not None:
+                (check if r["sun"] else warn)("Callsheet %s ↔ Drehplan: Sonnenzeiten %s" % (dt, "gleich" if r["sun"] else "verschieden"), *([True] if r["sun"] else [""]))
+            e = r["ex"]
+            if e[0] is not None and e[1] is not None:
+                (check if e[0] == e[1] else warn)("Callsheet %s ↔ Drehplan: Komparsen %s" % (dt, "gleich (%d)" % e[0] if e[0] == e[1] else "verschieden"), *([True] if e[0] == e[1] else ["Callsheet %d, Drehplan %d" % (e[0], e[1])]))
+        common.GROUP = g0
         cpl = await E("""(()=>{if(typeof csCallPlace!=='function')return null;const c={locations:[{no:'1',name:'CHAPEL',items:[{label:'Base',text:'Restaurant Waldrand, Tannen'}]}],
           transport:[{from:'Holiday Inn',t1:'09:30',to:'Base',t2:'09:55',vehicle:'PW',driver:'Max Muster',passengers:'Anna Beispiel'}]};
           const me=n=>({hit:t=>String(t||'').includes(n)});const call={t:'09:30'};
