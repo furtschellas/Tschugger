@@ -839,19 +839,39 @@ def dist_km(a, b):
 
 
 def map_pos(u):
-    """position of a map link from the address the short link leads to (never from the page text):
-    «!3d…!4d…» = the place itself (best), «q=lat,lon» = a pin, «@lat,lon» = only the centre of the view (rough)"""
-    pats = ((r"!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)", "p"), (r"[?&](?:q|ll|query|destination)=(-?\d{1,2}\.\d+)(?:,|%2C)\+?(-?\d{1,3}\.\d+)", "q"), (r"@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)", "c"))
-    try:
-        r = requests.get(u, allow_redirects=True, timeout=20, headers={"User-Agent": "Mozilla/5.0 (TschuggerCrewApp)", "Accept-Language": "de"})
-        txt = " ".join([h.url for h in r.history] + [r.url] + [h.headers.get("Location", "") for h in r.history])
-        from urllib.parse import unquote
-        txt = txt + " " + unquote(txt)
+    """position of a map link, only from map addresses (never from other numbers of a page):
+    «!3d…!4d…» = the place itself (best), «q=lat,lon» = a pin, «@lat,lon» = only the centre of the view (rough).
+    maps.app.goo.gl often answers with a page that forwards by script: the Google-Maps address in it is used.
+    A link that only names a place («q=Restaurant Hermitage, Susten») gives that text back for the address search."""
+    from urllib.parse import unquote, urlparse, parse_qs
+    pats = ((r"!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)", "p"), (r"[?&](?:q|ll|query|destination|center)=(-?\d{1,2}\.\d+)(?:,|%2C)\+?(-?\d{1,3}\.\d+)", "q"), (r"@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)", "c"))
+    def look(urls):
         for p, q in pats:
-            m = re.search(p, txt)
-            if m:
-                pos = [round(float(m.group(1)), 6), round(float(m.group(2)), 6)]
-                if in_ch(pos): return {"p": pos, "q": q}
+            for x in urls:
+                m = re.search(p, x)
+                if m:
+                    pos = [round(float(m.group(1)), 6), round(float(m.group(2)), 6)]
+                    if in_ch(pos): return {"p": pos, "q": q}
+        return None
+    try:
+        r = requests.get(u, allow_redirects=True, timeout=20, headers={"User-Agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36", "Accept-Language": "de-CH,de"})
+        urls = [h.url for h in r.history] + [r.url] + [h.headers.get("Location", "") for h in r.history]
+        urls = urls + [unquote(x) for x in urls]
+        res = look(urls)
+        if not res:   # the forwarding page: only real Google-Maps addresses in it
+            body = (r.text or "")[:600000].replace("\\u003d", "=").replace("\\u0026", "&").replace("\\/", "/")
+            inner = re.findall(r"https?://(?:www\.)?(?:google\.[a-z.]+/maps|maps\.google\.[a-z.]+)[^\s\"'<>\\]+", body)
+            inner = inner + [unquote(x) for x in inner]
+            res = look(inner)
+            urls += inner
+        if res: return res
+        for x in urls:   # a named place instead of coordinates
+            try:
+                qs = parse_qs(urlparse(x).query); t = (qs.get("q") or qs.get("query") or [""])[0]
+                if not t:
+                    m = re.search(r"/maps/place/([^/@?]+)", x); t = unquote(m.group(1)).replace("+", " ") if m else ""
+                if t and not re.fullmatch(r"[-\d.,\s]+", t): return {"p": None, "q": "", "name": t[:160]}
+            except Exception: pass
         return {"p": None, "q": ""}
     except Exception as e: log("Kartenlink nicht auflösbar:", type(e).__name__); return None
 
@@ -1554,7 +1574,7 @@ def main():
         except Exception as e: failed("dispo", f, e)
     # positions of the callsheet's map links for the map in the app – checked: inside Switzerland, close to the address of the
     # location (Motivliste or the address on the callsheet), not far from the other places of the day; otherwise the address
-    mg = meta.setdefault("mapGeo2", {}); meta.pop("mapGeo", None); gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "none": 0}
+    mg = meta.setdefault("mapGeo3", {}); meta.pop("mapGeo", None); meta.pop("mapGeo2", None); gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "none": 0}
     scene_addr = {}
     for l2 in data.get("locations") or []:
         ad = ", ".join(x for x in (l2.get("venue"), l2.get("address")) if x) if l2.get("address") else ""
@@ -1576,7 +1596,8 @@ def main():
         for u, ad in cand:
             if u not in mg or mg[u] is None: mg[u] = map_pos(u)
             lp = (mg.get(u) or {}).get("p"); q = (mg.get(u) or {}).get("q")
-            ap = geocode(ad, gcache) if ad else None
+            nm = (mg.get(u) or {}).get("name") or ""
+            ap = geocode(ad, gcache) if ad else (geocode(nm, gcache) if nm else None)
             if lp and ap and dist_km(lp, ap) > 2: pos[u] = (ap, "addr")          # link and address disagree: the address wins
             elif lp: pos[u] = (lp, "link" if q in ("p", "q") else "rough")
             elif ap: pos[u] = (ap, "addr")

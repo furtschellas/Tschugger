@@ -257,6 +257,15 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    // Fahrten aus dem Callsheet quittieren: lesen alle Mitglieder, setzen/zurücknehmen nur mit «rides.confirm» (AL, AD, Produktion)
+    // Dokument-ID = Prüfsumme der Fahrt (keine Namen), Felder: Datum d und Zeitpunkt at
+    match /rideack/{id} {
+      allow read: if crew();
+      allow create, update: if can('rides.confirm') && id.matches('[a-z0-9]{4,16}') && only(['d', 'at'])
+        && request.resource.data.d is string && request.resource.data.d.size() == 10 && request.resource.data.at is int;
+      allow delete: if can('rides.confirm');
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
