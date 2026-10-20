@@ -216,6 +216,13 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
    h+=csSec("Locations",ls.length?ls.map(l=>{let LAD=csLocAddr(c,l,x.date);const code=l.kinds?l.kinds.map(k=>k.replace(/\s+/g,"")).join("·"):(l.no?"S"+String(l.no).trim():"");return '<details class="dbox csloc"><summary><div class="csl1">'+(code?'<span class="csplace csloc-c" title="'+esc(l.kinds?l.no:'Set '+(l.no||""))+'">'+esc(code)+'</span>':'')+'<span class="dn">'+esc(l.name||"")+'</span>'+'<span class="csloc-i">'+(LAD?'':csMap(l.map))+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span></div>'+(LAD&&SEENAD.has(fold(LAD))?'<span class="csaddr cssame">'+esc(L("Adresse wie"))+' '+esc(SEENAD.get(fold(LAD)))+'</span>':'')+(LAD&&!SEENAD.has(fold(LAD))&&SEENAD.set(fold(LAD),code||l.name)?'<a class="csaddr" href="'+esc(safeUrl(l.map||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(LAD))))+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+esc(LAD)+'</a>':'')+(()=>{const mine=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>String(r.sc));const uniq=[...new Set(mine)];
        return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+'</summary>'+
      csA(l.notes).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",true,"","loc",SU.loc)}
+  /* map of the day: every place of the callsheet with a known position (sets, W/H/M, lunch, parking …) */
+  {const geo=c.geo||{},pts=[];const add=(u,code,name)=>{const g=geo[u];if(!g||!Array.isArray(g))return;const k=g.join(","),o=pts.find(x=>x.p.join(",")===k);
+     /* several places at the same point (W/H/M and lunch): one marker with both codes */
+     if(o){if(!o.c.split(" · ").includes(code)){o.c+=" · "+code;if(name&&!o.n.includes(name))o.n+=" / "+name}return}pts.push({p:g,c:code,n:name,u})};
+   for(const l of csLocs(c)){const code=l.kinds?l.kinds.map(k=>k.replace(/\s+/g,"")).join("·"):"S"+String(l.no||"").trim();add(l.map,code,l.name||"");
+     for(const i of csA(l.items))if(i.map)add(i.map,String(i.label||"").split(/\s+/).map(w=>w[0]||"").join("").toUpperCase().slice(0,3)||"P",[i.label,i.text].filter(Boolean).join(" · "))}
+   if(pts.length)h+=csSec(L("Karte"),'<div class="csmapw"><button type="button" class="csmapbig" data-csmapbig aria-label="'+esc(L("Karte vergrössern"))+'" title="'+esc(L("Karte vergrössern"))+'">'+CSEXP+'</button><div class="csmap0" data-csmap="'+esc(JSON.stringify(pts))+'"></div></div>',false,"","karte",'<span class="cscount"><span><b>'+pts.length+'</b> '+esc(L("Orte"))+'</span></span>')}
   /* production information */
   h+=csSec(L("Produktionsinfos"),csA(c.info).map(p=>'<p>'+csTx(csL(p))+'</p>').join(""),true,"csinfo");
   /* shooting order */
@@ -228,7 +235,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
        return '<span class="cso1"><i>'+esc(hm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?'<span class="csplace">S'+esc(String(lo.no).trim())+'</span>':'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
    h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c)),false,"","order",sumx)}
   /* cast, extras, vehicles */
-  h+=csSec("Cast",(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Karten":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,csMk(r.wardrobe,c)||csDurT(r.wardrobe),csMk(r.makeup,c),r.base,r.onset]),3),false,csCastMode()?"cs-astbl":"","cast",SU.cast);
+  h+=csSec("Cast",(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Kacheln":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,csMk(r.wardrobe,c)||csDurT(r.wardrobe),csMk(r.makeup,c),r.base,r.onset]),3),false,csCastMode()?"cs-astbl":"","cast",SU.cast);
   /* travel of the cast: one line per person (name · how · from → to · note), the place as short code (S1, Base …) with the map */
   {const U=/(https?:\/\/[^\s<]+)/g;const clean=v=>String(v||"").replace(U,"").replace(/\s{2,}/g," ").trim();
    const badge=(txt,url)=>{let pl=null;try{pl=csPlace(c,clean(txt))}catch(_){}const code=pl?csShort(pl):"";const u=url||(pl&&pl.map)||"";if(!u)return code?'<span class="csplace">'+esc(code)+'</span>':'';
@@ -289,10 +296,12 @@ function csPrevHTML(date){const p=csPrevFor(date);if(!p)return"";const ti=String
 /* search field opens from the magnifier */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-csqb]");if(!b)return;const q=document.getElementById("csq");if(!q)return;q.hidden=!q.hidden;b.setAttribute("aria-pressed",String(!q.hidden));if(!q.hidden)q.focus();else if(q.value){q.value="";q.dispatchEvent(new Event("input",{bubbles:true}))}});
 /* cast: cards or table (remembered on this device) */
-function csCastMode(){try{return localStorage.getItem("cscast:v1")==="t"}catch(_){return false}}
+/* cast: always tiles when opened; «Als Tabelle» only until it is closed again */
+let CSCASTT=false;function csCastMode(){return CSCASTT}
 function csApplyCast(){const d=document.getElementById("cs-cast");if(!d)return;const t=csCastMode();d.classList.toggle("cs-astbl",t);const b=d.querySelector("[data-cstview]");
-  if(b)b.innerHTML=(t?CSI.cards:CSI.table)+'<span>'+esc(L(t?"Als Karten":"Als Tabelle"))+'</span>'}
-document.addEventListener("click",e=>{if(!e.target.closest("[data-cstview]"))return;try{localStorage.setItem("cscast:v1",csCastMode()?"c":"t")}catch(_){}csApplyCast()});
+  if(b)b.innerHTML=(t?CSI.cards:CSI.table)+'<span>'+esc(L(t?"Als Kacheln":"Als Tabelle"))+'</span>'}
+document.addEventListener("click",e=>{if(!e.target.closest("[data-cstview]"))return;CSCASTT=!CSCASTT;csApplyCast()});
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.id==="cs-cast"&&d.open&&CSCASTT){CSCASTT=false;csApplyCast()}},true);
 document.addEventListener("click",e=>{const sm=e.target.closest("#cs-order>summary");if(!sm||e.target.closest("a,button"))return;const d=sm.parentElement;e.preventDefault();
   const st=!d.open?0:(d.dataset.all==="1"?2:1);const sc=d.querySelectorAll("details.csscd");
   if(st===0){d.open=true;d.dataset.all="0";sc.forEach(x=>x.open=false)}else if(st===1){d.dataset.all="1";sc.forEach(x=>x.open=true)}else{d.dataset.all="0";sc.forEach(x=>x.open=false);d.open=false}});
@@ -301,3 +310,18 @@ document.addEventListener("click",e=>{const sm=e.target.closest("#cs-loc>summary
 document.addEventListener("click",e=>{const b=e.target.closest("[data-cssc]");if(!b)return;e.preventDefault();e.stopPropagation();const sc=b.dataset.cssc;
   const od=document.getElementById("cs-order");if(!od)return;od.open=true;const li=[...od.querySelectorAll("li[data-sc]")].find(l=>l.dataset.sc===sc);if(!li)return;
   const d=li.querySelector("details.csscd");if(d)d.open=true;li.scrollIntoView({block:"center",behavior:"smooth"});li.classList.add("csflash");setTimeout(()=>li.classList.remove("csflash"),1600)},true);
+
+/* the interactive map (Leaflet, loaded only when the map is opened; tiles from OpenStreetMap) */
+let CSLF=null;function csLeaflet(){if(window.L&&window.L.map)return Promise.resolve(window.L);if(CSLF)return CSLF;
+  CSLF=new Promise((ok,no)=>{const c=document.createElement("link");c.rel="stylesheet";c.href="leaflet.css";document.head.appendChild(c);
+    const s=document.createElement("script");s.src="leaflet.js";s.onload=()=>ok(window.L);s.onerror=()=>{CSLF=null;no(new Error("leaflet"))};document.head.appendChild(s)});return CSLF}
+function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(box.dataset.csmap||"[]")}catch(_){}if(!pts.length)return;
+  csLeaflet().then(LF=>{if(box.__map||!box.isConnected)return;const m=LF.map(box,{scrollWheelZoom:false,tap:true});box.__map=m;
+    LF.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(m);
+    const b=[];for(const p of pts){const mk=LF.marker(p.p,{icon:LF.divIcon({className:"csmk",html:"<span>"+esc(p.c)+"</span>",iconSize:null})}).addTo(m);
+      mk.bindPopup("<b>"+esc(p.c)+"</b> "+esc(p.n)+(p.u?'<br><a href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer">'+esc(L("Route in Google Maps")||"Google Maps")+"</a>":""));b.push(p.p)}
+    if(b.length>1)m.fitBounds(b,{padding:[28,28],maxZoom:16});else m.setView(b[0],15)}).catch(()=>{box.innerHTML='<p class="ghint">'+esc(L("Karte nicht verfügbar (offline?)."))+'</p>'})}
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.id==="cs-karte"&&d.open)csMapInit(d.querySelector("[data-csmap]"))},true);
+/* enlarge / shrink the map */
+document.addEventListener("click",e=>{const b=e.target.closest("[data-csmapbig]");if(!b)return;e.preventDefault();const w=b.closest(".csmapw");w.classList.toggle("big");document.body.classList.toggle("csmapopen",w.classList.contains("big"));
+  const box=w.querySelector("[data-csmap]");setTimeout(()=>{if(box&&box.__map)box.__map.invalidateSize()},60)});

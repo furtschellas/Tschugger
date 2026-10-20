@@ -827,6 +827,22 @@ def cs_texts(cs):
             if isinstance(i, dict): out += [str(i.get(k)) for k in ("label", "text") if i.get(k)]
     return list(dict.fromkeys(out))
 
+def map_pos(u):
+    """position of a map link (maps.app.goo.gl → Google Maps URL with «!3d…!4d…» or «@lat,lon»); None when not found"""
+    pats = (r"!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)", r"@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)", r"[?&](?:q|ll|query|center)=(-?\d{1,2}\.\d+)(?:,|%2C)\+?(-?\d{1,3}\.\d+)")
+    try:
+        r = requests.get(u, allow_redirects=True, timeout=20, headers={"User-Agent": "Mozilla/5.0 (TschuggerCrewApp)", "Accept-Language": "de"})
+        txt = " ".join([h.url for h in r.history] + [r.url])
+        for src in (txt, (r.text or "")[:400000]):
+            for p in pats:
+                m = re.search(p, src)
+                if m:
+                    lat, lon = float(m.group(1)), float(m.group(2))
+                    if -90 <= lat <= 90 and -180 <= lon <= 180 and (lat or lon): return [round(lat, 6), round(lon, 6)]
+    except Exception as e: log("Kartenlink nicht auflösbar:", type(e).__name__)
+    return None
+
+
 def cs_to_dispo(cs, date, f):
     """the fields the rest of the app uses (Today, Meine Termine, push) taken from the structure «cs»"""
     t = cs.get("times") or {}
@@ -1495,6 +1511,20 @@ def main():
                     if d["date"] >= TODAY and (not prev or cs_sig(prev) != cs_sig(d)): NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})
             else: failed("dispo", f, "kein Drehtag erkannt")
         except Exception as e: failed("dispo", f, e)
+    # positions of the callsheet's map links (short Google links → coordinates) for the map in the app; once per link
+    mg = meta.setdefault("mapGeo", {}); n_geo = 0
+    for d in dispos.values():
+        cs = d.get("cs") if isinstance(d.get("cs"), dict) else None
+        if not cs: continue
+        urls = []
+        for l in cs.get("locations") or []:
+            if isinstance(l, dict): urls += [l.get("map")] + [i.get("map") for i in l.get("items") or [] if isinstance(i, dict)]
+        g = dict(cs.get("geo") or {})
+        for u in dict.fromkeys(u for u in urls if u and u not in g):
+            if u not in mg: mg[u] = map_pos(u)
+            if mg[u]: g[u] = mg[u]; n_geo += 1
+        if g != (cs.get("geo") or {}): cs["geo"] = g; changed = True
+    if n_geo: log("Karte: %d neue Positionen aus den Callsheet-Links" % n_geo)
     # the original pages of every callsheet and the Sides (script pages of the day) as pictures in the app (also offline)
     spc = dict(meta.get("sidesPages") or {}); used = set()
     try:
