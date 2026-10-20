@@ -18,7 +18,9 @@ addEventListener("online",offBar);addEventListener("offline",offBar);setTimeout(
 let STK="";function stickyH(){const w=document.querySelector("#view .stripwrap"),j=document.querySelector("#view .csjump");
   const h=w?Math.round(w.getBoundingClientRect().height):0,jh=j?Math.round(j.getBoundingClientRect().height):0,k=h+"|"+jh;if(k===STK)return;STK=k;   /* only when a height changed */
   document.documentElement.style.setProperty("--striph",h+"px");document.documentElement.style.setProperty("--csjh",jh+"px")}
-try{new MutationObserver(()=>requestAnimationFrame(stickyH)).observe(document.getElementById("view")||document.body,{childList:true})}catch(_){}
+try{new MutationObserver(()=>requestAnimationFrame(stickyH)).observe(document.getElementById("view")||document.body,{childList:true,subtree:true})}catch(_){}
+/* the day bar changes its height (font, units, rotation): measure again */
+try{const ro=new ResizeObserver(()=>stickyH());const watch=()=>{const w=document.querySelector("#view .stripwrap");if(w&&!w.__ro){w.__ro=1;ro.observe(w)}};new MutationObserver(watch).observe(document.getElementById("view")||document.body,{childList:true,subtree:true});watch()}catch(_){}
 addEventListener("resize",stickyH);setTimeout(stickyH,800);
 {let rq=0;addEventListener("scroll",()=>{if(rq)return;rq=requestAnimationFrame(()=>{rq=0;stickyH()})},{passive:true})}
 /* swipe left/right over the page = next/previous day (pages with the day bar); not inside things that scroll sideways */
