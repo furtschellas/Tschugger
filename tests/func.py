@@ -496,6 +496,16 @@ async def owner_tests(p, port):
           window.canPerm=p=>p==='rides.confirm';const a=csRideCell('2030-05-06',r).h;window.canPerm=()=>false;const b=csRideCell('2030-05-06',r).h;window.canPerm=kp;window.rideState=ks;
           return {btn:/<button[^>]*data-rideack=/.test(a),view:!/<button/.test(b)}})()""")
         check("Callsheet: mit «Fahrten quittieren» ist der Kreis ein Knopf zum Ändern, sonst nur Anzeige", rb in (None, {"btn": True, "view": True}), rb)
+        re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
+          const r0={t1:'07:30',t2:'08:00',from:'Hotel',to:'Base',vehicle:'Van 1',driver:'Max Fahrer',passengers:'Anna Muster'};S.dispos=[{date:t,cs:{transport:[r0]}}];
+          const id=rideId(t,r0);window.RIDEEDIT={[id]:{t1:'07:45',passengers:'Anna Muster, Lena Test'}};window.REDVER=(window.REDVER||0)+1;rideEditApply();const r=S.dispos[0].cs.transport[0];
+          const cell=csRideCell(t,r).h;window.canPerm=p=>p==='rides.manage';document.body.insertAdjacentHTML('beforeend','<div id="redtest">'+csRideCell(t,r).h+'</div>');document.querySelector('#redtest [data-rideack]').click();
+          const dl=document.getElementById('rededlg');const out={t1:r.t1,pax:r.passengers,same:rideId(t,r)===id,mark:cell.includes('rchg'),dlg:!!dl&&dl.querySelector('[name=t1]').value==='07:45'};
+          if(dl)dl.remove();document.getElementById('redtest').remove();S.dispos=keep.d;window.RIDEEDIT=keep.e;window.REDVER=keep.v+1;window.canPerm=keep.cp;return out})()""")
+        check("Fahrten Manager: Änderung gilt im Callsheet (markiert), Pop-up zum Ändern", re_ in (None, {"t1": "07:45", "pax": "Anna Muster, Lena Test", "same": True, "mark": True, "dlg": True}), re_)
+        pw = await E("""(async()=>{if(typeof pwEyes!=='function')return null;const f=document.createElement('div');f.innerHTML='<input type="password" value="x1">';document.body.appendChild(f);pwEyes(f);
+          const b=f.querySelector('.pweye');if(!b){f.remove();return 'no eye'}b.click();const t1=f.querySelector('input').type;b.click();const t2=f.querySelector('input').type;f.remove();return [t1,t2]})()""")
+        check("Passwortfelder: Auge rechts zeigt und verbirgt das Passwort", pw in (None, ["text", "password"]), pw)
         dn = await E("""(()=>{if(typeof renderCS!=='function')return null;const keep=S.dispos;S.dispos=[{date:'2030-05-05',cs:{drivers:'Vera Fahrerin +41 76 000 11 22 | Max Muster +41 76 000 33 44'}}];
           const x={date:'2030-05-06',cs:{drivers:'| +41 76 000 11 22 | Max Muster +41 76 000 33 44 o.p.D = on personal Decision',transport:[{t1:'07:00',from:'A',to:'B',driver:'Max Muster'}]}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,{date:x.date});S.dispos=keep;const t=(w.querySelector('.csdrvl')||{}).textContent||'';return {name:t.includes('Vera Fahrerin'),legend:!/personal decision/i.test(t)}})()""")

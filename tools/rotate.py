@@ -136,8 +136,8 @@ def crew():
         except Exception: return 0
         if r is None: return 0
         return 1 if fsadmin.patch_doc(path, {"c": base64.b64encode(r).decode()}) else 0
-    # push devices, messages and own events (Termine); gcal/feed = imported Google calendar
-    for col in ("push", "broadcasts", "events"):
+    # push devices, messages, own events (Termine) and changed rides (rideedit); gcal/feed = imported Google calendar
+    for col in ("push", "broadcasts", "events", "rideedit"):
         for did, f, _ in fsadmin.list_docs(col): m += redo(col + "/" + did, f.get("c"))
     m += redo("gcal/feed", (fsadmin.get_doc("gcal/feed") or {}).get("c"))
     log("Firestore-Einträge neu verschlüsselt (Push, Nachrichten, Termine, Kalender):", m)

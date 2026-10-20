@@ -267,6 +267,15 @@ service cloud.firestore {
       allow delete: if can('rides.confirm');
     }
 
+    // Fahrten aus dem Callsheet in der App ändern (Zeiten, Strecke, Fahrzeug, Fahrer, Mitfahrende): nur mit «Fahrten Manager»;
+    // Dokument-ID = Prüfsumme der ursprünglichen Fahrt, Inhalt c verschlüsselt mit dem Crew-Schlüssel (Namen), Datum d, Zeitpunkt at
+    match /rideedit/{id} {
+      allow read: if crew();
+      allow create, update: if can('rides.manage') && id.matches('[a-z0-9]{4,16}') && only(['c', 'd', 'at'])
+        && request.resource.data.d is string && request.resource.data.d.size() == 10 && request.resource.data.at is int && cOk(8000);
+      allow delete: if can('rides.manage');
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
