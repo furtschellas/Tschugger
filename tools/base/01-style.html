@@ -863,8 +863,6 @@ html body #blkgal.galpdf h3{margin:0;font-size:15px}
 .csloc{margin-bottom:8px}
 .csloc .ds{margin-top:3px}
 .cscast{font-size:13px;color:var(--muted);margin-top:2px}
-.csnote{margin-top:4px;font-size:13px}
-.csnote>summary{cursor:pointer;color:var(--accent)}
 .csdep{padding:4px 0;font-size:14px;border-bottom:1px solid var(--rule)}
 .csdep.mine{background:var(--accent-soft);border-radius:6px;padding:4px 6px}
 .cshid{opacity:.5;font-size:12px}
@@ -1226,4 +1224,11 @@ html body #view details.csloc>summary .csloc-i{order:9;margin-left:auto}
 }
 .csmpst{margin-top:4px;font-family:var(--f-mono,monospace);font-size:12px;line-height:1.35}
 @media (min-width:761px){html body #view .csmapw.big .csmapl,html body .csmapw.big .csmapl{flex-direction:row;flex-wrap:wrap;gap:6px;max-height:22%}html body .csmapw.big .csmapgo{flex:0 1 auto}html body .csmapw.big .csmapgo small{margin-left:6px}}
+.scdet{margin-top:6px}
+.scdet>summary{cursor:pointer;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);list-style:none;display:inline-flex;align-items:center;gap:4px}
+.scdet>summary::-webkit-details-marker{display:none}
+.scdet>summary::after{content:"▾";font-size:10px}
+.scdet:not([open])>summary::after{content:"▸"}
+.scdet .csn{margin-top:4px;font-size:13px}
+.pv-no-d .sc>.scdet .camx{display:none}
 </style>

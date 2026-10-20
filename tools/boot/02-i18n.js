@@ -302,7 +302,6 @@ Object.assign(I18N,{
  "Call-Ort":{fr:"Lieu du call",it:"Luogo della convocazione",en:"Call location"},
  "Alle auf-/zuklappen":{fr:"Tout ouvrir/fermer",it:"Apri/chiudi tutto",en:"Open/close all"},
  "mit":{fr:"avec",it:"con",en:"with"},"ab":{fr:"de",it:"da",en:"from"},
- "Details Callsheet":{fr:"Détails feuille de service",it:"Dettagli ordine del giorno",en:"Callsheet details"},
  "Das eigene Callsheet folgt.":{fr:"La feuille de service du jour suit.",it:"L’ordine del giorno segue.",en:"The day’s own callsheet follows."},
  "Beginn":{fr:"Début",it:"Inizio",en:"Start"},
  "Als Tabelle":{fr:"En tableau",it:"Come tabella",en:"As table"},

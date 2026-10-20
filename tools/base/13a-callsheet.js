@@ -103,8 +103,8 @@ function csOrderRows(rows,date,locs){if(!csA(rows).length)return"";const ni=date
     const sx=(()=>{try{const l=(schedIndex()[norm(r.sc)]||[]);const o=l.find(y=>y.d&&y.d.date===date)||l[0];return o?o.it:null}catch(_){return null}})();
     const fromCs={sc:String(r.sc),ie:r.ie||"",set:r.set||"",d:r.syn||"",pg:r.pgs||"",dur:r.dur||"",dir:r.dir||"",cast:String(r.cast||"").split(/[,\s]+/).filter(Boolean)};
     const it=Object.assign({},fromCs);if(sx)for(const kk in sx){const v=sx[kk];if(v!=null&&v!==""&&!(Array.isArray(v)&&!v.length))it[kk]=v}it.t=r.t||(sx&&sx.t)||"";
-    const keep=window.__mctx;window.__mctx={date:date||"",u:"1"};let li="";try{li=itemHTML(it)}catch(_){li=""}window.__mctx=keep;
-    const extra=(r.extras?'<div class="cscast">'+csTx(csS(r.extras))+'</div>':'')+(r.notes?'<details class="csnote"><summary>'+esc(L("Details Callsheet"))+'</summary><div>'+csTx(csS(r.notes))+'</div></details>':'');
+    if(r.notes)it.csnH=csTx(csS(r.notes));const keep=window.__mctx;window.__mctx={date:date||"",u:"1",cs:true};let li="";try{li=itemHTML(it)}catch(_){li=""}window.__mctx=keep;
+    const extra=(r.extras?'<div class="cscast">'+csTx(csS(r.extras))+'</div>':'');
     /* folded: the first line (scene, I/E, set, pages) is the summary, everything else opens with a tap */
     const i0=li.indexOf('<div class="sc">'),k=li.lastIndexOf('</div></li>');if(i0<0||k<0)return li;
     let body=li.slice(i0+16,k);const m=body.match(/<div class="l1">[\s\S]*?<\/div>/);const l1=m?m[0]:'<div class="l1"><span class="scn">'+esc(r.sc)+'</span></div>';if(m)body=body.replace(m[0],"");
