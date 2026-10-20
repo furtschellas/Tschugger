@@ -456,6 +456,11 @@ async def owner_tests(p, port):
           const dts=[...w.querySelectorAll('.csorder details.scdet')];
           return {det:dts.length>0&&dts.every(d=>d.open)&&dts.some(d=>d.textContent.includes('Drohne'))&&!w.querySelector('.csnote'),codes:[...w.querySelectorAll('.csloc-c')].map(e=>e.textContent),st:(pts.find(p=>p.c==='L1')||{}).st||[],st2:(pts.find(p=>p.c==='L2')||{}).st||[]}})()""")
         check("Callsheet: Locations heissen L1, L2 …", nx is None or nx["codes"][:2] == ["L1", "L2"], nx)
+        al = await E("""(()=>{if(typeof renderCS!=='function')return null;const x={date:'2030-05-06',cs:{geo:{'loc:1':[46.31,7.57],'https://g/b':[46.312,7.571]},geoSrc:{'loc:1':'addr','https://g/b':'link'},
+            locations:[{no:'1',name:'OFFICE',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Kirchplatz 5',map:'https://g/b'},{label:'Tech Parking',text:'',map:'https://g/b'}]},{no:'2',name:'OPEN SPACE'}],order:{rows:[]}}};
+          const w=document.createElement('div');w.innerHTML=renderCS(x,{date:x.date});const m=w.querySelector('[data-csmap]');const pts=m?JSON.parse(m.dataset.csmap):[];
+          return {codes:pts.filter(p=>!p.m).map(p=>p.c).filter(c=>/^L/.test(c)).sort(),l2rough:(pts.find(p=>p.c==='L2')||{}).r===2,park:pts.some(p=>p.m)}})()""")
+        check("Callsheet-Karte: jede Location L1, L2 … erscheint (ohne Kartenlink über die Adresse, sonst ungefähr)", al in (None, {"codes": ["L1", "L2"], "l2rough": True, "park": True}), al)
         check("Callsheet-Drehfolge: Szenendetails zuklappbar, zuerst offen (ohne eigenes «Details Callsheet»)", nx is None or nx["det"], nx)
         dup = await E("""(()=>{if(typeof renderCS!=='function'||typeof bdKey!=='function')return null;const keep=S.meta;const k='2026-10-20|'+bdKey('186pt1A');S.meta=Object.assign({},keep,{bd:Object.assign({},(keep||{}).bd,{[k]:{h:{},c:[['Notes',['Drohne ab 09:00']]]}})});
           const x={date:'2026-10-20',cs:{locations:[{no:'1',name:'CHAPEL'}],order:{rows:[{t:'08:30',sc:'186pt1A',set:'CHAPEL',notes:'Drohne ab 09:00'}]}}};const w=document.createElement('div');w.innerHTML=renderCS(x,{date:'2026-10-20'});S.meta=keep;
@@ -484,6 +489,9 @@ async def owner_tests(p, port):
           const c2={locations:[{no:'1',name:'CHAPEL',items:[{label:'W / H / M',text:'Cast + Lunch: Restaurant Hermitage, Pfynstrasse 160',map:'https://g/h'},{label:'DIT/Prod',text:'',map:'https://g/h'}]}]};
           const a=csLocs(c).filter(l=>l.kinds).map(l=>l.kinds.join('|')),b=csLocs(c2).filter(l=>l.kinds).map(l=>l.kinds.join('|'));return {other:a,same:b}})()""")
         check("Callsheet: DIT an anderem Ort = eigene Location, am selben Ort zusammen mit Base/Lunch", dit in (None, {"other": ["Base|W / H / M|Lunch", "DIT"], "same": ["W / H / M|Lunch|Prod|DIT"]}), dit)
+        dit2 = await E("""(()=>{if(typeof csLocs!=='function')return null;const c={locations:[{no:'1',name:'OFFICE',map:'https://g/o',items:[{label:'DIT',text:'Room 1st floor',map:'https://g/o'}]}]};
+          const ls=csLocs(c);return {own:ls.filter(l=>l.kinds).length,inset:(ls[0].items||[]).some(i=>i.label==='DIT')}})()""")
+        check("Callsheet: DIT am Ort eines Sets steht beim Set, nicht als eigene Location", dit2 in (None, {"own": 0, "inset": True}), dit2)
         fb = await E("""(()=>{if(typeof csTilesHTML!=='function')return null;const me={name:'Anna Muster',hit:t=>/anna muster/i.test(String(t||''))};
           const c={times:{crewCall:'08:15'},calls:[{dept:'AD',name:'Anna Muster',t:'-'}],locations:[{no:'1',name:'OFFICE',map:'https://g/o',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Kirchplatz 5 - 3970 Salgesch',map:'https://g/b'}]}]};
           const w=document.createElement('div');w.innerHTML=csTilesHTML({date:'2030-05-06'},{date:'2030-05-06'},c,me);const d=w.querySelector('.csdrv');return d?d.querySelector('.k').textContent:''})()""")

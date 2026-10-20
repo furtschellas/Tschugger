@@ -1247,4 +1247,8 @@ html body #view .cs-card:has(.ridest){position:relative;padding-right:40px}
 html body #view .cs-card .ridest{position:absolute;top:8px;right:8px;margin:0}
 html body #view .cs-tbl td:has(>.ridest){position:relative;padding-right:36px!important}
 html body #view .cs-tbl td>.ridest{position:absolute;top:50%;right:6px;transform:translateY(-50%);margin:0}
+/* map: the sets (L1, L2 …) and the other places always pink, parking and other points grey; a rough position only dashed */
+.csmk span{background:var(--accent)!important;color:#fff!important}
+.csmk.min span{background:#7d7790!important;color:#fff!important;border-color:#7d7790!important;opacity:1}
+.csmk.rough span{filter:none!important;opacity:1;border:1.5px dashed #fff!important}
 </style>
