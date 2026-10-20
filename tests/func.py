@@ -448,6 +448,29 @@ async def owner_tests(p, port):
           const keep=S.dispos;S.dispos=[{date:sh[0],cs:{prevision:{title:'PREVISION - D2 Extras: 12 Pages: 3 5/8 / Time Scree 03:30',rows:[{t:'09:15',sc:'12',set:'OFFICE'}]}}}];const h=csPrevHTML(sh[1]),h0=csPrevHTML(sh[0]);S.dispos=keep;
           return h.includes('09:15')&&h.includes('03:30')&&h.includes('3 5/8')&&h.includes('data-scene="12"')&&h0===''})()""")
         check("Callsheet: Vorschau erscheint beim Folgetag", pvw in (None, True), pvw, public=True)
+        # locations L1, L2 …; map popup: every scene with start and end; set floorplans; 2nd unit camera data; Test-User welcome
+        nx = await E("""(()=>{if(typeof renderCS!=='function')return null;const x={date:'2026-10-20',cs:{geo:{'https://a':[46.3,7.6],'https://b':[46.31,7.65]},
+            locations:[{no:'1',name:'CHAPEL',map:'https://a'},{no:'2',name:'FOREST',map:'https://b'}],
+            order:{rows:[{t:'08:30',sc:'186pt1A',set:'CHAPEL',notes:'Drohne ab 09:00'},{t:'10:45',sc:'2',set:'CHAPEL'},{t:'12:15',text:'Lunch'},{t:'13:15',sc:'12',set:'FOREST'},{t:'18:00',text:'Wrap'}]}}};
+          const w=document.createElement('div');w.innerHTML=renderCS(x,{date:'2026-10-20'});const m=w.querySelector('[data-csmap]');const pts=m?JSON.parse(m.dataset.csmap):[];
+          const dt=w.querySelector('.csorder details.scdet');
+          return {det:!!dt&&dt.open&&dt.textContent.includes('Drohne')&&!w.querySelector('.csnote'),codes:[...w.querySelectorAll('.csloc-c')].map(e=>e.textContent),st:(pts.find(p=>p.c==='L1')||{}).st||[],st2:(pts.find(p=>p.c==='L2')||{}).st||[]}})()""")
+        check("Callsheet: Locations heissen L1, L2 …", nx is None or nx["codes"][:2] == ["L1", "L2"], nx)
+        check("Callsheet-Drehfolge: Szenendetails zuklappbar, zuerst offen (ohne eigenes «Details Callsheet»)", nx is None or nx["det"], nx)
+        check("Callsheet-Karte: Pop-up zeigt jede Szene mit Anfangs- und Schlusszeit", nx is None or (nx["st"] == ["186pt1A 08:30–10:45", "2 10:45–12:15"] and nx["st2"] == ["12 13:15–18:00"]), nx)
+        sf = await E("""(()=>{if(typeof setfpHTML!=='function'||!vok('setfp'))return null;const keep=S.meta;S.meta=Object.assign({},keep,{setfp:[{date:'2026-10-20',name:'Floorplans',url:'https://www.dropbox.com/preview/x.pdf'}]});
+          const h=setfpHTML('2026-10-20'),h0=setfpHTML('2026-10-21');S.meta=keep;return {sec:h.includes('Setfloorpl')||h.includes('floorplan')||h.includes('Plans'),link:h.includes('x.pdf'),none:h0==='',perm:PERMS.some(p=>p[0]==='view.setfp')}})()""")
+        check("Callsheet: Setfloorpläne des Tages mit Link, Berechtigung «Setfloorpläne sehen» in der Rollenverwaltung", sf in (None, {"sec": True, "link": True, "none": True, "perm": True}), sf)
+        cx = await E("""(()=>{const h=itemHTML({sc:'5',t:'09:00',cam:'2nd Unit · Setups A-1',camx:['09:10 A-1 Wide']});const w=document.createElement('div');w.className='pv-no-d';w.innerHTML='<ol class="tl">'+h+'</ol>';document.body.appendChild(w);
+          const c=w.querySelector('.camx');const r={camx:!!c&&c.textContent.includes('A-1 Wide'),meta:(w.querySelector('.cam')||{}).textContent||'',hidden:!!c&&getComputedStyle(c).display==='none'};w.remove();return r})()""")
+        check("2nd Unit: Kameradaten unter dem Cast, mit «Szenendetails» ausblendbar", cx == {"camx": True, "meta": "2nd Unit", "hidden": True}, cx)
+        tw = await E("""(()=>{if(typeof DOCDEF!=='object'||!DOCDEF.testwelcome)return 'no doc';const d=docGet('testwelcome',{vorname:'Anna'},'de'),f=docGet('testwelcome',{vorname:'Anna'},'fr');
+          return {sub:!!d.subject,name:d.body.includes('Anna'),orig:/Originaldokument/.test(d.body),fr:f.body.includes('BETA')&&f.body!==d.body,ver:/^\\d+$/.test(twVer())}})()""")
+        check("Willkommen Test-User: Standardtext in den Dokumenten (DE, FR), Platzhalter {vorname}", tw == {"sub": True, "name": True, "orig": True, "fr": True, "ver": True}, tw)
+        ft = await E("""(()=>{if(typeof csFitTiles!=='function')return null;const v=document.getElementById('view');const keep=v.innerHTML;const W=Math.min(760,innerWidth-20);
+          v.innerHTML='<div style="width:'+W+'px"><div class="dtiles cstiles"><div class="dt big"><div class="k">Crew Call</div><div class="v">08:00</div></div><div class="dt"><div class="k">Rehearsal</div><div class="v">09:00</div></div><div class="dt"><div class="k">RTS</div><div class="v">09:15</div></div><div class="dt"><div class="k">Lunch</div><div class="v">12:15</div></div><div class="dt"><div class="k">Wrap</div><div class="v">19:00</div></div><div class="dt cssunt"><div class="k">Sonne</div><div class="v">07:55<span class="sd">–</span><br>18:37</div></div><button class="dt csdrv"><div class="k">Anfahrt</div><div class="v">Holiday Inn Express ›</div></button></div></div>';
+          csFitTiles();const t=v.querySelector('.cstiles');const ds=[...t.children];const r={wide:innerWidth>=480&&W>=700,rows:new Set(ds.map(d=>Math.round(d.getBoundingClientRect().top))).size,cut:ds.some(d=>d.scrollWidth>d.clientWidth+1)};v.innerHTML=keep;return r})()""")
+        check("Zeit-Kacheln: ganze Texte, auf breiten Bildschirmen eine Zeile", ft is None or (not ft["cut"] and (ft["rows"] == 1 or not ft["wide"])), ft)
         # ---------- callsheet ↔ other documents (schedule, cast list, crew list): differences are shown, they never block ----------
         xd = await E(r"""(()=>{const out=[];const N=x=>String(x||"").replace(/\s+/g,"").toLowerCase().replace(/^0+/,"");
           for(const dp of (S.dispos||[])){const c=dp&&dp.cs;if(!c)continue;const d=(S.days||[]).find(x=>x.date===dp.date);if(!d)continue;

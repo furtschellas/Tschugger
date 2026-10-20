@@ -155,8 +155,10 @@ function itemHTML(it){
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
     (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
-    castChips(it.cast)+(arr(it.camx).length?'<div class="camx"><b>'+esc(L("Kamera"))+'</b>'+arr(it.camx).map(c=>'<div class="cx">'+esc(c)+'</div>').join("")+'</div>':'')+bdXX(window.__mctx&&window.__mctx.date,it.sc)+
-    bdHTML(window.__mctx&&window.__mctx.date,it.sc)+(it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
+    castChips(it.cast)+(()=>{const det=(arr(it.camx).length?'<div class="camx"><b>'+esc(L("Kamera"))+'</b>'+arr(it.camx).map(c=>'<div class="cx">'+esc(c)+'</div>').join("")+'</div>':'')+bdXX(window.__mctx&&window.__mctx.date,it.sc)+
+    bdHTML(window.__mctx&&window.__mctx.date,it.sc)+(it.csnH?'<div class="csn">'+it.csnH+'</div>':'');
+      /* callsheet: the details of a scene (camera, breakdown, notes of the callsheet) fold, open at first */
+      return det&&window.__mctx&&window.__mctx.cs?'<details class="scdet" open><summary>'+esc(L("Details"))+'</summary>'+det+'</details>':det})()+(it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
     '</div></li>';
 }
 const padD=x=>String(x).replace(/^D(\d)$/,"D0$1");
