@@ -489,8 +489,9 @@ async def owner_tests(p, port):
           S.dispos=keep.d;window.csMe=keep.cm;const e=ev[0]||{};return {driver:String(e.driver||'').startsWith('Max Fahrer'),pax:e.pax||''}})()""")
         check("Meine Termine: Fahrt mit Fahrer:in (und Telefon) und den anderen Mitfahrenden", rx in (None, {"driver": True, "pax": "Lena Test"}), rx)
         rs = await E("""(()=>{if(typeof csRideCell!=='function'||!window.rideState)return null;const keep=window.rideState;const r={t1:'07:30',t2:'08:00',from:'A',to:'B'};const out=[];
-          for(const st of [0,1,2]){window.rideState=()=>st;const c=csRideCell('2030-05-06',r);const h=typeof c==='string'?c:c.h;out.push(st?(h.includes('ridest rs'+st)&&h.includes('<svg')):!/ridest/.test(h))}window.rideState=keep;return out})()""")
-        check("Callsheet: Fahrt läuft = Auto im Kreis, ausgeführt = Häkchen im Kreis", rs in (None, [True, True, True]), rs)
+          const ka=window.rideAt;for(const st of [0,1,2]){window.rideState=()=>st;window.rideAt=()=>Date.now()-60e3;const c=csRideCell('2030-05-06',r);const h=typeof c==='string'?c:c.h;out.push(st?(h.includes('ridest rs'+st)&&h.includes('<svg')&&!h.includes('rsold')):!/ridest/.test(h))}
+          window.rideState=()=>2;window.rideAt=()=>Date.now()-25*60e3;const c2=csRideCell('2030-05-06',r);out.push((typeof c2==='string'?c2:c2.h).includes('rsold'));window.rideState=keep;window.rideAt=ka;return out})()""")
+        check("Callsheet: Fahrt läuft = Auto im Kreis, ausgeführt = Häkchen im Kreis, 20 Min. danach grau", rs in (None, [True, True, True, True]), rs)
         aw = await E("""(()=>{if(typeof csDayAfterWrap!=='function')return null;const t='2030-05-06',n='2030-05-07',pick=[{date:t},{date:n}];
           const by={[t]:{cs:{times:{crewCall:'08:00',wrap:'19:00'}}},[n]:{cs:{}}},by2={[t]:by[t]},late={[t]:{cs:{times:{crewCall:'14:00',wrap:'01:30'}}},[n]:{cs:{}}},z=(h)=>zurichUTC(t,h).getTime();
           return [csDayAfterWrap(t,pick,by,z('19:30')),csDayAfterWrap(t,pick,by,z('20:01')),csDayAfterWrap(t,pick,by2,z('22:00')),csDayAfterWrap(t,pick,late,z('23:00'))]})()""")
