@@ -105,7 +105,7 @@ VIEWS.today=function(){
   /* my day from the callsheet (call, ride, my department) right below the tiles */
   /* «my day» from the callsheet: always (my own call, rides and department), also without the callsheet page; the link to it only with access */
   let mineCard="";try{const dpm=(S.dispos||[]).find(x=>x&&x.date===d.date);if(dpm&&dpm.cs&&typeof csMine==="function"){const me2=csMe();const mn=csMine(dpm.cs,me2);const toCs=canDispo&&typeof tabsOn==="function"&&tabsOn().includes("dispo");
-    if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein Tag"))+' · Callsheet'+(toCs?'<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button>':'')+'</div>'+mn.join("")+'</div>'}}catch(_){}
+    if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein Tag"))+' · Callsheet <span class="beta">BETA</span>'+(toCs?'<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button>':'')+'</div>'+mn.join("")+'</div>'}}catch(_){}
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
   /* from noon (or lunch, if earlier) on: the tiles of the next shooting day below (times, drive, weather) */
   try{const la=d.kind==="shoot"&&lunchAt(d),noon=+new Date(d.date+"T12:00:00"),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
@@ -125,7 +125,8 @@ VIEWS.today=function(){
   /* menu */
   if(tShow("menu"))try{const mn=window.menuFor?window.menuFor(d.date,"all"):"";if(mn)h+=card("tmenu",esc(L("Mittagessen")),mn)}catch(_){}
   /* scenes */
-  const scs=[];if(canPlan)for(const [u,its] of unitItems(d))if(u==="1"||hasU(d,u))its.forEach(it=>{if(it.sc)scs.push([u,it])});
+  /* scenes of the day; in the 2nd/3rd unit a scene that follows itself (same number, several set-ups) is listed once */
+  const scs=[];if(canPlan)for(const [u,its] of unitItems(d))if(u==="1"||hasU(d,u)){let prev="";its.forEach(it=>{if(!it.sc){return}const k=String(it.sc).replace(/\s+/g,"").toLowerCase();if(u!=="1"&&k===prev)return;prev=k;scs.push([u,it])})}
   if(scs.length&&tShow("scs"))h+=card("tscs",esc(L("Szenen"))+' <small>'+scs.length+'</small>','<ul class="tsclist">'+scs.map(([u,it])=>{const cg=window.chgFor(d.date,u,it.sc);
     /* one line per scene: time, scene, set and – as far as there is room – the description (cut with «…») */
     const set=String(it.set||"").replace(/^VALAIS\s*[–-]\s*/i,""),ds=String((LANG==="en"?it.d:(it["d_"+LANG]||it.d))||"").trim();
