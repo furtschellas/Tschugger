@@ -28,7 +28,7 @@ function roleList(){return memo("roles",()=>{const c=(S.meta&&S.meta.cast)||{};
   return Object.keys(c).sort((a,b)=>(parseInt(a,10)||0)-(parseInt(b,10)||0)).map(id=>{const name=String(c[id]||"");const al=new Set();
     for(const part of fold(name).split("/").map(x=>x.trim()).filter(Boolean)){al.add(part.replace(/\./g,""));const w=part.replace(/\./g,"").split(/\s+/).filter(Boolean);if(w.length>1){const last=w[w.length-1];if(last.length>=3&&!GENW.has(last))al.add(last)}}
     return {id:String(id),name,al:[...al].filter(x=>x.length>=2)}})})}
-function rolesFor(terms){return roleList().filter(r=>terms.every(t=>r.id===t||fold(r.name).includes(t)||r.al.some(a=>a.includes(t))))}
+function rolesFor(terms){return roleList().filter(r=>terms.every(t=>r.id===t||hasT(r.name,t)||r.al.some(a=>hasT(a,t))))}
 function planRoles(sc){const s=new Set();for(const h of (schedIndex()[norm(sc)]||[]))for(const c of arr(h.it.cast))s.add(String(c));return s}
 /* who appears in each script scene: sp = the role speaks (dialogue heading in capitals), mt = the role is only mentioned in the text */
 const SPK=/^[ \t]*([A-ZÄÖÜÉÈÀ][A-ZÄÖÜÉÈÀ0-9 .'’\-\/]{1,40}?)(?:\s*\(([^)]*)\))?[ \t]*$/gm;
@@ -45,7 +45,7 @@ function scriptRoles(){return memo("scroles:"+(SCRIPT?SCRIPT.length:0),()=>{cons
 const inScript=(o,id)=>!!o&&(o.sp.has(id)||o.mt.has(id));
 /* actors (callsheets) → role ids */
 function actorRoles(terms){const ids=new Set();const R=roleList();
-  for(const dp of S.dispos)for(const c of arr(dp&&dp.cast)){const a=fold(c.actor||"");if(!a||!terms.every(t=>a.includes(t)))continue;
+  for(const dp of S.dispos)for(const c of arr(dp&&dp.cast)){const a=fold(c.actor||"");if(!a||!terms.every(t=>hasT(a,t)))continue;
     const no=String(c.no||"").replace(/\D/g,"");if(no&&R.some(r=>r.id===no))ids.add(no);else{const hit=R.find(r=>fold(r.name)===fold(c.role||""));if(hit)ids.add(hit.id)}}
   return [...ids]}
 /* role overview: scenes per role in the schedule and in the script, and where they disagree */
@@ -63,6 +63,9 @@ function roleBadges(sc,ids){const P=planRoles(sc),o=SCRIPT?(scriptRoles()[norm(s
     return st?'<span class="rbadge'+(/⚠/.test(st)?' warn':'')+'"><b>'+esc(r.name)+'</b> '+esc(st)+'</span>':""}).join("")+'</span>'}
 /* ---------- global search ---------- */
 const nrm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+/* search ignores special characters and spellings: «186 pt1A» = «186pt1a», «Künzler» = «Kuenzler», «D'Alessandro» = «dalessandro» */
+const sqz=x=>nrm(x).replace(/ß/g,"ss").replace(/ae/g,"a").replace(/oe/g,"o").replace(/ue/g,"u").replace(/[^a-z0-9]/g,"");
+const hasT=(text,t)=>{const a=nrm(text);if(a.includes(t))return true;const q=sqz(t);return q.length>1&&sqz(a).includes(q)};
 function hl(text,terms){return markTerms(text,terms,1)}
 function searchAll(q,mode){
   mode=mode||"all";const M=k=>mode==="all"||mode===k;
@@ -75,7 +78,7 @@ function searchAll(q,mode){
   const cast=(S.meta&&S.meta.cast)||{};
   /* text terms: substring anywhere; numeric terms: only scene numbers, day codes, dates, phone numbers */
   const qd=terms.every(t=>/^\+?\d+$/.test(t))?terms.join("").replace(/\D/g,""):"";
-  const match=(text,nums,phone)=>{const T=nrm(text),N=nrm(nums);if(phone&&qd.length>=3&&N.replace(/\s+/g," ").split(" ").some(w=>w.includes(qd)))return true;return terms.every(t=>isNum(t)?N.split(/\s+/).some(w=>w.startsWith(t)):(T.includes(t)||N.includes(t)))};
+  const match=(text,nums,phone)=>{const T=nrm(text),N=nrm(nums);if(phone&&qd.length>=3&&N.replace(/\s+/g," ").split(" ").some(w=>w.includes(qd)))return true;return terms.every(t=>isNum(t)?N.split(/\s+/).some(w=>w.startsWith(t)||sqz(w).startsWith(sqz(t))):(hasT(T,t)||hasT(N,t)))};
   const R={day:[],sc:[],loc:[],crew:[],dispo:[],info:[]};
   const WDL=[["sonntag","sunday","dimanche","domenica"],["montag","monday","lundi","lunedi"],["dienstag","tuesday","mardi","martedi"],["mittwoch","wednesday","mercredi","mercoledi"],["donnerstag","thursday","jeudi","giovedi"],["freitag","friday","vendredi","venerdi"],["samstag","saturday","samedi","sabato"]];
   /* only areas the person may see (Drehplan, Locations, Crew, Callsheet) */
@@ -85,7 +88,7 @@ function searchAll(q,mode){
     const sc1=(d.items||[]).filter(i=>i.sc).length,sc2=((d.unit2&&d.unit2.items)||[]).filter(i=>i.sc).length,sc3=((d.unit3&&d.unit3.items)||[]).filter(i=>i.sc).length;
     const kindw=d.kind==="shoot"?"drehtag shooting day tournage riprese":d.kind==="off"?"drehfrei frei day off off-day libre libero":"reise reisetag travel voyage viaggio";
     const text=[d.label,d.short,kindw,WDL[x.getDay()].join(" "),WD[x.getDay()],dshort(d),(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info"),dayPlaces(d).join(" "),sc2?"2nd unit":"",sc3?"3rd unit":"",sc1?"1st unit":""].join(" ");
-    if(mode==="text"?terms.every(t=>nrm([(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info")].join(" ")).includes(t)):match(text,nrm(d.short||"")+" "+dshort(d)))R.day.push({k:"day",d,sc1,sc2,sc3});
+    if(mode==="text"?terms.every(t=>hasT([(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info")].join(" "),t)):match(text,nrm(d.short||"")+" "+dshort(d)))R.day.push({k:"day",d,sc1,sc2,sc3});
   }
   for(const d of (okPlan?S.days:[]))for(const [u,list] of unitLists(d))for(const it of list){
     if(!it.sc)continue;if(!unitsOn().includes(u))continue;const ad=addrForItem(it);
@@ -96,8 +99,8 @@ function searchAll(q,mode){
     if(mode==="all"&&!match(text,nums))continue;
     if(mode==="sc"&&!terms.every(t=>sc.startsWith(t.replace(/\s+/g,""))))continue;
     if(mode==="role"){const ids=rolesFor(terms).map(r=>r.id);if(!ids.length||!arr(it.cast).some(c=>ids.includes(String(c))))continue}
-    if(mode==="loc"&&!terms.every(t=>nrm([it.set,it.loc,ad].join(" ")).includes(t)))continue;
-    if(mode==="text"&&!terms.every(t=>nrm([it.d,it.d_de,it.d_fr,it.d_it].join(" ")).includes(t)))continue;
+    if(mode==="loc"&&!terms.every(t=>hasT([it.set,it.loc,ad].join(" "),t)))continue;
+    if(mode==="text"&&!terms.every(t=>hasT([it.d,it.d_de,it.d_fr,it.d_it].join(" "),t)))continue;
     let score=0;for(const t of terms){if(sc===t)score+=100;else if(sc.startsWith(t))score+=40}
     R.sc.push({k:"sc",d,u,it,ad,score});
   }
