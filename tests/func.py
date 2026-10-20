@@ -427,8 +427,8 @@ async def owner_tests(p, port):
           const w=document.createElement('div');w.innerHTML=renderCS(x,d);const open=[...w.querySelectorAll('details.cssec')].map(e=>[e.querySelector('.dh').textContent,e.open]);
           const sim=SIMROLE,kr=MYROLE,kp=MYPERMS.slice();SIMROLE={adm:false};MYROLE='t';MYPERMS=['view.dispo'];const w2=document.createElement('div');w2.innerHTML=renderCS(x,d);SIMROLE=sim;MYROLE=kr;MYPERMS=kp;
           return {tiles:w.textContent.includes('08:00')&&w.textContent.includes('19:00'),order:!!w.querySelector('.csorder details.csscd'),
-            locOpen:open.some(([t,o])=>/Location/i.test(t)&&!o),castClosed:open.some(([t,o])=>t==='Cast'&&!o),tel:!!w.querySelector('a[href^="tel:"]'),noTel:!w2.querySelector('a[href^="tel:"]')&&!w2.textContent.includes('000 00 00')}})()""")
-        check("Callsheet wie das Dokument: Zeiten, Drehfolge, Locations zugeklappt, Cast zu, Telefon nur mit Recht",
+            locOpen:open.some(([t,o])=>/Location/i.test(t)&&o),castClosed:open.some(([t,o])=>t==='Cast'&&!o),tel:!!w.querySelector('a[href^="tel:"]'),noTel:!w2.querySelector('a[href^="tel:"]')&&!w2.textContent.includes('000 00 00')}})()""")
+        check("Callsheet wie das Dokument: Zeiten, Drehfolge, Locations-Liste sichtbar, Cast zu, Telefon nur mit Recht",
               cs in (None, {"tiles": True, "order": True, "locOpen": True, "castClosed": True, "tel": True, "noTel": True}), cs, public=True)
         pvw = await E("""(()=>{if(typeof csPrevHTML!=='function')return null;const sh=S.days.filter(d=>d.kind==='shoot').map(d=>d.date).sort();if(sh.length<2)return null;
           const keep=S.dispos;S.dispos=[{date:sh[0],cs:{prevision:{title:'PREVISION - D2 Extras: 12 Pages: 3 5/8 / Time Scree 03:30',rows:[{t:'09:15',sc:'12',set:'OFFICE'}]}}}];const h=csPrevHTML(sh[1]),h0=csPrevHTML(sh[0]);S.dispos=keep;
