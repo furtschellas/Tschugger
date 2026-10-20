@@ -102,6 +102,8 @@ def check_callsheets(data, dbx, files):
                "Transport": len(cs.get("transport") or []), "Calls": len(cs.get("calls") or [])}
         for p in parts:
             if p in miss: bad("Callsheet %s · %s: %d Wert(e) nicht im PDF – %s" % (d.get("date"), p, len(miss[p]), ", ".join(sorted(set(miss[p]))[:12])))
+        urls = [u for l in cs.get("locations") or [] for u in [l.get("map")] + [i.get("map") for i in l.get("items") or []] if u]
+        if urls: (ok if all(u in (cs.get("geo") or {}) for u in urls) else info)("Callsheet %s: Karte – %d von %d Orten mit Position" % (d.get("date"), sum(1 for u in set(urls) if u in (cs.get("geo") or {})), len(set(urls))))
         if not miss: ok("Callsheet %s: alle Werte im PDF gefunden (%s)" % (d.get("date"), ", ".join("%s %d" % kv for kv in cnt.items())))
         # the totals line of the callsheet against the rows
         m = re.search(r"CAST:\s*(\d+)", txt)

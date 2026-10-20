@@ -1525,6 +1525,8 @@ def main():
             if mg[u]: g[u] = mg[u]; n_geo += 1
         if g != (cs.get("geo") or {}): cs["geo"] = g; changed = True
     if n_geo: log("Karte: %d neue Positionen aus den Callsheet-Links" % n_geo)
+    miss = sum(1 for v in mg.values() if not v)
+    if mg: print("::notice::Karte: %d von %d Kartenlinks der Callsheets mit Position" % (len(mg) - miss, len(mg)))
     # the original pages of every callsheet and the Sides (script pages of the day) as pictures in the app (also offline)
     spc = dict(meta.get("sidesPages") or {}); used = set()
     try:
