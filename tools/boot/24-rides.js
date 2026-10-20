@@ -12,8 +12,8 @@ const RIDE_ICO={1:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" s
 window.RIDE_ICO=RIDE_ICO;
 window.rideAckBtn=e=>{if(!e||!e.ride||!e.rid)return"";const st=rideState(e.rid),can=typeof canPerm==="function"&&canPerm("rides.confirm");
   const tip=[L("Fahrt quittieren: einmal = Fahrt beginnt"),L("Fahrt beginnt – nochmals = ausgeführt"),L("Fahrt ausgeführt – nochmals = zurücksetzen")][st];
-  if(!can)return st?'<span class="ridest s'+st+'" title="'+esc(st===1?L("Fahrt beginnt"):L("Fahrt ausgeführt"))+'">'+RIDE_ICO[st]+'</span>':"";
-  return '<button type="button" class="rideack s'+st+'" data-rideack="'+esc(e.rid)+'" data-rided="'+esc(e.date)+'" aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+(st?RIDE_ICO[st]:RIDE_ICO[1])+'</button>'};
+  if(!can)return st?'<span class="ridek rk'+st+'" title="'+esc(st===1?L("Fahrt beginnt"):L("Fahrt ausgeführt"))+'">'+RIDE_ICO[st]+'</span>':"";
+  return '<button type="button" class="rideack rk'+st+'" data-rideack="'+esc(e.rid)+'" data-rided="'+esc(e.date)+'" aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+(st?RIDE_ICO[st]:RIDE_ICO[1])+'</button>'};
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-rideack]");if(!b)return;e.preventDefault();if(!canPerm("rides.confirm"))return;
   const id=b.dataset.rideack,st=rideState(id),nx=(st+1)%3;b.disabled=true;
   try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);

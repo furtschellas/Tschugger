@@ -1184,10 +1184,10 @@ html body #view .csview .leaflet-container,html body #view .csview .leaflet-cont
 
 /* rides: confirm (AL, AD, production) */
 .rideack{width:34px;height:34px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 60%,transparent);background:none;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;flex:0 0 auto}
-.rideack.s0 svg{opacity:.45}.rideack.s1{color:var(--accent);border-color:var(--accent)}.rideack.s2{color:#5fd38d;border-color:#5fd38d;background:color-mix(in srgb,#5fd38d 14%,transparent)}
-.ridest{display:inline-flex;align-items:center;vertical-align:-4px}.ridest.s1{color:var(--accent)}.ridest.s2{color:#5fd38d}
-.ridest.s1 .rmove{animation:rmove .9s linear infinite}@keyframes rmove{from{transform:translateX(2px);opacity:1}to{transform:translateX(-2px);opacity:.2}}
-@media (prefers-reduced-motion:reduce){.ridest.s1 .rmove{animation:none}}
+.rideack.rk0 svg{opacity:.45}.rideack.rk1{color:var(--accent);border-color:var(--accent)}.rideack.rk2{color:#5fd38d;border-color:#5fd38d;background:color-mix(in srgb,#5fd38d 14%,transparent)}
+.ridest,.ridek{display:inline-flex;align-items:center;vertical-align:-4px}.ridest.rs1,.ridek.rk1{color:var(--accent)}.ridest.rs2,.ridek.rk2{color:#5fd38d}
+.ridest.rs1 .rmove{animation:rmove .9s linear infinite}@keyframes rmove{from{transform:translateX(2px);opacity:1}to{transform:translateX(-2px);opacity:.2}}
+@media (prefers-reduced-motion:reduce){.ridest.rs1 .rmove{animation:none}}
 
 /* cast: make-up / wardrobe – duration and initials pink; role and actor columns on/off */
 .mkd,.mki{color:var(--accent);font-weight:600}.mki{font-size:.9em;letter-spacing:.03em}
@@ -2140,7 +2140,7 @@ const csCell=c=>c&&typeof c==="object"&&"h" in c?c.h:csTx(c);
 const csCellTx=c=>c&&typeof c==="object"&&"h" in c?c.h.replace(/<[^>]+>/g,""):String(c||"");
 /* a ride with its state (quittiert): driving car = running, two checks = done */
 function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0;try{st=typeof rideId==="function"&&window.rideState?rideState(rideId(date,r)):0}catch(_){}
-  if(!st)return t;const I=window.RIDE_ICO||{};return {h:'<span class="ridest s'+st+'" title="'+esc(st===1?L("Fahrt läuft"):L("Fahrt ausgeführt"))+'">'+(st===1?I.car:I[2])+'</span> '+esc(t)}}
+  if(!st)return t;const I=window.RIDE_ICO||{};return {h:'<span class="ridest rs'+st+'" title="'+esc(st===1?L("Fahrt läuft"):L("Fahrt ausgeführt"))+'">'+(st===1?I.car:I[2])+'</span> '+esc(t)}}
 function csTable(head,rows,tc){rows=rows.map(r=>r.map(c=>c&&typeof c==="object"?c:csDurT(c)));rows=rows.filter(r=>r.some(c=>csCellTx(c).trim()));if(!rows.length)return"";tc=tc||2;
   const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csCell(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
   const cards='<div class="cs-cards">'+rows.map(r=>{const tt=r.slice(0,tc).map(c=>csCellTx(c).trim());
