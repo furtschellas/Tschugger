@@ -1175,6 +1175,16 @@ html body #view .csview .leaflet-container,html body #view .csview .leaflet-cont
 .csmapgo small{color:var(--muted);font-family:var(--f-mono,monospace);font-size:11.5px;margin-left:auto}.csmapgo:hover{border-color:var(--accent)}
 
 .csfp{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.csfp .pillbtn{display:inline-flex;align-items:center;gap:6px;font-size:13px}
+
+/* map: legend only enlarged (panel at the bottom), layer switch */
+.csmapw:not(.big) .csmapl{display:none}
+.csmapw.big{display:flex;flex-direction:column}.csmapw.big .csmap0{flex:1 1 auto;height:auto;min-height:0}
+.csmapw.big .csmapl{flex:0 0 auto;max-height:34%;overflow:auto;padding:8px;margin:0;background:var(--paper);border-top:1px solid var(--rule)}
+.leaflet-control-layers{font:13px/1.4 var(--f-body,sans-serif)}
+
+/* rides: confirm (AL, AD, production) */
+.rideack{font-size:12px;padding:3px 10px;min-height:28px;margin:4px 6px 0 0}.rideack.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.rideok{display:inline-block;font-size:12px;color:#5fd38d;margin:4px 6px 0 0;font-weight:600}
 </style>
 
 <div class="wrap">
@@ -1550,6 +1560,8 @@ function iAmIn(names,me,people){
   return false;
 }
 function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
+/* a ride of a callsheet: the same id for everyone (date, times, places, vehicle – no names) */
+function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 function myEvents(me){
   const out=[],people=mailPeople(),t=todayISO();
   for(const d of (vok("prep")?S.prepro:[])){if(d.date<t)continue;
@@ -1569,7 +1581,9 @@ function myEvents(me){
   try{const cm=typeof csMe==="function"?csMe():null;if(cm)for(const dp of S.dispos){if(!dp||dp.date<t||!dp.cs)continue;const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};
     const rides=[...arr(c.transport).filter(r=>cm.hit(r.driver)||cm.hit(r.passengers)).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>cm.hit(r.people)).map(r=>({r})),...arr(c.travel).filter(r=>cm.hit(r.name)).map(r=>({r,how:r.how}))];
     for(const {r,drv,how} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();
-      out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true})}}}catch(_){}
+      /* a confirmed ride disappears one hour after its arrival */
+      const rid=rideId(dp.date,r);if(window.RIDEACK&&window.RIDEACK[rid]){const end=hm(r.t2)||st;if(end&&Date.now()>zurichUTC(dp.date,end).getTime()+3600e3)continue}
+      out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true,rid})}}}catch(_){}
   /* own and Google Calendar events (tools/boot/18-own-events.js); the same appointment twice (same day, same start, same title) is shown once */
   try{if(window.ownEvents){const tn=x=>fold(x||"").replace(/[^a-z0-9]+/g," ").trim(),same=(a,b)=>a.date===b.date&&(hm(a.t)||"")===(hm(b.t)||"")&&(()=>{const x=tn(a.n),y=tn(b.n);return x===y||(x.length>=4&&y.length>=4&&(x.includes(y)||y.includes(x)))})();
     for(const e of window.ownEvents(me))if(!out.some(o=>same(o,e)))out.push(e)}}catch(_){}
@@ -1603,7 +1617,7 @@ function renderMy(){
     if(!MYEV.length)h+='<p class="ghint">'+esc(L("Keine kommenden Termine gefunden."))+'</p>';
     let last="";
     MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>';last=e.date}
-      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}
+      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.rideAckBtn?window.rideAckBtn(e):'')+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}
   return h+'</section>';
 }
 function openMyCal(){S.tab="my";S.srcOpen=false;window.scrollTo(0,0);render()}
@@ -2292,8 +2306,8 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
    /* places at the same point: the labels are stacked */
    pts.forEach((p,i)=>{p.k=pts.slice(0,i).filter(x=>x.p.join(",")===p.p.join(",")).length});
    const main=pts.filter(p=>!p.m);
-   if(pts.length)h+=csSec(L("Karte"),'<div class="csmapw"><button type="button" class="csmapbig" data-csmapbig aria-label="'+esc(L("Karte vergrössern"))+'" title="'+esc(L("Karte vergrössern"))+'">'+CSEXP+'</button><div class="csmap0" data-csmap="'+esc(JSON.stringify(pts))+'"></div></div>'+
-     '<div class="csmapl">'+main.map(p=>'<button type="button" class="csmapgo" data-csmapgo="'+pts.indexOf(p)+'"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+(p.s?' <small>'+esc(p.s)+'</small>':'')+'</button>').join("")+'</div>',
+   if(pts.length)h+=csSec(L("Karte"),'<div class="csmapw"><button type="button" class="csmapbig" data-csmapbig aria-label="'+esc(L("Karte vergrössern"))+'" title="'+esc(L("Karte vergrössern"))+'">'+CSEXP+'</button><div class="csmap0" data-csmap="'+esc(JSON.stringify(pts))+'"></div>'+
+     '<div class="csmapl">'+main.map(p=>'<button type="button" class="csmapgo" data-csmapgo="'+pts.indexOf(p)+'"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+(p.s?' <small>'+esc(p.s)+'</small>':'')+'</button>').join("")+'</div></div>',
      false,"","karte",'<span class="cscount"><span><b>'+main.length+'</b> '+esc(L("Orte"))+'</span></span>')}
   /* production information */
   h+=csSec(L("Produktionsinfos"),csA(c.info).map(p=>'<p>'+csTx(csL(p))+'</p>').join(""),true,"csinfo");
@@ -2391,7 +2405,10 @@ let CSLF=null;function csLeaflet(){if(window.L&&window.L.map)return Promise.reso
     const s=document.createElement("script");s.src="leaflet.js";s.onload=()=>ok(window.L);s.onerror=()=>{CSLF=null;no(new Error("leaflet"))};document.head.appendChild(s)});return CSLF}
 function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(box.dataset.csmap||"[]")}catch(_){}if(!pts.length)return;
   csLeaflet().then(LF=>{if(box.__map||!box.isConnected)return;const m=LF.map(box,{scrollWheelZoom:false,tap:true});box.__map=m;
-    LF.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(m);
+    /* map or satellite (switch bottom left) */
+    const osm=LF.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(m);
+    const sat=LF.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
+    LF.control.layers({[L("Karte")]:osm,[L("Satellit")]:sat},null,{position:"bottomleft"}).addTo(m);
     const b=[];box.__mk=[];for(const p of pts){const lab=esc(p.c)+(p.s?" <i>"+esc(p.s)+"</i>":"");
       const mk=LF.marker(p.p,{icon:LF.divIcon({className:"csmk"+(p.m?" min":""),html:'<span style="--k:'+(p.k||0)+'">'+lab+"</span>",iconSize:null}),zIndexOffset:p.m?0:1000}).addTo(m);
       mk.bindPopup("<b>"+esc(p.c)+"</b> "+esc(p.n)+(p.s?"<br>"+esc(L("Szenen"))+": "+esc(p.s):"")+(p.u?'<br><a href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer">Google Maps</a>':""));box.__mk.push(mk);if(!p.m)b.push(p.p)}
@@ -2399,8 +2416,8 @@ function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(
     if(b.length>1)m.fitBounds(b,{paddingTopLeft:[34,70],paddingBottomRight:[34,24],maxZoom:16});else m.setView(b[0],15)}).catch(()=>{box.innerHTML='<p class="ghint">'+esc(L("Karte nicht verfügbar (offline?)."))+'</p>'})}
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.id==="cs-karte"&&d.open)csMapInit(d.querySelector("[data-csmap]"))},true);
 /* a location in the list below the map: show it on its own */
-document.addEventListener("click",e=>{const b=e.target.closest("[data-csmapgo]");if(!b)return;const box=b.closest("details").querySelector("[data-csmap]");if(!box)return;
-  const go=()=>{const m=box.__map,mk=box.__mk&&box.__mk[+b.dataset.csmapgo];if(!m||!mk)return;m.setView(mk.getLatLng(),17);mk.openPopup();box.scrollIntoView({block:"nearest",behavior:"smooth"})};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-csmapgo]");if(!b)return;const box=b.closest(".csmapw").querySelector("[data-csmap]");if(!box)return;
+  const go=()=>{const m=box.__map,mk=box.__mk&&box.__mk[+b.dataset.csmapgo];if(!m||!mk)return;m.setView(mk.getLatLng(),17);mk.openPopup()};
   if(box.__map)go();else{csMapInit(box);setTimeout(go,900)}});
 /* enlarge / shrink the map */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-csmapbig]");if(!b)return;e.preventDefault();const w=b.closest(".csmapw");w.classList.toggle("big");document.body.classList.toggle("csmapopen",w.classList.contains("big"));

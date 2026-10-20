@@ -21,6 +21,8 @@ function iAmIn(names,me,people){
   return false;
 }
 function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
+/* a ride of a callsheet: the same id for everyone (date, times, places, vehicle – no names) */
+function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 function myEvents(me){
   const out=[],people=mailPeople(),t=todayISO();
   for(const d of (vok("prep")?S.prepro:[])){if(d.date<t)continue;
@@ -40,7 +42,9 @@ function myEvents(me){
   try{const cm=typeof csMe==="function"?csMe():null;if(cm)for(const dp of S.dispos){if(!dp||dp.date<t||!dp.cs)continue;const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};
     const rides=[...arr(c.transport).filter(r=>cm.hit(r.driver)||cm.hit(r.passengers)).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>cm.hit(r.people)).map(r=>({r})),...arr(c.travel).filter(r=>cm.hit(r.name)).map(r=>({r,how:r.how}))];
     for(const {r,drv,how} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();
-      out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true})}}}catch(_){}
+      /* a confirmed ride disappears one hour after its arrival */
+      const rid=rideId(dp.date,r);if(window.RIDEACK&&window.RIDEACK[rid]){const end=hm(r.t2)||st;if(end&&Date.now()>zurichUTC(dp.date,end).getTime()+3600e3)continue}
+      out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true,rid})}}}catch(_){}
   /* own and Google Calendar events (tools/boot/18-own-events.js); the same appointment twice (same day, same start, same title) is shown once */
   try{if(window.ownEvents){const tn=x=>fold(x||"").replace(/[^a-z0-9]+/g," ").trim(),same=(a,b)=>a.date===b.date&&(hm(a.t)||"")===(hm(b.t)||"")&&(()=>{const x=tn(a.n),y=tn(b.n);return x===y||(x.length>=4&&y.length>=4&&(x.includes(y)||y.includes(x)))})();
     for(const e of window.ownEvents(me))if(!out.some(o=>same(o,e)))out.push(e)}}catch(_){}
@@ -74,7 +78,7 @@ function renderMy(){
     if(!MYEV.length)h+='<p class="ghint">'+esc(L("Keine kommenden Termine gefunden."))+'</p>';
     let last="";
     MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>';last=e.date}
-      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}
+      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.rideAckBtn?window.rideAckBtn(e):'')+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}
   return h+'</section>';
 }
 function openMyCal(){S.tab="my";S.srcOpen=false;window.scrollTo(0,0);render()}

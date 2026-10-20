@@ -235,8 +235,8 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
    /* places at the same point: the labels are stacked */
    pts.forEach((p,i)=>{p.k=pts.slice(0,i).filter(x=>x.p.join(",")===p.p.join(",")).length});
    const main=pts.filter(p=>!p.m);
-   if(pts.length)h+=csSec(L("Karte"),'<div class="csmapw"><button type="button" class="csmapbig" data-csmapbig aria-label="'+esc(L("Karte vergrössern"))+'" title="'+esc(L("Karte vergrössern"))+'">'+CSEXP+'</button><div class="csmap0" data-csmap="'+esc(JSON.stringify(pts))+'"></div></div>'+
-     '<div class="csmapl">'+main.map(p=>'<button type="button" class="csmapgo" data-csmapgo="'+pts.indexOf(p)+'"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+(p.s?' <small>'+esc(p.s)+'</small>':'')+'</button>').join("")+'</div>',
+   if(pts.length)h+=csSec(L("Karte"),'<div class="csmapw"><button type="button" class="csmapbig" data-csmapbig aria-label="'+esc(L("Karte vergrössern"))+'" title="'+esc(L("Karte vergrössern"))+'">'+CSEXP+'</button><div class="csmap0" data-csmap="'+esc(JSON.stringify(pts))+'"></div>'+
+     '<div class="csmapl">'+main.map(p=>'<button type="button" class="csmapgo" data-csmapgo="'+pts.indexOf(p)+'"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+(p.s?' <small>'+esc(p.s)+'</small>':'')+'</button>').join("")+'</div></div>',
      false,"","karte",'<span class="cscount"><span><b>'+main.length+'</b> '+esc(L("Orte"))+'</span></span>')}
   /* production information */
   h+=csSec(L("Produktionsinfos"),csA(c.info).map(p=>'<p>'+csTx(csL(p))+'</p>').join(""),true,"csinfo");
@@ -334,7 +334,10 @@ let CSLF=null;function csLeaflet(){if(window.L&&window.L.map)return Promise.reso
     const s=document.createElement("script");s.src="leaflet.js";s.onload=()=>ok(window.L);s.onerror=()=>{CSLF=null;no(new Error("leaflet"))};document.head.appendChild(s)});return CSLF}
 function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(box.dataset.csmap||"[]")}catch(_){}if(!pts.length)return;
   csLeaflet().then(LF=>{if(box.__map||!box.isConnected)return;const m=LF.map(box,{scrollWheelZoom:false,tap:true});box.__map=m;
-    LF.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(m);
+    /* map or satellite (switch bottom left) */
+    const osm=LF.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(m);
+    const sat=LF.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
+    LF.control.layers({[L("Karte")]:osm,[L("Satellit")]:sat},null,{position:"bottomleft"}).addTo(m);
     const b=[];box.__mk=[];for(const p of pts){const lab=esc(p.c)+(p.s?" <i>"+esc(p.s)+"</i>":"");
       const mk=LF.marker(p.p,{icon:LF.divIcon({className:"csmk"+(p.m?" min":""),html:'<span style="--k:'+(p.k||0)+'">'+lab+"</span>",iconSize:null}),zIndexOffset:p.m?0:1000}).addTo(m);
       mk.bindPopup("<b>"+esc(p.c)+"</b> "+esc(p.n)+(p.s?"<br>"+esc(L("Szenen"))+": "+esc(p.s):"")+(p.u?'<br><a href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer">Google Maps</a>':""));box.__mk.push(mk);if(!p.m)b.push(p.p)}
@@ -342,8 +345,8 @@ function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(
     if(b.length>1)m.fitBounds(b,{paddingTopLeft:[34,70],paddingBottomRight:[34,24],maxZoom:16});else m.setView(b[0],15)}).catch(()=>{box.innerHTML='<p class="ghint">'+esc(L("Karte nicht verfügbar (offline?)."))+'</p>'})}
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.id==="cs-karte"&&d.open)csMapInit(d.querySelector("[data-csmap]"))},true);
 /* a location in the list below the map: show it on its own */
-document.addEventListener("click",e=>{const b=e.target.closest("[data-csmapgo]");if(!b)return;const box=b.closest("details").querySelector("[data-csmap]");if(!box)return;
-  const go=()=>{const m=box.__map,mk=box.__mk&&box.__mk[+b.dataset.csmapgo];if(!m||!mk)return;m.setView(mk.getLatLng(),17);mk.openPopup();box.scrollIntoView({block:"nearest",behavior:"smooth"})};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-csmapgo]");if(!b)return;const box=b.closest(".csmapw").querySelector("[data-csmap]");if(!box)return;
+  const go=()=>{const m=box.__map,mk=box.__mk&&box.__mk[+b.dataset.csmapgo];if(!m||!mk)return;m.setView(mk.getLatLng(),17);mk.openPopup()};
   if(box.__map)go();else{csMapInit(box);setTimeout(go,900)}});
 /* enlarge / shrink the map */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-csmapbig]");if(!b)return;e.preventDefault();const w=b.closest(".csmapw");w.classList.toggle("big");document.body.classList.toggle("csmapopen",w.classList.contains("big"));
