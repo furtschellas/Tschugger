@@ -359,7 +359,6 @@ Object.assign(I18N,{
  "Wird allen Test-Usern beim nächsten Öffnen nochmals gezeigt.":{fr:"Sera montré à nouveau à tous les testeurs à la prochaine ouverture.",it:"Verrà mostrato di nuovo a tutti i tester alla prossima apertura.",en:"Will be shown again to all test users the next time they open the app."},
  "Verstanden":{fr:"Compris",it:"Capito",en:"Got it"},
  "Erscheint einmalig beim Öffnen der App, sobald jemand eine Rolle mit «Test» im Namen hat (z. B. Test-User). Titel und Absätze wie bei der Willkommensnachricht; Zeilen mit • bleiben untereinander.":{fr:"Apparaît une seule fois à l'ouverture de l'app dès qu'une personne a un rôle contenant «Test» (p. ex. Test-User).",it:"Appare una sola volta all'apertura dell'app quando qualcuno ha un ruolo con «Test» nel nome (p. es. Test-User).",en:"Shown once when the app opens as soon as someone has a role with «Test» in its name (e.g. Test-User)."},
- "Vollbild":{fr:"Plein écran",it:"Schermo intero",en:"Full screen"},
  "ungefähr":{fr:"approx.",it:"circa",en:"approx."},
  "ohne Position – Google Maps":{fr:"sans position – Google Maps",it:"senza posizione – Google Maps",en:"no position – Google Maps"},
  "Position ungefähr beim Set":{fr:"Position approximative près du décor",it:"Posizione approssimativa presso il set",en:"Position roughly at the set"},
