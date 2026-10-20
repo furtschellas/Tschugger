@@ -1178,4 +1178,12 @@ html body #view .csview .leaflet-container,html body #view .csview .leaflet-cont
 /* rides: confirm (AL, AD, production) */
 .rideack{font-size:12px;padding:3px 10px;min-height:28px;margin:4px 6px 0 0}.rideack.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .rideok{display:inline-block;font-size:12px;color:#5fd38d;margin:4px 6px 0 0;font-weight:600}
+
+/* cast: make-up / wardrobe – duration and initials pink; role and actor columns on/off */
+.mkd,.mki{color:var(--accent);font-weight:600}.mki{font-size:.9em;letter-spacing:.03em}
+.cscols{display:inline-flex;gap:4px;margin:0 10px 6px 0;vertical-align:middle}
+.cscol{font:inherit;font-size:12px;border:1px solid var(--rule);background:none;color:var(--muted);border-radius:999px;padding:2px 10px;cursor:pointer}
+.cscol[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+html body #view #cs-cast.hide-role .dtbl th:nth-child(2),html body #view #cs-cast.hide-role .dtbl td:nth-child(2),html body #view #cs-cast.hide-role .cs-ct .c1{display:none}
+html body #view #cs-cast.hide-actor .dtbl th:nth-child(3),html body #view #cs-cast.hide-actor .dtbl td:nth-child(3),html body #view #cs-cast.hide-actor .cs-ct .c2{display:none}
 </style>
