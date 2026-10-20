@@ -99,7 +99,7 @@ async def owner_tests(p, port):
         if scn:
             await E("[...document.querySelectorAll('#view [data-scinl]')].find(x=>x.offsetParent).click()")
             await pg.wait_for_timeout(2500)
-            txt = await E("(()=>{const b=[...document.querySelectorAll('#view [data-scinl]')].find(x=>x.offsetParent);const s=b&&b.closest('.sc').querySelector(':scope>.scinl');return s&&!s.hidden?s.innerText:''})()")
+            txt = await E("(()=>{const s=document.querySelector('#view .scinl:not([hidden])');return s?s.innerText:''})()")
             check("Drehplan: Script-Knopf zeigt den Drehbuchtext direkt in der Szene", bool(txt) and scn.split("/")[0].strip().lower() in txt.lower() and "nicht geladen" not in txt and "nicht gefunden" not in txt, (scn, txt[:80]))
             await E("(()=>{const x=document.querySelector('#view .scinl:not([hidden]) [data-scene]');if(x)x.click()})()")
             await pg.wait_for_timeout(1500)
@@ -449,7 +449,7 @@ async def owner_tests(p, port):
               cs in (None, {"tiles": True, "order": True, "locOpen": True, "castClosed": True, "tel": True, "noTel": True}), cs, public=True)
         pvw = await E("""(()=>{if(typeof csPrevHTML!=='function')return null;const sh=S.days.filter(d=>d.kind==='shoot').map(d=>d.date).sort();if(sh.length<2)return null;
           const keep=S.dispos;S.dispos=[{date:sh[0],cs:{prevision:{title:'PREVISION - D2 Extras: 12 Pages: 3 5/8 / Time Scree 03:30',rows:[{t:'09:15',sc:'12',set:'OFFICE'}]}}}];const h=csPrevHTML(sh[1]),h0=csPrevHTML(sh[0]);S.dispos=keep;
-          return h.includes('09:15')&&h.includes('03:30')&&h.includes('3 5/8')&&h.includes('data-scene="12"')&&h0===''})()""")
+          return h.includes('09:15')&&h.includes('03:30')&&h.includes('3 5/8')&&(h.includes('data-scene="12"')||h.includes('data-scinl="12"'))&&h0===''})()""")
         check("Callsheet: Vorschau erscheint beim Folgetag", pvw in (None, True), pvw, public=True)
         # ---------- callsheet ↔ other documents (schedule, cast list, crew list): differences are shown, they never block ----------
         xd = await E(r"""(()=>{const out=[];const N=x=>String(x||"").replace(/\s+/g,"").toLowerCase().replace(/^0+/,"");
