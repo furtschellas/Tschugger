@@ -111,8 +111,12 @@ async function dckRun(auto){
       for(const x of dp){const d=days.find(y=>y.date===x.date);
         if(!d||d.kind!=="shoot"){w("warn",L("Callsheets ↔ Drehplan"),dday(x.date)+": "+L("Callsheet für einen Tag ohne Dreh im Drehplan."));continue}
         const ps=new Set(items.filter(([dd])=>dd===d).flatMap(([,it])=>scs(it)));
-        const cs=new Set(arr(x.scenes).map(s=>typeof s==="object"?s.sc:s).flatMap(s=>String(s||"").split(/[,/+&]/)).map(dsc).filter(Boolean));
+        /* the scenes of the callsheet: the shooting order of the structured callsheet, else the old list */
+        const csr=x.cs&&x.cs.order?arr(x.cs.order.rows).filter(r=>r&&r.sc).map(r=>r.sc):arr(x.scenes).map(s=>typeof s==="object"?s.sc:s);
+        const cs=new Set(csr.flatMap(s=>String(s||"").split(/[,/+&]/)).map(dsc).filter(Boolean));
+        if(!cs.size)w("info",L("Callsheets ↔ Drehplan"),dday(x.date)+": "+L("Im Callsheet keine Szenen gefunden."));
         if(cs.size){const a=[...cs].filter(s=>!ps.has(s)),b=[...ps].filter(s=>!cs.has(s));
+          if(!a.length&&!b.length)w("ok",L("Callsheets ↔ Drehplan"),dday(x.date)+": "+L("Szenen gleich")+" ("+cs.size+")");
           if(a.length||b.length)w("warn",L("Callsheets ↔ Drehplan"),dday(x.date)+": "+(a.length?L("nur im Callsheet")+": "+a.join(", "):"")+(a.length&&b.length?" · ":"")+(b.length?L("nur im Drehplan")+": "+b.join(", "):""))}
         const cc=hm(x.crewCall||x.generalCall),pc=hm(String(d.hours||"").split(/[–-]/)[0]);
         if(cc&&pc&&cc>pc)w("warn",L("Callsheets ↔ Drehplan"),dday(x.date)+": "+L("Crew Call {a} ist nach Drehbeginn {b} laut Drehplan.").replace("{a}",cc).replace("{b}",pc))}
