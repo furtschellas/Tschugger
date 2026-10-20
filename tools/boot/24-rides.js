@@ -12,7 +12,7 @@ const RIDE_ICO={1:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" s
   2:'<svg viewBox="0 0 24 24" width="20" height="18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12.5l4.5 4.5L16.5 7.5"/><path d="M11 16l1 1L21.5 7.5"/></svg>',
   car:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16V12l2-5h10l2 5v4"/><path d="M4 16h16v2H4z"/><circle cx="8" cy="16" r="1.6"/><circle cx="16" cy="16" r="1.6"/><path d="M5 12h14"/><path class="rmove" d="M1 9h2M0.5 12h2"/></svg>'};
 window.RIDE_ICO=RIDE_ICO;
-window.rideAckBtn=e=>{if(!e||!e.ride||!e.rid)return"";const st=rideState(e.rid),can=typeof canPerm==="function"&&canPerm("rides.confirm");
+window.rideAckBtn=e=>{if(!e||!e.ride||!e.rid||e.noack)return"";   /* crew transport and travel: no confirmation */const st=rideState(e.rid),can=typeof canPerm==="function"&&canPerm("rides.confirm");
   const tip=[L("Fahrt quittieren: einmal = Fahrt beginnt"),L("Fahrt beginnt – nochmals = ausgeführt"),L("Fahrt ausgeführt – nochmals = zurücksetzen")][st];
   if(!can)return st?'<span class="ridek rk'+st+'" title="'+esc(st===1?L("Fahrt beginnt"):L("Fahrt ausgeführt"))+'">'+RIDE_ICO[st]+'</span>':"";
   return '<button type="button" class="rideack rk'+st+'" data-rideack="'+esc(e.rid)+'" data-rided="'+esc(e.date)+'" aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+(st?RIDE_ICO[st]:RIDE_ICO[1])+'</button>'};
