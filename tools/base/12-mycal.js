@@ -44,7 +44,11 @@ function myEvents(me){
     for(const {r,drv,how} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();
       /* a confirmed ride disappears one hour after its arrival */
       const rid=rideId(dp.date,r);if(window.rideState&&rideState(rid)===2){const end=hm(r.t2)||st;if(end&&Date.now()>zurichUTC(dp.date,end).getTime()+3600e3){window.RIDEHID=(window.RIDEHID||0)+1;if(!window.SHOWDONE)continue}}
-      out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true,rid})}}}catch(_){}
+      /* more about the ride: who drives (with the phone from the callsheet's driver line), who rides along, notes */
+      const dn=drv?"":clean(r.driver),dph=dn&&vok("phone")?((String(c.drivers||"").split(/\s*[|\n;]\s*/).find(x=>fold(x).includes(fold(dn.split(" ")[0])))||"").match(/\+?\d[\d ]{7,}\d/)||[""])[0]:"";
+      const pax=clean(r.passengers||r.people||"").split(/\s*,\s*/).filter(x=>x&&!cm.hit(x)).join(", ");   /* the others in the car */
+      out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true,rid,
+        driver:dn?dn+(dph?" "+dph:""):"",pax:pax&&!(how&&!r.passengers&&!r.people)?pax:"",note:clean(r.note||"")})}}}catch(_){}
   /* own and Google Calendar events (tools/boot/18-own-events.js); the same appointment twice (same day, same start, same title) is shown once */
   try{if(window.ownEvents){const tn=x=>fold(x||"").replace(/[^a-z0-9]+/g," ").trim(),same=(a,b)=>a.date===b.date&&(hm(a.t)||"")===(hm(b.t)||"")&&(()=>{const x=tn(a.n),y=tn(b.n);return x===y||(x.length>=4&&y.length>=4&&(x.includes(y)||y.includes(x)))})();
     for(const e of window.ownEvents(me))if(!out.some(o=>same(o,e)))out.push(e)}}catch(_){}
@@ -53,7 +57,7 @@ function myEvents(me){
 }
 function shootOn(date){return S.days.some(d=>d.date===date&&d.kind==="shoot")}
 function myIcs(list){
-  const ev=list.map(e=>makeICS(e.date,{t:e.t,end:e.end,n:e.n,where:e.where,map:e.map}).split("BEGIN:VEVENT")[1].split("END:VEVENT")[0]);
+  const ev=list.map(e=>makeICS(e.date,{t:e.t,end:e.end,n:e.n,where:e.where,map:e.map,desc:[e.driver&&L("Fahrer:in")+": "+e.driver,e.pax&&L("Mitfahrende")+": "+e.pax,e.note].filter(Boolean).join(" · ")}).split("BEGIN:VEVENT")[1].split("END:VEVENT")[0]);
   return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Tschugger Crew//Meine Termine//DE","CALSCALE:GREGORIAN","METHOD:PUBLISH"].join("\r\n")+"\r\n"+ev.map(v=>"BEGIN:VEVENT"+v+"END:VEVENT").join("\r\n")+"\r\nEND:VCALENDAR\r\n";
 }
 function saveIcs(ics,name){try{const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}}
@@ -80,7 +84,7 @@ function renderMy(){
     if(window.RIDEHID||window.SHOWDONE)h+='<button type="button" class="lnk ridedone" data-ridedone>'+esc(window.SHOWDONE?L("Erledigte Fahrten ausblenden"):L("Erledigte Fahrten anzeigen")+" ("+window.RIDEHID+")")+'</button>';
     let last="";
     MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>';last=e.date}
-      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.rideAckBtn?window.rideAckBtn(e):'')+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}
+      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.pax?'<div class="ppx">'+esc(L("Mitfahrende"))+': '+esc(e.pax)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.rideAckBtn?window.rideAckBtn(e):'')+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}
   return h+'</section>';
 }
 function openMyCal(){S.tab="my";S.srcOpen=false;window.scrollTo(0,0);render()}

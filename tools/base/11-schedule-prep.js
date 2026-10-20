@@ -95,7 +95,7 @@ function makeICS(date,i){
     "UID:prep-"+date+"-"+String(i.n||"").replace(/\W+/g,"").slice(0,30)+"-"+(i.t||"").replace(/\W/g,"")+"@tschugger-crew","DTSTAMP:"+icsDate(new Date())];
   if(tm){const st=zurichUTC(date,i.t);let en=te?zurichUTC(date,i.end):new Date(st.getTime()+3600e3);if(en<=st)en=new Date(en.getTime()+864e5); /* night shoot: end after midnight */L2.push("DTSTART:"+icsDate(st),"DTEND:"+icsDate(en))}
   else{const d0=date.replace(/-/g,""),nx=new Date(date+"T12:00:00Z");nx.setUTCDate(nx.getUTCDate()+1);L2.push("DTSTART;VALUE=DATE:"+d0,"DTEND;VALUE=DATE:"+nx.toISOString().slice(0,10).replace(/-/g,""))}
-  const desc=[i.t&&!tm?i.t:"",i.crew?"Crew: "+i.crew:"",i.cast?"Cast: "+i.cast:"",i.map||"","TSCHUGGER Tigerblood – Prep"].filter(Boolean).join("\n");
+  const desc=[i.t&&!tm?i.t:"",i.desc||"",i.crew?"Crew: "+i.crew:"",i.cast?"Cast: "+i.cast:"",i.map||"","TSCHUGGER Tigerblood – Prep"].filter(Boolean).join("\n");
   L2.push("SUMMARY:"+icsEsc((tm?"":"("+(i.t||"TBA")+") ")+(i.n||"Prep")),i.where?"LOCATION:"+icsEsc(i.where):"","DESCRIPTION:"+icsEsc(desc),i.map?"URL:"+i.map:"");
   if(tm)L2.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(i.n||"Prep"),"TRIGGER:-PT30M","END:VALARM");
   L2.push("END:VEVENT","END:VCALENDAR");
