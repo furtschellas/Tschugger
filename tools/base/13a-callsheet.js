@@ -47,14 +47,21 @@ function csMk(v,c){const out=[];for(const seg of String(v==null?"":v).split(/\s*
     const m=seg.match(/^\s*(?:([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.' -]*?)\s+)?(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})(?:\s*(\d+)\s*['’′]?)?/);if(!m)continue;
     let ini="";if(m[1]){const fn=fold(m[1].trim().split(/\s+/)[0]);const full=csA(c&&c.calls).map(r=>String(r.name||"")).find(n=>fold(n).split(/\s+/)[0]===fn)||m[1];
       const w=String(full).trim().split(/\s+/).filter(x=>/^\p{L}/u.test(x));ini=w.length?(w.length>1?w[0][0]+w[w.length-1][0]:w[0].slice(0,2)).toUpperCase():""}
-    out.push(csDurT(m[2]+" - "+m[3]+":"+m[4]+(m[5]?" "+m[5]+"’":""))+(ini?" "+ini:""))}
-  return out.length?out.join(" / "):""}
-function csTable(head,rows,tc){rows=rows.map(r=>r.map(c=>csDurT(c)));rows=rows.filter(r=>r.some(c=>String(c||"").trim()));if(!rows.length)return"";tc=tc||2;
-  const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csTx(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
-  const cards='<div class="cs-cards">'+rows.map(r=>{const tt=r.slice(0,tc).map(c=>String(c||"").trim()).filter(Boolean);
-    const kv=r.slice(tc).map((c,i)=>[head[i+tc]||"",String(c||"").trim()]).filter(([,v])=>v);
+    const tx=csDurT(m[2]+" - "+m[3]+":"+m[4]+(m[5]?" "+m[5]+"’":"")),pr=tx.split(" · ");
+    /* the same time twice (two make-up artists at once): once, with both initials */
+    const o=out.find(x=>x.t===pr[0]&&x.d===(pr[1]||""));if(o){if(ini&&!o.i.includes(ini))o.i.push(ini)}else out.push({t:pr[0],d:pr[1]||"",i:ini?[ini]:[]})}
+  if(!out.length)return"";
+  /* time, duration and initials (duration and initials in pink) */
+  return {h:out.map(x=>'<span class="mkt">'+esc(x.t)+'</span>'+(x.d?' <span class="mkd">'+esc(x.d)+'</span>':'')+(x.i.length?' <span class="mki">'+esc(x.i.join("+"))+'</span>':'')).join(" / ")}}
+/* a cell: text (phone numbers, links) or ready HTML {h} */
+const csCell=c=>c&&typeof c==="object"&&"h" in c?c.h:csTx(c);
+const csCellTx=c=>c&&typeof c==="object"&&"h" in c?c.h.replace(/<[^>]+>/g,""):String(c||"");
+function csTable(head,rows,tc){rows=rows.map(r=>r.map(c=>c&&typeof c==="object"?c:csDurT(c)));rows=rows.filter(r=>r.some(c=>csCellTx(c).trim()));if(!rows.length)return"";tc=tc||2;
+  const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csCell(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
+  const cards='<div class="cs-cards">'+rows.map(r=>{const tt=r.slice(0,tc).map(c=>csCellTx(c).trim());
+    const kv=r.slice(tc).map((c,i)=>[head[i+tc]||"",c]).filter(([,v])=>csCellTx(v).trim());
     /* from → to pairs read as one line */
-    return '<div class="cs-card"><div class="cs-ct">'+tt.map((x,i)=>i?'<span>'+csTx(x)+'</span>':'<b>'+csTx(x)+'</b>').join(" ")+'</div>'+kv.map(([k,v])=>'<div class="cs-kv">'+(k?'<span class="k">'+esc(k)+'</span>':'')+'<span class="v">'+csTx(v)+'</span></div>').join("")+'</div>'}).join("")+'</div>';
+    return '<div class="cs-card"><div class="cs-ct">'+tt.map((x,i)=>!x?'':i?'<span class="c'+i+'">'+csTx(x)+'</span>':'<b>'+csTx(x)+'</b>').join(" ")+'</div>'+kv.map(([k,v])=>'<div class="cs-kv">'+(k?'<span class="k">'+esc(k)+'</span>':'')+'<span class="v">'+csCell(v)+'</span></div>').join("")+'</div>'}).join("")+'</div>';
   return tbl+cards}
 /* who am I on this callsheet: name and department (crew list / app profile) */
 function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.name)return null;
@@ -250,7 +257,8 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
        return '<span class="cso1"><i>'+esc(hm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?'<span class="csplace">S'+esc(String(lo.no).trim())+'</span>':'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
    h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c)),false,"","order",sumx)}
   /* cast, extras, vehicles */
-  h+=csSec("Cast",(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Kacheln":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,csMk(r.wardrobe,c)||csDurT(r.wardrobe),csMk(r.makeup,c),r.base,r.onset]),3),false,csCastMode()?"cs-astbl":"","cast",SU.cast);
+  const CC=csCols();
+  h+=csSec("Cast",(csA(c.cast).length?'<span class="cscols">'+[["role",L("Rolle")],["actor",L("Darsteller")]].map(([k,t])=>'<button type="button" class="cscol" data-cscol="'+k+'" aria-pressed="'+!CC.has(k)+'">'+esc(t)+'</button>').join("")+'</span>':'')+(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Kacheln":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,csMk(r.wardrobe,c)||csDurT(r.wardrobe),csMk(r.makeup,c),r.base,r.onset]),3),false,(csCastMode()?"cs-astbl":"")+(CC.has("role")?" hide-role":"")+(CC.has("actor")?" hide-actor":""),"cast",SU.cast);
   /* travel of the cast: one line per person (name · how · from → to · note), the place as short code (S1, Base …) with the map */
   {const U=/(https?:\/\/[^\s<]+)/g;const clean=v=>String(v||"").replace(U,"").replace(/\s{2,}/g," ").trim();
    const badge=(txt,url)=>{let pl=null;try{pl=csPlace(c,clean(txt))}catch(_){}const code=pl?csShort(pl):"";const u=url||(pl&&pl.map)||"";if(!u)return code?'<span class="csplace">'+esc(code)+'</span>':'';
@@ -351,3 +359,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-csmapgo]")
 /* enlarge / shrink the map */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-csmapbig]");if(!b)return;e.preventDefault();const w=b.closest(".csmapw");w.classList.toggle("big");document.body.classList.toggle("csmapopen",w.classList.contains("big"));
   const box=w.querySelector("[data-csmap]");setTimeout(()=>{if(box&&box.__map)box.__map.invalidateSize()},60)});
+
+/* cast: role and actor columns on/off (remembered on this device; both shown at first) */
+function csCols(){try{return new Set(String(localStorage.getItem("cscols:v1")||"").split(",").filter(Boolean))}catch(_){return new Set()}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-cscol]");if(!b)return;e.preventDefault();const k=b.dataset.cscol,h=csCols();if(h.has(k))h.delete(k);else h.add(k);
+  try{localStorage.setItem("cscols:v1",[...h].join(","))}catch(_){}const d=document.getElementById("cs-cast");if(d){d.classList.toggle("hide-"+k,h.has(k))}b.setAttribute("aria-pressed",String(!h.has(k)))});
