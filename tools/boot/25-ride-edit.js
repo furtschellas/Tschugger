@@ -24,8 +24,8 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
   const d=mkDialog("rededlg",null,{replace:true});
   d.innerHTML='<div class="a2box redbox"><h3>'+esc(L("Fahrt ändern"))+'</h3><p class="ghint">'+esc(dp.date.split("-").reverse().join(".")+" · "+csRoute(o.from,o.t1,o.to,o.t2))+'</p>'+
     (canAck?'<div class="redst" role="group">'+[[1,"Fahrt angenommen / läuft"],[2,"Fahrt ausgeführt"],[0,"Offen"]].map(([v,t])=>'<button type="button" data-redst="'+v+'" aria-pressed="'+(st===v)+'">'+esc(L(t))+'</button>').join("")+'</div>':'')+
-    '<form data-redform novalidate><div class="oerow">'+inp("t1","Abfahrt",hm(r.t1),"time")+inp("t2","Ankunft",hm(r.t2),"time")+'</div>'+
-    '<div class="oerow">'+inp("from","Von",r.from)+inp("to","Nach",r.to)+'</div>'+inp("vehicle","Fahrzeug",r.vehicle)+
+    '<form data-redform novalidate><div class="redrow">'+inp("t1","Abfahrt",hm(r.t1),"time")+inp("t2","Ankunft",hm(r.t2),"time")+'</div>'+
+    '<div class="redrow">'+inp("from","Von",r.from)+inp("to","Nach",r.to)+'</div>'+inp("vehicle","Fahrzeug",r.vehicle)+
     (crew?'':inp("driver","Fahrer:in",r.driver,"",' list="reddrv"')+'<datalist id="reddrv">'+drivers.map(n=>'<option value="'+esc(n)+'">').join("")+'</datalist>')+
     '<label>'+esc(L("Mitfahrende"))+'<textarea name="pax" rows="3">'+esc(crew?r.people:r.passengers)+'</textarea></label>'+
     '<label class="redadd">'+esc(L("Person hinzufügen"))+'<input data-redadd list="redppl" placeholder="'+esc(L("Name aus der Crewliste"))+'"></label><datalist id="redppl">'+crewNames.map(n=>'<option value="'+esc(n)+'">').join("")+'</datalist>'+
