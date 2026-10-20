@@ -1651,7 +1651,10 @@ def main():
             if u not in mg or mg[u] is None or (not (mg[u] or {}).get("p") and ("diag" not in (mg[u] or {}) or time.time() - int((mg[u] or {}).get("t") or 0) > 6 * 3600)): mg[u] = map_pos(u)
             lp = (mg.get(u) or {}).get("p"); q = (mg.get(u) or {}).get("q")
             nm = (mg.get(u) or {}).get("name") or ""
-            ap, exact = geocode_any(ad, gcache) if ad else (geocode_any(nm, gcache) if nm else (None, False))
+            ap, exact = geocode_any(ad, gcache) if ad else (None, False)
+            if not exact and nm:   # the place the map link searches for («/maps/search/…») when the address is not found exactly
+                p2, e2 = geocode_any(nm, gcache)
+                if p2 and (e2 or not ap): ap, exact = p2, e2
             if lp and ap and exact and dist_km(lp, ap) > 2: pos[u] = (ap, "addr")          # link and address disagree: the address wins
             elif lp: pos[u] = (lp, "link" if q in ("p", "q") else "rough")
             elif ap: pos[u] = (ap, "addr" if exact else "rough")
