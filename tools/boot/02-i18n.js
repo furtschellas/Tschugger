@@ -363,6 +363,7 @@ Object.assign(I18N,{
  "ohne Position – Google Maps":{fr:"sans position – Google Maps",it:"senza posizione – Google Maps",en:"no position – Google Maps"},
  "Position ungefähr beim Set":{fr:"Position approximative près du décor",it:"Posizione approssimativa presso il set",en:"Position roughly at the set"},
  "Position ungefähr":{fr:"Position approximative",it:"Posizione approssimativa",en:"Approximate position"},
+ "Kamera":{fr:"Caméra",it:"Camera",en:"Camera"},
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
  "Links neu geladen – bitte prüfen und nochmals speichern.":{fr:"Liens rechargés – merci de vérifier et d’enregistrer à nouveau.",it:"Link ricaricati – controlla e salva di nuovo.",en:"Links reloaded – please check and save again."},
  "Links konnten nicht geladen werden – bitte später nochmals speichern.":{fr:"Les liens n’ont pas pu être chargés – merci d’enregistrer plus tard.",it:"Impossibile caricare i link – salva di nuovo più tardi.",en:"Links could not be loaded – please save again later."},
