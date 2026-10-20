@@ -369,6 +369,7 @@ Object.assign(I18N,{
  "Per WhatsApp einladen":{fr:"Inviter par WhatsApp",it:"Invita via WhatsApp",en:"Invite via WhatsApp"},
  "Einladung WhatsApp":{fr:"Invitation WhatsApp",it:"Invito WhatsApp",en:"WhatsApp invitation"},
  "Crewliste und App-Verwaltung «Per WhatsApp einladen» (öffnet WhatsApp mit diesem Text). Kurz halten; *fett* geht in WhatsApp.":{fr:"Liste de l'équipe et gestion de l'app « Inviter par WhatsApp » (ouvre WhatsApp avec ce texte). Rester court ; *gras* fonctionne dans WhatsApp.",it:"Lista crew e gestione app «Invita via WhatsApp» (apre WhatsApp con questo testo). Breve; *grassetto* funziona in WhatsApp.",en:"Crew list and app admin “Invite via WhatsApp” (opens WhatsApp with this text). Keep it short; *bold* works in WhatsApp."},
+ "Fahrt noch nicht angenommen":{fr:"Trajet pas encore accepté",it:"Viaggio non ancora accettato",en:"Ride not yet accepted"},
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
  "Links neu geladen – bitte prüfen und nochmals speichern.":{fr:"Liens rechargés – merci de vérifier et d’enregistrer à nouveau.",it:"Link ricaricati – controlla e salva di nuovo.",en:"Links reloaded – please check and save again."},
  "Links konnten nicht geladen werden – bitte später nochmals speichern.":{fr:"Les liens n’ont pas pu être chargés – merci d’enregistrer plus tard.",it:"Impossibile caricare i link – salva di nuovo più tardi.",en:"Links could not be loaded – please save again later."},
