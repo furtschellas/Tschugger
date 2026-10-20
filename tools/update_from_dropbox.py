@@ -845,7 +845,7 @@ def map_pos(u):
     A link that only names a place («q=Restaurant Waldrand, Susten») gives that text back for the address search."""
     from urllib.parse import unquote, urlparse, parse_qs
     inner = []
-    pats = ((r"!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)", "p"), (r"[?&](?:q|ll|query|destination|center)=(-?\d{1,2}\.\d+)(?:,|%2C)\+?(-?\d{1,3}\.\d+)", "q"), (r"@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)", "c"))
+    pats = ((r"!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)", "p"), (r"[?&](?:q|ll|query|destination|center)=(-?\d{1,2}\.\d+)(?:,|%2C)\+?(-?\d{1,3}\.\d+)", "q"), (r"/maps/(?:search|place|dir)/(?:[^/?]*/)*?(-?\d{1,2}\.\d+)(?:,|%2C)(?:\+|%20|\s)*(-?\d{1,3}\.\d+)", "q"), (r"@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)", "c"))
     def look(urls):
         for p, q in pats:
             for x in urls:
@@ -867,7 +867,7 @@ def map_pos(u):
             urls += inner
         if res: return res
         pu = urlparse(r.url); segs = [x for x in pu.path.split("/")[1:4] if x in ("maps", "place", "dir", "search", "sorry", "url", "index", "preview", "embed")]
-        diag = urlparse(u).netloc + " → " + pu.netloc + "/" + "/".join(segs) + ("?" + ",".join(sorted(parse_qs(pu.query).keys()))[:60] if pu.query else "") + ("" if not inner else " +%d Maps-Links" % len(inner)) + " · HTTP %d · %d Weiterleitungen" % (r.status_code, len(r.history))
+        diag = urlparse(u).netloc + " → " + pu.netloc + "/" + "/".join(segs) + ("?" + ",".join(sorted(parse_qs(pu.query).keys()))[:60] if pu.query else "") + ("" if not inner else " +%d Maps-Links" % len(inner)) + (" · Pfad mit Zahlen" if re.search(r"/maps/search/[^?]*\d", r.url) else " · Pfad ohne Zahlen") + " · HTTP %d · %d Weiterleitungen" % (r.status_code, len(r.history))
         for x in urls:   # a named place instead of coordinates
             try:
                 qs = parse_qs(urlparse(x).query); t = (qs.get("q") or qs.get("query") or [""])[0]
@@ -1599,7 +1599,7 @@ def main():
         except Exception as e: failed("dispo", f, e)
     # positions of the callsheet's map links for the map in the app – checked: inside Switzerland, close to the address of the
     # location (Motivliste or the address on the callsheet), not far from the other places of the day; otherwise the address
-    mg = meta.setdefault("mapGeo5", {}); [meta.pop(k, None) for k in ("mapGeo", "mapGeo2", "mapGeo3", "mapGeo4")]; gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "near": 0, "none": 0}
+    mg = meta.setdefault("mapGeo6", {}); [meta.pop(k, None) for k in ("mapGeo", "mapGeo2", "mapGeo3", "mapGeo4", "mapGeo5")]; gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "near": 0, "none": 0}
     scene_addr, set_addr = {}, {}
     lcaddr = (meta.get("locCfg") or {}).get("addr") or {}
     day_items = {}
