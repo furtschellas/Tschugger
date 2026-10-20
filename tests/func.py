@@ -505,10 +505,11 @@ async def owner_tests(p, port):
           const ka=window.rideAt;for(const st of [0,1,2]){window.rideState=()=>st;window.rideAt=()=>Date.now()-60e3;const c=csRideCell('2030-05-06',r);const h=typeof c==='string'?c:c.h;out.push(st?(h.includes('ridest rs'+st)&&h.includes('<svg')&&!h.includes('rsold')):(h.includes('ridest rs0')&&!h.includes('<svg')))}
           window.rideState=()=>2;window.rideAt=()=>Date.now()-25*60e3;const c2=csRideCell('2030-05-06',r);out.push((typeof c2==='string'?c2:c2.h).includes('rsold'));window.rideState=keep;window.rideAt=ka;return out})()""")
         check("Callsheet: Fahrt offen = leerer Kreis, läuft = Auto im Kreis, ausgeführt = Häkchen im Kreis, 20 Min. danach grau", rs in (None, [True, True, True, True]), rs)
-        rb = await E("""(()=>{if(typeof csRideCell!=='function')return null;const kp=window.canPerm,ks=window.rideState;const r={t1:'07:30',t2:'08:00',from:'A',to:'B'};window.rideState=()=>0;
-          window.canPerm=p=>p==='rides.confirm';const a=csRideCell('2030-05-06',r).h;window.canPerm=()=>false;const b=csRideCell('2030-05-06',r).h;window.canPerm=kp;window.rideState=ks;
-          return {btn:/<button[^>]*data-rideack=/.test(a),view:!/<button/.test(b)}})()""")
-        check("Callsheet: mit «Fahrten quittieren» ist der Kreis ein Knopf zum Ändern, sonst nur Anzeige", rb in (None, {"btn": True, "view": True}), rb)
+        rb = await E("""(()=>{if(typeof csRideCell!=='function')return null;const kp=window.canPerm,ks=window.rideState,km=window.csMe;const r={t1:'07:30',t2:'08:00',from:'A',to:'B',driver:'Max Fahrer'};window.rideState=()=>0;
+          window.csMe=()=>({name:'X',hit:t=>false});window.canPerm=p=>p==='rides.manage';const mg=csRideCell('2030-05-06',r).h;window.canPerm=p=>p==='rides.confirm';const cf=csRideCell('2030-05-06',r).h;
+          window.canPerm=()=>false;const no=csRideCell('2030-05-06',r).h;window.csMe=()=>({name:'Max Fahrer',hit:t=>/max fahrer/i.test(String(t||''))});const dr=csRideCell('2030-05-06',r).h;
+          window.canPerm=kp;window.rideState=ks;window.csMe=km;return {mgr:/<button[^>]*data-rideack=/.test(mg)&&/rmgr/.test(mg),confirmOnly:!/<button/.test(cf),other:!/<button/.test(no),driver:/<button[^>]*data-rdrv="1"/.test(dr)}})()""")
+        check("Callsheet: Kreis antippbar nur für Fahrten Manager (Pop-up) und die Fahrerin / den Fahrer (bestätigen)", rb in (None, {"mgr": True, "confirmOnly": True, "other": True, "driver": True}), rb)
         re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
           const r0={t1:'07:30',t2:'08:00',from:'Hotel',to:'Base',vehicle:'Van 1',driver:'Max Fahrer',passengers:'Anna Muster'};S.dispos=[{date:t,cs:{transport:[r0]}}];
           const id=rideId(t,r0);window.RIDEEDIT={[id]:{t1:'07:45',passengers:'Anna Muster, Lena Test'}};window.REDVER=(window.REDVER||0)+1;rideEditApply();const r=S.dispos[0].cs.transport[0];
