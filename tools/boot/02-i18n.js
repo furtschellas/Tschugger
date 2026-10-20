@@ -332,6 +332,8 @@ Object.assign(I18N,{
  "Weg zum Set":{fr:"Chemin vers le plateau",it:"Percorso verso il set",en:"Way to set"},
  "WC":{fr:"WC",it:"WC",en:"Toilet"},
  "jetzt hier":{fr:"maintenant ici",it:"ora qui",en:"now here"},
+ "Nur meins":{fr:"Seulement moi",it:"Solo i miei",en:"Only mine"},
+ "vor Ort":{fr:"sur place",it:"sul posto",en:"on site"},
  "Szenen gleich":{fr:"Scènes identiques",it:"Scene uguali",en:"Same scenes"},
  "Im Callsheet keine Szenen gefunden.":{fr:"Aucune scène trouvée dans la feuille de service.",it:"Nessuna scena trovata nell’ordine del giorno.",en:"No scenes found in the callsheet."},
  "Mein Drehtag":{fr:"Ma journée de tournage",it:"La mia giornata di riprese",en:"My shooting day"},
