@@ -872,7 +872,7 @@ def map_pos(u):
             try:
                 qs = parse_qs(urlparse(x).query); t = (qs.get("q") or qs.get("query") or [""])[0]
                 if not t:
-                    m = re.search(r"/maps/place/([^/@?]+)", x); t = unquote(m.group(1)).replace("+", " ") if m else ""
+                    m = re.search(r"/maps/(?:place|search)/([^/@?]+)", x); t = unquote(m.group(1)).replace("+", " ") if m else ""
                 if t and not re.fullmatch(r"[-\d.,\s]+", t): return {"p": None, "q": "", "name": t[:160], "diag": diag, "t": int(time.time())}
             except Exception: pass
         return {"p": None, "q": "", "diag": diag, "t": int(time.time())}
@@ -1599,7 +1599,7 @@ def main():
         except Exception as e: failed("dispo", f, e)
     # positions of the callsheet's map links for the map in the app – checked: inside Switzerland, close to the address of the
     # location (Motivliste or the address on the callsheet), not far from the other places of the day; otherwise the address
-    mg = meta.setdefault("mapGeo4", {}); meta.pop("mapGeo", None); meta.pop("mapGeo2", None); meta.pop("mapGeo3", None); gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "near": 0, "none": 0}
+    mg = meta.setdefault("mapGeo5", {}); [meta.pop(k, None) for k in ("mapGeo", "mapGeo2", "mapGeo3", "mapGeo4")]; gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "near": 0, "none": 0}
     scene_addr, set_addr = {}, {}
     lcaddr = (meta.get("locCfg") or {}).get("addr") or {}
     day_items = {}
