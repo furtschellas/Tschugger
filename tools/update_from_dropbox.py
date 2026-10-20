@@ -866,7 +866,8 @@ def map_pos(u):
             res = look(inner)
             urls += inner
         if res: return res
-        diag = urlparse(r.url).netloc + ("" if not inner else " +%d Maps-Links" % len(inner)) + " · HTTP %d" % r.status_code
+        pu = urlparse(r.url); segs = [x for x in pu.path.split("/")[1:4] if x in ("maps", "place", "dir", "search", "sorry", "url", "index", "preview", "embed")]
+        diag = pu.netloc + "/" + "/".join(segs) + ("?" + ",".join(sorted(parse_qs(pu.query).keys()))[:60] if pu.query else "") + ("" if not inner else " +%d Maps-Links" % len(inner)) + " · HTTP %d · %d Weiterleitungen" % (r.status_code, len(r.history))
         for x in urls:   # a named place instead of coordinates
             try:
                 qs = parse_qs(urlparse(x).query); t = (qs.get("q") or qs.get("query") or [""])[0]
@@ -1578,6 +1579,13 @@ def main():
     # location (Motivliste or the address on the callsheet), not far from the other places of the day; otherwise the address
     mg = meta.setdefault("mapGeo3", {}); meta.pop("mapGeo", None); meta.pop("mapGeo2", None); gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "none": 0}
     scene_addr, set_addr = {}, {}
+    lcaddr = (meta.get("locCfg") or {}).get("addr") or {}
+    day_items = {}
+    for dd in data.get("days") or []:
+        its = list(dd.get("items") or [])
+        for u in ("unit2", "unit3"):
+            if isinstance(dd.get(u), dict): its += dd[u].get("items") or []
+        day_items[dd.get("date")] = [i for i in its if isinstance(i, dict)]
     for l2 in data.get("locations") or []:
         ad = ", ".join(x for x in (l2.get("venue"), l2.get("address")) if x) if l2.get("address") else ""
         for st in l2.get("sets") or []:
@@ -1593,7 +1601,13 @@ def main():
             # the Motivliste: a set with one of the scenes (also only the number: «186» for «186pt1A»), else a set with the same name
             keys = [x.lstrip("0") for x in cs_scene_list(l.get("scenes"))]
             keys += [re.sub(r"(pt|sl)\d+[a-z]?$", "", k) for k in keys] + [re.sub(r"[a-z]$", "", k) for k in keys]
-            ad = next((scene_addr[k] for k in keys if scene_addr.get(k)), "") or set_addr.get(re.sub(r"[^a-z0-9]", "", str(l.get("name") or "").lower()), "")
+            ad = ""
+            for it in day_items.get(d.get("date"), []):   # the schedule of the day: the place of these scenes → its address (place settings of the app)
+                k = re.sub(r"\s+", "", str(it.get("sc") or "")).lower().lstrip("0")
+                if k and (k in keys or re.sub(r"(pt|sl)\d+[a-z]?$", "", k) in keys) and it.get("loc"):
+                    ad = lcaddr.get(re.sub(r"\s+", "", str(it["loc"]).lower()), "")
+                    if ad: break
+            ad = ad or next((scene_addr[k] for k in keys if scene_addr.get(k)), "") or set_addr.get(re.sub(r"[^a-z0-9]", "", str(l.get("name") or "").lower()), "")
             if l.get("map"): cand.append((l["map"], ad))
             for i in l.get("items") or []:
                 if isinstance(i, dict) and i.get("map"):
@@ -1619,7 +1633,7 @@ def main():
     diags = {}
     for v in mg.values():
         if isinstance(v, dict) and not v.get("p"): k = (v.get("diag") or "?") + (" · Ortsname" if v.get("name") else ""); diags[k] = diags.get(k, 0) + 1
-    print("::notice::Karte-Diagnose: Motivliste %d Szenen / %d Sets mit Adresse · ohne Position: %s" % (len(scene_addr), len(set_addr), "; ".join("%s ×%d" % kv for kv in diags.items()) or "keine"))
+    print("::notice::Karte-Diagnose: Orte-Einstellungen %d Adressen, Motivliste %d Szenen mit Adresse · ohne Position: %s" % (len(lcaddr), sum(1 for v in scene_addr.values() if v), "; ".join("%s ×%d" % kv for kv in diags.items()) or "keine"))
     if any(stat.values()): print("::notice::Karte: %d Orte aus dem Kartenlink, %d über die Adresse korrigiert/ergänzt, %d nur ungefähr, %d ohne Position" % (stat["link"], stat["addr"], stat["rough"], stat["none"]))
     # the original pages of every callsheet and the Sides (script pages of the day) as pictures in the app (also offline)
     spc = dict(meta.get("sidesPages") or {}); used = set()
