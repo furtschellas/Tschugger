@@ -1254,4 +1254,14 @@ html body #view .cs-tbl td>.ridest{position:absolute;top:50%;right:6px;transform
 /* Fahrten Manager: the status circle carries a small pencil – a tap opens the popup to change the ride */
 button.ridest.rmgr{position:relative;overflow:visible}
 .rmgri{position:absolute;right:-4px;bottom:-4px;width:13px;height:13px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1.5px var(--sheet)}
+/* status icons in «Meine Termine» and in the popup: empty circle / driving car / check */
+.rideack.rk0{border-style:dashed}.rideack.rk1 svg{width:18px;height:18px;animation:rdrive 1.2s ease-in-out infinite}.rideack.rk2{color:#5fd38d}
+.ridek.rk1 svg{animation:rdrive 1.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.rideack.rk1 svg,.ridek.rk1 svg{animation:none}}
+.redbox .redst{gap:12px}.redbox .redst button.ridest{width:42px;height:42px;padding:0;border-width:2px;border-radius:50%;opacity:.55}
+.redbox .redst button.ridest svg{width:22px;height:22px}.redbox .redst button.ridest[aria-pressed="true"]{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 30%,transparent)}
+.redbox .redst button.ridest.rs0{color:var(--muted);border-style:dashed}
+.redbox select{width:100%;box-sizing:border-box}.redbox select+input{margin-top:6px}
+/* ride popup: departure time + from in one line, arrival time + to in one line */
+.redbox .redrow{display:grid;grid-template-columns:minmax(124px,38%) 1fr;gap:8px;align-items:end}.redbox .redrow>label{margin-top:8px;min-width:0}
 </style>

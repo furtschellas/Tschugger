@@ -258,7 +258,7 @@ service cloud.firestore {
     }
 
     // Fahrten aus dem Callsheet quittieren (Stand 1/2): lesen und setzen alle Mitglieder – die App zeigt den Knopf nur der Fahrerin / dem Fahrer
-    // dieser Fahrt, «Fahrten quittieren» (in Meine Termine) und «Fahrten Manager»; das Dokument enthält keine Namen
+    // dieser Fahrt, «Fahrten quittieren» (in Meine Termine) und «Fahrten Manager»; das Dokument enthält keine Namen (nur Prüfsumme, Datum, Stand)
     // Dokument-ID = Prüfsumme der Fahrt (keine Namen), Felder: Datum d, Zeitpunkt at, Stand s (1 = Fahrt beginnt, 2 = ausgeführt)
     match /rideack/{id} {
       allow read: if crew();
