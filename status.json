@@ -1,9 +1,7 @@
 {
- "state": "error",
- "msg": "Lauf abgebrochen (siehe GitHub Actions)",
- "updatedAt": "2026-10-20T17:29:54Z",
+ "state": "ok",
+ "msg": "Läuft",
+ "updatedAt": "2026-10-20T22:02:11Z",
  "version": "Sched 261018",
- "at": "2026-10-20T22:01:19Z",
- "fails": 2,
- "alarmAt": "2026-10-20T22:01:19Z"
+ "at": "2026-10-20T22:03:11Z"
 }
