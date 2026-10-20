@@ -1099,4 +1099,17 @@ html body #view details.csloc>summary .csloc-s{margin-top:4px}
 html body #view .cssec>summary .csnos>span.csno{display:inline-block;min-width:20px;text-align:center;margin-right:4px;padding:0 4px;border:1px solid var(--rule);border-radius:5px;font-family:var(--f-mono,monospace);font-size:11.5px;color:var(--ink)}
 
 html body #view .csview details.csloc .csl1>*{order:0!important}html body #view .csview details.csloc .csl1>.dn{flex:1 1 auto!important;min-width:0}html body #view .csview details.csloc .csl1>.csloc-i{margin-left:auto!important}
+
+/* Today: «Alle ›» in «Mein Tag» like in «Meine nächsten Termine» */
+html body #view .tmine .tmyall{margin-left:auto;font:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:none;border:1px solid var(--acc-soft,var(--accent));border-radius:999px;padding:3px 10px;cursor:pointer}
+html body #view .tmine .tch{display:flex;align-items:center;gap:8px}
+/* Today on the phone: tiles low, at most two lines (value | label) */
+@media (max-width:600px){
+ html body #view .today .ttiles{gap:6px}
+ html body #view .today .ttiles>.ttile{padding:6px 10px;min-height:0;line-height:1.15;border-radius:10px}
+ html body #view .today .ttiles>.ttile{font-size:19px}
+ html body #view .today .ttiles>.ttile>span,html body #view .today .ttiles>.ttile small{display:block;font-size:10.5px;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+ html body #view .today .ttiles>.ttile b{font-size:19px;line-height:1.1}
+ html body #view .today .ttiles>.ttile svg{width:18px;height:18px}
+}
 </style>
