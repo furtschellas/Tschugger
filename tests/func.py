@@ -492,6 +492,10 @@ async def owner_tests(p, port):
           const ka=window.rideAt;for(const st of [0,1,2]){window.rideState=()=>st;window.rideAt=()=>Date.now()-60e3;const c=csRideCell('2030-05-06',r);const h=typeof c==='string'?c:c.h;out.push(st?(h.includes('ridest rs'+st)&&h.includes('<svg')&&!h.includes('rsold')):(h.includes('ridest rs0')&&!h.includes('<svg')))}
           window.rideState=()=>2;window.rideAt=()=>Date.now()-25*60e3;const c2=csRideCell('2030-05-06',r);out.push((typeof c2==='string'?c2:c2.h).includes('rsold'));window.rideState=keep;window.rideAt=ka;return out})()""")
         check("Callsheet: Fahrt offen = leerer Kreis, läuft = Auto im Kreis, ausgeführt = Häkchen im Kreis, 20 Min. danach grau", rs in (None, [True, True, True, True]), rs)
+        rb = await E("""(()=>{if(typeof csRideCell!=='function')return null;const kp=window.canPerm,ks=window.rideState;const r={t1:'07:30',t2:'08:00',from:'A',to:'B'};window.rideState=()=>0;
+          window.canPerm=p=>p==='rides.confirm';const a=csRideCell('2030-05-06',r).h;window.canPerm=()=>false;const b=csRideCell('2030-05-06',r).h;window.canPerm=kp;window.rideState=ks;
+          return {btn:/<button[^>]*data-rideack=/.test(a),view:!/<button/.test(b)}})()""")
+        check("Callsheet: mit «Fahrten quittieren» ist der Kreis ein Knopf zum Ändern, sonst nur Anzeige", rb in (None, {"btn": True, "view": True}), rb)
         dn = await E("""(()=>{if(typeof renderCS!=='function')return null;const keep=S.dispos;S.dispos=[{date:'2030-05-05',cs:{drivers:'Vera Fahrerin +41 76 000 11 22 | Max Muster +41 76 000 33 44'}}];
           const x={date:'2030-05-06',cs:{drivers:'| +41 76 000 11 22 | Max Muster +41 76 000 33 44 o.p.D = on personal Decision',transport:[{t1:'07:00',from:'A',to:'B',driver:'Max Muster'}]}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,{date:x.date});S.dispos=keep;const t=(w.querySelector('.csdrvl')||{}).textContent||'';return {name:t.includes('Vera Fahrerin'),legend:!/personal decision/i.test(t)}})()""")
