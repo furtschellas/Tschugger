@@ -1627,9 +1627,9 @@ def main():
         labs = {}   # url → short label for the diagnosis (S1, S2 … or the kind of item like «Tech Parking»)
         for li, l in enumerate(cs.get("locations") or []):
             if not isinstance(l, dict): continue
-            if l.get("map"): labs.setdefault(l["map"], "S%d" % (li + 1))
+            if l.get("map"): labs.setdefault(l["map"], "L%d" % (li + 1))
             for i in l.get("items") or []:
-                if isinstance(i, dict) and i.get("map"): labs.setdefault(i["map"], "S%d·%s" % (li + 1, re.sub(r"[^A-Za-z/ ]", "", str(i.get("label") or "Punkt"))[:18].strip()))
+                if isinstance(i, dict) and i.get("map"): labs.setdefault(i["map"], "L%d·%s" % (li + 1, re.sub(r"[^A-Za-z/ ]", "", str(i.get("label") or "Punkt"))[:18].strip()))
             # the Motivliste: a set with one of the scenes (also only the number: «186» for «186pt1A»), else a set with the same name
             keys = [x.lstrip("0") for x in cs_scene_list(l.get("scenes"))]
             keys += [re.sub(r"(pt|sl)\d+[a-z]?$", "", k) for k in keys] + [re.sub(r"[a-z]$", "", k) for k in keys]
