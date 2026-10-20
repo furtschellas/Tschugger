@@ -27,6 +27,14 @@ SECRET = [(r"-----BEGIN (RSA |EC )?PRIVATE KEY-----", "privater Schlüssel"), (r
 hits = [(f.name, what) for f, s in src.items() for pat, what in SECRET if re.search(pat, s) and f.name != "security.py"]
 check("Repository: keine Schlüssel, Tokens oder Dienstkonten", not hits, hits[:5])
 
+# the GitHub runs (Dropbox update, push, key change …) must at least compile – a syntax error stops the data update
+import py_compile
+bad = []
+for f in sorted((ROOT / "tools").glob("*.py")):
+    try: py_compile.compile(str(f), doraise=True)
+    except py_compile.PyCompileError as e: bad.append(f.name + ": " + str(e).splitlines()[-1][:120])
+check("Abläufe (tools/*.py): alle Python-Dateien ohne Syntaxfehler", not bad, bad[:5])
+
 emails = set()
 for f, s in src.items():
     if f.name in ("security.py",) or "/tests/" in str(f) or f.suffix in (".svg",): continue
