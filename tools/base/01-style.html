@@ -907,7 +907,7 @@ html body #view .cstiles>.dt.cswx .ttile{margin:0;min-height:0;padding:4px 10px}
 /* computer: no sideways scrolling – the tables of the callsheet as a grid of cards, the parts side by side */
 @media (min-width:761px){html body #view .csview .cs-tbl{display:none}html body #view .csview .cs-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}html body #view .csview .cs-card{margin:0}.csview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 22px;align-items:start}.csview>.dsp-head,.csview>.dtiles,.csview>.cscontact,.csview>.csme,.csview>#cs-order,.csview>#cs-cast,.csview>#cs-trans,.csview>#cs-calls{grid-column:1/-1}.csview #cs-calls>.cscall{display:inline-block;vertical-align:top;width:calc(50% - 14px);margin-right:14px}}
 @media (min-width:1200px){.csview #cs-order .csorder{columns:2 480px;column-gap:22px}}
-.csplace{font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:0 5px;text-decoration:none;min-width:30px;text-align:center}
+.csplace{font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:0 4px;text-decoration:none;text-align:center}
 /* phone cards compact: the values side by side («P/UP 07:15 · Call 07:35 …»), long texts on their own line */
 @media (max-width:760px){html body #view .cs-card .cs-kv{display:inline-flex;gap:4px;margin-right:10px;padding:0;font-size:13px;max-width:100%;flex-wrap:wrap}html body #view .cs-card .cs-kv .k{min-width:0;font-size:11.5px}html body #view .cs-card .cs-kv .v{flex:0 1 auto}}
 .csdep{padding:8px 0}
@@ -966,7 +966,7 @@ html body #view .csview .cscall-r{display:grid;grid-template-columns:50px 48px m
 html body #view .csview .cscall-r .t{min-width:0;font-family:var(--f-mono,monospace);font-size:13px;white-space:nowrap}
 html body #view .csview .cscall-r .t i{font-style:normal;font-size:10px;color:var(--muted);margin-left:2px}
 html body #view .csview .cscall-r .cp{display:flex}
-html body #view .csview .cscall-r .csplace{min-width:0;width:100%;box-sizing:border-box;padding:0 3px;white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:clip}
+html body #view .csview .cscall-r .csplace{min-width:0;width:auto;justify-self:start;box-sizing:border-box;padding:0 3px;white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:clip}
 html body #view .csview .cscall-r .ccw{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:760px){html body #view .csview .cscall-r{grid-template-columns:46px 40px minmax(0,1fr);gap:0 6px}}
 /* phone: nothing wider than the screen */
@@ -1007,7 +1007,7 @@ html body #view .csview .cskey .csct{min-height:0}
 @media (min-width:480px){html body #view .dtiles.cstiles{flex-wrap:nowrap;gap:clamp(4px,.6vw,8px)}html body #view .cstiles>.dt{flex:1 1 auto;min-width:0;padding:5px clamp(6px,.9vw,12px)}html body #view .cstiles>.dt.cswx{flex:1.3 1 auto}html body #view .cstiles>.dt.cswx{display:flex}html body #view .cstiles>.dt.cswx .ttile{height:100%;width:100%;box-sizing:border-box;padding:5px clamp(6px,.9vw,12px)}html body #view .cstiles>.dt .v{font-size:clamp(13px,1.45vw,21px);white-space:nowrap}html body #view .cstiles>.dt.big .v{font-size:clamp(16px,1.8vw,26px)}html body #view .cstiles>.dt .k{font-size:clamp(9px,.75vw,11px);white-space:nowrap}html body #view .cstiles>.dt.cswx .ttile *{white-space:nowrap}html body #view .cstiles>.dt.cswx .ttile b,html body #view .cstiles>.dt.cswx .ttile .wxt,html body #view .cstiles>.dt.cswx .ttile .v{font-size:clamp(15px,1.6vw,22px)}}
 /* locations: short code badge, name, scenes; map and open symbol same small size on the right */
 html body #view details.csloc>summary{flex-wrap:nowrap;gap:8px;align-items:center}
-html body #view details.csloc>summary .csloc-c{flex:0 0 auto;order:0;min-width:34px;text-align:center}
+html body #view details.csloc>summary .csloc-c{flex:0 0 auto;order:0;text-align:center}
 html body #view details.csloc>summary .dn{flex:1 1 auto;min-width:0;order:0}
 html body #view details.csloc>summary .csloc-s{display:block;font-weight:400;font-size:11px;color:var(--muted);font-family:var(--f-mono,monospace)}
 html body #view details.csloc>summary .csloc-i{display:flex;gap:6px;margin-left:auto;flex:0 0 auto;order:0}
@@ -1231,4 +1231,6 @@ html body #view details.csloc>summary .csloc-i{order:9;margin-left:auto}
 .scdet:not([open])>summary::after{content:"▸"}
 .scdet .csn{margin-top:4px;font-size:13px}
 .pv-no-d .sc>.scdet .camx{display:none}
+/* place codes L1, L2, Base … always as narrow as their text */
+html body .csplace{min-width:0!important;width:auto!important;flex:0 0 auto;padding:0 4px!important;justify-self:start;display:inline-block}
 </style>
