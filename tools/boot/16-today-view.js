@@ -105,7 +105,7 @@ VIEWS.today=function(){
   /* my day from the callsheet (call, ride, my department) right below the tiles */
   /* «my day» from the callsheet: always (my own call, rides and department), also without the callsheet page; the link to it only with access */
   let mineCard="";try{const dpm=(S.dispos||[]).find(x=>x&&x.date===d.date);if(dpm&&dpm.cs&&typeof csMine==="function"){const me2=csMe();const mn=csMine(dpm.cs,me2);const toCs=canDispo&&typeof tabsOn==="function"&&tabsOn().includes("dispo");
-    if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein Tag"))+' · Callsheet <span class="beta">BETA</span>'+(toCs?'<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button>':'')+'</div>'+mn.join("")+'</div>'}}catch(_){}
+    if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein"))+' '+esc(dpm.label||d.label||L("Drehtag"))+' <span class="beta">BETA</span>'+(toCs?'<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button>':'')+'</div>'+mn.join("")+'</div>'}}catch(_){}
   h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k,cl])=>'<div class="ttile'+(cl?' '+cl:'')+'">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
   /* from noon (or lunch, if earlier) on: the tiles of the next shooting day below (times, drive, weather) */
   try{const la=d.kind==="shoot"&&lunchAt(d),noon=+new Date(d.date+"T12:00:00"),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
