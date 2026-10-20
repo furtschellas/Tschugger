@@ -1192,4 +1192,20 @@ html body #view #cs-cast.hide-actor .dtbl th:nth-child(3),html body #view #cs-ca
 .csmk.rough span{opacity:.8;border-style:dashed!important;filter:grayscale(.6)}
 .csmapr{opacity:.7;font-style:italic}
 .csmapgo.nopos{opacity:.75;text-decoration:none;color:inherit}
+/* time tiles (callsheet and Today): always one row from 480px, sizes follow the width of the row itself (container units), not the window */
+@media (min-width:480px){
+html body #view .dtiles.cstiles>.dt .v,html body #view .dtiles.cstiles>.dt.cswx .ttile b{letter-spacing:-.02em}
+html body #view .dtiles.cstiles{display:flex!important;flex-wrap:nowrap!important;container-type:inline-size;gap:clamp(3px,.8cqw,8px)!important;overflow:hidden}
+html body #view .dtiles.cstiles>.dt{flex:1 1 auto!important;min-width:0!important;width:auto!important;max-width:none!important;padding:clamp(2px,.6cqw,6px) clamp(2px,1cqw,12px)!important;overflow:hidden}
+html body #view .dtiles.cstiles>.dt .k{font-size:clamp(7px,1.3cqw,11px)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body #view .dtiles.cstiles>.dt .v{font-size:clamp(9px,2.3cqw,21px)!important;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+html body #view .dtiles.cstiles>.dt.big .v{font-size:clamp(11px,2.7cqw,25px)!important}
+html body #view .dtiles.cstiles>.dt.cssunt br{display:none}
+html body #view .dtiles.cstiles>.dt.cswx{padding:0!important;flex:1.2 1 auto!important;display:flex}
+html body #view .dtiles.cstiles>.dt.cswx .ttile{width:100%;height:100%;box-sizing:border-box;min-height:0;margin:0;padding:clamp(2px,.6cqw,6px) clamp(3px,1cqw,12px)!important;overflow:hidden}
+html body #view .dtiles.cstiles>.dt.cswx .ttile *{white-space:nowrap}
+html body #view .dtiles.cstiles>.dt.cswx .ttile b{font-size:clamp(10px,2.3cqw,21px)!important}
+html body #view .dtiles.cstiles>.dt.cswx .ttile>span{font-size:clamp(7px,1.3cqw,11px)!important;overflow:hidden;text-overflow:ellipsis;display:block}
+}
+@media (min-width:480px) and (max-width:519px){html body #view .dtiles.cstiles{flex-wrap:wrap!important}html body #view .dtiles.cstiles>.dt:is(.cssunt,.cswx,.csdrv){flex:1 1 30%!important}}
 </style>
