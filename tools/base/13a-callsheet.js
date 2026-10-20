@@ -145,6 +145,10 @@ function csDWords(t){const w=fold(String(t||"")).split(/[^a-z0-9]+/).filter(x=>x
 function csMyDept(c,me,dept){if(!me)return false;const call=csA(c.calls).find(r=>me.hit(r.name));const mine=new Set([...csDWords(call&&call.dept),...csDWords(me.dep)]);
   const w=csDWords(dept);for(const x of w)if(x.length>2&&mine.has(x)||x==="ad"&&mine.has("ad"))return true;return false}
 const CSMINEMEMO=new WeakMap();function csMine(c,me){if(!c||!me)return[];let m=CSMINEMEMO.get(c);if(!m)CSMINEMEMO.set(c,m=new Map());const k=me.name+"|"+me.dep+"|"+(typeof LANG!=="undefined"?LANG:"")+"|"+vok("phone");if(!m.has(k))m.set(k,csMine0(c,me));return m.get(k).slice()}
+/* the destination of a ride as a map link (the place of the callsheet, else a map search) */
+function csToLink(c,to){const t0=String(to||"").trim();if(!t0)return"";const um=t0.match(/https?:\/\/\S+/);const t=t0.replace(/https?:\/\/\S+/g,"").trim()||L("Karte");
+  if(um&&t===L("Karte"))return '<a class="csadl" href="'+esc(safeUrl(um[0]))+'" target="_blank" rel="noopener noreferrer"><span>'+esc(t)+'</span></a>';let pl=null;try{pl=csPlace(c,t)}catch(_){}
+  const u=(pl&&pl.map)||"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(t);return '<a class="csadl" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer"><span>'+esc(t)+'</span></a>'}
 function csMine0(c,me){const mine=[];
   const call=csA(c.calls).find(r=>me.hit(r.name));if(call){const pl=csCallPlace(c,me,call);
     mine.push('<div class="csme-r"><span class="k">'+esc(L("Mein Call"))+'</span><b>'+esc(call.t||"")+'</b> <small>'+esc([call.role,call.dept].filter(Boolean).join(" · "))+'</small></div>'+
@@ -152,11 +156,11 @@ function csMine0(c,me){const mine=[];
   const cast=csA(c.cast).find(r=>me.hit(r.actor));if(cast)mine.push('<div class="csme-r"><span class="k">Cast</span>'+esc([cast.role,cast.pickup&&"P/UP "+cast.pickup,cast.call&&"Call "+cast.call,cast.onset&&"Set "+cast.onset].filter(Boolean).map(csDurT).join(" · "))+'</div>');
   /* pickup: the first ride of the day (time and place first) */
   {const rides=csA(c.transport).filter(r=>me.hit(r.passengers)||me.hit(r.driver)).concat(csA(c.crewTransport).filter(r=>me.hit(r.people))).filter(r=>hm(r.t1)).sort((a,b)=>hm(a.t1).localeCompare(hm(b.t1)));
-   var pu=rides[0];if(pu&&!(cast&&cast.pickup))mine.splice(1,0,'<div class="csme-r"><span class="k">Pickup</span><b>'+esc(hm(pu.t1))+'</b> '+esc(pu.from||"")+(pu.to?' → '+esc([pu.to,pu.t2].filter(Boolean).join(" ")):'')+' <small>'+esc([pu.vehicle,pu.driver].filter(Boolean).join(" · "))+'</small></div>');else pu=null}
+   var pu=rides[0];if(pu&&!(cast&&cast.pickup))mine.splice(1,0,'<div class="csme-r"><span class="k">Pickup</span><b>'+esc(hm(pu.t1))+'</b> '+esc(pu.from||"")+(pu.to?' → '+csToLink(c,pu.to)+(pu.t2?" "+esc(pu.t2):""):'')+' <small>'+esc([pu.vehicle,pu.driver].filter(Boolean).join(" · "))+'</small></div>');else pu=null}
   /* the other rides (the pickup ride is already shown above) */
-  for(const r of csA(c.transport).filter(r=>(me.hit(r.passengers)||me.hit(r.driver))&&r!==pu))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+esc([r.to,r.t2].filter(Boolean).join(" "))+' <small>'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small></div>');
-  for(const r of csA(c.crewTransport).filter(r=>me.hit(r.people)&&r!==pu))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+esc([r.to,r.t2].filter(Boolean).join(" "))+' <small>'+esc(r.vehicle||"")+'</small></div>');
-  for(const r of csA(c.travel).filter(r=>me.hit(r.name)))mine.push('<div class="csme-r"><span class="k">'+esc(L("Anreise"))+'</span>'+esc([r.how,r.from,r.t1].filter(Boolean).join(" "))+' → '+esc([r.to,r.t2].filter(Boolean).join(" "))+'</div>');
+  for(const r of csA(c.transport).filter(r=>(me.hit(r.passengers)||me.hit(r.driver))&&r!==pu))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+' <small>'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small></div>');
+  for(const r of csA(c.crewTransport).filter(r=>me.hit(r.people)&&r!==pu))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+' <small>'+esc(r.vehicle||"")+'</small></div>');
+  for(const r of csA(c.travel).filter(r=>me.hit(r.name)))mine.push('<div class="csme-r"><span class="k">'+esc(L("Anreise"))+'</span>'+esc([r.how,r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+'</div>');
   {let first=true;for(const r of csA(c.depts).filter(r=>csMyDept(c,me,r.dept)&&String(r.text||"").trim())){const lab=first?esc(L("Abteilung")):"";first=false;mine.push('<div class="csme-r"><span class="k">'+lab+'</span><b>'+esc(r.dept||"")+'</b> '+csTx(r.text)+'</div>');}}
   /* value in its own span (label | value side by side on the phone) */
   return mine.map(x=>x.replace(/<div class="csme-r"><span class="k">(.*?)<\/span>(.*?)<\/div>/g,'<div class="csme-r"><span class="k">$1</span><span class="v">$2</span></div>'))}

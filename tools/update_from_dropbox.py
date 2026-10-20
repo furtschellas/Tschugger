@@ -827,20 +827,61 @@ def cs_texts(cs):
             if isinstance(i, dict): out += [str(i.get(k)) for k in ("label", "text") if i.get(k)]
     return list(dict.fromkeys(out))
 
+CH_BOX = (45.7, 48.0, 5.8, 10.7)   # Switzerland (and a little around): a position outside is wrong
+
+
+def in_ch(p): return bool(p) and CH_BOX[0] <= p[0] <= CH_BOX[1] and CH_BOX[2] <= p[1] <= CH_BOX[3]
+
+
+def dist_km(a, b):
+    import math
+    return 6371 * 2 * math.asin(math.sqrt(math.sin(math.radians(b[0] - a[0]) / 2) ** 2 + math.cos(math.radians(a[0])) * math.cos(math.radians(b[0])) * math.sin(math.radians(b[1] - a[1]) / 2) ** 2))
+
+
 def map_pos(u):
-    """position of a map link (maps.app.goo.gl → Google Maps URL with «!3d…!4d…» or «@lat,lon»); None when not found"""
-    pats = (r"!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)", r"@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)", r"[?&](?:q|ll|query|center)=(-?\d{1,2}\.\d+)(?:,|%2C)\+?(-?\d{1,3}\.\d+)")
+    """position of a map link from the address the short link leads to (never from the page text):
+    «!3d…!4d…» = the place itself (best), «q=lat,lon» = a pin, «@lat,lon» = only the centre of the view (rough)"""
+    pats = ((r"!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)", "p"), (r"[?&](?:q|ll|query|destination)=(-?\d{1,2}\.\d+)(?:,|%2C)\+?(-?\d{1,3}\.\d+)", "q"), (r"@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)", "c"))
     try:
         r = requests.get(u, allow_redirects=True, timeout=20, headers={"User-Agent": "Mozilla/5.0 (TschuggerCrewApp)", "Accept-Language": "de"})
-        txt = " ".join([h.url for h in r.history] + [r.url])
-        for src in (txt, (r.text or "")[:400000]):
-            for p in pats:
-                m = re.search(p, src)
-                if m:
-                    lat, lon = float(m.group(1)), float(m.group(2))
-                    if -90 <= lat <= 90 and -180 <= lon <= 180 and (lat or lon): return [round(lat, 6), round(lon, 6)]
-    except Exception as e: log("Kartenlink nicht auflösbar:", type(e).__name__)
-    return None
+        txt = " ".join([h.url for h in r.history] + [r.url] + [h.headers.get("Location", "") for h in r.history])
+        from urllib.parse import unquote
+        txt = txt + " " + unquote(txt)
+        for p, q in pats:
+            m = re.search(p, txt)
+            if m:
+                pos = [round(float(m.group(1)), 6), round(float(m.group(2)), 6)]
+                if in_ch(pos): return {"p": pos, "q": q}
+        return {"p": None, "q": ""}
+    except Exception as e: log("Kartenlink nicht auflösbar:", type(e).__name__); return None
+
+
+def geocode(addr, cache):
+    """address → position (OpenStreetMap Nominatim, Switzerland only), cached"""
+    if not addr: return None
+    if addr in cache: return cache[addr]
+    try:
+        time.sleep(1.1)
+        r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": addr, "format": "json", "limit": 1, "countrycodes": "ch"},
+                         headers={"User-Agent": "TschuggerCrewApp/1.0 (furtschellas@gmail.com)"}, timeout=20)
+        j = r.json() if r.ok else []
+        cache[addr] = [round(float(j[0]["lat"]), 6), round(float(j[0]["lon"]), 6)] if j else None
+    except Exception: return None
+    return cache[addr]
+
+
+def cs_scene_list(txt):
+    """«186 PT1B/C/PT2» → 186pt1b, 186pt1c, 186pt2 (as in the app)"""
+    out = []
+    for part in re.split(r"[,;+&]", re.sub(r"\s+", "", str(txt or "")).lower()):
+        prev = ""
+        for t in part.split("/"):
+            if not t: continue
+            v = t
+            if prev and re.fullmatch(r"[a-z]", t): v = prev[:-1] + t
+            elif prev and re.match(r"(pt|sl)\d", t): v = (re.match(r"\d+", prev) or [""])[0] + t if re.match(r"\d+", prev) else t
+            out.append(v); prev = v
+    return out
 
 
 def cs_to_dispo(cs, date, f):
@@ -1511,22 +1552,43 @@ def main():
                     if d["date"] >= TODAY and (not prev or cs_sig(prev) != cs_sig(d)): NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})
             else: failed("dispo", f, "kein Drehtag erkannt")
         except Exception as e: failed("dispo", f, e)
-    # positions of the callsheet's map links (short Google links → coordinates) for the map in the app; once per link
-    mg = meta.setdefault("mapGeo", {}); n_geo = 0
+    # positions of the callsheet's map links for the map in the app – checked: inside Switzerland, close to the address of the
+    # location (Motivliste or the address on the callsheet), not far from the other places of the day; otherwise the address
+    mg = meta.setdefault("mapGeo2", {}); meta.pop("mapGeo", None); gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "none": 0}
+    scene_addr = {}
+    for l2 in data.get("locations") or []:
+        ad = ", ".join(x for x in (l2.get("venue"), l2.get("address")) if x) if l2.get("address") else ""
+        for st in l2.get("sets") or []:
+            for sc in st.get("scenes") or []: scene_addr.setdefault(re.sub(r"\s+", "", str(sc)).lower().lstrip("0"), ad)
     for d in dispos.values():
         cs = d.get("cs") if isinstance(d.get("cs"), dict) else None
         if not cs: continue
-        urls = []
+        cand = []   # (url, address)
         for l in cs.get("locations") or []:
-            if isinstance(l, dict): urls += [l.get("map")] + [i.get("map") for i in l.get("items") or [] if isinstance(i, dict)]
-        g = dict(cs.get("geo") or {})
-        for u in dict.fromkeys(u for u in urls if u and u not in g):
-            if u not in mg: mg[u] = map_pos(u)
-            if mg[u]: g[u] = mg[u]; n_geo += 1
-        if g != (cs.get("geo") or {}): cs["geo"] = g; changed = True
-    if n_geo: log("Karte: %d neue Positionen aus den Callsheet-Links" % n_geo)
-    miss = sum(1 for v in mg.values() if not v)
-    if mg: print("::notice::Karte: %d von %d Kartenlinks der Callsheets mit Position" % (len(mg) - miss, len(mg)))
+            if not isinstance(l, dict): continue
+            ad = next((scene_addr[k] for k in (x.lstrip("0") for x in cs_scene_list(l.get("scenes"))) if scene_addr.get(k)), "")
+            if l.get("map"): cand.append((l["map"], ad))
+            for i in l.get("items") or []:
+                if isinstance(i, dict) and i.get("map"):
+                    m = re.search(r"([A-Za-zÀ-ÿ.\- ]+\d+[a-z]?\s*,\s*\d{4}\s+[A-Za-zÀ-ÿ\- ]+)", str(i.get("text") or ""))
+                    cand.append((i["map"], m.group(1).strip() if m else ""))
+        g, src, pos = {}, {}, {}
+        for u, ad in cand:
+            if u not in mg or mg[u] is None: mg[u] = map_pos(u)
+            lp = (mg.get(u) or {}).get("p"); q = (mg.get(u) or {}).get("q")
+            ap = geocode(ad, gcache) if ad else None
+            if lp and ap and dist_km(lp, ap) > 2: pos[u] = (ap, "addr")          # link and address disagree: the address wins
+            elif lp: pos[u] = (lp, "link" if q in ("p", "q") else "rough")
+            elif ap: pos[u] = (ap, "addr")
+        pts = [p for p, _ in pos.values()]
+        if len(pts) > 2:   # far away from all others (more than 25 km from the middle of the day): left out
+            mid = [sorted(x[0] for x in pts)[len(pts) // 2], sorted(x[1] for x in pts)[len(pts) // 2]]
+            pos = {u: v for u, v in pos.items() if dist_km(v[0], mid) <= 25}
+        for u, _ in cand:
+            if u in pos: g[u] = pos[u][0]; src[u] = pos[u][1]; stat[pos[u][1]] += 1
+            else: stat["none"] += 1
+        if g != (cs.get("geo") or {}) or src != (cs.get("geoSrc") or {}): cs["geo"] = g; cs["geoSrc"] = src; changed = True
+    if any(stat.values()): print("::notice::Karte: %d Orte aus dem Kartenlink, %d über die Adresse korrigiert/ergänzt, %d nur ungefähr, %d ohne Position" % (stat["link"], stat["addr"], stat["rough"], stat["none"]))
     # the original pages of every callsheet and the Sides (script pages of the day) as pictures in the app (also offline)
     spc = dict(meta.get("sidesPages") or {}); used = set()
     try:

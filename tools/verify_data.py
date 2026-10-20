@@ -103,7 +103,10 @@ def check_callsheets(data, dbx, files):
         for p in parts:
             if p in miss: bad("Callsheet %s · %s: %d Wert(e) nicht im PDF – %s" % (d.get("date"), p, len(miss[p]), ", ".join(sorted(set(miss[p]))[:12])))
         urls = [u for l in cs.get("locations") or [] for u in [l.get("map")] + [i.get("map") for i in l.get("items") or []] if u]
-        if urls: (ok if all(u in (cs.get("geo") or {}) for u in urls) else info)("Callsheet %s: Karte – %d von %d Orten mit Position" % (d.get("date"), sum(1 for u in set(urls) if u in (cs.get("geo") or {})), len(set(urls))))
+        if urls:
+            gs = cs.get("geoSrc") or {}
+            (ok if all(u in (cs.get("geo") or {}) for u in urls) else info)("Callsheet %s: Karte – %d von %d Orten mit Position (Link %d, Adresse %d, ungefähr %d)" % (d.get("date"), sum(1 for u in set(urls) if u in (cs.get("geo") or {})), len(set(urls)),
+                sum(1 for u in set(urls) if gs.get(u) == "link"), sum(1 for u in set(urls) if gs.get(u) == "addr"), sum(1 for u in set(urls) if gs.get(u) == "rough")))
         gp = [v for v in (cs.get("geo") or {}).values() if isinstance(v, list) and len(v) == 2]
         if len(gp) > 1:
             import math
