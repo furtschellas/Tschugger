@@ -1624,6 +1624,7 @@ def main():
         if not cs: continue
         cand = []   # (url, address)
         parent = {}   # url of a point of a set → url of the set (a parking without position is shown roughly at its set)
+        setkeys = []   # sets without a map link: (key «loc:no», set)
         labs = {}   # url → short label for the diagnosis (S1, S2 … or the kind of item like «Tech Parking»)
         for li, l in enumerate(cs.get("locations") or []):
             if not isinstance(l, dict): continue
@@ -1640,12 +1641,21 @@ def main():
                     ad = lcaddr.get(re.sub(r"\s+", "", str(it["loc"]).lower()), "")
                     if ad: break
             ad = ad or next((scene_addr[k] for k in keys if scene_addr.get(k)), "") or set_addr.get(re.sub(r"[^a-z0-9]", "", str(l.get("name") or "").lower()), "")
+            if not ad:   # the set's name in the schedule of the day («REGINA'S OFFICE» in «POLICE STATION - REGINA'S OFFICE») → its place
+                nk = re.sub(r"[^a-z0-9]", "", str(l.get("name") or "").lower())
+                for it in day_items.get(d.get("date"), []):
+                    if nk and nk in re.sub(r"[^a-z0-9]", "", str(it.get("set") or "").lower()) and it.get("loc"):
+                        ad = lcaddr.get(re.sub(r"\s+", "", str(it["loc"]).lower()), "")
+                        if ad: break
             if not ad:   # an address in the notes of the location on the callsheet
                 for nt in l.get("notes") or []:
                     m = ADDR_RE.search(str(nt))
                     if m: ad = m.group(1).strip(); break
             if l.get("map"): parent[l["map"]] = l["map"]
             if l.get("map"): cand.append((l["map"], ad))
+            else:   # a set without its own map link: its address (every set must be on the map)
+                pk = "loc:%d" % (li + 1);   # position of the set on the callsheet (the app counts the same way)
+                 labs[pk] = "L%d" % (li + 1); cand.append((pk, ad)); setkeys.append((pk, l))
             for i in l.get("items") or []:
                 if isinstance(i, dict) and i.get("map"):
                     m = ADDR_RE.search(str(i.get("text") or ""))
@@ -1653,7 +1663,8 @@ def main():
                     if l.get("map"): parent[i["map"]] = l["map"]
         g, src, pos = {}, {}, {}
         for u, ad in cand:
-            if u not in mg or mg[u] is None or (not (mg[u] or {}).get("p") and ("diag" not in (mg[u] or {}) or time.time() - int((mg[u] or {}).get("t") or 0) > 6 * 3600)): mg[u] = map_pos(u)
+            if u.startswith("loc:"): mg.setdefault(u, {"p": None, "q": "", "diag": "kein Kartenlink"})
+            elif u not in mg or mg[u] is None or (not (mg[u] or {}).get("p") and ("diag" not in (mg[u] or {}) or time.time() - int((mg[u] or {}).get("t") or 0) > 6 * 3600)): mg[u] = map_pos(u)
             lp = (mg.get(u) or {}).get("p"); q = (mg.get(u) or {}).get("q")
             nm = (mg.get(u) or {}).get("name") or ""
             ap, exact = geocode_any(ad, gcache) if ad else (None, False)
@@ -1665,13 +1676,18 @@ def main():
             elif ap: pos[u] = (ap, "addr" if exact else "rough")
         for u, ad in cand:   # 3: a point of a set without any position: roughly at its set (marked in the app)
             if u not in pos and parent.get(u) in pos and parent[u] != u: pos[u] = (pos[parent[u]][0], "near")
+        first = next((pos[u][0] for u, _ in cand if u in pos and pos[u][1] in ("link", "addr")), None) or next((pos[u][0] for u, _ in cand if u in pos), None)
+        for pk, l in setkeys:   # a set still without position: at a point of its own (parking …), else at the first place of the day – marked roughly
+            if pk in pos: continue
+            own = next((pos[i["map"]][0] for i in l.get("items") or [] if isinstance(i, dict) and i.get("map") in pos), None)
+            if own or first: pos[pk] = (own or first, "near")
         rep = []
         for u, ad in cand:
             if u in pos: g[u] = pos[u][0]; src[u] = pos[u][1]; stat[pos[u][1]] += 1
             else: stat["none"] += 1
             v = mg.get(u) or {}
             rep.append("%s: %s" % (labs.get(u, "?"), ("✓ " + {"link": "Link", "addr": "Adresse", "rough": "ungefähr", "near": "beim Set"}[pos[u][1]]) if u in pos else
-                       "✗ Link ohne Position (%s)%s" % ((v.get("diag") or "?").split(" · ")[0], ", keine Adresse" if not ad else ", Adresse nicht gefunden")))
+                       "✗ %s%s" % ("kein Kartenlink" if u.startswith("loc:") else "Link ohne Position (%s)" % (v.get("diag") or "?").split(" · ")[0], ", keine Adresse" if not ad else ", Adresse nicht gefunden")))
         print("::notice::Karte %s: %s" % (d.get("date"), " | ".join(rep)[:900]))
         if g != (cs.get("geo") or {}) or src != (cs.get("geoSrc") or {}): cs["geo"] = g; cs["geoSrc"] = src; changed = True
     diags = {}

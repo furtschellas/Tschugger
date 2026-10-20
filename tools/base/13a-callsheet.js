@@ -179,6 +179,9 @@ function csLocs0(c){const sets=[],extra=[];
     sets.push(Object.assign({},l,{items}))}
   /* a set without a number on the callsheet («ER SET», read wrongly) gets its position: 1, 2, 3 … (as «Loc. 3» elsewhere in the document) */
   sets.forEach((l,i)=>{if(!/^\d+[a-z]?$/i.test(String(l.no||"").trim()))l.no=String(i+1)});
+  /* DIT / production office at the place of a set: a line of that set, not a location of its own (only somewhere else it is one) */
+  for(const e of extra.slice())if(e.kinds.every(k=>k==="DIT"||k==="Prod")){const st=sets.find(l=>(e.map&&l.map===e.map)||(e.name&&fold(String(l.name||""))===fold(e.name)));
+    if(st){st.items=(st.items||[]).concat([{label:e.kinds.join(" / "),text:[e.name].concat(e.notes).filter(Boolean).join(", "),map:e.map||""}]);extra.splice(extra.indexOf(e),1)}}
   return sets.concat(extra.map(e=>{e.kinds.sort((a,b)=>ORDER.indexOf(a)-ORDER.indexOf(b));if(!e.name)e.name=e.kinds.join(" · ");return Object.assign(e,{no:e.kinds.join(" · ")})}))}
 /* short code of a place for the call list: L1, L2, Base, P1 … */
 function csShort(p){const n=String(p&&p.name||"");let m=n.match(/^Set\s*(\w+)/i);if(m)return "L"+m[1];if(/base|lunch|waldrand/i.test(n))return "Base";m=n.match(/park\w*\s*loc\.?\s*(\d+)/i);if(m)return "P"+m[1];m=n.match(/loc\.?\s*(\d+)/i);if(m)return "L"+m[1];return n.split(/[ ,·]/)[0].slice(0,8)}
@@ -264,12 +267,16 @@ function csMapSec(c,x,me,SU,t){let h="";
   {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const all=csA((c.order||{}).rows),rows=all.filter(r=>r.sc);
    /* scene with start and end (= start of the next row of the shooting order) for the popup of a place */
    const span=r=>{const i=all.indexOf(r),a=hm(r.t),nx=all.slice(i+1).find(y=>hm(y.t));return [String(r.sc),a?a+(nx?"–"+hm(nx.t):""):""]};
-   const add=(u,code,name,sc,minor)=>{const g=geo[u];if(!g||!Array.isArray(g)){if(!minor&&u&&!miss.some(x=>x.c===code))miss.push({c:code,n:name,s:sc||"",u});return}if(pts.some(x=>x.c===code&&x.p.join(",")===g.join(",")))return;
-     pts.push({p:g,c:code,n:name,s:sc||"",u,m:minor?1:0,r:gs[u]==="rough"||gs[u]==="near"?(gs[u]==="near"?2:1):0})};
-   for(const l of csLocs(c)){const code=l.kinds?l.kinds.map(k=>k.replace(/\s+/g,"")).join("·"):"L"+String(l.no||"").trim();
-     const lr=l.kinds?[]:rows.filter(r=>csSceneLoc([l],r)===l);const sc=l.kinds?"":[...new Set(lr.map(r=>String(r.sc)))].join(", ")||csS(l.scenes);add(l.map,code,l.name||"",sc,0);
-     {const pt=pts.find(x=>x.u===l.map&&x.c===code);if(pt&&lr.length)pt.st=lr.map(span)}
+   const add=(u,code,name,sc,minor,link)=>{const g=geo[u];link=link||(/^https?:/.test(u||"")?u:"");if(!g||!Array.isArray(g)){if(!minor&&u&&!miss.some(x=>x.c===code))miss.push({c:code,n:name,s:sc||"",u:link,set:!minor});return}if(pts.some(x=>x.c===code&&x.p.join(",")===g.join(",")))return;
+     pts.push({p:g,c:code,n:name,s:sc||"",u:link,m:minor?1:0,r:gs[u]==="rough"||gs[u]==="near"?(gs[u]==="near"?2:1):0})};
+   let si=0;for(const l of csLocs(c)){const code=l.kinds?l.kinds.map(k=>k.replace(/\s+/g,"")).join("·"):"L"+String(l.no||"").trim();
+     /* a set without its own map link: its position under «loc:n» (address found by the updater) – every L is on the map */
+     const key=l.kinds?l.map:(l.map||"loc:"+(si+1));if(!l.kinds)si++;
+     const lr=l.kinds?[]:rows.filter(r=>csSceneLoc([l],r)===l);const sc=l.kinds?"":[...new Set(lr.map(r=>String(r.sc)))].join(", ")||csS(l.scenes);add(key,code,l.name||"",sc,0,l.map||(()=>{let ad="";try{ad=csLocAddr(c,l,x.date)}catch(_){}return ad?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(ad):""})());
+     {const pt=pts.find(x=>x.u===key&&x.c===code);if(pt&&lr.length)pt.st=lr.map(span)}
      for(const i of csA(l.items))if(i.map)add(i.map,code+" · "+(String(i.label||"").trim()||"P"),[i.label,i.text].filter(Boolean).join(" · "),"",1)}
+   /* every L on the map: a set still without position (older data) roughly at the first place of the day, marked */
+   {const at=(pts.find(p=>!p.m)||pts[0]||{}).p;if(at)for(const m of miss.filter(m=>m.set&&/^L/.test(m.c))){pts.push({p:at,c:m.c,n:m.n,s:m.s,u:m.u,m:0,r:2});miss.splice(miss.indexOf(m),1)}}
    /* places at the same point: the labels are stacked */
    pts.forEach((p,i)=>{p.k=pts.slice(0,i).filter(x=>x.p.join(",")===p.p.join(",")).length});
    const main=pts.filter(p=>!p.m);
