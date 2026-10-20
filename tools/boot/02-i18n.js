@@ -391,6 +391,8 @@ Object.assign(I18N,{
  "Fahrt läuft – antippen = ausgeführt":{fr:"Trajet en cours – toucher = effectué",it:"Viaggio in corso – tocca = eseguito",en:"Ride running – tap = done"},
  "Fahrt ausgeführt – antippen = zurücksetzen":{fr:"Trajet effectué – toucher = réinitialiser",it:"Viaggio eseguito – tocca = reimposta",en:"Ride done – tap = reset"},
  "Andere …":{fr:"Autre …",it:"Altro …",en:"Other …"},
+ "Fahrer des Tages":{fr:"Chauffeurs du jour",it:"Autisti del giorno",en:"Drivers of the day"},
+ "Aufnahmeleitung":{fr:"Régie",it:"Direzione di produzione",en:"Location / production management"},
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
  "Links neu geladen – bitte prüfen und nochmals speichern.":{fr:"Liens rechargés – merci de vérifier et d’enregistrer à nouveau.",it:"Link ricaricati – controlla e salva di nuovo.",en:"Links reloaded – please check and save again."},
  "Links konnten nicht geladen werden – bitte später nochmals speichern.":{fr:"Les liens n’ont pas pu être chargés – merci d’enregistrer plus tard.",it:"Impossibile caricare i link – salva di nuovo più tardi.",en:"Links could not be loaded – please save again later."},
