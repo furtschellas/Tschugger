@@ -48,7 +48,7 @@ service cloud.firestore {
     // Felder, die nur aus dieser Liste stammen dürfen (neu) bzw. nur diese ändern (Änderung)
     function only(keys) { return request.resource.data.keys().hasOnly(keys); }
     function changesOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
-    // Profilfelder der Mitglieder (an mehreren Stellen gleich)
+    // Profilfelder der Mitglieder (an mehreren Stellen gleich; testAck/testVer = Willkommen Test-User bestätigt)
     function profile() { return ['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'testAck', 'testVer', 'func']; }
     // Menütext höchstens 300 Zeichen
     function short(f) { return request.resource.data.get(f, '').size() <= 300; }
