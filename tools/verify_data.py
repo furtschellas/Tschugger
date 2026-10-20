@@ -104,6 +104,12 @@ def check_callsheets(data, dbx, files):
             if p in miss: bad("Callsheet %s · %s: %d Wert(e) nicht im PDF – %s" % (d.get("date"), p, len(miss[p]), ", ".join(sorted(set(miss[p]))[:12])))
         urls = [u for l in cs.get("locations") or [] for u in [l.get("map")] + [i.get("map") for i in l.get("items") or []] if u]
         if urls: (ok if all(u in (cs.get("geo") or {}) for u in urls) else info)("Callsheet %s: Karte – %d von %d Orten mit Position" % (d.get("date"), sum(1 for u in set(urls) if u in (cs.get("geo") or {})), len(set(urls))))
+        gp = [v for v in (cs.get("geo") or {}).values() if isinstance(v, list) and len(v) == 2]
+        if len(gp) > 1:
+            import math
+            dk = lambda a, b: 6371 * 2 * math.asin(math.sqrt(math.sin(math.radians(b[0] - a[0]) / 2) ** 2 + math.cos(math.radians(a[0])) * math.cos(math.radians(b[0])) * math.sin(math.radians(b[1] - a[1]) / 2) ** 2))
+            mx = max(dk(a, b) for a in gp for b in gp)
+            (ok if mx <= 30 else bad)("Callsheet %s: Karte – Orte liegen höchstens %.1f km auseinander" % (d.get("date"), mx))
         if not miss: ok("Callsheet %s: alle Werte im PDF gefunden (%s)" % (d.get("date"), ", ".join("%s %d" % kv for kv in cnt.items())))
         # the totals line of the callsheet against the rows
         m = re.search(r"CAST:\s*(\d+)", txt)
