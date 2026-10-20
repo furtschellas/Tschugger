@@ -3,6 +3,7 @@
  "msg": "Lauf abgebrochen (siehe GitHub Actions)",
  "updatedAt": "2026-10-20T17:29:54Z",
  "version": "Sched 261018",
- "at": "2026-10-20T21:57:20Z",
- "fails": 1
+ "at": "2026-10-20T22:01:19Z",
+ "fails": 2,
+ "alarmAt": "2026-10-20T22:01:19Z"
 }
