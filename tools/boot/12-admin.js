@@ -292,6 +292,7 @@ function userList(rows,vis,o){
       own&&!r.m&&!isOwn?'<button data-adm="nomail" data-em="'+esc(r.email)+'">'+L("Ohne Bestätigungs-Mail freischalten")+'</button>':'',
       own&&!r.m&&!isOwn?'<button data-adm="startpw" data-em="'+esc(r.email)+'" data-nm="'+esc(r.name||"")+'">'+L("Startpasswort erzeugen")+'</button>':'',
       !r.m&&o.cInv?'<a class="abtnl" href="'+o.mail(r)+'">✉ '+L("Einladungsmail")+'</a>':'',
+      !r.m&&o.cInv?'<button type="button" class="abtnl" data-cwa="'+esc(r.email)+'" data-nm="'+esc(r.name||(crewPerson(r.email)||{}).name||"")+'" data-ph="'+esc((crewPerson(r.email)||{}).phone||"")+'">💬 '+L("Per WhatsApp einladen")+'</button>':'',
       own&&r.m&&!isOwn?(r.m.active===true?'<button class="warn" data-adm="block" data-uid="'+esc(r.m.uid)+'">'+L("Sperren")+'</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">'+L("Entsperren")+'</button>'):'',
       isOwn?'':own&&r.m?'<button class="warn" data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">'+L("Entfernen")+'</button>':(r.inv&&!r.m&&o.cInv?'<button class="warn" data-adm="uninvite" data-em="'+esc(r.email)+'">'+L("Einladung löschen")+'</button>':'')
     ].filter(Boolean);
@@ -587,7 +588,7 @@ window.crewFill=function(p){
   const m=memberFor(p);if(!m)return null;
   return {phone:String(m.phone||"").trim(),email:String(m.contactEmail||m.email||"").trim()};
 };
-const CICO={edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',close:'<path d="M18 6 6 18M6 6l12 12"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',add:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5"/><path d="M19 8v6M16 11h6"/>'};
+const CICO={wa:'<path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/><path d="M9 9.5c.4 1.9 2.6 4.1 4.5 4.5l1.2-1.2 2 1-.6 1.6c-3.4.4-7.8-4-7.4-7.4l1.6-.6 1 2z"/>',edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',close:'<path d="M18 6 6 18M6 6l12 12"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',add:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5"/><path d="M19 8v6M16 11h6"/>'};
 const cico=(k,label,attrs,extra)=>'<button type="button" class="cico'+(extra||"")+'" '+attrs+' '+ariaTip(label)+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+CICO[k]+'</svg></button>';
 window.crewExtra=function(p){
   /* «Kontoinfos» (owner and everyone allowed to change user data): account status, edit user data, role */
@@ -602,7 +603,7 @@ window.crewExtra=function(p){
   if(!(AV("food")||AV("bday")||ACC))return "";
   if(ACC){
     if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
-      if(inv&&isAdmin())ch.push(cico("mail",L("Einladungs-Mail schicken"),'data-cmail="'+esc(e)+'" data-nm="'+esc(p.name||"")+'"'));
+      if(inv&&isAdmin())ch.push(cico("mail",L("Einladungs-Mail schicken"),'data-cmail="'+esc(e)+'" data-nm="'+esc(p.name||"")+'"'),cico("wa",L("Per WhatsApp einladen"),'data-cwa="'+esc(e)+'" data-nm="'+esc(p.name||"")+'" data-ph="'+esc(p.phone||"")+'"'));
       if(!inv&&isOwner()&&e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))ch.push(cico("add",L("Als Benutzer:in einladen"),'data-cinv="'+esc(e)+'" data-nm="'+esc(p.name||"")+'" data-rl="'+esc(p.role||"")+'"'))}
     else ch.push(m.active===true?'<span class="ok">'+esc(L("Konto aktiv"))+'</span>':'<span class="off">'+esc(L("Gesperrt"))+'</span>');
     const ems=[lc(p.email),m&&m.email].filter(Boolean);
