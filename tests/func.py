@@ -492,6 +492,10 @@ async def owner_tests(p, port):
           const ka=window.rideAt;for(const st of [0,1,2]){window.rideState=()=>st;window.rideAt=()=>Date.now()-60e3;const c=csRideCell('2030-05-06',r);const h=typeof c==='string'?c:c.h;out.push(st?(h.includes('ridest rs'+st)&&h.includes('<svg')&&!h.includes('rsold')):!/ridest/.test(h))}
           window.rideState=()=>2;window.rideAt=()=>Date.now()-25*60e3;const c2=csRideCell('2030-05-06',r);out.push((typeof c2==='string'?c2:c2.h).includes('rsold'));window.rideState=keep;window.rideAt=ka;return out})()""")
         check("Callsheet: Fahrt läuft = Auto im Kreis, ausgeführt = Häkchen im Kreis, 20 Min. danach grau", rs in (None, [True, True, True, True]), rs)
+        dn = await E("""(()=>{if(typeof renderCS!=='function')return null;const keep=S.dispos;S.dispos=[{date:'2030-05-05',cs:{drivers:'Vera Fahrerin +41 76 000 11 22 | Max Muster +41 76 000 33 44'}}];
+          const x={date:'2030-05-06',cs:{drivers:'| +41 76 000 11 22 | Max Muster +41 76 000 33 44 o.p.D = on personal Decision',transport:[{t1:'07:00',from:'A',to:'B',driver:'Max Muster'}]}};
+          const w=document.createElement('div');w.innerHTML=renderCS(x,{date:x.date});S.dispos=keep;const t=(w.querySelector('.csdrvl')||{}).textContent||'';return {name:t.includes('Vera Fahrerin'),legend:!/personal decision/i.test(t)}})()""")
+        check("Callsheet: Fahrer ohne Namen im Dokument werden über die Nummer ergänzt, «o.p.D = …» nicht als Name", dn in (None, {"name": True, "legend": True}), dn)
         aw = await E("""(()=>{if(typeof csDayAfterWrap!=='function')return null;const t='2030-05-06',n='2030-05-07',pick=[{date:t},{date:n}];
           const by={[t]:{cs:{times:{crewCall:'08:00',wrap:'19:00'}}},[n]:{cs:{}}},by2={[t]:by[t]},late={[t]:{cs:{times:{crewCall:'14:00',wrap:'01:30'}}},[n]:{cs:{}}},z=(h)=>zurichUTC(t,h).getTime();
           return [csDayAfterWrap(t,pick,by,z('19:30')),csDayAfterWrap(t,pick,by,z('20:01')),csDayAfterWrap(t,pick,by2,z('22:00')),csDayAfterWrap(t,pick,late,z('23:00'))]})()""")
