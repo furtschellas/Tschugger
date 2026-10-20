@@ -29,3 +29,6 @@ setTimeout(()=>rideAckLoad(true),4000);setInterval(()=>{if(S.tab==="my"||S.tab==
 document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))return;e.preventDefault();window.SHOWDONE=!window.SHOWDONE;render()});
 /* the callsheet greys a ride 20 minutes after it was done: draw again when one crosses that time */
 {let OLDN=-1;setInterval(()=>{if(S.tab!=="dispo")return;const n=Object.values(window.RIDEACK||{}).filter(x=>x&&x.s!==1&&Date.now()-(+x.at||0)>20*60e3).length;if(OLDN>=0&&n!==OLDN)render();OLDN=n},60e3)}
+
+/* links inside clickable callsheet headers (L-codes, addresses): open the link without toggling or triggering the surrounding element */
+document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.target.closest("a[data-nobub]");if(a)e.stopPropagation()},true);
