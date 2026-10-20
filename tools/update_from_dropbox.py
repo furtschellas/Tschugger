@@ -1575,18 +1575,23 @@ def main():
     # positions of the callsheet's map links for the map in the app – checked: inside Switzerland, close to the address of the
     # location (Motivliste or the address on the callsheet), not far from the other places of the day; otherwise the address
     mg = meta.setdefault("mapGeo3", {}); meta.pop("mapGeo", None); meta.pop("mapGeo2", None); gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "none": 0}
-    scene_addr = {}
+    scene_addr, set_addr = {}, {}
     for l2 in data.get("locations") or []:
         ad = ", ".join(x for x in (l2.get("venue"), l2.get("address")) if x) if l2.get("address") else ""
         for st in l2.get("sets") or []:
             for sc in st.get("scenes") or []: scene_addr.setdefault(re.sub(r"\s+", "", str(sc)).lower().lstrip("0"), ad)
+            for nm in (st.get("name"), st.get("set")):
+                if nm and ad: set_addr.setdefault(re.sub(r"[^a-z0-9]", "", str(nm).lower()), ad)
     for d in dispos.values():
         cs = d.get("cs") if isinstance(d.get("cs"), dict) else None
         if not cs: continue
         cand = []   # (url, address)
         for l in cs.get("locations") or []:
             if not isinstance(l, dict): continue
-            ad = next((scene_addr[k] for k in (x.lstrip("0") for x in cs_scene_list(l.get("scenes"))) if scene_addr.get(k)), "")
+            # the Motivliste: a set with one of the scenes (also only the number: «186» for «186pt1A»), else a set with the same name
+            keys = [x.lstrip("0") for x in cs_scene_list(l.get("scenes"))]
+            keys += [re.sub(r"(pt|sl)\d+[a-z]?$", "", k) for k in keys] + [re.sub(r"[a-z]$", "", k) for k in keys]
+            ad = next((scene_addr[k] for k in keys if scene_addr.get(k)), "") or set_addr.get(re.sub(r"[^a-z0-9]", "", str(l.get("name") or "").lower()), "")
             if l.get("map"): cand.append((l["map"], ad))
             for i in l.get("items") or []:
                 if isinstance(i, dict) and i.get("map"):
