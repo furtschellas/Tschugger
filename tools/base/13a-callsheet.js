@@ -237,11 +237,14 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
        return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+'</summary>'+
      csLocFp(c,l,x.date)+csA(l.notes).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",true,"","loc",SU.loc)}
   /* map of the day: every location on its own (code, scenes, name), parking and other points of the sets small */
-  {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const rows=csA((c.order||{}).rows).filter(r=>r.sc);
+  {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const all=csA((c.order||{}).rows),rows=all.filter(r=>r.sc);
+   /* scene with start and end (= start of the next row of the shooting order) for the popup of a place */
+   const span=r=>{const i=all.indexOf(r),a=hm(r.t),nx=all.slice(i+1).find(y=>hm(y.t));return String(r.sc)+(a?" "+a+(nx?"–"+hm(nx.t):""):"")};
    const add=(u,code,name,sc,minor)=>{const g=geo[u];if(!g||!Array.isArray(g)){if(!minor&&u&&!miss.some(x=>x.c===code))miss.push({c:code,n:name,s:sc||"",u});return}if(pts.some(x=>x.c===code&&x.p.join(",")===g.join(",")))return;
      pts.push({p:g,c:code,n:name,s:sc||"",u,m:minor?1:0,r:gs[u]==="rough"||gs[u]==="near"?(gs[u]==="near"?2:1):0})};
    for(const l of csLocs(c)){const code=l.kinds?l.kinds.map(k=>k.replace(/\s+/g,"")).join("·"):"S"+String(l.no||"").trim();
-     const sc=l.kinds?"":[...new Set(rows.filter(r=>csSceneLoc([l],r)===l).map(r=>String(r.sc)))].join(", ")||csS(l.scenes);add(l.map,code,l.name||"",sc,0);
+     const lr=l.kinds?[]:rows.filter(r=>csSceneLoc([l],r)===l);const sc=l.kinds?"":[...new Set(lr.map(r=>String(r.sc)))].join(", ")||csS(l.scenes);add(l.map,code,l.name||"",sc,0);
+     {const pt=pts.find(x=>x.u===l.map&&x.c===code);if(pt&&lr.length)pt.st=lr.map(span)}
      for(const i of csA(l.items))if(i.map)add(i.map,code+" · "+(String(i.label||"").trim()||"P"),[i.label,i.text].filter(Boolean).join(" · "),"",1)}
    /* places at the same point: the labels are stacked */
    pts.forEach((p,i)=>{p.k=pts.slice(0,i).filter(x=>x.p.join(",")===p.p.join(",")).length});
@@ -353,7 +356,7 @@ function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(
     LF.control.layers({[L("Karte")]:osm,[L("Satellit")]:sat},null,{position:"bottomleft"}).addTo(m);
     const b=[];box.__mk=[];for(const p of pts){const lab=esc(p.c)+(p.s?" <i>"+esc(p.s)+"</i>":"");
       const mk=LF.marker(p.p,{icon:LF.divIcon({className:"csmk"+(p.m?" min":"")+(p.r?" rough":""),html:'<span style="--k:'+(p.k||0)+'">'+lab+"</span>",iconSize:null}),zIndexOffset:p.m?0:1000}).addTo(m);
-      mk.bindPopup("<b>"+esc(p.c)+"</b> "+esc(p.n)+(p.s?"<br>"+esc(L("Szenen"))+": "+esc(p.s):"")+(p.r?"<br><i>"+esc(L(p.r===2?"Position ungefähr beim Set":"Position ungefähr"))+"</i>":"")+(p.u?'<br><a href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer">Google Maps</a>':""));box.__mk.push(mk);b.push(p.p)}
+      mk.bindPopup("<b>"+esc(p.c)+"</b> "+esc(p.n)+(p.st&&p.st.length?'<div class="csmpst">'+p.st.map(x=>'<div>'+esc(x)+'</div>').join("")+'</div>':(p.s?"<br>"+esc(L("Szenen"))+": "+esc(p.s):""))+(p.r?"<br><i>"+esc(L(p.r===2?"Position ungefähr beim Set":"Position ungefähr"))+"</i>":"")+(p.u?'<br><a href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer">Google Maps</a>':""));box.__mk.push(mk);b.push(p.p)}
     box.__b=b;csMapFit(box)}).catch(()=>{box.innerHTML='<p class="ghint">'+esc(L("Karte nicht verfügbar (offline?)."))+'</p>'})}
 /* all places of the day at one glance (also the small parking points); again after opening or enlarging (the size changed) */
 function csMapFit(box){const m=box&&box.__map,b=box&&box.__b;if(!m||!b||!b.length)return;m.invalidateSize();
