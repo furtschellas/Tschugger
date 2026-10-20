@@ -257,14 +257,14 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
-    // Fahrten aus dem Callsheet quittieren (Stand 1/2): lesen alle Mitglieder, setzen/zurücknehmen nur mit «rides.confirm» (AL, AD, Produktion)
+    // Fahrten aus dem Callsheet quittieren (Stand 1/2): lesen alle Mitglieder, setzen/zurücknehmen mit «rides.confirm» (AL, AD, Produktion) oder «Fahrten Manager»
     // Dokument-ID = Prüfsumme der Fahrt (keine Namen), Felder: Datum d, Zeitpunkt at, Stand s (1 = Fahrt beginnt, 2 = ausgeführt)
     match /rideack/{id} {
       allow read: if crew();
-      allow create, update: if can('rides.confirm') && id.matches('[a-z0-9]{4,16}') && only(['d', 'at', 's'])
+      allow create, update: if canAny(['rides.confirm', 'rides.manage']) && id.matches('[a-z0-9]{4,16}') && only(['d', 'at', 's'])
         && request.resource.data.d is string && request.resource.data.d.size() == 10 && request.resource.data.at is int
         && request.resource.data.get('s', 2) in [1, 2];
-      allow delete: if can('rides.confirm');
+      allow delete: if canAny(['rides.confirm', 'rides.manage']);
     }
 
     // Fahrten aus dem Callsheet in der App ändern (Zeiten, Strecke, Fahrzeug, Fahrer, Mitfahrende): nur mit «Fahrten Manager» (rides.manage);

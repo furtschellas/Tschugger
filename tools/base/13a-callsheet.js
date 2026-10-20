@@ -73,7 +73,8 @@ function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0,id="
   const tip=st===0?L("Fahrt noch nicht angenommen"):st===1?L("Fahrt läuft"):L("Fahrt ausgeführt");
   const ico=st===1?I.car||"":st===2?I[1]||"":"";
   /* AL, AD and production change the state right here: open → running → done → open */
-  const el=can?'<button type="button" class="'+cls+' rideack-cs" data-rideack="'+esc(id)+'" data-rided="'+esc(date)+'" title="'+esc(tip+" – "+L("antippen zum Ändern"))+'" aria-label="'+esc(tip+" – "+L("antippen zum Ändern"))+'">'+ico+'</button>'
+  const mgr=typeof canPerm==="function"&&canPerm("rides.manage");
+  const el=can?'<button type="button" class="'+cls+' rideack-cs'+(mgr?' rmgr':'')+'" data-rideack="'+esc(id)+'" data-rided="'+esc(date)+'" title="'+esc(tip+" – "+L(mgr?"Fahrt ändern":"antippen zum Ändern"))+'" aria-label="'+esc(tip+" – "+L(mgr?"Fahrt ändern":"antippen zum Ändern"))+'">'+ico+(mgr?'<span class="rmgri" aria-hidden="true"><svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/></svg></span>':'')+'</button>'
     :'<span class="'+cls+'" title="'+esc(tip)+'">'+ico+'</span>';
   /* changed in the app (Fahrten Manager): marked, the original as tooltip */
   const o=r._orig,chg=o?' <span class="rchg" title="'+esc(L("Original")+": "+[csRoute(o.from,o.t1,o.to,o.t2),o.vehicle,o.driver,o.passengers||o.people].filter(Boolean).join(" · "))+'">'+esc(L("geändert"))+'</span>':'';
