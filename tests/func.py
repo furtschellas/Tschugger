@@ -525,6 +525,18 @@ async def owner_tests(p, port):
           const at=(h,m)=>{const l=csNowLoc(c,'2030-05-06',ls,new Date(2030,4,6,h,m));return l?l.name:''};
           return {icons:(b.match(/data-cshn=/g)||[]).length===2&&/cshn-wc/.test(b),texts:(t.match(/hidden/g)||[]).length===2,now:[at(8,0),at(9,0),at(12,30),at(14,0),at(18,30)].join(',')==',A,A,B,'}})()""")
         check("Callsheet: Hinweise (To set, WC) als Symbole mit Text beim Antippen, aktuelle Location «jetzt hier»", hn in (None, {"icons": True, "texts": True, "now": True}), hn)
+        nm = await E("""(()=>{if(typeof csNear!=='function'||typeof csFilter!=='function')return null;
+          const c={locations:[{no:'1',name:'Kapelle',scenes:'1',map:'u1'},{no:'2',name:'Wald',scenes:'2',map:'u2'},{kinds:['Base'],name:'Base',map:'u3'}],geo:{u1:[46.31,7.63],u2:[46.40,7.80],u3:[46.312,7.632]},
+            order:{rows:[{t:'08:00',sc:'1',set:'Kapelle',cast:'1'},{t:'10:00',sc:'2',set:'Wald',cast:'2'},{t:'12:00',sc:'3',set:'WALD EXT',cast:'1'}]},cast:[{no:'1',actor:'Max Muster',role:'X'},{no:'2',actor:'Eva Test',role:'Y'}],calls:[{dept:'Licht',t:'07:00',name:'Max Muster'},{dept:'Licht',t:'07:00',name:'Eva Test'}]};
+          const ls=csLocs(c),nr=csNear(c,ls,'');const n1=nr.get(ls.find(l=>l.no==='1'))||[];
+          const keep=window.myIdentity,km=CSMINE;window.myIdentity=()=>({name:'Max Muster',src:'Licht'});
+          const v=document.createElement('div');v.id='nmtest';v.innerHTML=renderCS({date:'2030-05-06',cs:c,link:'https://www.dropbox.com/preview/x.pdf'},{date:'2030-05-06'});document.body.appendChild(v);
+          const cv=v.querySelector('.csview');const L3=[...cv.querySelectorAll('.csorder>li[data-sc]')].map(li=>(li.querySelector('.csplace')||{}).textContent||'');
+          CSMINE=true;csFilter(cv);const sc=[...cv.querySelectorAll('.csorder>li[data-sc]')].filter(li=>!li.hidden).map(li=>li.dataset.sc).join(',');const calls=[...cv.querySelectorAll('.cscall-r')].filter(r=>!r.hidden).length;
+          CSMINE=false;csFilter(cv);const all=[...cv.querySelectorAll('.cscall-r')].filter(r=>!r.hidden).length;const pdf=!!v.querySelector('[data-cspdf]'),btn=!!v.querySelector('[data-csmine]');
+          v.remove();window.myIdentity=keep;CSMINE=km;
+          return {near:n1.length===1&&n1[0].code==='Base'&&n1[0].d<1,loc3:L3.join(',')==='L1,L2,L2',mine:sc==='1,3'&&calls===1&&all===2,pdf,btn}})()""")
+        check("Callsheet: Nebenorte mit Distanz beim Set, «Nur meins», PDF-Knopf, L-Code bei jeder Szene", nm in (None, {"near": True, "loc3": True, "mine": True, "pdf": True, "btn": True}), nm)
         re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
           const r0={t1:'07:30',t2:'08:00',from:'Hotel',to:'Base',vehicle:'Van 1',driver:'Max Fahrer',passengers:'Anna Muster'};S.dispos=[{date:t,cs:{transport:[r0]}}];
           const id=rideId(t,r0);window.RIDEEDIT={[id]:{t1:'07:45',passengers:'Anna Muster, Lena Test'}};window.REDVER=(window.REDVER||0)+1;rideEditApply();const r=S.dispos[0].cs.transport[0];
