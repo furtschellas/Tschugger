@@ -170,7 +170,8 @@ function userInfo(r){
   return row("Telefon",m.phone?'<a href="tel:'+esc(telNum(m.phone))+'">'+esc(m.phone)+'</a>':"")+
     row("Kontakt-E-Mail",m.contactEmail&&m.contactEmail!==m.email?'<a href="mailto:'+esc(m.contactEmail)+'">'+esc(m.contactEmail)+'</a>':"")+
     row("Geburtsdatum",m.birthday?esc(m.birthday.split("-").reverse().join(".")):"")+row("Geschlecht",g?esc(L(g)):"")+row("Essen",esc(dietText(m)))+
-    row("Willkommen",esc(m.welcomeAck?L("bestätigt")+" "+fmtD(m.welcomeAck):L("noch nicht bestätigt")));
+    row("Willkommen",esc(m.welcomeAck?L("bestätigt")+" "+fmtD(m.welcomeAck):L("noch nicht bestätigt")))+
+    row("Willkommen Test-User",m.testAck?esc(L("bestätigt")+" "+fmtD(m.testAck)):"");
 }
 
 /* new users get the role «Crew» automatically (an invitation creates userroles/{email} = crew) */

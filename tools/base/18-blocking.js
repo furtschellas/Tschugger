@@ -177,3 +177,14 @@ let LASTDAY=todayISO();
 document.addEventListener("toggle",e=>{if(e.target&&e.target.matches&&e.target.matches("[data-srcd]"))S.srcOpen=e.target.open},true);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&todayISO()!==LASTDAY){LASTDAY=todayISO();S.day=null;S.dday=null;render()}});
 
+/* the script text of a scene right in its row (schedule, callsheet, today): «Script» opens and closes it, «Vollbild» opens the reader */
+async function scInline(b){
+  const box=b.closest(".sc")&&b.closest(".sc").querySelector(":scope>.scinl");if(!box)return;
+  const open=box.hidden;box.hidden=!open;b.setAttribute("aria-expanded",String(open));b.classList.toggle("on",open);if(!open||box.dataset.ok)return;
+  box.className="scinl svwrap "+svClasses();box.innerHTML='<p class="scnmsg">'+esc(L("Lade"))+' …</p>';
+  try{const list=await scriptData();const x=findScene(list,b.dataset.scinl);
+    if(!x){box.innerHTML='<p class="scnmsg">'+esc(L("Diese Szene ist im Drehbuch nicht gefunden worden."))+'</p>';return}
+    box.innerHTML='<div class="scinlh"><button type="button" class="lnk" data-scene="'+esc(b.dataset.scinl)+'">'+esc(L("Vollbild"))+'</button></div>'+spPage(x,"",list,b.dataset.scinl);
+    box.querySelectorAll(".spf").forEach(n=>n.remove());box.dataset.ok="1"}
+  catch(err){console.error(err);box.innerHTML='<p class="scnmsg">'+esc(L("Drehbuch konnte nicht geladen werden."))+'</p>'}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-scinl]");if(!b)return;e.preventDefault();e.stopPropagation();if(window.SCRIPTON===false||!vok("script"))return;scInline(b)},true);

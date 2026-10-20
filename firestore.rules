@@ -49,7 +49,7 @@ service cloud.firestore {
     function only(keys) { return request.resource.data.keys().hasOnly(keys); }
     function changesOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
     // Profilfelder der Mitglieder (an mehreren Stellen gleich)
-    function profile() { return ['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'func']; }
+    function profile() { return ['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'testAck', 'testVer', 'func']; }
     // Menütext höchstens 300 Zeichen
     function short(f) { return request.resource.data.get(f, '').size() <= 300; }
 
