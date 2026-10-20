@@ -57,6 +57,10 @@ function csMk(v,c){const out=[];for(const seg of String(v==null?"":v).split(/\s*
 const csCell=c=>c&&typeof c==="object"&&"h" in c?c.h:csTx(c);
 const csCellTx=c=>c&&typeof c==="object"&&"h" in c?c.h.replace(/<[^>]+>/g,""):String(c||"");
 /* a ride with its state (quittiert): driving car = running, two checks = done */
+/* name to a driver's phone number: other callsheets' driver lines, else the crew list */
+function csDriverByPhone(ph){const k=String(ph||"").replace(/\D/g,"").slice(-9);if(k.length<9)return"";
+  for(const d of arr(S.dispos)){const t=String(d&&d.cs&&d.cs.drivers||"");for(const x of t.split(/\s*[|\n;]\s*/)){const m=x.match(CSPH);if(m&&m[0].replace(/\D/g,"").slice(-9)===k){const n=x.replace(m[0],"").replace(/o\.\s*p\.\s*D.*$/i,"").trim();if(n)return n}}}
+  for(const g of arr(S.crew))for(const p of arr(g.people))if(String(p.phone||"").replace(/\D/g,"").slice(-9)===k)return p.name||"";return ""}
 function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0;try{st=typeof rideId==="function"&&window.rideState?rideState(rideId(date,r)):0}catch(_){}
   if(!st)return t;const I=window.RIDE_ICO||{};return {h:'<span class="ridest rs'+st+(st===2&&window.rideAt&&Date.now()-rideAt(rideId(date,r))>20*60e3?' rsold':'')+'" title="'+esc(st===1?L("Fahrt läuft"):L("Fahrt ausgeführt"))+'">'+(st===1?I.car:I[1])+'</span> '+esc(t)}}
 function csTable(head,rows,tc){rows=rows.map(r=>r.map(c=>c&&typeof c==="object"?c:csDurT(c)));rows=rows.filter(r=>r.some(c=>csCellTx(c).trim()));if(!rows.length)return"";tc=tc||2;
@@ -318,7 +322,9 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset])),false,"","",SU.extras);
   h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","",SU.veh);
   /* transport and travel */
-  h+=csSec(L("Transport mit Fahrer"),(c.drivers?'<div class="csdrvl">'+String(c.drivers).split(/\s*[|\n;]\s*/).filter(x=>x.trim()).map(x=>{const m=x.match(CSPH);const nm=m?x.replace(m[0],"").trim():x.trim();
+  h+=csSec(L("Transport mit Fahrer"),(c.drivers?'<div class="csdrvl">'+String(c.drivers).replace(/o\.\s*p\.\s*D\.?\s*=\s*on personal decision/i,"").split(/\s*[|\n;]\s*/).filter(x=>x.trim()).map(x=>{const m=x.match(CSPH);let nm=m?x.replace(m[0],"").trim():x.trim();
+      /* a number without a name (forgotten on the callsheet): the name from other callsheets or the crew list with that number */
+      if(!nm&&m)nm=csDriverByPhone(m[0]);
      return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRideCell(x.date,r),r.vehicle,r.driver,r.passengers]),1),false,"","trans",SU.trans);
   /* information by department */
   h+=csSec(L("Transport Crew"),csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,csRideCell(x.date,r),r.people]),1),false,"","ctrans",SU.ctrans);
