@@ -889,16 +889,10 @@ html body #view .dtiles>.dt.wide{flex:2 1 210px}
 .csnow{display:block;font-size:10.5px;color:#fff;background:var(--accent);border-radius:6px;padding:1px 5px;margin-top:3px;width:max-content}
 .csbig{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid var(--accent);color:var(--accent);text-decoration:none;font-weight:600;margin:4px 6px 4px 0}
 html body #view .cstiles{display:flex!important;flex-wrap:wrap;gap:6px;margin-top:8px}
-html body #view .cstiles>.dt{flex:0 1 auto;min-width:0;padding:4px 10px;border-radius:8px}
-html body #view .cstiles>.dt .v{font-size:15px;line-height:1.25;white-space:nowrap}
 html body #view .cstiles>.dt.big .v{font-family:var(--f-mono);font-size:19px;font-weight:700;letter-spacing:0}
-html body #view .cstiles>.dt.big{box-shadow:none}
-html body #view .cstiles>.dt.wide{flex:0 1 auto}
 html body #view .cstiles>.dt.wide .v{white-space:normal;font-size:13.5px}
-details.csloc>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
 details.csloc>summary::-webkit-details-marker{display:none}
 html body #view .cstiles>.dt.cswx{padding:0;border:0;background:none}
-html body #view .cstiles>.dt.cswx .ttile{margin:0;min-height:0;padding:4px 10px}
 .csmap{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);vertical-align:middle;flex:0 0 auto;text-decoration:none}
 .csmap:hover{background:var(--accent-soft)}
 .csscd>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
@@ -924,7 +918,6 @@ html.fs-l #view{zoom:1.13}
 body>#offbar{position:fixed;bottom:12px}
 /* day bar always on top, callsheet bar right below it */
 html body #view .stripwrap{position:sticky;top:env(safe-area-inset-top,0px);z-index:6}
-html body #view .csview [id^="cs-"]{scroll-margin-top:calc(var(--striph,0px) + var(--csjh,0px) + 8px)}
 /* swipe feedback */
 #view.swl{animation:swl .25s ease}
 #view.swr{animation:swr .25s ease}
@@ -964,15 +957,12 @@ html body #view .csview .cslist{margin:4px 0;font-size:13px}
 /* calls: fixed columns time | place | name + job */
 html body #view .csview .cscall-r{display:grid;grid-template-columns:50px 48px minmax(0,1fr);gap:0 8px;align-items:baseline;padding:3px 6px;margin:0 -6px;border-radius:6px;flex-wrap:nowrap}
 html body #view .csview .cscall-r .t{min-width:0;font-family:var(--f-mono,monospace);font-size:13px;white-space:nowrap}
-html body #view .csview .cscall-r .t i{font-style:normal;font-size:10px;color:var(--muted);margin-left:2px}
 html body #view .csview .cscall-r .cp{display:flex}
 html body #view .csview .cscall-r .csplace{min-width:0;width:auto;justify-self:start;box-sizing:border-box;padding:0 3px;white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:clip}
 html body #view .csview .cscall-r .ccw{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:760px){html body #view .csview .cscall-r{grid-template-columns:46px 40px minmax(0,1fr);gap:0 6px}}
 /* phone: nothing wider than the screen */
 html body #view .csview,html body #view .csview *{max-width:100%}
-html body #view .csview{overflow-wrap:anywhere}
-html body #view .csview .cs-tbl .dtbl{max-width:none}
 /* team of the day: the phone number always whole, the name shrinks */
 html body #view .csview .cskey>div{white-space:normal;overflow:visible}
 html body #view .csview .cskey>div{display:grid;grid-template-columns:36% minmax(0,1fr) auto;gap:0 8px}
@@ -1004,10 +994,8 @@ html body #view details.csloc>summary .dn::before,html body #view details.csloc[
 html body #view .csview .csme{margin:0 0 8px}
 html body #view .csview .cskey .csct{min-height:0}
 /* desktop: the time tiles always in one row over the whole width (text scales with the width) */
-@media (min-width:480px){html body #view .dtiles.cstiles{flex-wrap:nowrap;gap:clamp(4px,.6vw,8px)}html body #view .cstiles>.dt{flex:1 1 auto;min-width:0;padding:5px clamp(6px,.9vw,12px)}html body #view .cstiles>.dt.cswx{flex:1.3 1 auto}html body #view .cstiles>.dt.cswx{display:flex}html body #view .cstiles>.dt.cswx .ttile{height:100%;width:100%;box-sizing:border-box;padding:5px clamp(6px,.9vw,12px)}html body #view .cstiles>.dt .v{font-size:clamp(13px,1.45vw,21px);white-space:nowrap}html body #view .cstiles>.dt.big .v{font-size:clamp(16px,1.8vw,26px)}html body #view .cstiles>.dt .k{font-size:clamp(9px,.75vw,11px);white-space:nowrap}html body #view .cstiles>.dt.cswx .ttile *{white-space:nowrap}html body #view .cstiles>.dt.cswx .ttile b,html body #view .cstiles>.dt.cswx .ttile .wxt,html body #view .cstiles>.dt.cswx .ttile .v{font-size:clamp(15px,1.6vw,22px)}}
 /* locations: short code badge, name, scenes; map and open symbol same small size on the right */
 html body #view details.csloc>summary{flex-wrap:nowrap;gap:8px;align-items:center}
-html body #view details.csloc>summary .csloc-c{flex:0 0 auto;order:0;text-align:center}
 html body #view details.csloc>summary .dn{flex:1 1 auto;min-width:0;order:0}
 html body #view details.csloc>summary .csloc-s{display:block;font-weight:400;font-size:11px;color:var(--muted);font-family:var(--f-mono,monospace)}
 html body #view details.csloc>summary .csloc-i{display:flex;gap:6px;margin-left:auto;flex:0 0 auto;order:0}
@@ -1021,7 +1009,6 @@ html body #view .cssec#cs-order[open] .csosum{display:none}
 html body #view .csscd>summary .csplace{font-size:11px;padding:0 5px;line-height:1.5}
 /* desktop: every part on its own full row; cast always as a table */
 @media (min-width:761px){html body #view .csview{display:block}html body #view .csview #cs-cast .cs-tbl{display:block!important}html body #view .csview #cs-cast .cs-cards{display:none!important}html body #view .csview #cs-cast .cstview{display:none}}
-@media (max-width:760px){html body #view .csview details.csloc>summary>*,html body #view .csview details.csloc .csloc-i>*{order:0!important}}
 /* jump bar: round symbols without text */
 html body #view .csjb{justify-content:space-around;gap:6px;padding:4px 0}
 html body #view .csjb button{flex:0 0 auto;width:38px;height:38px;min-width:38px;min-height:38px;padding:0;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 65%,transparent);justify-content:center}
@@ -1055,28 +1042,26 @@ html body #view .cssec#cs-order[open] .csoscn{display:none}
 .cstrv .r{font-family:var(--f-mono,monospace);font-size:12.5px}
 @media (min-width:761px){.cstrv{flex-wrap:nowrap;white-space:nowrap}.cstrv b{min-width:200px}.cstrv small:not(.n){min-width:90px}.cstrv .n{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}}
 /* calls: one line per person also on the phone (long jobs shortened) */
-@media (max-width:760px){html body #view .csview .cscall-r .ccw{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 /* location address (computer only) */
 /* callsheet head on one line: title · shoot day · date */
 html body #view .csview .dsp-head>div{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px}
 html body #view .csview .dsp-head .date>span{font-size:clamp(14px,1.9vw,24px);color:var(--ink)}
 /* team of the day: counts next to the title when there is room */
-@media (min-width:520px){html body #view .cssec#cs-team>summary{flex-wrap:nowrap}}
 /* addresses as links (pin + text) */
 .csadl{display:inline-flex;align-items:baseline;gap:4px;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 /* every main part: sums in one line (next to the title when there is room) */
 html body #view .cssec>summary{flex-wrap:wrap}
 html body #view .cssec>summary .cscount{flex:1 1 100%;order:3;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 html body #view .cssec>summary .cscount>span{margin-right:12px}
-@media (min-width:520px){html body #view .cssec>summary{flex-wrap:nowrap}html body #view .cssec>summary .cscount{flex:1 1 auto;order:0;margin-left:4px;min-width:0}html body #view .cssec>summary .dh{flex:0 0 auto}}
-@media (max-width:519px){html body #view .cssec>summary .dh{flex:1 1 0;min-width:0}html body #view .cssec>summary>.csexp{order:1;margin-left:auto}}
+@media (min-width:520px){html body #view .cssec>summary{flex-wrap:nowrap}html body #view .cssec>summary .cscount{flex:1 1 auto;order:0;margin-left:4px;min-width:0}}
+@media (max-width:519px){html body #view .cssec>summary .dh{flex:1 1 0;min-width:0}}
 /* sun next to the date in the head line */
 /* phone: time tiles much smaller (several rows allowed) */
-@media (max-width:479px){html body #view .cstiles{gap:4px;margin-top:6px}html body #view .cstiles>.dt{padding:2px 7px;border-radius:7px}html body #view .cstiles>.dt .v{font-size:13px;line-height:1.2}html body #view .cstiles>.dt.cswx .ttile{padding:2px 7px}html body #view .cstiles>.dt.cswx .ttile b{font-size:14px}html body #view .cstiles>.dt.cswx .ttile span{font-size:9px}}
+@media (max-width:479px){html body #view .cstiles{gap:4px;margin-top:6px}html body #view .cstiles>.dt .v{font-size:13px;line-height:1.2}html body #view .cstiles>.dt.cswx .ttile{padding:2px 7px}html body #view .cstiles>.dt.cswx .ttile b{font-size:14px}html body #view .cstiles>.dt.cswx .ttile span{font-size:9px}}
 /* phone: Crew Call to Wrap in one row, weather below */
-@media (max-width:479px){html body #view .dtiles.cstiles{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}html body #view .cstiles>.dt{min-width:0;padding:3px 5px}html body #view .cstiles>.dt .v{font-size:12.5px;white-space:nowrap}html body #view .cstiles>.dt.big .v{font-size:14px}html body #view .cstiles>.dt .k{white-space:nowrap;overflow:hidden;text-overflow:clip}html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:1/-1}}
+@media (max-width:479px){html body #view .dtiles.cstiles{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}html body #view .cstiles>.dt{min-width:0;padding:3px 5px}html body #view .cstiles>.dt .v{font-size:12.5px;white-space:nowrap}html body #view .cstiles>.dt.big .v{font-size:14px}html body #view .cstiles>.dt .k{white-space:nowrap;overflow:hidden;text-overflow:clip}}
 /* sun: in the head line on wider screens, next to the weather on the phone */
-@media (max-width:479px){html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:span 3}html body #view .cstiles>.dt.cswx .ttile{width:100%;height:100%;box-sizing:border-box;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}}
+@media (max-width:479px){html body #view .cstiles>.dt.cswx .ttile{width:100%;height:100%;box-sizing:border-box;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}}
 /* Today: «Mein Tag» like in the callsheet (label | value) */
 html body #view .tmine .csme-r{display:grid;grid-template-columns:96px minmax(0,1fr);gap:0 10px;align-items:baseline;padding:2px 0;font-size:14px;line-height:1.35}
 html body #view .tmine .csme-r .k{font-size:11.5px;color:var(--muted);min-width:0}
@@ -1087,7 +1072,7 @@ html body #view .tmine .csme-r .csmap svg{width:13px;height:13px}
 /* drive to my call place */
 html body #view .cstiles>.dt.csdrv{font:inherit;text-align:left;cursor:pointer;color:inherit;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent)}
 html body #view .cstiles>.dt.csdrv .v{color:var(--accent)}
-@media (max-width:479px){html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:span 2}html body #view .cstiles>.dt.cssunt{grid-column:span 1}html body #view .cstiles>.dt.cssunt .v{font-size:11.5px;line-height:1.25}html body #view .cstiles>.dt.csdrv{grid-column:span 2}}
+@media (max-width:479px){html body #view .cstiles>.dt.cswx,html body #view .cstiles>.dt.wide{grid-column:span 2}html body #view .cstiles>.dt.cssunt .v{font-size:11.5px;line-height:1.25}html body #view .cstiles>.dt.csdrv{grid-column:span 2}}
 html body #view .csjump{margin-top:0}
 @media (max-width:479px){html body #view .cstiles>.dt{justify-self:stretch;width:auto;box-sizing:border-box}html body #view .cstiles>.dt.cswx{display:flex;padding:0}}
 @media (max-width:479px){html body #view .dtiles.cstiles>.dt.big{grid-column:auto}html body #view .dtiles.cstiles>.dt .k{font-size:8px;letter-spacing:.02em}}
@@ -1104,10 +1089,7 @@ html body #view .csoscn .cso1 .du{font-family:var(--f-mono,monospace);color:var(
 html body #view .csview .cssec>summary .dh{font-size:clamp(17px,2.2vw,22px);letter-spacing:.04em}
 /* sun tile everywhere (before the weather), drive as high as the weather */
 html body #view .cstiles>.dt.csdrv{height:auto;align-self:stretch;display:flex;flex-direction:column;justify-content:center}
-html body #view .dtiles.cstiles{align-items:stretch}
-@media (min-width:480px){html body #view .cstiles>.dt.cssunt br{display:none}}
 @media (max-width:479px){html body #view .cstiles>.dt.cssunt .sd{display:none}}
-html body #view .cstiles>.dt{align-self:stretch;margin:0}
 /* location address as link, also on the phone and when folded */
 html body #view details.csloc>summary .csaddr{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--accent);text-decoration:underline;text-underline-offset:2px;font-weight:400;margin-top:2px}
 /* «Mein Drehtag 1 · date» as title of the red box */
@@ -1138,16 +1120,13 @@ html body #view .today .ttiles.ttiles>.twx b,html body #view .today .ttiles.ttil
 @media (max-width:600px){html body #view .today .ttiles.ttiles>*{min-width:0}html body #view .today .ttiles.ttiles{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:5px}html body #view .today .ttiles.ttiles>.ttile{padding:3px 6px}html body #view .today .ttiles.ttiles>.ttile>span{font-size:8px;letter-spacing:.03em}html body #view .today .ttiles.ttiles>.ttile>b{font-size:13px}html body #view .today .ttiles.ttiles>.ttile.big>b{font-size:16px}}
 .tstl li.twarn{color:#f5b400}
 html body #view .cssec#cs-loc:not([data-all="1"])>summary .csexp{background:none}
-
 /* cast: role numbers wrap, hidden when the part is open */
 html body #view .cssec>summary .csnos{white-space:normal;overflow:visible;display:flex;flex-wrap:wrap;gap:3px 0}
 html body #view .cssec#cs-cast[open]>summary .csnos{display:none}
 .cssame{color:var(--muted);font-size:12px;margin-top:2px;display:block}
-
 /* the round symbols stay right below the day bar on the whole page */
 html body #view .csjump{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--striph,0px));z-index:5;background:var(--paper)}
 html body #view .csview [id^="cs-"]{scroll-margin-top:calc(var(--striph,0px) + var(--csjh,0px) + 8px)}
-
 /* callsheet map */
 .csmapw{position:relative}.csmap0{height:260px;border-radius:10px;overflow:hidden;border:1px solid var(--rule);background:var(--sheet);z-index:0}
 @media (min-width:761px){.csmap0{height:380px}}
@@ -1156,30 +1135,24 @@ html body #view .csview [id^="cs-"]{scroll-margin-top:calc(var(--striph,0px) + v
 .csmapw.big .csmap0{height:100%}
 .csmk{background:none;border:0;width:auto!important;height:auto!important}.csmk span{display:inline-block;width:max-content;transform:translate(-50%,-100%);padding:2px 7px;border-radius:7px;background:var(--accent);color:#fff;font:700 12px/1.4 var(--f-body,sans-serif);white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4);border:1.5px solid #fff}
 .leaflet-container a{color:var(--accent)}
-
 html body #view .csview .leaflet-container,html body #view .csview .leaflet-container *{max-width:none!important}
-
 .csmk span{transform:translate(-50%,calc(-100% - var(--k,0) * 26px))!important}.csmk span i{font-style:normal;font-weight:500;opacity:.9;margin-left:4px;font-family:var(--f-mono,monospace);font-size:11px}
 .csmk.min span{background:var(--sheet);color:var(--ink);border-color:var(--accent);font-size:10.5px;padding:1px 5px;opacity:.9}
 .csmapl{display:flex;flex-direction:column;gap:4px;margin-top:8px}
 .csmapgo{display:flex;align-items:baseline;gap:8px;text-align:left;font:inherit;font-size:13.5px;color:var(--ink);background:none;border:1px solid var(--rule);border-radius:8px;padding:5px 9px;cursor:pointer}
 .csmapgo small{color:var(--muted);font-family:var(--f-mono,monospace);font-size:11.5px;margin-left:auto}.csmapgo:hover{border-color:var(--accent)}
-
 .csfp{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.csfp .pillbtn{display:inline-flex;align-items:center;gap:6px;font-size:13px}
-
 /* map: legend only enlarged (panel at the bottom), layer switch */
 .csmapw:not(.big) .csmapl{display:none}
 .csmapw.big{display:flex;flex-direction:column}.csmapw.big .csmap0{flex:1 1 auto;height:auto;min-height:0}
 .csmapw.big .csmapl{flex:0 0 auto;max-height:34%;overflow:auto;padding:8px;margin:0;background:var(--paper);border-top:1px solid var(--rule)}
 .leaflet-control-layers{font:13px/1.4 var(--f-body,sans-serif)}
-
 /* rides: confirm (AL, AD, production) */
 .rideack{width:34px;height:34px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 60%,transparent);background:none;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;flex:0 0 auto}
 .rideack.rk0 svg{opacity:.45}.rideack.rk1{color:var(--accent);border-color:var(--accent)}.rideack.rk2{color:#5fd38d;border-color:#5fd38d;background:color-mix(in srgb,#5fd38d 14%,transparent)}
 .ridest,.ridek{display:inline-flex;align-items:center;vertical-align:-4px}.ridest.rs1,.ridek.rk1{color:var(--accent)}.ridest.rs2,.ridek.rk2{color:#5fd38d}
 .ridest.rs1 .rmove{animation:rmove .9s linear infinite}@keyframes rmove{from{transform:translateX(2px);opacity:1}to{transform:translateX(-2px);opacity:.2}}
 @media (prefers-reduced-motion:reduce){.ridest.rs1 .rmove{animation:none}}
-
 /* cast: make-up / wardrobe – duration and initials pink; role and actor columns on/off */
 .mkd,.mki{color:var(--accent);font-weight:600}.mki{font-size:.9em;letter-spacing:.03em}
 .cscols{display:inline-flex;gap:4px;margin:0 10px 6px 0;vertical-align:middle}
@@ -1210,13 +1183,12 @@ html body #view .dtiles.cstiles>.dt.cswx .ttile>span{font-size:max(8.5px,calc(11
 .camx>b{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .camx .cx{font-family:var(--f-mono);overflow-wrap:anywhere}
 .pv-no-d .sc>.camx{display:none}
-@media (max-width:479px){html body #view .dtiles.cstiles>.dt.csdrv{min-width:0;overflow:hidden}html body #view .dtiles.cstiles>.dt.csdrv .v{white-space:normal!important;overflow-wrap:anywhere;line-height:1.15}}
+@media (max-width:479px){html body #view .dtiles.cstiles>.dt.csdrv .v{white-space:normal!important;overflow-wrap:anywhere;line-height:1.15}}
 .cscallpl{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
 /* desktop: a location in one line – code, name, address, scenes, buttons (long texts end with … , the full address is its tooltip) */
 @media (min-width:761px){
 html body #view details.csloc>summary{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:8px}
 html body #view details.csloc>summary .csl1{display:contents}
-html body #view details.csloc>summary .csloc-c{order:1;flex:0 0 auto}
 html body #view details.csloc>summary .dn{order:2;flex:0 1 auto;min-width:3em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html body #view details.csloc>summary .csaddr{order:3;flex:0 1 auto;min-width:4em;margin:0!important;width:auto!important;max-width:none!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 html body #view details.csloc>summary .csloc-s{order:4;flex:0 0 auto;display:flex;flex-wrap:nowrap;margin:0!important}
@@ -1237,11 +1209,8 @@ html body .csplace{min-width:0!important;width:auto!important;flex:0 0 auto;padd
 @media (max-width:760px){
 html body #view .csview .cskey>div{grid-template-columns:31% minmax(0,1fr) auto!important;gap:0 6px;padding:1px 0;font-size:12.5px;line-height:1.3}
 html body #view .csview .cskey>div .k{font-size:10.5px;line-height:1.2;white-space:normal}
-html body #view .csview .cskey>div>*:not(.k),html body #view .csview .cskey>div>*:not(.k) *{font-size:12.5px!important;line-height:1.3}
-html body #view .csview .cskey a{text-underline-offset:2px}
 html body #view .csview .cskey svg{width:12px;height:12px}
 html body #view .csview .cslist{margin:3px 0;font-size:11.5px;line-height:1.35}
-html body #view .csview .cslist b{font-size:11.5px}
 }
 @media (max-width:760px){html body #view details.csloc:not([open])>summary .csloc-s{display:none!important}}
 .csmpst>div{display:flex;align-items:center;gap:6px;margin-top:3px}
