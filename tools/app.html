@@ -1183,8 +1183,11 @@ html body #view .csview .leaflet-container,html body #view .csview .leaflet-cont
 .leaflet-control-layers{font:13px/1.4 var(--f-body,sans-serif)}
 
 /* rides: confirm (AL, AD, production) */
-.rideack{font-size:12px;padding:3px 10px;min-height:28px;margin:4px 6px 0 0}.rideack.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
-.rideok{display:inline-block;font-size:12px;color:#5fd38d;margin:4px 6px 0 0;font-weight:600}
+.rideack{width:34px;height:34px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 60%,transparent);background:none;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;flex:0 0 auto}
+.rideack.s0 svg{opacity:.45}.rideack.s1{color:var(--accent);border-color:var(--accent)}.rideack.s2{color:#5fd38d;border-color:#5fd38d;background:color-mix(in srgb,#5fd38d 14%,transparent)}
+.ridest{display:inline-flex;align-items:center;vertical-align:-4px}.ridest.s1{color:var(--accent)}.ridest.s2{color:#5fd38d}
+.ridest.s1 .rmove{animation:rmove .9s linear infinite}@keyframes rmove{from{transform:translateX(2px);opacity:1}to{transform:translateX(-2px);opacity:.2}}
+@media (prefers-reduced-motion:reduce){.ridest.s1 .rmove{animation:none}}
 
 /* cast: make-up / wardrobe – duration and initials pink; role and actor columns on/off */
 .mkd,.mki{color:var(--accent);font-weight:600}.mki{font-size:.9em;letter-spacing:.03em}
@@ -1590,7 +1593,7 @@ function myEvents(me){
     const rides=[...arr(c.transport).filter(r=>cm.hit(r.driver)||cm.hit(r.passengers)).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>cm.hit(r.people)).map(r=>({r})),...arr(c.travel).filter(r=>cm.hit(r.name)).map(r=>({r,how:r.how}))];
     for(const {r,drv,how} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();
       /* a confirmed ride disappears one hour after its arrival */
-      const rid=rideId(dp.date,r);if(window.RIDEACK&&window.RIDEACK[rid]){const end=hm(r.t2)||st;if(end&&Date.now()>zurichUTC(dp.date,end).getTime()+3600e3)continue}
+      const rid=rideId(dp.date,r);if(window.rideState&&rideState(rid)===2){const end=hm(r.t2)||st;if(end&&Date.now()>zurichUTC(dp.date,end).getTime()+3600e3)continue}
       out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true,rid})}}}catch(_){}
   /* own and Google Calendar events (tools/boot/18-own-events.js); the same appointment twice (same day, same start, same title) is shown once */
   try{if(window.ownEvents){const tn=x=>fold(x||"").replace(/[^a-z0-9]+/g," ").trim(),same=(a,b)=>a.date===b.date&&(hm(a.t)||"")===(hm(b.t)||"")&&(()=>{const x=tn(a.n),y=tn(b.n);return x===y||(x.length>=4&&y.length>=4&&(x.includes(y)||y.includes(x)))})();
@@ -2135,6 +2138,9 @@ function csMk(v,c){const out=[];for(const seg of String(v==null?"":v).split(/\s*
 /* a cell: text (phone numbers, links) or ready HTML {h} */
 const csCell=c=>c&&typeof c==="object"&&"h" in c?c.h:csTx(c);
 const csCellTx=c=>c&&typeof c==="object"&&"h" in c?c.h.replace(/<[^>]+>/g,""):String(c||"");
+/* a ride with its state (quittiert): driving car = running, two checks = done */
+function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0;try{st=typeof rideId==="function"&&window.rideState?rideState(rideId(date,r)):0}catch(_){}
+  if(!st)return t;const I=window.RIDE_ICO||{};return {h:'<span class="ridest s'+st+'" title="'+esc(st===1?L("Fahrt läuft"):L("Fahrt ausgeführt"))+'">'+(st===1?I.car:I[2])+'</span> '+esc(t)}}
 function csTable(head,rows,tc){rows=rows.map(r=>r.map(c=>c&&typeof c==="object"?c:csDurT(c)));rows=rows.filter(r=>r.some(c=>csCellTx(c).trim()));if(!rows.length)return"";tc=tc||2;
   const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csCell(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
   const cards='<div class="cs-cards">'+rows.map(r=>{const tt=r.slice(0,tc).map(c=>csCellTx(c).trim());
@@ -2349,9 +2355,9 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","",SU.veh);
   /* transport and travel */
   h+=csSec(L("Transport mit Fahrer"),(c.drivers?'<div class="csdrvl">'+String(c.drivers).split(/\s*[|\n;]\s*/).filter(x=>x.trim()).map(x=>{const m=x.match(CSPH);const nm=m?x.replace(m[0],"").trim():x.trim();
-     return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRoute(r.from,r.t1,r.to,r.t2),r.vehicle,r.driver,r.passengers]),1),false,"","trans",SU.trans);
+     return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRideCell(x.date,r),r.vehicle,r.driver,r.passengers]),1),false,"","trans",SU.trans);
   /* information by department */
-  h+=csSec(L("Transport Crew"),csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,csRoute(r.from,r.t1,r.to,r.t2),r.people]),1),false,"","ctrans",SU.ctrans);
+  h+=csSec(L("Transport Crew"),csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,csRideCell(x.date,r),r.people]),1),false,"","ctrans",SU.ctrans);
   h+=csSec(L("Infos nach Abteilung"),csA(c.depts).filter(r=>String(r.text||"").trim()).map(r=>'<div class="csdep'+(csMyDept(c,me,r.dept)?' mine':'')+'"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text)+'</div></div>').join(""),false,"","dept",SU.dept);
   /* the preview (PREVISION) is shown only on the next day (csPrevHTML) */
   /* calls on set */
