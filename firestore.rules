@@ -257,7 +257,7 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
-    // Fahrten aus dem Callsheet quittieren (Stand 1/2): lesen alle Mitglieder, setzen/zurücknehmen mit «rides.confirm» (AL, AD, Produktion) oder «Fahrten Manager»
+    // Fahrten aus dem Callsheet quittieren (Stand 1/2): lesen alle Mitglieder, setzen/zurücknehmen mit «rides.confirm» (AL, AD, Produktion) oder «Fahrten Manager» (rides.manage)
     // Dokument-ID = Prüfsumme der Fahrt (keine Namen), Felder: Datum d, Zeitpunkt at, Stand s (1 = Fahrt beginnt, 2 = ausgeführt)
     match /rideack/{id} {
       allow read: if crew();
