@@ -2,11 +2,13 @@
    every event can be switched off on its own; each device stores its upcoming reminders encrypted in push/{uid}_{device},
    a GitHub run (started every 10 minutes by the Cloudflare Worker) sends the due ones ---- */
 const VAPID_PUB="BEP6-lmT3gVm_ZL1R3qiyBzrntxU6dkKtCEbqanP4KjR9xFTTJNtg8Jm1lxWTs7Z2790ZdoNeV4HtNd1jQEjGeo";
+/* rides (pickup, driving): their own lead time, also short ones */
+const PUSH_LEADS_RIDE=[[5,"5 Min. vorher"],[10,"10 Min. vorher"],[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"]];
 const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"],[180,"3 Std. vorher"],[1440,"1 Tag vorher"]];
 const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
 function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
   const nd=c.on===false?false:true;  /* reminders were switched off: change pushes start off too */
-  return {hint:c.hint||0,news:Object.assign({plan:nd,cs:nd,prep:nd,script:nd},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
+  return {hint:c.hint||0,news:Object.assign({plan:nd,cs:nd,prep:nd,script:nd},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,leadRide:PUSH_LEADS_RIDE.some(x=>x[0]===c.leadRide)?c.leadRide:(PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60),types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
 function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
 const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
@@ -16,7 +18,7 @@ const hmOf=t=>{const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m
 /* all events the device would remind of, by kind; each with a stable id */
 function pushEvents(c){
   c=c||pushCfg();const out=[],seen=new Set(),t=todayISO(),add=(kind,e)=>{const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));if(seen.has(id))return;seen.add(id);out.push(Object.assign({id,kind},e))};
-  try{if(c.types.my&&vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)myEvents(me).forEach(e=>add("my",{date:e.date,t:hmOf(e.t),n:e.n,where:e.where||""}))}}catch(err){console.warn("push my",err)}
+  try{if(c.types.my&&vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)myEvents(me).forEach(e=>add("my",{date:e.date,t:hmOf(e.t),n:e.n,where:e.where||"",ride:!!e.ride}))}}catch(err){console.warn("push my",err)}
   try{if(c.types.shoot&&vok("plan"))for(const d of S.days){if(d.kind!=="shoot"||d.date<t)continue;const dp=S.dispos.find(x=>x&&x.date===d.date)||{};
     add("shoot",{date:d.date,t:hmOf(dp.crewCall)||hmOf(dp.generalCall),n:(d.short||d.label||"")+" · "+L("Drehtag"),where:(typeof dayPlaces==="function"?dayPlaces(d).join(", "):"")})}}catch(err){console.warn("push shoot",err)}
   try{if(c.types.prep&&vok("prep"))for(const d of S.prepro){if(d.date<t)continue;for(const i of arr(d.items).concat(arr(d.parallel))){if(!i||!i.n||/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n).trim()))continue;add("prep",{date:d.date,t:hmOf(i.t),n:i.n,where:i.where||""})}}}catch(err){console.warn("push prep",err)}
@@ -25,7 +27,7 @@ function pushEvents(c){
 /* start time of an event (events without a time: 08:00) and when to remind */
 const pushStart=e=>new Date(e.date+"T"+(e.t||"08:00")+":00").getTime();
 function pushItems(c){c=c||pushCfg();const now=Date.now(),lim=now+15*864e5;
-  return pushEvents(c).filter(e=>!c.off[e.id]).map(e=>{const st=pushStart(e),at=st-c.lead*60e3;
+  return pushEvents(c).filter(e=>!c.off[e.id]).map(e=>{const st=pushStart(e),at=st-(e.ride?c.leadRide:c.lead)*60e3;
     const dt=new Date(st),day=WDL(dt)+" "+ddmm(dt);
     return {id:e.id,at,start:st,title:e.n||L("Termin"),body:[day+(e.t?" "+e.t:""),e.where].filter(Boolean).join(" · "),url:"./#my"}}).filter(x=>x.start>now&&x.start<lim).slice(0,80)}
 let PUSHT=null,PUSHBUSY=false;
@@ -133,6 +135,7 @@ function pushSec(){
     '<p class="ahint"><b>'+L("Erinnerungen")+'</b></p>'+
     '<label class="ck"><input type="checkbox" data-pushmaster'+(c.on?' checked':'')+'> '+L("Erinnerungen an kommende Termine erhalten")+'</label>'+
     (c.on?dev+'<label>'+L("Erinnern")+'<select data-pushlead>'+PUSH_LEADS.map(([v,t])=>'<option value="'+v+'"'+(v===c.lead?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
+      '<label>'+L("Erinnern an Fahrten")+'<select data-pushleadride>'+PUSH_LEADS_RIDE.map(([v,t])=>'<option value="'+v+'"'+(v===c.leadRide?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
       '<p class="ahint"><b>'+L("Für welche Termine?")+'</b></p>'+types.map(([k,t])=>'<label class="ck"><input type="checkbox" data-pushtype="'+k+'"'+(c.types[k]?' checked':'')+'> '+L(t)+'</label>').join("")+
       '<details class="pushlist" data-sec="pushlist"'+(SECS.pushlist?' open':'')+'><summary>'+L("Kommende Termine")+' ('+ev.filter(e=>!c.off[e.id]).length+'/'+ev.length+')</summary>'+
       (ev.length?ev.map(e=>{const dt=new Date(e.date+"T12:00:00");return '<label class="ck pev"><input type="checkbox" data-pushev2="'+e.id+'" data-pushdate="'+esc(e.date)+'"'+(c.off[e.id]?'':' checked')+'> <span><b>'+WDL(dt)+' '+ddmm(dt)+(e.t?' '+esc(e.t):'')+'</b> '+esc(e.n||"")+'</span></label>'}).join(""):'<p class="ghint">'+L("Keine kommenden Termine gefunden.")+'</p>')+
@@ -148,6 +151,7 @@ document.addEventListener("change",e=>{const t=e.target;
   if(t.matches("[data-pushmaster]")){const c=pushCfg();c.on=t.checked;pushSave(c);if(t.checked&&pushOK()&&Notification.permission==="default")pushEnable();else render()}
   else if(t.matches("[data-pushnews]")){const c=pushCfg();c.news[t.dataset.pushnews]=t.checked;pushSave(c);if(t.checked&&pushOK()&&Notification.permission==="default")pushEnable();else render()}
   else if(t.matches("[data-pushlead]")){const c=pushCfg();c.lead=+t.value;pushSave(c)}
+  else if(t.matches("[data-pushleadride]")){const c=pushCfg();c.leadRide=+t.value;pushSave(c)}
   else if(t.matches("[data-pushtype]")){const c=pushCfg();c.types[t.dataset.pushtype]=t.checked;pushSave(c);render()}
   else if(t.matches("[data-pushev2]")){pushToggleEv(t.dataset.pushev2,t.dataset.pushdate,t.checked);const s=t.closest("details").querySelector("summary");if(s){const c=pushCfg(),ev=pushEvents(c).filter(x=>pushStart(x)>Date.now()).slice(0,40);s.textContent=L("Kommende Termine")+" ("+ev.filter(x=>!c.off[x.id]).length+"/"+ev.length+")"}}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pushSyncSoon()});

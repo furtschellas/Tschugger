@@ -1149,4 +1149,15 @@ html body #view .cssec#cs-cast[open]>summary .csnos{display:none}
 /* the round symbols stay right below the day bar on the whole page */
 html body #view .csjump{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--striph,0px));z-index:5;background:var(--paper)}
 html body #view .csview [id^="cs-"]{scroll-margin-top:calc(var(--striph,0px) + var(--csjh,0px) + 8px)}
+
+/* callsheet map */
+.csmapw{position:relative}.csmap0{height:260px;border-radius:10px;overflow:hidden;border:1px solid var(--rule);background:var(--sheet);z-index:0}
+@media (min-width:761px){.csmap0{height:380px}}
+.csmapbig{position:absolute;top:8px;right:8px;z-index:500;background:var(--paper);border:0;padding:0;border-radius:50%;cursor:pointer}
+.csmapw.big{position:fixed;inset:calc(env(safe-area-inset-top,0px) + 8px) 8px calc(env(safe-area-inset-bottom,0px) + 70px) 8px;z-index:60;background:var(--paper);border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.csmapw.big .csmap0{height:100%}
+.csmk{background:none;border:0;width:auto!important;height:auto!important}.csmk span{display:inline-block;width:max-content;transform:translate(-50%,-100%);padding:2px 7px;border-radius:7px;background:var(--accent);color:#fff;font:700 12px/1.4 var(--f-body,sans-serif);white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4);border:1.5px solid #fff}
+.leaflet-container a{color:var(--accent)}
+
+html body #view .csview .leaflet-container,html body #view .csview .leaflet-container *{max-width:none!important}
 </style>
