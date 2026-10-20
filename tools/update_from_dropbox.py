@@ -1654,8 +1654,8 @@ def main():
             if l.get("map"): parent[l["map"]] = l["map"]
             if l.get("map"): cand.append((l["map"], ad))
             else:   # a set without its own map link: its address (every set must be on the map)
-                pk = "loc:%d" % (li + 1);   # position of the set on the callsheet (the app counts the same way)
-                 labs[pk] = "L%d" % (li + 1); cand.append((pk, ad)); setkeys.append((pk, l))
+                pk = "loc:%d" % (li + 1)   # position of the set on the callsheet (the app counts the same way)
+                labs[pk] = "L%d" % (li + 1); cand.append((pk, ad)); setkeys.append((pk, l))
             for i in l.get("items") or []:
                 if isinstance(i, dict) and i.get("map"):
                     m = ADDR_RE.search(str(i.get("text") or ""))
