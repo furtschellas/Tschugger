@@ -21,24 +21,32 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
   const drivers=[...new Set(String(c.drivers||"").split(/\s*[|\n;]\s*/).map(x=>x.replace(/\+?\d[\d ()\/.-]{7,}\d/g,"").replace(/o\.\s*p\.\s*D.*$/i,"").trim()).filter(Boolean).concat((c.transport||[]).map(x=>x.driver).filter(Boolean)))];
   const crewNames=[...new Set([].concat(...(S.crew||[]).map(g=>(g.people||[]).map(p=>p.name))).filter(Boolean))];
   const inp=(n,lab,v,type,extra)=>'<label>'+esc(L(lab))+'<input name="'+n+'"'+(type?' type="'+type+'"':'')+' value="'+esc(v||"")+'"'+(extra||"")+'></label>';
+  /* pull-down with the choices of the day; «Andere …» opens a free field */
+  const OTHER="__other";const uniq=l=>[...new Set(l.map(x=>String(x||"").replace(/https?:\/\/\S+/g,"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"de"));
+  const sel=(n,lab,v,opts)=>{v=String(v||"").trim();const o=uniq(opts.concat(v?[v]:[]));
+    return '<label>'+esc(L(lab))+'<select name="'+n+'" data-redsel>'+'<option value=""></option>'+o.map(x=>'<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>').join("")+'<option value="'+OTHER+'">'+esc(L("Andere …"))+'</option></select><input name="'+n+'_x" hidden placeholder="'+esc(L(lab))+'"></label>'};
+  const rides=[].concat(c.transport||[],c.crewTransport||[]);
+  const places=rides.map(x=>x.from).concat(rides.map(x=>x.to),typeof csLocs==="function"?csLocs(c).map(l=>l.kinds?l.name:("L"+String(l.no||"").trim()+" · "+(l.name||""))):[],["Base","Hotel","Moxy","Holiday Inn"]);
+  const vehicles=rides.map(x=>x.vehicle);
   const d=mkDialog("rededlg",null,{replace:true});
   d.innerHTML='<div class="a2box redbox"><h3>'+esc(L("Fahrt ändern"))+'</h3><p class="ghint">'+esc(dp.date.split("-").reverse().join(".")+" · "+csRoute(o.from,o.t1,o.to,o.t2))+'</p>'+
-    (canAck?'<div class="redst" role="group">'+[[1,"Fahrt angenommen / läuft"],[2,"Fahrt ausgeführt"],[0,"Offen"]].map(([v,t])=>'<button type="button" data-redst="'+v+'" aria-pressed="'+(st===v)+'">'+esc(L(t))+'</button>').join("")+'</div>':'')+
-    '<form data-redform novalidate><div class="redrow">'+inp("t1","Abfahrt",hm(r.t1),"time")+inp("t2","Ankunft",hm(r.t2),"time")+'</div>'+
-    '<div class="redrow">'+inp("from","Von",r.from)+inp("to","Nach",r.to)+'</div>'+inp("vehicle","Fahrzeug",r.vehicle)+
-    (crew?'':inp("driver","Fahrer:in",r.driver,"",' list="reddrv"')+'<datalist id="reddrv">'+drivers.map(n=>'<option value="'+esc(n)+'">').join("")+'</datalist>')+
+    (canAck?'<div class="redst" role="group" aria-label="'+esc(L("Status"))+'">'+[[0,"Offen"],[1,"Fahrt angenommen / läuft"],[2,"Fahrt ausgeführt"]].map(([v,t])=>'<button type="button" class="ridest rs'+v+'" data-redst="'+v+'" aria-pressed="'+(st===v)+'" title="'+esc(L(t))+'" aria-label="'+esc(L(t))+'">'+rideIco(v)+'</button>').join("")+'</div>':'')+
+    '<form data-redform novalidate><div class="redrow">'+inp("t1","Abfahrt",hm(r.t1),"time")+sel("from","Von",r.from,places)+'</div>'+
+    '<div class="redrow">'+inp("t2","Ankunft",hm(r.t2),"time")+sel("to","Nach",r.to,places)+'</div>'+sel("vehicle","Fahrzeug",r.vehicle,vehicles)+
+    (crew?'':sel("driver","Fahrer:in",r.driver,drivers))+
     '<label>'+esc(L("Mitfahrende"))+'<textarea name="pax" rows="3">'+esc(crew?r.people:r.passengers)+'</textarea></label>'+
-    '<label class="redadd">'+esc(L("Person hinzufügen"))+'<input data-redadd list="redppl" placeholder="'+esc(L("Name aus der Crewliste"))+'"></label><datalist id="redppl">'+crewNames.map(n=>'<option value="'+esc(n)+'">').join("")+'</datalist>'+
+    '<label class="redadd">'+esc(L("Person hinzufügen"))+'<select data-redadd><option value="">'+esc(L("Name aus der Crewliste"))+'</option>'+crewNames.slice().sort((a,b)=>a.localeCompare(b,"de")).map(n=>'<option>'+esc(n)+'</option>').join("")+'</select></label>'+
     '<p class="amsg" role="status"></p><div class="a2b">'+(r._orig?'<button type="button" class="lnk" data-redreset>'+esc(L("Original wiederherstellen"))+'</button>':'')+dlgBtn("lnk",'data-redx',"Abbrechen")+'<button type="submit" class="pri">'+esc(L("Speichern"))+'</button></div></form></div>';
   const msg=d.querySelector(".amsg");
-  d.addEventListener("change",e=>{const t=e.target;if(t.matches("[data-redadd]")&&t.value.trim()){const ta=d.querySelector("[name=pax]");const l=ta.value.split(/\s*,\s*/).filter(Boolean);if(!l.includes(t.value.trim()))l.push(t.value.trim());ta.value=l.join(", ");t.value=""}});
+  d.addEventListener("change",e=>{const t=e.target;if(t.matches("[data-redsel]")){const x=t.parentNode.querySelector("input[name='"+t.name+"_x']");if(x){x.hidden=t.value!==OTHER;if(!x.hidden)x.focus()}return}
+    if(t.matches("[data-redadd]")&&t.value.trim()){const ta=d.querySelector("[name=pax]");const l=ta.value.split(/\s*,\s*/).filter(Boolean);if(!l.includes(t.value.trim()))l.push(t.value.trim());ta.value=l.join(", ");t.value=""}});
   d.addEventListener("click",async e=>{
     if(e.target===d||e.target.closest("[data-redx]")){d.remove();return}
     const sb=e.target.closest("[data-redst]");if(sb){const v=+sb.dataset.redst;try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);
         if(!v){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const x={d:dp.date,at:Date.now(),s:v};await F.setDoc(ref,x);window.RIDEACK[id]=x}
         d.querySelectorAll("[data-redst]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.redst===v)));render()}catch(err){msg.textContent=L("Speichern nicht möglich.")}return}
     if(e.target.closest("[data-redreset]")){try{const {F,db}=await fb();await F.deleteDoc(F.doc(db,"rideedit",id));d.remove();showMsg(L("Original wiederhergestellt."),2500)}catch(err){msg.textContent=L("Speichern nicht möglich.")}}});
-  d.addEventListener("submit",async e=>{e.preventDefault();const fm=e.target;const val=n=>fm[n]?String(fm[n].value||"").trim():"";
+  d.addEventListener("submit",async e=>{e.preventDefault();const fm=e.target;const val=n=>{const f0=fm.elements[n];if(!f0)return"";const v=String(f0.value||"").trim();if(v===OTHER){const x=fm.elements[n+"_x"];return x?String(x.value||"").trim():""}return v};
     const now={t1:val("t1"),t2:val("t2"),from:val("from"),to:val("to"),vehicle:val("vehicle")};if(!crew)now.driver=val("driver");now[crew?"people":"passengers"]=val("pax").split(/\s*,\s*/).filter(Boolean).join(", ");
     /* only what differs from the callsheet is stored */
     const ch={};for(const f in now){const a=String(o[f]==null?"":o[f]).trim(),b=now[f];if((f==="t1"||f==="t2")?hm(a)!==hm(b):a!==b)ch[f]=b}

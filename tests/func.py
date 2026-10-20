@@ -339,7 +339,7 @@ async def owner_tests(p, port):
         cu = await E("""(()=>{const w=document.createElement('div');w.innerHTML=chgUnitsHTML([{date:'2026-10-26',sc:'5 pt2',u:'2',txt:'x',unread:true},{date:'2026-10-26',sc:'157',txt:'y'},{date:'2026-10-27',sc:'107 pt1',u:'1',txt:'z'}]);
           const d=[...w.querySelectorAll('details[data-chgu]')];return d.map(x=>x.dataset.chgu+':'+(x.open?'auf':'zu')+':'+x.querySelectorAll('.chgi').length).join(' ')})()""")
         check("Today/Änderungen: 1st Unit (offen) und 2nd Unit (zu) getrennt aufklappbar", cu == "1:auf:2 2:zu:1", cu, public=True)
-        ct = await E("""(()=>{const o=chgLoad(),pv=Object.assign({},S.pv);const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d)return null;const it=arr(d.items).find(i=>i.sc);
+        ct = await E("""(()=>{const o=chgLoad(),pv=Object.assign({},S.pv);const sh=S.days.filter(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));const d=sh.find(x=>x.date>=todayISO())||sh[sh.length-1];if(!d)return null;const it=arr(d.items).find(i=>i.sc);
           chgSave([{id:'t1',at:Date.now(),date:d.date,u:'1',sc:it.sc,txt:'Test'}]);const keep=S.meta.bd;
           S.meta.bd={[d.date+'|'+bdKey(it.sc)]:{h:{FX:'Double BJ'},c:[['Crew',['Lifeguard']],['Props',['Knife','Stone (soft, dummy)']],['Mup/Hair',['Mike dying']],['Notes',['a','b']]]}};
           S.tab='plan';S.day=d.id;render();const v=document.querySelector('#view');const vis=e=>!!e&&getComputedStyle(e).display!=='none';
@@ -502,8 +502,8 @@ async def owner_tests(p, port):
           S.dispos=keep.d;window.csMe=keep.cm;const e=ev[0]||{};return {driver:String(e.driver||'').startsWith('Max Fahrer'),pax:e.pax||''}})()""")
         check("Meine Termine: Fahrt mit Fahrer:in (und Telefon) und den anderen Mitfahrenden", rx in (None, {"driver": True, "pax": "Lena Test"}), rx)
         rs = await E("""(()=>{if(typeof csRideCell!=='function'||!window.rideState)return null;const keep=window.rideState;const r={t1:'07:30',t2:'08:00',from:'A',to:'B'};const out=[];
-          const ka=window.rideAt;for(const st of [0,1,2]){window.rideState=()=>st;window.rideAt=()=>Date.now()-60e3;const c=csRideCell('2030-05-06',r);const h=typeof c==='string'?c:c.h;out.push(st?(h.includes('ridest rs'+st)&&h.includes('<svg')&&!h.includes('rsold')):(h.includes('ridest rs0')&&!h.includes('<svg')))}
-          window.rideState=()=>2;window.rideAt=()=>Date.now()-25*60e3;const c2=csRideCell('2030-05-06',r);out.push((typeof c2==='string'?c2:c2.h).includes('rsold'));window.rideState=keep;window.rideAt=ka;return out})()""")
+          const ka=window.rideAt,kp=window.canPerm;window.canPerm=()=>false;for(const st of [0,1,2]){window.rideState=()=>st;window.rideAt=()=>Date.now()-60e3;const c=csRideCell('2030-05-06',r);const h=typeof c==='string'?c:c.h;out.push(st?(h.includes('ridest rs'+st)&&h.includes('<svg')&&!h.includes('rsold')):(h.includes('ridest rs0')&&!h.includes('<svg')))}
+          window.rideState=()=>2;window.rideAt=()=>Date.now()-25*60e3;const c2=csRideCell('2030-05-06',r);out.push((typeof c2==='string'?c2:c2.h).includes('rsold'));window.rideState=keep;window.rideAt=ka;window.canPerm=kp;return out})()""")
         check("Callsheet: Fahrt offen = leerer Kreis, läuft = Auto im Kreis, ausgeführt = Häkchen im Kreis, 20 Min. danach grau", rs in (None, [True, True, True, True]), rs)
         rb = await E("""(()=>{if(typeof csRideCell!=='function')return null;const kp=window.canPerm,ks=window.rideState,km=window.csMe;const r={t1:'07:30',t2:'08:00',from:'A',to:'B',driver:'Max Fahrer'};window.rideState=()=>0;
           window.csMe=()=>({name:'X',hit:t=>false});window.canPerm=p=>p==='rides.manage';const mg=csRideCell('2030-05-06',r).h;window.canPerm=p=>p==='rides.confirm';const cf=csRideCell('2030-05-06',r).h;
