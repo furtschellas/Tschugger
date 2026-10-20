@@ -517,6 +517,11 @@ async def owner_tests(p, port):
           const dl=document.getElementById('rededlg');const out={t1:r.t1,pax:r.passengers,same:rideId(t,r)===id,mark:cell.includes('rchg'),dlg:!!dl&&dl.querySelector('[name=t1]').value==='07:45'};
           if(dl)dl.remove();document.getElementById('redtest').remove();S.dispos=keep.d;window.RIDEEDIT=keep.e;window.REDVER=keep.v+1;window.canPerm=keep.cp;return out})()""")
         check("Fahrten Manager: Änderung gilt im Callsheet (markiert), Pop-up zum Ändern", re_ in (None, {"t1": "07:45", "pax": "Anna Muster, Lena Test", "same": True, "mark": True, "dlg": True}), re_)
+        px = await E("""(()=>{if(typeof rideEditDialog!=='function')return null;const keep={d:S.dispos,c:S.crew,cp:window.canPerm,v:window.REDVER};const t='2030-05-06';S.crew=[{dept:'Cast',people:[{name:'Anna Muster'},{name:'Ida Test'}]}];
+          const r0={t1:'07:30',t2:'08:00',from:'A',to:'B',vehicle:'Van',driver:'Max',passengers:'Anna Muster, Lena Test'};S.dispos=[{date:t,cs:{transport:[r0]}}];window.REDVER=(window.REDVER||0)+1;rideEditApply();window.canPerm=()=>true;
+          rideEditDialog(rideId(t,S.dispos[0].cs.transport[0]));const d=document.getElementById('rededlg');const sl=d.querySelector('[data-redadd]');sl.value='Ida Test';sl.dispatchEvent(new Event('change',{bubbles:true}));
+          d.querySelector('[data-redrm="0"]').click();const v=d.querySelector('[name=pax]').value,chips=d.querySelectorAll('.redchip').length;d.remove();S.dispos=keep.d;S.crew=keep.c;window.canPerm=keep.cp;window.REDVER=keep.v+1;return {v,chips}})()""")
+        check("Fahrt ändern: Mitfahrende als Chips, hinzufügen aus der Crewliste, × entfernt", px in (None, {"v": "Lena Test, Ida Test", "chips": 2}), px)
         pw = await E("""(async()=>{if(typeof pwEyes!=='function')return null;const f=document.createElement('div');f.innerHTML='<input type="password" value="x1">';document.body.appendChild(f);pwEyes(f);
           const b=f.querySelector('.pweye');if(!b){f.remove();return 'no eye'}b.click();const t1=f.querySelector('input').type;b.click();const t2=f.querySelector('input').type;f.remove();return [t1,t2]})()""")
         check("Passwortfelder: Auge rechts zeigt und verbirgt das Passwort", pw in (None, ["text", "password"]), pw)

@@ -1264,4 +1264,10 @@ button.ridest.rmgr{position:relative;overflow:visible}
 .redbox select{width:100%;box-sizing:border-box}.redbox select+input{margin-top:6px}
 /* ride popup: departure time + from in one line, arrival time + to in one line */
 .redbox .redrow{display:grid;grid-template-columns:minmax(124px,38%) 1fr;gap:8px;align-items:end}.redbox .redrow>label{margin-top:8px;min-width:0}
+/* ride popup: passengers as chips */
+.redpaxf{border:1px solid var(--rule);border-radius:10px;padding:6px 10px 10px;margin:10px 0 0}.redpaxf legend{padding:0 4px;font-size:13px}
+.redpax{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.redchip{display:inline-flex;align-items:center;gap:2px;padding:2px 4px 2px 10px;border-radius:99px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);font-size:13.5px}
+.redchip button{border:0;background:none;color:inherit;font-size:16px;line-height:1;width:22px;height:22px;border-radius:50%;cursor:pointer;padding:0}.redchip button:hover{background:color-mix(in srgb,var(--accent) 25%,transparent)}
+.redaddr{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.redaddr select{flex:1 1 180px}.redaddr input{flex:1 1 160px;width:auto!important}
 </style>
