@@ -43,7 +43,7 @@ function myEvents(me){
     const rides=[...arr(c.transport).filter(r=>cm.hit(r.driver)||cm.hit(r.passengers)).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>cm.hit(r.people)).map(r=>({r})),...arr(c.travel).filter(r=>cm.hit(r.name)).map(r=>({r,how:r.how}))];
     for(const {r,drv,how} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();
       /* a confirmed ride disappears one hour after its arrival */
-      const rid=rideId(dp.date,r);if(window.rideState&&rideState(rid)===2){const end=hm(r.t2)||st;if(end&&Date.now()>zurichUTC(dp.date,end).getTime()+3600e3)continue}
+      const rid=rideId(dp.date,r);if(window.rideState&&rideState(rid)===2){const end=hm(r.t2)||st;if(end&&Date.now()>zurichUTC(dp.date,end).getTime()+3600e3){window.RIDEHID=(window.RIDEHID||0)+1;if(!window.SHOWDONE)continue}}
       out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true,rid})}}}catch(_){}
   /* own and Google Calendar events (tools/boot/18-own-events.js); the same appointment twice (same day, same start, same title) is shown once */
   try{if(window.ownEvents){const tn=x=>fold(x||"").replace(/[^a-z0-9]+/g," ").trim(),same=(a,b)=>a.date===b.date&&(hm(a.t)||"")===(hm(b.t)||"")&&(()=>{const x=tn(a.n),y=tn(b.n);return x===y||(x.length>=4&&y.length>=4&&(x.includes(y)||y.includes(x)))})();
@@ -70,12 +70,14 @@ function renderMy(){
   const names=[...new Set(people.map(p=>p.name))].sort((a,c)=>a.localeCompare(c,LANG));
   MCNAMES=names;
   const sel=!myAdmin()?'<p class="mcsel">'+esc(L("Termine für"))+' <b>'+esc(me?me.name:"–")+'</b></p>':'<div class="mcpick"><label class="mcsel">'+esc(L("Termine für"))+' <input type="search" list="mcnames" data-mcme autocomplete="off" placeholder="'+esc(L("Name tippen …"))+'" value="'+esc(me?me.name:"")+'"></label><datalist id="mcnames">'+names.map(n=>'<option value="'+esc(n)+'"></option>').join("")+'</datalist><button type="button" class="pillbtn mcself" data-mcself '+ariaTip(L("Meine eigenen Termine"))+'><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg></button></div>';
-  MYEV=me?myEvents(me).filter(evRecent):[];
+  window.RIDEHID=0;MYEV=me?myEvents(me).filter(e=>evRecent(e)||(window.SHOWDONE&&e.ride&&e.date>=todayISO())):[];
   let h='<section class="mypage"><div class="myhead"><h2 class="pgt">'+esc(L("Meine Termine"))+'</h2>'+'<span class="oebtns">'+(window.gcalBtn?window.gcalBtn():'')+(window.ownEvAddBtn?window.ownEvAddBtn():'')+'</span>'+'</div><div class="myrow">'+sel+(me&&MYEV.length?'<button type="button" class="pillbtn" data-mcall>'+esc(L("Alle in den Kalender"))+' ('+MYEV.length+')</button>':'')+'</div>';
   if(!me)h+='<p class="ghint">'+esc(L(myAdmin()?"Bitte oben deinen Namen wählen.":"Dein Name wurde in der Crewliste nicht gefunden."))+'</p>';
   else{
     if(me.src||me.role)h+='<p class="ghint">'+esc([me.role,me.src].filter(Boolean).join(" · "))+'</p>';
     if(!MYEV.length)h+='<p class="ghint">'+esc(L("Keine kommenden Termine gefunden."))+'</p>';
+    /* executed rides are hidden one hour after arrival – here they can be shown again */
+    if(window.RIDEHID||window.SHOWDONE)h+='<button type="button" class="lnk ridedone" data-ridedone>'+esc(window.SHOWDONE?L("Erledigte Fahrten ausblenden"):L("Erledigte Fahrten anzeigen")+" ("+window.RIDEHID+")")+'</button>';
     let last="";
     MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>';last=e.date}
       h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.rideAckBtn?window.rideAckBtn(e):'')+(window.pushBell?window.pushBell(e):'')+'<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button></div>'})}

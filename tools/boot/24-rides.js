@@ -22,3 +22,4 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-ride
 /* load when «Meine Termine» or Today is shown (at most every 2 minutes) */
 document.addEventListener("click",e=>{if(e.target.closest('[data-tab="my"],[data-tab="today"],[data-tab="dispo"],[data-tomy]'))setTimeout(()=>rideAckLoad(false),50)});
 setTimeout(()=>rideAckLoad(true),4000);setInterval(()=>{if(S.tab==="my"||S.tab==="today"||S.tab==="dispo")rideAckLoad(false)},120e3);
+document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))return;e.preventDefault();window.SHOWDONE=!window.SHOWDONE;render()});

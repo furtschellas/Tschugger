@@ -352,6 +352,8 @@ Object.assign(I18N,{
  "Fahrt beginnt":{fr:"Le trajet commence",it:"Il viaggio inizia",en:"Ride starting"},
  "Fahrt ausgeführt":{fr:"Trajet effectué",it:"Viaggio eseguito",en:"Ride done"},
  "Fahrt läuft":{fr:"Trajet en cours",it:"Viaggio in corso",en:"Ride in progress"},
+ "Erledigte Fahrten anzeigen":{fr:"Afficher les trajets effectués",it:"Mostra viaggi eseguiti",en:"Show completed rides"},
+ "Erledigte Fahrten ausblenden":{fr:"Masquer les trajets effectués",it:"Nascondi viaggi eseguiti",en:"Hide completed rides"},
  "Gespeichert.":{fr:"Enregistré.",it:"Salvato.",en:"Saved."},
  "Links neu geladen – bitte prüfen und nochmals speichern.":{fr:"Liens rechargés – merci de vérifier et d’enregistrer à nouveau.",it:"Link ricaricati – controlla e salva di nuovo.",en:"Links reloaded – please check and save again."},
  "Links konnten nicht geladen werden – bitte später nochmals speichern.":{fr:"Les liens n’ont pas pu être chargés – merci d’enregistrer plus tard.",it:"Impossibile caricare i link – salva di nuovo più tardi.",en:"Links could not be loaded – please save again later."},

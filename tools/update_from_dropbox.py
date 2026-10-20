@@ -1596,8 +1596,12 @@ def main():
         cs = d.get("cs") if isinstance(d.get("cs"), dict) else None
         if not cs: continue
         cand = []   # (url, address)
-        for l in cs.get("locations") or []:
+        labs = {}   # url → short label for the diagnosis (S1, S2 … or the kind of item like «Tech Parking»)
+        for li, l in enumerate(cs.get("locations") or []):
             if not isinstance(l, dict): continue
+            if l.get("map"): labs.setdefault(l["map"], "S%d" % (li + 1))
+            for i in l.get("items") or []:
+                if isinstance(i, dict) and i.get("map"): labs.setdefault(i["map"], "S%d·%s" % (li + 1, re.sub(r"[^A-Za-z/ ]", "", str(i.get("label") or "Punkt"))[:18].strip()))
             # the Motivliste: a set with one of the scenes (also only the number: «186» for «186pt1A»), else a set with the same name
             keys = [x.lstrip("0") for x in cs_scene_list(l.get("scenes"))]
             keys += [re.sub(r"(pt|sl)\d+[a-z]?$", "", k) for k in keys] + [re.sub(r"[a-z]$", "", k) for k in keys]
@@ -1615,20 +1619,21 @@ def main():
                     cand.append((i["map"], m.group(1).strip() if m else ""))
         g, src, pos = {}, {}, {}
         for u, ad in cand:
-            if u not in mg or mg[u] is None or (not (mg[u] or {}).get("p") and time.time() - int((mg[u] or {}).get("t") or 0) > 6 * 3600): mg[u] = map_pos(u)
+            if u not in mg or mg[u] is None or (not (mg[u] or {}).get("p") and ("diag" not in (mg[u] or {}) or time.time() - int((mg[u] or {}).get("t") or 0) > 6 * 3600)): mg[u] = map_pos(u)
             lp = (mg.get(u) or {}).get("p"); q = (mg.get(u) or {}).get("q")
             nm = (mg.get(u) or {}).get("name") or ""
             ap = geocode(ad, gcache) if ad else (geocode(nm, gcache) if nm else None)
             if lp and ap and dist_km(lp, ap) > 2: pos[u] = (ap, "addr")          # link and address disagree: the address wins
             elif lp: pos[u] = (lp, "link" if q in ("p", "q") else "rough")
             elif ap: pos[u] = (ap, "addr")
-        pts = [p for p, _ in pos.values()]
-        if len(pts) > 2:   # far away from all others (more than 25 km from the middle of the day): left out
-            mid = [sorted(x[0] for x in pts)[len(pts) // 2], sorted(x[1] for x in pts)[len(pts) // 2]]
-            pos = {u: v for u, v in pos.items() if dist_km(v[0], mid) <= 25}
-        for u, _ in cand:
+        rep = []
+        for u, ad in cand:
             if u in pos: g[u] = pos[u][0]; src[u] = pos[u][1]; stat[pos[u][1]] += 1
             else: stat["none"] += 1
+            v = mg.get(u) or {}
+            rep.append("%s: %s" % (labs.get(u, "?"), ("✓ " + {"link": "Link", "addr": "Adresse", "rough": "ungefähr"}[pos[u][1]]) if u in pos else
+                       "✗ Link ohne Position (%s)%s" % ((v.get("diag") or "?").split(" · ")[0], ", keine Adresse" if not ad else ", Adresse nicht gefunden")))
+        print("::notice::Karte %s: %s" % (d.get("date"), " | ".join(rep)[:900]))
         if g != (cs.get("geo") or {}) or src != (cs.get("geoSrc") or {}): cs["geo"] = g; cs["geoSrc"] = src; changed = True
     diags = {}
     for v in mg.values():
