@@ -32,6 +32,17 @@ def check(name, ok, info="", public=False):
     return bool(ok)
 
 
+def warn(name, info=""):
+    """not an error (the documents themselves differ): shown with ⚠ in the log, never blocks publishing; info = numbers only"""
+    r = {"n": name, "ok": True, "w": 1}
+    if GROUP: r["g"] = GROUP
+    if info not in ("", None): r["e"] = str(info)[:160]
+    RESULTS.append(r)
+    print("⚠ " + name + ("" if "e" not in r else "  – " + r["e"]), flush=True)
+    print("::warning title=Abgleich::" + name.replace("\n", " ")[:200] + ("" if "e" not in r else " – " + r["e"]), flush=True)
+    return True
+
+
 def done(suite):
     print(f"\n{suite}: {'ALLES OK' if not FAILS else str(len(FAILS)) + ' FEHLER'}", flush=True)
     out = os.environ.get("TESTS_OUT")

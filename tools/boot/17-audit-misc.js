@@ -120,11 +120,11 @@ function tstGroupsHTML(suite,cs){
   const rows=[],byTxt=new Map();
   for(const c of cs){const m=c.n.match(TST_ROLE);
     if(m){let r=byTxt.get(m[2]);if(!r){r={n:m[2],ok:true,roles:[],e:"",g:c.g||""};byTxt.set(m[2],r);rows.push(r)}r.roles.push([m[1],c.ok]);if(!c.ok){r.ok=false;if(c.e&&!r.e)r.e=c.e}}
-    else rows.push({n:c.n,ok:c.ok,e:c.e||"",g:c.g||""})}
+    else rows.push({n:c.n,ok:c.ok,e:c.e||"",g:c.g||"",w:!!c.w})}
   const pre={};for(const r of rows){const m=!r.g&&r.n.match(/^([^:]{2,40}): /);r.k=r.g||(m?m[1]:"");if(r.k)pre[r.k]=(pre[r.k]||0)+1}
   for(const r of rows)if(!r.g&&pre[r.k]<3)r.k="";
   const groups=new Map();for(const r of rows){const k=r.k||L("Weitere");if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r)}
-  const li=r=>'<li class="'+(r.ok?'ok':'no')+'">'+(r.ok?'✓':'✗')+' '+esc(r.g||!r.k?r.n:r.n.slice(r.k.length+2))+
+  const li=r=>'<li class="'+(r.w?'twarn':r.ok?'ok':'no')+'">'+(r.w?'⚠':r.ok?'✓':'✗')+' '+esc(r.g||!r.k?r.n:r.n.slice(r.k.length+2))+
     (r.roles?' <span class="tstroles">'+r.roles.map(([k,o])=>'<span class="'+(o?'ok':'no')+'">'+esc(L(TST_RN[k]||k))+' '+(o?'✓':'✗')+'</span>').join("")+'</span>':'')+(r.e?'<br><small>'+esc(r.e)+'</small>':'')+'</li>';
   if(groups.size<2)return '<ul class="tstl">'+rows.sort((a,b)=>a.ok-b.ok).map(li).join("")+'</ul>';
   return [...groups].sort((a,b)=>a[1].every(r=>r.ok)-b[1].every(r=>r.ok)).map(([k,l])=>{const bad=l.filter(r=>!r.ok).length,key="tg:"+suite+":"+k;
