@@ -451,7 +451,7 @@ async def owner_tests(p, port):
         # locations L1, L2 …; map popup: every scene with start and end; set floorplans; 2nd unit camera data; Test-User welcome
         nx = await E("""(()=>{if(typeof renderCS!=='function')return null;const x={date:'2026-10-20',cs:{geo:{'https://a':[46.3,7.6],'https://b':[46.31,7.65]},
             locations:[{no:'1',name:'CHAPEL',map:'https://a'},{no:'2',name:'FOREST',map:'https://b'}],
-            order:{rows:[{t:'08:30',sc:'186pt1A',set:'CHAPEL',notes:'Drohne ab 09:00'},{t:'10:45',sc:'2',set:'CHAPEL'},{t:'12:15',text:'Lunch'},{t:'13:15',sc:'12',set:'FOREST'},{t:'18:00',text:'Wrap'}]}}};
+            order:{rows:[{t:'08:30',sc:'186pt1A',set:'CHAPEL'},{t:'10:45',sc:'2',set:'CHAPEL'},{t:'12:15',text:'Lunch'},{t:'13:15',sc:'12',set:'FOREST'},{t:'16:00',sc:'9999',set:'FOREST',notes:'Drohne ab 09:00'},{t:'18:00',text:'Wrap'}]}}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,{date:'2026-10-20'});const m=w.querySelector('[data-csmap]');const pts=m?JSON.parse(m.dataset.csmap):[];
           const dt=w.querySelector('.csorder details.scdet');
           return {det:!!dt&&dt.open&&dt.textContent.includes('Drohne')&&!w.querySelector('.csnote'),codes:[...w.querySelectorAll('.csloc-c')].map(e=>e.textContent),st:(pts.find(p=>p.c==='L1')||{}).st||[],st2:(pts.find(p=>p.c==='L2')||{}).st||[]}})()""")
@@ -461,7 +461,7 @@ async def owner_tests(p, port):
           const x={date:'2026-10-20',cs:{locations:[{no:'1',name:'CHAPEL'}],order:{rows:[{t:'08:30',sc:'186pt1A',set:'CHAPEL',notes:'Drohne ab 09:00'}]}}};const w=document.createElement('div');w.innerHTML=renderCS(x,{date:'2026-10-20'});S.meta=keep;
           return (w.querySelector('.csorder').textContent.match(/Drohne/g)||[]).length})()""")
         check("Callsheet-Drehfolge: Szenendetails nur einmal (Breakdown und Callsheet-Notizen nicht doppelt)", dup in (None, 1), dup)
-        check("Callsheet-Karte: Pop-up zeigt jede Szene mit Anfangs- und Schlusszeit", nx is None or (nx["st"] == [["186pt1A", "08:30–10:45"], ["2", "10:45–12:15"]] and nx["st2"] == [["12", "13:15–18:00"]]), nx)
+        check("Callsheet-Karte: Pop-up zeigt jede Szene mit Anfangs- und Schlusszeit", nx is None or (nx["st"] == [["186pt1A", "08:30–10:45"], ["2", "10:45–12:15"]] and nx["st2"] == [["12", "13:15–16:00"], ["9999", "16:00–18:00"]]), nx)
         sf = await E("""(()=>{if(typeof setfpHTML!=='function'||!vok('setfp'))return null;const keep=S.meta;S.meta=Object.assign({},keep,{setfp:[{date:'2026-10-20',name:'Floorplans',url:'https://www.dropbox.com/preview/x.pdf'}]});
           const h=setfpHTML('2026-10-20'),h0=setfpHTML('2026-10-21');S.meta=keep;return {sec:h.includes('Setfloorpl')||h.includes('floorplan')||h.includes('Plans'),link:h.includes('x.pdf'),none:h0==='',perm:PERMS.some(p=>p[0]==='view.setfp')}})()""")
         check("Callsheet: Setfloorpläne des Tages mit Link, Berechtigung «Setfloorpläne sehen» in der Rollenverwaltung", sf in (None, {"sec": True, "link": True, "none": True, "perm": True}), sf)
