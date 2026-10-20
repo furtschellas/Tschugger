@@ -165,11 +165,12 @@ function csTilesHTML(x,day,c,me){const t=c.times||{};
       const from=(day&&day.drive&&day.drive.from)||"Hotel",enc=encodeURIComponent,url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+enc(from)+"&destination="+enc(to),here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+enc(to);
       return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc((()=>{const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})())+' ›</div></button>'})()+'</div>';}
 function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=c.tr||null;
+  let JB="";
   /* jump bar (sticky) and search over the whole callsheet */
   {const has=k=>({loc:csA(c.locations).length,order:csA((c.order||{}).rows).length,cast:csA(c.cast).length,trans:csA(c.transport).length||csA(c.crewTransport).length||csA(c.travel).length,dept:csA(c.depts).some(r=>String(r.text||"").trim()),calls:csA(c.calls).length})[k];
    const J=[["loc","Locations","pin",L("Orte")],["order",L("Drehfolge"),"film",L("Szenen")],["cast","Cast","cast"],["trans","Transport","car",L("Fahrten")],["dept",L("Infos nach Abteilung"),"dept",L("Infos")],["calls","Calls","calls"]].filter(([k])=>has(k));
    /* icons with a tiny label; the search opens from the magnifier (keeps the bar one line high) */
-   h+='<div class="csjump"><div class="csjb">'+J.map(([k,l,i,sh])=>'<button type="button" data-csj="'+k+'" aria-label="'+esc(l)+'" title="'+esc(l)+'">'+CSI[i]+'<span>'+esc(sh||l)+'</span></button>').join("")+
+   JB='<div class="csjump"><div class="csjb">'+J.map(([k,l,i,sh])=>'<button type="button" data-csj="'+k+'" aria-label="'+esc(l)+'" title="'+esc(l)+'">'+CSI[i]+'<span>'+esc(sh||l)+'</span></button>').join("")+
      '<button type="button" class="csqb" data-csqb aria-label="'+esc(L("Suchen"))+'" title="'+esc(L("Suchen"))+'">'+CSI.search+'<span>'+esc(L("Suchen"))+'</span></button></div><input id="csq" type="search" autocomplete="off" hidden placeholder="'+esc(L("Suchen: Name, Szene, Fahrzeug …"))+'"></div>'}
   /* head: as the top of the callsheet */
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
@@ -261,11 +262,13 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
     h+=csSec(String(sec.title||""),rows.map(r=>'<p>'+r.map(cc=>csTx(cc)).join(" · ")+'</p>').join(""),false)}
   /* on the shooting day: once per visit straight to the running row */
   if(x.date===todayISO()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
-  return '<div class="csview">'+h+'</div>'}
+  return JB+'<div class="csview">'+h+'</div>'}
 /* jump bar: open the part and go there */
-document.addEventListener("click",e=>{const b=e.target.closest("[data-csj]");if(!b)return;const all=({trans:["trans","ctrans"]}[b.dataset.csj]||[b.dataset.csj]).map(k=>document.getElementById("cs-"+k)).filter(Boolean);const el=all[0]||document.getElementById("cs-travel");if(!el)return;all.forEach(d=>{if(d.tagName==="DETAILS")d.open=true});if(el.tagName==="DETAILS")el.open=true;el.scrollIntoView({block:"start",behavior:"smooth"})});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-csj]");if(!b)return;const all=({trans:["trans","ctrans"]}[b.dataset.csj]||[b.dataset.csj]).map(k=>document.getElementById("cs-"+k)).filter(Boolean);const el=all[0]||document.getElementById("cs-travel");if(!el)return;/* only the chosen part open: the other open parts close (the production information stays) */
+  document.querySelectorAll("#view details.cssec[open]").forEach(d=>{if(!all.includes(d)&&!d.classList.contains("csinfo"))d.open=false});
+  all.forEach(d=>{if(d.tagName==="DETAILS")d.open=true});if(el.tagName==="DETAILS")el.open=true;el.scrollIntoView({block:"start",behavior:"smooth"})});
 /* search in the callsheet: only matching rows, cards and lines; parts with a hit open */
-document.addEventListener("input",e=>{if(!e.target||e.target.id!=="csq")return;const q=fold(e.target.value.trim());const v=e.target.closest(".csview");if(!v)return;
+document.addEventListener("input",e=>{if(!e.target||e.target.id!=="csq")return;const q=fold(e.target.value.trim());const jb=e.target.closest(".csjump"),nx=jb&&jb.nextElementSibling,v=nx&&nx.classList.contains("csview")?nx:document.querySelector("#view .csview");if(!v)return;
   const items=v.querySelectorAll(".csorder>li,.cs-card,.cs-tbl tbody tr,.cscall-r,.csdep,.csloc,.cskey>div,.cslist,.csinfo p,.cstrv,.csdrv-r");
   items.forEach(it=>{it.hidden=!!q&&!fold(it.textContent).includes(q)});
   v.querySelectorAll("details.cssec").forEach(d=>{if(!q){d.hidden=false;return}const hit=[...d.querySelectorAll(".csorder>li,.cs-card,.cs-tbl tbody tr,.cscall-r,.csdep,.csloc,.cskey>div,.cslist,.csinfo p,.cstrv,.csdrv-r")].some(it=>!it.hidden)||fold(d.querySelector("summary").textContent).includes(q);d.hidden=!hit;if(hit)d.open=true});
