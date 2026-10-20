@@ -267,7 +267,7 @@ service cloud.firestore {
       allow delete: if can('rides.confirm');
     }
 
-    // Fahrten aus dem Callsheet in der App ändern (Zeiten, Strecke, Fahrzeug, Fahrer, Mitfahrende): nur mit «Fahrten Manager»;
+    // Fahrten aus dem Callsheet in der App ändern (Zeiten, Strecke, Fahrzeug, Fahrer, Mitfahrende): nur mit «Fahrten Manager» (rides.manage);
     // Dokument-ID = Prüfsumme der ursprünglichen Fahrt, Inhalt c verschlüsselt mit dem Crew-Schlüssel (Namen), Datum d, Zeitpunkt at
     match /rideedit/{id} {
       allow read: if crew();
