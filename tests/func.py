@@ -453,8 +453,8 @@ async def owner_tests(p, port):
             locations:[{no:'1',name:'CHAPEL',map:'https://a'},{no:'2',name:'FOREST',map:'https://b'}],
             order:{rows:[{t:'08:30',sc:'186pt1A',set:'CHAPEL'},{t:'10:45',sc:'2',set:'CHAPEL'},{t:'12:15',text:'Lunch'},{t:'13:15',sc:'12',set:'FOREST'},{t:'16:00',sc:'9999',set:'FOREST',notes:'Drohne ab 09:00'},{t:'18:00',text:'Wrap'}]}}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,{date:'2026-10-20'});const m=w.querySelector('[data-csmap]');const pts=m?JSON.parse(m.dataset.csmap):[];
-          const dt=w.querySelector('.csorder details.scdet');
-          return {det:!!dt&&dt.open&&dt.textContent.includes('Drohne')&&!w.querySelector('.csnote'),codes:[...w.querySelectorAll('.csloc-c')].map(e=>e.textContent),st:(pts.find(p=>p.c==='L1')||{}).st||[],st2:(pts.find(p=>p.c==='L2')||{}).st||[]}})()""")
+          const dts=[...w.querySelectorAll('.csorder details.scdet')];
+          return {det:dts.length>0&&dts.every(d=>d.open)&&dts.some(d=>d.textContent.includes('Drohne'))&&!w.querySelector('.csnote'),codes:[...w.querySelectorAll('.csloc-c')].map(e=>e.textContent),st:(pts.find(p=>p.c==='L1')||{}).st||[],st2:(pts.find(p=>p.c==='L2')||{}).st||[]}})()""")
         check("Callsheet: Locations heissen L1, L2 …", nx is None or nx["codes"][:2] == ["L1", "L2"], nx)
         check("Callsheet-Drehfolge: Szenendetails zuklappbar, zuerst offen (ohne eigenes «Details Callsheet»)", nx is None or nx["det"], nx)
         dup = await E("""(()=>{if(typeof renderCS!=='function'||typeof bdKey!=='function')return null;const keep=S.meta;const k='2026-10-20|'+bdKey('186pt1A');S.meta=Object.assign({},keep,{bd:Object.assign({},(keep||{}).bd,{[k]:{h:{},c:[['Notes',['Drohne ab 09:00']]]}})});
