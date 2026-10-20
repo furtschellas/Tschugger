@@ -479,6 +479,10 @@ async def owner_tests(p, port):
             {no:'2',name:'FOREST',map:'https://g/d',items:[{label:'Private Cars Cast/ Extras',text:'Restaurant Waldrand (Base)',map:'https://g/h'}]}]};
           const ls=csLocs(c),k=ls.filter(l=>l.kinds);return {n:k.length,kinds:k[0]&&k[0].kinds.join('|'),name:k[0]&&k[0].name,notes:k[0]&&k[0].notes.length,set1:ls[0].items.length}})()""")
         check("Callsheet: Base, W/H/M, Lunch und Prod am selben Ort als eine Location, Anfahrt/WC dort", bw in (None, {"n": 1, "kinds": "Base|W / H / M|Lunch|Prod", "name": "Restaurant Waldrand", "notes": 3, "set1": 1}), bw)
+        fb = await E("""(()=>{if(typeof csTilesHTML!=='function')return null;const me={name:'Anna Muster',hit:t=>/anna muster/i.test(String(t||''))};
+          const c={times:{crewCall:'08:15'},calls:[{dept:'AD',name:'Anna Muster',t:'-'}],locations:[{no:'1',name:'OFFICE',map:'https://g/o',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Dorfplatz 5 - 3998 Musterdorf',map:'https://g/b'}]}]};
+          const w=document.createElement('div');w.innerHTML=csTilesHTML({date:'2030-05-06'},{date:'2030-05-06'},c,me);const d=w.querySelector('.csdrv');return d?d.querySelector('.k').textContent:''})()""")
+        check("Callsheet-Kacheln: ohne sicheren Call-Ort «Anfahrt Base» zur Base des Tages", fb is None or (isinstance(fb, str) and fb.endswith(" Base")), fb)
         aw = await E("""(()=>{if(typeof csDayAfterWrap!=='function')return null;const t='2030-05-06',n='2030-05-07',pick=[{date:t},{date:n}];
           const by={[t]:{cs:{times:{crewCall:'08:00',wrap:'19:00'}}},[n]:{cs:{}}},by2={[t]:by[t]},late={[t]:{cs:{times:{crewCall:'14:00',wrap:'01:30'}}},[n]:{cs:{}}},z=(h)=>zurichUTC(t,h).getTime();
           return [csDayAfterWrap(t,pick,by,z('19:30')),csDayAfterWrap(t,pick,by,z('20:01')),csDayAfterWrap(t,pick,by2,z('22:00')),csDayAfterWrap(t,pick,late,z('23:00'))]})()""")
