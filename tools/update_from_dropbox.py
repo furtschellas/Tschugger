@@ -950,6 +950,11 @@ def pick_ra(files):
     """risk assessments (Gefährdungsbeurteilung) in the callsheet folders, e.g. «DT1/RA_Tschugger_Tigerblood_Bild186_2026-10-20.pdf»"""
     return [f for f in files if _cs(f) and _is_ra(f)]
 
+def pick_setfp(files):
+    """set floorplans next to the callsheet in the day folders («TSCHUGGER_Floorplans_DT1_20.10.2026.pdf», «Tag 1 Plan- Motif Kapelle.pdf»)"""
+    return [f for f in files if _cs(f) and not _is_sides(f) and not _is_ra(f) and not re.search(r"dispo|call.?sheet", _base(f))
+            and (_is_fp(f) or re.search(r"(^|[_ -])(plan|motif|motiv)([_ -]|$)", _base(f)))]
+
 def sides_date(name):
     """«…_DT 4_Sunday, 25.10.2026.pdf» / «…_DT2_Tuesday, 10.21.2026.pdf» (also US order) → 2026-10-25; none → """""
     m = re.search(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", name)
@@ -1706,9 +1711,20 @@ def main():
             title = ("Szene " + mb.group(1)) if mb else re.sub(r"(?i)^ra_|\.pdf$", "", nm).replace("_", " ").strip()
             ras.append({"date": date, "name": title[:80], "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(f["name"])})
         if ras != (meta.get("ra") or []): meta["ra"] = ras; changed = True
+        sfp = []   # set floorplans of the day: buttons in the callsheet (only with the right «Setfloorpläne sehen»)
+        for f in sorted(pick_setfp(files), key=lambda f: f["name"]):
+            nm = f["name"].split("/")[-1]
+            md = re.search(r"(\d{4}-\d{2}-\d{2})", nm); m = re.search(r"(?i)DT\s*#?\s*(\d+)", f["name"]) or re.search(r"(?i)\btag\s*(\d+)", nm)
+            date = (md.group(1) if md else "") or sides_date(nm) or (shoot.get(int(m.group(1))) if m else "") or ""
+            title = re.sub(r"(?i)^tschugger_|\.pdf$", "", nm)
+            title = re.sub(r"(?i)[_ ]*\d{1,2}\.\d{1,2}\.\d{4}|[_ ]*dt\s*\d+|\btag\s*\d+\s*", " ", title)
+            full = bool(re.search(r"(?i)[_ ]full$", title)); title = re.sub(r"(?i)[_ ]full$", "", title)
+            title = re.sub(r"\s+", " ", title.replace("_", " ")).strip(" -") or "Floorplan"
+            sfp.append({"date": date, "name": (title + (" (full)" if full else ""))[:80], "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(f["name"])})
+        if sfp != (meta.get("setfp") or []): meta["setfp"] = sfp; changed = True
         spc = {k: v for k, v in spc.items() if k in used}
         if spc != (meta.get("sidesPages") or {}): meta["sidesPages"] = spc; changed = True
-        print("::notice::Callsheets: %d · Sides: %d (%d mit Seitenbildern) · Gefährdungsbeurteilungen: %d · Callsheet-Seiten: %d" % (len(dispos), len(sides), sum(1 for x in sides if x.get("pg")), len(ras), sum(1 for d in dispos.values() if d.get("pg"))))
+        print("::notice::Callsheets: %d · Sides: %d (%d mit Seitenbildern) · Gefährdungsbeurteilungen: %d · Setfloorpläne: %d · Callsheet-Seiten: %d" % (len(dispos), len(sides), sum(1 for x in sides if x.get("pg")), len(ras), len(sfp), sum(1 for d in dispos.values() if d.get("pg"))))
     except Exception as e: print("::warning::Sides/Callsheet-Seiten nicht erzeugt: " + type(e).__name__)
     if dispos or data.get("dispos"): data["dispos"] = sorted(dispos.values(), key=lambda d: d.get("date", ""))
 
