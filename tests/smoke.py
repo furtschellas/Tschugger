@@ -202,7 +202,7 @@ async def main():
                     check("Today: Seite mit Karten", await E("document.querySelectorAll('#view .today .tcard').length") >= 1)
                     tl = await E("[...document.querySelectorAll('#view .today .ttiles>*')].map(t=>{const r=t.getBoundingClientRect();return [Math.round(r.left),Math.round(r.top),Math.round(r.width)]})")
                     cols = len({x[0] for x in tl}); rws = len({x[1] for x in tl})
-                    check("Today auf dem Handy: Kacheln 2×2", len(tl) < 2 or (cols == 2 and len({x[2] for x in tl}) == 1), tl)
+                    check("Today auf dem Handy: Kacheln kompakt wie im Callsheet (mind. 3 pro Zeile)", len(tl) < 3 or cols >= 3, tl)
                     rows = await E("[...document.querySelectorAll('#view .tsclist li')].map(l=>Math.round(l.getBoundingClientRect().height))")
                     check("Today: Szenen je eine Zeile", all(h <= 30 for h in rows), rows[:5])
                     # push history: admins see who got the message (devices in «done» → person)
