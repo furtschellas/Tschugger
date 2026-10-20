@@ -457,6 +457,10 @@ async def owner_tests(p, port):
           return {det:!!dt&&dt.open&&dt.textContent.includes('Drohne')&&!w.querySelector('.csnote'),codes:[...w.querySelectorAll('.csloc-c')].map(e=>e.textContent),st:(pts.find(p=>p.c==='L1')||{}).st||[],st2:(pts.find(p=>p.c==='L2')||{}).st||[]}})()""")
         check("Callsheet: Locations heissen L1, L2 …", nx is None or nx["codes"][:2] == ["L1", "L2"], nx)
         check("Callsheet-Drehfolge: Szenendetails zuklappbar, zuerst offen (ohne eigenes «Details Callsheet»)", nx is None or nx["det"], nx)
+        dup = await E("""(()=>{if(typeof renderCS!=='function'||typeof bdKey!=='function')return null;const keep=S.meta;const k='2026-10-20|'+bdKey('186pt1A');S.meta=Object.assign({},keep,{bd:Object.assign({},(keep||{}).bd,{[k]:{h:{},c:[['Notes',['Drohne ab 09:00']]]}})});
+          const x={date:'2026-10-20',cs:{locations:[{no:'1',name:'CHAPEL'}],order:{rows:[{t:'08:30',sc:'186pt1A',set:'CHAPEL',notes:'Drohne ab 09:00'}]}}};const w=document.createElement('div');w.innerHTML=renderCS(x,{date:'2026-10-20'});S.meta=keep;
+          return (w.querySelector('.csorder').textContent.match(/Drohne/g)||[]).length})()""")
+        check("Callsheet-Drehfolge: Szenendetails nur einmal (Breakdown und Callsheet-Notizen nicht doppelt)", dup in (None, 1), dup)
         check("Callsheet-Karte: Pop-up zeigt jede Szene mit Anfangs- und Schlusszeit", nx is None or (nx["st"] == ["186pt1A 08:30–10:45", "2 10:45–12:15"] and nx["st2"] == ["12 13:15–18:00"]), nx)
         sf = await E("""(()=>{if(typeof setfpHTML!=='function'||!vok('setfp'))return null;const keep=S.meta;S.meta=Object.assign({},keep,{setfp:[{date:'2026-10-20',name:'Floorplans',url:'https://www.dropbox.com/preview/x.pdf'}]});
           const h=setfpHTML('2026-10-20'),h0=setfpHTML('2026-10-21');S.meta=keep;return {sec:h.includes('Setfloorpl')||h.includes('floorplan')||h.includes('Plans'),link:h.includes('x.pdf'),none:h0==='',perm:PERMS.some(p=>p[0]==='view.setfp')}})()""")
