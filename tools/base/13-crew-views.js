@@ -222,7 +222,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[da
 /* risk assessments (Gefährdungsbeurteilung) of the day: only with the right «Gefährdungsbeurteilung sehen», below the Sides,
    folded when the callsheet opens */
 function raHTML(date){if(!vok("ra"))return "";const l=arr(S.meta&&S.meta.ra).filter(r=>r.date===date);if(!l.length)return "";
-  return '<details class="dsec rasec"><summary><h3 class="dh">'+esc(L("Gefährdungsbeurteilung"))+' · '+l.length+'</h3></summary><p class="ghint">'+esc(L("Gefährdungsbeurteilungen des Tages (Sicherheit am Set)."))+'</p><div class="sidesb">'+
+  return '<details class="dsec cssec rasec"><summary><h3 class="dh">'+esc(L("Gefährdungsbeurteilung"))+' · '+l.length+'</h3>'+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L("Gefährdungsbeurteilungen des Tages (Sicherheit am Set)."))+'</p><div class="sidesb">'+
     l.map(r=>'<a class="pillbtn" href="'+esc(safeUrl(r.url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI.warn:'')+' '+esc(r.name)+'</a>').join("")+'</div></details>'}
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
