@@ -82,6 +82,12 @@ function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/\s+/g,"");co
       out.push(v);prev=v}}return out};
   return (sc&&ls.find(l=>list(l).includes(sc)))||ls.find(l=>l.name&&n(r.set).includes(n(l.name)))||null}
 /* address of a location: from the app's location list (by its scenes), else a note with a postcode («Föhrenweg 160, 3999 Testdorf») */
+/* codes L1, L2, Base …: always a link to the place (its map link, else its address in Google Maps); c/date of the callsheet being drawn */
+let CSCUR={c:null,date:""};
+function csLocHref(l,c,date){c=c||CSCUR.c;date=date||CSCUR.date;if(!l)return"";if(l.map)return l.map;let ad="";try{ad=c?csLocAddr(c,l,date):""}catch(_){}return ad?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(ad):""}
+function csCodeHref(code){const m=String(code||"").match(/^L(\w+)$/);if(!m||!CSCUR.c)return"";return csLocHref(csLocs(CSCUR.c).find(x=>!x.kinds&&String(x.no).trim()===m[1]))}
+function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':'',k='csplace'+(cls?' '+cls:'');
+  return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' onclick="event.stopPropagation()">'+esc(code)+'</a>':'<span class="'+k+'"'+t+'>'+esc(code)+'</span>'}
 function csLocAddr(c,l,date){let ad="";
   /* 1. the app's location list: a set there with one of the scenes of this location, or with the same name */
   try{const scs=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>norm(r.sc));const nm=fold(String(l.name||"")).replace(/\(.*?\)/g,"").trim();
@@ -109,7 +115,7 @@ function csOrderRows(rows,date,locs){if(!csA(rows).length)return"";const ni=date
     /* folded: the first line (scene, I/E, set, pages) is the summary, everything else opens with a tap */
     const i0=li.indexOf('<div class="sc">'),k=li.lastIndexOf('</div></li>');if(i0<0||k<0)return li;
     let body=li.slice(i0+16,k);const m=body.match(/<div class="l1">[\s\S]*?<\/div>/);const l1=m?m[0]:'<div class="l1"><span class="scn">'+esc(r.sc)+'</span></div>';if(m)body=body.replace(m[0],"");
-    const lo=csSceneLoc(locs,r);const pb=lo?(lo.map?'<a class="csplace" href="'+esc(safeUrl(lo.map))+'" target="_blank" rel="noopener noreferrer" title="'+esc(lo.name||"")+'" onclick="event.stopPropagation()">L'+esc(String(lo.no).trim())+'</a>':'<span class="csplace" title="'+esc(lo.name||"")+'">L'+esc(String(lo.no).trim())+'</span>'):'';
+    const lo=csSceneLoc(locs,r);const pb=lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'';
     const du=pb+(r.dur||it.dur?'<span class="csdur">'+esc(r.dur||it.dur)+'</span>':'');const l1d=du&&/<span class="set">/.test(l1)?l1.replace('<span class="set">',du+'<span class="set">'):l1+du;
     return '<li class="row csfold'+nw+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+l1d+CSEXP.replace('class="csexp"','class="csexp sm"')+'</summary>'+body+extra+'</details></div></li>'}).join("")+'</ol>'}
 /* what concerns me on this callsheet: call, cast times, rides, travel, my department */
@@ -185,7 +191,7 @@ function csTilesHTML(x,day,c,me){const t=c.times||{};
       const to=(String(pl.name||"").replace(/^[^:]*:\s*/,"").replace(/^Set\s*\w+\s*·\s*/,"")).trim();if(!to&&!pl.map)return"";if(!to)return '<a class="dt csdrv" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc(L("Karte"))+' ›</div></a>';
       const from=(day&&day.drive&&day.drive.from)||"Hotel",enc=encodeURIComponent,url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+enc(from)+"&destination="+enc(to),here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+enc(to);
       return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc((()=>{const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})())+' ›</div></button>'})()+'</div>';}
-function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=c.tr||null;
+function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=c.tr||null;CSCUR={c,date:x.date||""};
   let JB="";
   /* jump bar (sticky) and search over the whole callsheet */
   {const has=k=>({loc:csA(c.locations).length,order:csA((c.order||{}).rows).length,cast:csA(c.cast).length,trans:csA(c.transport).length||csA(c.crewTransport).length||csA(c.travel).length,dept:csA(c.depts).some(r=>String(r.text||"").trim()),calls:csA(c.calls).length})[k];
@@ -234,7 +240,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   /* locations */
   /* locations: each one folds (name and map always visible), a button opens or closes all */
   {const ls=csLocs(c),SEENAD=new Map();
-   h+=csSec("Locations",ls.length?ls.map(l=>{let LAD=csLocAddr(c,l,x.date);const code=l.kinds?l.kinds.map(k=>k.replace(/\s+/g,"")).join("·"):(l.no?"L"+String(l.no).trim():"");return '<details class="dbox csloc"><summary><div class="csl1">'+(code?'<span class="csplace csloc-c" title="'+esc(l.kinds?l.no:'Set '+(l.no||""))+'">'+esc(code)+'</span>':'')+'<span class="dn">'+esc(l.name||"")+'</span>'+'<span class="csloc-i">'+(LAD?'':csMap(l.map))+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span></div>'+(LAD&&SEENAD.has(fold(LAD))?'<span class="csaddr cssame">'+esc(L("Adresse wie"))+' '+esc(SEENAD.get(fold(LAD)))+'</span>':'')+(LAD&&!SEENAD.has(fold(LAD))&&SEENAD.set(fold(LAD),code||l.name)?'<a class="csaddr" href="'+esc(safeUrl(l.map||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(LAD))))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+esc(LAD)+'</a>':'')+(()=>{const mine=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>String(r.sc));const uniq=[...new Set(mine)];
+   h+=csSec("Locations",ls.length?ls.map(l=>{let LAD=csLocAddr(c,l,x.date);const code=l.kinds?l.kinds.map(k=>k.replace(/\s+/g,"")).join("·"):(l.no?"L"+String(l.no).trim():"");return '<details class="dbox csloc"><summary><div class="csl1">'+(code?csPlaceA(code,csLocHref(l,c,x.date),l.kinds?l.no:'Set '+(l.no||""),"csloc-c"):'')+'<span class="dn">'+esc(l.name||"")+'</span>'+'<span class="csloc-i">'+(LAD?'':csMap(l.map))+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span></div>'+(LAD&&SEENAD.has(fold(LAD))?'<span class="csaddr cssame">'+esc(L("Adresse wie"))+' '+esc(SEENAD.get(fold(LAD)))+'</span>':'')+(LAD&&!SEENAD.has(fold(LAD))&&SEENAD.set(fold(LAD),code||l.name)?'<a class="csaddr" href="'+esc(safeUrl(l.map||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(LAD))))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+esc(LAD)+'</a>':'')+(()=>{const mine=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>String(r.sc));const uniq=[...new Set(mine)];
        return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+'</summary>'+
      csLocFp(c,l,x.date)+csA(l.notes).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",true,"","loc",SU.loc)}
   /* map of the day: every location on its own (code, scenes, name), parking and other points of the sets small */
@@ -263,14 +269,14 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
    const sumx='<span class="csosum">'+ch("Call",t.crewCall||x.crewCall)+ch(L("Probe"),t.rehearsal)+ch("RTS",t.rts||x.shootCall)+(sc.length?ch(sc.length+" "+L("Szenen"),sc.length>1?sc[0]+"–"+sc[sc.length-1]:sc[0]):"")+ch("Lunch",t.lunch)+ch("Wrap",t.wrap||x.wrap)+'</span>'+
      (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c);return csA(o.rows).filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
        /* one line per scene: time · scene · I/E · set code · set · duration */
-       return '<span class="cso1"><i>'+esc(hm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?'<span class="csplace">L'+esc(String(lo.no).trim())+'</span>':'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
+       return '<span class="cso1"><i>'+esc(hm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
    h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c)),false,"","order",sumx)}
   /* cast, extras, vehicles */
   const CC=csCols();
   h+=csSec("Cast",(csA(c.cast).length?'<span class="cscols">'+[["role",L("Rolle")],["actor",L("Darsteller")]].map(([k,t])=>'<button type="button" class="cscol" data-cscol="'+k+'" aria-pressed="'+!CC.has(k)+'">'+esc(t)+'</button>').join("")+'</span>':'')+(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Kacheln":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,csMk(r.wardrobe,c)||csDurT(r.wardrobe),csMk(r.makeup,c),r.base,r.onset]),3),false,(csCastMode()?"cs-astbl":"")+(CC.has("role")?" hide-role":"")+(CC.has("actor")?" hide-actor":""),"cast",SU.cast);
   /* travel of the cast: one line per person (name · how · from → to · note), the place as short code (L1, Base …) with the map */
   {const U=/(https?:\/\/[^\s<]+)/g;const clean=v=>String(v||"").replace(U,"").replace(/\s{2,}/g," ").trim();
-   const badge=(txt,url)=>{let pl=null;try{pl=csPlace(c,clean(txt))}catch(_){}const code=pl?csShort(pl):"";const u=url||(pl&&pl.map)||"";if(!u)return code?'<span class="csplace">'+esc(code)+'</span>':'';
+   const badge=(txt,url)=>{let pl=null;try{pl=csPlace(c,clean(txt))}catch(_){}const code=pl?csShort(pl):"";const u=url||(pl&&pl.map)||"";if(!u)return code?csPlaceA(code,csCodeHref(code),pl&&pl.name):'';
      return '<a class="csplace" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer" title="'+esc(pl&&pl.name||clean(txt)||L("Karte"))+'">'+esc(code||L("Karte"))+'</a>'};
    const rows=csA(c.travel).map(r=>{const urls=[r.from,r.to,r.note].join(" ").match(U)||[];
      return '<div class="cstrv"><b>'+esc(r.name||"")+'</b>'+(r.how?'<small>'+esc(r.how)+'</small>':'')+'<span class="r">'+esc(csRoute(clean(r.from),r.t1,clean(r.to),r.t2))+'</span>'+badge(r.to,urls[0])+(clean(r.note)?'<small class="n">'+csTx(clean(r.note))+'</small>':'')+'</div>'}).join("");
@@ -288,7 +294,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   /* calls on set: by department, one short line per person (time · name · job) */
   {const g=new Map();for(const r of csA(c.calls)){const k=r.dept||"";if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
    h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>{const who={hit:t=>{const a=nmk(String(t||"")),b=nmk(String(r.name||""));return !!b&&a.includes(b)}};let pl=null;try{pl=csCallPlace(c,who,r)}catch(_){}
-     const sc=pl?csShort(pl):"";const tag=sc?(pl.map?'<a class="csplace" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer" title="'+esc(pl.name)+'">'+esc(sc)+'</a>':'<span class="csplace" title="'+esc(pl.name)+'">'+esc(sc)+'</span>'):'';
+     const sc=pl?csShort(pl):"";const tag=sc?csPlaceA(sc,pl.map||csCodeHref(sc),pl.name):'';
      const tm=String(r.t||"").match(/^(\d{1,2}:\d{2})\s*(.*)$/);
      return '<div class="cscall-r'+(me&&me.hit(r.name)?' mine':'')+'"><span class="t">'+esc(tm?tm[1]:(r.t||""))+(tm&&tm[2]?'<i>'+esc(tm[2])+'</i>':'')+'</span><span class="cp">'+tag+'</span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>'}).join("")+'</div>').join(""),false,"","calls",SU.calls)}
   /* totals, notes, radio */
