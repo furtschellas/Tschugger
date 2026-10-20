@@ -1213,4 +1213,15 @@ html body #view .dtiles.cstiles>.dt.cswx .ttile>span{font-size:max(8.5px,calc(11
 .camx .cx{font-family:var(--f-mono);overflow-wrap:anywhere}
 .pv-no-d .sc>.camx{display:none}
 @media (max-width:479px){html body #view .dtiles.cstiles>.dt.csdrv{min-width:0;overflow:hidden}html body #view .dtiles.cstiles>.dt.csdrv .v{white-space:normal!important;overflow-wrap:anywhere;line-height:1.15}}
+.cscallpl{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
+/* desktop: a location in one line – code, name, address, scenes, buttons (long texts end with … , the full address is its tooltip) */
+@media (min-width:761px){
+html body #view details.csloc>summary{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:8px}
+html body #view details.csloc>summary .csl1{display:contents}
+html body #view details.csloc>summary .csloc-c{order:1;flex:0 0 auto}
+html body #view details.csloc>summary .dn{order:2;flex:0 1 auto;min-width:3em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body #view details.csloc>summary .csaddr{order:3;flex:0 1 auto;min-width:4em;margin:0!important;width:auto!important;max-width:none!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+html body #view details.csloc>summary .csloc-s{order:4;flex:0 0 auto;display:flex;flex-wrap:nowrap;margin:0!important}
+html body #view details.csloc>summary .csloc-i{order:9;margin-left:auto}
+}
 </style>
