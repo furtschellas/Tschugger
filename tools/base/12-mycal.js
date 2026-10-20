@@ -22,8 +22,8 @@ function iAmIn(names,me,people){
 }
 function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
 /* a ride of a callsheet: the same id for everyone (date, times, places, vehicle – no names) */
-function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
-function myEvents(me){
+function rideId(date,r){if(r&&r._rid)return r._rid;const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
+function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   const out=[],people=mailPeople(),t=todayISO();
   for(const d of (vok("prep")?S.prepro:[])){if(d.date<t)continue;
     for(const [grp,list] of [["i",d.items],["p",arr(d.parallel)]])list.forEach((i,k)=>{if(/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n||"").trim()))return;if(iAmIn(ppNames(i.crew).concat(ppNames(i.cast)),me,people))out.push({date:d.date,t:hm(i.t)||i.t||"",end:hm(i.end),n:i.n,where:i.where,map:i.map,src:"Weekly Schedule",go:shootOn(d.date)?d.date:"prep:"+d.date,cal:d.date+"|"+grp+"|"+k})});

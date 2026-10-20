@@ -124,7 +124,7 @@ function fitAddr(root){if(!root||innerWidth>600)return;
   root.querySelectorAll('.addr,a[target="_blank"]').forEach(el=>{if(!/strasse/i.test(el.textContent)||lines(el)<2)return;
     el.childNodes.forEach(n=>{if(n.nodeType===3)n.nodeValue=n.nodeValue.replace(/(\p{L})strasse\b/giu,"$1str.").replace(/\bStrasse\b/g,"Str.").replace(/\bstrasse\b/g,"str.")})})}
 window.addEventListener("resize",()=>{clearTimeout(window.__fnT);window.__fnT=setTimeout(()=>{fitNav();try{fitAddr(document.getElementById("view"))}catch(_){}},120)});
-function render(){
+function render(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form")){S.rpend=true;return}} /* never wipe a form someone is typing in – catch up when the field is left */
   S.rpend=false;
   /* a page without access (e.g. the last page of an account whose rights were changed): back to the start page instead of «Kein Zugang» */

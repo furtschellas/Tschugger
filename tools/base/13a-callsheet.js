@@ -68,14 +68,16 @@ function csDriverByPhone(ph){const k=String(ph||"").replace(/\D/g,"").slice(-9);
   for(const d of arr(S.dispos)){const t=String(d&&d.cs&&d.cs.drivers||"");for(const x of t.split(/\s*[|\n;]\s*/)){const m=x.match(CSPH);if(m&&m[0].replace(/\D/g,"").slice(-9)===k){const n=x.replace(m[0],"").replace(/o\.\s*p\.\s*D.*$/i,"").trim();if(n)return n}}}
   for(const g of arr(S.crew))for(const p of arr(g.people))if(String(p.phone||"").replace(/\D/g,"").slice(-9)===k)return p.name||"";return ""}
 function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0,id="";try{id=typeof rideId==="function"?rideId(date,r):"";st=id&&window.rideState?rideState(id):0}catch(_){}
-  const I=window.RIDE_ICO||{},can=id&&typeof canPerm==="function"&&canPerm("rides.confirm");
+  const I=window.RIDE_ICO||{},can=id&&typeof canPerm==="function"&&(canPerm("rides.confirm")||canPerm("rides.manage"));
   const cls='ridest rs'+st+(st===2&&window.rideAt&&Date.now()-rideAt(id)>20*60e3?' rsold':'');
   const tip=st===0?L("Fahrt noch nicht angenommen"):st===1?L("Fahrt läuft"):L("Fahrt ausgeführt");
   const ico=st===1?I.car||"":st===2?I[1]||"":"";
   /* AL, AD and production change the state right here: open → running → done → open */
   const el=can?'<button type="button" class="'+cls+' rideack-cs" data-rideack="'+esc(id)+'" data-rided="'+esc(date)+'" title="'+esc(tip+" – "+L("antippen zum Ändern"))+'" aria-label="'+esc(tip+" – "+L("antippen zum Ändern"))+'">'+ico+'</button>'
     :'<span class="'+cls+'" title="'+esc(tip)+'">'+ico+'</span>';
-  return {h:el+' '+esc(t)}}
+  /* changed in the app (Fahrten Manager): marked, the original as tooltip */
+  const o=r._orig,chg=o?' <span class="rchg" title="'+esc(L("Original")+": "+[csRoute(o.from,o.t1,o.to,o.t2),o.vehicle,o.driver,o.passengers||o.people].filter(Boolean).join(" · "))+'">'+esc(L("geändert"))+'</span>':'';
+  return {h:el+' '+esc(t)+chg}}
 function csTable(head,rows,tc){rows=rows.map(r=>r.map(c=>c&&typeof c==="object"?c:csDurT(c)));rows=rows.filter(r=>r.some(c=>csCellTx(c).trim()));if(!rows.length)return"";tc=tc||2;
   const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csCell(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
   const cards='<div class="cs-cards">'+rows.map(r=>{const tt=r.slice(0,tc).map(c=>c&&typeof c==="object"&&c.h?c:csCellTx(c).trim());
@@ -185,7 +187,7 @@ const CSDSYN=[["ad","regie","directors","direction"],["camera","kamera","cam"],[
 function csDWords(t){const w=fold(String(t||"")).split(/[^a-z0-9]+/).filter(x=>x.length>1&&!["and","und","the","de","of"].includes(x));const out=new Set(w);for(const g of CSDSYN)if(w.some(x=>g.includes(x)))g.forEach(x=>out.add(x));return out}
 function csMyDept(c,me,dept){if(!me)return false;const call=csA(c.calls).find(r=>me.hit(r.name));const mine=new Set([...csDWords(call&&call.dept),...csDWords(me.dep)]);
   const w=csDWords(dept);for(const x of w)if(x.length>2&&mine.has(x)||x==="ad"&&mine.has("ad"))return true;return false}
-const CSMINEMEMO=new WeakMap();function csMine(c,me){if(!c||!me)return[];let m=CSMINEMEMO.get(c);if(!m)CSMINEMEMO.set(c,m=new Map());const k=me.name+"|"+me.dep+"|"+(typeof LANG!=="undefined"?LANG:"")+"|"+vok("phone");if(!m.has(k))m.set(k,csMine0(c,me));return m.get(k).slice()}
+const CSMINEMEMO=new WeakMap();function csMine(c,me){if(!c||!me)return[];let m=CSMINEMEMO.get(c);if(!m)CSMINEMEMO.set(c,m=new Map());const k=me.name+"|"+me.dep+"|"+(typeof LANG!=="undefined"?LANG:"")+"|"+vok("phone")+"|"+(window.REDVER||0);if(!m.has(k))m.set(k,csMine0(c,me));return m.get(k).slice()}
 /* the destination of a ride as a map link (the place of the callsheet, else a map search) */
 function csToLink(c,to){const t0=String(to||"").trim();if(!t0)return"";const um=t0.match(/https?:\/\/\S+/);const t=t0.replace(/https?:\/\/\S+/g,"").trim()||L("Karte");
   if(um&&t===L("Karte"))return '<a class="csadl" href="'+esc(safeUrl(um[0]))+'" target="_blank" rel="noopener noreferrer"><span>'+esc(t)+'</span></a>';let pl=null;try{pl=csPlace(c,t)}catch(_){}
