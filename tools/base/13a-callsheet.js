@@ -62,7 +62,8 @@ function csDriverByPhone(ph){const k=String(ph||"").replace(/\D/g,"").slice(-9);
   for(const d of arr(S.dispos)){const t=String(d&&d.cs&&d.cs.drivers||"");for(const x of t.split(/\s*[|\n;]\s*/)){const m=x.match(CSPH);if(m&&m[0].replace(/\D/g,"").slice(-9)===k){const n=x.replace(m[0],"").replace(/o\.\s*p\.\s*D.*$/i,"").trim();if(n)return n}}}
   for(const g of arr(S.crew))for(const p of arr(g.people))if(String(p.phone||"").replace(/\D/g,"").slice(-9)===k)return p.name||"";return ""}
 function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0;try{st=typeof rideId==="function"&&window.rideState?rideState(rideId(date,r)):0}catch(_){}
-  if(!st)return t;const I=window.RIDE_ICO||{};return {h:'<span class="ridest rs'+st+(st===2&&window.rideAt&&Date.now()-rideAt(rideId(date,r))>20*60e3?' rsold':'')+'" title="'+esc(st===1?L("Fahrt läuft"):L("Fahrt ausgeführt"))+'">'+(st===1?I.car:I[1])+'</span> '+esc(t)}}
+  /* not yet accepted: an empty circle */
+  if(!st)return {h:'<span class="ridest rs0" title="'+esc(L("Fahrt noch nicht angenommen"))+'"></span> '+esc(t)};const I=window.RIDE_ICO||{};return {h:'<span class="ridest rs'+st+(st===2&&window.rideAt&&Date.now()-rideAt(rideId(date,r))>20*60e3?' rsold':'')+'" title="'+esc(st===1?L("Fahrt läuft"):L("Fahrt ausgeführt"))+'">'+(st===1?I.car:I[1])+'</span> '+esc(t)}}
 function csTable(head,rows,tc){rows=rows.map(r=>r.map(c=>c&&typeof c==="object"?c:csDurT(c)));rows=rows.filter(r=>r.some(c=>csCellTx(c).trim()));if(!rows.length)return"";tc=tc||2;
   const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csCell(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
   const cards='<div class="cs-cards">'+rows.map(r=>{const tt=r.slice(0,tc).map(c=>csCellTx(c).trim());
