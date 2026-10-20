@@ -269,7 +269,7 @@ function csLocSec(c,x,me,SU,t){let h="";
        return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+'</summary>'+
      csLocFp(c,l,x.date)+csA(l.notes).filter(n=>!LAD||!fold(LAD).includes(fold(csL(n))))/* the address is already in the head */.map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",true,"","loc",SU.loc)}
   return h}
-function csMapSec(c,x,me,SU,t){let h="";
+function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false)return"";   /* switched off in the app settings */let h="";
   {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const all=csA((c.order||{}).rows),rows=all.filter(r=>r.sc);
    /* scene with start and end (= start of the next row of the shooting order) for the popup of a place */
    const span=r=>{const i=all.indexOf(r),a=hm(r.t),nx=all.slice(i+1).find(y=>hm(y.t));return [String(r.sc),a?a+(nx?"–"+hm(nx.t):""):""]};

@@ -466,6 +466,9 @@ async def owner_tests(p, port):
           const w=document.createElement('div');w.innerHTML=renderCS(x,{date:x.date});const m=w.querySelector('[data-csmap]');const pts=m?JSON.parse(m.dataset.csmap):[];
           return {codes:pts.filter(p=>!p.m).map(p=>p.c).filter(c=>/^L/.test(c)).sort(),l2rough:(pts.find(p=>p.c==='L2')||{}).r===2,park:pts.some(p=>p.m)}})()""")
         check("Callsheet-Karte: jede Location L1, L2 … erscheint (ohne Kartenlink über die Adresse, sonst ungefähr)", al in (None, {"codes": ["L1", "L2"], "l2rough": True, "park": True}), al)
+        mo = await E("""(()=>{if(typeof renderCS!=='function')return null;const k=window.CSMAPON;const x={date:'2030-05-06',cs:{geo:{'https://g/a':[46.3,7.6]},locations:[{no:'1',name:'A',map:'https://g/a'}],order:{rows:[]}}};
+          window.CSMAPON=false;const off=renderCS(x,{date:x.date}).includes('cs-karte');window.CSMAPON=true;const on=renderCS(x,{date:x.date}).includes('cs-karte');window.CSMAPON=k;return {off,on}})()""")
+        check("App-Einstellungen: Karte im Callsheet ein- und ausschaltbar", mo in (None, {"off": False, "on": True}), mo)
         check("Callsheet-Drehfolge: Szenendetails zuklappbar, zuerst offen (ohne eigenes «Details Callsheet»)", nx is None or nx["det"], nx)
         dup = await E("""(()=>{if(typeof renderCS!=='function'||typeof bdKey!=='function')return null;const keep=S.meta;const k='2026-10-20|'+bdKey('186pt1A');S.meta=Object.assign({},keep,{bd:Object.assign({},(keep||{}).bd,{[k]:{h:{},c:[['Notes',['Drohne ab 09:00']]]}})});
           const x={date:'2026-10-20',cs:{locations:[{no:'1',name:'CHAPEL'}],order:{rows:[{t:'08:30',sc:'186pt1A',set:'CHAPEL',notes:'Drohne ab 09:00'}]}}};const w=document.createElement('div');w.innerHTML=renderCS(x,{date:'2026-10-20'});S.meta=keep;
