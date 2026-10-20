@@ -23,6 +23,7 @@ async function loadLangs(){
     const tb=d.exists()&&Array.isArray(d.data().tabs)&&d.data().tabs.length?d.data().tabs:null;if(JSON.stringify(window.TABSON)!==JSON.stringify(tb)){window.TABSON=tb;try{tb?localStorage.setItem("apptabs",JSON.stringify(tb)):localStorage.removeItem("apptabs")}catch(_){}render()}
     window.FAILALARM=d.exists()?d.data().failAlarm!==false:true;
     window.OWNEV=d.exists()?d.data().ownEvents!==false:true;
+    window.CSMAPON=d.exists()?d.data().csMap!==false:true;   /* map in the callsheet (App-Verwaltung → Einstellungen) */
     window.GCALON=d.exists()&&!!d.data().gcal;
     const au=d.exists()?d.data().autoUpdate!==false:true;if(window.AUTOUPD!==au){window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}}
     const so=d.exists()?d.data().script!==false:true;if(window.SCRIPTON!==so){window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}render()}
