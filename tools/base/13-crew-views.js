@@ -228,6 +228,11 @@ function docSecHTML(date,perm,key,title,hint,icon){if(!vok(perm))return "";const
     l.map(r=>'<a class="pillbtn" href="'+esc(safeUrl(r.url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI[icon]:'')+' '+esc(r.name)+'</a>').join("")+'</div></details>'}
 const raHTML=date=>docSecHTML(date,"ra","ra","Gefährdungsbeurteilung","Gefährdungsbeurteilungen des Tages (Sicherheit am Set).","warn");
 const setfpHTML=date=>docSecHTML(date,"setfp","setfp","Setfloorpläne","Floorpläne der Sets, die dem Callsheet beiliegen.","doc");
+/* one hour after the wrap of a shooting day the callsheet of the next shooting day (if there is one); a wrap after midnight counts for the next morning */
+function csDayAfterWrap(t,pick,by,now){const td=S.days.find(d=>d.date===t)||{},x0=by[t]||{},tm=(x0.cs&&x0.cs.times)||{};
+  const w=hm(tm.wrap||x0.wrap||td.wrap||""),cc=hm(tm.crewCall||x0.crewCall||td.crewCall||"");const nx=pick.find(d=>d.date>t&&by[d.date]);
+  if(!w||!nx||typeof zurichUTC!=="function")return null;const end=zurichUTC(t,w).getTime()+(cc&&w<cc?864e5:0);
+  return now>end+3600e3?nx.date:null}
 function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   const t=todayISO(),PD=planDays();
@@ -236,6 +241,8 @@ function renderDispo(){
   const pick=PD.filter(d=>d.kind!=="off"&&d.kind!=="travel");
   if(!S.dday||!pick.some(d=>d.date===S.dday)){
     S.dday=((pick.find(d=>d.date>=t)||pick[pick.length-1]||{}).date)||null;
+    /* one hour after the wrap of today: the callsheet of the next shooting day, when there is one */
+    if(S.dday===t)S.dday=csDayAfterWrap(t,pick,by,Date.now())||t;
   }
   let h=dayNav(PD,d=>d.date===S.dday,"data-dday","date",d=>d.kind!=="shoot"?{cls:"",mark:""}:(by[d.date]?{cls:" has",mark:" ●"}:{cls:" nodispo",mark:""}));
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
