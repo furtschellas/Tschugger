@@ -9,7 +9,8 @@ async function rideEditLoad(){if(REDSUB||typeof ME==="undefined"||!ME)return;
 setTimeout(rideEditLoad,4500);
 /* the changes on the rides of every callsheet (the originals stay in _o_transport / _o_crewTransport) */
 const RED_KEYS=["t1","t2","from","to","vehicle","driver","passengers","people"];
-window.rideEditApply=()=>{for(const dp of (typeof S!=="undefined"&&S.dispos)||[]){const c=dp&&dp.cs;if(!c||c._rev===window.REDVER)continue;
+window.rideEditApply=()=>{for(const dp of (typeof S!=="undefined"&&S.dispos)||[]){const c=dp&&dp.cs;if(c&&dp.date)c._date=dp.date;   /* the day of the callsheet (travel of other days) */
+  if(!c||c._rev===window.REDVER)continue;
   for(const k of ["transport","crewTransport"]){const orig=c["_o_"+k]||c[k];if(!Array.isArray(orig))continue;c["_o_"+k]=orig;
     c[k]=orig.map(r=>{const id=rideId(dp.date,Object.assign({},r,{_rid:""}));const e=window.RIDEEDIT[id];if(!e)return Object.assign({},r,{_rid:id});
       const x=Object.assign({},r,{_rid:id,_orig:r});for(const f of RED_KEYS)if(e[f]!=null)x[f]=e[f];return x})}
