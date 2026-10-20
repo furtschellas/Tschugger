@@ -210,7 +210,7 @@ function csMine0(c,me){const mine=[];
   /* the other rides (the pickup ride is already shown above) */
   for(const r of csA(c.transport).filter(r=>(me.hit(r.passengers)||me.hit(r.driver))&&r!==pu))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+' <small>'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small></div>');
   for(const r of csA(c.crewTransport).filter(r=>me.hit(r.people)&&r!==pu))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+' <small>'+esc(r.vehicle||"")+'</small></div>');
-  for(const r of csA(c.travel).filter(r=>me.hit(r.name)))mine.push('<div class="csme-r"><span class="k">'+esc(L("Anreise"))+'</span>'+esc([r.how,r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+'</div>');
+  for(const r of csA(c.travel).filter(r=>me.hit(r.name)&&(!r.date||!c._date||r.date===c._date)))mine.push('<div class="csme-r"><span class="k">'+esc(L("Anreise"))+'</span>'+esc([r.how,r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+'</div>');
   {let first=true;for(const r of csA(c.depts).filter(r=>csMyDept(c,me,r.dept)&&String(r.text||"").trim())){const lab=first?esc(L("Abteilung")):"";first=false;mine.push('<div class="csme-r"><span class="k">'+lab+'</span><b>'+esc(r.dept||"")+'</b> '+csTx(r.text)+'</div>');}}
   /* value in its own span (label | value side by side on the phone) */
   return mine.map(x=>x.replace(/<div class="csme-r"><span class="k">(.*?)<\/span>(.*?)<\/div>/g,'<div class="csme-r"><span class="k">$1</span><span class="v">$2</span></div>'))}
@@ -239,7 +239,7 @@ function csSums(c){  const SU={};{const sm=a=>{a=a.filter(x=>x&&x[1]!==""&&x[1]!
     const ls=csLocs(c);SU.loc=sm([["Sets",ls.filter(l=>!l.kinds).length],[L("weitere Orte"),ls.filter(l=>l.kinds).length]]);
     {const nos=csA(c.cast).map(r=>String(r.no||"").trim()).filter(Boolean).sort((a,b)=>(parseInt(a,10)||0)-(parseInt(b,10)||0)||a.localeCompare(b));
      SU.cast=nos.length?'<span class="cscount csnos">'+nos.map(n=>'<span class="csno">'+esc(n)+'</span>').join("")+'</span>':''}
-    SU.travel=sm([[L("Personen"),csA(c.travel).length]]);
+    SU.travel=sm([[L("Personen"),csA(c.travel).filter(r=>!r.date||!c._date||r.date===c._date).length]]);
     SU.extras=sm([[L("Komparsen"),csA(c.extras).reduce((a,r)=>a+(parseInt(r.count,10)||0),0)],[L("Gruppen"),csA(c.extras).length]]);
     SU.veh=sm([[L("Fahrzeuge"),csA(c.vehicles).length]]);
     SU.trans=sm([[L("Fahrten"),csA(c.transport).length],[L("Fahrzeuge"),uniq(csA(c.transport).map(r=>r.vehicle))],[L("Fahrer"),uniq(csA(c.transport).map(r=>r.driver))]]);
@@ -252,8 +252,10 @@ function csCountLine(c,x,me,SU,t){  let csCnt="";{const nCast=csA(c.cast).length
    /* the callsheet's own totals line («TOTAL: 62 || CREW: 46 CAST: 11 EXTRAS: 0 ZUSATZ: 5») wins over counting rows */
    const tl=String(c.total||"")+" "+csA(c.notes).join(" ");const g=re=>{const m=tl.match(re);return m?+m[1]:null};
    const T={tot:g(/TOTAL:?\s*(\d+)/i),crew:g(/CREW:?\s*(\d+)/i),cast:g(/CAST:?\s*(\d+)/i),ex:g(/EXTRAS:?\s*(\d+)/i),zu:g(/ZUSATZ:?\s*(\d+)/i)};
-   const parts=T.tot!=null?[["Cast",T.cast],["Crew",T.crew],[L("Komparsen"),T.ex],[L("Zusatz"),T.zu],["Total",T.tot]]:[["Cast",nCast],["Crew",nCrew],[L("Komparsen"),nEx],["Total",nCast+nCrew+nEx]];
-   const pp=parts.filter(x=>x[1]);csCnt=pp.length?'<div class="cscount">'+pp.map(([k,v])=>'<span><b>'+v+'</b> '+esc(k)+'</span>').join("")+'</div>':''}
+   /* the cast as listed; when the totals line says something else, its number as a hint (the document contradicts itself) */
+   const castV=T.cast!=null&&nCast&&T.cast!==nCast?nCast+'<small class="cshint" title="'+esc(L("laut Totalzeile des Callsheets"))+'"> ('+esc(L("laut Callsheet"))+' '+T.cast+')</small>':(T.cast!=null?T.cast:nCast);
+   const parts=T.tot!=null?[["Cast",castV],["Crew",T.crew],[L("Komparsen"),T.ex],[L("Zusatz"),T.zu],["Total",T.tot]]:[["Cast",nCast],["Crew",nCrew],[L("Komparsen"),nEx],["Total",nCast+nCrew+nEx]];
+   const pp=parts.filter(x=>x[1]);csCnt=pp.length?'<div class="cscount">'+pp.map(([k,v])=>'<span><b>'+(typeof v==="string"&&/</.test(v)?v:esc(String(v)))+'</b> '+esc(k)+'</span>').join("")+'</div>':''}
   return csCnt}
 function csTeamSec(c,x,me,SU,t){const csCnt=csCountLine(c,x,me,SU,t);let h="";
   h+=csSec(L("Team des Tages"),csA(c.key).length||c.office||csCnt?'<div class="cskey">'+(c.office?'<div><span class="k">'+esc(L("Produktionsbüro"))+'</span>'+csTx(c.office)+'</div>':'')+csA(c.key).map(k=>{const tel=String(k.phone||"").replace(/[^\d+]/g,"");
@@ -293,8 +295,10 @@ function csTravelSec(c,x,me,SU,t){let h="";
   {const U=/(https?:\/\/[^\s<]+)/g;const clean=v=>String(v||"").replace(U,"").replace(/\s{2,}/g," ").trim();
    const badge=(txt,url)=>{let pl=null;try{pl=csPlace(c,clean(txt))}catch(_){}const code=pl?csShort(pl):"";const u=url||(pl&&pl.map)||"";if(!u)return code?csPlaceA(code,csCodeHref(code),pl&&pl.name):'';
      return '<a class="csplace" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer" title="'+esc(pl&&pl.name||clean(txt)||L("Karte"))+'">'+esc(code||L("Karte"))+'</a>'};
-   const rows=csA(c.travel).map(r=>{const urls=[r.from,r.to,r.note].join(" ").match(U)||[];
-     return '<div class="cstrv"><b>'+esc(r.name||"")+'</b>'+(r.how?'<small>'+esc(r.how)+'</small>':'')+'<span class="r">'+esc(csRoute(clean(r.from),r.t1,clean(r.to),r.t2))+'</span>'+badge(r.to,urls[0])+(clean(r.note)?'<small class="n">'+csTx(clean(r.note))+'</small>':'')+'</div>'}).join("");
+   /* travel of another day (a second TRAVEL CAST part of the document): after the others, with its date */
+   const other=r=>r.date&&x.date&&r.date!==x.date;const dlab=r=>{try{const d=new Date(r.date+"T12:00:00");return (typeof WDL==="function"?WDL(d)+" ":"")+r.date.slice(8,10)+"."+r.date.slice(5,7)+"."}catch(_){return r.date}};
+   const rows=csA(c.travel).slice().sort((a,b)=>(other(a)?1:0)-(other(b)?1:0)).map(r=>{const urls=[r.from,r.to,r.note].join(" ").match(U)||[];
+     return '<div class="cstrv'+(other(r)?' trvother':'')+'">'+(other(r)?'<span class="trvd">'+esc(dlab(r))+'</span>':'')+'<b>'+esc(r.name||"")+'</b>'+(r.how?'<small>'+esc(r.how)+'</small>':'')+'<span class="r">'+esc(csRoute(clean(r.from),r.t1,clean(r.to),r.t2))+'</span>'+badge(r.to,urls[0])+(clean(r.note)?'<small class="n">'+csTx(clean(r.note))+'</small>':'')+'</div>'}).join("");
    h+=csSec(L("Anreise Cast"),rows,false,"","travel",SU.travel)}
   return h}
 function csCallsSec(c,x,me,SU,t){let h="";

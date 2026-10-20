@@ -47,7 +47,7 @@ function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_){}
       /* more about the ride: who drives (with the phone from the callsheet's driver line), who rides along, notes */
       const dn=drv?"":clean(r.driver),dph=dn&&vok("phone")?((String(c.drivers||"").split(/\s*[|\n;]\s*/).find(x=>fold(x).includes(fold(dn.split(" ")[0])))||"").match(/\+?\d[\d ]{7,}\d/)||[""])[0]:"";
       const pax=clean(r.passengers||r.people||"").split(/\s*,\s*/).filter(x=>x&&!cm.hit(x)).join(", ");   /* the others in the car */
-      out.push({date:dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true,rid,noack:!!crew||!!how,drv:!!drv,
+      out.push({date:(how&&r.date)||dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:"",src:"Callsheet",go:d.id||dp.date,ride:true,rid,noack:!!crew||!!how,drv:!!drv,
         driver:dn?dn+(dph?" "+dph:""):"",pax:pax&&!(how&&!r.passengers&&!r.people)?pax:"",note:clean(r.note||"")})}}}catch(_){}
   /* own and Google Calendar events (tools/boot/18-own-events.js); the same appointment twice (same day, same start, same title) is shown once */
   try{if(window.ownEvents){const tn=x=>fold(x||"").replace(/[^a-z0-9]+/g," ").trim(),same=(a,b)=>a.date===b.date&&(hm(a.t)||"")===(hm(b.t)||"")&&(()=>{const x=tn(a.n),y=tn(b.n);return x===y||(x.length>=4&&y.length>=4&&(x.includes(y)||y.includes(x)))})();

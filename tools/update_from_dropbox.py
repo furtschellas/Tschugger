@@ -806,7 +806,7 @@ CS_A = (
 CS_B = (
     '{"drivers": Kopfzeile TRANSPORT with DRIVER, '
     '"transport": [{"vehicle", "driver", "passengers", "from", "t1", "to", "t2"}] (jede Fahrt eine Zeile; Fahrzeug und Fahrer wiederholen), '
-    '"travel": [{"how", "name", "from", "t1", "to", "t2", "note"}] (TRAVEL CAST), '
+    '"travel": [{"how", "name", "from", "t1", "to", "t2", "note", "date": Datum YYYY-MM-DD aus der Überschrift des Abschnitts («TRAVEL CAST - Thursday, October 22nd» = der 22.)}] (TRAVEL CAST, alle Abschnitte, auch die anderer Tage), '
     '"depts": [{"dept": Abteilung, "text": Text}] (INDIVIDUAL INFORMATION BY DEPARTEMENT und die Abteilungszeilen nach PREVISION, z. B. Drone, Grip, Sound, Light, Costume, Make-Up/Hair, Armourer/SFX, Stunt), '
     '"crewTransport": [{"vehicle", "people", "from", "t1", "to", "t2"}] (TRANSPORT CREW), '
     '"prevision": {"title": Kopfzeile PREVISION, "rows": wie bei SHOOTING ORDER: Szene = {"t","dur","dir","sc","pgs","time","ie","set","syn","cast","extras","notes"}, sonst {"t","text"}}, '
@@ -1568,7 +1568,7 @@ def main():
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 2 for v in dispos.values())   # read before the full structure / translation: again
+        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 3 for v in dispos.values())   # read before the full structure / translation / travel dates: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
@@ -1577,7 +1577,7 @@ def main():
             a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A, 32000)
             b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000)
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
-            cs["v"] = 2   # version 2: wardrobe/make-up with the person of the column
+            cs["v"] = 3   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date
             md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
             date = str(cs.pop("date", "") or "") or (md and "%s-%s-%s" % md.groups()) or ""
             # locations and production information in the languages of the app (names, places and streets stay as they are)

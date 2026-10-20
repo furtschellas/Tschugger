@@ -456,6 +456,11 @@ async def owner_tests(p, port):
           const dts=[...w.querySelectorAll('.csorder details.scdet')];
           return {det:dts.length>0&&dts.every(d=>d.open)&&dts.some(d=>d.textContent.includes('Drohne'))&&!w.querySelector('.csnote'),codes:[...w.querySelectorAll('.csloc-c')].map(e=>e.textContent),st:(pts.find(p=>p.c==='L1')||{}).st||[],st2:(pts.find(p=>p.c==='L2')||{}).st||[]}})()""")
         check("Callsheet: Locations heissen L1, L2 …", nx is None or nx["codes"][:2] == ["L1", "L2"], nx)
+        tv = await E("""(()=>{if(typeof renderCS!=='function')return null;const x={date:'2030-05-06',cs:{total:'TOTAL: 9 || CREW: 4 CAST: 1 EXTRAS: 0 ZUSATZ: 0',key:[{role:'Director',name:'A'}],cast:[{no:'1',role:'BAX',actor:'X'},{no:'2',role:'PIRMIN',actor:'Y'}],
+            travel:[{how:'Zug',name:'Anna Muster',from:'Bern',to:'Sierre',date:'2030-05-06'},{how:'Multivan',name:'Ben Test',from:'Hotel',to:'Zurich',date:'2030-05-07'}],order:{rows:[]}}};
+          const w=document.createElement('div');w.innerHTML=renderCS(x,{date:x.date});const tr=[...w.querySelectorAll('.cstrv')];
+          return {hint:!!w.querySelector('#cs-team .cscount .cshint'),order:tr.map(e=>e.classList.contains('trvother')),date:!!w.querySelector('.cstrv.trvother .trvd')}})()""")
+        check("Callsheet: Cast gezählt mit Hinweis auf abweichende Totalzeile; Anreise eines anderen Tages separat mit Datum", tv in (None, {"hint": True, "order": [False, True], "date": True}), tv)
         al = await E("""(()=>{if(typeof renderCS!=='function')return null;const x={date:'2030-05-06',cs:{geo:{'loc:1':[46.31,7.57],'https://g/b':[46.312,7.571]},geoSrc:{'loc:1':'addr','https://g/b':'link'},
             locations:[{no:'1',name:'OFFICE',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Kirchplatz 5',map:'https://g/b'},{label:'Tech Parking',text:'',map:'https://g/b'}]},{no:'2',name:'OPEN SPACE'}],order:{rows:[]}}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,{date:x.date});const m=w.querySelector('[data-csmap]');const pts=m?JSON.parse(m.dataset.csmap):[];
