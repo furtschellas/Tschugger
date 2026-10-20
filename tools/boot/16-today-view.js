@@ -2,7 +2,7 @@
 /* «Today» on/off per person (profile, synced with the view settings) */
 function todayOn(){try{const v=localStorage.getItem("today")||"";return !(v==="0"||v.startsWith("0|"))}catch(_){return true}}
 /* which parts Today shows (profile → App): stored with the on/off value, «1|menu,off» = on, without lunch and offline */
-const TODAY_PARTS=[["my","Meine nächsten Termine",()=>vok("mycal")],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
+const TODAY_PARTS=[["my","Meine nächsten Termine",()=>vok("mycal")],["mine","Mein Drehtag",()=>true],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
   ["loc","Erste Location",()=>vok("plan")],["menu","Mittagessen",()=>true],["scs","Szenen",()=>vok("plan")],["chg","Änderungen",()=>vok("plan")||vok("script")],["off","Offline am Set",()=>vok("blocking")||vok("plan")]];
 function todayHidden(){let v="";try{v=localStorage.getItem("today")||""}catch(_){}const i=v.indexOf("|");return new Set(i<0?[]:v.slice(i+1).split(",").filter(Boolean))}
 const tShow=k=>!todayHidden().has(k);
@@ -104,7 +104,7 @@ VIEWS.today=function(){
     return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify(r))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′")+(d.drive.km?'<small class="tkm"> · '+Math.round(d.drive.km)+' km</small>':'')+'</b><span>'+esc(L(back?"Rückfahrt":"Anfahrt"))+' ›</span></button>'})():'';
   /* my day from the callsheet (call, ride, my department) right below the tiles */
   /* «my day» from the callsheet: always (my own call, rides and department), also without the callsheet page; the link to it only with access */
-  let mineCard="";try{const dpm=(S.dispos||[]).find(x=>x&&x.date===d.date);if(dpm&&dpm.cs&&typeof csMine==="function"){const me2=csMe();const mn=csMine(dpm.cs,me2);const toCs=canDispo&&typeof tabsOn==="function"&&tabsOn().includes("dispo");
+  let mineCard="";try{const dpm=(S.dispos||[]).find(x=>x&&x.date===d.date);if(tShow("mine")&&dpm&&dpm.cs&&typeof csMine==="function"){const me2=csMe();const mn=csMine(dpm.cs,me2);const toCs=canDispo&&typeof tabsOn==="function"&&tabsOn().includes("dispo");
     if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein"))+' '+esc(dpm.label||d.label||L("Drehtag"))+' <span class="beta">BETA</span>'+(toCs?'<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button>':'')+'</div>'+mn.join("")+'</div>'}}catch(_){}
   /* a day with a callsheet: the same tiles as in the callsheet (Crew Call … Wrap, sun, weather, drive) */
   const dcs=(S.dispos||[]).find(x=>x&&x.date===d.date&&x.cs);

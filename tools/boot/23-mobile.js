@@ -15,8 +15,9 @@ function offBar(){let b=document.getElementById("offbar");const off=navigator.on
   if(nav){if(b.parentElement!==nav)nav.appendChild(b)}else if(b.parentElement!==document.body)document.body.appendChild(b)}
 addEventListener("online",offBar);addEventListener("offline",offBar);setTimeout(offBar,1500);setInterval(offBar,60000);
 /* sticky: the day bar stays on top, the callsheet bar right below it – measure the day bar's height */
-function stickyH(){const w=document.querySelector("#view .stripwrap");const h=w?Math.round(w.getBoundingClientRect().height):0;document.documentElement.style.setProperty("--striph",h+"px");
-  const j=document.querySelector("#view .csjump");document.documentElement.style.setProperty("--csjh",(j?Math.round(j.getBoundingClientRect().height):0)+"px")}
+let STK="";function stickyH(){const w=document.querySelector("#view .stripwrap"),j=document.querySelector("#view .csjump");
+  const h=w?Math.round(w.getBoundingClientRect().height):0,jh=j?Math.round(j.getBoundingClientRect().height):0,k=h+"|"+jh;if(k===STK)return;STK=k;   /* only when a height changed */
+  document.documentElement.style.setProperty("--striph",h+"px");document.documentElement.style.setProperty("--csjh",jh+"px")}
 try{new MutationObserver(()=>requestAnimationFrame(stickyH)).observe(document.getElementById("view")||document.body,{childList:true})}catch(_){}
 addEventListener("resize",stickyH);setTimeout(stickyH,800);
 {let rq=0;addEventListener("scroll",()=>{if(rq)return;rq=requestAnimationFrame(()=>{rq=0;stickyH()})},{passive:true})}
