@@ -520,6 +520,11 @@ async def owner_tests(p, port):
         check("Callsheet: Kreis antippbar nur für Fahrten Manager (Pop-up) und die Fahrerin / den Fahrer (bestätigen)", rb in (None, {"mgr": True, "confirmOnly": True, "other": True, "driver": True}), rb)
         hm = await E("""(()=>{if(typeof csMapQ!=='function')return null;return {q:csMapQ('Bahnhof 1, Sion')==='https://www.google.com/maps/search/?api=1&query=Bahnhof%201%2C%20Sion',e:csMapQ('  ')==='',noinl:!document.querySelector('#view [onclick]')}})()""")
         check("Callsheet: Karten-Suchlink aus einer Hilfsfunktion, keine Inline-Klick-Handler", hm in (None, {"q": True, "e": True, "noinl": True}), hm)
+        hn = await E("""(()=>{if(typeof csHnBtns!=='function'||typeof csNowLoc!=='function')return null;const ns=['To set 1: 4 min walk','WC: Base'];const b=csHnBtns(ns),t=csHnTexts(ns);
+          const c={locations:[{no:'1',name:'A',scenes:'1'},{no:'2',name:'B',scenes:'2'}],order:{rows:[{t:'08:30',sc:'1'},{t:'12:00',text:'Lunch'},{t:'13:00',sc:'2'},{t:'18:00',text:'Wrap'}]}};const ls=csLocs(c);
+          const at=(h,m)=>{const l=csNowLoc(c,'2030-05-06',ls,new Date(2030,4,6,h,m));return l?l.name:''};
+          return {icons:(b.match(/data-cshn=/g)||[]).length===2&&/cshn-wc/.test(b),texts:(t.match(/hidden/g)||[]).length===2,now:[at(8,0),at(9,0),at(12,30),at(14,0),at(18,30)].join(',')==',A,A,B,'}})()""")
+        check("Callsheet: Hinweise (To set, WC) als Symbole mit Text beim Antippen, aktuelle Location «jetzt hier»", hn in (None, {"icons": True, "texts": True, "now": True}), hn)
         re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
           const r0={t1:'07:30',t2:'08:00',from:'Hotel',to:'Base',vehicle:'Van 1',driver:'Max Fahrer',passengers:'Anna Muster'};S.dispos=[{date:t,cs:{transport:[r0]}}];
           const id=rideId(t,r0);window.RIDEEDIT={[id]:{t1:'07:45',passengers:'Anna Muster, Lena Test'}};window.REDVER=(window.REDVER||0)+1;rideEditApply();const r=S.dispos[0].cs.transport[0];

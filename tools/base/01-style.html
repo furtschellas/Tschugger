@@ -1185,15 +1185,6 @@ html body #view .dtiles.cstiles>.dt.cswx .ttile>span{font-size:max(8.5px,calc(11
 .pv-no-d .sc>.camx{display:none}
 @media (max-width:479px){html body #view .dtiles.cstiles>.dt.csdrv .v{white-space:normal!important;overflow-wrap:anywhere;line-height:1.15}}
 .cscallpl{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
-/* desktop: a location in one line – code, name, address, scenes, buttons (long texts end with … , the full address is its tooltip) */
-@media (min-width:761px){
-html body #view details.csloc>summary{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:8px}
-html body #view details.csloc>summary .csl1{display:contents}
-html body #view details.csloc>summary .dn{order:2;flex:0 1 auto;min-width:3em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html body #view details.csloc>summary .csaddr{order:3;flex:0 1 auto;min-width:4em;margin:0!important;width:auto!important;max-width:none!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-html body #view details.csloc>summary .csloc-s{order:4;flex:0 0 auto;display:flex;flex-wrap:nowrap;margin:0!important}
-html body #view details.csloc>summary .csloc-i{order:9;margin-left:auto}
-}
 .csmpst{margin-top:4px;font-family:var(--f-mono,monospace);font-size:12px;line-height:1.35}
 @media (min-width:761px){html body #view .csmapw.big .csmapl,html body .csmapw.big .csmapl{flex-direction:row;flex-wrap:wrap;gap:6px;max-height:22%}html body .csmapw.big .csmapgo{flex:0 1 auto}html body .csmapw.big .csmapgo small{margin-left:6px}}
 .scdet{margin-top:6px}
@@ -1212,7 +1203,8 @@ html body #view .csview .cskey>div .k{font-size:10.5px;line-height:1.2;white-spa
 html body #view .csview .cskey svg{width:12px;height:12px}
 html body #view .csview .cslist{margin:3px 0;font-size:11.5px;line-height:1.35}
 }
-@media (max-width:760px){html body #view details.csloc:not([open])>summary .csloc-s{display:none!important}}
+/* location closed: code and name, the address below; scenes, hints and the rest when opened */
+html body #view details.csloc:not([open])>summary .csloc-s{display:none!important}
 .csmpst>div{display:flex;align-items:center;gap:6px;margin-top:3px}
 .csmpsc{display:inline-block;font-weight:700;font-size:11px;color:var(--accent,#e0157a);border:1px solid currentColor;border-radius:5px;padding:0 4px;line-height:1.5}
 /* ride status in the callsheet: running = car in a circle (driving), done = one check in a green circle */
@@ -1272,4 +1264,13 @@ button.ridest.rmgr{position:relative;overflow:visible}
 .redaddr{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.redaddr select{flex:1 1 180px}.redaddr input{flex:1 1 160px;width:auto!important}
 .cstrv.trvother{opacity:.75;border-top:1px dashed var(--rule);padding-top:4px}.trvd{display:inline-block;font-size:11px;font-weight:700;color:var(--accent);margin-right:6px;text-transform:uppercase;letter-spacing:.04em}
 .cshint{font-weight:400;opacity:.75;font-size:.85em}
+/* place hints as icons: «To set …» and «WC …», text when tapped */
+html body #view details.csloc>summary .csloc-i .cshn{width:28px;height:28px;margin:0;padding:0;border:1.5px solid var(--rule);border-radius:50%;background:transparent;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
+html body #view details.csloc>summary .csloc-i .cshn b{font-size:9.5px;letter-spacing:.02em;line-height:1}
+html body #view details.csloc>summary .csloc-i .cshn[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+html body #view details.csloc>summary .cshn-t{display:block;flex-basis:100%;width:100%;margin-top:4px;padding:5px 8px;border-radius:8px;background:var(--accent-soft);font-size:.86em;line-height:1.35}
+html body #view details.csloc>summary .cshn-t[hidden]{display:none}
+/* the place where the shooting is now */
+html body #view details.csloc.csnow{box-shadow:inset 3px 0 0 var(--accent)}
+html body #view details.csloc .csnowb{flex:0 0 auto;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 7px;white-space:nowrap}
 </style>
