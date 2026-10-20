@@ -139,21 +139,28 @@ function csCallPlace(c,me,call){const ct=hm(call.t);
 /* Base, Lunch and Dinner as locations of their own (in the document they are lines of a set: «W / H / M Cast + Lunch: Restaurant Hermitage …») */
 /* computed once per callsheet (the calls list asks for every person) */
 const CSLOCMEMO=new WeakMap();function csLocs(c){if(!c||typeof c!=="object")return[];if(!CSLOCMEMO.has(c))CSLOCMEMO.set(c,csLocs0(c));return CSLOCMEMO.get(c)}
-function csLocs0(c){const sets=[],extra=new Map();
-  const KIND=[[/\bbase\b/i,"Base"],[/w\s*\/\s*h\s*\/\s*m/i,"W / H / M"],[/lunch|mittag/i,"Lunch"],[/dinner|diner|abendessen/i,"Dinner"]];
-  for(const l of csA(c.locations)){const items=[];for(const i of csA(l.items)){const lab=String(i.label||""),txt=String(i.text||"").trim();
-      /* «W / H / M  Cast + Lunch: Restaurant Hermitage, Pfynstrasse 160 …»: kinds from the label and from the words before «:» */
-      const cm=txt.match(/^([^:,]{1,40}):\s*(.+)$/),head=cm?cm[1]:"",body=cm?cm[2]:txt;
-      const kinds=KIND.filter(([re])=>re.test(lab)||re.test(head)).map(([,k])=>k);
-      if(!kinds.length||!txt){items.push(i);continue}
-      const name=body.split(",")[0].trim(),rest=body.split(",").slice(1).join(",").trim();
-      /* every kind is a location of its own (W / H / M, Base, Lunch, Dinner), also at the same place */
-      for(const k of kinds){const key=k+"|"+fold(name);const e=extra.get(key)||{no:"",kinds:[k],name,map:i.map||"",notes:[],items:[]};
-        if(!e.map&&i.map)e.map=i.map;if(rest&&!e.notes.includes(rest))e.notes.push(rest);extra.set(key,e)}}
+function csLocs0(c){const sets=[],extra=[];
+  /* Base, W / H / M, Lunch, Dinner and the production office (DIT/Prod): from the label, the words before «:» or «(Base)» in the text */
+  const KIND=[[/\bbase\b/i,"Base"],[/w\s*\/\s*h\s*\/\s*m/i,"W / H / M"],[/lunch|mittag/i,"Lunch"],[/dinner|diner|abendessen/i,"Dinner"],[/\bprod\b|production office|produktionsb/i,"Prod"]];
+  const ORDER=KIND.map(k=>k[1]);
+  /* one place = one location, also when several kinds are there (same map link or same name) */
+  const place=(name,map)=>extra.find(e=>(map&&e.map===map)||(name&&fold(e.name)===fold(name)));
+  for(const l of csA(c.locations)){const items=[];let last=null;
+    for(const i of csA(l.items)){const lab=String(i.label||""),txt=String(i.text||"").trim();
+      /* lines that belong to the place before them: «To set 1: 4’ with car …», «WC: on base …» */
+      if(last&&/^(to set|zum set|nach set|wc\b)/i.test((lab+" "+txt).trim())&&!i.map){const n=[lab,txt].filter(Boolean).join(": ").replace(/:\s*:/,":");if(!last.notes.includes(n))last.notes.push(n);continue}
+      const cm=txt.match(/^([^:,]{1,40}):\s*(.+)$/),head=cm?cm[1]:"",body=cm?cm[2]:txt,par=(body.match(/\(([^)]{1,30})\)/)||[])[1]||"";
+      const kinds=KIND.filter(([re])=>re.test(lab)||re.test(head)||re.test(par)).map(([,k])=>k);
+      if(!kinds.length||(!txt&&!i.map)){items.push(i);last=null;continue}
+      const clean=body.replace(/\s*\([^)]{1,30}\)\s*/g," ").trim(),name=clean.split(",")[0].trim(),rest=clean.split(",").slice(1).join(",").trim();
+      let e=place(name,i.map);
+      if(!e){e={no:"",kinds:[],name:name||"",map:i.map||"",notes:[],items:[]};extra.push(e)}
+      for(const k of kinds)if(!e.kinds.includes(k))e.kinds.push(k);
+      if(!e.name&&name)e.name=name;if(!e.map&&i.map)e.map=i.map;if(rest&&!e.notes.includes(rest))e.notes.unshift(rest);last=e}
     sets.push(Object.assign({},l,{items}))}
   /* a set without a number on the callsheet («ER SET», read wrongly) gets its position: 1, 2, 3 … (as «Loc. 3» elsewhere in the document) */
   sets.forEach((l,i)=>{if(!/^\d+[a-z]?$/i.test(String(l.no||"").trim()))l.no=String(i+1)});
-  return sets.concat([...extra.values()].map(e=>Object.assign(e,{no:e.kinds.join(" · ")})))}
+  return sets.concat(extra.map(e=>{e.kinds.sort((a,b)=>ORDER.indexOf(a)-ORDER.indexOf(b));if(!e.name)e.name=e.kinds.join(" · ");return Object.assign(e,{no:e.kinds.join(" · ")})}))}
 /* short code of a place for the call list: L1, L2, Base, P1 … */
 function csShort(p){const n=String(p&&p.name||"");let m=n.match(/^Set\s*(\w+)/i);if(m)return "L"+m[1];if(/base|lunch|hermitage/i.test(n))return "Base";m=n.match(/park\w*\s*loc\.?\s*(\d+)/i);if(m)return "P"+m[1];m=n.match(/loc\.?\s*(\d+)/i);if(m)return "L"+m[1];return n.split(/[ ,·]/)[0].slice(0,8)}
 /* is this department mine? words of my call's department and of my profile (Assistant Directors ~ AD/Regie, Camera ~ Kamera …) */
@@ -230,7 +237,7 @@ function csLocSec(c,x,me,SU,t){let h="";
   {const ls=csLocs(c),SEENAD=new Map();
    h+=csSec("Locations",ls.length?ls.map(l=>{let LAD=csLocAddr(c,l,x.date);const code=l.kinds?l.kinds.map(k=>k.replace(/\s+/g,"")).join("·"):(l.no?"L"+String(l.no).trim():"");return '<details class="dbox csloc"><summary><div class="csl1">'+(code?csPlaceA(code,csLocHref(l,c,x.date),l.kinds?l.no:'Set '+(l.no||""),"csloc-c"):'')+'<span class="dn">'+esc(l.name||"")+'</span>'+'<span class="csloc-i">'+(LAD?'':csMap(l.map))+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span></div>'+(LAD&&SEENAD.has(fold(LAD))?'<span class="csaddr cssame">'+esc(L("Adresse wie"))+' '+esc(SEENAD.get(fold(LAD)))+'</span>':'')+(LAD&&!SEENAD.has(fold(LAD))&&SEENAD.set(fold(LAD),code||l.name)?'<a class="csaddr" href="'+esc(safeUrl(l.map||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(LAD))))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+esc(LAD)+'</a>':'')+(()=>{const mine=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>String(r.sc));const uniq=[...new Set(mine)];
        return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+'</summary>'+
-     csLocFp(c,l,x.date)+csA(l.notes).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",true,"","loc",SU.loc)}
+     csLocFp(c,l,x.date)+csA(l.notes).filter(n=>!LAD||!fold(LAD).includes(fold(csL(n))))/* the address is already in the head */.map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("")+csA(l.items).filter(i=>String(i.text||"").trim()||i.map).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+csAdr(csL(i.text||""),i.map,csL(i.label||""))+'</div>').join("")+'</details>'}).join(""):"",true,"","loc",SU.loc)}
   return h}
 function csMapSec(c,x,me,SU,t){let h="";
   {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const all=csA((c.order||{}).rows),rows=all.filter(r=>r.sc);
