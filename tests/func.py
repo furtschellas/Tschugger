@@ -483,6 +483,11 @@ async def owner_tests(p, port):
           const c={times:{crewCall:'08:15'},calls:[{dept:'AD',name:'Anna Muster',t:'-'}],locations:[{no:'1',name:'OFFICE',map:'https://g/o',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Dorfplatz 5 - 3998 Musterdorf',map:'https://g/b'}]}]};
           const w=document.createElement('div');w.innerHTML=csTilesHTML({date:'2030-05-06'},{date:'2030-05-06'},c,me);const d=w.querySelector('.csdrv');return d?d.querySelector('.k').textContent:''})()""")
         check("Callsheet-Kacheln: ohne sicheren Call-Ort «Anfahrt Base» zur Base des Tages", fb is None or (isinstance(fb, str) and fb.endswith(" Base")), fb)
+        rx = await E("""(()=>{if(typeof myEvents!=='function'||typeof csMe!=='function')return null;const keep={d:S.dispos,cm:window.csMe};const t='2030-05-06';
+          S.dispos=[{date:t,cs:{drivers:'Max Fahrer +41 76 000 00 01',transport:[{t1:'07:30',t2:'08:00',from:'Holiday Inn',to:'Base Church',vehicle:'Multivan 2',driver:'Max Fahrer',passengers:'Anna Muster, Lena Test'}]}}];
+          window.csMe=()=>({name:'Anna Muster',hit:x=>/anna muster/i.test(String(x||''))});let ev=[];try{ev=myEvents({name:'Anna Muster',email:'',k:nmk('Anna Muster')}).filter(e=>e.ride)}catch(_){}
+          S.dispos=keep.d;window.csMe=keep.cm;const e=ev[0]||{};return {driver:String(e.driver||'').startsWith('Max Fahrer'),pax:e.pax||''}})()""")
+        check("Meine Termine: Fahrt mit Fahrer:in (und Telefon) und den anderen Mitfahrenden", rx in (None, {"driver": True, "pax": "Lena Test"}), rx)
         aw = await E("""(()=>{if(typeof csDayAfterWrap!=='function')return null;const t='2030-05-06',n='2030-05-07',pick=[{date:t},{date:n}];
           const by={[t]:{cs:{times:{crewCall:'08:00',wrap:'19:00'}}},[n]:{cs:{}}},by2={[t]:by[t]},late={[t]:{cs:{times:{crewCall:'14:00',wrap:'01:30'}}},[n]:{cs:{}}},z=(h)=>zurichUTC(t,h).getTime();
           return [csDayAfterWrap(t,pick,by,z('19:30')),csDayAfterWrap(t,pick,by,z('20:01')),csDayAfterWrap(t,pick,by2,z('22:00')),csDayAfterWrap(t,pick,late,z('23:00'))]})()""")
