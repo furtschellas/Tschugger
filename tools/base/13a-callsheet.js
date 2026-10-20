@@ -277,8 +277,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-csj]");if(
 /* search in the callsheet: only matching rows, cards and lines; parts with a hit open */
 document.addEventListener("input",e=>{if(!e.target||e.target.id!=="csq")return;const q=fold(e.target.value.trim());const jb=e.target.closest(".csjump"),nx=jb&&jb.nextElementSibling,v=nx&&nx.classList.contains("csview")?nx:document.querySelector("#view .csview");if(!v)return;
   const items=v.querySelectorAll(".csorder>li,.cs-card,.cs-tbl tbody tr,.cscall-r,.csdep,.csloc,.cskey>div,.cslist,.csinfo p,.cstrv,.csdrv-r");
-  items.forEach(it=>{it.hidden=!!q&&!fold(it.textContent).includes(q)});
-  v.querySelectorAll("details.cssec").forEach(d=>{if(!q){d.hidden=false;return}const hit=[...d.querySelectorAll(".csorder>li,.cs-card,.cs-tbl tbody tr,.cscall-r,.csdep,.csloc,.cskey>div,.cslist,.csinfo p,.cstrv,.csdrv-r")].some(it=>!it.hidden)||fold(d.querySelector("summary").textContent).includes(q);d.hidden=!hit;if(hit)d.open=true});
+  /* special characters and spellings do not matter (as in the app search) */
+  const sq=x=>fold(x).replace(/ß/g,"ss").replace(/ae/g,"a").replace(/oe/g,"o").replace(/ue/g,"u").replace(/[^a-z0-9]/g,""),qs=sq(q),hit=t=>fold(t).includes(q)||(qs.length>1&&sq(t).includes(qs));
+  items.forEach(it=>{it.hidden=!!q&&!hit(it.textContent)});
+  v.querySelectorAll("details.cssec").forEach(d=>{if(!q){d.hidden=false;return}const ok=[...d.querySelectorAll(".csorder>li,.cs-card,.cs-tbl tbody tr,.cscall-r,.csdep,.csloc,.cskey>div,.cslist,.csinfo p,.cstrv,.csdrv-r")].some(it=>!it.hidden)||hit(d.querySelector("summary").textContent);d.hidden=!ok;if(ok)d.open=true});
   v.querySelectorAll(".cscall").forEach(g=>{g.hidden=!!q&&![...g.querySelectorAll(".cscall-r")].some(r=>!r.hidden)})});
 
 /* preview (PREVISION) of a day from the callsheet of the shooting day before – shown on that day while its own callsheet is missing */
