@@ -1400,20 +1400,16 @@ html body #view .scack.sk1{background:var(--accent);border-color:var(--accent);c
 html body #view .scack.sk2{border-color:color-mix(in srgb,var(--ok,#4caf7d) 70%,transparent);color:var(--ok,#4caf7d)}
 /* Drehplan: the scene status top right of the scene */
 html body #view ol.tl>li.row>.sc{position:relative}
-html body #view ol.tl>li.row>.sc>.l1{padding-right:36px}
 html body #view ol.tl>li.row>.sc>.l1>.scackw{position:absolute;top:8px;right:8px;margin:0}
 /* callsheet shooting order: the scene status left of the open button */
 html body #view .csscd>summary{position:relative}
-html body #view .csscd>summary .l1:has(.scackw){padding-right:36px}
-html body #view .csscd>summary .scackw{position:absolute;top:50%;right:42px;transform:translateY(-50%);margin:0}
+html body #view .csscd>summary .scackw{position:absolute;top:6px;right:44px;transform:none;margin:0}
 html body #view .csscd>summary .scack{width:26px;height:26px}
 /* scene status: begin–end or begin · running time left of the icon */
 html body #view .scackw{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex:0 0 auto}
 html body #view .scackt{font-family:var(--f-mono,monospace);font-size:11.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 html body #view .scackw:has(.sk1) .scackt{color:var(--accent);font-weight:700}
 html body #view .scackw .scack{margin-left:0}
-html body #view ol.tl>li.row>.sc>.l1:has(.scackt){padding-right:136px}
-html body #view .csscd>summary .l1:has(.scackt){padding-right:128px}
 /* lunch and wrap quittiert: status right in the row */
 html body #view li.row.evack>.what{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 html body #view li.row.evack>.what>.scackw{margin-left:auto}
@@ -1428,4 +1424,17 @@ html body #view .tcard.tnow .tnset{color:var(--muted);font-size:13px}
 html body #view .tcard.tnow .csi{width:18px;height:18px}
 /* shooting order folded: the scene of now framed in the short list */
 html body #view .csoscn .cso1.now{outline:1.5px solid var(--accent);border-radius:6px}
+/* scenes: status and open button always top right; scene line next to them, the set title below over the whole width */
+html body #view .csscd>summary{position:relative}
+html body #view .csscd>summary>.csexp{position:absolute;top:6px;right:6px;margin:0}
+html body #view .csscd>summary .l1,html body #view ol.tl>li.row>.sc>.l1{display:flex;flex-wrap:wrap;align-items:center;padding-right:0}
+html body #view .csscd>summary .l1::after{content:"";order:1;flex:0 0 40px;height:1px}
+html body #view .csscd>summary .l1:has(.scackw)::after{flex-basis:150px}
+html body #view ol.tl>li.row>.sc>.l1:has(.scackw)::after{content:"";order:1;flex:0 0 120px;height:1px}
+html body #view .csscd>summary .l1>.set,html body #view ol.tl>li.row>.sc>.l1>.set{order:2;flex:1 1 100%;min-width:0}
+/* phone, callsheet: the status top right, its times under the title (the scene line keeps its room) */
+@media (max-width:760px){html body #view .csscd>summary .l1>.scackw{display:contents}
+ html body #view .csscd>summary .l1>.scackw>.scack{position:absolute;top:6px;right:44px}
+ html body #view .csscd>summary .l1>.scackw>.scackt{order:3;flex:1 1 100%}
+ html body #view .csscd>summary .l1:has(.scackw)::after{flex-basis:80px}}
 </style>
