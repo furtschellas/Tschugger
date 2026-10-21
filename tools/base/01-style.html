@@ -1315,7 +1315,8 @@ html body #view details.csloc .csmset .csplace{font-size:11px}
 html body #view .csorder li.now>.sc{outline:2px solid var(--accent);outline-offset:0;border-radius:10px}
 html body #view .csorder li.now>.sc>details,html body #view .csorder li.now>.sc>details:not([open]){outline:0!important}
 /* cast: the time running now */
-html body #view #cs-cast .csnowt{outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
+html body #view #cs-cast .csnowt{outline:0;box-shadow:inset 0 0 0 1px var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:7px}
+html body #view #cs-cast .cs-kv.csnowt{padding:0 5px}
 /* map: bases with their icons in gold */
 .csmk.csmkb span{background:var(--gold)!important;color:#1a1206!important;display:inline-flex!important;align-items:center;gap:2px}
 .csmk.csmkb span span{transform:none!important;padding:0;background:none!important}
@@ -1347,7 +1348,7 @@ html body #view .cssec.csdropped>summary .csdrop{display:none}
 html body #view .csview h4.cswx{margin:10px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
 /* folded parts: title and counts on one line (title not wrapped, counts cut with … only as the last resort) */
 html body #view .cssec>summary{flex-wrap:nowrap!important}
-html body #view .cssec:not(#cs-order)>summary .dh{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto;max-width:78%;min-width:0;display:block}
+html body #view .cssec:not(#cs-order)>summary .dh{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;max-width:calc(100% - 48px);min-width:0;display:block}
 html body #view .cssec>summary .cscount:not(.csnos){flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html body #view .cssec>summary .csnos{flex:1 1 0;min-width:0}
 html body #view #cs-order>summary{flex-wrap:wrap!important}
@@ -1379,4 +1380,8 @@ html body #view details.csloc:not(:has(>:not(summary)))>summary{pointer-events:a
 .csmk.csmkb span{--mkc:var(--gold)}
 .csmk span.csmk0::before{content:"";position:absolute;left:50%;top:-9px;transform:translateX(-50%);border:7px solid transparent;border-top:0;border-bottom:8px solid #fff}
 .csmk span.csmk0::after{content:"";position:absolute;left:50%;top:-6px;transform:translateX(-50%);border:5px solid transparent;border-top:0;border-bottom:6px solid var(--mkc)}
+/* «Gespeichert»: short popup at the bottom */
+#savepop{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:9999;display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+#savepop.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){#savepop{transition:none}}
 </style>
