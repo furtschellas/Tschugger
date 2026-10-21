@@ -1297,4 +1297,7 @@ html body #view .cscontact.csct-short small{display:none}
 html body #view .csplace.csbase{color:var(--gold,#d8b25a);border-color:var(--gold,#d8b25a)}
 html body #view .csplace.csbadge .csbsep{display:inline-block;width:1px;height:.9em;background:currentColor;opacity:.4;margin:0 2px}
 html body #view .csradio2 .csrlab{font-weight:700;color:var(--ink);margin-right:2px}
+/* bases: every kind its own little badge with its own icon (Base, WHM, Lunch, Prod, DIT …) */
+html body #view .csplace.csbase:has(.csk){border:0;padding:0!important;gap:3px;background:none}
+html body #view .csplace.csbase .csk{display:inline-flex;align-items:center;gap:3px;border:1px solid currentColor;border-radius:6px;padding:0 4px;font-weight:700}
 </style>
