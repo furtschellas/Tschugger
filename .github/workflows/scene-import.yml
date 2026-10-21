@@ -1,6 +1,6 @@
 name: Szenen-Quittierung übernehmen
 
-# einmalig von Hand: die Quittierung von Drehtag 1 und 2 wird durch die Zeiten aus dem Drehplan ersetzt
+# einmalig von Hand: alle Szenen-Quittierungen löschen, dann Drehtag 1 und 2 aus dem Drehplan setzen (Fahrten bleiben)
 on:
   workflow_dispatch:
 
