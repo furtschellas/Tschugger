@@ -47,7 +47,10 @@ function csFitContact(){document.querySelectorAll("#view .cscontact").forEach(r=
 function csFitSums(){document.querySelectorAll("#view details.cssec").forEach(d=>{const sm=d.querySelector(":scope>summary");if(!sm||!sm.offsetParent||d.id==="cs-order")return;const h=sm.querySelector(".dh");if(!h)return;
   const one=()=>{const c=sm.querySelector(".cscount:not(.csnos)");return h.scrollWidth<=h.clientWidth+1&&(!c||!c.offsetParent||c.scrollWidth<=c.clientWidth+1)};
   d.classList.remove("csshort","csdropped");if(one())return;d.classList.add("csshort");if(one())return;d.classList.add("csdropped")})}
-{let q=0;const go=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;csFitTiles();csFitContact();csFitSums()})};
+/* my account: languages in one line – the text gets smaller until every name fits */
+function fitLangs(){document.querySelectorAll(".thm.lngset").forEach(r=>{if(!r.offsetParent)return;const bs=[...r.querySelectorAll("button")];let f=13.5;r.style.setProperty("--lf",f+"px");
+  for(let i=0;i<12&&bs.some(b=>b.scrollWidth>b.clientWidth+1)&&f>9;i++){f-=.5;r.style.setProperty("--lf",f+"px")}})}
+{let q=0;const go=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;csFitTiles();csFitContact();csFitSums();fitLangs()})};
  addEventListener("resize",go);
  const v=document.getElementById("view");if(v)new MutationObserver(go).observe(v,{childList:true,subtree:true});
  document.addEventListener("toggle",go,true);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(go)}

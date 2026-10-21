@@ -368,7 +368,7 @@ function csLocCode(l){return l.kinds?l.kinds.map(csKindCode).join("·"):l._codes
 function csLocHead(c,l,date){let LAD=csLocAddr(c,l,date),DN=l.name||"";const w=t=>fold(String(t||"")).replace(/[^a-z0-9]/g,"");
   /* a side place: the title is its kind (Base, else the first kind, e.g. «WHM Extras»), the second line its name and address («Restaurant Hermitage, Pfynstrasse 160, 3952 Susten») */
   if(l.kinds){const isA=/\d{4}\s+\p{L}/u.test(DN),nm=isA?"":DN;const ad=LAD&&!(isA&&w(LAD)!==w(DN)&&!w(LAD).startsWith(w(DN)))?LAD:(isA?DN:LAD);
-    LAD=[nm&&!w(ad).includes(w(nm))?nm:"",ad].filter(Boolean).join(", ");DN=l.kinds.includes("Base")?"Base":csKindCode(l.kinds[0])}
+    LAD=[nm&&!w(ad).includes(w(nm))?nm:"",ad].filter(Boolean).join(", ");DN=l.kinds.includes("Base")?"BASE":csKindCode(l.kinds[0])}
   /* a set named by its address: no second line */
   else if(LAD&&w(DN).length>5&&w(LAD).startsWith(w(DN)))LAD="";
   return {DN,LAD}}
