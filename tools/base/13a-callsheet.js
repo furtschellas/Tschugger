@@ -407,7 +407,7 @@ function csLocBox(c,l,date,NOW,NEAR){const mem=l._m||[l];const {DN,LAD}=csLocHea
   const addr=LAD?'<a class="csaddr" href="'+esc(safeUrl(l.map||csMapQ(LAD)))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" data-nobub="1">'+esc(LAD)+'</a>':'';
   const near=[].concat(...mem.map(m=>NEAR.get(m)||[])).filter((p,i,a)=>a.findIndex(y=>y.code===p.code&&y.u===p.u)===i).sort((a,b)=>a.d-b.d);
   return '<details class="dbox csloc'+(isNow?' csnowloc':'')+'"><summary><div class="csl1">'+badge+title+icons+'</div>'+addr+csLocScenes(c,l)+'</summary>'+csLocBody(l,LAD,HN,near)+'</details>'}
-function csLocSec(c,x,me,SU,t){const ls=csLocs(c),NOW=csNowLoc(c,x.date,ls),NEAR=csNear(c,ls,x.date);window.CSNOWK=NOW?NOW.no+'|'+NOW.name:'';
+function csLocSec(c,x,me,SU,t){if(!vok("loc"))return"";   /* «Locations sehen» */const ls=csLocs(c),NOW=csNowLoc(c,x.date,ls),NEAR=csNear(c,ls,x.date);window.CSNOWK=NOW?NOW.no+'|'+NOW.name:'';
   const LG=csLocGroups(c,ls,x.date);
   return csSec("Locations",LG.length?LG.map(l=>csLocBox(c,l,x.date,NOW,NEAR)).join(""):"",true,"","loc","")}
 function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false)return"";   /* switched off in the app settings */let h="";

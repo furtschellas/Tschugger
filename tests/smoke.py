@@ -54,9 +54,9 @@ window.__db=JSON.parse(sessionStorage.getItem("fakedb")||"null")||Object.assign(
 window.__users=JSON.parse(sessionStorage.getItem("fakeusers")||"null")||{"furtschellas@gmail.com":{uid:"owner1",email:"furtschellas@gmail.com",pw:"geheim123",verified:true}};
 addEventListener("pagehide",()=>{sessionStorage.setItem("fakeusers",JSON.stringify(window.__users));sessionStorage.setItem("fakedb",JSON.stringify(window.__db))});
 (function(){if(sessionStorage.getItem('seed'))return;sessionStorage.setItem('seed','1');
-const P=%(people)s;const VP=["view.plan","view.prep","view.dispo","view.script","view.blocking","view.crew","view.phone","view.email","view.mycal"];
+const P=%(people)s;const VP=["view.plan","view.prep","view.dispo","view.loc","view.script","view.blocking","view.crew","view.phone","view.email","view.mycal"];
 window.__db['roles/crew']={name:'Crew',perms:VP};
-window.__db['roles/catering']={name:'Catering',perms:["view.plan","view.dispo","view.crew","crew.food","view.mycal"]};
+window.__db['roles/catering']={name:'Catering',perms:["view.plan","view.dispo","view.loc","view.crew","crew.food","view.mycal"]};
 window.__db['roles/power']={name:'Power',perms:VP.concat(["users.view","users.edit","roles.assign","roles.edit","push.send","audit.view","crew.bday","data.check"])};
 window.__db['admins/'+P.admin]={addedAt:'x'};
 let i=0;for(const k in P){const e=P[k];if(k==='owner')continue;i++;const uid='u_'+k;

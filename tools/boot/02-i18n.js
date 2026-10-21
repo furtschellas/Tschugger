@@ -353,6 +353,7 @@ Object.assign(I18N,{
  "läuft seit":{fr:"en cours depuis",it:"in corso dalle",en:"running since",hi:"से चल रहा है"},
  "Ändern":{fr:"Modifier",it:"Modifica",en:"Edit",hi:"बदलें"},
  "Tabelle":{fr:"Tableau",it:"Tabella",en:"Table",hi:"तालिका"},
+ "Locations sehen":{fr:"Voir les lieux",it:"Vedere le location",en:"View locations",hi:"लोकेशन देखें"},
  "{s} läuft noch – zuerst abschliessen.":{fr:"{s} est encore en cours – le terminer d'abord.",it:"{s} è ancora in corso – prima completalo.",en:"{s} is still running – finish it first.",hi:"{s} अभी चल रहा है – पहले उसे पूरा करें।"},
  "Szenen-Protokoll sehen":{fr:"Voir le journal des scènes",it:"Vedere il registro delle scene",en:"View scene log",hi:"सीन लॉग देखें"},
  "Plan":{fr:"Prévu",it:"Previsto",en:"Planned",hi:"योजना"},
