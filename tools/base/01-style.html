@@ -1319,4 +1319,15 @@ html body #view details.csloc .csmset .csplace{font-size:11px}
 html body #view .csorder li.now>.sc,html body #view .csorder li.now>.sc>details:not([open]){outline:2px solid var(--accent);outline-offset:0;border-radius:10px}
 /* phone: the pink frame shows «jetzt», no extra label */
 @media (max-width:760px){html body #view details.csloc .csnowb{display:none}}
+/* cast: the time running now */
+html body #view #cs-cast .csnowt{outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
+/* map: bases with their icons in gold */
+.csmk.csmkb span{background:var(--gold)!important;color:#1a1206!important;display:inline-flex!important;align-items:center;gap:2px}
+.csmk.csmkb span span{transform:none!important;padding:0;background:none!important}
+.csmk.csmkb .csk{border:0;padding:0;display:inline-flex}
+.csmk.csmkb .csi{width:14px;height:14px}
+/* locations: many icons in the head wrap instead of leaving the box */
+html body #view details.csloc .csl1{flex-wrap:wrap;row-gap:4px}
+html body #view details.csloc>summary .csloc-i{flex-wrap:wrap;justify-content:flex-end}
+html body #view details.csloc>summary .csloc-i .csfpi .csi{width:15px;height:15px}
 </style>
