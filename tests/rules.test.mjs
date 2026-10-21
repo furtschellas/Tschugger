@@ -188,6 +188,18 @@ await check("Protokoll: nur bekannte Aktionen und Bereiche", assertFails(addDoc(
 await check("Sicherheit: Protokolleinträge nicht änderbar", assertFails(updateDoc(doc(as("owner"), "audit/a1"), { sum: "y" })));
 
 
+// ---------- rides from the callsheet ----------
+const NOW = Date.now();
+await check("Fahrt quittieren: Crew mit Datum und aktueller Zeit geht", assertSucceeds(setDoc(doc(as("crew"), "rideack/abcd1234"), { d: "2026-10-21", at: NOW, s: 1 })));
+await check("Fahrt quittieren: falsches Datum nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1235"), { d: "21.10.2026", at: NOW, s: 1 })));
+await check("Fahrt quittieren: alte Zeit (2 Stunden) nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1236"), { d: "2026-10-21", at: NOW - 2 * 3600e3, s: 2 })));
+await check("Fahrt quittieren: fremde Felder nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1237"), { d: "2026-10-21", at: NOW, s: 1, name: "x" })));
+await check("Fahrt quittieren: Stand nur 1 oder 2", assertFails(setDoc(doc(as("crew"), "rideack/abcd1238"), { d: "2026-10-21", at: NOW, s: 3 })));
+await check("Fahrt quittieren: nicht eingeladene Person nicht", assertFails(setDoc(doc(as("stranger"), "rideack/abcd1239"), { d: "2026-10-21", at: NOW, s: 1 })));
+await check("Fahrt ändern: ohne «Fahrten Manager» nicht", assertFails(setDoc(doc(as("crew"), "rideedit/abcd1234"), { c: "x", d: "2026-10-21", at: NOW })));
+await check("Fahrt ändern: Admin (alle Rechte) geht", assertSucceeds(setDoc(doc(as("admin"), "rideedit/abcd1234"), { c: "x", d: "2026-10-21", at: NOW })));
+await check("Fahrt ändern: falsches Datum oder alte Zeit nicht", assertFails(setDoc(doc(as("admin"), "rideedit/abcd1240"), { c: "x", d: "2026-1-2", at: NOW - 2 * 3600e3 })));
+
 // ---------- prefs, log, everything else ----------
 await check("Einstellungen der Person: nicht eingeladene Person kann nichts speichern", assertFails(setDoc(doc(as("stranger"), "prefs/uStr"), { theme: "dark" })));
 await check("Geburtstag: eigener Eintrag (Name, Tag/Monat) geht", assertSucceeds(setDoc(doc(as("crew"), "bdays/uCrew"), { name: "Crew", md: "03-14" })));
