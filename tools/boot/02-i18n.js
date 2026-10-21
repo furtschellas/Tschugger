@@ -351,6 +351,8 @@ Object.assign(I18N,{
  "Drehtag abgeschlossen":{fr:"Journée de tournage terminée",it:"Giornata di riprese conclusa",en:"Shooting day wrapped",hi:"शूटिंग का दिन पूरा"},
  "Lunch vorbei, es geht weiter":{fr:"Fin du lunch, on reprend",it:"Fine lunch, si riprende",en:"Lunch over, back to work",hi:"लंच खत्म, काम फिर शुरू"},
  "läuft seit":{fr:"en cours depuis",it:"in corso dalle",en:"running since",hi:"से चल रहा है"},
+ "Ändern":{fr:"Modifier",it:"Modifica",en:"Edit",hi:"बदलें"},
+ "Tabelle":{fr:"Tableau",it:"Tabella",en:"Table",hi:"तालिका"},
  "{s} läuft noch – zuerst abschliessen.":{fr:"{s} est encore en cours – le terminer d'abord.",it:"{s} è ancora in corso – prima completalo.",en:"{s} is still running – finish it first.",hi:"{s} अभी चल रहा है – पहले उसे पूरा करें।"},
  "Szenen-Protokoll sehen":{fr:"Voir le journal des scènes",it:"Vedere il registro delle scene",en:"View scene log",hi:"सीन लॉग देखें"},
  "Plan":{fr:"Prévu",it:"Previsto",en:"Planned",hi:"योजना"},

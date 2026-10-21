@@ -54,7 +54,7 @@ setTimeout(scAckSub,3000);setInterval(()=>{if(!SCSUB)scAckSub()},60e3);
 function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCACK))if(x&&x.d===date&&x.s===1&&String(x.u||"1")===String(u||"1")&&id!==except)return x.sc||id.split("-").slice(1).join("-");return""}
 const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;const d=new Date(date+"T00:00:00");d.setHours(+m[1],+m[2],0,0);return d.getTime()};
 async function scWrite(date,sc,u,v){const {F,db}=await fb();const id=scAckId(date,sc),ref=F.doc(db,"sceneack",id);
-  if(!v){await F.deleteDoc(ref);delete window.SCACK[id]}else{v=Object.assign({d:date,at:Date.now(),u:String(u||"1"),sc:String(sc).slice(0,24)},v);for(const k of ["b","e"])if(v[k]==null)delete v[k];await F.setDoc(ref,v);window.SCACK[id]=v}scRender()}
+  if(!v){await F.deleteDoc(ref);delete window.SCACK[id]}else{v=Object.assign({d:date,at:Date.now(),u:String(u||"1"),sc:String(sc).slice(0,24)},v);for(const k of ["b","e"])if(v[k]==null)delete v[k];await F.setDoc(ref,v);window.SCACK[id]=v}if(typeof SCLOG!=="undefined"&&SCLOG.list){const i=SCLOG.list.findIndex(x=>x.id===id);if(i>=0)SCLOG.list.splice(i,1);if(v)SCLOG.list.push(Object.assign({id},v))}scRender()}
 /* tap: open → running (only when no other scene runs in this unit) → done; a done scene opens the popup to change state and times */
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("button[data-scack]");if(!b)return;e.preventDefault();e.stopPropagation();if(typeof canPerm!=="function"||!canPerm("scenes.ack"))return;
   const [date,sc,u]=b.dataset.scack.split("|");const id=scAckId(date,sc),st=scState(date,sc),x=window.SCACK[id]||{};
@@ -111,7 +111,9 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
   /* the days: every day with quittances and today when it is a shooting day; the newest first */
   const t=todayISO(),days=new Set(SCLOG.list.map(x=>x.d).filter(Boolean));if((S.days||[]).some(d=>d.date===t&&d.kind==="shoot"))days.add(t);
   /* one entry: name, state, planned time; begin, end and duration always (– when not known; running: the counter) */
-  const row=(name,st,plan,b,e,run)=>'<li class="scl'+(st===0?' sclo':'')+'"><div class="audh"><b>'+name+'</b>'+(plan?' <span class="audt">'+esc(L("Plan"))+' '+esc(plan)+'</span>':'')+'<span class="audw">'+esc(st===1?L("läuft"):st===2?L("abgeschlossen"):L("offen"))+'</span></div>'+
+  /* with «Szenen quittieren»: a pencil per entry opens the same popup as in the Drehplan (state, begin, end, delete) */
+  const ED=typeof canPerm==="function"&&canPerm("scenes.ack")&&window.SCACKON!==false,PEN='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
+  const row=(name,st,plan,b,e,run,ed)=>'<li class="scl'+(st===0?' sclo':'')+'"><div class="audh"><b>'+name+'</b>'+(ED&&ed?'<button type="button" class="scled" data-scled="'+esc(ed.join("|"))+'" title="'+esc(L("Ändern"))+'" aria-label="'+esc(L("Ändern"))+'">'+PEN+'</button>':'')+(plan?' <span class="audt">'+esc(L("Plan"))+' '+esc(plan)+'</span>':'')+'<span class="audw">'+esc(st===1?L("läuft"):st===2?L("abgeschlossen"):L("offen"))+'</span></div>'+
     '<div class="audb sclt"><span>'+esc(L("Beginn"))+' <b>'+(b?esc(scHM(b)):'–')+'</b></span><span>'+esc(L("Ende"))+' <b>'+(e?esc(scHM(e)):'–')+'</b></span><span>'+esc(L("Dauer"))+' <b>'+(b&&e?esc(dur(e-b)):b&&run?'<span data-scrun="'+b+'">'+esc(dur(Date.now()-b))+'</span>':'–')+'</b></span></div></li>';
   /* one unit of one day: fixed rows setup (planned begin until the first scene), Drehstart (until the wrap), lunch, wrap – plus the further setups and the scenes, by time */
   const unitRows=(d,u,l,day,cs)=>{const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items);
@@ -121,21 +123,42 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
     const real=scs.filter(x=>!isEv(key(x))),start=real.length?Math.min(...real.map(p0).filter(Boolean)):0,lu=get("lunch"),wr=get("wrap");
     const ms=hhmm=>{const v=String(hhmm||"").match(/^(\d{1,2}):(\d{2})$/);if(!v)return 0;const x=new Date(d+"T00:00:00");x.setHours(+v[1],+v[2],0,0);return x.getTime()};
     const plSetup=setup?hm(setup.t)||"":"",plStart=(u==="1"?hm(cs.shootCall||""):"")||(firstSc?hm(firstSc.t)||"":"");
-    const wrE=wr?(+wr.e||p0(wr)):0,ent=[];
-    ent.push([ms(plSetup)||1,row("Setup",start?2:0,plSetup,ms(plSetup),start,false)]);
-    ent.push([start||ms(plStart)||2,row(esc(L("Drehstart")),start?(wrE?2:1):0,plStart,start,wrE,!!start&&!wrE&&d===t)]);
-    ent.push([lu?p0(lu):ms(pl("lunch"))||8e15,row("Lunch",lu?(lu.s===1?1:2):0,pl("lunch"),lu?p0(lu):0,lu&&lu.s!==1?+lu.e||0:0,!!lu&&lu.s===1)]);
-    for(const x of scs){const k=key(x);ent.push([p0(x),row(esc(scLabel(k)),x.s===1?1:2,isEv(k)?pl(k):"",p0(x),x.s===1?0:+x.e||0,x.s===1&&d===t)])}
-    ent.push([wrE||ms(pl("wrap"))||9e15,row("Wrap",wr?2:0,pl("wrap"),wrE?start:0,wrE,false)]);
-    ent.sort((a,b)=>a[0]-b[0]);return {html:'<ul class="audlist">'+ent.map(e=>e[1]).join("")+'</ul>',n:real.length,start,wrE}};
+    const wrE=wr?(+wr.e||p0(wr)):0,ent=[],add=(x,name,st,plan,b,e,run,ed)=>ent.push([x,row(name,st,plan,b,e,run,ed),{name,st,plan,b,e}]);
+    add(ms(plSetup)||1,"Setup",start?2:0,plSetup,ms(plSetup),start,false);
+    add(start||ms(plStart)||2,esc(L("Drehstart")),start?(wrE?2:1):0,plStart,start,wrE,!!start&&!wrE&&d===t);
+    add(lu?p0(lu):ms(pl("lunch"))||8e15,"Lunch",lu?(lu.s===1?1:2):0,pl("lunch"),lu?p0(lu):0,lu&&lu.s!==1?+lu.e||0:0,!!lu&&lu.s===1,[d,"lunch",u]);
+    for(const x of scs){const k=key(x);add(p0(x),esc(scLabel(k)),x.s===1?1:2,isEv(k)?pl(k):"",p0(x),x.s===1?0:+x.e||0,x.s===1&&d===t,[d,k,u])}
+    add(wrE||ms(pl("wrap"))||9e15,"Wrap",wr?2:0,pl("wrap"),wrE?start:0,wrE,false,[d,"wrap",u]);
+    ent.sort((a,b)=>a[0]-b[0]);return {html:'<ul class="audlist">'+ent.map(e=>e[1]).join("")+'</ul>',n:real.length,start,wrE,rows:ent.map(e=>e[2])}};
+  /* shooting day number (DT 1 …): the shooting days with scenes in order */
+  const SHD=(S.days||[]).filter(y=>y.kind==="shoot"&&arr(y.items).some(i=>i.sc)).map(y=>y.date).sort();
   /* several units on a day: one part per unit (1st Unit, 2nd Unit …) */
+  const EXP=[];SCLOG.exp=EXP;
   const html=[...days].sort().reverse().map(d=>{const l=SCLOG.list.filter(x=>x.d===d),day=(S.days||[]).find(y=>y.date===d)||{},cs=((S.dispos||[]).find(y=>y&&y.date===d)||{});
     const us=[...new Set(["1"].concat(l.map(x=>String(x.u||"1"))))].sort(),parts=us.map(u=>[u,unitRows(d,u,l.filter(x=>String(x.u||"1")===u),day,cs)]);
     const real={length:parts.reduce((a,[,p])=>a+p.n,0)},p1=parts[0][1],start=p1.start,wrE=p1.wrE,
       body=us.length>1?parts.map(([u,p])=>'<p class="sclu"><b>'+esc(((window.UNAME&&UNAME[u])||u)+' Unit')+'</b> · '+p.n+' '+esc(L("Szenen"))+(p.start&&p.wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(p.wrE-p.start)):'')+'</p>'+p.html).join(""):p1.html;
-    return '<details class="tstsu"><summary>'+esc(String(d).split("-").reverse().join("."))+' · '+real.length+' '+esc(L("Szenen"))+(start&&wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(wrE-start)):'')+'</summary>'+body+'</details>'}).join("");
+    const dn=SHD.indexOf(d);for(const [u,p] of parts)for(const r of p.rows)EXP.push(Object.assign({dt:dn>=0?"DT "+(dn+1):"",d,u},r));
+    return '<details class="tstsu"><summary>'+(dn>=0?'<b>DT '+(dn+1)+'</b> · ':'')+esc(String(d).split("-").reverse().join("."))+' · '+real.length+' '+esc(L("Szenen"))+(start&&wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(wrE-start)):'')+'</summary>'+body+'</details>'}).join("");
   return '<details class="tstsec scld" data-lsec="sclog"'+(SCLOG.open?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Szenen-Protokoll")),'<span class="tsth">'+SCLOG.list.filter(x=>!isEv(key(x))).length+' '+esc(L("Szenen"))+'</span>',(()=>{const m=Math.max(0,...SCLOG.list.map(x=>+x.at||0))||SCLOG.at||Date.now();const z=new Date(m);return esc(String(z.getDate()).padStart(2,"0")+"."+String(z.getMonth()+1).padStart(2,"0")+". "+scHM(m))})()):esc(L("Szenen-Protokoll")))+'</summary>'+
     '<div class="admins"><p class="ahint">'+esc(L("Beginn, Ende und Dauer jeder quittierten Szene (Drehplan und Callsheet), dazu Setup, Drehstart, Lunch und Wrap."))+'</p>'+
     (html||'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+
-    '<button type="button" class="pillbtn" data-sclre>'+esc(L("Neu laden"))+'</button></div></details>'};
+    '<div class="sclbtns"><button type="button" class="pillbtn" data-sclre>'+esc(L("Neu laden"))+'</button>'+(html?'<button type="button" class="pillbtn" data-sclx="pdf">PDF</button><button type="button" class="pillbtn" data-sclx="csv">'+esc(L("Tabelle"))+' (Excel)</button>':'')+'</div></div></details>'};
+/* export of the scene log: as a table (CSV for Excel, Numbers, Google Sheets) or as PDF (print view → «Als PDF sichern»); oldest day first */
+function scExpRows(){const un=s=>{const x=document.createElement("textarea");x.innerHTML=String(s||"");return x.value};
+  return (SCLOG.exp||[]).slice().sort((a,b)=>a.d.localeCompare(b.d)).map(r=>({dt:r.dt,date:r.d.split("-").reverse().join("."),unit:((window.UNAME&&UNAME[r.u])||r.u)+" Unit",name:un(r.name),
+    st:r.st,state:r.st===1?L("läuft"):r.st===2?L("abgeschlossen"):L("offen"),plan:r.plan||"",b:r.b?scHM(r.b):"",e:r.e?scHM(r.e):"",min:r.b&&r.e?String(Math.round((r.e-r.b)/60000)):""}))}
+const SCX_HEAD=()=>[L("Drehtag"),L("Datum"),"Unit",L("Eintrag"),L("Status"),L("Plan"),L("Beginn"),L("Ende"),L("Dauer")+" (min)"];
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-sclx]");if(!b)return;e.preventDefault();const rows=scExpRows(),k=b.dataset.sclx,stamp=todayISO();
+  const cells=r=>[r.dt,r.date,r.unit,r.name,r.state,r.plan,r.b,r.e,r.min];
+  if(k==="csv"){const q=v=>{v=String(v==null?"":v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+    const txt="﻿"+[SCX_HEAD()].concat(rows.map(cells)).map(r=>r.map(q).join(";")).join("\r\n");
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));a.download="Szenen-Protokoll_"+stamp+".csv";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);return}
+  const doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(L("Szenen-Protokoll"))+' '+esc(stamp)+'</title><style>body{font:12px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#111}h1{font-size:18px;margin:0 0 10px}table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top}th{background:#f2f2f2}td.n{font-variant-numeric:tabular-nums;white-space:nowrap}tr.o td{color:#888}@page{size:A4;margin:12mm}</style></head><body><h1>'+esc(L("Szenen-Protokoll"))+'</h1><table><thead><tr>'+SCX_HEAD().map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+
+    rows.map(r=>'<tr'+(r.st?'':' class="o"')+'>'+cells(r).map((v,i)=>'<td'+(i>=5?' class="n"':'')+'>'+esc(v)+'</td>').join("")+'</tr>').join("")+'</tbody></table></body></html>';
+  const w=window.open("","_blank");if(w){w.document.open();w.document.write(doc);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(_){}},300);return}
+  /* pop-ups blocked: print from a hidden frame */
+  const f=document.createElement("iframe");f.style.cssText="position:fixed;width:0;height:0;border:0;right:0;bottom:0";document.body.appendChild(f);f.contentDocument.open();f.contentDocument.write(doc);f.contentDocument.close();
+  setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(_){}setTimeout(()=>f.remove(),60000)},300)});
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-sclre]")){SCLOG.list=null;render()}});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-scled]");if(!b)return;e.preventDefault();e.stopPropagation();const [d,k,u]=b.dataset.scled.split("|");scAckDialog(d,k,u||"1")},true);
