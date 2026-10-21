@@ -166,6 +166,9 @@ function pickDay(list){
   list=(list||S.days).filter(d=>d.kind!=="off"&&d.kind!=="travel");
   if(S.day&&list.some(d=>d.id===S.day))return;
   const t=todayISO();
-  const next=list.find(d=>d.date>=t);
+  let next=list.find(d=>d.date>=t);
+  /* one hour after the wrap of today: the next day of the plan */
+  if(next&&next.date===t){try{const x=(S.dispos||[]).find(y=>y&&y.date===t)||{},tm=(x.cs&&x.cs.times)||{},w=hm(tm.wrap||x.wrap||next.wrap||""),cc=hm(tm.crewCall||x.crewCall||next.crewCall||"");
+    const nx=list.find(d=>d.date>t);if(w&&nx&&typeof zurichUTC==="function"&&Date.now()>zurichUTC(t,w).getTime()+(cc&&w<cc?864e5:0)+3600e3)next=nx}catch(_){}}
   S.day=(next||list[list.length-1]||{}).id||null;
 }
