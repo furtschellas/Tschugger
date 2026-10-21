@@ -1472,4 +1472,9 @@ html body #view .csorder li.row.evack>.what>.scackw{margin-right:51px}
 .scbox .redrow input{width:100%;min-width:0;box-sizing:border-box;font-variant-numeric:tabular-nums}
 .scbox button.lnk{background:none;border:0;box-shadow:none;color:var(--muted);padding:8px 6px;font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .scbox button.lnk.scdel{color:var(--danger,#e5484d);padding-left:0}
+/* folded shooting order: less room between scene number and I/E */
+html body #view .csoscn .cso1 b{min-width:30px}
+/* cast: role/actor switches only for the table; the tiles always show both */
+html body #view #cs-cast[class] .cs-cards .cs-ct .c1,html body #view #cs-cast[class] .cs-cards .cs-ct .c2{display:revert}
+@media (max-width:760px){html body #view #cs-cast:not(.cs-astbl) .cscols{display:none}}
 </style>
