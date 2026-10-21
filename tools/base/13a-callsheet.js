@@ -119,7 +119,11 @@ function csHM(d){d=d||new Date();return String(d.getHours()).padStart(2,"0")+":"
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null */
 function csNowScene(x){x=x||(S.dispos||[]).find(y=>y&&y.date===todayISO());const c=x&&x.cs;if(!c||x.date!==todayISO())return null;const rows=csA((c.order||{}).rows);let i=csNowIdx(rows,x.date);
   for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(/wrap|drehschluss/i.test(String(r.text||"")))return null}return null}
-function csNowIdx(rows,date){if(date!==todayISO())return -1;const now=csHM();let k=-1;
+function csNowIdx(rows,date){if(date!==todayISO())return -1;
+  /* scenes quittiert in the Drehplan: the running one, else the next open one after the last done (all done: none) */
+  if(typeof scHas==="function"&&scHas(date)){const st=csA(rows).map(r=>r.sc?scState(date,r.sc):-1),run=st.indexOf(1);if(run>=0)return run;let last=-1;st.forEach((v,i)=>{if(v===2)last=i});
+    for(let i=last+1;i<st.length;i++)if(st[i]===0)return i;return -1}
+  const now=csHM();let k=-1;
   csA(rows).forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});return k}
 /* which set a scene is shot on: by the scenes listed at the location, else by the set name */
 function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/[^a-z0-9]/g,"");const sc=n(r.sc);const ls=csA(locs).filter(l=>!l.kinds&&l.no);
@@ -137,7 +141,7 @@ let CSCUR={c:null,date:""};
 /* hints of a place («To set …», «WC …»): lines in the open location */
 const CSHN_RE=/^(to set|zum set|nach set|wc\b)/i;
 /* the place where the shooting is now (callsheet of today, from the start of the first scene until wrap) */
-function csNowLoc(c,date,ls,now){now=now||new Date();const p=n=>String(n).padStart(2,"0");if(date!==now.getFullYear()+"-"+p(now.getMonth()+1)+"-"+p(now.getDate()))return null;
+function csNowLoc(c,date,ls,now){if(!now&&typeof scHas==="function"&&scHas(date)){const r=csNowScene({date,cs:c});return r?csSceneLoc(ls,r):null}now=now||new Date();const p=n=>String(n).padStart(2,"0");if(date!==now.getFullYear()+"-"+p(now.getMonth()+1)+"-"+p(now.getDate()))return null;
   const m=t=>{const x=String(t||"").match(/(\d{1,2})[:.](\d{2})/);return x?+x[1]*60+ +x[2]:null};const cur=now.getHours()*60+now.getMinutes();let hit=null,started=false;
   for(const r of csA((c.order||{}).rows)){const t=m(r.t);if(t==null||t>cur)break;if(r.sc){started=true;hit=csSceneLoc(ls,r)||hit}else if(/wrap|drehschluss/i.test(String(r.text||"")))return null}
   return started?hit:null}
@@ -217,7 +221,8 @@ function csOrderRows(rows,date,locs,one){const ONE=(()=>{const s0=csA(locs).filt
     let body=li.slice(i0+16,k);const m=body.match(/<div class="l1">[\s\S]*?<\/div>/);const l1=m?m[0]:'<div class="l1"><span class="scn">'+esc(r.sc)+'</span></div>';if(m)body=body.replace(m[0],"");
     const lo=csSceneLoc(locs,r)||(one&&ONE)||null;const pb=lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'';
     const du=pb+(r.dur||it.dur?'<span class="csdur">'+esc(r.dur||it.dur)+'</span>':'');const l1d=du&&/<span class="set">/.test(l1)?l1.replace('<span class="set">',du+'<span class="set">'):l1+du;
-    return '<li class="row csfold'+nw+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+l1d+CSEXP.replace('class="csexp"','class="csexp sm"')+'</summary>'+body+extra+'</details></div></li>'}).join("")+'</ol>'}
+    const dn=typeof scState==="function"&&date&&scState(date,r.sc)===2?' scdone':'';
+    return '<li class="row csfold'+nw+dn+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+l1d+CSEXP.replace('class="csexp"','class="csexp sm"')+'</summary>'+body+extra+'</details></div></li>'}).join("")+'</ol>'}
 /* what concerns me on this callsheet: call, cast times, rides, travel, my department */
 /* a place named on the callsheet («Base», «Loc.2», «Parking loc. 1», «Holiday Inn») → name and map link from the Locations */
 function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls=csLocs(c).filter(l=>!l.kinds);

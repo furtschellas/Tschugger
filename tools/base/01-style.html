@@ -1393,4 +1393,18 @@ html body #view .lc.lcnow{border:2px solid var(--accent)!important}
 html body #view .csme .csme-now .v b{color:var(--accent)}
 /* Drehplan: the scene being shot now */
 html body #view .tl li.scnow>.sc{outline:2px solid var(--accent);outline-offset:0;border-radius:10px}
+/* scenes quittiert: round status (open / running / done), done scenes greyed */
+html body #view .scack{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin-left:auto;flex:0 0 auto;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 60%,transparent);background:transparent;color:var(--accent);padding:0;cursor:pointer}
+html body #view span.scack{cursor:default;border-color:var(--rule);color:var(--muted)}
+html body #view .scack.sk1{background:var(--accent);border-color:var(--accent);color:#fff}
+html body #view .scack.sk2{border-color:color-mix(in srgb,var(--ok,#4caf7d) 70%,transparent);color:var(--ok,#4caf7d)}
+html body #view li.scdone>.sc{opacity:.55}
+/* Drehplan: the scene status top right of the scene */
+html body #view ol.tl>li.row>.sc{position:relative}
+html body #view ol.tl>li.row>.sc>.l1{padding-right:36px}
+html body #view ol.tl>li.row>.sc>.l1>.scack{position:absolute;top:8px;right:8px;margin:0}
+/* callsheet shooting order: the scene status left of the open button */
+html body #view .csscd>summary{position:relative}
+html body #view .csscd>summary .l1:has(.scack){padding-right:36px}
+html body #view .csscd>summary .scack{position:absolute;top:50%;right:42px;transform:translateY(-50%);margin:0;width:26px;height:26px}
 </style>

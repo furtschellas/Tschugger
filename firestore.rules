@@ -252,6 +252,17 @@ service cloud.firestore {
       allow delete: if can('rides.manage');
     }
 
+    // ---------- Szenen aus dem Drehplan ----------
+    // Quittieren (Stand s: 1 = Szene läuft, 2 = abgeschlossen): lesen alle aus der Crew, setzen nur mit «Szenen quittieren» (scenes.ack);
+    // Dokument-ID = Datum JJJJMMTT-Szene (keine Namen), Felder: Datum d, Zeitpunkt at, Stand s
+    match /sceneack/{id} {
+      allow read: if crew();
+      allow create, update: if can('scenes.ack') && id.matches('[0-9]{8}-[a-z0-9]{1,24}') && only(['d', 'at', 's'])
+        && isDate(request.resource.data.d) && nearNow(request.resource.data.at) && request.resource.data.s in [1, 2]
+        && id.matches(request.resource.data.d.replace('-', '') + '-.*');
+      allow delete: if can('scenes.ack');
+    }
+
     // ---------- Protokoll ----------
     // eigene Verwaltungs-Änderungen mit Serverzeit; lesen Admins oder «Protokoll sehen»; nicht änderbar
     match /audit/{id} {
