@@ -1384,4 +1384,7 @@ html body #view details.csloc:not(:has(>:not(summary)))>summary{pointer-events:a
 #savepop{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:9999;display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
 #savepop.on{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){#savepop{transition:none}}
+/* my account: the languages always in one line, the buttons share the width and the text scales */
+html body .thm.lngset{flex-wrap:nowrap;gap:clamp(3px,1.2vw,8px)}
+html body .thm.lngset.lngset button{flex:1 1 0;min-width:0;padding:0 clamp(2px,1.2vw,14px);font-size:var(--lf,13.5px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
