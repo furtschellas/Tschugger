@@ -333,6 +333,7 @@ Object.assign(I18N,{
  "WC":{fr:"WC",it:"WC",en:"Toilet"},
  "jetzt hier":{fr:"maintenant ici",it:"ora qui",en:"now here"},
  "Nur meins":{fr:"Seulement moi",it:"Solo i miei",en:"Only mine"},
+ "gleiche Adresse":{fr:"même adresse",it:"stesso indirizzo",en:"same address"},
  "vor Ort":{fr:"sur place",it:"sul posto",en:"on site"},
  "Funkkanäle":{fr:"Canaux radio",it:"Canali radio",en:"Radio channels"},
  "Cast":{fr:"Cast",it:"Cast",en:"Cast"},
