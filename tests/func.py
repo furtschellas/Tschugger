@@ -1002,7 +1002,11 @@ async def hidden_data(p, port):
             await E("MYPERMS.splice(MYPERMS.indexOf('roles.view'),1);try{acctButton(true)}catch(_){};S.tab='today';render()")
         if who == "catering":
             # role changed (here: catering gets «Push senden»): message with what is new, offered once
+            # same role, other rights: no message (only a change of the role is announced)
             await E("(()=>{const k=memKey();const c=JSON.parse(localStorage.getItem(k)||'{}');c.p=(c.p||[]).filter(p=>p!=='view.dispo');localStorage.setItem(k,JSON.stringify(c))})()")
+            await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
+            check("Rechte geändert, Rolle gleich: keine Nachricht", not await E("!!document.getElementById('rolechg')"))
+            await E("(()=>{localStorage.removeItem('rc');const k=memKey();const c=JSON.parse(localStorage.getItem(k)||'{}');c.r='crew';c.p=(c.p||[]).filter(p=>p!=='view.dispo');localStorage.setItem(k,JSON.stringify(c))})()")
             await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
             rc = await E("(()=>{const d=document.getElementById('rolechg');return d?d.innerText:''})()")
             check("Rolle geändert: Nachricht mit den neuen Rechten", "Callsheet sehen" in rc and "Catering" in rc, rc[:120])
@@ -1014,7 +1018,7 @@ async def hidden_data(p, port):
             await E("const r=document.getElementById('rolechg');if(r)r.remove()")
             await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
             check("Rolle geändert: ohne Änderung keine Nachricht", not await E("!!document.getElementById('rolechg')"))
-            await E("(()=>{localStorage.removeItem('rc');const k=memKey();const c=JSON.parse(localStorage.getItem(k)||'{}');c.p=(c.p||[]).concat(['users.edit']);localStorage.setItem(k,JSON.stringify(c))})()")
+            await E("(()=>{localStorage.removeItem('rc');const k=memKey();const c=JSON.parse(localStorage.getItem(k)||'{}');c.r='crew';c.p=(c.p||[]).concat(['users.edit']);localStorage.setItem(k,JSON.stringify(c))})()")
             await E("checkMember().catch(()=>{})"); await pg.wait_for_timeout(3500)
             rr = await E("(()=>{const d=document.getElementById('rolechg');return d?d.innerText:''})()")
             check("Rolle geändert: weggefallene Rechte werden genannt («Nicht mehr»)", "Nicht mehr" in rr and "Benutzer ändern" in rr, rr[:160])
