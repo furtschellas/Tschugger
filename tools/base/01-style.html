@@ -1051,10 +1051,10 @@ html body #view .csview .dsp-head .date>span{font-size:clamp(14px,1.9vw,24px);co
 .csadl{display:inline-flex;align-items:baseline;gap:4px;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 /* every main part: sums in one line (next to the title when there is room) */
 html body #view .cssec>summary{flex-wrap:wrap}
-html body #view .cssec>summary .cscount{flex:1 1 100%;order:3;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+html body #view .cssec>summary .cscount{flex:1 1 auto;order:0;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;min-width:0}
 html body #view .cssec>summary .cscount>span{margin-right:12px}
 @media (min-width:520px){html body #view .cssec>summary{flex-wrap:nowrap}html body #view .cssec>summary .cscount{flex:1 1 auto;order:0;margin-left:4px;min-width:0}}
-@media (max-width:519px){html body #view .cssec>summary .dh{flex:1 1 0;min-width:0}}
+@media (max-width:519px){html body #view .cssec>summary .dh{flex:0 1 auto;min-width:0}html body #view .cssec>summary .csexp{margin-left:auto}}
 /* sun next to the date in the head line */
 /* phone: time tiles much smaller (several rows allowed) */
 @media (max-width:479px){html body #view .cstiles{gap:4px;margin-top:6px}html body #view .cstiles>.dt .v{font-size:13px;line-height:1.2}html body #view .cstiles>.dt.cswx .ttile{padding:2px 7px}html body #view .cstiles>.dt.cswx .ttile b{font-size:14px}html body #view .cstiles>.dt.cswx .ttile span{font-size:9px}}
@@ -1341,4 +1341,17 @@ html body #view .csme .csmepax>summary::-webkit-details-marker{display:none}
 html body #view .csme .csmepax>summary::after{content:"▾";font-size:10px}
 html body #view .csme .csmepax[open]>summary::after{content:"▴"}
 html body #view .csme .csmepl{display:block;font-size:13px;line-height:1.35;margin-top:2px}
+/* folded parts in one line: short labels (csFitSums) when the line is too narrow, some counts left out */
+html body #view .cssec .sh{display:none}
+html body #view .cssec.csshort>summary .lg{display:none}
+html body #view .cssec.csshort>summary .sh{display:inline}
+html body #view .cssec>summary i.lg,html body #view .cssec>summary i.sh{font-style:normal}
+html body #view .cssec.csdropped>summary .csdrop{display:none}
+html body #view .csview h4.cswx{margin:10px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+/* folded parts: title and counts on one line (title not wrapped, counts cut with … only as the last resort) */
+html body #view .cssec>summary{flex-wrap:nowrap!important}
+html body #view .cssec:not(#cs-order)>summary .dh{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto;max-width:78%;min-width:0;display:block}
+html body #view .cssec>summary .cscount:not(.csnos){flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body #view .cssec>summary .csnos{flex:1 1 0;min-width:0}
+html body #view #cs-order>summary{flex-wrap:wrap!important}
 </style>

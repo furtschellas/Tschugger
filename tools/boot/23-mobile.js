@@ -43,7 +43,11 @@ function csFitContact(){document.querySelectorAll("#view .cscontact").forEach(r=
   /* on the phone the role goes away when the line would get small (it is in the title of the line) */
   const fit=()=>{r.style.fontSize=max+"px";for(let k=0;k<6;k++){const need=i.scrollWidth,have=r.clientWidth;if(!need||Math.abs(need-have)<2&&need<=have)break;const f=parseFloat(r.style.fontSize)*have/need*.985;r.style.fontSize=Math.max(11,Math.min(max,f)).toFixed(2)+"px";if(f>=max&&need<=have)break}};
   r.classList.remove("csct-short");fit();if(mob&&parseFloat(r.style.fontSize)<18&&r.querySelector("small")){r.classList.add("csct-short");fit()}})}
-{let q=0;const go=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;csFitTiles();csFitContact()})};
+/* folded parts of the callsheet: title and counts in one line; when it wraps: short labels («Pers.», «Dept.»), then less important counts away */
+function csFitSums(){document.querySelectorAll("#view details.cssec").forEach(d=>{const sm=d.querySelector(":scope>summary");if(!sm||!sm.offsetParent||d.id==="cs-order")return;const h=sm.querySelector(".dh");if(!h)return;
+  const one=()=>{const c=sm.querySelector(".cscount:not(.csnos)");return h.scrollWidth<=h.clientWidth+1&&(!c||!c.offsetParent||c.scrollWidth<=c.clientWidth+1)};
+  d.classList.remove("csshort","csdropped");if(one())return;d.classList.add("csshort");if(one())return;d.classList.add("csdropped")})}
+{let q=0;const go=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;csFitTiles();csFitContact();csFitSums()})};
  addEventListener("resize",go);
  const v=document.getElementById("view");if(v)new MutationObserver(go).observe(v,{childList:true,subtree:true});
  document.addEventListener("toggle",go,true);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(go)}
