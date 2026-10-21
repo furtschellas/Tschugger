@@ -1354,4 +1354,14 @@ html body #view .cssec:not(#cs-order)>summary .dh{white-space:nowrap;overflow:hi
 html body #view .cssec>summary .cscount:not(.csnos){flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html body #view .cssec>summary .csnos{flex:1 1 0;min-width:0}
 html body #view #cs-order>summary{flex-wrap:wrap!important}
+/* jump bar: no own box – the page shows through (blurred) so it sits in the document, phone and desktop */
+html body #view .csjump{background:color-mix(in srgb,var(--paper) 55%,transparent)!important;-webkit-backdrop-filter:blur(12px) saturate(1.2);backdrop-filter:blur(12px) saturate(1.2);border-bottom:0!important;box-shadow:none}
+html body #view .csjb button{background:color-mix(in srgb,var(--paper) 35%,transparent)}
+/* an open location: the hint texts are in its body, not again in the head */
+html body #view details.csloc[open]>summary .cshn-t{display:none}
+html body #view details.csloc .cshnl{display:flex;gap:6px;align-items:flex-start}
+html body #view details.csloc .cshnl .csi{flex:0 0 auto;margin-top:2px;color:var(--muted)}
+/* a location with nothing more to show: no open button */
+html body #view details.csloc:not(:has(>:not(summary)))>summary .csexp{display:none}
+html body #view details.csloc:not(:has(>:not(summary)))>summary{pointer-events:auto;cursor:default}
 </style>
