@@ -18,6 +18,8 @@ function chgSnap(){
 }
 function chgLoad(){try{return JSON.parse(localStorage.getItem("chg:v1")||"[]")||[]}catch(_){return []}}
 function chgSave(l){try{localStorage.setItem("chg:v1",JSON.stringify(l.slice(0,120)))}catch(_){}}
+/* once on every device: the changes of the 2nd unit leave the list on «Heute» (1st/3rd unit and callsheets stay) */
+try{if(!localStorage.getItem("chgu2clr:v1")){chgSave(chgLoad().filter(c=>String(c.u||"1")!=="2"));localStorage.setItem("chgu2clr:v1","1")}}catch(_){}
 function chgDetect(){
   if(!(S.days||[]).length)return;
   const now=chgSnap();now.v2=1;let old=null;try{old=JSON.parse(localStorage.getItem("snap:v1")||"null")}catch(_){}
