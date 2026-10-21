@@ -200,6 +200,16 @@ await check("Fahrt ändern: ohne «Fahrten Manager» nicht", assertFails(setDoc(
 await check("Fahrt ändern: Admin (alle Rechte) geht", assertSucceeds(setDoc(doc(as("admin"), "rideedit/abcd1234"), { c: "x", d: "2026-10-21", at: NOW })));
 await check("Fahrt ändern: falsches Datum oder alte Zeit nicht", assertFails(setDoc(doc(as("admin"), "rideedit/abcd1240"), { c: "x", d: "2026-1-2", at: NOW - 2 * 3600e3 })));
 
+// ---------- scenes quittiert in the Drehplan ----------
+await env.withSecurityRulesDisabled(async c => { const d0 = c.firestore(); await setDoc(doc(d0, "roles/scener"), { name: "Scener", perms: ["view.plan", "scenes.ack"] }); await setDoc(doc(d0, "userroles/scene@test.ch"), { role: "scener" }); await setDoc(doc(d0, "members/uScene"), { active: true, email: "scene@test.ch", name: "scene" }); });
+const scener = env.authenticatedContext("uScene", { email: "scene@test.ch", email_verified: true }).firestore();
+await check("Szene quittieren: mit «Szenen quittieren» geht", assertSucceeds(setDoc(doc(scener, "sceneack/20261021-12"), { d: "2026-10-21", at: Date.now(), s: 1 })));
+await check("Szene quittieren: Crew ohne Recht nicht", assertFails(setDoc(doc(as("crew"), "sceneack/20261021-13"), { d: "2026-10-21", at: Date.now(), s: 1 })));
+await check("Szene quittieren: Datum muss zur ID passen", assertFails(setDoc(doc(scener, "sceneack/20261022-12"), { d: "2026-10-21", at: Date.now(), s: 2 })));
+await check("Szene quittieren: Stand nur 1 oder 2, keine fremden Felder", assertFails(setDoc(doc(scener, "sceneack/20261021-14"), { d: "2026-10-21", at: Date.now(), s: 2, name: "x" })));
+await check("Szene quittieren: Crew darf den Stand lesen", assertSucceeds(getDoc(doc(as("crew"), "sceneack/20261021-12"))));
+await check("Szene quittieren: nicht eingeladene Person liest nicht", assertFails(getDoc(doc(as("stranger"), "sceneack/20261021-12"))));
+
 // ---------- prefs, log, everything else ----------
 await check("Einstellungen der Person: nicht eingeladene Person kann nichts speichern", assertFails(setDoc(doc(as("stranger"), "prefs/uStr"), { theme: "dark" })));
 await check("Geburtstag: eigener Eintrag (Name, Tag/Monat) geht", assertSucceeds(setDoc(doc(as("crew"), "bdays/uCrew"), { name: "Crew", md: "03-14" })));
