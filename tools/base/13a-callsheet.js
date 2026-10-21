@@ -151,7 +151,7 @@ const CSKICO={"Base":"base","W / H / M":"whm","Lunch":"lunch","Dinner":"dinner",
 function csKindIco(k){const b=String(k).replace(/ (Cast|Extras)$/,"");return CSI[CSKICO[b]]||(/park/i.test(b)?CSI.park:"")}
 function csBadgeIn(l,codes){if(!l.kinds)return CSI.set+'<span>'+esc((codes||["L"+String(l.no||"").trim()]).join("·"))+'</span>';
   /* side place: the icons, with the group (Cast / Extras) and a kind without icon as text */
-  return l.kinds.map(k=>{const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],t=csKindCode(k).replace(/ (Cast|Extras)$/,q?" "+L(q):"");return csKindIco(k)+'<span>'+esc(t)+'</span>'}).join('<i class="csbsep"></i>')}
+  return l.kinds.map(k=>{const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],t=csKindCode(k).replace(/ (Cast|Extras)$/,q?" "+L(q):"");return '<b class="csk">'+csKindIco(k)+'<span>'+esc(t)+'</span></b>'}).join("")}
 function csPlaceH(inner,href,title,cls){const t=title?' title="'+esc(title)+'" aria-label="'+esc(title)+'"':'',k='csplace csbadge'+(cls?' '+cls:'');
   return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+inner+'</a>':'<span class="'+k+'"'+t+'>'+inner+'</span>'}
 /* the locations of the day: every set has its code L1, L2 … (its scenes carry it); sets at the same place (same map link or address,
@@ -172,8 +172,10 @@ function csRadioHTML(t){t=String(t||"").trim();if(!t)return"";const b=t.replace(
 function csMapQ(q){q=String(q||"").trim();return q?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q):""}
 function csLocHref(l,c,date){c=c||CSCUR.c;date=date||CSCUR.date;if(!l)return"";if(l.map)return l.map;let ad="";try{ad=c?csLocAddr(c,l,date):""}catch(_){}return csMapQ(ad)}
 function csCodeHref(code){const m=String(code||"").match(/^L(\w+)$/);if(!m||!CSCUR.c)return"";return csLocHref(csLocs(CSCUR.c).find(x=>!x.kinds&&String(x.no).trim()===m[1]))}
-function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':'',k='csplace'+(cls?' '+cls:'');
-  return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+esc(code)+'</a>':'<span class="'+k+'"'+t+'>'+esc(code)+'</span>'}
+function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':'';
+  /* a base (Base, WHM, Lunch, Prod, DIT …): its own icon and the gold colour; sets (L1 …) stay text */
+  const ic=/^L\d/i.test(String(code))?"":csKindIco(String(code).replace(/^WHM\b/i,"W / H / M").replace(/^Prod\b.*/i,"Prod")),k='csplace'+(ic?' csbadge csbase':'')+(cls?' '+cls:''),in_=ic?ic+'<span>'+esc(code)+'</span>':esc(code);
+  return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+in_+'</a>':'<span class="'+k+'"'+t+'>'+in_+'</span>'}
 function csLocAddr(c,l,date){let ad="";
   /* 1. the app's location list: a set there with one of the scenes of this location, or with the same name */
   try{const scs=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>norm(r.sc));const nm=fold(String(l.name||"")).replace(/\(.*?\)/g,"").trim();
