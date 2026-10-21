@@ -76,4 +76,11 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
     catch(err){fm.querySelector("button[type=submit]").disabled=false;msg.textContent=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.")}});
   document.body.appendChild(d);const f0=d.querySelector("input[name=t1]");if(f0)f0.focus()}
 /* the circle of a ride in the callsheet: with «Fahrten Manager» it opens the popup (before the quick switch of «Fahrten quittieren») */
-document.addEventListener("click",e=>{const b=e.target.closest(".rideack-cs[data-rideack]");if(!b||!canPerm("rides.manage"))return;e.preventDefault();e.stopImmediatePropagation();rideEditDialog(b.dataset.rideack)},true);
+document.addEventListener("click",e=>{const b=e.target.closest(".rideack-cs[data-rideack]");if(!b||!canPerm("rides.manage"))return;e.preventDefault();e.stopImmediatePropagation();window.REDBACK={id:b.dataset.rideack,until:Date.now()+15e3};rideEditDialog(b.dataset.rideack)},true);
+/* after the popup (saved, reset or closed): back to the ride in «Transport with driver» – its part open, the ride in view, also after the new drawing */
+function rideBack(){const r=window.REDBACK;if(!r||Date.now()>r.until||document.querySelector(".redbox"))return false;
+  const el=[...document.querySelectorAll('#view [data-rideack="'+r.id+'"]')].map(b=>{let d=b.closest("details");while(d){d.open=true;d=d.parentElement&&d.parentElement.closest("details")}return b}).find(b=>b.offsetParent);
+  if(!el)return false;const row=el.closest("tr,.cs-card")||el;row.scrollIntoView({block:"center"});row.classList.add("redflash");setTimeout(()=>row.classList.remove("redflash"),1600);return true}
+/* popup closed: back to the ride now, and once more after the new drawing that follows a save (within 4 s) */
+new MutationObserver(m=>{if(window.REDBACK&&m.some(x=>[...x.removedNodes].some(n=>n.nodeType===1&&(n.matches(".redbox")||n.querySelector(".redbox"))))){window.REDBACK.until=Date.now()+4000;requestAnimationFrame(rideBack)}}).observe(document.body,{childList:true});
+{const v=document.getElementById("view");if(v)new MutationObserver(()=>{if(window.REDBACK&&!document.querySelector(".redbox")&&Date.now()<=window.REDBACK.until)requestAnimationFrame(rideBack)}).observe(v,{childList:true})}
