@@ -564,6 +564,34 @@ async def owner_tests(p, port):
           const dl=document.getElementById('rededlg');const out={t1:r.t1,pax:r.passengers,same:rideId(t,r)===id,mark:cell.includes('rchg'),dlg:!!dl&&dl.querySelector('[name=t1]').value==='07:45'};
           if(dl)dl.remove();document.getElementById('redtest').remove();S.dispos=keep.d;window.RIDEEDIT=keep.e;window.REDVER=keep.v+1;window.canPerm=keep.cp;return out})()""")
         check("Fahrten Manager: Änderung gilt im Callsheet (markiert), Pop-up zum Ändern", re_ in (None, {"t1": "07:45", "pax": "Anna Muster, Lena Test", "same": True, "mark": True, "dlg": True}), re_)
+        # --- scene quittance: setup/lunch/wrap keys, own entries per unit, labels, WhatsApp texts without symbols ---
+        sk = await E("""(()=>{if(typeof scRowKeys!=='function'||typeof scShareText!=='function')return null;const keys=scRowKeys([{n:'Setup'},{sc:'1'},{n:'Lunch'},{n:'Set up B'},{n:'Wrap'}],x=>x.n).join(',');
+          const lab=[scLabel('setup'),scLabel('setup2'),scLabel('lunch_u2'),scBase('wrap_u3')].join(',');const t=new Date('2030-05-06T09:00').getTime(),dd='2030-05-06';
+          const tx=[scShareText(dd,'12','1',{s:2,b:t,e:t+3600e3}),scShareText(dd,'12','1',{s:1,b:t,start:1}),scShareText(dd,'lunch','1',{s:2,b:t,e:t+1800e3}),scShareText(dd,'wrap_u2','2',{s:2,b:t,e:t})];
+          return {keys,lab,noIcon:tx.every(x=>!/[\\u2600-\\u27BF\\uD83C-\\uDBFF]/.test(x)),times:/09:00.10:00/.test(tx[0])&&/09:00/.test(tx[1])&&/09:30/.test(tx[2]),unit:/Unit/.test(tx[3])}})()""")
+        check("Quittieren: Setup, Lunch, Wrap und weitere Setups mit eigenem Schlüssel, 2nd/3rd Unit getrennt, WhatsApp-Text ohne Symbole", sk in (None, {"keys": "setup,,lunch,setup2,wrap", "lab": "Setup,Setup 2,Lunch,wrap", "noIcon": True, "times": True, "unit": True}), sk, public=True)
+        sw = await E("""(()=>{if(typeof scAckBtn!=='function'||typeof rideAckBtn!=='function')return null;const k={s:window.SCACKON,r:window.RIDEACKON,a:window.SCACK,cp:window.canPerm};const t=todayISO();
+          window.canPerm=()=>true;window.SCACK={[scAckId(t,'1')]:{d:t,s:2,at:1}};const on=scAckBtn(t,'1')!==''&&scHas(t);window.SCACKON=false;const off=scAckBtn(t,'1')===''&&!scHas(t)&&scState(t,'1')===0;
+          window.RIDEACKON=false;const roff=rideAckBtn({ride:1,rid:'abcd1234'})==='';window.SCACKON=k.s;window.RIDEACKON=k.r;window.SCACK=k.a;window.canPerm=k.cp;return {on,off,roff}})()""")
+        check("Einstellungen: Szenen und Fahrten quittieren lassen sich ausschalten (keine Knöpfe, «jetzt» nach der Uhr)", sw in (None, {"on": True, "off": True, "roff": True}), sw)
+        sl = await E("""(()=>{if(typeof sceneLogSec!=='function'||typeof scExpRows!=='function')return null;const k={l:SCLOG.list,e:SCLOG.exp,c:window.canSceneLog,cp:window.canPerm};const d='2030-05-06',t=h=>new Date(d+'T'+h).getTime();
+          SCLOG.list=[{id:'20300506-12',d,s:2,u:'1',sc:'12',b:t('09:00'),e:t('10:00')},{id:'20300506-lunch',d,s:2,u:'1',sc:'lunch',b:t('12:00'),e:t('13:00')},{id:'20300506-55',d,s:1,u:'2',sc:'55',b:t('09:30')},{id:'20300506-wrapu2',d,s:2,u:'2',sc:'wrap_u2',b:t('18:00'),e:t('18:00')}];
+          window.canSceneLog=()=>true;window.canPerm=p=>p==='scenes.ack';const h=sceneLogSec();const box=document.createElement('div');box.innerHTML=h;const days=box.querySelectorAll('details.tstsu').length;
+          const fixed=[...box.querySelectorAll('details.tstsu')].every(x=>['Setup','Lunch','Wrap'].every(n=>x.innerText.includes(n)));const pens=box.querySelectorAll('[data-scled]').length;
+          const per=!!box.querySelector('[data-sclx="pdf||1"]')&&!!box.querySelector('[data-sclx="csv||2"]')&&!!box.querySelector('[data-sclx="pdf|'+d+'|2"]')&&!box.querySelector('[data-sclx="pdf"]');
+          const r2=scExpRows(d,'2');const only2=r2.length>0&&r2.every(r=>/2/.test(r.unit));const dur=(scExpRows(d,'1').find(r=>/12/.test(r.name))||{}).min;
+          window.canPerm=()=>false;const nopen=(()=>{const b=document.createElement('div');b.innerHTML=sceneLogSec();return b.querySelectorAll('[data-scled]').length})();
+          SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;window.canPerm=k.cp;return {days,fixed,pens:pens>0,nopen,per,only2,dur}})()""")
+        check("Szenen-Protokoll: pro Unit ein Tagesprotokoll mit Setup/Drehstart/Lunch/Wrap, Stift nur mit Recht, Export pro Tag und Unit", sl in (None, {"days": 2, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}), sl, public=True)
+        vp = await E("""(()=>{if(typeof tabsOn!=='function')return null;const k={s:SIMROLE,r:MYROLE,p:MYPERMS.slice()};SIMROLE={adm:false};MYROLE='t';
+          MYPERMS=['view.plan','view.dispo'];const a={loc:vok('loc'),info:vok('info'),tabs:tabsOn().filter(x=>x==='loc'||x==='info').length};
+          MYPERMS=['view.plan','view.dispo','view.loc','view.info'];const b={loc:vok('loc'),info:vok('info')};SIMROLE=k.s;MYROLE=k.r;MYPERMS=k.p;
+          return {without:!a.loc&&!a.info&&a.tabs===0,with:b.loc&&b.info,perms:['view.loc','view.info','scenes.ack','scenes.log'].every(p=>PERMS.some(x=>x[0]===p))}})()""")
+        check("Rollen: «Locations sehen» und «Infos sehen» steuern die Bereiche; neue Rechte in der Rollenauswahl", vp in (None, {"without": True, "with": True, "perms": True}), vp, public=True)
+        wa = await E("""(()=>{if(typeof scShareAsk!=='function')return null;const t=new Date('2030-05-06T09:00').getTime();let no=null;try{no=localStorage.getItem('scwa:no');localStorage.setItem('scwa:no','1')}catch(_){}
+          scShareAsk('2030-05-06','12','1',{s:2,b:t,e:t+60e3});const a=!!document.getElementById('scwadlg');scShareAsk('2030-05-06','12','1',{s:2,b:t,e:t+60e3},true);const d=document.getElementById('scwadlg');
+          const b=!!d&&/^https:\\/\\/wa\\.me\\/\\?text=/.test((d.querySelector('a.scwa')||{}).getAttribute&&d.querySelector('a.scwa').getAttribute('href')||'');if(d)d.remove();try{no==null?localStorage.removeItem('scwa:no'):localStorage.setItem('scwa:no',no)}catch(_){}return {asked:a,forced:b}})()""")
+        check("WhatsApp-Info: «nicht mehr fragen» gilt, beim Ändern im Popup wird trotzdem angeboten", wa in (None, {"asked": False, "forced": True}), wa)
         px = await E("""(()=>{if(typeof rideEditDialog!=='function')return null;const keep={d:S.dispos,c:S.crew,cp:window.canPerm,v:window.REDVER};const t='2030-05-06';S.crew=[{dept:'Cast',people:[{name:'Anna Muster'},{name:'Ida Test'}]}];
           const r0={t1:'07:30',t2:'08:00',from:'A',to:'B',vehicle:'Van',driver:'Max',passengers:'Anna Muster, Lena Test'};S.dispos=[{date:t,cs:{transport:[r0]}}];window.REDVER=(window.REDVER||0)+1;rideEditApply();window.canPerm=()=>true;
           rideEditDialog(rideId(t,S.dispos[0].cs.transport[0]));const d=document.getElementById('rededlg');const sl=d.querySelector('[data-redadd]');sl.value='Ida Test';sl.dispatchEvent(new Event('change',{bubbles:true}));
