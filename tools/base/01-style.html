@@ -1450,4 +1450,20 @@ html body #view .csscd>summary .l1>.set,html body #view ol.tl>li.row>.sc>.l1>.se
 html body #view .sclt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 10px;font-variant-numeric:tabular-nums}
 html body #view .sclt b{font-family:var(--f-mono,monospace);font-weight:600}
 html body #view li.sclo{opacity:.6}
+
+/* Drehplan: every status icon and its times in one column (scenes, lunch, wrap, setups): the times in a box of equal width */
+html body #view .scackt{min-width:12ch;text-align:right}
+html body #view li.row.evack>.what>.scackw{margin-right:var(--evack-r,9px)}
+/* callsheet shooting order: status and open button the same size, close together */
+html body #view .csscd>summary>.csexp,html body #view .csscd>summary .scack{width:28px;height:28px;border-width:1.5px}
+html body #view .csscd>summary>.csexp svg{width:13px;height:13px}
+html body #view .csscd>summary .scackw{right:38px}
+/* phone: both icons a bit higher and further right, the scene title below them */
+@media (max-width:760px){html body #view .csscd>summary{padding-top:32px}
+ html body #view .csscd>summary>.csexp{top:2px;right:0}
+ html body #view .csscd>summary .scackw,html body #view .csscd>summary .l1>.scackw>.scack{top:2px;right:32px}
+ html body #view .csscd>summary .l1::after,html body #view .csscd>summary .l1:has(.scackw)::after{flex-basis:0;display:none}}
+.scbox .scdel{display:block;margin:12px 0 0;color:var(--danger,#e5484d)}
+html body #view .csorder li.row.evack>.what>.scackw{margin-right:51px}
+@media (max-width:760px){html body #view .csorder li.row.evack>.what>.scackw{margin-right:42px}}
 </style>

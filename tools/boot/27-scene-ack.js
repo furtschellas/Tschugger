@@ -70,9 +70,10 @@ function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{}
   d.innerHTML='<div class="a2box scbox"><h3>'+esc(scLabel(sc))+'</h3><p class="ghint">'+esc(date.split("-").reverse().join("."))+(u&&u!=="1"?' · '+esc((window.UNAME&&UNAME[u])||u)+' Unit':'')+'</p>'+
     '<div class="redst scst" role="group" aria-label="'+esc(L("Status"))+'">'+(sc==="wrap"?[[0,"offen"],[2,"Drehschluss"]]:[[0,"offen"],[1,sc==="lunch"?"Lunch läuft":"läuft"],[2,"abgeschlossen"]]).map(([v,t])=>'<button type="button" class="scstb" data-scst="'+v+'" aria-pressed="'+(st===v)+'"><span class="scack sk'+v+'">'+((v===1&&sc==="lunch"?SC_ICO.lunch:v===2&&sc==="wrap"?SC_ICO.wrap:SC_ICO[v])||"")+'</span><span class="scstl">'+esc(L(t))+'</span></button>').join("")+'</div>'+
     '<form data-scform novalidate><div class="redrow"><label>'+esc(L("Beginn"))+'<input type="time" name="b" value="'+esc(scHM(x.b||x.at))+'"></label><label>'+esc(L("Ende"))+'<input type="time" name="e" value="'+esc(scHM(x.e))+'"></label></div>'+
-    '<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+esc(L("Speichern"))+'</button><button type="button" class="lnk" data-scx>'+esc(L("Abbrechen"))+'</button></div></form></div>';
+    '<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+esc(L("Speichern"))+'</button><button type="button" class="lnk" data-scx>'+esc(L("Abbrechen"))+'</button></div>'+(st?'<button type="button" class="lnk scdel" data-scdel>'+esc(L("Quittierung löschen"))+'</button>':'')+'</form></div>';
   const msg=d.querySelector(".amsg"),f=d.querySelector("form");
   d.addEventListener("click",ev=>{const t=ev.target.closest("[data-scst]");if(t){cur=+t.dataset.scst;d.querySelectorAll("[data-scst]").forEach(z=>z.setAttribute("aria-pressed",String(+z.dataset.scst===cur)));f.e.disabled=cur!==2;f.b.disabled=cur===0;return}
+    if(ev.target.closest("[data-scdel]")){const bt=ev.target.closest("[data-scdel]");bt.disabled=true;scWrite(date,sc,u,null).then(()=>{d.remove();if(typeof savedPop==="function")savedPop(true)}).catch(err=>{bt.disabled=false;msg.textContent=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.")});return}
     if(ev.target===d||ev.target.closest("[data-scx]"))d.remove()});
   f.e.disabled=cur!==2;f.b.disabled=cur===0;
   f.addEventListener("submit",async ev=>{ev.preventDefault();const bm=scMs(date,f.b.value),em=scMs(date,f.e.value);
@@ -84,9 +85,11 @@ function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{}
   document.body.appendChild(d)}
 window.scAckDialog=scAckDialog;
 /* Einstellungen → Log: the scene log (begin, end and duration of every quittiert scene, by day) */
-const SCLOG={list:null,busy:false,open:true};
+const SCLOG={list:null,busy:false,open:false};
+/* a tap on «Log» shows it closed again (like the other boxes) */
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest('[data-asub="log"]'))SCLOG.open=false},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="sclog")SCLOG.open=d.open},true);
-async function scLogLoad(){SCLOG.busy=true;try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"sceneack"));SCLOG.list=(q.docs||[]).map(d=>Object.assign({id:d.id},d.data()))}catch(_){SCLOG.list=[]}SCLOG.busy=false;render()}
+async function scLogLoad(){SCLOG.busy=true;try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"sceneack"));SCLOG.list=(q.docs||[]).map(d=>Object.assign({id:d.id},d.data()))}catch(_){SCLOG.list=[]}SCLOG.at=Date.now();SCLOG.busy=false;render()}
 /* who sees it: admins and the permission «Szenen-Protokoll sehen» */
 window.canSceneLog=()=>typeof isAdmin==="function"&&(isAdmin()||(typeof can==="function"&&can("scenes.log")));
 window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.busy)scLogLoad();return""}
@@ -113,8 +116,8 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
     for(const x of scs){const k=key(x);ent.push([p0(x),row(esc(scLabel(k))+(x.u&&x.u!=="1"?' <span class="audt">'+esc((window.UNAME&&UNAME[x.u])||x.u)+' Unit</span>':''),x.s===1?1:2,isEv(k)?pl(k):"",p0(x),x.s===1?0:+x.e||0,x.s===1&&d===t)])}
     ent.push([wrE||ms(pl("wrap"))||9e15,row("Wrap",wr?2:0,pl("wrap"),wrE?start:0,wrE,false)]);
     ent.sort((a,b)=>a[0]-b[0]);
-    return '<details class="tstsu"'+(d===t?' open':'')+'><summary>'+esc(String(d).split("-").reverse().join("."))+' · '+real.length+' '+esc(L("Szenen"))+(start&&wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(wrE-start)):'')+'</summary><ul class="audlist">'+ent.map(e=>e[1]).join("")+'</ul></details>'}).join("");
-  return '<details class="tstsec scld" data-lsec="sclog"'+(SCLOG.open?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Szenen-Protokoll")),'<span class="tsth">'+SCLOG.list.filter(x=>!isEv(key(x))).length+' '+esc(L("Szenen"))+'</span>',""):esc(L("Szenen-Protokoll")))+'</summary>'+
+    return '<details class="tstsu"><summary>'+esc(String(d).split("-").reverse().join("."))+' · '+real.length+' '+esc(L("Szenen"))+(start&&wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(wrE-start)):'')+'</summary><ul class="audlist">'+ent.map(e=>e[1]).join("")+'</ul></details>'}).join("");
+  return '<details class="tstsec scld" data-lsec="sclog"'+(SCLOG.open?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Szenen-Protokoll")),'<span class="tsth">'+SCLOG.list.filter(x=>!isEv(key(x))).length+' '+esc(L("Szenen"))+'</span>',(()=>{const m=Math.max(0,...SCLOG.list.map(x=>+x.at||0))||SCLOG.at||Date.now();const z=new Date(m);return esc(String(z.getDate()).padStart(2,"0")+"."+String(z.getMonth()+1).padStart(2,"0")+". "+scHM(m))})()):esc(L("Szenen-Protokoll")))+'</summary>'+
     '<div class="admins"><p class="ahint">'+esc(L("Beginn, Ende und Dauer jeder quittierten Szene (Drehplan und Callsheet), dazu Setup, Drehstart, Lunch und Wrap."))+'</p>'+
     (html||'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+
     '<button type="button" class="pillbtn" data-sclre>'+esc(L("Neu laden"))+'</button></div></details>'};
