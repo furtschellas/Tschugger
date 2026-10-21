@@ -17,7 +17,7 @@ window.scAckBtn=(date,sc)=>{if(!date||!sc)return"";const st=scState(date,sc),can
     :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+(SC_ICO[st]||"")+'</span>'};
 /* live for everybody: the quittances from yesterday on */
 async function scAckSub(){if(SCSUB||typeof ME==="undefined"||!ME)return;try{const {F,db}=await fb();const y=new Date(Date.now()-864e5),p=n=>String(n).padStart(2,"0"),from=y.getFullYear()+"-"+p(y.getMonth()+1)+"-"+p(y.getDate());
-  SCSUB=F.onSnapshot(F.query(F.collection(db,"sceneack"),F.where("d",">=",from)),q=>{const m={};q.forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;render()}},()=>{SCSUB=null})}catch(_){SCSUB=null}}
+  SCSUB=F.onSnapshot(F.query(F.collection(db,"sceneack"),F.where("d",">=",from)),q=>{const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;render()}},()=>{SCSUB=null})}catch(_){SCSUB=null}}
 setTimeout(scAckSub,3000);setInterval(()=>{if(!SCSUB)scAckSub()},60e3);
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("button[data-scack]");if(!b)return;e.preventDefault();e.stopPropagation();if(typeof canPerm!=="function"||!canPerm("scenes.ack"))return;
   const [date,sc]=b.dataset.scack.split("|");const id=scAckId(date,sc),st=scState(date,sc),nx=(st+1)%3;
