@@ -333,6 +333,8 @@ Object.assign(I18N,{
  "WC":{fr:"WC",it:"WC",en:"Toilet"},
  "jetzt hier":{fr:"maintenant ici",it:"ora qui",en:"now here"},
  "Nur meins":{fr:"Seulement les miens",it:"Solo i miei",en:"Only mine"},
+ "Frühere Tage":{fr:"Jours précédents",it:"Giorni precedenti",en:"Earlier days",hi:"पिछले दिन"},
+ "Spätere Tage":{fr:"Jours suivants",it:"Giorni successivi",en:"Later days",hi:"अगले दिन"},
  "Pers.":{fr:"pers.",it:"pers.",en:"ppl."},
  "Infos nach Dept.":{fr:"Infos par dépt.",it:"Info per rep.",en:"Info by dept."},
  "Notizen & Wetter":{fr:"Notes & météo",it:"Note & meteo",en:"Notes & weather"},

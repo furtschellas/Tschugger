@@ -34,7 +34,9 @@ function dayNav(PD,isSel,attr,key,extra,pre){
   const uo=unitsOn();
   /* the unit buttons stay at the top with the days (they do not scroll away) */
   const ubar=uo.length>1?'<div class="pub dpub" role="group" aria-label="'+L("Unit filtern")+'">'+uo.map(ub).join("")+'</div>':'';UNITBAR="";
-  let h='<div class="stripwrap">'+ubar+'<div class="strip in" role="tablist" aria-label="'+esc(L("Tage"))+'">'+(pre||"");
+  /* desktop: buttons to scroll the days to the left and right */
+  const nav=dir=>'<button type="button" class="stripnav" data-stripnav="'+dir+'" aria-label="'+esc(L(dir<0?"Frühere Tage":"Spätere Tage"))+'" title="'+esc(L(dir<0?"Frühere Tage":"Spätere Tage"))+'"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+(dir<0?'M15 5l-7 7 7 7':'M9 5l7 7-7 7')+'"/></svg></button>';
+  let h='<div class="stripwrap">'+ubar+nav(-1)+'<div class="strip in" role="tablist" aria-label="'+esc(L("Tage"))+'">'+(pre||"");
   for(const d of PD){
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
@@ -43,8 +45,10 @@ function dayNav(PD,isSel,attr,key,extra,pre){
     h+='<button data-dt="'+esc(d.date)+'" class="chip'+(onlyU()&&d.kind==="shoot"?(hasSelU(d)?" u2day":" nou"):"")+(d.kind!=="shoot"?" off":"")+(d.kind==="off"?" free":"")+(d.kind==="travel"?" trav":"")+(d.date===t?" isnow":"")+ex.cls+'" role="tab" '+attr+'="'+esc(d[key])+'" aria-selected="'+isSel(d)+'"'+(d.kind==="off"||d.kind==="travel"?' disabled aria-disabled="true"':'')+'>'+
        '<div class="lb">'+lbh+'<span class="wds">/'+WD[dt.getDay()].toUpperCase()+'</span><span class="wdl">'+esc(WDL(dt))+'</span>'+ex.mark+'</div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>';
   }
-  return h+'</div></div>';
+  return h+'</div>'+nav(1)+'</div>';
 }
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-stripnav]");if(!b)return;const st=b.parentElement&&b.parentElement.querySelector(".strip");if(!st)return;
+  st.scrollBy({left:(+b.dataset.stripnav)*Math.max(120,st.clientWidth*.8),behavior:"smooth"})});
 /* PREP: preparation / rehearsal week before the first shooting day (data "prepro": one entry per date; meta.prepro: source, contacts) */
 function ppWhere(w,m){if(!w)return'';const sm=m?safeUrl(m):"";const q=(sm&&sm!=="#"?sm:"")||(/\d{4}\s+\S/.test(w)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(w.replace(/^On location:\s*/i,"")):"");return '<div class="ppl">'+(q?'<a href="'+esc(q)+'" target="_blank" rel="noopener">'+esc(w)+'</a>':esc(w))+'</div>'}
 function ppItem(i,date,grp,k){return '<div class="ppi'+(i.hl?' hl':'')+'">'+(date&&(i.crew||i.cast)&&vok("email")?'<button type="button" class="calbtn mailbtn" data-ppmail="'+esc(date)+'|'+grp+'|'+k+'" '+ariaTip(L("E-Mail-Verteiler"))+'><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></button>':'')+(date?'<button type="button" class="calbtn" data-cal="'+esc(date)+'|'+grp+'|'+k+'" '+ariaTip(L("In den Kalender"))+'><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>':'')+'<div class="ppt">'+esc(i.t||"")+(i.end?'<br>'+esc(i.end):'')+'</div><div class="ppb"><div class="ppn">'+esc(TX(i,"n")||"")+'</div>'+
