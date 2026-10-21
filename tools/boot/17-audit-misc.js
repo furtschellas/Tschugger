@@ -58,7 +58,7 @@ const logWhen=fmtDT;   /* time in the title line of every box */
 window.logWhen=logWhen;
 /* sub-parts (data-su) are open only while you stay on the page: every new visit of Log/Tests starts with everything closed */
 const logSu=k=>TST.su[k]?' open':'';window.logSu=logSu;
-function logReset(){TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false}
+function logReset(){TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false;if(window.scLogReset)scLogReset()}
 {let last="";const _r=render;render=function(){if((typeof RTS!=="undefined"&&RTS.busy)||(typeof DCK!=="undefined"&&DCK.busy))return _r.apply(this,arguments);   /* the tests switch pages for a moment: not a new visit */
   const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test")?ADM.sub:"";if(now&&now!==last){logReset();setTimeout(()=>logAutoRun(now),250)}last=now;return _r.apply(this,arguments)}}
 /* every tap on Log/Tests starts the permission and document tests again; the automatic tests on GitHub start when their

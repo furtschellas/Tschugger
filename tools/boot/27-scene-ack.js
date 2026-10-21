@@ -86,8 +86,8 @@ function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{}
 window.scAckDialog=scAckDialog;
 /* Einstellungen → Log: the scene log (begin, end and duration of every quittiert scene, by day) */
 const SCLOG={list:null,busy:false,open:false};
-/* a tap on «Log» shows it closed again (like the other boxes) */
-document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest('[data-asub="log"]'))SCLOG.open=false},true);
+/* every new visit of «Log» shows it closed again (like the other boxes) */
+window.scLogReset=()=>{SCLOG.open=false};
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="sclog")SCLOG.open=d.open},true);
 async function scLogLoad(){SCLOG.busy=true;try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"sceneack"));SCLOG.list=(q.docs||[]).map(d=>Object.assign({id:d.id},d.data()))}catch(_){SCLOG.list=[]}SCLOG.at=Date.now();SCLOG.busy=false;render()}
 /* who sees it: admins and the permission «Szenen-Protokoll sehen» */
