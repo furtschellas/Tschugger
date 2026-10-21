@@ -179,8 +179,12 @@ async function roleTestRun(auto){
     if(vis("bcBtn")!==!!(can("push.send")&&window.PUSHEN!==false))issues.push(L("Couvert-Symbol stimmt nicht mit dem Recht überein"));
     if(vis("admBtn")!==!!canAdm())issues.push(L("Zahnrad stimmt nicht mit dem Recht überein"));
     if(!ro.adm&&ro.id&&(tabs.includes("plan")!==can("view.plan")))issues.push(L("Drehplan sichtbar, obwohl das Recht fehlt (oder umgekehrt)"));
+    /* the new areas: Locations and Info only with their permission */
+    if(!ro.adm&&ro.id&&tabs.includes("loc")&&!can("view.loc"))issues.push(L("Locations sichtbar, obwohl das Recht fehlt"));
+    if(!ro.adm&&ro.id&&tabs.includes("info")&&!can("view.info")&&tabs.length>1)issues.push(L("Info sichtbar, obwohl das Recht fehlt"));
     const extra=[can("push.send")&&L("Push senden"),can("events.add")&&L("Termine erstellen"),vok("mycal")&&L("Meine Termine"),can("mycal.all")&&L("Termine anderer"),can("crew.food")&&L("Essen"),can("crew.bday")&&L("Geburtstage"),
-      vok("phone")&&L("Telefon"),vok("email")&&L("E-Mail"),canAdm()&&L("App-Verwaltung"),can("data.check")&&L("Dokumente prüfen")].filter(Boolean);
+      vok("phone")&&L("Telefon"),vok("email")&&L("E-Mail"),canAdm()&&L("App-Verwaltung"),can("data.check")&&L("Dokumente prüfen"),
+      can("scenes.ack")&&L("Szenen quittieren"),(typeof canSceneLog==="function"&&canSceneLog())&&L("Szenen-Protokoll"),(can("rides.confirm")||can("rides.manage"))&&L("Fahrten quittieren"),can("rides.manage")&&L("Fahrten Manager")].filter(Boolean);
     out.push({name:ro.name,tabs:tabs.map(t=>RTN[t]||t),extra,issues});
     /* back to the real rights for a moment and show the progress (the role's pages were drawn without being shown) */
     SIMROLE=null;MYPERMS=keep.p;MYROLE=keep.r;ADMINPERMS=keep.ap;S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}

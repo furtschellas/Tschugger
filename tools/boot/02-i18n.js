@@ -356,6 +356,8 @@ Object.assign(I18N,{
  "Locations sehen":{fr:"Voir les lieux",it:"Vedere le location",en:"View locations",hi:"लोकेशन देखें"},
  "Infos sehen":{fr:"Voir les infos",it:"Vedere le info",en:"View info",hi:"जानकारी देखें"},
  "alle Tage":{fr:"tous les jours",it:"tutti i giorni",en:"all days",hi:"सभी दिन"},
+ "Locations sichtbar, obwohl das Recht fehlt":{fr:"Lieux visibles sans le droit",it:"Location visibili senza il permesso",en:"Locations visible without the permission",hi:"अनुमति के बिना लोकेशन दिख रही हैं"},
+ "Info sichtbar, obwohl das Recht fehlt":{fr:"Infos visibles sans le droit",it:"Info visibili senza il permesso",en:"Info visible without the permission",hi:"अनुमति के बिना जानकारी दिख रही है"},
  "{s} läuft noch – zuerst abschliessen.":{fr:"{s} est encore en cours – le terminer d'abord.",it:"{s} è ancora in corso – prima completalo.",en:"{s} is still running – finish it first.",hi:"{s} अभी चल रहा है – पहले उसे पूरा करें।"},
  "Szenen-Protokoll sehen":{fr:"Voir le journal des scènes",it:"Vedere il registro delle scene",en:"View scene log",hi:"सीन लॉग देखें"},
  "Plan":{fr:"Prévu",it:"Previsto",en:"Planned",hi:"योजना"},
