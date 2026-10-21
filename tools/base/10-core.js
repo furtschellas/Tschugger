@@ -141,7 +141,9 @@ function bdHTML(date,sc){if(!date)return "";const b=bdFor(date,sc);if(!b)return 
 function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
-    return '<li class="row ev'+(mn?' lunch':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+mn+'</div></li>';
+    /* lunch and wrap: quittiert like the scenes (status right) */
+    const ek=typeof scEvKey==="function"&&window.__mctx&&window.__mctx.date?scEvKey(it.n):"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,ek,window.__mctx.u||"1"):"";
+    return '<li class="row ev'+(mn?' lunch':'')+(eb?' evack':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+eb+mn+'</div></li>';
   }
   const meta=[];
   if(it.cam)meta.push('<span class="cam">'+esc(arr(it.camx).length?String(it.cam).replace(/\s*·\s*Setups.*$/,""):it.cam)+'</span>'); /* which camera/unit shoots it (e.g. B-Cam of the 1st unit, setups of the 2nd unit) */
