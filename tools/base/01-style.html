@@ -1280,4 +1280,17 @@ html body #view details.csloc .csnear{display:flex;flex-wrap:wrap;gap:5px;margin
 html body #view details.csloc .csnearc{display:inline-flex;align-items:center;gap:5px;padding:2px 8px 2px 3px;border-radius:999px;border:1px solid var(--rule);text-decoration:none;color:inherit;font-size:12px;line-height:1.4}
 html body #view details.csloc .csnearc .csplace{font-size:11px;padding:0 5px}
 html body #view details.csloc .csnearc small{color:var(--muted);font-variant-numeric:tabular-nums}
+/* place badge with an icon per kind (set, Base, W/H/M, Lunch, Dinner, Prod, DIT, Parking) */
+html body #view .csplace.csbadge{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+html body #view .csplace.csbadge .csi{width:13px;height:13px;flex:0 0 auto}
+html body #view .csplace.csbadge span{font-size:.92em}
+/* contact on set: larger, always one line (size fitted by csFitContact); radio channels below as chips */
+html body #view .cscontact{white-space:nowrap;overflow:hidden;font-size:18px;line-height:1.3;margin:10px 0 4px}
+html body #view .cscontact .csct-in{display:inline-block}
+html body #view .cscontact .csct .csi{width:1em;height:1em;vertical-align:-.12em;margin-right:.2em}
+html body #view .csradio2{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:2px 0 8px;font-size:12.5px;color:var(--muted)}
+html body #view .csradio2>.csi{color:var(--accent)}
+html body #view .csradio2 .csrch{display:inline-flex;gap:4px;align-items:baseline;border:1px solid var(--rule);border-radius:999px;padding:1px 8px;white-space:nowrap}
+html body #view .csradio2 .csrch b{color:var(--accent);font-variant-numeric:tabular-nums}
+html body #view .cscontact.csct-short small{display:none}
 </style>
