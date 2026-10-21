@@ -186,7 +186,7 @@ function csLocAddr(c,l,date){let ad="";
       (nm.length>3?(S.locs||[]).find(x=>(x.sets||[]).some(st=>fold(String(st.name||st.set||"")).includes(nm))||fold(String(x.name||x.venue||"")).includes(nm)):null);
     if(hit)ad=[hit.venue,hit.address].filter(Boolean).join(", ")}catch(_){}
   if(!ad)try{for(const r of csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it){ad=addrForItem(it)||"";if(ad)break}}}catch(_){}
-  if(!ad||/^tba$/i.test(ad)){const n=csA(l.notes).map(String).concat(csA(l.items).map(i=>String(i.text||""))).find(t=>/\b\d{4}\b/.test(t)&&/[A-Za-zÀ-ÿ]{3,}/.test(t));ad=n?n.replace(/https?:\/\/\S+/g,"").split(/\.\s|\n/)[0].trim():""}
+  if(!ad||/^tba$/i.test(ad)){const n=csA(l.notes).map(String).concat(csA(l.items).map(i=>String(i.text||""))).find(t=>/\b\d{4}\b/.test(t)&&/[A-Za-zÀ-ÿ]{3,}/.test(t));ad=n?n.replace(/https?:\/\/\S+/g,"").split(/\.\s|\n|\s*;\s*|\s\/\/\s/).find(p=>/\b\d{4}\b/.test(p))||"":"";ad=ad.trim()}
   return /^tba$/i.test(ad)?"":ad}
 /* floorplans of a location (3D folder, matched like in the schedule: set and place of its scenes) – only with the right for blocking */
 function csLocFp(c,l,date,icon){if(l.kinds||typeof fpFor!=="function"||!vok("blocking"))return"";const out=new Map();
@@ -258,7 +258,8 @@ function csLocs0(c){const sets=[],extra=[];
       for(const k0 of kinds){const k=k0==="W / H / M"&&who?k0+" "+who:k0;if(!e.kinds.includes(k))e.kinds.push(k)}
       const isAdr=t=>/\d{4}\s+\p{L}/u.test(String(t||""))||/^\p{L}[\p{L}.\s-]*\s\d+[a-z]?(\s|$|-)/u.test(String(t||""));
       if(name&&(!e.name||(isAdr(e.name)&&!isAdr(name)))){if(e.name&&e.name!==name&&!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=name}
-      {const at=lab.match(/@\s*(.+)$/);if(at&&isAdr(e.name)&&!isAdr(at[1])){if(!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=at[1].trim()}}if(!e.map&&i.map)e.map=i.map;if(rest){const r2=isAdr(rest)?rest:kinds.map(k0=>{const k=k0==="W / H / M"&&who?k0+" "+who:k0;return csKindCode(k)}).join(" / ")+": "+rest;if(!e.notes.includes(r2))e.notes.push(r2)}last=e}
+      {const at=lab.match(/@\s*(.+)$/);if(at&&isAdr(e.name)&&!isAdr(at[1])){if(!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=at[1].trim()}}if(!e.map&&i.map)e.map=i.map;/* «Föhrenweg 160, 3999 Testdorf; To set 1: …; WC: …» – each part its own line (address, hints with their icons, the rest with its kind) */
+      for(const part of String(rest||"").split(/\s*;\s*/).map(x=>x.trim()).filter(Boolean)){const r2=isAdr(part)||/^(to set|zum set|nach set|wc\b)/i.test(part)?part:kinds.map(k0=>{const k=k0==="W / H / M"&&who?k0+" "+who:k0;return csKindCode(k)}).join(" / ")+": "+part;if(!e.notes.includes(r2))e.notes.push(r2)}last=e}
     /* the map link of the set is the one of a side place listed with it (e.g. «WHM Extras … https://…» after the set name): not the place of the set */
     const own=!!l.map&&extra.some(e=>e.map===l.map&&e.kinds.some(k=>k!=="DIT"&&k!=="Prod"));
     sets.push(Object.assign({},l,{items},own?{map:""}:{}))}
@@ -358,7 +359,10 @@ function csLocSec(c,x,me,SU,t){let h="";
    const LG=csLocGroups(c,ls,x.date),mem=l=>l._m||[l];
    h+=csSec("Locations",LG.length?LG.map(l=>{let LAD=csLocAddr(c,l,x.date);let DN=l.name||"";
      /* a side place named by its address only: the kinds as its name, the address in the second line */
-     {const w=t=>fold(String(t||"")).replace(/[^a-z0-9]/g,"");if(l.kinds&&/\d{4}\s+\p{L}/u.test(DN)){LAD=LAD&&!w(LAD).startsWith(w(DN))?LAD:DN;DN=l.kinds.map(csKindCode).join(" · ")}
+     {const w=t=>fold(String(t||"")).replace(/[^a-z0-9]/g,"");
+      /* a side place: the title is its kind (Base, else the first kind, e.g. «WHM Extras»), the second line its name and address («Restaurant Waldrand, Föhrenweg 160, 3999 Testdorf») */
+      if(l.kinds){const isA=/\d{4}\s+\p{L}/u.test(DN),nm=isA?"":DN;const ad=LAD&&!(isA&&w(LAD)!==w(DN)&&!w(LAD).startsWith(w(DN)))?LAD:(isA?DN:LAD);
+        LAD=[nm&&!w(ad).includes(w(nm))?nm:"",ad].filter(Boolean).join(", ");DN=l.kinds.includes("Base")?"Base":csKindCode(l.kinds[0])}
       else if(LAD&&w(DN).length>5&&w(LAD).startsWith(w(DN)))LAD=""}const code=l.kinds?l.kinds.map(csKindCode).join("·"):l._codes?l._codes.join("·"):(l.no?"L"+String(l.no).trim():"");const isNow=mem(l).includes(NOW);const HN=csA(l.notes).map(String).filter(n=>CSHN_RE.test(n.trim()));return '<details class="dbox csloc'+(isNow?' csnowloc':'')+'"><summary><div class="csl1">'+(code&&!l._m?csPlaceH(csBadgeIn(l,l._codes),csLocHref(l,c,x.date),l.kinds?l.no:code+' · Set','csloc-c '+(l.kinds?'csbase':'csmot')):'')+(l._m?'<span class="dn csmset">'+l._m.map(m=>'<span><b class="csplace csmot">L'+esc(String(m.no||"").trim())+'</b> '+esc(m.name||"")+'</span>').join("")+'</span>':'<span class="dn">'+esc(DN)+'</span>')+'<span class="csloc-i">'+[...new Set(mem(l).map(m=>csLocFp(c,m,x.date,true)))].join("")+csHnBtns(HN)+(LAD?'':csMap(l.map))+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span></div>'+(LAD&&SEENAD.has(fold(LAD))?'<span class="csaddr cssame">'+esc(L("Adresse wie"))+' '+esc(SEENAD.get(fold(LAD)))+'</span>':'')+(LAD&&!SEENAD.has(fold(LAD))&&SEENAD.set(fold(LAD),code||l.name)?'<a class="csaddr" href="'+esc(safeUrl(l.map||csMapQ(LAD)))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" data-nobub="1">'+esc(LAD)+'</a>':'')+(()=>{const mine=csA((c.order||{}).rows).filter(r=>r.sc&&mem(l).some(m=>csSceneLoc([m],r)===m)).map(r=>String(r.sc));const uniq=[...new Set(mine)];
        return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+csHnTexts(HN)+'</summary>'+
      (l.kinds?'':csNearHTML([].concat(...mem(l).map(m=>NEAR.get(m)||[])).filter((p,i,a)=>a.findIndex(y=>y.code===p.code&&y.u===p.u)===i).sort((a,b)=>a.d-b.d)))+(()=>{/* the address of the head only once: lines that only repeat it (also written differently) are left out, a place there shows «same address» */

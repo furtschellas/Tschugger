@@ -1327,4 +1327,10 @@ html body #view #cs-cast .csnowt{outline:2px solid var(--accent);outline-offset:
 html body #view details.csloc .csl1{flex-wrap:wrap;row-gap:4px}
 html body #view details.csloc>summary .csloc-i{flex-wrap:wrap;justify-content:flex-end}
 html body #view details.csloc>summary .csloc-i .csfpi .csi{width:15px;height:15px}
+/* phone: the callsheet never wider than the screen – long words and addresses wrap */
+@media (max-width:760px){html body #view .csview,html body #view .csjump{max-width:100%;overflow-wrap:anywhere}
+ html body #view .csview .csaddr,html body #view .csview .dn,html body #view .csview .cs-kv .v,html body #view .csview .ds{white-space:normal!important;max-width:100%;min-width:0}
+ html body #view .csview .csl1>*{min-width:0}
+ html body #view .csview .dbox,html body #view .csview details.cssec{grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%}
+ html body #view .csview .dbox>summary,html body #view .csview .dbox>*{min-width:0;max-width:100%}}
 </style>
