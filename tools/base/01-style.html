@@ -1402,9 +1402,17 @@ html body #view li.scdone>.sc{opacity:.55}
 /* Drehplan: the scene status top right of the scene */
 html body #view ol.tl>li.row>.sc{position:relative}
 html body #view ol.tl>li.row>.sc>.l1{padding-right:36px}
-html body #view ol.tl>li.row>.sc>.l1>.scack{position:absolute;top:8px;right:8px;margin:0}
+html body #view ol.tl>li.row>.sc>.l1>.scackw{position:absolute;top:8px;right:8px;margin:0}
 /* callsheet shooting order: the scene status left of the open button */
 html body #view .csscd>summary{position:relative}
-html body #view .csscd>summary .l1:has(.scack){padding-right:36px}
-html body #view .csscd>summary .scack{position:absolute;top:50%;right:42px;transform:translateY(-50%);margin:0;width:26px;height:26px}
+html body #view .csscd>summary .l1:has(.scackw){padding-right:36px}
+html body #view .csscd>summary .scackw{position:absolute;top:50%;right:42px;transform:translateY(-50%);margin:0}
+html body #view .csscd>summary .scack{width:26px;height:26px}
+/* scene status: begin–end or begin · running time left of the icon */
+html body #view .scackw{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex:0 0 auto}
+html body #view .scackt{font-family:var(--f-mono,monospace);font-size:11.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+html body #view .scackw:has(.sk1) .scackt{color:var(--accent);font-weight:700}
+html body #view .scackw .scack{margin-left:0}
+html body #view ol.tl>li.row>.sc>.l1:has(.scackt){padding-right:136px}
+html body #view .csscd>summary .l1:has(.scackt){padding-right:128px}
 </style>

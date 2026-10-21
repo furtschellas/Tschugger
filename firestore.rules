@@ -254,11 +254,13 @@ service cloud.firestore {
 
     // ---------- Szenen aus dem Drehplan (Quittierung) ----------
     // Quittieren (Stand s: 1 = Szene läuft, 2 = abgeschlossen): lesen alle aus der Crew, setzen nur mit «Szenen quittieren» (scenes.ack);
-    // Dokument-ID = Datum JJJJMMTT-Szene (keine Namen), Felder: Datum d, Zeitpunkt at, Stand s
+    // Dokument-ID = Datum JJJJMMTT-Szene (keine Namen), Felder: Datum d, Zeitpunkt at, Stand s, Unit u, Szene sc, Beginn b, Ende e (ms)
     match /sceneack/{id} {
       allow read: if crew();
-      allow create, update: if can('scenes.ack') && id.matches('[0-9]{8}-[a-z0-9]{1,24}') && only(['d', 'at', 's'])
+      allow create, update: if can('scenes.ack') && id.matches('[0-9]{8}-[a-z0-9]{1,24}') && only(['d', 'at', 's', 'u', 'sc', 'b', 'e'])
         && isDate(request.resource.data.d) && nearNow(request.resource.data.at) && request.resource.data.s in [1, 2]
+        && request.resource.data.get('u', '1') in ['1', '2', '3'] && request.resource.data.get('sc', '') is string && request.resource.data.get('sc', '').size() <= 24
+        && request.resource.data.get('b', 0) is int && request.resource.data.get('e', 0) is int
         && id.matches(request.resource.data.d.replace('-', '') + '-.*');
       allow delete: if can('scenes.ack');
     }
@@ -271,7 +273,7 @@ service cloud.firestore {
         && request.resource.data.by == myEmail()
         && request.resource.data.at == request.time   // Zeit vom Server, nicht frei wählbar
         && request.resource.data.op in ['set', 'update', 'delete', 'add', 'error']
-        && request.resource.data.col in ['roles', 'userroles', 'admins', 'owners', 'invites', 'members', 'menus', 'config', 'broadcasts', 'starts', 'requests', 'app']
+        && request.resource.data.col in ['roles', 'userroles', 'admins', 'owners', 'invites', 'members', 'menus', 'config', 'broadcasts', 'starts', 'requests', 'app', 'sceneack']
         && request.resource.data.sum is string && request.resource.data.sum.size() <= 300
         && request.resource.data.id is string && request.resource.data.id.size() <= 120;
       allow read: if isAdmin() || can('audit.view');
