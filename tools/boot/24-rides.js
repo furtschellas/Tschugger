@@ -30,7 +30,9 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))re
 /* the callsheet greys a ride 20 minutes after it was done: draw again when one crosses that time */
 {let OLDN=-1;setInterval(()=>{if(S.tab!=="dispo")return;const n=Object.values(window.RIDEACK||{}).filter(x=>x&&x.s!==1&&Date.now()-(+x.at||0)>20*60e3).length;let nk=null;try{const C=typeof CSCUR!=="undefined"&&CSCUR.c;if(C&&window.CSNOWK!=null){const l=csNowLoc(C,CSCUR.date,csLocs(C));nk=l?l.no+'|'+l.name:''}}catch(_){}
   /* also when the place of the shooting changes («jetzt hier») */
-  if((OLDN>=0&&n!==OLDN)||(nk!=null&&nk!==window.CSNOWK))render();OLDN=n},60e3)}
+  /* also when the scene being shot changes («Jetzt» in my day) */
+  let ns=null;try{if(window.CSNOWSC!=null&&typeof csNowScene==="function"){const r=csNowScene();ns=r?String(r.sc):""}}catch(_){}
+  if((OLDN>=0&&n!==OLDN)||(nk!=null&&nk!==window.CSNOWK)||(ns!=null&&ns!==window.CSNOWSC))render();OLDN=n},60e3)}
 
 /* links inside clickable callsheet headers (L-codes, addresses): open the link without toggling or triggering the surrounding element */
 document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.target.closest("a[data-nobub]");if(a)e.stopPropagation()},true);

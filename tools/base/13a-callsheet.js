@@ -116,6 +116,9 @@ function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.name)retur
 /* the row running now (shooting day = today): the last one that has started */
 /* the clock now as «HH:MM» (local time) – for the running row, the place now and the cast time now */
 function csHM(d){d=d||new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+/* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null */
+function csNowScene(x){x=x||(S.dispos||[]).find(y=>y&&y.date===todayISO());const c=x&&x.cs;if(!c||x.date!==todayISO())return null;const rows=csA((c.order||{}).rows);let i=csNowIdx(rows,x.date);
+  for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(/wrap|drehschluss/i.test(String(r.text||"")))return null}return null}
 function csNowIdx(rows,date){if(date!==todayISO())return -1;const now=csHM();let k=-1;
   csA(rows).forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});return k}
 /* which set a scene is shot on: by the scenes listed at the location, else by the set name */
@@ -454,7 +457,10 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   /* radio channels below the contact: one chip per channel («1 AD / AL», «2 Chat» …) */
   h+=csRadioHTML(c.radio);
   /* my day */
-  if(me){const mine=csMine(c,me);if(mine.length)h+='<section class="dsec csme" id="cs-mein" aria-label="'+esc(L("Mein Tag")+" · "+me.name)+'"><h2 class="csme-h">'+dtitle+' <span>'+fmtDate(x.date)+'</span></h2>'+mine.join("")+'</section>'}
+  /* my day: on the shooting day first the scene being shot now (with its place) */
+  const NS=csNowScene(x);window.CSNOWSC=NS?String(NS.sc):"";
+  const nowRow=NS?(()=>{let lo=null;try{lo=csSceneLoc(csLocs(c),NS)}catch(_){}return '<div class="csme-r csme-now"><span class="k">'+esc(L("Jetzt"))+'</span><span class="v"><b>'+esc(String(NS.sc))+'</b>'+(lo?' '+csPlaceA('L'+String(lo.no).trim(),csLocHref(lo,c,x.date),lo.name||""):'')+' <small>'+esc([NS.ie,NS.set].filter(Boolean).join(" · "))+'</small></span></div>'})():'';
+  if(me){const mine=csMine(c,me);if(mine.length)h+='<section class="dsec csme" id="cs-mein" aria-label="'+esc(L("Mein Tag")+" · "+me.name)+'"><h2 class="csme-h">'+dtitle+' <span>'+fmtDate(x.date)+'</span></h2>'+nowRow+mine.join("")+'</section>'}
   /* key people of the day */
   /* folded parts: sums and short facts in one line */
    const SU=csSums(c);

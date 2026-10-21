@@ -193,7 +193,9 @@ function locCard(g0){
     ?'<div class="adl">'+g.items.map(l=>{const ad=[l.venue,l.address].filter(Boolean).join(", ");return '<div><span class="addr">'+esc(ad)+'</span> <a href="'+esc(locHref(l,ad))+'" target="_blank" rel="noopener noreferrer">Maps</a></div>'}).join("")+'</div>'
     :(addr.length?'<div class="adl"><div><span class="addr">'+esc(addr.join(", "))+'</span> <a href="'+esc(locHref(g.items.find(l=>/^https:/.test(l.map||""))||g.items[0],addr.join(", ")))+'" target="_blank" rel="noopener noreferrer">Maps</a></div></div>':g.items.some(l=>/^https:/.test(l.map||""))?'<div class="adl"><div><span class="addr">'+L('Ort: TBA')+'</span> <a href="'+esc(g.items.find(l=>/^https:/.test(l.map||"")).map)+'" target="_blank" rel="noopener noreferrer">Maps</a></div></div>':'<div class="adl"><div><span class="addr">'+L('Ort: TBA')+'</span></div></div>');
   const fps=[...new Map(g.items.flatMap(l=>fpFor(l.name,[l.venue,l.address].filter(Boolean).join(", "))).map(f=>[f.url,f])).values()];
-  return cardWrap("card:"+g.key,head,addrHTML,body+fpLinks(fps,[]));
+  /* the location where the shooting is now: pink frame (as in the callsheet) */
+  let now=false;try{const ns=typeof csNowScene==="function"&&csNowScene();now=!!ns&&allSc.some(x=>norm(x)===norm(ns.sc))}catch(_){}
+  const card=cardWrap("card:"+g.key,head,addrHTML,body+fpLinks(fps,[]));return now?card.replace('<div class="lc scd','<div class="lc scd lcnow'):card;
 }
 function renderLoc(){
   if(!S.locs.length)return emptyHTML("Motivliste");
