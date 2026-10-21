@@ -194,10 +194,10 @@ async function onGateClick(e){
   }
 }
 
-/* the role or the rights of this person were changed: a short welcome with what is new (and what is gone), once */
+/* the role of this person was changed: a short welcome with what is new (and what is gone), once */
 function roleChanged(prev){if(!prev||!ME)return;const was=prev.a?"admin":(prev.r||""),now=isOwner()?"owner":COADMIN?"admin":(MYROLE||"");
   const pp=new Set(prev.a?(prev.ap||[]):(prev.p||[])),np=new Set(now==="admin"?ADMINPERMS:now==="owner"?PERMS.map(x=>x[0]):MYPERMS);
-  const add=[...np].filter(k=>!pp.has(k)),rem=[...pp].filter(k=>!np.has(k));if(was===now&&!add.length&&!rem.length)return;
+  const add=[...np].filter(k=>!pp.has(k)),rem=[...pp].filter(k=>!np.has(k));if(was===now)return;   /* only when the role itself changed (new rights of the same role: no message) */
   /* only once per change, also across devices: the shown state is kept with the synced settings */
   let h=0;for(const ch of now+":"+[...np].sort().join(","))h=(h*31+ch.charCodeAt(0))|0;const sig=(h>>>0).toString(36);
   let seen="";try{seen=localStorage.getItem("rc")||""}catch(_){}if(seen===sig)return;

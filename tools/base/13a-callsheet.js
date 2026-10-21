@@ -579,9 +579,9 @@ function csApplyCast(){const d=document.getElementById("cs-cast");if(!d)return;c
 csOn("click",e=>{if(!e.target.closest("[data-cstview]"))return;CSCASTT=!CSCASTT;csApplyCast()});
 csOn("toggle",e=>{const d=e.target;if(d&&d.id==="cs-cast"&&d.open&&CSCASTT){CSCASTT=false;csApplyCast()}},true);
 csOn("click",e=>{const sm=e.target.closest("#cs-order>summary");if(!sm||e.target.closest("a,button"))return;const d=sm.parentElement;e.preventDefault();
-  /* the button opens and closes all scene details at once: closed → open with all details, details open → all closed, all closed → part closed */
-  const sc=[...d.querySelectorAll("details.csscd")],any=sc.some(x=>x.open);
-  if(!d.open){d.open=true;sc.forEach(x=>x.open=true);d.dataset.all="1"}else if(any){sc.forEach(x=>x.open=false);d.dataset.all="0"}else{d.dataset.all="0";d.open=false}});
+  /* opens in two steps: minimum (folded) → middle (the rows, scenes folded) → all (every scene open) → folded again */
+  const sc=[...d.querySelectorAll("details.csscd")],all=sc.length&&sc.every(x=>x.open);
+  if(!d.open){d.open=true;sc.forEach(x=>x.open=false);d.dataset.all="0"}else if(sc.length&&!all){sc.forEach(x=>x.open=true);d.dataset.all="1"}else{sc.forEach(x=>x.open=false);d.dataset.all="0";d.open=false}});
 csOn("click",e=>{const sm=e.target.closest("#cs-loc>summary");if(!sm||e.target.closest("a"))return;e.preventDefault();const d=sm.parentElement;d.open=true;
   const ls=[...d.querySelectorAll("details.csloc")],all=ls.length&&ls.every(x=>x.open);ls.forEach(x=>x.open=!all);d.dataset.all=all?"0":"1"});
 csOn("click",e=>{const b=e.target.closest("[data-cssc]");if(!b)return;e.preventDefault();e.stopPropagation();const sc=b.dataset.cssc;
