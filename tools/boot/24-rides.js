@@ -39,4 +39,4 @@ document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.targ
 window.RIDEOPEN=window.RIDEOPEN||new Set();
 document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest("#view .cs-card");if(!c||!c.querySelector(".ridest.rs2")||e.target.closest("a,button,input,select"))return;
   const id=(c.querySelector("[data-rideack]")||{}).dataset;const k=id&&id.rideack;const on=!c.classList.contains("csopen");c.classList.toggle("csopen",on);if(k){if(on)RIDEOPEN.add(k);else RIDEOPEN.delete(k)}});
-{const v=document.getElementById("view");if(v)new MutationObserver(()=>{if(!RIDEOPEN.size)return;v.querySelectorAll(".cs-card [data-rideack]").forEach(b=>{if(RIDEOPEN.has(b.dataset.rideack))b.closest(".cs-card").classList.add("csopen")})}).observe(v,{childList:true})}
+csAfter(()=>{if(!RIDEOPEN.size)return;document.querySelectorAll("#view .cs-card [data-rideack]").forEach(b=>{if(RIDEOPEN.has(b.dataset.rideack))b.closest(".cs-card").classList.add("csopen")})});
