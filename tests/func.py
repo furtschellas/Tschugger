@@ -555,8 +555,8 @@ async def owner_tests(p, port):
           window.SCACK={};const a=csNowIdx(rows,t);window.SCACK={[scAckId(t,'1')]:{d:t,s:2,at:1}};const b=csNowIdx(rows,t);window.SCACK[scAckId(t,'2')]={d:t,s:1,at:1};const c=csNowIdx(rows,t);
           window.SCACK[scAckId(t,'2')].s=2;window.SCACK[scAckId(t,'3')]={d:t,s:2,at:1};const d=csNowIdx(rows,t);
           window.canPerm=()=>false;const v=scAckBtn(t,'1');window.canPerm=p=>p==='scenes.ack';const w=scAckBtn(t,'3');window.SCACK=keep;window.canPerm=kp;
-          return {a,b,c,d,view:/^<span class="scack sk2"/.test(v),btn:/^<button[^>]*data-scack=/.test(w),id:scAckId('2026-10-21','186 pt1A')}})()""")
-        check("Drehplan: Szenen quittieren (offen → läuft → erledigt), «jetzt» folgt der Quittierung, Knopf nur mit Berechtigung", sa in (None, {"a": sa and sa["a"], "b": 1, "c": 1, "d": -1, "view": True, "btn": True, "id": "20261021-186pt1a"}), sa)
+          return {a,b,c,d,view:/^<span class="scack sk2"/.test(v),btn:/^<button[^>]*data-scack=/.test(w),id:scAckId('2026-10-21','186 pt1A'),same:scAckId('2026-10-21','DJ 21 CONT')===scAckId('2026-10-21','21')}})()""")
+        check("Drehplan und Callsheet: Szenen quittieren gemeinsam (offen → läuft → erledigt), «jetzt» folgt der Quittierung, Knopf nur mit Berechtigung", sa in (None, {"a": sa and sa["a"], "b": 1, "c": 1, "d": -1, "view": True, "btn": True, "id": "20261021-186pt1a"}), sa)
         re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
           const r0={t1:'07:30',t2:'08:00',from:'Hotel',to:'Base',vehicle:'Van 1',driver:'Max Fahrer',passengers:'Anna Muster'};S.dispos=[{date:t,cs:{transport:[r0]}}];
           const id=rideId(t,r0);window.RIDEEDIT={[id]:{t1:'07:45',passengers:'Anna Muster, Lena Test'}};window.REDVER=(window.REDVER||0)+1;rideEditApply();const r=S.dispos[0].cs.transport[0];
