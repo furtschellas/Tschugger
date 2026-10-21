@@ -151,7 +151,9 @@ function itemHTML(it){
   if(it.fx)meta.push('<span>'+esc(it.fx)+' FX</span>');
   if(it.xx)meta.push('<span>'+esc(it.xx)+' Extras'+'</span>');
   const cg=window.chgFor&&window.__mctx?window.chgFor(window.__mctx.date,window.__mctx.u,it.sc):"";
-  return '<li class="row'+(cg?' chg':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
+  /* Drehplan of today: the scene being shot now gets the pink frame (as in the callsheet) */
+  let nowSc=false;try{const c0=window.__mctx;if(c0&&!c0.cs&&c0.date===todayISO()&&typeof csNowScene==="function"){const ns=csNowScene();nowSc=!!ns&&norm(ns.sc)===norm(it.sc)}}catch(_){}
+  return '<li class="row'+(cg?' chg':'')+(nowSc?' scnow':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span></div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
     (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
