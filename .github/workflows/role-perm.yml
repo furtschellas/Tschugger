@@ -1,6 +1,6 @@
 name: Rollen - Recht ergänzen
 
-# einmalig von Hand: alle Rollen bekommen das neue Recht «Locations sehen» (view.loc)
+# einmalig von Hand: alle Rollen bekommen das neue Recht «Infos sehen» (view.info)
 on:
   workflow_dispatch:
 
