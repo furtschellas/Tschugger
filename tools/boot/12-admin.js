@@ -207,8 +207,16 @@ function rolesSec(){
   const cnt=id=>id==="admin"?ADM.adm.length:Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e)).length;
   const roles=(ADM.roles||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG));
   const pplLbl=id=>cnt(id)+' '+L(cnt(id)===1?"Person":"Personen");
+  /* who has this role: folded list, a person added right here (select) or taken out (×) */
+  const nameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name))||(i&&i.name)||cp.name||e};
+  const everyone=[...new Set(ADM.mem.map(m=>m.email).concat(ADM.inv.map(i=>i.id)))].filter(e=>e&&!ADMINS.includes(e));
+  const ppl=id=>(id==="admin"?ADM.adm.slice():Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e))).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),LANG));
+  const pplSec=id=>{const l=ppl(id),can_=canRoleAssign()&&(id!=="admin"||isAdmin()),cand=can_?everyone.filter(e=>!l.includes(e)&&canRole(e)).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),LANG)):[];
+    return '<details class="arppl" data-sec="rppl-'+esc(id)+'"'+(SECS["rppl-"+id]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+l.length+')</summary>'+
+      (l.length?'<ul class="paccl">'+l.map(e=>'<li><span>'+esc(nameOf(e))+'</span>'+(can_&&canRole(e)?'<button type="button" class="lnk arpx" data-rpout="'+esc(e)+'" '+ariaTip(L("Aus der Rolle nehmen"))+'>×</button>':'')+'</li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+
+      (cand.length?'<label class="arl arpadd">'+L("Person hinzufügen")+'<select data-rpadd="'+esc(id)+'"><option value="">'+esc(L("Person wählen …"))+'</option>'+cand.map(e=>'<option value="'+esc(e)+'">'+esc(nameOf(e))+(nameOf(e)!==e?' · '+esc(e):'')+'</option>').join("")+'</select></label>':'')+'</details>'};
   const row=(id,name,perms,fixedName)=>{const open=ADM.redit===id;
-    return '<div class="arole'+(open?' open':'')+'"><div class="arh"><div class="arn"><b>'+esc(name)+(id==="crew"?' <span class="ust role">'+L("Standard")+'</span>':'')+'</b><small>'+(id==="crew"?L("Wird neuen Benutzer:innen automatisch zugewiesen.")+' ':'')+(perms.length?perms.length+' '+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+' · '+pplLbl(id)+'</small></div>'+(canRoleEdit()&&(id!=="admin"||isAdmin())&&(isAdmin()||id!==MYROLE)?'<button type="button" class="pillbtn" data-redit="'+esc(id)+'">'+L(open?"Schliessen":"Bearbeiten")+'</button>':'')+'</div>'+
+    return '<div class="arole'+(open?' open':'')+'"><div class="arh"><div class="arn"><b>'+esc(name)+(id==="crew"?' <span class="ust role">'+L("Standard")+'</span>':'')+'</b><small>'+(id==="crew"?L("Wird neuen Benutzer:innen automatisch zugewiesen.")+' ':'')+(perms.length?perms.length+' '+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+' · '+pplLbl(id)+'</small></div>'+(canRoleEdit()&&(id!=="admin"||isAdmin())&&(isAdmin()||id!==MYROLE)?'<button type="button" class="pillbtn" data-redit="'+esc(id)+'">'+L(open?"Schliessen":"Bearbeiten")+'</button>':'')+'</div>'+pplSec(id)+
       (open?'<form class="arolef" data-role="'+esc(id)+'">'+(fixedName?'<input type="hidden" name="rn" value="'+esc(name)+'">':'<label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required value="'+esc(name)+'"></label>')+permBoxes(perms)+
         '<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Speichern")+'</button>'+(id==="crew"?'':id==="admin"?'<button type="button" class="lnk" data-rreset>'+L("Standard wiederherstellen")+'</button>':'<button type="button" class="lnk" data-rdel="'+esc(id)+'">'+L("Rolle löschen")+'</button>')+'</div></form>':'')+'</div>'};
   return '<div class="admins"><h3>'+L("Rollen")+'</h3><p class="ahint">'+L("Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person alle Drehdaten, die Crewliste, das Drehbuch und das Blocking, aber keine Verwaltung. Mit Rolle sieht sie nur die Bereiche, die die Rolle erlaubt.")+'</p>'+(window.simPicker?window.simPicker():"")+
@@ -264,12 +272,14 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel
   if(!confirmSafe(L("Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.").replace("{r}",ro.name||id)))return;
   try{const {F,db}=await fb();for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)await F.deleteDoc(F.doc(db,"userroles",em));await F.deleteDoc(F.doc(db,"roles",id));showMsg(L("Rolle gelöscht."),2500);await admLoad()}
   catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
-document.addEventListener("change",async e=>{const sl=e.target.closest("select[data-urole]");if(!sl||!canRoleAssign())return;e.stopPropagation();const em=sl.dataset.urole,v=sl.value;if(!canRole(em)||(v==="owner"&&!isOwner())||(v==="admin"&&!isAdmin())){render();return}
+document.addEventListener("change",async e=>{const sl=e.target.closest("select[data-urole]");if(!sl||!canRoleAssign())return;e.stopPropagation();await setUserRole(sl.dataset.urole,sl.value,sl)},true);
+/* give a person a role (owner, admin, a role or none): from the user list and from the role management */
+async function setUserRole(em,v,sl){if(!canRoleAssign()||!canRole(em)||(v==="owner"&&!isOwner())||(v==="admin"&&!isAdmin())){render();return}
   /* applied right away in the list (no full reload); written in the background, undone on error. Owners are managed by owners only */
   const prev={ur:ADM.ur[em],adm:ADM.adm.includes(em),own:ADMINS.includes(em)};
   const setLocal=(own,adm,ur)=>{const k=ADMINS.indexOf(em);if(own&&k<0)ADMINS.push(em);if(!own&&k>=0)ADMINS.splice(k,1);ADM.own=(ADM.own||[]).filter(x=>x!==em);if(own)ADM.own.push(em);ADM.adm=ADM.adm.filter(x=>x!==em);if(adm)ADM.adm.push(em);if(ur)ADM.ur[em]=ur;else delete ADM.ur[em]};
   setLocal(v==="owner",v==="admin",v&&v!=="owner"&&v!=="admin"?v:"");
-  try{sl.blur()}catch(_){}admIndex&&admIndex();render();
+  try{sl&&sl.blur()}catch(_){}admIndex&&admIndex();render();
   try{const {F,db}=await fb();
     if(v==="owner")await F.setDoc(F.doc(db,"owners",em),{addedAt:F.serverTimestamp()});
     else if(prev.own)await F.deleteDoc(F.doc(db,"owners",em));
@@ -277,7 +287,7 @@ document.addEventListener("change",async e=>{const sl=e.target.closest("select[d
     if(v&&v!=="owner"&&v!=="admin")await F.setDoc(F.doc(db,"userroles",em),{role:v,at:F.serverTimestamp()});else if(prev.ur)await F.deleteDoc(F.doc(db,"userroles",em));
     showMsg(L("Rolle gespeichert."),2500)}
   catch(err){console.error(err);setLocal(prev.own,prev.adm,prev.ur);render();
-    showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),9000)}},true);
+    showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),9000)}}
 /* user list: one compact card per person, filter chips with counts, actions folded away */
 const initials=n=>String(n||"?").split(/[\s@._-]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
 function userList(rows,vis,o){
@@ -621,3 +631,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-ced]");if(
 
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
+
+/* role management: a person into a role (select) or out of it (× → no role) */
+document.addEventListener("change",async e=>{const sl=e.target.closest("select[data-rpadd]");if(!sl||!sl.value)return;e.stopPropagation();const id=sl.dataset.rpadd;SECS["rppl-"+id]=true;await setUserRole(sl.value,id,sl)},true);
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-rpout]");if(!b)return;e.preventDefault();const em=b.dataset.rpout;
+  if(!confirmSafe(L("{n} aus der Rolle nehmen?").replace("{n}",b.closest("li").querySelector("span").textContent)))return;await setUserRole(em,"",null)});
