@@ -333,6 +333,8 @@ Object.assign(I18N,{
  "Person hinzufügen":{fr:"Ajouter une personne",it:"Aggiungi persona",en:"Add person",hi:"व्यक्ति जोड़ें"},
  "Person wählen …":{fr:"Choisir une personne …",it:"Scegli persona …",en:"Choose person …",hi:"व्यक्ति चुनें …"},
  "{n} aus der Rolle nehmen?":{fr:"Retirer {n} du rôle ?",it:"Togliere {n} dal ruolo?",en:"Remove {n} from the role?",hi:"{n} को भूमिका से हटाएँ?"},
+ "Alle Fahrten als erledigt":{fr:"Tous les trajets terminés",it:"Tutti i tragitti completati",en:"Mark all rides done",hi:"सभी यात्राएँ पूरी"},
+ "Alle {n} Fahrten vom {d} als erledigt markieren?":{fr:"Marquer les {n} trajets du {d} comme terminés ?",it:"Segnare tutti i {n} tragitti del {d} come completati?",en:"Mark all {n} rides of {d} as done?",hi:"{d} की सभी {n} यात्राएँ पूरी चिह्नित करें?"},
  "Pers.":{fr:"pers.",it:"pers.",en:"ppl."},
  "Infos nach Dept.":{fr:"Infos par dépt.",it:"Info per rep.",en:"Info by dept."},
  "Notizen & Wetter":{fr:"Notes & météo",it:"Note & meteo",en:"Notes & weather"},

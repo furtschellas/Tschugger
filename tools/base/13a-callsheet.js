@@ -489,7 +489,9 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset])),false,"","",SU.extras);
   h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","",SU.veh);
   /* transport and travel */
-  h+=csSec(L("Transport mit Fahrer"),csTvBtn("trans")+(c.drivers?'<div class="csdrvl">'+String(c.drivers).replace(/o\.\s*p\.\s*D\.?\s*=\s*on personal decision/i,"").split(/\s*[|\n;]\s*/).filter(x=>x.trim()).map(x=>{const m=x.match(CSPH);let nm=m?x.replace(m[0],"").trim():x.trim();
+  /* Fahrten Manager: all rides of the day as done in one go */
+  const allDone=csA(c.transport).length&&typeof canPerm==="function"&&canPerm("rides.manage")?'<button type="button" class="pillbtn csrideall" data-rideall="'+esc(x.date||"")+'">'+(window.RIDE_ICO&&RIDE_ICO[2]||"")+' '+esc(L("Alle Fahrten als erledigt"))+'</button>':'';
+  h+=csSec(L("Transport mit Fahrer"),allDone+csTvBtn("trans")+(c.drivers?'<div class="csdrvl">'+String(c.drivers).replace(/o\.\s*p\.\s*D\.?\s*=\s*on personal decision/i,"").split(/\s*[|\n;]\s*/).filter(x=>x.trim()).map(x=>{const m=x.match(CSPH);let nm=m?x.replace(m[0],"").trim():x.trim();
       /* a number without a name (forgotten on the callsheet): the name from other callsheets or the crew list with that number */
       if(!nm&&m)nm=csDriverByPhone(m[0]);
      return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRideCell(x.date,r),r.vehicle,r.driver,r.passengers]),1),false,csTvCls("trans"),"trans",SU.trans);
@@ -615,3 +617,12 @@ function csCastNow(){const sec=document.getElementById("cs-cast");if(!sec)return
   sec.querySelectorAll(".cs-card").forEach(cd=>mark([...cd.querySelectorAll(".cs-kv")]))}
 csAfter(csCastNow);
 setInterval(()=>{if(typeof S!=="undefined"&&S.tab==="dispo")csCastNow()},60e3);
+
+/* «Alle Fahrten als erledigt»: every ride with driver of that day gets the tick (one batch) */
+csOn("click",async e=>{const b=e.target.closest("[data-rideall]");if(!b||typeof canPerm!=="function"||!canPerm("rides.manage"))return;e.preventDefault();const date=b.dataset.rideall;
+  const x=(S.dispos||[]).find(y=>y&&y.date===date);const rs=csA(x&&x.cs&&x.cs.transport);if(!rs.length)return;
+  if(!confirmSafe(L("Alle {n} Fahrten vom {d} als erledigt markieren?").replace("{n}",rs.length).replace("{d}",date.split("-").reverse().join("."))))return;
+  b.disabled=true;try{const {F,db}=await fb();const bt=F.writeBatch(db);const now=Date.now();const ids=[...new Set(rs.map(r=>rideId(date,r)).filter(Boolean))];
+    for(const id of ids)bt.set(F.doc(db,"rideack",id),{d:date,at:now,s:2});await bt.commit();window.RIDEACK=window.RIDEACK||{};for(const id of ids)window.RIDEACK[id]={d:date,at:now,s:2};
+    if(typeof savedPop==="function")savedPop(true);render()}
+  catch(err){b.disabled=false;showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich."),5000)}});
