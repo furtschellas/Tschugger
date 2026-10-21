@@ -62,9 +62,9 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   if(st===0){const run=scRunning(date,u,id);if(run){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}}
   b.disabled=true;
   if(st===0&&sc==="wrap"){const now=Date.now();for(const [rid,rx] of Object.entries(window.SCACK))if(rx&&rx.d===date&&rx.s===1&&String(rx.u||"1")===String(u||"1")){const k=rx.sc||rid.split("-").slice(1).join("-");try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now,e:now})}catch(_){}}}
-  try{const v=st===0&&sc==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};await scWrite(date,sc,u,v);scShareAsk(date,sc,u,v)}
+  try{const v=st===0&&sc==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};await scWrite(date,sc,u,v);if(v.s===2)scShareAsk(date,sc,u,v)}   /* WhatsApp only when it is finished (not when it starts) */
   catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich."),4000)}},true);
-/* after a quittance: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
+/* after a scene (lunch, wrap) was finished: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
 function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((window.UNAME&&UNAME[u])||u)+" Unit":"",dd=" ("+date.split("-").reverse().slice(0,2).join(".")+"."+un+")";
   if(sc==="wrap")return "Wrap "+scHM(v.e||v.b)+" – "+L("Drehtag abgeschlossen")+dd;
   if(sc==="lunch")return v.s===1?"Lunch "+L("ab")+" "+scHM(v.b)+dd:L("Lunch vorbei, es geht weiter")+" "+scHM(v.e)+dd;
