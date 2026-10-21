@@ -62,8 +62,21 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   if(st===0){const run=scRunning(date,u,id);if(run){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}}
   b.disabled=true;
   if(st===0&&sc==="wrap"){const now=Date.now();for(const [rid,rx] of Object.entries(window.SCACK))if(rx&&rx.d===date&&rx.s===1&&String(rx.u||"1")===String(u||"1")){const k=rx.sc||rid.split("-").slice(1).join("-");try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now,e:now})}catch(_){}}}
-  try{await scWrite(date,sc,u,st===0&&sc==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()})}
+  try{const v=st===0&&sc==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};await scWrite(date,sc,u,v);scShareAsk(date,sc,u,v)}
   catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich."),4000)}},true);
+/* after a quittance: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
+function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((window.UNAME&&UNAME[u])||u)+" Unit":"",dd=" ("+date.split("-").reverse().slice(0,2).join(".")+"."+un+")";
+  if(sc==="wrap")return "🎬 Wrap "+scHM(v.e||v.b)+" – "+L("Drehtag abgeschlossen")+dd;
+  if(sc==="lunch")return v.s===1?"🍽 Lunch "+L("ab")+" "+scHM(v.b)+dd:"🎬 "+L("Lunch vorbei, es geht weiter")+" "+scHM(v.e)+dd;
+  return v.s===1?"🎬 "+scLabel(sc)+" "+L("läuft seit")+" "+scHM(v.b)+dd:"✅ "+scLabel(sc)+" "+L("abgeschlossen")+" "+scHM(v.b)+"–"+scHM(v.e)+" ("+scDur((v.e||0)-(v.b||0))+")"+dd}
+function scShareAsk(date,sc,u,v){try{if(localStorage.getItem("scwa:no")==="1")return}catch(_){}
+  const txt=scShareText(date,sc,u,v),d=mkDialog("scwadlg",null,{replace:true});
+  d.innerHTML='<div class="a2box scbox"><h3>'+esc(L("Info per WhatsApp senden?"))+'</h3><p class="scwat">'+esc(txt)+'</p>'+
+    '<div class="arb"><a class="scwa" href="https://wa.me/?text='+encodeURIComponent(txt)+'" target="_blank" rel="noopener noreferrer" data-scwago>WhatsApp</a><button type="button" class="lnk" data-scwax>'+esc(L("Nein"))+'</button></div>'+
+    '<label class="ck scwano"><input type="checkbox" data-scwano> '+esc(L("Nicht mehr fragen (dieses Gerät)"))+'</label></div>';
+  d.addEventListener("change",e=>{if(e.target.closest("[data-scwano]")){try{e.target.checked?localStorage.setItem("scwa:no","1"):localStorage.removeItem("scwa:no")}catch(_){}}});
+  d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-scwax]")||e.target.closest("[data-scwago]"))setTimeout(()=>d.remove(),50)});
+  document.body.appendChild(d)}
 /* popup of a quittiert scene: state, begin and end time; «offen» takes the quittance away */
 function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{},st=scState(date,sc);
   const d=mkDialog("scackdlg",null,{replace:true});let cur=st;
@@ -100,23 +113,27 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
   /* one entry: name, state, planned time; begin, end and duration always (– when not known; running: the counter) */
   const row=(name,st,plan,b,e,run)=>'<li class="scl'+(st===0?' sclo':'')+'"><div class="audh"><b>'+name+'</b>'+(plan?' <span class="audt">'+esc(L("Plan"))+' '+esc(plan)+'</span>':'')+'<span class="audw">'+esc(st===1?L("läuft"):st===2?L("abgeschlossen"):L("offen"))+'</span></div>'+
     '<div class="audb sclt"><span>'+esc(L("Beginn"))+' <b>'+(b?esc(scHM(b)):'–')+'</b></span><span>'+esc(L("Ende"))+' <b>'+(e?esc(scHM(e)):'–')+'</b></span><span>'+esc(L("Dauer"))+' <b>'+(b&&e?esc(dur(e-b)):b&&run?'<span data-scrun="'+b+'">'+esc(dur(Date.now()-b))+'</span>':'–')+'</b></span></div></li>';
-  const html=[...days].sort().reverse().map(d=>{const l=SCLOG.list.filter(x=>x.d===d),day=(S.days||[]).find(y=>y.date===d)||{},its=arr(day.items),cs=((S.dispos||[]).find(y=>y&&y.date===d)||{});
+  /* one unit of one day: fixed rows setup (planned begin until the first scene), Drehstart (until the wrap), lunch, wrap – plus the further setups and the scenes, by time */
+  const unitRows=(d,u,l,day,cs)=>{const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items);
     const tx=i=>String(i.n||""),ks=scRowKeys(its,tx),pl=k=>{const i=ks.indexOf(k);return i>=0?hm(its[i].t)||"":""};
     const setup=its.find(i=>!i.sc&&/^\s*set[\s-]?up\b/i.test(tx(i))),firstSc=its.find(i=>i.sc);
-    const get=k=>l.find(x=>key(x)===k&&String(x.u||"1")==="1"),scs=l.filter(x=>!(key(x)==="lunch"||key(x)==="wrap")||String(x.u||"1")!=="1");
+    const get=k=>l.find(x=>key(x)===k),scs=l.filter(x=>!(key(x)==="lunch"||key(x)==="wrap"));
     const real=scs.filter(x=>!isEv(key(x))),start=real.length?Math.min(...real.map(p0).filter(Boolean)):0,lu=get("lunch"),wr=get("wrap");
     const ms=hhmm=>{const v=String(hhmm||"").match(/^(\d{1,2}):(\d{2})$/);if(!v)return 0;const x=new Date(d+"T00:00:00");x.setHours(+v[1],+v[2],0,0);return x.getTime()};
-    const plSetup=setup?hm(setup.t)||"":"",plStart=hm(cs.shootCall||"")||(firstSc?hm(firstSc.t)||"":"");
-    const wrE=wr?(+wr.e||p0(wr)):0;
-    /* fixed rows: setup (planned begin until the first scene), Drehstart (until the wrap), lunch, wrap – plus the further setups and the scenes, by time */
-    const ent=[];
+    const plSetup=setup?hm(setup.t)||"":"",plStart=(u==="1"?hm(cs.shootCall||""):"")||(firstSc?hm(firstSc.t)||"":"");
+    const wrE=wr?(+wr.e||p0(wr)):0,ent=[];
     ent.push([ms(plSetup)||1,row("Setup",start?2:0,plSetup,ms(plSetup),start,false)]);
     ent.push([start||ms(plStart)||2,row(esc(L("Drehstart")),start?(wrE?2:1):0,plStart,start,wrE,!!start&&!wrE&&d===t)]);
-    ent.push([lu?p0(lu):ms(pl("lunch"))||3,row("Lunch",lu?(lu.s===1?1:2):0,pl("lunch"),lu?p0(lu):0,lu&&lu.s!==1?+lu.e||0:0,!!lu&&lu.s===1)]);
-    for(const x of scs){const k=key(x);ent.push([p0(x),row(esc(scLabel(k))+(x.u&&x.u!=="1"?' <span class="audt">'+esc((window.UNAME&&UNAME[x.u])||x.u)+' Unit</span>':''),x.s===1?1:2,isEv(k)?pl(k):"",p0(x),x.s===1?0:+x.e||0,x.s===1&&d===t)])}
+    ent.push([lu?p0(lu):ms(pl("lunch"))||8e15,row("Lunch",lu?(lu.s===1?1:2):0,pl("lunch"),lu?p0(lu):0,lu&&lu.s!==1?+lu.e||0:0,!!lu&&lu.s===1)]);
+    for(const x of scs){const k=key(x);ent.push([p0(x),row(esc(scLabel(k)),x.s===1?1:2,isEv(k)?pl(k):"",p0(x),x.s===1?0:+x.e||0,x.s===1&&d===t)])}
     ent.push([wrE||ms(pl("wrap"))||9e15,row("Wrap",wr?2:0,pl("wrap"),wrE?start:0,wrE,false)]);
-    ent.sort((a,b)=>a[0]-b[0]);
-    return '<details class="tstsu"><summary>'+esc(String(d).split("-").reverse().join("."))+' · '+real.length+' '+esc(L("Szenen"))+(start&&wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(wrE-start)):'')+'</summary><ul class="audlist">'+ent.map(e=>e[1]).join("")+'</ul></details>'}).join("");
+    ent.sort((a,b)=>a[0]-b[0]);return {html:'<ul class="audlist">'+ent.map(e=>e[1]).join("")+'</ul>',n:real.length,start,wrE}};
+  /* several units on a day: one part per unit (1st Unit, 2nd Unit …) */
+  const html=[...days].sort().reverse().map(d=>{const l=SCLOG.list.filter(x=>x.d===d),day=(S.days||[]).find(y=>y.date===d)||{},cs=((S.dispos||[]).find(y=>y&&y.date===d)||{});
+    const us=[...new Set(["1"].concat(l.map(x=>String(x.u||"1"))))].sort(),parts=us.map(u=>[u,unitRows(d,u,l.filter(x=>String(x.u||"1")===u),day,cs)]);
+    const real={length:parts.reduce((a,[,p])=>a+p.n,0)},p1=parts[0][1],start=p1.start,wrE=p1.wrE,
+      body=us.length>1?parts.map(([u,p])=>'<p class="sclu"><b>'+esc(((window.UNAME&&UNAME[u])||u)+' Unit')+'</b> · '+p.n+' '+esc(L("Szenen"))+(p.start&&p.wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(p.wrE-p.start)):'')+'</p>'+p.html).join(""):p1.html;
+    return '<details class="tstsu"><summary>'+esc(String(d).split("-").reverse().join("."))+' · '+real.length+' '+esc(L("Szenen"))+(start&&wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(wrE-start)):'')+'</summary>'+body+'</details>'}).join("");
   return '<details class="tstsec scld" data-lsec="sclog"'+(SCLOG.open?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Szenen-Protokoll")),'<span class="tsth">'+SCLOG.list.filter(x=>!isEv(key(x))).length+' '+esc(L("Szenen"))+'</span>',(()=>{const m=Math.max(0,...SCLOG.list.map(x=>+x.at||0))||SCLOG.at||Date.now();const z=new Date(m);return esc(String(z.getDate()).padStart(2,"0")+"."+String(z.getMonth()+1).padStart(2,"0")+". "+scHM(m))})()):esc(L("Szenen-Protokoll")))+'</summary>'+
     '<div class="admins"><p class="ahint">'+esc(L("Beginn, Ende und Dauer jeder quittierten Szene (Drehplan und Callsheet), dazu Setup, Drehstart, Lunch und Wrap."))+'</p>'+
     (html||'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+
