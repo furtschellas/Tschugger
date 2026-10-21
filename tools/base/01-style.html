@@ -1300,4 +1300,8 @@ html body #view .csradio2 .csrlab{font-weight:700;color:var(--ink);margin-right:
 /* bases: every kind its own little badge with its own icon (Base, WHM, Lunch, Prod, DIT …) */
 html body #view .csplace.csbase:has(.csk){border:0;padding:0!important;gap:3px;background:none}
 html body #view .csplace.csbase .csk{display:inline-flex;align-items:center;gap:3px;border:1px solid currentColor;border-radius:6px;padding:0 4px;font-weight:700}
+/* bases as icons only (the name in the tooltip, for screen readers hidden text) */
+html body #view .csplace.csbase .csk{padding:1px 3px}
+html body #view .csplace.csbase .csk .csi{width:18px;height:18px}
+html body #view .csplace .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>

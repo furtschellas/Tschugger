@@ -25,6 +25,8 @@ const CSI={phone:csI('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 
   dinner:csI('<path d="M3.5 13h17a8.5 8.5 0 0 1-17 0z"/><path d="M14.5 3.5a3.2 3.2 0 1 0 4 4 2.6 2.6 0 0 1-4-4z"/>'),
   prod:csI('<rect x="5" y="3.5" width="14" height="17" rx="1.2"/><path d="M8.5 7.5h2M13.5 7.5h2M8.5 11h2M13.5 11h2M10.5 20.5v-4.5h3v4.5"/>'),
   dit:csI('<rect x="3.5" y="4.5" width="17" height="11.5" rx="1.5"/><path d="M8.5 20h7M12 16v4M7 12.5l2.5-3 2 2 2.5-3.5 3 4.5"/>'),
+  whmc:csI('<path d="M7 5.5a1.6 1.6 0 1 1 1.6 1.6v1.3"/><path d="M8.6 8.4L2.5 12.8a.8.8 0 0 0 .5 1.4h11.2a.8.8 0 0 0 .5-1.4z"/><path d="M18.2 13.5l1.3 2.6 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4z"/>'),
+  whme:csI('<path d="M7 5.5a1.6 1.6 0 1 1 1.6 1.6v1.3"/><path d="M8.6 8.4L2.5 12.8a.8.8 0 0 0 .5 1.4h11.2a.8.8 0 0 0 .5-1.4z"/><circle cx="16.5" cy="15" r="1.6"/><circle cx="20.5" cy="15.6" r="1.3"/><path d="M13.8 21c.3-2 1.4-3.1 2.7-3.1s2.4 1.1 2.7 3.1M19.3 18.4c.9-.3 2.1.1 2.6 2.4"/>'),
   park:csI('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 16.5v-9h3a2.6 2.6 0 0 1 0 5.2h-3"/>'),
   cards:csI('<rect x="4" y="4.5" width="16" height="6" rx="1.5"/><rect x="4" y="13.5" width="16" height="6" rx="1.5"/>')};
 window.CSI=CSI;
@@ -148,10 +150,10 @@ function csNearHTML(a){return a&&a.length?'<div class="csnear">'+a.map(p=>'<a cl
 const csKindCode=k=>String(k).replace(/^W\s*\/\s*H\s*\/\s*M/i,"WHM").replace(/\s*\/\s*/g,"/").trim();
 /* the code of a place as a badge: an icon per kind of place (set, Base, W/H/M, Lunch, Dinner, Prod, DIT, Parking) and the short text */
 const CSKICO={"Base":"base","W / H / M":"whm","Lunch":"lunch","Dinner":"dinner","Prod":"prod","DIT":"dit"};
-function csKindIco(k){const b=String(k).replace(/ (Cast|Extras)$/,"");return CSI[CSKICO[b]]||(/park/i.test(b)?CSI.park:"")}
+function csKindIco(k){const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],b=String(k).replace(/ (Cast|Extras)$/,"");if(b==="W / H / M"&&q)return q==="Cast"?CSI.whmc:CSI.whme;return CSI[CSKICO[b]]||(/park/i.test(b)?CSI.park:"")}
 function csBadgeIn(l,codes){if(!l.kinds)return CSI.set+'<span>'+esc((codes||["L"+String(l.no||"").trim()]).join("·"))+'</span>';
   /* side place: the icons, with the group (Cast / Extras) and a kind without icon as text */
-  return l.kinds.map(k=>{const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],t=csKindCode(k).replace(/ (Cast|Extras)$/,q?" "+L(q):"");return '<b class="csk">'+csKindIco(k)+'<span>'+esc(t)+'</span></b>'}).join("")}
+  return l.kinds.map(k=>{const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],t=csKindCode(k).replace(/ (Cast|Extras)$/,q?" "+L(q):"");const ic=csKindIco(k);return '<b class="csk" title="'+esc(t)+'" aria-label="'+esc(t)+'">'+(ic||'<span>'+esc(t)+'</span>')+'</b>'}).join("")}
 function csPlaceH(inner,href,title,cls){const t=title?' title="'+esc(title)+'" aria-label="'+esc(title)+'"':'',k='csplace csbadge'+(cls?' '+cls:'');
   return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+inner+'</a>':'<span class="'+k+'"'+t+'>'+inner+'</span>'}
 /* the locations of the day: every set has its code L1, L2 … (its scenes carry it); sets at the same place (same map link or address,
@@ -172,9 +174,9 @@ function csRadioHTML(t){t=String(t||"").trim();if(!t)return"";const b=t.replace(
 function csMapQ(q){q=String(q||"").trim();return q?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q):""}
 function csLocHref(l,c,date){c=c||CSCUR.c;date=date||CSCUR.date;if(!l)return"";if(l.map)return l.map;let ad="";try{ad=c?csLocAddr(c,l,date):""}catch(_){}return csMapQ(ad)}
 function csCodeHref(code){const m=String(code||"").match(/^L(\w+)$/);if(!m||!CSCUR.c)return"";return csLocHref(csLocs(CSCUR.c).find(x=>!x.kinds&&String(x.no).trim()===m[1]))}
-function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':'';
+function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':' title="'+esc(code)+'"';
   /* a base (Base, WHM, Lunch, Prod, DIT …): its own icon and the gold colour; sets (L1 …) stay text */
-  const ic=/^L\d/i.test(String(code))?"":csKindIco(String(code).replace(/^WHM\b/i,"W / H / M").replace(/^Prod\b.*/i,"Prod")),k='csplace'+(ic?' csbadge csbase':'')+(cls?' '+cls:''),in_=ic?ic+'<span>'+esc(code)+'</span>':esc(code);
+  const ic=/^L\d/i.test(String(code))?"":csKindIco(String(code).replace(/^WHM\b/i,"W / H / M").replace(/^Prod\b.*/i,"Prod")),k='csplace'+(ic?' csbadge csbase':'')+(cls?' '+cls:''),in_=ic?ic+'<span class="vh">'+esc(code)+'</span>':esc(code);
   return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+in_+'</a>':'<span class="'+k+'"'+t+'>'+in_+'</span>'}
 function csLocAddr(c,l,date){let ad="";
   /* 1. the app's location list: a set there with one of the scenes of this location, or with the same name */
