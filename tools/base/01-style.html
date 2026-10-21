@@ -1364,4 +1364,12 @@ html body #view details.csloc .cshnl .csi{flex:0 0 auto;margin-top:2px;color:var
 /* a location with nothing more to show: no open button */
 html body #view details.csloc:not(:has(>:not(summary)))>summary .csexp{display:none}
 html body #view details.csloc:not(:has(>:not(summary)))>summary{pointer-events:auto;cursor:default}
+/* desktop: code, title and address in one line when there is room, else the address in the next line; the buttons stay top right */
+@media (min-width:761px){html body #view details.csloc>summary{display:flex!important;flex-wrap:wrap;align-items:baseline;column-gap:12px;row-gap:2px;position:relative;padding-right:76px}
+ html body #view details.csloc>summary .csl1{display:contents}
+ html body #view details.csloc>summary .csloc-c,html body #view details.csloc>summary .dn{order:1;align-self:center;flex:0 1 auto!important}
+ html body #view details.csloc>summary .dn{max-width:calc(100% - 60px)}
+ html body #view details.csloc>summary .csaddr{order:2;margin:0!important;width:auto!important;max-width:100%;white-space:normal}
+ html body #view details.csloc>summary .csloc-s{order:3;flex-basis:100%}
+ html body #view details.csloc>summary .csloc-i{position:absolute;top:50%;right:0;transform:translateY(-50%);margin:0}}
 </style>

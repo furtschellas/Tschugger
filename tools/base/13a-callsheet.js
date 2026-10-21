@@ -123,13 +123,8 @@ function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/[^a-z0-9]/g,
 /* address of a location: from the app's location list (by its scenes), else a note with a postcode («Pfynstrasse 160, 3952 Susten») */
 /* codes L1, L2, Base …: always a link to the place (its map link, else its address in Google Maps); c/date of the callsheet being drawn */
 let CSCUR={c:null,date:""};
-/* hints of a place («To set …», «WC …»): small icons in the head, the text when tapped */
+/* hints of a place («To set …», «WC …»): lines in the open location */
 const CSHN_RE=/^(to set|zum set|nach set|wc\b)/i;
-function csHnBtns(ns){return ns.map((n,k)=>{const wc=/^wc\b/i.test(n.trim());const lab=wc?L("WC"):L("Weg zum Set");
-  return '<button type="button" class="cshn'+(wc?' cshn-wc':'')+'" data-cshn="'+k+'" aria-expanded="false" title="'+esc(csL(n))+'" aria-label="'+esc(lab)+'">'+(wc?'<b>WC</b>':CSI.walk)+'</button>'}).join("")}
-function csHnTexts(ns){return ns.map((n,k)=>'<span class="cshn-t" data-cshnt="'+k+'" hidden>'+csAdr(csL(n),"")+'</span>').join("")}
-document.addEventListener("click",e=>{const b=e.target&&e.target.closest&&e.target.closest("[data-cshn]");if(!b)return;e.preventDefault();e.stopPropagation();
-  const sm=b.closest("summary");const t=sm&&sm.querySelector('[data-cshnt="'+b.dataset.cshn+'"]');if(!t)return;const open=t.hidden;t.hidden=!open;b.setAttribute("aria-expanded",open?"true":"false")},true);
 /* the place where the shooting is now (callsheet of today, from the start of the first scene until wrap) */
 function csNowLoc(c,date,ls,now){now=now||new Date();const p=n=>String(n).padStart(2,"0");if(date!==now.getFullYear()+"-"+p(now.getMonth()+1)+"-"+p(now.getDate()))return null;
   const m=t=>{const x=String(t||"").match(/(\d{1,2})[:.](\d{2})/);return x?+x[1]*60+ +x[2]:null};const cur=now.getHours()*60+now.getMinutes();let hit=null,started=false;
@@ -358,7 +353,7 @@ function csTeamSec(c,x,me,SU,t){const csCnt=csCountLine(c,x,me,SU,t);let h="";
     csA(c.lists).map(l=>'<p class="cslist"><b>'+esc(l.title||"")+'</b> '+esc(csS(l.names))+'</p>').join(""):"",false,"","team",csCnt);
   return h}
 function csLocSec(c,x,me,SU,t){let h="";
-  {const ls=csLocs(c),SEENAD=new Map(),NOW=csNowLoc(c,x.date,ls);const NEAR=csNear(c,ls,x.date);window.CSNOWK=NOW?NOW.no+'|'+NOW.name:'';
+  {const ls=csLocs(c),NOW=csNowLoc(c,x.date,ls);const NEAR=csNear(c,ls,x.date);window.CSNOWK=NOW?NOW.no+'|'+NOW.name:'';
    const LG=csLocGroups(c,ls,x.date),mem=l=>l._m||[l];
    h+=csSec("Locations",LG.length?LG.map(l=>{let LAD=csLocAddr(c,l,x.date);let DN=l.name||"";
      /* a side place named by its address only: the kinds as its name, the address in the second line */
@@ -366,8 +361,8 @@ function csLocSec(c,x,me,SU,t){let h="";
       /* a side place: the title is its kind (Base, else the first kind, e.g. «WHM Extras»), the second line its name and address («Restaurant Hermitage, Pfynstrasse 160, 3952 Susten») */
       if(l.kinds){const isA=/\d{4}\s+\p{L}/u.test(DN),nm=isA?"":DN;const ad=LAD&&!(isA&&w(LAD)!==w(DN)&&!w(LAD).startsWith(w(DN)))?LAD:(isA?DN:LAD);
         LAD=[nm&&!w(ad).includes(w(nm))?nm:"",ad].filter(Boolean).join(", ");DN=l.kinds.includes("Base")?"Base":csKindCode(l.kinds[0])}
-      else if(LAD&&w(DN).length>5&&w(LAD).startsWith(w(DN)))LAD=""}const code=l.kinds?l.kinds.map(csKindCode).join("·"):l._codes?l._codes.join("·"):(l.no?"L"+String(l.no).trim():"");const isNow=mem(l).includes(NOW);const HN=csA(l.notes).map(String).filter(n=>CSHN_RE.test(n.trim()));return '<details class="dbox csloc'+(isNow?' csnowloc':'')+'"><summary><div class="csl1">'+(code&&!l._m?csPlaceH(csBadgeIn(l,l._codes),csLocHref(l,c,x.date),l.kinds?l.no:code+' · Set','csloc-c '+(l.kinds?'csbase':'csmot')):'')+(l._m?'<span class="dn csmset">'+l._m.map(m=>'<span><b class="csplace csmot">L'+esc(String(m.no||"").trim())+'</b> '+esc(m.name||"")+'</span>').join("")+'</span>':'<span class="dn">'+esc(DN)+'</span>')+'<span class="csloc-i">'+[...new Set(mem(l).map(m=>csLocFp(c,m,x.date,true)))].join("")+csHnBtns(HN)+(LAD?'':csMap(l.map))+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span></div>'+(LAD&&SEENAD.has(fold(LAD))?'<span class="csaddr cssame">'+esc(L("Adresse wie"))+' '+esc(SEENAD.get(fold(LAD)))+'</span>':'')+(LAD&&!SEENAD.has(fold(LAD))&&SEENAD.set(fold(LAD),code||l.name)?'<a class="csaddr" href="'+esc(safeUrl(l.map||csMapQ(LAD)))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" data-nobub="1">'+esc(LAD)+'</a>':'')+(()=>{const mine=csA((c.order||{}).rows).filter(r=>r.sc&&mem(l).some(m=>csSceneLoc([m],r)===m)).map(r=>String(r.sc));const uniq=[...new Set(mine)];
-       return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+csHnTexts(HN)+'</summary>'+
+      else if(LAD&&w(DN).length>5&&w(LAD).startsWith(w(DN)))LAD=""}const code=l.kinds?l.kinds.map(csKindCode).join("·"):l._codes?l._codes.join("·"):(l.no?"L"+String(l.no).trim():"");const isNow=mem(l).includes(NOW);const HN=csA(l.notes).map(String).filter(n=>CSHN_RE.test(n.trim()));return '<details class="dbox csloc'+(isNow?' csnowloc':'')+'"><summary><div class="csl1">'+(code&&!l._m?csPlaceH(csBadgeIn(l,l._codes),csLocHref(l,c,x.date),l.kinds?l.no:code+' · Set','csloc-c '+(l.kinds?'csbase':'csmot')):'')+(l._m?'<span class="dn csmset">'+l._m.map(m=>'<span><b class="csplace csmot">L'+esc(String(m.no||"").trim())+'</b> '+esc(m.name||"")+'</span>').join("")+'</span>':'<span class="dn">'+esc(DN)+'</span>')+'<span class="csloc-i">'+[...new Set(mem(l).map(m=>csLocFp(c,m,x.date,true)))].join("")+(LAD?'':csMap(l.map))+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span></div>'+(LAD?'<a class="csaddr" href="'+esc(safeUrl(l.map||csMapQ(LAD)))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" data-nobub="1">'+esc(LAD)+'</a>':'')+(()=>{const mine=csA((c.order||{}).rows).filter(r=>r.sc&&mem(l).some(m=>csSceneLoc([m],r)===m)).map(r=>String(r.sc));const uniq=[...new Set(mine)];
+       return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')})()+'</summary>'+
      /* the hints (To set, WC) also as lines of the open location */
      HN.map(n=>'<div class="ds cshnl">'+(/^wc\b/i.test(n.trim())?'<b>WC</b>':CSI.walk)+'<span>'+csAdr(csL(n),"")+'</span></div>').join("")+
      (l.kinds?'':csNearHTML([].concat(...mem(l).map(m=>NEAR.get(m)||[])).filter((p,i,a)=>a.findIndex(y=>y.code===p.code&&y.u===p.u)===i).sort((a,b)=>a.d-b.d)))+(()=>{/* the address of the head only once: lines that only repeat it (also written differently) are left out, a place there shows «same address» */
