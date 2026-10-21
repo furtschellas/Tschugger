@@ -38,7 +38,12 @@ function csFitTiles(){if(innerWidth<480)return;document.querySelectorAll("#view 
   r.classList.remove("cswrap");let f=1;r.style.setProperty("--csf","1");
   for(let i=0;i<6;i++){const need=r.scrollWidth,have=r.clientWidth;if(need<=have+1)break;f=Math.max(.55,f*have/need*.98);r.style.setProperty("--csf",f.toFixed(3));if(f<=.55)break}
   if(r.scrollWidth>r.clientWidth+1){r.style.setProperty("--csf",".7");r.classList.add("cswrap")}})}
-{let q=0;const go=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;csFitTiles()})};
+/* contact on set: always one line; on the phone as large as the width allows, on the desktop at most 22px */
+function csFitContact(){document.querySelectorAll("#view .cscontact").forEach(r=>{const i=r.querySelector(".csct-in");if(!i||!r.offsetParent)return;const mob=innerWidth<=760,max=mob?30:22;
+  /* on the phone the role goes away when the line would get small (it is in the title of the line) */
+  const fit=()=>{r.style.fontSize=max+"px";for(let k=0;k<6;k++){const need=i.scrollWidth,have=r.clientWidth;if(!need||Math.abs(need-have)<2&&need<=have)break;const f=parseFloat(r.style.fontSize)*have/need*.985;r.style.fontSize=Math.max(11,Math.min(max,f)).toFixed(2)+"px";if(f>=max&&need<=have)break}};
+  r.classList.remove("csct-short");fit();if(mob&&parseFloat(r.style.fontSize)<18&&r.querySelector("small")){r.classList.add("csct-short");fit()}})}
+{let q=0;const go=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;csFitTiles();csFitContact()})};
  addEventListener("resize",go);
  const v=document.getElementById("view");if(v)new MutationObserver(go).observe(v,{childList:true,subtree:true});
  document.addEventListener("toggle",go,true);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(go)}

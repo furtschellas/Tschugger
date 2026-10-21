@@ -491,12 +491,12 @@ async def owner_tests(p, port):
             {no:'1',name:'CHAPEL',map:'https://g/a',items:[{label:'TECH PARKING',text:'10’ on foot',map:'https://g/b'},{label:'W / H / M',text:'Cast + Lunch: Restaurant Waldrand, Föhrenweg 160, 3999 Testdorf',map:'https://g/h'},{label:'',text:'To set 1: 4’ with car'},{label:'WC',text:'on base'},{label:'DIT/Prod',text:'',map:'https://g/h'}]},
             {no:'2',name:'FOREST',map:'https://g/d',items:[{label:'Private Cars Cast/ Extras',text:'Restaurant Waldrand (Base)',map:'https://g/h'}]}]};
           const ls=csLocs(c),k=ls.filter(l=>l.kinds);return {n:k.length,kinds:k[0]&&k[0].kinds.join('|'),name:k[0]&&k[0].name,notes:k[0]&&k[0].notes.length,set1:ls[0].items.length}})()""")
-        check("Callsheet: Base, W/H/M, Lunch und Prod am selben Ort als eine Location, Anfahrt/WC dort", bw in (None, {"n": 1, "kinds": "Base|W / H / M|Lunch|Prod|DIT", "name": "Restaurant Waldrand", "notes": 3, "set1": 1}), bw)
+        check("Callsheet: Base, W/H/M, Lunch und Prod am selben Ort als eine Location, Anfahrt/WC dort", bw in (None, {"n": 1, "kinds": "Base|W / H / M Cast|Lunch|Prod|DIT", "name": "Restaurant Waldrand", "notes": 3, "set1": 1}), bw)
         dit = await E("""(()=>{if(typeof csLocs!=='function')return null;const c={locations:[{no:'1',name:'OFFICE',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Dorfplatz 5 - 3998 Musterdorf',map:'https://g/b'}]},
             {no:'2',name:'OPEN SPACE',items:[{label:'DIT',text:'Turnhallenweg 4 - 3998 Musterdorf',map:'https://g/s'}]}]};
           const c2={locations:[{no:'1',name:'CHAPEL',items:[{label:'W / H / M',text:'Cast + Lunch: Restaurant Waldrand, Föhrenweg 160',map:'https://g/h'},{label:'DIT/Prod',text:'',map:'https://g/h'}]}]};
           const a=csLocs(c).filter(l=>l.kinds).map(l=>l.kinds.join('|')),b=csLocs(c2).filter(l=>l.kinds).map(l=>l.kinds.join('|'));return {other:a,same:b}})()""")
-        check("Callsheet: DIT an anderem Ort = eigene Location, am selben Ort zusammen mit Base/Lunch", dit in (None, {"other": ["Base|W / H / M|Lunch", "DIT"], "same": ["W / H / M|Lunch|Prod|DIT"]}), dit)
+        check("Callsheet: DIT an anderem Ort = eigene Location, am selben Ort zusammen mit Base/Lunch", dit in (None, {"other": ["Base|W / H / M Cast|Lunch", "DIT"], "same": ["W / H / M Cast|Lunch|Prod|DIT"]}), dit)
         dit2 = await E("""(()=>{if(typeof csLocs!=='function')return null;const c={locations:[{no:'1',name:'OFFICE',map:'https://g/o',items:[{label:'DIT',text:'Room 1st floor',map:'https://g/o'}]}]};
           const ls=csLocs(c);return {own:ls.filter(l=>l.kinds).length,inset:(ls[0].items||[]).some(i=>i.label==='DIT')}})()""")
         check("Callsheet: DIT am Ort eines Sets steht beim Set, nicht als eigene Location", dit2 in (None, {"own": 0, "inset": True}), dit2)
@@ -537,6 +537,12 @@ async def owner_tests(p, port):
           v.remove();window.myIdentity=keep;CSMINE=km;
           return {near:n1.length===1&&n1[0].code==='Base'&&n1[0].d<1,loc3:L3.join(',')==='L1,L2,L2',mine:sc==='1,3'&&calls===1&&all===2,pdf,btn}})()""")
         check("Callsheet: Nebenorte mit Distanz beim Set, «Nur meins», PDF-Knopf, L-Code bei jeder Szene", nm in (None, {"near": True, "loc3": True, "mine": True, "pdf": True, "btn": True}), nm)
+        w2 = await E("""(()=>{if(typeof csLocGroups!=='function'||typeof csRadioHTML!=='function')return null;
+          const c={locations:[{no:'1',name:"OFFICE",scenes:'12',items:[{label:'Location',text:'Bahnweg 40 - 3998 Musterdorf',map:'mL'},{label:'Private Cars @ Base Church',text:'Dorfplatz 5 - 3998 Musterdorf',map:'mB'},{label:'W / H / M Cast + Lunch',text:'Base Church, Dorfplatz 5 - 3998 Musterdorf',map:'mB'}]},
+            {no:'2',name:'OPEN SPACE W / H / M Extras: Turnhallenweg 4 - 3998 Musterdorf',scenes:'22',map:'mS',items:[{label:'DIT',text:'Turnhallenweg 4 - 3998 Musterdorf, Room 1st floor',map:'mS'}]}]};
+          const ls=csLocs(c),k=ls.filter(l=>l.kinds).map(l=>l.kinds.map(csKindCode).join('|')),g=csLocGroups(c,ls,'');const r=csRadioHTML('Radio channel 1: AD / AL 2: Chat 3: Light');
+          return {kinds:k.join(','),base:(ls.find(l=>l.kinds&&l.kinds.includes('Base'))||{}).name,set2:(ls.find(l=>l.no==='2')||{}).name,merged:g.filter(l=>!l.kinds).length===1&&(g.find(l=>l._codes)||{})._codes.join(',')==='L1,L2',radio:(r.match(/csrch/g)||[]).length}})()""")
+        check("Callsheet: W/H/M für Cast und Extras getrennt, Sets am selben Ort als eine Location, Funkkanäle als Chips", w2 in (None, {"kinds": "Base|W/H/M Cast|Lunch,W/H/M Extras|DIT", "base": "Base Church", "set2": "OPEN SPACE", "merged": True, "radio": 3}), w2)
         re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
           const r0={t1:'07:30',t2:'08:00',from:'Hotel',to:'Base',vehicle:'Van 1',driver:'Max Fahrer',passengers:'Anna Muster'};S.dispos=[{date:t,cs:{transport:[r0]}}];
           const id=rideId(t,r0);window.RIDEEDIT={[id]:{t1:'07:45',passengers:'Anna Muster, Lena Test'}};window.REDVER=(window.REDVER||0)+1;rideEditApply();const r=S.dispos[0].cs.transport[0];
