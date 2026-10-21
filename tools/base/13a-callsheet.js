@@ -115,7 +115,8 @@ function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/\s+/g,"");co
       out.push(v);prev=v}}return out};
   /* else by the set name: the whole name in either direction, else its first word (at least 4 letters) */
   const st=n(r.set),w=s=>(fold(String(s||"")).match(/[a-z0-9]{4,}/)||[""])[0];
-  return (sc&&ls.find(l=>list(l).includes(sc)))||(st&&ls.find(l=>l.name&&(st.includes(n(l.name))||n(l.name).includes(st))))||(st&&ls.find(l=>w(l.name)&&w(l.name)===w(r.set)))||null}
+  const names=l=>(l._m||[l]).map(m=>m.name).filter(Boolean);
+  return (sc&&ls.find(l=>list(l).includes(sc)))||(st&&ls.find(l=>names(l).some(nm=>st.includes(n(nm))||n(nm).includes(st))))||(st&&ls.find(l=>names(l).some(nm=>w(nm)&&w(nm)===w(r.set))))||null}
 /* address of a location: from the app's location list (by its scenes), else a note with a postcode («Föhrenweg 160, 3999 Testdorf») */
 /* codes L1, L2, Base …: always a link to the place (its map link, else its address in Google Maps); c/date of the callsheet being drawn */
 let CSCUR={c:null,date:""};
@@ -133,7 +134,7 @@ function csNowLoc(c,date,ls,now){now=now||new Date();const p=n=>String(n).padSta
   return started?hit:null}
 /* side places (Base, W/H/M, Lunch, Parking, DIT …) with the set they are nearest to and the distance (positions of the updater in c.geo) */
 function csNear(c,ls,date){const geo=c.geo||{},out=new Map(),sets=[];let si=0;
-  for(const l of ls)if(!l.kinds){si++;const g=geo[l.map||"loc:"+si];if(Array.isArray(g))sets.push([l,g])}
+  for(const l of ls)if(!l.kinds){const g=csSetGeo(c,l)[1];if(g)sets.push([l,g])}
   if(!sets.length)return out;const km=(a,b)=>{const R=6371,r=Math.PI/180,dl=(b[0]-a[0])*r,dn=(b[1]-a[1])*r,h=Math.sin(dl/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
   const add=(code,name,u,g,H)=>{if(!Array.isArray(g))return;let best=null;for(const [l,sg] of sets){const d=km(sg,g);if(!best||d<best[1])best=[l,d]}
     if(!best||best[1]>15)return;if(!out.has(best[0]))out.set(best[0],[]);const L0=out.get(best[0]);if(!L0.some(x=>x.code===code&&x.u===u))L0.push({code,name,u,d:best[1],h:H})};
@@ -153,16 +154,19 @@ function csBadgeIn(l,codes){if(!l.kinds)return CSI.set+'<span>'+esc((codes||["L"
   return l.kinds.map(k=>{const ic=csKindIco(k),q=(String(k).match(/ (Cast|Extras)$/)||[])[1];return ic?ic+(q?'<span>'+esc(L(q))+'</span>':''):'<span>'+esc(csKindCode(k))+'</span>'}).join("")}
 function csPlaceH(inner,href,title,cls){const t=title?' title="'+esc(title)+'" aria-label="'+esc(title)+'"':'',k='csplace csbadge'+(cls?' '+cls:'');
   return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+inner+'</a>':'<span class="'+k+'"'+t+'>'+inner+'</span>'}
-/* sets at the same place (same map link or address; sets without either go to the only place there is): one location */
+/* the locations of the day: every set has its code L1, L2 … (its scenes carry it); sets at the same place (same map link or address,
+   a set without either at the only place there is) are shown as one location with their codes «L1·L2» */
 function csLocGroups(c,ls,date){const sets=ls.filter(l=>!l.kinds),key=l=>{let a="";try{a=csLocAddr(c,l,date)}catch(_){}return fold(String(l.map||a||"")).replace(/\s+/g," ").trim()};
-  const keys=new Map(sets.map(l=>[l,key(l)])),K=[...new Set([...keys.values()].filter(Boolean))];if(sets.length<2)return ls;
-  const groups=new Map();for(const l of sets){let k=keys.get(l);if(!k){if(K.length>1){groups.set(l,[l]);continue}k=K[0]||"_"}if(!groups.has(k))groups.set(k,[]);groups.get(k).push(l)}
-  const out=[];const done=new Set();for(const l of ls){if(l.kinds){out.push(l);continue}if(done.has(l))continue;
-    const g=[...groups.values()].find(a=>a.includes(l))||[l];g.forEach(x=>done.add(x));if(g.length===1){out.push(l);continue}
-    const uq=a=>[...new Set(a.filter(Boolean))];
-    out.push(Object.assign({},g[0],{name:uq(g.map(x=>String(x.name||"").trim())).join(" / "),map:(g.find(x=>x.map)||{}).map||"",scenes:uq(g.map(x=>csS(x.scenes))).join(", "),
-      notes:uq([].concat(...g.map(x=>csA(x.notes).map(String)))),items:[].concat(...g.map(x=>csA(x.items))),_m:g,_codes:g.map(x=>"L"+String(x.no||"").trim())}))}
+  const keys=new Map(sets.map(l=>[l,key(l)])),K=[...new Set([...keys.values()].filter(Boolean))];
+  const groups=[];for(const l of sets){let k=keys.get(l);if(!k){if(K.length!==1){groups.push([l]);continue}k=K[0]}let g=groups.find(x=>x.k===k);if(!g){g=[];g.k=k;groups.push(g)}g.push(l)}
+  const uq=a=>[...new Set(a.filter(Boolean))];const out=[];
+  for(const l of ls){if(l.kinds){out.push(l);continue}const g=groups.find(a=>a.includes(l));if(!g||g[0]!==l)continue;
+    if(g.length===1){out.push(l);continue}
+    out.push(Object.assign({},g[0],{_codes:g.map(x=>"L"+String(x.no||"").trim()),name:uq(g.map(x=>String(x.name||"").trim())).join(" / "),map:(g.find(x=>x.map)||{}).map||"",scenes:uq(g.map(x=>csS(x.scenes))).join(", "),
+      notes:uq([].concat(...g.map(x=>csA(x.notes).map(String)))),items:[].concat(...g.map(x=>csA(x.items))),_m:g,_nos:[].concat(...g.map(x=>x._nos||[]))}))}
   return out}
+/* position of a set: its map link, else the address the updater found (key «loc:n» = n-th set of the document) */
+function csSetGeo(c,l){const geo=c.geo||{};for(const m of (l._m||[l])){const g=geo[m.map||"loc:"+(m._ix||m.no)];if(Array.isArray(g))return [m.map||"loc:"+(m._ix||m.no),g]}return [l.map||"loc:"+(l._ix||l.no),null]}
 function csRadioHTML(t){t=String(t||"").trim();if(!t)return"";const b=t.replace(/^(radio\s*channels?|funk(kanäle)?)\s*:?\s*/i,"");const ch=[];const re=/(\d{1,2})\s*:\s*(.*?)(?=\s+\d{1,2}\s*:|$)/g;let m;while((m=re.exec(b)))ch.push([m[1],m[2].trim()]);
   return '<div class="csradio2" aria-label="'+esc(L("Funkkanäle"))+'">'+CSI.radio+(ch.length>1?ch.map(([n,l])=>'<span class="csrch"><b>'+esc(n)+'</b>'+esc(l||"–")+'</span>').join(""):'<span>'+esc(t)+'</span>')+'</div>'}
 function csMapQ(q){q=String(q||"").trim();return q?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q):""}
@@ -204,7 +208,7 @@ function csOrderRows(rows,date,locs,one){const ONE=(()=>{const s0=csA(locs).filt
 /* a place named on the callsheet («Base», «Loc.2», «Parking loc. 1», «Holiday Inn») → name and map link from the Locations */
 function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls=csLocs(c).filter(l=>!l.kinds);
   const m=t.match(/loc\.?\s*(\d+)/);const park=/park/.test(t);
-  if(m){const l=ls.find(x=>String(x.no).trim()===m[1]);if(l){if(park){const it=csA(l.items).find(i=>/park/i.test(i.label||""));if(it)return {name:String(txt),map:it.map||l.map||""}}return {name:'Set '+l.no+' · '+(l.name||""),map:l.map||""}}}
+  if(m){const l=ls.find(x=>(x._nos||[String(x.no).trim()]).includes(m[1]));if(l){if(park){const it=csA(l.items).find(i=>/park/i.test(i.label||""));if(it)return {name:String(txt),map:it.map||l.map||""}}return {name:'Set '+l.no+' · '+(l.name||""),map:l.map||""}}}
   if(/base|lunch|waldrand/.test(t))for(const l of csA(c.locations))for(const i of csA(l.items))if(/base|w \/ h|lunch/i.test((i.label||"")+" "+(i.text||"")))return {name:String(txt)+(!i.text||!/^base$/i.test(String(txt).trim())?"":" · "+String(i.text).split(",")[0]),map:i.map||""};
   return {name:String(txt),map:""}}
 /* where my call is: the end of my first ride (if it arrives around my call), else the set shooting at that time, else set 1 */
@@ -250,7 +254,7 @@ function csLocs0(c){const sets=[],extra=[];
       {const at=lab.match(/@\s*(.+)$/);if(at&&isAdr(e.name)&&!isAdr(at[1])){if(!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=at[1].trim()}}if(!e.map&&i.map)e.map=i.map;if(rest){const r2=isAdr(rest)?rest:kinds.map(k0=>{const k=k0==="W / H / M"&&who?k0+" "+who:k0;return csKindCode(k)}).join(" / ")+": "+rest;if(!e.notes.includes(r2))e.notes.push(r2)}last=e}
     sets.push(Object.assign({},l,{items}))}
   /* a set without a number on the callsheet («ER SET», read wrongly) gets its position: 1, 2, 3 … (as «Loc. 3» elsewhere in the document) */
-  sets.forEach((l,i)=>{if(!/^\d+[a-z]?$/i.test(String(l.no||"").trim()))l.no=String(i+1)});
+  sets.forEach((l,i)=>{if(!/^\d+[a-z]?$/i.test(String(l.no||"").trim()))l.no=String(i+1);l._ix=i+1;l._nos=[String(l.no).trim()]});
   /* DIT / production office at the place of a set: a line of that set, not a location of its own (only somewhere else it is one) */
   for(const e of extra.slice())if(e.kinds.every(k=>k==="DIT"||k==="Prod")){const st=sets.find(l=>(e.map&&l.map===e.map)||(e.name&&fold(String(l.name||""))===fold(e.name)));
     if(st){st.items=(st.items||[]).concat([{label:e.kinds.join(" / "),text:[e.name].concat(e.notes).filter(Boolean).join(", "),map:e.map||""}]);extra.splice(extra.indexOf(e),1)}}
@@ -354,7 +358,7 @@ function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false)return"";   /* switched
      pts.push({p:g,c:code,n:name,s:sc||"",u:link,m:minor?1:0,r:gs[u]==="rough"||gs[u]==="near"?(gs[u]==="near"?2:1):0})};
    let si=0;const BH=new Map();for(const l of csLocs(c)){const code=l.kinds?l.kinds.map(csKindCode).join("·"):"L"+String(l.no||"").trim();BH.set(code,csBadgeIn(l));
      /* a set without its own map link: its position under «loc:n» (address found by the updater) – every L is on the map */
-     const key=l.kinds?l.map:(l.map||"loc:"+(si+1));if(!l.kinds)si++;
+     const key=l.kinds?l.map:csSetGeo(c,l)[0];
      const lr=l.kinds?[]:rows.filter(r=>csSceneLoc([l],r)===l);const sc=l.kinds?"":[...new Set(lr.map(r=>String(r.sc)))].join(", ")||csS(l.scenes);add(key,code,l.name||"",sc,0,csLocHref(l,c,x.date));
      {const pt=pts.find(x=>x.u===key&&x.c===code);if(pt&&lr.length)pt.st=lr.map(span)}
      for(const i of csA(l.items))if(i.map)add(i.map,code+" · "+(String(i.label||"").trim()||"P"),[i.label,i.text].filter(Boolean).join(" · "),"",1)}
