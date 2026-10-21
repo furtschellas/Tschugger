@@ -83,4 +83,4 @@ function rideBack(){const r=window.REDBACK;if(!r||Date.now()>r.until||document.q
   if(!el)return false;const row=el.closest("tr,.cs-card")||el;row.scrollIntoView({block:"center"});row.classList.add("redflash");setTimeout(()=>row.classList.remove("redflash"),1600);return true}
 /* popup closed: back to the ride now, and once more after the new drawing that follows a save (within 4 s) */
 new MutationObserver(m=>{if(window.REDBACK&&m.some(x=>[...x.removedNodes].some(n=>n.nodeType===1&&(n.matches(".redbox")||n.querySelector(".redbox"))))){window.REDBACK.until=Date.now()+4000;requestAnimationFrame(rideBack)}}).observe(document.body,{childList:true});
-{const v=document.getElementById("view");if(v)new MutationObserver(()=>{if(window.REDBACK&&!document.querySelector(".redbox")&&Date.now()<=window.REDBACK.until)requestAnimationFrame(rideBack)}).observe(v,{childList:true})}
+csAfter(()=>{if(window.REDBACK&&!document.querySelector(".redbox")&&Date.now()<=window.REDBACK.until)rideBack()});
