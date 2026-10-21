@@ -543,6 +543,11 @@ async def owner_tests(p, port):
           const ls=csLocs(c),k=ls.filter(l=>l.kinds).map(l=>l.kinds.map(csKindCode).join('|')),g=csLocGroups(c,ls,'');const r=csRadioHTML('Radio channel 1: AD / AL 2: Chat 3: Light');
           return {kinds:k.join(','),base:(ls.find(l=>l.kinds&&l.kinds.includes('Base'))||{}).name,set2:(ls.find(l=>l.no==='2')||{}).name,merged:g.filter(l=>!l.kinds).length===1&&g.find(l=>l._codes)._codes.join(',')==='L1,L2'&&(csOrderRows([{t:'09:00',sc:'12',set:'OFFICE'},{t:'10:00',sc:'22',set:'OPEN SPACE'}],'',ls).match(/>L[12]</g)||[]).join(',')==='>L1<,>L2<',radio:(r.match(/csrch/g)||[]).length}})()""")
         check("Callsheet: W/H/M für Cast und Extras getrennt, Sets (L-Codes) an derselben Adresse als eine Location, Szenen mit dem L-Code ihres Sets, Funkkanäle als Chips", w2 in (None, {"kinds": "Base|WHM Cast|Lunch,WHM Extras|DIT", "base": "Base Church", "set2": "OPEN SPACE", "merged": True, "radio": 3}), w2)
+        w3 = await E("""(()=>{if(typeof csLocGroups!=='function')return null;
+          const c={locations:[{no:'1',name:'OFFICE',scenes:'12',map:'mL',items:[]},{no:'2',name:'OPEN SPACE',scenes:'22',map:'mS',items:[{label:'W / H / M Extras',text:'Turnhallenweg 4 - 3998 Musterdorf',map:'mS'}]}]};
+          const ls=csLocs(c),g=csLocGroups(c,ls,'');const m=g.find(l=>l._m);const h=renderCS({date:'2030-05-06',cs:c},{date:'2030-05-06'});
+          return {set2map:(ls.find(l=>l.no==='2')||{}).map||'',merged:!!m&&m._m.length===2,title:/csmset[^]*L1[^]*OFFICE[^]*L2[^]*OPEN SPACE/.test(h)}})()""")
+        check("Callsheet: Kartenlink eines Nebenorts gilt nicht für das Set; Sets gebündelt, Titel je L-Code mit Setbezeichnung", w3 in (None, {"set2map": "", "merged": True, "title": True}), w3)
         re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
           const r0={t1:'07:30',t2:'08:00',from:'Hotel',to:'Base',vehicle:'Van 1',driver:'Max Fahrer',passengers:'Anna Muster'};S.dispos=[{date:t,cs:{transport:[r0]}}];
           const id=rideId(t,r0);window.RIDEEDIT={[id]:{t1:'07:45',passengers:'Anna Muster, Lena Test'}};window.REDVER=(window.REDVER||0)+1;rideEditApply();const r=S.dispos[0].cs.transport[0];
