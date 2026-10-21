@@ -1315,7 +1315,8 @@ html body #view details.csloc .csmset{display:flex;flex-direction:column;gap:3px
 html body #view details.csloc .csmset>span{display:flex;align-items:center;gap:6px}
 html body #view details.csloc .csmset .csplace{font-size:11px}
 /* «jetzt»: pink frame around the whole box, open or folded (locations and shooting order) */
-html body #view .csorder li.now>.sc,html body #view .csorder li.now>.sc>details:not([open]){outline:2px solid var(--accent);outline-offset:0;border-radius:10px}
+html body #view .csorder li.now>.sc{outline:2px solid var(--accent);outline-offset:0;border-radius:10px}
+html body #view .csorder li.now>.sc>details,html body #view .csorder li.now>.sc>details:not([open]){outline:0!important}
 /* cast: the time running now */
 html body #view #cs-cast .csnowt{outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
 /* map: bases with their icons in gold */
@@ -1333,4 +1334,11 @@ html body #view details.csloc>summary .csloc-i .csfpi .csi{width:15px;height:15p
  html body #view .csview .csl1>*{min-width:0}
  html body #view .csview .dbox,html body #view .csview details.cssec{grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%}
  html body #view .csview .dbox>summary,html body #view .csview .dbox>*{min-width:0;max-width:100%}}
+/* my day: passengers of my rides as driver, folded */
+html body #view .csme .csmepax{margin-top:3px}
+html body #view .csme .csmepax>summary{cursor:pointer;color:var(--accent);font-size:12.5px;list-style:none;display:inline-flex;align-items:center;gap:4px}
+html body #view .csme .csmepax>summary::-webkit-details-marker{display:none}
+html body #view .csme .csmepax>summary::after{content:"▾";font-size:10px}
+html body #view .csme .csmepax[open]>summary::after{content:"▴"}
+html body #view .csme .csmepl{display:block;font-size:13px;line-height:1.35;margin-top:2px}
 </style>
