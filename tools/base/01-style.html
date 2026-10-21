@@ -1466,4 +1466,10 @@ html body #view .csscd>summary .scackw{right:38px}
 .scbox .scdel{display:block;margin:12px 0 0;color:var(--danger,#e5484d)}
 html body #view .csorder li.row.evack>.what>.scackw{margin-right:51px}
 @media (max-width:760px){html body #view .csorder li.row.evack>.what>.scackw{margin-right:42px}}
+/* popup of a quittiert scene: begin and end as two columns, label above the time */
+.scbox .redrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 8px}
+.scbox .redrow label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+.scbox .redrow input{width:100%;min-width:0;box-sizing:border-box;font-variant-numeric:tabular-nums}
+.scbox button.lnk{background:none;border:0;box-shadow:none;color:var(--muted);padding:8px 6px;font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.scbox button.lnk.scdel{color:var(--danger,#e5484d);padding-left:0}
 </style>
