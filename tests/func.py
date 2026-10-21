@@ -520,11 +520,11 @@ async def owner_tests(p, port):
         check("Callsheet: Kreis antippbar nur für Fahrten Manager (Pop-up) und die Fahrerin / den Fahrer (bestätigen)", rb in (None, {"mgr": True, "confirmOnly": True, "other": True, "driver": True}), rb)
         hm = await E("""(()=>{if(typeof csMapQ!=='function')return null;return {q:csMapQ('Bahnhof 1, Sion')==='https://www.google.com/maps/search/?api=1&query=Bahnhof%201%2C%20Sion',e:csMapQ('  ')==='',noinl:!document.querySelector('#view [onclick]')}})()""")
         check("Callsheet: Karten-Suchlink aus einer Hilfsfunktion, keine Inline-Klick-Handler", hm in (None, {"q": True, "e": True, "noinl": True}), hm)
-        hn = await E("""(()=>{if(typeof csHnBtns!=='function'||typeof csNowLoc!=='function')return null;const ns=['To set 1: 4 min walk','WC: Base'];const b=csHnBtns(ns),t=csHnTexts(ns);
+        hn = await E("""(()=>{if(typeof csNowLoc!=='function')return null;const cc={locations:[{no:'1',name:'A',notes:['To set 1: 4 min walk','WC: Base']}]};const kl=S.locs;S.locs=[];const v=document.createElement('div');v.innerHTML=renderCS({date:'2030-05-06',cs:cc},{date:'2030-05-06'});S.locs=kl;const d=v.querySelector('details.csloc');
           const c={locations:[{no:'1',name:'A',scenes:'1'},{no:'2',name:'B',scenes:'2'}],order:{rows:[{t:'08:30',sc:'1'},{t:'12:00',text:'Lunch'},{t:'13:00',sc:'2'},{t:'18:00',text:'Wrap'}]}};const ls=csLocs(c);
           const at=(h,m)=>{const l=csNowLoc(c,'2030-05-06',ls,new Date(2030,4,6,h,m));return l?l.name:''};
-          return {icons:(b.match(/data-cshn=/g)||[]).length===2&&/cshn-wc/.test(b),texts:(t.match(/hidden/g)||[]).length===2,now:[at(8,0),at(9,0),at(12,30),at(14,0),at(18,30)].join(',')==',A,A,B,'}})()""")
-        check("Callsheet: Hinweise (To set, WC) als Symbole mit Text beim Antippen, aktuelle Location «jetzt hier»", hn in (None, {"icons": True, "texts": True, "now": True}), hn)
+          return {icons:!d.querySelector('summary [data-cshn]'),texts:d.querySelectorAll(':scope>.cshnl').length===2,now:[at(8,0),at(9,0),at(12,30),at(14,0),at(18,30)].join(',')==',A,A,B,'}})()""")
+        check("Callsheet: Hinweise (To set, WC) nur im aufgeklappten Teil, aktuelle Location «jetzt hier»", hn in (None, {"icons": True, "texts": True, "now": True}), hn)
         nm = await E("""(()=>{if(typeof csNear!=='function'||typeof csFilter!=='function')return null;
           const c={locations:[{no:'1',name:'Kapelle',scenes:'1',map:'u1'},{no:'2',name:'Wald',scenes:'2',map:'u2'},{kinds:['Base'],name:'Base',map:'u3'}],geo:{u1:[46.31,7.63],u2:[46.40,7.80],u3:[46.312,7.632]},
             order:{rows:[{t:'08:00',sc:'1',set:'Kapelle',cast:'1'},{t:'10:00',sc:'2',set:'Wald',cast:'2'},{t:'12:00',sc:'3',set:'WALD EXT',cast:'1'}]},cast:[{no:'1',actor:'Max Muster',role:'X'},{no:'2',actor:'Eva Test',role:'Y'}],calls:[{dept:'Licht',t:'07:00',name:'Max Muster'},{dept:'Licht',t:'07:00',name:'Eva Test'}]};
