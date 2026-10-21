@@ -69,7 +69,7 @@ function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((window.UNAME&&UNA
   if(sc==="wrap")return "Wrap "+scHM(v.e||v.b)+" – "+L("Drehtag abgeschlossen")+dd;
   if(sc==="lunch")return v.s===1?"Lunch "+L("ab")+" "+scHM(v.b)+dd:L("Lunch vorbei, es geht weiter")+" "+scHM(v.e)+dd;
   return v.s===1?scLabel(sc)+" "+L("läuft seit")+" "+scHM(v.b)+dd:scLabel(sc)+" "+L("abgeschlossen")+" "+scHM(v.b)+"–"+scHM(v.e)+" ("+scDur((v.e||0)-(v.b||0))+")"+dd}
-function scShareAsk(date,sc,u,v){try{if(localStorage.getItem("scwa:no")==="1")return}catch(_){}
+function scShareAsk(date,sc,u,v,force){try{if(!force&&localStorage.getItem("scwa:no")==="1")return}catch(_){}
   const txt=scShareText(date,sc,u,v),d=mkDialog("scwadlg",null,{replace:true});
   d.innerHTML='<div class="a2box scbox"><h3>'+esc(L("Info per WhatsApp senden?"))+'</h3><p class="scwat">'+esc(txt)+'</p>'+
     '<div class="arb"><a class="scwa" href="https://wa.me/?text='+encodeURIComponent(txt)+'" target="_blank" rel="noopener noreferrer" data-scwago>WhatsApp</a><button type="button" class="lnk" data-scwax>'+esc(L("Nein"))+'</button></div>'+
@@ -83,18 +83,18 @@ function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{}
   d.innerHTML='<div class="a2box scbox"><h3>'+esc(scLabel(sc))+'</h3><p class="ghint">'+esc(date.split("-").reverse().join("."))+(u&&u!=="1"?' · '+esc((window.UNAME&&UNAME[u])||u)+' Unit':'')+'</p>'+
     '<div class="redst scst" role="group" aria-label="'+esc(L("Status"))+'">'+(sc==="wrap"?[[0,"offen"],[2,"Drehschluss"]]:[[0,"offen"],[1,sc==="lunch"?"Lunch läuft":"läuft"],[2,"abgeschlossen"]]).map(([v,t])=>'<button type="button" class="scstb" data-scst="'+v+'" aria-pressed="'+(st===v)+'"><span class="scack sk'+v+'">'+((v===1&&sc==="lunch"?SC_ICO.lunch:v===2&&sc==="wrap"?SC_ICO.wrap:SC_ICO[v])||"")+'</span><span class="scstl">'+esc(L(t))+'</span></button>').join("")+'</div>'+
     '<form data-scform novalidate><div class="redrow"><label>'+esc(L("Beginn"))+'<input type="time" name="b" value="'+esc(scHM(x.b||x.at))+'"></label><label>'+esc(L("Ende"))+'<input type="time" name="e" value="'+esc(scHM(x.e))+'"></label></div>'+
-    '<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+esc(L("Speichern"))+'</button><button type="button" class="lnk" data-scx>'+esc(L("Abbrechen"))+'</button></div>'+(st?'<button type="button" class="lnk scdel" data-scdel>'+esc(L("Quittierung löschen"))+'</button>':'')+'</form></div>';
+    '<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+esc(L("Speichern"))+'</button><button type="submit" class="scwab" data-scwasub>'+esc(L("Speichern"))+' + WhatsApp</button><button type="button" class="lnk" data-scx>'+esc(L("Abbrechen"))+'</button></div>'+(st?'<button type="button" class="lnk scdel" data-scdel>'+esc(L("Quittierung löschen"))+'</button>':'')+'</form></div>';
   const msg=d.querySelector(".amsg"),f=d.querySelector("form");
   d.addEventListener("click",ev=>{const t=ev.target.closest("[data-scst]");if(t){cur=+t.dataset.scst;d.querySelectorAll("[data-scst]").forEach(z=>z.setAttribute("aria-pressed",String(+z.dataset.scst===cur)));f.e.disabled=cur!==2;f.b.disabled=cur===0;return}
     if(ev.target.closest("[data-scdel]")){const bt=ev.target.closest("[data-scdel]");bt.disabled=true;scWrite(date,sc,u,null).then(()=>{d.remove();if(typeof savedPop==="function")savedPop(true)}).catch(err=>{bt.disabled=false;msg.textContent=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.")});return}
     if(ev.target===d||ev.target.closest("[data-scx]"))d.remove()});
   f.e.disabled=cur!==2;f.b.disabled=cur===0;
-  f.addEventListener("submit",async ev=>{ev.preventDefault();const bm=scMs(date,f.b.value),em=scMs(date,f.e.value);
+  f.addEventListener("submit",async ev=>{ev.preventDefault();if(ev.submitter&&ev.submitter.dataset.scwasub)f.dataset.wa="1";else delete f.dataset.wa;const bm=scMs(date,f.b.value),em=scMs(date,f.e.value);
     if(cur===1){const run=scRunning(date,u,id);if(run){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
     if(cur===2&&bm&&em&&em<bm){msg.textContent=L("Das Ende liegt vor dem Beginn.");return}
-    f.querySelector("button[type=submit]").disabled=true;
-    try{await scWrite(date,sc,u,cur===0?null:{s:cur,b:bm||x.b||Date.now(),e:cur===2?(em||x.e||Date.now()):null});d.remove();if(typeof savedPop==="function")savedPop(true)}
-    catch(err){f.querySelector("button[type=submit]").disabled=false;msg.textContent=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.")}});
+    f.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=true);
+    try{const nv=cur===0?null:{s:cur,b:bm||x.b||Date.now(),e:cur===2?(em||x.e||Date.now()):null};await scWrite(date,sc,u,nv);d.remove();if(nv&&f.dataset.wa)scShareAsk(date,sc,u,nv,true);else if(typeof savedPop==="function")savedPop(true)}
+    catch(err){f.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=false);msg.textContent=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.")}});
   document.body.appendChild(d)}
 window.scAckDialog=scAckDialog;
 /* Einstellungen → Log: the scene log (begin, end and duration of every quittiert scene, by day) */
