@@ -9,12 +9,18 @@ setInterval(()=>document.querySelectorAll("[data-scrun]").forEach(el=>{el.textCo
 /* one id per scene and day for Drehplan and callsheet alike: «186 pt1A», «186pt1A», «Sc. 186 PT1A», «DJ 186pt1a» → 186pt1a; «21 CONT» = 21 */
 function scAckId(date,sc){return String(date||"").replace(/-/g,"")+"-"+fold(String(sc||"")).replace(/[^a-z0-9]/g,"").replace(/^(dj|d|j|sc|sz|seq|scene|szene)(?=\d)/,"").replace(/(cont|continued|forts|fortsetzung)$/,"").slice(0,24)}
 window.scAckId=scAckId;
+/* lunch and wrap rows of the schedule / shooting order are quittiert too: their key «lunch» / «wrap», else "" */
+window.scEvKey=t=>{t=String(t||"");return /\b(lunch|mittag|pranzo|d[ée]jeuner)\b/i.test(t)?"lunch":/\b(wrap|drehschluss)\b/i.test(t)?"wrap":""};
 /* state of a scene: 0 open, 1 running, 2 done */
 window.scState=(date,sc)=>{const x=window.SCACK[scAckId(date,sc)];return x?(x.s===1?1:2):0};
 /* any scene of that day quittiert (then «jetzt» follows the quittances instead of the clock) */
 window.scHas=date=>{const p=String(date||"").replace(/-/g,"")+"-";return Object.keys(window.SCACK).some(k=>k.startsWith(p))};
 const SC_ICO={1:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v8.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 10l-.4-2.3a1.5 1.5 0 0 1 1.2-1.7l12.8-2.3a1.5 1.5 0 0 1 1.7 1.2L19.6 7"/><path d="M8.5 5.3l2.2 3.4M13.5 4.4l2.2 3.4"/></svg>',
-  2:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'};
+  2:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  /* wrap done: two ticks (the shooting day is finished) */
+  wrap:'<svg viewBox="0 0 24 24" width="20" height="18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12.5l4.5 4.5L16.5 7.5"/><path d="M11 16l1 1L21.5 7.5"/></svg>',
+  /* lunch running: knife and fork */
+  lunch:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5v6a2 2 0 0 0 2 2 2 2 0 0 0 2-2v-6M9 3.5v17"/><path d="M17 20.5v-17c-2 1.2-3 3.6-3 7v2h3"/></svg>'};
 /* the round status button of a scene (visible for all, a button only with the permission) */
 window.scAckBtn=(date,sc,u)=>{if(!date||!sc)return"";u=String(u||"1");const st=scState(date,sc),can=typeof canPerm==="function"&&canPerm("scenes.ack");
   const tip=[L("Szene offen – antippen = Szene beginnt"),L("Szene läuft – antippen = abgeschlossen"),L("Szene abgeschlossen – antippen = ändern")][st];
@@ -22,8 +28,9 @@ window.scAckBtn=(date,sc,u)=>{if(!date||!sc)return"";u=String(u||"1");const st=s
   /* left of the icon: begin–end, while running begin and a counter how long it runs */
   const x=window.SCACK[scAckId(date,sc)]||{},b0=+x.b||+x.at||0,tm=st===2?scHM(b0)+(x.e?"–"+scHM(x.e):""):st===1?scHM(b0)+' · <span data-scrun="'+b0+'">'+scDur(Date.now()-b0)+'</span>':"";
   const lab0=tm?'<span class="scackt">'+tm+'</span>':'';
-  return '<span class="scackw">'+lab0+(can?'<button type="button" class="scack sk'+st+'" data-scack="'+esc(date)+'|'+esc(String(sc))+'|'+esc(u)+'" aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+(SC_ICO[st]||"")+'</button>'
-    :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+(SC_ICO[st]||"")+'</span>')+'</span>'};
+  const ico=st===1&&sc==="lunch"?SC_ICO.lunch:st===2&&sc==="wrap"?SC_ICO.wrap:(SC_ICO[st]||"");
+  return '<span class="scackw">'+lab0+(can?'<button type="button" class="scack sk'+st+'" data-scack="'+esc(date)+'|'+esc(String(sc))+'|'+esc(u)+'" aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+ico+'</button>'
+    :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+ico+'</span>')+'</span>'};
 /* live for everybody: the quittances from yesterday on */
 async function scAckSub(){if(SCSUB||typeof ME==="undefined"||!ME)return;try{const {F,db}=await fb();const y=new Date(Date.now()-864e5),p=n=>String(n).padStart(2,"0"),from=y.getFullYear()+"-"+p(y.getMonth()+1)+"-"+p(y.getDate());
   SCSUB=F.onSnapshot(F.query(F.collection(db,"sceneack"),F.where("d",">=",from)),q=>{const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;render()}},()=>{SCSUB=null})}catch(_){SCSUB=null}}
@@ -39,7 +46,8 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   if(st===2){scAckDialog(date,sc,u);return}
   if(st===0){const run=scRunning(date,u,id);if(run){showMsg(L("Szene {s} läuft noch – zuerst abschliessen.").replace("{s}",run),4000);return}}
   b.disabled=true;
-  try{await scWrite(date,sc,u,st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()})}
+  if(st===0&&sc==="wrap"){const now=Date.now();for(const [rid,rx] of Object.entries(window.SCACK))if(rx&&rx.d===date&&rx.s===1&&String(rx.u||"1")===String(u||"1")){const k=rx.sc||rid.split("-").slice(1).join("-");try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now,e:now})}catch(_){}}}
+  try{await scWrite(date,sc,u,st===0&&sc==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()})}
   catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich."),4000)}},true);
 /* popup of a quittiert scene: state, begin and end time; «offen» takes the quittance away */
 function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{},st=scState(date,sc);

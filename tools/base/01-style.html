@@ -1398,7 +1398,6 @@ html body #view .scack{display:inline-flex;align-items:center;justify-content:ce
 html body #view span.scack{cursor:default;border-color:var(--rule);color:var(--muted)}
 html body #view .scack.sk1{background:var(--accent);border-color:var(--accent);color:#fff}
 html body #view .scack.sk2{border-color:color-mix(in srgb,var(--ok,#4caf7d) 70%,transparent);color:var(--ok,#4caf7d)}
-html body #view li.scdone>.sc{opacity:.55}
 /* Drehplan: the scene status top right of the scene */
 html body #view ol.tl>li.row>.sc{position:relative}
 html body #view ol.tl>li.row>.sc>.l1{padding-right:36px}
@@ -1415,4 +1414,10 @@ html body #view .scackw:has(.sk1) .scackt{color:var(--accent);font-weight:700}
 html body #view .scackw .scack{margin-left:0}
 html body #view ol.tl>li.row>.sc>.l1:has(.scackt){padding-right:136px}
 html body #view .csscd>summary .l1:has(.scackt){padding-right:128px}
+/* lunch and wrap quittiert: status right in the row */
+html body #view li.row.evack>.what{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+html body #view li.row.evack>.what>.scackw{margin-left:auto}
+html body #view li.row.ev.now>.what{outline:2px solid var(--accent);border-radius:10px}
+/* callsheet shooting order: quittiert scenes grey only while folded */
+html body #view .csorder li.scdone .csscd:not([open])>summary{opacity:.55}
 </style>

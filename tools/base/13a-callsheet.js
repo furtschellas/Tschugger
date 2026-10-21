@@ -118,11 +118,14 @@ function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.name)retur
 function csHM(d){d=d||new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null */
 function csNowScene(x){x=x||(S.dispos||[]).find(y=>y&&y.date===todayISO());const c=x&&x.cs;if(!c||x.date!==todayISO())return null;const rows=csA((c.order||{}).rows);let i=csNowIdx(rows,x.date);
+  if(i>=0&&!rows[i].sc&&typeof scEvKey==="function"&&scEvKey(rows[i].text)==="lunch"&&typeof scHas==="function"&&scHas(x.date)&&scState(x.date,"lunch")===1)return Object.assign({},rows[i],{lunch:true});
   for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(/wrap|drehschluss/i.test(String(r.text||"")))return null}return null}
 function csNowIdx(rows,date){if(date!==todayISO())return -1;
   /* scenes quittiert in the Drehplan: the running one, else the next open one after the last done (all done: none) */
-  if(typeof scHas==="function"&&scHas(date)){const st=csA(rows).map(r=>r.sc?scState(date,r.sc):-1),run=st.indexOf(1);if(run>=0)return run;let last=-1;st.forEach((v,i)=>{if(v===2)last=i});
-    for(let i=last+1;i<st.length;i++)if(st[i]===0)return i;return -1}
+  if(typeof scHas==="function"&&scHas(date)){const key=r=>r.sc||(typeof scEvKey==="function"?scEvKey(r.text||r.syn):"");
+    const st=csA(rows).map(r=>key(r)?scState(date,key(r)):-1);if(st.some((v,i)=>v===2&&key(rows[i])==="wrap"))return -1;   /* wrap quittiert: nothing runs any more */
+    const run=st.indexOf(1);if(run>=0)return run;let last=-1;st.forEach((v,i)=>{if(v===2)last=i});
+    for(let i=last+1;i<st.length;i++)if(st[i]===0&&csA(rows)[i].sc)return i;return -1}
   const now=csHM();let k=-1;
   csA(rows).forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});return k}
 /* which set a scene is shot on: by the scenes listed at the location, else by the set name */
@@ -208,7 +211,8 @@ function csLocFp(c,l,date,icon){if(l.kinds||typeof fpFor!=="function"||!vok("blo
   if(icon)return [...out.values()].map(f=>'<a class="cshn csfpi" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer" title="'+esc("Floorplan · "+f.name)+'" aria-label="'+esc("Floorplan · "+f.name)+'">'+CSI.fp+'</a>').join("");
   return '<div class="csfp">'+[...out.values()].map(f=>'<a class="pillbtn" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+CSI.doc+' Floorplan · '+esc(f.name)+'</a>').join("")+'</div>'}
 function csOrderRows(rows,date,locs,one){const ONE=(()=>{const s0=csA(locs).filter(l=>!l.kinds&&l.no);return s0.length===1?s0[0]:null})();if(!csA(rows).length)return"";const ni=date?csNowIdx(rows,date):-1;return '<ol class="tl csorder">'+csA(rows).map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
-    if(!r.sc)return '<li class="row ev'+nw+'"><div class="t">'+esc(r.t||"")+nb+'</div><div class="what">'+csTx(r.text||r.syn||"")+'</div></li>';
+    if(!r.sc){const ek=date&&typeof scEvKey==="function"?scEvKey(r.text||r.syn):"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(date,ek,"1"):"";
+      return '<li class="row ev'+nw+(eb?' evack':'')+'"><div class="t">'+esc(r.t||"")+nb+'</div><div class="what">'+csTx(r.text||r.syn||"")+eb+'</div></li>'}
     /* scenes look like in the schedule (same row, details, cast, buttons): the scheduled row of that day with the callsheet time */
     const sx=(()=>{try{const l=(schedIndex()[norm(r.sc)]||[]);const o=l.find(y=>y.d&&y.d.date===date)||l[0];return o?o.it:null}catch(_){return null}})();
     const fromCs={sc:String(r.sc),ie:r.ie||"",set:r.set||"",d:r.syn||"",pg:r.pgs||"",dur:r.dur||"",dir:r.dir||"",cast:String(r.cast||"").split(/[,\s]+/).filter(Boolean)};
@@ -463,8 +467,8 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   h+=csRadioHTML(c.radio);
   /* my day */
   /* my day: on the shooting day first the scene being shot now (with its place) */
-  const NS=csNowScene(x);window.CSNOWSC=NS?String(NS.sc):"";
-  const nowRow=NS?(()=>{let lo=null;try{lo=csSceneLoc(csLocs(c),NS)}catch(_){}return '<div class="csme-r csme-now"><span class="k">'+esc(L("Jetzt"))+'</span><span class="v"><b>'+esc(String(NS.sc))+'</b>'+(lo?' '+csPlaceA('L'+String(lo.no).trim(),csLocHref(lo,c,x.date),lo.name||""):'')+' <small>'+esc([NS.ie,NS.set].filter(Boolean).join(" · "))+'</small></span></div>'})():'';
+  const NS=csNowScene(x);window.CSNOWSC=NS?(NS.lunch?"lunch":String(NS.sc)):"";
+  const nowRow=NS&&NS.lunch?'<div class="csme-r csme-now"><span class="k">'+esc(L("Jetzt"))+'</span><span class="v">'+CSI.lunch+' <b>Lunch</b></span></div>':NS?(()=>{let lo=null;try{lo=csSceneLoc(csLocs(c),NS)}catch(_){}return '<div class="csme-r csme-now"><span class="k">'+esc(L("Jetzt"))+'</span><span class="v"><b>'+esc(String(NS.sc))+'</b>'+(lo?' '+csPlaceA('L'+String(lo.no).trim(),csLocHref(lo,c,x.date),lo.name||""):'')+' <small>'+esc([NS.ie,NS.set].filter(Boolean).join(" · "))+'</small></span></div>'})():'';
   if(me){const mine=csMine(c,me);if(mine.length)h+='<section class="dsec csme" id="cs-mein" aria-label="'+esc(L("Mein Tag")+" · "+me.name)+'"><h2 class="csme-h">'+dtitle+' <span>'+fmtDate(x.date)+'</span></h2>'+nowRow+mine.join("")+'</section>'}
   /* key people of the day */
   /* folded parts: sums and short facts in one line */
