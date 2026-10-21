@@ -1,9 +1,10 @@
 /* ---------- 11) Protokoll: who changed what in the administration (roles, users, menus, settings, messages) ---------- */
-const AUDIT_COLS=["roles","userroles","admins","owners","invites","members","menus","config","broadcasts","starts","requests"];
+const AUDIT_COLS=["roles","userroles","admins","owners","invites","members","menus","config","broadcasts","starts","requests","sceneack"];
 function auditSum(col,data,op){
   if(op==="delete")return "";
   if(col==="broadcasts")return data&&data.c?L("Nachricht gesendet"):(data&&data.sent?L("versendet"):"");
   if(!data||typeof data!=="object")return "";
+  if(col==="sceneack"){const t=ms=>{if(!ms)return"";const d=new Date(+ms);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};return L("Szene")+" "+(data.sc||"")+" · "+(data.s===1?L("läuft")+" "+t(data.b):L("abgeschlossen")+" "+t(data.b)+"–"+t(data.e))}
   const keysOnly=col==="members"||col==="requests"; /* profile values (phone, address …) never into the log, only which fields changed */
   const out=[];for(const [k,v] of Object.entries(data)){if(["at","by","addedAt","joinedAt","lastSeen","c"].includes(k))continue;if(keysOnly){out.push(k.split(".")[0]);continue}if(v&&typeof v==="object"&&!Array.isArray(v)&&(v._methodName||v.constructor&&/FieldValue|Sentinel/.test(v.constructor.name)))continue;
     let s=Array.isArray(v)?v.join(", "):typeof v==="object"?JSON.stringify(v):String(v);if(s.length>60)s=s.slice(0,57)+"…";out.push(k+": "+s)}
@@ -29,7 +30,7 @@ async function auditLoad(){AUD.busy=true;try{const {F,db}=await fb();let q;
     try{q=await F.getDocs(F.query(F.collection(db,"audit"),F.orderBy("at","desc"),F.limit(300)))}catch(_){q=await F.getDocs(F.collection(db,"audit"))}
     AUD.list=q.docs.map(d=>Object.assign({id_:d.id},d.data())).map(x=>Object.assign(x,{ms:x.at&&x.at.toMillis?x.at.toMillis():(x.at&&x.at.seconds?x.at.seconds*1000:Date.parse(x.at)||0)})).sort((a,b)=>b.ms-a.ms).slice(0,300);AUD.err=""}
   catch(err){AUD.list=[];AUD.err=(err&&err.code)||String(err)}AUD.busy=false;AUD.at=Date.now();render()}
-const AUDLBL={app:"App-Fehler",roles:"Rolle",userroles:"Rolle zugewiesen",admins:"Admin",owners:"Owner",invites:"Einladung",members:"Profil",menus:"Menü",config:"Einstellungen",broadcasts:"Push-Nachricht",starts:"Startpasswort",requests:"Zugangsanfrage"};
+const AUDLBL={app:"App-Fehler",roles:"Rolle",userroles:"Rolle zugewiesen",admins:"Admin",owners:"Owner",invites:"Einladung",members:"Profil",menus:"Menü",config:"Einstellungen",broadcasts:"Push-Nachricht",starts:"Startpasswort",requests:"Zugangsanfrage",sceneack:"Szene"};
 const AUDOP={error:"gemeldet",set:"gespeichert",update:"geändert",delete:"gelöscht",add:"erstellt"};
 function auditSecInner(){
   if(!AUD.list&&!AUD.busy)auditLoad();

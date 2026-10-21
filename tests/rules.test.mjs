@@ -207,6 +207,8 @@ await check("Szene quittieren: mit «Szenen quittieren» geht", assertSucceeds(s
 await check("Szene quittieren: Crew ohne Recht nicht", assertFails(setDoc(doc(as("crew"), "sceneack/20261021-13"), { d: "2026-10-21", at: Date.now(), s: 1 })));
 await check("Szene quittieren: Datum muss zur ID passen", assertFails(setDoc(doc(scener, "sceneack/20261022-12"), { d: "2026-10-21", at: Date.now(), s: 2 })));
 await check("Szene quittieren: Stand nur 1 oder 2, keine fremden Felder", assertFails(setDoc(doc(scener, "sceneack/20261021-14"), { d: "2026-10-21", at: Date.now(), s: 2, name: "x" })));
+await check("Szene quittieren: mit Unit, Szene, Beginn und Ende geht", assertSucceeds(setDoc(doc(scener, "sceneack/20261021-15"), { d: "2026-10-21", at: Date.now(), s: 2, u: "2", sc: "15", b: Date.now() - 3600e3, e: Date.now() })));
+await check("Szene quittieren: unbekannte Unit nicht", assertFails(setDoc(doc(scener, "sceneack/20261021-16"), { d: "2026-10-21", at: Date.now(), s: 1, u: "9" })));
 await check("Szene quittieren: Crew darf den Stand lesen", assertSucceeds(getDoc(doc(as("crew"), "sceneack/20261021-12"))));
 await check("Szene quittieren: nicht eingeladene Person liest nicht", assertFails(getDoc(doc(as("stranger"), "sceneack/20261021-12"))));
 
