@@ -757,7 +757,7 @@ async def owner_tests(p, port):
         # start page: a start (or coming back after a long pause) opens Today; with Today off the Drehplan at today / the next day
         sp = await E("""(()=>{const keep=localStorage.getItem('today'),tab=S.tab,day=S.day;const r={};
           S.tab='loc';S.day='x';goStart();r.on=S.tab;localStorage.setItem('today','0|'+(keep||'').replace(/^[01]\\|?/,''));S.tab='loc';S.day='x';goStart();r.off=S.tab;
-          const l=S.days.filter(d=>d.kind!=='off'&&d.kind!=='travel'),nx=l.find(d=>d.date>=todayISO())||l[l.length-1];r.day=!l.length||S.day===nx.id||String(S.day||'').startsWith('prep:');
+          const l=S.days.filter(d=>d.kind!=='off'&&d.kind!=='travel'),nx=l.find(d=>d.date>=todayISO())||l[l.length-1],nx2=l.find(d=>d.date>todayISO());/* one hour after the wrap of today: the next day */r.day=!l.length||S.day===nx.id||(!!nx2&&S.day===nx2.id)||String(S.day||'').startsWith('prep:');
           if(keep==null)localStorage.removeItem('today');else localStorage.setItem('today',keep);S.tab=tab;S.day=day;render();return r})()""")
         check("Start: Today, ohne Today Drehplan beim aktuellen Tag", sp == {"on": "today", "off": "plan", "day": True}, sp, public=True)
         await E("localStorage.setItem('today','1');S.tab='today';render()")
