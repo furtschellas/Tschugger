@@ -17,11 +17,11 @@ function auditWrap(fs){
     fs.addDoc(fs.collection(FB.db,"audit"),{by:lc(ME.email),at:fs.serverTimestamp(),op,col,id:String(id||"").slice(0,120),sum:auditSum(col,data,op)}).catch(()=>{})}catch(_){}};
   /* «Ansicht als …» (simulation): nothing is written – not only forms, also buttons, switches and selections */
   const sim=()=>{if(typeof SIMUSER!=="undefined"&&SIMUSER){throw Object.assign(new Error(L("Nur Ansicht – in der Simulation wird nichts gespeichert.")),{code:"simulation"})}};
-  F.setDoc=async(ref,data,o)=>{sim();const r=await fs.setDoc(ref,data,o);log("set",ref,data);return r};
-  F.updateDoc=async(ref,data)=>{sim();const r=await fs.updateDoc(ref,data);log("update",ref,data);return r};
-  F.deleteDoc=async(ref)=>{sim();const r=await fs.deleteDoc(ref);log("delete",ref,null);return r};
+  F.setDoc=async(ref,data,o)=>{sim();const r=await fs.setDoc(ref,data,o);log("set",ref,data);savedPop();return r};
+  F.updateDoc=async(ref,data)=>{sim();const r=await fs.updateDoc(ref,data);log("update",ref,data);savedPop();return r};
+  F.deleteDoc=async(ref)=>{sim();const r=await fs.deleteDoc(ref);log("delete",ref,null);savedPop();return r};
   F.writeBatch=db=>{sim();return fs.writeBatch(db)};
-  F.addDoc=async(col,data)=>{sim();const r=await fs.addDoc(col,data);if(col&&col.path!=="audit")log("add",{path:col.path+"/"+(r&&r.id||"")},data);return r};
+  F.addDoc=async(col,data)=>{sim();const r=await fs.addDoc(col,data);if(col&&col.path!=="audit"){log("add",{path:col.path+"/"+(r&&r.id||"")},data);savedPop()}return r};
   return F;
 }
 const AUD={list:null,busy:false,q:"",at:0};
@@ -180,3 +180,16 @@ async function workerCheck(){if(!window.CHATURL||!isAdmin()||Date.now()-WK.at<10
   try{const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/",{cache:"no-store"});const j=r.ok?await r.json():null;WK.v=j&&j.v||"?";if(S.tab==="admin")render()}catch(_){WK.v="?"}}
 window.workerWarnHTML=function(){workerCheck();const want=window.WORKERVER||"";if(!want||!WK.v||WK.v===want)return "";
   return '<div class="wkwarn" role="status"><b>'+esc(L("Cloudflare Worker veraltet"))+'</b><br>'+esc(L("Er läuft mit Version {a}, die App erwartet {b}. Bitte den Code aus tools/chat_worker.js in Cloudflare einsetzen.").replace("{a}",WK.v==="?"?L("unbekannt"):WK.v).replace("{b}",want))+'</div>'};
+
+/* «Gespeichert»: a short popup after every save the person started (a «Speichern» button or a form) – not for writes in the background */
+let SAVEAT=0,SAVEPOPAT=0;
+const SAVE_RE=/speichern|sichern|save|enregistr|salva|सहेज/i;
+document.addEventListener("submit",()=>{SAVEAT=Date.now()},true);
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button,[role=button]");if(b&&(b.type==="submit"||SAVE_RE.test(b.textContent||"")||SAVE_RE.test(b.getAttribute("aria-label")||"")))SAVEAT=Date.now()},true);
+function savedPop(force){if(!force&&Date.now()-SAVEAT>12000)return;if(Date.now()-SAVEPOPAT<1500)return;SAVEPOPAT=Date.now();SAVEAT=0;
+  let p=document.getElementById("savepop");if(!p){p=document.createElement("div");p.id="savepop";p.setAttribute("role","status");p.setAttribute("aria-live","polite");document.body.appendChild(p)}
+  p.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>'+esc(L("Gespeichert"))+'</span>';
+  p.classList.remove("on");void p.offsetWidth;p.classList.add("on");clearTimeout(p.__t);p.__t=setTimeout(()=>p.classList.remove("on"),1800)}
+window.savedPop=savedPop;
+/* the existing short messages «… gespeichert.» also show the popup */
+{const sm=window.showMsg;if(typeof sm==="function"){window.showMsg=function(t,ms){try{if(/gespeichert|enregistr|salvat|saved|सहेज/i.test(String(t||"")))savedPop(true)}catch(_){}return sm.apply(this,arguments)}}}
