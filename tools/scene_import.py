@@ -1,8 +1,8 @@
-"""One-time action: the scene quittances of shooting days 1 and 2 are replaced by the times of the shooting schedule (Drehplan).
+"""One-time action: all scene quittances are deleted, then those of shooting days 1 and 2 are set by the times of the shooting schedule (Drehplan).
 
 Every scene, lunch, wrap and further setup of the 1st unit becomes «abgeschlossen» with the planned times:
 begin = its time in the Drehplan, end = the time of the next row (wrap: begin = end). Quittances that already
-exist are overwritten; other entries of these days stay. The log shows counts only.
+of other days or units are gone (rides are not touched). The log shows counts only.
 Run: Actions → «Szenen-Quittierung übernehmen» (needs FIREBASE_SA and CREW_KEY).
 """
 import base64, json, os, re, sys, time, unicodedata
@@ -83,6 +83,13 @@ def main():
     h, _ = ({}, None) if dry else fsadmin._auth()
     if not dry and not h: print("• kein Dienstkonto (FIREBASE_SA)"); sys.exit(1)
     made = kept = bad = 0
+    # first every scene quittance is deleted (all days, all units) – the rides stay
+    if not dry:
+        gone = 0
+        for did, _, _ in list(fsadmin.list_docs("sceneack")):
+            if fsadmin.delete_doc("sceneack/" + did): gone += 1
+            else: bad += 1
+        print("• alle Szenen-Quittierungen gelöscht: %d" % gone)
     for n, day in enumerate(shoot, 1):
         docs = docs_for(day)
         for i, (did, v) in enumerate(docs.items()):
