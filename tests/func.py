@@ -548,6 +548,9 @@ async def owner_tests(p, port):
           const kl=S.locs;S.locs=[];/* without the app's location list (its addresses would decide) */const ls=csLocs(c),g=csLocGroups(c,ls,'');const m=g.find(l=>l._m);const h=renderCS({date:'2030-05-06',cs:c},{date:'2030-05-06'});S.locs=kl;
           return {set2map:(ls.find(l=>l.no==='2')||{}).map||'',merged:!!m&&m._m.length===2,title:/csmset[^]*L1[^]*XQZ OFFICE[^]*L2[^]*XQZ SPACE/.test(h)}})()""")
         check("Callsheet: Kartenlink eines Nebenorts gilt nicht für das Set; Sets gebündelt, Titel je L-Code mit Setbezeichnung", w3 in (None, {"set2map": "", "merged": True, "title": True}), w3)
+        sq = await E("""(()=>{if(typeof csSceneLoc!=='function')return null;const c={locations:[{no:'1',name:'CHAPEL',scenes:''},{no:'2',name:'TANNEN FOREST (BUSHES)',scenes:'Seq. 186pt1A'},{no:'ER',name:'TANNEN FOREST (PARTY)',scenes:'Seq.186 pt1B/C/pt2'},{no:'4',name:"REGINA’S OFFICE"}]};const ls=csLocs(c);
+          return ['2|ITALY - ISLAND - CHAPEL','186 pt1A|VALAIS - TANNEN FOREST','186 pt1B|VALAIS - TANNEN FOREST','186 pt2|VALAIS - TANNEN FOREST',"12|VALAIS - POLICE STATION - REGINA'S OFFICE"].map(t=>{const [sc,set]=t.split('|');const l=csSceneLoc(ls,{sc,set});return l?'L'+l.no:'-'}).join(',')})()""")
+        check("Callsheet-Drehfolge: L-Code bei jeder Szene («Seq. 186 pt1B/C/pt2», anderer Apostroph)", sq in (None, "L1,L2,L3,L3,L4"), sq)
         re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
           const r0={t1:'07:30',t2:'08:00',from:'Hotel',to:'Base',vehicle:'Van 1',driver:'Max Fahrer',passengers:'Anna Muster'};S.dispos=[{date:t,cs:{transport:[r0]}}];
           const id=rideId(t,r0);window.RIDEEDIT={[id]:{t1:'07:45',passengers:'Anna Muster, Lena Test'}};window.REDVER=(window.REDVER||0)+1;rideEditApply();const r=S.dispos[0].cs.transport[0];
