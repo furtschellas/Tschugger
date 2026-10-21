@@ -1271,7 +1271,7 @@ html body #view details.csloc>summary .csloc-i .cshn[aria-expanded="true"]{backg
 html body #view details.csloc>summary .cshn-t{display:block;flex-basis:100%;width:100%;margin-top:4px;padding:5px 8px;border-radius:8px;background:var(--accent-soft);font-size:.86em;line-height:1.35}
 html body #view details.csloc>summary .cshn-t[hidden]{display:none}
 /* the place where the shooting is now */
-html body #view details.csloc.csnow{box-shadow:inset 3px 0 0 var(--accent)}
+html body #view details.csloc.csnowloc,html body #view details.csloc.csnowloc:not([open]){box-shadow:none;border:2px solid var(--accent)!important;outline:0}
 html body #view details.csloc .csnowb{flex:0 0 auto;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 7px;white-space:nowrap}
 /* jump bar with «Nur meins» and PDF: all round buttons in one line on small phones */
 @media (max-width:760px){html body #view .csjb{gap:clamp(2px,1vw,6px);justify-content:space-between;overflow:hidden}html body #view .csjb button{flex:1 1 0;width:auto;height:auto;min-width:0;min-height:0;max-width:44px;aspect-ratio:1/1;padding:0}html body #view .csjb button .csi{width:46%;height:46%;max-width:18px;max-height:18px}}
@@ -1315,4 +1315,6 @@ html body #view .cs-card:has(.ridest.rs2):not(.csopen) .cs-ct{white-space:nowrap
 html body #view details.csloc .csmset{display:flex;flex-direction:column;gap:3px;font-size:15px;white-space:normal}
 html body #view details.csloc .csmset>span{display:flex;align-items:center;gap:6px}
 html body #view details.csloc .csmset .csplace{font-size:11px}
+/* «jetzt»: pink frame around the whole box, open or folded (locations and shooting order) */
+html body #view .csorder li.now>.sc,html body #view .csorder li.now>.sc>details:not([open]){outline:2px solid var(--accent);outline-offset:0;border-radius:10px}
 </style>
