@@ -1,11 +1,11 @@
-"""One-time action: every role (also roles/admin when it exists) gets the new permission «view.loc» (Locations sehen).
+"""One-time action: every role (also roles/admin when it exists) gets the new permission «view.info» (Infos sehen).
 Run: Actions → «Rollen: Recht ergänzen» (needs FIREBASE_SA). The log shows counts only."""
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import fsadmin  # noqa: E402
 
-PERM = "view.loc"
+PERM = "view.info"
 if not fsadmin.sa(): print("• kein Dienstkonto (FIREBASE_SA)"); sys.exit(1)
 done = had = bad = 0
 for rid, f, ut in list(fsadmin.list_docs("roles")):
