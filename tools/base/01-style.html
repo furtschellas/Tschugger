@@ -1458,11 +1458,11 @@ html body #view li.row.evack>.what>.scackw{margin-right:var(--evack-r,9px)}
 html body #view .csscd>summary>.csexp,html body #view .csscd>summary .scack{width:28px;height:28px;border-width:1.5px}
 html body #view .csscd>summary>.csexp svg{width:13px;height:13px}
 html body #view .csscd>summary .scackw{right:38px}
-/* phone: both icons a bit higher and further right, the scene title below them */
-@media (max-width:760px){html body #view .csscd>summary{padding-top:32px}
- html body #view .csscd>summary>.csexp{top:2px;right:0}
+/* phone: both icons a bit higher and further right; the scene line beside them, the set title (e.g. VALAIS – LAKE – SHORE) below them over the whole width */
+@media (max-width:760px){html body #view .csscd>summary>.csexp{top:2px;right:0}
  html body #view .csscd>summary .scackw,html body #view .csscd>summary .l1>.scackw>.scack{top:2px;right:32px}
- html body #view .csscd>summary .l1::after,html body #view .csscd>summary .l1:has(.scackw)::after{flex-basis:0;display:none}}
+ html body #view .csscd>summary .l1:has(.scackw)::after{flex-basis:64px}
+ html body #view .csscd>summary .l1>.set{margin-top:4px}}
 .scbox .scdel{display:block;margin:12px 0 0;color:var(--danger,#e5484d)}
 html body #view .csorder li.row.evack>.what>.scackw{margin-right:51px}
 @media (max-width:760px){html body #view .csorder li.row.evack>.what>.scackw{margin-right:42px}}
