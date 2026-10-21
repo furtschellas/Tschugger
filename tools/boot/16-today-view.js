@@ -80,6 +80,12 @@ VIEWS.today=function(){
     if(td)h+='<div class="tcard tinfo"><div class="tch">'+esc(L("Heute"))+' · '+esc(L(td.label||""))+'</div>'+(TX(td,"info")?'<p class="tsub">'+esc(TX(td,"info"))+'</p>':'')+'</div>'}
   /* title of the (next) shooting day below my events */
   h+=thead;
+  /* the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
+  try{if(isToday&&canPlan&&typeof csNowScene==="function"){const ns=csNowScene();if(ns){const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
+    const key=ns.lunch?"lunch":ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1?(+ak.b||+ak.at):0;
+    let lo=null;try{lo=ns.lunch?null:csSceneLoc(csLocs(c0),ns)}catch(_){}
+    const since=b0?' <small>· '+esc(L("seit"))+' '+esc(new Date(b0).toTimeString().slice(0,5))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
+    h+='<div class="tcard tnow"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowb">'+(ns.lunch?(window.CSI?CSI.lunch:'')+' <b>Lunch</b>':'<b class="tnsc">'+esc(String(ns.sc))+'</b>'+(lo?' '+csPlaceA('L'+String(lo.no).trim(),csLocHref(lo,c0,t),lo.name||""):'')+' <span class="tnset">'+esc([ns.ie,ns.set].filter(Boolean).join(" · "))+'</span>')+since+'</div></div>'}}}catch(_){}
   /* calls */
   let myCall="";try{if(me&&dp){const myDep=fold(me.src||"").split(/[\s/]/)[0];const c=myDep?arr(dp.calls).find(z=>fold(z.dept||"").includes(myDep)):null;if(c)myCall=hm(c.t)+" · "+c.dept}}catch(_){}
   const tiles=[],shT=tShow("time");

@@ -350,6 +350,7 @@ Object.assign(I18N,{
  "abgeschlossen":{fr:"terminée",it:"completata",en:"done",hi:"पूरा"},
  "Ende":{fr:"Fin",it:"Fine",en:"End",hi:"अंत"},
  "Szene":{fr:"Scène",it:"Scena",en:"Scene",hi:"सीन"},
+ "seit":{fr:"depuis",it:"da",en:"since",hi:"से"},
  "Pers.":{fr:"pers.",it:"pers.",en:"ppl."},
  "Infos nach Dept.":{fr:"Infos par dépt.",it:"Info per rep.",en:"Info by dept."},
  "Notizen & Wetter":{fr:"Notes & météo",it:"Note & meteo",en:"Notes & weather"},

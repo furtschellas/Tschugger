@@ -486,9 +486,9 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   {const sc=csA(o.rows).filter(r=>r.sc).map(r=>String(r.sc)),ch=(k,v)=>v?'<span class="csoc"><i>'+esc(k)+'</i>'+esc(v)+'</span>':'';
    /* folded: Call · Probe · RTS · scenes · Lunch · Wrap in one short line */
    const sumx='<span class="csosum">'+ch("Call",t.crewCall||x.crewCall)+ch(L("Probe"),t.rehearsal)+ch("RTS",t.rts||x.shootCall)+(sc.length?ch(sc.length+" "+L("Szenen"),sc.length>1?sc[0]+"–"+sc[sc.length-1]:sc[0]):"")+ch("Lunch",t.lunch)+ch("Wrap",t.wrap||x.wrap)+'</span>'+
-     (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c);return csA(o.rows).filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
-       /* one line per scene: time · scene · I/E · set code · set · duration */
-       return '<span class="cso1"><i>'+esc(hm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
+     (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c),NR=(()=>{const i=csNowIdx(csA(o.rows),x.date);return i>=0?csA(o.rows)[i]:null})();return csA(o.rows).filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
+       /* one line per scene: time · scene · I/E · set code · set · duration; the scene of now framed */
+       return '<span class="cso1'+(r===NR?' now':'')+'"><i>'+esc(hm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
    h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c),true),false,"","order",sumx)}
   /* cast, extras, vehicles */
   const CC=csCols();

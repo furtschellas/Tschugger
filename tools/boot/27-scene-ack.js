@@ -14,6 +14,14 @@ window.scEvKey=t=>{t=String(t||"");return /\b(lunch|mittag|pranzo|d[ée]jeuner)\
 /* state of a scene: 0 open, 1 running, 2 done */
 window.scState=(date,sc)=>{const x=window.SCACK[scAckId(date,sc)];return x?(x.s===1?1:2):0};
 /* any scene of that day quittiert (then «jetzt» follows the quittances instead of the clock) */
+/* draw again but keep what is open (callsheet parts, scene details, locations) and the scroll position */
+function scRender(){const v=document.getElementById("view");if(!v){render();return}
+  const secs=[...v.querySelectorAll("details[id]")].filter(d=>d.open).map(d=>d.id),scs=[...v.querySelectorAll("li[data-sc]")].filter(li=>{const d=li.querySelector("details.csscd");return d&&d.open}).map(li=>li.dataset.sc),
+    all=[...v.querySelectorAll("details[id]")].filter(d=>d.dataset.all).map(d=>[d.id,d.dataset.all]),y=scrollY;
+  render();
+  for(const id of secs){const d=document.getElementById(id);if(d)d.open=true}for(const [id,a] of all){const d=document.getElementById(id);if(d)d.dataset.all=a}
+  for(const sc of scs){const li=v.querySelector('li[data-sc="'+CSS.escape(sc)+'"]');const d=li&&li.querySelector("details.csscd");if(d)d.open=true}
+  scrollTo(0,y)}
 window.scHas=date=>{const p=String(date||"").replace(/-/g,"")+"-";return Object.keys(window.SCACK).some(k=>k.startsWith(p))};
 const SC_ICO={1:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v8.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 10l-.4-2.3a1.5 1.5 0 0 1 1.2-1.7l12.8-2.3a1.5 1.5 0 0 1 1.7 1.2L19.6 7"/><path d="M8.5 5.3l2.2 3.4M13.5 4.4l2.2 3.4"/></svg>',
   2:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -33,13 +41,13 @@ window.scAckBtn=(date,sc,u)=>{if(!date||!sc)return"";u=String(u||"1");const st=s
     :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+ico+'</span>')+'</span>'};
 /* live for everybody: the quittances from yesterday on */
 async function scAckSub(){if(SCSUB||typeof ME==="undefined"||!ME)return;try{const {F,db}=await fb();const y=new Date(Date.now()-864e5),p=n=>String(n).padStart(2,"0"),from=y.getFullYear()+"-"+p(y.getMonth()+1)+"-"+p(y.getDate());
-  SCSUB=F.onSnapshot(F.query(F.collection(db,"sceneack"),F.where("d",">=",from)),q=>{const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;render()}},()=>{SCSUB=null})}catch(_){SCSUB=null}}
+  SCSUB=F.onSnapshot(F.query(F.collection(db,"sceneack"),F.where("d",">=",from)),q=>{const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;scRender()}},()=>{SCSUB=null})}catch(_){SCSUB=null}}
 setTimeout(scAckSub,3000);setInterval(()=>{if(!SCSUB)scAckSub()},60e3);
 /* the scene running in a unit on that day (other than this one): its scene number, else "" */
 function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCACK))if(x&&x.d===date&&x.s===1&&String(x.u||"1")===String(u||"1")&&id!==except)return x.sc||id.split("-").slice(1).join("-");return""}
 const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;const d=new Date(date+"T00:00:00");d.setHours(+m[1],+m[2],0,0);return d.getTime()};
 async function scWrite(date,sc,u,v){const {F,db}=await fb();const id=scAckId(date,sc),ref=F.doc(db,"sceneack",id);
-  if(!v){await F.deleteDoc(ref);delete window.SCACK[id]}else{v=Object.assign({d:date,at:Date.now(),u:String(u||"1"),sc:String(sc).slice(0,24)},v);for(const k of ["b","e"])if(v[k]==null)delete v[k];await F.setDoc(ref,v);window.SCACK[id]=v}render()}
+  if(!v){await F.deleteDoc(ref);delete window.SCACK[id]}else{v=Object.assign({d:date,at:Date.now(),u:String(u||"1"),sc:String(sc).slice(0,24)},v);for(const k of ["b","e"])if(v[k]==null)delete v[k];await F.setDoc(ref,v);window.SCACK[id]=v}scRender()}
 /* tap: open → running (only when no other scene runs in this unit) → done; a done scene opens the popup to change state and times */
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("button[data-scack]");if(!b)return;e.preventDefault();e.stopPropagation();if(typeof canPerm!=="function"||!canPerm("scenes.ack"))return;
   const [date,sc,u]=b.dataset.scack.split("|");const id=scAckId(date,sc),st=scState(date,sc),x=window.SCACK[id]||{};

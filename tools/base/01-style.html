@@ -1420,4 +1420,12 @@ html body #view li.row.evack>.what>.scackw{margin-left:auto}
 html body #view li.row.ev.now>.what{outline:2px solid var(--accent);border-radius:10px}
 /* callsheet shooting order: quittiert scenes grey only while folded */
 html body #view .csorder li.scdone .csscd:not([open])>summary{opacity:.55}
+/* Today: the scene being shot now */
+html body #view .tcard.tnow{border:2px solid var(--accent)}
+html body #view .tcard.tnow .tnowb{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px}
+html body #view .tcard.tnow .tnsc{font-size:20px;color:var(--accent)}
+html body #view .tcard.tnow .tnset{color:var(--muted);font-size:13px}
+html body #view .tcard.tnow .csi{width:18px;height:18px}
+/* shooting order folded: the scene of now framed in the short list */
+html body #view .csoscn .cso1.now{outline:1.5px solid var(--accent);border-radius:6px}
 </style>
