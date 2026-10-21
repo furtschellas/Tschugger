@@ -110,7 +110,7 @@ function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.name)retur
 function csNowIdx(rows,date){if(date!==todayISO())return -1;const d=new Date(),now=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");let k=-1;
   csA(rows).forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});return k}
 /* which set a scene is shot on: by the scenes listed at the location, else by the set name */
-function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/\s+/g,"");const sc=n(r.sc);const ls=csA(locs).filter(l=>!l.kinds&&l.no);
+function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/[^a-z0-9]/g,"");const sc=n(r.sc);const ls=csA(locs).filter(l=>!l.kinds&&l.no);
   /* «186 PT1B/C/PT2» → 186pt1b, 186pt1c, 186pt2 */
   const list=l=>{const out=[];for(const part of n(csS(l.scenes)).split(/[,;+&]/)){let prev="";for(const t of part.split("/")){if(!t)continue;let v=t;
       if(prev&&/^[a-z]$/.test(t))v=prev.slice(0,-1)+t;else if(prev&&/^(pt|sl)\d/.test(t))v=(prev.match(/^\d+/)||[""])[0]+t;else if(prev&&/^\d+[a-z]?$/.test(t)&&/pt\d/.test(prev)&&t.length<=2)v=prev.replace(/\d+[a-z]?$/,"")+t;
@@ -151,7 +151,7 @@ const csKindCode=k=>String(k).replace(/^W\s*\/\s*H\s*\/\s*M/i,"WHM").replace(/\s
 /* the code of a place as a badge: an icon per kind of place (set, Base, W/H/M, Lunch, Dinner, Prod, DIT, Parking) and the short text */
 const CSKICO={"Base":"base","W / H / M":"whm","Lunch":"lunch","Dinner":"dinner","Prod":"prod","DIT":"dit"};
 function csKindIco(k){const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],b=String(k).replace(/ (Cast|Extras)$/,"");if(b==="W / H / M"&&q)return q==="Cast"?CSI.whmc:CSI.whme;return CSI[CSKICO[b]]||(/park/i.test(b)?CSI.park:"")}
-function csBadgeIn(l,codes){if(!l.kinds)return CSI.set+'<span>'+esc((codes||["L"+String(l.no||"").trim()]).join("·"))+'</span>';
+function csBadgeIn(l,codes){if(!l.kinds)return '<span>'+esc((codes||["L"+String(l.no||"").trim()]).join("·"))+'</span>';
   /* side place: the icons, with the group (Cast / Extras) and a kind without icon as text */
   return l.kinds.map(k=>{const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],t=csKindCode(k).replace(/ (Cast|Extras)$/,q?" "+L(q):"");const ic=csKindIco(k);return '<b class="csk" title="'+esc(t)+'" aria-label="'+esc(t)+'">'+(ic||'<span>'+esc(t)+'</span>')+'</b>'}).join("")}
 function csPlaceH(inner,href,title,cls){const t=title?' title="'+esc(title)+'" aria-label="'+esc(title)+'"':'',k='csplace csbadge'+(cls?' '+cls:'');
@@ -259,6 +259,10 @@ function csLocs0(c){const sets=[],extra=[];
     /* the map link of the set is the one of a side place listed with it (e.g. «WHM Extras … https://…» after the set name): not the place of the set */
     const own=!!l.map&&extra.some(e=>e.map===l.map&&e.kinds.some(k=>k!=="DIT"&&k!=="Prod"));
     sets.push(Object.assign({},l,{items},own?{map:""}:{}))}
+  /* «LOCATION: Bahnhofstrasse 40 - 3970 Salgesch» read as a set of its own: it is the address of the sets without own address or map link */
+  {const isA=t=>/\d{4}\s+\p{L}/u.test(String(t||""))&&!/\bset\b/i.test(String(t||""));const adr=sets.filter(l=>isA(l.name)&&!csS(l.scenes).trim());
+   if(adr.length===1&&sets.length>1){const a=adr[0];sets.splice(sets.indexOf(a),1);for(const l of sets)if(!l.map&&!csA(l.notes).some(n=>isA(n))){l.notes=[a.name].concat(csA(l.notes));if(a.map)l.map=a.map}
+     for(const i of csA(a.items))if(!sets.some(l=>csA(l.items).some(j=>j.map&&j.map===i.map)))sets[0].items=csA(sets[0].items).concat([i])}}
   /* a set without a number on the callsheet («ER SET», read wrongly) gets its position: 1, 2, 3 … (as «Loc. 3» elsewhere in the document) */
   sets.forEach((l,i)=>{if(!/^\d+[a-z]?$/i.test(String(l.no||"").trim()))l.no=String(i+1);l._ix=i+1;l._nos=[String(l.no).trim()]});
   /* DIT / production office at the place of a set: a line of that set, not a location of its own (only somewhere else it is one) */

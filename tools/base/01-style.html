@@ -1317,4 +1317,6 @@ html body #view details.csloc .csmset>span{display:flex;align-items:center;gap:6
 html body #view details.csloc .csmset .csplace{font-size:11px}
 /* «jetzt»: pink frame around the whole box, open or folded (locations and shooting order) */
 html body #view .csorder li.now>.sc,html body #view .csorder li.now>.sc>details:not([open]){outline:2px solid var(--accent);outline-offset:0;border-radius:10px}
+/* phone: the pink frame shows «jetzt», no extra label */
+@media (max-width:760px){html body #view details.csloc .csnowb{display:none}}
 </style>
