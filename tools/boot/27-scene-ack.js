@@ -66,9 +66,9 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich."),4000)}},true);
 /* after a quittance: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
 function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((window.UNAME&&UNAME[u])||u)+" Unit":"",dd=" ("+date.split("-").reverse().slice(0,2).join(".")+"."+un+")";
-  if(sc==="wrap")return "🎬 Wrap "+scHM(v.e||v.b)+" – "+L("Drehtag abgeschlossen")+dd;
-  if(sc==="lunch")return v.s===1?"🍽 Lunch "+L("ab")+" "+scHM(v.b)+dd:"🎬 "+L("Lunch vorbei, es geht weiter")+" "+scHM(v.e)+dd;
-  return v.s===1?"🎬 "+scLabel(sc)+" "+L("läuft seit")+" "+scHM(v.b)+dd:"✅ "+scLabel(sc)+" "+L("abgeschlossen")+" "+scHM(v.b)+"–"+scHM(v.e)+" ("+scDur((v.e||0)-(v.b||0))+")"+dd}
+  if(sc==="wrap")return "Wrap "+scHM(v.e||v.b)+" – "+L("Drehtag abgeschlossen")+dd;
+  if(sc==="lunch")return v.s===1?"Lunch "+L("ab")+" "+scHM(v.b)+dd:L("Lunch vorbei, es geht weiter")+" "+scHM(v.e)+dd;
+  return v.s===1?scLabel(sc)+" "+L("läuft seit")+" "+scHM(v.b)+dd:scLabel(sc)+" "+L("abgeschlossen")+" "+scHM(v.b)+"–"+scHM(v.e)+" ("+scDur((v.e||0)-(v.b||0))+")"+dd}
 function scShareAsk(date,sc,u,v){try{if(localStorage.getItem("scwa:no")==="1")return}catch(_){}
   const txt=scShareText(date,sc,u,v),d=mkDialog("scwadlg",null,{replace:true});
   d.innerHTML='<div class="a2box scbox"><h3>'+esc(L("Info per WhatsApp senden?"))+'</h3><p class="scwat">'+esc(txt)+'</p>'+
