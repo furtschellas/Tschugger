@@ -142,7 +142,8 @@ function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
     /* lunch and wrap: quittiert like the scenes (status right) */
-    const ek=typeof scEvKey==="function"&&window.__mctx&&window.__mctx.date?scEvKey(it.n):"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,ek,window.__mctx.u||"1"):"";
+    const ek=typeof scRowKeys==="function"&&window.__mctx&&window.__mctx.date?(()=>{const c=window.__mctx,dy=(S.days||[]).find(x=>x.date===c.date);if(!dy)return scEvKey(it.n);
+      const l=arr(c.u==="2"?(dy.unit2||{}).items:c.u==="3"?(dy.unit3||{}).items:dy.items);let i=l.indexOf(it);if(i<0)i=l.findIndex(x=>!x.sc&&x.t===it.t&&x.n===it.n);return i<0?scEvKey(it.n):scRowKeys(l,x=>x.n)[i]})():"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,ek,window.__mctx.u||"1"):"";
     return '<li class="row ev'+(mn?' lunch':'')+(eb?' evack':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+eb+mn+'</div></li>';
   }
   const meta=[];

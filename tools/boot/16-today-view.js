@@ -2,7 +2,7 @@
 /* «Today» on/off per person (profile, synced with the view settings) */
 function todayOn(){try{const v=localStorage.getItem("today")||"";return !(v==="0"||v.startsWith("0|"))}catch(_){return true}}
 /* which parts Today shows (profile → App): stored with the on/off value, «1|menu,off» = on, without lunch and offline */
-const TODAY_PARTS=[["my","Meine nächsten Termine",()=>vok("mycal")],["mine","Mein Drehtag",()=>true],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
+const TODAY_PARTS=[["now","Jetzt gedreht",()=>true],["my","Meine nächsten Termine",()=>vok("mycal")],["mine","Mein Drehtag",()=>true],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
   ["loc","Erste Location",()=>vok("plan")],["menu","Mittagessen",()=>true],["scs","Szenen",()=>vok("plan")],["chg","Änderungen",()=>vok("plan")||vok("script")],["off","Offline am Set",()=>vok("blocking")||vok("plan")]];
 function todayHidden(){let v="";try{v=localStorage.getItem("today")||""}catch(_){}const i=v.indexOf("|");return new Set(i<0?[]:v.slice(i+1).split(",").filter(Boolean))}
 const tShow=k=>!todayHidden().has(k);
@@ -72,6 +72,12 @@ VIEWS.today=function(){
   const thead='<div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+ddmm(dt))+'</span></div>';
   let h='<section class="today">';
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
+  /* for everybody, first of all and only while shooting: the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
+  try{if(isToday&&tShow("now")&&typeof csNowScene==="function"){const ns=csNowScene();if(ns){const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
+    const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1?(+ak.b||+ak.at):0;
+    let lo=null;try{lo=ns.ev?null:csSceneLoc(csLocs(c0),ns)}catch(_){}
+    const since=b0?' <small>· '+esc(L("seit"))+' '+esc(new Date(b0).toTimeString().slice(0,5))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
+    h+='<div class="tcard tnow"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowb">'+(ns.ev?(ns.lunch&&window.CSI?CSI.lunch+' ':'')+'<b>'+esc(scLabel(ns.ev))+'</b>':'<b class="tnsc">'+esc(String(ns.sc))+'</b>'+(lo?' '+csPlaceA('L'+String(lo.no).trim(),csLocHref(lo,c0,t),lo.name||""):'')+' <span class="tnset">'+esc([ns.ie,ns.set].filter(Boolean).join(" · "))+'</span>')+since+'</div></div>'}}}catch(_){}
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
   try{if(me&&vok("mycal")&&tShow("my")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
     h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'<button type="button" class="tmyall" data-tomy>'+esc(L("Alle"))+' ›</button></div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· '+esc(L("Fahrer:in"))+': '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+'</div>'}}catch(_){}
@@ -80,12 +86,6 @@ VIEWS.today=function(){
     if(td)h+='<div class="tcard tinfo"><div class="tch">'+esc(L("Heute"))+' · '+esc(L(td.label||""))+'</div>'+(TX(td,"info")?'<p class="tsub">'+esc(TX(td,"info"))+'</p>':'')+'</div>'}
   /* title of the (next) shooting day below my events */
   h+=thead;
-  /* the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
-  try{if(isToday&&canPlan&&typeof csNowScene==="function"){const ns=csNowScene();if(ns){const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
-    const key=ns.lunch?"lunch":ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1?(+ak.b||+ak.at):0;
-    let lo=null;try{lo=ns.lunch?null:csSceneLoc(csLocs(c0),ns)}catch(_){}
-    const since=b0?' <small>· '+esc(L("seit"))+' '+esc(new Date(b0).toTimeString().slice(0,5))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
-    h+='<div class="tcard tnow"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowb">'+(ns.lunch?(window.CSI?CSI.lunch:'')+' <b>Lunch</b>':'<b class="tnsc">'+esc(String(ns.sc))+'</b>'+(lo?' '+csPlaceA('L'+String(lo.no).trim(),csLocHref(lo,c0,t),lo.name||""):'')+' <span class="tnset">'+esc([ns.ie,ns.set].filter(Boolean).join(" · "))+'</span>')+since+'</div></div>'}}}catch(_){}
   /* calls */
   let myCall="";try{if(me&&dp){const myDep=fold(me.src||"").split(/[\s/]/)[0];const c=myDep?arr(dp.calls).find(z=>fold(z.dept||"").includes(myDep)):null;if(c)myCall=hm(c.t)+" · "+c.dept}}catch(_){}
   const tiles=[],shT=tShow("time");

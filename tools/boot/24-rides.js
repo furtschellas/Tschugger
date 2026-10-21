@@ -5,7 +5,7 @@ async function rideAckLoad(force){if(RIDEBUSY||typeof ME==="undefined"||!ME||(!f
   try{const {F,db}=await fb();const s=await F.getDocs(F.query(F.collection(db,"rideack"),F.where("d",">=",todayISO())));const m={};s.forEach(x=>{m[x.id]=x.data()});
     const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))render()}catch(_){}RIDEBUSY=false}
 /* state of a ride: 0 open, 1 started (one check), 2 done (two checks); old entries without s count as done */
-window.rideState=id=>{const x=window.RIDEACK[id];return x?(x.s===1?1:2):0};
+window.rideState=id=>{if(window.RIDEACKON===false)return 0;const x=window.RIDEACK[id];return x?(x.s===1?1:2):0};
 /* when the ride was set to its state (ms) */
 window.rideAt=id=>{const x=window.RIDEACK[id];return x&&+x.at||0};
 const RIDE_ICO={1:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -14,7 +14,8 @@ const RIDE_ICO={1:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" s
 window.RIDE_ICO=RIDE_ICO;
 /* the status as a round icon: open = empty circle, accepted / running = driving car, done = check (same as in the callsheet) */
 window.rideIco=st=>st===1?RIDE_ICO.car:st===2?RIDE_ICO[1]:"";
-window.rideAckBtn=e=>{if(!e||!e.ride||!e.rid||e.noack)return"";const st=rideState(e.rid),can=e.drv||(typeof canPerm==="function"&&(canPerm("rides.confirm")||canPerm("rides.manage")));
+window.rideAckBtn=e=>{if(!e||!e.ride||!e.rid||e.noack||window.RIDEACKON===false)return"";   /* switched off in App-Verwaltung → Einstellungen */
+  const st=rideState(e.rid),can=e.drv||(typeof canPerm==="function"&&(canPerm("rides.confirm")||canPerm("rides.manage")));
   const tip=[L("Fahrt offen – antippen = annehmen"),L("Fahrt läuft – antippen = ausgeführt"),L("Fahrt ausgeführt – antippen = zurücksetzen")][st];
   if(!can)return st?'<span class="ridek rk'+st+'" title="'+esc(st===1?L("Fahrt läuft"):L("Fahrt ausgeführt"))+'">'+rideIco(st)+'</span>':"";
   return '<button type="button" class="rideack rk'+st+'" data-rideack="'+esc(e.rid)+'" data-rided="'+esc(e.date)+'"'+(e.drv?' data-rdrv="1"':'')+' aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+rideIco(st)+'</button>'};
@@ -31,7 +32,7 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))re
 {let OLDN=-1;setInterval(()=>{if(S.tab!=="dispo")return;const n=Object.values(window.RIDEACK||{}).filter(x=>x&&x.s!==1&&Date.now()-(+x.at||0)>20*60e3).length;let nk=null;try{const C=typeof CSCUR!=="undefined"&&CSCUR.c;if(C&&window.CSNOWK!=null){const l=csNowLoc(C,CSCUR.date,csLocs(C));nk=l?l.no+'|'+l.name:''}}catch(_){}
   /* also when the place of the shooting changes («jetzt hier») */
   /* also when the scene being shot changes («Jetzt» in my day) */
-  let ns=null;try{if(window.CSNOWSC!=null&&typeof csNowScene==="function"){const r=csNowScene();ns=r?(r.lunch?"lunch":String(r.sc)):""}}catch(_){}
+  let ns=null;try{if(window.CSNOWSC!=null&&typeof csNowScene==="function"){const r=csNowScene();ns=r?(r.ev||String(r.sc)):""}}catch(_){}
   if((OLDN>=0&&n!==OLDN)||(nk!=null&&nk!==window.CSNOWK)||(ns!=null&&ns!==window.CSNOWSC))render();OLDN=n},60e3)}
 
 /* links inside clickable callsheet headers (L-codes, addresses): open the link without toggling or triggering the surrounding element */

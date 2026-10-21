@@ -1437,4 +1437,17 @@ html body #view .csscd>summary .l1>.set,html body #view ol.tl>li.row>.sc>.l1>.se
  html body #view .csscd>summary .l1>.scackw>.scack{position:absolute;top:6px;right:44px}
  html body #view .csscd>summary .l1>.scackw>.scackt{order:3;flex:1 1 100%}
  html body #view .csscd>summary .l1:has(.scackw)::after{flex-basis:80px}}
+
+/* popup of a quittiert scene: the states as round symbols with their name */
+.scbox .scst{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 12px}
+.scbox .scstb{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:70px;padding:6px 4px;border:1px solid transparent;border-radius:10px;background:none;color:inherit;font:inherit;font-size:12px;cursor:pointer;opacity:.6}
+.scbox .scstb[aria-pressed="true"]{opacity:1;border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.scbox .scstb .scack{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1.5px dashed var(--rule);color:var(--muted)}
+.scbox .scstb .scack.sk1{border:1.5px solid var(--accent);background:var(--accent);color:#fff}
+.scbox .scstb .scack.sk2{border:1.5px solid color-mix(in srgb,var(--ok,#4caf7d) 70%,transparent);color:var(--ok,#4caf7d)}
+.scbox .scstb .scack svg{width:20px;height:20px}
+/* scene log: begin, end and duration in three columns; open rows faint */
+html body #view .sclt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 10px;font-variant-numeric:tabular-nums}
+html body #view .sclt b{font-family:var(--f-mono,monospace);font-weight:600}
+html body #view li.sclo{opacity:.6}
 </style>
