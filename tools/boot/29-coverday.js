@@ -34,7 +34,18 @@ function cdTransform(days0){const ops=cdActive();if(!ops.length)return days0;
       for(let i=sl.length-1;i>=1;i--){const d=get(sl[i]);if(op.u==="2"){if(cs[i-1])d.unit2=cs[i-1]}else{empty(d);Object.assign(d,cs[i-1])}note(d,"↷ "+L("Coverday: nachgerückt vom")+" "+cdDD(sl[i-1]))}
       const f=get(sl[0]);if(op.u==="2")delete f.unit2;else empty(f);note(f,"↷ "+L("Coverday: Drehtag nachgerückt"))}
   }catch(err){console.warn("coverday",err)}}
-  return days.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)}
+  days.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  try{cdRenumber(days,ops)}catch(err){console.warn("coverday",err)}
+  return days}
+/* the shooting day numbers follow the date again (D03 before D04): only between the first and the last date of the changes,
+   so the numbers outside stay exactly as in the Drehplan */
+const cdNo=d=>{const m=String(d.short||d.label||"").match(/\d+/);return m?+m[0]:null};
+const cdSetNo=(s,n)=>String(s).replace(/\d+/,m=>String(n).padStart(m.length,"0"));
+function cdRenumber(days,ops){const ds=[];for(const op of ops){ds.push(op.a);if(op.b)ds.push(op.b);
+    if(op.op==="shift"){const sh=days.filter(d=>d.date>=op.a&&d.kind==="shoot").map(d=>d.date);if(sh.length)ds.push(sh[sh.length-1])}}
+  const fr=ds.filter(Boolean).sort()[0],to=ds.filter(Boolean).sort().pop();if(!fr)return;
+  const win=days.filter(d=>d.date>=fr&&d.date<=to&&d.kind==="shoot"&&cdNo(d)!=null),nos=win.map(cdNo).sort((a,b)=>a-b);
+  win.forEach((d,i)=>{if(cdNo(d)===nos[i])return;if(d.short)d.short=cdSetNo(d.short,nos[i]);if(d.label)d.label=cdSetNo(d.label,nos[i])})}
 /* dates touched by the active changes (the callsheet of such a day only when it is newer than the change) */
 function cdTouched(){const out=new Map();for(const op of cdActive()){const add=dt=>{if(dt&&!(out.get(dt)>(+op.at||0)))out.set(dt,+op.at||0)};add(op.a);add(op.b);
   if(op.op==="shift"){const sl=cdShootDates(S.days0||S.days,op.u,op.a);sl.forEach(add);if(sl.length)add(cdNextSlot(sl[sl.length-1]))}}return out}
