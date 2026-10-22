@@ -473,6 +473,12 @@ async def owner_tests(p, port):
           const pts=[{p:[46.3,7.6],c:'Base',n:'Base'}];const a=csGmFeat(pts,{on:true,color:true,off:['B']}).map(f=>f.n),b=csGmFeat(pts,{on:true,color:false,off:[]});S.gmap=k;
           return {a,b:b.map(f=>f.n),col:b.every(f=>!f.c)}})()""")
         check("Callsheet-Karte: Google-Karte ohne doppelte Punkte, nur in der Nähe, Ebenen und Farben wählbar", gm in (None, {"a": ["Nah", "Weg"], "b": ["Nah", "Ebene B", "Weg"], "col": True}), gm, public=True)
+        rpt = await E("""(()=>{if(typeof reportsSec!=='function'||typeof repDay!=='function')return null;const k={m:S.meta&&S.meta.reports,c1:window.canRep,c2:window.canRepAny};S.meta=S.meta||{};window.canRep=()=>true;window.canRepAny=()=>true;
+          S.meta.reports=[{g:'DIT',n:'SD01_261020_Clips Report',d:'2026-10-21',f:['blk/a.bin'],pdf:'blk/a.pdf.bin',u:'https://x'},{g:'Production report',n:'TSCH3D_production_report_1_2026_10_20',d:'2026-10-22',f:['blk/b.bin'],pdf:'',u:'https://x'}];repPermsSync();
+          const perms=PERMS.filter(x=>x[2]==='Reports').map(x=>x[0]).sort();const days=S.meta.reports.map(r=>repDay(r).date);
+          const all=reportsSec(),boxes=(all.match(/data-lsec="rep-/g)||[]).length,titles=repGroups().map(repTitle);
+          S.meta.reports=k.m;window.canRep=k.c1;window.canRepAny=k.c2;return {perms,days,boxes,titles}})()""")
+        check("Reports: ein Recht und eine Box pro Unterordner, Drehtag aus dem Dateinamen, Unterthemen Produktion/DIT", rpt in (None, {"perms": ["rep.dit", "rep.production-report"], "days": ["2026-10-20", "2026-10-20"], "boxes": 3, "titles": ["Produktion", "DIT"]}), rpt, public=True)
         check("App-Einstellungen: Karte im Callsheet ein- und ausschaltbar", mo in (None, {"off": False, "on": True}), mo)
         check("Callsheet-Drehfolge: Szene in drei Schritten, alle Details (Breakdown/Notizen) erst im dritten Schritt", nx is None or nx["det"], nx)
         dup = await E("""(()=>{if(typeof renderCS!=='function'||typeof bdKey!=='function')return null;const keep=S.meta;const k='2026-10-20|'+bdKey('186pt1A');S.meta=Object.assign({},keep,{bd:Object.assign({},(keep||{}).bd,{[k]:{h:{},c:[['Notes',['Drohne ab 09:00']]]}})});
