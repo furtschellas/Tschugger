@@ -121,7 +121,7 @@ const csAck=date=>typeof scHas==="function"&&scHas(date);
 const csLocRows=(c,l)=>csRows(c).filter(r=>r.sc&&csSceneLoc([l],r)===l);
 const csIsWrap=r=>!!r&&!r.sc&&/\b(wrap|drehschluss)\b/i.test(String(r.text||r.syn||""));
 /* the clock now as «HH:MM» (local time) – for the running row, the place now and the cast time now */
-function csHM(d){d=d||new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function csHM(d){return clockHM(d||new Date())}
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null; lunch or a setup running: that row with ev = its key */
 function csNowScene(x){x=x||(S.dispos||[]).find(y=>y&&y.date===todayISO());const c=x&&x.cs;if(!c||x.date!==todayISO())return null;const rows=csRows(c);let i=csNowIdx(rows,x.date);
   if(i>=0&&!rows[i].sc&&csAck(x.date)){const k=csKeys(rows)[i];if(k&&k!=="wrap"&&scState(x.date,k)===1)return Object.assign({},rows[i],{ev:k,lunch:k==="lunch"})}
@@ -135,6 +135,10 @@ function csNowIdx(rows,date){if(date!==todayISO())return -1;rows=csA(rows);
     for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0&&rows[i].sc)return i;return -1}
   const now=csHM();let k=-1;rows.forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});
   return k>=0&&csIsWrap(rows[k])?-1:k}
+/* the parts of «Jetzt» (callsheet «Mein Tag» and Today): lunch/setup with its name, else scene number, its place (L-code) and I/E · set */
+function csNowBits(ns,c,date){if(ns.ev)return {ev:(ns.lunch?CSI.lunch+' ':'')+'<b>'+esc(scLabel(ns.ev))+'</b>'};let lo=null;try{lo=csSceneLoc(csLocs(c),ns)}catch(_){}
+  return {sc:esc(String(ns.sc)),place:lo?' '+csPlaceA('L'+String(lo.no).trim(),csLocHref(lo,c,date),lo.name||""):'',set:esc([ns.ie,ns.set].filter(Boolean).join(" · "))}}
+window.csNowBits=csNowBits;
 /* which set a scene is shot on: by the scenes listed at the location, else by the set name */
 function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/[^a-z0-9]/g,"");const sc=n(r.sc);const ls=csA(locs).filter(l=>!l.kinds&&l.no);
   /* «186 PT1B/C/PT2» → 186pt1b, 186pt1c, 186pt2 */
@@ -151,7 +155,7 @@ let CSCUR={c:null,date:""};
 /* hints of a place («To set …», «WC …»): lines in the open location */
 const CSHN_RE=/^(to set|zum set|nach set|wc\b)/i;
 /* the place where the shooting is now (callsheet of today, from the start of the first scene until wrap) */
-function csNowLoc(c,date,ls,now){if(!now&&csAck(date)){const r=csNowScene({date,cs:c});return r?csSceneLoc(ls,r):null}now=now||new Date();const p=n=>String(n).padStart(2,"0");if(date!==now.getFullYear()+"-"+p(now.getMonth()+1)+"-"+p(now.getDate()))return null;
+function csNowLoc(c,date,ls,now){if(!now&&csAck(date)){const r=csNowScene({date,cs:c});return r?csSceneLoc(ls,r):null}now=now||new Date();if(date!==now.getFullYear()+"-"+pad2(now.getMonth()+1)+"-"+pad2(now.getDate()))return null;
   const m=t=>{const x=String(t||"").match(/(\d{1,2})[:.](\d{2})/);return x?+x[1]*60+ +x[2]:null};const cur=now.getHours()*60+now.getMinutes();let hit=null,started=false;
   for(const r of csRows(c)){const t=m(r.t);if(t==null||t>cur)break;if(r.sc){started=true;hit=csSceneLoc(ls,r)||hit}else if(csIsWrap(r))return null}
   return started?hit:null}
@@ -475,7 +479,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   /* my day */
   /* my day: on the shooting day first the scene being shot now (with its place) */
   const NS=csNowScene(x);window.CSNOWSC=NS?(NS.ev||String(NS.sc)):"";
-  const nowRow=NS&&NS.ev?'<div class="csme-r csme-now"><span class="k">'+esc(L("Jetzt"))+'</span><span class="v">'+(NS.lunch?CSI.lunch+' ':'')+'<b>'+esc(scLabel(NS.ev))+'</b></span></div>':NS?(()=>{let lo=null;try{lo=csSceneLoc(csLocs(c),NS)}catch(_){}return '<div class="csme-r csme-now"><span class="k">'+esc(L("Jetzt"))+'</span><span class="v"><b>'+esc(String(NS.sc))+'</b>'+(lo?' '+csPlaceA('L'+String(lo.no).trim(),csLocHref(lo,c,x.date),lo.name||""):'')+' <small>'+esc([NS.ie,NS.set].filter(Boolean).join(" · "))+'</small></span></div>'})():'';
+  const nowRow=NS?(()=>{const b=csNowBits(NS,c,x.date);return '<div class="csme-r csme-now"><span class="k">'+esc(L("Jetzt"))+'</span><span class="v">'+(b.ev||'<b>'+b.sc+'</b>'+b.place+' <small>'+b.set+'</small>')+'</span></div>'})():'';
   if(me){const mine=csMine(c,me);if(mine.length)h+='<section class="dsec csme" id="cs-mein" aria-label="'+esc(L("Mein Tag")+" · "+me.name)+'"><h2 class="csme-h">'+dtitle+' <span>'+fmtDate(x.date)+'</span></h2>'+nowRow+mine.join("")+'</section>'}
   /* key people of the day */
   /* folded parts: sums and short facts in one line */
@@ -641,4 +645,4 @@ csOn("click",async e=>{const b=e.target.closest("[data-rideall]");if(!b||typeof 
   b.disabled=true;try{const {F,db}=await fb();const bt=F.writeBatch(db);const now=Date.now();const ids=[...new Set(rs.map(r=>rideId(date,r)).filter(Boolean))];
     for(const id of ids)bt.set(F.doc(db,"rideack",id),{d:date,at:now,s:2});await bt.commit();window.RIDEACK=window.RIDEACK||{};for(const id of ids)window.RIDEACK[id]={d:date,at:now,s:2};
     if(typeof savedPop==="function")savedPop(true);render()}
-  catch(err){b.disabled=false;showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich."),5000)}});
+  catch(err){b.disabled=false;showMsg(saveErr(err),5000)}});
