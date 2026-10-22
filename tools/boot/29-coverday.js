@@ -133,8 +133,14 @@ window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days||S.days0
     (f.op==="shift"?'':'<label>'+esc(f.op==="swap"?L("Tauschen mit"):L("Neues Datum"))+'<select data-cdf="b"><option value="">–</option>'+opts(f.b,f.op==="swap"?days:targets)+'</select></label>')+
     (typeof can==="function"&&can("push.send")?'<label class="ck"><input type="checkbox" data-cdf="push"'+(f.push?' checked':'')+'> '+esc(L("Push-Nachricht «Drehplan geändert» an alle"))+'</label>':'')+
     '<p class="cdpv'+(pv.ok?'':' bad')+'">'+esc(pv.t)+'</p><div class="arb">'+saveBtn('data-cdsave'+(pv.ok&&!CD.busy?'':' disabled'),L("Übernehmen"))+'</div>'+(CD.msg?'<p class="amsg">'+esc(CD.msg)+'</p>':'')+'</form>'+
-    '<h4>'+esc(L("Aktive Änderungen"))+'</h4>'+(list?'<ul class="cdlist">'+list+'</ul>':'<p class="ghint">'+esc(L("Keine."))+'</p>')+'</div>'};
+    '<details class="cdprot" data-sec="cdprot"'+(SECS.cdprot!==false?' open':'')+'><summary><h4>'+esc(L("Protokoll"))+' · '+arr(window.CDOPS).filter(o=>o&&o.st!=="off").length+'</h4></summary>'+(list?'<ul class="cdlist">'+list+'</ul>':'<p class="ghint">'+esc(L("Keine."))+'</p>')+'</details></div>'};
 document.addEventListener("change",e=>{const t=e.target.closest&&e.target.closest("[data-cdf]");if(!t)return;const k=t.dataset.cdf;CD.form[k]=t.type==="checkbox"?t.checked:t.value;if(k==="op"||k==="u"){CD.form.a="";CD.form.b=""}CD.msg="";render()});
+/* question before «Aufheben» / «Wieder anwenden»: with the choice to tell everybody by push (only with the right and push switched on) */
+function cdAsk(q,what,okT,offerPush){return new Promise(res=>{const canP=offerPush&&can("push.send")&&window.PUSHEN!==false,d=mkDialog("cdask");
+  d.innerHTML='<div class="a2box"><h3>Coverday</h3><p>'+esc(q)+'</p><p><b>'+esc(what)+'</b></p>'+(canP?'<label class="ck"><input type="checkbox" data-cdaskp checked> '+esc(L("Push «Drehplan geändert» an alle senden"))+'</label>':'')+
+    '<div class="a2b"><button type="button" class="pri" data-cdaskok>'+esc(okT)+'</button><button type="button" data-cdaskno>'+esc(L("Abbrechen"))+'</button></div></div>';
+  const end=v=>{d.remove();res(v)};d.addEventListener("click",e=>{if(e.target.closest("[data-cdaskok]")){const c=d.querySelector("[data-cdaskp]");end({ok:true,push:!!(c&&c.checked)})}else if(e.target.closest("[data-cdaskno]")||e.target===d)end({ok:false})});
+  document.body.appendChild(d)})}
 /* push «Drehplan geändert» to everybody (also when a change is cancelled or applied again, so nobody keeps the old state) */
 async function cdPush(body,date){if(!can("push.send")||window.PUSHEN===false)return false;try{const enc=await ownEnc({title:L("Drehplan geändert"),body,roles:null,depts:null,by:ME.email,at:Date.now(),kind:"plan",url:"./#go=plan:"+date});
   const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});if(typeof bcDeliver==="function")await bcDeliver(ref.id);return true}catch(_){return false}}
@@ -154,15 +160,16 @@ function cdVerify(op,on){const bad=[],d=dt=>arr(S.days).find(x=>x.date===dt),d0=
   return bad}
 const cdReport=(t,bad,pushed)=>showMsg(t+" "+(bad.length?"⚠ "+L("Bitte prüfen:")+" "+bad.join(", "):"✓ "+L("Geprüft: Drehplan, Callsheets, Nummerierung und Erinnerungen stimmen."))+(pushed?" "+L("Push «Drehplan geändert» verschickt."):""),bad.length?9000:5000);
 document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.closest("[data-cdsave],[data-cdoff],[data-cdre]");if(!s||!cdCan()||CD.busy)return;e.preventDefault();
-  if(s.dataset.cdoff!=null){const o=arr(window.CDOPS).find(x=>x.id===s.dataset.cdoff);if(!o||!confirmSafe(L("Coverday-Änderung wirklich aufheben? Der Drehplan gilt dann wieder für alle.")+"\n\n"+cdOpText(o)))return}
-  if(s.dataset.cdre!=null){const o=arr(window.CDOPS).find(x=>x.id===s.dataset.cdre);if(!o||!confirmSafe(L("Coverday-Änderung wieder anwenden? Sie gilt sofort für alle.")+"\n\n"+cdOpText(o)))return}
+  let ask=null;
+  if(s.dataset.cdoff!=null){const o=arr(window.CDOPS).find(x=>x.id===s.dataset.cdoff);if(!o)return;ask=await cdAsk(L("Coverday-Änderung wirklich aufheben? Der Drehplan gilt dann wieder für alle."),cdOpText(o),L("Aufheben"),!cdReview(o));if(!ask.ok)return}
+  if(s.dataset.cdre!=null){const o=arr(window.CDOPS).find(x=>x.id===s.dataset.cdre);if(!o)return;ask=await cdAsk(L("Coverday-Änderung wieder anwenden? Sie gilt sofort für alle."),cdOpText(o),L("Wieder anwenden"),true);if(!ask.ok)return}
   if(s.dataset.cdsave!=null){const pv0=cdPreview(CD.form);if(!pv0.ok||!confirmSafe(L("Coverday-Änderung wirklich übernehmen? Sie gilt sofort für alle.")+"\n\n"+pv0.t))return}
   const ops=arr(window.CDOPS).map(x=>Object.assign({},x));CD.busy=true;
   try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(!o)return;const wasOn=!cdReview(o);o.st="off";o.off=Date.now();await cdSave(ops);
-      const pushed=wasOn&&o.push!==false?await cdPush(L("Coverday aufgehoben:")+" "+cdOpText(o)+" – "+L("es gilt wieder der Drehplan."),o.a):false;
+      const pushed=wasOn&&ask&&ask.push?await cdPush(L("Coverday aufgehoben:")+" "+cdOpText(o)+" – "+L("es gilt wieder der Drehplan."),o.a):false;
       cdReport(L("Änderung aufgehoben."),cdVerify(o,false),pushed)}
     else if(s.dataset.cdre!=null){const o=ops.find(x=>x.id===s.dataset.cdre);if(!o)return;o.at=Date.now();o.raw=cdRaw(o,S.days0||[]);await cdSave(ops);
-      const pushed=o.push!==false?await cdPush(cdOpText(o),o.op==="move"?o.b:o.a):false;cdReport(L("Änderung wieder angewendet."),cdVerify(o,true),pushed)}
+      const pushed=ask&&ask.push?await cdPush(cdOpText(o),o.op==="move"?o.b:o.a):false;cdReport(L("Änderung wieder angewendet."),cdVerify(o,true),pushed)}
     else{const f=CD.form,pv=cdPreview(f);if(!pv.ok)return;const raw=S.days||S.days0,d=dt=>raw.find(x=>x.date===dt);
       const snap=f.op==="shift"?{a:cdScenes(d(f.a),f.u)}:{a:cdScenes(d(f.a),f.u),b:cdScenes(d(f.b),f.u)};
       const op={id:Math.random().toString(36).slice(2,10),op:f.op,u:f.u==="2"?"2":"all",a:f.a,b:f.op==="shift"?"":f.b,at:Date.now(),by:ME&&ME.email||"",snap,st:"on",push:!!(f.push&&can("push.send"))};op.raw=cdRaw(op,S.days0||raw);

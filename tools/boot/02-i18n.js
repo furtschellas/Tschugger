@@ -1291,6 +1291,8 @@ Object.assign(I18N,{
  "Push «Drehplan geändert» verschickt.":{fr:"Push « Plan de tournage modifié » envoyé.",it:"Push «Piano modificato» inviato.",en:"Push «Schedule changed» sent."},
  "Nummerierung":{fr:"Numérotation",it:"Numerazione",en:"Numbering"},
  "Ausgeschaltet verschickt die App an niemanden mehr Push-Nachrichten – keine Erinnerungen, keine automatischen Meldungen, keine Nachrichten an alle –, egal was die einzelnen Personen in ihrem Profil eingestellt haben. Glocken und Briefumschlag verschwinden.":{fr:"Désactivé, l'app n'envoie plus de notifications push à personne – ni rappels, ni messages automatiques, ni messages à tous –, quels que soient les réglages de chaque profil. Les cloches et l'enveloppe disparaissent.",it:"Disattivato, l'app non invia più notifiche push a nessuno – né promemoria, né messaggi automatici, né messaggi a tutti –, indipendentemente dalle impostazioni dei singoli profili. Campanelle e busta scompaiono.",en:"Switched off, the app sends no push notifications to anyone any more – no reminders, no automatic messages, no messages to everyone – whatever each person has set in their profile. Bells and envelope disappear."},
+ "Push «Drehplan geändert» an alle senden":{fr:"Envoyer le push « Plan de tournage modifié » à tous",it:"Inviare a tutti il push «Piano modificato»",en:"Send push «Schedule changed» to everyone"},
+ "Protokoll":{fr:"Journal",it:"Registro",en:"Log"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},
