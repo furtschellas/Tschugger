@@ -1,0 +1,23 @@
+name: Rollen - Recht ergänzen
+
+# einmalig von Hand: «Cast manuell quittieren» für AL/AD, Crew 1AD, Poweruser und die Admin-Rolle
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q cryptography==43.0.3 requests==2.32.3
+      - name: Ausführen
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: python tools/role_add_perm.py

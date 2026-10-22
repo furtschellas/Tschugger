@@ -1328,6 +1328,8 @@ Object.assign(I18N,{
  "Bei Fahrten ist das Ziel ein Link zur Karte – aus dem Callsheet, sonst aus der Motivliste.":{fr:"Pour les trajets, la destination est un lien vers la carte – de la feuille de service, sinon de la liste des décors.",it:"Per i viaggi la destinazione è un link alla mappa – dal foglio di convocazione, altrimenti dalla lista dei set.",en:"For rides the destination is a map link – from the callsheet, else from the location list."},
  "Am Set (Fahrt ausgeführt)":{fr:"Au plateau (trajet effectué)",it:"Sul set (viaggio effettuato)",en:"On set (ride done)"},
  "Fahrt zum Set angenommen":{fr:"Trajet vers le plateau accepté",it:"Viaggio verso il set accettato",en:"Ride to set accepted"},
+ "Cast manuell quittieren (alle Zeiten)":{fr:"Valider le cast à la main (toutes les heures)",it:"Confermare il cast a mano (tutti gli orari)",en:"Confirm cast by hand (all times)"},
+ "Von Hand":{fr:"À la main",it:"A mano",en:"By hand"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},
