@@ -178,7 +178,7 @@ function showNews(){
   const T=Object.assign({},NEWS_TXT[LANG]||NEWS_TXT.en,{p:NEWS_ITEMS.filter(([ok])=>{try{return ok()}catch(_){return false}}).map(([,tx])=>tx[LANG]||tx.en)}),d=mkDialog("news");
   d.innerHTML='<div class="a2box wlbox"><div class="nwlogo" aria-hidden="true"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></div><h3>'+esc(T.t)+'</h3>'+T.p.map(x=>'<p'+(x.startsWith("⚠")?' class="nwwarn"':'')+'>'+x+'</p>').join("")+'<p class="ghint">'+T.f+'</p><div class="a2b"><button type="button" data-nwtour>'+esc(T.tour)+'</button><button type="button" class="pri" data-nwok>'+esc(T.ok)+'</button></div></div>';
   const done=()=>{store("nv",NEWS_VER);savePrefs();d.remove()};
-  d.addEventListener("click",e=>{if(e.target.closest("[data-nwok]")){done();setTimeout(maybePushHint,600)}else if(e.target.closest("[data-nwtour]")){done();tourStart(false)}});
+  d.addEventListener("click",e=>{if(e.target.closest("[data-nwok]")){done();setTimeout(maybePushHint,600)}else if(e.target.closest("[data-nwtour]")){done();tourStart(true)}});
   document.body.appendChild(d);
   /* closed in any way (also ✕): seen */
   const ob=new MutationObserver(()=>{if(!d.isConnected||d.hidden){ob.disconnect();store("nv",NEWS_VER);savePrefs()}});ob.observe(document.body,{childList:true});ob.observe(d,{attributes:true,attributeFilter:["hidden"]});
@@ -191,17 +191,20 @@ async function maybeTour(){
   if(!window.TOUREN||(MEMBER&&MEMBER.tour)||tourDoneLocal()){if(newsDue()){showNews();return}setTimeout(maybePushHint,800);return}
   TOUR.pending=true;setTimeout(()=>{TOUR.pending=false;if(!TOUR.el&&!tourDoneLocal()&&!(MEMBER&&MEMBER.tour)){tourMark("shown");tourStart(true)}},700);
 }
-function tourStart(ask){
+/* the short tour: only the most important functions (at most 15 steps) */
+const TOUR_SHORT=["Deine Tour","Today","Jetzt","Meine nächsten Termine","Schedule","Tage wählen","Szenen quittieren","Callsheet","Drehfolge","Locations","Crew","Script","Meine Termine","Suche","Mein Konto"];
+function tourMode(m){TOUR.mode=m;if(TOUR.all)TOUR.steps=m==="short"?TOUR.all.filter(st=>TOUR_SHORT.includes(st.t)).slice(0,15):TOUR.all.slice()}
+function tourStart(ask,mode){
   if(TOUR.el)TOUR.el.remove();if(CHAT.open){CHAT.open=false;chatPanel()}
   TOUR.prev={tab:S.tab,day:S.day};
   /* show a shooting day so the display options and unit buttons can be explained */
   {const t=todayISO(),cur=S.days.find(x=>x.id===S.day);if(S.tab!=="plan"||!cur||cur.kind!=="shoot"){const sd=S.days.filter(x=>x.kind==="shoot");const d=sd.find(x=>x.date>=t)||sd[0];S.tab="plan";if(d)S.day=d.id;render()}}
   {const keep=S.tab,navOn=t=>{const b=document.querySelector('nav.tabs [data-tab="'+t+'"]');return !!(b&&!b.hidden)};
-    TOUR.steps=TOUR_STEPS.filter(st=>{try{if(st.need&&!st.need())return false;return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}});S.tab=keep;render()}
+    TOUR.all=TOUR_STEPS.filter(st=>{try{if(st.need&&!st.need())return false;return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}});tourMode(mode||"full");S.tab=keep;render()}
   window.scrollTo(0,0);TOUR.i=ask?-1:0;
   const o=mkDialog("tour",'<div class="tspot"></div><div class="tour-card" role="document"></div>',{cls:"tour"});
   o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;
-    if(a==="next")tourGo(TOUR.i+1);else if(a==="back")tourGo(TOUR.i-1);else if(a==="skip")tourSkipInfo();else if(a==="skipok")tourEnd("skip",true);else if(a==="done")tourEnd("done")});
+    if(a==="short"||a==="full"){tourMode(a);tourGo(0)}else if(a==="next")tourGo(TOUR.i+1);else if(a==="back")tourGo(TOUR.i-1);else if(a==="skip")tourSkipInfo();else if(a==="skipok")tourEnd("skip",true);else if(a==="done")tourEnd("done")});
   document.body.appendChild(o);TOUR.el=o;tourGo(TOUR.i);
   addEventListener("resize",tourPlace);
 }
@@ -209,7 +212,9 @@ function tourGo(i){
   const o=TOUR.el;if(!o)return;TOUR.i=i;const n=TOUR.steps.length,c=o.querySelector(".tour-card"),sp=o.querySelector(".tspot");
   if(i<0||i>=n)tourDemo(null);
   if(i<0){sp.hidden=true;c.className="tour-card center";
-    c.innerHTML='<h3>'+L("Kurze Tour durch die App?")+'</h3><p>'+L("In einer Minute zeigen wir dir die wichtigsten Funktionen. Du kannst die Tour später jederzeit unter «Mein Konto» starten.")+'</p><div class="tbtns"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><button type="button" class="pri" data-tour="next">'+L("Tour starten")+'</button></div>';return}
+    /* two tours: short (the most important, at most 15 steps) or detailed (everything) */
+    const ns=Math.min(15,(TOUR.all||[]).filter(st=>TOUR_SHORT.includes(st.t)).length),nf=(TOUR.all||[]).length;
+    c.innerHTML='<h3>'+L("Tour durch die App")+'</h3><p>'+L("Wähle die kurze Tour mit den wichtigsten Funktionen oder die ausführliche Tour, die alles erklärt. Beide findest du jederzeit wieder unter «Mein Konto».")+'</p><div class="tbtns tchoose"><button type="button" class="lnk" data-tour="skip">'+L("Überspringen")+'</button><button type="button" class="sec" data-tour="full">'+L("Ausführlich")+' · '+nf+'</button><button type="button" class="pri" data-tour="short">'+L("Kurz")+' · '+ns+'</button></div>';return}
   if(i>=n){sp.hidden=true;c.className="tour-card center";
     c.innerHTML='<h3>'+L("Fertig!")+'</h3><p>'+L("Viel Spass mit der App. Die Tour findest du jederzeit wieder unter «Mein Konto».")+'</p><div class="tbtns"><button type="button" class="pri" data-tour="done">'+L("Los geht's")+'</button></div>';return}
   const s=TOUR.steps[i];tourDemo(s);if(!tourShow(s)){const dir=i>=(TOUR.last==null?-1:TOUR.last)?1:-1;TOUR.steps.splice(i,1);return tourGo(dir>0?i:i-1)}TOUR.last=i;sp.hidden=false;c.className="tour-card";
