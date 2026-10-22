@@ -1269,6 +1269,7 @@ Object.assign(I18N,{
  "Hierarchie":{fr:"Hiérarchie",it:"Gerarchia",en:"Hierarchy"},
  "A–Z":{fr:"A–Z",it:"A–Z",en:"A–Z"},
  "Die Drehtage bleiben nach Datum durchnummeriert, und jedes Callsheet wandert mit seinen Szenen zum neuen Datum.":{fr:"Les jours de tournage restent numérotés par date, et chaque feuille de service suit ses scènes vers la nouvelle date.",it:"I giorni di riprese restano numerati per data e ogni foglio di convocazione segue le sue scene alla nuova data.",en:"Shooting days stay numbered by date, and every callsheet moves with its scenes to the new date."},
+ "via Drehplan geändert":{fr:"modifié via le plan de tournage",it:"modificato tramite il piano di lavorazione",en:"changed via the shooting schedule"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},
