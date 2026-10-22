@@ -956,3 +956,5 @@ html body #view .cstrv.trvother .trvd{display:block;flex:0 0 100%;width:100%;mar
 html body .cql{text-decoration-thickness:1px!important;text-underline-offset:2px!important}
 /* cast: done = only the time in normal text colour (white in the dark look), no underline, no background */
 html body .cql.cq2,html body .cql.cqro.cq2{background:none!important;color:var(--ink)!important;text-decoration:none!important;box-shadow:none!important}
+/* cast: next to a pink time (open or running) the duration is white */
+html body .mkw:has(.cql.cq0,.cql.cq1) .mkd{color:var(--ink)!important}
