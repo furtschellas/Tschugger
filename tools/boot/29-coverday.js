@@ -88,6 +88,7 @@ window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days0||S.days
     '<h4>'+esc(L("Aktive Änderungen"))+'</h4>'+(list?'<ul class="cdlist">'+list+'</ul>':'<p class="ghint">'+esc(L("Keine."))+'</p>')+'</div>'};
 document.addEventListener("change",e=>{const t=e.target.closest&&e.target.closest("[data-cdf]");if(!t)return;const k=t.dataset.cdf;CD.form[k]=t.type==="checkbox"?t.checked:t.value;if(k==="op"||k==="u"){CD.form.a="";CD.form.b=""}CD.msg="";render()});
 document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.closest("[data-cdsave],[data-cdoff],[data-cdre]");if(!s||!cdCan()||CD.busy)return;e.preventDefault();
+  if(s.dataset.cdsave!=null){const pv0=cdPreview(CD.form);if(!pv0.ok||!confirmSafe(L("Coverday-Änderung wirklich übernehmen? Sie gilt sofort für alle.")+"\n\n"+pv0.t))return}
   const ops=arr(window.CDOPS).slice();CD.busy=true;
   try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(o){o.st="off";o.off=Date.now()}await cdSave(ops);showMsg(L("Änderung aufgehoben."),3000)}
     else if(s.dataset.cdre!=null){const o=ops.find(x=>x.id===s.dataset.cdre);if(o){o.at=Date.now()}await cdSave(ops);showMsg(L("Änderung wieder angewendet."),3000)}
