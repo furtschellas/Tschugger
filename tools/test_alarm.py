@@ -4,9 +4,8 @@ Push-Nachricht nur an die Owner (verschlüsselt mit dem Crew-Schlüssel, wie all
 kommt über ein GitHub-Issue (GitHub schickt sie). Im öffentlichen Protokoll stehen nur Namen von Prüfungen, keine Daten.
 Aufruf: test_alarm.py <tests.json> <link zum Lauf>
 """
-import base64, datetime, json, os, secrets, sys, time
+import base64, json, os, sys, time
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)

@@ -65,7 +65,7 @@ def write_stamp():
     p.write_text(json.dumps({"s": s, "c": NOW}) + "\n")
 def _h(x): return "#" + hashlib.sha1(str(x).encode()).hexdigest()[:6]   # short anonymous tag instead of a file name (public log)
 
-# ---------- encryption (same format as tools/publish.py) ----------
+# ---------- encryption (same format as the app reads: iv + AES-GCM with the crew key) ----------
 def dec_file(p, key=None):
     try:
         e = json.load(open(p))
@@ -229,6 +229,7 @@ def _key(e, extra=""):
     return hashlib.sha1((str(e.get("id")) + "|" + str(e.get("modified")) + extra).encode()).hexdigest()[:20]
 
 def _enc_write(fn, data):
+    """binary file encrypted with the crew key (12 bytes iv + AES-GCM)"""
     iv = secrets.token_bytes(12)
     open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, data, None))
 
@@ -1902,8 +1903,7 @@ def main():
                     try:
                         r = requests.post("https://content.dropboxapi.com/2/files/get_thumbnail_v2", timeout=120, headers=dict(dbx.h, **{"Dropbox-API-Arg": json.dumps({"resource": {".tag": "path", "path": e["id"]}, "format": "jpeg", "size": "w2048h1536", "mode": "fitone_bestfit"})}))
                         r.raise_for_status()
-                        iv = secrets.token_bytes(12)
-                        open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, small_jpeg(r.content), None)); changed = True
+                        _enc_write(fn, small_jpeg(r.content)); changed = True
                     except Exception as ex:
                         log("Vorschau fehlt:", _h(e["name"]), type(ex).__name__); want_files.discard(fn); continue
                 vid = bool(re.search(r"\.(mov|mp4|m4v)$", e["name"], re.I))
@@ -1929,8 +1929,7 @@ def main():
                                                 "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", dst], check=True, timeout=max(60, min(900, int(left))))
                                 vbytes = open(dst, "rb").read()
                             if len(vbytes) > 45e6: raise RuntimeError("zu gross")
-                            iv = secrets.token_bytes(12)
-                            open(vf, "wb").write(iv + AESGCM(KEY).encrypt(iv, vbytes, None)); changed = True
+                            _enc_write(vf, vbytes); changed = True
                         except Exception as ex:
                             log("Film nicht umgewandelt:", _h(e["name"]), str(ex)[:60]); want_files.discard(vf); vf = None
                 _, subs, part = blk_top(e)

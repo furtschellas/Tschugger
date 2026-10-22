@@ -9,10 +9,9 @@ und ändern sie, App-Verwaltung → App → Termine). Dieses Skript
     werden nachgeführt (die gewählten Empfänger bleiben), im Kalender gelöschte Termine verschwinden aus der App.
 Braucht das Dienstkonto (FIREBASE_SA). Das Repository ist öffentlich: im Protokoll stehen nur Zahlen.
 """
-import base64, datetime, json, os, secrets, sys, time, zoneinfo
+import base64, datetime, json, os, sys, time, zoneinfo
 
 import requests
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fsadmin  # noqa: E402
