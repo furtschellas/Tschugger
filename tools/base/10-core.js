@@ -54,6 +54,10 @@ let ZDF=null;try{ZDF=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Zurich",y
 function localISO(t){const d=new Date(t);if(ZDF)try{const x=ZDF.format(d);if(/^\d{4}-\d\d-\d\d$/.test(x))return x}catch(_){}return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
 const todayISO=()=>localISO(Date.now());
 const pad2=n=>String(n).padStart(2,"0");
+const clockHM=d=>pad2(d.getHours())+":"+pad2(d.getMinutes());   /* «07:05» of a Date (local time) */
+const msHM=ms=>ms?clockHM(new Date(+ms)):"";   /* «07:05» of a time in milliseconds, "" without */
+/* message when saving failed: no permission, else not possible */
+const saveErr=e=>/permission/.test((e&&e.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.");
 const telNum=s=>String(s||"").replace(/[^\d+]/g,"");   /* phone number for tel:/sms:/vCard: only digits and + */
 const ddmm=d=>pad2(d.getDate())+"."+pad2(d.getMonth()+1)+".";   /* «17.10.» */
 const fmtDate=iso=>{const d=new Date(iso+"T12:00:00");return WD[d.getDay()]+" "+ddmm(d)+d.getFullYear()};

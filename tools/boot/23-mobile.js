@@ -6,8 +6,8 @@ fsApply();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-fsset]");if(!b)return;try{localStorage.setItem("fsize:v1",b.dataset.fsset)}catch(_){}fsApply();
   b.parentElement.querySelectorAll("[data-fsset]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
 /* offline: a small bar above the tabs on every page, with the time the data was last confirmed current */
-function offTime(){let t=0;try{t=+localStorage.getItem("dtime:v1")||0}catch(_){}if(!t)return"";const d=new Date(t),p=n=>String(n).padStart(2,"0");
-  return p(d.getDate())+"."+p(d.getMonth()+1)+". "+p(d.getHours())+":"+p(d.getMinutes())}
+function offTime(){let t=0;try{t=+localStorage.getItem("dtime:v1")||0}catch(_){}if(!t)return"";const d=new Date(t);
+  return pad2(d.getDate())+"."+pad2(d.getMonth()+1)+". "+clockHM(d)}
 function offBar(){let b=document.getElementById("offbar");const off=navigator.onLine===false;
   if(!off){if(b)b.remove();return}
   const nav=document.querySelector("nav.tabs");if(!b){b=document.createElement("div");b.id="offbar";b.setAttribute("role","status")}

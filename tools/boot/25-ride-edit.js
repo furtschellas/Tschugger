@@ -73,7 +73,7 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
     try{const {F,db}=await fb();const ref=F.doc(db,"rideedit",id);
       if(!Object.keys(ch).length)await F.deleteDoc(ref);else await F.setDoc(ref,{c:await ownEnc(ch),d:dp.date,at:Date.now()});
       d.remove();showMsg(L("Fahrt gespeichert."),2500)}
-    catch(err){fm.querySelector("button[type=submit]").disabled=false;msg.textContent=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.")}});
+    catch(err){fm.querySelector("button[type=submit]").disabled=false;msg.textContent=saveErr(err)}});
   document.body.appendChild(d);const f0=d.querySelector("input[name=t1]");if(f0)f0.focus()}
 /* the circle of a ride in the callsheet: with «Fahrten Manager» it opens the popup (before the quick switch of «Fahrten quittieren») */
 document.addEventListener("click",e=>{const b=e.target.closest(".rideack-cs[data-rideack]");if(!b||!canPerm("rides.manage"))return;e.preventDefault();e.stopImmediatePropagation();window.REDBACK={id:b.dataset.rideack,until:Date.now()+15e3};rideEditDialog(b.dataset.rideack)},true);
