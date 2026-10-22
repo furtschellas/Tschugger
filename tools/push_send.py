@@ -48,7 +48,18 @@ def vapid_keys(key):
         out.append(AESGCM(key).decrypt(base64.b64decode(e["iv"]), base64.b64decode(e["ct"]), None).decode())
     except Exception:
         pass
-    return list(dict.fromkeys(out))
+    return list(dict.fromkeys(_vkey(k) for k in out if k))
+
+
+def _vkey(k):
+    """the library reads only base64 keys (DER or raw), not PEM text: PEM → base64url DER"""
+    k = k.strip()
+    if "BEGIN" not in k: return k
+    try:
+        from cryptography.hazmat.primitives import serialization
+        d = serialization.load_pem_private_key(k.encode(), None).private_bytes(serialization.Encoding.DER, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())
+        return base64.urlsafe_b64encode(d).decode().rstrip("=")
+    except Exception: return k
 
 
 ERRC = {}   # error codes of this run (only codes in the public log)
