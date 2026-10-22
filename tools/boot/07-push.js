@@ -134,9 +134,10 @@ function pushSec(){
     (!c.on&&newsAny(c)?dev:'')+
     '<p class="ahint"><b>'+L("Erinnerungen")+'</b></p>'+
     '<label class="ck"><input type="checkbox" data-pushmaster'+(c.on?' checked':'')+'> '+L("Erinnerungen an kommende Termine erhalten")+'</label>'+
+    /* which appointments: right below «Erinnerungen», also before reminders are switched on */
+    '<p class="ahint"><b>'+L("Für welche Termine?")+'</b></p>'+types.map(([k,t])=>'<label class="ck"><input type="checkbox" data-pushtype="'+k+'"'+(c.types[k]?' checked':'')+'> '+L(t)+'</label>').join("")+
     (c.on?dev+'<label>'+L("Erinnern")+'<select data-pushlead>'+PUSH_LEADS.map(([v,t])=>'<option value="'+v+'"'+(v===c.lead?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
       '<label>'+L("Erinnern an Fahrten")+'<select data-pushleadride>'+PUSH_LEADS_RIDE.map(([v,t])=>'<option value="'+v+'"'+(v===c.leadRide?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+
-      '<p class="ahint"><b>'+L("Für welche Termine?")+'</b></p>'+types.map(([k,t])=>'<label class="ck"><input type="checkbox" data-pushtype="'+k+'"'+(c.types[k]?' checked':'')+'> '+L(t)+'</label>').join("")+
       '<details class="pushlist" data-sec="pushlist"'+(SECS.pushlist?' open':'')+'><summary>'+L("Kommende Termine")+' ('+ev.filter(e=>!c.off[e.id]).length+'/'+ev.length+')</summary>'+
       (ev.length?ev.map(e=>{const dt=new Date(e.date+"T12:00:00");return '<label class="ck pev"><input type="checkbox" data-pushev2="'+e.id+'" data-pushdate="'+esc(e.date)+'"'+(c.off[e.id]?'':' checked')+'> <span><b>'+WDL(dt)+' '+ddmm(dt)+(e.t?' '+esc(e.t):'')+'</b> '+esc(e.n||"")+'</span></label>'}).join(""):'<p class="ghint">'+L("Keine kommenden Termine gefunden.")+'</p>')+
       '<p class="ahint">'+L("Hier oder mit der Glocke in «Meine Termine» schaltest du einzelne Termine aus.")+'</p></details>':'')+
