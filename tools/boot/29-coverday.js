@@ -52,9 +52,6 @@ const cdChronoOk=days=>{let l=-1;for(const d of days){if(d.kind!=="shoot")contin
 function cdRenumber(days){const win=days.filter(d=>d.kind==="shoot"&&cdNo(d)!=null),nos=win.map(cdNo).sort((a,b)=>a-b);
   win.forEach((d,i)=>{if(cdNo(d)===nos[i])return;if(d.short0==null)d.short0=d.short||d.label||"";if(d.short)d.short=cdSetNo(d.short,nos[i]);if(d.label)d.label=cdSetNo(d.label,nos[i])})}
 function cdChrono(days0){if(cdChronoOk(days0))return days0;const days=days0.map(d=>Object.assign({},d));cdRenumber(days);return days}
-/* dates touched by the active changes (the callsheet of such a day only when it is newer than the change) */
-function cdTouched(){const out=new Map();for(const op of cdActive()){const add=dt=>{if(dt&&!(out.get(dt)>(+op.at||0)))out.set(dt,+op.at||0)};add(op.a);add(op.b);
-  if(op.op==="shift"){for(const src of [S.days0||[],S.days||[]]){const sl=cdShootDates(src,op.u,op.a);sl.forEach(add);if(sl.length)add(cdNextSlot(sl[sl.length-1]))}}}return out}
 window.cdApplyAll=()=>{if(!S.days0)return;S.days=cdTransform(S.days0);
   /* callsheets of changed days go with their scenes: to the day that now has (most of) these scenes – also a new callsheet that already
      shows the change stays that way; the number in the title follows the shooting day; no matching day: «Callsheet folgt» */
