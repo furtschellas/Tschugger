@@ -173,6 +173,11 @@ check("Push-Versand: nur an Rollen der Nachricht (Catering bekommt den Drehplan 
 check("Push-Versand: abbestellte Art wird nicht geschickt", eps.count("https://push/crew") == 1, eps)
 check("Push-Versand: Text in der Sprache des Geräts", any(d["title"] == "TF" for e, d in calls if e == "https://push/crew"))
 check("Push-Versand: Bild je nach Thema (Änderung → Pfeile)", all(d.get("icon") == "change" for e, d in calls if d.get("tag", "").startswith("b")))
+# App-Verwaltung «Push-Nachrichten anbieten» off: nothing goes out (also new messages to everybody), whatever the devices say
+fs.d["broadcasts/bOff"] = {"c": enc({"title": "X", "body": "Y", "roles": None, "at": int(time.time() * 1000) - 120000, "push": True})}
+fs.d["config/app"] = {"pushEnabled": False}; calls.clear(); P.main()
+check("Push-Versand: in der App-Verwaltung ausgeschaltet – an niemanden etwas verschickt", calls == [] and not fs.d["broadcasts/bOff"].get("fin"), calls)
+fs.d.pop("config/app", None); fs.d.pop("broadcasts/bOff", None)
 # Coverday: reminders of a device computed before a change (applied, applied again or cancelled) are held back on the days of that change only
 fs.d["coverday/state"] = {"c": enc({"ops": [{"op": "swap", "a": "2031-03-02", "b": "2031-03-03", "st": "on", "at": 5000},
                                              {"op": "move", "a": "2031-03-09", "b": "2031-03-10", "st": "off", "at": 1000, "off": 4000},
