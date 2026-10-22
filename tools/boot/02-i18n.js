@@ -369,6 +369,7 @@ Object.assign(I18N,{
  "Wähle die kurze Tour mit den wichtigsten Funktionen oder die ausführliche Tour, die alles erklärt. Beide findest du jederzeit wieder unter «Mein Konto».":{fr:"Choisis la visite courte avec les fonctions principales ou la visite détaillée qui explique tout. Tu les retrouves à tout moment sous « Mon compte ».",it:"Scegli il tour breve con le funzioni principali o il tour dettagliato che spiega tutto. Li ritrovi sempre in «Il mio account».",en:"Choose the short tour with the main functions or the detailed tour that explains everything. You can find both again any time under “My account”.",hi:"मुख्य फ़ंक्शन वाला छोटा टूर चुनें या सब कुछ समझाने वाला विस्तृत टूर। दोनों «मेरा खाता» में कभी भी मिलेंगे।"},
  "Ausführlich":{fr:"Détaillée",it:"Dettagliato",en:"Detailed",hi:"विस्तृत"},
  "Kurz":{fr:"Courte",it:"Breve",en:"Short",hi:"छोटा"},
+ "Plan-Dauer":{fr:"Durée prévue",it:"Durata prevista",en:"Planned duration",hi:"योजनाबद्ध अवधि"},
  "{s} läuft noch – zuerst abschliessen.":{fr:"{s} est encore en cours – le terminer d'abord.",it:"{s} è ancora in corso – prima completalo.",en:"{s} is still running – finish it first.",hi:"{s} अभी चल रहा है – पहले उसे पूरा करें।"},
  "Szenen-Protokoll sehen":{fr:"Voir le journal des scènes",it:"Vedere il registro delle scene",en:"View scene log",hi:"सीन लॉग देखें"},
  "Plan":{fr:"Prévu",it:"Previsto",en:"Planned",hi:"योजना"},
