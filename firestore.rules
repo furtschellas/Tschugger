@@ -265,6 +265,13 @@ service cloud.firestore {
       allow delete: if can('scenes.ack');
     }
 
+    // ---------- Coverday (ganze Drehtage tauschen/verschieben/nachrücken) ----------
+    // ein Dokument coverday/state, Inhalt c verschlüsselt; lesen die Crew, ändern nur mit «Coverday verwalten»
+    match /coverday/{doc} {
+      allow read: if crew();
+      allow write: if can('coverday.manage') && doc == 'state' && only(['c', 'at']) && cOk(60000) && request.resource.data.at is int;
+    }
+
     // ---------- Protokoll ----------
     // eigene Verwaltungs-Änderungen mit Serverzeit; lesen Admins oder «Protokoll sehen»; nicht änderbar
     match /audit/{id} {
@@ -273,7 +280,7 @@ service cloud.firestore {
         && request.resource.data.by == myEmail()
         && request.resource.data.at == request.time   // Zeit vom Server, nicht frei wählbar
         && request.resource.data.op in ['set', 'update', 'delete', 'add', 'error']
-        && request.resource.data.col in ['roles', 'userroles', 'admins', 'owners', 'invites', 'members', 'menus', 'config', 'broadcasts', 'starts', 'requests', 'app', 'sceneack']
+        && request.resource.data.col in ['roles', 'userroles', 'admins', 'owners', 'invites', 'members', 'menus', 'config', 'broadcasts', 'starts', 'requests', 'app', 'sceneack', 'coverday']
         && request.resource.data.sum is string && request.resource.data.sum.size() <= 300
         && request.resource.data.id is string && request.resource.data.id.size() <= 120;
       allow read: if isAdmin() || can('audit.view');
