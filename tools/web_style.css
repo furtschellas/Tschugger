@@ -960,4 +960,6 @@ html body .mkw:has(.cql.cq0,.cql.cq1) .mkd{color:var(--ink)!important}
 html body .cql.cq1{text-decoration:none!important}
 html body .mkw:has(.cql.cq2) .mkd{color:var(--accent)!important}
 /* cast: underlined only what I can tick with my rights – open times I can not tick are plain text */
-html body .cql.cqro.cq0{color:inherit!important;text-decoration:none!important}
+html body .cql.cqro.cq0{color:var(--accent)!important;text-decoration:none!important}   /* open: pink text; underlined only where I can tick it */
+/* cast: done times (and the duration next to a pink time) pure white in the dark look */
+html:not([data-theme="light"]) body .cql.cq2,html:not([data-theme="light"]) body .cql.cqro.cq2,html:not([data-theme="light"]) body .mkw:has(.cql.cq0,.cql.cq1) .mkd{color:#fff!important}
