@@ -151,6 +151,19 @@ async function listDocs(env, col) {
   return out;
 }
 
+/* the push devices of one person only (document ids «uid_…»): reads only those documents instead of the whole collection;
+   if the query does not work, the whole list (as before) */
+async function ownDevices(env, uid) {
+  try {
+    const t = await saToken(env); const base = `projects/${PROJECT}/databases/(default)/documents/push/`;
+    const nf = (op, v) => ({ fieldFilter: { field: { fieldPath: "__name__" }, op, value: { referenceValue: base + v } } });
+    const r = await fetch(FS + ":runQuery", { method: "POST", headers: { Authorization: "Bearer " + t, "Content-Type": "application/json" },
+      body: JSON.stringify({ structuredQuery: { from: [{ collectionId: "push" }], where: { compositeFilter: { op: "AND", filters: [nf("GREATER_THAN_OR_EQUAL", uid + "_"), nf("LESS_THAN", uid + "_\uf8ff")] } } } }) });
+    if (!r.ok) throw new Error(String(r.status));
+    return (await r.json()).filter(x => x.document).map(x => ({ id: x.document.name.split("/").pop(), f: x.document.fields || {} }));
+  } catch (_) { return (await listDocs(env, "push")).filter(d => d.id.startsWith(uid + "_")); }
+}
+
 /* ---------- crew key and push key ---------- */
 let CK = null, CK_AT = 0;
 async function crewKeyRaw(env) {
@@ -231,7 +244,7 @@ async function selftest(req, env, origin) {
   const g = await guard(req, origin); if (g.err) return g.err;
   if (!allow("self", g.user.sub, 5, 10 * 60e3)) return json({ error: "Zu viele Tests – bitte in ein paar Minuten nochmals." }, 429, origin);
   const b = await req.json().catch(() => ({}));
-  const devs = (await listDocs(env, "push")).filter(d => d.id.startsWith(g.user.sub + "_"));
+  const devs = await ownDevices(env, g.user.sub);
   let n = 0; const st = [];
   for (const dv of devs) {
     const pc = fv(dv.f.c); if (!pc) continue;
@@ -292,7 +305,8 @@ async function broadcast(req, env, origin, ctx) {
   await fsPatch(env, "broadcasts/" + id, { n, done, fin }, g.tok);
   const later = [];
   if (!fin) later.push(dispatch(env, "push.yml"));   // the rest (and failed devices) by the GitHub run
-  if (gone.length && saJson(env)) later.push(...gone.map(did => fsReq(env, "push/" + did, { method: "DELETE" }).catch(() => {})));
+  // at most 10 deletes here (free-tier subrequest limit) – the GitHub run removes the rest
+  if (gone.length && saJson(env)) later.push(...gone.slice(0, 10).map(did => fsReq(env, "push/" + did, { method: "DELETE" }).catch(() => {})));
   if (later.length) ctx.waitUntil(Promise.all(later));
   return json({ ok: true, n, fail, rest: todo.length - tried, claimed: true }, 200, origin);
 }

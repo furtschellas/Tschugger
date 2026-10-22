@@ -1317,6 +1317,7 @@ Object.assign(I18N,{
  "Folgt der Fahrt":{fr:"Suit le trajet",it:"Segue il viaggio",en:"Follows the ride"},
  "Angekommen – antippen = zurücksetzen":{fr:"Arrivé – toucher = réinitialiser",it:"Arrivato – tocca = ripristina",en:"Arrived – tap = reset"},
  "Offen – antippen = angekommen":{fr:"Ouvert – toucher = arrivé",it:"Aperto – tocca = arrivato",en:"Open – tap = arrived"},
+ "Angekommen (Kostüm/Maske)":{fr:"Arrivé (costume/maquillage)",it:"Arrivato (costumi/trucco)",en:"Arrived (costume/make-up)"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},

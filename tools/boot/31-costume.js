@@ -48,13 +48,24 @@ function cqRide(c,r){if(!r||!r.actor||!c||!c._date)return null;const k=fold(Stri
   const has=v=>fold(String(v||"")).includes(k)||k.split(" ").filter(w=>w.length>2).every(w=>fold(String(v||"")).includes(w));
   const rs=arr(c.transport).filter(x=>has(x.passengers)).concat(arr(c.crewTransport).filter(x=>has(x.people)));if(!rs.length)return null;
   const t=hm(r.pickup);return rs.find(x=>hm(x.t1)===t)||rs[0]}
-window.cqPickup=(c,r)=>{if(!hm(r&&r.pickup)||typeof rideId!=="function")return null;const ride=cqRide(c,r);return ride?{h:window.cqLink("p",rideId(c._date,ride),c._date,String(r.pickup))}:null};
+/* the actor has arrived when Kostüm or Maske started or finished one of his times: then P/UP and Call count as done */
+function cqArrived(c,r){if(!c||!c._date||!r)return false;for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c))if(cmSt(cmId(c._date,k,r,p.t))>0)return true;return false}
+const cqDone=(t,tip)=>'<span class="cql cq2 cqro" title="'+esc(tip)+'">'+esc(t)+'</span>';
+window.cqPickup=(c,r)=>{if(!hm(r&&r.pickup)||typeof rideId!=="function")return null;const ride=cqRide(c,r);if(!ride)return cqArrived(c,r)?{h:cqDone(String(r.pickup),L("Angekommen (Kostüm/Maske)"))}:null;
+  const id=rideId(c._date,ride);if(cqArrived(c,r)&&!(window.rideState&&rideState(id)===2))return {h:cqDone(String(r.pickup),L("Angekommen (Kostüm/Maske)"))};
+  return {h:window.cqLink("p",id,c._date,String(r.pickup))}};
 /* Call: with a ride the arrival follows the ride (done when the ride is done); without a ride it is ticked here (open → arrived) */
-window.cqCall=(c,r)=>{const t=hm(r&&r.call);if(!t||!c._date)return null;const ride=typeof rideId==="function"?cqRide(c,r):null;
+window.cqCall=(c,r)=>{const t=hm(r&&r.call);if(!t||!c._date)return null;if(cqArrived(c,r))return {h:cqDone(String(r.call),L("Angekommen (Kostüm/Maske)"))};const ride=typeof rideId==="function"?cqRide(c,r):null;
   if(ride){const st=window.rideState&&rideState(rideId(c._date,ride))===2?2:0;return {h:'<span class="cql cq'+st+' cqro" title="'+esc(st?L("Angekommen (Fahrt ausgeführt)"):L("Folgt der Fahrt"))+'">'+esc(String(r.call))+'</span>'}}
   return {h:window.cqLink("c",cmId(c._date,"c",r,t),c._date,String(r.call))}};
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cqk]");if(!b)return;e.preventDefault();e.stopPropagation();
   const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="p"?!cqCanRide():!cmCan())return;b.disabled=true;
-  try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),nx=k==="c"?(st?0:2):(st+1)%3;   /* Kostüm/Maske: open → running (pink) → done; Call: open → arrived */
+  try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),nx=k==="c"?(st?0:2):k==="b"?(st===2?0:2):(st+1)%3;   /* Kostüm/Maske: open → running (pink) → done; Call: open → arrived */
     if(!nx){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cqd,at:Date.now(),s:nx};await F.setDoc(ref,v);window.RIDEACK[id]=v}
     try{MEMO.clear()}catch(_){}render()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
+/* Base: when Kostüm and Maske are both done, the base time is the running step (pink); tap = done (green) – before that plain text */
+function cqAllDone(c,r){let n=0;for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c)){n++;if(cmSt(cmId(c._date,k,r,p.t))!==2)return false}return n>0}
+window.cqBase=(c,r)=>{const t=hm(r&&r.base);if(!t||!c||!c._date||!cqAllDone(c,r))return null;const id=cmId(c._date,"b",r,t),st=cmSt(id)===2?2:1;
+  if(!cmCan())return {h:'<span class="cql cq'+st+' cqro" title="'+esc(st===2?L("Erledigt"):L("Läuft"))+'">'+esc(String(r.base))+'</span>'};
+  const tip=st===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
+  return {h:'<button type="button" class="cql cq'+st+'" data-cqk="b" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(r.base+" – "+tip)+'">'+esc(String(r.base))+'</button>'}};

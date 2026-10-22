@@ -25,6 +25,7 @@ jobs:
   # the hourly schedule is only the reserve: skipped when the worker started a run in the last 25 minutes
   reserve:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     outputs:
       skip: ${{ steps.res.outputs.skip }}
     steps:
@@ -104,13 +105,13 @@ jobs:
           # wait until GitHub Pages serves the new data (at most 5 minutes), so a tap on the push shows it
           want=$(python -c "import json;print(json.load(open('stamp.json')).get('s',''))" 2>/dev/null)
           for i in $(seq 1 30); do
-            live=$(curl -fsS "https://furtschellas.github.io/Tschugger/stamp.json?t=$(date +%s)" | python -c "import json,sys;print(json.load(sys.stdin).get('s',''))" 2>/dev/null)
+            live=$(curl -fsS --max-time 15 "https://furtschellas.github.io/Tschugger/stamp.json?t=$(date +%s)" | python -c "import json,sys;print(json.load(sys.stdin).get('s',''))" 2>/dev/null)
             [ -n "$want" ] && [ "$live" = "$want" ] && break; sleep 10
           done
           python tools/notify_changes.py
           gh api -X POST repos/${{ github.repository }}/actions/workflows/push.yml/dispatches -f ref=main || true
       - name: Status bei Fehler veröffentlichen
-        if: failure()
+        if: failure() || cancelled()   # also when the 40-minute limit stopped the run
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           CREW_KEY: ${{ secrets.CREW_KEY }}

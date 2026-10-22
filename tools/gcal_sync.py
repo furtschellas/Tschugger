@@ -105,7 +105,7 @@ def main():
     full = old.get("sig") != sig or now - int(old.get("synced") or 0) > 6 * 3600e3 or datetime.datetime.now(zoneinfo.ZoneInfo(TZ)).hour == 0
     if old.get("sig") != sig:
         fsadmin.patch_doc("gcal/feed", {"c": c, "sig": sig, "n": len(items), "at": now, "err": "", **({"synced": now} if full else {})})
-    else:
+    elif full or old.get("err") or now - int(old.get("chk") or 0) > 3 * 3600e3:   # «checked» at most every 3 hours (each write counts)
         fsadmin.patch_doc("gcal/feed", {"chk": now, "err": "", **({"synced": now} if full else {})})
     if not full:
         log(f"Google Kalender: {len(items)} Termine · unverändert"); return 0

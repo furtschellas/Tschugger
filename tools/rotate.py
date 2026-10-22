@@ -171,7 +171,8 @@ def due():
     cur = members(); meta = fsadmin.get_doc("secret/keymeta") or {}
     known = {x if ":" in x else "m:" + x for x in meta.get("uids") or []}   # older entries: plain member uids
     gone = known - cur if meta else set()
-    if not gone: fsadmin.patch_doc("secret/keymeta", {"uids": sorted(known | cur), "at": int(meta.get("at") or time.time())})
+    if not gone and (not meta or sorted(known | cur) != sorted(known)):   # only when somebody was added (not every night)
+        fsadmin.patch_doc("secret/keymeta", {"uids": sorted(known | cur), "at": int(meta.get("at") or time.time())})
     print("::notice::Schlüsselwechsel: %s" % ("%d Person(en) entfernt oder gesperrt seit dem letzten Wechsel – neuer Crew-Schlüssel wird erstellt" % len(gone) if gone else "nicht nötig"))
     o = os.environ.get("GITHUB_OUTPUT")
     if o: open(o, "a").write("due=%s\n" % ("true" if gone else "false"))

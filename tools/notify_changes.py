@@ -74,7 +74,7 @@ def main():
         b = {"title": i18n["de"]["title"], "body": i18n["de"]["body"], "i18n": i18n, "roles": rl, "push": True, "kind": kind,
              "by": "Automatisch", "at": at, "ch": {"push": True}, "url": "./#go=" + GO[kind] + ":" + dates[0]}
         if fsadmin.new_broadcast(key, b): made += 1
-    os.remove(p)
+    if made or not groups: os.remove(p)   # nothing could be created (Firestore not reachable): kept for the next run
     log("Automatische Push-Nachrichten angelegt:", made)
     print("::notice::Push bei Änderungen: %d von %d Nachrichten angelegt (%s)" % (made, len(groups), ", ".join(sorted(groups)) or "–"))
     return 0

@@ -18,6 +18,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Code übertragen
@@ -42,7 +43,7 @@ jobs:
           node --check tools/chat_worker.js
           V=$(grep -o 'const VERSION = "[^"]*"' tools/chat_worker.js | cut -d'"' -f2)
           set +e
-          code=$(curl -s -o /tmp/r.json -w "%{http_code}" -X PUT \
+          code=$(curl -s --max-time 60 -o /tmp/r.json -w "%{http_code}" -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/$ACC/workers/scripts/$NAME/content" \
             -H "Authorization: Bearer $TOKEN" \
             -F 'metadata={"main_module":"worker.js"};type=application/json' \

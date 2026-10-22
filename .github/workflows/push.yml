@@ -19,26 +19,40 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
+      # the hourly schedule is only the reserve: nothing to do when the worker started a run in the last 15 minutes
+      - id: gate
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last=$(gh api "repos/${{ github.repository }}/actions/workflows/push.yml/runs?per_page=1&event=workflow_dispatch" -q '.workflow_runs[0].created_at' 2>/dev/null || echo "")
+          if [ -n "$last" ] && [ $(( $(date +%s) - $(date -d "$last" +%s) )) -lt 900 ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; echo "::notice::Reserve-Lauf übersprungen – der Worker hat vor weniger als 15 Minuten gestartet"; fi
       - uses: actions/checkout@v4
+        if: steps.gate.outputs.skip != 'true'
         with:
           sparse-checkout: tools
       - uses: actions/setup-python@v5
+        if: steps.gate.outputs.skip != 'true'
         with:
           python-version: "3.12"
       - name: Bereits verschickte holen
+        if: steps.gate.outputs.skip != 'true'
         uses: actions/cache/restore@v4
         with:
           path: sent.json
           key: push-sent-${{ github.run_id }}
           restore-keys: push-sent-
       - name: Geräte-Zwischenspeicher holen
+        if: steps.gate.outputs.skip != 'true'
         uses: actions/cache/restore@v4
         with:
           path: devices.json
           key: push-devs-${{ github.run_id }}
           restore-keys: push-devs-
       - run: pip install -q cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1 icalendar==6.1.0 recurring-ical-events==3.3.3
+        if: steps.gate.outputs.skip != 'true'
       - name: Fällige Erinnerungen schicken
+        if: steps.gate.outputs.skip != 'true'
         env:
           CREW_KEY: ${{ secrets.CREW_KEY }}
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
@@ -46,6 +60,7 @@ jobs:
         run: python tools/push_send.py
       # Google Kalender → App (Auswahl in «Meine Termine»; übernommene Termine werden nachgeführt)
       - name: Google Kalender lesen
+        if: steps.gate.outputs.skip != 'true'
         continue-on-error: true
         env:
           CREW_KEY: ${{ secrets.CREW_KEY }}
@@ -56,31 +71,33 @@ jobs:
           python tools/gcal_sync.py
       # Szenen-Protokoll → Google Sheet (Einstellungen → «Szenen-Protokoll in Google Sheets»); writes only when something changed
       - name: Szenen-Sheet-Stand holen
+        if: steps.gate.outputs.skip != 'true'
         uses: actions/cache/restore@v4
         with:
           path: sheet.json
           key: scene-sheet-${{ github.run_id }}
           restore-keys: scene-sheet-
       - name: Szenen-Protokoll ins Google Sheet
+        if: steps.gate.outputs.skip != 'true'
         continue-on-error: true
         env:
           CREW_KEY: ${{ secrets.CREW_KEY }}
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
         run: python tools/scene_sheet.py
       - name: Szenen-Sheet-Stand merken
-        if: always() && hashFiles('sheet.json') != ''
+        if: always() && steps.gate.outputs.skip != 'true' && hashFiles('sheet.json') != ''
         uses: actions/cache/save@v4
         with:
           path: sheet.json
           key: scene-sheet-${{ github.run_id }}
       - name: Verschickte merken
-        if: always()
+        if: always() && steps.gate.outputs.skip != 'true'
         uses: actions/cache/save@v4
         with:
           path: sent.json
           key: push-sent-${{ github.run_id }}
       - name: Geräte-Zwischenspeicher merken
-        if: always() && hashFiles('devices.json') != ''
+        if: always() && steps.gate.outputs.skip != 'true' && hashFiles('devices.json') != ''
         uses: actions/cache/save@v4
         with:
           path: devices.json
