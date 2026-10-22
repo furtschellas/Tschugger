@@ -83,8 +83,11 @@ try{window.repPermsSync()}catch(_){}
 /* ---------- own topic «Reports» (button in the head between the message envelope and «Mein Konto»):
    sub topics Szenen (scene log), Produktion, Sound, DIT (one per report folder), Alle – navigation like «Mein Konto» ---------- */
 let REPSUB="";try{REPSUB=localStorage.getItem("repsub")||""}catch(_){}
-const repSubs=()=>{const out=[];if(typeof canSceneLog==="function"&&canSceneLog())out.push(["scenes","Szenen"]);
-  for(const g of repGroups())out.push(["g:"+g,repTitle(g)]);
+/* order: Produktion, Szenen, then the other folders (Sound, DIT …), Alle */
+const repSubs=()=>{const out=[],gs=repGroups(),isP=g=>fold(repTitle(g))==="produktion";
+  for(const g of gs.filter(isP))out.push(["g:"+g,repTitle(g)]);
+  if(typeof canSceneLog==="function"&&canSceneLog())out.push(["scenes","Szenen"]);
+  for(const g of gs.filter(g=>!isP(g)))out.push(["g:"+g,repTitle(g)]);
   if(repList().filter(r=>repGroups().includes(String(r.g||""))&&arr(r.f).length).length>1)out.push(["all","Alle"]);return out};
 window.repOn=()=>!!ME&&repSubs().length>0;
 window.repButton=()=>{let b=document.getElementById("repBtn");const a=document.getElementById("acctBtn");if(!a)return;

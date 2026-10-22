@@ -41,6 +41,8 @@ function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https?:\/\/\
     if(num&&String(l.no||"").trim().toLowerCase()===num)return true;return arr(l.kinds).some(k=>words.has(fold(k).split(" ")[0]))};
   const l=ls.find(hit);
   if(l){if(/^https:\/\//.test(String(l.map||"")))return l.map;const ad=[l.name].concat(arr(l.notes)).find(isA);if(ad)return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(ad)}
+  /* lines of the sets («Tech Parking» …) and the location list, with the names as on the callsheet */
+  try{const p=typeof csPlace==="function"&&dp&&dp.cs?csPlace(dp.cs,txt):null;if(p&&p.map)return p.map;if(p&&p.addr)return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.addr)}catch(_){}
   const m=arr(S.locs).find(x=>{const k=fold(String(x&&x.name||""));return k&&(k===n||k.includes(n)||n.includes(k))&&/^https:\/\//.test(String(x.map||""))});if(m)return m.map;
   /* Google search made more precise with the callsheet: the place (postcode and town) most of its addresses are in, e.g. «Hotel Elite, 3930 Visp» */
   if(always&&!isA(txt)){const cnt=new Map();const scan=t=>{for(const m of String(t||"").matchAll(/\b(\d{4})\s+(\p{L}[\p{L}-]+(?:\s+\p{L}[\p{L}-]+)?)/gu)){const k=m[1]+" "+m[2];cnt.set(k,(cnt.get(k)||0)+1)}};
