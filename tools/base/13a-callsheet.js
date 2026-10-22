@@ -79,7 +79,8 @@ function csMk(v,c,kind,row){const out=[];for(const seg of String(v==null?"":v).s
   /* time, duration and initials (duration and initials in pink) */
   /* Kostüm / Maske ticked off: green, with the tick button (right «Kostüm/Maske quittieren») */
   const dt=c&&c._date,ck=x=>kind&&dt&&window.cmId?window.cmId(dt,kind,row,x.t):"";
-  return {h:out.map(x=>{const id=ck(x);return '<span class="mkw">'+(id&&window.cqLink?window.cqLink(kind,id,dt,x.t):'<span class="mkt">'+esc(x.t)+'</span>')+(x.d?' <span class="mkd">'+esc(x.d)+'</span>':'')+(x.i.length?' <span class="mki">'+esc(x.i.join("+"))+'</span>':'')+'</span>'}).join(" / ")}}
+  const rowDone=kind&&dt&&window.cqRowDone&&window.cqRowDone(c,row);   /* On set done: Kostüm and Maske done too */
+  return {h:out.map(x=>{const id=ck(x);return '<span class="mkw">'+(rowDone?'<span class="cql cq2 cqro">'+esc(x.t)+'</span>':id&&window.cqLink?window.cqLink(kind,id,dt,x.t):'<span class="mkt">'+esc(x.t)+'</span>')+(x.d?' <span class="mkd">'+esc(x.d)+'</span>':'')+(x.i.length?' <span class="mki">'+esc(x.i.join("+"))+'</span>':'')+'</span>'}).join(" / ")}}
 /* a cell: text (phone numbers, links) or ready HTML {h} */
 const csCell=c=>c&&typeof c==="object"&&"h" in c?c.h:csTx(c);
 const csCellTx=c=>c&&typeof c==="object"&&"h" in c?c.h.replace(/<[^>]+>/g,""):String(c||"");
