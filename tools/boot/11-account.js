@@ -101,7 +101,7 @@ async function onAcctClick(e){
   const b=e.target.closest("[data-ac]");if(!b)return;
   if(b.dataset.ac==="close")s.hidden=true;
   else if(b.dataset.ac==="theme")setTheme(b.dataset.thset);
-  else if(b.dataset.ac==="tour")tourStart(false);
+  else if(b.dataset.ac==="tour")tourStart(true);   /* first the choice: short or detailed tour */
   else if(b.dataset.ac==="a2hs"&&typeof a2hsDo==="function"){a2hsDo(!!b.dataset.more).then(done=>{if(!done)showA2hs(true)})}
   else if(b.dataset.ac==="a2un")a2Uninstall();
   else if(b.dataset.ac==="pwreset"){const msg=b.closest("form").querySelector(".amsg");msg.className="amsg";msg.textContent="";b.disabled=true;
