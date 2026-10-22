@@ -133,7 +133,7 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
     const real=scs.filter(x=>!isEv(key(x))),start=real.length?Math.min(...real.map(p0).filter(Boolean)):0,lu=get("lunch"),wr=get("wrap");
     const ms=hhmm=>{const v=String(hhmm||"").match(/^(\d{1,2}):(\d{2})$/);if(!v)return 0;const x=new Date(d+"T00:00:00");x.setHours(+v[1],+v[2],0,0);return x.getTime()};
     const plSetup=setup?hm(setup.t)||"":"",plStart=(u==="1"?hm(cs.shootCall||""):"")||(firstSc?hm(firstSc.t)||"":"");
-    const wrE=wr?(+wr.e||p0(wr)):0,su=get("setup"),fs=real.slice().sort((a,b)=>p0(a)-p0(b))[0],ent=[],add=(x,name,st,plan,b,e,run,ed,pdm)=>ent.push([x,row(name,st,plan,b,e,run,ed,pdm),{name,st,plan,pdm:pdm||0,b,e,k:ed&&name!==esc(L("Drehstart"))?ed[1]:""}]);
+    const wrE=wr?(+wr.e||p0(wr)):0,su=get("setup"),fs=real.slice().sort((a,b)=>p0(a)-p0(b))[0],ent=[],add=(x,name,st,plan,b,e,run,ed,pdm)=>ent.push([x,row(name,st,plan,b,e,run,ed,pdm),{name,st,plan,pdm:pdm||0,b,e,k:ed&&name!==esc(L("Drehstart"))?ed[1]:"",drehstart:name===esc(L("Drehstart"))}]);
     /* setup: its own quittance, else planned begin until the first scene */
     if(su)add(p0(su),"Setup",su.s===1?1:2,plSetup,p0(su),su.s===1?0:+su.e||0,su.s===1&&d===t,[d,uk("setup"),u],pd("setup"));else add(ms(plSetup)||1,"Setup",start?2:0,plSetup,ms(plSetup),start,false,[d,uk("setup"),u],pd("setup"));
     /* Drehstart = begin of the first scene: the pencil opens that scene */
@@ -166,22 +166,26 @@ function scExpRows(d,u){const un=s=>{const x=document.createElement("textarea");
   return (SCLOG.exp||[]).filter(r=>(!d||r.d===d)&&(!u||String(r.u)===u)).sort((a,b)=>a.d.localeCompare(b.d)).map(r=>Object.assign({dt:r.dt,date:r.d.split("-").reverse().join("."),unit:((window.UNAME&&UNAME[r.u])||r.u)+" Unit",name:un(r.name),
     st:r.st,state:r.st===1?L("läuft"):r.st===2?L("abgeschlossen"):L("offen"),plan:r.plan||"",pmin:r.pdm?String(r.pdm):"",b:r.b?scHM(r.b):"",e:r.e?scHM(r.e):"",min:r.b&&r.e?String(Math.round((r.e-r.b)/60000)):""},scInfo(r)))}
 /* more about a scene for the export: I/E, set, pages, cast and the description from the Drehplan of that day (and unit) */
-function scInfo(r){const k=scBase(r.k||"");if(!k||/^(lunch|wrap|setup\d*)$/.test(k)||typeof schedIndex!=="function")return {ie:"",set:"",pg:"",cast:"",desc:""};
+function scInfo(r){const k=scBase(r.k||""),E={ie:"",set:"",pg:"",cast:"",desc:""};
+  /* setup and Drehstart: the I/E of the scene that follows (setup: the next scene after its row, Drehstart: the first scene of the day) */
+  if(/^setup\d*$/.test(k)||r.drehstart){const day=(S.days||[]).find(y=>y.date===r.d)||{},its=arr(r.u==="2"?(day.unit2||{}).items:r.u==="3"?(day.unit3||{}).items:day.items);
+    let i=0;if(!r.drehstart){i=scRowKeys(its,x=>String(x.n||"")).indexOf(k);if(i<0)i=0}const nx=its.slice(i).find(x=>x.sc);return Object.assign(E,{ie:nx&&nx.ie||""})}
+  if(!k||/^(lunch|wrap)$/.test(k)||typeof schedIndex!=="function")return E;
   let o=null;try{const l=schedIndex()[norm(k)]||[];o=l.find(y=>y.d&&y.d.date===r.d&&String(y.u||"1")===String(r.u||"1"))||l.find(y=>y.d&&y.d.date===r.d)||null}catch(_){}
   const it=(o&&o.it)||{},cm=(S.meta&&S.meta.cast)||{};
   return {ie:it.ie||"",set:it.set||"",pg:it.pg||"",cast:arr(it.cast).map(i=>cm[i]?i+" "+cm[i]:i).join(", "),desc:typeof TX==="function"?TX(it,"d")||"":(it.d||"")}}
-const SCX_HEAD=()=>[L("Drehtag"),L("Datum"),"Unit",L("Eintrag"),L("Status"),L("Plan"),L("Plan-Dauer")+" (min)",L("Beginn"),L("Ende"),L("Dauer")+" (min)","I/E","Set",L("Seiten"),L("Beschreibung")];   /* no cast in the scene log */
+const SCX_HEAD=()=>[L("Drehtag"),L("Datum"),"Unit",L("Eintrag"),L("Status"),"I/E","Set",L("Seiten"),L("Plan"),L("Plan-Dauer")+" (min)",L("Beginn"),L("Ende"),L("Dauer")+" (min)",L("Beschreibung")];   /* no cast in the scene log */
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-sclx]");if(!b)return;e.preventDefault();const [k,dd,uu]=b.dataset.sclx.split("|"),rows=scExpRows(dd,uu),stamp=(dd||todayISO())+(uu?"_Unit"+uu:"");
-  const cells=r=>[r.dt,r.date,r.unit,r.name,r.state,r.plan,r.pmin,r.b,r.e,r.min,r.ie,r.set,r.pg,r.desc];
+  const cells=r=>[r.dt,r.date,r.unit,r.name,r.state,r.ie,r.set,r.pg,r.plan,r.pmin,r.b,r.e,r.min,r.desc];
   if(k==="csv"){const q=v=>{v=String(v==null?"":v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-    const txt="﻿"+[SCX_HEAD()].concat(rows.map(cells)).map(r=>r.map(q).join(";")).join("\r\n");
+    const txt="﻿"+[SCX_HEAD()].concat(rows.map(r=>{const c=cells(r);if(c[7])c[7]='="'+c[7]+'"';return c})).map(r=>r.map(q).join(";")).join("\r\n");   /* pages as text: «1 1/8» is no date */
     const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));a.download="TSCHUGGER-Tigerblood_Szenen-Protokoll_"+stamp+".csv";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);return}
-  const UN=uu?((window.UNAME&&UNAME[uu])||uu)+" Unit":"",HD=SCX_HEAD().filter((_,i)=>i>2),days=[...new Set(rows.map(r=>r.dt+" · "+r.date))];
-  /* the same columns on every day: fixed widths (entry, state, plan, begin, end, duration, I/E, set, pages, description) */
-  const COLS='<colgroup>'+[12,8,5,6,6,6,6,5,16,5,25].map(w=>'<col style="width:'+w+'%">').join("")+'</colgroup>';
-  const doc='<!doctype html><html><head><meta charset="utf-8"><title>TSCHUGGER Tigerblood · '+esc(L("Szenen-Protokoll"))+' '+esc(UN)+' '+esc(stamp)+'</title><style>body{font:11px/1.35 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#111}h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:0 0 6px;break-after:avoid}.day{break-inside:avoid;page-break-inside:avoid;margin:0 0 14px}table{table-layout:fixed}table{border-collapse:collapse;width:100%;break-inside:auto}th,td{border-bottom:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top}th{background:#f2f2f2}td.n{font-variant-numeric:tabular-nums;white-space:nowrap}tr.o td{color:#888}td.scxd{font-size:10.5px;color:#333;min-width:40mm}@page{size:A4 landscape;margin:10mm}</style></head><body><h1>TSCHUGGER Tigerblood · '+esc(L("Szenen-Protokoll"))+(UN?' · '+esc(UN):'')+'</h1>'+
-    days.map(k=>'<div class="day"><h2>'+esc(k.replace(/^ · /,""))+'</h2><table>'+COLS+'<thead><tr>'+HD.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+
-      rows.filter(r=>r.dt+" · "+r.date===k).map(r=>'<tr'+(r.st?'':' class="o"')+'>'+cells(r).slice(3).map((v,i)=>'<td'+(i>=2&&i<=6?' class="n"':i===10?' class="scxd"':'')+'>'+esc(v)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>').join("")+'</body></html>';
+  const UN=uu?((window.UNAME&&UNAME[uu])||uu)+" Unit":"",HD=SCX_HEAD().slice(3,-1),days=[...new Set(rows.map(r=>r.dt+" · "+r.date))];
+  /* the same columns on every day: fixed widths (entry, state, I/E, set, pages, plan, planned duration, begin, end, duration); the description in a second line below */
+  const COLS='<colgroup>'+[14,9,6,27,6,7,8,7,7,9].map(w=>'<col style="width:'+w+'%">').join("")+'</colgroup>';
+  const doc='<!doctype html><html><head><meta charset="utf-8"><title>TSCHUGGER Tigerblood · '+esc(L("Szenen-Protokoll"))+' '+esc(UN)+' '+esc(stamp)+'</title><style>body{font:11px/1.35 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#111}h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:0 0 6px;break-after:avoid}.day{break-inside:avoid;page-break-inside:avoid;margin:0 0 14px}table{table-layout:fixed}table{border-collapse:collapse;width:100%;break-inside:auto}th,td{border-bottom:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top}th{background:#f2f2f2}td.n{font-variant-numeric:tabular-nums;white-space:nowrap}tbody.o td{color:#888}tbody.e{break-inside:avoid}tr.l1 td{border-bottom:0;padding-bottom:1px}tr.l2 td{padding-top:0}td.scxd{font-size:10.5px;color:#333;min-width:40mm}@page{size:A4 landscape;margin:10mm}</style></head><body><h1>TSCHUGGER Tigerblood · '+esc(L("Szenen-Protokoll"))+(UN?' · '+esc(UN):'')+'</h1>'+
+    days.map(k=>'<div class="day"><h2>'+esc(k.replace(/^ · /,""))+'</h2><table>'+COLS+'<thead><tr>'+HD.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead>'+
+      rows.filter(r=>r.dt+" · "+r.date===k).map(r=>{const c=cells(r).slice(3,-1),sc=!!(r.set||r.ie||r.desc);return '<tbody class="e'+(r.st?'':' o')+'"><tr'+(sc?' class="l1"':'')+'>'+c.map((v,i)=>'<td'+(i>=4?' class="n"':'')+'>'+esc(v)+'</td>').join("")+'</tr>'+(sc?'<tr class="l2"><td></td><td colspan="'+(c.length-1)+'" class="scxd">'+esc(r.desc||"–")+'</td></tr>':'')+'</tbody>'}).join("")+'</table></div>').join("")+'</body></html>';
   /* the print view in a new window (a page of its own from a blob), its print dialog offers «Als PDF sichern» */
   const url=URL.createObjectURL(new Blob([doc],{type:"text/html;charset=utf-8"})),w=window.open(url,"_blank");
   if(w){const go=()=>{try{w.focus();w.print()}catch(_){}};try{w.addEventListener("load",()=>setTimeout(go,200))}catch(_){setTimeout(go,800)}setTimeout(()=>URL.revokeObjectURL(url),120000);return}
