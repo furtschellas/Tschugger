@@ -215,7 +215,7 @@ async function scPdf(rows,days,UN,stamp,pw,uu){
   /* column lines always through; thicker after «Set / Beschreibung» and after «Plan» */
   const TH=.8,lw=(i,t,b)=>({top:t,bottom:b,left:i===4||i===6?TH:.2,right:i===3||i===5?TH:.2});
   const hc=(t,i,x)=>Object.assign({content:t,styles:Object.assign({lineWidth:lw(i,.2,.2)},x&&x.styles)},x&&x.o);
-  const head=[[hc(C(T("Aktion")),0,{o:{rowSpan:2},styles:{valign:"bottom"}}),hc("S",1,{o:{rowSpan:2},styles:{valign:"bottom",halign:"center"}}),hc("I/E\n"+C(T("Seiten")),2,{o:{rowSpan:2},styles:{valign:"bottom"}}),hc("Set\n"+C(T("Beschreibung")),3,{o:{rowSpan:2},styles:{valign:"bottom"}}),
+  const head=[[hc(C(T("Aktion")),0,{o:{rowSpan:2},styles:{valign:"top"}}),hc("S",1,{o:{rowSpan:2},styles:{valign:"top",halign:"center"}}),hc("I/E\n"+C(T("Seiten")),2,{o:{rowSpan:2},styles:{valign:"top"}}),hc("Set\n"+C(T("Beschreibung")),3,{o:{rowSpan:2},styles:{valign:"top"}}),
     Object.assign(hc(C(T("Plan")),4,{o:{colSpan:2},styles:{halign:"left"}}),{}),hc(C(T("Dreh")),6,{o:{colSpan:4},styles:{halign:"left"}})],
     [T("Zeit"),T("Dauer"),T("Start"),T("Ende"),T("Dauer"),T("Diff.")].map((t,j)=>hc(C(t),j+4,{styles:{halign:"left"}}))];
   head[0][4].styles.lineWidth.right=TH;
@@ -227,17 +227,17 @@ async function scPdf(rows,days,UN,stamp,pw,uu){
     for(const r of rs){const sc=!!(r.desc||r.pg),o=r.inv?{fillColor:25,textColor:r.st?255:175,lineColor:90}:r.st?{}:{textColor:140};
       /* difference: more time than planned in red */
       const df=r.diff===""?"":(+r.diff>0?"+":"")+r.diff,red=+r.diff>0?{textColor:r.inv?[255,110,110]:[200,30,30],fontStyle:"bold"}:{};
-      body.push([r.name,r.st===2?"":"",r.ie,r.set,r.plan,r.pmin,r.b,r.e,r.min,df].map((v,i)=>({content:C(v),styles:Object.assign({fontStyle:i===0?"bold":"normal",lineWidth:lw(i,.2,sc?0:.2)},sc?{cellPadding:{top:1.4,bottom:.2,left:1.4,right:1.4}}:{},o,i===9?red:{}),_done:i===1&&r.st===2})));
-      if(sc)body.push(["","",C(r.pg),fit1(C(r.desc)),"","","","","",""].map((v,i)=>({content:v,styles:Object.assign({lineWidth:lw(i,0,.2),cellPadding:{top:.2,bottom:1.4,left:1.4,right:1.4}},o,i===3?Object.assign({fontSize:8},r.inv?{}:{textColor:r.st?70:140}):{})})))}
+      body.push([r.name,r.st===2?"":"",r.ie,r.set,r.plan,r.pmin,r.b,r.e,r.min,df].map((v,i)=>({content:C(v),styles:Object.assign({fontStyle:i===0?"bold":"normal",fontSize:i===0?9.5:8.5,lineWidth:lw(i,.2,sc?0:.2)},sc?{cellPadding:{top:1,bottom:0,left:1.4,right:1.4}}:{},o,i===9?red:{}),_done:i===1&&r.st===2})));
+      if(sc)body.push(["","",C(r.pg),fit1(C(r.desc)),"","","","","",""].map((v,i)=>({content:v,styles:Object.assign({lineWidth:lw(i,0,.2),cellPadding:{top:0,bottom:1,left:1.4,right:1.4}},o,i===3?Object.assign({fontSize:8},r.inv?{}:{textColor:r.st?70:140}):{})})))}
     /* a day that does not fit on the rest of the page starts on a new one */
     const need=10+body.length*6;if(y+need>192&&y>30){doc.addPage();y=14}
     doc.setFontSize(11);doc.text(C(k.replace(/^ · /,"")),12,y+5);
     doc.autoTable({startY:y+8,head,body,margin:{left:12,right:12,bottom:14},theme:"grid",tableWidth:"wrap",columnStyles:Object.fromEntries(W.map((w,i)=>[i,{cellWidth:w}])),
-      styles:{fontSize:8.5,cellPadding:1.4,lineColor:150,lineWidth:.2,overflow:"linebreak"},headStyles:{fillColor:[242,242,242],textColor:20,fontStyle:"bold"},rowPageBreak:"avoid",
+      styles:{fontSize:8.5,cellPadding:{top:1,bottom:1,left:1.4,right:1.4},lineColor:150,lineWidth:.2,overflow:"linebreak"},headStyles:{fillColor:[242,242,242],textColor:20,fontStyle:"bold"},rowPageBreak:"avoid",
       didDrawCell:h=>{if(h.section==="body"&&h.cell.raw&&h.cell.raw._done){const c=h.cell,x=c.x+c.width/2-2,yy=c.y+c.height/2;doc.setDrawColor(40,150,90);doc.setLineWidth(.6);doc.line(x,yy,x+1.4,yy+1.4);doc.line(x+1.4,yy+1.4,x+4,yy-1.6)}}});
     y=doc.lastAutoTable.finalY+6}
   /* footer on every page: who exported it (left), page x of y (middle), date and time of the export (right) */
-  {const n=doc.getNumberOfPages(),z=new Date(),who=(()=>{try{const m=myIdentity();if(m&&m.name)return m.name}catch(_){}return (window.ME&&ME.email)||""})(),when=pad2(z.getDate())+"."+pad2(z.getMonth()+1)+"."+z.getFullYear()+" "+pad2(z.getHours())+":"+pad2(z.getMinutes());
+  {const n=doc.getNumberOfPages(),z=new Date(),who=(()=>{/* the signed-in user who makes the export (not the person chosen in «Meine Termine») */try{if(typeof MEMBER!=="undefined"&&MEMBER){const n=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name;if(n)return n}}catch(_){}try{if(typeof ME!=="undefined"&&ME)return ME.displayName||ME.email||""}catch(_){}return ""})(),when=pad2(z.getDate())+"."+pad2(z.getMonth()+1)+"."+z.getFullYear()+" "+pad2(z.getHours())+":"+pad2(z.getMinutes());
    for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(90);doc.text(C(who),12,203);doc.text(C(T("Seite")+" "+i+" "+T("von")+" "+n),148.5,203,{align:"center"});doc.text(C(when),285,203,{align:"right"})}doc.setTextColor(0)}
   const blob=doc.output("blob"),url=URL.createObjectURL(blob),name=projFile()+"_Szenen-Protokoll_"+stamp+".pdf";
   /* open in the PDF reader of the device; where a new window is not possible, as a download */
