@@ -882,3 +882,9 @@ html body #view .cdsec .cdop{display:flex;gap:8px 12px;align-items:center;justif
 html body #view .cdsec .cdop.cdrv b{color:var(--warn,#e0a040)}
 html body #view .cdsec .cdform label:not(.ck){display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
 html body #view .cdsec .cdform select{width:100%}
+/* «Speichern»: round button with a symbol, everywhere */
+.savebtn{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;min-width:46px;padding:0!important;border-radius:50%!important;border:0;background:var(--accent);color:#fff;cursor:pointer;flex:0 0 auto}
+.savebtn svg{width:20px;height:20px;display:block}
+.savebtn:disabled{opacity:.45;cursor:default}
+.savebtn.scwab{background:#25d366;color:#0b2b17}
+.savebtn+.savebtn{margin-left:8px}

@@ -84,7 +84,7 @@ window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days0||S.days
     '<label>'+esc(f.op==="shift"?L("Ab Drehtag"):L("Drehtag"))+'<select data-cdf="a"><option value="">–</option>'+opts(f.a,days)+'</select></label>'+
     (f.op==="shift"?'':'<label>'+esc(f.op==="swap"?L("Tauschen mit"):L("Neues Datum"))+'<select data-cdf="b"><option value="">–</option>'+opts(f.b,f.op==="swap"?days:targets)+'</select></label>')+
     (typeof can==="function"&&can("push.send")?'<label class="ck"><input type="checkbox" data-cdf="push"'+(f.push?' checked':'')+'> '+esc(L("Push-Nachricht «Drehplan geändert» an alle"))+'</label>':'')+
-    '<p class="cdpv'+(pv.ok?'':' bad')+'">'+esc(pv.t)+'</p><div class="arb"><button type="submit" data-cdsave'+(pv.ok&&!CD.busy?'':' disabled')+'>'+esc(L("Übernehmen"))+'</button></div>'+(CD.msg?'<p class="amsg">'+esc(CD.msg)+'</p>':'')+'</form>'+
+    '<p class="cdpv'+(pv.ok?'':' bad')+'">'+esc(pv.t)+'</p><div class="arb">'+saveBtn('data-cdsave'+(pv.ok&&!CD.busy?'':' disabled'),L("Übernehmen"))+'</div>'+(CD.msg?'<p class="amsg">'+esc(CD.msg)+'</p>':'')+'</form>'+
     '<h4>'+esc(L("Aktive Änderungen"))+'</h4>'+(list?'<ul class="cdlist">'+list+'</ul>':'<p class="ghint">'+esc(L("Keine."))+'</p>')+'</div>'};
 document.addEventListener("change",e=>{const t=e.target.closest&&e.target.closest("[data-cdf]");if(!t)return;const k=t.dataset.cdf;CD.form[k]=t.type==="checkbox"?t.checked:t.value;if(k==="op"||k==="u"){CD.form.a="";CD.form.b=""}CD.msg="";render()});
 document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.closest("[data-cdsave],[data-cdoff],[data-cdre]");if(!s||!cdCan()||CD.busy)return;e.preventDefault();

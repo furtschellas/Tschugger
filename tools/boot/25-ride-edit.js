@@ -48,7 +48,7 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
       '<option value="'+OTHER+'">'+esc(L("Andere …"))+'</option></select>'+
     '<input data-redfree hidden placeholder="'+esc(L("Name"))+'"><button type="button" class="lnk" data-redfreeok hidden>'+esc(L("Hinzufügen"))+'</button></div></fieldset>'+
 
-    '<p class="amsg" role="status"></p><div class="a2b">'+(r._orig?'<button type="button" class="lnk" data-redreset>'+esc(L("Original wiederherstellen"))+'</button>':'')+dlgBtn("lnk",'data-redx',"Abbrechen")+'<button type="submit" class="pri">'+esc(L("Speichern"))+'</button></div></form></div>';
+    '<p class="amsg" role="status"></p><div class="a2b">'+(r._orig?'<button type="button" class="lnk" data-redreset>'+esc(L("Original wiederherstellen"))+'</button>':'')+dlgBtn("lnk",'data-redx',"Abbrechen")+''+saveBtn("","",null,"pri")+'</div></form></div>';
   const msg=d.querySelector(".amsg");
   let pax=String((crew?r.people:r.passengers)||"").split(/\s*,\s*/).map(x=>x.trim()).filter(Boolean);
   const drawPax=()=>{d.querySelector(".redpax").innerHTML=pax.length?pax.map((n,i)=>'<span class="redchip">'+esc(n)+'<button type="button" data-redrm="'+i+'" aria-label="'+esc(L("Entfernen")+" "+n)+'">×</button></span>').join(""):'<span class="ghint">'+esc(L("Niemand"))+'</span>';d.querySelector("[name=pax]").value=pax.join(", ")};
