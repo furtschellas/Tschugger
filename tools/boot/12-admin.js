@@ -1,4 +1,6 @@
 /* ---- admin: invitations and members (German only; visible to admins) ---- */
+/* error text of the App-Verwaltung: without permission a hint to publish the Firestore rules, else the error itself */
+const admErr=err=>/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err);
 const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false,open:new Set()};
 async function admLoad(){
   const {F,db}=await fb();
@@ -257,7 +259,7 @@ document.addEventListener("change",async e=>{const c=e.target.closest("input[dat
   const apply=ps=>{if(id==="admin")ADM.adminPerms=ps;else{const r=(ADM.roles||[]).find(x=>x.id===id);if(r)r.perms=ps}};
   apply(perms);render();
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name:ro.name||id,perms,at:F.serverTimestamp()});showMsg(L("Rolle gespeichert."),2000)}
-  catch(err){apply(before);render();showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),6000)}});
+  catch(err){apply(before);render();showMsg(admErr(err),6000)}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&canRoleEdit()&&(b.dataset.redit!=="admin"||isAdmin())){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
   if(e.target.closest("[data-rreset]")&&canRoleEdit()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!canRoleEdit()||(f.dataset.role==="admin"&&!isAdmin()))return;
@@ -267,7 +269,7 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form.arol
   let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
   const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});ADM.redit="";showMsg(L("Rolle gespeichert."),2500);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();await admLoad()}
-  catch(err){if(btn)btn.disabled=false;console.error(err);{const m=f.querySelector(".amsg");if(m){m.className="amsg";m.textContent=/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err)}}showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),9000)}});
+  catch(err){if(btn)btn.disabled=false;console.error(err);{const m=f.querySelector(".amsg");if(m){m.className="amsg";m.textContent=admErr(err)}}showMsg(admErr(err),9000)}});
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!canRoleEdit())return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
   if(!confirmSafe(L("Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.").replace("{r}",ro.name||id)))return;
   try{const {F,db}=await fb();for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)await F.deleteDoc(F.doc(db,"userroles",em));await F.deleteDoc(F.doc(db,"roles",id));showMsg(L("Rolle gelöscht."),2500);await admLoad()}
@@ -287,7 +289,7 @@ async function setUserRole(em,v,sl){if(!canRoleAssign()||!canRole(em)||(v==="own
     if(v&&v!=="owner"&&v!=="admin")await F.setDoc(F.doc(db,"userroles",em),{role:v,at:F.serverTimestamp()});else if(prev.ur)await F.deleteDoc(F.doc(db,"userroles",em));
     showMsg(L("Rolle gespeichert."),2500)}
   catch(err){console.error(err);setLocal(prev.own,prev.adm,prev.ur);render();
-    showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),9000)}}
+    showMsg(admErr(err),9000)}}
 /* user list: one compact card per person, filter chips with counts, actions folded away */
 const initials=n=>String(n||"?").split(/[\s@._-]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
 function userList(rows,vis,o){
@@ -451,7 +453,7 @@ document.addEventListener("submit",async e=>{
     await F.setDoc(F.doc(db,"invites",em),Object.assign(nm?{name:nm}:{},{addedAt:F.serverTimestamp()}),{merge:true});await assignCrew(em);
     if(!ADM.inv.some(i=>i.id===em))ADM.inv.push({id:em,name:nm});f.reset();admIndex();render();
     showMsg(em+" "+L("eingeladen.")+" "+L("Schick jetzt die Einladungs-Mail (✉ bei der Person)."),6000);admLoad().catch(()=>{})}
-  catch(err){console.error(err);showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}
+  catch(err){console.error(err);showMsg(admErr(err),8000)}
   if(btn)btn.disabled=false;
 });
 document.addEventListener("click",async e=>{
