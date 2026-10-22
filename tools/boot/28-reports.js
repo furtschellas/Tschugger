@@ -44,7 +44,20 @@ window.reportsSec=only=>{const all=repList();if((!all.length&&!repFolders().leng
   const allBox=vis.length>1&&typeof window.blkImg==="function"?'<details class="tstsec repsec" data-lsec="rep-all"'+(REPLOG.all||only==="*"?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Alle Reports")),'<span class="tsth">'+vis.length+'</span>',""):esc(L("Alle Reports")))+'</summary>'+
     '<div class="admins"><p class="ahint">'+esc(L("Alle Reports in der Galerie, sortiert:"))+'</p><div class="arb repmodes">'+
     [["day","Nach Drehtag"],["dept","Nach Department"],["new","Neueste zuerst"]].map(([m,t])=>'<button type="button" class="pillbtn" data-repall="'+m+'">'+esc(L(t))+'</button>').join("")+'</div></div></details>':'';
+  /* subtopic «Alle»: every report as a list, sorted (Drehtag / Department / Neueste), headings per group, and the gallery in the same order */
+  if(only==="*"){const lst=repSort(all.map((r,i)=>[r,i]).filter(([r])=>repGroups().includes(String(r.g||""))),REPALL);
+    const hk=([r])=>REPALL==="dept"?repTitle(r.g):REPALL==="day"?(()=>{const dy=repDay(r);return (dy.dt?"DT "+dy.dt+" · ":"")+repFmt(dy.date)})():"";
+    let last=null,lis="";for(const x of lst){const h=hk(x);if(h&&h!==last){lis+='<li class="reph2">'+esc(h)+'</li>';last=h}lis+=row(x[0],x[1])}
+    return '<details class="tstsec repsec" data-lsec="rep-all" open><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Alle Reports")),'<span class="tsth">'+lst.length+'</span>',""):esc(L("Alle Reports")))+'</summary>'+
+      '<div class="admins"><div class="arb repmodes" role="group" aria-label="'+esc(L("Sortieren"))+'">'+[["day","Nach Drehtag"],["dept","Nach Department"],["new","Neueste zuerst"]].map(([m,t])=>'<button type="button" class="pillbtn'+(REPALL===m?' on':'')+'" data-repsort="'+m+'" aria-pressed="'+(REPALL===m)+'">'+esc(L(t))+'</button>').join("")+
+      (vis.length&&typeof window.blkImg==="function"?repIco('data-repall="'+REPALL+'"',REP_GAL,L("Alle in der Galerie")):'')+'</div>'+
+      (lst.length?'<ul class="audlist">'+lis+'</ul>':'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+'</div></details>'}
   return only==="*"?allBox:only?boxes:boxes+allBox};
+let REPALL="day";try{REPALL=localStorage.getItem("repall")||"day"}catch(_){}
+/* order of [report, index] pairs: by shooting day (oldest first), by department, or newest first */
+function repSort(l,m){const dk=x=>repDay(x[0]).date||"",gk=x=>String(x[0].g||"").toLowerCase(),nk=x=>String(x[0].n);
+  return l.slice().sort(m==="dept"?(a,b)=>gk(a).localeCompare(gk(b))||dk(a).localeCompare(dk(b))||nk(a).localeCompare(nk(b)):m==="new"?(a,b)=>dk(b).localeCompare(dk(a))||gk(a).localeCompare(gk(b))||nk(a).localeCompare(nk(b)):(a,b)=>dk(a).localeCompare(dk(b))||gk(a).localeCompare(gk(b))||nk(a).localeCompare(nk(b)))}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repsort]");if(!b)return;e.preventDefault();e.stopPropagation();REPALL=b.dataset.repsort;try{localStorage.setItem("repall",REPALL)}catch(_){}render()},true);
 /* the gallery with many reports: every page, the caption says shooting day, department and report */
 function repGallery(list,title){const media=[];for(const r of list){const dy=repDay(r),cap=[(dy.dt?"DT "+dy.dt:repFmt(dy.date)),r.g,r.n].filter(Boolean).join(" · ");
     arr(r.f).forEach((p,k)=>media.push({n:cap+(r.f.length>1?" · "+(k+1)+"/"+r.f.length:""),t:"img",f:p,u:r.u}))}
@@ -86,6 +99,10 @@ VIEWS.reports=function(){const subs=repSubs();if(!ME||!subs.length)return '<div 
   const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-repsub="'+esc(k)+'" aria-selected="'+(REPSUB===k)+'">'+(t==="Produktion"?'<span class="lgl">'+esc(L(t))+'</span><span class="sml">Prod</span>':esc(L(t)))+'</button>').join("")+'</nav>';
   let body="";if(REPSUB==="scenes"){SCLOG.open=true;body=typeof sceneLogSec==="function"?sceneLogSec():""}
   else if(REPSUB==="all")body=reportsSec("*");else body=reportsSec(REPSUB.slice(2));
+  /* in the topic «Reports» every box is always open: no folding (summary and expand button without function) */
+  body=String(body||"").replace(/<details class="tstsec/g,'<details open class="tstsec');
   return '<section class="mypage reppage"><div class="myhead"><h2 class="pgt">'+esc(L("Reports"))+'</h2></div>'+nav+(body||'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+'</section>'};
 window.repSetSub=k=>{if(REPSUB===k)return false;REPSUB=k;return true};
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repsub]");if(!b)return;REPSUB=b.dataset.repsub;try{localStorage.setItem("repsub",REPSUB)}catch(_){}render();scrollTo(0,0)});
+document.addEventListener("click",e=>{const sm=e.target.closest&&e.target.closest(".reppage details.tstsec>summary");if(!sm)return;
+  if(e.target.closest("a,button:not(.tstall),input,select,label"))return;e.preventDefault()},true);

@@ -891,3 +891,18 @@ html body #view .cdsec .cdform select{width:100%}
 /* always round, even inside forms whose own button rules make buttons wide (e.g. Coverday, Nachricht) */
 html body button.savebtn{width:46px!important;height:46px!important;min-width:46px!important;max-width:46px!important;flex:0 0 46px!important;padding:0!important;border-radius:50%!important;color:#fff!important;align-self:flex-start}
 html body button.savebtn.scwab{color:#0b2b17!important}
+/* roles: sort button next to the title (Hierarchie / A–Z) */
+.rolesh{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rsort{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule);background:transparent;color:var(--accent);border-radius:99px;padding:5px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0}
+.rsort svg{width:16px;height:16px;flex:none}
+/* Reports topic: boxes always open, no fold marker and no expand button */
+html body #view .reppage details.tstsec>summary{cursor:default;list-style:none}
+html body #view .reppage details.tstsec>summary::-webkit-details-marker{display:none}
+html body #view .reppage details.tstsec>summary .tstall{display:none}
+/* Reports «Alle»: sort buttons and group headings */
+.repmodes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 10px}
+.repmodes .pillbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.audlist .reph2{list-style:none;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin:12px 0 2px;padding:0;border:0;background:none}
+html body #view .reppage .repmodes{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:6px;align-items:center}
+html body #view .reppage .repmodes .pillbtn{width:auto!important;margin:0!important;padding:5px 12px!important;font-size:13px}
+html body #view .reppage .repmodes .pillbtn.on{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
