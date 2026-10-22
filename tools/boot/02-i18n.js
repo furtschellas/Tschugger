@@ -1180,4 +1180,11 @@ Object.assign(I18N,{
  "Dreh":{fr:"Tournage",it:"Riprese",en:"Shoot",hi:"शूट"},
  "Differenz":{fr:"Différence",it:"Differenza",en:"Difference",hi:"अंतर"},
  "Diff.":{fr:"Diff.",it:"Diff.",en:"Diff.",hi:"अंतर"},
+ "Quittierungszeiten sehen":{fr:"Voir les heures de confirmation",it:"Vedere gli orari di conferma",en:"See confirmation times",hi:"पुष्टि के समय देखें"},
+ "Quittierungszeiten":{fr:"Heures de confirmation",it:"Orari di conferma",en:"Confirmation times",hi:"पुष्टि के समय"},
+ "Beginn und Ende der quittierten Szenen neben dem Quittierungs-Knopf. Sichtbar nur mit dem Recht «Quittierungszeiten sehen».":{fr:"Début et fin des scènes confirmées à côté du bouton de confirmation. Visible uniquement avec le droit « Voir les heures de confirmation ».",it:"Inizio e fine delle scene confermate accanto al pulsante di conferma. Visibile solo con il diritto «Vedere gli orari di conferma».",en:"Start and end of confirmed scenes next to the confirm button. Visible only with the permission “See confirmation times”.",hi:"पुष्टि बटन के पास पुष्टि किए गए सीन का शुरू और अंत। केवल «पुष्टि के समय देखें» अधिकार के साथ दिखता है।"},
+ "Drehplan – Handy":{fr:"Plan de tournage – mobile",it:"Piano di lavorazione – cellulare",en:"Schedule – phone",hi:"शूटिंग प्लान – फ़ोन"},
+ "Drehplan – Computer":{fr:"Plan de tournage – ordinateur",it:"Piano di lavorazione – computer",en:"Schedule – computer",hi:"शूटिंग प्लान – कंप्यूटर"},
+ "Callsheet – Handy":{fr:"Feuille de service – mobile",it:"Ordine del giorno – cellulare",en:"Callsheet – phone",hi:"कॉलशीट – फ़ोन"},
+ "Callsheet – Computer":{fr:"Feuille de service – ordinateur",it:"Ordine del giorno – computer",en:"Callsheet – computer",hi:"कॉलशीट – कंप्यूटर"},
 });

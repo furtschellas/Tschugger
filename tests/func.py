@@ -573,6 +573,10 @@ async def owner_tests(p, port):
         sw = await E("""(()=>{if(typeof scAckBtn!=='function'||typeof rideAckBtn!=='function')return null;const k={s:window.SCACKON,r:window.RIDEACKON,a:window.SCACK,cp:window.canPerm};const t=todayISO();
           window.canPerm=()=>true;window.SCACK={[scAckId(t,'1')]:{d:t,s:2,at:1}};const on=scAckBtn(t,'1')!==''&&scHas(t);window.SCACKON=false;const off=scAckBtn(t,'1')===''&&!scHas(t)&&scState(t,'1')===0;
           window.RIDEACKON=false;const roff=rideAckBtn({ride:1,rid:'abcd1234'})==='';window.SCACKON=k.s;window.RIDEACKON=k.r;window.SCACK=k.a;window.canPerm=k.cp;return {on,off,roff}})()""")
+        st = await E("""(()=>{if(typeof scAckBtn!=='function'||typeof scTimesOk!=='function')return null;const k={a:window.SCACK,cp:window.canPerm,on:window.SCACKON};const d='2030-05-06',t=new Date(d+'T09:00').getTime();
+          window.SCACKON=true;window.SCACK={[scAckId(d,'12')]:{s:2,b:t,e:t+3600e3}};window.canPerm=p=>p==='scenes.times';const on=scAckBtn(d,'12','1').includes('scackt');window.canPerm=()=>false;const off=!scAckBtn(d,'12','1').includes('scackt');
+          window.SCACK=k.a;window.canPerm=k.cp;window.SCACKON=k.on;return {on,off}})()""")
+        check("Rollen: Quittierungszeiten nur mit dem Recht «Quittierungszeiten sehen»", st in (None, {"on": True, "off": True}), st)
         check("Einstellungen: Szenen und Fahrten quittieren lassen sich ausschalten (keine Knöpfe, «jetzt» nach der Uhr)", sw in (None, {"on": True, "off": True, "roff": True}), sw)
         sl = await E("""(()=>{if(typeof sceneLogSec!=='function'||typeof scExpRows!=='function')return null;const k={l:SCLOG.list,e:SCLOG.exp,c:window.canSceneLog,cp:window.canPerm};const d='2030-05-06',t=h=>new Date(d+'T'+h).getTime();
           SCLOG.list=[{id:'20300506-12',d,s:2,u:'1',sc:'12',b:t('09:00'),e:t('10:00')},{id:'20300506-lunch',d,s:2,u:'1',sc:'lunch',b:t('12:00'),e:t('13:00')},{id:'20300506-55',d,s:1,u:'2',sc:'55',b:t('09:30')},{id:'20300506-wrapu2',d,s:2,u:'2',sc:'wrap_u2',b:t('18:00'),e:t('18:00')}];

@@ -1371,6 +1371,9 @@ html body #view .sclt b{font-family:var(--f-mono,monospace);font-weight:600}
 html body #view li.sclo{opacity:.6}
 /* Drehplan: every status icon and its times in one column (scenes, lunch, wrap, setups): the times in a box of equal width */
 html body #view .scackt{min-width:12ch;text-align:right}
+/* App-Verwaltung → Quittierungszeiten: hidden in the Drehplan / Callsheet on phones or computers */
+@media (max-width:760px){html.nosctpm body #view .scackt.sctp,html.nosctcm body #view .scackt.sctc{display:none}}
+@media (min-width:761px){html.nosctpd body #view .scackt.sctp,html.nosctcd body #view .scackt.sctc{display:none}}
 html body #view li.row.evack>.what>.scackw{margin-left:auto;margin-right:var(--evack-r,9px)}
 /* callsheet shooting order: status and open button the same size, close together */
 html body #view .csscd>summary>.csexp,html body #view .csscd>summary .scack{width:28px;height:28px;border-width:1.5px}
