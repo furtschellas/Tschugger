@@ -1402,4 +1402,12 @@ html body #view .scled{display:inline-flex;align-items:center;justify-content:ce
 html body #view .sclbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 html body .scbox button.scwab{background:#25d366!important;border:1px solid #25d366!important;color:#fff!important;font:inherit;font-weight:700;font-size:14px;padding:8px 16px;border-radius:99px;cursor:pointer}
 html body #view .sclall{align-items:center;font-size:13px}
+/* folded shooting order: the scene number keeps its width, the set title gives way (nothing overlaps) */
+html body #view .csoscn .cso1 b{flex:0 0 auto;white-space:nowrap}
+html body #view .csoscn .cso1>*{flex-shrink:0}html body #view .csoscn .cso1 .st{flex:1 1 auto;flex-shrink:1}
+/* phone, shooting order: the scene line wraps before the two round buttons, the set title below them over the whole width; folded no quittance times */
+@media (max-width:760px){html body #view .csscd>summary .l1{padding-right:66px}
+ html body #view .csscd>summary .l1::after,html body #view .csscd>summary .l1:has(.scackw)::after{display:none}
+ html body #view .csscd>summary .l1>.set{margin-right:-66px;margin-top:6px}
+ html body #view .csscd:not([open])>summary .scackt{display:none}}
 </style>
