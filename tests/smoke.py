@@ -56,7 +56,7 @@ addEventListener("pagehide",()=>{sessionStorage.setItem("fakeusers",JSON.stringi
 (function(){if(sessionStorage.getItem('seed'))return;sessionStorage.setItem('seed','1');
 const P=%(people)s;const VP=["view.plan","view.prep","view.dispo","view.loc","view.csmap","view.info","view.script","view.blocking","view.crew","view.phone","view.email","view.mycal","scenes.times","scenes.see"];
 window.__db['roles/crew']={name:'Crew',perms:VP};
-window.__db['roles/catering']={name:'Catering',perms:["view.plan","view.dispo","view.loc","view.info","view.crew","crew.food","view.mycal"]};
+window.__db['roles/catering']={name:'Catering',perms:["view.plan","view.dispo","view.loc","view.info","view.crew","crew.food","view.mycal","menus.edit"]};
 window.__db['roles/power']={name:'Power',perms:VP.concat(["users.view","users.edit","roles.assign","roles.edit","push.send","audit.view","crew.bday","data.check"])};
 window.__db['admins/'+P.admin]={addedAt:'x'};
 let i=0;for(const k in P){const e=P[k];if(k==='owner')continue;i++;const uid='u_'+k;
