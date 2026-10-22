@@ -82,9 +82,12 @@ window.cdDocDate=date=>{if(!S.days0||S.days===S.days0)return date;const ds=arr(S
 let CDSUBS=null;
 async function cdSub(){if(CDSUBS||!ME)return;try{const {F,db}=await fb();CDSUBS=F.onSnapshot(F.doc(db,"coverday","state"),async snap=>{let ops=[];
     try{if(snap.exists()&&snap.data().c)ops=arr((await ownDec(await getDataKey(),snap.data().c)).ops)}catch(_){CDSUBS&&CDSUBS();CDSUBS=null;return}
-    if(JSON.stringify(ops)===JSON.stringify(window.CDOPS))return;window.CDOPS=ops;cdApplyAll();render()},()=>{CDSUBS=null})}catch(_){CDSUBS=null}}
+    const at=snap.exists()&&+snap.data().at||0;if(at!==window.CDAT){window.CDAT=at;try{pushSyncSoon()}catch(_){}}
+    if(JSON.stringify(ops)===JSON.stringify(window.CDOPS))return;window.CDOPS=ops;cdApplyAll();render();try{pushSyncSoon()}catch(_){}},()=>{CDSUBS=null})}catch(_){CDSUBS=null}}
 setInterval(()=>{try{if(ME&&!CDSUBS)cdSub()}catch(_){}},4000);
-async function cdSave(ops){const {F,db}=await fb();const c=await ownEnc({ops});await F.setDoc(F.doc(db,"coverday","state"),{c,at:Date.now()});window.CDOPS=ops;cdApplyAll();render()}
+/* «at» of coverday/state = version of the changes; the device sends it with its reminders (push), so the server knows whether they already
+   follow the changes */
+async function cdSave(ops){const {F,db}=await fb();const c=await ownEnc({ops}),at=Date.now();await F.setDoc(F.doc(db,"coverday","state"),{c,at});window.CDAT=at;window.CDOPS=ops;cdApplyAll();render();try{pushSyncSoon()}catch(_){}}
 /* proposal for a change that waits because of a newer Drehplan */
 function cdProposal(op){const raw=S.days0||[],d=dt=>raw.find(x=>x.date===dt),sn=op.snap||{};
   if(!d(op.a)||(op.op!=="shift"&&!d(op.b)&&op.op==="swap"))return ["gone",L("Ein Tag dieser Änderung gibt es im neuen Drehplan nicht mehr – aufheben.")];

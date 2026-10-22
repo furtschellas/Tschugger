@@ -32,6 +32,41 @@ CLAIM = "mailto:furtschellas@gmail.com"
 dec = fsadmin.dec_json
 
 
+# ---------- Coverday: reminders of a device that does not know the newest changes yet ----------
+# The device computes its reminders from the Drehplan with the Coverday changes (app). When a change was saved after the device
+# last sent its reminders («cd» older than coverday/state «at»), its reminders on the changed days may show the wrong day:
+# they are not sent (the device sends correct ones as soon as the app is opened).
+def coverday(key):
+    """(version «at», dates touched by the active changes, first date of a «Nachrücken» – from there all later days count)"""
+    try:
+        f = fsadmin.get_doc("coverday/state") or {}
+        if not f.get("c"): return 0, set(), None
+        ops = (dec(key, f["c"]) or {}).get("ops") or []
+    except Exception as e:
+        _note("Coverday nicht lesbar", e); return 0, set(), None
+    ds, shift = set(), None
+    for o in ops:
+        if not isinstance(o, dict) or o.get("st") == "off": continue
+        for k in ("a", "b"):
+            if o.get(k): ds.add(str(o[k]))
+        if o.get("op") == "shift" and o.get("a"): shift = min(shift or o["a"], o["a"])
+    return int(f.get("at") or 0), ds, shift
+
+
+def cd_stale(item, p, cd):
+    """True: reminder of a device without the newest Coverday changes, on a changed day – not sent"""
+    at, ds, shift = cd
+    if not at or int(p.get("cd") or 0) >= at: return False
+    st = (item.get("start") or item.get("at") or 0) / 1000
+    try:
+        from zoneinfo import ZoneInfo
+        import datetime as _dt
+        day = _dt.datetime.fromtimestamp(st, ZoneInfo("Europe/Zurich")).strftime("%Y-%m-%d")
+    except Exception:
+        day = time.strftime("%Y-%m-%d", time.gmtime(st))
+    return day in ds or bool(shift and day >= shift)
+
+
 def vapid_keys(key):
     """[aktueller, alter] privater VAPID-Schlüssel (PEM). Aktuell: Firestore secret/vapid (Dienstkonto) oder Secret
     VAPID_PRIVATE; alt: die verschlüsselte Datei im Repository (für Geräte, die noch nicht umgestellt sind)."""
@@ -153,7 +188,8 @@ def main():
     if not pems:
         print("::error::Kein VAPID-Schlüssel"); return 1
     sa = bool(fsadmin.sa())
-    n_dev = n_sent = n_gone = n_late = n_err = 0
+    n_dev = n_sent = n_gone = n_late = n_err = n_cd = 0
+    cd = coverday(key)
 
     # messages to everybody / selected roles and departments, at most 24 h old, not yet finished by the worker
     bcs = []
@@ -208,6 +244,7 @@ def main():
                 start = (it.get("start") or it.get("at") or 0) / 1000
                 k = did + "|" + str(it.get("id")) + "|" + str(int(at))
                 if k in sent or at > NOW + EARLY or start < NOW - 60: continue
+                if cd_stale(it, p, cd): n_cd += 1; continue   # Coverday: the device does not know the newest change yet
                 if at < NOW - LATE:
                     n_late += 1; sent[k] = NOW; continue
                 r = send(sub, json.dumps({"title": it.get("title", ""), "body": it.get("body", ""), "url": it.get("url", "./#my"), "tag": str(it.get("id", "")), "icon": "termin"}, ensure_ascii=False), pems, 3600)
@@ -229,7 +266,7 @@ def main():
     finally:   # always remember what was sent, also after an error or timeout – nothing is sent twice
         json.dump(sent, open(SENT, "w"))
         save_devices()
-    print(f"• {n_dev} Geräte · {n_sent} verschickt · {n_err} Fehler (nächster Lauf) · {n_late} zu spät verworfen · {n_gone} abgemeldet"
+    print(f"• {n_dev} Geräte · {n_sent} verschickt · {n_err} Fehler (nächster Lauf) · {n_late} zu spät verworfen · {n_gone} abgemeldet · {n_cd} wegen Coverday zurückgehalten"
           + ("" if sa else " · ohne Dienstkonto (FIREBASE_SA fehlt)"))
     if bcs:   # visible in the run overview (only numbers): which message reached how many devices
         print("::notice::Push: %d Nachricht(en) · %d Geräte · %d verschickt · %d Fehler · %d abgemeldet · Arten: %s"

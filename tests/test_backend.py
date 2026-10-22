@@ -173,6 +173,16 @@ check("Push-Versand: nur an Rollen der Nachricht (Catering bekommt den Drehplan 
 check("Push-Versand: abbestellte Art wird nicht geschickt", eps.count("https://push/crew") == 1, eps)
 check("Push-Versand: Text in der Sprache des Geräts", any(d["title"] == "TF" for e, d in calls if e == "https://push/crew"))
 check("Push-Versand: Bild je nach Thema (Änderung → Pfeile)", all(d.get("icon") == "change" for e, d in calls if d.get("tag", "").startswith("b")))
+# Coverday: reminders of a device that does not know the newest change are held back on the changed days only
+fs.d["coverday/state"] = {"c": enc({"ops": [{"op": "swap", "a": "2031-03-02", "b": "2031-03-03", "st": "on"}, {"op": "move", "a": "2031-03-09", "b": "2031-03-10", "st": "off"}]}), "at": 5000}
+cdv = P.coverday(KEY)
+ts = lambda d, h=10: int(datetime.datetime(*map(int, d.split("-")), h, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=1))).timestamp() * 1000)
+st = [P.cd_stale({"start": ts(d)}, {"cd": v}, cdv) for d, v in (("2031-03-02", 0), ("2031-03-03", 4999), ("2031-03-04", 0), ("2031-03-09", 0), ("2031-03-02", 5000))]
+check("Push-Versand: Coverday – Erinnerungen eines Geräts ohne die neueste Änderung an geänderten Tagen zurückgehalten, sonst normal", (cdv[0], sorted(cdv[1]), st) == (5000, ["2031-03-02", "2031-03-03"], [True, True, False, False, False]), (cdv, st))
+fs.d["coverday/state"] = {"c": enc({"ops": [{"op": "shift", "a": "2031-03-05", "st": "on"}]}), "at": 7000}
+cdv = P.coverday(KEY)
+check("Push-Versand: Coverday Nachrücken – alle Tage ab dem Datum", [P.cd_stale({"start": ts(d)}, {}, cdv) for d in ("2031-03-04", "2031-03-05", "2031-03-20")] == [False, True, True])
+fs.d.pop("coverday/state", None)
 check("Push-Versand: Empfänger werden gespeichert", "dCrew" in (b1.get("done") or []) and "dOff" not in (b1.get("done") or []), b1.get("done"))
 check("Push-Versand: mit Fehler nicht erledigt (nächster Lauf versucht es nochmals)", not b1.get("fin"))
 check("Push-Versand: abgemeldetes Gerät wird gelöscht", "push/dGone" not in fs.d)
@@ -423,5 +433,24 @@ _d = U.cs_to_dispo({"label": "Drehtag 1", "times": {"crewCall": "08:00", "rts": 
                     "order": {"rows": [{"t": "09:00", "sc": "2", "ie": "I/Ev", "set": "CHAPEL"}, {"t": "12:15", "text": "Lunch"}]}}, "2026-10-20", {"name": "00_Callsheets/DT1/TBO_Dispo_DT01_20261020.pdf"})
 check("Callsheet: App-Felder aus der Struktur (Zeiten, Calls, Cast, Szenen, Link)", _d["crewCall"] == "08:00" and _d["shootCall"] == "09:15" and _d["calls"][0]["dept"] == "Camera"
       and _d["cast"][0]["costume"] == "07:40" and [x["sc"] for x in _d["scenes"]] == ["2"] and _d["date"] == "2026-10-20" and "TBO_Dispo" in _d["link"] and "cs" in _d, _d)
+
+# ====================================================================== Google Sheet (Szenen-Protokoll)
+common.GROUP = 'Szenen-Sheet'
+import scene_sheet as SS  # noqa: E402
+_days = [{"date": "2031-03-02", "kind": "shoot", "short": "D1", "items": [{"sc": "1", "t": "08:00"}, {"n": "Lunch", "t": "12:00"}, {"sc": "2", "t": "13:00"}, {"n": "Wrap", "t": "18:00"}]},
+         {"date": "2031-03-03", "kind": "shoot", "short": "D2", "items": [{"sc": "7", "t": "09:00"}, {"n": "Wrap", "t": "17:00"}]},
+         {"date": "2031-03-04", "kind": "shoot", "short": "D3", "items": [{"sc": "9", "t": "07:30"}, {"n": "Wrap", "t": "16:00"}]}]
+_cs = [{"date": "2031-03-02", "shootCall": "08:00", "scenes": [{"sc": "1"}, {"sc": "2"}]}, {"date": "2031-03-03", "shootCall": "09:00", "scenes": [{"sc": "7"}]}]
+_ms = lambda d, h: int(datetime.datetime.fromisoformat(d + "T%02d:00" % h).replace(tzinfo=SS.TZ).timestamp() * 1000)
+# Coverday: day 2 (scene 7) was shot on 2.3., day 1 on 3.3.
+_acks = [{"d": "2031-03-02", "u": "1", "sc": "7", "id": "x-7", "s": 2, "b": _ms("2031-03-02", 9), "e": _ms("2031-03-02", 10)},
+         {"d": "2031-03-03", "u": "1", "sc": "1", "id": "y-1", "s": 2, "b": _ms("2031-03-03", 8), "e": _ms("2031-03-03", 9)}]
+_rows = SS.build(_acks, {"days": _days, "dispos": _cs})["1"]
+_r7 = next(r for r in _rows if r[0] == "Szene 7"); _r1 = next(r for r in _rows if r[0] == "Szene 1")
+_ds = {r[2]: (r[1], r[8]) for r in _rows if r[0] == "Drehstart"}
+check("Google Sheet: Plan-Spalten nach Szenen-Nummer (Coverday getauscht) – Planzeit vom Drehplan-Tag der Szene, Drehstart vom passenden Callsheet",
+      (_r7[8], _r1[8], _ds.get("02.03.2031"), _ds.get("03.03.2031")) == ("09:00", "08:00", ("DT 1", "09:00"), ("DT 2", "08:00")), (_r7[:10], _r1[:10], _ds))
+_rows0 = SS.build([dict(_acks[0], sc="1", id="x-1")], {"days": _days, "dispos": _cs})["1"]
+check("Google Sheet: ohne Coverday unverändert (eigener Tag, eigenes Callsheet)", next(r for r in _rows0 if r[0] == "Szene 1")[8] == "08:00" and next(r for r in _rows0 if r[0] == "Drehstart")[1] == "DT 1")
 
 sys.exit(done("Hintergrund"))

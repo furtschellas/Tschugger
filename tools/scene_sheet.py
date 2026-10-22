@@ -144,6 +144,22 @@ def info(r, days, sched):
     return {"ie": it.get("ie") or "", "set": it.get("set") or "", "pg": it.get("pg") or "", "desc": it.get("d_de") or it.get("d") or ""}
 
 
+def sc_key(sc): return re.sub(r"pt.*$", "", re.sub(r"[^a-z0-9]", "", fold(sc)))
+def match_day(d, l, days, dispos):
+    """the plan day and the callsheet whose scenes fit the quittierten scenes of date d best (own date when it fits as well)"""
+    ks = {sc_key(x.get("sc") or "") for x in l if x.get("sc")} - {""}
+    if not ks: return days.get(d), dispos.get(d)
+    def score_day(day): return len(ks & {sc_key(i.get("sc")) for u in ("1", "2", "3") for i in items(day, u) if i.get("sc")})
+    def score_cs(c): return len(ks & {sc_key(r.get("sc")) for r in (c.get("scenes") or []) if isinstance(r, dict) and r.get("sc")})
+    def best(cands, own, sc):
+        b, bs = own, sc(own) if own else 0
+        for c in cands:
+            v = sc(c)
+            if v > bs: b, bs = c, v
+        return b if bs else own
+    return best(days.values(), days.get(d), score_day), best(dispos.values(), dispos.get(d), score_cs)
+
+
 def build(acks, data):
     """{unit: [rows]} – the oldest day first, like the export of the app"""
     days = {d.get("date"): d for d in data.get("days") or [] if isinstance(d, dict) and d.get("date")}
@@ -158,10 +174,18 @@ def build(acks, data):
     shd = sorted(d["date"] for d in days.values() if d.get("kind") == "shoot" and any(i.get("sc") for i in items(d, "1")))
     today = datetime.datetime.now(TZ).date().isoformat()
     ds = {x.get("d") for x in acks if x.get("d")}
+    # Coverday: a day shot on another date than in the Drehplan – the plan columns come from the plan day and the callsheet
+    # with these scenes (matched by scene number); the date it left counts no longer as a shooting day
+    used = {}
+    for d in ds:
+        pd_, pc_ = match_day(d, [x for x in acks if x.get("d") == d], days, dispos)
+        used[d] = (pd_, pc_)
+    gone = {pd_["date"] for d, (pd_, _) in used.items() if pd_ and pd_.get("date") != d} - ds
+    shd = sorted((set(shd) | {d for d, (pd_, _) in used.items() if pd_ and pd_.get("date") != d}) - {g for g in gone if g >= min(ds or [today])})
     if (days.get(today) or {}).get("kind") == "shoot": ds.add(today)
     out = {}
     for d in sorted(ds):
-        l = [x for x in acks if x.get("d") == d]; day = days.get(d) or {}; cs = dispos.get(d) or {}
+        l = [x for x in acks if x.get("d") == d]; day = (used.get(d) or (None,))[0] or days.get(d) or {}; cs = (used.get(d) or (None, None))[1] or dispos.get(d) or {}
         has_u = lambda u: any(i.get("sc") for i in items(day, u))
         us = sorted(set(["1"] + [str(x.get("u") or "1") for x in l] + [u for u in ("2", "3") if has_u(u)]))
         dt = "DT " + str(shd.index(d) + 1) if d in shd else ""
@@ -277,7 +301,7 @@ def main():
     try: asig = ack_signature()
     except Exception as e:   # the aggregation is only a saving: without it the whole collection is read
         note("Signatur nicht lesbar (" + type(e).__name__ + " " + str(getattr(getattr(e, "response", None), "status_code", "")) + ") – lese alle Quittierungen"); asig = str(time.time() // 1800)
-    sig = hashlib.sha256(("v3|" + asig + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
+    sig = hashlib.sha256(("v4|" + asig + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
     try: old = json.load(open(STATE))
     except Exception: old = {}
     if old.get("sig") == sig and (old.get("ok") or time.time() - old.get("t", 0) < 1800):   # after an error: again after 30 min (or when something changed)
