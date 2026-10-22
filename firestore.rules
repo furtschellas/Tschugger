@@ -35,8 +35,6 @@ service cloud.firestore {
     function can(p) { return canAny([p]); }
     // wer Benutzende oder Rollen sieht (dieselbe Liste an mehreren Stellen)
     function seesUsers() { return isAdmin() || canAny(['users.view', 'users.edit', 'roles.assign', 'roles.edit', 'roles.view']); }
-    // Catering: wer eine Rolle hat, deren Kennung «cater» enthält (z. B. catering)
-    function isCatering() { return verified() && hasRole() && isMember() && myRole().matches('.*cater.*'); }
     function isMember() {
       return signedIn() && exists(d('members', request.auth.uid)) && get(d('members', request.auth.uid)).data.active == true;
     }
@@ -51,6 +49,9 @@ service cloud.firestore {
     function changesOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
     // Profilfelder der Mitglieder (an mehreren Stellen gleich; testAck/testVer = Willkommen Test-User bestätigt)
     function profile() { return ['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'testAck', 'testVer', 'func']; }
+    // Text eines Profilfelds höchstens 1000 Zeichen (nur wenn es Text ist)
+    function txt(f) { return !(f in request.resource.data) || !(request.resource.data[f] is string) || request.resource.data[f].size() <= 1000; }
+    function profileOk() { return txt('name') && txt('firstName') && txt('lastName') && txt('phone') && txt('contactEmail') && txt('diet') && txt('intol') && txt('allergies') && txt('func'); }
     // Menütext höchstens 300 Zeichen
     function short(f) { return request.resource.data.get(f, '').size() <= 300; }
     // Datum als Text JJJJ-MM-TT
@@ -73,9 +74,9 @@ service cloud.firestore {
     }
     // Telefon/E-Mail der Crewliste: «Telefonnummern sehen» / «E-Mail-Adressen sehen», ohne Rolle wenn für alle freigegeben
     match /secret/keycontacts {
-      allow get: if crew() && (canAny(['view.phone', 'view.email'])
-        || (isMember() && !hasRole() && (get(d('config', 'app')).data.get('phonePublic', false) == true
-            || get(d('config', 'app')).data.get('emailPublic', false) == true)));
+      allow get: if crew() && ((isMember() && !hasRole() && (get(d('config', 'app')).data.get('phonePublic', false) == true
+            || get(d('config', 'app')).data.get('emailPublic', false) == true))
+        || canAny(['view.phone', 'view.email']));
       allow list, write: if false;
     }
     // Google Kalender: geheime iCal-Adresse nur mit «Einstellungen»
@@ -113,7 +114,8 @@ service cloud.firestore {
       // Rollen anlegen/ändern/löschen: Admins, oder wer «Rollen bearbeiten» hat (nicht die Admin-Rolle)
       // nicht die eigene Rolle und nur Berechtigungen, die man selbst hat (keine Selbst-Beförderung)
       // die Admin-Rolle (Rechte der Admins) passt nur der Owner an – sonst könnte sich ein Admin selbst «Einstellungen» geben
-      allow write: if ((isAdmin() && (id != 'admin' || isOwner())) || (can('roles.edit') && id != 'admin'
+      // Admins (nicht der Owner) legen keine Rolle mit «Einstellungen» an – sonst könnten sie es über eine Rolle weitergeben
+      allow write: if ((isAdmin() && (isOwner() || (id != 'admin' && (request.resource == null || !request.resource.data.get('perms', []).hasAny(['settings']))))) || (can('roles.edit') && id != 'admin'
           && !(hasRole() && myRole() == id)
           && (request.resource == null || request.resource.data.perms.hasOnly(rolePerms())
               || (resource != null && request.resource.data.perms.hasOnly(rolePerms().concat(resource.data.perms))))))   // vorhandene fremde Rechte bleiben
@@ -126,21 +128,27 @@ service cloud.firestore {
       allow get: if (verified() && myEmail() == email) || isAdmin();
       allow list: if isAdmin() || canAny(['roles.assign', 'roles.edit', 'roles.view']);
       allow write: if ((isOwner() && !isRoot(email)) || (isAdmin() && !ownerEmail(email))) && email != myEmail()
-        && (request.resource == null || only(['role', 'at']));
+        && (request.resource == null || only(['role', 'at']))
+        && (isOwner() || request.resource == null || !exists(d('roles', request.resource.data.role))
+            || !get(d('roles', request.resource.data.role)).data.perms.hasAny(['settings']));   // «Einstellungen» vergibt nur der Owner
       // «Rollen pflegen»: Rollen zuweisen, aber nicht an Owner oder Admins und nicht sich selbst
       allow write: if can('roles.assign') && email != myEmail() && !ownerEmail(email)
         && !exists(d('admins', email))
         && (request.resource == null || (only(['role', 'at']) && request.resource.data.role != 'admin'
-          && (isAdmin() || get(d('roles', request.resource.data.role)).data.perms.hasOnly(rolePerms()))));   // nur Rollen mit eigenen Rechten vergeben
+          && (isAdmin() || get(d('roles', request.resource.data.role)).data.perms.hasOnly(rolePerms()))))   // nur Rollen mit eigenen Rechten vergeben
+        // wer schon eine Rolle mit mehr Rechten hat, wird nicht umgestuft oder herausgenommen
+        && (isAdmin() || resource == null || !exists(d('roles', resource.data.role)) || get(d('roles', resource.data.role)).data.perms.hasOnly(rolePerms()));
       // wer einladen darf, gibt neuen Benutzenden automatisch die Rolle «Crew»
-      allow create: if can('users.invite') && !ownerEmail(email)
+      allow create: if canAny(['users.invite', 'users.requests']) && !ownerEmail(email) && email != myEmail()
         && only(['role', 'at']) && request.resource.data.role == 'crew';
     }
     // Einladungen (E-Mail = ID)
     match /invites/{email} {
       allow read: if canAny(['users.view', 'users.invite', 'contacts.extra']);
       allow delete: if can('users.invite');
-      allow create: if canAny(['users.invite', 'users.requests']) && only(['name', 'role', 'addedAt']) && email != myEmail();   // niemand lädt sich selbst ein
+      allow create: if canAny(['users.invite', 'users.requests', 'users.edit']) && only(['name', 'role', 'addedAt']) && email != myEmail()   // niemand lädt sich selbst ein
+        && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 120
+        && request.resource.data.get('role', '') is string && request.resource.data.get('role', '').size() <= 80;
       allow update: if canAny(['users.invite', 'users.edit']) && only(['name', 'role', 'addedAt']);
       allow get: if verified() && myEmail() == email;
     }
@@ -149,7 +157,8 @@ service cloud.firestore {
       allow create, update: if verified() && myEmail() == email
         && only(['name', 'role', 'note', 'at'])
         && request.resource.data.name is string && request.resource.data.name.size() <= 80
-        && (!('note' in request.resource.data) || request.resource.data.note.size() <= 280);
+        && (!('note' in request.resource.data) || request.resource.data.note.size() <= 280)
+        && (!('role' in request.resource.data) || (request.resource.data.role is string && request.resource.data.role.size() <= 80));
       allow get: if (verified() && myEmail() == email) || isAdmin();
       allow list, delete: if can('users.requests');
     }
@@ -169,20 +178,20 @@ service cloud.firestore {
       allow update, delete: if isOwner() && !isRoot(resource.data.email);
       // alle Admins dürfen die Profildaten der Benutzenden ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
       allow update: if can('users.edit') && (isOwner() || !ownerEmail(resource.data.email))
-        && changesOnly(profile());
+        && changesOnly(profile()) && profileOk();
       allow get: if signedIn() && request.auth.uid == uid;
       allow create: if isOwner() || (isAdmin() && request.auth.uid == uid) || (verified() && request.auth.uid == uid
         && exists(d('invites', myEmail()))
         && only(profile().concat(['active', 'email', 'joinedAt', 'tour', 'tourAt']))
         && request.resource.data.active == true
-        && request.resource.data.email == myEmail());
+        && request.resource.data.email == myEmail() && profileOk());
       allow update: if verified() && request.auth.uid == uid
         && resource.data.active == true
         && changesOnly(profile().concat(['email', 'lastSeen', 'tour', 'tourAt', 'app', 'devs']))
         && (!('app' in request.resource.data) || (request.resource.data.app is string && request.resource.data.app.size() <= 20))
         && (!('devs' in request.resource.data) || (request.resource.data.devs is map && request.resource.data.devs.size() <= 12))
         && request.resource.data.email == myEmail()
-        && request.resource.data.active == true;
+        && request.resource.data.active == true && profileOk();
     }
     // Ansichts-Einstellungen: jede Person nur ihre eigenen
     match /prefs/{uid} {
@@ -191,8 +200,8 @@ service cloud.firestore {
     }
     // Geburtstage (Name, Tag/Monat): eigener Eintrag; lesen mit Recht oder wenn freigegeben
     match /bdays/{uid} {
-      allow read: if can('crew.bday')
-        || (isMember() && get(d('config', 'app')).data.get('bdayPublic', false) == true);
+      allow read: if (isMember() && get(d('config', 'app')).data.get('bdayPublic', false) == true)
+        || can('crew.bday');
       allow write: if isOwner() || (verified() && crew() && request.auth.uid == uid   // nur Crew, nur Name und Tag/Monat
         && (request.resource == null || (only(['name', 'md'])
           && request.resource.data.name is string && request.resource.data.name.size() <= 80
@@ -203,7 +212,7 @@ service cloud.firestore {
     // Push pro Gerät: eigenes Gerät; Admins sehen den Push-Status
     match /push/{id} {
       allow get: if ownDevice(id);
-      allow read: if isAdmin();
+      allow read: if isAdmin() || can('settings');
       allow create, update: if ownDevice(id) && crew() && only(['c', 'at']) && cOk(60000);
       allow delete: if ownDevice(id);
     }
@@ -213,6 +222,7 @@ service cloud.firestore {
       allow create: if can('push.send') && only(['c', 'at']) && cOk(4000);
       // der Worker markiert im Namen der sendenden Person: sent (einmalig), n, done (Geräte), fin (alle erledigt)
       allow update: if can('push.send') && changesOnly(['sent', 'n', 'done', 'fin'])
+        && !(resource.data.get('sent', false) == true && request.resource.data.get('sent', false) != true)
         && (!('done' in request.resource.data) || (request.resource.data.done is list && request.resource.data.done.size() <= 1000));
       allow delete: if isAdmin();
     }
@@ -223,17 +233,17 @@ service cloud.firestore {
         && request.resource.data.by == request.auth.uid && cOk(20000);
       allow update: if ((resource.data.by == request.auth.uid && can('events.add')) || isAdmin())
         && changesOnly(['c']) && cOk(20000);
-      allow delete: if resource.data.by == request.auth.uid || isAdmin();
+      allow delete: if (resource.data.by == request.auth.uid && crew()) || isAdmin();
     }
     // Google Kalender: gelesene Termine für «Termine erstellen»; geschrieben nur vom GitHub-Lauf
     match /gcal/{doc} {
       allow read: if isAdmin() || can('events.add');
       allow write: if false;
     }
-    // Menüs pro Drehtag und Unit: Catering-Rolle und Admins
+    // Menüs pro Drehtag und Unit: «Lunch-Menüs eingeben» (menus.edit) und Admins
     match /menus/{date} {
       allow read: if crew();
-      allow write: if (isAdmin() || isCatering()) && isDate(date)
+      allow write: if can('menus.edit') && isDate(date)
         && (request.resource == null || (only(['u1', 'u2', 'u3', 'u1a', 'u1b', 'u2a', 'u2b', 'u3a', 'u3b', 'tog', 'zw', 'by', 'at'])
           && short('zw') && short('u1a') && short('u1b') && short('u2a') && short('u2b') && short('u3a') && short('u3b')));
     }

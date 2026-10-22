@@ -1309,6 +1309,7 @@ Object.assign(I18N,{
  "Offen – antippen = erledigt":{fr:"Ouvert – toucher = fait",it:"Aperto – tocca = fatto",en:"Open – tap = done"},
  "Erledigt":{fr:"Fait",it:"Fatto",en:"Done"},
  "bei":{fr:"chez",it:"da",en:"with"},
+ "Lunch-Menüs eingeben":{fr:"Saisir les menus du lunch",it:"Inserire i menu del pranzo",en:"Enter lunch menus"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},

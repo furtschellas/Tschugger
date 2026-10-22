@@ -184,7 +184,7 @@ await check("Einstellungen: zu viele Felder abgelehnt (max. 16)", assertFails(se
 await check("Einstellungen: «Nachricht gesehen» (rc) speicherbar", assertSucceeds(setDoc(doc(as("crew"), "prefs/uCrew"), { theme: "dark", rc: "abc", at: 1, lt: 1 })));
 await check("Sicherheit: Owner-Liste nicht für Crew", assertFails(getDocs(collection(as("crew"), "owners"))));
 await check("Sicherheit: Admin kann keinen weiteren Owner ernennen", assertFails(setDoc(doc(as("admin"), "owners/crew@test.ch"), { addedAt: 1 })));
-await check("Sicherheit: Menüs nur Catering und Admins", assertFails(setDoc(doc(as("crew"), "menus/2026-10-20"), { u1: "x" })));
+await check("Sicherheit: Menüs nur mit «Lunch-Menüs eingeben» und Admins", assertFails(setDoc(doc(as("crew"), "menus/2026-10-20"), { u1: "x" })));
 await check("Sicherheit: Push-Gerät nur unter eigener Kennung", assertFails(setDoc(doc(as("crew"), "push/uOther_abcdefghij"), { c: "x", at: 1 })));
 await check("Sicherheit: Nachricht an alle – Empfänger nachträglich nicht änderbar", assertFails(updateDoc(doc(as("power"), "broadcasts/b0"), { c: "y" })));
 await check("Sicherheit: Protokoll nur im eigenen Namen", assertFails(addDoc(collection(as("crew"), "audit"), { by: "other@test.ch", at: 1, op: "x", col: "x", id: "x", sum: "x" })));
@@ -232,6 +232,31 @@ await check("Einstellungen der Person: nur die eigenen", assertFails(getDoc(doc(
 await check("Einstellungen der Person: höchstens 16 Felder", assertFails(setDoc(doc(as("crew"), "prefs/uCrew"), Object.fromEntries([...Array(17)].map((_, i) => ["k" + i, "v"])))));
 await check("Protokoll: Crew kann es nicht lesen", assertFails(getDocs(collection(as("crew"), "audit"))));
 await check("Protokoll: Einträge löscht nur der Owner", assertFails(deleteDoc(doc(as("admin"), "audit/a1"))));
+// ---------- hardening (admins and «settings», role changes, limits) ----------
+await env.withSecurityRulesDisabled(async c => {
+  const db = c.firestore();
+  await setDoc(doc(db, "roles/boss"), { name: "Boss", perms: ["view.plan", "settings"] });
+  await setDoc(doc(db, "roles/cater"), { name: "Catering", perms: ["view.plan", "menus.edit"] });
+  await setDoc(doc(db, "roles/lunchbox"), { name: "Lunchbox", perms: ["view.plan"] });
+  await setDoc(doc(db, "userroles/boss@test.ch"), { role: "boss" });
+  await setDoc(doc(db, "roles/req"), { name: "Req", perms: ["view.plan", "users.requests"] });
+  await setDoc(doc(db, "userroles/no@test.ch"), { role: "req" });
+  await setDoc(doc(db, "broadcasts/bSent"), { c: "x", at: 1, sent: true });
+});
+await check("Härtung: Admin legt keine Rolle mit «Einstellungen» an", assertFails(setDoc(doc(as("admin"), "roles/x2"), { name: "X", perms: ["settings"] })));
+await check("Härtung: Owner darf eine Rolle mit «Einstellungen» anlegen", assertSucceeds(setDoc(doc(as("owner"), "roles/x3"), { name: "X", perms: ["settings"] })));
+await check("Härtung: Admin legt normale Rollen weiter an", assertSucceeds(setDoc(doc(as("admin"), "roles/x4"), { name: "X", perms: ["view.plan"] })));
+await check("Härtung: Admin vergibt keine Rolle mit «Einstellungen»", assertFails(setDoc(doc(as("admin"), "userroles/neu@test.ch"), { role: "boss" })));
+await check("Härtung: Admin vergibt normale Rollen weiter", assertSucceeds(setDoc(doc(as("admin"), "userroles/neu2@test.ch"), { role: "crew" })));
+await check("Härtung: «Rollen pflegen» stuft niemanden mit mehr Rechten um", assertFails(setDoc(doc(as("reader"), "userroles/boss@test.ch"), { role: "minimal" })));
+await check("Härtung: «Rollen pflegen» nimmt niemanden mit mehr Rechten heraus", assertFails(deleteDoc(doc(as("reader"), "userroles/boss@test.ch"))));
+await check("Härtung: Menüs mit «Lunch-Menüs eingeben»", assertSucceeds((async () => { await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "userroles/other@test.ch"), { role: "cater" }) }); await setDoc(doc(as("other"), "menus/2026-10-21"), { u1: "x" }) })()));
+await check("Härtung: Rolle mit «cater» im Namen ohne Recht: keine Menüs", assertFails((async () => { await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "userroles/other@test.ch"), { role: "lunchbox" }) }); await setDoc(doc(as("other"), "menus/2026-10-22"), { u1: "x" }) })()));
+await check("Härtung: «Anfragen» gibt beim Freischalten die Rolle Crew", assertSucceeds(setDoc(doc(as("norole"), "userroles/frei@test.ch"), { role: "crew" })));
+await check("Härtung: Profilfeld höchstens 1000 Zeichen", assertFails(updateDoc(doc(as("crew"), "members/uCrew"), { allergies: "x".repeat(1001) })));
+await check("Härtung: Profilfeld normal geht", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { allergies: "Nüsse" })));
+await check("Härtung: verschickte Nachricht nicht wieder auf «nicht verschickt»", assertFails(updateDoc(doc(as("power"), "broadcasts/bSent"), { sent: false })));
+await check("Härtung: Anfrage mit zu langer Rolle nicht", assertFails(setDoc(doc(as("stranger"), "requests/str@test.ch"), { name: "S", role: "x".repeat(81), at: 1 })));
 await check("Unbekannte Sammlung: alles gesperrt", assertFails(setDoc(doc(as("owner"), "irgendwas/x"), { a: 1 })));
 
 await env.cleanup();
