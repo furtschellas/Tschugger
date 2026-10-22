@@ -103,3 +103,7 @@ for(const [f,k] of [["p","cqPickup"],["c","cqCall"],["b","cqBase"],["o","cqOnset
   if(t&&c&&c._date&&(cmSt(cmId(c._date,"c",r,t))===2||cmSt(cmId(c._date,"xc",r,t))===2)&&hm(r.pickup)&&!(res&&/\bcq2\b/.test(res.h)))
     return {h:'<span class="cql cq2 cqro" title="'+esc(L("Erledigt"))+' (Call)">'+esc(String(r.pickup))+'</span>'};
   return res}}
+/* On set done (ticked or by hand): every step before it (P/UP, Call, Kostüm, Maske, Base) counts as done too */
+window.cqRowDone=(c,r)=>{const t=hm(r&&r.onset);return !!(t&&c&&c._date&&(cmSt(cmId(c._date,"o",r,t))===2||cmSt(cmId(c._date,"xo",r,t))===2))};
+for(const [f,k] of [["p","cqPickup"],["c","cqCall"],["b","cqBase"]]){const orig=window[k];
+  window[k]=(c,r)=>{if(window.cqRowDone(c,r)){const t=f==="p"?r.pickup:f==="c"?r.call:r.base;if(hm(t))return {h:'<span class="cql cq2 cqro" title="'+esc(L("Erledigt"))+' (On set)">'+esc(String(t))+'</span>'}}return orig(c,r)}}
