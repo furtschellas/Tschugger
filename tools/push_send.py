@@ -13,7 +13,7 @@ Mit dem Dienstkonto (Secret FIREBASE_SA, siehe tools/fsadmin.py):
   * nimmt es den Crew-Schlüssel und den Push-Schlüssel (VAPID) aus Firestore.
 Das Repository ist öffentlich: im Protokoll stehen nur Zahlen, keine Titel, Namen oder Geräte.
 """
-import base64, json, os, sys, time
+import base64, json, os, re, sys, time
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pywebpush import webpush, WebPushException
@@ -66,7 +66,7 @@ def send(sub, data, pems, ttl):
             print("• Push-Fehler HTTP", code); ERRC[str(code)] = ERRC.get(str(code), 0) + 1
             return "err"
         except Exception as e:   # e.g. a key that cannot be read (ValueError): try the next one
-            last = type(e).__name__
+            last = type(e).__name__ + ":" + re.sub(r"[^A-Za-z .:_-]", "", str(e))[:60]   # the message of the library (no data of the person)
     ERRC[last or "Schlüssel"] = ERRC.get(last or "Schlüssel", 0) + 1   # no key worked
     return "err"
 
