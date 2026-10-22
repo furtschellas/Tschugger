@@ -916,10 +916,10 @@ html body #view .pacc .paccd>summary>.paccpen,html body #view .pacc .paccd>summa
 /* callsheet jump bar: solid, not see-through */
 /* the bar is solid but shows exactly the part of the page background (colour glow of the page) that lies behind it: the same gradients,
    sized to the screen and shifted by the position of the bar (--cjx/--cjy, set while scrolling) – no visible edge */
-html body #view .csjump.csjump{-webkit-backdrop-filter:none;backdrop-filter:none;background-color:var(--paper)!important;
+html body #view .csjump.csjump,html body #view .stripwrap.stripwrap,html body #view .stripwrap .strip{-webkit-backdrop-filter:none;backdrop-filter:none;background-color:var(--paper)!important;
   background-image:radial-gradient(120% 60% at 80% -10%,rgba(255,46,138,.22),transparent 60%),radial-gradient(90% 50% at 0% 0%,rgba(139,124,255,.18),transparent 60%)!important;
   background-size:100vw 100vh,100vw 100vh!important;background-repeat:no-repeat!important;background-position:var(--cjx,0) var(--cjy,0),var(--cjx,0) var(--cjy,0)!important}
-html[data-theme="light"] body #view .csjump.csjump{background-color:#f6f3ee!important;
+html[data-theme="light"] body #view .csjump.csjump,html[data-theme="light"] body #view .stripwrap.stripwrap,html[data-theme="light"] body #view .stripwrap .strip{background-color:#f6f3ee!important;
   background-image:radial-gradient(120% 50% at 85% -10%,rgba(211,20,111,.10),transparent 60%),radial-gradient(90% 40% at 0% 0%,rgba(36,22,63,.08),transparent 60%),linear-gradient(180deg,#fbf9f6 0,#f6f3ee 320px)!important;
   background-size:100vw 100vh,100vw 100vh,100vw 320px!important;background-position:var(--cjx,0) var(--cjy,0),var(--cjx,0) var(--cjy,0),var(--cjx,0) var(--cjp,0)!important}
 /* «Mit Google anmelden» below «Anmelden», just as wide */

@@ -704,7 +704,7 @@ document.addEventListener("click",e=>{const sm=e.target.closest&&e.target.closes
   const d=sm.parentNode,x=d.querySelector(":scope>details.cs3");if(!d.open||!x)return;e.preventDefault();if(!x.open)x.open=true;else{x.open=false;d.open=false}},true);
 
 /* callsheet jump bar: its background follows the page background behind it (position on the screen → --cjx/--cjy, on the page → --cjp) */
-(()=>{let q=0;const fit=()=>{q=0;for(const el of document.querySelectorAll("#view .csjump")){const r=el.getBoundingClientRect(),b=document.body.getBoundingClientRect();
+(()=>{let q=0;const fit=()=>{q=0;for(const el of document.querySelectorAll("#view .csjump,#view .stripwrap,#view .stripwrap .strip")){const r=el.getBoundingClientRect(),b=document.body.getBoundingClientRect();
     el.style.setProperty("--cjx",(-r.left)+"px");el.style.setProperty("--cjy",(-r.top)+"px");el.style.setProperty("--cjp",(b.top-r.top)+"px")}};
   const soon=()=>{if(!q)q=requestAnimationFrame(fit)};addEventListener("scroll",soon,{passive:true});addEventListener("resize",soon);
   new MutationObserver(soon).observe(document.documentElement,{childList:true,subtree:true})})();
