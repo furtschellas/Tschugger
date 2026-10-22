@@ -7,7 +7,11 @@ const prefsFlush=()=>{if(PREFT){clearTimeout(PREFT);PREFT=null;savePrefs()}};
 addEventListener("pagehide",prefsFlush);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")prefsFlush()});
 async function savePrefs(){
   if(!ME||!ME.uid)return;const p={};
-  try{for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null)p[k]=String(v).slice(0,400)}}catch(_){return}
+  /* at most 400 characters per setting – but JSON is never cut (broken JSON would reset the setting elsewhere): the push settings drop their
+     oldest switched-off reminders, anything else too long stays on this device only */
+  const fit=(k,v)=>{v=String(v);if(v.length<=400)return v;if(k==="push"){try{const c=JSON.parse(v),o=c&&c.off&&typeof c.off==="object"?c.off:null;
+      if(o){const ks=Object.keys(o).sort((a,b)=>String(o[a]).localeCompare(String(o[b])));while(ks.length&&JSON.stringify(c).length>400)delete o[ks.shift()];const t=JSON.stringify(c);if(t.length<=400)return t}}catch(_){}}return null};
+  try{for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null){const f=fit(k,v);if(f!==null)p[k]=f}}}catch(_){return}
   try{for(const k of ["rc","scrv"]){const v=localStorage.getItem(k);if(v!==null&&Object.keys(p).length<14)p[k]=v.slice(0,60)}}catch(_){}   /* role-change notice seen (room permitting: the rules allow 16 fields) */
   let lt=0;try{lt=+localStorage.getItem("prefsLocalAt")||0}catch(_){}PREFT=null;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"prefs",ME.uid),Object.assign(p,{at:F.serverTimestamp(),lt}))}catch(err){console.warn("prefs",err&&err.code||err)}

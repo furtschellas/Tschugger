@@ -6,7 +6,7 @@ async function rideEditLoad(){if(REDSUB||typeof ME==="undefined"||!ME)return;
   try{const {F,db}=await fb();const key=await getDataKey();
     REDSUB=F.onSnapshot(F.query(F.collection(db,"rideedit"),F.where("d",">=",todayISO())),async q=>{const m={};for(const d of q.docs){try{m[d.id]=await ownDec(key,d.data().c)}catch(_){}}
       if(JSON.stringify(m)===JSON.stringify(window.RIDEEDIT))return;window.RIDEEDIT=m;window.REDVER++;try{MEMO.clear()}catch(_){}render();try{pushSyncSoon()}catch(_){}},()=>{REDSUB=null})}catch(_){}}
-setTimeout(rideEditLoad,4500);
+setTimeout(rideEditLoad,4500);setInterval(()=>{if(!REDSUB)rideEditLoad()},30e3);   /* also after a late sign-in or a lost connection */
 /* the changes on the rides of every callsheet (the originals stay in _o_transport / _o_crewTransport) */
 const RED_KEYS=["t1","t2","from","to","vehicle","driver","passengers","people"];
 window.rideEditApply=()=>{for(const dp of (typeof S!=="undefined"&&S.dispos)||[]){const c=dp&&dp.cs;if(c&&dp.date)c._date=dp.date;   /* the day of the callsheet (travel of other days) */

@@ -89,10 +89,11 @@ window.cdCsCheck=cdCsCheck;
 /* the changes: one encrypted document (coverday/state), live for the crew */
 let CDSUBS=null;
 async function cdSub(){if(CDSUBS||!ME)return;try{const {F,db}=await fb();CDSUBS=F.onSnapshot(F.doc(db,"coverday","state"),async snap=>{let ops=[];
-    try{if(snap.exists()&&snap.data().c)ops=arr((await ownDec(await getDataKey(),snap.data().c)).ops)}catch(_){CDSUBS&&CDSUBS();CDSUBS=null;return}
+    try{if(snap.exists()&&snap.data().c)ops=arr((await ownDec(await getDataKey(),snap.data().c)).ops)}catch(_){CDSUBS&&CDSUBS();CDSUBS=null;CDFAIL=Date.now();return}
     const at=snap.exists()&&+snap.data().at||0;if(at!==window.CDAT){window.CDAT=at;try{pushSyncSoon()}catch(_){}}
-    if(JSON.stringify(ops)===JSON.stringify(window.CDOPS))return;window.CDOPS=ops;cdApplyAll();render();try{pushSyncSoon()}catch(_){}},()=>{CDSUBS=null})}catch(_){CDSUBS=null}}
-setInterval(()=>{try{if(ME&&!CDSUBS)cdSub()}catch(_){}},4000);
+    if(JSON.stringify(ops)===JSON.stringify(window.CDOPS))return;window.CDOPS=ops;cdApplyAll();render();try{pushSyncSoon()}catch(_){}},()=>{CDSUBS=null;CDFAIL=Date.now()})}catch(_){CDSUBS=null;CDFAIL=Date.now()}}
+/* (re)subscribe: only for members; after an error at most every 5 minutes (no request every 4 s that costs reads) */
+let CDFAIL=0;setInterval(()=>{try{if(ME&&!CDSUBS&&((typeof MEMBER!=="undefined"&&MEMBER)||isAdmin())&&Date.now()-CDFAIL>3e5)cdSub()}catch(_){}},4000);
 /* «at» of coverday/state = version of the changes; the device sends it with its reminders (push), so the server knows whether they already
    follow the changes */
 async function cdSave(ops){const {F,db}=await fb();const c=await ownEnc({ops}),at=Date.now();await F.setDoc(F.doc(db,"coverday","state"),{c,at});window.CDAT=at;window.CDOPS=ops;cdApplyAll();render();try{pushSyncSoon()}catch(_){}}

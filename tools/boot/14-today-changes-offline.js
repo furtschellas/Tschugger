@@ -49,7 +49,8 @@ function chgDetect(){
 }
 /* changes: unread ones for 3 days; once marked as read they disappear 2 days later; the newest change always on top */
 const chgSeenGone=(at,seen)=>at<=seen&&Date.now()-seen>2*864e5;
-function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem("chgseen:v1")||0);return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t&&!chgSeenGone(c.at,seen)).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>b.at-a.at||String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
+window.CHGCLR=window.CHGCLR||0;try{window.CHGCLR=+localStorage.getItem("appchgclr")||0}catch(_){}
+function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem("chgseen:v1")||0),clr=+window.CHGCLR||0;return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t&&c.at>clr&&!chgSeenGone(c.at,seen)).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>b.at-a.at||String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
 /* used by the schedule (itemHTML): mark a changed scene */
 /* change marks in the schedule: switched on/off with the round button «Änderungen» (S.pv.g, CSS .pv-no-g) */
 window.chgFor=(date,u,sc)=>{const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};

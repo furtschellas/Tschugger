@@ -82,7 +82,7 @@ function searchAll(q,mode){
   const R={day:[],sc:[],loc:[],crew:[],dispo:[],info:[]};
   const WDL=[["sonntag","sunday","dimanche","domenica"],["montag","monday","lundi","lunedi"],["dienstag","tuesday","mardi","martedi"],["mittwoch","wednesday","mercredi","mercoledi"],["donnerstag","thursday","jeudi","giovedi"],["freitag","friday","vendredi","venerdi"],["samstag","saturday","samedi","sabato"]];
   /* only areas the person may see (Drehplan, Locations, Crew, Callsheet) */
-  const okPlan=vok("plan"),okLoc=true,okCrew=vok("crew"),okDispo=vok("dispo"),okPh=vok("phone"),okEm=vok("email");
+  const okPlan=vok("plan"),okLoc=vok("loc"),okCrew=vok("crew"),okDispo=vok("dispo"),okPh=vok("phone"),okEm=vok("email");
   for(const d of (okPlan?S.days:[])){if(!M("day")&&mode!=="text")break;
     const x=new Date(d.date+"T12:00:00");
     const sc1=(d.items||[]).filter(i=>i.sc).length,sc2=((d.unit2&&d.unit2.items)||[]).filter(i=>i.sc).length,sc3=((d.unit3&&d.unit3.items)||[]).filter(i=>i.sc).length;
@@ -112,7 +112,7 @@ function searchAll(q,mode){
   }
   if(M("person")&&okCrew)for(const dep of S.crew)for(const pp of (dep.people||[]))if(match([pp.name,pp.role,pp.role_fr,pp.role_en,dep.dept,dep.dept_fr,dep.dept_en,okEm?pp.email:"",pp.note].join(" "),okPh?phoneVars(pp.phone):"",true))R.crew.push({k:"crew",p:pp,dep});
   if(mode==="all"&&okDispo)for(const x of S.dispos){const vals=JSON.stringify(x).replace(/"[a-zA-Z]+":/g," ");if(match(vals,nrm(x.label||"")+" "+dshort(x)))R.dispo.push({k:"dispo",x})}
-  if(mode==="all"||mode==="text")for(const c of S.places)for(const it of (c.items||[]))if(match([it.name,it.address,it.note,TX(it,"note"),c.cat,TX(c,"cat")].join(" "),phoneVars(it.phone),true))R.info.push({k:"info",it,c});
+  if((mode==="all"||mode==="text")&&vok("info"))for(const c of S.places)for(const it of (c.items||[]))if(match([it.name,it.address,it.note,TX(it,"note"),c.cat,TX(c,"cat")].join(" "),phoneVars(it.phone),true))R.info.push({k:"info",it,c});
   return {R,terms};
 }
 let SR=[],LASTQ="";
@@ -144,7 +144,7 @@ function addX(d){const box=d.querySelector(".a2box");if(!box||d.id==="welcome"||
 new MutationObserver(()=>{for(const d of document.querySelectorAll(".a2hs:not([hidden])"))addX(d)}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});
 document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;const ds=[...document.querySelectorAll(".a2hs:not([hidden])")];if(ds.length){e.preventDefault();closeDialog(ds[ds.length-1])}});
 $("#sclose").addEventListener("click",closeSearch);
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#search").hidden)closeSearch()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!e.defaultPrevented&&!$("#search").hidden){e.preventDefault();closeSearch()}});   /* one Escape closes one thing */
 let gqT=null;$("#gq").addEventListener("input",()=>{clearTimeout(gqT);gqT=setTimeout(renderSearch,120)});
 $("#gq").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clearTimeout(gqT);renderSearch();const f=document.querySelector("#gres [data-sr]");if(f)f.click()}});
 $("#gmodes").addEventListener("click",e=>{const b=e.target.closest("[data-gm]");if(!b)return;S.gm=b.dataset.gm;try{localStorage.setItem("gm",S.gm)}catch(_){}renderSearch();$("#gq").focus()});

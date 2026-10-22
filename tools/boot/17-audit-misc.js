@@ -173,7 +173,7 @@ async function tstStart(auto){if(!isAdmin()||TST.run||!window.CHATURL)return;TST
 /* ---------- errors on a device are reported to the owners (in Log, «App-Fehler»): only the message, file and line –
    never data (addresses and numbers removed); at most 5 per visit, the same message once a day per device ---------- */
 const ERRSENT=new Set();let ERRN=0;
-async function errReport(){try{if(!ME||!window.__ERRS||!__ERRS.length||ERRN>=5)return;if(!(MEMBER||isAdmin()))return;
+async function errReport(){try{if(window.__ERRS&&__ERRS.length>50)__ERRS.splice(0,__ERRS.length-50);if(!ME||!window.__ERRS||!__ERRS.length||ERRN>=5)return;if(!(MEMBER||isAdmin()))return;
     const today=todayISO();let seen={};try{seen=JSON.parse(localStorage.getItem("errsent:v1")||"{}")}catch(_){}if(seen.d!==today)seen={d:today,m:[]};
     const list=__ERRS.splice(0);const {F,db}=await fb();
     for(const e of list){const m=String(e.m||"").replace(/[\w.+-]+@[\w-]+\.[\w.]+/g,"…").replace(/\+?\d[\d ]{6,}/g,"…").slice(0,200);const k=m+"|"+e.f;

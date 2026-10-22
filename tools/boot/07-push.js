@@ -25,7 +25,7 @@ function pushEvents(c){
   return out.sort((a,b)=>(a.date+(a.t||"08:00")).localeCompare(b.date+(b.t||"08:00")));
 }
 /* start time of an event (events without a time: 08:00) and when to remind */
-const pushStart=e=>new Date(e.date+"T"+(e.t||"08:00")+":00").getTime();
+const pushStart=e=>{try{if(typeof zurichUTC==="function")return zurichUTC(e.date,e.t||"08:00").getTime()}catch(_){}return new Date(e.date+"T"+(e.t||"08:00")+":00").getTime()};   /* Swiss time, also on a phone set to another time zone */
 function pushItems(c){c=c||pushCfg();const now=Date.now(),lim=now+15*864e5;
   return pushEvents(c).filter(e=>!c.off[e.id]).map(e=>{const st=pushStart(e),at=st-(e.ride?c.leadRide:c.lead)*60e3;
     const dt=new Date(st),day=WDL(dt)+" "+ddmm(dt);

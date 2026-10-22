@@ -7,7 +7,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-blkpdf]");
 document.addEventListener("click",e=>{const a=e.target.closest("[data-schedpdf]");if(!a||typeof window.blkImg!=="function")return;const sp=S.meta&&S.meta.schedPdf;if(!sp)return;e.preventDefault();
   /* the real PDF, opened at the page of this shooting day */
   if(sp.pdf){const pgn=(+a.dataset.schedpdf||0)+1,w=window.open("","_blank");
-    window.blkImg(sp.pdf).then(u=>{const url=u+"#page="+pgn;if(w&&!w.closed)w.location.href=url;else location.href=url}).catch(()=>{if(w&&!w.closed)w.location.href=sp.url;else window.open(sp.url,"_blank")});return}
+    window.blkImg(sp.pdf).then(u=>{const url=u+"#page="+pgn;if(w&&!w.closed)w.location.href=url;else location.href=url}).catch(()=>{const su=safeUrl(sp.url);if(w&&!w.closed)w.location.href=su;else window.open(su,"_blank","noopener")});return}
   openGallery({name:"sched",title:L("Drehplan")+" · "+String(sp.name||"").replace(/\.pdf$/i,""),sc:[],url:sp.url,media:arr(sp.pg).map((p,i)=>({n:L("Seite")+" "+(i+1)+"/"+sp.pg.length,t:"img",f:p,u:sp.url}))},+a.dataset.schedpdf||0)});
 /* several Dropbox folders for one scene: one button, then the choice */
 document.addEventListener("click",e=>{const a=e.target.closest("[data-folders]");if(!a)return;e.preventDefault();let l=[];try{l=JSON.parse(a.dataset.folders)}catch(_){return}

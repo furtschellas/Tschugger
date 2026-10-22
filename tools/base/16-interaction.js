@@ -24,4 +24,4 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 function store(k,v){try{localStorage.setItem(k,v)}catch(_){}}
 
 /* Today «Mein Tag» → the callsheet of that day */
-document.addEventListener("click",e=>{const b=e.target.closest("[data-tocs]");if(!b)return;goTab("dispo");S.dday=b.dataset.tocs});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-tocs]");if(!b)return;goTab("dispo");S.dday=b.dataset.tocs;render()});
