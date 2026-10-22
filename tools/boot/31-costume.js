@@ -3,6 +3,8 @@
    the actor; with the right «Kostüm/Maske quittieren» (cm.ack) it is ticked off in the callsheet or in Meine Termine – then it is green.
    The tick is stored like the rides (rideack/{id}, id = check sum, no names) ---------- */
 const CMK={w:"Kostüm",m:"Maske"};
+/* after a tick: draw again without moving the page (the open parts and the scroll position stay) */
+function cqKeep(){const y=window.scrollY;render();window.scrollTo(0,y);requestAnimationFrame(()=>window.scrollTo(0,y))}
 /* the entries of one cell: who (full name from the call list when the first name matches), start, end, minutes */
 function cmParse(v,c){const out=[];for(const seg of String(v==null?"":v).split(/\s*;\s*/)){
     const m=seg.match(/^\s*(?:([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.' -]*?)\s+)?(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);if(!m)continue;
@@ -23,7 +25,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   const id=b.dataset.cmack,done=cmDone(id);b.disabled=true;
   try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);
     if(done){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cmd,at:Date.now(),s:2};await F.setDoc(ref,v);window.RIDEACK[id]=v}
-    try{MEMO.clear()}catch(_){}render()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
+    try{MEMO.clear()}catch(_){}cqKeep()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
 /* my appointments: as Kostüm / Maske (named in the column head) and as actor */
 window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function"?csMe():null}catch(_){}if(!cm)return out;
   for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,d=arr(S.days).find(x=>x.date===dp.date)||{};
@@ -62,7 +64,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="p"?!cqCanRide():!cmCan())return;b.disabled=true;
   try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),cur=b.dataset.cqcur!=null?+b.dataset.cqcur:st,nx=k==="c"?(st?0:2):k==="b"?(st===2?0:2):(cur+1)%3;   /* Kostüm/Maske: open → running (pink) → done; Call: open → arrived */
     if(!nx){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cqd,at:Date.now(),s:nx};await F.setDoc(ref,v);window.RIDEACK[id]=v}
-    try{MEMO.clear()}catch(_){}render()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
+    try{MEMO.clear()}catch(_){}cqKeep()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
 /* Base: when Kostüm and Maske are both done, the base time is the running step (pink); tap = done (green) – before that plain text */
 function cqAllDone(c,r){let n=0;for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c)){n++;if(cmSt(cmId(c._date,k,r,p.t))!==2)return false}return n>0}
 window.cqBase=(c,r)=>{const t=hm(r&&r.base);if(!t||!c||!c._date||!cqAllDone(c,r))return null;const id=cmId(c._date,"b",r,t);
