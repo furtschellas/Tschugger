@@ -108,3 +108,6 @@ for(const [f,k] of [["p","cqPickup"],["c","cqCall"],["b","cqBase"],["o","cqOnset
 window.cqRowDone=(c,r)=>{const t=hm(r&&r.onset);return !!(t&&c&&c._date&&(cmSt(cmId(c._date,"o",r,t))===2||cmSt(cmId(c._date,"xo",r,t))===2))};
 for(const [f,k] of [["p","cqPickup"],["c","cqCall"],["b","cqBase"]]){const orig=window[k];
   window[k]=(c,r)=>{if(window.cqRowDone(c,r)){const t=f==="p"?r.pickup:f==="c"?r.call:r.base;if(hm(t))return {h:'<span class="cql cq2 cqro" title="'+esc(L("Erledigt"))+' (On set)">'+esc(String(t))+'</span>'}}return orig(c,r)}}
+/* «Cast-Quittierungen sehen» (cast.see): without it (and without a right to tick) the cast shows the plain times, no states */
+window.cqSee=()=>{try{return typeof canPerm==="function"&&(canPerm("cast.see")||canPerm("wardrobe.ack")||canPerm("makeup.ack")||canPerm("cast.manual")||canPerm("rides.confirm")||canPerm("rides.manage"))}catch(_){return false}};
+for(const k of ["cqPickup","cqCall","cqBase","cqOnset"]){const orig=window[k];window[k]=(c,r)=>window.cqSee()?orig(c,r):null}
