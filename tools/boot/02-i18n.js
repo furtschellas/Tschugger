@@ -1198,4 +1198,8 @@ Object.assign(I18N,{
  "Name der Produktionsfirma":{fr:"Nom de la société de production",it:"Nome della casa di produzione",en:"Name of the production company",hi:"प्रोडक्शन कंपनी का नाम"},
  "Adresse":{fr:"Adresse",it:"Indirizzo",en:"Address",hi:"पता"},
  "Alle Units":{fr:"Toutes les unités",it:"Tutte le unità",en:"All units",hi:"सभी यूनिट"},
+ "Navigation":{fr:"Navigation",it:"Navigazione",en:"Navigation",hi:"नेविगेशन"},
+ "Reihenfolge der Bereiche unten in der App (auf diesem Gerät). Mit ▲ ▼ verschieben.":{fr:"Ordre des sections en bas de l’app (sur cet appareil). Déplacer avec ▲ ▼.",it:"Ordine delle sezioni in basso nell’app (su questo dispositivo). Spostare con ▲ ▼.",en:"Order of the sections at the bottom of the app (on this device). Move with ▲ ▼.",hi:"ऐप के नीचे सेक्शन का क्रम (इस डिवाइस पर)। ▲ ▼ से बदलें।"},
+ "Auf Standard zurücksetzen":{fr:"Rétablir l’ordre par défaut",it:"Ripristina l’ordine predefinito",en:"Reset to default",hi:"डिफ़ॉल्ट पर रीसेट करें"},
+ "Lang":{fr:"Longue",it:"Lungo",en:"Long",hi:"लंबा"},
 });
