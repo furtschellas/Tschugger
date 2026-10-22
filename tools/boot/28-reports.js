@@ -20,23 +20,28 @@ function repDay(r){const n=String(r.n||""),shd=(S.days||[]).filter(d=>d.kind==="
   else if((m=n.match(/(\d\d)\.(\d\d)\.(20\d\d)/)))date=m[3]+"-"+m[2]+"-"+m[1];if(!date)date=String(r.d||"");const k=shd.indexOf(date);return {dt:k>=0?k+1:0,date}}
 const repFmt=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||"")?d.split("-").reverse().join("."):"";
 /* every sub folder its own box in «Logs» (only with its permission); below: all reports in the gallery, by shooting day or by department */
-window.reportsSec=()=>{const all=repList();if(!all.length||!canRepAny())return"";
-  const groups=[...new Set(all.map(r=>String(r.g||"")))].filter(g=>canRep(g));if(!groups.length)return"";
+/* the name of a folder as a sub topic: Produktion, Sound, DIT – other folders keep their name */
+const repTitle=g=>({"production report":"Produktion","production reports":"Produktion","produktion":"Produktion","sound":"Sound","dit":"DIT"})[fold(String(g||"")).trim()]||String(g||"")||L("Allgemein");
+const REPORDER=["produktion","sound","dit"];
+window.repGroups=()=>[...new Set(repList().map(r=>String(r.g||"")))].filter(g=>canRep(g)).sort((a,b)=>{const ia=REPORDER.indexOf(fold(repTitle(a))),ib=REPORDER.indexOf(fold(repTitle(b)));return (ia<0?9:ia)-(ib<0?9:ib)||a.localeCompare(b)});
+/* only: one folder (its box) or "*" (all reports in the gallery); without: everything (Logs) */
+window.reportsSec=only=>{const all=repList();if(!all.length||!canRepAny())return"";
+  let groups=repGroups();if(!groups.length)return"";if(only&&only!=="*")groups=groups.filter(g=>g===only);
   const row=(r,i)=>{const dy=repDay(r);return '<li class="repr"><div class="reph"><b>'+esc(r.n)+'</b><span class="repd">'+(dy.dt?'DT '+dy.dt+' · ':'')+esc(repFmt(dy.date))+'</span></div><div class="arb tstbtns repb">'+
     (arr(r.f).length&&typeof window.blkImg==="function"?repIco('data-repg="'+i+'"',REP_GAL,L("Ansehen")):'')+
     (r.u?repIco('data-repu="'+i+'"',REP_DBX,L("In Dropbox öffnen")):'')+
     (r.pdf&&typeof window.blkImg==="function"?repIco('data-reppdf="'+i+'"',REP_PDF,"PDF"):'')+'</div></li>'};
   const boxes=groups.map(g=>{const rs=all.map((r,i)=>[r,i]).filter(([r])=>String(r.g||"")===g).sort((a,b)=>String(repDay(b[0]).date).localeCompare(String(repDay(a[0]).date))||String(a[0].n).localeCompare(String(b[0].n)));
     const k=repSlug(g);
-    return '<details class="tstsec repsec" data-lsec="rep-'+esc(k)+'"'+(REPLOG[k]?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Reports"))+' · '+esc(g||L("Allgemein")),'<span class="tsth">'+rs.length+'</span>',""):esc(g))+'</summary>'+
+    return '<details class="tstsec repsec" data-lsec="rep-'+esc(k)+'"'+(REPLOG[k]||only?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Reports"))+' · '+esc(repTitle(g)),'<span class="tsth">'+rs.length+'</span>',""):esc(g))+'</summary>'+
       '<div class="admins"><ul class="audlist">'+rs.map(([r,i])=>row(r,i)).join("")+'</ul>'+
       (rs.some(([r])=>arr(r.f).length)&&typeof window.blkImg==="function"?'<div class="arb tstbtns repb repall">'+repIco('data-repall="g|'+esc(k)+'"',REP_GAL,L("Alle in der Galerie"))+'</div>':'')+'</div></details>'}).join("");
   /* all reports at once: the order to choose (shooting day or department) */
-  const vis=all.filter(r=>groups.includes(String(r.g||""))&&arr(r.f).length);
-  const allBox=vis.length>1&&typeof window.blkImg==="function"?'<details class="tstsec repsec" data-lsec="rep-all"'+(REPLOG.all?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Alle Reports")),'<span class="tsth">'+vis.length+'</span>',""):esc(L("Alle Reports")))+'</summary>'+
+  const vis=all.filter(r=>repGroups().includes(String(r.g||""))&&arr(r.f).length);
+  const allBox=vis.length>1&&typeof window.blkImg==="function"?'<details class="tstsec repsec" data-lsec="rep-all"'+(REPLOG.all||only==="*"?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Alle Reports")),'<span class="tsth">'+vis.length+'</span>',""):esc(L("Alle Reports")))+'</summary>'+
     '<div class="admins"><p class="ahint">'+esc(L("Alle Reports in der Galerie, sortiert:"))+'</p><div class="arb repmodes">'+
     [["day","Nach Drehtag"],["dept","Nach Department"],["new","Neueste zuerst"]].map(([m,t])=>'<button type="button" class="pillbtn" data-repall="'+m+'">'+esc(L(t))+'</button>').join("")+'</div></div></details>':'';
-  return boxes+allBox};
+  return only==="*"?allBox:only?boxes:boxes+allBox};
 /* the gallery with many reports: every page, the caption says shooting day, department and report */
 function repGallery(list,title){const media=[];for(const r of list){const dy=repDay(r),cap=[(dy.dt?"DT "+dy.dt:repFmt(dy.date)),r.g,r.n].filter(Boolean).join(" · ");
     arr(r.f).forEach((p,k)=>media.push({n:cap+(r.f.length>1?" · "+(k+1)+"/"+r.f.length:""),t:"img",f:p,u:r.u}))}
@@ -58,3 +63,26 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
   window.blkImg(r.pdf).then(u=>{if(w&&!w.closed)w.location.href=u;else{const a=document.createElement("a");a.href=u;a.download=r.n+".pdf";document.body.appendChild(a);a.click();a.remove()}})
     .catch(()=>{try{if(w)w.close()}catch(_){}showMsg(L("PDF nicht verfügbar (offline?)."),4000)})},true);
 try{window.repPermsSync()}catch(_){}
+
+/* ---------- own topic «Reports» (button in the head between the message envelope and «Mein Konto»):
+   sub topics Szenen (scene log), Produktion, Sound, DIT (one per report folder), Alle – navigation like «Mein Konto» ---------- */
+let REPSUB="";try{REPSUB=localStorage.getItem("repsub")||""}catch(_){}
+const repSubs=()=>{const out=[];if(typeof canSceneLog==="function"&&canSceneLog())out.push(["scenes","Szenen"]);
+  for(const g of repGroups())out.push(["g:"+g,repTitle(g)]);
+  if(repList().filter(r=>repGroups().includes(String(r.g||""))&&arr(r.f).length).length>1)out.push(["all","Alle"]);return out};
+window.repOn=()=>!!ME&&repSubs().length>0;
+window.repButton=()=>{let b=document.getElementById("repBtn");const a=document.getElementById("acctBtn");if(!a)return;
+  if(!b){b=document.createElement("button");b.id="repBtn";b.className="refresh";b.type="button";
+    b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 17v-3M12 17v-6M15 17v-4"/></svg>';
+    a.parentNode.insertBefore(b,a);b.addEventListener("click",()=>{S.tab="reports";S.srcOpen=false;window.scrollTo(0,0);render()})}
+  b.setAttribute("aria-label",L("Reports"));b.title=L("Reports");let on=false;try{on=repOn()}catch(_){}b.hidden=!on;
+  if(!on&&S.tab==="reports"){S.tab="today";render()}};
+setInterval(()=>{try{repButton()}catch(_){}},5000);
+VIEWS.reports=function(){const subs=repSubs();if(!ME||!subs.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
+  if(!subs.some(([k])=>k===REPSUB))REPSUB=subs[0][0];
+  const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-repsub="'+esc(k)+'" aria-selected="'+(REPSUB===k)+'">'+esc(L(t))+'</button>').join("")+'</nav>';
+  let body="";if(REPSUB==="scenes"){SCLOG.open=true;body=typeof sceneLogSec==="function"?sceneLogSec():""}
+  else if(REPSUB==="all")body=reportsSec("*");else body=reportsSec(REPSUB.slice(2));
+  return '<section class="mypage reppage"><div class="myhead"><h2 class="pgt">'+esc(L("Reports"))+'</h2></div>'+nav+(body||'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+'</section>'};
+window.repSetSub=k=>{if(REPSUB===k)return false;REPSUB=k;return true};
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repsub]");if(!b)return;REPSUB=b.dataset.repsub;try{localStorage.setItem("repsub",REPSUB)}catch(_){}render();scrollTo(0,0)});

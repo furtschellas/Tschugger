@@ -87,6 +87,8 @@ await check("Rollen: Crew kann sich keine andere Rolle geben", assertFails(setDo
 await check("Rollen: «Rollen bearbeiten» darf die eigene Rolle nicht ändern", assertFails(setDoc(doc(as("power"), "roles/power"), { name: "Power", perms: ["view.plan", "settings"] })));
 await check("Rollen: «Rollen bearbeiten» vergibt nur Rechte, die man selbst hat", assertFails(setDoc(doc(as("power"), "roles/crew"), { name: "Crew", perms: ["settings"] })));
 await check("Rollen: «Rollen bearbeiten» darf andere Rolle mit eigenen Rechten ändern", assertSucceeds(setDoc(doc(as("power"), "roles/crew"), { name: "Crew", perms: ["view.plan"] })));
+await check("Rollen: bis 80 Rechte pro Rolle (Report-Ordner)", assertSucceeds(setDoc(doc(as("owner"), "roles/many"), { name: "Viele", perms: Array.from({ length: 80 }, (_, i) => "rep.ordner-" + i) })));
+await check("Rollen: mehr als 80 Rechte nicht", assertFails(setDoc(doc(as("owner"), "roles/many"), { name: "Viele", perms: Array.from({ length: 81 }, (_, i) => "rep.ordner-" + i) })));
 await check("Rollen: Admin-Rolle nur für Admins", assertFails(setDoc(doc(as("power"), "roles/admin"), { name: "Admin", perms: [] })));
 await check("Rollen: Admin kann sich nicht über die Admin-Rolle «Einstellungen» geben", assertFails(setDoc(doc(as("admin"), "roles/admin"), { name: "Admin", perms: ["settings"] })));
 await check("Rollen: Admin darf andere Rollen ändern", assertSucceeds(setDoc(doc(as("admin"), "roles/crew"), { name: "Crew", perms: ["view.plan"] })));

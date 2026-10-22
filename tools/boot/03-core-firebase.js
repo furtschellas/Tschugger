@@ -99,7 +99,7 @@ const can=p=>isOwner()||(isAdmin()&&ADMINPERMS.includes(p))||MYPERMS.includes(p)
 window.canMenu=()=>!!(ME&&(isAdmin()||/cater/i.test(MYROLE||"")));
 /* roles: «Rollen bearbeiten» = create/change/delete roles (not the admin role), «Rollen pflegen» = give people a role (not admin/owner) */
 window.canRoleEdit=()=>isAdmin()||can("roles.edit");window.canRoleAssign=()=>isAdmin()||can("roles.assign");
-const canAdm=()=>isOwner()||["settings","audit.view","users.view","users.invite","users.requests","users.edit","roles.edit","roles.assign","roles.view","data.check","scenes.log"].some(p=>can(p))||(typeof canRepAny==="function"&&canRepAny());   /* gear = App-Verwaltung: anyone with one of its permissions */
+const canAdm=()=>isOwner()||["settings","audit.view","users.view","users.invite","users.requests","users.edit","roles.edit","roles.assign","roles.view","data.check"].some(p=>can(p));   /* scene log and reports: own topic «Reports» (button in the head) */   /* gear = App-Verwaltung: anyone with one of its permissions */
 /* what someone sees: without a role everything as before; with a role (or as admin) only the areas the role allows */
 window.viewOK=k=>{if(!ME||isOwner())return true;if(!isAdmin()&&!MYROLE){if(["plan","script","blocking"].includes(k))return false;return k in window.PUBV?window.PUBV[k]===true:true}return can("view."+k)};
 window.canPerm=can;
