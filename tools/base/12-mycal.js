@@ -1,6 +1,13 @@
 /* ---------- «Meine Termine»: every event of all documents (shooting schedule, callsheets, weekly schedule, transport) the signed-in person takes part in ---------- */
 const NOSET=/^(postprod|verleih|buchhalt|autor|casting)/i;
 const myAdmin=()=>{try{return typeof window.canPerm!=="function"||window.canPerm("mycal.all")}catch(_){return false}};
+/* admins can look at the appointments of another person (Meine Termine → «Termine für»); that choice also fills Today and «Mein Drehtag»:
+   a bar says so, with the way back to the own data */
+function myPickBar(){let pick="";try{if(myAdmin()&&!(window.simOn&&window.simOn()))pick=localStorage.getItem("myname")||""}catch(_){}if(!pick)return "";
+  let own="";try{if(typeof MEMBER!=="undefined"&&MEMBER)own=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
+  if(own&&fold(own)===fold(pick))return "";
+  return '<div class="mypickbar" role="status">'+esc(L("Du siehst die Daten von"))+' <b>'+esc(pick)+'</b> '+esc(L("(gewählt in Meine Termine)."))+' <button type="button" class="pillbtn" data-mypickoff>'+esc(L("Zu meinen Daten"))+'</button></div>'}
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-mypickoff]")){e.preventDefault();try{localStorage.removeItem("myname")}catch(_){}try{MEMO.clear()}catch(_){}render()}});
 function myIdentity(){
   const people=mailPeople();let nm="",em="";
   try{em=String(window.simEmail?window.simEmail():(typeof ME!=="undefined"&&ME&&ME.email)||"").toLowerCase()}catch(_){}

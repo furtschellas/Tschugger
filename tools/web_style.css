@@ -913,3 +913,11 @@ html body #view .pacc .paccd>summary>span{flex:1 1 auto;min-width:0;overflow-wra
 html body #view .pacc .paccd>summary>.paccpen,html body #view .pacc .paccd>summary>.pacn{flex:none}
 .docf .docon{margin:4px 0 2px;font-weight:600}
 .docf .arb .docai{width:auto}
+/* callsheet jump bar: solid, not see-through */
+html body #view .csjump.csjump{background:var(--paper)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+/* «Mit Google anmelden» below «Anmelden», just as wide */
+.gbox [data-gglw]{width:100%;margin-top:0;display:flex;flex-direction:column;gap:10px}
+.gbox [data-gglw][hidden]{display:none}
+html body .gbox [data-gglw] .ggoogle{width:100%;box-sizing:border-box}
+.mypickbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:8px 0 12px;padding:10px 12px;border:1px solid var(--accent);border-radius:12px;background:color-mix(in srgb,var(--accent) 12%,var(--paper));font-size:14px}
+.mypickbar .pillbtn{margin-left:auto}

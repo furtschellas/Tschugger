@@ -70,7 +70,7 @@ VIEWS.today=function(){
   const dp=canDispo?((S.dispos||[]).find(x=>x&&x.date===d.date)||null):null;
   const card=(cls,title,body)=>body?'<div class="tcard '+cls+'"><div class="tch">'+title+'</div>'+body+'</div>':'';
   const thead='<div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+ddmm(dt))+'</span></div>';
-  let h='<section class="today">';
+  let h='<section class="today">'+(typeof myPickBar==="function"?myPickBar():"");
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* for everybody, first of all and only while shooting: the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
   try{if(isToday&&tShow("now")&&typeof csNowScene==="function"){const ns=csNowScene();if(ns&&ns.ev!=="wrap"){const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
