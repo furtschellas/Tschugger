@@ -118,7 +118,7 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
   /* one entry: name, state, planned time; begin, end and duration always (– when not known; running: the counter) */
   /* with «Szenen quittieren»: a pencil per entry opens the same popup as in the Drehplan (state, begin, end, delete) */
   const ED=typeof canPerm==="function"&&canPerm("scenes.ack")&&window.SCACKON!==false,PEN='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
-  const row=(name,st,plan,b,e,run,ed,pdm)=>'<li class="scl'+(st===0?' sclo':'')+'"><div class="audh"><b>'+name+'</b>'+(ED&&ed?'<button type="button" class="scled" data-scled="'+esc(ed.join("|"))+'" title="'+esc(L("Ändern"))+'" aria-label="'+esc(L("Ändern"))+'">'+PEN+'</button>':'')+(plan||pdm?' <span class="audt">'+esc(L("Plan"))+' '+esc(plan||'–')+(pdm?' · '+esc(dur(pdm*60000)):'')+'</span>':'')+'<span class="audw">'+esc(st===1?L("läuft"):st===2?L("abgeschlossen"):L("offen"))+'</span></div>'+
+  const row=(name,st,plan,b,e,run,ed,pdm)=>'<li class="scl'+(st===0?' sclo':'')+'"><div class="audh"><b>'+name+'</b>'+(ED&&ed?'<button type="button" class="scled" data-scled="'+esc(ed.join("|"))+'" title="'+esc(L("Ändern"))+'" aria-label="'+esc(L("Ändern"))+'">'+PEN+'</button>':'')+(plan||pdm?' <span class="audt">'+esc(L("Plan"))+' '+esc(plan||'–')+(pdm?' · '+esc(dur(pdm*60000)):'')+'</span>':'')+'<span class="audw">'+(st===2?'✓':'')+'</span></div>'+
     '<div class="audb sclt"><span>'+esc(L("Beginn"))+' <b>'+(b?esc(scHM(b)):'–')+'</b></span><span>'+esc(L("Ende"))+' <b>'+(e?esc(scHM(e)):'–')+'</b></span><span>'+esc(L("Dauer"))+' <b>'+(b&&e?esc(dur(e-b)):b&&run?'<span data-scrun="'+b+'">'+esc(dur(Date.now()-b))+'</span>':'–')+'</b></span></div></li>';
   /* one unit of one day: fixed rows setup (planned begin until the first scene), Drehstart (until the wrap), lunch, wrap – plus the further setups and the scenes, by time */
   const unitRows=(d,u,l,day,cs)=>{const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items);
@@ -164,7 +164,7 @@ const scIco=(attr,ic,t)=>typeof tstIco==="function"?tstIco(attr,ic,t):'<button t
 /* export of the scene log: as a table (CSV for Excel, Numbers, Google Sheets) or as PDF (print view → «Als PDF sichern»); oldest day first */
 function scExpRows(d,u){const un=s=>{const x=document.createElement("textarea");x.innerHTML=String(s||"");return x.value};
   return (SCLOG.exp||[]).filter(r=>(!d||r.d===d)&&(!u||String(r.u)===u)).sort((a,b)=>a.d.localeCompare(b.d)).map(r=>Object.assign({dt:r.dt,date:r.d.split("-").reverse().join("."),unit:((window.UNAME&&UNAME[r.u])||r.u)+" Unit",name:un(r.name),
-    st:r.st,state:r.st===1?L("läuft"):r.st===2?L("abgeschlossen"):L("offen"),plan:r.plan||"",pmin:r.pdm?String(r.pdm):"",b:r.b?scHM(r.b):"",e:r.e?scHM(r.e):"",min:r.b&&r.e?String(Math.round((r.e-r.b)/60000)):""},scInfo(r)))}
+    st:r.st,state:r.st===2?"✓":"",plan:r.plan||"",pmin:r.pdm?String(r.pdm):"",b:r.b?scHM(r.b):"",e:r.e?scHM(r.e):"",min:r.b&&r.e?String(Math.round((r.e-r.b)/60000)):""},scInfo(r)))}
 /* more about a scene for the export: I/E, set, pages, cast and the description from the Drehplan of that day (and unit) */
 function scInfo(r){const k=scBase(r.k||""),E={ie:"",set:"",pg:"",cast:"",desc:""};
   /* setup and Drehstart: the I/E of the scene that follows (setup: the next scene after its row, Drehstart: the first scene of the day) */
@@ -180,16 +180,45 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   if(k==="csv"){const q=v=>{v=String(v==null?"":v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
     const txt="﻿"+[SCX_HEAD()].concat(rows.map(r=>{const c=cells(r);if(c[7])c[7]='="'+c[7]+'"';return c})).map(r=>r.map(q).join(";")).join("\r\n");   /* pages as text: «1 1/8» is no date */
     const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));a.download="TSCHUGGER-Tigerblood_Szenen-Protokoll_"+stamp+".csv";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);return}
-  const UN=uu?((window.UNAME&&UNAME[uu])||uu)+" Unit":"",HD=SCX_HEAD().slice(3,-1),days=[...new Set(rows.map(r=>r.dt+" · "+r.date))];
+  const UN=uu?((window.UNAME&&UNAME[uu])||uu)+" Unit":"",HD=[L("Eintrag"),L("Status"),"I/E · "+L("Seiten"),"Set · "+L("Beschreibung"),L("Plan"),L("Plan-Dauer")+" (min)",L("Beginn"),L("Ende"),L("Dauer")+" (min)"],days=[...new Set(rows.map(r=>r.dt+" · "+r.date))];
   /* the same columns on every day: fixed widths (entry, state, I/E, set, pages, plan, planned duration, begin, end, duration); the description in a second line below */
-  const COLS='<colgroup>'+[14,9,6,27,6,7,8,7,7,9].map(w=>'<col style="width:'+w+'%">').join("")+'</colgroup>';
+  const COLS='<colgroup>'+[14,6,8,33,7,8,8,8,8].map(w=>'<col style="width:'+w+'%">').join("")+'</colgroup>';
   const doc='<!doctype html><html><head><meta charset="utf-8"><title>TSCHUGGER Tigerblood · '+esc(L("Szenen-Protokoll"))+' '+esc(UN)+' '+esc(stamp)+'</title><style>body{font:11px/1.35 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#111}h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:0 0 6px;break-after:avoid}.day{break-inside:avoid;page-break-inside:avoid;margin:0 0 14px}table{table-layout:fixed}table{border-collapse:collapse;width:100%;break-inside:auto}th,td{border-bottom:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top}th{background:#f2f2f2}td.n{font-variant-numeric:tabular-nums;white-space:nowrap}tbody.o td{color:#888}tbody.e{break-inside:avoid}tr.l1 td{border-bottom:0;padding-bottom:1px}tr.l2 td{padding-top:0}td.scxd{font-size:10.5px;color:#333;min-width:40mm}@page{size:A4 landscape;margin:10mm}</style></head><body><h1>TSCHUGGER Tigerblood · '+esc(L("Szenen-Protokoll"))+(UN?' · '+esc(UN):'')+'</h1>'+
     days.map(k=>'<div class="day"><h2>'+esc(k.replace(/^ · /,""))+'</h2><table>'+COLS+'<thead><tr>'+HD.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead>'+
-      rows.filter(r=>r.dt+" · "+r.date===k).map(r=>{const c=cells(r).slice(3,-1),sc=!!(r.set||r.ie||r.desc);return '<tbody class="e'+(r.st?'':' o')+'"><tr'+(sc?' class="l1"':'')+'>'+c.map((v,i)=>'<td'+(i>=4?' class="n"':'')+'>'+esc(v)+'</td>').join("")+'</tr>'+(sc?'<tr class="l2"><td></td><td colspan="'+(c.length-1)+'" class="scxd">'+esc(r.desc||"–")+'</td></tr>':'')+'</tbody>'}).join("")+'</table></div>').join("")+'</body></html>';
-  /* the print view in a new window (a page of its own from a blob), its print dialog offers «Als PDF sichern» */
+      rows.filter(r=>r.dt+" · "+r.date===k).map(r=>{const c=[r.name,r.state,r.ie,r.set,r.plan,r.pmin,r.b,r.e,r.min],sc=!!(r.desc||r.pg);return '<tbody class="e'+(r.st?'':' o')+'"><tr'+(sc?' class="l1"':'')+'>'+c.map((v,i)=>'<td'+(i>=4?' class="n"':'')+'>'+esc(v)+'</td>').join("")+'</tr>'+(sc?'<tr class="l2"><td></td><td></td><td class="n">'+esc(r.pg||"")+'</td><td colspan="6" class="scxd">'+esc(r.desc||"")+'</td></tr>':'')+'</tbody>'}).join("")+'</table></div>').join("")+'</body></html>';
+  /* a real PDF (jsPDF, loaded only when needed) that opens directly in the PDF reader; without it the print view below */
+  let pw=null;try{pw=window.open("","_blank")}catch(_){}   /* the window is opened during the tap (else the browser blocks it) and gets the PDF when it is ready */
+  scPdf(rows,days,UN,stamp,pw).catch(err=>{console.error(err);try{if(pw)pw.close()}catch(_){}scPrint(doc)});return});
+/* load a script of the app once (same origin, allowed by the page) */
+const scLoad=src=>new Promise((ok,no)=>{if(document.querySelector('script[data-src="'+src+'"]'))return ok();const x=document.createElement("script");x.src=src;x.dataset.src=src;x.onload=()=>ok();x.onerror=()=>no(new Error(src));document.head.appendChild(x)});
+async function scPdf(rows,days,UN,stamp,pw){
+  if(!(window.jspdf&&window.jspdf.jsPDF)){await scLoad("jspdf.js");await scLoad("jspdf.autotable.js")}
+  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+  /* the built-in font knows only Latin letters: Hindi labels in English, signs that it lacks replaced */
+  const T=k=>LANG==="hi"?(((I18N[k]||{}).en)||k):L(k),C=v=>String(v==null?"":v).replace(/[′’]/g,"'").replace(/[^\x20-\x7E\xA0-\xFF–—…€]/g,"");
+  doc.setFontSize(15);doc.text(C("TSCHUGGER Tigerblood · "+T("Szenen-Protokoll")+(UN?" · "+UN:"")),12,14);
+  const head=[[T("Eintrag"),T("Status"),"I/E · "+T("Seiten"),"Set · "+T("Beschreibung"),T("Plan"),T("Plan-Dauer")+" (min)",T("Beginn"),T("Ende"),T("Dauer")+" (min)"]].map(r=>r.map(C));
+  const W=[38,13,22,92,15,18,15,15,17];let y=20;
+  for(const k of days){const rs=rows.filter(r=>r.dt+" · "+r.date===k),body=[];
+    for(const r of rs){const sc=!!(r.desc||r.pg),o=r.st?{}:{textColor:140};
+      body.push([r.name,r.st===2?"":"",r.ie,r.set,r.plan,r.pmin,r.b,r.e,r.min].map((v,i)=>({content:C(v),styles:Object.assign({fontStyle:i===0?"bold":"normal"},o),_done:i===1&&r.st===2})));
+      if(sc)body.push([{content:""},{content:""},{content:C(r.pg),styles:o},{content:C(r.desc),colSpan:6,styles:Object.assign({fontSize:8,textColor:70},o)}])}
+    /* a day that does not fit on the rest of the page starts on a new one */
+    const need=10+body.length*6;if(y+need>200&&y>30){doc.addPage();y=14}
+    doc.setFontSize(11);doc.text(C(k.replace(/^ · /,"")),12,y+5);
+    doc.autoTable({startY:y+8,head,body,margin:{left:12,right:12},theme:"grid",tableWidth:"wrap",columnStyles:Object.fromEntries(W.map((w,i)=>[i,{cellWidth:w}])),
+      styles:{fontSize:8.5,cellPadding:1.4,lineColor:220,lineWidth:.1,overflow:"linebreak"},headStyles:{fillColor:[242,242,242],textColor:20,fontStyle:"bold"},rowPageBreak:"avoid",
+      didDrawCell:h=>{if(h.section==="body"&&h.cell.raw&&h.cell.raw._done){const c=h.cell,x=c.x+c.width/2-2,yy=c.y+c.height/2;doc.setDrawColor(40,150,90);doc.setLineWidth(.6);doc.line(x,yy,x+1.4,yy+1.4);doc.line(x+1.4,yy+1.4,x+4,yy-1.6)}}});
+    y=doc.lastAutoTable.finalY+6}
+  const blob=doc.output("blob"),url=URL.createObjectURL(blob),name="TSCHUGGER-Tigerblood_Szenen-Protokoll_"+stamp+".pdf";
+  /* open in the PDF reader of the device; where a new window is not possible, as a download */
+  if(pw&&!pw.closed)pw.location.href=url;else{const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}
+  setTimeout(()=>URL.revokeObjectURL(url),300000)}
+/* the print view in a new window (a page of its own from a blob), its print dialog offers «Als PDF sichern» */
+function scPrint(doc){
   const url=URL.createObjectURL(new Blob([doc],{type:"text/html;charset=utf-8"})),w=window.open(url,"_blank");
   if(w){const go=()=>{try{w.focus();w.print()}catch(_){}};try{w.addEventListener("load",()=>setTimeout(go,200))}catch(_){setTimeout(go,800)}setTimeout(()=>URL.revokeObjectURL(url),120000);return}
   /* pop-ups blocked: print from a hidden frame */
-  const f=document.createElement("iframe");f.style.cssText="position:fixed;width:0;height:0;border:0;right:0;bottom:0";f.addEventListener("load",()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(_){}setTimeout(()=>{f.remove();URL.revokeObjectURL(url)},60000)});f.src=url;document.body.appendChild(f)});
+  const f=document.createElement("iframe");f.style.cssText="position:fixed;width:0;height:0;border:0;right:0;bottom:0";f.addEventListener("load",()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(_){}setTimeout(()=>{f.remove();URL.revokeObjectURL(url)},60000)});f.src=url;document.body.appendChild(f)}
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-sclre]")){SCLOG.list=null;render()}});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-scled]");if(!b)return;e.preventDefault();e.stopPropagation();const [d,k,u]=b.dataset.scled.split("|");scAckDialog(d,k,u||"1")},true);
