@@ -150,7 +150,9 @@ document.addEventListener("click",e=>{
   for(const [sel,fn] of ACTIONS){const b=e.target.closest(sel);if(b){if(b.disabled)return;try{const r=fn(b);if(r&&typeof r.catch==="function")r.catch(err=>console.error(err))}catch(err){console.error(err)}return}}
 });
 /* admins: type a name in «Termine für» (suggestions appear while typing); «Ich» goes back to the own name */
-function mcPick(v){try{if(v)localStorage.setItem("myname",v);else localStorage.removeItem("myname")}catch(_){}render()}
+/* the person chosen in «Termine für» (admins): only until the app is reloaded – after a reload it is me again */
+window.MYPICK="";try{localStorage.removeItem("myname")}catch(_){}
+function mcPick(v){window.MYPICK=v||"";try{MEMO.clear()}catch(_){}render()}
 document.addEventListener("input",e=>{if(e.target.matches&&e.target.matches("input[data-mcme]")){const v=e.target.value.trim();const hit=MCNAMES.find(n=>n.toLowerCase()===v.toLowerCase());if(hit)mcPick(hit)}});
 document.addEventListener("change",e=>{if(e.target.matches&&e.target.matches("input[data-mcme]")){const v=e.target.value.trim();if(!v){mcPick("");return}const f=fold(v),hits=MCNAMES.filter(n=>fold(n).includes(f));if(hits.length===1)mcPick(hits[0])}});
 document.addEventListener("click",e=>{if(e.target.closest("[data-mcself]"))mcPick("")});
