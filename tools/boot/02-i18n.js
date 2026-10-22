@@ -1263,6 +1263,7 @@ Object.assign(I18N,{
  "Push-Nachricht «Drehplan geändert» an alle":{fr:"Notification « Plan de tournage modifié » à tous",it:"Notifica «Piano modificato» a tutti",en:"Push message “Schedule changed” to everyone",hi:"सबको पुश संदेश «प्लान बदला»"},
  "Aktive Änderungen":{fr:"Changements actifs",it:"Modifiche attive",en:"Active changes",hi:"सक्रिय बदलाव"},
  "Keine.":{fr:"Aucun.",it:"Nessuna.",en:"None.",hi:"कोई नहीं।"},
+ "Coverday-Änderung wirklich übernehmen? Sie gilt sofort für alle.":{fr:"Vraiment appliquer ce changement de Coverday ? Il s'applique immédiatement pour tous.",it:"Applicare davvero questa modifica Coverday? Vale subito per tutti.",en:"Really apply this Coverday change? It applies to everyone right away."},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},
