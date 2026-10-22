@@ -136,6 +136,7 @@ window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days||S.days0
     '<h4>'+esc(L("Aktive Änderungen"))+'</h4>'+(list?'<ul class="cdlist">'+list+'</ul>':'<p class="ghint">'+esc(L("Keine."))+'</p>')+'</div>'};
 document.addEventListener("change",e=>{const t=e.target.closest&&e.target.closest("[data-cdf]");if(!t)return;const k=t.dataset.cdf;CD.form[k]=t.type==="checkbox"?t.checked:t.value;if(k==="op"||k==="u"){CD.form.a="";CD.form.b=""}CD.msg="";render()});
 document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.closest("[data-cdsave],[data-cdoff],[data-cdre]");if(!s||!cdCan()||CD.busy)return;e.preventDefault();
+  if(s.dataset.cdoff!=null){const o=arr(window.CDOPS).find(x=>x.id===s.dataset.cdoff);if(!o||!confirmSafe(L("Coverday-Änderung wirklich aufheben? Der Drehplan gilt dann wieder für alle.")+"\n\n"+cdOpText(o)))return}
   if(s.dataset.cdsave!=null){const pv0=cdPreview(CD.form);if(!pv0.ok||!confirmSafe(L("Coverday-Änderung wirklich übernehmen? Sie gilt sofort für alle.")+"\n\n"+pv0.t))return}
   const ops=arr(window.CDOPS).slice();CD.busy=true;
   try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(o){o.st="off";o.off=Date.now()}await cdSave(ops);const bad=cdCsCheck();showMsg(L("Änderung aufgehoben.")+" "+(bad.length?L("Achtung – Callsheet passt nicht zum Drehplan:")+" "+bad.join(", "):L("Callsheets geprüft: alle am richtigen Tag.")),bad.length?8000:4000)}
