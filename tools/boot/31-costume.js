@@ -82,7 +82,7 @@ function cqOnsetInfo(c,r){const id=cmId(c._date,"o",r,hm(r.onset));let ride=null
   return {id,st:cmSt(id),rs:ride&&window.rideState?rideState(rideId(c._date,ride)):0}}
 /* On set: open (underlined) once Kostüm and Maske are done → tap = running (pink, Base then counts as done) → tap = done (white);
    the ride Base → set accepted: pink frame; ride done: On set running (pink) */
-window.cqOnset=(c,r)=>{if(!hm(r&&r.onset)||!c||!c._date)return null;const {id,st,rs}=cqOnsetInfo(c,r),all=cqAllDone(c,r),t=String(r.onset);
+window.cqOnset=(c,r)=>{if(!hm(r&&r.onset)||!c||!c._date)return null;const {id,st,rs}=cqOnsetInfo(c,r),all=cqAllDone(c,r)||cqBaseDone(c,r),t=String(r.onset);
   const cur=st===2?2:(st===1||rs===2)?1:(all?0:-1);
   if(cur<0)return rs===1?{h:'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>'}:null;
   const tip=[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")][cur];
@@ -105,9 +105,12 @@ for(const [f,k] of [["p","cqPickup"],["c","cqCall"],["b","cqBase"],["o","cqOnset
     return {h:'<span class="cql cq2 cqro" title="'+esc(L("Erledigt"))+' (Call)">'+esc(String(r.pickup))+'</span>'};
   return res}}
 /* On set done (ticked or by hand): every step before it (P/UP, Call, Kostüm, Maske, Base) counts as done too */
-window.cqRowDone=(c,r)=>{const t=hm(r&&r.onset);return !!(t&&c&&c._date&&(cmSt(cmId(c._date,"o",r,t))===2||cmSt(cmId(c._date,"xo",r,t))===2))};
+/* also: On set started (tapped, by hand or the ride Base → set done) or Base ticked → every step before it counts as done */
+window.cqOnStarted=(c,r)=>{if(!c||!c._date||!r)return false;const t=hm(r.onset);return !!(t&&(cmSt(cmId(c._date,"o",r,t))>0||cmSt(cmId(c._date,"xo",r,t))>0||cqOnsetInfo(c,r).rs===2))};
+const cqBaseDone=(c,r)=>{const b=hm(r&&r.base);return !!(b&&c&&c._date&&(cmSt(cmId(c._date,"b",r,b))===2||cmSt(cmId(c._date,"xb",r,b))===2))};
+window.cqRowDone=(c,r)=>window.cqOnStarted(c,r)||cqBaseDone(c,r);
 for(const [f,k] of [["p","cqPickup"],["c","cqCall"],["b","cqBase"]]){const orig=window[k];
-  window[k]=(c,r)=>{if(window.cqRowDone(c,r)){const t=f==="p"?r.pickup:f==="c"?r.call:r.base;if(hm(t))return {h:'<span class="cql cq2 cqro" title="'+esc(L("Erledigt"))+' (On set)">'+esc(String(t))+'</span>'}}return orig(c,r)}}
+  window[k]=(c,r)=>{if(f==="b"?window.cqOnStarted(c,r):window.cqRowDone(c,r)){const t=f==="p"?r.pickup:f==="c"?r.call:r.base;if(hm(t))return {h:'<span class="cql cq2 cqro" title="'+esc(L("Erledigt"))+' (On set)">'+esc(String(t))+'</span>'}}return orig(c,r)}}
 /* «Cast-Quittierungen sehen» (cast.see): without it (and without a right to tick) the cast shows the plain times, no states */
 window.cqSee=()=>{try{return typeof canPerm==="function"&&(canPerm("cast.see")||canPerm("wardrobe.ack")||canPerm("makeup.ack")||canPerm("cast.manual")||canPerm("rides.confirm")||canPerm("rides.manage"))}catch(_){return false}};
 for(const k of ["cqPickup","cqCall","cqBase","cqOnset"]){const orig=window[k];window[k]=(c,r)=>window.cqSee()?orig(c,r):null}
