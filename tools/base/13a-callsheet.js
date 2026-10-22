@@ -124,15 +124,15 @@ const csIsWrap=r=>!!r&&!r.sc&&/\b(wrap|drehschluss)\b/i.test(String(r.text||r.sy
 function csHM(d){return clockHM(d||new Date())}
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null; lunch or a setup running: that row with ev = its key */
 function csNowScene(x){x=x||(S.dispos||[]).find(y=>y&&y.date===todayISO());const c=x&&x.cs;if(!c||x.date!==todayISO())return null;const rows=csRows(c);let i=csNowIdx(rows,x.date);
-  if(i>=0&&!rows[i].sc&&csAck(x.date)){const k=csKeys(rows)[i];if(k&&k!=="wrap"&&scState(x.date,k)===1)return Object.assign({},rows[i],{ev:k,lunch:k==="lunch"})}
+  if(i>=0&&!rows[i].sc&&csAck(x.date)){const k=csKeys(rows)[i];if(k)return Object.assign({},rows[i],{ev:k,lunch:k==="lunch"&&scState(x.date,k)===1})}   /* setup, lunch or wrap is the step now (running or next) */
   for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(csIsWrap(r))return null}return null}
-/* the row running now: with quittances the running one, else the next open scene after the last done one (wrap quittiert: none);
+/* the row running now: with quittances the running one, else the next open step (scene, setup, lunch, wrap) after the last done one (wrap quittiert: none);
    without quittances by the clock: the last row that has started (after the wrap: none) */
 function csNowIdx(rows,date){if(date!==todayISO())return -1;rows=csA(rows);
   if(csAck(date)){const RK=csKeys(rows),key=(r,i)=>r.sc||RK[i]||"";
     const st=rows.map((r,i)=>key(r,i)?scState(date,key(r,i)):-1);if(st.some((v,i)=>v===2&&key(rows[i],i)==="wrap"))return -1;
     const run=st.indexOf(1);if(run>=0)return run;
-    for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0&&rows[i].sc)return i;return -1}
+    for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0)return i;return -1}   /* the next step: a scene, setup, lunch or the wrap */
   const now=csHM();let k=-1;rows.forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});
   return k>=0&&csIsWrap(rows[k])?-1:k}
 /* the parts of «Jetzt» (callsheet «Mein Tag» and Today): lunch/setup with its name, else scene number, its place (L-code) and I/E · set */

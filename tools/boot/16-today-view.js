@@ -73,7 +73,7 @@ VIEWS.today=function(){
   let h='<section class="today">';
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* for everybody, first of all and only while shooting: the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
-  try{if(isToday&&tShow("now")&&typeof csNowScene==="function"){const ns=csNowScene();if(ns){const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
+  try{if(isToday&&tShow("now")&&typeof csNowScene==="function"){const ns=csNowScene();if(ns&&ns.ev!=="wrap"){const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
     const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1?(+ak.b||+ak.at):0;
     const nb=csNowBits(ns,c0,t);
     const since=b0?' <small>· '+esc(L("seit"))+' '+esc(new Date(b0).toTimeString().slice(0,5))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
