@@ -1,5 +1,5 @@
 /* ---------- 11) Protokoll: who changed what in the administration (roles, users, menus, settings, messages) ---------- */
-const AUDIT_COLS=["roles","userroles","admins","owners","invites","members","menus","config","broadcasts","starts","requests","sceneack"];
+const AUDIT_COLS=["roles","userroles","admins","owners","invites","members","menus","config","broadcasts","starts","requests","sceneack","coverday"];
 function auditSum(col,data,op){
   if(op==="delete")return "";
   if(col==="broadcasts")return data&&data.c?L("Nachricht gesendet"):(data&&data.sent?L("versendet"):"");

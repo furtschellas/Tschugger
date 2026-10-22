@@ -1,6 +1,6 @@
 """One-time action: the roles «Crew HOD» and «Poweruser» (and roles/admin when it exists) get the report permissions
 «Reports: Production report / DIT / Sound» (rep.production-report, rep.dit, rep.sound); then the new role «Crew 1AD»
-(id crew1ad) is made with the permissions of «Crew HOD» (Coverday management follows with its own permission). Counts only in the log."""
+(id crew1ad) is made with the permissions of «Crew HOD» plus «Coverday verwalten». Counts only in the log."""
 import re, sys, unicodedata
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -26,7 +26,7 @@ hod = next((f for rid, f in roles.items() if re.search(r"\bhod\b", fold(f.get("n
 if "crew1ad" in roles: print("::notice::Rolle Crew 1AD: schon vorhanden")
 elif not hod: print("::notice::Rolle Crew 1AD: keine Rolle Crew HOD gefunden"); bad += 1
 else:
-    perms = list(hod.get("perms") or [])
+    perms = list(hod.get("perms") or []) + ["coverday.manage"]
     ok = fsadmin.patch_doc("roles/crew1ad", {"name": "Crew 1AD", "perms": perms})
     print("::notice::Rolle Crew 1AD: %s (%d Rechte)" % ("angelegt" if ok else "Fehler", len(perms)))
     if not ok: bad += 1

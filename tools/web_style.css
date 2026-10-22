@@ -872,3 +872,13 @@ html body #view .repsec .repd{font-size:12px;color:var(--muted)}
 html body #view .repsec .repb{margin:0;gap:8px;flex:0 0 auto}
 html body #view .repsec .repall{margin-top:10px;justify-content:flex-end}
 html body #view .repsec .repmodes{display:flex;flex-wrap:wrap;gap:8px}
+/* Coverday: form in two columns on a computer, the preview, the list of changes */
+html body #view .cdsec .cdform{display:grid;grid-template-columns:1fr;gap:8px 14px}
+@media (min-width:761px){html body #view .cdsec .cdform{grid-template-columns:1fr 1fr}html body #view .cdsec .cdform>.cdpv,html body #view .cdsec .cdform>.arb,html body #view .cdsec .cdform>.ck,html body #view .cdsec .cdform>.amsg{grid-column:1/-1}}
+html body #view .cdsec .cdpv{font-family:var(--f-mono,monospace);font-size:13px;margin:4px 0}
+html body #view .cdsec .cdpv.bad{color:var(--warn,#e0a040)}
+html body #view .cdsec .cdlist{list-style:none;margin:0;padding:0}
+html body #view .cdsec .cdop{display:flex;gap:8px 12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--rule)}
+html body #view .cdsec .cdop.cdrv b{color:var(--warn,#e0a040)}
+html body #view .cdsec .cdform label:not(.ck){display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+html body #view .cdsec .cdform select{width:100%}
