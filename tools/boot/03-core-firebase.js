@@ -34,7 +34,7 @@ async function loadLangs(){
     /* links (motive list, map, chat) are in config/private – only for the crew; the older fields in config/app still count */
     let pv={};try{const {auth}=await fb();if(auth.currentUser){const q=await F.getDoc(F.doc(db,"config","private"));if(q.exists())pv=q.data();window.PRIVOK=true}}catch(_){}
     const cf=k=>typeof pv[k]==="string"&&pv[k]?pv[k]:(d.exists()&&typeof d.data()[k]==="string"?d.data()[k]:"");
-    window.LOCSHEET=cf("locSheet");
+    window.LOCSHEET=cf("locSheet");window.SCENESHEET=typeof pv.sceneSheet==="string"?pv.sceneSheet:"";window.SHEETSA=typeof pv.sheetSa==="string"?pv.sheetSa:"";window.SHEETST=pv.sceneSheetSt&&typeof pv.sceneSheetSt==="object"?pv.sceneSheetSt:null;
     {const cu=cf("chatUrl");if(cu&&window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
     const mu=cf("mapUrl");if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
   }catch(err){console.warn("langs",err)}
