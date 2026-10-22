@@ -23,12 +23,19 @@ function iAmIn(names,me,people){
 function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
 /* a ride of a callsheet: the same id for everyone (date, times, places, vehicle – no names) */
 function rideId(date,r){if(r&&r._rid)return r._rid;const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
-/* map link of a ride's start or destination: a link in the callsheet text, else the location of the callsheet or of the motif list with
-   that name, else (always for the destination) a Google Maps search for the name */
-function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https?:\/\/\S+/)||[])[0];if(u)return u;const n=fold(raw.replace(/https?:\/\/\S+/g,"").trim());if(!n)return "";
-  const hit=l=>{const m=fold(String(l&&l.name||""));return m&&(m===n||m.includes(n)||n.includes(m))&&/^https:\/\//.test(String(l.map||""))};
-  const l=arr(dp&&dp.locations).find(hit)||arr(S.locs).find(hit);if(l)return l.map;
-  return always?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(raw.replace(/https?:\/\/\S+/g,"").trim()):""}
+/* map link of a ride's start or destination, from the callsheet: a link in the text of the ride, else the place of the callsheet with that
+   name, code (L1, Set 1, Base, P1 …) or kind (Base, Lunch …) – its map link, else its address; else the motif list; only then (destination) a Google Maps search */
+function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https?:\/\/\S+/)||[])[0];if(u)return u;const txt=raw.replace(/https?:\/\/\S+/g,"").trim(),n=fold(txt);if(!n)return "";
+  const words=new Set(n.split(/[^a-z0-9]+/).filter(Boolean)),isA=t=>/\d{4}\s+\p{L}/u.test(String(t||""));
+  const ls=typeof csLocs==="function"&&dp&&dp.cs?csLocs(dp.cs):arr(dp&&dp.locations);
+  const code=l=>{try{return typeof csShort==="function"?fold(csShort(l)):""}catch(_){return ""}};
+  const num=(n.match(/\b(?:set|loc\.?|location|l)\s*(\d+[a-z]?)\b/)||[])[1];
+  const hit=l=>{const m=fold(String(l&&l.name||""));if(m&&(m===n||m.includes(n)||n.includes(m)))return true;const c=code(l);if(c&&words.has(c))return true;
+    if(num&&String(l.no||"").trim().toLowerCase()===num)return true;return arr(l.kinds).some(k=>words.has(fold(k).split(" ")[0]))};
+  const l=ls.find(hit);
+  if(l){if(/^https:\/\//.test(String(l.map||"")))return l.map;const ad=[l.name].concat(arr(l.notes)).find(isA);if(ad)return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(ad)}
+  const m=arr(S.locs).find(x=>{const k=fold(String(x&&x.name||""));return k&&(k===n||k.includes(n)||n.includes(k))&&/^https:\/\//.test(String(x.map||""))});if(m)return m.map;
+  return always?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(txt):isA(txt)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(txt):""}
 function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   const out=[],people=mailPeople(),t=todayISO();
   for(const d of (vok("prep")?S.prepro:[])){if(d.date<t)continue;
@@ -90,7 +97,7 @@ function renderMy(){
     if(window.RIDEHID||window.SHOWDONE)h+='<button type="button" class="lnk ridedone" data-ridedone>'+esc(window.SHOWDONE?L("Erledigte Fahrten ausblenden"):L("Erledigte Fahrten anzeigen")+" ("+window.RIDEHID+")")+'</button>';
     let last="";
     MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>';last=e.date}
-      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.to?'<div class="ppl rto">'+esc(L("Ziel"))+': <a href="'+esc(safeUrl(e.toMap))+'" target="_blank" rel="noopener">'+esc(e.to)+'</a></div>':'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.pax?'<div class="ppx">'+esc(L("Mitfahrende"))+': '+esc(e.pax)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+(()=>{/* a ride: its confirmation on the right instead of «in den Kalender» (the calendar stays when there is nothing to confirm) */
+      h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.to?'<div class="ppl rto">'+esc(L("Ziel"))+': '+(e.toMap?'<a href="'+esc(safeUrl(e.toMap))+'" target="_blank" rel="noopener">'+esc(e.to)+'</a>':esc(e.to))+'</div>':'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.pax?'<div class="ppx">'+esc(L("Mitfahrende"))+': '+esc(e.pax)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+(()=>{/* a ride: its confirmation on the right instead of «in den Kalender» (the calendar stays when there is nothing to confirm) */
         const ack=window.rideAckBtn?window.rideAckBtn(e):'';if(ack)return ack;
         return '<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>'})()+'</div>'})}
   return h+'</section>';
