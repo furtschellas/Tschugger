@@ -49,7 +49,7 @@ async function pushSync(){
     if(!(c.on||newsAny(c))||Notification.permission!=="granted"){if(last){await F.deleteDoc(ref).catch(()=>{});try{localStorage.removeItem("pushlast")}catch(_){}}return}
     const sub=await pushSub(true);if(!sub)return;
     let dept="";try{const me=typeof myIdentity==="function"&&myIdentity();dept=me&&me.src||""}catch(_){}
-    const pl={on:true,sub:sub.toJSON(),k:sub.__k||vapidPub(),lang:LANG,items:c.on?pushItems(c):[],news:newsFor(c),who:{email:lc(ME.email),role:isOwner()?"owner":isAdmin()?"admin":(MYROLE||""),dept}};const js=JSON.stringify(pl),h=pushId(js)+"|"+Math.floor(Date.now()/216e5);
+    const pl={on:true,sub:sub.toJSON(),k:sub.__k||vapidPub(),lang:LANG,items:c.on?pushItems(c):[],cd:+window.CDAT||0,news:newsFor(c),who:{email:lc(ME.email),role:isOwner()?"owner":isAdmin()?"admin":(MYROLE||""),dept}};const js=JSON.stringify(pl),h=pushId(js)+"|"+Math.floor(Date.now()/216e5);
     if(h===last)return;
     const enc=await ownEnc(pl);
     await F.setDoc(ref,{c:enc,at:F.serverTimestamp()});try{localStorage.setItem("pushlast",h)}catch(_){}
