@@ -178,16 +178,23 @@ def build(acks, data):
 
 # ---------- Firestore: change check with one aggregation (count + sum of «at») ----------
 def ack_signature():
+    """count of the quittances + the newest «at»: two small queries (≈2 reads) instead of reading all of them"""
     h, q = fsadmin._auth()
-    body = {"structuredAggregationQuery": {"structuredQuery": {"from": [{"collectionId": "sceneack"}]},
-            "aggregations": [{"alias": "n", "count": {}}, {"alias": "s", "sum": {"field": {"fieldPath": "at"}}},
-                             {"alias": "b", "sum": {"field": {"fieldPath": "b"}}}, {"alias": "e", "sum": {"field": {"fieldPath": "e"}}}]}}
-    r = requests.post(fsadmin.BASE + ":runAggregationQuery", headers=h, params=q, json=body, timeout=30)
+    r = requests.post(fsadmin.BASE + ":runAggregationQuery", headers=h, params=q, timeout=30,
+                      json={"structuredAggregationQuery": {"structuredQuery": {"from": [{"collectionId": "sceneack"}]}, "aggregations": [{"alias": "n", "count": {}}]}})
     r.raise_for_status()
+    n = ""
     for x in r.json():
         a = (x.get("result") or {}).get("aggregateFields")
-        if a: return ":".join(str(fsadmin.val(a.get(k))) for k in ("n", "s", "b", "e"))
-    return ""
+        if a: n = str(fsadmin.val(a.get("n")))
+    r = requests.post(fsadmin.BASE + ":runQuery", headers=h, params=q, timeout=30,
+                      json={"structuredQuery": {"from": [{"collectionId": "sceneack"}], "orderBy": [{"field": {"fieldPath": "at"}, "direction": "DESCENDING"}], "limit": 1}})
+    r.raise_for_status()
+    at = ""
+    for x in r.json():
+        d = x.get("document")
+        if d: at = str(fsadmin.val((d.get("fields") or {}).get("at"))) + "@" + str(d.get("updateTime"))
+    return n + ":" + at
 
 
 # ---------- Google Sheets ----------
