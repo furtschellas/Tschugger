@@ -1178,4 +1178,6 @@ Object.assign(I18N,{
  "Unbekannter Fehler":{fr:"Erreur inconnue",it:"Errore sconosciuto",en:"Unknown error",hi:"अज्ञात त्रुटि"},
  "Szenen-Protokoll in Google Sheets öffnen":{fr:"Ouvrir le journal des scènes dans Google Sheets",it:"Aprire il registro scene in Google Sheets",en:"Open the scene log in Google Sheets",hi:"Google Sheets में सीन लॉग खोलें"},
  "Dreh":{fr:"Tournage",it:"Riprese",en:"Shoot",hi:"शूट"},
+ "Differenz":{fr:"Différence",it:"Differenza",en:"Difference",hi:"अंतर"},
+ "Diff.":{fr:"Diff.",it:"Diff.",en:"Diff.",hi:"अंतर"},
 });

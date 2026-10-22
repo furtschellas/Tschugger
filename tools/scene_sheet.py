@@ -21,7 +21,7 @@ TZ = ZoneInfo("Europe/Zurich")
 STATE = os.path.join(ROOT, "sheet.json")   # signature of the last write (actions cache)
 SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 UNAME = {"1": "1st", "2": "2nd", "3": "3rd"}
-HEAD = ["Drehtag", "Datum", "Unit", "Eintrag", "Status", "I/E", "Set", "Seiten", "Plan", "Plan-Dauer (min)", "Beginn", "Ende", "Dauer (min)", "Beschreibung"]
+HEAD = ["Drehtag", "Datum", "Unit", "Eintrag", "Status", "I/E", "Set", "Seiten", "Plan", "Plan-Dauer (min)", "Beginn", "Ende", "Dauer (min)", "Differenz (min)", "Beschreibung"]
 
 
 def log(*a): print("•", *a, flush=True)
@@ -168,7 +168,8 @@ def build(acks, data):
                 r.update(d=d, u=u); i = info(r, days, sched)
                 out.setdefault(u, []).append([dt, ".".join(reversed(d.split("-"))), UNAME.get(u, u) + " Unit", r["name"], "✓" if r["st"] == 2 else "",
                                               i["ie"], i["set"], i["pg"], r["plan"] or "", r["pdm"] or "", clock(r["b"]), clock(r["e"]),
-                                              round((r["e"] - r["b"]) / 60000) if r["b"] and r["e"] else "", i["desc"]])
+                                              round((r["e"] - r["b"]) / 60000) if r["b"] and r["e"] else "",
+                                              round((r["e"] - r["b"]) / 60000) - r["pdm"] if r["b"] and r["e"] and r["pdm"] else "", i["desc"]])
     return out
 
 

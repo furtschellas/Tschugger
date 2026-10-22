@@ -588,7 +588,7 @@ async def owner_tests(p, port):
           const k={l:SCLOG.list,e:SCLOG.exp,c:window.canSceneLog,g:LANG},d=day.date,t=h=>new Date(d+'T'+h).getTime(),sc=day.items.filter(i=>i.sc);
           const acks=[{id:scAckId(d,sc[0].sc),d,s:2,u:'1',sc:scAckId(d,sc[0].sc).split('-')[1],b:t('09:05'),e:t('10:10'),at:1},{id:scAckId(d,sc[1].sc),d,s:1,u:'1',sc:scAckId(d,sc[1].sc).split('-')[1],b:t('10:30'),at:2},
             {id:d.replace(/-/g,'')+'-lunch',d,s:2,u:'1',sc:'lunch',b:t('12:30'),e:t('13:15'),at:3},{id:d.replace(/-/g,'')+'-lunch_u2',d,s:2,u:'2',sc:'lunch_u2',b:t('12:00'),e:t('12:40'),at:4}];
-          LANG='de';window.canSceneLog=()=>true;SCLOG.list=acks;sceneLogSec();const rows=['1','2','3'].map(u=>scExpRows('',u).map(r=>[r.dt,r.date,r.unit,r.name,r.state,r.ie,r.set,r.pg,r.plan,r.pmin,r.b,r.e,r.min,r.desc]));
+          LANG='de';window.canSceneLog=()=>true;SCLOG.list=acks;sceneLogSec();const rows=['1','2','3'].map(u=>scExpRows('',u).map(r=>[r.dt,r.date,r.unit,r.name,r.state,r.ie,r.set,r.pg,r.plan,r.pmin,r.b,r.e,r.min,r.diff,r.desc]));
           SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;LANG=k.g;return {acks,rows,days:S.days,dispos:S.dispos,tz:Intl.DateTimeFormat().resolvedOptions().timeZone}})()""")
         if sp:
             sys.path.insert(0, str(HERE.parent / "tools")); import scene_sheet  # noqa: E402
