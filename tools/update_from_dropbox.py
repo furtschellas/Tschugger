@@ -961,7 +961,7 @@ def cs_known_hint(data):
             + "; ".join(lines)[:6000]
             + "\nRäume der Base (z. B. «Greenroom Cast@base», «Prod + DIT: Room at base», «WC … @base») sind items der Location mit label und text wie im Dokument, keine eigene Location.")
 
-CS_BASE = ("\nBASE: Es gibt pro Location höchstens EINE Base. Die Zeile der Base (z. B. «BASE LAKE: W / H / M Cast / Extras / Lunch, Route … 20 – PLZ Ort» mit Kartenlink) "
+CS_BASE = ("\nBASE: Pro Base-Adresse genau EINE Base – steht im Dokument nur eine Base-Adresse, gibt es nur eine Base; stehen mehrere verschiedene Base-Adressen da, gibt es entsprechend mehrere Bases. Die Zeile einer Base (z. B. «BASE LAKE: W / H / M Cast / Extras / Lunch, Route … 20 – PLZ Ort» mit Kartenlink) "
            "ist EIN item mit label = Name der Base (z. B. «BASE LAKE») und text = Nutzung, Adresse (z. B. «W / H / M Cast / Extras / Lunch, Route … 20 – PLZ Ort») und map = ihr Kartenlink. "
            "Räume und Einrichtungen an der Base (Greenroom, Prod/DIT-Raum, WC @base, Zelt) sind eigene items mit label wie im Dokument und dem Zusatz «@base» im label, "
            "ohne map, nie als eigene Location und nie mit dem Wort Base im label ausser als «@base».")
