@@ -1211,4 +1211,7 @@ Object.assign(I18N,{
  "Ebenen":{fr:"Calques",it:"Livelli",en:"Layers",hi:"लेयर"},
  "Die Ebenen erscheinen hier nach der nächsten Aktualisierung.":{fr:"Les calques apparaissent ici après la prochaine mise à jour.",it:"I livelli appaiono qui dopo il prossimo aggiornamento.",en:"The layers appear here after the next update.",hi:"अगले अपडेट के बाद लेयर यहाँ दिखेंगी।"},
  "Callsheet-Karte sehen":{fr:"Voir la carte de la feuille de service",it:"Vedere la mappa dell’ordine del giorno",en:"See the callsheet map",hi:"कॉलशीट मैप देखें"},
+ "Callsheet":{fr:"Callsheet",it:"Callsheet",en:"Callsheet",hi:"Callsheet"},
+ "Quittierung":{fr:"Confirmation",it:"Conferma",en:"Confirmation",hi:"पुष्टि"},
+ "Access":{fr:"Accès",it:"Accesso",en:"Access",hi:"एक्सेस"},
 });
