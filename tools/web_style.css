@@ -939,3 +939,9 @@ button.cmk.cmok,span.cmk.cmok{border-color:#3fb950;background:#3fb950;color:#fff
 span.cmk{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center}
 .cmk svg{width:15px;height:15px}
 .cmk .cmc{width:8px;height:8px;border-radius:50%}
+/* Cast quittieren: tap the time – underlined = still open (pink; ride accepted: pink with white time), not underlined = done (green) */
+.cql{font:inherit;border:0;background:none;padding:0 3px;border-radius:6px;cursor:pointer;color:var(--accent);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.cql.cqro{cursor:default;color:inherit;text-decoration:none}
+.cql.cq1{background:var(--accent);color:#fff;text-decoration:underline;text-decoration-color:#fff}   /* accepted, still open: underlined */
+.cql.cq2{background:#2ea043;color:#fff;text-decoration:none}
+.cql:disabled{opacity:.6}

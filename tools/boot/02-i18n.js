@@ -1310,6 +1310,7 @@ Object.assign(I18N,{
  "Erledigt":{fr:"Fait",it:"Fatto",en:"Done"},
  "bei":{fr:"chez",it:"da",en:"with"},
  "Lunch-Menüs eingeben":{fr:"Saisir les menus du lunch",it:"Inserire i menu del pranzo",en:"Enter lunch menus"},
+ "Cast quittieren (Call, Kostüm, Maske)":{fr:"Valider le cast (call, costume, maquillage)",it:"Confermare il cast (call, costumi, trucco)",en:"Confirm cast (call, costume, make-up)"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},
