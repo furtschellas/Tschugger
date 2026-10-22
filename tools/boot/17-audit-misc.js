@@ -117,19 +117,25 @@ function tstAllBtn(pg){const p=pg&&pg.pct!=null?Math.max(0,Math.min(100,pg.pct))
 /* the checks of one test part, tidied up: by theme (group from the test run, else the word before «:»), and the same
    check for several permission levels (crew, catering …) as ONE line with a mark per level */
 const TST_ROLE=/^(owner|admin|crew|catering|power|norole): (.+)$/,TST_RN={owner:"Owner",admin:"Admin",crew:"Crew",catering:"Catering",power:"Power",norole:"ohne Rolle"};
+const TST_THEMES=[["Sicherheit",/sicherheit|xss|firestore|regel|schlüssel|verschlüssel|gefährlich|e-mail-adressen der crew|klartext/i],["Quittierung",/quittier|szenen-protokoll|google-sheet|sheet|export/i],
+  ["Reports",/report/i],["Coverday",/coverday/i],["Callsheet",/callsheet|drehfolge|locations?\b|karte|base|parking|dit/i],["Drehplan",/drehplan|schedule|szene|prep|drehtag|unit/i],
+  ["Crewliste",/crew|kontakt|telefon|geburtstag|vcf|essen|catering/i],["Termine",/termin|push|kalender|fahrt|erinner/i],["Access",/rolle|recht|access|benutzer|einlad|anmeld|login|passwort|owner|admin|zugang/i],
+  ["App",/einstellung|sprache|tour|übersetz|offline|today|navigation|app|handy|desktop|ansicht|seite|klassen/i]];
+function tstTheme(n){for(const [t,re] of TST_THEMES)if(re.test(n))return t;return L("Weitere")}
 function tstGroupsHTML(suite,cs){
   const rows=[],byTxt=new Map();
   for(const c of cs){const m=c.n.match(TST_ROLE);
     if(m){let r=byTxt.get(m[2]);if(!r){r={n:m[2],ok:true,roles:[],e:"",g:c.g||""};byTxt.set(m[2],r);rows.push(r)}r.roles.push([m[1],c.ok]);if(!c.ok){r.ok=false;if(c.e&&!r.e)r.e=c.e}}
     else rows.push({n:c.n,ok:c.ok,e:c.e||"",g:c.g||"",w:!!c.w})}
-  const pre={};for(const r of rows){const m=!r.g&&r.n.match(/^([^:]{2,40}): /);r.k=r.g||(m?m[1]:"");if(r.k)pre[r.k]=(pre[r.k]||0)+1}
-  for(const r of rows)if(!r.g&&pre[r.k]<3)r.k="";
+  /* themes like the permissions (Drehplan, Callsheet, Quittierung …): one box per theme, failing ones first and open */
+  for(const r of rows){r.k=r.g||tstTheme(r.n)}
   const groups=new Map();for(const r of rows){const k=r.k||L("Weitere");if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r)}
   const li=r=>'<li class="'+(r.w?'twarn':r.ok?'ok':'no')+'">'+(r.w?'⚠':r.ok?'✓':'✗')+' '+esc(r.g||!r.k?r.n:r.n.slice(r.k.length+2))+
     (r.roles?' <span class="tstroles">'+r.roles.map(([k,o])=>'<span class="'+(o?'ok':'no')+'">'+esc(L(TST_RN[k]||k))+' '+(o?'✓':'✗')+'</span>').join("")+'</span>':'')+(r.e?'<br><small>'+esc(r.e)+'</small>':'')+'</li>';
   if(groups.size<2)return '<ul class="tstl">'+rows.sort((a,b)=>a.ok-b.ok).map(li).join("")+'</ul>';
-  return [...groups].sort((a,b)=>a[1].every(r=>r.ok)-b[1].every(r=>r.ok)).map(([k,l])=>{const bad=l.filter(r=>!r.ok).length,key="tg:"+suite+":"+k;
-    return '<details class="tstsu tstgrp'+(bad?' bad':'')+'" data-su="'+esc(key)+'"'+logSu(key)+'><summary>'+(bad?'✗ ':'✓ ')+esc(k)+' · '+(bad?(l.length-bad)+'/'+l.length:l.length)+'</summary><ul class="tstl">'+l.sort((a,b)=>a.ok-b.ok).map(li).join("")+'</ul></details>'}).join("")}
+  const ord=k=>{const i=TST_THEMES.findIndex(x=>x[0]===k);return i<0?99:i};
+  return [...groups].sort((a,b)=>a[1].every(r=>r.ok)-b[1].every(r=>r.ok)||ord(a[0])-ord(b[0])).map(([k,l])=>{const bad=l.filter(r=>!r.ok).length,key="tg:"+suite+":"+k;
+    return '<details class="tstsu tstgrp'+(bad?' bad':'')+'" data-su="'+esc(key)+'"'+(bad?' open':logSu(key))+'><summary>'+(bad?'✗ ':'✓ ')+esc(L(k))+' · '+(bad?(l.length-bad)+'/'+l.length:l.length)+'</summary><ul class="tstl">'+l.sort((a,b)=>a.ok-b.ok).map(li).join("")+'</ul></details>'}).join("")}
 function testsSec(){
   if(!TST.d){testsLoad();return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("Lade …")))+'</summary></details>'}
   const d=TST.d;if(d.none)return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("noch keine Resultate")))+'</summary></details>';

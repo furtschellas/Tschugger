@@ -55,7 +55,7 @@ function menuSec(){
       us.filter(u=>u==="1"||!m.tog).map(u=>'<div class="menuu" data-mu="'+u+'"><div class="menuul">'+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'</div>'+["a","b"].map((k,i)=>'<label>'+L("Menü")+' '+(i+1)+'<input name="u'+u+k+'" maxlength="300" placeholder="'+esc(L(i?"z. B. vegetarisch: Gemüsecurry":"z. B. Risotto mit Pilzen"))+'" value="'+esc(k==="a"?(m["u"+u+"a"]||m["u"+u]||""):(m["u"+u+"b"]||""))+'"></label>').join("")+'</div>').join("")+
       (addU.length&&!m.tog?'<div class="menuadd">'+addU.map(u=>'<button type="button" class="pillbtn" data-menux="'+esc(d.date)+'|'+u+'">+ '+esc(UNAME&&UNAME[u]?UNAME[u]+" Unit":u+". Unit")+'</button>').join("")+'</div>':'')+
       '<label class="menuzw"><span>'+L("Zwischenverpflegung")+' <span class="ghint">('+L("optional")+')</span></span><input name="zw" maxlength="300" placeholder="'+esc(L("z. B. Früchte, Sandwiches um 16:00"))+'" value="'+esc(m.zw||"")+'"></label>'+
-      '<div class="arb"><button type="submit">'+L("Speichern")+'</button></div></form>'}).join("");
+      '<div class="arb">'+saveBtn()+'</div></form>'}).join("");
 }
 document.addEventListener("change",e=>{const t=e.target;if(!t.matches("form[data-menu] input[name=tog]"))return;const f=t.form;f.querySelectorAll('.menuu').forEach(x=>{if(x.dataset.mu!=="1")x.hidden=t.checked});{const a=f.querySelector('.menuadd');if(a)a.hidden=t.checked}
   if(!t.checked&&!f.querySelector('.menuu[data-mu="2"]')){const date=f.dataset.menu;window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],{tog:false},Object.fromEntries([...f.querySelectorAll("input[name^=u]")].map(x=>[x.name,x.value])))});render()}});

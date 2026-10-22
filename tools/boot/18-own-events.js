@@ -69,7 +69,7 @@ async function ownDialog(id,pre){
     '<label>'+L("Ort")+'<input name="wh" maxlength="300" value="'+esc(ev?ev.where:"")+'"></label>'+
     '<label>'+L("Notiz")+'<textarea name="no" rows="4" maxlength="2000">'+esc(ev?ev.note:"")+'</textarea></label>'+
     '<fieldset class="efood"><legend>'+L("Wer sieht den Termin?")+'</legend><label class="ck"><input type="radio" name="oem" value="all"'+(st.sel?'':' checked')+'> '+L("Alle")+'</label><label class="ck"><input type="radio" name="oem" value="sel"'+(st.sel?' checked':'')+'> '+L("Auswahl nach Rolle, Abteilung oder Person")+'</label><div class="oesel"'+(st.sel?'':' hidden')+'>'+selBox()+'</div></fieldset>'+
-    '<p class="amsg" role="status"></p><div class="a2b">'+(!isNew?'<button type="button" class="lnk oedel" data-oedel>'+L("Löschen")+'</button>':'')+dlgBtn("lnk",'data-oex',"Abbrechen")+'<button type="submit" class="pri">'+L("Speichern")+'</button></div></form>'+ownListHTML(ev&&ev.id)+'</div>';
+    '<p class="amsg" role="status"></p><div class="a2b">'+(!isNew?'<button type="button" class="lnk oedel" data-oedel>'+L("Löschen")+'</button>':'')+dlgBtn("lnk",'data-oex',"Abbrechen")+''+saveBtn("","",null,"pri")+'</div></form>'+ownListHTML(ev&&ev.id)+'</div>';
   const redrawPeople=()=>{const pl=d.querySelector(".oepl");if(pl)pl.innerHTML=pchips()};
   d.addEventListener("change",e=>{const t=e.target;
     if(t.name==="oem"){st.sel=t.value==="sel";d.querySelector(".oesel").hidden=!st.sel}

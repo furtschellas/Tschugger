@@ -47,6 +47,9 @@ function mkDialog(id,html,o){o=o||{};if(o.replace){const x=document.getElementBy
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 /* repeated button markup: label + tooltip of a symbol button, text button in a dialog, × in the corner of a dialog */
 const ariaTip=t=>{const x=esc(t);return 'aria-label="'+x+'" title="'+x+'"'};
+/* «Speichern» everywhere: a round button with a symbol (the word as tooltip and for screen readers) */
+const SAVE_ICO='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3"/><rect x="8" y="13" width="8" height="6" rx="1"/></svg>';
+const saveBtn=(attr,t,ico,cls)=>{t=t||L("Speichern");return '<button type="submit" class="savebtn'+(cls?' '+cls:'')+'"'+(attr?' '+attr:'')+' aria-label="'+esc(t)+'" title="'+esc(t)+'">'+(ico||SAVE_ICO)+'</button>'};window.saveBtn=saveBtn;
 const dlgBtn=(cls,attr,t)=>'<button type="button" class="'+cls+'" '+attr+'>'+esc(L(t))+'</button>';
 const xBtn=attr=>'<button type="button" class="xclose" '+attr+' aria-label="'+esc(L("Schliessen"))+'">×</button>';
 const WD=new Proxy([],{get:(t,k)=>k==="length"?7:(WDS[LANG]||WDS.de)[k]});
