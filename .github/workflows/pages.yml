@@ -3,7 +3,8 @@ name: Website veröffentlichen
 # Die App (index.html) wird HIER gebaut, getestet und nur bei bestandenen Tests veröffentlicht: erst dann wird die gebaute
 # index.html nach main geschrieben (von dort holt sie GitHub Pages). Im Repository wird index.html nie von Hand geändert –
 # schlägt ein Test fehl, bleibt die laufende App unverändert. Reine Daten-Aktualisierungen (Dropbox) gehen ohne Test gleich online.
-# Einmalig nötig: Repository → Settings → Pages → Source: «GitHub Actions».
+# GitHub Pages: Repository → Settings → Pages → Source «Deploy from a branch» (main, Hauptordner) – veröffentlicht wird mit dem
+# Commit der getesteten index.html nach main (Job «results»); Daten-Aktualisierungen gehen über denselben Weg online.
 on:
   push:
     branches: [main]
@@ -176,36 +177,10 @@ jobs:
         run: |
           gh issue create -R ${{ github.repository }} -t "Firestore-Regeln nicht übertragen (${GITHUB_SHA::7})" -b "Die Regeln haben alle Tests bestanden, konnten aber nicht nach Firebase übertragen werden. In Firebase gelten weiter die bisherigen Regeln. Details ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" -a furtschellas || true
 
-  deploy:
-    needs: [changes, test, rules]
-    if: always() && needs.changes.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.rules.result == 'success' || needs.rules.result == 'skipped')
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.d.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: site
-          path: .
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - id: d
-        uses: actions/deploy-pages@v4
-
   # results (only check names and ✓/✗) for App-Verwaltung → Log; also when the tests fail.
-  # Committed only AFTER the deployment, otherwise the two Pages deployments get in each other's way.
+  # GitHub Pages publishes from the branch main («Deploy from a branch»): this commit of the tested index.html IS the publication.
   results:
-    needs: [test, rules, deploy]
+    needs: [test, rules]
     # not when a newer push cancelled the tests: missing results would count as «crashed» and raise a false alarm
     if: always() && needs.test.result != 'cancelled' && needs.rules.result != 'cancelled' && (needs.test.result == 'success' || needs.test.result == 'failure' || needs.rules.result == 'success' || needs.rules.result == 'failure')
     runs-on: ubuntu-latest
