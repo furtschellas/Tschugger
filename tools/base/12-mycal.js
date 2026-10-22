@@ -35,6 +35,10 @@ function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https?:\/\/\
   const l=ls.find(hit);
   if(l){if(/^https:\/\//.test(String(l.map||"")))return l.map;const ad=[l.name].concat(arr(l.notes)).find(isA);if(ad)return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(ad)}
   const m=arr(S.locs).find(x=>{const k=fold(String(x&&x.name||""));return k&&(k===n||k.includes(n)||n.includes(k))&&/^https:\/\//.test(String(x.map||""))});if(m)return m.map;
+  /* Google search made more precise with the callsheet: the place (postcode and town) most of its addresses are in, e.g. «Hotel Elite, 3930 Visp» */
+  if(always&&!isA(txt)){const cnt=new Map();const scan=t=>{for(const m of String(t||"").matchAll(/\b(\d{4})\s+(\p{L}[\p{L}-]+(?:\s+\p{L}[\p{L}-]+)?)/gu)){const k=m[1]+" "+m[2];cnt.set(k,(cnt.get(k)||0)+1)}};
+    for(const x of ls){scan(x.name);arr(x.notes).forEach(scan);arr(x.items).forEach(i=>{scan(i&&i.text)})}
+    const reg=[...cnt.entries()].sort((a,b)=>b[1]-a[1])[0];if(reg&&!n.includes(fold(reg[0].split(" ").slice(1).join(" "))))return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(txt+", "+reg[0])}
   return always?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(txt):isA(txt)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(txt):""}
 function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   const out=[],people=mailPeople(),t=todayISO();
