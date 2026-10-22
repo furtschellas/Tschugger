@@ -62,22 +62,30 @@ window.cdApplyAll=()=>{if(!S.days0)return;S.days=cdTransform(S.days0);
   try{MEMO.clear()}catch(_){}};
 const cdKey=x=>norm(String(x||"")).replace(/pt.*$/,"");
 const cdDayKeys=d=>new Set([].concat(arr(d&&d.items),arr(d&&d.unit2&&d.unit2.items),arr(d&&d.unit3&&d.unit3.items)).filter(i=>i&&i.sc).map(i=>cdKey(i.sc)));
-function cdDispos(dispos0,days){const tc=cdTouched();if(!tc.size)return dispos0;
-  const keep=[],move=[];for(const x of dispos0){if(!tc.has(x.date))keep.push(x);else move.push(x)}
+function cdDispos(dispos0,days){
+  /* every callsheet belongs to the day of the Drehplan (with the Coverday changes) that has its scenes: it stays on its date when that day
+     has them (at least as many as any other day), else it goes to the day with most of them (at least half) – also after «Aufheben» */
+  const sh=days.filter(d=>d.kind==="shoot"),dk=new Map(sh.map(d=>[d.date,cdDayKeys(d)]));
+  const ksOf=x=>arr(x.scenes).map(r=>cdKey(r&&r.sc)).filter(Boolean),sc=(ks,dt)=>{const s=dk.get(dt);return s?ks.filter(k=>s.has(k)).length:0};
+  const keep=[],move=[];
+  for(const x of dispos0){const ks=ksOf(x);if(!ks.length){keep.push(x);continue}const own=sc(ks,x.date);
+    const better=sh.some(d=>d.date!==x.date&&sc(ks,d.date)>own&&sc(ks,d.date)>=Math.ceil(ks.length/2));(better?move:keep).push(x)}
+  if(!move.length)return dispos0;
   const taken=new Set(keep.map(x=>x.date)),out=keep.slice();
-  for(const x of move){const ks=arr(x.scenes).map(r=>cdKey(r&&r.sc)).filter(Boolean);if(!ks.length)continue;
-    let best=null,bs=0;for(const d of days){if(d.kind!=="shoot"||taken.has(d.date))continue;const dk=cdDayKeys(d);const hit=ks.filter(k=>dk.has(k)).length;
-      if(hit>bs||(hit===bs&&best&&d.date===x.date)){best=d;bs=hit}}
-    if(!best||bs<Math.max(1,Math.ceil(ks.length/2)))continue;taken.add(best.date);
-    out.push(best.date===x.date?x:Object.assign({},x,{date:best.date,cdFrom:x.date}))}
+  for(const x of move){const ks=ksOf(x);let best=null,bs=0;for(const d of sh){if(taken.has(d.date))continue;const v=sc(ks,d.date);if(v>bs){best=d;bs=v}}
+    if(!best||bs<Math.ceil(ks.length/2))continue;taken.add(best.date);out.push(Object.assign({},x,{date:best.date,cdFrom:x.date}))}
   /* the number in the title of every callsheet like the shooting day it belongs to now */
   const no=new Map(days.filter(d=>d.kind==="shoot").map(d=>[d.date,cdNo(d)]));
   return out.map(x=>{const n=no.get(x.date);return n!=null&&x.label&&/\d/.test(x.label)&&String(x.label).match(/\d+/)[0]!=String(n)&&+String(x.label).match(/\d+/)[0]!==n?Object.assign({},x,{label:cdSetNo(x.label,n)}):x}).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)}
 /* the date whose documents (Sides, Gefährdungsbeurteilung, Setfloorpläne) belong to a day now: they go with the callsheet,
    without a callsheet with the content of the day; null = the documents of this day went elsewhere */
-window.cdDocDate=date=>{if(!S.days0||S.days===S.days0)return date;const ds=arr(S.dispos),x=ds.find(c=>c.date===date);if(x)return x.cdFrom||date;
+window.cdDocDate=date=>{if(!S.days0)return date;const ds=arr(S.dispos),x=ds.find(c=>c.date===date);if(x)return x.cdFrom||date;
   if(ds.some(c=>c.cdFrom===date))return null;const d=arr(S.days).find(y=>y.date===date);if(d&&d.cdSrc)return d.cdSrc;
   return arr(S.days).some(y=>y.cdSrc===date&&y.date!==date)?null:date};
+/* check: every callsheet on a day whose scenes it has (dates where it does not fit, e.g. «24.10.») */
+function cdCsCheck(){const out=[];for(const x of arr(S.dispos)){const ks=arr(x.scenes).map(r=>cdKey(r&&r.sc)).filter(Boolean);if(!ks.length)continue;
+  const d=arr(S.days).find(y=>y.date===x.date),dk=cdDayKeys(d);if(ks.filter(k=>dk.has(k)).length<Math.ceil(ks.length/2))out.push(cdDD(x.date))}return out}
+window.cdCsCheck=cdCsCheck;
 /* the changes: one encrypted document (coverday/state), live for the crew */
 let CDSUBS=null;
 async function cdSub(){if(CDSUBS||!ME)return;try{const {F,db}=await fb();CDSUBS=F.onSnapshot(F.doc(db,"coverday","state"),async snap=>{let ops=[];
@@ -130,7 +138,7 @@ document.addEventListener("change",e=>{const t=e.target.closest&&e.target.closes
 document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.closest("[data-cdsave],[data-cdoff],[data-cdre]");if(!s||!cdCan()||CD.busy)return;e.preventDefault();
   if(s.dataset.cdsave!=null){const pv0=cdPreview(CD.form);if(!pv0.ok||!confirmSafe(L("Coverday-Änderung wirklich übernehmen? Sie gilt sofort für alle.")+"\n\n"+pv0.t))return}
   const ops=arr(window.CDOPS).slice();CD.busy=true;
-  try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(o){o.st="off";o.off=Date.now()}await cdSave(ops);showMsg(L("Änderung aufgehoben."),3000)}
+  try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(o){o.st="off";o.off=Date.now()}await cdSave(ops);const bad=cdCsCheck();showMsg(L("Änderung aufgehoben.")+" "+(bad.length?L("Achtung – Callsheet passt nicht zum Drehplan:")+" "+bad.join(", "):L("Callsheets geprüft: alle am richtigen Tag.")),bad.length?8000:4000)}
     else if(s.dataset.cdre!=null){const o=ops.find(x=>x.id===s.dataset.cdre);if(o){o.at=Date.now();o.raw=cdRaw(o,S.days0||[])}await cdSave(ops);showMsg(L("Änderung wieder angewendet."),3000)}
     else{const f=CD.form,pv=cdPreview(f);if(!pv.ok){CD.busy=false;return}const raw=S.days||S.days0,d=dt=>raw.find(x=>x.date===dt);
       const snap=f.op==="shift"?{a:cdScenes(d(f.a),f.u)}:{a:cdScenes(d(f.a),f.u),b:cdScenes(d(f.b),f.u)};
