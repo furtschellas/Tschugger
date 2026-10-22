@@ -75,6 +75,8 @@ function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_){}
       const pax=clean(r.passengers||r.people||"").split(/\s*,\s*/).filter(x=>x&&!cm.hit(x)).join(", ");   /* the others in the car */
       out.push({date:(how&&r.date)||dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:rideMap(r.from,dp),to:clean(r.to),toMap:rideMap(r.to,dp,true),src:"Callsheet",go:d.id||dp.date,ride:true,rid,noack:!!crew||!!how,drv:!!drv,
         driver:dn?dn+(dph?" "+dph:""):"",pax:pax&&!(how&&!r.passengers&&!r.people)?pax:"",note:clean(r.note||"")})}}}catch(_){}
+  /* Kostüm & Maske from the callsheets (tools/boot/31-costume.js) */
+  try{if(window.cmEvents)out.push(...window.cmEvents(me,t))}catch(_){}
   /* own and Google Calendar events (tools/boot/18-own-events.js); the same appointment twice (same day, same start, same title) is shown once */
   try{if(window.ownEvents){const tn=x=>fold(x||"").replace(/[^a-z0-9]+/g," ").trim(),same=(a,b)=>a.date===b.date&&(hm(a.t)||"")===(hm(b.t)||"")&&(()=>{const x=tn(a.n),y=tn(b.n);return x===y||(x.length>=4&&y.length>=4&&(x.includes(y)||y.includes(x)))})();
     for(const e of window.ownEvents(me))if(!out.some(o=>same(o,e)))out.push(e)}}catch(_){}
@@ -113,6 +115,7 @@ function renderMy0(){
     let last="";
     MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>';last=e.date}
       h+='<div class="mci"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.to?'<div class="ppl rto">'+esc(L("Ziel"))+': '+(e.toMap?'<a href="'+esc(safeUrl(e.toMap))+'" target="_blank" rel="noopener">'+esc(e.to)+'</a>':esc(e.to))+'</div>':'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.pax?'<div class="ppx">'+esc(L("Mitfahrende"))+': '+esc(e.pax)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+(()=>{/* a ride: its confirmation on the right instead of «in den Kalender» (the calendar stays when there is nothing to confirm) */
+        if(e.cm&&window.cmBtn){const cb=window.cmBtn(e.cm,e.date,e.n);if(cb)return cb}
         const ack=window.rideAckBtn?window.rideAckBtn(e):'';if(ack)return ack;
         return '<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>'})()+'</div>'})}
   return h+'</section>';

@@ -930,3 +930,12 @@ html body .gbox [data-gglw] .ggoogle{width:100%;box-sizing:border-box}
 .mypickbar .pillbtn{margin-left:auto}
 /* jump bar right below the day bar when both are stuck at the top: no gap (1 px under the day bar, which lies above it) */
 html body #view .csjump.csjump{top:calc(env(safe-area-inset-top,0px) + var(--striph,0px) - 1px)!important;margin-top:0!important}
+/* Kostüm / Maske: tick per entry, green when done */
+.mkw{display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:1px 4px}
+.mkw.cmok{background:color-mix(in srgb,#3fb950 22%,transparent);color:#3fb950}
+.mkw.cmok .mkd,.mkw.cmok .mki{color:#3fb950}
+button.cmk{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--accent);background:transparent;color:var(--accent);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;flex:none;vertical-align:middle}
+button.cmk.cmok,span.cmk.cmok{border-color:#3fb950;background:#3fb950;color:#fff}
+span.cmk{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center}
+.cmk svg{width:15px;height:15px}
+.cmk .cmc{width:8px;height:8px;border-radius:50%}
