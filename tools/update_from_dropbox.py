@@ -1263,6 +1263,62 @@ def apply_place_fixes(data):
                 cat.setdefault("items", []).append(dict(add))
 
 
+# ---------- Google My Maps (link «Karte» in the App-Verwaltung): points, lines and areas with layer and colour for the callsheet map ----------
+def google_map(url):
+    """KML of a shared My Maps map → {"l": [layer names], "f": [{"l": layer, "n": name, "d": text, "c": "#rrggbb", "g": "p"|"l"|"a", "x": [[lat, lng], …]}]};
+    None when there is no My Maps link (or it cannot be read – then the old data stays)"""
+    m = re.search(r"[?&]mid=([\w-]+)", url or "")
+    if not m or "google." not in (url or ""): return None
+    import xml.etree.ElementTree as ET, html as _html
+    r = requests.get("https://www.google.com/maps/d/kml", params={"mid": m.group(1), "forcekml": "1"}, timeout=40)
+    r.raise_for_status()
+    root = ET.fromstring(r.content)
+    ns = lambda t: "{http://www.opengis.net/kml/2.2}" + t
+    def txt(e, t):
+        x = e.find(ns(t)); return (x.text or "").strip() if x is not None and x.text else ""
+    styles = {}   # style id → colour (My Maps: «icon-1899-0288D1» / «line-000000-1200», else IconStyle/LineStyle aabbggrr)
+    for st in root.iter(ns("Style")):
+        sid = st.get("id") or ""; c = ""
+        for tag in ("IconStyle", "LineStyle", "PolyStyle"):
+            e = st.find(ns(tag))
+            if e is not None and txt(e, "color") and not c:
+                k = txt(e, "color"); c = "#" + k[6:8] + k[4:6] + k[2:4] if len(k) == 8 else ""
+        hm = re.search(r"-([0-9A-Fa-f]{6})(?:-|$)", sid)
+        styles["#" + sid] = ("#" + hm.group(1)) if hm else c
+    for sm in root.iter(ns("StyleMap")):
+        for pr in sm.findall(ns("Pair")):
+            if txt(pr, "key") == "normal": styles["#" + (sm.get("id") or "")] = styles.get(txt(pr, "styleUrl"), "")
+    def coords(e):
+        out = []
+        for t in (e.text or "").split():
+            v = t.split(",")
+            try: out.append([round(float(v[1]), 6), round(float(v[0]), 6)])
+            except Exception: pass
+        return out
+    def plain(h):
+        h = re.sub(r"<br\s*/?>", "\n", h or "", flags=re.I); h = re.sub(r"<[^>]+>", "", h)
+        return _html.unescape(h).strip()[:600]
+    layers, feats = [], []
+    def walk(e, layer):
+        for ch in e:
+            t = ch.tag.split("}")[-1]
+            if t == "Folder":
+                nm = txt(ch, "name") or "Ebene"
+                if nm not in layers: layers.append(nm)
+                walk(ch, nm)
+            elif t == "Placemark":
+                c = styles.get(txt(ch, "styleUrl"), "")
+                for g, tag in (("p", "Point"), ("l", "LineString"), ("a", "Polygon")):
+                    for geo in ch.iter(ns(tag)):
+                        cc = geo.find(".//" + ns("coordinates"))
+                        xy = coords(cc) if cc is not None else []
+                        if not xy: continue
+                        if g == "l" and len(xy) > 400: xy = xy[::max(1, len(xy) // 400)]
+                        feats.append({"l": layer, "n": txt(ch, "name")[:120], "d": plain(txt(ch, "description")), "c": c, "g": g, "x": xy if g != "p" else xy[:1]})
+            elif t == "Document": walk(ch, layer)
+    walk(root, "")
+    return {"l": layers, "f": feats[:1500]}
+
 def add_drive_times(data):
     """Anfahrt Crew-Hotel → erstes Motiv je Drehtag (Auto). Geocoding: OpenStreetMap/Nominatim, Route: OSRM.
     Ergebnisse werden in data.meta.geo/route gemerkt, damit nur neue Adressen abgefragt werden."""
@@ -2093,6 +2149,12 @@ def main():
     except Exception as e: log("2nd Unit zusätzlich nicht ergänzt:", type(e).__name__)
     try: apply_place_fixes(data)
     except Exception as e: log("Info-Ergänzungen nicht angewendet:", type(e).__name__)
+    try:   # the shared Google map (link «Karte»): its points for the callsheet map (App-Verwaltung: «Punkte der Google-Karte …»)
+        gm = google_map(cfg.get("mapUrl") or "")
+        if gm is None and not re.search(r"[?&]mid=", cfg.get("mapUrl") or ""): data.pop("gmap", None)
+        elif gm is not None:
+            if gm != data.get("gmap"): data["gmap"] = gm; log("Google-Karte:", len(gm["f"]), "Einträge in", len(gm["l"]), "Ebenen")
+    except Exception as e: log("Google-Karte nicht gelesen:", type(e).__name__)
     try: add_drive_times(data)
     except Exception as e: log("Anfahrt nicht berechnet:", type(e).__name__)
     if BLKS: BLKS.sync()   # R2: pictures first, so the new data never points to a picture that is not there yet

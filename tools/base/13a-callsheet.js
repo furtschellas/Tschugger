@@ -443,7 +443,17 @@ function csLocBox(c,l,date,NOW,NEAR){const mem=l._m||[l];const {DN,LAD}=csLocHea
 function csLocSec(c,x,me,SU,t){if(!vok("loc"))return"";   /* «Locations sehen» */const ls=csLocs(c),NOW=csNowLoc(c,x.date,ls),NEAR=csNear(c,ls,x.date);window.CSNOWK=NOW?NOW.no+'|'+NOW.name:'';
   const LG=csLocGroups(c,ls,x.date);
   return csSec("Locations",LG.length?LG.map(l=>csLocBox(c,l,x.date,NOW,NEAR)).join(""):"",true,"","loc","")}
-function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false)return"";   /* switched off in the app settings */let h="";
+/* points, lines and areas of the shared Google map near the places of the day (5 km); a point at a place already on the map (60 m or same name) is left out */
+function csGmFeat(pts,G){const gm=S.gmap;if(!gm||!Array.isArray(gm.f)||!pts.length)return[];
+  const d=(a,b)=>{const k=Math.PI/180,x=(b[1]-a[1])*k*Math.cos((a[0]+b[0])/2*k),y=(b[0]-a[0])*k;return Math.sqrt(x*x+y*y)*6371000};
+  const P=pts.map(p=>p.p),nm=v=>fold(String(v||"")).replace(/[^a-z0-9]/g,""),N=new Set(pts.map(p=>nm(p.n)).concat(pts.map(p=>nm(p.c))).filter(Boolean)),off=new Set((G.off||[]).map(String));
+  const out=[];for(const f of gm.f){if(!f||!Array.isArray(f.x)||!f.x.length||off.has(String(f.l||"")))continue;const xy=f.x.filter(q=>Array.isArray(q)&&q.length===2&&isFinite(q[0])&&isFinite(q[1]));if(!xy.length)continue;
+    if(!xy.some(q=>P.some(p=>d(p,q)<5000)))continue;
+    if(f.g==="p"&&(P.some(p=>d(p,xy[0])<60)||(nm(f.n)&&N.has(nm(f.n)))))continue;
+    if(f.g==="p"&&out.some(o=>o.g==="p"&&d(o.x[0],xy[0])<15&&nm(o.n)===nm(f.n)))continue;   /* the same point twice in the Google map */
+    out.push({g:f.g==="l"||f.g==="a"?f.g:"p",n:String(f.n||""),d:String(f.d||""),l:String(f.l||""),c:G.color!==false&&/^#[0-9a-f]{6}$/i.test(f.c||"")?f.c:"",x:f.g==="p"?[xy[0]]:xy})}
+  return out}
+function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false||!vok("csmap"))return"";   /* switched off in the app settings */let h="";
   {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const all=csRows(c),rows=all.filter(r=>r.sc);
    /* scene with start and end (= start of the next row of the shooting order) for the popup of a place */
    const span=r=>{const i=all.indexOf(r),a=hm(r.t),nx=all.slice(i+1).find(y=>hm(y.t));return [String(r.sc),a?a+(nx?"–"+hm(nx.t):""):""]};
@@ -462,7 +472,7 @@ function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false)return"";   /* switched
    /* places at the same point: the labels are stacked */
    pts.forEach((p,i)=>{p.k=pts.slice(0,i).filter(x=>x.p.join(",")===p.p.join(",")).length});
    const main=pts.filter(p=>!p.m);
-   if(pts.length)h+=csSec(L("Karte"),'<div class="csmapw"><button type="button" class="csmapbig" data-csmapbig aria-label="'+esc(L("Karte vergrössern"))+'" title="'+esc(L("Karte vergrössern"))+'">'+CSEXP+'</button><div class="csmap0" data-csmap="'+esc(JSON.stringify(pts))+'"></div>'+
+   if(pts.length)h+=csSec(L("Karte"),'<div class="csmapw"><button type="button" class="csmapbig" data-csmapbig aria-label="'+esc(L("Karte vergrössern"))+'" title="'+esc(L("Karte vergrössern"))+'">'+CSEXP+'</button><div class="csmap0" data-csmap="'+esc(JSON.stringify(pts))+'"'+(()=>{const G=window.GMAPSET||{};if(!G.on)return"";const f=csGmFeat(pts,G);return f.length?' data-csgm="'+esc(JSON.stringify(f))+'"':""})()+'></div>'+
      '<div class="csmapl">'+main.map(p=>'<button type="button" class="csmapgo" data-csmapgo="'+pts.indexOf(p)+'">'+(BH.has(p.c)?'<span class="csplace csbadge '+(/^L/.test(p.c)?'csmot':'csbase')+'">'+BH.get(p.c)+'</span>':'<span class="csplace">'+esc(p.c)+'</span>')+' '+esc(p.n)+(p.r?' <small class="csmapr">'+esc(L("ungefähr"))+'</small>':'')+'</button>').join("")+
      miss.map(p=>'<a class="csmapgo nopos" href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+' <small class="csmapr">'+esc(L("ohne Position – Google Maps"))+'</small></a>').join("")+'</div></div>',
      false,"","karte","")}
@@ -634,6 +644,11 @@ function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(
     const b=[];box.__mk=[];for(const p of pts){const lab=p.h||esc(p.c);   /* only the code on the map, the scenes with their times in the popup */
       const mk=LF.marker(p.p,{icon:LF.divIcon({className:"csmk"+(p.h?" csmkb":"")+(p.m?" min":"")+(p.r?" rough":""),html:'<span'+(p.k?'':' class="csmk0"')+' style="--k:'+(p.k||0)+'">'+lab+"</span>",iconSize:null}),zIndexOffset:p.m?0:1000}).addTo(m);
       mk.bindPopup("<b>"+esc(p.c)+"</b> "+esc(p.n)+(p.st&&p.st.length?'<div class="csmpst">'+p.st.map(x=>'<div><span class="csmpsc">'+esc(x[0])+'</span> '+esc(x[1])+'</div>').join("")+'</div>':(p.s?"<br>"+esc(L("Szenen"))+": "+esc(p.s):""))+(p.r?"<br><i>"+esc(L(p.r===2?"Position ungefähr beim Set":"Position ungefähr"))+"</i>":"")+(p.u?'<br><a href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer">Google Maps</a>':""));box.__mk.push(mk);b.push(p.p)}
+    /* the shared Google map: small round points, lines and areas in their colour; name, text and «Google Maps» in the popup (not used for the zoom) */
+    let gm=[];try{gm=JSON.parse(box.dataset.csgm||"[]")}catch(_){}
+    for(const f of gm){const col=f.c||"#8a8f98",pop="<b>"+esc(f.n||"")+"</b>"+(f.l?' <small>'+esc(f.l)+'</small>':"")+(f.d?'<div class="csgmd">'+esc(f.d).replace(/\n/g,"<br>")+'</div>':"")+'<br><a href="https://www.google.com/maps/search/?api=1&query='+f.x[0][0]+','+f.x[0][1]+'" target="_blank" rel="noopener noreferrer">Google Maps</a>';
+      const o=f.g==="l"?LF.polyline(f.x,{color:col,weight:3,opacity:.85}):f.g==="a"?LF.polygon(f.x,{color:col,weight:2,fillOpacity:.15}):LF.circleMarker(f.x[0],{radius:6,color:"#fff",weight:1.5,fillColor:col,fillOpacity:.95});
+      o.bindPopup(pop).addTo(m);if(f.g==="p"&&f.n)o.bindTooltip(esc(f.n),{direction:"top",offset:[0,-6]})}
     box.__b=b;csMapFit(box)}).catch(()=>{box.innerHTML='<p class="ghint">'+esc(L("Karte nicht verfügbar (offline?)."))+'</p>'})}
 /* all places of the day at one glance (also the small parking points); again after opening or enlarging (the size changed) */
 function csMapFit(box){const m=box&&box.__map,b=box&&box.__b;if(!m||!b||!b.length)return;m.invalidateSize();
