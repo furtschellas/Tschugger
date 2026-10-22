@@ -54,6 +54,25 @@ jobs:
         run: |
           M=$(date -u +%M); if [ $((10#$M % 30)) -ge 10 ]; then echo "Google Kalender: nächster Abgleich zur halben/vollen Stunde"; exit 0; fi
           python tools/gcal_sync.py
+      # Szenen-Protokoll → Google Sheet (Einstellungen → «Szenen-Protokoll in Google Sheets»); writes only when something changed
+      - name: Szenen-Sheet-Stand holen
+        uses: actions/cache/restore@v4
+        with:
+          path: sheet.json
+          key: scene-sheet-${{ github.run_id }}
+          restore-keys: scene-sheet-
+      - name: Szenen-Protokoll ins Google Sheet
+        continue-on-error: true
+        env:
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: python tools/scene_sheet.py
+      - name: Szenen-Sheet-Stand merken
+        if: always() && hashFiles('sheet.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: sheet.json
+          key: scene-sheet-${{ github.run_id }}
       - name: Verschickte merken
         if: always()
         uses: actions/cache/save@v4
