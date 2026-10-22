@@ -1177,4 +1177,5 @@ Object.assign(I18N,{
  "Sheet nicht gefunden – Link prüfen.":{fr:"Feuille introuvable – vérifier le lien.",it:"Foglio non trovato – controllare il link.",en:"Sheet not found – check the link.",hi:"शीट नहीं मिली – लिंक जांचें।"},
  "Unbekannter Fehler":{fr:"Erreur inconnue",it:"Errore sconosciuto",en:"Unknown error",hi:"अज्ञात त्रुटि"},
  "Szenen-Protokoll in Google Sheets öffnen":{fr:"Ouvrir le journal des scènes dans Google Sheets",it:"Aprire il registro scene in Google Sheets",en:"Open the scene log in Google Sheets",hi:"Google Sheets में सीन लॉग खोलें"},
+ "Dreh":{fr:"Tournage",it:"Riprese",en:"Shoot",hi:"शूट"},
 });
