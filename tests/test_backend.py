@@ -173,13 +173,15 @@ check("Push-Versand: nur an Rollen der Nachricht (Catering bekommt den Drehplan 
 check("Push-Versand: abbestellte Art wird nicht geschickt", eps.count("https://push/crew") == 1, eps)
 check("Push-Versand: Text in der Sprache des Geräts", any(d["title"] == "TF" for e, d in calls if e == "https://push/crew"))
 check("Push-Versand: Bild je nach Thema (Änderung → Pfeile)", all(d.get("icon") == "change" for e, d in calls if d.get("tag", "").startswith("b")))
-# Coverday: reminders of a device that does not know the newest change are held back on the changed days only
-fs.d["coverday/state"] = {"c": enc({"ops": [{"op": "swap", "a": "2031-03-02", "b": "2031-03-03", "st": "on"}, {"op": "move", "a": "2031-03-09", "b": "2031-03-10", "st": "off"}]}), "at": 5000}
+# Coverday: reminders of a device computed before a change (applied, applied again or cancelled) are held back on the days of that change only
+fs.d["coverday/state"] = {"c": enc({"ops": [{"op": "swap", "a": "2031-03-02", "b": "2031-03-03", "st": "on", "at": 5000},
+                                             {"op": "move", "a": "2031-03-09", "b": "2031-03-10", "st": "off", "at": 1000, "off": 4000},
+                                             {"op": "move", "a": "2031-03-12", "b": "2031-03-13", "st": "off", "at": 500, "off": 900}]}), "at": 5000}
 cdv = P.coverday(KEY)
 ts = lambda d, h=10: int(datetime.datetime(*map(int, d.split("-")), h, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=1))).timestamp() * 1000)
-st = [P.cd_stale({"start": ts(d)}, {"cd": v}, cdv) for d, v in (("2031-03-02", 0), ("2031-03-03", 4999), ("2031-03-04", 0), ("2031-03-09", 0), ("2031-03-02", 5000))]
-check("Push-Versand: Coverday – Erinnerungen eines Geräts ohne die neueste Änderung an geänderten Tagen zurückgehalten, sonst normal", (cdv[0], sorted(cdv[1]), st) == (5000, ["2031-03-02", "2031-03-03"], [True, True, False, False, False]), (cdv, st))
-fs.d["coverday/state"] = {"c": enc({"ops": [{"op": "shift", "a": "2031-03-05", "st": "on"}]}), "at": 7000}
+st = [P.cd_stale({"start": ts(d)}, {"cd": v}, cdv) for d, v in (("2031-03-02", 0), ("2031-03-03", 4999), ("2031-03-04", 0), ("2031-03-02", 5000), ("2031-03-09", 3000), ("2031-03-10", 4500), ("2031-03-12", 3000))]
+check("Push-Versand: Coverday – Erinnerungen eines Geräts ohne die neueste Änderung (auch Aufheben) an deren Tagen zurückgehalten, sonst normal", (cdv[0], st) == (5000, [True, True, False, False, True, False, False]), (cdv, st))
+fs.d["coverday/state"] = {"c": enc({"ops": [{"op": "shift", "a": "2031-03-05", "st": "on", "at": 7000}]}), "at": 7000}
 cdv = P.coverday(KEY)
 check("Push-Versand: Coverday Nachrücken – alle Tage ab dem Datum", [P.cd_stale({"start": ts(d)}, {}, cdv) for d in ("2031-03-04", "2031-03-05", "2031-03-20")] == [False, True, True])
 fs.d.pop("coverday/state", None)

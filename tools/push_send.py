@@ -37,26 +37,27 @@ dec = fsadmin.dec_json
 # last sent its reminders («cd» older than coverday/state «at»), its reminders on the changed days may show the wrong day:
 # they are not sent (the device sends correct ones as soon as the app is opened).
 def coverday(key):
-    """(version «at», dates touched by the active changes, first date of a «Nachrücken» – from there all later days count)"""
+    """(version «at», changes as [(time of the last change of it – applied, applied again or cancelled), dates, first date of a «Nachrücken»])"""
     try:
         f = fsadmin.get_doc("coverday/state") or {}
-        if not f.get("c"): return 0, set(), None
+        if not f.get("c"): return 0, []
         ops = (dec(key, f["c"]) or {}).get("ops") or []
     except Exception as e:
-        _note("Coverday nicht lesbar", e); return 0, set(), None
-    ds, shift = set(), None
+        _note("Coverday nicht lesbar", e); return 0, []
+    out = []
     for o in ops:
-        if not isinstance(o, dict) or o.get("st") == "off": continue
-        for k in ("a", "b"):
-            if o.get(k): ds.add(str(o[k]))
-        if o.get("op") == "shift" and o.get("a"): shift = min(shift or o["a"], o["a"])
-    return int(f.get("at") or 0), ds, shift
+        if not isinstance(o, dict): continue
+        t = max(int(o.get("at") or 0), int(o.get("off") or 0))
+        out.append((t, {str(o[k]) for k in ("a", "b") if o.get(k)}, o.get("a") if o.get("op") == "shift" else None))
+    return int(f.get("at") or 0), out
 
 
 def cd_stale(item, p, cd):
-    """True: reminder of a device without the newest Coverday changes, on a changed day – not sent"""
-    at, ds, shift = cd
-    if not at or int(p.get("cd") or 0) >= at: return False
+    """True: reminder of a device that computed it before a Coverday change (applied, applied again or cancelled) on a day of that
+    change – it may show the wrong day; not sent (the device sends correct ones as soon as the app is opened)"""
+    at, ops = cd
+    dev = int(p.get("cd") or 0)
+    if not at or dev >= at: return False
     st = (item.get("start") or item.get("at") or 0) / 1000
     try:
         from zoneinfo import ZoneInfo
@@ -64,7 +65,7 @@ def cd_stale(item, p, cd):
         day = _dt.datetime.fromtimestamp(st, ZoneInfo("Europe/Zurich")).strftime("%Y-%m-%d")
     except Exception:
         day = time.strftime("%Y-%m-%d", time.gmtime(st))
-    return day in ds or bool(shift and day >= shift)
+    return any(t > dev and (day in ds or (sh and day >= sh)) for t, ds, sh in ops)
 
 
 def vapid_keys(key):
