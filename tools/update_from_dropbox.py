@@ -961,6 +961,11 @@ def cs_known_hint(data):
             + "; ".join(lines)[:6000]
             + "\nRäume der Base (z. B. «Greenroom Cast@base», «Prod + DIT: Room at base», «WC … @base») sind items der Location mit label und text wie im Dokument, keine eigene Location.")
 
+CS_BASE = ("\nBASE: Es gibt pro Location höchstens EINE Base. Die Zeile der Base (z. B. «BASE LAKE: W / H / M Cast / Extras / Lunch, Route … 20 – PLZ Ort» mit Kartenlink) "
+           "ist EIN item mit label = Name der Base (z. B. «BASE LAKE») und text = Nutzung, Adresse (z. B. «W / H / M Cast / Extras / Lunch, Route … 20 – PLZ Ort») und map = ihr Kartenlink. "
+           "Räume und Einrichtungen an der Base (Greenroom, Prod/DIT-Raum, WC @base, Zelt) sind eigene items mit label wie im Dokument und dem Zusatz «@base» im label, "
+           "ohne map, nie als eigene Location und nie mit dem Wort Base im label ausser als «@base».")
+
 def cs_fill_places(cs, data):
     """map links that the callsheet leaves out: from the Motivliste or an earlier callsheet with the same place name (never overwritten)"""
     k = known_places(data); n = 0
@@ -1613,16 +1618,16 @@ def main():
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 4 for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
+        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 5 for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
             # the callsheet in two parts (one answer was too long): A = head … vehicles, B = transport … calls
             blk = pdf_block(dbx.download(f["id"]))
-            a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A + cs_known_hint(data), 32000)
+            a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A + CS_BASE + cs_known_hint(data), 32000)
             b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000)
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
-            cs["v"] = 4   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date; 4: places learnt (names, base rooms, map links)
+            cs["v"] = 5   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date; 4: places learnt (names, base rooms, map links); 5: one base with its rooms
             nf = cs_fill_places(cs, data)
             if nf: log("Callsheet: Kartenlinks ergänzt:", nf)
             md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
@@ -1644,6 +1649,12 @@ def main():
                     d["id"] = d["date"]; d["_mod"] = f["modified"]; dispos[d["date"]] = d; changed = True
                     cs = d.get("cs") if isinstance(d.get("cs"), dict) else {}
                     n = lambda k: len(cs.get(k) or []) if isinstance(cs.get(k), list) else 0
+                    def _cat(t):
+                        t = str(t or "").lower()
+                        for k, rx in (("@base", r"@\s*base|\bat base|on base"), ("base", r"\bbase\b"), ("whm", r"w\s*/\s*h\s*/\s*m"), ("lunch", r"lunch|mittag"), ("park", r"park"), ("wc", r"\bwc\b"), ("prod", r"\bprod|\bdit\b"), ("loc", r"location|set")):
+                            if re.search(rx, t): return k
+                        return "x"
+                    print("::notice::Callsheet %s Locations-Struktur: %s" % (d["date"], " | ".join("L%s:%s" % (str(l.get("no") or "?")[:3], ",".join(_cat(i.get("label")) + ("M" if i.get("map") else "") for i in (l.get("items") or []) if isinstance(i, dict))) for l in (cs.get("locations") or []) if isinstance(l, dict))[:600]))
                     print("::notice::Callsheet %s eingelesen: Locations %d · Drehfolge %d · Cast %d · Komparsen %d · Transport %d · Abteilungen %d · Calls %d · Vorschau %d"
                           % (d["date"], n("locations"), len((cs.get("order") or {}).get("rows") or []), n("cast"), n("extras"), n("transport"), n("depts"), n("calls"), len((cs.get("prevision") or {}).get("rows") or [])))
                     if d["date"] >= TODAY and (not prev or cs_sig(prev) != cs_sig(d)): NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})

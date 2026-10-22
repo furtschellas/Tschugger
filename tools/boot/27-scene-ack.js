@@ -49,9 +49,9 @@ window.scAckBtn=(date,sc,u)=>{if(!date||!sc||window.SCACKON===false)return"";   
   const ico=st===1&&scBase(sc)==="lunch"?SC_ICO.lunch:st===2&&scBase(sc)==="wrap"?SC_ICO.wrap:(SC_ICO[st]||"");
   return '<span class="scackw">'+lab0+(can?'<button type="button" class="scack sk'+st+'" data-scack="'+esc(date)+'|'+esc(String(sc))+'|'+esc(u)+'" aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+ico+'</button>'
     :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+ico+'</span>')+'</span>'};
-/* live for everybody: the quittances from yesterday on */
-async function scAckSub(){if(SCSUB||typeof ME==="undefined"||!ME)return;try{const {F,db}=await fb();const y=new Date(Date.now()-864e5),from=y.getFullYear()+"-"+pad2(y.getMonth()+1)+"-"+pad2(y.getDate());
-  SCSUB=F.onSnapshot(F.query(F.collection(db,"sceneack"),F.where("d",">=",from)),q=>{const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;scRender()}},()=>{SCSUB=null})}catch(_){SCSUB=null}}
+/* live for everybody: all quittances (also past shooting days keep their ticks in the Drehplan and callsheet) */
+async function scAckSub(){if(SCSUB||typeof ME==="undefined"||!ME)return;try{const {F,db}=await fb();
+  SCSUB=F.onSnapshot(F.collection(db,"sceneack"),q=>{const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;scRender()}},()=>{SCSUB=null})}catch(_){SCSUB=null}}
 setTimeout(scAckSub,3000);setInterval(()=>{if(!SCSUB)scAckSub()},60e3);
 /* the scene running in a unit on that day (other than this one): its scene number, else "" */
 function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCACK))if(x&&x.d===date&&x.s===1&&String(x.u||"1")===String(u||"1")&&id!==except)return x.sc||id.split("-").slice(1).join("-");return""}
