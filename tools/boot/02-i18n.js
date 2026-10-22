@@ -1197,4 +1197,5 @@ Object.assign(I18N,{
  "Name und Adresse, z. B. oben rechts im Szenen-Protokoll (PDF).":{fr:"Nom et adresse, p. ex. en haut à droite du journal des scènes (PDF).",it:"Nome e indirizzo, ad es. in alto a destra nel registro scene (PDF).",en:"Name and address, e.g. top right in the scene log (PDF).",hi:"नाम और पता, जैसे सीन लॉग (PDF) में ऊपर दाईं ओर।"},
  "Name der Produktionsfirma":{fr:"Nom de la société de production",it:"Nome della casa di produzione",en:"Name of the production company",hi:"प्रोडक्शन कंपनी का नाम"},
  "Adresse":{fr:"Adresse",it:"Indirizzo",en:"Address",hi:"पता"},
+ "Alle Units":{fr:"Toutes les unités",it:"Tutte le unità",en:"All units",hi:"सभी यूनिट"},
 });
