@@ -930,6 +930,50 @@ def cs_scene_list(txt):
     return out
 
 
+# ---------- locations of a callsheet: learnt from the Motivliste and the callsheets read before ----------
+def _lk(x):
+    """key of a place name: lower case, without accents, only letters and digits («Lake – Shore» = «LAKE - SHORE»)"""
+    import unicodedata
+    t = unicodedata.normalize("NFKD", str(x or "")).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]", "", t)
+
+def known_places(data):
+    """the places known so far: sets of the Motivliste (name, address, map) and the locations / base lines of earlier callsheets"""
+    out = {}
+    for l in data.get("locations") or []:
+        if not isinstance(l, dict) or not l.get("name"): continue
+        out.setdefault(_lk(l["name"]), {"name": l["name"], "address": ", ".join(x for x in (l.get("venue"), l.get("address")) if x), "map": l.get("map") or ""})
+    for d in sorted(data.get("dispos") or [], key=lambda d: d.get("date") or ""):   # the newest callsheet wins
+        for l in ((d.get("cs") or {}).get("locations") or []):
+            if not isinstance(l, dict): continue
+            if l.get("name") and l.get("map"): out[_lk(l["name"])] = dict(out.get(_lk(l["name"]), {}), name=l["name"], map=l["map"])
+            for i in l.get("items") or []:
+                if isinstance(i, dict) and i.get("label") and i.get("map") and re.search(r"(?i)\bbase\b|w\s*/\s*h\s*/\s*m|lunch|parking", str(i.get("label"))):
+                    out[_lk(i["label"])] = {"name": i["label"], "address": str(i.get("text") or "")[:120], "map": i["map"]}
+    return out
+
+def cs_known_hint(data):
+    """for the prompt: the names used so far, so that the same place keeps its name (nothing is taken over that is not in the document)"""
+    k = known_places(data)
+    if not k: return ""
+    lines = ["%s%s" % (v.get("name"), (" – " + v["address"]) if v.get("address") else "") for v in list(k.values())[:80]]
+    return ("\nBEKANNTE ORTE (Motivliste und frühere Callsheets; nur damit derselbe Ort gleich heisst – nichts übernehmen, was nicht im Dokument steht): "
+            + "; ".join(lines)[:6000]
+            + "\nRäume der Base (z. B. «Greenroom Cast@base», «Prod + DIT: Room at base», «WC … @base») sind items der Location mit label und text wie im Dokument, keine eigene Location.")
+
+def cs_fill_places(cs, data):
+    """map links that the callsheet leaves out: from the Motivliste or an earlier callsheet with the same place name (never overwritten)"""
+    k = known_places(data); n = 0
+    for l in cs.get("locations") or []:
+        if not isinstance(l, dict): continue
+        hit = k.get(_lk(l.get("name")))
+        if hit and hit.get("map") and not l.get("map"): l["map"] = hit["map"]; n += 1
+        for i in l.get("items") or []:
+            if isinstance(i, dict) and not i.get("map") and i.get("label"):
+                h2 = k.get(_lk(i["label"]))
+                if h2 and h2.get("map") and _lk(i.get("text"))[:12] and _lk(h2.get("address"))[:12] == _lk(i.get("text"))[:12]: i["map"] = h2["map"]; n += 1
+    return n
+
 def cs_to_dispo(cs, date, f):
     """the fields the rest of the app uses (Today, Meine Termine, push) taken from the structure «cs»"""
     t = cs.get("times") or {}
@@ -1569,16 +1613,18 @@ def main():
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 3 for v in dispos.values())   # read before the full structure / translation / travel dates: again
+        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 4 for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
             # the callsheet in two parts (one answer was too long): A = head … vehicles, B = transport … calls
             blk = pdf_block(dbx.download(f["id"]))
-            a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A, 32000)
+            a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A + cs_known_hint(data), 32000)
             b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000)
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
-            cs["v"] = 3   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date
+            cs["v"] = 4   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date; 4: places learnt (names, base rooms, map links)
+            nf = cs_fill_places(cs, data)
+            if nf: log("Callsheet: Kartenlinks ergänzt:", nf)
             md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
             date = str(cs.pop("date", "") or "") or (md and "%s-%s-%s" % md.groups()) or ""
             # locations and production information in the languages of the app (names, places and streets stay as they are)
