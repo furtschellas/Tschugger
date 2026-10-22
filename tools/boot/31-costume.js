@@ -1,6 +1,6 @@
 /* ---------- Kostüm & Maske from the callsheet (cast table, columns Kostüm / Maske, e.g. «Marina 07:55 - 08:10 15’; Anna 08:10 - 08:30»):
    every entry is an appointment in «Meine Termine» (with push reminder) for the person of Kostüm / Maske named in the column head and for
-   the actor; with the right «Kostüm/Maske quittieren» (cm.ack) it is ticked off in the callsheet or in Meine Termine – then it is green.
+   the actor; with the right «Kostüm quittieren» (wardrobe.ack) / «Maske quittieren» (makeup.ack) it is ticked off in the callsheet or in Meine Termine – then it is green.
    The tick is stored like the rides (rideack/{id}, id = check sum, no names) ---------- */
 const CMK={w:"Kostüm",m:"Maske"};
 /* after a tick: draw again without moving the page (the open parts and the scroll position stay) */
@@ -15,13 +15,14 @@ const cmId=(date,k,r,t)=>{const s=[date,k,String(r&&(r.no||r.role)||"").trim(),t
 /* state of a cast entry: 0 open, 1 active (running now), 2 done */
 const cmSt=id=>{const x=window.RIDEACK&&window.RIDEACK[id];return x?(x.s===1?1:2):0};
 const cmDone=id=>cmSt(id)===2;window.cmSt=cmSt;
-const cmCan=()=>{try{return typeof canPerm==="function"&&canPerm("cm.ack")}catch(_){return false}};
+/* rights: Kostüm times «Kostüm quittieren» (wardrobe.ack), Maske times «Maske quittieren» (makeup.ack); Call, Base and On set with either of them */
+const cmCan=k=>{try{if(typeof canPerm!=="function")return false;return k==="w"?canPerm("wardrobe.ack"):k==="m"?canPerm("makeup.ack"):(canPerm("wardrobe.ack")||canPerm("makeup.ack"))}catch(_){return false}};
 window.cmDone=cmDone;window.cmId=cmId;window.cmParse=cmParse;
 /* the button / mark of one entry (callsheet and Meine Termine) */
-window.cmBtn=(id,date,label)=>{const ok=cmDone(id),tip=ok?L("Erledigt – antippen = zurücksetzen"):L("Offen – antippen = erledigt");
-  if(!cmCan())return ok?'<span class="cmk cmok" title="'+esc(L("Erledigt"))+'">'+(window.RIDE_ICO?RIDE_ICO[1]:"✓")+'</span>':"";
-  return '<button type="button" class="cmk'+(ok?' cmok':'')+'" data-cmack="'+esc(id)+'" data-cmd="'+esc(date)+'" aria-label="'+esc((label?label+" – ":"")+tip)+'" title="'+esc(tip)+'">'+(ok&&window.RIDE_ICO?RIDE_ICO[1]:'<span class="cmc"></span>')+'</button>'};
-document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cmack]");if(!b)return;e.preventDefault();e.stopPropagation();if(!cmCan())return;
+window.cmBtn=(id,date,label,k)=>{const ok=cmDone(id),tip=ok?L("Erledigt – antippen = zurücksetzen"):L("Offen – antippen = erledigt");
+  if(!cmCan(k))return ok?'<span class="cmk cmok" title="'+esc(L("Erledigt"))+'">'+(window.RIDE_ICO?RIDE_ICO[1]:"✓")+'</span>':"";
+  return '<button type="button" class="cmk'+(ok?' cmok':'')+'" data-cmack="'+esc(id)+'" data-cmd="'+esc(date)+'" data-cmk="'+esc(k||"")+'" aria-label="'+esc((label?label+" – ":"")+tip)+'" title="'+esc(tip)+'">'+(ok&&window.RIDE_ICO?RIDE_ICO[1]:'<span class="cmc"></span>')+'</button>'};
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cmack]");if(!b)return;e.preventDefault();e.stopPropagation();if(!cmCan(b.dataset.cmk))return;
   const id=b.dataset.cmack,done=cmDone(id);b.disabled=true;
   try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);
     if(done){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cmd,at:Date.now(),s:2};await F.setDoc(ref,v);window.RIDEACK[id]=v}
@@ -34,13 +35,13 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
       for(const p of cmParse(v,c)){const mine=p.who&&cm.hit(p.who),actor=r.actor&&cm.hit(r.actor);if(!mine&&!actor)continue;
         const id=cmId(dp.date,k,r,p.t);
         out.push({date:dp.date,t:p.t,end:p.end,n:L(CMK[k])+": "+(mine?[r.role,r.actor&&"("+r.actor+")"].filter(Boolean).join(" "):[r.role,p.who&&L("bei")+" "+p.who].filter(Boolean).join(" · ")),
-          where,map,src:"Callsheet",go:d.id||dp.date,cm:id})}}}
+          where,map,src:"Callsheet",go:d.id||dp.date,cm:id,cmk:k})}}}
   return out};
 /* ---------- Cast quittieren (callsheet, cast table): P/UP, Call, Kostüm and Maske – the time itself is the tick: underlined = open,
    pink with white time = running (ride accepted), not underlined = done (green). Tap: open → running → done → open.
-   Call / Kostüm / Maske with «Cast quittieren» (cm.ack); P/UP is not tapped here – it shows the state of the ride (Fahrten quittieren) ---------- */
+   Kostüm with «Kostüm quittieren», Maske with «Maske quittieren», Call / Base / On set with either; P/UP is not tapped here – it shows the state of the ride (Fahrten quittieren) ---------- */
 const cqCanRide=()=>{try{return canPerm("rides.confirm")||canPerm("rides.manage")}catch(_){return false}};
-window.cqLink=(kind,id,date,t)=>{const st=kind==="p"?(window.rideState?rideState(id):0):cmSt(id),can=kind==="p"?false:cmCan();   /* P/UP follows the ride quittance only (no tap here) */
+window.cqLink=(kind,id,date,t)=>{const st=kind==="p"?(window.rideState?rideState(id):0):cmSt(id),can=kind==="p"?false:cmCan(kind);   /* P/UP follows the ride quittance only (no tap here) */
   const cls="cql cq"+st,tip=kind==="c"?(st?L("Angekommen – antippen = zurücksetzen"):L("Offen – antippen = angekommen")):kind==="p"?[L("Fahrt offen – antippen = annehmen"),L("Fahrt läuft – antippen = ausgeführt"),L("Fahrt ausgeführt – antippen = zurücksetzen")][st]:[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")][st];
   if(!can)return '<span class="'+cls+' cqro" title="'+esc([L("Offen"),L("Läuft"),L("Erledigt")][st])+'">'+esc(t)+'</span>';
   return '<button type="button" class="'+cls+'" data-cqk="'+kind+'" data-cqid="'+esc(id)+'" data-cqd="'+esc(date)+'" title="'+esc(tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>'};
@@ -61,7 +62,7 @@ window.cqCall=(c,r)=>{const t=hm(r&&r.call);if(!t||!c._date)return null;if(cqArr
   if(ride){const st=window.rideState&&rideState(rideId(c._date,ride))===2?2:0;return {h:'<span class="cql cq'+st+' cqro" title="'+esc(st?L("Angekommen (Fahrt ausgeführt)"):L("Folgt der Fahrt"))+'">'+esc(String(r.call))+'</span>'}}
   return {h:window.cqLink("c",cmId(c._date,"c",r,t),c._date,String(r.call))}};
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cqk]");if(!b)return;e.preventDefault();e.stopPropagation();
-  const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="x"?!cqMan():k==="p"?!cqCanRide():!cmCan())return;b.disabled=true;
+  const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="x"?!cqMan():k==="p"?!cqCanRide():!cmCan(k))return;b.disabled=true;
   try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),cur=b.dataset.cqcur!=null?+b.dataset.cqcur:st,nx=k==="c"?(st?0:2):k==="b"?(st===2?0:2):(cur+1)%3;   /* Kostüm/Maske: open → running (pink) → done; Call: open → arrived */
     if(!nx){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cqd,at:Date.now(),s:nx};await F.setDoc(ref,v);window.RIDEACK[id]=v}
     try{MEMO.clear()}catch(_){}cqKeep()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
@@ -70,7 +71,7 @@ function cqAllDone(c,r){let n=0;for(const k of ["w","m"])for(const p of cmParse(
 window.cqBase=(c,r)=>{const t=hm(r&&r.base);if(!t||!c||!c._date||!cqAllDone(c,r))return null;const id=cmId(c._date,"b",r,t);
   {const o=hm(r.onset)?cqOnsetInfo(c,r):null;if(o&&(o.st>0||o.rs===2))return {h:'<span class="cql cq2 cqro" title="'+esc(L("Erledigt"))+'">'+esc(String(r.base))+'</span>'}}   /* On set started: Base done */
   const st=cmSt(id)===2?2:1;
-  if(!cmCan())return {h:'<span class="cql cq'+st+' cqro" title="'+esc(st===2?L("Erledigt"):L("Läuft"))+'">'+esc(String(r.base))+'</span>'};
+  if(!cmCan("b"))return {h:'<span class="cql cq'+st+' cqro" title="'+esc(st===2?L("Erledigt"):L("Läuft"))+'">'+esc(String(r.base))+'</span>'};
   const tip=st===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
   return {h:'<button type="button" class="cql cq'+st+'" data-cqk="b" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(r.base+" – "+tip)+'">'+esc(String(r.base))+'</button>'}};
 /* On set: the ride of the actor from the Base to the set – accepted: pink frame around the time; ride done: On set pink (running), tap = done (green) */
@@ -85,7 +86,7 @@ window.cqOnset=(c,r)=>{if(!hm(r&&r.onset)||!c||!c._date)return null;const {id,st
   const cur=st===2?2:(st===1||rs===2)?1:(all?0:-1);
   if(cur<0)return rs===1?{h:'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>'}:null;
   const tip=[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")][cur];
-  if(!cmCan())return {h:'<span class="cql cq'+cur+' cqro" title="'+esc(tip)+'">'+esc(t)+'</span>'};
+  if(!cmCan("o"))return {h:'<span class="cql cq'+cur+' cqro" title="'+esc(tip)+'">'+esc(t)+'</span>'};
   return {h:'<button type="button" class="cql cq'+cur+'" data-cqk="o" data-cqcur="'+cur+'" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>'}};
 /* «Cast manuell quittieren» (cast.manual): every time of the cast can be ticked by hand, also P/UP, Call with a ride, Base and On set
    before Kostüm and Maske are done. A hand tick is stored on its own (id kind «x…») and wins over the automatic state */

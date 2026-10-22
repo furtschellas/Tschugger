@@ -101,7 +101,7 @@ const TOUR_STEPS=[
   {tab:"dispo",sel:"#view #cs-karte",need:()=>window.CSMAPON!==false&&vok("csmap"),t:"Callsheet-Karte",x:"Alle Orte des Tages auf einer Karte – auf Wunsch mit den Punkten, Wegen und Flächen der Google-Karte der Produktion."},
   {tab:"dispo",sel:"#view #cs-loc",t:"Locations im Callsheet",x:"Jeder Drehort mit Karte, Floorplan und Szenen; die Base mit ihren Räumen (Greenroom, W/H/M, Prod, WC) als ein Ort. Der pinke Rahmen zeigt, wo gerade gedreht wird."},
   {tab:"loc",sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
-  {tab:"dispo",sel:"#view #cs-cast",need:()=>vok("dispo"),t:"Cast quittieren",x:"Unterstrichene Zeiten sind offen. Mit dem Recht «Cast quittieren» tippst du Call, Kostüm oder Maske an: pink = läuft, grün = erledigt. P/UP folgt der Fahrt; sind Kostüm und Maske fertig, wird Base pink."},
+  {tab:"dispo",sel:"#view #cs-cast",need:()=>vok("dispo"),t:"Cast quittieren",x:"Unterstrichen ist, was du abschliessen kannst: mit «Kostüm quittieren» bzw. «Maske quittieren» tippst du die Zeit an – pink = läuft, weiss = erledigt. P/UP folgt der Fahrt; sind Kostüm und Maske fertig, wird Base pink bis On Set."},
   {tab:"loc",sel:"#view .mapbtn",t:"Karte",x:"«Map» öffnet die Karte mit allen Drehorten – praktisch für die Anfahrt."},
   {tab:"loc",sel:"#scall",t:"Szenen",x:"«Szenen» klappt bei allen Motiven die Szenen auf oder zu – so siehst du auf einen Blick, was wo gedreht wird."},
   {tab:"loc",sel:"#view .lch",t:"Ein Motiv",x:"Tippe auf ein Motiv: Adresse, Karte, Floorplans und die Szenen, die dort gedreht werden."},
