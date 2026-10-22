@@ -60,25 +60,28 @@ window.cqCall=(c,r)=>{const t=hm(r&&r.call);if(!t||!c._date)return null;if(cqArr
   return {h:window.cqLink("c",cmId(c._date,"c",r,t),c._date,String(r.call))}};
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cqk]");if(!b)return;e.preventDefault();e.stopPropagation();
   const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="p"?!cqCanRide():!cmCan())return;b.disabled=true;
-  try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),nx=k==="c"?(st?0:2):k==="b"?(st===2?0:2):(st+1)%3;   /* Kostüm/Maske: open → running (pink) → done; Call: open → arrived */
+  try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),cur=b.dataset.cqcur!=null?+b.dataset.cqcur:st,nx=k==="c"?(st?0:2):k==="b"?(st===2?0:2):(cur+1)%3;   /* Kostüm/Maske: open → running (pink) → done; Call: open → arrived */
     if(!nx){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cqd,at:Date.now(),s:nx};await F.setDoc(ref,v);window.RIDEACK[id]=v}
     try{MEMO.clear()}catch(_){}render()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
 /* Base: when Kostüm and Maske are both done, the base time is the running step (pink); tap = done (green) – before that plain text */
 function cqAllDone(c,r){let n=0;for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c)){n++;if(cmSt(cmId(c._date,k,r,p.t))!==2)return false}return n>0}
-window.cqBase=(c,r)=>{const t=hm(r&&r.base);if(!t||!c||!c._date||!cqAllDone(c,r))return null;const id=cmId(c._date,"b",r,t),st=cmSt(id)===2?2:1;
+window.cqBase=(c,r)=>{const t=hm(r&&r.base);if(!t||!c||!c._date||!cqAllDone(c,r))return null;const id=cmId(c._date,"b",r,t);
+  {const o=hm(r.onset)?cqOnsetInfo(c,r):null;if(o&&(o.st>0||o.rs===2))return {h:'<span class="cql cq2 cqro" title="'+esc(L("Erledigt"))+'">'+esc(String(r.base))+'</span>'}}   /* On set started: Base done */
+  const st=cmSt(id)===2?2:1;
   if(!cmCan())return {h:'<span class="cql cq'+st+' cqro" title="'+esc(st===2?L("Erledigt"):L("Läuft"))+'">'+esc(String(r.base))+'</span>'};
   const tip=st===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
   return {h:'<button type="button" class="cql cq'+st+'" data-cqk="b" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(r.base+" – "+tip)+'">'+esc(String(r.base))+'</button>'}};
 /* On set: the ride of the actor from the Base to the set – accepted: pink frame around the time; ride done: On set pink (running), tap = done (green) */
-window.cqOnset=(c,r)=>{if(!hm(r&&r.onset)||!c||!c._date)return null;const id=cmId(c._date,"o",r,hm(r.onset)),done=cmSt(id)===2,t=String(r.onset);
-  let ride=null;if(r.actor&&typeof rideId==="function"){const k=fold(String(r.actor)).replace(/[^a-z ]/g,"").trim();
+/* On set: id and the ride of the actor from the Base to the set */
+function cqOnsetInfo(c,r){const id=cmId(c._date,"o",r,hm(r.onset));let ride=null;if(r.actor&&typeof rideId==="function"){const k=fold(String(r.actor)).replace(/[^a-z ]/g,"").trim();
     const has=v=>!!k&&(fold(String(v||"")).includes(k)||k.split(" ").filter(w=>w.length>2).every(w=>fold(String(v||"")).includes(w)));
     ride=arr(c.transport).filter(x=>has(x.passengers)&&/base/i.test(String(x.from||""))).concat(arr(c.crewTransport).filter(x=>has(x.people)&&/base/i.test(String(x.from||""))))[0]||null}
-  const rs=ride&&window.rideState?rideState(rideId(c._date,ride)):0,all=cqAllDone(c,r);
-  const mk=(st,tip,click)=>click&&cmCan()?'<button type="button" class="cql cq'+st+'" data-cqk="b" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>'
-    :'<span class="cql cq'+st+' cqro" title="'+esc(tip)+'">'+esc(t)+'</span>';
-  if(done)return {h:mk(2,L("Erledigt – antippen = zurücksetzen"),true)};
-  if(rs===2)return {h:mk(1,L("Läuft – antippen = erledigt"),true)};   /* ride Base → set done: On set is the running step (pink) */
-  if(rs===1&&!all)return {h:'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>'};
-  if(all)return {h:mk(rs===1?1:0,L("Offen – antippen = erledigt"),true)};   /* Kostüm and Maske done: On set can be ticked by hand */
-  return null};
+  return {id,st:cmSt(id),rs:ride&&window.rideState?rideState(rideId(c._date,ride)):0}}
+/* On set: open (underlined) once Kostüm and Maske are done → tap = running (pink, Base then counts as done) → tap = done (white);
+   the ride Base → set accepted: pink frame; ride done: On set running (pink) */
+window.cqOnset=(c,r)=>{if(!hm(r&&r.onset)||!c||!c._date)return null;const {id,st,rs}=cqOnsetInfo(c,r),all=cqAllDone(c,r),t=String(r.onset);
+  const cur=st===2?2:(st===1||rs===2)?1:(all?0:-1);
+  if(cur<0)return rs===1?{h:'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>'}:null;
+  const tip=[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")][cur];
+  if(!cmCan())return {h:'<span class="cql cq'+cur+' cqro" title="'+esc(tip)+'">'+esc(t)+'</span>'};
+  return {h:'<button type="button" class="cql cq'+cur+'" data-cqk="o" data-cqcur="'+cur+'" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>'}};
