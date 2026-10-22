@@ -6,9 +6,8 @@ Liest pending_push.json (vom Updater geschrieben), legt pro Art eine «Nachricht
 dürfen. Den Versand macht danach tools/push_send.py; dort kann jede Person die Arten einzeln abbestellen
 (Mein Konto → Push). Braucht das Dienstkonto (FIREBASE_SA). Im öffentlichen Protokoll stehen nur Zahlen.
 """
-import base64, datetime, json, os, secrets, sys, time
+import base64, datetime, json, os, sys, time
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)

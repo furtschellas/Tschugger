@@ -3,7 +3,7 @@
 Uses the service account in the GitHub secret FIREBASE_SA. If the rules in Firebase are already the same, nothing
 happens. Prints only short German status lines – never keys or data.
 """
-import base64, json, os, sys, time
+import os, sys
 from pathlib import Path
 
 import requests

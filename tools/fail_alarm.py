@@ -6,9 +6,8 @@ Push-Nachricht mit dem Grund – höchstens alle 6 Stunden, und nur wenn in der 
 eingeschaltet ist (config/app.failAlarm, Standard: ein). Ein erfolgreicher Lauf setzt den Zähler zurück.
 Braucht das Dienstkonto (FIREBASE_SA). Im öffentlichen Protokoll stehen nur Zahlen.
 """
-import base64, datetime, json, os, secrets, sys, time
+import base64, datetime, json, os, sys, time
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
