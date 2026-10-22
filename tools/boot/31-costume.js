@@ -70,13 +70,15 @@ window.cqBase=(c,r)=>{const t=hm(r&&r.base);if(!t||!c||!c._date||!cqAllDone(c,r)
   const tip=st===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
   return {h:'<button type="button" class="cql cq'+st+'" data-cqk="b" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(r.base+" – "+tip)+'">'+esc(String(r.base))+'</button>'}};
 /* On set: the ride of the actor from the Base to the set – accepted: pink frame around the time; ride done: On set pink (running), tap = done (green) */
-window.cqOnset=(c,r)=>{if(!hm(r&&r.onset)||!c||!c._date||!r.actor||typeof rideId!=="function")return null;const k=fold(String(r.actor)).replace(/[^a-z ]/g,"").trim();if(!k)return null;
-  const has=v=>fold(String(v||"")).includes(k)||k.split(" ").filter(w=>w.length>2).every(w=>fold(String(v||"")).includes(w));
-  const ride=arr(c.transport).filter(x=>has(x.passengers)&&/base/i.test(String(x.from||""))).concat(arr(c.crewTransport).filter(x=>has(x.people)&&/base/i.test(String(x.from||""))))[0];if(!ride)return null;
-  const st=window.rideState?rideState(rideId(c._date,ride)):0;if(!st)return null;
-  if(st===1)return {h:'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(String(r.onset))+'</span>'};
-  /* ride done: On set is the running step (pink) – tap = done (green) */
-  const id=cmId(c._date,"o",r,hm(r.onset)),s2=cmSt(id)===2?2:1;
-  if(!cmCan())return {h:'<span class="cql cq'+s2+' cqro" title="'+esc(s2===2?L("Erledigt"):L("Läuft"))+'">'+esc(String(r.onset))+'</span>'};
-  const tip=s2===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
-  return {h:'<button type="button" class="cql cq'+s2+'" data-cqk="b" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(r.onset+" – "+tip)+'">'+esc(String(r.onset))+'</button>'}};
+window.cqOnset=(c,r)=>{if(!hm(r&&r.onset)||!c||!c._date)return null;const id=cmId(c._date,"o",r,hm(r.onset)),done=cmSt(id)===2,t=String(r.onset);
+  let ride=null;if(r.actor&&typeof rideId==="function"){const k=fold(String(r.actor)).replace(/[^a-z ]/g,"").trim();
+    const has=v=>!!k&&(fold(String(v||"")).includes(k)||k.split(" ").filter(w=>w.length>2).every(w=>fold(String(v||"")).includes(w)));
+    ride=arr(c.transport).filter(x=>has(x.passengers)&&/base/i.test(String(x.from||""))).concat(arr(c.crewTransport).filter(x=>has(x.people)&&/base/i.test(String(x.from||""))))[0]||null}
+  const rs=ride&&window.rideState?rideState(rideId(c._date,ride)):0,all=cqAllDone(c,r);
+  const mk=(st,tip,click)=>click&&cmCan()?'<button type="button" class="cql cq'+st+'" data-cqk="b" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>'
+    :'<span class="cql cq'+st+' cqro" title="'+esc(tip)+'">'+esc(t)+'</span>';
+  if(done)return {h:mk(2,L("Erledigt – antippen = zurücksetzen"),true)};
+  if(rs===2)return {h:mk(1,L("Läuft – antippen = erledigt"),true)};   /* ride Base → set done: On set is the running step (pink) */
+  if(rs===1&&!all)return {h:'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>'};
+  if(all)return {h:mk(rs===1?1:0,L("Offen – antippen = erledigt"),true)};   /* Kostüm and Maske done: On set can be ticked by hand */
+  return null};
