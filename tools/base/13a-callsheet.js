@@ -267,29 +267,40 @@ function csLocs0(c){const sets=[],extra=[];
   const place=(name,map)=>extra.find(e=>(map&&e.map===map)||(name&&fold(e.name)===fold(name)));
   /* two W / H / M on one day (one for the cast, one for the extras): the group after «W / H / M» stays in the code («W/H/M Cast», «W/H/M Extras») */
   const whoOf=t=>{const m=String(t||"").match(/w\s*\/\s*h\s*\/\s*m\s*([^:]*)/i);const g=m?m[1]:"";return /extra|komp|statist|figur/i.test(g)?"Extras":/cast|darsteller|schausp/i.test(g)?"Cast":""};
+  /* rooms of the base («Greenroom Cast@base: Loge …», «Prod + DIT: Room at base», «WC: … 2x@base»): lines of the one Base, not places of their own */
+  const ROOM=/(@\s*base|\b(at|on|in|im|auf der|in der)\s+(the\s+)?base)\b/i,rooms=[];
+  const isAdr0=t=>/\d{4}\s+\p{L}/u.test(String(t||""))||/^\p{L}[\p{L}.\s-]*\s\d+[a-z]?(\s|$|-)/u.test(String(t||""));
   for(const l0 of csA(c.locations)){const items=[];let last=null;let l=l0;
     /* «OPEN SPACE W / H / M Extras: Turnhallenweg 4 …» read as the name of a set: the W / H / M part is a place of its own */
     {const m=String(l.name||"").match(/^(.*?)\s+(w\s*\/\s*h\s*\/\s*m\b.*)$/i);if(m&&m[1].trim()){const part=m[2],adr=(part.split(":").slice(1).join(":")||"").trim();
       const twin=adr&&csA(l.items).find(i=>i.map&&i.map===l.map&&fold(String(i.text||"")).includes(fold(adr.split(/[,-]/)[0].trim())));
       l=Object.assign({},l,{name:m[1].trim()});const it={label:part.split(":")[0].trim(),text:adr||part,map:twin?l.map:""};if(twin)l.map="";l.items=[it].concat(csA(l.items))}}
     for(const i of csA(l.items)){const lab=String(i.label||""),txt=String(i.text||"").trim();
+      if(!i.map&&ROOM.test(lab+" "+txt)&&!isAdr0(txt)){rooms.push({l:lab.replace(/\s*@\s*base\b/i,"").replace(/\s*\+\s*/g," + ").trim(),t:txt,set:items});continue}
       /* lines that belong to the place before them: «To set 1: 4’ with car …», «WC: on base …» */
       if(last&&/^(to set|zum set|nach set|wc\b)/i.test((lab+" "+txt).trim())&&!i.map){const n=[lab,txt].filter(Boolean).join(": ").replace(/:\s*:/,":");if(!last.notes.includes(n))last.notes.push(n);continue}
       const cm=txt.match(/^([^:,]{1,40}):\s*(.+)$/),head=cm?cm[1]:"",body=cm?cm[2]:txt,par=(body.match(/\(([^)]{1,30})\)/)||[])[1]||"";
       const kinds=KIND.filter(([re,k])=>re.test(lab)||re.test(head)||re.test(par)||(k==="Base"&&re.test(body.split(",")[0]))).map(([,k])=>k);   /* «Base Church, Dorfplatz 5» is the Base too */
       if(!kinds.length||(!txt&&!i.map)){items.push(i);last=null;continue}
-      const clean=body.replace(/\s*\([^)]{1,30}\)\s*/g," ").trim(),name=clean.split(",")[0].trim(),rest=clean.split(",").slice(1).join(",").trim();
+      let clean=body.replace(/\s*\([^)]{1,30}\)\s*/g," ").trim(),name=clean.split(",")[0].trim(),rest=clean.split(",").slice(1).join(",").trim(),uses="";
+      /* «BASE LAKE» as label and the uses first in the text (W / H / M, Lunch …): the base is called by its label, the uses are a line of it */
+      if(/\bbase\b/i.test(lab)&&lab.trim().split(/\s+/).length>1&&!head&&/w\s*\/\s*h\s*\/\s*m|lunch|mittag|cast|extras/i.test(name)&&!isAdr0(name)){uses=name;name=lab.trim();
+        for(const [re,k] of KIND)if(k!=="Base"&&re.test(uses)&&!kinds.includes(k))kinds.push(k)}
       let e=place(name,i.map);
       if(!e){e={no:"",kinds:[],name:name||"",map:i.map||"",notes:[],items:[]};extra.push(e)}
-      const who=whoOf(lab+" "+head)||whoOf(txt);
+      const who=uses&&/cast/i.test(uses)&&/extra/i.test(uses)?"":(whoOf(lab+" "+head)||whoOf(txt));
       for(const k0 of kinds){const k=k0==="W / H / M"&&who?k0+" "+who:k0;if(!e.kinds.includes(k))e.kinds.push(k)}
       const isAdr=t=>/\d{4}\s+\p{L}/u.test(String(t||""))||/^\p{L}[\p{L}.\s-]*\s\d+[a-z]?(\s|$|-)/u.test(String(t||""));
       if(name&&(!e.name||(isAdr(e.name)&&!isAdr(name)))){if(e.name&&e.name!==name&&!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=name}
       {const at=lab.match(/@\s*(.+)$/);if(at&&isAdr(e.name)&&!isAdr(at[1])){if(!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=at[1].trim()}}if(!e.map&&i.map)e.map=i.map;/* «Föhrenweg 160, 3999 Testdorf; To set 1: …; WC: …» – each part its own line (address, hints with their icons, the rest with its kind) */
+      if(uses&&!e.notes.includes(uses))e.notes.unshift(uses);
       for(const part of String(rest||"").split(/\s*;\s*/).map(x=>x.trim()).filter(Boolean)){const r2=isAdr(part)||/^(to set|zum set|nach set|wc\b)/i.test(part)?part:kinds.map(k0=>{const k=k0==="W / H / M"&&who?k0+" "+who:k0;return csKindCode(k)}).join(" / ")+": "+part;if(!e.notes.includes(r2))e.notes.push(r2)}last=e}
     /* the map link of the set is the one of a side place listed with it (e.g. «WHM Extras … https://…» after the set name): not the place of the set */
     const own=!!l.map&&extra.some(e=>e.map===l.map&&e.kinds.some(k=>k!=="DIT"&&k!=="Prod"));
     sets.push(Object.assign({},l,{items},own?{map:""}:{}))}
+  /* the rooms go to the Base (the one with a map first); without a Base they stay lines of their set */
+  {const b=extra.find(e=>e.kinds.includes("Base")&&e.map)||extra.find(e=>e.kinds.includes("Base"));
+   for(const r of rooms){const n=[r.l,r.t].filter(Boolean).join(": ");if(b){if(!b.notes.includes(n))b.notes.push(n)}else r.set.push({label:r.l,text:r.t})}}
   /* «LOCATION: Bahnweg 40 - 3998 Musterdorf» read as a set of its own: it is the address of the sets without own address or map link */
   {const isA=t=>/\d{4}\s+\p{L}/u.test(String(t||""))&&!/\bset\b/i.test(String(t||""));const adr=sets.filter(l=>isA(l.name)&&!csS(l.scenes).trim());
    if(adr.length===1&&sets.length>1){const a=adr[0];sets.splice(sets.indexOf(a),1);for(const l of sets)if(!l.map&&!csA(l.notes).some(n=>isA(n))){l.notes=[a.name].concat(csA(l.notes));if(a.map)l.map=a.map}
@@ -400,7 +411,7 @@ function csLocScenes(c,l){const mem=l._m||[l];const uniq=[...new Set(csRows(c).f
   return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')}
 /* the open part: hints (To set, WC), side places with distance, notes and lines – the address of the head only once */
 function csLocBody(l,LAD,HN,near){
-  const hints=HN.map(n=>'<div class="ds cshnl">'+(/^wc\b/i.test(n.trim())?'<b>WC</b>':CSI.walk)+'<span>'+csAdr(csL(n),"")+'</span></div>').join("");
+  const hints=HN.map(n=>'<div class="ds cshnl">'+(/^wc\b/i.test(n.trim())?'<b>WC</b>':CSI.walk)+'<span>'+csAdr(csL(n).replace(/^wc\s*:\s*/i,""),"")+'</span></div>').join("");
   /* lines that only repeat the address (also written differently) are left out, a place there shows «same address» */
   const an=t=>fold(String(t||"")).replace(/https?:\/\/\S+/g,"").replace(/[^a-z0-9]/g,""),km=String(LAD||"").match(/[^\d,]*?[a-zäöüéèà.]{3,}\s*\d+[a-z]?\b/i),K=km?an(km[0]):"";
   const same=t=>!!K&&K.length>5&&an(t).includes(K),only=t=>same(t)&&an(t).length<=an(LAD).length+4;
