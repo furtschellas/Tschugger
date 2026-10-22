@@ -18,7 +18,8 @@ def tracked():
 
 TEXT = (".html", ".js", ".mjs", ".py", ".json", ".md", ".yml", ".css", ".rules", ".txt", ".webmanifest", ".svg")
 files = [f for f in tracked() if f.suffix in TEXT and f.exists()]
-src = {f: f.read_text(errors="ignore") for f in files}
+VENDOR = {"leaflet.js", "jspdf.js", "jspdf.autotable.js"}   # third-party libraries, unchanged copies
+src = {f: f.read_text(errors="ignore") for f in files if f.name not in VENDOR}
 
 # ---------- 1) nothing secret in the public repository ----------
 SECRET = [(r"-----BEGIN (RSA |EC )?PRIVATE KEY-----", "privater Schlüssel"), (r"\bghp_[A-Za-z0-9]{30,}|\bgithub_pat_[A-Za-z0-9_]{40,}", "GitHub-Token"),
