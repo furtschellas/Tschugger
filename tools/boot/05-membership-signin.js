@@ -14,8 +14,8 @@ async function checkMember0(){
   if(!isOwner()&&u.emailVerified){try{if((await F.getDoc(F.doc(db,"owners",lc(u.email)))).exists()&&!ADMINS.includes(lc(u.email)))ADMINS.push(lc(u.email))}catch(_){}}
   if(!isOwner()&&u.emailVerified){try{COADMIN=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(_){COADMIN=false}}
   MYPERMS=[];MYROLE="";window.MYROLENAME="";ADMINPERMS=ADMIN_DEFAULT.slice();
-  if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())ADMINPERMS=(ad.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}catch(_){}}
-  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){MYROLE=String(ur.data().role||"");const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())window.MYROLENAME=String(rd.data().name||""),MYPERMS=(rd.data().perms||[]).filter(p=>PERMS.some(x=>x[0]===p))}}catch(_){}
+  if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())ADMINPERMS=(ad.data().perms||[]).filter(p=>permKnown(p))}catch(_){}}
+  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){MYROLE=String(ur.data().role||"");const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())window.MYROLENAME=String(rd.data().name||""),MYPERMS=(rd.data().perms||[]).filter(p=>permKnown(p))}}catch(_){}
   }
   const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){

@@ -39,6 +39,7 @@ KEY = base64.b64decode(fsadmin.crew_key_b64() or os.environ.get("CREW_KEY", "").
 ROOT = (os.environ.get("DROPBOX_ROOT") or "ns:14935064499").rstrip("/")
 ROOT3D = (os.environ.get("DROPBOX_ROOT_3D") or "ns:13132709057").rstrip("/")
 ROOTAUF = (os.environ.get("DROPBOX_ROOT_AUF") or "ns:15240921299").rstrip("/")
+ROOTREP = (os.environ.get("DROPBOX_ROOT_REP") or "ns:13723634417").rstrip("/")   # «3D/20_Reports»: production, DIT and sound reports (Einstellungen → Logs → Reports)
 ROOTRECCE = (os.environ.get("DROPBOX_ROOT_RECCE") or "ns:13058967505/RECCE").rstrip("/")   # recce photos (in «TSCHUGGER - 3D Locations»)
 PIC_DEADLINE = time.time() + 10 * 60   # new previews only for 10 minutes per run; the rest follows in the next runs
 PIC_BUDGET = [int(os.environ.get("PIC_BUDGET") or 250)]   # and at most this many new preview files per run (keeps each push small)   # shared folder «AUFLÖSUNG» (in «TSCHUGGER - 3D Locations»)   # shared folder «3D» (weekly prep schedule, floorplans)
@@ -276,6 +277,35 @@ def _pdf_pages(dbx, e, cache):
         return key, out
     except Exception as ex:
         log("PDF-Seiten nicht erzeugt:", _h(e["name"]), type(ex).__name__); return key, []
+
+def add_reports(dbx, meta, want_files):
+    """reports (PDFs) of «3D/20_Reports», one group per sub folder: every page as an encrypted picture for the gallery and the PDF itself
+    (encrypted) for the download → meta.reports [{g, n, d, f: [pages], pdf, u}]; True when something changed"""
+    allf = dbx.list_path(ROOTREP, True)
+    import unicodedata
+    for e in allf: e["path"] = unicodedata.normalize("NFC", e["path"])
+    shortest = min((e["path"] for e in allf), key=lambda x: x.count("/"), default="/")
+    base = shortest.rsplit("/", 1)[0]
+    cache, used, out = dict(meta.get("repPages") or {}), set(), []
+    for e in sorted((e for e in allf if e["tag"] == "file" and e["name"].lower().endswith(".pdf")), key=lambda e: e["path"].lower()):
+        rel = e["path"][len(base):].lstrip("/") if e["path"].startswith(base + "/") else e["path"].lstrip("/")
+        parts = rel.split("/")
+        g = parts[0] if len(parts) > 1 else ""
+        key, pages = _pdf_pages(dbx, e, cache); used.add(key); want_files.update(pages)
+        pf = "blk/" + _key(e, "|pdf") + ".pdf.bin"
+        if not blk_have(pf) and time.time() < PIC_DEADLINE and PIC_BUDGET[0] > 0:
+            try:
+                PIC_BUDGET[0] -= 1; data = dbx.download(e["id"])
+                if len(data) < 40e6: _enc_write(pf, data)
+            except Exception as ex: log("Report-PDF fehlt:", _h(e["name"]), type(ex).__name__)
+        if blk_have(pf): want_files.add(pf)
+        else: pf = ""
+        out.append({"g": g, "n": re.sub(r"(?i)\.pdf$", "", e["name"]), "d": str(e.get("modified") or "")[:10], "f": pages, "pdf": pf, "u": _web(os.path.dirname(e["path"]), e["name"])})
+    meta["repPages"] = {k: v for k, v in cache.items() if k in used}
+    out.sort(key=lambda r: (r["g"].lower(), r["d"], r["n"].lower()), reverse=False)
+    if out != (meta.get("reports") or []):
+        meta["reports"] = out; log("Reports:", len(out), "in", len({r["g"] for r in out}), "Ordnern"); return True
+    return False
 
 def _norm_sc(x):
     x = re.sub(r"^0+(?=\d)", "", str(x).strip()).lower().replace(" ", "")
@@ -2059,6 +2089,10 @@ def main():
             changed = add_more_blocking(dbx, blk, meta, want_files, data.get("days") or [], data.get("locations") or [], [(x, next((e for e in fl if e["name"] == x.get("file")), None)) for x in fps]) or changed
         except Exception as ex:
             log("Auflösung/Seiten nicht gelesen:", str(ex)[:160]); PARTIAL.append("auf")
+        try:   # reports of «3D/20_Reports» (Einstellungen → Logs → Reports)
+            if add_reports(dbx, meta, want_files): changed = True
+        except Exception as ex:
+            log("Reports nicht gelesen:", type(ex).__name__); PARTIAL.append("rep")
         # store every picture once (meta.bm) and let the scenes refer to it by number – keeps the data file small
         bm, idx = [], {}
         for b in blk:

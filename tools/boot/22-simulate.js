@@ -16,7 +16,7 @@ function simStart(em){em=lc(em);if(!simCan(em))return;
   const mem=(ADM.mem||[]).find(x=>lc(x.email||"")===em)||null,inv=(ADM.inv||[]).find(x=>x.id===em)||{};
   const name=(mem&&[mem.firstName,mem.lastName].filter(Boolean).join(" "))||inv.name||em;
   SIMUSER={email:em,name,rname:ro.name||ro.id||L("Keine Rolle"),keep:{p:MYPERMS.slice(),r:MYROLE,ap:ADMINPERMS.slice(),mem:typeof MEMBER!=="undefined"?MEMBER:null,tab:S.tab,sub:ADM.sub}};
-  if(r==="owner")SIMROLE=null;else{SIMROLE={adm:r==="admin",user:em};MYPERMS=r==="admin"?[]:arr(ro.perms).filter(p=>PERMS.some(x=>x[0]===p));MYROLE=r==="admin"?"":ro.id;if(r==="admin")ADMINPERMS=ro.perms}
+  if(r==="owner")SIMROLE=null;else{SIMROLE={adm:r==="admin",user:em};MYPERMS=r==="admin"?[]:arr(ro.perms).filter(p=>permKnown(p));MYROLE=r==="admin"?"":ro.id;if(r==="admin")ADMINPERMS=ro.perms}
   /* the simulated person's own data: profile (name), callsheet «my day», my appointments – never the admin's */
   try{MEMBER=mem||{name:inv.name||"",email:em}}catch(_){}try{MEMO.clear()}catch(_){}
   S.tab="today";simRefreshChrome();simBar();render();scrollTo(0,0)}
@@ -28,7 +28,7 @@ function simStartRole(id){if(!simRoleCan(id))return;
   const ro=id==="admin"?{id:"admin",name:L("Admin"),perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:id?((ADM.roles||[]).find(x=>x.id===id)||null):{id:"",name:L("Keine Rolle"),perms:[]};
   if(!ro)return;
   SIMUSER={email:"",name:L("Rolle")+" «"+(ro.name||ro.id||L("Keine Rolle"))+"»",rname:L("ohne Person"),keep:{p:MYPERMS.slice(),r:MYROLE,ap:ADMINPERMS.slice(),mem:typeof MEMBER!=="undefined"?MEMBER:null,tab:S.tab,sub:ADM.sub}};
-  SIMROLE={adm:id==="admin",user:""};MYPERMS=id==="admin"?[]:arr(ro.perms).filter(p=>PERMS.some(x=>x[0]===p));MYROLE=id==="admin"?"":ro.id;if(id==="admin")ADMINPERMS=ro.perms;
+  SIMROLE={adm:id==="admin",user:""};MYPERMS=id==="admin"?[]:arr(ro.perms).filter(p=>permKnown(p));MYROLE=id==="admin"?"":ro.id;if(id==="admin")ADMINPERMS=ro.perms;
   try{MEMBER=null}catch(_){}
   S.tab="today";simRefreshChrome();simBar();render();scrollTo(0,0)}
 /* quick picker «Ansicht als …» (roles and people) for the admin pages */

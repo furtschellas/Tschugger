@@ -167,7 +167,7 @@ async function roleTestRun(auto){
   const t0=Date.now();
   let here={tab:keep.tab,sub:keep.sub},mid=false;
   try{let k=0;for(const ro of roles){RTS.prog=Math.round(k++/roles.length*100);here={tab:S.tab,sub:ADM.sub};mid=true;
-    SIMROLE={adm:!!ro.adm};MYPERMS=ro.adm?[]:ro.perms.filter(p=>PERMS.some(x=>x[0]===p));MYROLE=ro.adm?"":ro.id;if(ro.adm)ADMINPERMS=ro.perms;
+    SIMROLE={adm:!!ro.adm};MYPERMS=ro.adm?[]:ro.perms.filter(p=>permKnown(p));MYROLE=ro.adm?"":ro.id;if(ro.adm)ADMINPERMS=ro.perms;
     const issues=[],tabs=tabsOn();
     for(const t of tabs){S.tab=t;try{const v=offView(t);
         if(/konnte nicht angezeigt/.test(v.innerText))issues.push(L("Seite mit Fehler")+": "+(RTN[t]||t));
