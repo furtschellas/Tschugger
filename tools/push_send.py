@@ -188,6 +188,11 @@ def main():
     pems = vapid_keys(key)
     if not pems:
         print("::error::Kein VAPID-Schlüssel"); return 1
+    # App-Verwaltung → App «Push-Nachrichten anbieten» off: nothing is sent to anybody, whatever the profiles say
+    try: app = fsadmin.get_doc("config/app") or {}
+    except Exception: app = {}
+    if app.get("pushEnabled") is False:
+        print("::notice::Push in der App-Verwaltung ausgeschaltet – nichts verschickt"); return 0
     sa = bool(fsadmin.sa())
     n_dev = n_sent = n_gone = n_late = n_err = n_cd = 0
     cd = coverday(key)

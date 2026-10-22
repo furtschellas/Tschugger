@@ -262,7 +262,10 @@ async function broadcast(req, env, origin, ctx) {
   try { devs = await listDocs(env, "push"); } catch (e) { return json({ error: "Geräte nicht lesbar (FIREBASE_SA im Worker?) – die Nachricht geht mit dem nächsten Lauf raus." }, 503, origin); }
   const claim = await fsPatch(env, "broadcasts/" + id, { sent: true }, g.tok, d.updateTime);
   if (!claim.ok) return json({ error: claim.status === 403 ? "Keine Berechtigung «Push senden»." : "Schon gesendet." }, claim.status === 403 ? 403 : 409, origin);
-  if (b.push === false) { await fsPatch(env, "broadcasts/" + id, { n: 0, fin: true }, g.tok); return json({ ok: true, n: 0, claimed: true }, 200, origin); }
+  // App-Verwaltung → App «Push-Nachrichten anbieten» off: nothing goes out, whatever the profiles say
+  let appOff = false;
+  try { const ar = await fsReq(env, "config/app", {}, g.tok); if (ar.ok) appOff = fv(((await ar.json()).fields || {}).pushEnabled) === false; } catch (_) {}
+  if (b.push === false || appOff) { await fsPatch(env, "broadcasts/" + id, { n: 0, fin: true }, g.tok); return json({ ok: true, n: 0, claimed: true, off: appOff }, 200, origin); }
   const lim = Math.max(1, +env.PUSH_LIMIT || 25);
   let n = 0, fail = 0, tried = 0, more = false;
   const done = [], gone = [];

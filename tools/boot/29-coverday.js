@@ -136,7 +136,7 @@ window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days||S.days0
     '<h4>'+esc(L("Aktive Änderungen"))+'</h4>'+(list?'<ul class="cdlist">'+list+'</ul>':'<p class="ghint">'+esc(L("Keine."))+'</p>')+'</div>'};
 document.addEventListener("change",e=>{const t=e.target.closest&&e.target.closest("[data-cdf]");if(!t)return;const k=t.dataset.cdf;CD.form[k]=t.type==="checkbox"?t.checked:t.value;if(k==="op"||k==="u"){CD.form.a="";CD.form.b=""}CD.msg="";render()});
 /* push «Drehplan geändert» to everybody (also when a change is cancelled or applied again, so nobody keeps the old state) */
-async function cdPush(body,date){if(!can("push.send"))return false;try{const enc=await ownEnc({title:L("Drehplan geändert"),body,roles:null,depts:null,by:ME.email,at:Date.now(),kind:"plan",url:"./#go=plan:"+date});
+async function cdPush(body,date){if(!can("push.send")||window.PUSHEN===false)return false;try{const enc=await ownEnc({title:L("Drehplan geändert"),body,roles:null,depts:null,by:ME.email,at:Date.now(),kind:"plan",url:"./#go=plan:"+date});
   const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});if(typeof bcDeliver==="function")await bcDeliver(ref.id);return true}catch(_){return false}}
 /* check after a change was applied or cancelled: the days show what they should, every callsheet on the day with its scenes,
    the reminders of this device are sent again (the server holds back old reminders of other devices on these days until they are updated) */
