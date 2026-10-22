@@ -51,6 +51,7 @@ def vapid_keys(key):
     return list(dict.fromkeys(out))
 
 
+ERRC = {}   # error codes of this run (only codes in the public log)
 def send(sub, data, pems, ttl):
     """returns «ok», «gone» (device removed the app) or «err»; tries the older VAPID key if the push service rejects the key"""
     for pem in pems:
@@ -61,11 +62,12 @@ def send(sub, data, pems, ttl):
             code = getattr(e.response, "status_code", None)
             if code in (404, 410): return "gone"
             if code in (401, 403): continue   # key does not match this subscription: try the next one
-            print("• Push-Fehler HTTP", code)
+            print("• Push-Fehler HTTP", code); ERRC[str(code)] = ERRC.get(str(code), 0) + 1
             return "err"
         except Exception as e:
-            print("• Push-Fehler", type(e).__name__)
+            print("• Push-Fehler", type(e).__name__); ERRC[type(e).__name__] = ERRC.get(type(e).__name__, 0) + 1
             return "err"
+    ERRC["Schlüssel"] = ERRC.get("Schlüssel", 0) + 1   # no VAPID key matches (401/403 with all keys)
     return "err"
 
 
@@ -221,6 +223,7 @@ def main():
     if bcs:   # visible in the run overview (only numbers): which message reached how many devices
         print("::notice::Push: %d Nachricht(en) · %d Geräte · %d verschickt · %d Fehler · %d abgemeldet · Arten: %s"
               % (len(bcs), n_dev, n_sent, n_err, n_gone, ", ".join(sorted({b.get("kind") or "von Hand" for _, b, _, _ in bcs}))))
+    if ERRC: print("::notice::Push-Fehlercodes: " + ", ".join(f"{k}×{v}" for k, v in sorted(ERRC.items())))
 
 
 if __name__ == "__main__":
