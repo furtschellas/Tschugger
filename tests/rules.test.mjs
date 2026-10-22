@@ -73,7 +73,9 @@ await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(
 await check("Bereichs-Schlüssel: niemand darf sie ändern", assertFails(setDoc(doc(as("owner"), "secret/keyscript"), { k: "x" })));
 
 // ---------- assigning and editing roles: never more rights than one has ----------
-await check("Rollen zuweisen: Rolle mit eigenen Rechten geht", assertSucceeds(setDoc(doc(as("reader"), "userroles/other@test.ch"), { role: "minimal" })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "userroles/sub@test.ch"), { role: "minimal" }) });
+await check("Rollen zuweisen: Rolle mit eigenen Rechten geht", assertSucceeds(setDoc(doc(as("reader"), "userroles/sub@test.ch"), { role: "minimal" })));
+await check("Rollen zuweisen: wer Rechte hat, die man selbst nicht hat, wird nicht umgestuft", assertFails(setDoc(doc(as("reader"), "userroles/other@test.ch"), { role: "minimal" })));
 await check("Rollen zuweisen: Rolle mit Rechten, die man nicht hat, nicht", assertFails(setDoc(doc(as("reader"), "userroles/other@test.ch"), { role: "power" })));
 await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "userroles/other@test.ch"), { role: "crew" }); });
 await check("Rolle bearbeiten: fremde vorhandene Rechte bleiben erhalten", assertSucceeds(setDoc(doc(as("power"), "roles/minimal"), { name: "Minimal 2", perms: ["view.plan"] })));
