@@ -16,7 +16,7 @@ function offBar(){let b=document.getElementById("offbar");const off=navigator.on
 addEventListener("online",offBar);addEventListener("offline",offBar);setTimeout(offBar,1500);setInterval(offBar,60000);
 /* sticky: the day bar stays on top, the callsheet bar right below it – measure the day bar's height */
 let STK="";function stickyH(){const w=document.querySelector("#view .stripwrap"),j=document.querySelector("#view .csjump");
-  const h=w?Math.round(w.getBoundingClientRect().height):0,jh=j?Math.round(j.getBoundingClientRect().height):0,k=h+"|"+jh;if(k===STK)return;STK=k;   /* only when a height changed */
+  const h=w?Math.floor(w.getBoundingClientRect().height):0,jh=j?Math.round(j.getBoundingClientRect().height):0,k=h+"|"+jh;if(k===STK)return;STK=k;   /* only when a height changed */
   document.documentElement.style.setProperty("--striph",h+"px");document.documentElement.style.setProperty("--csjh",jh+"px")}
 try{new MutationObserver(()=>requestAnimationFrame(stickyH)).observe(document.getElementById("view")||document.body,{childList:true,subtree:true})}catch(_){}
 /* the day bar changes its height (font, units, rotation): measure again */
