@@ -135,18 +135,39 @@ window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days||S.days0
     '<p class="cdpv'+(pv.ok?'':' bad')+'">'+esc(pv.t)+'</p><div class="arb">'+saveBtn('data-cdsave'+(pv.ok&&!CD.busy?'':' disabled'),L("Übernehmen"))+'</div>'+(CD.msg?'<p class="amsg">'+esc(CD.msg)+'</p>':'')+'</form>'+
     '<h4>'+esc(L("Aktive Änderungen"))+'</h4>'+(list?'<ul class="cdlist">'+list+'</ul>':'<p class="ghint">'+esc(L("Keine."))+'</p>')+'</div>'};
 document.addEventListener("change",e=>{const t=e.target.closest&&e.target.closest("[data-cdf]");if(!t)return;const k=t.dataset.cdf;CD.form[k]=t.type==="checkbox"?t.checked:t.value;if(k==="op"||k==="u"){CD.form.a="";CD.form.b=""}CD.msg="";render()});
+/* push «Drehplan geändert» to everybody (also when a change is cancelled or applied again, so nobody keeps the old state) */
+async function cdPush(body,date){if(!can("push.send"))return false;try{const enc=await ownEnc({title:L("Drehplan geändert"),body,roles:null,depts:null,by:ME.email,at:Date.now(),kind:"plan",url:"./#go=plan:"+date});
+  const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});if(typeof bcDeliver==="function")await bcDeliver(ref.id);return true}catch(_){return false}}
+/* check after a change was applied or cancelled: the days show what they should, every callsheet on the day with its scenes,
+   the reminders of this device are sent again (the server holds back old reminders of other devices on these days until they are updated) */
+function cdVerify(op,on){const bad=[],d=dt=>arr(S.days).find(x=>x.date===dt),d0=dt=>arr(S.days0).find(x=>x.date===dt),sc=(x,u)=>cdScenes(x,u);
+  const others=cdActive().filter(o=>o.id!==op.id&&(o.a===op.a||o.b===op.a||o.a===op.b||o.b===op.b||o.op==="shift"||op.op==="shift"));
+  if(!others.length){
+    if(on&&op.op==="swap"){if(sc(d(op.a),op.u)!==(op.snap&&op.snap.b||"")||sc(d(op.b),op.u)!==(op.snap&&op.snap.a||""))bad.push(L("Drehplan")+" "+cdDD(op.a)+" ⇄ "+cdDD(op.b))}
+    else if(on&&op.op==="move"){if(sc(d(op.b),op.u)!==(op.snap&&op.snap.a||"")||sc(d(op.a),op.u))bad.push(L("Drehplan")+" "+cdDD(op.a)+" → "+cdDD(op.b))}
+    else if(on&&op.op==="shift"){if(sc(d(op.a),op.u))bad.push(L("Drehplan")+" "+cdDD(op.a))}
+    else if(!on){for(const dt of [op.a,op.b].filter(Boolean))if(sc(d(dt),op.u)!==sc(d0(dt),op.u))bad.push(L("Drehplan")+" "+cdDD(dt))}}
+  for(const x of cdCsCheck())bad.push("Callsheet "+x);
+  /* numbering in date order */
+  {let l=-1;for(const x of arr(S.days)){if(x.kind!=="shoot")continue;const n=cdNo(x);if(n==null)continue;if(n<l){bad.push(L("Nummerierung")+" "+cdDD(x.date));break}l=n}}
+  try{pushSyncSoon()}catch(_){}
+  return bad}
+const cdReport=(t,bad,pushed)=>showMsg(t+" "+(bad.length?"⚠ "+L("Bitte prüfen:")+" "+bad.join(", "):"✓ "+L("Geprüft: Drehplan, Callsheets, Nummerierung und Erinnerungen stimmen."))+(pushed?" "+L("Push «Drehplan geändert» verschickt."):""),bad.length?9000:5000);
 document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.closest("[data-cdsave],[data-cdoff],[data-cdre]");if(!s||!cdCan()||CD.busy)return;e.preventDefault();
   if(s.dataset.cdoff!=null){const o=arr(window.CDOPS).find(x=>x.id===s.dataset.cdoff);if(!o||!confirmSafe(L("Coverday-Änderung wirklich aufheben? Der Drehplan gilt dann wieder für alle.")+"\n\n"+cdOpText(o)))return}
+  if(s.dataset.cdre!=null){const o=arr(window.CDOPS).find(x=>x.id===s.dataset.cdre);if(!o||!confirmSafe(L("Coverday-Änderung wieder anwenden? Sie gilt sofort für alle.")+"\n\n"+cdOpText(o)))return}
   if(s.dataset.cdsave!=null){const pv0=cdPreview(CD.form);if(!pv0.ok||!confirmSafe(L("Coverday-Änderung wirklich übernehmen? Sie gilt sofort für alle.")+"\n\n"+pv0.t))return}
-  const ops=arr(window.CDOPS).slice();CD.busy=true;
-  try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(o){o.st="off";o.off=Date.now()}await cdSave(ops);const bad=cdCsCheck();showMsg(L("Änderung aufgehoben.")+" "+(bad.length?L("Achtung – Callsheet passt nicht zum Drehplan:")+" "+bad.join(", "):L("Callsheets geprüft: alle am richtigen Tag.")),bad.length?8000:4000)}
-    else if(s.dataset.cdre!=null){const o=ops.find(x=>x.id===s.dataset.cdre);if(o){o.at=Date.now();o.raw=cdRaw(o,S.days0||[])}await cdSave(ops);showMsg(L("Änderung wieder angewendet."),3000)}
-    else{const f=CD.form,pv=cdPreview(f);if(!pv.ok){CD.busy=false;return}const raw=S.days||S.days0,d=dt=>raw.find(x=>x.date===dt);
+  const ops=arr(window.CDOPS).map(x=>Object.assign({},x));CD.busy=true;
+  try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(!o)return;const wasOn=!cdReview(o);o.st="off";o.off=Date.now();await cdSave(ops);
+      const pushed=wasOn&&o.push!==false?await cdPush(L("Coverday aufgehoben:")+" "+cdOpText(o)+" – "+L("es gilt wieder der Drehplan."),o.a):false;
+      cdReport(L("Änderung aufgehoben."),cdVerify(o,false),pushed)}
+    else if(s.dataset.cdre!=null){const o=ops.find(x=>x.id===s.dataset.cdre);if(!o)return;o.at=Date.now();o.raw=cdRaw(o,S.days0||[]);await cdSave(ops);
+      const pushed=o.push!==false?await cdPush(cdOpText(o),o.op==="move"?o.b:o.a):false;cdReport(L("Änderung wieder angewendet."),cdVerify(o,true),pushed)}
+    else{const f=CD.form,pv=cdPreview(f);if(!pv.ok)return;const raw=S.days||S.days0,d=dt=>raw.find(x=>x.date===dt);
       const snap=f.op==="shift"?{a:cdScenes(d(f.a),f.u)}:{a:cdScenes(d(f.a),f.u),b:cdScenes(d(f.b),f.u)};
-      const op={id:Math.random().toString(36).slice(2,10),op:f.op,u:f.u==="2"?"2":"all",a:f.a,b:f.op==="shift"?"":f.b,at:Date.now(),by:ME&&ME.email||"",snap,st:"on"};op.raw=cdRaw(op,S.days0||raw);
+      const op={id:Math.random().toString(36).slice(2,10),op:f.op,u:f.u==="2"?"2":"all",a:f.a,b:f.op==="shift"?"":f.b,at:Date.now(),by:ME&&ME.email||"",snap,st:"on",push:!!(f.push&&can("push.send"))};op.raw=cdRaw(op,S.days0||raw);
       ops.push(op);await cdSave(ops);CD.form={op:f.op,u:f.u,a:"",b:"",push:f.push};CD.msg=L("Übernommen:")+" "+pv.t;
-      if(f.push&&can("push.send")){try{const enc=await ownEnc({title:L("Drehplan geändert"),body:cdOpText(op),roles:null,depts:null,by:ME.email,at:Date.now(),kind:"plan",url:"./#go=plan:"+(f.op==="move"?f.b:f.a)});
-        const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});if(typeof bcDeliver==="function")await bcDeliver(ref.id)}catch(_){}}}}
+      const pushed=op.push?await cdPush(cdOpText(op),f.op==="move"?f.b:f.a):false;cdReport(L("Übernommen:")+" "+pv.t+".",cdVerify(op,true),pushed)}}
   catch(err){CD.msg=(typeof saveErr==="function"?saveErr(err):L("Fehler:")+" "+(err.message||err))}
-  CD.busy=false;render()},true);
+  finally{CD.busy=false;render()}},true);
 document.addEventListener("submit",e=>{if(e.target.closest&&e.target.closest("[data-cdform]"))e.preventDefault()},true);
