@@ -952,3 +952,5 @@ span.cmk{display:inline-flex;width:22px;height:22px;border-radius:50%;align-item
 /* Anreise Cast: a travel of another day – the date on its own line, half a line of space above, the travel below */
 html body #view .cstrv.trvother{flex-wrap:wrap}
 html body #view .cstrv.trvother .trvd{display:block;flex:0 0 100%;width:100%;margin-top:.5em}
+/* cast ticks: finer underline */
+html body .cql{text-decoration-thickness:1px!important;text-underline-offset:2px!important}
