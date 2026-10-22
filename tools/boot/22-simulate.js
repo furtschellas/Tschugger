@@ -33,7 +33,7 @@ function simStartRole(id){if(!simRoleCan(id))return;
   S.tab="today";simRefreshChrome();simBar();render();scrollTo(0,0)}
 /* quick picker «Ansicht als …» (roles and people) for the admin pages */
 window.simPicker=()=>{if(!isAdmin()||SIMROLE||SIMUSER)return "";
-  const roles=[["role:",L("Keine Rolle")]].concat(isOwner()?[["role:admin",L("Admin")]]:[],(ADM.roles||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),LANG)).map(r=>["role:"+r.id,r.name||r.id]));
+  const roles=[["role:",L("Keine Rolle")]].concat(isOwner()?[["role:admin",L("Admin")]]:[],(window.rolesSorted?rolesSorted():(ADM.roles||[])).map(r=>["role:"+r.id,r.name||r.id]));
   const ppl=[];const seen=new Set();for(const m of (ADM.mem||[])){const em=lc(m.email||"");if(!em||seen.has(em)||!simCan(em))continue;seen.add(em);ppl.push([em,[m.firstName,m.lastName].filter(Boolean).join(" ")||em])}
   ppl.sort((a,b)=>a[1].localeCompare(b[1],LANG));
   return '<div class="simpick"><label>'+esc(L("Ansicht simulieren"))+' <select data-simpick><option value="">'+esc(L("Rolle oder Person wählen …"))+'</option><optgroup label="'+esc(L("Rollen"))+'">'+roles.map(([v,n])=>'<option value="'+esc(v)+'">'+esc(n)+'</option>').join("")+'</optgroup>'+
