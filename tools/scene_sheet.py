@@ -25,6 +25,7 @@ HEAD = ["Aktion", "Drehtag", "Datum", "Unit", "S", "I/E", "Seiten", "Set", "Plan
 
 
 def log(*a): print("•", *a, flush=True)
+def note(msg): print("::notice title=Szenen-Sheet::" + msg, flush=True)   # readable in the run summary (codes and counts only)
 
 
 # ---------- the same helpers as the app ----------
@@ -252,14 +253,14 @@ def main():
     url = str(pv.get("sceneSheet") or "").strip(); sid = sheet_id(url)
     sa_mail = fsadmin.sa().get("client_email", "")
     if sa_mail and pv.get("sheetSa") != sa_mail: fsadmin.patch_doc("config/private", {"sheetSa": sa_mail})
-    if not sid: log("Szenen-Sheet: kein Sheet eingetragen"); return
+    if not sid: note("kein Sheet eingetragen" if not url else "Link ist kein Google-Sheets-Link"); return
     try: stamp = json.load(open(os.path.join(ROOT, "data.enc.json"))).get("stamp", "")
     except Exception: stamp = ""
     sig = hashlib.sha256((ack_signature() + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
     try: old = json.load(open(STATE))
     except Exception: old = {}
     if old.get("sig") == sig and (old.get("ok") or time.time() - old.get("t", 0) < 1800):   # after an error: again after 30 min (or when something changed)
-        log("Szenen-Sheet: unverändert" if old.get("ok") else "Szenen-Sheet: letzter Fehler " + str(old.get("err"))); return
+        log("Szenen-Sheet: unverändert" if old.get("ok") else "Szenen-Sheet: letzter Fehler " + str(old.get("err"))); json.dump(old, open(STATE, "w")); return
     key = base64.b64decode(fsadmin.crew_key_b64())
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     e = json.load(open(os.path.join(ROOT, "data.enc.json")))
@@ -268,10 +269,10 @@ def main():
     out = build(acks, data)
     try:
         n, t = write_sheet(sid, out)
-        log(f"Szenen-Sheet: {n} Zeilen in {t} Tabellenblättern geschrieben")
+        note(f"{n} Zeilen in {t} Tabellenblättern geschrieben")
         status(ok=True, n=n); json.dump({"sig": sig, "ok": True, "t": time.time()}, open(STATE, "w"))
     except SheetError as err:
-        log("Szenen-Sheet: Fehler", err.code)
+        note("Fehler " + err.code)
         if old.get("err") != err.code: status(ok=False, err=err.code)
         json.dump({"sig": sig, "ok": False, "err": err.code, "t": time.time()}, open(STATE, "w"))
 
@@ -279,4 +280,6 @@ def main():
 if __name__ == "__main__":
     try: main()
     except Exception as e:
-        log("Szenen-Sheet: Fehler", type(e).__name__); sys.exit(0)
+        code = type(e).__name__ + (" " + str(getattr(getattr(e, "response", None), "status_code", "")) if getattr(e, "response", None) is not None else "")
+        note("Fehler " + code.strip())
+        status(ok=False, err="intern", code=code.strip()[:40]); sys.exit(0)
