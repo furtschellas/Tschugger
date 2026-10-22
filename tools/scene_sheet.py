@@ -282,12 +282,12 @@ def write_sheet(sid, out, proj=""):
         req.append({"unmergeCells": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": len(HEAD)}}})
         req.append({"mergeCells": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": HEAD.index("Set") + 1}, "mergeType": "MERGE_ALL"}})
         n = len(rows) + 2
-        # no lines at all – only a thick line below every «Wrap» (between the days)
+        # no lines at all – only a thick line between the shooting days
         none = {"style": "NONE"}
         req.append({"updateBorders": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": n + 50, "startColumnIndex": 0, "endColumnIndex": len(HEAD) + 1},
                                       "top": none, "bottom": none, "left": none, "right": none, "innerHorizontal": none, "innerVertical": none}})
         for i, r in enumerate(rows[:-1]):
-            if str(r[0]).strip().lower() == "wrap":
+            if str(r[2]) != str(rows[i + 1][2]):   # the date changes: a new shooting day
                 req.append({"updateBorders": {"range": {"sheetId": g, "startRowIndex": i + 2, "endRowIndex": i + 3, "startColumnIndex": 0, "endColumnIndex": len(HEAD)},
                                               "bottom": {"style": "SOLID_THICK", "color": {"red": 0, "green": 0, "blue": 0}}}})
         # times hh:mm, column E (S) centred
@@ -324,7 +324,7 @@ def main():
     try: asig = ack_signature()
     except Exception as e:   # the aggregation is only a saving: without it the whole collection is read
         note("Signatur nicht lesbar (" + type(e).__name__ + " " + str(getattr(getattr(e, "response", None), "status_code", "")) + ") – lese alle Quittierungen"); asig = str(time.time() // 1800)
-    sig = hashlib.sha256(("v5|" + asig + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
+    sig = hashlib.sha256(("v6|" + asig + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
     try: old = json.load(open(STATE))
     except Exception: old = {}
     if old.get("sig") == sig and (old.get("ok") or time.time() - old.get("t", 0) < 1800):   # after an error: again after 30 min (or when something changed)
