@@ -1311,6 +1311,8 @@ Object.assign(I18N,{
  "bei":{fr:"chez",it:"da",en:"with"},
  "Lunch-Menüs eingeben":{fr:"Saisir les menus du lunch",it:"Inserire i menu del pranzo",en:"Enter lunch menus"},
  "Cast quittieren (Call, Kostüm, Maske)":{fr:"Valider le cast (call, costume, maquillage)",it:"Confermare il cast (call, costumi, trucco)",en:"Confirm cast (call, costume, make-up)"},
+ "Offen – antippen = läuft":{fr:"Ouvert – toucher = en cours",it:"Aperto – tocca = in corso",en:"Open – tap = running"},
+ "Läuft – antippen = erledigt":{fr:"En cours – toucher = fait",it:"In corso – tocca = fatto",en:"Running – tap = done"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},
