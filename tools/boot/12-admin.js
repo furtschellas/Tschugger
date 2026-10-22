@@ -255,7 +255,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-paccedit]"
 document.addEventListener("change",async e=>{const c=e.target.closest("input[data-pacc]");if(!c)return;const id=c.dataset.pacc,k=c.dataset.perm,on=c.checked;
   if(!id||id==="owner"||(id==="admin"&&!isAdmin())||(id!=="admin"&&!canRoleEdit())||(!isAdmin()&&(id===MYROLE||!MYPERMS.includes(k)))){render();return}
   const ro=id==="admin"?{name:"Admin",perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:Object.assign({},(ADM.roles||[]).find(x=>x.id===id)||{});if(id!=="admin"&&!ro.name&&!ro.perms){render();return}
-  const before=arr(ro.perms).slice(),perms=[...new Set(on?before.concat([k]):before.filter(p=>p!==k))].filter(p=>PERMS.some(x=>x[0]===p));
+  const before=arr(ro.perms).slice(),perms=[...new Set(on?before.concat([k]):before.filter(p=>p!==k))].filter(p=>permKnown(p));
   const apply=ps=>{if(id==="admin")ADM.adminPerms=ps;else{const r=(ADM.roles||[]).find(x=>x.id===id);if(r)r.perms=ps}};
   apply(perms);render();
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name:ro.name||id,perms,at:F.serverTimestamp()});showMsg(L("Rolle gespeichert."),2000)}
@@ -263,7 +263,7 @@ document.addEventListener("change",async e=>{const c=e.target.closest("input[dat
 document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&canRoleEdit()&&(b.dataset.redit!=="admin"||isAdmin())){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
   if(e.target.closest("[data-rreset]")&&canRoleEdit()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!canRoleEdit()||(f.dataset.role==="admin"&&!isAdmin()))return;
-  const name=String(f.rn.value||"").trim().slice(0,40),perms=readBoxes(f,"rp").filter(p=>PERMS.some(x=>x[0]===p)&&(isAdmin()||MYPERMS.includes(p)));if(!name)return;
+  const name=String(f.rn.value||"").trim().slice(0,40),perms=readBoxes(f,"rp").filter(p=>permKnown(p)&&(isAdmin()||MYPERMS.includes(p)));if(!name)return;
   /* rights of this role the editor does not have himself (shown greyed out) stay as they are – they were silently removed before */
   if(!isAdmin()&&f.dataset.role){const cur=((ADM.roles||[]).find(x=>x.id===f.dataset.role)||{}).perms||[];for(const p of cur)if(!MYPERMS.includes(p)&&!perms.includes(p))perms.push(p)}
   let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
@@ -410,7 +410,7 @@ VIEWS.admin=function(){
     grp("acktimes","Quittieren",QQ+'<p class="ahint"><b>'+L("Quittierungszeiten")+'</b> – '+L("Beginn und Ende der quittierten Szenen neben dem Quittierungs-Knopf. Sichtbar nur mit dem Recht «Quittierungszeiten sehen».")+'</p><div class="chk">'+
       [["tpm","pm","Drehplan – Handy"],["tpd","pd","Drehplan – Computer"],["tcm","cm","Callsheet – Handy"],["tcd","cd","Callsheet – Computer"]].map(([n,k,t])=>'<label class="ck"><input form="setform" type="checkbox" name="'+n+'"'+((window.ACKT||{})[k]!==false?' checked':'')+'> '+L(t)+'</label>').join("")+'</div>'+sv)+
     grp("push","Push-Nachrichten",pushStatusSec())+grp("src","Quellen",srcInner())+(own?grp("bk","Backup",bkSec()):''):(own?grp("up","Aktualisieren",upSec())+grp("src","Quellen",srcInner())+grp("bk","Backup",bkSec()):'');
-  const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(canRoleEdit()||canRoleAssign()||can("roles.view"))SUBS.push(["roles","Access"]);if(can("settings"))SUBS.push(["docs","Dokumente"],["set","App"]);if(isAdmin()||can("audit.view")||can("scenes.log"))SUBS.push(["log",isAdmin()||can("audit.view")?"Log/Tests":"Log"]);if(!isAdmin()&&can("data.check"))SUBS.push(["test","Test"]);
+  const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(canRoleEdit()||canRoleAssign()||can("roles.view"))SUBS.push(["roles","Access"]);if(can("settings"))SUBS.push(["docs","Dokumente"],["set","App"]);if(isAdmin()||can("audit.view")||can("scenes.log")||(typeof canRepAny==="function"&&canRepAny()))SUBS.push(["log",isAdmin()||can("audit.view")?"Log/Tests":"Log"]);if(!isAdmin()&&can("data.check"))SUBS.push(["test","Test"]);
   if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
   const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>{const sh={users:"User",roles:"Access",docs:"Docs",set:"App",log:"Log",test:"Test"}[k]||t;if(k==="users")t="User";
@@ -419,7 +419,7 @@ VIEWS.admin=function(){
   if(ADM.sub==="set")return h+setSec+'</section>';
   if(ADM.sub==="docs")return h+docsSec()+'</section>';
   if(ADM.sub==="roles")return h+rolesSec()+'</section>';
-  if(ADM.sub==="log")return h+(window.sceneLogSec?window.sceneLogSec():"")+(isAdmin()||can("audit.view")?(window.workerWarnHTML?window.workerWarnHTML():"")+testsSec()+(window.roleTestSec?window.roleTestSec():"")+(isAdmin()&&window.dataCheckSec?window.dataCheckSec():"")+auditSec():"")+'</section>';   /* the scene log at the top */
+  if(ADM.sub==="log")return h+(window.sceneLogSec?window.sceneLogSec():"")+(window.reportsSec?window.reportsSec():"")+(isAdmin()||can("audit.view")?(window.workerWarnHTML?window.workerWarnHTML():"")+testsSec()+(window.roleTestSec?window.roleTestSec():"")+(isAdmin()&&window.dataCheckSec?window.dataCheckSec():"")+auditSec():"")+'</section>';   /* the scene log at the top */
   if(ADM.sub==="test")return h+'<div class="dcktab">'+(window.dataCheckSec?window.dataCheckSec(true):"")+'</div></section>';
   if(ADM.sub==="bk")return h+bkSec()+'</section>';
   const cInv=can("users.invite"),cView=can("users.view")||can("users.edit"),cEd=can("users.edit");

@@ -63,6 +63,7 @@ function applyData(d){
   for(const [k,src] of [["days","days"],["crew","crew"],["locs","locations"],["places","places"],["dispos","dispos"],["prepro","prepro"]])S[k]=(CLEAN[k]||(x=>x))(arr(d[src]));
   /* the shared Google map (points, lines, areas with layer and colour) for the callsheet map */
   S.gmap=d.gmap&&typeof d.gmap==="object"&&Array.isArray(d.gmap.f)?d.gmap:null;
+  if(typeof window.repPermsSync==="function")window.repPermsSync();   /* one permission per report folder */
   /* keep the contacts already on this device until the contacts file is read again (no flicker) */
   try{const ct=[];prevCrew.forEach((g,gi)=>(g.people||[]).forEach((p,pi)=>{const c={};for(const k in p)if(/^(phone|e?mail|tel|mobil|natel)/i.test(k)&&p[k])c[k]=p[k];if(Object.keys(c).length)ct.push([gi,pi,p.name||"",c])}));
     const hasOwn=S.crew.some(g=>(g.people||[]).some(p=>p.phone||p.email));if(!hasOwn){contactsMerge(S.crew,ct);setTimeout(()=>window.loadContacts(),200)}}catch(_){}
