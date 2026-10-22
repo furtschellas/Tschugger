@@ -21,7 +21,7 @@ TZ = ZoneInfo("Europe/Zurich")
 STATE = os.path.join(ROOT, "sheet.json")   # signature of the last write (actions cache)
 SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 UNAME = {"1": "1st", "2": "2nd", "3": "3rd"}
-HEAD = ["Aktion", "Drehtag", "Datum", "Unit", "S", "I/E", "Seiten", "Set", "Plan Zeit", "Plan Dauer", "Start", "Ende", "Dauer", "Diff.", "Beschreibung"]   # like the PDF of the app
+HEAD = ["Aktion", "Drehtag", "Datum", "Unit", "S", "I/E", "Seiten", "Set", "Plan Zeit", "PD", "Start", "Ende", "Dauer", "Diff.", "Beschreibung"]   # like the PDF of the app
 
 
 def log(*a): print("•", *a, flush=True)
@@ -219,7 +219,7 @@ def sheets_call(tok, method, path, **kw):
     return r.json() if r.text else {}
 
 
-def write_sheet(sid, out):
+def write_sheet(sid, out, proj=""):
     STAGE[0] = "token"
     tok = fsadmin.sa_token(SCOPE)
     STAGE[0] = "sheet"
@@ -235,7 +235,7 @@ def write_sheet(sid, out):
         sheets_call(tok, "POST", sid + "/values/" + requests.utils.quote(rng + "!A:Z", safe="") + ":clear", json={})
         # RAW: pages like «1 1/8» and times stay text (no date), durations stay numbers
         sheets_call(tok, "PUT", sid + "/values/" + requests.utils.quote(rng + "!A1", safe=""), params={"valueInputOption": "RAW"},
-                    json={"values": [HEAD + [stamp]] + rows})
+                    json={"values": [[(proj or "TSCHUGGER Tigerblood") + " · Szenen-Protokoll · " + t, "", "", "", "", "", "", "", stamp]] + [HEAD] + rows})   # like the title of the PDF
     # a filter on every column and the column widths fitting the content
     meta = sheets_call(tok, "GET", sid, params={"fields": "sheets(properties(sheetId,title))"})
     ids = {x["properties"]["title"]: x["properties"]["sheetId"] for x in meta.get("sheets") or []}
@@ -243,7 +243,14 @@ def write_sheet(sid, out):
     for t, rows in tabs.items():
         g = ids.get(t)
         if g is None: continue
-        req.append({"setBasicFilter": {"filter": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": len(rows) + 1, "startColumnIndex": 0, "endColumnIndex": len(HEAD)}}}})
+        # filter only up to «Set» (not on the times and the description); title and headings fixed; title, headings and «Aktion» bold
+        req.append({"setBasicFilter": {"filter": {"range": {"sheetId": g, "startRowIndex": 1, "endRowIndex": len(rows) + 2, "startColumnIndex": 0, "endColumnIndex": HEAD.index("Set") + 1}}}})
+        req.append({"updateSheetProperties": {"properties": {"sheetId": g, "gridProperties": {"frozenRowCount": 2}}, "fields": "gridProperties.frozenRowCount"}})
+        req.append({"repeatCell": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": 2}, "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}}, "fields": "userEnteredFormat.textFormat.bold"}})
+        req.append({"repeatCell": {"range": {"sheetId": g, "startRowIndex": 2, "endRowIndex": len(rows) + 2, "startColumnIndex": 0, "endColumnIndex": 1}, "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}}, "fields": "userEnteredFormat.textFormat.bold"}})
+        # the title over the columns up to «Set» (so it does not make the first column wide)
+        req.append({"unmergeCells": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": len(HEAD)}}})
+        req.append({"mergeCells": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": HEAD.index("Set") + 1}, "mergeType": "MERGE_ALL"}})
         req.append({"autoResizeDimensions": {"dimensions": {"sheetId": g, "dimension": "COLUMNS", "startIndex": 0, "endIndex": len(HEAD) + 1}}})
     if req:
         try: sheets_call(tok, "POST", sid + ":batchUpdate", json={"requests": req})
@@ -270,7 +277,7 @@ def main():
     try: asig = ack_signature()
     except Exception as e:   # the aggregation is only a saving: without it the whole collection is read
         note("Signatur nicht lesbar (" + type(e).__name__ + " " + str(getattr(getattr(e, "response", None), "status_code", "")) + ") – lese alle Quittierungen"); asig = str(time.time() // 1800)
-    sig = hashlib.sha256((asig + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
+    sig = hashlib.sha256(("v3|" + asig + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
     try: old = json.load(open(STATE))
     except Exception: old = {}
     if old.get("sig") == sig and (old.get("ok") or time.time() - old.get("t", 0) < 1800):   # after an error: again after 30 min (or when something changed)
@@ -285,7 +292,7 @@ def main():
     out = build(acks, data)
     STAGE[0] = "sheet"
     try:
-        n, t = write_sheet(sid, out)
+        n, t = write_sheet(sid, out, str((fsadmin.get_doc("config/app") or {}).get("projName") or "").strip())
         note(f"{n} Zeilen in {t} Tabellenblättern geschrieben")
         status(ok=True, n=n); json.dump({"sig": sig, "ok": True, "t": time.time()}, open(STATE, "w"))
     except SheetError as err:
