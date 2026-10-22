@@ -60,10 +60,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # up to three tries: a short network hiccup while installing must not make the whole test run «crash»
       - name: Werkzeuge
         run: |
-          pip install -q playwright==1.48.0 cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1 icalendar==6.1.0 recurring-ical-events==3.3.3 pillow==11.0.0 openpyxl==3.1.5
-          python -m playwright install --with-deps chromium >/dev/null
+          for i in 1 2 3; do
+            pip install -q playwright==1.48.0 cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1 icalendar==6.1.0 recurring-ical-events==3.3.3 pillow==11.0.0 openpyxl==3.1.5 \
+              && python -m playwright install --with-deps chromium >/dev/null && exit 0
+            echo "::warning::Installation fehlgeschlagen (Versuch $i/3) – neuer Versuch"; sleep 20
+          done; exit 1
       # the app is built here from tools/ (never taken from a hand-made index.html) and must start without any script error
       - name: App bauen
         run: |
@@ -202,7 +206,8 @@ jobs:
   # Committed only AFTER the deployment, otherwise the two Pages deployments get in each other's way.
   results:
     needs: [test, rules, deploy]
-    if: always() && (needs.test.result == 'success' || needs.test.result == 'failure' || needs.rules.result == 'success' || needs.rules.result == 'failure')
+    # not when a newer push cancelled the tests: missing results would count as «crashed» and raise a false alarm
+    if: always() && needs.test.result != 'cancelled' && needs.rules.result != 'cancelled' && (needs.test.result == 'success' || needs.test.result == 'failure' || needs.rules.result == 'success' || needs.rules.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
