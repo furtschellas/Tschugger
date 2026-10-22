@@ -217,7 +217,7 @@ async function scPdf(rows,days,UN,stamp,pw,uu){
   const hc=(t,i,x)=>Object.assign({content:t,styles:Object.assign({lineWidth:lw(i,.1,.1)},x&&x.styles)},x&&x.o);
   const head=[[hc(C(T("Aktion")),0,{o:{rowSpan:2},styles:{valign:"bottom"}}),hc("S",1,{o:{rowSpan:2},styles:{valign:"bottom",halign:"center"}}),hc("I/E\n"+C(T("Seiten")),2,{o:{rowSpan:2},styles:{valign:"bottom"}}),hc("Set\n"+C(T("Beschreibung")),3,{o:{rowSpan:2},styles:{valign:"bottom"}}),
     Object.assign(hc(C(T("Plan")),4,{o:{colSpan:2},styles:{halign:"left"}}),{}),hc(C(T("Dreh")),6,{o:{colSpan:4},styles:{halign:"left"}})],
-    [T("Zeit"),T("Dauer"),T("Start"),T("Ende"),T("Dauer"),T("Diff.")].map((t,j)=>hc(C(t),j+4,{styles:{halign:"right"}}))];
+    [T("Zeit"),T("Dauer"),T("Start"),T("Ende"),T("Dauer"),T("Diff.")].map((t,j)=>hc(C(t),j+4,{styles:{halign:"left"}}))];
   head[0][4].styles.lineWidth.right=TH;
   const W=[38,9,22,109,16,16,16,16,16,16];
   /* the description in one line: shortened with … when it is too long */

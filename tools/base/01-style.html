@@ -1352,6 +1352,8 @@ html body #view .csscd>summary .l1::after{content:"";order:1;flex:0 0 40px;heigh
 html body #view .csscd>summary .l1:has(.scackw)::after{flex-basis:150px}
 html body #view ol.tl>li.row>.sc>.l1:has(.scackw)::after{content:"";order:1;flex:0 0 120px;height:1px}
 html body #view .csscd>summary .l1>.set,html body #view ol.tl>li.row>.sc>.l1>.set{order:2;flex:1 1 100%;min-width:0}
+/* step 1 of a scene in the callsheet: the facts (pages, duration, director, extras) below the set */
+html body #view .csscd>summary .l1>.meta{order:9;flex:1 1 100%;margin:2px 0 0}
 /* phone, callsheet: the status top right, its times under the title (the scene line keeps its room) */
 @media (max-width:760px){html body #view .csscd>summary .l1>.scackw{display:contents}
  html body #view .csscd>summary .l1>.scackw>.scack{position:absolute;top:6px;right:44px}
@@ -1412,6 +1414,7 @@ html body #view .csoscn .cso1>*{flex-shrink:0}html body #view .csoscn .cso1 .st{
 @media (max-width:760px){html body #view .csscd>summary .l1{padding-right:66px}
  html body #view .csscd>summary .l1::after,html body #view .csscd>summary .l1:has(.scackw)::after{display:none}
  html body #view .csscd>summary .l1>.set{margin-right:-66px;margin-top:6px}
+ html body #view .csscd>summary .l1>.meta{margin-right:-66px}
  html body #view .csscd:not([open])>summary .scackt{display:none}}
 /* callsheet scene «Details»: all fields of the scene as a two-column list */
 html body #view dl.csdet{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:4px 0 8px;font-size:13px}
