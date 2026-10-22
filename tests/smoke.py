@@ -126,7 +126,7 @@ async def session(p, port, who, width=390, extra=""):
 
 
 # shared building blocks (same meaning everywhere); any OTHER class name used in two modules is a collision risk
-SHARED = set("""lgl sml wlwarn wlbox acsub tbord tbrow tbmv audh audt audw audb audlist tstsec tsth redst redrow lsum lsh lss lst tstsu tstl tstbtns ghint pillbtn a2hs a2box ck ahint amsg lnk a2b empty arb pgt chk role mypage admins ok psec off pri refresh efood
+SHARED = set("""lgl sml err wlwarn wlbox acsub tbord tbrow tbmv audh audt audw audb audlist tstsec tsth redst redrow lsum lsh lss lst tstsu tstl tstbtns ghint pillbtn a2hs a2box ck ahint amsg lnk a2b empty arb pgt chk role mypage admins ok psec off pri refresh efood
 xclose gbtn lang glink hasreq smodes pok pushsec amap wlbox sec wlbeta cath3 catchip reg catchips myhead asub n acbox warn cico
 em search src dh on ico spin ttile fact v ust bcchk calbtn mcd uh tstsec tsth""".split())
 
