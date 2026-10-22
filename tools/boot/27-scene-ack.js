@@ -167,9 +167,11 @@ const SCX_CSV='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true
 const SCX_SHEET='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M8.5 11h7v6.5h-7zM8.5 14.2h7M12 11v6.5"/></svg>';
 const scIco=(attr,ic,t)=>typeof tstIco==="function"?tstIco(attr,ic,t):'<button type="button" class="pillbtn" '+attr+'>'+esc(t)+'</button>';
 /* export of the scene log: as a table (CSV for Excel, Numbers, Google Sheets) or as PDF (print view → «Als PDF sichern»); oldest day first */
+/* Drehstart and Wrap: no duration in the exports (they are points in time) */
+const scNoDur=r=>!!r.drehstart||scBase(r.k||"")==="wrap";
 function scExpRows(d,u){const un=s=>{const x=document.createElement("textarea");x.innerHTML=String(s||"");return x.value};
   return (SCLOG.exp||[]).filter(r=>(!d||r.d===d)&&(!u||String(r.u)===u)).sort((a,b)=>a.d.localeCompare(b.d)).map(r=>Object.assign({dt:r.dt,date:r.d.split("-").reverse().join("."),unit:((typeof UNAME!=="undefined"&&UNAME[r.u])||r.u)+" Unit",name:un(r.name),
-    st:r.st,inv:!!r.drehstart||/^(lunch|wrap)$/.test(scBase(r.k||"")),state:r.st===2?"✓":"",plan:r.plan||"",pmin:r.pdm?String(r.pdm):"",b:r.b?scHM(r.b):"",e:r.e?scHM(r.e):"",min:r.b&&r.e?String(Math.round((r.e-r.b)/60000)):"",diff:r.b&&r.e&&r.pdm?String(Math.round((r.e-r.b)/60000)-r.pdm):""},scInfo(r)))}
+    st:r.st,inv:!!r.drehstart||/^(lunch|wrap)$/.test(scBase(r.k||"")),state:r.st===2?"✓":"",plan:r.plan||"",pmin:r.pdm&&!scNoDur(r)?String(r.pdm):"",b:r.b?scHM(r.b):"",e:r.e?scHM(r.e):"",min:r.b&&r.e&&!scNoDur(r)?String(Math.round((r.e-r.b)/60000)):"",diff:r.b&&r.e&&r.pdm&&!scNoDur(r)?String(Math.round((r.e-r.b)/60000)-r.pdm):""},scInfo(r)))}
 /* more about a scene for the export: I/E, set, pages, cast and the description from the Drehplan of that day (and unit) */
 function scInfo(r){const k=scBase(r.k||""),E={ie:"",set:"",pg:"",cast:"",desc:""};
   /* setup and Drehstart: the I/E of the scene that follows (setup: the next scene after its row, Drehstart: the first scene of the day) */
@@ -185,11 +187,11 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   const cells=r=>[r.dt,r.date,r.unit,r.name,r.state,r.ie,r.set,r.pg,r.plan,r.pmin,r.b,r.e,r.min,r.diff,r.desc];
   if(k==="csv"){const q=v=>{v=String(v==null?"":v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
     const txt="﻿"+[SCX_HEAD()].concat(rows.map(r=>{const c=cells(r);if(c[7])c[7]='="'+c[7]+'"';return c})).map(r=>r.map(q).join(";")).join("\r\n");   /* pages as text: «1 1/8» is no date */
-    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));a.download="TSCHUGGER-Tigerblood_Szenen-Protokoll_"+stamp+".csv";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);return}
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));a.download=projFile()+"_Szenen-Protokoll_"+stamp+".csv";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);return}
   const UN=uu?((typeof UNAME!=="undefined"&&UNAME[uu])||uu)+" Unit":"",HD=[L("Eintrag"),L("Status"),"I/E · "+L("Seiten"),"Set · "+L("Beschreibung")],HD2=[L("Zeit"),L("Dauer")+" (min)",L("Beginn"),L("Ende"),L("Dauer")+" (min)",L("Diff.")+" (min)"],days=[...new Set(rows.map(r=>r.dt+" · "+r.date))];
   /* the same columns on every day: fixed widths (entry, state, I/E, set, pages, plan, planned duration, begin, end, duration); the description in a second line below */
   const COLS='<colgroup>'+[14,6,8,29,7,8,7,7,7,7].map(w=>'<col style="width:'+w+'%">').join("")+'</colgroup>';
-  const doc='<!doctype html><html><head><meta charset="utf-8"><title>TSCHUGGER Tigerblood · '+esc(L("Szenen-Protokoll"))+' '+esc(UN)+' '+esc(stamp)+'</title><style>body{font:11px/1.35 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#111}h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:0 0 6px;break-after:avoid}.day{break-inside:avoid;page-break-inside:avoid;margin:0 0 14px}table{table-layout:fixed}table{border-collapse:collapse;width:100%;break-inside:auto}th,td{border-bottom:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top}th{background:#f2f2f2;vertical-align:bottom}th.scg{text-align:center;border-left:1px solid #ccc}td.n{font-variant-numeric:tabular-nums;white-space:nowrap}tbody.o td{color:#888}tbody.e{break-inside:avoid}tr.scl1 td{border-bottom:0;padding-bottom:1px}tr.scl2 td{padding-top:0}td.scred{color:#c81e1e;font-weight:700}td.scxd{font-size:10.5px;color:#333;min-width:40mm}@page{size:A4 landscape;margin:10mm}</style></head><body><h1>TSCHUGGER Tigerblood · '+esc(L("Szenen-Protokoll"))+(UN?' · '+esc(UN):'')+'</h1>'+
+  const doc='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(projName())+' · '+esc(L("Szenen-Protokoll"))+' '+esc(UN)+' '+esc(stamp)+'</title><style>body{font:11px/1.35 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#111}h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:0 0 6px;break-after:avoid}.day{break-inside:avoid;page-break-inside:avoid;margin:0 0 14px}table{table-layout:fixed}table{border-collapse:collapse;width:100%;break-inside:auto}th,td{border-bottom:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top}th{background:#f2f2f2;vertical-align:bottom}th.scg{text-align:center;border-left:1px solid #ccc}td.n{font-variant-numeric:tabular-nums;white-space:nowrap}tbody.o td{color:#888}tbody.e{break-inside:avoid}tr.scl1 td{border-bottom:0;padding-bottom:1px}tr.scl2 td{padding-top:0}td.scred{color:#c81e1e;font-weight:700}td.scxd{font-size:10.5px;color:#333;min-width:40mm}@page{size:A4 landscape;margin:10mm}</style></head><body><h1>'+esc(projName())+' · '+esc(L("Szenen-Protokoll"))+(UN?' · '+esc(UN):'')+'</h1>'+
     days.map(k=>'<div class="day"><h2>'+esc(k.replace(/^ · /,""))+'</h2><table>'+COLS+'<thead><tr>'+HD.map(h=>'<th rowspan="2">'+esc(h)+'</th>').join("")+'<th colspan="2" class="scg">'+esc(L("Plan"))+'</th><th colspan="4" class="scg">'+esc(L("Dreh"))+'</th></tr><tr>'+HD2.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead>'+
       rows.filter(r=>r.dt+" · "+r.date===k).map(r=>{const c=[r.name,r.state,r.ie,r.set,r.plan,r.pmin,r.b,r.e,r.min,(+r.diff>0?"+":"")+r.diff],sc=!!(r.desc||r.pg);return '<tbody class="e'+(r.st?'':' o')+'"><tr'+(sc?' class="scl1"':'')+'>'+c.map((v,i)=>'<td'+(i>=4?' class="n'+(i===9&&+r.diff>0?' scred':'')+'"':'')+'>'+esc(v)+'</td>').join("")+'</tr>'+(sc?'<tr class="scl2"><td></td><td></td><td class="n">'+esc(r.pg||"")+'</td><td colspan="7" class="scxd">'+esc(r.desc||"")+'</td></tr>':'')+'</tbody>'}).join("")+'</table></div>').join("")+'</body></html>';
   /* a real PDF (jsPDF, loaded only when needed) that opens directly in the PDF reader; without it the print view below */
@@ -202,27 +204,38 @@ async function scPdf(rows,days,UN,stamp,pw){
   const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
   /* the built-in font knows only Latin letters: Hindi labels in English, signs that it lacks replaced */
   const T=k=>LANG==="hi"?(((I18N[k]||{}).en)||k):L(k),C=v=>String(v==null?"":v).replace(/[′’]/g,"'").replace(/[^\x20-\x7E\xA0-\xFF–—…€]/g,"");
-  doc.setFontSize(15);doc.text(C("TSCHUGGER Tigerblood · "+T("Szenen-Protokoll")+(UN?" · "+UN:"")),12,14);
+  doc.setFontSize(15);doc.text(C(projName()+" · "+T("Szenen-Protokoll")+(UN?" · "+UN:"")),12,14);
+  /* right of the title: the production company in capitals (and its address below, small) – App-Verwaltung → Produktion */
+  {const co=String(window.PRODCO||"").trim(),ad=String(window.PRODADDR||"").trim();if(co){doc.setFontSize(11);doc.setFont(undefined,"bold");doc.text(C(co.toUpperCase()),285,12,{align:"right"});doc.setFont(undefined,"normal")}
+   if(ad){doc.setFontSize(7.5);doc.setTextColor(90);doc.text(C(ad.replace(/\s*\n\s*/g,", ")),285,co?16:12,{align:"right"});doc.setTextColor(0)}}
   /* two header rows: «Plan» over time and duration, «Dreh» over begin, end and duration */
   const g=t=>({content:C(t),colSpan:t===T("Plan")?2:4,styles:{halign:"center"}}),r2=t=>({content:C(t),rowSpan:2,styles:{valign:"bottom"}});
-  const head=[[r2(T("Eintrag")),r2(T("Status")),{content:"I/E\n"+C(T("Seiten")),rowSpan:2,styles:{valign:"bottom"}},r2("Set · "+T("Beschreibung")),g(T("Plan")),g(T("Dreh"))],[T("Zeit"),T("Dauer")+" (min)",T("Beginn"),T("Ende"),T("Dauer")+" (min)",T("Diff.")+" (min)"].map(C)];
-  const W=[38,13,22,78,15,21,15,15,21,19];let y=20;
+  /* column lines always through; thicker after «Set / Beschreibung» and after «Plan» */
+  const TH=.8,lw=(i,t,b)=>({top:t,bottom:b,left:i===4||i===6?TH:.1,right:i===3||i===5?TH:.1});
+  const hc=(t,i,x)=>Object.assign({content:t,styles:Object.assign({lineWidth:lw(i,.1,.1)},x&&x.styles)},x&&x.o);
+  const head=[[hc(C(T("Aktion")),0,{o:{rowSpan:2},styles:{valign:"bottom"}}),hc("S",1,{o:{rowSpan:2},styles:{valign:"bottom",halign:"center"}}),hc("I/E\n"+C(T("Seiten")),2,{o:{rowSpan:2},styles:{valign:"bottom"}}),hc("Set\n"+C(T("Beschreibung")),3,{o:{rowSpan:2},styles:{valign:"bottom"}}),
+    Object.assign(hc(C(T("Plan")),4,{o:{colSpan:2},styles:{halign:"center"}}),{}),hc(C(T("Dreh")),6,{o:{colSpan:4},styles:{halign:"center"}})],
+    [T("Zeit"),T("Dauer"),T("Start"),T("Ende"),T("Dauer"),T("Diff.")].map((t,j)=>hc(C(t),j+4))];
+  head[0][4].styles.lineWidth.right=TH;
+  const W=[38,9,22,109,16,16,16,16,16,16];   /* all time columns the same width */let y=20;
   for(const k of days){const rs=rows.filter(r=>r.dt+" · "+r.date===k),body=[];
     /* Drehstart, Lunch and Wrap inverted (white on black); no line between the two lines of one entry, only between entries */
-    const L1={top:.1,right:.1,bottom:0,left:.1},L2={top:0,right:.1,bottom:.1,left:.1};
-    for(const r of rs){const sc=!!(r.desc||r.pg),o=Object.assign(r.inv?{fillColor:25,textColor:r.st?255:175,lineColor:90}:r.st?{}:{textColor:140},sc?{lineWidth:L1}:{});
+    for(const r of rs){const sc=!!(r.desc||r.pg),o=r.inv?{fillColor:25,textColor:r.st?255:175,lineColor:90}:r.st?{}:{textColor:140};
       /* difference: more time than planned in red */
       const df=r.diff===""?"":(+r.diff>0?"+":"")+r.diff,red=+r.diff>0?{textColor:r.inv?[255,110,110]:[200,30,30],fontStyle:"bold"}:{};
-      body.push([r.name,r.st===2?"":"",r.ie,r.set,r.plan,r.pmin,r.b,r.e,r.min,df].map((v,i)=>({content:C(v),styles:Object.assign({fontStyle:i===0?"bold":"normal"},o,i===9?red:{}),_done:i===1&&r.st===2})));
-      if(sc){const o2=Object.assign({},o,{lineWidth:L2});body.push([{content:"",styles:o2},{content:"",styles:o2},{content:C(r.pg),styles:o2},{content:C(r.desc),colSpan:7,styles:Object.assign({fontSize:8},r.inv?{}:{textColor:r.st?70:140},o2)}])}}
+      body.push([r.name,r.st===2?"":"",r.ie,r.set,r.plan,r.pmin,r.b,r.e,r.min,df].map((v,i)=>({content:C(v),styles:Object.assign({fontStyle:i===0?"bold":"normal",lineWidth:lw(i,.1,sc?0:.1)},sc?{cellPadding:{top:1.4,bottom:.2,left:1.4,right:1.4}}:{},o,i===9?red:{}),_done:i===1&&r.st===2})));
+      if(sc)body.push(["","",C(r.pg),C(r.desc),"","","","","",""].map((v,i)=>({content:v,styles:Object.assign({lineWidth:lw(i,0,.1),cellPadding:{top:.2,bottom:1.4,left:1.4,right:1.4}},o,i===3?Object.assign({fontSize:8},r.inv?{}:{textColor:r.st?70:140}):{})})))}
     /* a day that does not fit on the rest of the page starts on a new one */
-    const need=10+body.length*6;if(y+need>200&&y>30){doc.addPage();y=14}
+    const need=10+body.length*6;if(y+need>192&&y>30){doc.addPage();y=14}
     doc.setFontSize(11);doc.text(C(k.replace(/^ · /,"")),12,y+5);
-    doc.autoTable({startY:y+8,head,body,margin:{left:12,right:12},theme:"grid",tableWidth:"wrap",columnStyles:Object.fromEntries(W.map((w,i)=>[i,{cellWidth:w}])),
+    doc.autoTable({startY:y+8,head,body,margin:{left:12,right:12,bottom:14},theme:"grid",tableWidth:"wrap",columnStyles:Object.fromEntries(W.map((w,i)=>[i,{cellWidth:w}])),
       styles:{fontSize:8.5,cellPadding:1.4,lineColor:220,lineWidth:.1,overflow:"linebreak"},headStyles:{fillColor:[242,242,242],textColor:20,fontStyle:"bold"},rowPageBreak:"avoid",
       didDrawCell:h=>{if(h.section==="body"&&h.cell.raw&&h.cell.raw._done){const c=h.cell,x=c.x+c.width/2-2,yy=c.y+c.height/2;doc.setDrawColor(40,150,90);doc.setLineWidth(.6);doc.line(x,yy,x+1.4,yy+1.4);doc.line(x+1.4,yy+1.4,x+4,yy-1.6)}}});
     y=doc.lastAutoTable.finalY+6}
-  const blob=doc.output("blob"),url=URL.createObjectURL(blob),name="TSCHUGGER-Tigerblood_Szenen-Protokoll_"+stamp+".pdf";
+  /* footer on every page: who exported it (left), page x of y (middle), date and time of the export (right) */
+  {const n=doc.getNumberOfPages(),z=new Date(),who=(()=>{try{const m=myIdentity();if(m&&m.name)return m.name}catch(_){}return (window.ME&&ME.email)||""})(),when=pad2(z.getDate())+"."+pad2(z.getMonth()+1)+"."+z.getFullYear()+" "+pad2(z.getHours())+":"+pad2(z.getMinutes());
+   for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(90);doc.text(C(who),12,203);doc.text(C(T("Seite")+" "+i+" "+T("von")+" "+n),148.5,203,{align:"center"});doc.text(C(when),285,203,{align:"right"})}doc.setTextColor(0)}
+  const blob=doc.output("blob"),url=URL.createObjectURL(blob),name=projFile()+"_Szenen-Protokoll_"+stamp+".pdf";
   /* open in the PDF reader of the device; where a new window is not possible, as a download */
   if(pw&&!pw.closed)pw.location.href=url;else{const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}
   setTimeout(()=>URL.revokeObjectURL(url),300000)}

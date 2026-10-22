@@ -166,10 +166,11 @@ def build(acks, data):
         for u in us:
             for r in unit_rows(d, u, [x for x in l if str(x.get("u") or "1") == u], day, cs):
                 r.update(d=d, u=u); i = info(r, days, sched)
+                nd = r["drehstart"] or base(r["k"]) == "wrap"   # Drehstart and Wrap: points in time, no duration
                 out.setdefault(u, []).append([dt, ".".join(reversed(d.split("-"))), UNAME.get(u, u) + " Unit", r["name"], "✓" if r["st"] == 2 else "",
-                                              i["ie"], i["set"], i["pg"], r["plan"] or "", r["pdm"] or "", clock(r["b"]), clock(r["e"]),
-                                              round((r["e"] - r["b"]) / 60000) if r["b"] and r["e"] else "",
-                                              round((r["e"] - r["b"]) / 60000) - r["pdm"] if r["b"] and r["e"] and r["pdm"] else "", i["desc"]])
+                                              i["ie"], i["set"], i["pg"], r["plan"] or "", (r["pdm"] or "") if not nd else "", clock(r["b"]), clock(r["e"]),
+                                              round((r["e"] - r["b"]) / 60000) if r["b"] and r["e"] and not nd else "",
+                                              round((r["e"] - r["b"]) / 60000) - r["pdm"] if r["b"] and r["e"] and r["pdm"] and not nd else "", i["desc"]])
     return out
 
 
