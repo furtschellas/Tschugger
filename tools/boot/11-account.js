@@ -4,7 +4,7 @@ function acctButton(on){
   if(!b){b=document.createElement("button");b.id="acctBtn";b.className="refresh";b.type="button";
     b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
     const r=$("#refresh");r.parentNode.insertBefore(b,r);b.addEventListener("click",showAcct)}
-  b.setAttribute("aria-label",L("Mein Konto"));b.title=L("Mein Konto");b.hidden=!on;
+  b.setAttribute("aria-label",L("Mein Konto"));b.title=L("Mein Konto");b.hidden=!on;try{if(window.repButton)repButton()}catch(_){}
   /* gear (admins): App-Verwaltung, between account and refresh */
   let g=document.getElementById("admBtn");
   if(!g){g=document.createElement("button");g.id="admBtn";g.className="refresh";g.type="button";

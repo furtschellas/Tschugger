@@ -96,7 +96,8 @@ const TOUR_STEPS=[
   {tab:"plan",day:"prep",sel:"#view .ppi .calbtn:not(.mailbtn)",t:"Termin in den Kalender",x:"Mit dem Kalender-Knopf übernimmst du einen Termin direkt in deinen Kalender (Handy oder Computer)."},
   {tab:"plan",day:"prep",sel:"#view .ppi .mailbtn",t:"E-Mail-Verteiler",x:"Der Brief-Knopf öffnet eine E-Mail an alle Teilnehmenden dieses Termins – praktisch für kurzfristige Infos."},
   {tab:"dispo",sel:'nav.tabs [data-tab="dispo"]',t:"Callsheet",x:"Die Dispo des Drehtags: Crew Call, Drehbeginn, Wrap, Locations und Cast."},
-  {tab:"dispo",sel:"#view #cs-order",t:"Drehfolge",x:"In zwei Schritten aufklappen: zuerst die Zeilen, dann alle Szenen. Der pinke Rahmen zeigt den aktuellen Schritt, «Details» alle Angaben zur Szene; die Statisten stehen bei der Cast."},
+  {tab:"dispo",sel:"#view #cs-order",t:"Drehfolge",x:"In zwei Schritten aufklappen: zuerst die Zeilen, dann alle Szenen. Eine Szene öffnet sich mit jedem Tipp einen Schritt weiter: Eckdaten, dann Beschreibung, Cast, Statisten und Adresse, zuletzt alle Angaben aus dem Breakdown. Der pinke Rahmen zeigt den aktuellen Schritt."},
+  {tab:"dispo",sel:"#view #cs-karte",need:()=>window.CSMAPON!==false&&vok("csmap"),t:"Callsheet-Karte",x:"Alle Orte des Tages auf einer Karte – auf Wunsch mit den Punkten, Wegen und Flächen der Google-Karte der Produktion."},
   {tab:"dispo",sel:"#view #cs-loc",t:"Locations im Callsheet",x:"Jeder Drehort mit Karte, Floorplan und Szenen; die Base mit ihren Räumen (Greenroom, W/H/M, Prod, WC) als ein Ort. Der pinke Rahmen zeigt, wo gerade gedreht wird."},
   {tab:"loc",sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
   {tab:"loc",sel:"#view .mapbtn",t:"Karte",x:"«Map» öffnet die Karte mit allen Drehorten – praktisch für die Anfahrt."},
@@ -118,6 +119,9 @@ const TOUR_STEPS=[
   {tab:"my",sel:"#view [data-oeadd]",need:()=>can("events.add"),t:"Termin hinzufügen",x:"Mit «+ Termin» legst du einen eigenen Termin an und wählst, wer ihn sieht: alle, Rollen, Abteilungen oder einzelne Personen. Er erscheint auch im Drehplan und in der Prep-Planung am jeweiligen Tag."},
   {tab:"my",sel:"#view [data-oegc]",t:"Google Kalender",x:"Wähle Termine aus dem Google Kalender aus und bestimme, wer sie sieht. Ändert sich ein Termin dort, wird er hier automatisch nachgeführt."},
   {tab:"plan",sel:"#bcBtn",need:()=>can("push.send"),t:"Push-Nachricht senden",x:"Mit dem Briefumschlag schickst du sofort eine Push-Nachricht an alle – oder nur an bestimmte Rollen und Abteilungen."},
+  {tab:"reports",sel:"#repBtn",need:()=>typeof repOn==="function"&&repOn(),t:"Reports",x:"Szenen-Protokoll und die Reports der Produktion (Produktion, Sound, DIT) an einem Ort."},
+  {tab:"reports",repsub:"scenes",sel:'#view details[data-lsec="sclog"]',need:()=>typeof canSceneLog==="function"&&canSceneLog(),t:"Szenen-Protokoll",x:"Beginn, Ende und Dauer aller Szenen pro Drehtag und Unit, dazu Setup, Drehstart, Lunch und Wrap – mit dem Stift änderbar. Export als PDF, als Excel-Tabelle mit Filtern oder direkt im Google Sheet."},
+  {tab:"reports",sel:"#view .reppage .acsub",need:()=>typeof repGroups==="function"&&repGroups().length>0,t:"Reports der Produktion",x:"Pro Bereich alle Reports: ansehen in der Galerie, direkt in der Dropbox öffnen oder als PDF. Unter «Alle» alle Reports in der Galerie – nach Drehtag, nach Department oder die neuesten zuerst."},
   {tab:"acct",sel:"#acctBtn",t:"Mein Konto",x:"Profil, Push-Nachrichten, hell/dunkel, Passwort und Abmelden. Hier kannst du diese Tour jederzeit neu starten."},
   {tab:"acct",sel:"#view .acsub",t:"Bereiche",x:"Profil, Essen, Push und App. Unter «App» findest du Darstellung, Sprache, Offline, Today und das App-Icon."},
   {tab:"acct",acsub:"note",sel:"#view .pushsec",t:"Push-Nachrichten",x:"Wähle, ob du bei Änderungen am Drehplan, bei neuen Callsheets und bei Änderungen der Prep-Planung benachrichtigt wirst – und wann du an deine Termine erinnert wirst. Ein Tipp auf die Nachricht öffnet direkt den betroffenen Tag."},
@@ -131,7 +135,7 @@ const TOUR_STEPS=[
   {tab:"admin",asub:"docs",sel:'#view .asub [data-asub="docs"]',need:()=>can("settings"),t:"Docs",x:"Die Texte der Einladungs-Mails und der Willkommensnachricht."},
   {tab:"admin",asub:"set",sel:'#view .asub [data-asub="set"]',need:()=>can("settings"),t:"App",x:"Aktualisierung aus der Dropbox, Sprachen, Bereiche, eigene Termine und Google Kalender, Push, Tour und Assistent ein- oder ausschalten."},
   {tab:"admin",asub:"log",sel:'#view .asub [data-asub="log"]',need:()=>isAdmin()||can("audit.view"),t:"Log/Tests",x:"Automatische Tests, «Berechtigungen testen», «Dokumente prüfen» und wer was geändert hat."},
-  {tab:"admin",asub:"log",sel:'#view details[data-lsec="sclog"]',need:()=>typeof canSceneLog==="function"&&canSceneLog(),t:"Szenen-Protokoll",x:"Beginn, Ende und Dauer aller Szenen pro Drehtag und Unit, dazu Setup, Drehstart, Lunch und Wrap – mit dem Stift änderbar, als PDF (Querformat) oder Tabelle exportierbar."},
+
   {tab:"admin",asub:"test",sel:'#view .asub [data-asub="test"],#view .dcktab .dcksec',need:()=>!isAdmin()&&can("data.check"),t:"Dokumente prüfen",x:"Vergleicht Drehplan, Drehbuch, Locations, Prep und Callsheets und zeigt Unstimmigkeiten."},
   {tab:"plan",sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
 ];
@@ -147,7 +151,7 @@ function tourDemo(st){
   if(want==="lang"&&!o.lang){const to=(APPLANGS||[]).find(l=>l!==LANG&&l==="en")||(APPLANGS||[]).find(l=>l!==LANG);if(to){o.lang=LANG;LANG=to;applyStatic();render()}}
   if(want==="theme"&&!o.theme){o.theme=getTheme();setTheme(o.theme==="dark"?"light":"dark")}
 }
-function tourShow(st){if(st.acsub&&typeof ACSUB!=="undefined"&&ACSUB!==st.acsub){ACSUB=st.acsub;if(S.tab===st.tab)render()}if(st.asub&&typeof ADM!=="undefined"&&ADM.sub!==st.asub){ADM.sub=st.asub;if(S.tab===st.tab)render()}if(st.day){const id=tourDay(st.day);if(id&&S.day!==id){S.day=id;if(S.tab===st.tab)render()}}if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}else if(st.day)render();window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
+function tourShow(st){if(st.acsub&&typeof ACSUB!=="undefined"&&ACSUB!==st.acsub){ACSUB=st.acsub;if(S.tab===st.tab)render()}if(st.repsub&&typeof window.repSetSub==="function"&&window.repSetSub(st.repsub)&&S.tab===st.tab)render();if(st.asub&&typeof ADM!=="undefined"&&ADM.sub!==st.asub){ADM.sub=st.asub;if(S.tab===st.tab)render()}if(st.day){const id=tourDay(st.day);if(id&&S.day!==id){S.day=id;if(S.tab===st.tab)render()}}if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}else if(st.day)render();window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
 function tourDoneLocal(){try{return !!(localStorage.getItem("tourDone:"+(ME&&ME.uid))||localStorage.getItem("tour"))}catch(_){return false}}
 /* the tour starts by itself only once per person: marked right when it is offered (this device, the synced view settings and the profile) */
 /* app icon status for «Mein Konto»: checked whenever the page is opened (at most every 20 s) */
@@ -192,7 +196,7 @@ async function maybeTour(){
   TOUR.pending=true;setTimeout(()=>{TOUR.pending=false;if(!TOUR.el&&!tourDoneLocal()&&!(MEMBER&&MEMBER.tour)){tourMark("shown");tourStart(true)}},700);
 }
 /* the short tour: only the most important functions (at most 15 steps) */
-const TOUR_SHORT=["Deine Tour","Today","Jetzt","Meine nächsten Termine","Schedule","Tage wählen","Szenen quittieren","Callsheet","Drehfolge","Locations","Crew","Script","Meine Termine","Suche","Mein Konto"];
+const TOUR_SHORT=["Deine Tour","Today","Jetzt","Meine nächsten Termine","Schedule","Szenen quittieren","Callsheet","Drehfolge","Locations","Crew","Script","Meine Termine","Suche","Reports","Mein Konto"];
 function tourMode(m){TOUR.mode=m;if(TOUR.all)TOUR.steps=m==="short"?TOUR.all.filter(st=>TOUR_SHORT.includes(st.t)).slice(0,15):TOUR.all.slice()}
 function tourStart(ask,mode){
   if(TOUR.el)TOUR.el.remove();if(CHAT.open){CHAT.open=false;chatPanel()}

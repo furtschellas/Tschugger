@@ -119,7 +119,7 @@ service cloud.firestore {
               || (resource != null && request.resource.data.perms.hasOnly(rolePerms().concat(resource.data.perms))))))   // vorhandene fremde Rechte bleiben
         && (request.resource == null || (only(['name', 'perms', 'at'])
             && request.resource.data.name is string && request.resource.data.name.size() <= 40
-            && request.resource.data.perms is list && request.resource.data.perms.size() <= 40));
+            && request.resource.data.perms is list && request.resource.data.perms.size() <= 80));
     }
     // Rollen zuweisen: Admins, «Rollen pflegen» (nicht an Owner/Admins, nicht sich selbst), Einladende geben «Crew»
     match /userroles/{email} {
