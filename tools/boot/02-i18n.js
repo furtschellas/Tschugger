@@ -1282,6 +1282,7 @@ Object.assign(I18N,{
  "Wartungsarbeiten":{fr:"Travaux de maintenance",it:"Lavori di manutenzione",en:"Maintenance"},
  "Achtung – Callsheet passt nicht zum Drehplan:":{fr:"Attention – la feuille de service ne correspond pas au plan :",it:"Attenzione – il foglio di convocazione non corrisponde al piano:",en:"Attention – callsheet does not match the schedule:"},
  "Callsheets geprüft: alle am richtigen Tag.":{fr:"Feuilles de service vérifiées : toutes au bon jour.",it:"Fogli di convocazione controllati: tutti al giorno giusto.",en:"Callsheets checked: all on the right day."},
+ "Coverday-Änderung wirklich aufheben? Der Drehplan gilt dann wieder für alle.":{fr:"Vraiment annuler ce changement de Coverday ? Le plan de tournage s'applique alors de nouveau pour tous.",it:"Annullare davvero questa modifica Coverday? Vale di nuovo il piano di lavorazione per tutti.",en:"Really cancel this Coverday change? The shooting schedule then applies to everyone again."},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},
