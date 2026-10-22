@@ -135,7 +135,8 @@ service cloud.firestore {
       allow write: if can('roles.assign') && email != myEmail() && !ownerEmail(email)
         && !exists(d('admins', email))
         && (request.resource == null || (only(['role', 'at']) && request.resource.data.role != 'admin'
-          && (isAdmin() || get(d('roles', request.resource.data.role)).data.perms.hasOnly(rolePerms()))))   // nur Rollen mit eigenen Rechten vergeben
+          && (isAdmin() || get(d('roles', request.resource.data.role)).data.perms.hasOnly(rolePerms()))
+          && (isOwner() || !exists(d('roles', request.resource.data.role)) || !get(d('roles', request.resource.data.role)).data.perms.hasAny(['settings']))))   // nur Rollen mit eigenen Rechten vergeben, «Einstellungen» nur der Owner
         // wer schon eine Rolle mit mehr Rechten hat, wird nicht umgestuft oder herausgenommen
         && (isAdmin() || resource == null || !exists(d('roles', resource.data.role)) || get(d('roles', resource.data.role)).data.perms.hasOnly(rolePerms()));
       // wer einladen darf, gibt neuen Benutzenden automatisch die Rolle «Crew»
