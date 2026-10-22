@@ -945,3 +945,6 @@ span.cmk{display:inline-flex;width:22px;height:22px;border-radius:50%;align-item
 .cql.cq1{background:var(--accent);color:#fff;text-decoration:underline;text-decoration-color:#fff}   /* accepted, still open: underlined */
 .cql.cq2{background:#2ea043;color:#fff;text-decoration:none}
 .cql:disabled{opacity:.6}
+.cql.cqro.cq0{color:var(--accent);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}   /* open also for those who only look */
+.cql.cqro.cq1{background:var(--accent);color:#fff}
+.cql.cqro.cq2{background:#2ea043;color:#fff}
