@@ -52,7 +52,7 @@ function acctInnerAll(){
 }
 /* Mein Konto → App: my own order of the navigation below (▲ ▼), back to the order of the App-Verwaltung */
 const NAVT={today:"Today",plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",info:"Info"};
-function navOrderSec(){let t=[];try{t=tabsOn()}catch(_){}if(t.length<2)return"";const own=!!myTabOrder();
+function navOrderSec(){if(window.MYNAV===false)return"";let t=[];try{t=tabsOn()}catch(_){}if(t.length<2)return"";const own=!!myTabOrder();
   return '<section class="psec"><h4>'+L("Navigation")+'</h4><p class="ghint">'+L("Reihenfolge der Bereiche unten in der App (auf diesem Gerät). Mit ▲ ▼ verschieben.")+'</p><div class="tbord">'+
     t.map((k,i)=>'<div class="tbrow"><span>'+esc(L(NAVT[k]||k))+'</span><span class="tbmv"><button type="button" data-mynav="'+k+'|up"'+(i?'':' disabled')+' aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-mynav="'+k+'|down"'+(i<t.length-1?'':' disabled')+' aria-label="'+esc(L("Nach unten"))+'">▼</button></span></div>').join("")+'</div>'+
     (own?'<div class="arb"><button type="button" class="pillbtn" data-mynavreset>'+L("Auf Standard zurücksetzen")+'</button></div>':'')+'</section>'}
