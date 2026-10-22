@@ -21,7 +21,7 @@ TZ = ZoneInfo("Europe/Zurich")
 STATE = os.path.join(ROOT, "sheet.json")   # signature of the last write (actions cache)
 SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 UNAME = {"1": "1st", "2": "2nd", "3": "3rd"}
-HEAD = ["Aktion", "Drehtag", "Datum", "Unit", "S", "I/E", "Seiten", "Set", "Plan Zeit", "PD", "Start", "Ende", "Dauer", "Diff.", "Beschreibung"]   # like the PDF of the app
+HEAD = ["Aktion", "DT", "Datum", "Unit", "S", "I/E", "Seiten", "Set", "Plan", "PD", "Start", "Ende", "Dauer", "Diff.", "Beschreibung"]   # like the PDF of the app
 
 
 def log(*a): print("•", *a, flush=True)
@@ -254,12 +254,18 @@ def write_sheet(sid, out, proj=""):
     if new:
         sheets_call(tok, "POST", sid + ":batchUpdate", json={"requests": [{"addSheet": {"properties": {"title": t, "gridProperties": {"frozenRowCount": 1}}}} for t in new]})
     stamp = "Stand " + datetime.datetime.now(TZ).strftime("%d.%m.%Y %H:%M")
+    # Plan, Start, Ende as real times (fraction of a day, shown hh:mm)
+    TCOL = [HEAD.index(k) for k in ("Plan", "Start", "Ende")]
+    def tval(v):
+        m = re.match(r"^(\d{1,2}):(\d{2})$", str(v or ""))
+        return (int(m.group(1)) * 60 + int(m.group(2))) / 1440 if m else v
+    tabs = {t: [[tval(v) if i in TCOL else v for i, v in enumerate(r)] for r in rows] for t, rows in tabs.items()}
     for t, rows in tabs.items():
         rng = "'" + t.replace("'", "''") + "'"
         sheets_call(tok, "POST", sid + "/values/" + requests.utils.quote(rng + "!A:Z", safe="") + ":clear", json={})
         # RAW: pages like «1 1/8» and times stay text (no date), durations stay numbers
         sheets_call(tok, "PUT", sid + "/values/" + requests.utils.quote(rng + "!A1", safe=""), params={"valueInputOption": "RAW"},
-                    json={"values": [[(proj or "TSCHUGGER Tigerblood") + " · Szenen-Protokoll · " + t, "", "", "", "", "", "", "", stamp]] + [HEAD] + rows})   # like the title of the PDF
+                    json={"values": [[(proj or "TSCHUGGER Tigerblood") + " · Szenen-Protokoll · " + t] + [""] * (len(HEAD) - 2) + [stamp]] + [HEAD] + rows})   # «Stand» above «Beschreibung»   # like the title of the PDF
     # a filter on every column and the column widths fitting the content
     meta = sheets_call(tok, "GET", sid, params={"fields": "sheets(properties(sheetId,title))"})
     ids = {x["properties"]["title"]: x["properties"]["sheetId"] for x in meta.get("sheets") or []}
@@ -275,7 +281,24 @@ def write_sheet(sid, out, proj=""):
         # the title over the columns up to «Set» (so it does not make the first column wide)
         req.append({"unmergeCells": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": len(HEAD)}}})
         req.append({"mergeCells": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": HEAD.index("Set") + 1}, "mergeType": "MERGE_ALL"}})
-        req.append({"autoResizeDimensions": {"dimensions": {"sheetId": g, "dimension": "COLUMNS", "startIndex": 0, "endIndex": len(HEAD) + 1}}})
+        n = len(rows) + 2
+        # no lines at all – only a thick line below every «Wrap» (between the days)
+        none = {"style": "NONE"}
+        req.append({"updateBorders": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": n + 50, "startColumnIndex": 0, "endColumnIndex": len(HEAD) + 1},
+                                      "top": none, "bottom": none, "left": none, "right": none, "innerHorizontal": none, "innerVertical": none}})
+        for i, r in enumerate(rows[:-1]):
+            if str(r[0]).strip().lower() == "wrap":
+                req.append({"updateBorders": {"range": {"sheetId": g, "startRowIndex": i + 2, "endRowIndex": i + 3, "startColumnIndex": 0, "endColumnIndex": len(HEAD)},
+                                              "bottom": {"style": "SOLID_THICK", "color": {"red": 0, "green": 0, "blue": 0}}}})
+        # times hh:mm, column E (S) centred
+        for c in TCOL:
+            req.append({"repeatCell": {"range": {"sheetId": g, "startRowIndex": 2, "endRowIndex": n, "startColumnIndex": c, "endColumnIndex": c + 1},
+                                       "cell": {"userEnteredFormat": {"numberFormat": {"type": "TIME", "pattern": "hh:mm"}}}, "fields": "userEnteredFormat.numberFormat"}})
+        req.append({"repeatCell": {"range": {"sheetId": g, "startRowIndex": 1, "endRowIndex": n, "startColumnIndex": 4, "endColumnIndex": 5},
+                                   "cell": {"userEnteredFormat": {"horizontalAlignment": "CENTER"}}, "fields": "userEnteredFormat.horizontalAlignment"}})
+        # column A keeps its width; the others fit their content
+        req.append({"updateDimensionProperties": {"range": {"sheetId": g, "dimension": "COLUMNS", "startIndex": 0, "endIndex": 1}, "properties": {"pixelSize": 170}, "fields": "pixelSize"}})
+        req.append({"autoResizeDimensions": {"dimensions": {"sheetId": g, "dimension": "COLUMNS", "startIndex": 1, "endIndex": len(HEAD) + 1}}})
     if req:
         try: sheets_call(tok, "POST", sid + ":batchUpdate", json={"requests": req})
         except SheetError as e: log("Szenen-Sheet: Filter/Breiten nicht gesetzt", e.code)
@@ -301,7 +324,7 @@ def main():
     try: asig = ack_signature()
     except Exception as e:   # the aggregation is only a saving: without it the whole collection is read
         note("Signatur nicht lesbar (" + type(e).__name__ + " " + str(getattr(getattr(e, "response", None), "status_code", "")) + ") – lese alle Quittierungen"); asig = str(time.time() // 1800)
-    sig = hashlib.sha256(("v4|" + asig + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
+    sig = hashlib.sha256(("v5|" + asig + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
     try: old = json.load(open(STATE))
     except Exception: old = {}
     if old.get("sig") == sig and (old.get("ok") or time.time() - old.get("t", 0) < 1800):   # after an error: again after 30 min (or when something changed)
