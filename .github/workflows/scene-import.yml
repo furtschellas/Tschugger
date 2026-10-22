@@ -1,0 +1,25 @@
+name: Szenen-Quittierung übernehmen
+
+# einmalig von Hand: Drehtag 1: alle Quittierungen auf abgeschlossen (fehlende mit den Zeiten aus dem Drehplan)
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q cryptography==43.0.3 requests==2.32.3
+      - name: Quittierung aus dem Drehplan
+        env:
+          TZ: Europe/Zurich
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: python tools/scene_import.py
