@@ -202,14 +202,15 @@ function scXlsx(head,data,name,title,stand){const x=v=>String(v==null?"":v).repl
   const col=i=>{let s="";i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s};
   const NUM=new Set([9,12,13]);   /* Plan-Dauer, Dauer, Diff. */
   const TIME=new Set([8,10,11]),CEN=4;   /* Plan, Start, Ende: real times (hh:mm); column E (S) centred */
-  /* styles: 0 normal, 1 bold, 2 time, 3 centred – +4 the same with a thick line below (after «Wrap»: between the days); no other lines */
+  /* styles: 0 normal, 1 bold, 2 time, 3 centred – +4 the same with a thick line below (between the shooting days); no other lines */
   const cell=(v,r,c,h,thick)=>{const ref=col(c)+r,tk=thick?4:0;if(v===""||v==null)return thick?'<c r="'+ref+'" s="'+tk+'"/>':"";
     if(!h&&TIME.has(c)){const m=String(v).match(/^(\d{1,2}):(\d{2})$/);if(m)return '<c r="'+ref+'" s="'+(2+tk)+'"><v>'+((+m[1]*60+ +m[2])/1440)+'</v></c>'}
     if(!h&&NUM.has(c)&&/^-?\d+$/.test(String(v)))return '<c r="'+ref+'"'+(tk?' s="'+tk+'"':'')+'><v>'+v+'</v></c>';
     const st=(h||c===0?1:c===CEN?3:0)+tk;return '<c r="'+ref+'" t="inlineStr"'+(st?' s="'+st+'"':'')+'><is><t xml:space="preserve">'+x(v)+'</t></is></c>'};
   const R0=title?1:0,rows=[head].concat(data),FC=head.indexOf("Set")>=0?head.indexOf("Set"):head.length-1,last=col(FC)+(rows.length+R0),
     W=head.map((_,i)=>i===0?24:Math.min(70,Math.max(5,...rows.map(r=>String(r[i]==null?"":r[i]).length))+3));   /* column A fixed; the others as wide as their longest entry (+ room for the filter arrow) */
-  const wrap=ri=>ri>0&&ri<rows.length-1&&String(rows[ri][0]||"").trim().toLowerCase()==="wrap";
+  /* thick line between the shooting days: below the last row of a day (date in column C changes) */
+  const wrap=ri=>ri>0&&ri<rows.length-1&&String(rows[ri][2]||"")!==String(rows[ri+1][2]||"");
   const sheet='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" showGridLines="1"><pane ySplit="'+(1+R0)+'" topLeftCell="A'+(2+R0)+'" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'+
     head.map((_,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+(W[i]||12)+'" customWidth="1"/>').join("")+'</cols><sheetData>'+(title?'<row r="1">'+cell(title,1,0,true)+(stand?cell(stand,1,head.length-1,true):'')+'</row>':'')+
     rows.map((r,ri)=>'<row r="'+(ri+1+R0)+'">'+(wrap(ri)?head.map((_,ci)=>cell(r[ci],ri+1+R0,ci,false,true)):r.map((v,ci)=>cell(v,ri+1+R0,ci,ri===0))).join("")+'</row>').join("")+'</sheetData><autoFilter ref="A'+(1+R0)+':'+last+'"/>'+(title?'<mergeCells count="1"><mergeCell ref="A1:'+col(FC)+'1"/></mergeCells>':'')+'</worksheet>';
