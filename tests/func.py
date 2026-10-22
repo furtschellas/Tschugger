@@ -554,7 +554,7 @@ async def owner_tests(p, port):
         sa = await E("""(()=>{if(typeof scAckBtn!=='function'||typeof csNowIdx!=='function')return null;const t=todayISO(),keep=window.SCACK,kp=window.canPerm;const rows=[{t:'00:01',sc:'1'},{t:'00:02',sc:'2'},{t:'00:03',text:'Lunch'},{t:'00:04',sc:'3'}];
           window.SCACK={};const a=csNowIdx(rows,t);window.SCACK={[scAckId(t,'1')]:{d:t,s:2,at:1}};const b=csNowIdx(rows,t);window.SCACK[scAckId(t,'2')]={d:t,s:1,at:1};const c=csNowIdx(rows,t);
           window.SCACK[scAckId(t,'2')].s=2;window.SCACK[scAckId(t,'3')]={d:t,s:2,at:1};const d=csNowIdx(rows,t);
-          window.canPerm=()=>false;const v=scAckBtn(t,'1');window.canPerm=p=>p==='scenes.ack';const w=scAckBtn(t,'3');window.SCACK=keep;window.canPerm=kp;
+          window.canPerm=p=>p==='scenes.see';const v=scAckBtn(t,'1');window.canPerm=p=>p==='scenes.ack';const w=scAckBtn(t,'3');window.SCACK=keep;window.canPerm=kp;
           return {a,b,c,d,view:/<span class="scack sk2"/.test(v)&&!/<button/.test(v),btn:/<button[^>]*data-scack=/.test(w),id:scAckId('2026-10-21','186 pt1A'),same:scAckId('2026-10-21','DJ 21 CONT')===scAckId('2026-10-21','21')}})()""")
         check("Drehplan und Callsheet: Szenen quittieren gemeinsam (offen → läuft → erledigt), «jetzt» folgt der Quittierung, Knopf nur mit Berechtigung", sa in (None, {"a": sa and sa["a"], "b": 1, "c": 1, "d": -1, "view": True, "btn": True, "id": "20261021-186pt1a", "same": True}), sa, public=True)
         re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
@@ -574,9 +574,9 @@ async def owner_tests(p, port):
           window.canPerm=()=>true;window.SCACK={[scAckId(t,'1')]:{d:t,s:2,at:1}};const on=scAckBtn(t,'1')!==''&&scHas(t);window.SCACKON=false;const off=scAckBtn(t,'1')===''&&!scHas(t)&&scState(t,'1')===0;
           window.RIDEACKON=false;const roff=rideAckBtn({ride:1,rid:'abcd1234'})==='';window.SCACKON=k.s;window.RIDEACKON=k.r;window.SCACK=k.a;window.canPerm=k.cp;return {on,off,roff}})()""")
         st = await E("""(()=>{if(typeof scAckBtn!=='function'||typeof scTimesOk!=='function')return null;const k={a:window.SCACK,cp:window.canPerm,on:window.SCACKON};const d='2030-05-06',t=new Date(d+'T09:00').getTime();
-          window.SCACKON=true;window.SCACK={[scAckId(d,'12')]:{s:2,b:t,e:t+3600e3}};window.canPerm=p=>p==='scenes.times';const on=scAckBtn(d,'12','1').includes('scackt');window.canPerm=()=>false;const off=!scAckBtn(d,'12','1').includes('scackt');
-          window.SCACK=k.a;window.canPerm=k.cp;window.SCACKON=k.on;return {on,off}})()""")
-        check("Rollen: Quittierungszeiten nur mit dem Recht «Quittierungszeiten sehen»", st in (None, {"on": True, "off": True}), st)
+          window.SCACKON=true;window.SCACK={[scAckId(d,'12')]:{s:2,b:t,e:t+3600e3}};window.canPerm=p=>p==='scenes.times'||p==='scenes.see';const on=scAckBtn(d,'12','1').includes('scackt');window.canPerm=p=>p==='scenes.see';const off=!scAckBtn(d,'12','1').includes('scackt')&&scAckBtn(d,'12','1').includes('scack');window.canPerm=()=>false;const none=scAckBtn(d,'12','1')==='';
+          window.SCACK=k.a;window.canPerm=k.cp;window.SCACKON=k.on;return {on,off,none}})()""")
+        check("Rollen: Quittierungszeiten nur mit «Quittierungszeiten sehen», das Symbol nur mit «Quittierungen sehen»", st in (None, {"on": True, "off": True, "none": True}), st)
         check("Einstellungen: Szenen und Fahrten quittieren lassen sich ausschalten (keine Knöpfe, «jetzt» nach der Uhr)", sw in (None, {"on": True, "off": True, "roff": True}), sw)
         sl = await E("""(()=>{if(typeof sceneLogSec!=='function'||typeof scExpRows!=='function')return null;const k={l:SCLOG.list,e:SCLOG.exp,c:window.canSceneLog,cp:window.canPerm};const d='2030-05-06',t=h=>new Date(d+'T'+h).getTime();
           SCLOG.list=[{id:'20300506-12',d,s:2,u:'1',sc:'12',b:t('09:00'),e:t('10:00')},{id:'20300506-lunch',d,s:2,u:'1',sc:'lunch',b:t('12:00'),e:t('13:00')},{id:'20300506-55',d,s:1,u:'2',sc:'55',b:t('09:30')},{id:'20300506-wrapu2',d,s:2,u:'2',sc:'wrap_u2',b:t('18:00'),e:t('18:00')}];
@@ -592,7 +592,7 @@ async def owner_tests(p, port):
           const k={l:SCLOG.list,e:SCLOG.exp,c:window.canSceneLog,g:LANG},d=day.date,t=h=>new Date(d+'T'+h).getTime(),sc=day.items.filter(i=>i.sc);
           const acks=[{id:scAckId(d,sc[0].sc),d,s:2,u:'1',sc:scAckId(d,sc[0].sc).split('-')[1],b:t('09:05'),e:t('10:10'),at:1},{id:scAckId(d,sc[1].sc),d,s:1,u:'1',sc:scAckId(d,sc[1].sc).split('-')[1],b:t('10:30'),at:2},
             {id:d.replace(/-/g,'')+'-lunch',d,s:2,u:'1',sc:'lunch',b:t('12:30'),e:t('13:15'),at:3},{id:d.replace(/-/g,'')+'-lunch_u2',d,s:2,u:'2',sc:'lunch_u2',b:t('12:00'),e:t('12:40'),at:4}];
-          LANG='de';window.canSceneLog=()=>true;SCLOG.list=acks;sceneLogSec();const rows=['1','2','3'].map(u=>scExpRows('',u).map(r=>[r.dt,r.date,r.unit,r.name,r.state,r.ie,r.set,r.pg,r.plan,r.pmin,r.b,r.e,r.min,r.diff,r.desc]));
+          LANG='de';window.canSceneLog=()=>true;SCLOG.list=acks;sceneLogSec();const rows=['1','2','3'].map(u=>scExpRows('',u).map(r=>[r.name,r.dt,r.date,r.unit,r.state,r.ie,r.pg,r.set,r.plan,r.pmin,r.b,r.e,r.min,r.diff,r.desc]));
           SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;LANG=k.g;return {acks,rows,days:S.days,dispos:S.dispos,tz:Intl.DateTimeFormat().resolvedOptions().timeZone}})()""")
         if sp:
             sys.path.insert(0, str(HERE.parent / "tools")); import scene_sheet  # noqa: E402

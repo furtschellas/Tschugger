@@ -1370,6 +1370,13 @@ html body #view .csscd>summary .l1>.meta{order:9;flex:1 1 100%;margin:2px 0 0}
 /* scene log: begin, end and duration in three columns; open rows faint */
 html body #view .sclt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 10px;font-variant-numeric:tabular-nums}
 html body #view .sclt b{font-family:var(--f-mono,monospace);font-weight:600}
+/* Szenen-Protokoll on a computer: one line per entry (name, pencil, plan · begin, end, duration · state) */
+@media (min-width:761px){html body #view li.scl{display:flex;align-items:center;gap:6px 14px}
+ html body #view li.scl>.audh{display:contents}
+ html body #view li.scl>.audh>b{flex:0 0 auto}
+ html body #view li.scl>.audh>.audt{flex:1 1 auto}
+ html body #view li.scl>.sclt{order:5;flex:0 0 27em;margin:0}
+ html body #view li.scl>.audh>.audw{order:9;flex:0 0 1.2em;margin:0;text-align:right}}
 html body #view li.sclo{opacity:.6}
 /* Drehplan: every status icon and its times in one column (scenes, lunch, wrap, setups): the times in a box of equal width */
 html body #view .scackt{min-width:12ch;text-align:right}
@@ -1387,8 +1394,9 @@ html body #view .csscd>summary .scackw{position:absolute;top:6px;transform:none;
  html body #view .csscd>summary .l1:has(.scackw)::after{flex-basis:64px}
  html body #view .csscd>summary .l1>.set{margin-top:4px}}
 .scbox .scdel{display:block;margin:12px 0 0;color:var(--danger,#e5484d)}
-html body #view .csorder li.row.evack>.what>.scackw{margin-right:51px}
-@media (max-width:760px){html body #view .csorder li.row.evack>.what>.scackw{margin-right:42px}}
+/* callsheet: lunch, wrap … have only the quittance button – it stands below the open/close button of the scenes, the time stays below the times */
+html body #view .csorder li.row.evack>.what>.scackw{margin-right:19px}html body #view .csorder li.row.evack>.what>.scackw>.scackt{margin-right:32px}
+@media (max-width:760px){html body #view .csorder li.row.evack>.what>.scackw{margin-right:13px}html body #view .csorder li.row.evack>.what>.scackw>.scackt{margin-right:29px}}
 /* popup of a quittiert scene: begin and end as two columns, label above the time */
 .scbox .redrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 8px}
 .scbox .redrow label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
@@ -1407,6 +1415,8 @@ html body #view .scled{display:inline-flex;align-items:center;justify-content:ce
 html body #view .sclbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 html body .scbox button.scwab{background:#25d366!important;border:1px solid #25d366!important;color:#fff!important;font:inherit;font-weight:700;font-size:14px;padding:8px 16px;border-radius:99px;cursor:pointer}
 html body #view .sclall{align-items:center;font-size:13px}
+/* «alle Tage»: the buttons of all lines exactly below each other */
+html body #view .sclall{flex-wrap:nowrap}html body #view .sclall>.scll{flex:0 0 11.5em}
 /* folded shooting order: the scene number keeps its width, the set title gives way (nothing overlaps) */
 html body #view .csoscn .cso1 b{flex:0 0 auto;white-space:nowrap}
 html body #view .csoscn .cso1>*{flex-shrink:0}html body #view .csoscn .cso1 .st{flex:1 1 auto;flex-shrink:1}

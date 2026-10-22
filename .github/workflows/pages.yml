@@ -146,6 +146,8 @@ jobs:
   # the Firestore rules go to Firebase automatically – only after the rule tests (emulator) AND the app tests passed
   rules_deploy:
     needs: [changes, test, rules]
+    # Freigabe: Settings → Environments → firestore-rules → «Required reviewers» (dann wartet die Übertragung auf die Freigabe)
+    environment: firestore-rules
     if: always() && needs.rules.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.changes.outputs.rules == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 5

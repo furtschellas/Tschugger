@@ -1202,4 +1202,6 @@ Object.assign(I18N,{
  "Reihenfolge der Bereiche unten in der App (auf diesem Gerät). Mit ▲ ▼ verschieben.":{fr:"Ordre des sections en bas de l’app (sur cet appareil). Déplacer avec ▲ ▼.",it:"Ordine delle sezioni in basso nell’app (su questo dispositivo). Spostare con ▲ ▼.",en:"Order of the sections at the bottom of the app (on this device). Move with ▲ ▼.",hi:"ऐप के नीचे सेक्शन का क्रम (इस डिवाइस पर)। ▲ ▼ से बदलें।"},
  "Auf Standard zurücksetzen":{fr:"Rétablir l’ordre par défaut",it:"Ripristina l’ordine predefinito",en:"Reset to default",hi:"डिफ़ॉल्ट पर रीसेट करें"},
  "Lang":{fr:"Longue",it:"Lungo",en:"Long",hi:"लंबा"},
+ "Jede Person darf die Reihenfolge in «Mein Konto» selber anpassen":{fr:"Chacun peut adapter l’ordre dans « Mon compte »",it:"Ognuno può adattare l’ordine in «Il mio account»",en:"Everyone may change the order in “My account”",hi:"हर व्यक्ति «मेरा खाता» में क्रम बदल सकता है"},
+ "Quittierungen sehen":{fr:"Voir les confirmations",it:"Vedere le conferme",en:"See confirmations",hi:"पुष्टि देखें"},
 });

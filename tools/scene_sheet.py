@@ -21,7 +21,7 @@ TZ = ZoneInfo("Europe/Zurich")
 STATE = os.path.join(ROOT, "sheet.json")   # signature of the last write (actions cache)
 SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 UNAME = {"1": "1st", "2": "2nd", "3": "3rd"}
-HEAD = ["Drehtag", "Datum", "Unit", "Eintrag", "Status", "I/E", "Set", "Seiten", "Plan", "Plan-Dauer (min)", "Beginn", "Ende", "Dauer (min)", "Differenz (min)", "Beschreibung"]
+HEAD = ["Aktion", "Drehtag", "Datum", "Unit", "S", "I/E", "Seiten", "Set", "Plan Zeit", "Plan Dauer", "Start", "Ende", "Dauer", "Diff.", "Beschreibung"]   # like the PDF of the app
 
 
 def log(*a): print("•", *a, flush=True)
@@ -167,8 +167,8 @@ def build(acks, data):
             for r in unit_rows(d, u, [x for x in l if str(x.get("u") or "1") == u], day, cs):
                 r.update(d=d, u=u); i = info(r, days, sched)
                 nd = r["drehstart"] or base(r["k"]) == "wrap"   # Drehstart and Wrap: points in time, no duration
-                out.setdefault(u, []).append([dt, ".".join(reversed(d.split("-"))), UNAME.get(u, u) + " Unit", r["name"], "✓" if r["st"] == 2 else "",
-                                              i["ie"], i["set"], i["pg"], r["plan"] or "", (r["pdm"] or "") if not nd else "", clock(r["b"]), clock(r["e"]),
+                out.setdefault(u, []).append([r["name"], dt, ".".join(reversed(d.split("-"))), UNAME.get(u, u) + " Unit", "✓" if r["st"] == 2 else "",
+                                              i["ie"], i["pg"], i["set"], r["plan"] or "", (r["pdm"] or "") if not nd else "", clock(r["b"]), clock(r["e"]),
                                               round((r["e"] - r["b"]) / 60000) if r["b"] and r["e"] and not nd else "",
                                               round((r["e"] - r["b"]) / 60000) - r["pdm"] if r["b"] and r["e"] and r["pdm"] and not nd else "", i["desc"]])
     return out
@@ -225,6 +225,18 @@ def write_sheet(sid, out):
         # RAW: pages like «1 1/8» and times stay text (no date), durations stay numbers
         sheets_call(tok, "PUT", sid + "/values/" + requests.utils.quote(rng + "!A1", safe=""), params={"valueInputOption": "RAW"},
                     json={"values": [HEAD + [stamp]] + rows})
+    # a filter on every column and the column widths fitting the content
+    meta = sheets_call(tok, "GET", sid, params={"fields": "sheets(properties(sheetId,title))"})
+    ids = {x["properties"]["title"]: x["properties"]["sheetId"] for x in meta.get("sheets") or []}
+    req = []
+    for t, rows in tabs.items():
+        g = ids.get(t)
+        if g is None: continue
+        req.append({"setBasicFilter": {"filter": {"range": {"sheetId": g, "startRowIndex": 0, "endRowIndex": len(rows) + 1, "startColumnIndex": 0, "endColumnIndex": len(HEAD)}}}})
+        req.append({"autoResizeDimensions": {"dimensions": {"sheetId": g, "dimension": "COLUMNS", "startIndex": 0, "endIndex": len(HEAD) + 1}}})
+    if req:
+        try: sheets_call(tok, "POST", sid + ":batchUpdate", json={"requests": req})
+        except SheetError as e: log("Szenen-Sheet: Filter/Breiten nicht gesetzt", e.code)
     return sum(len(r) for r in tabs.values()), len(tabs)
 
 
