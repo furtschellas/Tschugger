@@ -113,24 +113,28 @@ function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.name)retur
   const k=nmk(me.name),parts=k.split(" ").filter(w=>w.length>1),dep=fold(me.src||"").split(/[\s/]/)[0];
   const hit=t=>{const n=nmk(String(t||""));if(!n)return false;if(n.includes(k))return true;const f=parts[0],l=parts[parts.length-1];return parts.length>1&&n.includes(f)&&n.includes(l)};
   return {name:me.name,dep,hit}}
-/* the row running now (shooting day = today): the last one that has started */
+/* «jetzt» on the shooting day, in one place: the rows of the shooting order, their quittance keys (setup, lunch, wrap …), the wrap row */
+const csRows=c=>csA(((c||{}).order||{}).rows);
+const csKeys=rows=>typeof scRowKeys==="function"?scRowKeys(csA(rows),r=>r.text||r.syn):[];
+const csAck=date=>typeof scHas==="function"&&scHas(date);
+/* the scenes of the shooting order shot at one location */
+const csLocRows=(c,l)=>csRows(c).filter(r=>r.sc&&csSceneLoc([l],r)===l);
+const csIsWrap=r=>!!r&&!r.sc&&/\b(wrap|drehschluss)\b/i.test(String(r.text||r.syn||""));
 /* the clock now as «HH:MM» (local time) – for the running row, the place now and the cast time now */
 function csHM(d){d=d||new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
-/* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null */
-function csNowScene(x){x=x||(S.dispos||[]).find(y=>y&&y.date===todayISO());const c=x&&x.cs;if(!c||x.date!==todayISO())return null;const rows=csA((c.order||{}).rows);let i=csNowIdx(rows,x.date);
-  /* lunch or a further setup quittiert as running: that row (ev = its key) */
-  if(i>=0&&!rows[i].sc&&typeof scRowKeys==="function"&&typeof scHas==="function"&&scHas(x.date)){const k=scRowKeys(rows,r=>r.text||r.syn)[i];if(k&&k!=="wrap"&&scState(x.date,k)===1)return Object.assign({},rows[i],{ev:k,lunch:k==="lunch"})}
-  for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(/wrap|drehschluss/i.test(String(r.text||"")))return null}return null}
-function csNowIdx(rows,date){if(date!==todayISO())return -1;
-  /* scenes quittiert in the Drehplan: the running one, else the next open one after the last done (all done: none) */
-  if(typeof scHas==="function"&&scHas(date)){const RK=typeof scRowKeys==="function"?scRowKeys(csA(rows),r=>r.text||r.syn):[],key=r=>r.sc||RK[csA(rows).indexOf(r)]||"";
-    const st=csA(rows).map(r=>key(r)?scState(date,key(r)):-1);if(st.some((v,i)=>v===2&&key(rows[i])==="wrap"))return -1;   /* wrap quittiert: nothing runs any more */
-    const run=st.indexOf(1);if(run>=0)return run;let last=-1;st.forEach((v,i)=>{if(v===2)last=i});
-    for(let i=last+1;i<st.length;i++)if(st[i]===0&&csA(rows)[i].sc)return i;return -1}
-  const now=csHM();let k=-1;
-  csA(rows).forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});
-  /* after the wrap (Drehschluss) no «jetzt und hier» any more */
-  if(k>=0&&!csA(rows)[k].sc&&/\b(wrap|drehschluss)\b/i.test(String(csA(rows)[k].text||csA(rows)[k].syn||"")))return -1;return k}
+/* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null; lunch or a setup running: that row with ev = its key */
+function csNowScene(x){x=x||(S.dispos||[]).find(y=>y&&y.date===todayISO());const c=x&&x.cs;if(!c||x.date!==todayISO())return null;const rows=csRows(c);let i=csNowIdx(rows,x.date);
+  if(i>=0&&!rows[i].sc&&csAck(x.date)){const k=csKeys(rows)[i];if(k&&k!=="wrap"&&scState(x.date,k)===1)return Object.assign({},rows[i],{ev:k,lunch:k==="lunch"})}
+  for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(csIsWrap(r))return null}return null}
+/* the row running now: with quittances the running one, else the next open scene after the last done one (wrap quittiert: none);
+   without quittances by the clock: the last row that has started (after the wrap: none) */
+function csNowIdx(rows,date){if(date!==todayISO())return -1;rows=csA(rows);
+  if(csAck(date)){const RK=csKeys(rows),key=(r,i)=>r.sc||RK[i]||"";
+    const st=rows.map((r,i)=>key(r,i)?scState(date,key(r,i)):-1);if(st.some((v,i)=>v===2&&key(rows[i],i)==="wrap"))return -1;
+    const run=st.indexOf(1);if(run>=0)return run;
+    for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0&&rows[i].sc)return i;return -1}
+  const now=csHM();let k=-1;rows.forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});
+  return k>=0&&csIsWrap(rows[k])?-1:k}
 /* which set a scene is shot on: by the scenes listed at the location, else by the set name */
 function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/[^a-z0-9]/g,"");const sc=n(r.sc);const ls=csA(locs).filter(l=>!l.kinds&&l.no);
   /* «186 PT1B/C/PT2» → 186pt1b, 186pt1c, 186pt2 */
@@ -147,9 +151,9 @@ let CSCUR={c:null,date:""};
 /* hints of a place («To set …», «WC …»): lines in the open location */
 const CSHN_RE=/^(to set|zum set|nach set|wc\b)/i;
 /* the place where the shooting is now (callsheet of today, from the start of the first scene until wrap) */
-function csNowLoc(c,date,ls,now){if(!now&&typeof scHas==="function"&&scHas(date)){const r=csNowScene({date,cs:c});return r?csSceneLoc(ls,r):null}now=now||new Date();const p=n=>String(n).padStart(2,"0");if(date!==now.getFullYear()+"-"+p(now.getMonth()+1)+"-"+p(now.getDate()))return null;
+function csNowLoc(c,date,ls,now){if(!now&&csAck(date)){const r=csNowScene({date,cs:c});return r?csSceneLoc(ls,r):null}now=now||new Date();const p=n=>String(n).padStart(2,"0");if(date!==now.getFullYear()+"-"+p(now.getMonth()+1)+"-"+p(now.getDate()))return null;
   const m=t=>{const x=String(t||"").match(/(\d{1,2})[:.](\d{2})/);return x?+x[1]*60+ +x[2]:null};const cur=now.getHours()*60+now.getMinutes();let hit=null,started=false;
-  for(const r of csA((c.order||{}).rows)){const t=m(r.t);if(t==null||t>cur)break;if(r.sc){started=true;hit=csSceneLoc(ls,r)||hit}else if(/wrap|drehschluss/i.test(String(r.text||"")))return null}
+  for(const r of csRows(c)){const t=m(r.t);if(t==null||t>cur)break;if(r.sc){started=true;hit=csSceneLoc(ls,r)||hit}else if(csIsWrap(r))return null}
   return started?hit:null}
 /* side places (Base, W/H/M, Lunch, Parking, DIT …) with the set they are nearest to and the distance (positions of the updater in c.geo) */
 function csNear(c,ls,date){const geo=c.geo||{},out=new Map(),sets=[];let si=0;
@@ -198,23 +202,23 @@ function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':'
   return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+in_+'</a>':'<span class="'+k+'"'+t+'>'+in_+'</span>'}
 function csLocAddr(c,l,date){let ad="";
   /* 1. the app's location list: a set there with one of the scenes of this location, or with the same name */
-  try{const scs=csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l).map(r=>norm(r.sc));const nm=fold(String(l.name||"")).replace(/\(.*?\)/g,"").trim();
+  try{const scs=csLocRows(c,l).map(r=>norm(r.sc));const nm=fold(String(l.name||"")).replace(/\(.*?\)/g,"").trim();
     const hit=(S.locs||[]).find(x=>(x.sets||[]).some(st=>(st.scenes||[]).map(norm).some(w=>scs.some(n=>n===w||n.startsWith(w+"pt")))))||
       (nm.length>3?(S.locs||[]).find(x=>(x.sets||[]).some(st=>fold(String(st.name||st.set||"")).includes(nm))||fold(String(x.name||x.venue||"")).includes(nm)):null);
     if(hit)ad=[hit.venue,hit.address].filter(Boolean).join(", ")}catch(_){}
-  if(!ad)try{for(const r of csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it){ad=addrForItem(it)||"";if(ad)break}}}catch(_){}
+  if(!ad)try{for(const r of csLocRows(c,l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it){ad=addrForItem(it)||"";if(ad)break}}}catch(_){}
   if(!ad||/^tba$/i.test(ad)){const n=csA(l.notes).map(String).concat(csA(l.items).map(i=>String(i.text||""))).find(t=>/\b\d{4}\b/.test(t)&&/[A-Za-zÀ-ÿ]{3,}/.test(t));ad=n?n.replace(/https?:\/\/\S+/g,"").split(/\.\s|\n|\s*;\s*|\s\/\/\s/).find(p=>/\b\d{4}\b/.test(p))||"":"";ad=ad.trim()}
   return /^tba$/i.test(ad)?"":ad}
 /* floorplans of a location (3D folder, matched like in the schedule: set and place of its scenes) – only with the right for blocking */
 function csLocFp(c,l,date,icon){if(l.kinds||typeof fpFor!=="function"||!vok("blocking"))return"";const out=new Map();
-  try{for(const r of csA((c.order||{}).rows).filter(r=>r.sc&&csSceneLoc([l],r)===l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it)for(const f of fpFor(it.set,it.loc))out.set(f.file||f.name,f)}
+  try{for(const r of csLocRows(c,l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it)for(const f of fpFor(it.set,it.loc))out.set(f.file||f.name,f)}
     if(!out.size)for(const f of fpFor(l.name||"",""))out.set(f.file||f.name,f)}catch(_){}
   if(!out.size)return"";
   /* in the head of the location: one round icon per floorplan (the name in the tooltip) */
   if(icon)return [...out.values()].map(f=>'<a class="cshn csfpi" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer" title="'+esc("Floorplan · "+f.name)+'" aria-label="'+esc("Floorplan · "+f.name)+'">'+CSI.fp+'</a>').join("");
   return '<div class="csfp">'+[...out.values()].map(f=>'<a class="pillbtn" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+CSI.doc+' Floorplan · '+esc(f.name)+'</a>').join("")+'</div>'}
-function csOrderRows(rows,date,locs,one){const ONE=(()=>{const s0=csA(locs).filter(l=>!l.kinds&&l.no);return s0.length===1?s0[0]:null})();if(!csA(rows).length)return"";const ni=date?csNowIdx(rows,date):-1;return '<ol class="tl csorder">'+csA(rows).map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
-    if(!r.sc){const ek=date&&typeof scRowKeys==="function"?scRowKeys(csA(rows),y=>y.text||y.syn)[i]:"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(date,ek,"1"):"";
+function csOrderRows(rows,date,locs,one){rows=csA(rows);const ONE=(()=>{const s0=csA(locs).filter(l=>!l.kinds&&l.no);return s0.length===1?s0[0]:null})();if(!rows.length)return"";const ni=date?csNowIdx(rows,date):-1,RK=date?csKeys(rows):[];return '<ol class="tl csorder">'+rows.map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
+    if(!r.sc){const ek=RK[i]||"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(date,ek,"1"):"";
       return '<li class="row ev'+nw+(eb?' evack':'')+'"><div class="t">'+esc(r.t||"")+nb+'</div><div class="what">'+csTx(r.text||r.syn||"")+eb+'</div></li>'}
     /* scenes look like in the schedule (same row, details, cast, buttons): the scheduled row of that day with the callsheet time */
     const sx=(()=>{try{const l=(schedIndex()[norm(r.sc)]||[]);const o=l.find(y=>y.d&&y.d.date===date)||l[0];return o?o.it:null}catch(_){return null}})();
@@ -336,7 +340,7 @@ function csTilesHTML(x,day,c,me){const t=c.times||{};
       return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc((()=>{if(pl.fbk)return pl.fbn.slice(0,18)||L("Route");const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})())+' ›</div></button>'})()+'</div>';}
 /* parts of the callsheet (each one a folded section; c = callsheet, x = day of the dispo, me = me, SU = sums of the folded parts, t = times) */
 function csJumpBar(c,x,me,SU,t){let JB="";
-  {const has=k=>({loc:csA(c.locations).length,order:csA((c.order||{}).rows).length,cast:csA(c.cast).length,trans:csA(c.transport).length||csA(c.crewTransport).length||csA(c.travel).length,dept:csA(c.depts).some(r=>String(r.text||"").trim()),calls:csA(c.calls).length})[k];
+  {const has=k=>({loc:csA(c.locations).length,order:csRows(c).length,cast:csA(c.cast).length,trans:csA(c.transport).length||csA(c.crewTransport).length||csA(c.travel).length,dept:csA(c.depts).some(r=>String(r.text||"").trim()),calls:csA(c.calls).length})[k];
    const J=[["loc","Locations","pin",L("Orte")],["order",L("Drehfolge"),"film",L("Szenen")],["cast","Cast","cast"],["trans","Transport","car",L("Fahrten")],["dept",L("Infos nach Abteilung"),"dept",L("Infos")],["calls","Calls","calls"]].filter(([k])=>has(k));
    /* icons with a tiny label; the search opens from the magnifier (keeps the bar one line high) */
    JB='<div class="csjump"><div class="csjb">'+J.map(([k,l,i,sh])=>'<button type="button" data-csj="'+k+'" aria-label="'+esc(l)+'" title="'+esc(l)+'">'+CSI[i]+'<span>'+esc(sh||l)+'</span></button>').join("")+
@@ -388,7 +392,7 @@ function csLocHead(c,l,date){let LAD=csLocAddr(c,l,date),DN=l.name||"";const w=t
   else if(LAD&&w(DN).length>5&&w(LAD).startsWith(w(DN)))LAD="";
   return {DN,LAD}}
 /* scenes of a location: buttons from the shooting order, else as listed in the callsheet */
-function csLocScenes(c,l){const mem=l._m||[l];const uniq=[...new Set(csA((c.order||{}).rows).filter(r=>r.sc&&mem.some(m=>csSceneLoc([m],r)===m)).map(r=>String(r.sc)))];
+function csLocScenes(c,l){const mem=l._m||[l];const uniq=[...new Set(csRows(c).filter(r=>r.sc&&mem.some(m=>csSceneLoc([m],r)===m)).map(r=>String(r.sc)))];
   return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')}
 /* the open part: hints (To set, WC), side places with distance, notes and lines – the address of the head only once */
 function csLocBody(l,LAD,HN,near){
@@ -411,7 +415,7 @@ function csLocSec(c,x,me,SU,t){if(!vok("loc"))return"";   /* «Locations sehen»
   const LG=csLocGroups(c,ls,x.date);
   return csSec("Locations",LG.length?LG.map(l=>csLocBox(c,l,x.date,NOW,NEAR)).join(""):"",true,"","loc","")}
 function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false)return"";   /* switched off in the app settings */let h="";
-  {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const all=csA((c.order||{}).rows),rows=all.filter(r=>r.sc);
+  {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const all=csRows(c),rows=all.filter(r=>r.sc);
    /* scene with start and end (= start of the next row of the shooting order) for the popup of a place */
    const span=r=>{const i=all.indexOf(r),a=hm(r.t),nx=all.slice(i+1).find(y=>hm(y.t));return [String(r.sc),a?a+(nx?"–"+hm(nx.t):""):""]};
    const add=(u,code,name,sc,minor,link)=>{const g=geo[u];link=link||(/^https?:/.test(u||"")?u:"");if(!g||!Array.isArray(g)){if(!minor&&u&&!miss.some(x=>x.c===code))miss.push({c:code,n:name,s:sc||"",u:link,set:!minor});return}if(pts.some(x=>x.c===code&&x.p.join(",")===g.join(",")))return;
@@ -489,7 +493,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   {const sc=csA(o.rows).filter(r=>r.sc).map(r=>String(r.sc)),ch=(k,v)=>v?'<span class="csoc"><i>'+esc(k)+'</i>'+esc(v)+'</span>':'';
    /* folded: Call · Probe · RTS · scenes · Lunch · Wrap in one short line */
    const sumx='<span class="csosum">'+ch("Call",t.crewCall||x.crewCall)+ch(L("Probe"),t.rehearsal)+ch("RTS",t.rts||x.shootCall)+(sc.length?ch(sc.length+" "+L("Szenen"),sc.length>1?sc[0]+"–"+sc[sc.length-1]:sc[0]):"")+ch("Lunch",t.lunch)+ch("Wrap",t.wrap||x.wrap)+'</span>'+
-     (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c),NR=(()=>{const i=csNowIdx(csA(o.rows),x.date);return i>=0?csA(o.rows)[i]:null})();return csA(o.rows).filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
+     (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c),OR=csA(o.rows),NR=OR[csNowIdx(OR,x.date)]||null;return OR.filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
        /* one line per scene: time · scene · I/E · set code · set · duration; the scene of now framed */
        return '<span class="cso1'+(r===NR?' now':'')+'"><i>'+esc(hm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
    h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c),true),false,"","order",sumx)}
@@ -538,7 +542,7 @@ const CSITEMS=".csorder>li,.cs-card,.cs-tbl tbody tr,.cscall-r,.csdep,.csloc,.cs
 function csMineTest(){const me=CSCUR.me,c=CSCUR.c;if(!me||!c)return null;
   /* my scenes as cast: my number in the cast column of the shooting order */
   const no=(csA(c.cast).find(r=>me.hit(r.actor))||{}).no,sc=new Set();
-  if(no)for(const r of csA((c.order||{}).rows))if(r.sc&&String(r.cast||"").split(/[^0-9a-z]+/i).includes(String(no).trim()))sc.add(String(r.sc));
+  if(no)for(const r of csRows(c))if(r.sc&&String(r.cast||"").split(/[^0-9a-z]+/i).includes(String(no).trim()))sc.add(String(r.sc));
   return it=>it.classList.contains("mine")||(it.matches(".csorder>li")?sc.has(it.dataset.sc||""):me.hit(it.textContent))}
 function csFilter(v){v=v||document.querySelector("#view .csview");if(!v)return;const jb=v.previousElementSibling,inp=(jb&&jb.querySelector("#csq"))||document.getElementById("csq");
   const q=fold(String(inp&&inp.value||"").trim()),mt=CSMINE?csMineTest():null;v.classList.toggle("csmineon",!!mt);
