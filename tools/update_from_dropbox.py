@@ -1641,7 +1641,10 @@ def main():
             if mainU2 != (meta.get("unit2Main") or {}): meta["unit2Main"] = mainU2; changed = True
             U2SUM.append("in der App an Tag " + (",".join(str(dayno(d)) for d in shoot if d.get("unit2")) or "keinem"))
             print("::notice::2nd Unit: " + " · ".join(U2SUM))
-            sources.append({"kind": "unit2", "name": "Google Sheet «2nd Unit Shooting Order»", "link": url, "modified": NOW})
+            # «modified» only changes when the sheet changed – else every run would rewrite the data file (new download for every device)
+            prev = next((x.get("modified") for x in meta.get("sources") or [] if isinstance(x, dict) and x.get("kind") == "unit2"), None)
+            sources.append({"kind": "unit2", "name": "Google Sheet «2nd Unit Shooting Order»", "link": url,
+                            "modified": NOW if (cache != (meta.get("unit2Sheet") or {}) or not prev) else prev})
         if cache != (meta.get("unit2Sheet") or {}): meta["unit2Sheet"] = cache; changed = True
     except Exception as e: print("::warning::2nd-Unit-Planung nicht gelesen: " + type(e).__name__)
 

@@ -56,7 +56,7 @@ async function ownDialog(id,pre){
   const roles=[{id:"owner",name:L("Owner")},{id:"admin",name:L("Admin")}].concat(await ownRoles()).concat([{id:"",name:L("Keine Rolle")}]);
   const depts=[...new Set((S.crew||[]).map(g=>g.dept).filter(Boolean))],ppl=ownPeople();
   const st={sel:!!(ev&&(ev.roles||ev.depts||ev.people)),roles:(ev&&ev.roles)||[],depts:(ev&&ev.depts)||[],people:((ev&&ev.people)||[]).slice()};
-  const d=mkDialog("oedlg");
+  const d=mkDialog("oedlg",null,{replace:true});
   const ck=(k,v,t)=>'<label class="ck"><input type="checkbox" data-oek="'+k+'" value="'+esc(v)+'"'+(st[k].includes(v)?' checked':'')+'> '+esc(t)+'</label>';
   const pchips=()=>st.people.map((p,i)=>'<span class="oechip">'+esc(p.name)+'<button type="button" data-oerm="'+i+'" aria-label="'+esc(L("Entfernen"))+'">×</button></span>').join("");
   const selBox=()=>'<p class="ahint"><b>'+L("Rollen")+'</b></p><div class="bcchk">'+roles.map(r=>ck("roles",r.id,r.name)).join("")+'</div>'+
@@ -111,7 +111,7 @@ async function gcDialog(){
   await gcLoad(true);await ownLoad(true);
   const taken=new Map((OWN.list||[]).filter(x=>x.gc).map(x=>[x.gc,x]));const t=todayISO();
   const items=(GC.feed.items||[]).filter(x=>x.date>=t);
-  const d=mkDialog("gcdlg");
+  const d=mkDialog("gcdlg",null,{replace:true});
   let last="";const rows=items.map((x,i)=>{const dt=new Date(x.date+"T12:00:00");const hd=x.date!==last?'<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>':'';last=x.date;const tk=taken.get(x.uid);
     return hd+'<div class="gcrow'+(tk?' on':'')+'"><span class="gct">'+esc(x.t||L("ganztags"))+(x.end?'–'+esc(x.end):'')+'</span><span class="gcn"><b>'+esc(x.title||"–")+'</b>'+(x.where?'<br><small>'+esc(x.where)+'</small>':'')+(tk?'<br><small class="gcw">✓ '+esc(L("in der App"))+'</small>':'')+'</span>'+
       (tk?'<button type="button" class="pillbtn" data-gced="'+esc(tk.id)+'">'+esc(L("Bearbeiten"))+'</button>':'<button type="button" class="pillbtn" data-gcadd="'+i+'">'+esc(L("Übernehmen"))+'</button>')+'</div>'}).join("");

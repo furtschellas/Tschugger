@@ -15,9 +15,10 @@ async function loadLangs(){
     {const c=d.exists()?d.data():{};const nv={phone:c.phonePublic===true,email:c.emailPublic===true,mycal:c.mycalPublic===true};if(JSON.stringify(nv)!==JSON.stringify(window.PUBV)){window.PUBV=nv;try{localStorage.setItem("apppubv",JSON.stringify(nv))}catch(_){}render()}}
     {const go=!(d.exists()&&d.data().googleLogin===false);if(window.GOOGLEON!==go){window.GOOGLEON=go;try{localStorage.setItem("appgoogle",go?"1":"0")}catch(_){}try{const g=document.getElementById("gate");if(g&&!g.hidden&&(AUTHMODE==="login"||AUTHMODE==="register")&&!g.querySelector("input:focus"))showGate(AUTHMODE)}catch(_){}}}
     {const c=d.exists()?d.data():{};window.A2AGAIN=c.a2again===true;try{localStorage.setItem("appa2again",window.A2AGAIN?"1":"0")}catch(_){}}
+    {const c=d.exists()?d.data():{};const z=+c.chgClearAt||0;if(window.CHGCLR!==z){window.CHGCLR=z;try{localStorage.setItem("appchgclr",String(z))}catch(_){}render()}}   /* «Änderungen» in Today emptied for everybody */
     {const c=d.exists()?d.data():{};const pe=c.pushEnabled!==false;if(window.PUSHEN!==pe){window.PUSHEN=pe;try{localStorage.setItem("apppushon",pe?"1":"0")}catch(_){}render()}}
     {const c=d.exists()?d.data():{};const ce=c.chatEnabled!==false,te=c.tourEnabled!==false;if(window.CHATEN!==ce||window.TOUREN!==te){window.CHATEN=ce;window.TOUREN=te;try{localStorage.setItem("appchaton",ce?"1":"0");localStorage.setItem("apptouron",te?"1":"0")}catch(_){}}}
-    {const cu=String((d.exists()&&d.data().chatUrl)||"");if(window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
+    {let cu=String((d.exists()&&d.data().chatUrl)||"");if(cu&&!/^https:\/\//i.test(cu))cu="";   /* only https – the sign-in token goes there */if(window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
     {const dc=(d.exists()&&d.data().docs)||{};window.DOCS=dc;try{localStorage.setItem("appdocs",JSON.stringify(dc))}catch(_){}}
     const bp=d.exists()&&d.data().bdayPublic===true;if(window.BDAYPUB!==bp){window.BDAYPUB=bp;try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}render()}
     const to=d.exists()&&Array.isArray(d.data().tabOrder)?d.data().tabOrder:null;if(JSON.stringify(window.TABORDER)!==JSON.stringify(to)){window.TABORDER=to;try{to?localStorage.setItem("apptaborder",JSON.stringify(to)):localStorage.removeItem("apptaborder")}catch(_){}render()}
@@ -42,7 +43,7 @@ async function loadLangs(){
     window.LOCSHEET=cf("locSheet");
     /* Google map in the callsheet map: on/off, its colours, hidden layers (config/private) */
     {const g=pv.gmap&&typeof pv.gmap==="object"?pv.gmap:{};window.GMAPSET={on:g.on===true,color:g.color!==false,off:Array.isArray(g.off)?g.off.map(String):[]}}window.SCENESHEET=typeof pv.sceneSheet==="string"?pv.sceneSheet:"";window.SHEETSA=typeof pv.sheetSa==="string"?pv.sheetSa:"";window.SHEETST=pv.sceneSheetSt&&typeof pv.sceneSheetSt==="object"?pv.sceneSheetSt:null;
-    {const cu=cf("chatUrl");if(cu&&window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
+    {const cu=cf("chatUrl");if(cu&&/^https:\/\//i.test(cu)&&window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
     const mu=cf("mapUrl");if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
   }catch(err){console.warn("langs",err)}
   applyLangs();

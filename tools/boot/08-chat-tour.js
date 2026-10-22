@@ -18,7 +18,7 @@ function chatCtx(){
   try{if(vok("plan")){out.push("DREHPLAN (days, ab gestern): "+J(cur(S.days)));const past=S.days.filter(d=>d&&String(d.date||"")<y);if(past.length)out.push("FRÜHERE DREHTAGE (nur Datum/Titel): "+J(past.map(d=>({date:d.date,label:d.label||d.short,kind:d.kind}))))}}catch(_){}
   try{if(vok("dispo"))out.push("CALLSHEETS (dispos, ab gestern): "+J(cur(S.dispos)))}catch(_){}
   try{if(vok("prep"))out.push("PREP / WEEKLY SCHEDULE (ab gestern): "+J(cur(S.prepro)))}catch(_){}
-  try{out.push("LOCATIONS: "+J(S.locs))}catch(_){}
+  try{if(vok("loc"))out.push("LOCATIONS: "+J(S.locs))}catch(_){}
   try{const ph=vok("phone"),em=vok("email");if(vok("crew"))out.push("CREWLISTE: "+J(S.crew.map(g=>Object.assign({},g,{people:arr(g.people).map(p=>{const q=Object.assign({},p);if(!ph){delete q.phone;delete q.tel;delete q.mobile}if(!em)delete q.email;return q})}))))}catch(_){}
   try{if(vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)out.push("MEINE TERMINE ("+me.name+"): "+J(myEvents(me).filter(e=>String(e.date||"")>=y).map(e=>({date:e.date,t:e.t,end:e.end,n:e.n,where:e.where,src:e.src}))))}}catch(_){}
   /* «Meine Termine» first after the help, so a cut at the limit takes the least important part */
@@ -63,7 +63,8 @@ async function chatAsk(q){
 function chatSec(){if(!window.CHATURL||!window.CHATEN)return "";
   return '<section class="psec"><h4>'+L("Assistent")+'</h4><label class="ck"><input type="checkbox" data-chaton'+(chatOn()?' checked':'')+'> '+L("Chat-Assistent anzeigen (Knopf unten rechts)")+'</label></section>'}
 function chatSetSec(){
-  return '<p class="ahint"><b>'+L("Push-Nachrichten")+'</b> – '+L("Ausgeschaltet verschickt die App an niemanden mehr Push-Nachrichten – keine Erinnerungen, keine automatischen Meldungen, keine Nachrichten an alle –, egal was die einzelnen Personen in ihrem Profil eingestellt haben. Glocken und Briefumschlag verschwinden.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="pn"'+(window.PUSHEN!==false?' checked':'')+'> '+L("Push-Nachrichten anbieten")+'</label></div>'+
+  return '<p class="ahint"><b>'+L("Änderungen in Today")+'</b> – '+L("Leert die Liste «Änderungen» in Today auf allen Geräten; neue Änderungen erscheinen danach wieder normal.")+(window.CHGCLR?' ('+L("zuletzt geleert")+' '+esc(new Date(window.CHGCLR).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))+')':'')+'</p><div class="arb"><button type="button" class="pillbtn" data-chgclrall>'+L("Änderungsliste für alle leeren")+'</button></div>'+
+    '<p class="ahint"><b>'+L("Push-Nachrichten")+'</b> – '+L("Ausgeschaltet verschickt die App an niemanden mehr Push-Nachrichten – keine Erinnerungen, keine automatischen Meldungen, keine Nachrichten an alle –, egal was die einzelnen Personen in ihrem Profil eingestellt haben. Glocken und Briefumschlag verschwinden.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="pn"'+(window.PUSHEN!==false?' checked':'')+'> '+L("Push-Nachrichten anbieten")+'</label></div>'+
     '<p class="ahint"><b>'+L("Als App installieren")+'</b> – '+L("Wer die Crew-App noch nicht installiert hat, wird beim ersten Öffnen einmal gefragt. Eingeschaltet: alle 3 Tage wieder, bis die App installiert ist. Wer sie installiert hat, siehst du in der Benutzerübersicht.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="ia"'+(window.A2AGAIN===true?' checked':'')+'> '+L("Immer wieder zum Installieren auffordern")+'</label></div>'+
     '<p class="ahint"><b>'+L("Einführungstour")+'</b> – '+L("Eingeschaltet wird die Tour allen einmalig angeboten und kann unter «Mein Konto» neu gestartet werden.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="to"'+(window.TOUREN!==false?' checked':'')+'> '+L("Einführungstour anbieten")+'</label></div>'+
     '<p class="ahint"><b>'+L("Assistent")+'</b> – '+L("Adresse des Cloudflare Workers für den Chat-Assistenten (und den zuverlässigen Zeitplan für Push und Dropbox). Leer = kein Assistent.")+' <a href="https://github.com/furtschellas/Tschugger/blob/main/tools/chat_worker.js" target="_blank" rel="noopener">'+L("Worker-Code und Anleitung")+'</a></p><input form="setform" class="amap" type="url" name="chat" inputmode="url" placeholder="https://tschugger.….workers.dev" value="'+esc(window.CHATURL||"")+'"><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="ca"'+(window.CHATEN!==false?' checked':'')+'> '+L("KI-Assistent anbieten")+'</label></div>'}
@@ -275,3 +276,8 @@ function maybePushHint(){
   document.body.appendChild(d);
 }
 const tourInfo=m=>!m?"":m.tour==="done"?L("Tour gemacht"):m.tour==="skip"?L("Tour übersprungen"):m.tour==="shown"?L("Tour angefangen"):L("Tour offen");
+
+document.addEventListener("click",async e=>{if(!e.target.closest||!e.target.closest("[data-chgclrall]")||!can("settings"))return;e.preventDefault();
+  if(!confirmSafe(L("Die Liste «Änderungen» in Today für alle leeren?")))return;const at=Date.now();
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{chgClearAt:at},{merge:true});window.CHGCLR=at;try{localStorage.setItem("appchgclr",String(at))}catch(_){}
+    showMsg(L("Änderungsliste für alle geleert."),3000);render()}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
