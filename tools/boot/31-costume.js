@@ -111,3 +111,8 @@ for(const [f,k] of [["p","cqPickup"],["c","cqCall"],["b","cqBase"]]){const orig=
 /* «Cast-Quittierungen sehen» (cast.see): without it (and without a right to tick) the cast shows the plain times, no states */
 window.cqSee=()=>{try{return typeof canPerm==="function"&&(canPerm("cast.see")||canPerm("wardrobe.ack")||canPerm("makeup.ack")||canPerm("cast.manual")||canPerm("rides.confirm")||canPerm("rides.manage"))}catch(_){return false}};
 for(const k of ["cqPickup","cqCall","cqBase","cqOnset"]){const orig=window[k];window[k]=(c,r)=>window.cqSee()?orig(c,r):null}
+/* Kostüm / Maske running: the duration counts down in minutes from the moment it was started (back to open = original duration again) */
+const cqLeft=(at,min)=>Math.max(0,Math.ceil(min-(Date.now()-at)/60000));
+window.cqCd=(id,d)=>{const x=window.RIDEACK&&window.RIDEACK[id],m=String(d||"").match(/(\d+)/);if(!x||!+x.at||!m)return"";const min=+m[1];
+  return ' <span class="mkd cqcd" data-cqat="'+(+x.at)+'" data-cqmin="'+min+'" title="'+esc(L("Restzeit"))+'">'+cqLeft(+x.at,min)+'′</span>'};
+setInterval(()=>{for(const s of document.querySelectorAll(".cqcd[data-cqat]")){const v=cqLeft(+s.dataset.cqat,+s.dataset.cqmin)+"′";if(s.textContent!==v)s.textContent=v}},20000);
