@@ -98,3 +98,8 @@ function cqManual(f,c,r,t,res){if(!t||!c||!c._date)return res;const id=cmId(c._d
   return {h:'<button type="button" class="cql cq'+cur+'" data-cqk="x" data-cqcur="'+cur+'" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(L("Von Hand")+" · "+tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(String(t))+'</button>'}}
 for(const [f,k] of [["p","cqPickup"],["c","cqCall"],["b","cqBase"],["o","cqOnset"]]){const orig=window[k];
   window[k]=(c,r)=>{const t=r&&(f==="p"?r.pickup:f==="c"?r.call:f==="b"?r.base:r.onset);let res=null;try{res=orig(c,r)}catch(_){}return cqManual(f,c,r,t,res)||res}}
+/* Call done (ticked or by hand): P/UP counts as done too */
+{const orig=window.cqPickup;window.cqPickup=(c,r)=>{let res=null;try{res=orig(c,r)}catch(_){}const t=hm(r&&r.call);
+  if(t&&c&&c._date&&(cmSt(cmId(c._date,"c",r,t))===2||cmSt(cmId(c._date,"xc",r,t))===2)&&hm(r.pickup)&&!(res&&/\bcq2\b/.test(res.h)))
+    return {h:'<span class="cql cq2 cqro" title="'+esc(L("Erledigt"))+' (Call)">'+esc(String(r.pickup))+'</span>'};
+  return res}}
