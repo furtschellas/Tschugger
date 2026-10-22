@@ -35,6 +35,9 @@ async function loadPrefs(){
 }
 /* ---- documents: every text the app sends or shows (mails, welcome note, disclaimer); editable under App-Verwaltung → Einstellungen → Dokumente ---- */
 const DOCDEF={
+ maint:{t:"Wartungshinweis",use:"Erscheint bei jedem Öffnen der App als Hinweis mit «OK», solange er eingeschaltet ist. Titel und Text frei wählbar.",
+  subject:"Wartungsarbeiten",
+  body:"Gerade bauen wir das Coverday-Management in die App ein. Wegen der Drehplanänderung zwischen DT03 und DT04 kann es sein, dass DT03 und DT04 vorübergehend falsch angezeigt werden. Im Zweifel gilt das Callsheet aus der Dropbox. Danke für dein Verständnis!"},
  disclaimer:{t:"Disclaimer (BETA-Hinweis)",use:"Wird in der Willkommensnachricht und in den Mails als {disclaimer} eingesetzt.",
   body:"Hinweis: Die App ist eine BETA-Testversion. Alle angezeigten Daten sind ohne Gewähr. Die Produktion und das Entwicklungsteam übernehmen KEINE Garantie für die Richtigkeit, Vollständigkeit oder Aktualität der Daten. Verbindlich sind immer die offiziellen Unterlagen der Produktion (Drehplan, Callsheet, Dispo)."},
  welcome:{t:"Willkommensnachricht",use:"Erscheint beim ersten Login und muss bestätigt werden. Betreff = Titel, Absätze durch eine Leerzeile trennen.",
@@ -57,6 +60,7 @@ const DOCDEF={
 
 /* default texts in the other languages (German defaults are above) */
 const DOCI18N={
+ maint:{fr:{subject:"Travaux de maintenance",body:"Nous intégrons en ce moment la gestion des Coverdays dans l'app. En raison du changement du plan de tournage entre DT03 et DT04, DT03 et DT04 peuvent être affichés incorrectement pendant un moment. En cas de doute, la feuille de service dans Dropbox fait foi. Merci de ta compréhension !"},it:{subject:"Lavori di manutenzione",body:"Stiamo integrando la gestione dei Coverday nell'app. A causa della modifica del piano di lavorazione tra DT03 e DT04, DT03 e DT04 potrebbero essere visualizzati in modo errato per un po'. In caso di dubbio vale il foglio di convocazione in Dropbox. Grazie per la comprensione!"},en:{subject:"Maintenance",body:"We are currently building the Coverday management into the app. Because of the schedule change between DT03 and DT04, DT03 and DT04 may be shown incorrectly for a while. If in doubt, the callsheet in Dropbox applies. Thanks for your understanding!"}},
  disclaimer:{hi:{"body": "नोट: यह ऐप BETA परीक्षण संस्करण है। दिखाया गया सारा डेटा बिना गारंटी के है। प्रोडक्शन और डेवलपर्स डेटा के सही, पूर्ण या अद्यतन होने की कोई गारंटी नहीं देते। प्रोडक्शन के आधिकारिक दस्तावेज़ (शेड्यूल, Callsheet, Dispo) ही मान्य हैं।"},fr:{body:"Remarque : l'app est une version de test BETA. Toutes les données affichées sont sans garantie. La production et les développeurs n'assument AUCUNE garantie quant à l'exactitude, l'exhaustivité ou l'actualité des données. Seuls les documents officiels de la production (plan de tournage, callsheet, dispo) font foi."},
   it:{body:"Nota: l'app è una versione di prova BETA. Tutti i dati visualizzati sono senza garanzia. La produzione e gli sviluppatori NON si assumono alcuna garanzia sulla correttezza, completezza o attualità dei dati. Fanno fede sempre i documenti ufficiali della produzione (piano di lavorazione, callsheet, dispo)."},
   en:{body:"Note: the app is a BETA test version. All data shown is without guarantee. The production and the developers accept NO liability for the data being correct, complete or up to date. The official production documents (shooting schedule, callsheet, dispo) are always binding."}},
@@ -96,9 +100,9 @@ function docsSec(){
     '<div class="smodes doclangs" role="group">'+DOCLANGS.map(l=>'<button type="button" data-doclang="'+l+'" aria-pressed="'+(l===dl)+'">'+l.toUpperCase()+'</button>').join("")+'</div>'+
     Object.keys(DOCDEF).map(k=>{const d=DOCDEF[k],r=docRaw(k,dl);
       return '<details class="docd" data-sec="doc-'+k+'"'+(SECS["doc-"+k]?' open':'')+'><summary><b>'+esc(L(d.t))+'</b>'+(r.custom?' <span class="ust role">'+L("angepasst")+'</span>':'')+'</summary>'+
-        '<form class="docf" data-doc="'+k+'" data-dl="'+dl+'"><p class="ahint">'+esc(L(d.use))+'</p>'+(d.subject!==undefined?'<label>'+L(k==="welcome"||k==="testwelcome"?"Titel":"Betreff")+'<input name="ds" maxlength="200" value="'+esc(r.subject)+'"></label>':'')+
+        '<form class="docf" data-doc="'+k+'" data-dl="'+dl+'"><p class="ahint">'+esc(L(d.use))+'</p>'+(k==="maint"?'<label class="ck docon"><input type="checkbox" data-mainton'+(maintOn()?' checked':'')+'> '+esc(L("Wartungshinweis eingeschaltet (für alle)"))+'</label>':'')+(d.subject!==undefined?'<label>'+L(k==="welcome"||k==="testwelcome"||k==="maint"?"Titel":"Betreff")+'<input name="ds" maxlength="200" value="'+esc(r.subject)+'"></label>':'')+
         '<label>'+L("Text")+'<textarea name="db" rows="'+(k==="disclaimer"?5:12)+'">'+esc(r.body)+'</textarea></label>'+
-        '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+''+(r.custom?'<button type="button" class="lnk" data-docreset="'+k+'" data-dl="'+dl+'">'+L("Standard wiederherstellen")+'</button>':'')+(k==="testwelcome"?'<button type="button" class="lnk" data-twagain>'+L("Allen Test-Usern nochmals zeigen")+'</button>':'')+(k!=="welcome"&&k!=="disclaimer"&&k!=="testwelcome"&&k!=="invitewa"&&ME?'<a class="lnk" href="'+esc(mailto(ME.email,k,{vorname:"Test",name:"Test Person",passwort:"Abc123xyz",lang:dl}))+'">'+L("Test an mich")+'</a>':'')+'</div></form></details>'}).join("")+
+        '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+(window.CHATURL?'<button type="button" class="pillbtn docai" data-docai>✨ '+esc(L("Text mit KI überarbeiten"))+'</button>':'')+(r.custom?'<button type="button" class="lnk" data-docreset="'+k+'" data-dl="'+dl+'">'+L("Standard wiederherstellen")+'</button>':'')+(k==="testwelcome"?'<button type="button" class="lnk" data-twagain>'+L("Allen Test-Usern nochmals zeigen")+'</button>':'')+(k!=="welcome"&&k!=="disclaimer"&&k!=="testwelcome"&&k!=="invitewa"&&k!=="maint"&&ME?'<a class="lnk" href="'+esc(mailto(ME.email,k,{vorname:"Test",name:"Test Person",passwort:"Abc123xyz",lang:dl}))+'">'+L("Test an mich")+'</a>':'')+'</div></form></details>'}).join("")+
     '<p class="ahint">'+L("Bestätigungs-Mail, Passwort-Zurücksetzen und Anmelde-Link verschickt Firebase. Deren Texte änderst du in der Firebase-Konsole unter Authentication → Templates.")+'</p></div>';
 }
 const docDef=(k,lang)=>lang==="de"?{subject:DOCDEF[k].subject||"",body:DOCDEF[k].body||""}:Object.assign({subject:DOCDEF[k].subject||"",body:DOCDEF[k].body||""},(DOCI18N[k]||{})[lang]||(DOCI18N[k]||{}).en||{});
@@ -128,3 +132,27 @@ function waInvite(em,name,phone){const d=docGet("invitewa",{email:em,vorname:Str
   return "https://wa.me/"+(n.length>=8?n:"")+"?text="+encodeURIComponent(d.body)}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-cwa]");if(!b||!isAdmin())return;e.preventDefault();e.stopPropagation();
   window.open(waInvite(b.dataset.cwa,b.dataset.nm||"",b.dataset.ph||""),"_blank","noopener")},true);
+
+/* maintenance note on/off (config/app → docs.maint.on, for everybody; default on) */
+const maintOn=()=>((window.DOCS||{}).maint||{}).on!==false;window.maintOn=maintOn;
+document.addEventListener("change",async e=>{const c=e.target.closest&&e.target.closest("[data-mainton]");if(!c||!can("settings"))return;const on=c.checked;
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{maint:{on}}},{merge:true});
+    window.DOCS=Object.assign({},window.DOCS,{maint:Object.assign({},(window.DOCS||{}).maint,{on})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
+    showMsg(L(on?"Wartungshinweis eingeschaltet.":"Wartungshinweis ausgeschaltet."),2500)}catch(err){c.checked=!on;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
+/* «Text mit KI überarbeiten»: the assistant (Cloudflare Worker → Claude) improves title and text of the open document in its language;
+   the result only goes into the fields – it counts once it is saved */
+const DOCLN={de:"Deutsch (Schweiz, ohne ß, ohne Gender-Doppelpunkt)",fr:"français",it:"italiano",en:"English",hi:"Hindi"};
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-docai]");if(!b||!can("settings")||!window.CHATURL)return;e.preventDefault();
+  const f=b.closest("form.docf"),msg=f.querySelector(".amsg"),lang=f.dataset.dl||"de",ti=f.ds?String(f.ds.value||""):"",tx=String(f.db.value||"");if(!tx.trim())return;
+  b.disabled=true;const old=b.innerHTML;b.innerHTML="✨ "+esc(L("KI überarbeitet …"));msg.className="amsg";msg.textContent="";
+  const q="Überarbeite diesen Text der Crew-App, damit er klar, freundlich und gut lesbar ist. Sprache: "+(DOCLN[lang]||lang)+". Inhalt und Fakten genau gleich lassen; "+
+    "Platzhalter in geschweiften Klammern wie {vorname} unverändert lassen; Namen, Drehtage (z. B. DT03) und Szenen nicht ändern; Absätze mit Leerzeile trennen. "+
+    "Antworte NUR mit JSON: {\"titel\":\"…\",\"text\":\"…\"}"+(f.ds?"":" (titel leer lassen)")+".\n\nTITEL: "+ti+"\n\nTEXT:\n"+tx;
+  try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();
+    const r=await withTimeout(fetch(window.CHATURL.replace(/\/+$/,"")+"/chat",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({q,lang,today:"",who:ME.email,hist:[],ctx:""})}),60000,"docai");
+    const j=await r.json().catch(()=>({}));if(!r.ok||!j.a)throw new Error(j.error||r.status);
+    const m=String(j.a).match(/\{[\s\S]*\}/);const o=m?JSON.parse(m[0]):null;if(!o||!o.text)throw new Error(L("Keine brauchbare Antwort."));
+    if(f.ds&&o.titel)f.ds.value=String(o.titel).trim();f.db.value=String(o.text).replace(/ß/g,"ss").trim();
+    msg.textContent=L("Vorschlag eingesetzt – prüfen und speichern.")}
+  catch(err){msg.className="amsg err";msg.textContent=L("Fehler:")+" "+(err.message||err)}
+  b.disabled=false;b.innerHTML=old});

@@ -911,3 +911,5 @@ html body #view .reppage .repmodes .pillbtn.on{background:var(--accent)!importan
 /* «Wer hat welchen Zugriff?»: long names break (with hyphen) instead of running under the buttons */
 html body #view .pacc .paccd>summary>span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;word-break:normal;hyphens:auto;-webkit-hyphens:auto}
 html body #view .pacc .paccd>summary>.paccpen,html body #view .pacc .paccd>summary>.pacn{flex:none}
+.docf .docon{margin:4px 0 2px;font-weight:600}
+.docf .arb .docai{width:auto}
