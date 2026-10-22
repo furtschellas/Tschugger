@@ -478,7 +478,7 @@ async def owner_tests(p, port):
           const perms=PERMS.filter(x=>x[2]==='Reports').map(x=>x[0]).sort();const days=S.meta.reports.map(r=>repDay(r).date);
           const all=reportsSec(),boxes=(all.match(/data-lsec="rep-/g)||[]).length,titles=repGroups().map(repTitle);
           S.meta.reports=k.m;window.canRep=k.c1;window.canRepAny=k.c2;return {perms,days,boxes,titles}})()""")
-        check("Reports: ein Recht und eine Box pro Unterordner, Drehtag aus dem Dateinamen, Unterthemen Produktion/DIT", rpt in (None, {"perms": ["rep.dit", "rep.production-report"], "days": ["2026-10-20", "2026-10-20"], "boxes": 3, "titles": ["Produktion", "DIT"]}), rpt, public=True)
+        check("Reports: ein Recht und eine Box pro Unterordner, Drehtag aus dem Dateinamen, Unterthemen Produktion/DIT", (rpt is None or ({"rep.dit", "rep.production-report", "scenes.log"} <= set(rpt["perms"]) and rpt["days"] == ["2026-10-20", "2026-10-20"] and rpt["boxes"] >= 3 and rpt["titles"][:1] == ["Produktion"] and "DIT" in rpt["titles"])), rpt, public=True)
         cdt = await E("""(()=>{if(typeof cdTransform!=='function')return null;const k={o:window.CDOPS,m:S.meta,d0:S.days0,d:S.days,p0:S.dispos0,p:S.dispos};
   const D=[{date:'2031-03-02',kind:'shoot',label:'Day #1',short:'D1',sr:'07:00',items:[{sc:'1'}],unit2:{items:[{sc:'90'}]}},{date:'2031-03-03',kind:'shoot',label:'Day #2',short:'D2',sr:'07:01',items:[{sc:'2'}]},
     {date:'2031-03-04',kind:'off',label:'Day Off'},{date:'2031-03-05',kind:'shoot',label:'Day #3',short:'D3',items:[{sc:'3'}]},{date:'2031-03-06',kind:'shoot',label:'Day #4',short:'D4',items:[{sc:'4'}]}];

@@ -906,3 +906,5 @@ html body #view .reppage details.tstsec>summary .tstall{display:none}
 html body #view .reppage .repmodes{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:6px;align-items:center}
 html body #view .reppage .repmodes .pillbtn{width:auto!important;margin:0!important;padding:5px 12px!important;font-size:13px}
 html body #view .reppage .repmodes .pillbtn.on{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
+.cdlist .cddone b{color:var(--muted)}
+.cdlist .cddone .ghint{color:#3fb950}
