@@ -959,3 +959,5 @@ html body .mkw:has(.cql.cq0,.cql.cq1) .mkd{color:var(--ink)!important}
 /* cast: the running step (pink, white time) without underline; next to a done (white) time the duration stays pink */
 html body .cql.cq1{text-decoration:none!important}
 html body .mkw:has(.cql.cq2) .mkd{color:var(--accent)!important}
+/* cast: underlined only what I can tick with my rights – open times I can not tick are plain text */
+html body .cql.cqro.cq0{color:inherit!important;text-decoration:none!important}
