@@ -3,7 +3,7 @@ const NOSET=/^(postprod|verleih|buchhalt|autor|casting)/i;
 const myAdmin=()=>{try{return typeof window.canPerm!=="function"||window.canPerm("mycal.all")}catch(_){return false}};
 /* admins can look at the appointments of another person (Meine Termine → «Termine für»); that choice also fills Today and «Mein Drehtag»:
    a bar says so, with the way back to the own data */
-function myPickBar(){let pick="";try{if(myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){}if(!pick)return "";
+function myPickBar(){let pick="";try{if(window.PICKON&&myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){}if(!pick)return "";
   let own="";try{if(typeof MEMBER!=="undefined"&&MEMBER)own=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
   if(own&&fold(own)===fold(pick))return "";
   return '<div class="mypickbar" role="status">'+esc(L("Du siehst die Daten von"))+' <b>'+esc(pick)+'</b> '+esc(L("(gewählt in Meine Termine)."))+' <button type="button" class="pillbtn" data-mypickoff>'+esc(L("Zu meinen Daten"))+'</button></div>'}
@@ -12,7 +12,7 @@ function myIdentity(){
   const people=mailPeople();let nm="",em="";
   try{em=String(window.simEmail?window.simEmail():(typeof ME!=="undefined"&&ME&&ME.email)||"").toLowerCase()}catch(_){}
   try{if(typeof MEMBER!=="undefined"&&MEMBER)nm=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
-  let pick="";try{if(myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){} /* simulating: always the simulated person, never my own pick */
+  let pick="";try{if(window.PICKON&&myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){} /* simulating: always the simulated person, never my own pick */
   let p=null;
   if(pick)p=people.find(x=>x.name===pick)||{name:pick,k:nmk(pick)};
   if(!p&&em)p=people.find(x=>x.email===em&&x.src!=="user");
@@ -94,7 +94,9 @@ function evRecent(e){const ok=x=>/^\d\d:\d\d$/.test(x||"");if(!ok(e.t)&&!ok(e.en
   const ms=x=>zurichUTC(e.date,x).getTime(),now=Date.now();
   let end=ok(e.end)?ms(e.end):0;if(end&&ok(e.t)&&end<=ms(e.t))end+=864e5; /* night shoot: end after midnight */
   return (ok(e.t)&&ms(e.t)>=now-5*3600e3)||(end&&end>=now)}
-function renderMy(){
+/* the person chosen in «Termine für» counts only while Meine Termine is drawn – Today, the callsheet, push and the assistant are always me */
+function renderMy(){window.PICKON=true;try{return renderMy0()}finally{window.PICKON=false}}
+function renderMy0(){
   if(!vok("mycal"))return '<div class="empty">'+esc(L("Kein Zugang"))+'</div>';
   const me=myIdentity();const people=mailPeople().filter(x=>x.src&&x.src!=="user");
   const names=[...new Set(people.map(p=>p.name))].sort((a,c)=>a.localeCompare(c,LANG));
