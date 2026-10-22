@@ -1,7 +1,7 @@
 /* day.month. without weekday (any language) */
 const dmShort=iso=>{const [,m,d]=String(iso||'').split('-');return d&&m?d+'.'+m+'.':''};
 /* vCard 3.0 for one crew member, so it can be added to the phone's contacts */
-const vEsc=t=>String(t||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/([,;])/g,"\\$1");
+const vEsc=icsEsc;   /* vCard and iCal escape text the same way (11-schedule-prep.js) */
 function vCardText(p,g){
   const parts=String(p.name||"").trim().split(/\s+/),first=parts[0]||"",last=parts.slice(1).join(" ");
   const L1=["BEGIN:VCARD","VERSION:3.0","N:"+vEsc(last)+";"+vEsc(first)+";;;","FN:"+vEsc(p.name||""),"ORG:"+vEsc("TSCHUGGER Tigerblood")+(g&&g.dept?";"+vEsc(g.dept):"")];
