@@ -1371,12 +1371,16 @@ html body #view .csscd>summary .l1>.meta{order:9;flex:1 1 100%;margin:2px 0 0}
 html body #view .sclt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 10px;font-variant-numeric:tabular-nums}
 html body #view .sclt b{font-family:var(--f-mono,monospace);font-weight:600}
 /* Szenen-Protokoll on a computer: one line per entry (name, pencil, plan · begin, end, duration · state) */
-@media (min-width:761px){html body #view li.scl{display:flex;align-items:center;gap:6px 14px}
+@media (min-width:761px){html body #view li.scl{display:grid;grid-template-columns:minmax(7em,8.5em) 30px 10.5em minmax(0,1fr) 1.4em;grid-auto-flow:column;align-items:center;gap:6px 10px}
+ html body #view li.scl>.audh>*,html body #view li.scl>.sclt{grid-row:1}
  html body #view li.scl>.audh{display:contents}
- html body #view li.scl>.audh>b{flex:0 0 auto}
- html body #view li.scl>.audh>.audt{flex:1 1 auto}
- html body #view li.scl>.sclt{order:5;flex:0 0 27em;margin:0}
- html body #view li.scl>.audh>.audw{order:9;flex:0 0 1.2em;margin:0;text-align:right}}
+ html body #view li.scl>.audh>b{grid-column:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ html body #view li.scl>.audh>.scled{grid-column:2;margin:0}
+ html body #view li.scl>.audh>.audt{grid-column:3;white-space:nowrap;margin:0}
+ html body #view li.scl>.sclt{grid-column:4;margin:0}
+ html body #view li.scl>.audh>.audw{grid-column:5;margin:0;text-align:right}}
+/* the buttons of a day: more room to the frame */
+html body #view details.tstsu>.sclbtns.scld1{margin:12px 12px 12px 0;padding-right:4px}
 html body #view li.sclo{opacity:.6}
 /* Drehplan: every status icon and its times in one column (scenes, lunch, wrap, setups): the times in a box of equal width */
 html body #view .scackt{min-width:12ch;text-align:right}
