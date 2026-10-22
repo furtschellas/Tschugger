@@ -1296,6 +1296,8 @@ Object.assign(I18N,{
  "Du siehst die Daten von":{fr:"Tu vois les données de",it:"Stai vedendo i dati di",en:"You are seeing the data of"},
  "(gewählt in Meine Termine).":{fr:"(choisi dans Mes rendez-vous).",it:"(scelto in I miei appuntamenti).",en:"(chosen in My appointments)."},
  "Zu meinen Daten":{fr:"Revenir à mes données",it:"Torna ai miei dati",en:"Back to my data"},
+ "Tech Parkplatz":{fr:"Parking technique",it:"Parcheggio tecnico",en:"Tech parking"},
+ "Crew Parkplatz":{fr:"Parking équipe",it:"Parcheggio crew",en:"Crew parking"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},

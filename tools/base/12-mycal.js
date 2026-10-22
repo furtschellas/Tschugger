@@ -3,16 +3,16 @@ const NOSET=/^(postprod|verleih|buchhalt|autor|casting)/i;
 const myAdmin=()=>{try{return typeof window.canPerm!=="function"||window.canPerm("mycal.all")}catch(_){return false}};
 /* admins can look at the appointments of another person (Meine Termine → «Termine für»); that choice also fills Today and «Mein Drehtag»:
    a bar says so, with the way back to the own data */
-function myPickBar(){let pick="";try{if(myAdmin()&&!(window.simOn&&window.simOn()))pick=localStorage.getItem("myname")||""}catch(_){}if(!pick)return "";
+function myPickBar(){let pick="";try{if(myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){}if(!pick)return "";
   let own="";try{if(typeof MEMBER!=="undefined"&&MEMBER)own=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
   if(own&&fold(own)===fold(pick))return "";
   return '<div class="mypickbar" role="status">'+esc(L("Du siehst die Daten von"))+' <b>'+esc(pick)+'</b> '+esc(L("(gewählt in Meine Termine)."))+' <button type="button" class="pillbtn" data-mypickoff>'+esc(L("Zu meinen Daten"))+'</button></div>'}
-document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-mypickoff]")){e.preventDefault();try{localStorage.removeItem("myname")}catch(_){}try{MEMO.clear()}catch(_){}render()}});
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-mypickoff]")){e.preventDefault();window.MYPICK="";try{MEMO.clear()}catch(_){}render()}});
 function myIdentity(){
   const people=mailPeople();let nm="",em="";
   try{em=String(window.simEmail?window.simEmail():(typeof ME!=="undefined"&&ME&&ME.email)||"").toLowerCase()}catch(_){}
   try{if(typeof MEMBER!=="undefined"&&MEMBER)nm=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
-  let pick="";try{if(myAdmin()&&!(window.simOn&&window.simOn()))pick=localStorage.getItem("myname")||""}catch(_){} /* simulating: always the simulated person, never my own pick */
+  let pick="";try{if(myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){} /* simulating: always the simulated person, never my own pick */
   let p=null;
   if(pick)p=people.find(x=>x.name===pick)||{name:pick,k:nmk(pick)};
   if(!p&&em)p=people.find(x=>x.email===em&&x.src!=="user");
