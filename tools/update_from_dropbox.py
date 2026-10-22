@@ -547,7 +547,7 @@ def add_more_blocking(dbx, blk, meta, want_files, days=(), locs=(), fpe=()):
     try:
         add_recce(dbx, days, add)
     except Exception as ex:
-        log("Recce nicht gelesen:", str(ex)[:160]); PARTIAL.append("recce")
+        log("Recce nicht gelesen:", type(ex).__name__); PARTIAL.append("recce")
     # attach: to the blocking entry of the scene, or a new entry «AUF <scene>»
     by = {}
     for b in blk:
@@ -1418,7 +1418,7 @@ def rotating():
     if not fsadmin.sa(): return False
     try:
         nx = fsadmin.get_doc("secret/keynext") or {}
-        return bool(nx.get("k")) and time.time() - int(nx.get("at") or 0) < 3600
+        return bool(nx.get("k")) and time.time() - int(nx.get("at") or 0) < 4500   # 75 min: longer than the key change may run (keys.yml 70 min)
     except Exception: return False
 
 def main():
@@ -1470,7 +1470,7 @@ def main():
         keep_old(kind, f); log(kind, "übersprungen nach 3 Fehlversuchen", _h(f["name"])); print("::warning::%s übersprungen nach 3 Fehlversuchen" % kind); return False
     def failed(kind, f, why):
         k = fkey(kind, f); seen.add(k); fails[k] = fails.get(k, 0) + 1
-        keep_old(kind, f); log(kind, "nicht übernommen (Versuch %d/3):" % fails[k], str(why)[:120])
+        keep_old(kind, f); log(kind, "nicht übernommen (Versuch %d/3):" % fails[k], (why if isinstance(why, str) else type(why).__name__)[:120])   # public log: no exception text
         print("::warning::%s nicht übernommen (Versuch %d/3): %s" % (kind, fails[k], why if isinstance(why, str) else type(why).__name__))
 
     # schedule
@@ -1939,7 +1939,7 @@ def main():
     try:
         pf = [e for e in dbx.list_path(ROOT3D + "/11_Planning Prep Rehearsals") if e["tag"] == "file" and e["name"].lower().endswith(".pdf")]
     except Exception as ex:
-        pf = []; log("Prep-Ordner nicht lesbar:", str(ex)[:80])
+        pf = []; log("Prep-Ordner nicht lesbar:", type(ex).__name__)
     PLAN_RE = PREP_PLAN_RE; stand = prep_stand
     plans = sorted([e for e in pf if PLAN_RE.search(e["name"])], key=stand, reverse=True)[:4]   # newest first
     if pf and not plans: plans = sorted(pf, key=stand, reverse=True)[:1]
@@ -2096,7 +2096,7 @@ def main():
         try:
             changed = add_more_blocking(dbx, blk, meta, want_files, data.get("days") or [], data.get("locations") or [], [(x, next((e for e in fl if e["name"] == x.get("file")), None)) for x in fps]) or changed
         except Exception as ex:
-            log("Auflösung/Seiten nicht gelesen:", str(ex)[:160]); PARTIAL.append("auf")
+            log("Auflösung/Seiten nicht gelesen:", type(ex).__name__); PARTIAL.append("auf")
         try:   # reports of «3D/20_Reports» (Einstellungen → Logs → Reports)
             if add_reports(dbx, meta, want_files): changed = True
         except Exception as ex:

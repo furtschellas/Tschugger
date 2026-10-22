@@ -7,6 +7,14 @@ messages as sent. Without FIREBASE_SA everything falls back to the old public re
 import base64, json, os, secrets, time
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+# reads (and the token) are tried again on a short network or server hiccup (not on 429 = daily quota used up: no point);
+# writes are not repeated automatically (a create could happen twice)
+_RS = requests.Session()
+_RS.mount("https://", HTTPAdapter(max_retries=Retry(total=3, connect=3, read=2, backoff_factor=1.5, status_forcelist=(500, 502, 503, 504),
+                                                    allowed_methods=frozenset(["GET", "POST"]), raise_on_status=False)))
 
 PROJECT = "tschugger-83692"
 API_KEY = "AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ"
@@ -37,7 +45,7 @@ def sa_token(scope):
                           "aud": "https://oauth2.googleapis.com/token", "iat": now, "exp": now + 3600}).encode())
     key = serialization.load_pem_private_key(acc["private_key"].encode(), None)
     sig = _b64u(key.sign((h + "." + p).encode(), padding.PKCS1v15(), hashes.SHA256()))
-    r = requests.post("https://oauth2.googleapis.com/token", timeout=30,
+    r = _RS.post("https://oauth2.googleapis.com/token", timeout=30,
                       data={"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer", "assertion": h + "." + p + "." + sig})
     r.raise_for_status()
     return r.json()["access_token"]
@@ -107,7 +115,7 @@ def list_docs(col):
     """yields (id, fields as Python dict, updateTime)"""
     h, q = _auth(); tok = None
     while True:
-        r = requests.get(BASE + "/" + col, headers=h, params={"pageSize": 300, **q, **({"pageToken": tok} if tok else {})}, timeout=30)
+        r = _RS.get(BASE + "/" + col, headers=h, params={"pageSize": 300, **q, **({"pageToken": tok} if tok else {})}, timeout=30)
         r.raise_for_status(); j = r.json()
         for d in j.get("documents", []):
             yield d["name"].rsplit("/", 1)[1], {k: val(v) for k, v in (d.get("fields") or {}).items()}, d.get("updateTime")
@@ -121,7 +129,7 @@ def query_since(col, field, iso):
     h, q = _auth()
     body = {"structuredQuery": {"from": [{"collectionId": col}],
                                 "where": {"fieldFilter": {"field": {"fieldPath": field}, "op": "GREATER_THAN_OR_EQUAL", "value": {"timestampValue": iso}}}}}
-    r = requests.post(BASE + ":runQuery", headers=h, params=q, json=body, timeout=30)
+    r = _RS.post(BASE + ":runQuery", headers=h, params=q, json=body, timeout=30)
     r.raise_for_status()
     for x in r.json():
         d = x.get("document")
@@ -130,7 +138,7 @@ def query_since(col, field, iso):
 
 def get_doc(path):
     h, q = _auth()
-    r = requests.get(BASE + "/" + path, headers=h, params=q, timeout=30)
+    r = _RS.get(BASE + "/" + path, headers=h, params=q, timeout=30)
     if r.status_code == 404: return None
     r.raise_for_status()
     return {k: val(v) for k, v in (r.json().get("fields") or {}).items()}
