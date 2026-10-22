@@ -1,6 +1,8 @@
 /* ---------- scenes of the shooting day «quittiert» in the Drehplan: open → running (tap) → done (tap); sceneack/{date-scene}, no names.
    Everybody sees the state live; tapping only with the permission «Szenen quittieren». «Jetzt» follows: the running scene, else the next open one after the last done ---------- */
 window.SCACK=window.SCACK||{};let SCSUB=null;
+/* the times of the quittances (begin–end, running since) only with the permission «Quittierungszeiten sehen» */
+window.scTimesOk=()=>typeof canPerm==="function"&&canPerm("scenes.times");
 const scHM=msHM;
 /* running time: 7′, 1h05 */
 const scDur=ms=>{const m=Math.max(0,Math.floor(ms/60000));return m<60?m+"′":Math.floor(m/60)+"h"+pad2(m%60)};
@@ -45,7 +47,8 @@ window.scAckBtn=(date,sc,u)=>{if(!date||!sc||window.SCACKON===false)return"";   
   const lab=[L("Szene offen"),L("Szene läuft"),L("Szene abgeschlossen")][st];
   /* left of the icon: begin–end, while running begin and a counter how long it runs */
   const x=window.SCACK[scAckId(date,sc)]||{},b0=+x.b||+x.at||0,tm=st===2?scHM(b0)+(x.e?"–"+scHM(x.e):""):st===1?scHM(b0)+' · <span data-scrun="'+b0+'">'+scDur(Date.now()-b0)+'</span>':"";
-  const lab0=tm?'<span class="scackt">'+tm+'</span>':'';
+  /* sctp = Drehplan, sctc = Callsheet: App-Verwaltung can hide the times there on phones and on computers (classes on <html>) */
+  const lab0=tm&&scTimesOk()?'<span class="scackt '+(S.tab==="dispo"?"sctc":"sctp")+'">'+tm+'</span>':'';
   const ico=st===1&&scBase(sc)==="lunch"?SC_ICO.lunch:st===2&&scBase(sc)==="wrap"?SC_ICO.wrap:(SC_ICO[st]||"");
   return '<span class="scackw">'+lab0+(can?'<button type="button" class="scack sk'+st+'" data-scack="'+esc(date)+'|'+esc(String(sc))+'|'+esc(u)+'" aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+ico+'</button>'
     :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+ico+'</span>')+'</span>'};

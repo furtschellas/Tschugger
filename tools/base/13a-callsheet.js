@@ -176,9 +176,10 @@ const csKindCode=k=>String(k).replace(/^W\s*\/\s*H\s*\/\s*M/i,"WHM").replace(/\s
 /* the code of a place as a badge: an icon per kind of place (set, Base, W/H/M, Lunch, Dinner, Prod, DIT, Parking) and the short text */
 const CSKICO={"Base":"base","W / H / M":"whm","Lunch":"lunch","Dinner":"dinner","Prod":"prod","DIT":"dit"};
 function csKindIco(k){const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],b=String(k).replace(/ (Cast|Extras)$/,"");if(b==="W / H / M"&&q)return q==="Cast"?CSI.whmc:CSI.whme;return CSI[CSKICO[b]]||(/park/i.test(b)?CSI.park:"")}
-function csBadgeIn(l,codes){if(!l.kinds)return '<span>'+esc((codes||["L"+String(l.no||"").trim()]).join("·"))+'</span>';
+const csKindB=k=>{const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],t=csKindCode(k).replace(/ (Cast|Extras)$/,q?" "+L(q):"");const ic=csKindIco(k);return '<b class="csk" title="'+esc(t)+'" aria-label="'+esc(t)+'">'+(ic||'<span>'+esc(t)+'</span>')+'</b>'};
+function csBadgeIn(l,codes){if(!l.kinds)return '<span>'+esc((codes||["L"+String(l.no||"").trim()]).join("·"))+'</span>'+(l._kx||[]).map(csKindB).join("");   /* a set with DIT / Prod at its place: their icon too */
   /* side place: the icons, with the group (Cast / Extras) and a kind without icon as text */
-  return l.kinds.map(k=>{const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],t=csKindCode(k).replace(/ (Cast|Extras)$/,q?" "+L(q):"");const ic=csKindIco(k);return '<b class="csk" title="'+esc(t)+'" aria-label="'+esc(t)+'">'+(ic||'<span>'+esc(t)+'</span>')+'</b>'}).join("")}
+  return l.kinds.map(csKindB).join("")}
 function csPlaceH(inner,href,title,cls){const t=title?' title="'+esc(title)+'" aria-label="'+esc(title)+'"':'',k='csplace csbadge'+(cls?' '+cls:'');
   return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+inner+'</a>':'<span class="'+k+'"'+t+'>'+inner+'</span>'}
 /* the locations of the day: every set has its code L1, L2 … (its scenes carry it); sets at the same place (same map link or address,
@@ -314,7 +315,7 @@ function csLocs0(c){const sets=[],extra=[];
   sets.forEach((l,i)=>{if(!/^\d+[a-z]?$/i.test(String(l.no||"").trim()))l.no=String(i+1);l._ix=i+1;l._nos=[String(l.no).trim()]});
   /* DIT / production office at the place of a set: a line of that set, not a location of its own (only somewhere else it is one) */
   for(const e of extra.slice())if(e.kinds.every(k=>k==="DIT"||k==="Prod")){const st=sets.find(l=>(e.map&&l.map===e.map)||(e.name&&fold(String(l.name||""))===fold(e.name)));
-    if(st){st.items=(st.items||[]).concat([{label:e.kinds.join(" / "),text:[e.name].concat(e.notes).filter(Boolean).join(", "),map:e.map||""}]);extra.splice(extra.indexOf(e),1)}}
+    if(st){st._kx=[...new Set((st._kx||[]).concat(e.kinds))];st.items=(st.items||[]).concat([{label:e.kinds.join(" / "),text:[e.name].concat(e.notes).filter(Boolean).join(", "),map:e.map||""}]);extra.splice(extra.indexOf(e),1)}}
   return sets.concat(extra.map(e=>{e.kinds.sort((a,b)=>ORDER.indexOf(a.replace(/ (Cast|Extras)$/,""))-ORDER.indexOf(b.replace(/ (Cast|Extras)$/,"")));if(!e.name)e.name=e.kinds.join(" · ");return Object.assign(e,{no:e.kinds.join(" · ")})}))}
 /* short code of a place for the call list: L1, L2, Base, P1 … */
 function csShort(p){const n=String(p&&p.name||"");let m=n.match(/^Set\s*(\w+)/i);if(m)return "L"+m[1];if(/base|lunch|waldrand/i.test(n))return "Base";m=n.match(/park\w*\s*loc\.?\s*(\d+)/i);if(m)return "P"+m[1];m=n.match(/loc\.?\s*(\d+)/i);if(m)return "L"+m[1];return n.split(/[ ,·]/)[0].slice(0,8)}
