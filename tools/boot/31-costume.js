@@ -32,3 +32,22 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
         out.push({date:dp.date,t:p.t,end:p.end,n:L(CMK[k])+": "+(mine?[r.role,r.actor&&"("+r.actor+")"].filter(Boolean).join(" "):[r.role,p.who&&L("bei")+" "+p.who].filter(Boolean).join(" · ")),
           where,map,src:"Callsheet",go:d.id||dp.date,cm:id})}}}
   return out};
+/* ---------- Cast quittieren (callsheet, cast table): P/UP, Call, Kostüm and Maske – the time itself is the tick: at the start of the day
+   pink and underlined; tap = done (green, white). P/UP is the ride of the actor: accepted = pink with white time, done = green.
+   Call / Kostüm / Maske with «Cast quittieren» (cm.ack), P/UP with «Fahrten quittieren» / «Fahrten Manager» ---------- */
+const cqCanRide=()=>{try{return canPerm("rides.confirm")||canPerm("rides.manage")}catch(_){return false}};
+window.cqLink=(kind,id,date,t)=>{const st=kind==="p"?(window.rideState?rideState(id):0):(cmDone(id)?2:0),can=kind==="p"?cqCanRide():cmCan();
+  const cls="cql cq"+st,tip=kind==="p"?[L("Fahrt offen – antippen = annehmen"),L("Fahrt läuft – antippen = ausgeführt"),L("Fahrt ausgeführt – antippen = zurücksetzen")][st]:(st?L("Erledigt – antippen = zurücksetzen"):L("Offen – antippen = erledigt"));
+  if(!can)return '<span class="'+cls+' cqro" title="'+esc(st?L("Erledigt"):L("Offen"))+'">'+esc(t)+'</span>';
+  return '<button type="button" class="'+cls+'" data-cqk="'+kind+'" data-cqid="'+esc(id)+'" data-cqd="'+esc(date)+'" title="'+esc(tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>'};
+/* P/UP: the ride of the callsheet that picks up the actor (passenger), at the pickup time if there are several */
+window.cqPickup=(c,r)=>{const t=hm(r&&r.pickup);if(!t||!r.actor||!c._date||typeof rideId!=="function")return null;const k=fold(String(r.actor)).replace(/[^a-z ]/g,"").trim();if(!k)return null;
+  const has=v=>fold(String(v||"")).includes(k)||k.split(" ").filter(w=>w.length>2).every(w=>fold(String(v||"")).includes(w));
+  const rs=arr(c.transport).filter(x=>has(x.passengers)).concat(arr(c.crewTransport).filter(x=>has(x.people)));if(!rs.length)return null;
+  const ride=rs.find(x=>hm(x.t1)===t)||rs[0];return {h:window.cqLink("p",rideId(c._date,ride),c._date,String(r.pickup))}};
+window.cqCall=(c,r)=>{const t=hm(r&&r.call);if(!t||!c._date)return null;return {h:window.cqLink("c",cmId(c._date,"c",r,t),c._date,String(r.call))}};
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cqk]");if(!b)return;e.preventDefault();e.stopPropagation();
+  const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="p"?!cqCanRide():!cmCan())return;b.disabled=true;
+  try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):(cmDone(id)?2:0),nx=k==="p"?(st+1)%3:(st?0:2);
+    if(!nx){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cqd,at:Date.now(),s:nx};await F.setDoc(ref,v);window.RIDEACK[id]=v}
+    try{MEMO.clear()}catch(_){}render()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);

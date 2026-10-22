@@ -79,7 +79,7 @@ function csMk(v,c,kind,row){const out=[];for(const seg of String(v==null?"":v).s
   /* time, duration and initials (duration and initials in pink) */
   /* Kostüm / Maske ticked off: green, with the tick button (right «Kostüm/Maske quittieren») */
   const dt=c&&c._date,ck=x=>kind&&dt&&window.cmId?window.cmId(dt,kind,row,x.t):"";
-  return {h:out.map(x=>{const id=ck(x),ok=id&&window.cmDone&&window.cmDone(id);return '<span class="mkw'+(ok?' cmok':'')+'"><span class="mkt">'+esc(x.t)+'</span>'+(x.d?' <span class="mkd">'+esc(x.d)+'</span>':'')+(x.i.length?' <span class="mki">'+esc(x.i.join("+"))+'</span>':'')+(id&&window.cmBtn?' '+window.cmBtn(id,dt,x.t):'')+'</span>'}).join(" / ")}}
+  return {h:out.map(x=>{const id=ck(x);return '<span class="mkw">'+(id&&window.cqLink?window.cqLink(kind,id,dt,x.t):'<span class="mkt">'+esc(x.t)+'</span>')+(x.d?' <span class="mkd">'+esc(x.d)+'</span>':'')+(x.i.length?' <span class="mki">'+esc(x.i.join("+"))+'</span>':'')+'</span>'}).join(" / ")}}
 /* a cell: text (phone numbers, links) or ready HTML {h} */
 const csCell=c=>c&&typeof c==="object"&&"h" in c?c.h:csTx(c);
 const csCellTx=c=>c&&typeof c==="object"&&"h" in c?c.h.replace(/<[^>]+>/g,""):String(c||"");
@@ -552,7 +552,8 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
    h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c),true),false,"","order",sumx)}
   /* cast, extras, vehicles */
   const CC=csCols();
-  h+=csSec("Cast",(csA(c.cast).length?'<span class="cscols">'+[["role",L("Rolle")],["actor",L("Darsteller")]].map(([k,t])=>'<button type="button" class="cscol" data-cscol="'+k+'" aria-pressed="'+!CC.has(k)+'">'+esc(t)+'</button>').join("")+'</span>':'')+(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Kacheln":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,csMk(r.wardrobe,c,"w",r)||csDurT(r.wardrobe),csMk(r.makeup,c,"m",r),r.base,r.onset]),3),false,(csCastMode()?"cs-astbl":"")+(CC.has("role")?" hide-role":"")+(CC.has("actor")?" hide-actor":""),"cast",SU.cast);
+  if(c&&x&&x.date)c._date=x.date;   /* the day for the cast ticks */
+  h+=csSec("Cast",(csA(c.cast).length?'<span class="cscols">'+[["role",L("Rolle")],["actor",L("Darsteller")]].map(([k,t])=>'<button type="button" class="cscol" data-cscol="'+k+'" aria-pressed="'+!CC.has(k)+'">'+esc(t)+'</button>').join("")+'</span>':'')+(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Kacheln":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>[r.no,r.role,r.actor,window.cqPickup?window.cqPickup(c,r)||r.pickup:r.pickup,window.cqCall?window.cqCall(c,r)||r.call:r.call,csMk(r.wardrobe,c,"w",r)||csDurT(r.wardrobe),csMk(r.makeup,c,"m",r),r.base,r.onset]),3),false,(csCastMode()?"cs-astbl":"")+(CC.has("role")?" hide-role":"")+(CC.has("actor")?" hide-actor":""),"cast",SU.cast);
   /* travel of the cast: one line per person (name · how · from → to · note), the place as short code (L1, Base …) with the map */
    h+=csTravelSec(c,x,me,SU,t);
   h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset])),false,"","",SU.extras);
