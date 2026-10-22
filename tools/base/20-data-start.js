@@ -20,8 +20,8 @@ const CLEAN={
 };
 /* last data kept in this browser so the app opens instantly; the live database replaces it a moment later */
 const CACHE_KEY="crewcache:v1";let cacheT=null;
-function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>{try{localStorage.setItem(CACHE_KEY,JSON.stringify({meta:S.meta,days:S.days,crew:S.crew,locs:S.locs,places:S.places,dispos:S.dispos,prepro:S.prepro}))}catch(_){}},1500)}
-function loadCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(!c||!Array.isArray(c.days))return false;S.meta=c.meta||null;for(const k of ["days","crew","locs","places","dispos","prepro"])S[k]=(CLEAN[k]||(x=>x))(arr(c[k]));MEMO.clear();return true}catch(_){return false}}
+function saveCache(){clearTimeout(cacheT);cacheT=setTimeout(()=>{try{localStorage.setItem(CACHE_KEY,JSON.stringify({meta:S.meta,days:S.days,crew:S.crew,locs:S.locs,places:S.places,dispos:S.dispos,prepro:S.prepro,gmap:S.gmap||null}))}catch(_){}},1500)}
+function loadCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(!c||!Array.isArray(c.days))return false;S.meta=c.meta||null;S.gmap=c.gmap||null;for(const k of ["days","crew","locs","places","dispos","prepro"])S[k]=(CLEAN[k]||(x=>x))(arr(c[k]));MEMO.clear();return true}catch(_){return false}}
 /* several snapshots arrive together on start: draw once per frame */
 let RQ=0;function scheduleRender(){if(RQ)return;RQ=1;const go=()=>{if(!RQ)return;RQ=0;render()};requestAnimationFrame(go);setTimeout(go,120)}
 let MSGT=null;function showMsg(text,ms){const m=$("#refmsg");m.hidden=false;m.textContent=text;clearTimeout(MSGT);MSGT=ms?setTimeout(()=>{m.hidden=true},ms):null} /* a newer message is not hidden by the timer of an older one */

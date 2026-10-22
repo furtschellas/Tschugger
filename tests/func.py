@@ -468,6 +468,11 @@ async def owner_tests(p, port):
         check("Callsheet-Karte: jede Location L1, L2 … erscheint (ohne Kartenlink über die Adresse, sonst ungefähr)", al in (None, {"codes": ["L1", "L2"], "l2rough": True, "park": True}), al)
         mo = await E("""(()=>{if(typeof renderCS!=='function')return null;const k=window.CSMAPON;const x={date:'2030-05-06',cs:{geo:{'https://g/a':[46.3,7.6]},locations:[{no:'1',name:'A',map:'https://g/a'}],order:{rows:[]}}};
           window.CSMAPON=false;const off=renderCS(x,{date:x.date}).includes('cs-karte');window.CSMAPON=true;const on=renderCS(x,{date:x.date}).includes('cs-karte');window.CSMAPON=k;return {off,on}})()""")
+        gm = await E("""(()=>{if(typeof csGmFeat!=='function')return null;const k=S.gmap;
+          S.gmap={l:['A','B'],f:[{l:'A',n:'Base',g:'p',x:[[46.3,7.6]],c:'#ff0000'},{l:'A',n:'Gleich',g:'p',x:[[46.3002,7.6001]]},{l:'A',n:'Nah',g:'p',x:[[46.31,7.61]],c:'#00ff00'},{l:'A',n:'Nah',g:'p',x:[[46.31,7.61]]},{l:'A',n:'Weit',g:'p',x:[[47.3,8.6]]},{l:'B',n:'Ebene B',g:'p',x:[[46.305,7.605]]},{l:'A',n:'Weg',g:'l',x:[[46.3,7.6],[46.4,7.7]]}]};
+          const pts=[{p:[46.3,7.6],c:'Base',n:'Base'}];const a=csGmFeat(pts,{on:true,color:true,off:['B']}).map(f=>f.n),b=csGmFeat(pts,{on:true,color:false,off:[]});S.gmap=k;
+          return {a,b:b.map(f=>f.n),col:b.every(f=>!f.c)}})()""")
+        check("Callsheet-Karte: Google-Karte ohne doppelte Punkte, nur in der Nähe, Ebenen und Farben wählbar", gm in (None, {"a": ["Nah", "Weg"], "b": ["Nah", "Ebene B", "Weg"], "col": True}), gm, public=True)
         check("App-Einstellungen: Karte im Callsheet ein- und ausschaltbar", mo in (None, {"off": False, "on": True}), mo)
         check("Callsheet-Drehfolge: Szene in drei Schritten, alle Details (Breakdown/Notizen) erst im dritten Schritt", nx is None or nx["det"], nx)
         dup = await E("""(()=>{if(typeof renderCS!=='function'||typeof bdKey!=='function')return null;const keep=S.meta;const k='2026-10-20|'+bdKey('186pt1A');S.meta=Object.assign({},keep,{bd:Object.assign({},(keep||{}).bd,{[k]:{h:{},c:[['Notes',['Drohne ab 09:00']]]}})});
