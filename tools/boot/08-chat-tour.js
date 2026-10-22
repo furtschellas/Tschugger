@@ -83,6 +83,7 @@ const TOUR_STEPS=[
   {tab:"today",sel:"nav.tabs",t:"Deine Tour",x:()=>tourIntro()},
   {tab:"today",sel:'nav.tabs [data-tab="today"]',t:"Today",x:"Alles für heute – oder den nächsten Arbeitstag – auf einer Seite. Nach mehr als 2 Stunden Pause öffnet die App direkt hier."},
   {tab:"today",sel:"#view .tmy",t:"Meine nächsten Termine",x:"Deine nächsten Termine auf einen Blick; mit «Alle ›» siehst du alle."},
+  {tab:"today",sel:"#view .tnow",t:"Jetzt",x:"Welche Szene gerade gedreht wird – oder Setup, Lunch – mit Ort und wie lange sie schon läuft. Erscheint nur, während gedreht wird."},
   {tab:"today",sel:"#view [data-route]",t:"Anfahrt",x:"Fahrzeit zum ersten Set. Antippen und wählen, ob die Route vom Hotel oder von deinem Standort aus geplant wird."},
   {tab:"today",sel:"#view [data-wx]",t:"Wetter",x:"Das Wetter am ersten Motiv – antippen für den detaillierten Wetterbericht."},
   {tab:"today",sel:"#view .tchg",t:"Änderungen",x:"Was sich seit deinem letzten Besuch geändert hat. Geänderte Zeilen sind auch im Drehplan markiert."},
@@ -91,9 +92,12 @@ const TOUR_STEPS=[
   {tab:"plan",day:"shoot",sel:"#view .stripwrap",t:"Tage wählen",x:"Wische durch die Tage: PREP, OFF, TRAVEL und die Drehtage D01, D02 … Heute ist hervorgehoben."},
   {tab:"plan",day:"shoot",sel:"#view .dayhead .pvb",t:"Anzeigeoptionen",x:"Blende im Drehplan ein oder aus, was du sehen willst: Info, Szenenbeschrieb, Cast, Adresse und Blocking. Deine Auswahl bleibt gespeichert."},
   {tab:"plan",day:"shoot",sel:"#view .dayhead .dpub",t:"1st / 2nd Unit",x:"Wähle, welche Units du siehst – zum Beispiel nur die 2nd Unit. Ist eine Unit an diesem Tag nicht im Einsatz, ist ihr Knopf blass."},
+  {tab:"plan",day:"shoot",sel:"#view .scack",t:"Szenen quittieren",x:"Der runde Knopf zeigt den Stand: offen, läuft (Kamera), abgeschlossen (Haken) – auch für Setup, Lunch und Wrap. Mit dem Recht «Szenen quittieren» tippst du ihn an; ein abgeschlossener öffnet das Popup zum Ändern, Löschen oder Senden per WhatsApp."},
   {tab:"plan",day:"prep",sel:"#view .ppi .calbtn:not(.mailbtn)",t:"Termin in den Kalender",x:"Mit dem Kalender-Knopf übernimmst du einen Termin direkt in deinen Kalender (Handy oder Computer)."},
   {tab:"plan",day:"prep",sel:"#view .ppi .mailbtn",t:"E-Mail-Verteiler",x:"Der Brief-Knopf öffnet eine E-Mail an alle Teilnehmenden dieses Termins – praktisch für kurzfristige Infos."},
   {tab:"dispo",sel:'nav.tabs [data-tab="dispo"]',t:"Callsheet",x:"Die Dispo des Drehtags: Crew Call, Drehbeginn, Wrap, Locations und Cast."},
+  {tab:"dispo",sel:"#view #cs-order",t:"Drehfolge",x:"In zwei Schritten aufklappen: zuerst die Zeilen, dann alle Szenen. Der pinke Rahmen zeigt den aktuellen Schritt, «Details» alle Angaben zur Szene; die Statisten stehen bei der Cast."},
+  {tab:"dispo",sel:"#view #cs-loc",t:"Locations im Callsheet",x:"Jeder Drehort mit Karte, Floorplan und Szenen; die Base mit ihren Räumen (Greenroom, W/H/M, Prod, WC) als ein Ort. Der pinke Rahmen zeigt, wo gerade gedreht wird."},
   {tab:"loc",sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
   {tab:"loc",sel:"#view .mapbtn",t:"Karte",x:"«Map» öffnet die Karte mit allen Drehorten – praktisch für die Anfahrt."},
   {tab:"loc",sel:"#scall",t:"Szenen",x:"«Szenen» klappt bei allen Motiven die Szenen auf oder zu – so siehst du auf einen Blick, was wo gedreht wird."},
@@ -127,6 +131,7 @@ const TOUR_STEPS=[
   {tab:"admin",asub:"docs",sel:'#view .asub [data-asub="docs"]',need:()=>can("settings"),t:"Docs",x:"Die Texte der Einladungs-Mails und der Willkommensnachricht."},
   {tab:"admin",asub:"set",sel:'#view .asub [data-asub="set"]',need:()=>can("settings"),t:"App",x:"Aktualisierung aus der Dropbox, Sprachen, Bereiche, eigene Termine und Google Kalender, Push, Tour und Assistent ein- oder ausschalten."},
   {tab:"admin",asub:"log",sel:'#view .asub [data-asub="log"]',need:()=>isAdmin()||can("audit.view"),t:"Log/Tests",x:"Automatische Tests, «Berechtigungen testen», «Dokumente prüfen» und wer was geändert hat."},
+  {tab:"admin",asub:"log",sel:'#view details[data-lsec="sclog"]',need:()=>typeof canSceneLog==="function"&&canSceneLog(),t:"Szenen-Protokoll",x:"Beginn, Ende und Dauer aller Szenen pro Drehtag und Unit, dazu Setup, Drehstart, Lunch und Wrap – mit dem Stift änderbar, als PDF (Querformat) oder Tabelle exportierbar."},
   {tab:"admin",asub:"test",sel:'#view .asub [data-asub="test"],#view .dcktab .dcksec',need:()=>!isAdmin()&&can("data.check"),t:"Dokumente prüfen",x:"Vergleicht Drehplan, Drehbuch, Locations, Prep und Callsheets und zeigt Unstimmigkeiten."},
   {tab:"plan",sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
 ];
