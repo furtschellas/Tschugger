@@ -963,3 +963,5 @@ html body .mkw:has(.cql.cq2) .mkd{color:var(--accent)!important}
 html body .cql.cqro.cq0{color:var(--accent)!important;text-decoration:none!important}   /* open: pink text; underlined only where I can tick it */
 /* cast: done times (and the duration next to a pink time) pure white in the dark look */
 html:not([data-theme="light"]) body .cql.cq2,html:not([data-theme="light"]) body .cql.cqro.cq2,html:not([data-theme="light"]) body .mkw:has(.cql.cq0,.cql.cq1) .mkd{color:#fff!important}
+/* cast: the active step = pink box with white time (also for those who only look) */
+html body .cql.cq1,html body .cql.cqro.cq1{background:var(--accent)!important;color:#fff!important;text-decoration:none!important;box-shadow:none!important;padding:1px 4px!important;border-radius:6px!important}
