@@ -1280,6 +1280,8 @@ Object.assign(I18N,{
  "Keine brauchbare Antwort.":{fr:"Pas de réponse utilisable.",it:"Nessuna risposta utilizzabile.",en:"No usable answer."},
  "Vorschlag eingesetzt – prüfen und speichern.":{fr:"Proposition insérée – vérifier et enregistrer.",it:"Proposta inserita – controlla e salva.",en:"Suggestion inserted – check and save."},
  "Wartungsarbeiten":{fr:"Travaux de maintenance",it:"Lavori di manutenzione",en:"Maintenance"},
+ "Achtung – Callsheet passt nicht zum Drehplan:":{fr:"Attention – la feuille de service ne correspond pas au plan :",it:"Attenzione – il foglio di convocazione non corrisponde al piano:",en:"Attention – callsheet does not match the schedule:"},
+ "Callsheets geprüft: alle am richtigen Tag.":{fr:"Feuilles de service vérifiées : toutes au bon jour.",it:"Fogli di convocazione controllati: tutti al giorno giusto.",en:"Callsheets checked: all on the right day."},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},
