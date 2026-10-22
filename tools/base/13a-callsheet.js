@@ -235,15 +235,18 @@ function csOrderRows(rows,date,locs,one){rows=csA(rows);const ONE=(()=>{const s0
     const extra=(r.extras&&!(bd0&&bd0.h&&bd0.h.XX)?'<div class="bdx"><u>XX:</u> '+csTx(csS(r.extras))+'</div>':'');
     /* folded: the first line (scene, I/E, set, pages) is the summary, everything else opens with a tap */
     const i0=li.indexOf('<div class="sc">'),k=li.lastIndexOf('</div></li>');if(i0<0||k<0)return li;
-    /* «Details»: every field of the scene on the callsheet (set, I/E, pages, screen time, duration, director, cast, extras, notes, synopsis) */
-    const cm=(S.meta&&S.meta.cast)||{},F=[["Set",r.set||it.set],["I/E",r.ie||it.ie],[L("Seiten"),r.pgs||it.pg],[L("Screen-Zeit"),r.time],[L("Dauer"),r.dur||it.dur],[L("Regie"),r.dir],
-      ["Cast",String(r.cast||"").split(/[,\s]+/).filter(Boolean).map(n=>cm[n]?n+" "+cm[n]:n).join(", ")],[L("Komparsen"),csS(r.extras)],[L("Notizen"),bd0&&(arr(bd0.c).length||(bd0.h&&bd0.h.FX))?"":csS(r.notes)],[L("Beschreibung"),r.syn||it.d]].filter(x=>String(x[1]||"").trim());
-    const full=F.length?'<dl class="csdet">'+F.map(([kk,v])=>'<dt>'+esc(kk)+'</dt><dd>'+csTx(String(v))+'</dd>').join("")+'</dl>':'';
-    let body=li.slice(i0+16,k);if(full)body=/<details class="scdet" open><summary>[\s\S]*?<\/summary>/.test(body)?body.replace(/(<details class="scdet" open><summary>[\s\S]*?<\/summary>)/,m0=>m0+full):(()=>{const dd='<details class="scdet" open><summary>'+esc(L("Details"))+'</summary>'+full+'</details>';const j=body.search(/<div class="fpls|<button class="scbtn"/);return j>=0?body.slice(0,j)+dd+body.slice(j):body+dd})();if(extra)body=/<div class="cast">/.test(body)?body.replace(/(<div class="cast">[\s\S]*?<\/div>)/,m0=>m0+extra):body.replace(/(<div class="l1">[\s\S]*?<\/div>)/,m0=>m0+extra);const m=body.match(/<div class="l1">[\s\S]*?<\/div>/);const l1=m?m[0]:'<div class="l1"><span class="scn">'+esc(r.sc)+'</span></div>';if(m)body=body.replace(m[0],"");
+    /* three steps (tap on the scene): 1 = first line and the facts (pages, duration, director, extras) · 2 = + description, cast, extras, address, buttons · 3 = + everything of the breakdown (crew, set dec, props, costume, notes …) */
+    let body=li.slice(i0+16,k);
+    const md=body.match(/<details class="scdet" open><summary>[\s\S]*?<\/summary>([\s\S]*)<\/details>/);let det=md?md[1]:"";if(md)body=body.replace(md[0],"");
+    if(!(bd0&&(arr(bd0.c).length||(bd0.h&&bd0.h.FX)))&&csS(r.notes).trim())det+='<p class="bdt"><span class="bdi"><u>'+esc(L("Notizen"))+':</u> '+csTx(csS(r.notes))+'</span></p>';   /* no breakdown: the notes of the callsheet */
+    if(det)body+='<details class="scdet cs3"><summary>'+esc(L("Details"))+'</summary>'+det+'</details>';
+    if(extra)body=/<div class="cast">/.test(body)?body.replace(/(<div class="cast">[\s\S]*?<\/div>)/,m0=>m0+extra):body.replace(/(<div class="l1">[\s\S]*?<\/div>)/,m0=>m0+extra);
+    const mm=body.match(/<div class="meta">[\s\S]*?<\/div>/),meta=mm?mm[0]:"";if(mm)body=body.replace(mm[0],"");
+    const m=body.match(/<div class="l1">[\s\S]*?<\/div>/);const l1=m?m[0]:'<div class="l1"><span class="scn">'+esc(r.sc)+'</span></div>';if(m)body=body.replace(m[0],"");
     const lo=csSceneLoc(locs,r)||(one&&ONE)||null;const pb=lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'';
     const du=pb;   /* the duration only in the details (not in the top line) */const l1d=du&&/<span class="set">/.test(l1)?l1.replace('<span class="set">',du+'<span class="set">'):l1+du;
     const dn=typeof scState==="function"&&date&&scState(date,r.sc)===2?' scdone':'';
-    return '<li class="row csfold'+nw+dn+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+l1d+CSEXP.replace('class="csexp"','class="csexp sm"')+'</summary>'+body+'</details></div></li>'}).join("")+'</ol>'}
+    return '<li class="row csfold'+nw+dn+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+(meta?l1d.replace(/<\/div>$/,meta+'</div>'):l1d)+CSEXP.replace('class="csexp"','class="csexp sm"')+'</summary>'+body+'</details></div></li>'}).join("")+'</ol>'}
 /* what concerns me on this callsheet: call, cast times, rides, travel, my department */
 /* a place named on the callsheet («Base», «Loc.2», «Parking loc. 1», «Holiday Inn») → name and map link from the Locations */
 function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls=csLocs(c).filter(l=>!l.kinds);
@@ -668,3 +671,7 @@ csOn("click",async e=>{const b=e.target.closest("[data-rideall]");if(!b||typeof 
     for(const id of ids)bt.set(F.doc(db,"rideack",id),{d:date,at:now,s:2});await bt.commit();window.RIDEACK=window.RIDEACK||{};for(const id of ids)window.RIDEACK[id]={d:date,at:now,s:2};
     if(typeof savedPop==="function")savedPop(true);render()}
   catch(err){b.disabled=false;showMsg(saveErr(err),5000)}});
+
+/* Drehfolge im Callsheet: a tap on a scene opens it in three steps (closed → open → with all details → closed) */
+document.addEventListener("click",e=>{const sm=e.target.closest&&e.target.closest("details.csscd>summary");if(!sm||e.target.closest("a,button,input,[data-scack]"))return;
+  const d=sm.parentNode,x=d.querySelector(":scope>details.cs3");if(!d.open||!x)return;e.preventDefault();if(!x.open)x.open=true;else{x.open=false;d.open=false}},true);
