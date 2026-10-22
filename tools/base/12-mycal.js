@@ -133,7 +133,7 @@ const WDL=dt=>({de:["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freit
 function telLinks(t){return esc(t).replace(/(\+?\d[\d ]{7,}\d)/g,m=>'<a href="tel:'+m.replace(/\s/g,"")+'">'+m+'</a>')}
 /* the facts of a shooting day (time, drive, weather, length, pages, sun, extras, PDF): schedule and callsheet without callsheet */
 function planPdfBtn(d){
-  const sp=S.meta&&S.meta.schedPdf,dno=(String(d.short||d.label||"").match(/\d+/)||[])[0],spi=sp&&sp.day&&dno!==undefined?sp.day[String(+dno)]:undefined;
+  const sp=S.meta&&S.meta.schedPdf,dno=(String(d.short0||d.short||d.label||"").match(/\d+/)||[])[0],spi=sp&&sp.day&&dno!==undefined?sp.day[String(+dno)]:undefined;
   const spBtn=sp&&arr(sp.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="fact factp" data-schedpdf="'+(spi===undefined?0:spi)+'" '+ariaTip(L("Drehplan als PDF (Originalseite dieses Drehtags)"))+'><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span class="v">PDF</span></button>':'';
   return spBtn}
 function planFactsHTML(d,spBtn){

@@ -7,7 +7,7 @@ const repList=()=>arr(S.meta&&S.meta.reports).filter(r=>r&&typeof r==="object"&&
 /* all report folders, also empty ones (from the updater), plus the folders of the reports */
 const repFolders=()=>arr(S.meta&&S.meta.repFolders).map(String).filter(Boolean);
 /* one permission per sub folder: added to the list of permissions as soon as the folder is known */
-window.repPermsSync=()=>{for(const g of [...new Set(repList().map(r=>String(r.g||"")).concat(repFolders()))]){const k="rep."+repSlug(g);if(!PERMS.some(x=>x[0]===k))PERMS.push([k,"Reports: "+(g||L("Allgemein")),"Reports"])}};
+window.repPermsSync=()=>{for(const g of [...new Set(repList().map(r=>String(r.g||"")).concat(repFolders()))]){const k="rep."+repSlug(g);if(!PERMS.some(x=>x[0]===k))PERMS.push([k,g?repTitle(g):"Allgemein","Reports"])}};
 window.canRep=g=>{try{return isOwner()||isAdmin()||can("rep."+repSlug(g))}catch(_){return false}};
 window.canRepAny=()=>{try{return isOwner()||isAdmin()||MYPERMS.some(p=>/^rep\./.test(p))}catch(_){return false}};
 const REPLOG={};

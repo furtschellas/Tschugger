@@ -9,7 +9,13 @@ const CDKEEP=new Set(["date","id","sr","ss","order"]);
 const cdDD=d=>String(d||"").split("-").reverse().slice(0,2).join(".")+".";
 const cdSched=()=>{let m="";for(const s of arr(S.meta&&S.meta.sources))if(s&&s.kind==="schedule"&&String(s.modified||"")>m)m=String(s.modified||"");return m?Date.parse(m)||0:0};
 /* a change made before the newest Drehplan was read: the Drehplan has priority, the change waits for a decision */
-const cdReview=op=>{const t=cdSched();return !!t&&t>(+op.at||0)};
+/* the scenes of the days of a change in the Drehplan as read (to see later whether a new Drehplan changed exactly these days) */
+const cdRaw=(op,days)=>{const d=dt=>days.find(x=>x.date===dt);return op.op==="shift"?{l:cdShootDates(days,op.u,op.a).map(dt=>dt+"="+cdScenes(d(dt),op.u)).join("|")}:{a:cdScenes(d(op.a),op.u),b:cdScenes(d(op.b),op.u)}};
+/* a newer Drehplan has priority – but only when it changed the days of this change; otherwise the change stays active */
+const cdReview=op=>{const t=cdSched();if(!(t&&t>(+op.at||0)))return false;if(!S.days0)return true;const now=cdRaw(op,S.days0),r=op.raw;
+  /* changes from before (without «raw»): the scenes saved with the change */
+  if(!r){const sn=op.snap;if(!sn||!sn.a)return true;const d=dt=>S.days0.find(x=>x.date===dt);return op.op==="shift"?cdScenes(d(op.a),op.u)!==sn.a:(cdScenes(d(op.a),op.u)!==sn.a||cdScenes(d(op.b),op.u)!==(sn.b||""))}
+  return op.op==="shift"?now.l!==r.l:(now.a!==r.a||now.b!==r.b)};
 const cdActive=()=>arr(window.CDOPS).filter(o=>o&&o.st!=="off"&&!cdReview(o)).sort((a,b)=>(+a.at||0)-(+b.at||0));
 const cdContent=d=>{const o={};for(const k in d)if(!CDKEEP.has(k))o[k]=d[k];return o};
 const cdScenes=(d,u)=>d?arr(u==="2"?(d.unit2||{}).items:d.items).filter(i=>i&&i.sc).map(i=>norm(i.sc)).join(","):"";
@@ -17,8 +23,8 @@ const cdShootDates=(days,u,from)=>days.filter(d=>d.date>=from&&(u==="2"?arr((d.u
 /* the next date for «Nachrücken»: after the last shooting day, not on a weekend */
 function cdNextSlot(after){const x=new Date(after+"T12:00:00");do{x.setDate(x.getDate()+1)}while(x.getDay()===0||x.getDay()===6);return x.toISOString().slice(0,10)}
 /* the Drehplan with the changes laid over it (the original stays in S.days0) */
-function cdTransform(days0){const ops=cdActive();if(!ops.length)return days0;
-  const days=days0.map(d=>Object.assign({},d)),get=dt=>{let d=days.find(x=>x.date===dt);if(!d){d={date:dt,id:dt,kind:"off",label:"Day Off"};days.push(d)}return d};
+function cdTransform(days0){const ops=cdActive();if(!ops.length)return cdChrono(days0);
+  const days=days0.map(d=>Object.assign({},d,d.kind==="shoot"?{cdSrc:d.date}:{})),get=dt=>{let d=days.find(x=>x.date===dt);if(!d){d={date:dt,id:dt,kind:"off",label:"Day Off"};days.push(d)}return d};
   const note=(d,t)=>{d.notes=[t].concat(arr(d.notes));for(const l of ["en","fr","it"])if(d["notes_"+l])d["notes_"+l]=[t].concat(arr(d["notes_"+l]))};
   const empty=d=>{for(const k of Object.keys(d))if(!CDKEEP.has(k))delete d[k];d.kind="off";d.label="Cover"};
   for(const op of ops){try{
@@ -35,29 +41,47 @@ function cdTransform(days0){const ops=cdActive();if(!ops.length)return days0;
       const f=get(sl[0]);if(op.u==="2")delete f.unit2;else empty(f);note(f,"↷ "+L("Coverday: Drehtag nachgerückt"))}
   }catch(err){console.warn("coverday",err)}}
   days.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-  try{cdRenumber(days,ops)}catch(err){console.warn("coverday",err)}
+  try{cdRenumber(days)}catch(err){console.warn("coverday",err)}
   return days}
 /* the shooting day numbers follow the date again (D03 before D04): only between the first and the last date of the changes,
    so the numbers outside stay exactly as in the Drehplan */
 const cdNo=d=>{const m=String(d.short||d.label||"").match(/\d+/);return m?+m[0]:null};
 const cdSetNo=(s,n)=>String(s).replace(/\d+/,m=>String(n).padStart(m.length,"0"));
-function cdRenumber(days,ops){const ds=[];for(const op of ops){ds.push(op.a);if(op.b)ds.push(op.b);
-    if(op.op==="shift"){const sh=days.filter(d=>d.date>=op.a&&d.kind==="shoot").map(d=>d.date);if(sh.length)ds.push(sh[sh.length-1])}}
-  const fr=ds.filter(Boolean).sort()[0],to=ds.filter(Boolean).sort().pop();if(!fr)return;
-  const win=days.filter(d=>d.date>=fr&&d.date<=to&&d.kind==="shoot"&&cdNo(d)!=null),nos=win.map(cdNo).sort((a,b)=>a-b);
-  win.forEach((d,i)=>{if(cdNo(d)===nos[i])return;if(d.short)d.short=cdSetNo(d.short,nos[i]);if(d.label)d.label=cdSetNo(d.label,nos[i])})}
+/* all shooting days numbered in the order of their dates (the numbers of the Drehplan, sorted): D01, D02, D03 … */
+const cdChronoOk=days=>{let l=-1;for(const d of days){if(d.kind!=="shoot")continue;const n=cdNo(d);if(n==null)continue;if(n<l)return false;l=n}return true};
+function cdRenumber(days){const win=days.filter(d=>d.kind==="shoot"&&cdNo(d)!=null),nos=win.map(cdNo).sort((a,b)=>a-b);
+  win.forEach((d,i)=>{if(cdNo(d)===nos[i])return;if(d.short0==null)d.short0=d.short||d.label||"";if(d.short)d.short=cdSetNo(d.short,nos[i]);if(d.label)d.label=cdSetNo(d.label,nos[i])})}
+function cdChrono(days0){if(cdChronoOk(days0))return days0;const days=days0.map(d=>Object.assign({},d));cdRenumber(days);return days}
 /* dates touched by the active changes (the callsheet of such a day only when it is newer than the change) */
 function cdTouched(){const out=new Map();for(const op of cdActive()){const add=dt=>{if(dt&&!(out.get(dt)>(+op.at||0)))out.set(dt,+op.at||0)};add(op.a);add(op.b);
-  if(op.op==="shift"){const sl=cdShootDates(S.days0||S.days,op.u,op.a);sl.forEach(add);if(sl.length)add(cdNextSlot(sl[sl.length-1]))}}return out}
+  if(op.op==="shift"){for(const src of [S.days0||[],S.days||[]]){const sl=cdShootDates(src,op.u,op.a);sl.forEach(add);if(sl.length)add(cdNextSlot(sl[sl.length-1]))}}}return out}
 window.cdApplyAll=()=>{if(!S.days0)return;S.days=cdTransform(S.days0);
-  /* callsheets: a callsheet of a moved day from before the change would show the wrong day – «Callsheet folgt» until a new one is read */
-  if(S.dispos0){const tc=cdTouched(),mod=f=>{let m=0;for(const s of arr(S.meta&&S.meta.sources))if(s&&s.name&&f&&String(s.name).endsWith(f))m=Math.max(m,Date.parse(s.modified||"")||0);return m};
-    S.dispos=S.dispos0.filter(x=>!tc.has(x.date)||mod(x.file)>tc.get(x.date))}
+  /* callsheets of changed days go with their scenes: to the day that now has (most of) these scenes – also a new callsheet that already
+     shows the change stays that way; the number in the title follows the shooting day; no matching day: «Callsheet folgt» */
+  if(S.dispos0)S.dispos=cdDispos(S.dispos0,S.days);
   try{MEMO.clear()}catch(_){}};
+const cdKey=x=>norm(String(x||"")).replace(/pt.*$/,"");
+const cdDayKeys=d=>new Set([].concat(arr(d&&d.items),arr(d&&d.unit2&&d.unit2.items),arr(d&&d.unit3&&d.unit3.items)).filter(i=>i&&i.sc).map(i=>cdKey(i.sc)));
+function cdDispos(dispos0,days){const tc=cdTouched();if(!tc.size)return dispos0;
+  const keep=[],move=[];for(const x of dispos0){if(!tc.has(x.date))keep.push(x);else move.push(x)}
+  const taken=new Set(keep.map(x=>x.date)),out=keep.slice();
+  for(const x of move){const ks=arr(x.scenes).map(r=>cdKey(r&&r.sc)).filter(Boolean);if(!ks.length)continue;
+    let best=null,bs=0;for(const d of days){if(d.kind!=="shoot"||taken.has(d.date))continue;const dk=cdDayKeys(d);const hit=ks.filter(k=>dk.has(k)).length;
+      if(hit>bs||(hit===bs&&best&&d.date===x.date)){best=d;bs=hit}}
+    if(!best||bs<Math.max(1,Math.ceil(ks.length/2)))continue;taken.add(best.date);
+    out.push(best.date===x.date?x:Object.assign({},x,{date:best.date,cdFrom:x.date}))}
+  /* the number in the title of every callsheet like the shooting day it belongs to now */
+  const no=new Map(days.filter(d=>d.kind==="shoot").map(d=>[d.date,cdNo(d)]));
+  return out.map(x=>{const n=no.get(x.date);return n!=null&&x.label&&/\d/.test(x.label)&&String(x.label).match(/\d+/)[0]!=String(n)&&+String(x.label).match(/\d+/)[0]!==n?Object.assign({},x,{label:cdSetNo(x.label,n)}):x}).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)}
+/* the date whose documents (Sides, Gefährdungsbeurteilung, Setfloorpläne) belong to a day now: they go with the callsheet,
+   without a callsheet with the content of the day; null = the documents of this day went elsewhere */
+window.cdDocDate=date=>{if(!S.days0||S.days===S.days0)return date;const ds=arr(S.dispos),x=ds.find(c=>c.date===date);if(x)return x.cdFrom||date;
+  if(ds.some(c=>c.cdFrom===date))return null;const d=arr(S.days).find(y=>y.date===date);if(d&&d.cdSrc)return d.cdSrc;
+  return arr(S.days).some(y=>y.cdSrc===date&&y.date!==date)?null:date};
 /* the changes: one encrypted document (coverday/state), live for the crew */
 let CDSUBS=null;
 async function cdSub(){if(CDSUBS||!ME)return;try{const {F,db}=await fb();CDSUBS=F.onSnapshot(F.doc(db,"coverday","state"),async snap=>{let ops=[];
-    try{if(snap.exists()&&snap.data().c)ops=arr((await ownDec(await getDataKey(),snap.data().c)).ops)}catch(_){ops=[]}
+    try{if(snap.exists()&&snap.data().c)ops=arr((await ownDec(await getDataKey(),snap.data().c)).ops)}catch(_){CDSUBS&&CDSUBS();CDSUBS=null;return}
     if(JSON.stringify(ops)===JSON.stringify(window.CDOPS))return;window.CDOPS=ops;cdApplyAll();render()},()=>{CDSUBS=null})}catch(_){CDSUBS=null}}
 setInterval(()=>{try{if(ME&&!CDSUBS)cdSub()}catch(_){}},4000);
 async function cdSave(ops){const {F,db}=await fb();const c=await ownEnc({ops});await F.setDoc(F.doc(db,"coverday","state"),{c,at:Date.now()});window.CDOPS=ops;cdApplyAll();render()}
@@ -73,7 +97,7 @@ const CDN={swap:"Tauschen",move:"Verschieben",shift:"Nachrücken"};
 const cdOpText=op=>L(CDN[op.op]||op.op)+" · "+(op.u==="2"?"2nd Unit":L("ganzer Drehtag"))+" · "+(op.op==="shift"?L("ab")+" "+cdDD(op.a):cdDD(op.a)+(op.op==="swap"?" ⇄ ":" → ")+cdDD(op.b));
 /* which days may be changed: today or later, nothing quittiert yet */
 const cdFree=dt=>dt>=todayISO()&&!(typeof scHas==="function"&&scHas(dt));
-function cdPreview(f){const raw=S.days0||S.days||[],d=dt=>raw.find(x=>x.date===dt);const u=f.u,sc=dt=>cdScenes(d(dt),u)||"–";
+function cdPreview(f){const raw=S.days||S.days0||[],d=dt=>raw.find(x=>x.date===dt);const u=f.u,sc=dt=>cdScenes(d(dt),u)||"–";
   if(!f.a)return {ok:false,t:L("Bitte einen Drehtag wählen.")};if(!cdFree(f.a))return {ok:false,t:L("Vergangene oder schon quittierte Tage lassen sich nicht ändern.")};
   if(f.op!=="shift"){if(!f.b)return {ok:false,t:L("Bitte das zweite Datum wählen.")};if(f.b===f.a)return {ok:false,t:L("Bitte zwei verschiedene Tage wählen.")};if(!cdFree(f.b))return {ok:false,t:L("Vergangene oder schon quittierte Tage lassen sich nicht ändern.")}}
   if(f.op==="move"&&cdScenes(d(f.b),u))return {ok:false,t:L("Am Zieltag wird schon gedreht – bitte «Tauschen» wählen.")};
@@ -81,7 +105,7 @@ function cdPreview(f){const raw=S.days0||S.days||[],d=dt=>raw.find(x=>x.date===d
   if(f.op==="move")return {ok:true,t:cdDD(f.a)+" ("+sc(f.a)+") → "+cdDD(f.b)};
   const sl=cdShootDates(raw,u,f.a);if(!sl.length)return {ok:false,t:L("Ab diesem Tag gibt es keine Drehtage.")};sl.push(cdNextSlot(sl[sl.length-1]));
   return {ok:true,t:sl.slice(0,-1).map((dt,i)=>cdDD(dt)+" → "+cdDD(sl[i+1])).join(" · ")}}
-window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days0||S.days||[];
+window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days||S.days0||[];
   const opts=(sel,list)=>list.map(dt=>{const d=raw.find(x=>x.date===dt);return '<option value="'+dt+'"'+(sel===dt?' selected':'')+'>'+esc(WDL(new Date(dt+"T12:00:00"))+" "+cdDD(dt)+(d&&d.short?" · "+d.short:d&&d.kind==="off"?" · "+L("frei"):""))+'</option>'}).join("");
   const days=raw.filter(d=>cdFree(d.date)&&(f.u==="2"?arr((d.unit2||{}).items).some(i=>i.sc):d.kind==="shoot")).map(d=>d.date);
   const t=todayISO(),last=raw.length?raw[raw.length-1].date:t,targets=[];{const x=new Date(t+"T12:00:00");const end=new Date(last+"T12:00:00");end.setDate(end.getDate()+21);while(x<=end){const dt=x.toISOString().slice(0,10);if(cdFree(dt))targets.push(dt);x.setDate(x.getDate()+1)}}
@@ -89,7 +113,7 @@ window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days0||S.days
   const list=arr(window.CDOPS).filter(o=>o&&o.st!=="off").sort((a,b)=>(+b.at||0)-(+a.at||0)).map(o=>{const rv=cdReview(o),p=rv?cdProposal(o):null;
     return '<li class="cdop'+(rv?' cdrv':'')+'"><div><b>'+esc(cdOpText(o))+'</b><div class="ghint">'+(rv?'⚠ '+esc(L("Neuer Drehplan – zu prüfen:"))+' '+esc(p[1]):esc(L("aktiv"))+' · '+esc(new Date(+o.at||0).toLocaleString()))+'</div></div><div class="arb">'+
       (rv&&p[0]==="diff"?'<button type="button" class="pillbtn" data-cdre="'+esc(o.id)+'">'+esc(L("Wieder anwenden"))+'</button>':'')+'<button type="button" class="pillbtn" data-cdoff="'+esc(o.id)+'">'+esc(L("Aufheben"))+'</button></div></li>'}).join("");
-  return '<div class="admins cdsec"><h3>'+esc(L("Coverday"))+'</h3><p class="ahint">'+esc(L("Ganze Drehtage tauschen, verschieben oder nachrücken lassen – zum Beispiel bei schlechtem Wetter. Gilt sofort für alle in der App, bis ein neuer Drehplan kommt: dann schlägt die App pro Änderung den nächsten Schritt vor."))+'</p>'+
+  return '<div class="admins cdsec"><h3>'+esc(L("Coverday"))+'</h3><p class="ahint">'+esc(L("Ganze Drehtage tauschen, verschieben oder nachrücken lassen – zum Beispiel bei schlechtem Wetter. Gilt sofort für alle in der App, bis ein neuer Drehplan kommt: dann schlägt die App pro Änderung den nächsten Schritt vor."))+' '+esc(L("Die Drehtage bleiben nach Datum durchnummeriert, und jedes Callsheet wandert mit seinen Szenen zum neuen Datum."))+'</p>'+
     '<form class="cdform" data-cdform novalidate><label>'+esc(L("Art"))+'<select data-cdf="op">'+Object.entries(CDN).map(([k,v])=>'<option value="'+k+'"'+(f.op===k?' selected':'')+'>'+esc(L(v))+'</option>').join("")+'</select></label>'+
     '<label>Unit<select data-cdf="u"><option value="all"'+(f.u!=="2"?' selected':'')+'>'+esc(L("ganzer Drehtag"))+'</option><option value="2"'+(f.u==="2"?' selected':'')+'>2nd Unit</option></select></label>'+
     '<label>'+esc(f.op==="shift"?L("Ab Drehtag"):L("Drehtag"))+'<select data-cdf="a"><option value="">–</option>'+opts(f.a,days)+'</select></label>'+
@@ -102,10 +126,10 @@ document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.c
   if(s.dataset.cdsave!=null){const pv0=cdPreview(CD.form);if(!pv0.ok||!confirmSafe(L("Coverday-Änderung wirklich übernehmen? Sie gilt sofort für alle.")+"\n\n"+pv0.t))return}
   const ops=arr(window.CDOPS).slice();CD.busy=true;
   try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(o){o.st="off";o.off=Date.now()}await cdSave(ops);showMsg(L("Änderung aufgehoben."),3000)}
-    else if(s.dataset.cdre!=null){const o=ops.find(x=>x.id===s.dataset.cdre);if(o){o.at=Date.now()}await cdSave(ops);showMsg(L("Änderung wieder angewendet."),3000)}
-    else{const f=CD.form,pv=cdPreview(f);if(!pv.ok){CD.busy=false;return}const raw=S.days0||S.days,d=dt=>raw.find(x=>x.date===dt);
+    else if(s.dataset.cdre!=null){const o=ops.find(x=>x.id===s.dataset.cdre);if(o){o.at=Date.now();o.raw=cdRaw(o,S.days0||[])}await cdSave(ops);showMsg(L("Änderung wieder angewendet."),3000)}
+    else{const f=CD.form,pv=cdPreview(f);if(!pv.ok){CD.busy=false;return}const raw=S.days||S.days0,d=dt=>raw.find(x=>x.date===dt);
       const snap=f.op==="shift"?{a:cdScenes(d(f.a),f.u)}:{a:cdScenes(d(f.a),f.u),b:cdScenes(d(f.b),f.u)};
-      const op={id:Math.random().toString(36).slice(2,10),op:f.op,u:f.u==="2"?"2":"all",a:f.a,b:f.op==="shift"?"":f.b,at:Date.now(),by:ME&&ME.email||"",snap,st:"on"};
+      const op={id:Math.random().toString(36).slice(2,10),op:f.op,u:f.u==="2"?"2":"all",a:f.a,b:f.op==="shift"?"":f.b,at:Date.now(),by:ME&&ME.email||"",snap,st:"on"};op.raw=cdRaw(op,S.days0||raw);
       ops.push(op);await cdSave(ops);CD.form={op:f.op,u:f.u,a:"",b:"",push:f.push};CD.msg=L("Übernommen:")+" "+pv.t;
       if(f.push&&can("push.send")){try{const enc=await ownEnc({title:L("Drehplan geändert"),body:cdOpText(op),roles:null,depts:null,by:ME.email,at:Date.now(),kind:"plan",url:"./#go=plan:"+(f.op==="move"?f.b:f.a)});
         const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});if(typeof bcDeliver==="function")await bcDeliver(ref.id)}catch(_){}}}}

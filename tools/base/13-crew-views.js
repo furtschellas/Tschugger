@@ -212,7 +212,7 @@ function locResults(gs){
     })();
 }
 /* Sides (the script pages of a shooting day) and the original callsheet pages: as pictures in the app (gallery, also offline) */
-function sidesHTML(date){const all=arr(S.meta&&S.meta.sides),mine=all.map((s,i)=>[s,i]).filter(([s])=>s.date===date),gen=all.map((s,i)=>[s,i]).filter(([s])=>!s.date);
+function sidesHTML(date){const dd=window.cdDocDate?cdDocDate(date):date,all=arr(S.meta&&S.meta.sides),mine=all.map((s,i)=>[s,i]).filter(([s])=>dd&&s.date===dd),gen=all.map((s,i)=>[s,i]).filter(([s])=>!s.date);
   if(!mine.length&&!gen.length)return "";const b=([s])=>'<a class="pillbtn" href="'+esc(safeUrl(s.url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI.doc:'')+' '+esc(s.name)+'</a>';   /* opens the PDF itself */
   /* folded, opened with a tap */
   return '<details class="dsec cssec"><summary><h3 class="dh">Sides · '+(mine.length+gen.length)+'</h3>'+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L("Die Drehbuchseiten des Tages."))+'</p><div class="sidesb">'+mine.map(b).join("")+(gen.length?(mine.length?'<span class="sidesg">'+esc(L("Weitere"))+'</span>':'')+gen.map(b).join(""):'')+'</div></details>'}
@@ -225,7 +225,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[da
    folded when the callsheet opens */
 /* documents of the day as buttons in a folded part of the callsheet: risk assessments (right «Gefährdungsbeurteilung sehen»)
    and set floorplans attached to the callsheet (right «Setfloorpläne sehen») */
-function docSecHTML(date,perm,key,title,hint,icon){if(!vok(perm))return "";const l=arr(S.meta&&S.meta[key]).filter(r=>r.date===date);if(!l.length)return "";
+function docSecHTML(date,perm,key,title,hint,icon){if(!vok(perm))return "";const dd=window.cdDocDate?cdDocDate(date):date,l=arr(S.meta&&S.meta[key]).filter(r=>dd&&r.date===dd);if(!l.length)return "";
   return '<details class="dsec cssec rasec"><summary><h3 class="dh">'+esc(L(title))+' · '+l.length+'</h3>'+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L(hint))+'</p><div class="sidesb">'+
     l.map(r=>'<a class="pillbtn" href="'+esc(safeUrl(r.url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI[icon]:'')+' '+esc(r.name)+'</a>').join("")+'</div></details>'}
 const raHTML=date=>docSecHTML(date,"ra","ra","Gefährdungsbeurteilung","Gefährdungsbeurteilungen des Tages (Sicherheit am Set).","warn");
