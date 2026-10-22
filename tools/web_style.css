@@ -888,3 +888,6 @@ html body #view .cdsec .cdform select{width:100%}
 .savebtn:disabled{opacity:.45;cursor:default}
 .savebtn.scwab{background:#25d366;color:#0b2b17}
 .savebtn+.savebtn{margin-left:8px}
+/* always round, even inside forms whose own button rules make buttons wide (e.g. Coverday, Nachricht) */
+html body button.savebtn{width:46px!important;height:46px!important;min-width:46px!important;max-width:46px!important;flex:0 0 46px!important;padding:0!important;border-radius:50%!important;color:#fff!important;align-self:flex-start}
+html body button.savebtn.scwab{color:#0b2b17!important}
