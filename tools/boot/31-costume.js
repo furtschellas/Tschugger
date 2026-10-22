@@ -61,7 +61,7 @@ window.cqCall=(c,r)=>{const t=hm(r&&r.call);if(!t||!c._date)return null;if(cqArr
   if(ride){const st=window.rideState&&rideState(rideId(c._date,ride))===2?2:0;return {h:'<span class="cql cq'+st+' cqro" title="'+esc(st?L("Angekommen (Fahrt ausgeführt)"):L("Folgt der Fahrt"))+'">'+esc(String(r.call))+'</span>'}}
   return {h:window.cqLink("c",cmId(c._date,"c",r,t),c._date,String(r.call))}};
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cqk]");if(!b)return;e.preventDefault();e.stopPropagation();
-  const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="p"?!cqCanRide():!cmCan())return;b.disabled=true;
+  const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="x"?!cqMan():k==="p"?!cqCanRide():!cmCan())return;b.disabled=true;
   try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),cur=b.dataset.cqcur!=null?+b.dataset.cqcur:st,nx=k==="c"?(st?0:2):k==="b"?(st===2?0:2):(cur+1)%3;   /* Kostüm/Maske: open → running (pink) → done; Call: open → arrived */
     if(!nx){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cqd,at:Date.now(),s:nx};await F.setDoc(ref,v);window.RIDEACK[id]=v}
     try{MEMO.clear()}catch(_){}cqKeep()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
@@ -87,3 +87,14 @@ window.cqOnset=(c,r)=>{if(!hm(r&&r.onset)||!c||!c._date)return null;const {id,st
   const tip=[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")][cur];
   if(!cmCan())return {h:'<span class="cql cq'+cur+' cqro" title="'+esc(tip)+'">'+esc(t)+'</span>'};
   return {h:'<button type="button" class="cql cq'+cur+'" data-cqk="o" data-cqcur="'+cur+'" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>'}};
+/* «Cast manuell quittieren» (cast.manual): every time of the cast can be ticked by hand, also P/UP, Call with a ride, Base and On set
+   before Kostüm and Maske are done. A hand tick is stored on its own (id kind «x…») and wins over the automatic state */
+const cqMan=()=>{try{return typeof canPerm==="function"&&canPerm("cast.manual")}catch(_){return false}};
+function cqManual(f,c,r,t,res){if(!t||!c||!c._date)return res;const id=cmId(c._date,"x"+f,r,hm(t)),st=cmSt(id),man=cqMan();
+  const auto=res&&res.h?(+((String(res.h).match(/\bcq([012])\b/)||[])[1]||0)):0;
+  if(!st&&(!man||(res&&!/cqro/.test(res.h))))return res;   /* not stored by hand: the automatic state (and its own tap) */
+  const cur=st||auto,tip=[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")][cur];
+  if(!man)return {h:'<span class="cql cq'+cur+' cqro" title="'+esc(tip)+'">'+esc(String(t))+'</span>'};
+  return {h:'<button type="button" class="cql cq'+cur+'" data-cqk="x" data-cqcur="'+cur+'" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(L("Von Hand")+" · "+tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(String(t))+'</button>'}}
+for(const [f,k] of [["p","cqPickup"],["c","cqCall"],["b","cqBase"],["o","cqOnset"]]){const orig=window[k];
+  window[k]=(c,r)=>{const t=r&&(f==="p"?r.pickup:f==="c"?r.call:f==="b"?r.base:r.onset);let res=null;try{res=orig(c,r)}catch(_){}return cqManual(f,c,r,t,res)||res}}
