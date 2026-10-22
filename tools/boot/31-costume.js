@@ -69,9 +69,14 @@ window.cqBase=(c,r)=>{const t=hm(r&&r.base);if(!t||!c||!c._date||!cqAllDone(c,r)
   if(!cmCan())return {h:'<span class="cql cq'+st+' cqro" title="'+esc(st===2?L("Erledigt"):L("Läuft"))+'">'+esc(String(r.base))+'</span>'};
   const tip=st===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
   return {h:'<button type="button" class="cql cq'+st+'" data-cqk="b" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(r.base+" – "+tip)+'">'+esc(String(r.base))+'</button>'}};
-/* On set: the ride of the actor from the Base to the set – accepted: pink frame around the time; done: green */
+/* On set: the ride of the actor from the Base to the set – accepted: pink frame around the time; ride done: On set pink (running), tap = done (green) */
 window.cqOnset=(c,r)=>{if(!hm(r&&r.onset)||!c||!c._date||!r.actor||typeof rideId!=="function")return null;const k=fold(String(r.actor)).replace(/[^a-z ]/g,"").trim();if(!k)return null;
   const has=v=>fold(String(v||"")).includes(k)||k.split(" ").filter(w=>w.length>2).every(w=>fold(String(v||"")).includes(w));
   const ride=arr(c.transport).filter(x=>has(x.passengers)&&/base/i.test(String(x.from||""))).concat(arr(c.crewTransport).filter(x=>has(x.people)&&/base/i.test(String(x.from||""))))[0];if(!ride)return null;
   const st=window.rideState?rideState(rideId(c._date,ride)):0;if(!st)return null;
-  return {h:'<span class="cql '+(st===2?"cq2":"cqf")+' cqro" title="'+esc(st===2?L("Am Set (Fahrt ausgeführt)"):L("Fahrt zum Set angenommen"))+'">'+esc(String(r.onset))+'</span>'}};
+  if(st===1)return {h:'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(String(r.onset))+'</span>'};
+  /* ride done: On set is the running step (pink) – tap = done (green) */
+  const id=cmId(c._date,"o",r,hm(r.onset)),s2=cmSt(id)===2?2:1;
+  if(!cmCan())return {h:'<span class="cql cq'+s2+' cqro" title="'+esc(s2===2?L("Erledigt"):L("Läuft"))+'">'+esc(String(r.onset))+'</span>'};
+  const tip=s2===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
+  return {h:'<button type="button" class="cql cq'+s2+'" data-cqk="b" data-cqid="'+esc(id)+'" data-cqd="'+esc(c._date)+'" title="'+esc(tip)+'" aria-label="'+esc(r.onset+" – "+tip)+'">'+esc(String(r.onset))+'</button>'}};
