@@ -36,9 +36,9 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
   return out};
 /* ---------- Cast quittieren (callsheet, cast table): P/UP, Call, Kostüm and Maske – the time itself is the tick: underlined = open,
    pink with white time = running (ride accepted), not underlined = done (green). Tap: open → running → done → open.
-   Call / Kostüm / Maske with «Cast quittieren» (cm.ack), P/UP with «Fahrten quittieren» / «Fahrten Manager» ---------- */
+   Call / Kostüm / Maske with «Cast quittieren» (cm.ack); P/UP is not tapped here – it shows the state of the ride (Fahrten quittieren) ---------- */
 const cqCanRide=()=>{try{return canPerm("rides.confirm")||canPerm("rides.manage")}catch(_){return false}};
-window.cqLink=(kind,id,date,t)=>{const st=kind==="p"?(window.rideState?rideState(id):0):cmSt(id),can=kind==="p"?cqCanRide():cmCan();
+window.cqLink=(kind,id,date,t)=>{const st=kind==="p"?(window.rideState?rideState(id):0):cmSt(id),can=kind==="p"?false:cmCan();   /* P/UP follows the ride quittance only (no tap here) */
   const cls="cql cq"+st,tip=kind==="p"?[L("Fahrt offen – antippen = annehmen"),L("Fahrt läuft – antippen = ausgeführt"),L("Fahrt ausgeführt – antippen = zurücksetzen")][st]:[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")][st];
   if(!can)return '<span class="'+cls+' cqro" title="'+esc([L("Offen"),L("Läuft"),L("Erledigt")][st])+'">'+esc(t)+'</span>';
   return '<button type="button" class="'+cls+'" data-cqk="'+kind+'" data-cqid="'+esc(id)+'" data-cqd="'+esc(date)+'" title="'+esc(tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>'};
