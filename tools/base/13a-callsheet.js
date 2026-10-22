@@ -258,7 +258,10 @@ function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls
   /* a place that is a line of a set on the callsheet («Tech Parking», «Crew Parking», «Private Cars Crew» …): its map link and address */
   {const f=v=>fold(String(v||"")).replace(/[^a-z0-9]/g,""),tt=f(txt);if(tt.length>3)for(const l of csA(c.locations))for(const i of csA(l.items)){const lb=f(i.label);
     if(lb.length>3&&(lb===tt||tt.includes(lb)||lb.includes(tt))){const ad=(String(i.text||"").match(/[^,;]*\d{4}\s+\p{L}[^,;]*/u)||[])[0]||"";
-      return {name:String(txt),map:i.map||"",addr:ad?String(i.text||"").split(/;/)[0].trim():"",disp:String(txt)}}}}
+      return {name:String(txt),map:i.map||"",addr:ad?String(i.text||"").split(/;/)[0].trim():"",disp:String(txt)}}}
+    /* else the location list (Motive): venue or set name – its map link and address */
+    if(tt.length>3)for(const l of arr(S.locs)){const ns=[l.venue,l.name].concat(arr(l.sets).map(x=>x&&x.name)).map(f).filter(x=>x.length>3);
+      if(ns.some(n=>n===tt||tt.includes(n)||n.includes(tt)))return {name:String(txt),map:/^https:\/\//.test(String(l.map||""))?l.map:"",addr:String(l.address||""),disp:String(txt)}}}
   return {name:String(txt),map:""}}
 /* where my call is: the end of my first ride (if it arrives around my call), else the set shooting at that time, else set 1 */
 function csCallPlace(c,me,call){const ct=hm(call.t);
