@@ -53,7 +53,8 @@ def vapid_keys(key):
 
 ERRC = {}   # error codes of this run (only codes in the public log)
 def send(sub, data, pems, ttl):
-    """returns «ok», «gone» (device removed the app) or «err»; tries the older VAPID key if the push service rejects the key"""
+    """returns «ok», «gone» (device removed the app) or «err»; tries the next VAPID key if the push service rejects a key or a key cannot be read"""
+    last = ""
     for pem in pems:
         try:
             webpush(subscription_info=sub, data=data, vapid_private_key=pem, vapid_claims={"sub": CLAIM}, headers={"Urgency": "high"}, ttl=ttl, timeout=15)
@@ -61,13 +62,12 @@ def send(sub, data, pems, ttl):
         except WebPushException as e:
             code = getattr(e.response, "status_code", None)
             if code in (404, 410): return "gone"
-            if code in (401, 403): continue   # key does not match this subscription: try the next one
+            if code in (401, 403): last = "HTTP" + str(code); continue   # key does not match this subscription: try the next one
             print("• Push-Fehler HTTP", code); ERRC[str(code)] = ERRC.get(str(code), 0) + 1
             return "err"
-        except Exception as e:
-            print("• Push-Fehler", type(e).__name__); ERRC[type(e).__name__] = ERRC.get(type(e).__name__, 0) + 1
-            return "err"
-    ERRC["Schlüssel"] = ERRC.get("Schlüssel", 0) + 1   # no VAPID key matches (401/403 with all keys)
+        except Exception as e:   # e.g. a key that cannot be read (ValueError): try the next one
+            last = type(e).__name__
+    ERRC[last or "Schlüssel"] = ERRC.get(last or "Schlüssel", 0) + 1   # no key worked
     return "err"
 
 
