@@ -25,6 +25,8 @@ async function loadLangs(){
     window.FAILALARM=d.exists()?d.data().failAlarm!==false:true;
     window.OWNEV=d.exists()?d.data().ownEvents!==false:true;
     window.CSMAPON=d.exists()?d.data().csMap!==false:true;
+    /* App-Verwaltung → Produktion: name of the project, production company and its address (exports, title of the app) */
+    {const g=k=>d.exists()&&typeof d.data()[k]==="string"?d.data()[k]:"";window.PROJNAME=g("projName");window.PRODCO=g("prodCo");window.PRODADDR=g("prodAddr");try{localStorage.setItem("appproj",JSON.stringify([PROJNAME,PRODCO,PRODADDR]))}catch(_){}if(typeof projApply==="function")projApply()}
     /* times of the quittances: Drehplan / Callsheet, each on phones (pm, cm) and computers (pd, cd) */
     {const at=(d.exists()&&d.data().ackTimes)||{};window.ACKT={pm:at.pm!==false,pd:at.pd!==false,cm:at.cm!==false,cd:at.cd!==false};for(const k in ACKT)document.documentElement.classList.toggle("nosct"+k,!ACKT[k])}
     /* scenes and rides quittiert (App-Verwaltung → Einstellungen; on unless switched off) */
@@ -73,6 +75,13 @@ const isOwner=()=>!SIMROLE&&!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email
 const isAdmin=()=>SIMROLE?!!SIMROLE.adm:(isOwner()||!!(COADMIN&&ME&&ME.emailVerified));
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
 /* permissions, grouped by main topic (topic in capitals, short labels so they fit on one line on phones) */
+/* name of the project (App-Verwaltung → Produktion), default TSCHUGGER Tigerblood; cached for the next start */
+try{const v=JSON.parse(localStorage.getItem("appproj")||"null");if(Array.isArray(v))[window.PROJNAME,window.PRODCO,window.PRODADDR]=v}catch(_){}
+window.projName=()=>String(window.PROJNAME||"").trim()||"TSCHUGGER Tigerblood";
+window.projFile=()=>projName().replace(/[^\w-]+/g,"-").replace(/^-+|-+$/g,"")||"Crew-App";
+/* the name in the title of the browser tab and in the heading of the app */
+window.projApply=()=>{try{const n=projName();document.title=n;const h=document.querySelector("header h1, .hd h1, h1.logo");if(h&&window.PROJNAME){const i=n.indexOf(" ");h.innerHTML=i>0?esc(n.slice(0,i))+" <span>"+esc(n.slice(i+1))+"</span>":esc(n)}}catch(_){}};
+if(window.PROJNAME)projApply();
 const PERMS=[["view.plan","Drehplan sehen","Drehplan"],["view.prep","Prep sehen","Drehplan"],["view.dispo","Callsheet sehen","Drehplan"],["view.loc","Locations sehen","Drehplan"],["view.info","Infos sehen","Drehplan"],["view.ra","Gefährdungsbeurteilung sehen","Drehplan"],["view.setfp","Setfloorpläne sehen","Drehplan"],["view.script","Drehbuch sehen","Drehbuch"],["view.blocking","Blocking sehen","Drehbuch"],["view.crew","Crewliste sehen","Crewliste"],["view.phone","Telefon sehen","Crewliste"],["view.email","E-Mail sehen","Crewliste"],["contacts.extra","Externe Kontakte sehen","Crewliste"],["crew.food","Essen sehen","Crewliste"],["crew.bday","Geburtstage sehen","Crewliste"],["crew.vcf","VCF exportieren","Crewliste"],["view.mycal","Meine Termine sehen","Termine"],["mycal.all","Alle Termine sehen","Termine"],["push.send","Push-Nachrichten senden","Termine"],["rides.confirm","Fahrten quittieren","Termine"],["rides.manage","Fahrten Manager","Termine"],["scenes.ack","Szenen quittieren","Drehplan"],["scenes.log","Szenen-Protokoll sehen","Drehplan"],["scenes.times","Quittierungszeiten sehen","Drehplan"],["events.add","Eigene Termine erstellen","Termine"],["users.view","Benutzer sehen","Benutzer"],["users.edit","Benutzer ändern","Benutzer"],["users.invite","Benutzer einladen","Benutzer"],["users.requests","Anfragen freischalten","Benutzer"],["roles.view","Rollen sehen","Benutzer"],["roles.assign","Rollen pflegen","Benutzer"],["roles.edit","Rollen bearbeiten","Benutzer"],["settings","Einstellungen ändern","App"],["audit.view","Protokoll sehen","App"],["data.check","Dokumente prüfen","App"]];
 const VIEWPERMS=PERMS.filter(x=>x[0].startsWith("view.")).map(x=>x[0]);
 const ADMIN_DEFAULT=PERMS.map(x=>x[0]).filter(p=>p!=="settings");

@@ -60,7 +60,7 @@ function GBTN(){if(window.GOOGLEON===false||(isIOS()&&isStandalone()))return '';
 function showGate(mode,msg,isErr){
   AUTHMODE=mode||AUTHMODE;const g=gateEl();
   const em=ME?esc(ME.email):(g.querySelector("#gem")?esc(g.querySelector("#gem").value):"");
-  const head='<h2>Tschugger <span>Tigerblood</span></h2>';
+  const head=(n=>{const i=n.indexOf(" ");return '<h2>'+(i>0?esc(n.slice(0,i))+' <span>'+esc(n.slice(i+1))+'</span>':esc(n))+'</h2>'})(window.PROJNAME?projName():"Tschugger Tigerblood");
   const langs='<div class="lang glang"><button type="button" data-glang="de">DE</button><button type="button" data-glang="fr">FR</button><button type="button" data-glang="it">IT</button><button type="button" data-glang="en">EN</button><button type="button" data-glang="hi">HI</button></div>';
   const note=msg?'<p class="'+(isErr?'gerr':'gok')+'" role="alert">'+esc(msg)+'</p>':'<p class="gerr" role="alert"></p>';
   let f="";
