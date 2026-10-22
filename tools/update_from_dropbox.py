@@ -302,10 +302,15 @@ def add_reports(dbx, meta, want_files):
         else: pf = ""
         out.append({"g": g, "n": re.sub(r"(?i)\.pdf$", "", e["name"]), "d": str(e.get("modified") or "")[:10], "f": pages, "pdf": pf, "u": _web(os.path.dirname(e["path"]), e["name"])})
     meta["repPages"] = {k: v for k, v in cache.items() if k in used}
+    # the sub folders (also empty ones like «Sound»): every one is a topic in «Reports»
+    folders = sorted({(e["path"][len(base):].lstrip("/") if e["path"].startswith(base + "/") else e["path"].lstrip("/")).split("/")[0]
+                      for e in allf if e["tag"] == "folder"} - {""})
+    if folders != (meta.get("repFolders") or []): meta["repFolders"] = folders; changed_f = True
+    else: changed_f = False
     out.sort(key=lambda r: (r["g"].lower(), r["d"], r["n"].lower()), reverse=False)
     if out != (meta.get("reports") or []):
         meta["reports"] = out; log("Reports:", len(out), "in", len({r["g"] for r in out}), "Ordnern"); return True
-    return False
+    return changed_f
 
 def _norm_sc(x):
     x = re.sub(r"^0+(?=\d)", "", str(x).strip()).lower().replace(" ", "")

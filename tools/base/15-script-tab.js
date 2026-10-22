@@ -166,7 +166,7 @@ function render(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   try{fitNav()}catch(_){}
   try{fitRows(document.querySelector("header.top"))}catch(_){}
   {const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}
-  for(const [id,t] of [["myCalBtn","my"],["acctBtn","acct"],["admBtn","admin"]]){const hb=document.getElementById(id);if(hb){hb.classList.toggle("on",S.tab===t);hb.setAttribute("aria-current",S.tab===t?"page":"false")}}
+  for(const [id,t] of [["myCalBtn","my"],["bcBtn","bcast"],["repBtn","reports"],["acctBtn","acct"],["admBtn","admin"]]){const hb=document.getElementById(id);if(hb){hb.classList.toggle("on",S.tab===t);hb.setAttribute("aria-current",S.tab===t?"page":"false")}}
   try{pvApply();fitRows(v)}catch(_){}
   try{fitAddr(v)}catch(_){}
   saveView();

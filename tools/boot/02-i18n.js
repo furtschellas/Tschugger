@@ -1266,4 +1266,5 @@ Object.assign(I18N,{
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
  "Übernommen:":{fr:"Appliqué :",it:"Applicato:",en:"Applied:",hi:"लागू:"},
+ "Noch keine Reports in diesem Ordner.":{fr:"Pas encore de rapports dans ce dossier.",it:"Ancora nessun report in questa cartella.",en:"No reports in this folder yet.",hi:"इस फ़ोल्डर में अभी कोई रिपोर्ट नहीं।"},
 });

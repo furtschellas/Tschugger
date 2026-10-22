@@ -2,9 +2,12 @@
    Every report: the gallery (pages as pictures, like the floorplans), the file in the Dropbox and the PDF. Who sees a group: the permission
    «Reports: <folder>» (one per sub folder, in the roles under «Reports»); admins and the owner see all ---------- */
 const repSlug=g=>fold(String(g||"")).replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"allgemein";
-const repList=()=>arr(S.meta&&S.meta.reports).filter(r=>r&&typeof r==="object"&&r.n);
+/* a sound report filed in another folder (e.g. DIT) belongs to «Sound» */
+const repList=()=>arr(S.meta&&S.meta.reports).filter(r=>r&&typeof r==="object"&&r.n).map(r=>/sound/i.test(r.n)&&!/sound/i.test(r.g||"")&&repFolders().some(f=>/^sound$/i.test(f))?Object.assign({},r,{g:repFolders().find(f=>/^sound$/i.test(f))}):r);
+/* all report folders, also empty ones (from the updater), plus the folders of the reports */
+const repFolders=()=>arr(S.meta&&S.meta.repFolders).map(String).filter(Boolean);
 /* one permission per sub folder: added to the list of permissions as soon as the folder is known */
-window.repPermsSync=()=>{for(const g of [...new Set(repList().map(r=>String(r.g||"")))]){const k="rep."+repSlug(g);if(!PERMS.some(x=>x[0]===k))PERMS.push([k,"Reports: "+(g||L("Allgemein")),"Reports"])}};
+window.repPermsSync=()=>{for(const g of [...new Set(repList().map(r=>String(r.g||"")).concat(repFolders()))]){const k="rep."+repSlug(g);if(!PERMS.some(x=>x[0]===k))PERMS.push([k,"Reports: "+(g||L("Allgemein")),"Reports"])}};
 window.canRep=g=>{try{return isOwner()||isAdmin()||can("rep."+repSlug(g))}catch(_){return false}};
 window.canRepAny=()=>{try{return isOwner()||isAdmin()||MYPERMS.some(p=>/^rep\./.test(p))}catch(_){return false}};
 const REPLOG={};
@@ -23,9 +26,9 @@ const repFmt=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||"")?d.split("-").reverse().join(".
 /* the name of a folder as a sub topic: Produktion, Sound, DIT – other folders keep their name */
 const repTitle=g=>({"production report":"Produktion","production reports":"Produktion","produktion":"Produktion","sound":"Sound","dit":"DIT"})[fold(String(g||"")).trim()]||String(g||"")||L("Allgemein");
 const REPORDER=["produktion","sound","dit"];
-window.repGroups=()=>[...new Set(repList().map(r=>String(r.g||"")))].filter(g=>canRep(g)).sort((a,b)=>{const ia=REPORDER.indexOf(fold(repTitle(a))),ib=REPORDER.indexOf(fold(repTitle(b)));return (ia<0?9:ia)-(ib<0?9:ib)||a.localeCompare(b)});
+window.repGroups=()=>[...new Set(repList().map(r=>String(r.g||"")).concat(repFolders()))].filter(g=>canRep(g)).sort((a,b)=>{const ia=REPORDER.indexOf(fold(repTitle(a))),ib=REPORDER.indexOf(fold(repTitle(b)));return (ia<0?9:ia)-(ib<0?9:ib)||a.localeCompare(b)});
 /* only: one folder (its box) or "*" (all reports in the gallery); without: everything (Logs) */
-window.reportsSec=only=>{const all=repList();if(!all.length||!canRepAny())return"";
+window.reportsSec=only=>{const all=repList();if((!all.length&&!repFolders().length)||!canRepAny())return"";
   let groups=repGroups();if(!groups.length)return"";if(only&&only!=="*")groups=groups.filter(g=>g===only);
   const row=(r,i)=>{const dy=repDay(r);return '<li class="repr"><div class="reph"><b>'+esc(r.n)+'</b><span class="repd">'+(dy.dt?'DT '+dy.dt+' · ':'')+esc(repFmt(dy.date))+'</span></div><div class="arb tstbtns repb">'+
     (arr(r.f).length&&typeof window.blkImg==="function"?repIco('data-repg="'+i+'"',REP_GAL,L("Ansehen")):'')+
@@ -34,7 +37,7 @@ window.reportsSec=only=>{const all=repList();if(!all.length||!canRepAny())return
   const boxes=groups.map(g=>{const rs=all.map((r,i)=>[r,i]).filter(([r])=>String(r.g||"")===g).sort((a,b)=>String(repDay(b[0]).date).localeCompare(String(repDay(a[0]).date))||String(a[0].n).localeCompare(String(b[0].n)));
     const k=repSlug(g);
     return '<details class="tstsec repsec" data-lsec="rep-'+esc(k)+'"'+(REPLOG[k]||only?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Reports"))+' · '+esc(repTitle(g)),'<span class="tsth">'+rs.length+'</span>',""):esc(g))+'</summary>'+
-      '<div class="admins"><ul class="audlist">'+rs.map(([r,i])=>row(r,i)).join("")+'</ul>'+
+      '<div class="admins">'+(rs.length?'<ul class="audlist">'+rs.map(([r,i])=>row(r,i)).join("")+'</ul>':'<p class="ghint">'+esc(L("Noch keine Reports in diesem Ordner."))+'</p>')+
       (rs.some(([r])=>arr(r.f).length)&&typeof window.blkImg==="function"?'<div class="arb tstbtns repb repall">'+repIco('data-repall="g|'+esc(k)+'"',REP_GAL,L("Alle in der Galerie"))+'</div>':'')+'</div></details>'}).join("");
   /* all reports at once: the order to choose (shooting day or department) */
   const vis=all.filter(r=>repGroups().includes(String(r.g||""))&&arr(r.f).length);
@@ -80,7 +83,7 @@ window.repButton=()=>{let b=document.getElementById("repBtn");const a=document.g
 setInterval(()=>{try{repButton()}catch(_){}},5000);
 VIEWS.reports=function(){const subs=repSubs();if(!ME||!subs.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!subs.some(([k])=>k===REPSUB))REPSUB=subs[0][0];
-  const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-repsub="'+esc(k)+'" aria-selected="'+(REPSUB===k)+'">'+esc(L(t))+'</button>').join("")+'</nav>';
+  const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-repsub="'+esc(k)+'" aria-selected="'+(REPSUB===k)+'">'+(t==="Produktion"?'<span class="lgl">'+esc(L(t))+'</span><span class="sml">Prod</span>':esc(L(t)))+'</button>').join("")+'</nav>';
   let body="";if(REPSUB==="scenes"){SCLOG.open=true;body=typeof sceneLogSec==="function"?sceneLogSec():""}
   else if(REPSUB==="all")body=reportsSec("*");else body=reportsSec(REPSUB.slice(2));
   return '<section class="mypage reppage"><div class="myhead"><h2 class="pgt">'+esc(L("Reports"))+'</h2></div>'+nav+(body||'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+'</section>'};
