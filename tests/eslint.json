@@ -1,0 +1,27 @@
+{
+  "root": true,
+  "parserOptions": {"ecmaVersion": 2022, "sourceType": "script"},
+  "env": {"browser": true, "es2022": true},
+  "rules": {
+    "no-dupe-keys": "error",
+    "no-dupe-else-if": "error",
+    "no-duplicate-case": "error",
+    "no-unreachable": "error",
+    "no-self-assign": "error",
+    "no-self-compare": "error",
+    "valid-typeof": "error",
+    "use-isnan": "error",
+    "no-unsafe-negation": "error",
+    "no-unsafe-finally": "error",
+    "no-sparse-arrays": "error",
+    "no-func-assign": "error",
+    "no-const-assign": "error",
+    "no-dupe-args": "error",
+    "no-invalid-regexp": "error",
+    "no-loss-of-precision": "error",
+    "no-compare-neg-zero": "error",
+    "no-restricted-syntax": ["error",
+      {"selector": "Literal[regex.pattern=/\\(\\?<[=!]/]", "message": "Look-behind im Regex: ältere iPhones (iOS < 16.4) können die ganze App nicht starten"},
+      {"selector": "NewExpression[callee.name='RegExp'] > Literal[value=/\\(\\?<[=!]/]", "message": "Look-behind im Regex: ältere iPhones (iOS < 16.4) können die ganze App nicht starten"}]
+  }
+}

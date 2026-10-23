@@ -72,7 +72,7 @@ jobs:
       # the app is built here from tools/ (never taken from a hand-made index.html) and must start without any script error
       - name: App bauen
         run: |
-          npm install -g esbuild@0.24.0 --no-audit --no-fund --loglevel=error || true
+          npm install -g esbuild@0.24.0 eslint@8.57.0 --no-audit --no-fund --loglevel=error || true
           ESBUILD=$(command -v esbuild || true) python tools/make_site.py
           mkdir -p /tmp/site && cp index.html version.txt /tmp/site/
       - name: App startet ohne Fehler
