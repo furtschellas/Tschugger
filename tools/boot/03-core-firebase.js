@@ -17,6 +17,7 @@ async function loadLangs(){
     {const c=d.exists()?d.data():{};window.A2AGAIN=c.a2again===true;try{localStorage.setItem("appa2again",window.A2AGAIN?"1":"0")}catch(_){}}
     {const c=d.exists()?d.data():{};const z=+c.chgClearAt||0;if(window.CHGCLR!==z){window.CHGCLR=z;try{localStorage.setItem("appchgclr",String(z))}catch(_){}render()}}   /* «Änderungen» in Today emptied for everybody */
     {const c=d.exists()?d.data():{};const pn=c.permNames&&typeof c.permNames==="object"?c.permNames:{};if(JSON.stringify(pn)!==JSON.stringify(window.PERMNAMES)){window.PERMNAMES=pn;try{localStorage.setItem("apppermnames",JSON.stringify(pn))}catch(_){}render()}}
+    {const c=d.exists()?d.data():{},k=typeof c.appCheckKey==="string"?c.appCheckKey:"";if((window.APPCHECKKEY||"")!==k){window.APPCHECKKEY=k;try{localStorage.setItem("appcheck",k)}catch(_){}}}   /* App Check: used from the next start */
     {const c=d.exists()?d.data():{};const pe=c.pushEnabled!==false;if(window.PUSHEN!==pe){window.PUSHEN=pe;try{localStorage.setItem("apppushon",pe?"1":"0")}catch(_){}render()}}
     {const c=d.exists()?d.data():{};const ce=c.chatEnabled!==false,te=c.tourEnabled!==false;if(window.CHATEN!==ce||window.TOUREN!==te){window.CHATEN=ce;window.TOUREN=te;try{localStorage.setItem("appchaton",ce?"1":"0");localStorage.setItem("apptouron",te?"1":"0")}catch(_){}}}
     {let cu=String((d.exists()&&d.data().chatUrl)||"");if(cu&&!/^https:\/\//i.test(cu))cu="";   /* only https – the sign-in token goes there */if(window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
@@ -126,6 +127,8 @@ async function fbInit(){
   /* signed out on this device: the local Firebase copy (names, lists) is removed before Firebase opens it again */
   try{if(localStorage.getItem("fsclear")){await new Promise(r=>{const q=indexedDB.deleteDatabase("firestore/[DEFAULT]/"+FB_CONFIG.projectId+"/main");q.onsuccess=q.onerror=q.onblocked=()=>r();setTimeout(r,1500)});localStorage.removeItem("fsclear")}}catch(_){}
   const a=app.initializeApp(FB_CONFIG);
+  /* App Check (App-Verwaltung → Einstellungen): Firebase can then accept only requests of this app – before any other Firebase use */
+  try{const ak=localStorage.getItem("appcheck")||"";window.APPCHECKKEY=window.APPCHECKKEY||ak;if(/^[\w-]{20,80}$/.test(ak)){const ac=await withTimeout(import(base+"firebase-app-check.js"),8000,"appcheck");ac.initializeAppCheck(a,{provider:new ac.ReCaptchaV3Provider(ak),isTokenAutoRefreshEnabled:true})}}catch(err){console.warn("appcheck",err&&err.message||err)}
   /* data cache on the device (per signed-in person): reopening the app reads only what changed instead of everything (Firebase quota);
      if the browser cannot keep it, Firebase falls back to memory by itself */
   let db=null;try{if(fs.initializeFirestore&&fs.persistentLocalCache)db=fs.initializeFirestore(a,{localCache:fs.persistentLocalCache(fs.persistentMultipleTabManager?{tabManager:fs.persistentMultipleTabManager()}:{})})}catch(_){db=null}

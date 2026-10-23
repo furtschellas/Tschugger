@@ -269,6 +269,11 @@ await check("Härtung: Profilfeld höchstens 1000 Zeichen", assertFails(updateDo
 await check("Härtung: Profilfeld normal geht", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { allergies: "Nüsse" })));
 await check("Härtung: verschickte Nachricht nicht wieder auf «nicht verschickt»", assertFails(updateDoc(doc(as("power"), "broadcasts/bSent"), { sent: false })));
 await check("Härtung: Anfrage mit zu langer Rolle nicht", assertFails(setDoc(doc(as("stranger"), "requests/str@test.ch"), { name: "S", role: "x".repeat(81), at: 1 })));
+/* «Auf allen Geräten abmelden»: rev nur als Serverzeit; danach ist eine ältere Anmeldung kein Mitglied mehr (zuletzt, «other» wird dabei abgemeldet) */
+await check("Abmelden überall: rev mit fester Zahl nicht", assertFails(updateDoc(doc(as("other"), "members/uOther"), { rev: 5 })));
+await check("Abmelden überall: rev als Serverzeit geht", assertSucceeds(updateDoc(doc(as("other"), "members/uOther"), { rev: serverTimestamp() })));
+await check("Abmelden überall: ältere Anmeldung liest danach keine Crew-Daten mehr", assertFails(getDoc(doc(env.authenticatedContext(U.other[0], { email: U.other[1], email_verified: true, auth_time: Math.floor(Date.now() / 1000) - 3600 }).firestore(), "secret/key"))));
+await check("Abmelden überall: neue Anmeldung liest wieder", assertSucceeds(getDoc(doc(env.authenticatedContext(U.other[0], { email: U.other[1], email_verified: true, auth_time: Math.floor(Date.now() / 1000) + 60 }).firestore(), "secret/key"))));
 await check("Unbekannte Sammlung: alles gesperrt", assertFails(setDoc(doc(as("owner"), "irgendwas/x"), { a: 1 })));
 
 await env.cleanup();
