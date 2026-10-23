@@ -39,20 +39,26 @@ const CSI={phone:csI('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 
 window.CSI=CSI;
 /* open/close symbol of the app (two chevrons in a round frame, as in Log/Tests) */
 const CSEXP='<span class="csexp" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span>';
+const CSEXPSM=CSEXP.replace('class="csexp"','class="csexp sm"');   /* the small one (scenes, locations) */
 const CSPH=/(\+?\d[\d ()\/.-]{7,}\d)/g;
-const csIsTel=x=>/^(\+|0)/.test(x)&&x.replace(/\D/g,"").length>=9;
+const csIsTel=x=>/^(\+|0)/.test(x)&&x.replace(/\D/g,"").length>=9&&!/\b\d{1,2}\.\d{1,2}\.\d{2,4}\b/.test(x);   /* not a date («03.11.2026 - 05.11.2026») */
 /* text with phone numbers: callable with the right, else left out */
 function csTx(s){s=String(s==null?"":s);if(!s)return"";const ok=vok("phone");let out="",p=0;
   for(const m of s.matchAll(CSPH)){if(!csIsTel(m[1]))continue;out+=esc(s.slice(p,m.index));out+=ok?'<a href="tel:'+esc(m[1].replace(/[^\d+]/g,""))+'">'+esc(m[1])+'</a>':'<span class="cshid" title="'+esc(L("Nur mit dem Recht «Telefon sehen»"))+'">'+CSI.lock+'</span>';p=m.index+m[0].length}
-  return (out+esc(s.slice(p))).replace(/(https?:\/\/[^\s<]+)/g,u=>'<a href="'+esc(safeUrl(u.replace(/&amp;/g,"&")))+'" target="_blank" rel="noopener noreferrer">'+u+'</a>').replace(/<a href="([^"]+)" target="_blank" rel="noopener noreferrer">(https?:\/\/(?:maps\.app\.goo\.gl|[^"<]*google\.[a-z.]+\/maps)[^<]*)<\/a>/g,(m0,h)=>csMap(h.replace(/&amp;/g,"&")))}
+  /* a link ends before a closing bracket, a full stop or comma at its end and before an escaped quote */
+  return (out+esc(s.slice(p))).replace(/https?:\/\/[^\s<]+/g,m=>{const t=m.match(/(?:&quot;|&#39;|[).,;:!?'"])+$/),u=t?m.slice(0,-t[0].length):m;return '<a href="'+esc(safeUrl(u.replace(/&amp;/g,"&")))+'" target="_blank" rel="noopener noreferrer">'+u+'</a>'+(t?t[0]:"")}).replace(/<a href="([^"]+)" target="_blank" rel="noopener noreferrer">(https?:\/\/(?:maps\.app\.goo\.gl|[^"<]*google\.[a-z.]+\/maps)[^<]*)<\/a>/g,(m0,h)=>csMap(h.replace(/&amp;/g,"&")))}
 /* an address or place with a map link: the text itself is the link (instead of the round map button) */
 function csAdr(txt,map,fallback){const U=/(https?:\/\/[^\s<]+)/g;const s0=String(txt||"");const urls=s0.match(U)||[];const isMap=u=>/maps\.app\.goo\.gl|google\.[a-z.]+\/maps|goo\.gl\/maps/.test(u);
   const u=map||urls.find(isMap)||"";const t=s0.replace(U,m=>isMap(m)?"":m).replace(/\s{2,}/g," ").replace(/[\s,:;–-]+$/,"").trim();if(!u)return csTx(s0);
-  return '<a class="csadl" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer"><span>'+csTx(t||fallback||L("Karte"))+'</span></a>'}
+  return '<a class="csadl" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer"><span>'+csNoA(csTx(t||fallback||L("Karte")))+'</span></a>'}
+/* text inside a link: its own links removed (a link in a link breaks the page), the hidden phone numbers stay hidden */
+const csNoA=h=>String(h).replace(/<a\b[^>]*>/g,"").replace(/<\/a>/g,"");
 /* map: a round button with a pin (like the other round buttons of the app) */
 const csMap=u=>u?'<a class="csmap" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(L("Karte"))+'" title="'+esc(L("Karte"))+'">'+CSI.pin+'</a>':'';
 /* translated text (locations, production information) in the language of the app; the original when none */
 let CSTR=null;const csL=t=>{const s2=String(t==null?"":t);return (CSTR&&CSTR[LANG]&&CSTR[LANG][s2])||s2};
+/* a small tile (key and value) of the callsheet head */
+const csTile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
 const csA=v=>Array.isArray(v)?v:(v==null||v===""?[]:[v]);
 const csRoute=(f,t1,to,t2)=>[[t1,f].filter(Boolean).join(" "),[t2,to].filter(Boolean).join(" ")].filter(Boolean).join(" → ");
 const csS=v=>Array.isArray(v)?v.join(", "):String(v==null?"":v);
@@ -115,9 +121,16 @@ function csTable(head,rows,tc,keep){rows=rows.map(r=>r.map(c=>c&&typeof c==="obj
 /* who am I on this callsheet: name and department (crew list / app profile) */
 function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.name)return null;
   const k=nmk(me.name),parts=k.split(" ").filter(w=>w.length>1),dep=fold(me.src||"").split(/[\s/]/)[0];
-  const hit=t=>{const n=nmk(String(t||""));if(!n)return false;if(n.includes(k))return true;const f=parts[0],l=parts[parts.length-1];return parts.length>1&&n.includes(f)&&n.includes(l)};
+  /* a name part only counts at the start of a word: «Anna Muster» is not in «Johanna Muster» (a shortened «Zeis» still finds «Zeiss») */
+  const ws=(n,w)=>(" "+n).includes(" "+w);
+  const hit=t=>{const n=nmk(String(t||""));if(!n)return false;if(ws(n,k))return true;const f=parts[0],l=parts[parts.length-1];return parts.length>1&&ws(n,f)&&ws(n,l)};
   return {name:me.name,dep,hit}}
 /* «jetzt» on the shooting day, in one place: the rows of the shooting order, their quittance keys (setup, lunch, wrap …), the wrap row */
+/* me on this callsheet: my call, my rides (passenger or driver, crew transport), do I drive, the words of my department */
+const csMyCall=(c,me)=>me?csA(c.calls).find(r=>me.hit(r.name)):undefined;
+const csMyRides=(c,me)=>csA(c.transport).filter(r=>me.hit(r.passengers)||me.hit(r.driver)).concat(csA(c.crewTransport).filter(r=>me.hit(r.people)));
+const csIDrive=(c,me)=>!!me&&csA(c.transport).some(r=>me.hit(r.driver));
+const csMyWords=(c,me,withRole)=>{const call=csMyCall(c,me);return new Set([...csDWords(call&&call.dept),...(withRole?csDWords(call&&call.role):[]),...csDWords(me&&me.dep)])};
 const csRows=c=>csA(((c||{}).order||{}).rows);
 const csKeys=rows=>typeof scRowKeys==="function"?scRowKeys(csA(rows),r=>r.text||r.syn):[];
 const csAck=date=>typeof scHas==="function"&&scHas(date);
@@ -125,7 +138,9 @@ const csAck=date=>typeof scHas==="function"&&scHas(date);
 const csLocRows=(c,l)=>csRows(c).filter(r=>r.sc&&csSceneLoc([l],r)===l);
 const csIsWrap=r=>!!r&&!r.sc&&/\b(wrap|drehschluss)\b/i.test(String(r.text||r.syn||""));
 /* the clock now as «HH:MM» (local time) – for the running row, the place now and the cast time now */
-function csHM(d){return clockHM(d||new Date())}
+/* «now» as hh:mm in Zurich (the shooting time – also on a phone set to another time zone) */
+const CSZHM=(()=>{try{return new Intl.DateTimeFormat("de-CH",{timeZone:"Europe/Zurich",hour:"2-digit",minute:"2-digit",hourCycle:"h23"})}catch(_){return null}})();
+function csHM(d){d=d||new Date();if(CSZHM)try{const x=CSZHM.format(d);if(/^\d\d:\d\d$/.test(x))return x}catch(_){}return clockHM(d)}
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null; lunch or a setup running: that row with ev = its key */
 function csNowScene(x){x=x||(S.dispos||[]).find(y=>y&&y.date===todayISO());const c=x&&x.cs;if(!c||x.date!==todayISO())return null;const rows=csRows(c);let i=csNowIdx(rows,x.date);
   if(i>=0&&!rows[i].sc&&csAck(x.date)){const k=csKeys(rows)[i];if(k)return Object.assign({},rows[i],{ev:k,lunch:k==="lunch"&&scState(x.date,k)===1})}   /* setup, lunch or wrap is the step now (running or next) */
@@ -137,7 +152,8 @@ function csNowIdx(rows,date){if(date!==todayISO())return -1;rows=csA(rows);
     const st=rows.map((r,i)=>key(r,i)?scState(date,key(r,i)):-1);if(st.some((v,i)=>v===2&&key(rows[i],i)==="wrap"))return -1;
     const run=st.indexOf(1);if(run>=0)return run;
     for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0)return i;return -1}   /* the next step: a scene, setup, lunch or the wrap */
-  const now=csHM();let k=-1;rows.forEach((r,i)=>{const t=hm(r.t);if(t&&t<=now)k=i});
+  /* times after midnight (night shoot: 23:00 … 00:30) count as the next day – they are not «now» in the evening */
+  const now=csHM();let k=-1,prev="",late=false;rows.forEach((r,i)=>{const t=hm(r.t);if(!t)return;if(prev&&t<prev&&prev>="12:00")late=true;prev=t;if(!late&&t<=now)k=i});
   return k>=0&&csIsWrap(rows[k])?-1:k}
 /* the parts of «Jetzt» (callsheet «Mein Tag» and Today): lunch/setup with its name, else scene number, its place (L-code) and I/E · set */
 function csNowBits(ns,c,date){if(ns.ev)return {ev:(ns.lunch?CSI.lunch+' ':'')+'<b>'+esc(scLabel(ns.ev))+'</b>'};let lo=null;try{lo=csSceneLoc(csLocs(c),ns)}catch(_){}
@@ -158,13 +174,15 @@ function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/[^a-z0-9]/g,
 let CSCUR={c:null,date:""};
 /* hints of a place («To set …», «WC …»): lines in the open location */
 const CSHN_RE=/^(to set|zum set|nach set|wc\b)/i;
+/* a text that looks like an address («3930 Visp», «Kantonsstrasse 12») */
+const csIsAdr=t=>/\d{4}\s+\p{L}/u.test(String(t||""))||/^\p{L}[\p{L}.\s-]*\s\d+[a-z]?(\s|$|-)/u.test(String(t||""));
 /* the place where the shooting is now (callsheet of today, from the start of the first scene until wrap) */
-function csNowLoc(c,date,ls,now){if(!now&&csAck(date)){const r=csNowScene({date,cs:c});return r?csSceneLoc(ls,r):null}now=now||new Date();if(date!==now.getFullYear()+"-"+pad2(now.getMonth()+1)+"-"+pad2(now.getDate()))return null;
-  const m=t=>{const x=String(t||"").match(/(\d{1,2})[:.](\d{2})/);return x?+x[1]*60+ +x[2]:null};const cur=now.getHours()*60+now.getMinutes();let hit=null,started=false;
+function csNowLoc(c,date,ls,now){if(!now&&csAck(date)){const r=csNowScene({date,cs:c});return r?csSceneLoc(ls,r):null}now=now||new Date();if(date!==localISO(now))return null;
+  const m=t=>{const x=String(t||"").match(/(\d{1,2})[:.](\d{2})/);return x?+x[1]*60+ +x[2]:null};const cur=m(csHM(now));let hit=null,started=false;
   for(const r of csRows(c)){const t=m(r.t);if(t==null||t>cur)break;if(r.sc){started=true;hit=csSceneLoc(ls,r)||hit}else if(csIsWrap(r))return null}
   return started?hit:null}
 /* side places (Base, W/H/M, Lunch, Parking, DIT …) with the set they are nearest to and the distance (positions of the updater in c.geo) */
-function csNear(c,ls,date){const geo=c.geo||{},out=new Map(),sets=[];let si=0;
+function csNear(c,ls,date){const geo=c.geo||{},out=new Map(),sets=[];
   for(const l of ls)if(!l.kinds){const g=csSetGeo(c,l)[1];if(g)sets.push([l,g])}
   if(!sets.length)return out;const km=(a,b)=>{const R=6371,r=Math.PI/180,dl=(b[0]-a[0])*r,dn=(b[1]-a[1])*r,h=Math.sin(dl/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
   const add=(code,name,u,g,H)=>{if(!Array.isArray(g))return;let best=null;for(const [l,sg] of sets){const d=km(sg,g);if(!best||d<best[1])best=[l,d]}
@@ -250,7 +268,7 @@ function csOrderRows(rows,date,locs,one){rows=csA(rows);const ONE=(()=>{const s0
     const lo=csSceneLoc(locs,r)||(one&&ONE)||null;const pb=lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'';
     const du=pb;   /* the duration only in the details (not in the top line) */const l1d=du&&/<span class="set">/.test(l1)?l1.replace('<span class="set">',du+'<span class="set">'):l1+du;
     const dn=typeof scState==="function"&&date&&scState(date,r.sc)===2?' scdone':'';
-    return '<li class="row csfold'+nw+dn+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+(meta?l1d.replace(/<\/div>$/,meta+'</div>'):l1d)+CSEXP.replace('class="csexp"','class="csexp sm"')+'</summary>'+body+'</details></div></li>'}).join("")+'</ol>'}
+    return '<li class="row csfold'+nw+dn+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+(meta?l1d.replace(/<\/div>$/,meta+'</div>'):l1d)+CSEXPSM+'</summary>'+body+'</details></div></li>'}).join("")+'</ol>'}
 /* what concerns me on this callsheet: call, cast times, rides, travel, my department */
 /* a place named on the callsheet («Base», «Loc.2», «Parking loc. 1», «Holiday Inn») → name and map link from the Locations */
 /* parking places of the callsheet in the language of the app: «Tech parking» → «Tech Parkplatz», «Crew parking» → «Crew Parkplatz» */
@@ -273,7 +291,7 @@ function csCallPlace(c,me,call){const ct=hm(call.t);
   {const dr=csA(c.transport).concat(csA(c.crewTransport)).filter(r=>me.hit(r.driver)&&hm(r.t1)).sort((a,b)=>hm(a.t1).localeCompare(hm(b.t1)));
    const r=dr.find(r=>!ct||hm(r.t1)>=ct)||dr[0];
    if(r&&r.from){const p=Object.assign({},csPlace(c,r.from));if(!p.map)p.map=csMapQ(r.from);
-     return Object.assign({},p,{how:L("Fahrer")+" "+[r.vehicle,r.t1&&(L("ab")+" "+hm(r.t1)),r.to&&("→ "+r.to)].filter(Boolean).join(" ")})}}const rides=csA(c.transport).filter(r=>me.hit(r.passengers)||me.hit(r.driver)).concat(csA(c.crewTransport).filter(r=>me.hit(r.people)));
+     return Object.assign({},p,{how:L("Fahrer")+" "+[r.vehicle,r.t1&&(L("ab")+" "+hm(r.t1)),r.to&&("→ "+r.to)].filter(Boolean).join(" ")})}}const rides=csMyRides(c,me);
   const r=rides.filter(r=>hm(r.t2)).sort((a,b)=>hm(a.t2).localeCompare(hm(b.t2)))[0];
   if(r){const p=csPlace(c,r.to);if(p){p.how=L("mit")+" "+[r.vehicle,r.from&&(L("ab")+" "+r.from),r.t1].filter(Boolean).join(" ");return p}}
   /* no ride: the place is not on the callsheet – nothing is guessed */
@@ -291,7 +309,7 @@ function csLocs0(c){const sets=[],extra=[];
   const whoOf=t=>{const m=String(t||"").match(/w\s*\/\s*h\s*\/\s*m\s*([^:]*)/i);const g=m?m[1]:"";return /extra|komp|statist|figur/i.test(g)?"Extras":/cast|darsteller|schausp/i.test(g)?"Cast":""};
   /* rooms of the base («Greenroom Cast@base: Loge …», «Prod + DIT: Room at base», «WC: … 2x@base»): lines of the one Base, not places of their own */
   const ROOM=/(@\s*base|\b(at|on|in|im|auf der|in der)\s+(the\s+)?base)\b/i,rooms=[];
-  const isAdr0=t=>/\d{4}\s+\p{L}/u.test(String(t||""))||/^\p{L}[\p{L}.\s-]*\s\d+[a-z]?(\s|$|-)/u.test(String(t||""));
+  const isAdr0=csIsAdr;
   for(const l0 of csA(c.locations)){const items=[];let last=null;let l=l0;
     /* «OPEN SPACE W / H / M Extras: Turnhallenweg 4 …» read as the name of a set: the W / H / M part is a place of its own */
     {const m=String(l.name||"").match(/^(.*?)\s+(w\s*\/\s*h\s*\/\s*m\b.*)$/i);if(m&&m[1].trim()){const part=m[2],adr=(part.split(":").slice(1).join(":")||"").trim();
@@ -300,7 +318,7 @@ function csLocs0(c){const sets=[],extra=[];
     for(const i of csA(l.items)){const lab=String(i.label||""),txt=String(i.text||"").trim();
       if(!i.map&&ROOM.test(lab+" "+txt)&&!isAdr0(txt)){rooms.push({l:lab.replace(/\s*@\s*base\b/i,"").replace(/\s*\+\s*/g," + ").trim(),t:txt,set:items});continue}
       /* lines that belong to the place before them: «To set 1: 4’ with car …», «WC: on base …» */
-      if(last&&/^(to set|zum set|nach set|wc\b)/i.test((lab+" "+txt).trim())&&!i.map){const n=[lab,txt].filter(Boolean).join(": ").replace(/:\s*:/,":");if(!last.notes.includes(n))last.notes.push(n);continue}
+      if(last&&CSHN_RE.test((lab+" "+txt).trim())&&!i.map){const n=[lab,txt].filter(Boolean).join(": ").replace(/:\s*:/,":");if(!last.notes.includes(n))last.notes.push(n);continue}
       const cm=txt.match(/^([^:,]{1,40}):\s*(.+)$/),head=cm?cm[1]:"",body=cm?cm[2]:txt,par=(body.match(/\(([^)]{1,30})\)/)||[])[1]||"";
       const kinds=KIND.filter(([re,k])=>re.test(lab)||re.test(head)||re.test(par)||(k==="Base"&&re.test(body.split(",")[0]))).map(([,k])=>k);   /* «Base Church, Dorfplatz 5» is the Base too */
       if(!kinds.length||(!txt&&!i.map)){items.push(i);last=null;continue}
@@ -312,7 +330,7 @@ function csLocs0(c){const sets=[],extra=[];
       if(!e){e={no:"",kinds:[],name:name||"",map:i.map||"",notes:[],items:[]};extra.push(e)}
       const who=uses&&/cast/i.test(uses)&&/extra/i.test(uses)?"":(whoOf(lab+" "+head)||whoOf(txt));
       for(const k0 of kinds){const k=k0==="W / H / M"&&who?k0+" "+who:k0;if(!e.kinds.includes(k))e.kinds.push(k)}
-      const isAdr=t=>/\d{4}\s+\p{L}/u.test(String(t||""))||/^\p{L}[\p{L}.\s-]*\s\d+[a-z]?(\s|$|-)/u.test(String(t||""));
+      const isAdr=csIsAdr;
       if(name&&(!e.name||(isAdr(e.name)&&!isAdr(name)))){if(e.name&&e.name!==name&&!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=name}
       {const at=lab.match(/@\s*(.+)$/);if(at&&isAdr(e.name)&&!isAdr(at[1])){if(!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=at[1].trim()}}if(!e.map&&i.map)e.map=i.map;/* «Föhrenweg 160, 3999 Testdorf; To set 1: …; WC: …» – each part its own line (address, hints with their icons, the rest with its kind) */
       if(uses&&!e.notes.includes(uses))e.notes.unshift(uses);
@@ -339,17 +357,17 @@ function csShort(p){const n=String(p&&p.name||"");let m=n.match(/^Set\s*(\w+)/i)
 const CSDSYN=[["ad","regie","directors","direction"],["camera","kamera","cam"],["sound","ton"],["light","licht","electric","gaffer"],["grip","grips","buhne"],["costume","kostum","wardrobe"],["makeup","maske","make","hair"],["production","produktion","prod"],["location","locations"],["art","ausstattung","props","requisite"],["catering","kuche"],["transport","fahrer","driver"],["script","continuity"]];
 function csDWords(t){const w=fold(String(t||"")).split(/[^a-z0-9]+/).filter(x=>x.length>1&&!["and","und","the","de","of"].includes(x));const out=new Set(w);for(const g of CSDSYN)if(w.some(x=>g.includes(x)))g.forEach(x=>out.add(x));return out}
 /* Maske and Kostüm see the cast right after «Mein Drehtag» */
-function csCmFirst(c,me){try{if(!me)return false;const call=csA(c.calls).find(r=>me.hit(r.name)),w=new Set([...csDWords(call&&call.dept),...csDWords(me.dep)]);return ["makeup","maske","costume","kostum","wardrobe"].some(x=>w.has(x))}catch(_){return false}}
+function csCmFirst(c,me){try{if(!me)return false;const w=csMyWords(c,me);return ["makeup","maske","costume","kostum","wardrobe"].some(x=>w.has(x))}catch(_){return false}}
 /* the cast part is always open for AL/AD (Aufnahmeleitung, Regieassistenz), the role Crew 1AD, drivers, Maske and Kostüm */
 /* the rides open by default for the role «Fahrer» and for whoever drives on this day */
-function csTransOpen(c,me){try{if(typeof MYROLE!=="undefined"&&/fahrer|driver/i.test(MYROLE||""))return true;return !!me&&csA(c.transport).some(r=>me.hit(r.driver))}catch(_){return false}}
+function csTransOpen(c,me){try{if(typeof MYROLE!=="undefined"&&/fahrer|driver/i.test(MYROLE||""))return true;return csIDrive(c,me)}catch(_){return false}}
 function csCastOpen(c,me){try{if(typeof MYROLE!=="undefined"&&/1ad/i.test(MYROLE||""))return true;if(!me)return false;
-  if(csA(c.transport).some(r=>me.hit(r.driver)))return true;
-  const call=csA(c.calls).find(r=>me.hit(r.name)),w=new Set([...csDWords(call&&call.dept),...csDWords(call&&call.role),...csDWords(me.dep)]);
+  if(csIDrive(c,me))return true;
+  const w=csMyWords(c,me,true);
   return ["ad","regie","location","locations","aufnahmeleitung","al","transport","fahrer","driver","runner","makeup","maske","costume","kostum","wardrobe"].some(x=>w.has(x))}catch(_){return false}}
-function csMyDept(c,me,dept){if(!me)return false;const call=csA(c.calls).find(r=>me.hit(r.name));const mine=new Set([...csDWords(call&&call.dept),...csDWords(me.dep)]);
+function csMyDept(c,me,dept){if(!me)return false;const mine=csMyWords(c,me);
   const w=csDWords(dept);for(const x of w)if(x.length>2&&mine.has(x)||x==="ad"&&mine.has("ad"))return true;return false}
-const CSMINEMEMO=new WeakMap();function csMine(c,me){if(!c||!me)return[];let m=CSMINEMEMO.get(c);if(!m)CSMINEMEMO.set(c,m=new Map());const k=me.name+"|"+me.dep+"|"+(typeof LANG!=="undefined"?LANG:"")+"|"+vok("phone")+"|"+(window.REDVER||0);if(!m.has(k))m.set(k,csMine0(c,me));return m.get(k).slice()}
+const CSMINEMEMO=new WeakMap();function csMine(c,me){if(!c||!me)return[];let m=CSMINEMEMO.get(c);if(!m)CSMINEMEMO.set(c,m=new Map());const k=me.name+"|"+me.dep+"|"+(typeof LANG!=="undefined"?LANG:"")+"|"+vok("phone")+"|"+(window.REDVER||0);if(!m.has(k)){m.clear();m.set(k,csMine0(c,me))}return m.get(k).slice()}   /* only the latest (else every ride change added one) */
 /* the destination of a ride as a map link (the place of the callsheet, else a map search) */
 function csToLink(c,to){const t0=String(to||"").trim();if(!t0)return"";const um=t0.match(/https?:\/\/\S+/);const t=t0.replace(/https?:\/\/\S+/g,"").trim()||L("Karte");
   if(um&&t===L("Karte"))return '<a class="csadl" href="'+esc(safeUrl(um[0]))+'" target="_blank" rel="noopener noreferrer"><span>'+esc(t)+'</span></a>';let pl=null;try{pl=csPlace(c,t)}catch(_){}
@@ -358,12 +376,12 @@ function csMine0(c,me){const mine=[];
   /* I drive: the passengers of the ride folded below it (tap opens) */
   const pax=r=>{if(!me.hit(r.driver))return"";const p=String(r.passengers||"").trim();if(!p)return"";const n=p.split(/\s*(?:,|;|\bund\b|\/|\+)\s*/).filter(x=>x.trim()).length;
     return '<details class="csmepax"><summary>'+esc(L("Mitfahrende"))+' · '+n+'</summary><span class="csmepl">'+esc(p)+'</span></details>'};
-  const call=csA(c.calls).find(r=>me.hit(r.name));if(call){const pl=csCallPlace(c,me,call);
+  const call=csMyCall(c,me);if(call){const pl=csCallPlace(c,me,call);
     mine.push('<div class="csme-r"><span class="k">'+esc(L("Mein Call"))+'</span><b>'+esc(call.t||"")+'</b> <small>'+esc([call.role,call.dept].filter(Boolean).join(" · "))+'</small></div>'+
       (pl?'<div class="csme-r"><span class="k">'+esc(L("Call-Ort"))+'</span>'+(pl.map?'<a class="cscallpl" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><b>'+esc(plDe(pl.name))+'</b></a>':'<b>'+esc(plDe(pl.name))+'</b>')+(pl.how?' <small>'+esc(pl.how)+'</small>':'')+'</div>':''))}
   const cast=csA(c.cast).find(r=>me.hit(r.actor));if(cast)mine.push('<div class="csme-r"><span class="k">Cast</span>'+esc([cast.role,cast.pickup&&"P/UP "+cast.pickup,cast.call&&"Call "+cast.call,cast.onset&&"Set "+cast.onset].filter(Boolean).map(csDurT).join(" · "))+'</div>');
   /* pickup: the first ride of the day – shown first, before «Mein Call» */
-  {const rides=csA(c.transport).filter(r=>me.hit(r.passengers)||me.hit(r.driver)).concat(csA(c.crewTransport).filter(r=>me.hit(r.people))).filter(r=>hm(r.t1)).sort((a,b)=>hm(a.t1).localeCompare(hm(b.t1)));
+  {const rides=csMyRides(c,me).filter(r=>hm(r.t1)).sort((a,b)=>hm(a.t1).localeCompare(hm(b.t1)));
    var pu=rides[0];if(pu&&!(cast&&cast.pickup))mine.splice(0,0,'<div class="csme-r"><span class="k">Pickup</span><b>'+esc(hm(pu.t1))+'</b> '+esc(pu.from||"")+(pu.to?' → '+csToLink(c,pu.to)+(pu.t2?" "+esc(pu.t2):""):'')+' <small>'+esc([pu.vehicle,pu.driver].filter(Boolean).join(" · "))+'</small>'+pax(pu)+'</div>');else pu=null}
   /* the other rides (the pickup ride is already shown above) */
   for(const r of csA(c.transport).filter(r=>(me.hit(r.passengers)||me.hit(r.driver))&&r!==pu))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+' <small>'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small>'+pax(r)+'</div>');
@@ -374,11 +392,11 @@ function csMine0(c,me){const mine=[];
   return mine.map(x=>x.replace(/<div class="csme-r"><span class="k">(.*?)<\/span>(.*?)<\/div>/g,'<div class="csme-r"><span class="k">$1</span><span class="v">$2</span></div>'))}
 /* the time tiles of a callsheet day (Crew Call … Wrap, sun, weather, drive to my call place) – callsheet and Today */
 function csTilesHTML(x,day,c,me){const t=c.times||{};
-  const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
+  const tile=csTile;
   return '<div class="dtiles cstiles" id="cs-zeiten">'+tile("Crew Call",t.crewCall||x.crewCall,true)+tile("Rehearsal",t.rehearsal)+tile("RTS",t.rts||x.shootCall)+tile("Lunch",t.lunch)+tile("Wrap",t.wrap||x.wrap)+
     (()=>{const a=c.sunrise||x.sr,b=c.sunset||x.ss;return a&&b?'<div class="dt cssunt"><div class="k">'+esc(L("Sonne"))+'</div><div class="v">'+esc(a)+'<span class="sd">–</span><br>'+esc(b)+'</div></div>':''})()+(typeof wxTile==="function"&&day&&day.date&&wxTile(day)?'<div class="dt cswx">'+wxTile(day)+'</div>':tile(L("Wetter"),[c.weather,c.temp].filter(Boolean).join(" · ")).replace('class="dt"','class="dt wide"'))
     /* drive to my call place: route from the hotel or from where I am */
-    +(()=>{if(!me)return"";const call=csA(c.calls).find(r=>me.hit(r.name));let pl=null;try{pl=call?csCallPlace(c,me,call):null}catch(_){}/* no sure call place (no call or no ride): the way to the Base of the day, else to location 1 – marked as such */
+    +(()=>{if(!me)return"";const call=csMyCall(c,me);let pl=null;try{pl=call?csCallPlace(c,me,call):null}catch(_){}/* no sure call place (no call or no ride): the way to the Base of the day, else to location 1 – marked as such */
       if(!pl){const ls=csLocs(c),b=ls.find(l=>l.kinds&&l.kinds.includes("Base"))||ls.find(l=>!l.kinds);if(!b)return"";let ad="";try{ad=csLocAddr(c,b,x.date)}catch(_){}
         pl={name:ad||b.name||"",map:b.map||"",fbk:b.kinds?"Base":"L"+String(b.no||"").trim(),fbn:String(b.name||"")}}
       /* my call place is a side place given by its kind («W / H / M Cast / E», «Base»): the place of the day with that kind – its name, address and map */
@@ -402,13 +420,13 @@ function csJumpBar(c,x,me,SU,t){let JB="";
      (me?'<button type="button" class="csmineb" data-csmine aria-pressed="'+(CSMINE?"true":"false")+'" aria-label="'+esc(L("Nur meins"))+'" title="'+esc(L("Nur meins"))+'">'+CSI.me+'<span>'+esc(L("Nur meins"))+'</span></button>':'')+
      /* the original callsheet: its pages in the app, else the PDF in the Dropbox */
      (arr(x.pg).length&&typeof window.blkImg==="function"?'<button type="button" data-cspg="'+esc(x.date)+'" aria-label="'+esc(L("Original-Callsheet ansehen"))+'" title="'+esc(L("Original-Callsheet ansehen"))+'">'+CSI.doc+'<span>PDF</span></button>':
-      x.link?'<button type="button" data-cspdf="'+esc(safeUrl(x.link))+'" aria-label="'+esc(L("In Dropbox öffnen"))+'" title="'+esc(L("In Dropbox öffnen"))+'">'+CSI.doc+'<span>PDF</span></button>':'')+'</div><input id="csq" type="search" autocomplete="off" hidden placeholder="'+esc(L("Suchen: Name, Szene, Fahrzeug …"))+'"></div>'}
+      x.link?'<button type="button" data-cspdf="'+esc(safeUrl(x.link))+'" aria-label="'+esc(L("In Dropbox öffnen"))+'" title="'+esc(L("In Dropbox öffnen"))+'">'+CSI.doc+'<span>PDF</span></button>':'')+'</div><input id="csq" type="search" autocomplete="off"'+(window.CSQV?' value="'+esc(CSQV)+'"':' hidden')+' placeholder="'+esc(L("Suchen: Name, Szene, Fahrzeug …"))+'"></div>'}
   return JB}
-function csSums(c){  const SU={};{const sm=a=>{a=a.filter(x=>x&&x[1]!==""&&x[1]!=null&&x[1]!==0);return a.length?'<span class="cscount">'+a.map(([k,v,d])=>'<span'+(d?' class="csdrop"':'')+'><b>'+esc(String(v))+'</b> '+(Array.isArray(k)?'<i class="lg">'+esc(k[0])+'</i><i class="sh">'+esc(k[1])+'</i>':esc(k))+'</span>').join("")+'</span>':''};
+function csSums(c,x){  const SU={};{const sm=a=>{a=a.filter(x=>x&&x[1]!==""&&x[1]!=null&&x[1]!==0);return a.length?'<span class="cscount">'+a.map(([k,v,d])=>'<span'+(d?' class="csdrop"':'')+'><b>'+esc(String(v))+'</b> '+(Array.isArray(k)?'<i class="lg">'+esc(k[0])+'</i><i class="sh">'+esc(k[1])+'</i>':esc(k))+'</span>').join("")+'</span>':''};
     const uniq=l=>new Set(l.map(x=>fold(String(x||"")).trim()).filter(Boolean)).size;
     
     {/* the numbers in the head of «Cast»: pink = On set, pink box = waiting at the Base for the pickup, grey = not called yet */
-     const stg={};if(window.cqStage)for(const r of csA(c.cast)){const n=String(r.no||"").trim();if(n)stg[n]=window.cqStage(Object.assign({},c,{_date:c._date||(typeof x!=="undefined"&&x&&x.date)||""}),r)}
+     const stg={};if(window.cqStage)for(const r of csA(c.cast)){const n=String(r.no||"").trim();if(n)stg[n]=window.cqStage(Object.assign({},c,{_date:c._date||(x&&x.date)||""}),r)}
      const nos=csA(c.cast).map(r=>String(r.no||"").trim()).filter(Boolean).sort((a,b)=>(parseInt(a,10)||0)-(parseInt(b,10)||0)||a.localeCompare(b));
      SU.cast=nos.length?'<span class="cscount csnos">'+nos.map(n=>'<span class="csno'+(stg[n]===3?' cqnon':stg[n]===0?' cqnwait':' cqnbase')+'">'+esc(n)+'</span>').join("")+'</span>':''}
     SU.travel=sm([[L("Personen"),csA(c.travel).filter(r=>!r.date||!c._date||r.date===c._date).length]]);
@@ -462,7 +480,7 @@ function csLocBody(l,LAD,HN,near){
 function csLocBox(c,l,date,NOW,NEAR){const mem=l._m||[l];const {DN,LAD}=csLocHead(c,l,date),code=csLocCode(l),isNow=mem.includes(NOW);const HN=csA(l.notes).map(String).filter(n=>CSHN_RE.test(n.trim()));
   const badge=code&&!l._m?csPlaceH(csBadgeIn(l,l._codes),csLocHref(l,c,date),l.kinds?l.no:code+' · Set','csloc-c '+(l.kinds?'csbase':'csmot')):'';
   const title=l._m?'<span class="dn csmset">'+l._m.map(m=>'<span><b class="csplace csmot">L'+esc(String(m.no||"").trim())+'</b> '+esc(m.name||"")+'</span>').join("")+'</span>':'<span class="dn">'+esc(DN)+'</span>';
-  const icons='<span class="csloc-i">'+[...new Set(mem.map(m=>csLocFp(c,m,date,true)))].join("")+(LAD?'':csMap(l.map))+CSEXP.replace('class="csexp"','class="csexp sm"')+'</span>';
+  const icons='<span class="csloc-i">'+[...new Set(mem.map(m=>csLocFp(c,m,date,true)))].join("")+(LAD?'':csMap(l.map))+CSEXPSM+'</span>';
   const addr=LAD?'<a class="csaddr" href="'+esc(safeUrl(l.map||csMapQ(LAD)))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" data-nobub="1">'+esc(LAD)+'</a>':'';
   const near=[].concat(...mem.map(m=>NEAR.get(m)||[])).filter((p,i,a)=>a.findIndex(y=>y.code===p.code&&y.u===p.u)===i).sort((a,b)=>a.d-b.d);
   return '<details class="dbox csloc'+(isNow?' csnowloc':'')+'"><summary><div class="csl1">'+badge+title+icons+'</div>'+addr+csLocScenes(c,l)+'</summary>'+csLocBody(l,LAD,HN,near)+'</details>'}
@@ -483,9 +501,9 @@ function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false||!vok("csmap"))return""
   {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const all=csRows(c),rows=all.filter(r=>r.sc);
    /* scene with start and end (= start of the next row of the shooting order) for the popup of a place */
    const span=r=>{const i=all.indexOf(r),a=hm(r.t),nx=all.slice(i+1).find(y=>hm(y.t));return [String(r.sc),a?a+(nx?"–"+hm(nx.t):""):""]};
-   const add=(u,code,name,sc,minor,link)=>{const g=geo[u];link=link||(/^https?:/.test(u||"")?u:"");if(!g||!Array.isArray(g)){if(!minor&&u&&!miss.some(x=>x.c===code))miss.push({c:code,n:name,s:sc||"",u:link,set:!minor});return}if(pts.some(x=>x.c===code&&x.p.join(",")===g.join(",")))return;
+   const add=(u,code,name,sc,minor,link)=>{const g=geo[u];link=link||(/^https?:/.test(u||"")?u:"");if(!(Array.isArray(g)&&g.length>=2&&isFinite(g[0])&&isFinite(g[1])&&g[0]!==null&&g[1]!==null)){   /* only real coordinates (else the whole map failed) */if(!minor&&u&&!miss.some(x=>x.c===code))miss.push({c:code,n:name,s:sc||"",u:link,set:!minor});return}if(pts.some(x=>x.c===code&&x.p.join(",")===g.join(",")))return;
      pts.push({p:g,c:code,n:name,s:sc||"",u:link,m:minor?1:0,r:gs[u]==="rough"||gs[u]==="near"?(gs[u]==="near"?2:1):0})};
-   let si=0;const BH=new Map();for(const l of csLocs(c)){const code=l.kinds?l.kinds.map(csKindCode).join("·"):"L"+String(l.no||"").trim();BH.set(code,csBadgeIn(l));
+   const BH=new Map();for(const l of csLocs(c)){const code=l.kinds?l.kinds.map(csKindCode).join("·"):"L"+String(l.no||"").trim();BH.set(code,csBadgeIn(l));
      /* a set without its own map link: its position under «loc:n» (address found by the updater) – every L is on the map */
      const key=l.kinds?l.map:csSetGeo(c,l)[0];
      const lr=l.kinds?[]:rows.filter(r=>csSceneLoc([l],r)===l);const sc=l.kinds?"":[...new Set(lr.map(r=>String(r.sc)))].join(", ")||csS(l.scenes);add(key,code,l.name||"",sc,0,csLocHref(l,c,x.date));
@@ -525,7 +543,6 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   /* jump bar (sticky) and search over the whole callsheet */
    JB=csJumpBar(c,x,me,null,t);
   /* head: as the top of the callsheet */
-  const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
   /* with «my day»: its red box carries the title (Mein Drehtag 1 · date), no head line on top */
   const mineN=me?csMine(c,me).length:0;const dtitle=(mineN?esc(L("Mein"))+' ':'')+esc(x.label||day.label||"Callsheet");
   if(!mineN)h+='<div class="dsp-head"><div><h2>'+dtitle+'</h2><div class="date drow"><span>'+fmtDate(x.date)+'</span>'+UNITBAR+'</div></div></div>';
@@ -546,7 +563,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   h+='<!--CASTPOS-->';   /* Maske / Kostüm: the cast right below «Mein Drehtag» */
   /* key people of the day */
   /* folded parts: sums and short facts in one line */
-   const SU=csSums(c);
+   const SU=csSums(c,x);
    h+=csTeamSec(c,x,me,SU,t);
   /* locations */
   /* locations: each one folds (name and map always visible), a button opens or closes all */
@@ -568,7 +585,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   const CC=csCols();
   if(c&&x&&x.date)c._date=x.date;   /* the day for the cast ticks */
   {const castH=csSec("Cast",(csA(c.cast).length?'<span class="cscols">'+[["role",L("Rolle")],["actor",L("Darsteller")]].map(([k,t])=>'<button type="button" class="cscol" data-cscol="'+k+'" aria-pressed="'+!CC.has(k)+'">'+esc(t)+'</button>').join("")+'</span>':'')+(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Kacheln":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>{const all=window.cqAll&&window.cqAll(c,r),pk=v=>all&&v?{h:'<span class="cqall" title="'+esc(L("Alle Schritte abgeschlossen"))+'">'+esc(v)+'</span>'}:v;   /* On set: number, role and name pink */
-    return [pk(r.no),pk(r.role),pk(r.actor),window.cqPickup?window.cqPickup(c,r)||r.pickup:r.pickup,window.cqCall?window.cqCall(c,r)||r.call:r.call,csMk(r.wardrobe,c,"w",r)||csDurT(r.wardrobe),csMk(r.makeup,c,"m",r),window.cqBase?window.cqBase(c,r)||r.base:r.base,window.cqOnset?window.cqOnset(c,r)||r.onset:r.onset]}),3,true),csCastOpen(c,me),(csCastMode()?"cs-astbl":"")+(CC.has("role")?" hide-role":"")+(CC.has("actor")?" hide-actor":""),"cast",SU.cast);if(csCmFirst(c,me)&&h.includes('<!--CASTPOS-->'))h=h.replace('<!--CASTPOS-->',castH);else h+=castH}
+    return [pk(r.no),pk(r.role),pk(r.actor),window.cqPickup?window.cqPickup(c,r)||r.pickup:r.pickup,window.cqCall?window.cqCall(c,r)||r.call:r.call,csMk(r.wardrobe,c,"w",r)||csDurT(r.wardrobe),csMk(r.makeup,c,"m",r)||csDurT(r.makeup),window.cqBase?window.cqBase(c,r)||r.base:r.base,window.cqOnset?window.cqOnset(c,r)||r.onset:r.onset]}),3,true),csCastOpen(c,me),(csCastMode()?"cs-astbl":"")+(CC.has("role")?" hide-role":"")+(CC.has("actor")?" hide-actor":""),"cast",SU.cast);if(csCmFirst(c,me)&&h.includes('<!--CASTPOS-->'))h=h.replace('<!--CASTPOS-->',castH);else h+=castH}
   h=h.replace('<!--CASTPOS-->','');
   /* travel of the cast: one line per person (name · how · from → to · note), the place as short code (L1, Base …) with the map */
    h+=csTravelSec(c,x,me,SU,t);
@@ -623,7 +640,9 @@ function csFilter(v){v=v||document.querySelector("#view .csview");if(!v)return;c
   v.querySelectorAll("details.cssec").forEach(d=>{const its=[...d.querySelectorAll(CSITEMS)];if(!q&&!mt){d.hidden=false;return}
     const vis=its.some(it=>!it.hidden);if(q){const ok=vis||hit(d.querySelector("summary").textContent);d.hidden=!ok;if(ok)d.open=true}else d.hidden=its.length>0&&!vis});
   v.querySelectorAll(".cscall").forEach(g=>{g.hidden=(!!q||!!mt)&&![...g.querySelectorAll(".cscall-r")].some(r=>!r.hidden)})}
-document.addEventListener("input",e=>{if(e.target&&e.target.id==="csq"){const jb=e.target.closest(".csjump"),nx=jb&&jb.nextElementSibling;csFilter(nx&&nx.classList.contains("csview")?nx:null)}});
+/* the search text stays when the page is drawn again (the minute redraw, a tick …) */
+window.CSQV="";csAfter(()=>{if(window.CSQV)try{csFilter()}catch(_){}});document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-dday]"))window.CSQV=""},true);   /* another day: a new search */
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="csq"){window.CSQV=String(e.target.value||"");const jb=e.target.closest(".csjump"),nx=jb&&jb.nextElementSibling;csFilter(nx&&nx.classList.contains("csview")?nx:null)}});
 csOn("click",e=>{const b=e.target.closest&&e.target.closest("[data-csmine],[data-cspdf]");if(!b)return;
   if(b.dataset.cspdf!=null){window.open(b.dataset.cspdf,"_blank","noopener");return}
   CSMINE=!CSMINE;try{localStorage.setItem("csmine:v1",CSMINE?"1":"0")}catch(_){}
@@ -638,7 +657,7 @@ function csPrevHTML(date){const p=csPrevFor(date);if(!p)return"";const ti=String
   /* «PREVISION - D2 Wednesday, 21st 2026 Extras: 12 Pages: 3 5/8 / Time Scree 03:30» → small tiles */
   const g=re=>{const m=ti.match(re);return m?m[1].trim():""};const ex=g(/Extras:\s*([\d]+)/i),pg=g(/Pages:\s*(\d+(?:\s+\d+\/\d+)?)/i),scr=g(/Time\s*Scree?n?\s*([\d:]+)/i);
   const rows=csA(p.pv.rows),first=rows.find(r=>hm(r.t)),scenes=rows.filter(r=>r.sc).length;
-  const tile=(k,v)=>v?'<div class="dt"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
+  const tile=csTile;
   return '<section class="dsec csprev"><h3 class="dh">'+esc(L("Vorschau"))+'</h3><p class="ghint">'+esc(L("aus dem Callsheet vom"))+' '+esc(fmtDate(p.from.date))+' · '+esc(L("Das eigene Callsheet folgt."))+'</p>'+
     '<div class="dtiles cstiles">'+tile(L("Beginn"),first?hm(first.t):"")+tile(cap(L("Szenen")),scenes?String(scenes):"")+tile("Pages",pg)+tile("Screen",scr)+tile(L("Komparsen"),ex)+'</div>'+csOrderRows(rows,date)+'</section>'}
 
@@ -690,7 +709,7 @@ csOn("click",e=>{const b=e.target.closest("[data-csmapgo]");if(!b)return;const b
   const go=()=>{const m=box.__map,mk=box.__mk&&box.__mk[+b.dataset.csmapgo];if(!m||!mk)return;m.setView(mk.getLatLng(),17);mk.openPopup()};
   if(box.__map)go();else{csMapInit(box);setTimeout(go,900)}});
 /* enlarge / shrink the map */
-csOn("click",e=>{const b=e.target.closest("[data-csmapbig]");if(!b)return;e.preventDefault();const w=b.closest(".csmapw");w.classList.toggle("big");document.body.classList.toggle("csmapopen",w.classList.contains("big"));
+csOn("click",e=>{const b=e.target.closest("[data-csmapbig]");if(!b)return;e.preventDefault();const w=b.closest(".csmapw");w.classList.toggle("big");
   const box=w.querySelector("[data-csmap]");setTimeout(()=>csMapFit(box),80)});
 
 /* cast: role and actor columns on/off (remembered on this device; both shown at first) */
@@ -701,8 +720,8 @@ csOn("click",e=>{const b=e.target.closest("[data-cscol]");if(!b)return;e.prevent
 /* cast of today: a pink frame around the time that is running now (P/UP, call, costume, make-up, base, on set) – in the table and in the cards */
 function csCastNow(){const sec=document.getElementById("cs-cast");if(!sec)return;sec.querySelectorAll(".csnowt").forEach(e=>e.classList.remove("csnowt"));
   if(!CSCUR||!CSCUR.date||typeof todayISO!=="function"||CSCUR.date!==todayISO())return;const tm=(CSCUR.c&&CSCUR.c.times)||{},w=hm(tm.wrap||"");
-  const now=csHM();if(w&&now>w)return;if(typeof scState==="function"&&scState(CSCUR.date,"wrap")===2)return;   /* after the wrap: no frame */
-  const span=el=>{const t=String(el.textContent||"").replace(/(\d{1,2})[.:](\d{2})/g,"$1:$2"),ms=t.match(/(?<!\d)\d{1,2}:\d{2}(?!\d)/g);if(!ms)return null;const a=hm(ms[0]),b=/[-–]/.test(t)&&ms.length>1?hm(ms[ms.length-1]):"";return {a,b}};
+  const now=csHM(),cc=hm(tm.crewCall||"");if(w&&now>w&&!(cc&&w<cc))return;   /* a wrap after midnight (earlier than the crew call) is tomorrow */if(typeof scState==="function"&&scState(CSCUR.date,"wrap")===2)return;   /* after the wrap: no frame */
+  const span=el=>{const t=String(el.textContent||"").replace(/(\d{1,2})[.:](\d{2})/g,"$1:$2"),ms=(t.match(/(?:^|\D)\d{1,2}:\d{2}(?!\d)/g)||[]).map(x=>x.replace(/^\D/,""));if(!ms.length)return null;   /* no look-behind: older iPhones (iOS < 16.4) can not read it – the whole app would not start */const a=hm(ms[0]),b=/[-–]/.test(t)&&ms.length>1?hm(ms[ms.length-1]):"";return {a,b}};
   const mark=cells=>{let best=null;for(const el of cells){const s=span(el);if(!s||!s.a||s.a>now)continue;if(s.b&&s.a<=now&&now<s.b){best=el;break}if(!best||s.a>=span(best).a)best=el}if(best)best.classList.add("csnowt")};
   sec.querySelectorAll(".cs-tbl tbody tr").forEach(tr=>mark([...tr.children].slice(3)));
   sec.querySelectorAll(".cs-card").forEach(cd=>mark([...cd.querySelectorAll(".cs-kv")]))}
@@ -714,7 +733,7 @@ csOn("click",async e=>{const b=e.target.closest("[data-rideall]");if(!b||typeof 
   const x=(S.dispos||[]).find(y=>y&&y.date===date);const rs=csA(x&&x.cs&&x.cs.transport);if(!rs.length)return;
   if(!confirmSafe(L("Alle {n} Fahrten vom {d} als erledigt markieren?").replace("{n}",rs.length).replace("{d}",date.split("-").reverse().join("."))))return;
   b.disabled=true;try{const {F,db}=await fb();const bt=F.writeBatch(db);const now=Date.now();const ids=[...new Set(rs.map(r=>rideId(date,r)).filter(Boolean))];
-    for(const id of ids){bt.set(F.doc(db,"rideack",id),{d:date,at:now,s:2});if(window.RIDEACK&&window.RIDEACK["v"+id])bt.delete(F.doc(db,"rideack","v"+id))}   /* «on the way» ends too */
+    for(const id of ids){bt.set(F.doc(db,"rideack",id),{d:date,at:now,s:2});bt.delete(F.doc(db,"rideack","v"+id))}   /* «on the way» ends too */
     await bt.commit();window.RIDEACK=window.RIDEACK||{};for(const id of ids){window.RIDEACK[id]={d:date,at:now,s:2};delete window.RIDEACK["v"+id]}
     if(typeof savedPop==="function")savedPop(true);render()}
   catch(err){b.disabled=false;showMsg(saveErr(err),5000)}});
