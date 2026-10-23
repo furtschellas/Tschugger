@@ -1027,11 +1027,17 @@ html body #view .cast span.cqlk3 i{color:var(--accent)}
 /* cast tile On set: everything grey (labels and plain times too) – only number, role, name (pink) and the On set time (tick time) stand out */
 html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cqall) .cs-kv :is(.k,.v){color:var(--muted)}
 html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cqall) .cs-kv:last-child .k{color:inherit}
-/* extras tiles on the phone (same look as the cast): count + role · Call over the whole line · Kostüm + Maske · On set */
+/* extras tiles on the phone (same look as the cast): count + role · Call + On set · Kostüm + Maske (the table keeps its column order) */
 @media (max-width:760px){
 html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(n) .k{margin-left:0}
-html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(2) .v{grid-column:2/-1}
-html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(4) .k{margin-left:6px}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(2) .k{grid-row:2;grid-column:1}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(2) .v{grid-row:2;grid-column:2}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(5) .k{grid-row:2;grid-column:3;margin-left:6px}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(5) .v{grid-row:2;grid-column:4}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(3) .k{grid-row:3;grid-column:1}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(3) .v{grid-row:3;grid-column:2}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(4) .k{grid-row:3;grid-column:3;margin-left:6px}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(4) .v{grid-row:3;grid-column:4}
 }
 /* «Wie viele sind da?» (Call of a group of extras) */
 #xqpick .xqn{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
