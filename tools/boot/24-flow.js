@@ -142,7 +142,7 @@ const CQRULE={
     const tip=cur?L("Erledigt – antippen = zurücksetzen")+" · "+L("geplant")+" "+r.onset:L("Offen – antippen = erledigt");if(!cqCan("o"))return cqSpan(cur,t,tip).replace('class="cql ','class="cql cqon ');
     return cqBtn(cur,"o",oid,m.d,t,tip,{nx:cur?0:2,lk:m.bid,ls:cur?(m.baseDone?2:0):3}).replace('class="cql ','class="cql cqon ')}};
 const CQF={p:"pickup",c:"call",b:"base",o:"onset"};
-function cqField(f,c,r){if(!c||!c._date||!r)return null;const v=r[CQF[f]];if(f==="o"?!cqOk(r):!hm(v))return null;let h=null;try{h=CQRULE[f](cqModel(c,r),r,String(v))}catch(_){}return h?{h}:null}
+function cqField(f,c,r){if(!c||!c._date||!r)return null;const v=r[CQF[f]];if(f==="o"?!cqOk(r):!hm(v))return null;let h=null;try{h=CQRULE[f](cqModel(c,r),r,String(v))}catch(_){}if(h&&f==="p")h=h.replace('class="cql ','class="cql cqpu ');return h?{h}:null}   /* cqpu: P/UP – no pink frame of the tile */
 window.cqPickup=(c,r)=>cqField("p",c,r);window.cqCall=(c,r)=>cqField("c",c,r);window.cqBase=(c,r)=>cqField("b",c,r);window.cqOnset=(c,r)=>cqField("o",c,r);
 /* Kostüm / Maske in the callsheet (csMk): done once Base or On set is done */
 window.cqRowDone=(c,r)=>{if(!c||!c._date||!r)return false;const m=cqModel(c,r);return m.onDone||m.baseDone};
