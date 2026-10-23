@@ -140,7 +140,9 @@ def class_collisions():
     for f in sorted((ROOT / "tools" / "boot").glob("*.js")) + [ROOT / "tools" / "app.html", ROOT / "tools" / "a2hs.js"]:
         s = f.read_text()
         for m in re.finditer(r"""class(?:Name)?\s*=\s*\\?["']([^"'<>]{1,200})["']""", s):
-            for c in re.findall(r"[a-zA-Z][\w-]*", m.group(1)): use[c].add(f.stem)
+            # parts of one module («12a-admin-core», «12c-admin-users» …) count as the same module
+            mod = (re.match(r"(\d+)[a-z]?-", f.stem) or [None, f.stem])[1]
+            for c in re.findall(r"[a-zA-Z][\w-]*", m.group(1)): use[c].add(mod)
     return {c: sorted(v) for c, v in use.items() if len(v) > 1 and c not in SHARED}
 
 
