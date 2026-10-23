@@ -59,6 +59,11 @@ if _sh.which("node"):   # a syntax error in one part stops the whole app: check 
     _T = pathlib.Path(__file__).resolve().parent.parent / "tools"
     _bad = [f.name for f in sorted(list((_T / "boot").glob("*.js")) + list((_T / "base").glob("*.js"))) if _sp.run(["node", "--check", str(f)], capture_output=True).returncode]
     check("App-Teile (tools/base, tools/boot) ohne Syntaxfehler", not _bad, _bad)
+# known bug patterns (duplicate keys, unreachable code, look-behind regex that stops older iPhones …) – tests/eslint.json
+_esl = _sh.which("eslint")
+if _esl and _sp.run([_esl, "--version"], capture_output=True, text=True).stdout.strip().startswith("v8."):   # the CI installs eslint@8 (config format of tests/eslint.json)
+    _r = _sp.run([_esl, "--no-eslintrc", "-c", str(_T.parent / "tests" / "eslint.json"), "--format", "unix"] + [str(f) for f in sorted(list((_T / "base").glob("*.js")) + list((_T / "boot").glob("*.js")))], capture_output=True, text=True)
+    check("App-Teile: keine bekannten Fehlermuster (ESLint)", _r.returncode == 0, [l.split("/")[-1][:160] for l in _r.stdout.splitlines() if l.strip()][:8])
 _sf = lambda n, m="2026-10-01": {"name": n, "modified": m}
 _fs = [_sf("01_Script/261017_Tschugger_Tigerblood_v13 CLEAN.pdf"), _sf("01_Script/261017_Tschugger_Tigerblood_v13.pdf"), _sf("01_Script/Tschugger Script Changelog v13 261017.pdf"),
        _sf("01_Script/250901_Tschugger_Tigerblood_v12 CLEAN.pdf"), _sf("01_Script/English translation v12/Tschugger_v12 EN.pdf"), _sf("01_Script/Tschugger_v14 SPP.pdf")]
