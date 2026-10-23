@@ -1,7 +1,7 @@
 /* ========== Ablauf: Fahrten und Cast auf einer Ebene ==========
    One store for every tick (rideack/{id}, id = check sum, no names: {d date, at ms, s 1 running / 2 done}), one way to write it,
    one tap handler – used by the rides (callsheet, Meine Termine, Fahrten Manager), the cast table and Kostüm / Maske in Meine Termine.
-     1. store      FLOW (=window.RIDEACK), flowSt, flowAt, flowPut, loading
+     1. store      FLOW (=window.RIDEACK), flowSt, flowAt, flowPut, live loading
      2. rights
      3. rides      three steps: 1 driver on site · 2 on the way (car) · 3 done
      4. cast       Kostüm / Maske entries, the rules of a cast row
@@ -24,7 +24,7 @@
    Everybody who sees the callsheet sees the states. */
 
 /* ---------- 1. store ---------- */
-window.RIDEACK=window.RIDEACK||{};let RIDEAT=0,RIDEBUSY=false;
+window.RIDEACK=window.RIDEACK||{};
 /* state of a tick: 0 open, 1 running, 2 done (old entries without s count as done) · when it was set (ms) */
 const flowSt=id=>{const x=window.RIDEACK[id];return x?(x.s===1?1:2):0};
 const flowAt=id=>{const x=window.RIDEACK[id];return x&&+x.at||0};
@@ -36,12 +36,19 @@ const FLOWMINE=new Map();
 async function flowPut(id,date,s){if(!id)return;const {F,db}=await fb();const ref=F.doc(db,"rideack",id);
   if(!s){await F.deleteDoc(ref);delete window.RIDEACK[id];FLOWMINE.set(id,{t:Date.now(),v:null})}
   else{const v={d:date,at:Date.now(),s};await F.setDoc(ref,v);window.RIDEACK[id]=v;FLOWMINE.set(id,{t:Date.now(),v})}}
-/* load from the first callsheet of the last 60 days on (not only today): ticks of past shooting days must not disappear on reload */
-async function rideAckLoad(force){if(RIDEBUSY||typeof ME==="undefined"||!ME||(!force&&Date.now()-RIDEAT<120e3))return;RIDEBUSY=true;RIDEAT=Date.now();const t0=Date.now();
-  try{const {F,db}=await fb();const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;
-    const s=await F.getDocs(F.query(F.collection(db,"rideack"),F.where("d",">=",from)));const m={};s.forEach(x=>{m[x.id]=x.data()});
-    for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}   /* own taps during the loading win */
-    const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}catch(_){}RIDEBUSY=false}
+/* the ticks live: a subscription on rideack (what someone taps shows on every device within a second) – from the first callsheet of the
+   last 60 days on (ticks of past shooting days must not disappear); renewed when that day changes; without live updates (tests, old
+   browser) every 2 minutes as before. Own taps win for a moment over an answer that was already on its way. */
+let RIDEAT=0,RIDEBUSY=false,ACKSUB=null,ACKFROM="";
+const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
+function ackApply(m,t0){for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}
+  const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}
+async function rideAckLoad(force){if(typeof ME==="undefined"||!ME)return;const from=ackFrom();if(ACKSUB&&ACKFROM===from)return;
+  try{const {F,db}=await fb();const q=F.query(F.collection(db,"rideack"),F.where("d",">=",from));
+    if(typeof F.onSnapshot==="function"){if(ACKSUB&&ACKFROM===from)return;if(typeof ACKSUB==="function")ACKSUB();ACKFROM=from;ACKSUB="…";
+      ACKSUB=F.onSnapshot(q,snap=>{const t0=Date.now(),m={};(snap.docs||[]).forEach(x=>{m[x.id]=x.data()});ackApply(m,t0)},err=>{console.warn("rideack",err&&err.code||err);ACKSUB=null;ACKFROM=""});return}
+    if(RIDEBUSY||(!force&&Date.now()-RIDEAT<120e3))return;RIDEBUSY=true;RIDEAT=Date.now();const t0=Date.now();
+    const snap=await F.getDocs(q);const m={};snap.forEach(x=>{m[x.id]=x.data()});ackApply(m,t0)}catch(err){if(ACKSUB==="…")ACKSUB=null}RIDEBUSY=false}
 /* after a tick: draw again without moving the page (the open parts and the scroll position stay) */
 /* … and the tapped row (cast tile, table row, appointment) stays exactly where it was on the screen, even when parts above it grow or shrink */
 const CQROW="#view .cs-card,#view tr,#view .mci";
@@ -220,7 +227,7 @@ document.addEventListener("click",e=>flowClick(e,"[data-rideack]",false));
 setInterval(()=>{for(const s of document.querySelectorAll(".cqcd[data-cqat]")){const v=(s.dataset.cqup?Math.max(0,Math.floor((Date.now()-s.dataset.cqat)/60000)):cqLeft(+s.dataset.cqat,+s.dataset.cqmin))+"′";if(s.textContent!==v)s.textContent=v}},20000);
 /* load when «Meine Termine», Today or the callsheet is shown (at most every 2 minutes) */
 document.addEventListener("click",e=>{if(e.target.closest('[data-tab="my"],[data-tab="today"],[data-tab="dispo"],[data-tomy]'))setTimeout(()=>rideAckLoad(false),50)});
-setTimeout(()=>rideAckLoad(true),4000);setInterval(()=>{if(S.tab==="my"||S.tab==="today"||S.tab==="dispo")rideAckLoad(false)},120e3);
+setTimeout(()=>rideAckLoad(true),4000);setInterval(()=>{if(ACKSUB||S.tab==="my"||S.tab==="today"||S.tab==="dispo")rideAckLoad(false)},30e3);   /* live: only checks the start day / a lost subscription */
 document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))return;e.preventDefault();window.SHOWDONE=!window.SHOWDONE;render()});
 /* the callsheet greys a ride 20 minutes after it was done – and follows «jetzt hier» and «Jetzt» in my day: draw again when one changes */
 {let OLDN=-1;setInterval(()=>{if(S.tab!=="dispo")return;const n=Object.values(window.RIDEACK||{}).filter(x=>x&&x.s!==1&&Date.now()-(+x.at||0)>20*60e3).length;let nk=null;try{const C=typeof CSCUR!=="undefined"&&CSCUR.c;if(C&&window.CSNOWK!=null){const l=csNowLoc(C,CSCUR.date,csLocs(C));nk=l?l.no+'|'+l.name:''}}catch(_){}
