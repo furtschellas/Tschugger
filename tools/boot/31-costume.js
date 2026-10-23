@@ -51,11 +51,11 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
    Call done or Kostüm/Maske started → P/UP done (Kostüm/Maske started: Call too).
    Rights: Kostüm «Kostüm quittieren» (wardrobe.ack), Maske «Maske quittieren» (makeup.ack), Call / Base / On set either of them or
    «Cast manuell quittieren» (cast.manual: also Base and On set before Kostüm and Maske are done); P/UP «Fahrten quittieren» or cast.manual.
-   «Cast-Quittierungen sehen» (cast.see): without it (and without a right to tick) only the plain times. ---------- */
+   Everybody who sees the callsheet sees the states. ---------- */
 const cqCanRide=()=>{try{return canPerm("rides.confirm")||canPerm("rides.manage")}catch(_){return false}};
 const cqMan=()=>{try{return typeof canPerm==="function"&&canPerm("cast.manual")}catch(_){return false}};
 const cqCan=k=>k==="u"?cqCanRide()||cqMan():k==="w"||k==="m"?cmCan(k):cmCan(k)||cqMan();
-window.cqSee=()=>{try{return typeof canPerm==="function"&&(canPerm("cast.see")||canPerm("wardrobe.ack")||canPerm("makeup.ack")||canPerm("cast.manual")||canPerm("rides.confirm")||canPerm("rides.manage"))}catch(_){return false}};
+window.cqSee=()=>true;   /* everybody who sees the callsheet sees the state of the cast */
 const CQTIP3=()=>[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")];
 const CQCAR='<svg class="cqcar" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h11l3 5h2v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M9.5 17h5M5 12h14"/></svg>';
 const cqSpan=(st,t,tip,x)=>'<span class="cql cq'+st+(x?" "+x:"")+' cqro" title="'+esc(tip)+'">'+esc(t)+'</span>';
