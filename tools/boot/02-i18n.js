@@ -1319,6 +1319,8 @@ Object.assign(I18N,{
  "Fahrer wartet seit":{fr:"Le chauffeur attend depuis",it:"L'autista aspetta da",en:"Driver waiting for"},
  "Wartet auf die Abholung seit":{fr:"Attend d'être pris en charge depuis",it:"Aspetta di essere prelevato da",en:"Waiting for pickup for"},
  "Name der Option":{fr:"Nom de l'option",it:"Nome dell'opzione",en:"Name of the option"},
+ "Kostüm/Maske läuft":{fr:"Costume/maquillage en cours",it:"Costumi/trucco in corso",en:"Costume/make-up running"},
+ "Wartet auf Kostüm/Maske":{fr:"Attend costume/maquillage",it:"Aspetta costumi/trucco",en:"Waiting for costume/make-up"},
  "Restzeit":{fr:"Temps restant",it:"Tempo rimanente",en:"Time left"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},

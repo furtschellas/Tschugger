@@ -7,7 +7,7 @@ const fold=t=>String(t||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").to
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));const L=x=>x;const S={tab:""};const ME=null;const csAfter=()=>{};const todayISO=()=>"2031-03-02";
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=>{PERMS=p};`;
-const C={console,document:{addEventListener(){},querySelectorAll:()=>[]},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
+const H=[];const C={console,document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
 vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-rides.js"),"utf8")+"\n"+fs.readFileSync(path.join(ROOT,"tools/boot/31-costume.js"),"utf8")+";globalThis.T={p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep}",C);
 const T=C.T,D="2031-03-02";
 const cs={_date:D,calls:[{name:"Anna Probe"},{name:"Mara Test"}],crewTransport:[],
@@ -36,6 +36,7 @@ t("Call angetippt → Call aktiv, P/UP abgeschlossen, Auto weg",W,Object.assign(
 t("Call aktiv, dann Kostüm angenommen → Call abgeschlossen",W,{[id(R1,"c","07:00")]:1,[id(R1,"w","07:05")]:1},R1,"cq2 cq2 plain plain");
 t("Kostüm läuft → P/UP und Call abgeschlossen",W,{[id(R1,"w","07:05")]:1},R1,"cq2 cq2 plain plain");
 t("Maske läuft → P/UP und Call abgeschlossen",W,{[id(R1,"m","07:20")]:1},R1,"cq2 cq2 plain plain");
+t("Kostüm erledigt, Maske noch offen → Call wieder aktiv (Cast wartet)",W,{[id(R1,"w","07:05")]:2},R1,"cq2 cq1 plain plain");
 t("Kostüm und Maske fertig → Base läuft, On set offen",W,{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"cq2 cq2 cq1+tap cq0+tap");
 tap("Base antippen = erledigt, Fahrt Base → Set unterwegs",W,{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"b","nx=2 ride=base-set step=2");
 t("Base quittiert → alle vorherigen abgeschlossen, Auto hinter Base, On set offen",W,Object.assign({[id(R1,"b","07:45")]:2},ride(sr,2)),R1,"cq2 cq2 cq2+tap+car cq0+tap rowdone");
@@ -54,4 +55,10 @@ t("ohne Recht: Base quittiert sichtbar",[],{[id(R1,"b","07:45")]:2},R1,"cq2 cq2 
   C.RIDEACK={[id(R1,"w","07:05")]:{s:2,at:now-9*60000},[id(R1,"m","07:20")]:{s:2,at:now-4*60000}};a("Base aktiv seit 4 Min. → Wartezeit zählt hoch",(()=>{const h=(T.b(cs,R1)||{}).h||"";return /data-cqup/.test(h)?"up "+(h.match(/>(\d+)′</)||[])[1]:"none"})(),"up 4");
   set(W,{});C.RIDEACK={[pr]:{s:1,at:now},["v"+pr]:{s:1,at:now-5*60000}};a("Fahrzeug unterwegs seit 5 Min. → Countdown 10",(()=>{const h=(T.p(cs,R1)||{}).h||"";return /cqcd/.test(h)?"countdown "+(h.match(/>(\d+)′</)||[])[1]:"none"})(),"countdown 10");
   a("Fahrt abgeschlossen → kein Countdown",dt(ride(pr,3)),"none")}
+/* a tap: Kostüm starts while Maske still runs → Maske is done */
+await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:async(i,v)=>{W2.push(i+"="+v.s)},deleteDoc:async i=>{W2.push(i+"=0")}}});
+  set(W,{[id(R1,"m","07:20")]:1});const wid=id(R1,"w","07:05"),mid=id(R1,"m","07:20");
+  const btn={dataset:{cqk:"w",cqid:wid,cqd:D},disabled:false,closest:q=>q==="[data-cqk]"?btn:q==="tr,.cs-card"?{querySelectorAll:()=>[{dataset:{cqwm:mid}}]}:null};
+  for(const f of H)await f({target:{closest:q=>q==="[data-cqk]"?btn:null},preventDefault(){},stopPropagation(){}});await new Promise(r=>setTimeout(r,20));
+  const got=W2.sort().join(" "),want=[mid+"=2",wid+"=1"].sort().join(" ");out.push({n:"Kostüm angetippt, Maske läuft noch → Maske abgeschlossen",ok:got===want,got,want})})();
 for(const x of out)console.log(JSON.stringify(x));
