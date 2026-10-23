@@ -1,5 +1,5 @@
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false,PREFOK=false;const PREFX=["rc","scrv","csb"];
+const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false,PREFOK=false;const PREFX=["rc","scrv","csb","iconhint"];
 /* the notices of p.x (or the older single fields) */
 const prefX=p=>{let x={};try{x=JSON.parse(p&&p.x||"{}")||{}}catch(_){}for(const k of PREFX)if(typeof(p&&p[k])==="string"&&x[k]==null)x[k]=p[k];return x};
 {const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}}}
@@ -25,7 +25,7 @@ function applyPrefs(p){
   if(!p||typeof p!=="object")return;PREFAPPLY=true;
   try{
     for(const k of PREFKEYS)if(typeof p[k]==="string")try{localStorage.setItem(k,p[k])}catch(_){}
-    {const x=prefX(p);for(const k of ["rc","scrv","csb"])if(typeof x[k]==="string")try{localStorage.setItem(k,x[k])}catch(_){}}
+    {const x=prefX(p);for(const k of PREFX)if(typeof x[k]==="string")try{localStorage.setItem(k,x[k])}catch(_){}}
     const js=k=>{try{return JSON.parse(p[k])}catch(_){return null}};
     for(const [k,o] of [["pv",S.pv],["sv",S.sv],["lv",S.lv]]){const x=js(k);if(x&&typeof x==="object")for(const i in o)if(typeof x[i]==="boolean")o[i]=x[i]}
     for(const k of ["uf","pu"]){const x=js(k);if(x&&typeof x==="object")S[k]=Object.assign({},S[k],...["1","2","3"].filter(u=>typeof x[u]==="boolean").map(u=>({[u]:x[u]})))}

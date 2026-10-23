@@ -1,9 +1,9 @@
 /* Service worker: app files load fresh from the network when online and from the cache when offline
    (film locations often have no reception). The crew data file is never cached here – the app keeps
    its own last copy – and nothing from Firebase sign-in or the database is cached. */
-const CACHE="crew-app-v9";
+const CACHE="crew-app-v10";
 const PAGES_MAX=4000;   /* PDF pages and floorplans kept for offline use: at most this many, the oldest go first */
-const SHELL=["./","index.html","manifest.webmanifest","clap.svg","fav.svg","fav-32.png","clap-180.png","clap-192.png","clap-512.png","clap-maskable-512.png","n-termin.png","n-change.png","n-push.png"];
+const SHELL=["./","index.html","manifest.webmanifest","clap.svg","fav.svg","fav-32.png","clap-180.png","clap-192.png","clap-512.png","clap-maskable-512.png","n-termin.png","badge-96.png","n-change.png","n-push.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=="crew-vc"&&k!=="crew-good").map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 let TRIMT=null;
@@ -52,8 +52,10 @@ self.addEventListener("fetch",e=>{
 const pushIcon=d=>d.icon==="termin"||d.icon==="change"||d.icon==="push"?"n-"+d.icon+".png":String(d.tag||"").startsWith("b")?(d.kind?"n-change.png":"n-push.png"):"n-termin.png";
 self.addEventListener("push",e=>{let d={};try{d=e.data?e.data.json():{}}catch(_){d={body:e.data&&e.data.text()}}
   /* shown as a pop-up (heads-up) banner: high urgency is set by the sender; it stays until it is tapped or swiped away */
-  const opt={body:d.body||"",tag:d.tag||undefined,renotify:!!d.tag,requireInteraction:true,silent:false,vibrate:[200,100,200],timestamp:Date.now(),icon:pushIcon(d),badge:"clap-192.png",data:{url:d.url||"./#my"}};
+  const opt={body:d.body||"",tag:d.tag||undefined,renotify:!!d.tag,requireInteraction:true,silent:false,vibrate:[200,100,200],timestamp:Date.now(),icon:pushIcon(d),badge:"badge-96.png",data:{url:d.url||"./#my"}};
   e.waitUntil(Promise.all([self.registration.showNotification(d.title||"TSCHUGGER",opt),
     self.clients.matchAll({type:"window",includeUncontrolled:true}).then(cs=>cs.forEach(c=>c.postMessage({push:{title:d.title||"",body:d.body||"",url:d.url||""}})))]))});
 self.addEventListener("notificationclick",e=>{e.notification.close();const url=new URL((e.notification.data&&e.notification.data.url)||"./#my",self.registration.scope).href;
+  /* a ride reminder: the route in Google Maps (outside the app) opens directly */
+  if(!url.startsWith(self.registration.scope)){if(/^https:\/\//.test(url))e.waitUntil(self.clients.openWindow(url));return}
   e.waitUntil(self.clients.matchAll({type:"window",includeUncontrolled:true}).then(cs=>{for(const c of cs){if(c.url.startsWith(self.registration.scope)&&"focus" in c){c.postMessage({open:url});return c.focus()}}return self.clients.openWindow(url)}))});

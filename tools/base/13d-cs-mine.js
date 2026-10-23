@@ -8,6 +8,8 @@ function csDWords(t){const w=fold(String(t||"")).split(/[^a-z0-9]+/).filter(x=>x
 function csCmFirst(c,me){try{if(!me)return false;const w=csMyWords(c,me);return ["makeup","maske","costume","kostum","wardrobe"].some(x=>w.has(x))}catch(_){return false}}
 /* the cast part is always open for AL/AD (Aufnahmeleitung, Regieassistenz), the role Crew 1AD, drivers, Maske and Kostüm */
 /* the rides open by default for the role «Fahrer» and for whoever drives on this day */
+/* role «Komparsen» / «Extras»: the extras of the callsheet always open (like the rides for drivers) */
+function csExOpen(){try{return typeof MYROLE!=="undefined"&&/kompars|extras?\b|statist/i.test((MYROLE||"")+" "+(window.MYROLENAME||""))}catch(_){return false}}
 function csTransOpen(c,me){try{if(typeof MYROLE!=="undefined"&&/fahrer|driver/i.test(MYROLE||""))return true;return csIDrive(c,me)}catch(_){return false}}
 function csCastOpen(c,me){try{if(typeof MYROLE!=="undefined"&&/1ad/i.test(MYROLE||""))return true;if(!me)return false;
   if(csIDrive(c,me))return true;
