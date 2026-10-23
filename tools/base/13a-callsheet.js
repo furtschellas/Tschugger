@@ -341,6 +341,8 @@ function csDWords(t){const w=fold(String(t||"")).split(/[^a-z0-9]+/).filter(x=>x
 /* Maske and Kostüm see the cast right after «Mein Drehtag» */
 function csCmFirst(c,me){try{if(!me)return false;const call=csA(c.calls).find(r=>me.hit(r.name)),w=new Set([...csDWords(call&&call.dept),...csDWords(me.dep)]);return ["makeup","maske","costume","kostum","wardrobe"].some(x=>w.has(x))}catch(_){return false}}
 /* the cast part is always open for AL/AD (Aufnahmeleitung, Regieassistenz), the role Crew 1AD, drivers, Maske and Kostüm */
+/* the rides open by default for the role «Fahrer» and for whoever drives on this day */
+function csTransOpen(c,me){try{if(typeof MYROLE!=="undefined"&&/fahrer|driver/i.test(MYROLE||""))return true;return !!me&&csA(c.transport).some(r=>me.hit(r.driver))}catch(_){return false}}
 function csCastOpen(c,me){try{if(typeof MYROLE!=="undefined"&&/1ad/i.test(MYROLE||""))return true;if(!me)return false;
   if(csA(c.transport).some(r=>me.hit(r.driver)))return true;
   const call=csA(c.calls).find(r=>me.hit(r.name)),w=new Set([...csDWords(call&&call.dept),...csDWords(call&&call.role),...csDWords(me.dep)]);
@@ -575,9 +577,9 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   h+=csSec(L("Transport mit Fahrer"),allDone+csTvBtn("trans")+(c.drivers?'<div class="csdrvl">'+String(c.drivers).replace(/o\.\s*p\.\s*D\.?\s*=\s*on personal decision/i,"").split(/\s*[|\n;]\s*/).filter(x=>x.trim()).map(x=>{const m=x.match(CSPH);let nm=m?x.replace(m[0],"").trim():x.trim();
       /* a number without a name (forgotten on the callsheet): the name from other callsheets or the crew list with that number */
       if(!nm&&m)nm=csDriverByPhone(m[0]);
-     return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRideCell(x.date,r),r.vehicle,r.driver,r.passengers]),1),false,csTvCls("trans"),"trans",SU.trans);
+     return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRideCell(x.date,r),r.vehicle,r.driver,r.passengers]),1),csTransOpen(c,me),csTvCls("trans"),"trans",SU.trans);
   /* information by department */
-  h+=csSec(L("Transport Crew"),csTvBtn("ctrans")+csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,csRoute(r.from,r.t1,r.to,r.t2),r.people])   /* crew transport: no confirmation */,1),false,csTvCls("ctrans"),"ctrans",SU.ctrans);
+  h+=csSec(L("Transport Crew"),csTvBtn("ctrans")+csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,csRoute(r.from,r.t1,r.to,r.t2),r.people])   /* crew transport: no confirmation */,1),csTransOpen(c,me),csTvCls("ctrans"),"ctrans",SU.ctrans);
   h+=csSec([L("Infos nach Abteilung"),L("Infos nach Dept.")],csA(c.depts).filter(r=>String(r.text||"").trim()).map(r=>'<div class="csdep'+(csMyDept(c,me,r.dept)?' mine':'')+'"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text)+'</div></div>').join(""),false,"","dept",SU.dept);
   /* the preview (PREVISION) is shown only on the next day (csPrevHTML) */
   /* calls on set */
