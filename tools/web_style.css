@@ -1009,10 +1009,10 @@ html body #view .csno.cqnon{color:var(--accent)!important;border-color:var(--acc
 html body #view .csno.cqnwait{color:var(--muted)!important;opacity:.6}
 html body #view .csno.cqnbase{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
 html body #view .csno.cqnon{border-width:1.5px!important}
-/* cast tiles on the phone (the grid «label | time | label | time» is above): the car left of the time, times never broken */
+/* cast tiles on the phone (the grid «label | time | label | time» is above): time, minutes, car – times never broken */
 @media (max-width:760px){
 html body #view .csview #cs-cast .cs-card .cs-kv .v{display:flex;align-items:center;flex-wrap:wrap;gap:0 4px;min-width:0}
-html body #view .csview #cs-cast .cs-card .cs-kv .v .cqcar{order:-1;margin:0}
+html body #view .csview #cs-cast .cs-card .cs-kv .v .cqcar{margin:0 0 0 2px}   /* the car behind the minutes */
 html body #view .csview #cs-cast .cs-card .cs-kv .v>.mkw{display:inline-flex;align-items:center;gap:4px}
 }
 @media (max-width:760px){
