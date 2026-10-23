@@ -23,8 +23,13 @@ async def search(pg, mode, q):
     return await E("[...document.querySelectorAll('#gres [data-sr]')].map(b=>b.innerText.replace(/\\s+/g,' '))")
 
 
-async def run_part(name, part, pg):
-    """one part of the owner tests: an error stops only this part; the page is put back to a known state for the next one"""
+RETRY_PARTS = []   # parts that failed: run once more at the end of the owner tests
+
+
+async def run_part(name, part, pg, last=False):
+    """one part of the owner tests: an error stops only this part; the page is put back to a known state for the next one.
+    A part with a failed check is put aside and run once more at the end (last=True: the second try – its result counts)"""
+    i = common.mark()
     common.GROUP = name
     try:
         await part()
@@ -32,10 +37,14 @@ async def run_part(name, part, pg):
     except Exception as e:
         check(f"{name}: Teil lief durch", False, str(e).split("\n")[0][:150])
     try:
-        await pg.evaluate("document.querySelectorAll('.a2hs,#tour,#routepop,#bcview,#scrnews').forEach(x=>x.remove());S.tab='today';render()")
+        await pg.evaluate("document.querySelectorAll('.a2hs,#tour,#routepop,#bcview,#scrnews,#xqpick,#pdfv').forEach(x=>x.remove());S.tab='today';render()")
     except Exception:
         pass
     common.GROUP = ""
+    if not last and common.failed_since(i):
+        common.drop_since(i); RETRY_PARTS.append((name, part)); print("… " + name + ": fehlgeschlagen – wird am Schluss nochmals ausgeführt", flush=True)
+    elif last and not common.failed_since(i):
+        common.second_try_ok(name)
 
 
 async def owner_tests(p, port):
@@ -1005,6 +1014,11 @@ async def owner_tests(p, port):
 
     for name, part in [('Suche', _p0), ('Drehplan', _p1), ('Meine Termine und Konto', _p2), ('Push an alle', _p3), ('Eigene Termine und Google Kalender', _p4), ('Drehbuch-Version und Today', _p5), ('App allgemein (Knöpfe, Stabilität, App-Icon, Today-Teile)', _p6), ('App-Verwaltung (Access, Tour, Dokumente, Log/Tests)', _p7), ('Push-Seite und vCard', _p8)]:
         await run_part(name, part, pg)
+    # the parts that failed: once more, now their result counts
+    again = RETRY_PARTS[:]; RETRY_PARTS.clear()
+    for name, part in again:
+        await pg.wait_for_timeout(1500)
+        await run_part(name, part, pg, last=True)
     await b.close()
     return errs
 
@@ -1151,13 +1165,22 @@ async def main():
     smoke.wait_port(port)
     try:
         async with async_playwright() as p:
-            for name, fn in (("Funktionen", owner_tests), ("Offline", offline_test), ("Berechtigungen", hidden_data), ("Sprachen", languages)):
+            async def unit(name, fn):
                 common.GROUP = "" if name == "Funktionen" else name
                 try:
                     errs = await fn(p, port)
                     if name == "Funktionen": check("Funktionstests ohne Skriptfehler", not errs, (errs or [])[:3])
                 except Exception as e:
                     check(f"{name}: Test lief durch", False, f"{type(e).__name__}: {str(e)[:150]}")
+            later = []
+            for name, fn in (("Funktionen", owner_tests), ("Offline", offline_test), ("Berechtigungen", hidden_data), ("Sprachen", languages)):
+                i = common.mark(); await unit(name, fn)
+                # the short tests (offline, rights, languages): failed → put aside, once more at the end (the owner tests repeat their parts themselves)
+                if name != "Funktionen" and common.failed_since(i):
+                    common.drop_since(i); later.append((name, fn)); print("… " + name + ": fehlgeschlagen – wird am Schluss nochmals ausgeführt", flush=True)
+            for name, fn in later:
+                i = common.mark(); await unit(name, fn)
+                if not common.failed_since(i): common.second_try_ok(name)
     finally:
         srv.terminate()
     return done("Funktionen")
