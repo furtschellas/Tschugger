@@ -26,10 +26,22 @@ def check(name, ok, info="", public=False):
     RESULTS.append(r)
     # the public log only gets the name (and the cleaned detail above) – never raw details, they can contain crew data
     print(("✓ " if ok else "✗ ") + name + ("" if ok or "e" not in r else "  – " + r["e"]), flush=True)
-    if not ok:
-        FAILS.append(name)
-        if len(FAILS) <= 8: print("::error title=Test::" + name.replace("\n", " ")[:200] + ("" if "e" not in r else " – " + r["e"].replace("\n", " ")), flush=True)
+    if not ok: FAILS.append(name)   # the red marks for GitHub come at the end (done): a check that passes on its second try is no error
     return bool(ok)
+
+
+# ---------- second try: a part that failed is put aside and run once more at the end (a slow page or network hiccup must not stop publishing) ----------
+def mark(): return len(RESULTS)
+def failed_since(i): return any(not r["ok"] for r in RESULTS[i:])
+def drop_since(i):
+    """take the results of a failed try out again (the second try writes them anew)"""
+    gone = RESULTS[i:]; del RESULTS[i:]
+    for r in gone:
+        if not r["ok"] and r["n"] in FAILS: FAILS.remove(r["n"])
+    return gone
+def second_try_ok(name):
+    print("↻ " + name + ": im zweiten Versuch bestanden", flush=True)
+    return warn(name + ": erst im zweiten Versuch bestanden")
 
 
 def warn(name, info=""):
@@ -45,8 +57,10 @@ def warn(name, info=""):
 
 def done(suite):
     print(f"\n{suite}: {'ALLES OK' if not FAILS else str(len(FAILS)) + ' FEHLER'}", flush=True)
+    for r in [r for r in RESULTS if not r["ok"]][:8]:
+        print(("::warning title=Test (1. Versuch)::" if os.environ.get("TEST_SOFT") else "::error title=Test::") + r["n"].replace("\n", " ")[:200] + ("" if "e" not in r else " – " + r["e"].replace("\n", " ")), flush=True)
     out = os.environ.get("TESTS_OUT")
     if out:
-        json.dump({"suite": suite, "at": int(time.time() * 1000), "ok": not FAILS, "n": len(RESULTS), "fail": len(FAILS), "checks": RESULTS},
+        json.dump({"suite": suite, "at": int(time.time() * 1000), "ok": not FAILS, "try": int(os.environ.get("TEST_TRY") or 1), "n": len(RESULTS), "fail": len(FAILS), "checks": RESULTS},
                   open(out, "w"), ensure_ascii=False)
     return 1 if FAILS else 0

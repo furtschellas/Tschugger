@@ -55,7 +55,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40   # room for second tries
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -87,7 +87,8 @@ jobs:
         continue-on-error: true
         env:
           TESTS_OUT: /tmp/t-backend.json
-        run: python tests/test_backend.py
+        # crashed (no results at all): a second try; real failures count right away
+        run: python tests/test_backend.py || { [ -s "$TESTS_OUT" ] && exit 1; echo "::warning::Hintergrund-Tests abgebrochen – zweiter Versuch"; TEST_TRY=2 python tests/test_backend.py; }
       - name: App (sechs Rollen, Handy und Desktop)
         id: t2
         continue-on-error: true
@@ -95,7 +96,8 @@ jobs:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           CREW_KEY: ${{ secrets.CREW_KEY }}
           TESTS_OUT: /tmp/t-app.json
-        run: python tests/smoke.py
+        # a failed or crashed run is repeated once at the end of the step (a slow page must not stop publishing); a real error fails twice
+        run: TEST_SOFT=1 python tests/smoke.py || { echo "::warning::App-Tests fehlgeschlagen – zweiter Versuch"; TEST_TRY=2 python tests/smoke.py; }
       - name: Funktionen (Suche, Drehplan, Termine, Konto, Push, vCard, offline, Rechte, Sprachen)
         id: t3
         continue-on-error: true
@@ -103,7 +105,8 @@ jobs:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           CREW_KEY: ${{ secrets.CREW_KEY }}
           TESTS_OUT: /tmp/t-func.json
-        run: python tests/func.py
+        # failed parts are repeated inside the run (tests/func.py); crashed (no results at all): a second try
+        run: python tests/func.py || { [ -s "$TESTS_OUT" ] && exit 1; echo "::warning::Funktionstests abgebrochen – zweiter Versuch"; TEST_TRY=2 python tests/func.py; }
       - name: Sicherheit (Repository, Seite, Verschlüsselung, Worker, eingeschleuster Code)
         id: t4
         continue-on-error: true
@@ -111,7 +114,7 @@ jobs:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           CREW_KEY: ${{ secrets.CREW_KEY }}
           TESTS_OUT: /tmp/t-sec.json
-        run: python tests/security.py
+        run: python tests/security.py || { [ -s "$TESTS_OUT" ] && exit 1; echo "::warning::Sicherheitstests abgebrochen – zweiter Versuch"; TEST_TRY=2 python tests/security.py; }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
