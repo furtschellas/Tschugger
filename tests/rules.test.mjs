@@ -206,6 +206,13 @@ await check("Fahrt quittieren: Stand nur 1 oder 2", assertFails(setDoc(doc(as("c
 await check("Komparsen: Anzahl da (n = 3) geht", assertSucceeds(setDoc(doc(as("crew"), "rideack/abcd1239"), { d: "2026-10-21", at: NOW, s: 1, n: 3 })));
 await check("Komparsen: Anzahl nur ganze Zahl 0–999", assertFails(setDoc(doc(as("crew"), "rideack/abcd1240"), { d: "2026-10-21", at: NOW, s: 1, n: 1000 })));
 await check("Komparsen: Anzahl kein Text", assertFails(setDoc(doc(as("crew"), "rideack/abcd1241"), { d: "2026-10-21", at: NOW, s: 1, n: "3" })));
+/* Kostüm «Ich übernehme»: mit «Kostüm quittieren» (Admin hat es), eigene uid; fremde Übernahme nicht überschreiben; Crew ohne Recht nicht */
+await check("Kostüm übernehmen: mit Recht und eigener uid geht", assertSucceeds(setDoc(doc(as("admin"), "cmassign/mab12"), { c: "x", d: "2026-10-24", at: NOW, by: U.admin[0] })));
+await check("Kostüm übernehmen: fremde uid nicht", assertFails(setDoc(doc(as("admin"), "cmassign/mab13"), { c: "x", d: "2026-10-24", at: NOW, by: "someoneElse" })));
+await check("Kostüm übernehmen: ohne «Kostüm quittieren» nicht", assertFails(setDoc(doc(as("crew"), "cmassign/mab14"), { c: "x", d: "2026-10-24", at: NOW, by: U.crew[0] })));
+await check("Kostüm übernehmen: lesen die Crew", assertSucceeds(getDoc(doc(as("crew"), "cmassign/mab12"))));
+await check("Kostüm übernehmen: fremde Übernahme freigeben nur Admin/selbst", assertFails(deleteDoc(doc(as("crew"), "cmassign/mab12"))));
+await check("Kostüm übernehmen: eigene freigeben geht", assertSucceeds(deleteDoc(doc(as("admin"), "cmassign/mab12"))));
 await check("Fahrt quittieren: nicht eingeladene Person nicht", assertFails(setDoc(doc(as("stranger"), "rideack/abcd1239"), { d: "2026-10-21", at: NOW, s: 1 })));
 await check("Fahrt ändern: ohne «Fahrten Manager» nicht", assertFails(setDoc(doc(as("crew"), "rideedit/abcd1234"), { c: "x", d: "2026-10-21", at: NOW })));
 await check("Fahrt ändern: Admin (alle Rechte) geht", assertSucceeds(setDoc(doc(as("admin"), "rideedit/abcd1234"), { c: "x", d: "2026-10-21", at: NOW })));

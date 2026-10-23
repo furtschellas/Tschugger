@@ -1043,3 +1043,8 @@ html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(4) .v{grid-row:3;gr
 #xqpick .xqn{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
 #xqpick .xqn .pillbtn{min-width:44px;min-height:40px;justify-content:center}
 #xqpick .xqn .pillbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+/* Meine Termine: a Kostüm taken by somebody else is grey (still visible: who does it) */
+html body #view .mci.mcdim{opacity:.5}
+html body #view .mci .cma{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+html body #view .mci .cma .cmab.pillbtn{min-height:30px;padding:2px 12px}
+html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
