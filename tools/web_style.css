@@ -190,7 +190,7 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .unm b{overflow-wrap:anywhere}.ulist .search{position:static;margin:8px 0 0;box-shadow:none}
 #refresh.admhide{display:none!important}
 .acpage .myhead{align-items:center}.acwho{font-size:13px;color:var(--muted);margin:2px 0 10px}
-.acpage form[data-af=pf]{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:6px}
+.acpage form[data-af=pf]{display:grid;gap:8px 10px;margin-top:6px}
 .acpage form[data-af=pf]>:is(.pname,.ghint,.chk,.full,button,.amsg){grid-column:1/-1}
 .acpage form[data-af=pf] label{font-size:12px;gap:3px}
 .acpage form[data-af=pf] :is(input,select){font-size:15px;padding:8px 10px}
@@ -635,7 +635,7 @@ html body #view .mypage .myhead .oeadd{margin-left:auto;margin-right:8px}
 #oedlg form{display:flex;flex-direction:column}
 #oedlg label{display:flex;flex-direction:column;gap:4px;font-size:13px}
 #oedlg label.ck{flex-direction:row;align-items:center}
-#oedlg .oerow{display:grid;grid-template-columns:1.4fr 1fr 1fr}
+#oedlg .oerow{display:grid}
 #oedlg .oepl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
 #oedlg .oechip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--rule);border-radius:999px;font-size:13px}
 #oedlg .oechip button{border:0;background:none;color:inherit;font-size:16px;line-height:1;padding:0 4px;cursor:pointer}
