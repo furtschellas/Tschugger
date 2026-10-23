@@ -87,4 +87,6 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   t("On set ohne Zeit erledigt",W,{[id(R3,"o","set")]:2},R3,"cq2 cq2 cq2 cq2+tap rowdone pink")}
 {const g=ack=>{set(W,ack);return T.look(cs,R1)};const got=[g({}),g(ride(pr,1)),g({[id(R1,"c","07:00")]:1}),g({[id(R1,"m","07:20")]:1}),g({[id(R1,"b","07:45")]:2}),g({[id(R1,"o","08:00")]:2})].join(",");
   out.push({n:"Cast in Drehfolge/Drehplan: nichts 0, P/UP 1, Call 2, Maske 2, Base 3, On set 3",ok:got==="0,1,2,2,3,3",got,want:"0,1,2,2,3,3"})}
+{const R5={no:"5",actor:"TJ Bhanu",pickup:"10:30",call:"10:55",wardrobe:"13.50 - 14:10 20’",makeup:"11:00 - 12:00 60’",base:"14.10",onset:"14:15"};
+  t("Zeiten mit Punkt (13.50, 14.10): Kostüm und Maske fertig → Base aktiv",W,{[id(R5,"w","13.50")]:2,[id(R5,"m","11:00")]:2},R5,"cq2 cq2 cq1+tap cq0+tap")}
 for(const x of out)console.log(JSON.stringify(x));
