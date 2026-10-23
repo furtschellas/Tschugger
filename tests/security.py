@@ -18,7 +18,7 @@ def tracked():
 
 TEXT = (".html", ".js", ".mjs", ".py", ".json", ".md", ".yml", ".css", ".rules", ".txt", ".webmanifest", ".svg")
 files = [f for f in tracked() if f.suffix in TEXT and f.exists()]
-VENDOR = {"leaflet.js", "jspdf.js", "jspdf.autotable.js"}   # third-party libraries, unchanged copies
+VENDOR = {"leaflet.js", "jspdf.js", "jspdf.autotable.js", "pdf.min.mjs", "pdf.worker.min.mjs"}   # third-party libraries, unchanged copies
 src = {f: f.read_text(errors="ignore") for f in files if f.name not in VENDOR}
 
 # ---------- 1) nothing secret in the public repository ----------

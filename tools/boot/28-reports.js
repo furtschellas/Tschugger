@@ -74,10 +74,8 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
   const id=t.dataset.repg||t.dataset.repu||t.dataset.reppdf,r=repList()[+id];if(!r||!canRep(r.g))return;
   if(t.dataset.repu!=null){window.open(safeUrl(r.u),"_blank","noopener");return}
   if(t.dataset.repg!=null){if(typeof openGallery==="function")openGallery({name:"rep:"+r.n,title:(r.g?r.g+" · ":"")+r.n,sc:[],url:r.u,media:arr(r.f).map((p,k)=>({n:r.n+(r.f.length>1?" · "+(k+1)+"/"+r.f.length:""),t:"img",f:p,u:r.u}))});return}
-  /* PDF: the window opens during the tap (else the browser blocks it), then gets the decrypted file */
-  let w=null;try{w=window.open("","_blank")}catch(_){}
-  window.blkImg(r.pdf).then(u=>{if(w&&!w.closed)w.location.href=u;else{const a=document.createElement("a");a.href=u;a.download=r.n+".pdf";document.body.appendChild(a);a.click();a.remove()}})
-    .catch(()=>{try{if(w)w.close()}catch(_){}showMsg(L("PDF nicht verfügbar (offline?)."),4000)})},true);
+  /* PDF: decrypted and shown in the app's own PDF viewer (28a-pdfview) – no Dropbox, the same on every device */
+  window.blkImg(r.pdf).then(u=>window.pdfView(u,(r.g?repTitle(r.g)+" · ":"")+r.n,r.n+".pdf")).catch(()=>showMsg(L("PDF nicht verfügbar (offline?)."),4000))},true);
 try{window.repPermsSync()}catch(_){}
 
 /* ---------- own topic «Reports» (button in the head between the message envelope and «Mein Konto»):
