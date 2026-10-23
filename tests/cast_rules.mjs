@@ -21,6 +21,8 @@ const out=[];const t=(n,perms,ack,r,want)=>{C.RIDEACK=Object.fromEntries(Object.
 const W=["wardrobe.ack","makeup.ack"];
 t("nichts quittiert: P/UP folgt der Fahrt, Call antippbar, Base und On set noch ohne Stand",W,{},R1,"cq0 cq0+tap plain plain");
 t("Kostüm läuft → P/UP und Call abgeschlossen",W,{[id(R1,"w","07:05")]:1},R1,"cq2 cq2 plain plain");
+t("Maske läuft → P/UP und Call abgeschlossen",W,{[id(R1,"m","07:20")]:1},R1,"cq2 cq2 plain plain");
+t("Kostüm läuft → P/UP und Call abgeschlossen, auch gegen einen Hand-Haken",["cast.manual","wardrobe.ack"],{[id(R1,"w","07:05")]:1,[id(R1,"xp","06:40")]:1},R1,"cq2 cq2 cq0+tap cq0+tap");
 t("Kostüm und Maske fertig → Base läuft, On set offen",W,{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"cq2 cq2 cq1+tap cq0+tap");
 t("Base quittiert → alle vorherigen abgeschlossen, On set offen",W,{[id(R1,"b","07:45")]:2},R1,"cq2 cq2 cq2+tap cq0+tap rowdone");
 t("On set läuft → alle vorherigen abgeschlossen",W,{[id(R1,"o","08:00")]:1},R1,"cq2 cq2 cq2 cq1+tap rowdone");
