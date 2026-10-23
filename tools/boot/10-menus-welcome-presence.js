@@ -23,7 +23,7 @@ window.menuFor=(date,u)=>{const m=(window.MENUS||{})[date];if(!m)return "";
 setInterval(()=>{if(document.visibilityState==="visible")menusLoad()},120e3);   /* reads at most every 10 min (Firebase quota) */
 /* who eats on a shooting day: crew of the departments called in that day's callsheet (all active crew if there is
    no callsheet yet), plus the cast of the callsheet and the extras; split by diet */
-function dayEaters(d){const c=caterData(),dp=(S.dispos||[]).find(x=>x&&x.date===d.date),fd=x=>String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+function dayEaters(d){const c=caterData(),dp=(S.dispos||[]).find(x=>x&&x.date===d.date),fd=x=>fold(x).trim();
   let crew=c.act,src=dp?"dispo":"crew";
   if(dp&&arr(dp.calls).length){const deps=arr(dp.calls).map(z=>fd(z.dept)).filter(Boolean);const f=c.act.filter(m=>{const dd=fd(crewDeptOf(m));return dd&&deps.some(x=>x.includes(dd)||dd.includes(x))});if(f.length)crew=f}
   const cast=dp?arr(dp.cast).filter(x=>x&&(x.actor||x.role)).length:0,ex=parseInt(String((dp&&dp.extras)||d.extras||0).replace(/[^0-9]/g,""))||0;

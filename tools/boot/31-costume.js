@@ -9,7 +9,7 @@ function cqKeep(){const y=window.scrollY;render();window.scrollTo(0,y);requestAn
 function cmParse(v,c){const out=[];for(const seg of String(v==null?"":v).split(/\s*;\s*/)){
     const m=seg.match(/^\s*(?:([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.' -]*?)\s+)?(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);if(!m)continue;
     let who="";if(m[1]){const fn=fold(m[1].trim().split(/\s+/)[0]);who=arr(c&&c.calls).map(r=>String(r.name||"")).find(n=>fold(n).split(/\s+/)[0]===fn)||m[1].trim()}
-    out.push({who,t:String(m[2]).padStart(2,"0")+":"+m[3],end:String(m[4]).padStart(2,"0")+":"+m[5]})}return out}
+    out.push({who,t:pad2(m[2])+":"+m[3],end:pad2(m[4])+":"+m[5]})}return out}
 /* id of one entry: day, Kostüm/Maske, role of the cast row, start (no names in the id) */
 const cmId=(date,k,r,t)=>{const s=[date,k,String(r&&(r.no||r.role)||"").trim(),t].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "m"+(h>>>0).toString(36)};
 /* state of a cast entry: 0 open, 1 active (running now), 2 done */
