@@ -33,10 +33,10 @@ tap("Fahrer: P/UP antippen = Fahrer vor Ort (Fahrt Schritt 1)",D2,{},R1,"p","nx=
 tap("Fahrer: P/UP nochmals = Fahrzeug fährt (Fahrt Schritt 2)",D2,ride(pr,1),R1,"p","nx=2 ride=pickup step=2");
 tap("Call antippen = angekommen (aktiv), Fahrt abgeschlossen",W,ride(pr,2),R1,"c","nx=1 ride=pickup step=3");
 t("Call angetippt → Call aktiv, P/UP abgeschlossen, Auto weg",W,Object.assign(ride(pr,2),{[id(R1,"c","07:00")]:1}),R1,"cq2 cq1+tap plain plain");
-t("Call aktiv, dann Kostüm angenommen → Call abgeschlossen",W,{[id(R1,"c","07:00")]:1,[id(R1,"w","07:05")]:1},R1,"cq2 cq2 plain plain");
-t("Kostüm läuft → P/UP und Call abgeschlossen",W,{[id(R1,"w","07:05")]:1},R1,"cq2 cq2 plain plain");
-t("Maske läuft → P/UP und Call abgeschlossen",W,{[id(R1,"m","07:20")]:1},R1,"cq2 cq2 plain plain");
-t("Kostüm erledigt, Maske noch offen → Call wieder aktiv (Cast wartet)",W,{[id(R1,"w","07:05")]:2},R1,"cq2 cq1 plain plain");
+t("Call aktiv, dann Kostüm angenommen → Call abgeschlossen",W,{[id(R1,"c","07:00")]:1,[id(R1,"w","07:05")]:1},R1,"cq2 cq2 cq0+tap plain");
+t("Kostüm läuft → P/UP und Call abgeschlossen",W,{[id(R1,"w","07:05")]:1},R1,"cq2 cq2 cq0+tap plain");
+t("Maske läuft → P/UP und Call abgeschlossen",W,{[id(R1,"m","07:20")]:1},R1,"cq2 cq2 cq0+tap plain");
+t("Kostüm erledigt, Maske noch offen → Call wieder aktiv (Cast wartet)",W,{[id(R1,"w","07:05")]:2},R1,"cq2 cq1 cq0+tap plain");
 t("Kostüm und Maske fertig → Base läuft, On set offen",W,{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"cq2 cq2 cq1+tap cq0+tap");
 tap("Base antippen = erledigt, Fahrt Base → Set unterwegs",W,{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"b","nx=2 ride=base-set step=2");
 t("Base quittiert → alle vorherigen abgeschlossen, Auto hinter Base, On set offen",W,Object.assign({[id(R1,"b","07:45")]:2},ride(sr,2)),R1,"cq2 cq2 cq2+tap+car cq0+tap rowdone");
@@ -73,4 +73,10 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   out.push({n:"On set erledigt zeigt die Zeit der Quittierung",ok:got==="09:07",got,want:"09:07"})}
 {const g=ack=>{set(W,ack);return T.stage(cs,R1)};const got=[g({}),g({[id(R1,"c","07:00")]:1}),g({[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2}),g({[id(R1,"o","08:00")]:2})].join(",");
   out.push({n:"Cast-Nummern im Kopf: nicht gerufen 0, gerufen 1, wartet an der Base 2, On set 3",ok:got==="0,1,2,3",got,want:"0,1,2,3"})}
+t("Maske läuft → Base antippbar (Cast wartet)",W,{[id(R1,"m","07:20")]:1},R1,"cq2 cq2 cq0+tap plain");
+await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:async(i,v)=>{W2.push(i+"="+v.s)},deleteDoc:async i=>{W2.push(i+"=0")}}});
+  const wid=id(R1,"w","07:05"),mid=id(R1,"m","07:20");set(W,{[mid]:1});const h=(T.b(cs,R1)||{}).h||"";const ds={};for(const x of h.matchAll(/data-([a-z]+)="([^"]*)"/g))ds[x[1]]=x[2];
+  const btn={dataset:ds,disabled:false,closest:()=>null};for(const f of H)await f({target:{closest:q=>q.includes("[data-cqk]")?btn:null},preventDefault(){},stopPropagation(){}});await new Promise(r=>setTimeout(r,20));
+  const got=W2.sort().join(" "),want=[mid+"=2",wid+"=2"].sort().join(" ");out.push({n:"Base angetippt während Maske läuft → Kostüm und Maske abgeschlossen",ok:got===want,got,want});
+  t("danach: Base aktiv (wartet auf Abholung)",W,{[wid]:2,[mid]:2},R1,"cq2 cq2 cq1+tap cq0+tap")})();
 for(const x of out)console.log(JSON.stringify(x));
