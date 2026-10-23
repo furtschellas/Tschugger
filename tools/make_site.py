@@ -15,6 +15,32 @@ assert parts, "tools/boot/*.js fehlt"
 # every part runs in a script of its own: an error in one part stops only that part, the rest of the app keeps working
 # (each part is valid JavaScript on its own – the syntax test checks that; global names are shared between the scripts)
 mods=[("a2hs.js",(T/"a2hs.js").read_text())]+[(p.name,p.read_text()) for p in parts]
+# speed: the translations (tools/boot/02-i18n.js, ~300 KB for all languages) go to i18n/<lang>.json – a device loads only its own language
+# (German is the text of the code itself: nothing to load); without node the file stays in the page as before
+def _i18n_split(code):
+  import json as _j,subprocess as _sp,shutil as _sh
+  node=_sh.which("node")
+  if not node: return None
+  js="const I18N={};"+code+"\n;const o={};for(const l of ['fr','it','en','hi']){const t={};for(const k in I18N){const v=I18N[k]||{},x={};if(v[l])x[l]=v[l];if(l!=='en'&&v.en)x.en=v.en;if(Object.keys(x).length)t[k]=x}o[l]=t}process.stdout.write(JSON.stringify({o,LANGS}))"
+  try:
+    r=_sp.run([node,"-"],input=js.encode(),capture_output=True,timeout=60)   # the script on stdin (too long for the command line)
+    if r.returncode!=0 or not r.stdout: return None
+    d=_j.loads(r.stdout.decode())
+  except Exception: return None
+  out=R/"i18n";out.mkdir(exist_ok=True)
+  for l,t in d["o"].items():(out/(l+".json")).write_text(_j.dumps(t,ensure_ascii=False,separators=(",",":"),sort_keys=True))
+  ver=hashlib.sha1(_j.dumps(d["o"],sort_keys=True).encode()).hexdigest()[:10]
+  return ("const LANGS="+_j.dumps(d["LANGS"],ensure_ascii=False)+";\n"
+    "/* translations: only the chosen language (i18n/<lang>.json, kept on the device); German is the text of the code itself */\n"
+    "const I18NV=\""+ver+"\";window.I18NHAVE=new Set([\"de\"]);\n"
+    "function i18nMerge(o){for(const k in o)I18N[k]=Object.assign(I18N[k]||{},o[k])}\n"
+    "function i18nLoad(l,cb){if(!l||I18NHAVE.has(l)){if(cb)cb();return}\n"
+    "  try{const c=JSON.parse(localStorage.getItem(\"i18n:\"+l)||\"null\");if(c&&c.v===I18NV){i18nMerge(c.t);I18NHAVE.add(l);if(cb)cb();return}}catch(_){}\n"
+    "  fetch(\"i18n/\"+l+\".json?v=\"+I18NV).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(t=>{i18nMerge(t);I18NHAVE.add(l);try{localStorage.setItem(\"i18n:\"+l,JSON.stringify({v:I18NV,t}))}catch(_){}if(cb)cb()}).catch(err=>{console.warn(\"i18n\",l,err&&err.message||err);if(cb)cb()})}\n"
+    "window.i18nLoad=i18nLoad;i18nLoad(LANG==='hi'?'hi':LANG);\n"
+    "/* a new language: load it, then show the page again in it */\n"
+    "{const a=applyStatic;applyStatic=function(){if(!I18NHAVE.has(LANG))i18nLoad(LANG,()=>{a();try{render()}catch(_){}});return a.apply(this,arguments)}}\n")
+mods=[(n,(_i18n_split(c) or c) if n=="02-i18n.js" else c) for n,c in mods]
 boot="\n</script>\n"+"".join("<script>/* "+n+" */\n"+c+"\n</script>\n" for n,c in mods)+"<script>window.__APPOK=1</script>\n"
 body=src[:i]+boot+src[j+len("</script>"):]
 body=body.replace("</style>",(T/"web_style.css").read_text()+"\n</style>\n</head>\n<body>\n"+(T/"splash.html").read_text(),1)   # start screen first
