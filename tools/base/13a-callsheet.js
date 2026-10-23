@@ -96,6 +96,11 @@ const csCellTx=c=>c&&typeof c==="object"&&"h" in c?c.h.replace(/<[^>]+>/g,""):St
 function csDriverByPhone(ph){const k=String(ph||"").replace(/\D/g,"").slice(-9);if(k.length<9)return"";
   for(const d of arr(S.dispos)){const t=String(d&&d.cs&&d.cs.drivers||"");for(const x of t.split(/\s*[|\n;]\s*/)){const m=x.match(CSPH);if(m&&m[0].replace(/\D/g,"").slice(-9)===k){const n=x.replace(m[0],"").replace(/o\.\s*p\.\s*D.*$/i,"").trim();if(n)return n}}}
   for(const g of arr(S.crew))for(const p of arr(g.people))if(String(p.phone||"").replace(/\D/g,"").slice(-9)===k)return p.name||"";return ""}
+/* a ride «07:40 Hotel → 07:55 Base»: the destination opens in Google Maps (its own map link from the callsheet, else its address / name) */
+function csRouteH(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let rt=esc(t);try{const to=String(r.to||"").replace(/https?:\/\/\S+/g,"").trim(),dp=arr(S.dispos).find(x=>x&&x.date===date),u=to&&typeof rideMap==="function"?rideMap(r.to,dp,true):"",su=u?safeUrl(u):"";
+    if(su&&su!=="#"){const a=[r.t1,String(r.from||"").replace(/https?:\/\/\S+/g,"").trim()].filter(Boolean).join(" "),b=[r.t2,to].filter(Boolean).join(" ");
+      rt=(a?esc(a)+" → ":"")+'<a class="rideto" href="'+esc(su)+'" target="_blank" rel="noopener" data-nobub title="'+esc(L("Route in Google Maps"))+'">'+esc(b)+'</a>'}}catch(_){}
+  return rt}
 function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0,id="";try{id=typeof rideId==="function"?rideId(date,r):"";st=id&&window.rideState?rideState(id):0}catch(_){}
   const I=window.RIDE_ICO||{},mgr0=typeof canPerm==="function"&&canPerm("rides.manage");
   /* clickable only for the Fahrten Manager (popup) and for the driver of this ride (accept / done) */
@@ -111,7 +116,8 @@ function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0,id="
     :'<span class="'+cls+'" title="'+esc(tip)+'">'+ico+'</span>';
   /* changed in the app (Fahrten Manager): marked, the original as tooltip */
   const o=r._orig,chg=o?' <span class="rchg" title="'+esc(L("Original")+": "+[csRoute(o.from,o.t1,o.to,o.t2),o.vehicle,o.driver,o.passengers||o.people].filter(Boolean).join(" · "))+'">'+esc(L("geändert"))+'</span>':'';
-  return {h:el+' '+esc(t)+chg}}
+  const rt=csRouteH(date,r);
+  return {h:el+' '+rt+chg}}
 function csTable(head,rows,tc,keep){rows=rows.map(r=>r.map(c=>c&&typeof c==="object"?c:csDurT(c)));rows=rows.filter(r=>r.some(c=>csCellTx(c).trim()));if(!rows.length)return"";tc=tc||2;
   const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csCell(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
   const cards='<div class="cs-cards">'+rows.map(r=>{const tt=r.slice(0,tc).map(c=>c&&typeof c==="object"&&c.h?c:csCellTx(c).trim());

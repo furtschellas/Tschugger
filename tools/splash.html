@@ -27,7 +27,7 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
    appears the moment it is ready – also on reload. It never blocks the app: at the latest after 20 s it disappears. */
 (function(){var el=document.getElementById("splash"),c=document.getElementById("splp"),t0=Date.now(),cur=0,done=false;
   var shut=false;function clap(){if(shut)return;shut=true;el.classList.add("shut");try{if(navigator.vibrate)navigator.vibrate([22,30,18])}catch(e){}}
-  function set(p){if(p>cur){cur=p;c.style.strokeDashoffset=String(465*(1-p/100));if(p>=80&&el.classList.contains("vis"))clap()}}
+  function set(p){if(p>cur){cur=p;c.style.strokeDashoffset=String(465*(1-p/100));if(p>=60&&el.classList.contains("vis"))clap()}}
   /* on a start the logo, the versions and the © are shown right away – only as long as the app is loading */
   el.classList.add("vis");
   var tp=0;requestAnimationFrame(function(){tp=Date.now()});

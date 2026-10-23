@@ -18,7 +18,7 @@ const hmOf=hm;   /* same as hm() in 12-mycal.js */
 /* all events the device would remind of, by kind; each with a stable id */
 function pushEvents(c){
   c=c||pushCfg();const out=[],seen=new Set(),t=todayISO(),add=(kind,e)=>{const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));if(seen.has(id))return;seen.add(id);out.push(Object.assign({id,kind},e))};
-  try{if(c.types.my&&vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)myEvents(me).forEach(e=>add("my",{date:e.date,t:hmOf(e.t),n:e.n,where:e.where||"",ride:!!e.ride}))}}catch(err){console.warn("push my",err)}
+  try{if(c.types.my&&vok("mycal")&&typeof myIdentity==="function"){const me=myIdentity();if(me)myEvents(me).forEach(e=>add("my",{date:e.date,t:hmOf(e.t),n:e.n,where:e.where||"",ride:!!e.ride,go:e.ride&&e.toMap?String(e.toMap):""}))}}catch(err){console.warn("push my",err)}
   try{if(c.types.shoot&&vok("plan"))for(const d of S.days){if(d.kind!=="shoot"||d.date<t)continue;const dp=S.dispos.find(x=>x&&x.date===d.date)||{};
     add("shoot",{date:d.date,t:hmOf(dp.crewCall)||hmOf(dp.generalCall),n:(d.short||d.label||"")+" · "+L("Drehtag"),where:(typeof dayPlaces==="function"?dayPlaces(d).join(", "):"")})}}catch(err){console.warn("push shoot",err)}
   try{if(c.types.prep&&vok("prep"))for(const d of S.prepro){if(d.date<t)continue;for(const i of arr(d.items).concat(arr(d.parallel))){if(!i||!i.n||/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n).trim()))continue;add("prep",{date:d.date,t:hmOf(i.t),n:i.n,where:i.where||""})}}}catch(err){console.warn("push prep",err)}
@@ -29,7 +29,9 @@ const pushStart=e=>{try{if(typeof zurichUTC==="function")return zurichUTC(e.date
 function pushItems(c){c=c||pushCfg();const now=Date.now(),lim=now+15*864e5;
   return pushEvents(c).filter(e=>!c.off[e.id]).map(e=>{const st=pushStart(e),at=st-(e.ride?c.leadRide:c.lead)*60e3;
     const dt=new Date(e.date+"T12:00:00"),day=WDL(dt)+" "+ddmm(dt);   /* the date of the event, not of the phone's time zone */
-    return {id:e.id,at,start:st,title:e.n||L("Termin"),body:[day+(e.t?" "+e.t:""),e.where].filter(Boolean).join(" · "),url:"./#my"}}).filter(x=>x.start>now&&x.start<lim).slice(0,80)}
+    return {id:e.id,at,start:st,title:e.n||L("Termin"),body:[day+(e.t?" "+e.t:""),e.where].filter(Boolean).join(" · "),
+      /* a ride: the tap opens the route to its destination in Google Maps (only https links) */
+      url:e.go&&/^https:\/\/[^\s"'<>]+$/.test(e.go)?e.go.slice(0,400):"./#my"}}).filter(x=>x.start>now&&x.start<lim).slice(0,80)}
 let PUSHT=null,PUSHBUSY=false,PUSHDIRTY=false;
 function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>{try{pushLocalSchedule()}catch(_){}pushSync().catch(err=>console.warn("push",err&&err.code||err))},2500)}
 async function pushReg(){return navigator.serviceWorker.getRegistration?((await navigator.serviceWorker.getRegistration())||(await navigator.serviceWorker.ready)):navigator.serviceWorker.ready}
@@ -71,7 +73,7 @@ async function pushTest(){
       const j=await r.json().catch(()=>({}));
       if(r.ok&&j.n>0){msg(L("Test über den Server an {n} Gerät(e) gesendet.").replace("{n}",j.n));return}
       msg(L("Server-Test fehlgeschlagen:")+" "+(j.error||(j.devices===0?L("dieses Gerät ist noch nicht registriert"):JSON.stringify(j.st||r.status))));return}
-    const reg=await pushReg();await reg.showNotification(L("Test-Nachricht"),{body:L("So sehen Erinnerungen an deine Termine aus."),icon:"clap-192.png",badge:"clap-192.png",tag:"test"});
+    const reg=await pushReg();await reg.showNotification(L("Test-Nachricht"),{body:L("So sehen Erinnerungen an deine Termine aus."),icon:"clap-192.png",badge:"badge-96.png",tag:"test"});
     msg(L("Nur lokal getestet – für echte Push-Nachrichten muss die Produktion den Cloudflare Worker einrichten."))}
   catch(err){msg(L("Fehler:")+" "+(err.message||err))}}
 /* while the app is open (or in the background), reminders also come from the device itself – a backup when the server is late */
@@ -85,7 +87,7 @@ window.pushSignOut=async function(){
 function pushLocalSchedule(){LOCALT.forEach(clearTimeout);LOCALT=[];const c=pushCfg();if(!c.on||!pushOK()||Notification.permission!=="granted")return;
   const now=Date.now();for(const it of pushItems(c)){const d=it.at-now;if(d<-5*60e3||d>6*3600e3)continue;
     LOCALT.push(setTimeout(async()=>{const k="pushlocal:"+it.id+"|"+it.at;try{if(localStorage.getItem(k))return;localStorage.setItem(k,"1")}catch(_){}
-      try{const reg=await pushReg();const open=await reg.getNotifications({tag:it.id});if(open&&open.length)return;await reg.showNotification(it.title,{body:it.body,tag:it.id,icon:"clap-192.png",badge:"clap-192.png",data:{url:"./#my"}})}catch(_){}},Math.max(0,d)))}}
+      try{const reg=await pushReg();const open=await reg.getNotifications({tag:it.id});if(open&&open.length)return;await reg.showNotification(it.title,{body:it.body,tag:it.id,icon:"clap-192.png",badge:"badge-96.png",data:{url:"./#my"}})}catch(_){}},Math.max(0,d)))}}
 /* status for the production (Einstellungen): server, registered devices, last runs */
 const PST={busy:false,d:null};
 async function pushStatusLoad(){if(PST.busy)return;PST.busy=true;const d={};
@@ -179,5 +181,5 @@ if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("messag
 if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const p=e.data&&e.data.push;if(!p)return;
   const o=document.createElement("div");o.className="pushpop";o.setAttribute("role","alertdialog");
   o.innerHTML='<div class="pphd"><span class="ppic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><b>'+esc(p.title||"TSCHUGGER")+'</b><button type="button" class="pushx" aria-label="'+esc(L("Schliessen"))+'">×</button></div>'+(p.body?'<p>'+esc(p.body)+'</p>':'');
-  o.addEventListener("click",ev=>{if(!ev.target.closest(".pushx")&&/#my/.test(p.url||"")&&typeof openMyCal==="function")openMyCal();o.classList.add("out");setTimeout(()=>o.remove(),250)});
+  o.addEventListener("click",ev=>{if(!ev.target.closest(".pushx")){if(/^https:\/\//.test(p.url||""))window.open(p.url,"_blank","noopener");else if(/#my/.test(p.url||"")&&typeof openMyCal==="function")openMyCal()}o.classList.add("out");setTimeout(()=>o.remove(),250)});
   document.body.appendChild(o);try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(_){}});
