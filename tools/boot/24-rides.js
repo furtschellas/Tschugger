@@ -2,7 +2,9 @@
    the confirmation is shared (rideack/{id}, no names), a confirmed ride disappears from «Meine Termine» one hour after arrival ---------- */
 window.RIDEACK=window.RIDEACK||{};let RIDEAT=0,RIDEBUSY=false;
 async function rideAckLoad(force){if(RIDEBUSY||typeof ME==="undefined"||!ME||(!force&&Date.now()-RIDEAT<120e3))return;RIDEBUSY=true;RIDEAT=Date.now();
-  try{const {F,db}=await fb();const s=await F.getDocs(F.query(F.collection(db,"rideack"),F.where("d",">=",todayISO())));const m={};s.forEach(x=>{m[x.id]=x.data()});
+  try{const {F,db}=await fb();/* from the first callsheet of the last 60 days on (not only today): ticks of past shooting days must not disappear on reload */
+    const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;
+    const s=await F.getDocs(F.query(F.collection(db,"rideack"),F.where("d",">=",from)));const m={};s.forEach(x=>{m[x.id]=x.data()});
     const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))render()}catch(_){}RIDEBUSY=false}
 /* state of a ride: 0 open, 1 started (one check), 2 done (two checks); old entries without s count as done */
 window.rideState=id=>{if(window.RIDEACKON===false)return 0;const x=window.RIDEACK[id];return x?(x.s===1?1:2):0};
