@@ -41,6 +41,14 @@ def _i18n_split(code):
     "/* a new language: load it, then show the page again in it */\n"
     "{const a=applyStatic;applyStatic=function(){if(!I18NHAVE.has(LANG))i18nLoad(LANG,()=>{a();try{render()}catch(_){}});return a.apply(this,arguments)}}\n")
 mods=[(n,(_i18n_split(c) or c) if n=="02-i18n.js" else c) for n,c in mods]
+# speed: the App-Verwaltung (backup, users, roles – only for admins) goes to admin.js, loaded when it is opened (12a-admin-core: loadAdminUI)
+LAZY=("12b-admin-backup.js","12c-admin-users.js","12d-admin-roles.js")
+_lz=[(n,c) for n,c in mods if n in LAZY]
+if len(_lz)==len(LAZY):
+  _adm="".join("/* "+n+" */\n"+c+"\n;\n" for n,c in _lz)
+  _av=hashlib.sha1(_adm.encode()).hexdigest()[:10]
+  (R/"admin.js").write_text(_adm)
+  mods=[(n,c.replace("__ADMINJS_VER__",_av)) for n,c in mods if n not in LAZY]
 boot="\n</script>\n"+"".join("<script>/* "+n+" */\n"+c+"\n</script>\n" for n,c in mods)+"<script>window.__APPOK=1</script>\n"
 body=src[:i]+boot+src[j+len("</script>"):]
 body=body.replace("</style>",(T/"web_style.css").read_text()+"\n</style>\n</head>\n<body>\n"+(T/"splash.html").read_text(),1)   # start screen first
@@ -58,6 +66,7 @@ def _mini(code,loader):
 if ESB and os.path.exists(ESB):
   out=re.sub(r"(<script>)([\s\S]*?)(</script>)",lambda m:m.group(1)+_mini(m.group(2),"js").strip()+m.group(3),out)
   out=re.sub(r"(<style>)([\s\S]*?)(</style>)",lambda m:m.group(1)+_mini(m.group(2),"css").strip()+m.group(3),out)
+  if (R/"admin.js").exists():(R/"admin.js").write_text(_mini((R/"admin.js").read_text(),"js").strip()+"\n")   # the App-Verwaltung loaded on demand: minified like the page
 ver=hashlib.sha1(out.encode()).hexdigest()[:10]
 out=out.replace("__APP_VER__",ver)
 _wv=re.search(r'const VERSION = "([^"]+)"',(T/"chat_worker.js").read_text())

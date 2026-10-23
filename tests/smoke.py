@@ -122,6 +122,9 @@ async def session(p, port, who, width=390, extra=""):
     await pg.fill("#gem", PEOPLE[who]); await pg.fill("#gpw", "geheim123"); await pg.click("#gate button[type=submit]")
     await pg.wait_for_timeout(2800)
     await pg.evaluate("document.querySelectorAll('.a2hs,#tour').forEach(x=>x.remove());if(window.TOUR)TOUR.el=null")
+    # the App-Verwaltung comes from admin.js (loaded when opened): in the tests always loaded, so its functions can be called directly
+    try: await pg.evaluate("window.loadAdminUI?window.loadAdminUI().catch(()=>{}):0")
+    except Exception: pass
     return b, pg, errs
 
 

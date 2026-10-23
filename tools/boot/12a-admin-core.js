@@ -197,7 +197,7 @@ window.crewExtra=function(p){
   /* admins edit the person's user data right here (same form as in App-Verwaltung) */
   const ue=m?m.email:lc(p.email),uinv=ue&&ADM.inv.some(i=>i.id===ue),canEd=ACC&&can("users.edit")&&(m||uinv)&&(isOwner()||!ADMINS.includes(ue));
   const edBtn=canEd?cico(ADM.cedit===ue?"close":"edit",L(ADM.cedit===ue?"Schliessen":"Benutzerdaten bearbeiten"),'data-ced="'+esc(ue)+'" aria-expanded="'+(ADM.cedit===ue)+'"',ADM.cedit===ue?" on":""):"";
-  const edForm=canEd&&ADM.cedit===ue?editForm({email:ue,m,name:p.name,role:p.role},true):"";
+  const edForm=canEd&&ADM.cedit===ue?(typeof editForm==="function"?editForm({email:ue,m,name:p.name,role:p.role},true):(window.loadAdminUI&&window.loadAdminUI().catch(()=>{}),'<p class="ghint">'+esc(L("Lade …"))+'</p>')):"";   /* the form is in admin.js */
   if(!(AV("food")||AV("bday")||ACC))return "";
   if(ACC){
     if(!m){const e=lc(p.email),inv=e&&ADM.inv.some(i=>i.id===e);ch.push(na(L(inv?"Eingeladen, noch kein Konto":"Noch kein Konto")));
@@ -218,3 +218,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-ced]");if(
 
 function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
+/* ---------- the App-Verwaltung (users, roles, settings, backup) is loaded only when it is opened (admin.js): a faster start for everybody else.
+   Without a separate file (local build) the parts are in the page and this does nothing ---------- */
+let ADMUI=null;
+window.loadAdminUI=()=>{if(typeof editForm==="function")return Promise.resolve();if(ADMUI)return ADMUI;
+  ADMUI=new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="admin.js?v=__ADMINJS_VER__";sc.onload=()=>{ok();try{render()}catch(_){}};sc.onerror=()=>{ADMUI=null;no(new Error("admin.js"))};document.head.appendChild(sc)});return ADMUI};
+if(typeof VIEWS.admin!=="function")VIEWS.admin=()=>{window.loadAdminUI().catch(()=>showMsg(L("App-Verwaltung konnte nicht geladen werden (offline?)."),5000));return '<div class="empty">'+esc(L("Lade …"))+'</div>'};
