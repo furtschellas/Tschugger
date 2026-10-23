@@ -109,7 +109,7 @@ const cdFree=dt=>dt>=todayISO()&&!(typeof scHas==="function"&&scHas(dt));
 function cdPreview(f){const raw=S.days||S.days0||[],d=dt=>raw.find(x=>x.date===dt);const u=f.u,sc=dt=>cdScenes(d(dt),u)||"–";
   if(!f.a)return {ok:false,t:L("Bitte einen Drehtag wählen.")};if(!cdFree(f.a))return {ok:false,t:L("Vergangene oder schon quittierte Tage lassen sich nicht ändern.")};
   if(f.op!=="shift"){if(!f.b)return {ok:false,t:L("Bitte das zweite Datum wählen.")};if(f.b===f.a)return {ok:false,t:L("Bitte zwei verschiedene Tage wählen.")};if(!cdFree(f.b))return {ok:false,t:L("Vergangene oder schon quittierte Tage lassen sich nicht ändern.")}}
-  if(f.op==="move"&&cdScenes(d(f.b),u))return {ok:false,t:L("Am Zieltag wird schon gedreht – bitte «Tauschen» wählen.")};
+  if(f.op==="move"&&(cdScenes(d(f.b),u)||(u!=="2"&&cdScenes(d(f.b),"2"))))return   /* whole day: a 2nd unit on the target day would be deleted */ {ok:false,t:L("Am Zieltag wird schon gedreht – bitte «Tauschen» wählen.")};
   if(f.op==="swap")return {ok:true,t:cdDD(f.a)+" ("+sc(f.a)+") ⇄ "+cdDD(f.b)+" ("+sc(f.b)+")"};
   if(f.op==="move")return {ok:true,t:cdDD(f.a)+" ("+sc(f.a)+") → "+cdDD(f.b)};
   const sl=cdShootDates(raw,u,f.a);if(!sl.length)return {ok:false,t:L("Ab diesem Tag gibt es keine Drehtage.")};sl.push(cdNextSlot(sl[sl.length-1]));

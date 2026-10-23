@@ -58,6 +58,8 @@ const WD=new Proxy([],{get:(t,k)=>k==="length"?7:(WDS[LANG]||WDS.de)[k]});
 let ZDF=null;try{ZDF=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Zurich",year:"numeric",month:"2-digit",day:"2-digit"})}catch(_){}
 function localISO(t){const d=new Date(t);if(ZDF)try{const x=ZDF.format(d);if(/^\d{4}-\d\d-\d\d$/.test(x))return x}catch(_){}return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
 const todayISO=()=>localISO(Date.now());
+/* «2026-10-24» + n days as a date (calendar days – not 24 h: the change to winter time on 25.10. has 25 hours) */
+const isoAdd=(d,n)=>{const x=new Date(String(d)+"T12:00:00Z");x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};
 const pad2=n=>String(n).padStart(2,"0");
 const clockHM=d=>pad2(d.getHours())+":"+pad2(d.getMinutes());   /* «07:05» of a Date (local time) */
 const msHM=ms=>ms?clockHM(new Date(+ms)):"";   /* «07:05» of a time in milliseconds, "" without */
@@ -189,6 +191,6 @@ function pickDay(list){
   let next=list.find(d=>d.date>=t);
   /* one hour after the wrap of today: the next day of the plan */
   if(next&&next.date===t){try{const x=(S.dispos||[]).find(y=>y&&y.date===t)||{},tm=(x.cs&&x.cs.times)||{},w=hm(tm.wrap||x.wrap||next.wrap||""),cc=hm(tm.crewCall||x.crewCall||next.crewCall||"");
-    const nx=list.find(d=>d.date>t);if(w&&nx&&typeof zurichUTC==="function"&&Date.now()>zurichUTC(t,w).getTime()+(cc&&w<cc?864e5:0)+3600e3)next=nx}catch(_){}}
+    const nx=list.find(d=>d.date>t);if(w&&nx&&typeof zurichUTC==="function"&&Date.now()>zurichUTC(cc&&w<cc?isoAdd(t,1):t,w).getTime()+3600e3)next=nx}catch(_){}}
   S.day=(next||list[list.length-1]||{}).id||null;
 }

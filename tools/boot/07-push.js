@@ -28,9 +28,9 @@ function pushEvents(c){
 const pushStart=e=>{try{if(typeof zurichUTC==="function")return zurichUTC(e.date,e.t||"08:00").getTime()}catch(_){}return new Date(e.date+"T"+(e.t||"08:00")+":00").getTime()};   /* Swiss time, also on a phone set to another time zone */
 function pushItems(c){c=c||pushCfg();const now=Date.now(),lim=now+15*864e5;
   return pushEvents(c).filter(e=>!c.off[e.id]).map(e=>{const st=pushStart(e),at=st-(e.ride?c.leadRide:c.lead)*60e3;
-    const dt=new Date(st),day=WDL(dt)+" "+ddmm(dt);
+    const dt=new Date(e.date+"T12:00:00"),day=WDL(dt)+" "+ddmm(dt);   /* the date of the event, not of the phone's time zone */
     return {id:e.id,at,start:st,title:e.n||L("Termin"),body:[day+(e.t?" "+e.t:""),e.where].filter(Boolean).join(" · "),url:"./#my"}}).filter(x=>x.start>now&&x.start<lim).slice(0,80)}
-let PUSHT=null,PUSHBUSY=false;
+let PUSHT=null,PUSHBUSY=false,PUSHDIRTY=false;
 function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>{try{pushLocalSchedule()}catch(_){}pushSync().catch(err=>console.warn("push",err&&err.code||err))},2500)}
 async function pushReg(){return navigator.serviceWorker.getRegistration?((await navigator.serviceWorker.getRegistration())||(await navigator.serviceWorker.ready)):navigator.serviceWorker.ready}
 const u8=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");s+="===".slice((s.length+3)%4);return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
@@ -44,7 +44,8 @@ async function pushSub(create){const reg=await pushReg();let sub=await reg.pushM
   if(sub&&sub.options&&sub.options.applicationServerKey&&b64uOf(sub.options.applicationServerKey)!==k){try{await sub.unsubscribe()}catch(_){}sub=null;create=true;try{localStorage.removeItem("pushlast")}catch(_){}}
   if(!sub&&create)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u8(k)});if(sub)sub.__k=k;return sub}
 async function pushSync(){
-  if(!ME||!ME.uid||!pushOK()||PUSHBUSY||(window.simOn&&window.simOn()))return;PUSHBUSY=true;   /* never while viewing as another person */
+  if(PUSHBUSY){PUSHDIRTY=true;return}   /* a change during a sync: one more sync right after it (it was lost) */
+  if(!ME||!ME.uid||!pushOK()||(window.simOn&&window.simOn()))return;PUSHBUSY=true;   /* never while viewing as another person */
   try{const c=pushCfg(),{F,db}=await fb(),ref=F.doc(db,"push",ME.uid+"_"+pushDev());let last="";try{last=localStorage.getItem("pushlast")||""}catch(_){}
     if(!(c.on||newsAny(c))||Notification.permission!=="granted"){if(last){await F.deleteDoc(ref).catch(()=>{});try{localStorage.removeItem("pushlast")}catch(_){}}return}
     const sub=await pushSub(true);if(!sub)return;
@@ -53,7 +54,7 @@ async function pushSync(){
     if(h===last)return;
     const enc=await ownEnc(pl);
     await F.setDoc(ref,{c:enc,at:F.serverTimestamp()});try{localStorage.setItem("pushlast",h)}catch(_){}
-  }finally{PUSHBUSY=false}
+  }finally{PUSHBUSY=false;if(PUSHDIRTY){PUSHDIRTY=false;setTimeout(()=>pushSync(),300)}}
 }
 async function pushEnable(){
   if(!pushOK())return;const p=await Notification.requestPermission();
