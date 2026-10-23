@@ -14,8 +14,8 @@
 @media (prefers-color-scheme:light){html:not([data-theme="dark"]) #splash{background:#f6f2ea}html:not([data-theme="dark"]) #splash .spv,html:not([data-theme="dark"]) #splash .splog,html:not([data-theme="dark"]) #splash .spc{color:rgba(0,0,0,.55)}}</style>
 <script>/* stability: errors are collected (reported to the owners without any data), the last version that started without
    errors is kept on the device, and if this version does not start, the page switches to that one (once per session) */
-window.__ERRS=[];window.APPVER="__APP_VER__";window.WORKERVER="__WORKER_VER__";window.addEventListener("error",function(e){try{__ERRS.push({m:String(e.message||"").slice(0,200),f:String(e.filename||"").split("/").pop().slice(0,40),l:e.lineno||0,t:Date.now()})}catch(_){}});
-window.addEventListener("unhandledrejection",function(e){try{var r=e.reason;__ERRS.push({m:String(r&&r.message||r||"").slice(0,200),f:"promise",l:0,t:Date.now()})}catch(_){}});
+window.__ERRS=[];window.APPVER="__APP_VER__";window.WORKERVER="__WORKER_VER__";window.addEventListener("error",function(e){try{__ERRS.push({m:String(e.message||"").slice(0,200),f:String(e.filename||"").split("/").pop().slice(0,40),l:e.lineno||0,t:Date.now(),c:window.__errCtx?String(window.__errCtx()):""})}catch(_){}});
+window.addEventListener("unhandledrejection",function(e){try{var r=e.reason;__ERRS.push({m:String(r&&r.message||r||"").slice(0,200),f:"promise",l:0,t:Date.now(),c:window.__errCtx?String(window.__errCtx()):""})}catch(_){}});
 window.addEventListener("load",function(){setTimeout(function(){var ok=typeof render==="function"&&typeof VIEWS==="object"&&window.__APPOK;
   var safe=/[?&]safe=/.test(location.search);if(safe)try{history.replaceState(null,"",location.pathname+location.hash)}catch(_){}
   if(ok&&!safe)try{sessionStorage.removeItem("safeTry")}catch(_){}
@@ -31,7 +31,7 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   /* on a start the logo, the versions and the © are shown right away – only as long as the app is loading */
   el.classList.add("vis");
   var tp=0;requestAnimationFrame(function(){tp=Date.now()});
-  function end(){if(done)return;var base=tp||Date.now();if(!tp){requestAnimationFrame(function(){tp=Date.now();end()});return}/* as short as possible: away as soon as the app is ready (the versions are also under Mein Konto → App) */done=true;var w=shut?60:160;set(100);setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove()},200)},w)}
+  function end(){if(done)return;var base=tp||Date.now();if(!tp){requestAnimationFrame(function(){tp=Date.now();end()});return}/* as short as possible: away as soon as the app is ready (the versions are also under Mein Konto → App) */done=true;try{window.__STARTMS=Math.round(performance.now())}catch(e){}var w=shut?60:160;   /* how long the start took on this device (Log: «Startzeit») */set(100);setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove()},200)},w)}
   /* below the logo (only when the app starts, not on a reload): schedule version, script version, app version and © */
   /* «start» = first page of this visit (a new tab or the app opened anew); a reload in the same visit shows only the logo */
   /* «reload» = the person reloaded while using the app (the page was visible within the last minute). Phones also «reload»
