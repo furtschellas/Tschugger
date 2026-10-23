@@ -76,10 +76,10 @@ const cqBaseRide=(c,r)=>cqRides(c,r).find(x=>/base/i.test(String(x.from||"")))||
 function cqModel(c,r){const d=c._date,st=(k,t)=>hm(t)?cmSt(cmId(d,k,r,hm(t))):0,rst=id=>id&&window.rideStep?rideStep(id):0;   /* ride steps 0 open · 1 on site · 2 on the way · 3 done */let n=0,all=true,arrived=false,running=false,wmAt=0;
   for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c)){n++;const id=cmId(d,k,r,p.t),s=cmSt(id);if(s>0)arrived=true;if(s===1)running=true;if(s!==2)all=false;else wmAt=Math.max(wmAt,+((window.RIDEACK[id]||{}).at)||0)}
   const ok=typeof rideId==="function",ride=ok?cqRide(c,r):null,rid=ride?rideId(d,ride):"",rs=rst(rid),br=ok?cqBaseRide(c,r):null,bid=br?rideId(d,br):"",bs=rst(bid);
-  const onDone=!!hm(r.onset)&&(st("o",r.onset)>0||st("xo",r.onset)>0||bs===3),baseDone=st("b",r.base)===2||st("xb",r.base)===2;
+  const onDone=!!hm(r.onset)&&(st("o",r.onset)>0||bs===3),baseDone=st("b",r.base)===2;   /* old hand ticks («x…») no longer count – they could not be reset */
   const at=id=>+((window.RIDEACK[id]||{}).at)||0;
   return {d,st,wmDone:n>0&&all,wmAt,arrived,running,ride,rid,rs,bid,bs,pu:rid?rs:st("u",r.pickup),puAt:rid?at(rid):at(cmId(d,"u",r,hm(r.pickup))),puVAt:rid?at("v"+rid):0,onDone,baseDone,
-    callAct:st("c",r.call)>0||st("xc",r.call)>0||rs===3,puDone:st("xp",r.pickup)===2}}
+    callAct:st("c",r.call)>0||rs===3}}
 const CQF={p:"pickup",c:"call",b:"base",o:"onset"};
 /* P/UP: the planned driving time of the pickup ride behind the time – driver on site: the minutes; on the way: counting down from the start */
 /* minutes behind a time: counting up (waiting since …) or down (planned driving time of the pickup ride, from the start) */
@@ -89,7 +89,7 @@ function cqDrive(m,cur){if(cur===1)return cqUp(m.puAt,L("Fahrer wartet seit"));i
   return ' <span class="mkd cqcd" data-cqat="'+m.puVAt+'" data-cqmin="'+min+'" title="'+esc(L("Restzeit"))+'">'+cqLeft(m.puVAt,min)+'′</span>'}
 const CQRULE={
   /* P/UP: with a ride its three steps (also ticked in «Fahrten»), without a ride stored here */
-  p(m,r,t){if(m.onDone||m.baseDone||m.callAct||m.arrived||m.puDone)return cqDone(t,L("Erledigt"));
+  p(m,r,t){if(m.onDone||m.baseDone||m.callAct||m.arrived)return cqDone(t,L("Erledigt"));
     const cur=Math.min(2,m.pu),car=(cur===2?CQCAR:"")+cqDrive(m,cur),tips=[L("Offen – antippen = Fahrer vor Ort"),L("Fahrer vor Ort – antippen = Fahrzeug fährt los"),L("Fahrzeug unterwegs – antippen = zurücksetzen")];
     if(!cqCan("u"))return cqSpan(cur?1:0,t,tips[cur])+car;const nx=(cur+1)%3;
     return cqBtn(cur?1:0,"u",m.rid?"":cmId(m.d,"u",r,hm(t)),m.d,t,tips[cur],{nx,lk:m.rid,ls:nx})+car},
