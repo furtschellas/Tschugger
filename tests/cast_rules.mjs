@@ -46,6 +46,7 @@ t("Fahrt Base → Set in «Fahrten» abgeschlossen → On set erledigt",W,ride(s
 t("Fahrt Base → Set angenommen, Kostüm/Maske offen → pinker Rahmen bei On set",W,ride(sr,1),R1,"cq0 cq0+tap plain frame");
 t("ohne Fahrt: P/UP offen, Call antippbar",W,{},R2,"cq0 cq0+tap plain plain");
 t("ohne Fahrt: Call angetippt → P/UP abgeschlossen",W,{[id(R2,"c","07:30")]:1},R2,"cq2 cq1+tap plain plain");
+t("alter Hand-Haken bei Call blockiert nichts mehr (Call zurücksetzbar)",W,{[id(R1,"xc","07:00")]:2},R1,"cq0 cq0+tap plain plain");
 t("Cast manuell: jede Zeit antippbar",["cast.manual"],{},R1,"cq0+tap cq0+tap cq0+tap cq0+tap");
 t("ohne Recht zum Quittieren: Stand sichtbar, nichts antippbar",[],{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"cq2 cq2 cq1 cq0");
 t("ohne Recht: Base quittiert sichtbar",[],{[id(R1,"b","07:45")]:2},R1,"cq2 cq2 cq2+car cq0 rowdone");
