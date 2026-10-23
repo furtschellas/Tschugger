@@ -620,18 +620,25 @@ async def owner_tests(p, port):
           const r2=scExpRows(d,'2');const only2=r2.length>0&&r2.every(r=>/2/.test(r.unit));const dur=(scExpRows(d,'1').find(r=>/12/.test(r.name))||{}).min;
           window.canPerm=()=>false;const nopen=(()=>{const b=document.createElement('div');b.innerHTML=sceneLogSec();return b.querySelectorAll('[data-scled]').length})();
           SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;window.canPerm=k.cp;return {days,fixed,pens:pens>0,nopen,per,only2,dur}})()""")
-        check("Szenen-Protokoll: pro Unit ein Tagesprotokoll mit Setup/Drehstart/Lunch/Wrap, Stift nur mit Recht, Export pro Tag und Unit", sl in (None, {"days": 2, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}), sl, public=True)
+        check("Szenen-Protokoll: pro Unit ein Tagesprotokoll mit Setup/Drehstart/Lunch/Wrap, Stift nur mit Recht, Export pro Tag und Unit", sl in (None, {"days": 2, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}, {"days": 3, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}), sl, public=True)
         # the Google-Sheets copy of the scene log (tools/scene_sheet.py) builds the same rows as the export of the app
         sp = await E("""(()=>{if(typeof sceneLogSec!=='function'||typeof scExpRows!=='function')return null;const day=(S.days||[]).find(d=>d.kind==='shoot'&&(d.items||[]).filter(i=>i.sc).length>1);if(!day)return null;
           const k={l:SCLOG.list,e:SCLOG.exp,c:window.canSceneLog,g:LANG},d=day.date,t=h=>new Date(d+'T'+h).getTime(),sc=day.items.filter(i=>i.sc);
           const acks=[{id:scAckId(d,sc[0].sc),d,s:2,u:'1',sc:scAckId(d,sc[0].sc).split('-')[1],b:t('09:05'),e:t('10:10'),at:1},{id:scAckId(d,sc[1].sc),d,s:1,u:'1',sc:scAckId(d,sc[1].sc).split('-')[1],b:t('10:30'),at:2},
             {id:d.replace(/-/g,'')+'-lunch',d,s:2,u:'1',sc:'lunch',b:t('12:30'),e:t('13:15'),at:3},{id:d.replace(/-/g,'')+'-lunch_u2',d,s:2,u:'2',sc:'lunch_u2',b:t('12:00'),e:t('12:40'),at:4}];
           LANG='de';window.canSceneLog=()=>true;SCLOG.list=acks;sceneLogSec();const rows=['1','2','3'].map(u=>scExpRows('',u).map(r=>[r.name,r.dt,r.date,r.unit,r.state,r.ie,r.pg,r.set,r.plan,r.pmin,r.b,r.e,r.min,r.diff,r.desc]));
-          SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;LANG=k.g;return {acks,rows,days:S.days,dispos:S.dispos,tz:Intl.DateTimeFormat().resolvedOptions().timeZone}})()""")
+          SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;LANG=k.g;return {today:todayISO(),acks,rows,days:S.days,dispos:S.dispos,tz:Intl.DateTimeFormat().resolvedOptions().timeZone}})()""")
         if sp:
             sys.path.insert(0, str(HERE.parent / "tools")); import scene_sheet  # noqa: E402
             from zoneinfo import ZoneInfo; scene_sheet.TZ = ZoneInfo(sp["tz"])
-            py = scene_sheet.build(sp["acks"], {"days": sp["days"], "dispos": sp["dispos"]})
+            # the same «today» as the app (Zurich): around midnight the test browser's time zone is already / still another day
+            import types as _ty
+            class _DT(scene_sheet.datetime.datetime):
+                @classmethod
+                def now(cls, tz=None): return scene_sheet.datetime.datetime.fromisoformat(sp["today"] + "T12:00:00").replace(tzinfo=tz)
+            _real = scene_sheet.datetime; scene_sheet.datetime = _ty.SimpleNamespace(datetime=_DT)
+            try: py = scene_sheet.build(sp["acks"], {"days": sp["days"], "dispos": sp["dispos"]})
+            finally: scene_sheet.datetime = _real
             diff = sum(1 for i, u in enumerate("123") for x, y in zip(sp["rows"][i], py.get(u, [])) if [str(v) for v in x] != [str(v) for v in y]) + sum(abs(len(sp["rows"][i]) - len(py.get(u, []))) for i, u in enumerate("123"))
             check("Szenen-Protokoll: Google-Sheets-Abgleich baut dieselben Zeilen wie der Export der App", diff == 0, f"{diff} Zeilen verschieden", public=True)
         vp = await E("""(()=>{if(typeof tabsOn!=='function')return null;const k={s:SIMROLE,r:MYROLE,p:MYPERMS.slice()};SIMROLE={adm:false};MYROLE='t';
