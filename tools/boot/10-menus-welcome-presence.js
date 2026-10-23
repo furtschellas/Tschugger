@@ -151,7 +151,8 @@ async function markSeen(){
      «last seen» too – used to fail from the 13th browser on (private mode, cleared data …). MEMBER.devs follows every write */
   let F,db;try{({F,db}=await fb())}catch(_){return}
   const base={lastSeen:F.serverTimestamp(),app:appKind()},up=Object.assign({},base),dv=Object.assign({},(MEMBER&&MEMBER.devs)||{}),tm=k=>+String(dv[k]).split("|")[1]||0;
-  if(id){dv[id]=appKind()+"|"+Date.now();up["devs."+id]=dv[id];
+  /* the device's last start time (ms) after kind and last use: Log shows how fast the app starts on the crew's devices */
+  if(id){dv[id]=appKind()+"|"+Date.now()+(window.__STARTMS?"|"+window.__STARTMS:(String(dv[id]||"").split("|")[2]?"|"+String(dv[id]).split("|")[2]:""));up["devs."+id]=dv[id];
     Object.keys(dv).filter(k=>k!==id).sort((a,b)=>tm(b)-tm(a)).forEach((k,i)=>{if(i>=9||Date.now()-tm(k)>30*864e5){up["devs."+k]=F.deleteField();delete dv[k]}})}
   try{await F.updateDoc(F.doc(db,"members",ME.uid),up);if(MEMBER&&id)MEMBER.devs=dv}
   catch(err){console.warn("seen",err&&err.code||err);if(id&&/permission/.test(err&&err.code||""))try{await F.updateDoc(F.doc(db,"members",ME.uid),base)}catch(_){}}

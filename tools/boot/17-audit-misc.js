@@ -41,10 +41,17 @@ function auditSecInner(){
   const rows=AUD.list.map(x=>{const tgt=x.col==="members"?memName(x.id):x.col==="roles"?(((ADM.roles||[]).find(r=>r.id===x.id)||{}).name||x.id):x.col==="menus"?dmy(x.id):x.col==="config"?"":x.col==="broadcasts"?"":/@/.test(x.id)?nameOf(x.id):x.id;
     return Object.assign({},x,{who:nameOf(x.by),tgt,what:L(AUDLBL[x.col]||x.col)+" "+L(AUDOP[x.op]||x.op)})}).filter(x=>!q||fold([x.who,x.tgt,x.what,x.sum].join(" ")).includes(q));
   return '<div class="admins audit"><h3>'+L("Log")+' <small>'+AUD.list.length+'</small></h3><p class="ahint">'+L("Wer hat wann Rollen, Benutzende, Menüs, Einstellungen oder Push-Nachrichten geändert – die letzten 300 Einträge.")+'</p>'+
+    startStatsHTML()+
     (AUD.err?'<p class="amsg">'+esc(L("Protokoll nicht lesbar – bitte die neuen Firestore-Regeln veröffentlichen."))+' ('+esc(AUD.err)+')</p>':'')+
     '<div class="audbar"><input type="search" data-audq placeholder="'+esc(L("Suchen: Person, Rolle, Menü …"))+'" value="'+esc(AUD.q)+'"><button type="button" class="cico" data-audre '+ariaTip(L("Neu laden"))+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button></div>'+
     (rows.length?audDays(rows,x=>'<li><div class="audh"><b>'+esc(x.what)+'</b>'+(x.tgt?' <span class="audt">'+esc(x.tgt)+'</span>':'')+'<span class="audw">'+esc(x.ms?fmtDT(x.ms):"")+'</span></div><div class="audb">'+esc(x.who)+(x.sum?' · <span class="ghint">'+esc(x.sum)+'</span>':'')+'</div></li>'):'<p class="ghint">'+L("Noch keine Einträge.")+'</p>')+'</div>';
 }
+/* «Startzeit»: how long the app takes to start on the crew's devices (last 14 days, the median per kind of device) – from the devices' «last seen» */
+function startStatsHTML(){try{const per={ios:[],android:[],desktop:[]},all=[],lim=Date.now()-14*864e5;
+  for(const m of (typeof ADM!=="undefined"&&ADM.mem)||[])for(const v of Object.values(m.devs||{})){const [k,at,ms]=String(v).split("|");if(!ms||+at<lim||!(+ms>0&&+ms<120e3))continue;const d=String(k).split("-")[1]||"desktop";(per[d]||per.desktop).push(+ms);all.push(+ms)}
+  if(!all.length)return "";const med=a=>{const b=a.slice().sort((x,y)=>x-y);return b[Math.floor(b.length/2)]},s=x=>(x/1000).toFixed(1).replace(".",",")+" s";
+  return '<p class="ahint audstart"><b>'+esc(L("Startzeit"))+'</b> ('+all.length+' '+esc(L("Geräte"))+', '+esc(L("letzte 14 Tage"))+'): '+esc(L("Mittel"))+' '+s(med(all))+
+    [["ios","iPhone/iPad"],["android","Android"],["desktop",L("Computer")]].filter(([k])=>per[k].length).map(([k,t])=>' · '+esc(t)+' '+s(med(per[k]))).join("")+' · '+esc(L("langsamstes"))+' '+s(Math.max(...all))+'</p>'}catch(_){return ""}}
 /* the log by day: one closed sub-part per day (open while searching) */
 function audDays(rows,li){const g=new Map();for(const x of rows){const k=x.ms?localISO(x.ms):"–";if(!g.has(k))g.set(k,[]);g.get(k).push(x)}
   return [...g].map(([k,l])=>'<details class="tstsu" data-su="aud:'+esc(k)+'"'+(AUD.q?' open':logSu("aud:"+k))+'><summary>'+esc(k==="–"?"–":dmy(k))+' · '+l.length+' '+esc(L(l.length===1?"Eintrag":"Einträge"))+'</summary><ul class="audlist">'+l.map(li).join("")+'</ul></details>').join("")}
@@ -172,13 +179,17 @@ async function tstStart(auto){if(!isAdmin()||TST.run||!window.CHATURL)return;TST
 
 /* ---------- errors on a device are reported to the owners (in Log, «App-Fehler»): only the message, file and line –
    never data (addresses and numbers removed); at most 5 per visit, the same message once a day per device ---------- */
+/* where the error happened (no data): page and sub-page, the day shown, the role, the device, online/offline, simulation – «tab=dispo · 2026-10-24 · Rolle crew · app-ios · offline» */
+window.__errCtx=()=>{try{const sub=S.tab==="admin"&&typeof ADM!=="undefined"?ADM.sub:S.tab==="acct"&&typeof ACSUB!=="undefined"?ACSUB:"";
+  const day=S.tab==="dispo"&&typeof CSCUR!=="undefined"?CSCUR.date:S.tab==="plan"?S.day:"",role=typeof isOwner==="function"&&isOwner()?"owner":typeof isAdmin==="function"&&isAdmin()?"admin":(typeof MYROLE!=="undefined"&&MYROLE)||"-";
+  return [S.tab+(sub?"/"+sub:""),day,"Rolle "+String(role).slice(0,20),typeof appKind==="function"?appKind():"",navigator.onLine===false?"offline":"",typeof SIMUSER!=="undefined"&&SIMUSER?"Simulation":""].filter(Boolean).join(" · ").slice(0,90)}catch(_){return ""}};
 const ERRSENT=new Set();let ERRN=0;
 async function errReport(){try{if(window.__ERRS&&__ERRS.length>50)__ERRS.splice(0,__ERRS.length-50);if(!ME||!window.__ERRS||!__ERRS.length||ERRN>=5)return;if(!(MEMBER||isAdmin()))return;
     const today=todayISO();let seen={};try{seen=JSON.parse(localStorage.getItem("errsent:v1")||"{}")}catch(_){}if(seen.d!==today)seen={d:today,m:[]};
     const list=__ERRS.splice(0);const {F,db}=await fb();
     for(const e of list){const m=String(e.m||"").replace(/[\w.+-]+@[\w-]+\.[\w.]+/g,"…").replace(/\+?\d[\d ]{6,}/g,"…").slice(0,200);const k=m+"|"+e.f;
       if(!m||ERRSENT.has(k)||seen.m.includes(k)||ERRN>=5)continue;ERRSENT.add(k);seen.m.push(k);ERRN++;
-      await F.addDoc(F.collection(db,"audit"),{by:lc(ME.email),at:F.serverTimestamp(),op:"error",col:"app",id:String(window.APPVER||"").slice(0,40),sum:(m+(e.f?" ("+e.f+(e.l?":"+e.l:"")+")":"")).slice(0,290)})}
+      await F.addDoc(F.collection(db,"audit"),{by:lc(ME.email),at:F.serverTimestamp(),op:"error",col:"app",id:String(window.APPVER||"").slice(0,40),sum:(m.slice(0,180)+(e.f?" ("+e.f+(e.l?":"+e.l:"")+")":"")+(e.c?" – "+e.c:"")).slice(0,290)})}
     try{localStorage.setItem("errsent:v1",JSON.stringify({d:today,m:seen.m.slice(-30)}))}catch(_){}}catch(_){}}
 setInterval(errReport,30000);setTimeout(errReport,8000);
 /* ---------- the worker in Cloudflare: admins see in Log/Tests when it runs an older version than this app expects ---------- */
