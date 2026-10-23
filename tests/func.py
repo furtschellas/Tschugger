@@ -967,12 +967,14 @@ async def owner_tests(p, port):
         await E("(()=>{const d=document.querySelector('#view details[data-lsec=\"tst\"]');d.open=true;const s=d.querySelector('details.tstsu');s.open=true})()"); await pg.wait_for_timeout(150); await E("render()"); await pg.wait_for_timeout(200)
         ko = await E("({sub:!!document.querySelector('#view details[data-lsec=\"tst\"] details.tstsu[open]'),box:!!(document.querySelector('#view details[data-lsec=\"tst\"]')||{}).open,su:JSON.stringify(TST.su).slice(0,80),tab:S.tab+'/'+ADM.sub})")
         check("Log: geöffnete Unterteile bleiben offen, solange man auf der Seite bleibt", ko["sub"], ko, public=True)
-        pf = await E("""(()=>{const keep={};for(const k of PREFKEYS){keep[k]=localStorage.getItem(k);localStorage.setItem(k,'x')}localStorage.setItem('rc','abc');
-          let n=0;const p={};for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null)p[k]=v}const v=localStorage.getItem('rc');if(v!==null&&Object.keys(p).length<14)p.rc=v;n=Object.keys(p).length+2;
-          for(const k of PREFKEYS){if(keep[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,keep[k])}localStorage.removeItem('rc');return n})()""")
-        check("Einstellungen: auch mit allen Werten höchstens 16 Felder (Regel)", pf <= 16, pf)
+        pf = await E("PREFKEYS.length+2")
+        check("Einstellungen: auch mit allen Werten höchstens 16 Felder (Regel: Einstellungen + lt + x)", pf <= 16, pf)
         src = await E("savePrefs.toString()")
-        check("Einstellungen: «Nachricht gesehen» wird nur gespeichert, wenn Platz ist", "length<14" in src)
+        check("Einstellungen: gesehene Hinweise in einem Feld «x» (gehen nicht mehr verloren), gespeichert erst nach dem Laden", "p.x=" in src and "PREFOK" in src and "serverTimestamp" not in src)
+        px = await E("JSON.stringify([prefX({x:JSON.stringify({csb:'a'})}).csb,prefX({rc:'b'}).rc])")
+        check("Einstellungen: Hinweise aus «x» und aus älteren Einzelfeldern gelesen", px == '["a","b"]', px)
+        wa = await E("waNum('079 123 45 67')+'|'+bcWaHTML.toString().includes('waNum(')")
+        check("Broadcast: WhatsApp-Link mit internationaler Nummer (079 → 4179)", wa == "41791234567|true", wa)
         check("Log: Knopf «Tests jetzt starten» (Kreis-Pfeile) für Admins", await E("!!document.querySelector('#view [data-tstrun] svg')"))
         await E("TST.d=null")
 
