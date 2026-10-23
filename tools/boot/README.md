@@ -23,5 +23,6 @@ alles teilt denselben globalen Bereich, die Reihenfolge zählt (Nummern vorne).
 | 15-weather | Wetter (Open-Meteo) |
 | 16-today-view | Seite «Today» |
 | 17-audit-misc | Protokoll und Rest |
+| 24-flow | Ablauf: Fahrten und Cast auf einer Ebene – Quittierungen speichern, Fahrten in drei Schritten, Cast-Regeln, Kostüm/Maske in Meine Termine |
 
 Neue Teile: eigene Datei mit passender Nummer anlegen (z. B. `13b-…`), dann `python3 tools/make_site.py`.
