@@ -87,6 +87,11 @@ check("Verschlüsselung: veränderte Daten werden erkannt", fails(lambda: AESGCM
 html = (ROOT / "index.html").read_text()
 csp = (re.search(r'Content-Security-Policy" content="([^"]+)"', html) or [None, ""])[1]
 check("Seite: Content-Security-Policy vorhanden", bool(csp))
+_inl = re.findall(r"<script>([\s\S]*?)</script>", html)
+import base64 as _b64, hashlib as _hl
+_miss = [i for i, c in enumerate(_inl) if "'sha256-" + _b64.b64encode(_hl.sha256(c.encode("utf-8")).digest()).decode() + "'" not in csp]
+check("Seite: jedes eigene Skript ist in der CSP per Prüfsumme erlaubt (eingeschleuste Skripte laufen nicht)", bool(_inl) and not _miss, len(_miss), public=True)
+check("Seite: lässt sich nicht in fremde Seiten einbetten (Schutz gegen Clickjacking)", "window.top!==window.self" in html, public=True)
 check("Seite: kein eval im Skript erlaubt ('unsafe-eval')", "unsafe-eval" not in csp)
 check("Seite: keine Plugins/Objekte, Basis-Adresse fest (object-src 'none', base-uri 'self')", "object-src 'none'" in csp and "base-uri 'self'" in csp)
 check("Seite: Formulare nur an die eigene Seite (form-action 'self')", "form-action 'self'" in csp)
