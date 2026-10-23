@@ -212,10 +212,12 @@ function locResults(gs){
     })();
 }
 /* Sides (the script pages of a shooting day) and the original callsheet pages: as pictures in the app (gallery, also offline) */
+/* the count behind the title of a part, like the other parts of the callsheet («3 Dokumente») */
+const docCnt=n=>'<span class="cscount"><span><b>'+n+'</b> '+esc(L(n===1?"Dokument":"Dokumente"))+'</span></span>';
 function sidesHTML(date){const dd=window.cdDocDate?cdDocDate(date):date,all=arr(S.meta&&S.meta.sides),mine=all.map((s,i)=>[s,i]).filter(([s])=>dd&&s.date===dd),gen=all.map((s,i)=>[s,i]).filter(([s])=>!s.date);
   if(!mine.length&&!gen.length)return "";const b=([s])=>'<a class="pillbtn" href="'+esc(safeUrl(s.url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI.doc:'')+' '+esc(s.name)+'</a>';   /* opens the PDF itself */
   /* folded, opened with a tap */
-  return '<details class="dsec cssec"><summary><h3 class="dh">Sides · '+(mine.length+gen.length)+'</h3>'+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L("Die Drehbuchseiten des Tages."))+'</p><div class="sidesb">'+mine.map(b).join("")+(gen.length?(mine.length?'<span class="sidesg">'+esc(L("Weitere"))+'</span>':'')+gen.map(b).join(""):'')+'</div></details>'}
+  return '<details class="dsec cssec" id="cs-sides"><summary><h3 class="dh">Sides</h3>'+docCnt(mine.length+gen.length)+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L("Die Drehbuchseiten des Tages."))+'</p><div class="sidesb">'+mine.map(b).join("")+(gen.length?(mine.length?'<span class="sidesg">'+esc(L("Weitere"))+'</span>':'')+gen.map(b).join(""):'')+'</div></details>'}
 document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[data-cspg]");if(!a||typeof window.blkImg!=="function")return;e.preventDefault();
   if(a.dataset.sides!==undefined){const s=arr(S.meta&&S.meta.sides)[+a.dataset.sides];if(!s)return;
     openGallery({name:"sides:"+s.name,title:"Sides · "+s.name,sc:[],url:s.url,media:arr(s.pg).map((p,i)=>({n:s.name+" · "+(i+1)+"/"+s.pg.length,t:"img",f:p,u:s.url}))});return}
@@ -226,10 +228,24 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-sides],[da
 /* documents of the day as buttons in a folded part of the callsheet: risk assessments (right «Gefährdungsbeurteilung sehen»)
    and set floorplans attached to the callsheet (right «Setfloorpläne sehen») */
 function docSecHTML(date,perm,key,title,hint,icon){if(!vok(perm))return "";const dd=window.cdDocDate?cdDocDate(date):date,l=arr(S.meta&&S.meta[key]).filter(r=>dd&&r.date===dd);if(!l.length)return "";
-  return '<details class="dsec cssec rasec"><summary><h3 class="dh">'+esc(L(title))+' · '+l.length+'</h3>'+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L(hint))+'</p><div class="sidesb">'+
+  return '<details class="dsec cssec rasec" id="cs-'+esc(key)+'"><summary><h3 class="dh">'+esc(L(title))+'</h3>'+docCnt(l.length)+(typeof CSEXP==="string"?CSEXP:"")+'</summary><p class="ghint">'+esc(L(hint))+'</p><div class="sidesb">'+
     l.map(r=>'<a class="pillbtn" href="'+esc(safeUrl(r.url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI[icon]:'')+' '+esc(r.name)+'</a>').join("")+'</div></details>'}
 const raHTML=date=>docSecHTML(date,"ra","ra","Gefährdungsbeurteilung","Gefährdungsbeurteilungen des Tages (Sicherheit am Set).","warn");
-const setfpHTML=date=>docSecHTML(date,"setfp","setfp","Setfloorpläne","Floorpläne der Sets, die dem Callsheet beiliegen.","doc");
+/* «Anhänge» of a callsheet: the original callsheet, the Motivpläne («Motif See», «Tag 1 Plan – Motif Kapelle») and the floorplans of the day –
+   opened in the PDF viewer of the app (no Dropbox account needed, also offline); without the PDF in the app yet: the pages / the Dropbox link */
+function attachHTML(x,date){const dd=window.cdDocDate?cdDocDate(date):date,fp=vok("setfp")?arr(S.meta&&S.meta.setfp).filter(r=>dd&&r.date===dd):[];
+  const btn=(pdf,title,url,ico,lab)=>pdf&&typeof window.blkImg==="function"?'<button type="button" class="pillbtn" data-attpdf="'+esc(pdf)+'" data-atttitle="'+esc(title)+'">'+(window.CSI?CSI[ico]:'')+' '+esc(lab)+'</button>'
+    :url?'<a class="pillbtn" href="'+esc(safeUrl(url))+'" target="_blank" rel="noopener noreferrer">'+(window.CSI?CSI[ico]:'')+' '+esc(lab)+'</a>':'';
+  const grp=(t,items)=>items.length?'<div class="attg"><h4>'+esc(L(t))+'</h4><div class="sidesb">'+items.join("")+'</div></div>':'';
+  let orig="";if(x){orig=x.pdf?btn(x.pdf,L("Callsheet")+" · "+(x.label||x.date),"","doc",L("Original-Callsheet")):arr(x.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="pillbtn" data-cspg="'+esc(x.date)+'">'+(window.CSI?CSI.doc:'')+' '+esc(L("Original-Callsheet"))+'</button>':btn("","",x.link,"doc",L("Original-Callsheet"))}
+  const mo=fp.filter(r=>r.k!=="fp").map(r=>btn(r.pdf,r.name,r.url,"pin",r.name)),fl=fp.filter(r=>r.k==="fp").map(r=>btn(r.pdf,r.name,r.url,"doc",r.name));
+  const n=(orig?1:0)+mo.length+fl.length;if(!n)return "";
+  return '<details class="dsec cssec attsec" id="cs-att"><summary><h3 class="dh">'+esc(L("Anhänge"))+'</h3>'+docCnt(n)+(typeof CSEXP==="string"?CSEXP:"")+'</summary>'+
+    grp("Callsheet",orig?[orig]:[])+grp("Motivpläne",mo)+grp("Floorpläne",fl)+'</details>'}
+window.attachCount=(x,date)=>{const dd=window.cdDocDate?cdDocDate(date):date;return (x&&(x.pdf||arr(x.pg).length||x.link)?1:0)+(vok("setfp")?arr(S.meta&&S.meta.setfp).filter(r=>dd&&r.date===dd).length:0)};
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-attpdf]");if(!b||typeof window.blkImg!=="function")return;e.preventDefault();
+  const t=b.dataset.atttitle||"PDF";window.blkImg(b.dataset.attpdf).then(u=>window.pdfView(u,t,t.replace(/[\\/:*?"<>|]+/g," ").trim()+".pdf")).catch(()=>showMsg(L("PDF nicht verfügbar (offline?)."),4000))});
+const setfpHTML=date=>attachHTML(null,date);
 /* one hour after the wrap of a shooting day the callsheet of the next shooting day (if there is one); a wrap after midnight counts for the next morning */
 function csDayAfterWrap(t,pick,by,now){const td=S.days.find(d=>d.date===t)||{},x0=by[t]||{},tm=(x0.cs&&x0.cs.times)||{};
   const w=hm(tm.wrap||x0.wrap||td.wrap||""),cc=hm(tm.crewCall||x0.crewCall||td.crewCall||"");const nx=pick.find(d=>d.date>t&&by[d.date]);
@@ -262,9 +278,8 @@ function renderDispo(){
       setfpHTML(day.date)+sidesHTML(day.date)+raHTML(day.date);
   }
   /* read in structure (as the document): the new view; older callsheets keep the view below */
-  if(x.cs&&typeof x.cs==="object"&&typeof renderCS==="function"){h+=renderCS(x,day)+setfpHTML(x.date)+sidesHTML(x.date)+raHTML(x.date);
-    if(arr(x.pg).length||x.link)h+='<p class="csorig">'+(arr(x.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="bigbtn" data-cspg="'+esc(x.date)+'">'+L('Original-Callsheet ansehen')+' <small>'+x.pg.length+'</small></button> ':'')+
-      (x.link?'<a class="pillbtn csbig" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer">'+L('In Dropbox öffnen')+'</a>':'')+'</p>';
+  if(x.cs&&typeof x.cs==="object"&&typeof renderCS==="function"){/* Anhänge, Sides and risk assessments inside the callsheet: the same look as its other parts */
+    const r=renderCS(x,day),ex=attachHTML(x,x.date)+sidesHTML(x.date)+raHTML(x.date);h+=r.endsWith("</div>")?r.slice(0,-6)+ex+"</div>":r+ex;
     return h}
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>':'';
   h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date drow"><span>'+fmtDate(x.date)+(x.version?' · '+esc(x.version):'')+'</span>'+UNITBAR+'</div></div></div>';
@@ -294,9 +309,7 @@ function renderDispo(){
     const w=Math.max(...rows.map(r=>r.length));
     h+='<section class="dsec"><h3 class="dh">'+esc(String(sec.title||""))+'</h3>'+(w>1?'<div class="tblw"><table class="dtbl"><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(String(c==null?"":c))+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>'
       :'<div class="dlines">'+rows.map(r=>'<p>'+esc(String(r[0]))+'</p>').join("")+'</div>')+'</section>'}
-  h+=setfpHTML(x.date)+sidesHTML(x.date)+raHTML(x.date);
-  if(arr(x.pg).length||x.link)h+='<p class="csorig">'+(arr(x.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="bigbtn" data-cspg="'+esc(x.date)+'">'+L('Original-Callsheet ansehen')+' <small>'+x.pg.length+'</small></button> ':'')+
-    (x.link?'<a class="pillbtn" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer">'+L('In Dropbox öffnen')+'</a>':'')+'</p>';
+  h+=attachHTML(x,x.date)+sidesHTML(x.date)+raHTML(x.date);
   return h;
 }
 function renderInfo(){
