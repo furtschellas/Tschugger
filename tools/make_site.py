@@ -36,5 +36,13 @@ ver=hashlib.sha1(out.encode()).hexdigest()[:10]
 out=out.replace("__APP_VER__",ver)
 _wv=re.search(r'const VERSION = "([^"]+)"',(T/"chat_worker.js").read_text())
 out=out.replace("__WORKER_VER__",_wv.group(1) if _wv else "")   # the app warns admins when the worker in Cloudflare is older
+# security: only the app's own inline scripts may run – each by its SHA-256 (an injected <script> has no matching hash and is blocked);
+# 'unsafe-inline' stays only for very old browsers (a browser that knows hashes ignores it)
+import base64 as _b64
+_hs=sorted({"'sha256-"+_b64.b64encode(hashlib.sha256(m.group(1).encode("utf-8")).digest()).decode()+"'" for m in re.finditer(r"<script>([\s\S]*?)</script>",out)})
+_csp=re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]*)">',out)
+if _csp and _hs:
+  _new=_csp.group(1).replace("script-src 'self' 'unsafe-inline'","script-src 'self' 'unsafe-inline' "+" ".join(_hs),1)
+  out=out[:_csp.start(1)]+_new+out[_csp.end(1):]
 (R/"index.html").write_text(out);(R/"version.txt").write_text(ver+"\n")
 print("index.html",len(out))
