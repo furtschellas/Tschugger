@@ -548,7 +548,7 @@ async def owner_tests(p, port):
         check("Callsheet: Karten-Suchlink aus einer Hilfsfunktion, keine Inline-Klick-Handler", hm in (None, {"q": True, "e": True, "noinl": True}), hm)
         hn = await E("""(()=>{if(typeof csNowLoc!=='function')return null;const cc={locations:[{no:'1',name:'A',notes:['To set 1: 4 min walk','WC: Base']}]};const kl=S.locs;S.locs=[];const v=document.createElement('div');v.innerHTML=renderCS({date:'2030-05-06',cs:cc},{date:'2030-05-06'});S.locs=kl;const d=v.querySelector('details.csloc');
           const c={locations:[{no:'1',name:'A',scenes:'1'},{no:'2',name:'B',scenes:'2'}],order:{rows:[{t:'08:30',sc:'1'},{t:'12:00',text:'Lunch'},{t:'13:00',sc:'2'},{t:'18:00',text:'Wrap'}]}};const ls=csLocs(c);
-          const at=(h,m)=>{const l=csNowLoc(c,'2030-05-06',ls,new Date(2030,4,6,h,m));return l?l.name:''};
+          const at=(h,m)=>{const l=csNowLoc(c,'2030-05-06',ls,zurichUTC('2030-05-06',pad2(h)+':'+pad2(m)));return l?l.name:''};   /* the shooting time is Zurich time */
           return {icons:!d.querySelector('summary [data-cshn]'),texts:d.querySelectorAll(':scope>.cshnl').length===2,now:[at(8,0),at(9,0),at(12,30),at(14,0),at(18,30)].join(',')==',A,A,B,'}})()""")
         check("Callsheet: Hinweise (To set, WC) nur im aufgeklappten Teil, aktuelle Location «jetzt hier»", hn in (None, {"icons": True, "texts": True, "now": True}), hn)
         nm = await E("""(()=>{if(typeof csNear!=='function'||typeof csFilter!=='function')return null;
