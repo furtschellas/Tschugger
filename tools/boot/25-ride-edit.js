@@ -2,10 +2,14 @@
    rideedit/{id of the original ride} = {c (encrypted with the crew key – names), d (date), at}; the Dropbox stays untouched,
    the change applies to exactly this ride of the callsheet (a new callsheet with another ride replaces it) ---------- */
 window.RIDEEDIT=window.RIDEEDIT||{};window.REDVER=0;let REDSUB=null;
-async function rideEditLoad(){if(REDSUB||typeof ME==="undefined"||!ME)return;
+/* the subscription is marked at once (two quick calls made two subscriptions); a slower older snapshot does not overwrite a newer one;
+   like the ticks: from the first callsheet of the last 60 days on (changed rides of past days stayed hidden) */
+let REDSEQ=0;
+async function rideEditLoad(){if(REDSUB||typeof ME==="undefined"||!ME)return;REDSUB="…";
   try{const {F,db}=await fb();const key=await getDataKey();
-    REDSUB=F.onSnapshot(F.query(F.collection(db,"rideedit"),F.where("d",">=",todayISO())),async q=>{const m={};for(const d of q.docs){try{m[d.id]=await ownDec(key,d.data().c)}catch(_){}}
-      if(JSON.stringify(m)===JSON.stringify(window.RIDEEDIT))return;window.RIDEEDIT=m;window.REDVER++;try{MEMO.clear()}catch(_){}render();try{pushSyncSoon()}catch(_){}},()=>{REDSUB=null})}catch(_){}}
+    const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;
+    REDSUB=F.onSnapshot(F.query(F.collection(db,"rideedit"),F.where("d",">=",from)),async q=>{const my=++REDSEQ,m={};for(const d of q.docs){try{m[d.id]=await ownDec(key,d.data().c)}catch(_){}}
+      if(my!==REDSEQ||JSON.stringify(m)===JSON.stringify(window.RIDEEDIT))return;window.RIDEEDIT=m;window.REDVER++;try{MEMO.clear()}catch(_){}(typeof scRender==="function"?scRender:render)();try{pushSyncSoon()}catch(_){}},()=>{REDSUB=null})}catch(_){REDSUB=null}}
 setTimeout(rideEditLoad,4500);setInterval(()=>{if(!REDSUB)rideEditLoad()},30e3);   /* also after a late sign-in or a lost connection */
 /* the changes on the rides of every callsheet (the originals stay in _o_transport / _o_crewTransport) */
 const RED_KEYS=["t1","t2","from","to","vehicle","driver","passengers","people"];
@@ -23,8 +27,8 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
   const crewNames=[...new Set([].concat(...(S.crew||[]).map(g=>(g.people||[]).map(p=>p.name))).filter(Boolean))];
   const inp=(n,lab,v,type,extra)=>'<label>'+esc(L(lab))+'<input name="'+n+'"'+(type?' type="'+type+'"':'')+' value="'+esc(v||"")+'"'+(extra||"")+'></label>';
   /* pull-down with the choices of the day; «Andere …» opens a free field */
-  const OTHER="__other";const uniq=l=>[...new Set(l.map(x=>String(x||"").replace(/https?:\/\/\S+/g,"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"de"));
-  const sel=(n,lab,v,opts)=>{v=String(v||"").trim();const o=uniq(opts.concat(v?[v]:[]));
+  const OTHER="__other",noUrl=x=>String(x||"").replace(/https?:\/\/\S+/g,"").trim();const uniq=l=>[...new Set(l.map(noUrl).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"de"));
+  const sel=(n,lab,v,opts)=>{v=noUrl(v);   /* the choices are without map links – so is the value (else nothing was selected and saving emptied the field) */const o=uniq(opts.concat(v?[v]:[]));
     return '<label>'+esc(L(lab))+'<select name="'+n+'" data-redsel>'+'<option value=""></option>'+o.map(x=>'<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>').join("")+'<option value="'+OTHER+'">'+esc(L("Andere …"))+'</option></select><input name="'+n+'_x" hidden placeholder="'+esc(L(lab))+'"></label>'};
   const rides=[].concat(c.transport||[],c.crewTransport||[]);
   const places=rides.map(x=>x.from).concat(rides.map(x=>x.to),typeof csLocs==="function"?csLocs(c).map(l=>l.kinds?l.name:("L"+String(l.no||"").trim()+" · "+(l.name||""))):[],["Base","Hotel","Moxy","Holiday Inn"]);
@@ -67,7 +71,7 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
   d.addEventListener("submit",async e=>{e.preventDefault();const fm=e.target;const val=n=>{const f0=fm.elements[n];if(!f0)return"";const v=String(f0.value||"").trim();if(v===OTHER){const x=fm.elements[n+"_x"];return x?String(x.value||"").trim():""}return v};
     const now={t1:val("t1"),t2:val("t2"),from:val("from"),to:val("to"),vehicle:val("vehicle")};if(!crew)now.driver=val("driver");now[crew?"people":"passengers"]=val("pax").split(/\s*,\s*/).filter(Boolean).join(", ");
     /* only what differs from the callsheet is stored */
-    const ch={};for(const f in now){const a=String(o[f]==null?"":o[f]).trim(),b=now[f];if((f==="t1"||f==="t2")?hm(a)!==hm(b):a!==b)ch[f]=b}
+    const ch={};for(const f in now){const a=String(o[f]==null?"":o[f]).trim(),b=now[f];if((f==="t1"||f==="t2")?hm(a)!==hm(b):a!==b&&noUrl(a)!==b)ch[f]=b}   /* a place with its map link in the callsheet counts as unchanged */
     fm.querySelector("button[type=submit]").disabled=true;
     try{const {F,db}=await fb();const ref=F.doc(db,"rideedit",id);
       if(!Object.keys(ch).length)await F.deleteDoc(ref);else await F.setDoc(ref,{c:await ownEnc(ch),d:dp.date,at:Date.now()});

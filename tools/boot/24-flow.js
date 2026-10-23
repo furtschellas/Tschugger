@@ -28,20 +28,26 @@ window.RIDEACK=window.RIDEACK||{};let RIDEAT=0,RIDEBUSY=false;
 /* state of a tick: 0 open, 1 running, 2 done (old entries without s count as done) · when it was set (ms) */
 const flowSt=id=>{const x=window.RIDEACK[id];return x?(x.s===1?1:2):0};
 const flowAt=id=>{const x=window.RIDEACK[id];return x&&+x.at||0};
-/* write one tick (0 = open again: deleted) */
+/* draw again and keep the open parts (sections, scenes) – scRender (27-scene-ack) does that, render alone closes them */
+const flowRedraw=()=>(typeof scRender==="function"?scRender:render)();
+/* write one tick (0 = open again: deleted – always, also when this device does not know it yet: another device may have set it);
+   own writes are remembered for a moment so that a reload started before them does not undo them on the screen */
+const FLOWMINE=new Map();
 async function flowPut(id,date,s){if(!id)return;const {F,db}=await fb();const ref=F.doc(db,"rideack",id);
-  if(!s){if(window.RIDEACK[id]){await F.deleteDoc(ref);delete window.RIDEACK[id]}}else{const v={d:date,at:Date.now(),s};await F.setDoc(ref,v);window.RIDEACK[id]=v}}
+  if(!s){await F.deleteDoc(ref);delete window.RIDEACK[id];FLOWMINE.set(id,{t:Date.now(),v:null})}
+  else{const v={d:date,at:Date.now(),s};await F.setDoc(ref,v);window.RIDEACK[id]=v;FLOWMINE.set(id,{t:Date.now(),v})}}
 /* load from the first callsheet of the last 60 days on (not only today): ticks of past shooting days must not disappear on reload */
-async function rideAckLoad(force){if(RIDEBUSY||typeof ME==="undefined"||!ME||(!force&&Date.now()-RIDEAT<120e3))return;RIDEBUSY=true;RIDEAT=Date.now();
+async function rideAckLoad(force){if(RIDEBUSY||typeof ME==="undefined"||!ME||(!force&&Date.now()-RIDEAT<120e3))return;RIDEBUSY=true;RIDEAT=Date.now();const t0=Date.now();
   try{const {F,db}=await fb();const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;
     const s=await F.getDocs(F.query(F.collection(db,"rideack"),F.where("d",">=",from)));const m={};s.forEach(x=>{m[x.id]=x.data()});
-    const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))render()}catch(_){}RIDEBUSY=false}
+    for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}   /* own taps during the loading win */
+    const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}catch(_){}RIDEBUSY=false}
 /* after a tick: draw again without moving the page (the open parts and the scroll position stay) */
 /* … and the tapped row (cast tile, table row, appointment) stays exactly where it was on the screen, even when parts above it grow or shrink */
 const CQROW="#view .cs-card,#view tr,#view .mci";
 function cqKeep(b){try{MEMO.clear()}catch(_){}const y=window.scrollY;let i=-1,top=0;
   try{const row=b&&b.isConnected&&b.closest(CQROW);if(row){i=[...document.querySelectorAll(CQROW)].indexOf(row);top=row.getBoundingClientRect().top}}catch(_){}
-  render();window.scrollTo(0,y);
+  flowRedraw();window.scrollTo(0,y);
   const fix=()=>{if(i<0)return window.scrollTo(0,y);const r=document.querySelectorAll(CQROW)[i];if(r){const d=r.getBoundingClientRect().top-top;if(Math.abs(d)>.5)window.scrollBy(0,d)}};
   fix();requestAnimationFrame(fix)}
 
@@ -218,8 +224,9 @@ setTimeout(()=>rideAckLoad(true),4000);setInterval(()=>{if(S.tab==="my"||S.tab==
 document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))return;e.preventDefault();window.SHOWDONE=!window.SHOWDONE;render()});
 /* the callsheet greys a ride 20 minutes after it was done – and follows «jetzt hier» and «Jetzt» in my day: draw again when one changes */
 {let OLDN=-1;setInterval(()=>{if(S.tab!=="dispo")return;const n=Object.values(window.RIDEACK||{}).filter(x=>x&&x.s!==1&&Date.now()-(+x.at||0)>20*60e3).length;let nk=null;try{const C=typeof CSCUR!=="undefined"&&CSCUR.c;if(C&&window.CSNOWK!=null){const l=csNowLoc(C,CSCUR.date,csLocs(C));nk=l?l.no+'|'+l.name:''}}catch(_){}
-  let ns=null;try{if(window.CSNOWSC!=null&&typeof csNowScene==="function"){const r=csNowScene();ns=r?(r.ev||String(r.sc)):""}}catch(_){}
-  if((OLDN>=0&&n!==OLDN)||(nk!=null&&nk!==window.CSNOWK)||(ns!=null&&ns!==window.CSNOWSC))render();OLDN=n},60e3)}
+  /* «Jetzt» of the day that is shown (not of today – else a callsheet of another day was redrawn every minute) */
+  let ns=null;try{if(window.CSNOWSC!=null&&typeof csNowScene==="function"&&typeof CSCUR!=="undefined"){const dx=(S.dispos||[]).find(y=>y&&y.date===CSCUR.date),r=dx?csNowScene(dx):null;ns=r?(r.ev||String(r.sc)):""}}catch(_){}
+  if((OLDN>=0&&n!==OLDN)||(nk!=null&&nk!==window.CSNOWK)||(ns!=null&&ns!==window.CSNOWSC))flowRedraw();OLDN=n},60e3)}
 /* links inside clickable callsheet headers (L-codes, addresses): open the link without toggling or triggering the surrounding element */
 document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.target.closest("a[data-nobub]");if(a)e.stopPropagation()},true);
 /* cast tiles (phone): a tile whose cast is On set is folded to one line – a tap opens it again; the choice stays while the page is redrawn */
