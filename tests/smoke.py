@@ -48,7 +48,7 @@ PEOPLE = {"owner": "furtschellas@gmail.com", "admin": "admin@test.ch", "crew": "
           "catering": "cater@test.ch", "power": "power@test.ch", "norole": "nor@test.ch"}
 
 SEED = r"""
-try{localStorage.setItem("welcomeAck","2026-01-01T00:00:00Z|1");localStorage.setItem("a2hs:v1","done");localStorage.setItem("nv","%(nv)s");
+try{localStorage.setItem("welcomeAck","2026-01-01T00:00:00Z|1");localStorage.setItem("a2hs:v1","done");localStorage.setItem("csb","2026-01-01T00:00");localStorage.setItem("nv","%(nv)s");
   if(!sessionStorage.getItem("tourtest")){const g=Storage.prototype.getItem;Storage.prototype.getItem=function(k){return /^tourDone:/.test(k)?"done|2026-01-01T00:00:00Z":g.call(this,k)}}}catch(_){}
 window.__db=JSON.parse(sessionStorage.getItem("fakedb")||"null")||Object.assign({"secret/key":{k:%(key)s}},%(ak)s);
 window.__users=JSON.parse(sessionStorage.getItem("fakeusers")||"null")||{"furtschellas@gmail.com":{uid:"owner1",email:"furtschellas@gmail.com",pw:"geheim123",verified:true}};
