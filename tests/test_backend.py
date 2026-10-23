@@ -460,4 +460,14 @@ check("Google Sheet: Plan-Spalten nach Szenen-Nummer (Coverday getauscht) – Pl
 _rows0 = SS.build([dict(_acks[0], sc="1", id="x-1")], {"days": _days, "dispos": _cs})["1"]
 check("Google Sheet: ohne Coverday unverändert (eigener Tag, eigenes Callsheet)", next(r for r in _rows0 if r[0] == "Szene 1")[8] == "08:00" and next(r for r in _rows0 if r[0] == "Drehstart")[1] == "DT 1")
 
+# ====================================================================== Cast quittieren (Regeln, erfundene Daten)
+common.GROUP = 'Cast quittieren'
+try:
+    _cr = [json.loads(x) for x in _sp.run(["node", str(pathlib.Path(__file__).resolve().parent / "cast_rules.mjs")], capture_output=True, text=True, timeout=60).stdout.splitlines() if x.strip()]
+except Exception as _e:  # noqa: BLE001
+    _cr = []
+check("Cast quittieren: Regeln laufen", len(_cr) >= 15, len(_cr))
+for _x in _cr:
+    check("Cast quittieren: " + _x["n"], _x["ok"], (_x["got"], _x["want"]))
+
 sys.exit(done("Hintergrund"))
