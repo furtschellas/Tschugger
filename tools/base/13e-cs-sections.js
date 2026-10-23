@@ -17,7 +17,7 @@ function csLocScenes(c,l){const mem=l._m||[l];const uniq=[...new Set(csRows(c).f
 function csLocBody(l,LAD,HN,near){
   const hints=HN.map(n=>'<div class="ds cshnl">'+(/^wc\b/i.test(n.trim())?'<b>WC</b>':CSI.walk)+'<span>'+csAdr(csL(n).replace(/^wc\s*:\s*/i,""),"")+'</span></div>').join("");
   /* lines that only repeat the address (also written differently) are left out, a place there shows «same address» */
-  const an=t=>fold(String(t||"")).replace(/https?:\/\/\S+/g,"").replace(/[^a-z0-9]/g,""),km=String(LAD||"").match(/[^\d,]*?[a-zäöüéèà.]{3,}\s*\d+[a-z]?\b/i),K=km?an(km[0]):"";
+  const an=t=>fold(String(t||"")).replace(/https?:\/\/\S+/g,"").replace(/[^a-z0-9]/g,""),km=fold(String(LAD||"")).match(/[^\d,]*?[a-z.]{3,}\s*\d+[a-z]?\b/i),K=km?an(km[0]):"";   /* folded: «Rue de la Côte 5» too */
   const same=t=>!!K&&K.length>5&&an(t).includes(K),only=t=>same(t)&&an(t).length<=an(LAD).length+4;
   const notes=csA(l.notes).filter(n=>!HN.includes(String(n))).filter(n=>!LAD||(!fold(LAD).includes(fold(csL(n)))&&!only(csL(n)))).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("");
   const items=csA(l.items).filter(i=>String(i.text||"").trim()||i.map).filter(i=>!LAD||fold(String(i.text||"")).trim()!==fold(LAD).trim()).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+(only(csL(i.text||""))?(i.map?'<a href="'+esc(safeUrl(i.map))+'" target="_blank" rel="noopener noreferrer">'+esc(L("gleiche Adresse"))+'</a>':esc(L("gleiche Adresse"))):csAdr(csL(i.text||""),i.map,csL(i.label||"")))+'</div>').join("");
@@ -46,14 +46,14 @@ function csGmFeat(pts,G){const gm=S.gmap;if(!gm||!Array.isArray(gm.f)||!pts.leng
 function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false||!vok("csmap"))return"";   /* switched off in the app settings */let h="";
   {const geo=c.geo||{},gs=c.geoSrc||{},pts=[],miss=[];const all=csRows(c),rows=all.filter(r=>r.sc);
    /* scene with start and end (= start of the next row of the shooting order) for the popup of a place */
-   const span=r=>{const i=all.indexOf(r),a=hm(r.t),nx=all.slice(i+1).find(y=>hm(y.t));return [String(r.sc),a?a+(nx?"–"+hm(nx.t):""):""]};
+   const span=r=>{const i=all.indexOf(r),a=csHm(r.t),nx=all.slice(i+1).find(y=>csHm(y.t));return [String(r.sc),a?a+(nx?"–"+csHm(nx.t):""):""]};
    const add=(u,code,name,sc,minor,link)=>{const g=geo[u];link=link||(/^https?:/.test(u||"")?u:"");if(!(Array.isArray(g)&&g.length>=2&&isFinite(g[0])&&isFinite(g[1])&&g[0]!==null&&g[1]!==null)){   /* only real coordinates (else the whole map failed) */if(!minor&&u&&!miss.some(x=>x.c===code))miss.push({c:code,n:name,s:sc||"",u:link,set:!minor});return}if(pts.some(x=>x.c===code&&x.p.join(",")===g.join(",")))return;
      pts.push({p:g,c:code,n:name,s:sc||"",u:link,m:minor?1:0,r:gs[u]==="rough"||gs[u]==="near"?(gs[u]==="near"?2:1):0})};
    const BH=new Map();for(const l of csLocs(c)){const code=l.kinds?l.kinds.map(csKindCode).join("·"):"L"+String(l.no||"").trim();BH.set(code,csBadgeIn(l));
      /* a set without its own map link: its position under «loc:n» (address found by the updater) – every L is on the map */
      const key=l.kinds?l.map:csSetGeo(c,l)[0];
      const lr=l.kinds?[]:rows.filter(r=>csSceneLoc([l],r)===l);const sc=l.kinds?"":[...new Set(lr.map(r=>String(r.sc)))].join(", ")||csS(l.scenes);add(key,code,l.name||"",sc,0,csLocHref(l,c,x.date));
-     {const pt=pts.find(x=>x.u===key&&x.c===code);if(pt&&lr.length)pt.st=lr.map(span)}
+     {const pt=pts.find(x=>x.c===code&&!x.m);if(pt&&lr.length)pt.st=lr.map(span)}   /* by its code (the link of a set without own map link is a search, never equal to the key) */
      for(const i of csA(l.items))if(i.map)add(i.map,code+" · "+(String(i.label||"").trim()||"P"),[i.label,i.text].filter(Boolean).join(" · "),"",1)}
    /* every L on the map: a set still without position (older data) roughly at the first place of the day, marked */
    {const at=(pts.find(p=>!p.m)||pts[0]||{}).p;if(at)for(const m of miss.filter(m=>m.set&&/^L/.test(m.c))){pts.push({p:at,c:m.c,n:m.n,s:m.s,u:m.u,m:0,r:2});miss.splice(miss.indexOf(m),1)}}
@@ -79,12 +79,12 @@ function csTravelSec(c,x,me,SU,t){let h="";
   return h}
 function csCallsSec(c,x,me,SU,t){let h="";
   {const g=new Map();for(const r of csA(c.calls)){const k=r.dept||"";if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
-   h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>{const who={hit:t=>{const a=nmk(String(t||"")),b=nmk(String(r.name||""));return !!b&&a.includes(b)}};let pl=null;try{pl=csCallPlace(c,who,r)}catch(_){}
+   h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>{const who={hit:t=>{const a=nmk(String(t||"")),b=nmk(String(r.name||""));return !!b&&(" "+a).includes(" "+b)}};   /* at the start of a word: «Anna Muster» is not in «Johanna Muster» */let pl=null;try{pl=csCallPlace(c,who,r)}catch(_){}
      const sc=pl?csShort(pl):"";const tag=sc?csPlaceA(sc,pl.map||csCodeHref(sc),pl.name):'';
      const tm=String(r.t||"").match(/^(\d{1,2}:\d{2})\s*(.*)$/);
      return '<div class="cscall-r'+(me&&me.hit(r.name)?' mine':'')+'"><span class="t">'+esc(tm?tm[1]:(r.t||""))+(tm&&tm[2]?'<i>'+esc(tm[2])+'</i>':'')+'</span><span class="cp">'+tag+'</span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>'}).join("")+'</div>').join(""),false,"","calls",SU.calls)}
   return h}
-function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=c.tr||null;CSCUR={c,date:x.date||"",me};
+function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=c.tr||null;CSCUR={c,date:x.date||"",me,addr:new Map()};
   let JB="";
   /* jump bar (sticky) and search over the whole callsheet */
    JB=csJumpBar(c,x,me,null,t);
@@ -96,7 +96,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   if(typeof myPickBar==='function')h+=myPickBar();
   h+=csTilesHTML(x,day,c,me);
   /* contact on set: the name itself is the call link (only with the phone right) */
-  if(c.contact&&(c.contact.name||c.contact.phone)){const ct=c.contact,tel=String(ct.phone||"").replace(/[^\d+]/g,""),nm=ct.name?esc(ct.name):csTx(ct.phone);
+  if(c.contact&&(c.contact.name||c.contact.phone)){const ct=c.contact,tel=String(ct.phone||"").replace(/[^\d+]/g,""),nm=ct.name?esc(ct.name):(tel&&vok("phone")?esc(ct.phone):csTx(ct.phone));   /* only the number: plain inside the call link (a link in a link broke the line) */
     /* one line, the size fitted to the width (csFitContact) */
     h+='<div class="cscontact"><span class="csct-in"><b>'+esc(L("Kontakt am Set"))+':</b> '+(tel&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'" title="'+esc(L("Anrufen"))+'">'+CSI.phone+nm+'</a>':nm)+(ct.role?' <small>· '+esc(ct.role)+'</small>':'')+'</span></div>'}
   /* radio channels below the contact: one chip per channel («1 AD / AL», «2 Chat» …) */
@@ -125,7 +125,7 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
    const sumx='<span class="csosum">'+ch("Call",t.crewCall||x.crewCall)+ch(L("Probe"),t.rehearsal)+ch("RTS",t.rts||x.shootCall)+(sc.length?ch(sc.length+" "+L("Szenen"),sc.length>1?sc[0]+"–"+sc[sc.length-1]:sc[0]):"")+ch("Lunch",t.lunch)+ch("Wrap",t.wrap||x.wrap)+'</span>'+
      (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c),OR=csA(o.rows),NR=OR[csNowIdx(OR,x.date)]||null;return OR.filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
        /* one line per scene: time · scene · I/E · set code · set · duration; the scene of now framed */
-       return '<span class="cso1'+(r===NR?' now':'')+'"><i>'+esc(hm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
+       return '<span class="cso1'+(r===NR?' now':'')+'"><i>'+esc(csHm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
    h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c),true),false,"","order",sumx)}
   /* cast, extras, vehicles */
   const CC=csCols();
@@ -166,5 +166,5 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   for(const sec of csA(x.sections).concat(csA(c.sections)).filter(s0=>!WX.includes(s0))){const rows=csA(sec&&sec.rows).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(cc=>String(cc==null?"":cc).trim()));if(!rows.length)continue;
     h+=csSec(String(sec.title||""),rows.map(r=>'<p>'+r.map(cc=>csTx(cc)).join(" · ")+'</p>').join(""),false)}
   /* on the shooting day: once per visit straight to the running row */
-  if(x.date===todayISO()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
+  if(x.date===csShootDay()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
   return JB+'<div class="csview">'+h+'</div>'}

@@ -33,7 +33,10 @@ function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':'
   /* a base (Base, WHM, Lunch, Prod, DIT …): its own icon and the gold colour; sets (L1 …) stay text */
   const ic=/^L\d/i.test(String(code))?"":csKindIco(String(code).replace(/^WHM\b/i,"W / H / M").replace(/^Prod\b.*/i,"Prod")),k='csplace'+(ic?' csbadge csbase':'')+(cls?' '+cls:''),in_=ic?ic+'<span class="vh">'+esc(code)+'</span>':esc(code);
   return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+in_+'</a>':'<span class="'+k+'"'+t+'>'+in_+'</span>'}
-function csLocAddr(c,l,date){let ad="";
+/* the address of a place is asked for many times per drawing (scene rows, short line, map, tiles …): worked out once per drawing */
+function csLocAddr(c,l,date){const M=typeof CSCUR!=="undefined"&&CSCUR.c===c&&CSCUR.addr;if(!M||!l||typeof l!=="object")return csLocAddr0(c,l,date);
+  const k=String(date||"");let e=M.get(l);if(!e)M.set(l,e={});if(!(k in e))e[k]=csLocAddr0(c,l,date);return e[k]}
+function csLocAddr0(c,l,date){let ad="";
   /* 1. the app's location list: a set there with one of the scenes of this location, or with the same name */
   try{const scs=csLocRows(c,l).map(r=>norm(r.sc));const nm=fold(String(l.name||"")).replace(/\(.*?\)/g,"").trim();
     const hit=(S.locs||[]).find(x=>(x.sets||[]).some(st=>(st.scenes||[]).map(norm).some(w=>scs.some(n=>n===w||n.startsWith(w+"pt")))))||
@@ -92,13 +95,13 @@ function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls
       if(ns.some(n=>n===tt||tt.includes(n)||n.includes(tt)))return {name:String(txt),map:/^https:\/\//.test(String(l.map||""))?l.map:"",addr:String(l.address||""),disp:String(txt)}}}
   return {name:String(txt),map:""}}
 /* where my call is: the end of my first ride (if it arrives around my call), else the set shooting at that time, else set 1 */
-function csCallPlace(c,me,call){const ct=hm(call.t);
+function csCallPlace(c,me,call){const ct=csHm(call.t);
   /* I drive: my call is where my first ride starts (pickup place), not where it goes */
-  {const dr=csA(c.transport).concat(csA(c.crewTransport)).filter(r=>me.hit(r.driver)&&hm(r.t1)).sort((a,b)=>hm(a.t1).localeCompare(hm(b.t1)));
-   const r=dr.find(r=>!ct||hm(r.t1)>=ct)||dr[0];
+  {const dr=csA(c.transport).concat(csA(c.crewTransport)).filter(r=>me.hit(r.driver)&&csHm(r.t1)).sort((a,b)=>csHm(a.t1).localeCompare(csHm(b.t1)));
+   const r=dr.find(r=>!ct||csHm(r.t1)>=ct)||dr[0];
    if(r&&r.from){const p=Object.assign({},csPlace(c,r.from));if(!p.map)p.map=csMapQ(r.from);
-     return Object.assign({},p,{how:L("Fahrer")+" "+[r.vehicle,r.t1&&(L("ab")+" "+hm(r.t1)),r.to&&("→ "+r.to)].filter(Boolean).join(" ")})}}const rides=csMyRides(c,me);
-  const r=rides.filter(r=>hm(r.t2)).sort((a,b)=>hm(a.t2).localeCompare(hm(b.t2)))[0];
+     return Object.assign({},p,{how:L("Fahrer")+" "+[r.vehicle,r.t1&&(L("ab")+" "+csHm(r.t1)),r.to&&("→ "+r.to)].filter(Boolean).join(" ")})}}const rides=csMyRides(c,me);
+  const r=rides.filter(r=>csHm(r.t2)).sort((a,b)=>csHm(a.t2).localeCompare(csHm(b.t2)))[0];
   if(r){const p=csPlace(c,r.to);if(p){p.how=L("mit")+" "+[r.vehicle,r.from&&(L("ab")+" "+r.from),r.t1].filter(Boolean).join(" ");return p}}
   /* no ride: the place is not on the callsheet – nothing is guessed */
   return null}
@@ -140,7 +143,7 @@ function csLocs0(c){const sets=[],extra=[];
       if(name&&(!e.name||(isAdr(e.name)&&!isAdr(name)))){if(e.name&&e.name!==name&&!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=name}
       {const at=lab.match(/@\s*(.+)$/);if(at&&isAdr(e.name)&&!isAdr(at[1])){if(!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=at[1].trim()}}if(!e.map&&i.map)e.map=i.map;/* «Föhrenweg 160, 3999 Testdorf; To set 1: …; WC: …» – each part its own line (address, hints with their icons, the rest with its kind) */
       if(uses&&!e.notes.includes(uses))e.notes.unshift(uses);
-      for(const part of String(rest||"").split(/\s*;\s*/).map(x=>x.trim()).filter(Boolean)){const r2=isAdr(part)||/^(to set|zum set|nach set|wc\b)/i.test(part)?part:kinds.map(k0=>{const k=k0==="W / H / M"&&who?k0+" "+who:k0;return csKindCode(k)}).join(" / ")+": "+part;if(!e.notes.includes(r2))e.notes.push(r2)}last=e}
+      for(const part of String(rest||"").split(/\s*;\s*/).map(x=>x.trim()).filter(Boolean)){const r2=isAdr(part)||CSHN_RE.test(part)?part:kinds.map(k0=>{const k=k0==="W / H / M"&&who?k0+" "+who:k0;return csKindCode(k)}).join(" / ")+": "+part;if(!e.notes.includes(r2))e.notes.push(r2)}last=e}
     /* the map link of the set is the one of a side place listed with it (e.g. «WHM Extras … https://…» after the set name): not the place of the set */
     const own=!!l.map&&extra.some(e=>e.map===l.map&&e.kinds.some(k=>k!=="DIT"&&k!=="Prod"));
     sets.push(Object.assign({},l,{items},own?{map:""}:{}))}

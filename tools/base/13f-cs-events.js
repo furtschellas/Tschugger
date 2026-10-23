@@ -21,14 +21,16 @@ function csFilter(v){v=v||document.querySelector("#view .csview");if(!v)return;c
     const vis=its.some(it=>!it.hidden);if(q){const ok=vis||hit(d.querySelector("summary").textContent);d.hidden=!ok;if(ok)d.open=true}else d.hidden=its.length>0&&!vis});
   v.querySelectorAll(".cscall").forEach(g=>{g.hidden=(!!q||!!mt)&&![...g.querySelectorAll(".cscall-r")].some(r=>!r.hidden)})}
 /* the search text stays when the page is drawn again (the minute redraw, a tick …) */
-window.CSQV="";csAfter(()=>{if(window.CSQV)try{csFilter()}catch(_){}});document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-dday]"))window.CSQV=""},true);   /* another day: a new search */
+window.CSQV="";window.CSQD="";
+/* one pass after each drawing: search and «Nur meins» together (before, both filtered the page one after the other); another day (also via Today
+   or a push) starts without the old search */
+csAfter(()=>{const d=typeof CSCUR!=="undefined"&&CSCUR.date||"";if(d&&d!==window.CSQD){if(window.CSQD&&window.CSQV){window.CSQV="";const q=document.getElementById("csq");if(q)q.value=""}window.CSQD=d}
+  if(window.CSQV||CSMINE)try{document.querySelectorAll("#view .csview").forEach(x=>csFilter(x))}catch(_){}});document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-dday]"))window.CSQV=""},true);   /* another day: a new search */
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="csq"){window.CSQV=String(e.target.value||"");const jb=e.target.closest(".csjump"),nx=jb&&jb.nextElementSibling;csFilter(nx&&nx.classList.contains("csview")?nx:null)}});
 csOn("click",e=>{const b=e.target.closest&&e.target.closest("[data-csmine],[data-cspdf]");if(!b)return;
   if(b.dataset.cspdf!=null){window.open(b.dataset.cspdf,"_blank","noopener");return}
   CSMINE=!CSMINE;try{localStorage.setItem("csmine:v1",CSMINE?"1":"0")}catch(_){}
   document.querySelectorAll("#view [data-csmine]").forEach(x=>x.setAttribute("aria-pressed",CSMINE?"true":"false"));document.querySelectorAll("#view .csview").forEach(v=>csFilter(v))});
-/* after each drawing of the page: the filter again (the choice stays) */
-csAfter(()=>{if(CSMINE)document.querySelectorAll("#view .csview").forEach(x=>csFilter(x))});
 
 /* preview (PREVISION) of a day from the callsheet of the shooting day before – shown on that day while its own callsheet is missing */
 function csPrevFor(date){const sh=S.days.filter(d=>d.kind==="shoot").map(d=>d.date).sort();const i=sh.indexOf(date);if(i<1)return null;
@@ -36,10 +38,10 @@ function csPrevFor(date){const sh=S.days.filter(d=>d.kind==="shoot").map(d=>d.da
 function csPrevHTML(date){const p=csPrevFor(date);if(!p)return"";const ti=String(p.pv.title||"");
   /* «PREVISION - D2 Wednesday, 21st 2026 Extras: 12 Pages: 3 5/8 / Time Scree 03:30» → small tiles */
   const g=re=>{const m=ti.match(re);return m?m[1].trim():""};const ex=g(/Extras:\s*([\d]+)/i),pg=g(/Pages:\s*(\d+(?:\s+\d+\/\d+)?)/i),scr=g(/Time\s*Scree?n?\s*([\d:]+)/i);
-  const rows=csA(p.pv.rows),first=rows.find(r=>hm(r.t)),scenes=rows.filter(r=>r.sc).length;
+  const rows=csA(p.pv.rows),first=rows.find(r=>csHm(r.t)),scenes=rows.filter(r=>r.sc).length;
   const tile=csTile;
   return '<section class="dsec csprev"><h3 class="dh">'+esc(L("Vorschau"))+'</h3><p class="ghint">'+esc(L("aus dem Callsheet vom"))+' '+esc(fmtDate(p.from.date))+' · '+esc(L("Das eigene Callsheet folgt."))+'</p>'+
-    '<div class="dtiles cstiles">'+tile(L("Beginn"),first?hm(first.t):"")+tile(cap(L("Szenen")),scenes?String(scenes):"")+tile("Pages",pg)+tile("Screen",scr)+tile(L("Komparsen"),ex)+'</div>'+csOrderRows(rows,date)+'</section>'}
+    '<div class="dtiles cstiles">'+tile(L("Beginn"),first?csHm(first.t):"")+tile(cap(L("Szenen")),scenes?String(scenes):"")+tile("Pages",pg)+tile("Screen",scr)+tile(L("Komparsen"),ex)+'</div>'+csOrderRows(rows,date)+'</section>'}
 
 /* open or close all locations */
 /* search field opens from the magnifier */
@@ -62,11 +64,13 @@ csOn("click",e=>{const b=e.target.closest("[data-cssc]");if(!b)return;e.preventD
   const d=li.querySelector("details.csscd");if(d)d.open=true;li.scrollIntoView({block:"center",behavior:"smooth"});li.classList.add("csflash");setTimeout(()=>li.classList.remove("csflash"),1600)},true);
 
 /* the interactive map (Leaflet, loaded only when the map is opened; tiles from OpenStreetMap) */
+/* maps of earlier drawings are removed (each redraw made a new one; the old ones stayed in memory with their resize handlers and tiles) */
+const CSMAPS=[];csAfter(()=>{for(let i=CSMAPS.length-1;i>=0;i--){const m=CSMAPS[i];let gone=true;try{gone=!m.getContainer().isConnected}catch(_){}if(gone){try{m.remove()}catch(_){}CSMAPS.splice(i,1)}}});
 let CSLF=null;function csLeaflet(){if(window.L&&window.L.map)return Promise.resolve(window.L);if(CSLF)return CSLF;
-  CSLF=new Promise((ok,no)=>{const c=document.createElement("link");c.rel="stylesheet";c.href="leaflet.css";document.head.appendChild(c);
+  CSLF=new Promise((ok,no)=>{if(!document.querySelector('link[href="leaflet.css"]')){const c=document.createElement("link");c.rel="stylesheet";c.href="leaflet.css";document.head.appendChild(c)}   /* once, also after a failed try */
     const s=document.createElement("script");s.src="leaflet.js";s.onload=()=>ok(window.L);s.onerror=()=>{CSLF=null;no(new Error("leaflet"))};document.head.appendChild(s)});return CSLF}
 function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(box.dataset.csmap||"[]")}catch(_){}if(!pts.length)return;
-  csLeaflet().then(LF=>{if(box.__map||!box.isConnected)return;const m=LF.map(box,{scrollWheelZoom:false,tap:true});box.__map=m;
+  csLeaflet().then(LF=>{if(box.__map||!box.isConnected)return;const m=LF.map(box,{scrollWheelZoom:false,tap:true});box.__map=m;CSMAPS.push(m);
     /* map or satellite (switch bottom left) */
     const osm=LF.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(m);
     const sat=LF.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
@@ -99,9 +103,11 @@ csOn("click",e=>{const b=e.target.closest("[data-cscol]");if(!b)return;e.prevent
 
 /* cast of today: a pink frame around the time that is running now (P/UP, call, costume, make-up, base, on set) – in the table and in the cards */
 function csCastNow(){const sec=document.getElementById("cs-cast");if(!sec)return;sec.querySelectorAll(".csnowt").forEach(e=>e.classList.remove("csnowt"));
-  if(!CSCUR||!CSCUR.date||typeof todayISO!=="function"||CSCUR.date!==todayISO())return;const tm=(CSCUR.c&&CSCUR.c.times)||{},w=hm(tm.wrap||"");
-  const now=csHM(),cc=hm(tm.crewCall||"");if(w&&now>w&&!(cc&&w<cc))return;   /* a wrap after midnight (earlier than the crew call) is tomorrow */if(typeof scState==="function"&&scState(CSCUR.date,"wrap")===2)return;   /* after the wrap: no frame */
-  const span=el=>{const t=String(el.textContent||"").replace(/(\d{1,2})[.:](\d{2})/g,"$1:$2"),ms=(t.match(/(?:^|\D)\d{1,2}:\d{2}(?!\d)/g)||[]).map(x=>x.replace(/^\D/,""));if(!ms.length)return null;   /* no look-behind: older iPhones (iOS < 16.4) can not read it – the whole app would not start */const a=hm(ms[0]),b=/[-–]/.test(t)&&ms.length>1?hm(ms[ms.length-1]):"";return {a,b}};
+  if(!CSCUR||!CSCUR.date||typeof todayISO!=="function"||CSCUR.date!==csShootDay())return;const tm=(CSCUR.c&&CSCUR.c.times)||{},w0=csHm(tm.wrap||"");
+  /* the night after the shooting day: hours go on past 24:00 (a wrap after midnight, earlier than the crew call, too) */
+  const night=CSCUR.date!==todayISO(),cc=csHm(tm.crewCall||""),n24=t=>t?String(24+ +t.slice(0,2))+t.slice(2):t,w=w0&&cc&&w0<cc?n24(w0):w0;
+  const now=night?n24(csHM()):csHM();if(w&&now>w)return;   /* a wrap after midnight (earlier than the crew call) is tomorrow */if(typeof scState==="function"&&scState(CSCUR.date,"wrap")===2)return;   /* after the wrap: no frame */
+  const span=el=>{const t=String(el.textContent||"").replace(/(\d{1,2})[.:](\d{2})/g,"$1:$2"),ms=(t.match(/(?:^|\D)\d{1,2}:\d{2}(?!\d)/g)||[]).map(x=>x.replace(/^\D/,""));if(!ms.length)return null;   /* no look-behind: older iPhones (iOS < 16.4) can not read it – the whole app would not start */const A=x=>night&&x&&cc&&x<cc?n24(x):x,a=A(csHm(ms[0])),b=/[-–]/.test(t)&&ms.length>1?A(csHm(ms[ms.length-1])):"";return {a,b}};
   const mark=cells=>{let best=null;for(const el of cells){const s=span(el);if(!s||!s.a||s.a>now)continue;if(s.b&&s.a<=now&&now<s.b){best=el;break}if(!best||s.a>=span(best).a)best=el}if(best)best.classList.add("csnowt")};
   sec.querySelectorAll(".cs-tbl tbody tr").forEach(tr=>mark([...tr.children].slice(3)));
   sec.querySelectorAll(".cs-card").forEach(cd=>mark([...cd.querySelectorAll(".cs-kv")]))}
@@ -126,4 +132,4 @@ document.addEventListener("click",e=>{const sm=e.target.closest&&e.target.closes
 (()=>{let q=0;const fit=()=>{q=0;for(const el of document.querySelectorAll("#view .csjump,#view .stripwrap,#view .stripwrap .strip")){const r=el.getBoundingClientRect(),b=document.body.getBoundingClientRect();
     el.style.setProperty("--cjx",(-r.left)+"px");el.style.setProperty("--cjy",(-r.top)+"px");el.style.setProperty("--cjp",(b.top-r.top)+"px")}};
   const soon=()=>{if(!q)q=requestAnimationFrame(fit)};addEventListener("scroll",soon,{passive:true});addEventListener("resize",soon);
-  new MutationObserver(soon).observe(document.documentElement,{childList:true,subtree:true})})();
+  new MutationObserver(soon).observe(document.getElementById("view")||document.body,{childList:true})})();   /* the page itself, not every change in the document (each forced a layout) */
