@@ -471,7 +471,7 @@ try:
     _cr = [json.loads(x) for x in _sp.run(["node", str(pathlib.Path(__file__).resolve().parent / "cast_rules.mjs")], capture_output=True, text=True, timeout=60).stdout.splitlines() if x.strip()]
 except Exception as _e:  # noqa: BLE001
     _cr = []
-check("Cast quittieren: Regeln laufen", len(_cr) >= 42, len(_cr))
+check("Cast quittieren: Regeln laufen", len(_cr) >= 50, len(_cr))
 for _x in _cr:
     check("Cast quittieren: " + _x["n"], _x["ok"], (_x["got"], _x["want"]))
 

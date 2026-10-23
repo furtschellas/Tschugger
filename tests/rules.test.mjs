@@ -203,6 +203,9 @@ await check("Fahrt quittieren: falsches Datum nicht", assertFails(setDoc(doc(as(
 await check("Fahrt quittieren: alte Zeit (2 Stunden) nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1236"), { d: "2026-10-21", at: NOW - 2 * 3600e3, s: 2 })));
 await check("Fahrt quittieren: fremde Felder nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1237"), { d: "2026-10-21", at: NOW, s: 1, name: "x" })));
 await check("Fahrt quittieren: Stand nur 1 oder 2", assertFails(setDoc(doc(as("crew"), "rideack/abcd1238"), { d: "2026-10-21", at: NOW, s: 3 })));
+await check("Komparsen: Anzahl da (n = 3) geht", assertSucceeds(setDoc(doc(as("crew"), "rideack/abcd1239"), { d: "2026-10-21", at: NOW, s: 1, n: 3 })));
+await check("Komparsen: Anzahl nur ganze Zahl 0–999", assertFails(setDoc(doc(as("crew"), "rideack/abcd1240"), { d: "2026-10-21", at: NOW, s: 1, n: 1000 })));
+await check("Komparsen: Anzahl kein Text", assertFails(setDoc(doc(as("crew"), "rideack/abcd1241"), { d: "2026-10-21", at: NOW, s: 1, n: "3" })));
 await check("Fahrt quittieren: nicht eingeladene Person nicht", assertFails(setDoc(doc(as("stranger"), "rideack/abcd1239"), { d: "2026-10-21", at: NOW, s: 1 })));
 await check("Fahrt ändern: ohne «Fahrten Manager» nicht", assertFails(setDoc(doc(as("crew"), "rideedit/abcd1234"), { c: "x", d: "2026-10-21", at: NOW })));
 await check("Fahrt ändern: Admin (alle Rechte) geht", assertSucceeds(setDoc(doc(as("admin"), "rideedit/abcd1234"), { c: "x", d: "2026-10-21", at: NOW })));

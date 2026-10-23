@@ -8,7 +8,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=>{PERMS=p};`;
 const H=[];const C={console,document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
-vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8")+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep}",C);
+vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8")+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep,xf:xqField,xa:xqAll}",C);
 const T=C.T,D="2031-03-02";
 const cs={_date:D,calls:[{name:"Anna Probe"},{name:"Mara Test"}],crewTransport:[],
   transport:[{vehicle:"Van",passengers:"Max Muster",from:"Hotel",t1:"06:40",to:"Base",t2:"06:55"},{vehicle:"Van",passengers:"Max Muster",from:"Base",t1:"07:50",to:"Set",t2:"07:58"}]};
@@ -89,4 +89,21 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   out.push({n:"Cast in Drehfolge/Drehplan: nichts 0, P/UP 1, Call 2, Maske 2, Base 3, On set 3",ok:got==="0,1,2,2,3,3",got,want:"0,1,2,2,3,3"})}
 {const R5={no:"5",actor:"TJ Bhanu",pickup:"10:30",call:"10:55",wardrobe:"13.50 - 14:10 20’",makeup:"11:00 - 12:00 60’",base:"14.10",onset:"14:15"};
   t("Zeiten mit Punkt (13.50, 14.10): Kostüm und Maske fertig → Base aktiv",W,{[id(R5,"w","13.50")]:2,[id(R5,"m","11:00")]:2},R5,"cq2 cq2 cq1+tap cq0+tap")}
+/* extras (Komparsen): per group – Call with how many are there, Kostüm / Maske, On set */
+{const X={count:"5",part:"Passanten",call:"08:00",wardrobe:"08:10",makeup:"08:20",onset:"09:00"},X1={count:"-",part:"Velofahrer",call:"08:30",wardrobe:"",makeup:"",onset:"09:30"};
+  const xid=(r,f,t)=>T.cmId(D,"x"+f,{no:"x|"+r.part+"|"+r.count},t);
+  const xs=(perms,ack)=>{C.RIDEACK=ack;vm.runInContext("setP("+JSON.stringify(perms)+")",C)};
+  const xr=r=>["c","w","m","o"].map(f=>{const h=(T.xf(f,cs,r)||{}).h||"";return h?"cq"+((h.match(/\bcq([012])\b/)||[])[1]||"?")+(/<button/.test(h)?"+tap":"")+((h.match(/(\d+\/\d+)/)||[])[1]?" "+h.match(/(\d+\/\d+)/)[1]:""):"-"}).join(" ")+(T.xa(cs,r)?" grau":"");
+  const xt=(n,perms,ack,r,want)=>{xs(perms,ack);const got=xr(r);out.push({n:"Komparsen: "+n,ok:got===want,got,want})};
+  const XA=["extras.ack"],ALL=["extras.ack","wardrobe.ack","makeup.ack"];
+  xt("nichts quittiert, ohne Recht: nur Kostüm/Maske antippbar",W,{},X,"cq0 cq0+tap cq0+tap cq0");
+  xt("mit «Komparsen quittieren»: Call und On set antippbar",XA,{},X,"cq0+tap cq0 cq0 cq0+tap");
+  xt("3 von 5 da: Call pink mit 3/5",ALL,{[xid(X,"c","08:00")]:{s:1,n:3,at:1}},X,"cq1+tap 3/5 cq0+tap cq0+tap cq0+tap");
+  xt("alle da: Call erledigt",ALL,{[xid(X,"c","08:00")]:{s:2,at:1}},X,"cq2+tap cq0+tap cq0+tap cq0+tap");
+  xt("On set: ganze Gruppe grau",ALL,{[xid(X,"c","08:00")]:{s:2,at:1},[xid(X,"o","09:00")]:{s:2,at:Date.UTC(2031,2,2,8,4)}},X,"cq2+tap cq0+tap cq0+tap cq2+tap grau");
+  xs(XA,{});const h=(T.xf("c",cs,X1)||{}).h||"",h5=(T.xf("c",cs,X)||{}).h||"",ho=(T.xf("o",cs,X)||{}).h||"";
+  out.push({n:"Komparsen: ohne Anzahl ist Call ein einfacher Haken, mit Anzahl die Auswahl bis 5",ok:/data-xqn="0"/.test(h)&&/data-xqn="5"/.test(h5),got:(h.match(/data-xqn="\d+"/)||[""])[0]+" "+(h5.match(/data-xqn="\d+"/)||[""])[0],want:'data-xqn="0" data-xqn="5"'});
+  out.push({n:"Komparsen: On set antippen = erledigt (eigene ID, nicht die vom Cast)",ok:/data-cqk="xo"/.test(ho)&&/data-cqnx="2"/.test(ho)&&ho.includes(xid(X,"o","09:00")),got:(ho.match(/data-cq[a-z]+="[^"]*"/g)||[]).join(" "),want:'data-cqk="xo" … data-cqnx="2"'});
+  xs(ALL,{[xid(X,"o","09:00")]:{s:2,at:Date.UTC(2031,2,2,8,4)}});const hc=(T.xf("o",cs,X)||{}).h||"";
+  out.push({n:"Komparsen: On set zeigt die Zeit der Quittierung",ok:/>09:04</.test(hc),got:(hc.match(/>([^<]*)</)||[])[1],want:"09:04"})}
 for(const x of out)console.log(JSON.stringify(x));

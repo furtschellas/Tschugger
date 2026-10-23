@@ -253,7 +253,9 @@ service cloud.firestore {
     // Quittieren (Stand s: 1 = Fahrt beginnt, 2 = ausgeführt): alle Mitglieder – die App zeigt den Knopf nur Fahrer:in, «Fahrten quittieren» und «Fahrten Manager»
     match /rideack/{id} {
       allow read: if crew();
-      allow create, update: if crew() && rideOk(id, ['d', 'at', 's']) && request.resource.data.get('s', 2) in [1, 2];
+      // n = wie viele einer Komparsen-Gruppe schon da sind (z. B. 3 von 5), nur eine ganze Zahl 0–999
+      allow create, update: if crew() && rideOk(id, ['d', 'at', 's', 'n']) && request.resource.data.get('s', 2) in [1, 2]
+        && (!('n' in request.resource.data) || (request.resource.data.n is int && request.resource.data.n >= 0 && request.resource.data.n <= 999));
       allow delete: if crew();
     }
     // Ändern (Zeiten, Strecke, Fahrer, Mitfahrende; Inhalt c verschlüsselt): nur «Fahrten Manager»
