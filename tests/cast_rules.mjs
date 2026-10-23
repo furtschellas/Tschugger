@@ -6,7 +6,7 @@ const helpers=`const pad2=n=>String(n).padStart(2,"0");function hm(t){const m=St
 const fold=t=>String(t||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase();const arr=x=>Array.isArray(x)?x:[];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));const L=x=>x;const S={tab:""};const ME=null;const csAfter=()=>{};const todayISO=()=>"2031-03-02";
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
-let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=>{PERMS=p};`;
+var MYROLE="";let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=>{PERMS=p};`;
 const H=[];const C={console,document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
 vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8")+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep,xf:xqField,xa:xqAll}",C);
 const T=C.T,D="2031-03-02";
@@ -106,4 +106,13 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   out.push({n:"Komparsen: On set antippen = erledigt (eigene ID, nicht die vom Cast)",ok:/data-cqk="xo"/.test(ho)&&/data-cqnx="2"/.test(ho)&&ho.includes(xid(X,"o","09:00")),got:(ho.match(/data-cq[a-z]+="[^"]*"/g)||[]).join(" "),want:'data-cqk="xo" … data-cqnx="2"'});
   xs(ALL,{[xid(X,"o","09:00")]:{s:2,at:Date.UTC(2031,2,2,8,4)}});const hc=(T.xf("o",cs,X)||{}).h||"";
   out.push({n:"Komparsen: On set zeigt die Zeit der Quittierung",ok:/>09:04</.test(hc),got:(hc.match(/>([^<]*)</)||[])[1],want:"09:04"})}
+/* Meine Termine: the role «Kostüm» gets every Kostüm without a name (cast and extras); a named one only that person; the role «Komparsen» its groups */
+{const c2={calls:[{name:"Anna Probe"}],cast:[{no:"7",role:"Wirt",actor:"Max",wardrobe:"07:05 - 07:20 15’",makeup:""},{no:"8",role:"Gast",actor:"Eva",wardrobe:"Anna 07:30 - 07:40 10’",makeup:""}],
+   extras:[{count:"5",part:"Passanten",call:"08:00",wardrobe:"08:10",makeup:"",onset:"09:00"},{count:"3",part:"Polizei",call:"08:30",wardrobe:"Anna 08:40 - 08:50",makeup:"",onset:"09:30"}]};
+  vm.runInContext("S.dispos=[{date:'"+D+"',cs:"+JSON.stringify(c2)+"}];S.days=[];var MYROLE='kostuem'",C);
+  const ev=vm.runInContext("cmEvents(null,'2031-01-01').map(e=>e.n).join(' | ')",C);
+  out.push({n:"Meine Termine: Rolle Kostüm sieht Kostüm ohne Namen (Cast und Komparsen), nicht die einer genannten Person",ok:ev==="Kostüm: Wirt (Max) | Kostüm: Komparsen 5 Passanten",got:ev,want:"Kostüm: Wirt (Max) | Kostüm: Komparsen 5 Passanten"});
+  vm.runInContext("MYROLE='komparsen'",C);
+  const xe=vm.runInContext("xqEvents('2031-01-01').map(e=>e.n+' '+e.t+'-'+e.end).join(' | ')",C);
+  out.push({n:"Meine Termine: Rolle Komparsen sieht pro Gruppe Call bis On set",ok:xe==="Komparsen: 5 Passanten 08:00-09:00 | Komparsen: 3 Polizei 08:30-09:30",got:xe,want:"Komparsen: 5 Passanten 08:00-09:00 | Komparsen: 3 Polizei 08:30-09:30"})}
 for(const x of out)console.log(JSON.stringify(x));

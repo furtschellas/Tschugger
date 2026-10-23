@@ -224,6 +224,19 @@ async function xqPick(b){const id=b.dataset.xqc,d=b.dataset.xqd,N=+b.dataset.xqn
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-xqc]");if(!b)return;e.preventDefault();e.stopPropagation();if(!xqCan())return;
   xqPick(b).catch(err=>showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000))},true);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const d=document.getElementById("xqpick");if(d){e.preventDefault();d.remove()}}});
+/* Meine Termine for the role «Komparsen» (Extras, Statisten): per shooting day one appointment per group – Call to On set, Kostüm / Maske below,
+   the Call can be ticked right there (same picker «Wie viele sind da?») */
+const xqRoleIs=()=>{try{const id=typeof MYROLE!=="undefined"?MYROLE||"":"",nm=window.MYROLENAME||((typeof ADM!=="undefined"&&(ADM.roles||[]).find(x=>x.id===id))||{}).name||"";
+  return /kompars|extras?\b|statist/.test(fold(id+" "+nm))}catch(_){return false}};
+window.xqEvents=t=>{const out=[];if(!xqRoleIs())return out;
+  for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,cc=Object.assign({},c,{_date:dp.date}),d=arr(S.days).find(x=>x.date===dp.date)||{};
+    let where="",map="";try{const ls=typeof csLocs==="function"?csLocs(c):[],w=k=>/^W \/ H \/ M/.test(k);
+      const b=ls.find(l=>arr(l.kinds).some(k=>w(k)&&/Extras/.test(k)))||ls.find(l=>arr(l.kinds).some(w))||ls.find(l=>arr(l.kinds).includes("Base"));if(b){where=b.name||"";map=b.map||""}}catch(_){}
+    for(const r of arr(c.extras)){const ct=cqHm(r.call),ot=cqHm(r.onset);if(!ct&&!ot)continue;
+      const wm=[[L("Kostüm"),r.wardrobe],[L("Maske"),r.makeup]].filter(x=>String(x[1]||"").trim()).map(x=>x[0]+" "+String(x[1]).trim()).join(" · ");
+      let xh="";try{const f=window.xqField("c",cc,r);if(f)xh='Call '+f.h}catch(_){}
+      out.push({date:dp.date,t:ct||ot,end:ot&&ct?ot:"",n:L("Komparsen")+": "+[String(r.count||"").trim(),String(r.part||"").trim()].filter(Boolean).join(" "),where,map,src:"Callsheet",go:d.id||dp.date,note:wm,xqh:xh})}}
+  return out};
 /* ---------- 5. Meine Termine: Kostüm / Maske as appointments (for the person named in the column head and for the actor) ---------- */
 /* the app role is «Kostüm» (Garderobe, Costume …): every Kostüm appointment of the cast – the callsheet names nobody in the Kostüm column */
 const cmRoleW=()=>{try{const id=typeof MYROLE!=="undefined"?MYROLE||"":"",nm=window.MYROLENAME||((typeof ADM!=="undefined"&&(ADM.roles||[]).find(x=>x.id===id))||{}).name||"";
@@ -232,10 +245,17 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
   for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,d=arr(S.days).find(x=>x.date===dp.date)||{};
     let where="",map="";try{const ls=typeof csLocs==="function"?csLocs(c):[];const b=ls.find(l=>arr(l.kinds).some(k=>/^W \/ H \/ M/.test(k)))||ls.find(l=>arr(l.kinds).includes("Base"));if(b){where=b.name||"";map=b.map||""}}catch(_){}
     for(const r of arr(c.cast))for(const k of ["w","m"]){const v=k==="w"?r.wardrobe:r.makeup;
-      for(const p of cmParse(v,c)){const mine=(p.who&&cm&&cm.hit(p.who))||(k==="w"&&rw),actor=r.actor&&cm&&cm.hit(r.actor);if(!mine&&!actor)continue;
+      for(const p of cmParse(v,c)){const mine=p.who?!!(cm&&cm.hit(p.who)):k==="w"&&rw,actor=r.actor&&cm&&cm.hit(r.actor);if(!mine&&!actor)continue;
         const oth=["w","m"].flatMap(k2=>cmParse(k2==="w"?r.wardrobe:r.makeup,c).map(q=>cmId(dp.date,k2,r,q.t)));   /* the other Kostüm / Maske of this actor */
         out.push({cmo:oth,date:dp.date,t:p.t,end:p.end,n:L(CMK[k])+": "+(mine?[r.role,r.actor&&"("+r.actor+")"].filter(Boolean).join(" "):[r.role,p.who&&L("bei")+" "+p.who].filter(Boolean).join(" · ")),
-          where,map,src:"Callsheet",go:d.id||dp.date,cm:cmId(dp.date,k,r,p.t),cmk:k})}}}
+          where,map,src:"Callsheet",go:d.id||dp.date,cm:cmId(dp.date,k,r,p.t),cmk:k})}}
+    /* extras: Kostüm for the role Kostüm, unless a person is named in the cell (then only that person); Maske only for the person named */
+    const cc=Object.assign({},c,{_date:dp.date});
+    for(const r of arr(c.extras))for(const k of ["w","m"]){const v=String((k==="w"?r.wardrobe:r.makeup)||"").trim(),t0=cqHm(v);if(!t0)continue;
+      const p=cmParse(v,c)[0]||{},nm=p.who||(v.match(/^\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.' -]*?)\s+\d{1,2}[:.]\d{2}/)||[])[1]||"";
+      const mine=nm?!!(cm&&cm.hit(nm)):k==="w"&&rw;if(!mine)continue;
+      out.push({date:dp.date,t:t0,end:p.end||"",n:L(CMK[k])+": "+L("Komparsen")+" "+[String(r.count||"").trim(),String(r.part||"").trim()].filter(Boolean).join(" "),
+        where,map,src:"Callsheet",go:d.id||dp.date,cm:xqId(cc,k,r,t0),cmk:k})}}
   return out};
 /* the mark of one entry: the same three steps as in the callsheet – open → running (pink) → done (check) → open */
 window.cmBtn=(id,date,label,k,oth)=>{const st=cmSt(id),cls="cmk"+(st===2?" cmok":st===1?" cmrun":""),ico=st===2?RIDE_ICO[1]:'<span class="cmc"></span>';
