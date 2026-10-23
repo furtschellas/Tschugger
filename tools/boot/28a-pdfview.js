@@ -5,11 +5,15 @@ async function pdfLib(){if(!PDFLIB){const m=await import(new URL("pdf.min.mjs",l
 const PDFV={doc:null,zoom:1,blob:null,name:"",obs:null,el:null};
 function pdfClose(){const v=PDFV;try{v.obs&&v.obs.disconnect()}catch(_){}try{v.doc&&v.doc.destroy()}catch(_){}if(v.el)v.el.remove();Object.assign(v,{doc:null,blob:null,obs:null,el:null});document.documentElement.classList.remove("pdfvon")}
 /* draw one page at the width of the screen × zoom (sharp on retina) */
-async function pdfPage(cv){const v=PDFV;if(!v.doc||cv.dataset.z===String(v.zoom))return;cv.dataset.z=String(v.zoom);
+/* a zoom during drawing: the running drawing is stopped first (two at once on one canvas failed and left the page empty for good) */
+async function pdfPage(cv){const v=PDFV;if(!v.doc||cv.dataset.z===String(v.zoom))return;const z=String(v.zoom);cv.dataset.z=z;
+  if(cv._task){try{cv._task.cancel()}catch(_){}try{await cv._task.promise}catch(_){}cv._task=null}
+  try{
   const p=await v.doc.getPage(+cv.dataset.p),w0=p.getViewport({scale:1}).width,box=v.el.querySelector(".pdfvb"),w=Math.max(200,(box.clientWidth-16)*v.zoom),
     vp=p.getViewport({scale:w/w0}),dpr=Math.min(3,window.devicePixelRatio||1);
   cv.width=Math.floor(vp.width*dpr);cv.height=Math.floor(vp.height*dpr);cv.style.width=Math.floor(vp.width)+"px";cv.style.height=Math.floor(vp.height)+"px";
-  await p.render({canvasContext:cv.getContext("2d"),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null}).promise}
+  const t=p.render({canvasContext:cv.getContext("2d"),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null});cv._task=t;await t.promise;if(cv._task===t)cv._task=null}
+  catch(err){if(cv.dataset.z===z)delete cv.dataset.z;throw err}}
 function pdfRedraw(){const v=PDFV;if(!v.el)return;v.el.querySelector(".pdfvz").textContent=Math.round(v.zoom*100)+"%";
   v.el.querySelectorAll("canvas[data-p]").forEach(cv=>{const r=cv.getBoundingClientRect();if(r.bottom>-800&&r.top<innerHeight+800)pdfPage(cv).catch(()=>{})})}
 /* url: a Blob, or the blob: address from blkImg (its file is kept in blkBlob) */

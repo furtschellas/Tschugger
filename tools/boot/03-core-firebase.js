@@ -76,8 +76,11 @@ const lc=s=>String(s||"").trim().toLowerCase();
 let COADMIN=false;
 /* SIMROLE: App-Verwaltung → Log → «Berechtigungen testen» looks at the app with the rights of another role for a moment */
 let SIMROLE=null;
-const isOwner=()=>!SIMROLE&&!!(ME&&ME.emailVerified&&ADMINS.includes(lc(ME.email)));
-const isAdmin=()=>SIMROLE?!!SIMROLE.adm:(isOwner()||!!(COADMIN&&ME&&ME.emailVerified));
+/* confirmed like in the rules: e-mail confirmed OR account made by the owner with a start password (starts/{email}) – before, such an account
+   got admin rights from the rules but no admin view in the app */
+const meOk=()=>{if(!ME)return false;if(ME.emailVerified)return true;try{return !!START}catch(_){return false}};
+const isOwner=()=>!SIMROLE&&!!(meOk()&&ADMINS.includes(lc(ME.email)));
+const isAdmin=()=>SIMROLE?!!SIMROLE.adm:(isOwner()||!!(COADMIN&&meOk()));
 /* roles: the owner creates roles (roles/{id}: name + perms) and assigns them (userroles/{email}); admins have every permission except the app settings */
 /* permissions, grouped by main topic (topic in capitals, short labels so they fit on one line on phones) */
 /* name of the project (App-Verwaltung → Produktion), default TSCHUGGER Tigerblood; cached for the next start */
@@ -101,7 +104,7 @@ let MYPERMS=[],MYROLE="",ADMINPERMS=ADMIN_DEFAULT.slice();
 const can=p=>isOwner()||(isAdmin()&&ADMINPERMS.includes(p))||MYPERMS.includes(p);
 /* the gear (App-Verwaltung) only with the permission «Einstellungen ändern» */
 /* lunch menus: admins/owners and the right «Lunch-Menüs eingeben» (menus.edit) – before: every role with «cater» in its id */
-window.canMenu=()=>!!(ME&&(isAdmin()||can("menus.edit")));
+window.canMenu=()=>!!(ME&&can("menus.edit"));   /* like the rules: admins only while «menus.edit» is in the admin rights */
 /* roles: «Rollen bearbeiten» = create/change/delete roles (not the admin role), «Rollen pflegen» = give people a role (not admin/owner) */
 window.canRoleEdit=()=>isAdmin()||can("roles.edit");window.canRoleAssign=()=>isAdmin()||can("roles.assign");
 const canAdm=()=>isOwner()||["settings","audit.view","users.view","users.invite","users.requests","users.edit","roles.edit","roles.assign","roles.view","data.check","coverday.manage"].some(p=>can(p));   /* scene log and reports: own topic «Reports» (button in the head) */   /* gear = App-Verwaltung: anyone with one of its permissions */
