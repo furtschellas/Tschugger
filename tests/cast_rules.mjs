@@ -34,4 +34,6 @@ t("Cast manuell: Base von Hand erledigt → alle vorherigen abgeschlossen",["cas
 t("Cast manuell: jede Zeit antippbar",["cast.manual"],{},R1,"cq0+tap cq0+tap cq0+tap cq0+tap");
 t("nur sehen (cast.see): Stand ohne Antippen",["cast.see"],{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"cq2 cq2 cq1 cq0");
 t("ohne Recht: nur die Zeiten, kein Stand",[],{[id(R1,"b","07:45")]:2},R1,"plain plain plain plain rowdone");
+{C.RIDEACK={};vm.runInContext('setP(["cast.manual"])',C);const h=f=>(T[f](cs,R1)||{}).h||"";const got=["p","c","b","o"].map(f=>/data-cq2/.test(h(f))?"1x":"3x").join(" ");
+  out.push({n:"Cast manuell: P/UP und Call mit einem Tippen erledigt, Base und On set in Schritten",ok:got==="1x 1x 3x 3x",got,want:"1x 1x 3x 3x"})}
 for(const x of out)console.log(JSON.stringify(x));
