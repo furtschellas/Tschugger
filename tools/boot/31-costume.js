@@ -47,7 +47,7 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
    2. Base done (tapped or by hand) → P/UP, Call, Kostüm and Maske done; On set open
    3. Call done → P/UP done
    4. a hand tick (cast.manual) wins over the automatic state
-   5. automatic: Kostüm or Maske started → P/UP and Call done; P/UP and Call follow the ride; both Kostüm and Maske done → Base running;
+   5. automatic: Kostüm or Maske started → P/UP and Call done; P/UP follows the ride (Call too once the ride is done, but Call can always be tapped); both Kostüm and Maske done → Base running;
       On set open once Kostüm and Maske (or Base) are done, running when the ride Base → set is done, pink frame when that ride is accepted ---------- */
 const cqCanRide=()=>{try{return canPerm("rides.confirm")||canPerm("rides.manage")}catch(_){return false}};
 const cqMan=()=>{try{return typeof canPerm==="function"&&canPerm("cast.manual")}catch(_){return false}};
@@ -82,7 +82,7 @@ const CQAUTO={
   p(m,r,t){if(typeof rideId!=="function")return null;const arr_=L("Angekommen (Kostüm/Maske)");
     if(!m.ride)return m.arrived?cqDone(t,arr_):null;if(m.arrived&&m.rs!==2)return cqDone(t,arr_);return window.cqLink("p",m.rid,m.d,t)},
   c(m,r,t){if(m.arrived)return cqDone(t,L("Angekommen (Kostüm/Maske)"));
-    if(m.ride){const s=m.rs===2?2:0;return cqSpan(s,t,s?L("Angekommen (Fahrt ausgeführt)"):L("Folgt der Fahrt"))}
+    if(m.ride&&m.rs===2)return cqSpan(2,t,L("Angekommen (Fahrt ausgeführt)"));   /* with a ride Call can still be tapped (then P/UP is done too) */
     return window.cqLink("c",cmId(m.d,"c",r,hm(t)),m.d,t)},
   b(m,r,t){if(!m.wmDone&&m.st("b",t)!==2)return null;   /* a stored Base tick stays visible */
     if(hm(r.onset)&&(m.on.st>0||m.on.rs===2))return cqDone(t,L("Erledigt"));
