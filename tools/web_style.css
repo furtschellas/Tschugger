@@ -971,5 +971,13 @@ html body #view .csview #cs-cast .cs-card{display:grid;grid-template-columns:min
 html body #view .csview #cs-cast .cs-card .cs-ct{grid-column:1/-1}
 html body #view .csview #cs-cast .cs-card .cs-kv{display:flex;margin:0;min-width:0}
 html body #view .csview #cs-cast .cs-card .cs-kv .k{flex:0 0 auto}
-html body #view .csview #cs-cast .cs-card:has(.cs-kv:last-child .cql.cq2){border-color:var(--accent)!important;box-shadow:inset 0 0 0 0 transparent}
+html body #view .csview #cs-cast .cs-card:has(.cqall){border-color:var(--accent)!important;box-shadow:inset 0 0 0 0 transparent}
 }
+/* cast: every step done = the cast number in pink; the car behind P/UP / Base while the ride is on the way */
+html body #view .cqall{color:var(--accent)!important}
+html body #view .cqcar{color:var(--accent);vertical-align:-3px;margin-left:3px}
+/* rides: «driver on site» (pin) pink, without the driving animation */
+html body .ridest.rsh svg,html body .ridest.rsh .rmove{animation:none!important}
+html body .rideack.rkh,html body .ridek.rkh{color:var(--accent)}
+/* cast: On set done – every other time of the row grey, On set stays */
+html body #view :is(tr,.cs-card):has(.cqall) :is(.cql:not(.cqon),.mkd,.mki,.mkt,.cqcar){color:var(--muted)!important;background:none!important}
