@@ -300,13 +300,17 @@ async function broadcast(req, env, origin, ctx) {
         if (st >= 200 && st < 300) { n++; done.push(did); } else if (st === 404 || st === 410) { gone.push(did); done.push(did); } else fail++;
       } catch (_) { fail++; }
     }));
+    // progress after every group (only «done», no «n»: the GitHub run keeps waiting 3 min) – if the worker stops in the middle,
+    // the GitHub run skips the devices that got it already (before, everybody got the message a second time)
+    if (i + 10 < todo.length && tried < lim) await fsPatch(env, "broadcasts/" + id, { done }, g.tok).catch(() => {});
   }
   const fin = !more && !fail;
-  await fsPatch(env, "broadcasts/" + id, { n, done, fin }, g.tok);
+  let endOk = false;
+  for (let k = 0; k < 2 && !endOk; k++) { try { endOk = (await fsPatch(env, "broadcasts/" + id, { n, done, fin }, g.tok)).ok; } catch (_) {} }
   const later = [];
   if (!fin) later.push(dispatch(env, "push.yml"));   // the rest (and failed devices) by the GitHub run
-  // at most 10 deletes here (free-tier subrequest limit) – the GitHub run removes the rest
-  if (gone.length && saJson(env)) later.push(...gone.slice(0, 10).map(did => fsReq(env, "push/" + did, { method: "DELETE" }).catch(() => {})));
+  // at most 8 deletes here (free-tier subrequest limit, the progress marks above need a few) – the GitHub run removes the rest
+  if (gone.length && saJson(env)) later.push(...gone.slice(0, 8).map(did => fsReq(env, "push/" + did, { method: "DELETE" }).catch(() => {})));
   if (later.length) ctx.waitUntil(Promise.all(later));
   return json({ ok: true, n, fail, rest: todo.length - tried, claimed: true }, 200, origin);
 }

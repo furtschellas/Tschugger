@@ -1,5 +1,7 @@
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false;
+const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false,PREFOK=false;const PREFX=["rc","scrv","csb"];
+/* the notices of p.x (or the older single fields) */
+const prefX=p=>{let x={};try{x=JSON.parse(p&&p.x||"{}")||{}}catch(_){}for(const k of PREFX)if(typeof(p&&p[k])==="string"&&x[k]==null)x[k]=p[k];return x};
 {const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}}}
 function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 /* a change made just before closing or reloading is saved right away (before, the older copy online won on the next start) */
@@ -12,15 +14,18 @@ async function savePrefs(){
   const fit=(k,v)=>{v=String(v);if(v.length<=400)return v;if(k==="push"){try{const c=JSON.parse(v),o=c&&c.off&&typeof c.off==="object"?c.off:null;
       if(o){const ks=Object.keys(o).sort((a,b)=>String(o[a]).localeCompare(String(o[b])));while(ks.length&&JSON.stringify(c).length>400)delete o[ks.shift()];const t=JSON.stringify(c);if(t.length<=400)return t}}catch(_){}}return null};
   try{for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null){const f=fit(k,v);if(f!==null)p[k]=f}}}catch(_){return}
-  try{for(const k of ["rc","scrv","csb"]){const v=localStorage.getItem(k);if(v!==null&&Object.keys(p).length<14)p[k]=v.slice(0,60)}}catch(_){}   /* role-change notice seen (room permitting: the rules allow 16 fields) */
+  /* notices already seen (role change, callsheet beta …) share ONE field «x»: the rules allow 16 fields = 14 settings + lt + x (before, they were dropped when all settings were set) */
+  try{const x={};for(const k of PREFX){const v=localStorage.getItem(k);if(v!==null)x[k]=v.slice(0,60)}if(Object.keys(x).length)p.x=JSON.stringify(x)}catch(_){}
   let lt=0;try{lt=+localStorage.getItem("prefsLocalAt")||0}catch(_){}PREFT=null;
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"prefs",ME.uid),Object.assign(p,{at:F.serverTimestamp(),lt}))}catch(err){console.warn("prefs",err&&err.code||err)}
+  /* before the copy online was read, nothing is written (it would replace settings made on another device); a change is kept by prefsLocalAt and saved after loading */
+  if(!PREFOK)return;
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"prefs",ME.uid),Object.assign(p,{lt}))}catch(err){console.warn("prefs",err&&err.code||err)}
 }
 function applyPrefs(p){
   if(!p||typeof p!=="object")return;PREFAPPLY=true;
   try{
     for(const k of PREFKEYS)if(typeof p[k]==="string")try{localStorage.setItem(k,p[k])}catch(_){}
-    for(const k of ["rc","scrv"])if(typeof p[k]==="string")try{localStorage.setItem(k,p[k])}catch(_){}
+    {const x=prefX(p);for(const k of ["rc","scrv","csb"])if(typeof x[k]==="string")try{localStorage.setItem(k,x[k])}catch(_){}}
     const js=k=>{try{return JSON.parse(p[k])}catch(_){return null}};
     for(const [k,o] of [["pv",S.pv],["sv",S.sv],["lv",S.lv]]){const x=js(k);if(x&&typeof x==="object")for(const i in o)if(typeof x[i]==="boolean")o[i]=x[i]}
     for(const k of ["uf","pu"]){const x=js(k);if(x&&typeof x==="object")S[k]=Object.assign({},S[k],...["1","2","3"].filter(u=>typeof x[u]==="boolean").map(u=>({[u]:x[u]})))}
@@ -35,7 +40,7 @@ async function loadPrefs(){
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),10000,"prefs");
     let lt=0;try{lt=+localStorage.getItem("prefsLocalAt")||0}catch(_){}
     /* settings changed on this device after the copy online was saved: this device wins and is saved */
-    if(d.exists()&&!(lt&&(+d.data().lt||0)<lt))applyPrefs(d.data());else savePrefs()}catch(err){console.warn("prefs",err&&err.code||err)}
+    PREFOK=true;if(d.exists()&&!(lt&&(+d.data().lt||0)<lt))applyPrefs(d.data());else savePrefs()}catch(err){console.warn("prefs",err&&err.code||err);addEventListener("online",()=>{if(!PREFOK)loadPrefs()},{once:true})}
 }
 /* ---- documents: every text the app sends or shows (mails, welcome note, disclaimer); editable under App-Verwaltung → Einstellungen → Dokumente ---- */
 const DOCDEF={
@@ -138,7 +143,7 @@ document.addEventListener("click",async e=>{if(!e.target.closest("[data-twagain]
 function waNum(t){let d=String(t||"").replace(/[^\d+]/g,"");if(d.startsWith("+"))return d.slice(1);if(d.startsWith("00"))return d.slice(2);if(/^0\d{9}$/.test(d))return "41"+d.slice(1);return d}
 function waInvite(em,name,phone){const d=docGet("invitewa",{email:em,vorname:String(name||"").split(/\s+/)[0],name:name||""});const n=waNum(phone);
   return "https://wa.me/"+(n.length>=8?n:"")+"?text="+encodeURIComponent(d.body)}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-cwa]");if(!b||!isAdmin())return;e.preventDefault();e.stopPropagation();
+document.addEventListener("click",e=>{const b=e.target.closest("[data-cwa]");if(!b||!can("users.invite"))return;   /* the same right that shows the button */e.preventDefault();e.stopPropagation();
   window.open(waInvite(b.dataset.cwa,b.dataset.nm||"",b.dataset.ph||""),"_blank","noopener")},true);
 
 /* maintenance note on/off (config/app → docs.maint.on, for everybody; default on) */

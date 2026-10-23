@@ -1,11 +1,12 @@
 /* ---- admin: invitations and members (German only; visible to admins) ---- */
 /* error text of the App-Verwaltung: without permission a hint to publish the Firestore rules, else the error itself */
-const admErr=err=>/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err);
+/* the buttons follow the rules now – a refusal means this change is not allowed for this person (not «rules missing», which misled before) */
+const admErr=err=>/permission/.test((err&&err.code)||"")?L("Keine Berechtigung für diese Änderung."):L("Fehler:")+" "+(err.message||err);
 const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false,open:new Set()};
 async function admLoad(){
   const {F,db}=await fb();
   const none=()=>({docs:[]}),opt=(ok,pr)=>ok?pr:pr.catch(none);
-  const [i,m,a,ro,ur]=await Promise.all([opt(isAdmin(),F.getDocs(F.collection(db,"invites"))),opt(isAdmin(),F.getDocs(F.collection(db,"members"))),F.getDocs(F.collection(db,"admins")).catch(none),F.getDocs(F.collection(db,"roles")).catch(none),F.getDocs(F.collection(db,"userroles")).catch(none)]);
+  const [i,m,a,ro,ur]=await Promise.all([opt(isAdmin(),F.getDocs(F.collection(db,"invites"))),opt(isAdmin(),F.getDocs(F.collection(db,"members"))),F.getDocs(F.collection(db,"admins")).catch(none),F.getDocs(F.collection(db,"roles")).catch(none),F.getDocs(F.collection(db,"userroles")).then(x=>{ADM.urOk=true;return x}).catch(()=>{ADM.urOk=false;return none()})]);
   try{const ow=await F.getDocs(F.collection(db,"owners"));ADM.own=ow.docs.map(d=>d.id);for(const e of ADM.own)if(!ADMINS.includes(e))ADMINS.push(e);for(let k=ADMINS.length-1;k>=0;k--)if(!ROOT_OWNERS.includes(ADMINS[k])&&!ADM.own.includes(ADMINS[k])&&!(ME&&lc(ME.email)===ADMINS[k]))ADMINS.splice(k,1)}catch(_){ADM.own=ADM.own||[]}
   ADM.roles=ro.docs.filter(d=>d.id!=="admin").map(d=>Object.assign({id:d.id},d.data()));
   if(isOwner()&&!ADM.roles.some(x=>x.id==="crew")){const cp=VIEWPERMS.filter(p=>p!=="view.mycal");try{await F.setDoc(F.doc(db,"roles","crew"),{name:"Crew",perms:cp,at:F.serverTimestamp()});ADM.roles.push({id:"crew",name:"Crew",perms:cp})}catch(err){console.warn("crew role",err&&err.code||err)}}{const ad=ro.docs.find(d=>d.id==="admin");ADM.adminPerms=ad?(ad.data().perms||[]):ADMIN_DEFAULT.slice()}ADM.ur={};ur.docs.forEach(d=>{ADM.ur[d.id]=String((d.data()||{}).role||"")});
@@ -82,9 +83,10 @@ function bkSec(){
 async function bkCollect(){
   const {F,db}=await fb();
   const col=async n=>{const q=await F.getDocs(F.collection(db,n));return q.docs.map(d=>({id:d.id,data:d.data()}))};
-  const [members,invites,admins,bdays,cfg]=await Promise.all([col("members"),col("invites"),col("admins"),col("bdays").catch(()=>[]),F.getDoc(F.doc(db,"config","app"))]);
+  /* roles and who has which role belong in the backup too (before, after a restore nobody had a role) */
+  const [members,invites,admins,bdays,cfg,roles,userroles,owners]=await Promise.all([col("members"),col("invites"),col("admins"),col("bdays").catch(()=>[]),F.getDoc(F.doc(db,"config","app")),col("roles").catch(()=>[]),col("userroles").catch(()=>[]),col("owners").catch(()=>[])]);
   const plain=v=>JSON.parse(JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&typeof x.toDate==="function"?{__ts:x.toDate().toISOString()}:x));
-  return plain({app:"tschugger-crew",version:1,createdAt:new Date().toISOString(),by:ME&&ME.email,config:cfg.exists()?cfg.data():null,members,invites,admins,bdays});
+  return plain({app:"tschugger-crew",version:1,createdAt:new Date().toISOString(),by:ME&&ME.email,config:cfg.exists()?cfg.data():null,members,invites,admins,bdays,roles,userroles,owners});
 }
 async function bkDownload(){
   const data=await bkCollect();const t=new Date();
@@ -102,11 +104,15 @@ async function bkRestore(file){
   const {F,db}=await fb();const back=v=>JSON.parse(JSON.stringify(v),(k,x)=>x&&typeof x==="object"&&typeof x.__ts==="string"?F.Timestamp&&F.Timestamp.fromDate?F.Timestamp.fromDate(new Date(x.__ts)):x.__ts:x);
   const own=lc(ME&&ME.email),ok=/^[^/]{1,200}$/;const ops=[];
   if(d.config&&typeof d.config==="object")ops.push(["config","app",d.config]);
-  for(const [n,list] of [["admins",d.admins],["invites",d.invites],["members",d.members],["bdays",d.bdays]])
-    for(const r of (Array.isArray(list)?list:[]))if(r&&ok.test(String(r.id))&&r.data&&typeof r.data==="object"&&!(n==="members"&&lc(r.data.email)===own))ops.push([n,String(r.id),r.data]);
+  /* entries the rules never allow are left out (own invitation and own role, the main owner's entries) */
+  const root=ROOT_OWNERS.includes(own);
+  for(const [n,list] of [["roles",d.roles],["admins",d.admins],["invites",d.invites],["members",d.members],["bdays",d.bdays],["userroles",d.userroles],["owners",d.owners]])
+    for(const r of (Array.isArray(list)?list:[]))if(r&&ok.test(String(r.id))&&r.data&&typeof r.data==="object"&&!(n==="members"&&(lc(r.data.email)===own||(!root&&ROOT_OWNERS.includes(lc(r.data.email)))))&&!((n==="invites"||n==="userroles"||n==="admins"||n==="owners")&&(lc(r.id)===own||ROOT_OWNERS.includes(lc(r.id)))))ops.push([n,String(r.id),r.data]);
   let done=0,fail=0;
-  for(let i=0;i<ops.length;i+=300){const batch=F.writeBatch(db);ops.slice(i,i+300).forEach(([n,id,v])=>batch.set(F.doc(db,n,id),back(v),{merge:true}));
-    try{await batch.commit();done+=Math.min(300,ops.length-i)}catch(err){console.error(err);fail+=Math.min(300,ops.length-i)}}
+  for(let i=0;i<ops.length;i+=300){const part=ops.slice(i,i+300),batch=F.writeBatch(db);part.forEach(([n,id,v])=>batch.set(F.doc(db,n,id),back(v),{merge:true}));
+    /* a refused entry made the whole batch of 300 fail: then each entry on its own */
+    try{await batch.commit();done+=part.length}catch(err){console.warn("restore batch",err&&err.code||err);
+      for(const [n,id,v] of part){try{await F.setDoc(F.doc(db,n,id),back(v),{merge:true});done++}catch(_){fail++}}}}
   ADM.loaded=false;
   return L("Wiederhergestellt")+": "+done+(fail?" · "+L("fehlgeschlagen")+": "+fail:"");
 }
@@ -145,12 +151,14 @@ function genPw(){const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ2345678
   const x=[...r].map(v=>c[v%c.length]).join("");return x.slice(0,4)+"-"+x.slice(4,8)+"-"+x.slice(8)}
 async function createStartAccount(em,nm){
   em=lc(em);const {AP,A,F,db}=await fb();const pw=genPw();
+  /* an earlier entry (e.g. «ohne Bestätigungs-Mail» freigeschaltet) is put back if the account exists already – it was deleted and locked the person out */
+  let prev=null;try{const d=await F.getDoc(F.doc(db,"starts",em));if(d.exists())prev=d.data()}catch(_){}
   await F.setDoc(F.doc(db,"starts",em),{mustChange:true,at:F.serverTimestamp()});
   if(!ADM.inv.some(i=>i.id===em))await F.setDoc(F.doc(db,"invites",em),{name:String(nm||"").slice(0,80),role:"",addedAt:F.serverTimestamp()});await assignCrew(em);
   const a2=AP.initializeApp(FB_CONFIG,"start"+Date.now());
   try{const au=typeof A.initializeAuth==="function"&&A.inMemoryPersistence?A.initializeAuth(a2,{persistence:A.inMemoryPersistence}):A.getAuth(a2);
     await A.createUserWithEmailAndPassword(au,em,pw);try{await A.signOut(au)}catch(_){}}
-  catch(err){try{await F.deleteDoc(F.doc(db,"starts",em))}catch(_){}throw err}
+  catch(err){try{if(prev)await F.setDoc(F.doc(db,"starts",em),prev);else await F.deleteDoc(F.doc(db,"starts",em))}catch(_){}throw err}
   finally{try{AP.deleteApp&&await AP.deleteApp(a2)}catch(_){}}
   return pw;
 }
@@ -178,12 +186,19 @@ function userInfo(r){
 
 /* new users get the role «Crew» automatically (an invitation creates userroles/{email} = crew) */
 async function assignCrew(em){em=lc(em);if(!em||ADMINS.includes(em)||(ADM.adm||[]).includes(em)||(ADM.ur||{})[em])return;
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"userroles",em),{role:"crew",at:F.serverTimestamp()});ADM.ur=ADM.ur||{};ADM.ur[em]="crew"}catch(err){console.warn("crew role",err&&err.code||err)}}
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"userroles",em),{role:"crew",at:F.serverTimestamp()});ADM.ur=ADM.ur||{};ADM.ur[em]="crew"}catch(err){console.warn("crew role",err&&err.code||err);
+    /* without a role the person sees no shooting plan: say so instead of failing silently */
+    showMsg(L("Rolle «Crew» konnte nicht vergeben werden – bitte unter Rollen zuweisen.")+" ("+em+")",7000)}}
 /* role picker (owner): Benutzer:in, Admin or one of the custom roles */
-const canRole=e=>!!e&&!ROOT_OWNERS.includes(e)&&!(ME&&lc(ME.email)===e)&&(isOwner()||(isAdmin()&&!ADMINS.includes(e))||(can("roles.assign")&&!ADMINS.includes(e)&&!ADM.adm.includes(e)));
+/* the same limits as the rules: without admin rights nobody whose current role has rights one lacks (no demoting a «bigger» person) */
+const rolePermsOf=id=>id==="admin"?(ADM.adminPerms||ADMIN_DEFAULT):arr(((ADM.roles||[]).find(x=>x.id===id)||{}).perms);
+const roleMine=id=>!id||id==="crew"&&!(ADM.roles||[]).some(x=>x.id===id)||rolePermsOf(id).every(p=>MYPERMS.includes(p));
+const canRole=e=>!!e&&!ROOT_OWNERS.includes(e)&&!(ME&&lc(ME.email)===e)&&(isOwner()||(isAdmin()&&!ADMINS.includes(e))||(can("roles.assign")&&!ADMINS.includes(e)&&!ADM.adm.includes(e)&&roleMine((ADM.ur||{})[e])));
+/* the Admin role and roles holding «Einstellungen» are changed by the owner only (rules: an admin could otherwise give himself «Einstellungen») */
+const roleLocked=id=>!isOwner()&&(id==="admin"||(isAdmin()&&rolePermsOf(id).includes("settings")));
 const roleOf=e=>{if(ADMINS.includes(e))return "owner";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
 const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).name||"");
-const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Keine Rolle (eingeschränkt)")+'</option>'+(isOwner()?'<option value="owner"'+(roleOf(r.email)==="owner"?' selected':'')+'>'+L("Owner")+'</option>':'')+(isAdmin()?'<option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>':'')+rolesSorted().map(x=>{const mine=roleOf(r.email)===x.id,ok=isAdmin()||(x.perms||[]).every(p=>MYPERMS.includes(p));/* only roles with one's own rights can be given */return ok||mine?'<option value="'+esc(x.id)+'"'+(mine?' selected':'')+(ok?'':' disabled')+'>'+esc(x.name||x.id)+'</option>':''}).join("")+'</select></label>';
+const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Keine Rolle (eingeschränkt)")+'</option>'+(isOwner()?'<option value="owner"'+(roleOf(r.email)==="owner"?' selected':'')+'>'+L("Owner")+'</option>':'')+(isAdmin()?'<option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>':'')+rolesSorted().map(x=>{const mine=roleOf(r.email)===x.id,ok=(isAdmin()||(x.perms||[]).every(p=>MYPERMS.includes(p)))&&(isOwner()||!(x.perms||[]).includes("settings"));/* only roles with one's own rights can be given */return ok||mine?'<option value="'+esc(x.id)+'"'+(mine?' selected':'')+(ok?'':' disabled')+'>'+esc(x.name||x.id)+'</option>':''}).join("")+'</select></label>';
 function editForm(r,withRole){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
   return (window.simBtn?window.simBtn(r.email):'')+(withRole&&canRole(r.email)?'<div class="aerole">'+roleSel(r)+'</div>':'')+'<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
@@ -203,7 +218,7 @@ function reqSec(){
     r.map(q=>'<div class="arow"><span><b>'+esc(q.name||"")+'</b> · '+esc(q.id)+(q.role?'<br><small>'+esc(q.role)+'</small>':'')+(q.note?'<br><small>«'+esc(q.note)+'»</small>':'')+'</span>'+
       (can("users.requests")?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
 }
-const permBoxes=sel=>'<div class="perms">'+[...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp"><h5>'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const lock=!isAdmin()&&!MYPERMS.includes(k); /* role editors can only give permissions they have themselves */
+const permBoxes=sel=>'<div class="perms">'+[...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp"><h5>'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const lock=(!isAdmin()&&!MYPERMS.includes(k))||(k==="settings"&&!isOwner()); /* role editors can only give permissions they have themselves */
     return '<label class="ck'+(lock?' plock':'')+'"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+(lock?' disabled':'')+'> '+esc(permLbl(k,t))+'</label>'}).join("")+'</div>').join("")+'</div>';
 /* roles in order: «Hierarchie» (most permissions first) or alphabetical – the sort button in «Rollen» switches, kept on this device */
 let ROLESORT="h";try{ROLESORT=localStorage.getItem("rolesort")==="a"?"a":"h"}catch(_){}
@@ -223,9 +238,9 @@ function rolesSec(){
       (l.length?'<ul class="paccl">'+l.map(e=>'<li><span>'+esc(nameOf(e))+'</span>'+(can_&&canRole(e)?'<button type="button" class="lnk arpx" data-rpout="'+esc(e)+'" '+ariaTip(L("Aus der Rolle nehmen"))+'>×</button>':'')+'</li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+
       (cand.length?'<label class="arl arpadd">'+L("Person hinzufügen")+'<select data-rpadd="'+esc(id)+'"><option value="">'+esc(L("Person wählen …"))+'</option>'+cand.map(e=>'<option value="'+esc(e)+'">'+esc(nameOf(e))+(nameOf(e)!==e?' · '+esc(e):'')+'</option>').join("")+'</select></label>':'')+'</details>'};
   const row=(id,name,perms,fixedName)=>{const open=ADM.redit===id;
-    return '<div class="arole'+(open?' open':'')+'"><div class="arh"><div class="arn"><b>'+esc(name)+(id==="crew"?' <span class="ust role">'+L("Standard")+'</span>':'')+'</b><small>'+(id==="crew"?L("Wird neuen Benutzer:innen automatisch zugewiesen.")+' ':'')+(perms.length?perms.length+' '+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+' · '+pplLbl(id)+'</small></div>'+(canRoleEdit()&&(id!=="admin"||isAdmin())&&(isAdmin()||id!==MYROLE)?'<button type="button" class="pillbtn" data-redit="'+esc(id)+'">'+L(open?"Schliessen":"Bearbeiten")+'</button>':'')+'</div>'+pplSec(id)+
+    return '<div class="arole'+(open?' open':'')+'"><div class="arh"><div class="arn"><b>'+esc(name)+(id==="crew"?' <span class="ust role">'+L("Standard")+'</span>':'')+'</b><small>'+(id==="crew"?L("Wird neuen Benutzer:innen automatisch zugewiesen.")+' ':'')+(perms.length?perms.length+' '+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+' · '+pplLbl(id)+'</small></div>'+(canRoleEdit()&&!roleLocked(id)&&(isAdmin()||id!==MYROLE)?'<button type="button" class="pillbtn" data-redit="'+esc(id)+'">'+L(open?"Schliessen":"Bearbeiten")+'</button>':'')+'</div>'+pplSec(id)+
       (open?'<form class="arolef" data-role="'+esc(id)+'">'+(fixedName?'<input type="hidden" name="rn" value="'+esc(name)+'">':'<label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required value="'+esc(name)+'"></label>')+permBoxes(perms)+
-        '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+''+(id==="crew"?'':id==="admin"?'<button type="button" class="lnk" data-rreset>'+L("Standard wiederherstellen")+'</button>':'<button type="button" class="lnk" data-rdel="'+esc(id)+'">'+L("Rolle löschen")+'</button>')+'</div></form>':'')+'</div>'};
+        '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+''+(id==="crew"?'':id==="admin"?'<button type="button" class="lnk" data-rreset>'+L("Standard wiederherstellen")+'</button>':canRoleAssign()?'<button type="button" class="lnk" data-rdel="'+esc(id)+'">'+L("Rolle löschen")+'</button>':'')+'</div></form>':'')+'</div>'};
   return '<div class="admins"><h3 class="rolesh">'+L("Rollen")+'<button type="button" class="rsort" data-rolesort '+ariaTip(L(ROLESORT==="a"?"Sortiert: alphabetisch – tippen für Hierarchie (meiste Berechtigungen zuerst)":"Sortiert: Hierarchie (meiste Berechtigungen zuerst) – tippen für alphabetisch"))+'>'+(ROLESORT==="a"?'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l3-10 3 10M5 15h4"/><path d="M14 8h6l-6 10h6"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg>')+'<span>'+esc(L(ROLESORT==="a"?"A–Z":"Hierarchie"))+'</span></button></h3><p class="ahint">'+L("Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person alle Drehdaten, die Crewliste, das Drehbuch und das Blocking, aber keine Verwaltung. Mit Rolle sieht sie nur die Bereiche, die die Rolle erlaubt.")+'</p>'+(window.simPicker?window.simPicker():"")+
     '<div class="arole fixed"><div class="arh"><div class="arn"><b>'+L("Owner")+'</b><small>'+L("Alles, auch Rollen, Admins, Sperren und Backup")+'</small></div></div></div>'+
     row("admin",L("Admin"),ADM.adminPerms||ADMIN_DEFAULT,true)+
@@ -245,8 +260,8 @@ function permAccessSec(){
   return '<div class="admins pacc"><h3>'+L("Wer hat welchen Zugriff?")+'</h3><p class="ahint">'+L("Tippe auf eine Berechtigung, um zu sehen, wer sie hat – und über welche Rolle.")+'</p>'+
     [...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp paccgrp"><h5 class="paccg">'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const w=who(k);
       /* roles first – switch the permission on or off for a role right here; the people below, to open */
-      const rl=[['owner',L("Owner"),true,false]].concat([['admin',L("Admin"),aperm.includes(k),isAdmin()&&k!=="settings"]])
-        .concat(rolesSorted().map(r=>[r.id,r.name||r.id,arr(r.perms).includes(k),canRoleEdit()&&(isAdmin()||(r.id!==MYROLE&&MYPERMS.includes(k)))]));
+      const rl=[['owner',L("Owner"),true,false]].concat([['admin',L("Admin"),aperm.includes(k),isOwner()&&k!=="settings"]])
+        .concat(rolesSorted().map(r=>[r.id,r.name||r.id,arr(r.perms).includes(k),canRoleEdit()&&!roleLocked(r.id)&&(k!=="settings"||isOwner())&&(isAdmin()||(r.id!==MYROLE&&MYPERMS.includes(k)))]));
       const nr=noRoleOK(k);if(nr)rl.push(['',L("Keine Rolle"),!!(window.PUBV&&window.PUBV[nr]),false]);
       const edit=ADM.paccEdit===k,canEd=rl.some(x=>x[3]);
       return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]||edit?' open':'')+'><summary><span>'+esc(permLbl(k,t))+'</span>'+(canEd?'<button type="button" class="paccpen'+(edit?' on':'')+'" data-paccedit="'+k+'" '+ariaTip(L("Rollen ändern"))+'><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'')+'<b class="pacn">'+w.length+'</b></summary>'+
@@ -259,27 +274,32 @@ function permAccessSec(){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-paccedit]");if(!b)return;e.preventDefault();e.stopPropagation();const k=b.dataset.paccedit;ADM.paccEdit=ADM.paccEdit===k?"":k;if(ADM.paccEdit)SECS["pacc-"+k]=true;render()},true);
 /* «Wer hat welchen Zugriff?»: a permission switched on/off for a role directly (same rules as «Bearbeiten»: no self-promotion) */
 document.addEventListener("change",async e=>{const c=e.target.closest("input[data-pacc]");if(!c)return;const id=c.dataset.pacc,k=c.dataset.perm,on=c.checked;
-  if(!id||id==="owner"||(id==="admin"&&!isAdmin())||(id!=="admin"&&!canRoleEdit())||(!isAdmin()&&(id===MYROLE||!MYPERMS.includes(k)))){render();return}
+  if(!id||id==="owner"||roleLocked(id)||(k==="settings"&&!isOwner())||(id!=="admin"&&!canRoleEdit())||(!isAdmin()&&(id===MYROLE||!MYPERMS.includes(k)))){render();return}
   const ro=id==="admin"?{name:"Admin",perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:Object.assign({},(ADM.roles||[]).find(x=>x.id===id)||{});if(id!=="admin"&&!ro.name&&!ro.perms){render();return}
-  const before=arr(ro.perms).slice(),perms=[...new Set(on?before.concat([k]):before.filter(p=>p!==k))].filter(p=>permKnown(p));
+  const before=arr(ro.perms).slice(),perms=[...new Set(on?before.concat([k]):before.filter(p=>p!==k))].filter(p=>permKnown(p)||before.includes(p));
   const apply=ps=>{if(id==="admin")ADM.adminPerms=ps;else{const r=(ADM.roles||[]).find(x=>x.id===id);if(r)r.perms=ps}};
   apply(perms);render();
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name:ro.name||id,perms,at:F.serverTimestamp()});showMsg(L("Rolle gespeichert."),2000)}
   catch(err){apply(before);render();showMsg(admErr(err),6000)}});
-document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&canRoleEdit()&&(b.dataset.redit!=="admin"||isAdmin())){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
-  if(e.target.closest("[data-rreset]")&&canRoleEdit()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
-document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!canRoleEdit()||(f.dataset.role==="admin"&&!isAdmin()))return;
-  const name=String(f.rn.value||"").trim().slice(0,40),perms=readBoxes(f,"rp").filter(p=>permKnown(p)&&(isAdmin()||MYPERMS.includes(p)));if(!name)return;
+document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&canRoleEdit()&&!roleLocked(b.dataset.redit)){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
+  if(e.target.closest("[data-rreset]")&&isOwner()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
+document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!canRoleEdit()||(f.dataset.role&&roleLocked(f.dataset.role)))return;
+  const name=String(f.rn.value||"").trim().slice(0,40),perms=readBoxes(f,"rp").filter(p=>permKnown(p)&&(isAdmin()||MYPERMS.includes(p))&&(p!=="settings"||isOwner()));if(!name)return;
   /* rights of this role the editor does not have himself (shown greyed out) stay as they are – they were silently removed before */
   if(!isAdmin()&&f.dataset.role){const cur=((ADM.roles||[]).find(x=>x.id===f.dataset.role)||{}).perms||[];for(const p of cur)if(!MYPERMS.includes(p)&&!perms.includes(p))perms.push(p)}
+  /* rights not shown right now (e.g. the report rights before the reports are loaded) stay – saving removed them before */
+  if(f.dataset.role){const cur=f.dataset.role==="admin"?(ADM.adminPerms||[]):rolePermsOf(f.dataset.role);for(const p of cur)if(!PERMS.some(x=>x[0]===p)&&!perms.includes(p))perms.push(p)}
   let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
   const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});ADM.redit="";/* collapse right away (the reload below takes a moment) */if(id==="admin")ADM.adminPerms=perms;else{const r=(ADM.roles||[]).find(x=>x.id===id);if(r){r.name=name;r.perms=perms}else(ADM.roles||(ADM.roles=[])).push({id,name,perms})}document.activeElement&&document.activeElement.blur&&document.activeElement.blur();render();showMsg(L("Rolle gespeichert."),2500);admLoad().catch(err=>console.warn("roles reload",err&&err.code||err))}
   catch(err){if(btn)btn.disabled=false;console.error(err);{const m=f.querySelector(".amsg");if(m){m.className="amsg";m.textContent=admErr(err)}}showMsg(admErr(err),9000)}});
-document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!canRoleEdit())return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!canRoleEdit()||!canRoleAssign()||roleLocked(b.dataset.rdel))return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
   if(!confirmSafe(L("Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.").replace("{r}",ro.name||id)))return;
-  try{const {F,db}=await fb();for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)await F.deleteDoc(F.doc(db,"userroles",em));await F.deleteDoc(F.doc(db,"roles",id));showMsg(L("Rolle gelöscht."),2500);await admLoad()}
-  catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
+  /* all in one step: before, a refused person in the middle left some people without role and the role still there */
+  try{const {F,db}=await fb();const bt=F.writeBatch(db);for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)bt.delete(F.doc(db,"userroles",em));bt.delete(F.doc(db,"roles",id));await bt.commit();
+    /* a batch is not in the change log by itself: one entry for the role */
+    F.addDoc(F.collection(db,"audit"),{by:lc(ME.email),at:F.serverTimestamp(),op:"delete",col:"roles",id:String(id).slice(0,120),sum:auditSum("roles",null,"delete")}).catch(()=>{});showMsg(L("Rolle gelöscht."),2500);await admLoad()}
+  catch(err){showMsg(admErr(err),6000)}});
 document.addEventListener("change",async e=>{const sl=e.target.closest("select[data-urole]");if(!sl||!canRoleAssign())return;e.stopPropagation();await setUserRole(sl.dataset.urole,sl.value,sl)},true);
 /* give a person a role (owner, admin, a role or none): from the user list and from the role management */
 async function setUserRole(em,v,sl){if(!canRoleAssign()||!canRole(em)||(v==="owner"&&!isOwner())||(v==="admin"&&!isAdmin())){render();return}
@@ -352,7 +372,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if
 VIEWS.admin=function(){
   if(!canAdm())return '<div class="empty">'+L("Für die App-Verwaltung fehlt die Berechtigung.")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>300000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
-  if(!ADM.loaded){if(!ADM.loading){ADM.loading=true;admLoad().catch(err=>{console.error(err);showMsg(L("Liste der Benutzer:innen konnte nicht geladen werden:")+" "+(err.message||err),6000)}).finally(()=>{ADM.loading=false})}return '<div class="empty">'+L("Lade Benutzer:innen …")+'</div>'}
+  /* after a failed load the next try waits a minute (before: again on every render – many reads and messages, Firebase quota) */
+  if(!ADM.loaded){const wait=Date.now()-(ADM.failAt||0)<60e3;if(!ADM.loading&&!wait){ADM.loading=true;admLoad().then(()=>{ADM.failAt=0}).catch(err=>{console.error(err);ADM.failAt=Date.now();showMsg(L("Liste der Benutzer:innen konnte nicht geladen werden:")+" "+(err.message||err),6000);render()}).finally(()=>{ADM.loading=false})}
+    return '<div class="empty">'+L(wait&&!ADM.loading?"Liste der Benutzer:innen konnte nicht geladen werden:":"Lade Benutzer:innen …")+'</div>'}
   const memBy={};ADM.mem.forEach(m=>memBy[m.email]=m);
   const invBy={};ADM.inv.forEach(i=>invBy[i.id]=i);
   const rows=[];const seen=new Set();
@@ -446,11 +468,12 @@ document.addEventListener("submit",async e=>{
     const m=ADM.mem.find(x=>x.email===em),inv=ADM.inv.find(x=>x.id===em),btn=sf.querySelector("button");if(btn)btn.disabled=true;
     try{const {F,db}=await fb();
       if(m){const fn=g("fn"),ln=g("ln"),d={firstName:fn,lastName:ln,name:[fn,ln].filter(Boolean).join(" ")||m.name||"",lang:g("lg")||m.lang||"de",birthday:g("bd")||"",gender:g("gd")||"",phone:(g("eph")||"").slice(0,40),contactEmail:lc(g("ece")||"").slice(0,120),diet:g("edt")||"none",intol:readBoxes(sf,"eint"),allergies:(g("eal")||"").slice(0,200)};
+        /* «Funktion» belongs to the member (the card shows m.func) – before, it was only written to the invitation and never appeared */
+        if(g("rl")!==null)d.func=g("rl").slice(0,80);
         await F.updateDoc(F.doc(db,"members",m.uid),d)}
       if(inv||!m){const d={name:(m?[g("fn"),g("ln")].filter(Boolean).join(" "):g("nm"))||"",role:g("rl")||""};
         /* role «Crew» only for a NEW invitation – a deliberate «Keine Rolle» stays when the profile is edited later */
         if(inv)await F.updateDoc(F.doc(db,"invites",em),d);else{await F.setDoc(F.doc(db,"invites",em),Object.assign(d,{addedAt:F.serverTimestamp()}));await assignCrew(em)}}
-      else if(g("rl"))await F.setDoc(F.doc(db,"invites",em),{name:[g("fn"),g("ln")].filter(Boolean).join(" "),role:g("rl"),addedAt:F.serverTimestamp()});
       ADM.edit="";ADM.cedit="";showMsg(L("Gespeichert."),3000);await admLoad();render()}
     catch(err){console.error(err);if(btn)btn.disabled=false;showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}
@@ -508,12 +531,16 @@ document.addEventListener("click",async e=>{
       const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),em);
       showMsg(L("Link für ein neues Passwort gesendet an")+" "+em+". "+L("Schau auch im Spam-Ordner nach."),6000);return}
     if(a==="reqok"||a==="reqno"){const em=b.dataset.em,q=(ADM.req||[]).find(x=>x.id===em)||{};
-      if(a==="reqok"){await F.setDoc(F.doc(db,"invites",em),{name:String(q.name||"").slice(0,80),role:String(q.role||"").slice(0,80),addedAt:F.serverTimestamp()});await assignCrew(em);await notifyApproved(em,q)}
+      /* with «Anfragen freischalten» only, an invitation that exists already can not be changed (rules) – it is valid as it is, so go on */
+      if(a==="reqok"){try{await F.setDoc(F.doc(db,"invites",em),{name:String(q.name||"").slice(0,80),role:String(q.role||"").slice(0,80),addedAt:F.serverTimestamp()})}
+        catch(err){if(!/permission/.test(err&&err.code||"")||can("users.invite")||can("users.edit"))throw err}await assignCrew(em);await notifyApproved(em,q)}
       await F.deleteDoc(F.doc(db,"requests",em));ADM.req=(ADM.req||[]).filter(x=>x.id!==em);
       showMsg(a==="reqok"?L("Freigeschaltet:")+" "+(q.name||em):L("Anfrage abgelehnt."),4000);ADM.busy=false;await admLoad();return}
     if(a==="crew"){const list=crewEmails().filter(c=>!ADM.inv.some(i=>i.id===c.email)&&!ADM.mem.some(m=>m.email===c.email));
       if(confirmSafe(L("{n} Adressen aus der Crewliste einladen?").replace("{n}",list.length))){
-        for(let i=0;i<list.length;i+=200){const batch=F.writeBatch(db);list.slice(i,i+200).forEach(c=>{batch.set(F.doc(db,"invites",c.email),{name:c.name,role:c.role,addedAt:F.serverTimestamp()});if(!ADM.ur[c.email]&&!ADM.adm.includes(c.email)&&!ADMINS.includes(c.email))batch.set(F.doc(db,"userroles",c.email),{role:"crew",at:F.serverTimestamp()})});await batch.commit()}
+        for(let i=0;i<list.length;i+=200){const batch=F.writeBatch(db);list.slice(i,i+200).forEach(c=>{batch.set(F.doc(db,"invites",c.email),{name:String(c.name||"").slice(0,120),role:String(c.role||"").slice(0,80),addedAt:F.serverTimestamp()});
+          /* a role only where surely none exists yet (without the right to read the roles the list is empty and the batch – up to 200 invitations – failed) */
+          if(ADM.urOk&&!ADM.ur[c.email]&&!ADM.adm.includes(c.email)&&!ADMINS.includes(c.email))batch.set(F.doc(db,"userroles",c.email),{role:"crew",at:F.serverTimestamp()})});await batch.commit()}
         showMsg(L("{n} Adressen eingeladen.").replace("{n}",list.length),4000)}}
     else if((a==="block"||a==="remove"||a==="uninvite")&&ADMINS.includes(b.dataset.em||(ADM.mem.find(m=>m.uid===b.dataset.uid)||{}).email)){showMsg(L("Der Owner kann nicht gesperrt oder entfernt werden."),4000)}
     else if(a==="block"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:false});showMsg(L("Gesperrt."),3000)}
@@ -548,6 +575,8 @@ const bdShort=iso=>{const m=/^\d{4}-(\d\d)-(\d\d)$/.exec(iso||"");return m?m[2]+
 function bdayEntries(){
   const name=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
   if(isAdmin()&&ADM.loaded)return ADM.mem.filter(m=>m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||"")).map(m=>({name:name(m),md:m.birthday.slice(5)}));
+  /* without admin rights (e.g. «Geburtstage sehen» only) the list comes from «bdays» – it was never loaded on this path and always showed «Keine Geburtstage» */
+  if(!PUBB.loaded&&ME)loadPubBdays();
   return PUBB.list;
 }
 function bdayHTML(){

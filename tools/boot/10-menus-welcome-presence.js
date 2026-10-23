@@ -82,8 +82,9 @@ async function welcomeDone(){
 }
 async function maybeWelcome(){
   if(!ME||WELCOME_OPEN||ONBOARD)return;
-  if(await welcomeDone()){maybeTestWelcome();return}
-  WELCOME_OPEN=true;let T=WTXT[LANG]||(LANG==="hi"?WTXT.en:WTXT.de);
+  /* locked BEFORE the check: two sign-in paths at the same moment showed the note twice */
+  WELCOME_OPEN=true;if(await welcomeDone()){WELCOME_OPEN=false;maybeTestWelcome();return}
+  if(document.getElementById("welcome")){return}let T=WTXT[LANG]||(LANG==="hi"?WTXT.en:WTXT.de);
   if(LANG==="de"||docRaw("welcome").custom||docRaw("disclaimer").custom){const w=docGet("welcome",{});const dis=docRaw("disclaimer").body.trim();
     T=Object.assign({},WTXT[LANG]||(LANG==="hi"?WTXT.en:WTXT.de),{t:w.subject,p:w.body.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean)});T.warnIdx=T.p.findIndex(x=>x===dis)}
   const d=mkDialog("welcome");
@@ -123,7 +124,7 @@ async function maybeTestWelcome(){
 /* ---- «Neu: Interaktives Callsheet» (BETA): once for everybody who may see the callsheet; text under Einstellungen → Dokumente ---- */
 let CSB_OPEN=false;
 async function csbDone(){let loc="";try{loc=localStorage.getItem("csb")||""}catch(_){}if(loc)return true;
-  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().csb;if(w){try{localStorage.setItem("csb",w)}catch(_){}return true}}catch(_){}
+  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&prefX(d.data()).csb;if(w){try{localStorage.setItem("csb",w)}catch(_){}return true}}catch(_){}
   return false}
 async function maybeCsBeta(){
   const may=ME&&!SIMROLE&&!(typeof SIMUSER!=="undefined"&&SIMUSER)&&typeof vok==="function"&&vok("dispo");
@@ -146,10 +147,14 @@ async function markSeen(){
   if(!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
   /* every device of the person once in «devs» (kind|last use) – the user list shows how many devices are in use; devices unused for 30 days drop out */
   let id="";try{id=localStorage.getItem("devid")||"";if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem("devid",id)}}catch(_){}
-  try{const {F,db}=await fb();const up={lastSeen:F.serverTimestamp(),app:appKind()};
-    if(id){up["devs."+id]=appKind()+"|"+Date.now();const dv=(MEMBER&&MEMBER.devs)||{},old=Object.keys(dv).filter(k=>k!==id&&Date.now()-(+String(dv[k]).split("|")[1]||0)>30*864e5);
-      if(Object.keys(dv).length>=10)old.forEach(k=>{up["devs."+k]=F.deleteField()})}
-    await F.updateDoc(F.doc(db,"members",ME.uid),up)}catch(err){console.warn("seen",err&&err.code||err)}
+  /* at most 10 devices are kept (this one + the 9 used last; unused for 30 days drop out): the rules refuse more than 12, and the whole mark –
+     «last seen» too – used to fail from the 13th browser on (private mode, cleared data …). MEMBER.devs follows every write */
+  let F,db;try{({F,db}=await fb())}catch(_){return}
+  const base={lastSeen:F.serverTimestamp(),app:appKind()},up=Object.assign({},base),dv=Object.assign({},(MEMBER&&MEMBER.devs)||{}),tm=k=>+String(dv[k]).split("|")[1]||0;
+  if(id){dv[id]=appKind()+"|"+Date.now();up["devs."+id]=dv[id];
+    Object.keys(dv).filter(k=>k!==id).sort((a,b)=>tm(b)-tm(a)).forEach((k,i)=>{if(i>=9||Date.now()-tm(k)>30*864e5){up["devs."+k]=F.deleteField();delete dv[k]}})}
+  try{await F.updateDoc(F.doc(db,"members",ME.uid),up);if(MEMBER&&id)MEMBER.devs=dv}
+  catch(err){console.warn("seen",err&&err.code||err);if(id&&/permission/.test(err&&err.code||""))try{await F.updateDoc(F.doc(db,"members",ME.uid),base)}catch(_){}}
 }
 setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading&&Date.now()-(ADM.at||0)>=900e3){   /* the user list is read again at most every 15 minutes (Firebase quota) */ADM.at=Date.now();ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
 function startSeen(){clearInterval(SEENT);SEENAT=0;markSeen();SEENT=setInterval(markSeen,120e3)}

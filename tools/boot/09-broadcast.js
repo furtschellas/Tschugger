@@ -35,7 +35,7 @@ function bcRecips(pl){
 /* WhatsApp: WhatsApp has no way to send to many people at once from a web page – one tap per person opens the chat with the text ready */
 function bcWaHTML(){const w=BC.waList;if(!w)return "";w.list=w.list.filter(x=>x.ph&&x.ph.length>=6);const t=encodeURIComponent(w.text);
   return '<div class="bcwa"><div class="bchh"><h3 class="cath3">WhatsApp</h3><button type="button" class="pillbtn" data-wax>'+L("Fertig")+'</button></div><a class="pillbtn wabtn wagrp" href="https://wa.me/?text='+t+'" target="_blank" rel="noopener">'+L("In eine WhatsApp-Gruppe teilen")+'</a><p class="ghint">'+L("Am schnellsten: in eure Crew-Gruppe teilen. Oder einzeln – bei jeder Person auf WhatsApp tippen, der Text ist schon eingefügt.")+'</p>'+
-    (w.list.length?'<ul class="walist">'+w.list.map(x=>'<li><span><b>'+esc(x.name)+'</b><small>'+esc(HIT(x.dept))+'</small></span><a class="pillbtn wabtn" href="https://wa.me/'+esc(x.ph.replace(/^\+/,""))+'?text='+t+'" target="_blank" rel="noopener" data-wad>WhatsApp</a></li>').join("")+'</ul>':'<p class="ghint">'+L("Keine Telefonnummern für diese Empfänger gefunden.")+'</p>')+'</div>'}
+    (w.list.length?'<ul class="walist">'+w.list.map(x=>'<li><span><b>'+esc(x.name)+'</b><small>'+esc(HIT(x.dept))+'</small></span><a class="pillbtn wabtn" href="https://wa.me/'+esc(waNum(x.ph))+'?text='+t+'" target="_blank" rel="noopener" data-wad>WhatsApp</a></li>').join("")+'</ul>':'<p class="ghint">'+L("Keine Telefonnummern für diese Empfänger gefunden.")+'</p>')+'</div>'}
 document.addEventListener("click",e=>{const a=e.target.closest("[data-wad]");if(a){a.classList.add("done");a.textContent="✓ WhatsApp";return}if(e.target.closest("[data-wax]")){BC.waList=null;render()}});
 /* send right away through the Cloudflare Worker; without it the next run picks the message up */
 async function bcDeliver(id){
@@ -92,7 +92,8 @@ document.addEventListener("click",async e=>{const bt=e.target.closest("[data-bcr
     const enc=await ownEnc(pl);
     const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});showMsg(await bcDeliver(ref.id),5000);BC.hist=null}
   catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}BC.busy=false;render()});
-VIEWS.bcast=function(){try{if(isAdmin()&&typeof ensureAdm==="function")ensureAdm()}catch(_){}
+/* the role lists are read for everybody who may send (not only admins): SMS, WhatsApp and e-mail pick the people by role on this device */
+VIEWS.bcast=function(){try{if(typeof ensureAdm==="function")ensureAdm()}catch(_){}
   if(!ME||!can("push.send"))return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!BC.roles)bcLoadRoles();
   const roles=[{id:"owner",name:L("Owner")},{id:"admin",name:L("Admin")}].concat(BC.roles||[]).concat([{id:"",name:L("Keine Rolle")}]);
@@ -116,6 +117,9 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form[data
   BC.ch={push:!!(f.bp&&f.bp.checked),wa:!!(f.bw&&f.bw.checked),sms:!!(f.bs&&f.bs.checked),mail:!!(f.be&&f.be.checked)};BC.sms=BC.ch.sms;BC.wa=BC.ch.wa;
   if(!BC.ch.push&&!BC.ch.wa&&!BC.ch.sms&&!BC.ch.mail){msg.className="amsg";msg.textContent=L("Bitte mindestens einen Weg wählen.");return}const sel=BC.mode==="sel";if(sel&&!BC.sel.roles.length&&!BC.sel.depts.length){msg.className="amsg";msg.textContent=L("Bitte mindestens eine Rolle oder Abteilung wählen.");return}
   const who=sel?[BC.sel.roles.map(r=>r==="owner"?L("Owner"):r==="admin"?L("Admin"):r===""?L("Keine Rolle"):((BC.roles||[]).find(x=>x.id===r)||{}).name||r).concat(BC.sel.depts).join(", ")]:[L("alle")];
+  /* who has which role is unknown on this device (no right to read the roles): SMS/WhatsApp/e-mail by role would reach the wrong people
+     («Keine Rolle» = everybody, a role = nobody) – Push is not affected, the server picks those people */
+  if(sel&&BC.sel.roles.length&&(BC.ch.sms||BC.ch.wa||BC.ch.mail)&&!(typeof ADM!=="undefined"&&ADM.urOk)){msg.className="amsg";msg.textContent=L("WhatsApp, SMS und E-Mail nach Rolle gehen nur mit dem Recht, Rollen zu sehen. Bitte nach Abteilung wählen oder nur Push senden.");return}
   if(!confirmSafe(L("Push-Nachricht jetzt senden an:")+" "+who.join(", ")+"?"))return;
   BC.busy=true;f.querySelector("button[type=submit]").disabled=true;
   try{const pl={title,body,roles:sel?BC.sel.roles:null,depts:sel?BC.sel.depts:null,by:ME.email,at:Date.now(),ch:BC.ch,push:BC.ch.push};
