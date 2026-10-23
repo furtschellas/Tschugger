@@ -44,7 +44,27 @@ let RIDEAT=0,RIDEBUSY=false,ACKSUB=null,ACKFROM="";
 const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
 function ackApply(m,t0,live){if(!live)for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}
   const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}
-async function rideAckLoad(force){if(typeof ME==="undefined"||!ME)return;const from=ackFrom();if(ACKSUB&&ACKFROM===from)return;
+/* «Ich übernehme» (Kostüm of the cast without a name in the callsheet): who took which Kostüm – live, the name encrypted (cmassign/{tick id}) */
+window.CMASSIGN=window.CMASSIGN||{};let CMASUB=null,CMAFROM="";
+async function cmaLoad(from){if(CMASUB&&CMAFROM===from)return;try{const {F,db}=await fb();if(typeof F.onSnapshot!=="function")return;if(typeof CMASUB==="function")CMASUB();CMAFROM=from;CMASUB="…";
+  CMASUB=F.onSnapshot(F.query(F.collection(db,"cmassign"),F.where("d",">=",from)),async snap=>{const m={};let key=null;try{key=await getDataKey()}catch(_){}
+    for(const x of snap.docs||[]){const v=x.data()||{};let n="";try{if(key&&v.c)n=String((await ownDec(key,v.c)).n||"")}catch(_){}m[x.id]={by:v.by||"",n}}
+    window.CMASSIGN=m;if(S.tab==="my"||S.tab==="today")flowRedraw()},err=>{console.warn("cmassign",err&&err.code||err);CMASUB=null;CMAFROM=""})}catch(_){if(CMASUB==="…")CMASUB=null}}
+window.cmaStop=()=>{try{if(typeof CMASUB==="function")CMASUB()}catch(_){}CMASUB=null;CMAFROM="";window.CMASSIGN={}};
+const cmaMyName=()=>{try{const m=typeof MEMBER!=="undefined"&&MEMBER;const n=m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);if(n)return n;const me=typeof myIdentity==="function"?myIdentity():null;return (me&&me.name)||(ME&&ME.email)||""}catch(_){return ""}};
+async function cmaSet(id,date,take){const {F,db}=await fb();const ref=F.doc(db,"cmassign",id);
+  if(!take){await F.deleteDoc(ref);delete window.CMASSIGN[id];return}
+  const n=cmaMyName().slice(0,80),c=await ownEnc({n});await F.setDoc(ref,{c,d:date,at:Date.now(),by:ME.uid});window.CMASSIGN[id]={by:ME.uid,n}}
+/* the line below a Kostüm appointment: «Ich übernehme» · «Von dir übernommen · Freigeben» · «Übernommen von Anna» (then the appointment grey) */
+function cmaLine(id,date){const a=window.CMASSIGN[id],mine=a&&typeof ME!=="undefined"&&ME&&a.by===ME.uid,can=cmCan("w");
+  if(!a)return {h:can?'<button type="button" class="pillbtn cmab" data-cmatake="'+esc(id)+'" data-cmad="'+esc(date)+'">'+esc(L("Ich übernehme"))+'</button>':''};
+  if(mine)return {h:'<span class="cmam">'+esc(L("Von dir übernommen"))+'</span> <button type="button" class="lnk cmab" data-cmafree="'+esc(id)+'" data-cmad="'+esc(date)+'">'+esc(L("Freigeben"))+'</button>'};
+  const adm=typeof isAdmin==="function"&&isAdmin();
+  return {dim:true,h:'<span class="cmao">'+esc(L("Übernommen von {n}").replace("{n}",a.n||"?"))+'</span>'+(adm?' <button type="button" class="lnk cmab" data-cmafree="'+esc(id)+'" data-cmad="'+esc(date)+'">'+esc(L("Freigeben"))+'</button>':'')}}
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cmatake],[data-cmafree]");if(!b)return;e.preventDefault();e.stopPropagation();b.disabled=true;
+  try{await cmaSet(b.dataset.cmatake||b.dataset.cmafree,b.dataset.cmad,b.dataset.cmatake!=null);cqKeep(b)}
+  catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:err&&/permission/.test(err.code||"")?L("Schon von jemand anderem übernommen."):L("Speichern nicht möglich."),4000)}},true);
+async function rideAckLoad(force){if(typeof ME==="undefined"||!ME)return;const from=ackFrom();cmaLoad(from);if(ACKSUB&&ACKFROM===from)return;
   try{const {F,db}=await fb();const q=F.query(F.collection(db,"rideack"),F.where("d",">=",from));
     if(typeof F.onSnapshot==="function"){if(ACKSUB&&ACKFROM===from)return;if(typeof ACKSUB==="function")ACKSUB();ACKFROM=from;ACKSUB="…";
       ACKSUB=F.onSnapshot(q,snap=>{const t0=Date.now(),m={};(snap.docs||[]).forEach(x=>{m[x.id]=x.data()});ackApply(m,t0,true)},err=>{console.warn("rideack",err&&err.code||err);ACKSUB=null;ACKFROM=""});return}
@@ -255,15 +275,16 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
     for(const r of arr(c.cast))for(const k of ["w","m"]){const v=k==="w"?r.wardrobe:r.makeup;
       for(const p of cmParse(v,c)){const mine=p.who?!!(cm&&cm.hit(p.who)):k==="w"&&rw,actor=r.actor&&cm&&cm.hit(r.actor);if(!mine&&!actor)continue;
         const oth=["w","m"].flatMap(k2=>cmParse(k2==="w"?r.wardrobe:r.makeup,c).map(q=>cmId(dp.date,k2,r,q.t)));   /* the other Kostüm / Maske of this actor */
+        const id=cmId(dp.date,k,r,p.t),ln=!p.who&&k==="w"&&rw&&!actor?cmaLine(id,dp.date):null;   /* nobody named: «Ich übernehme» */
         out.push({cmo:oth,date:dp.date,t:p.t,end:p.end,n:L(CMK[k])+": "+(mine?[r.role,r.actor&&"("+r.actor+")"].filter(Boolean).join(" "):[r.role,p.who&&L("bei")+" "+p.who].filter(Boolean).join(" · ")),
-          where,map,src:"Callsheet",go:d.id||dp.date,cm:cmId(dp.date,k,r,p.t),cmk:k})}}
+          where,map,src:"Callsheet",go:d.id||dp.date,cm:id,cmk:k,cmah:ln&&ln.h,dim:!!(ln&&ln.dim)})}}
     /* extras: Kostüm for the role Kostüm, unless a person is named in the cell (then only that person); Maske only for the person named */
     const cc=Object.assign({},c,{_date:dp.date});
     for(const r of arr(c.extras))for(const k of ["w","m"]){const v=String((k==="w"?r.wardrobe:r.makeup)||"").trim(),t0=cqHm(v);if(!t0)continue;
       const p=cmParse(v,c)[0]||{},nm=p.who||(v.match(/^\s*(\p{L}[\p{L}.'’ -]*?)\s+\d{1,2}[:.]\d{2}/u)||[])[1]||"";
-      const mine=nm?!!(cm&&cm.hit(nm)):k==="w"&&rw;if(!mine)continue;
-      out.push({date:dp.date,t:t0,end:p.end||"",n:L(CMK[k])+": "+L("Komparsen")+" "+[String(r.count||"").trim(),String(r.part||"").trim()].filter(Boolean).join(" "),
-        where,map,src:"Callsheet",go:d.id||dp.date,cm:xqId(cc,k,r,t0),cmk:k})}}
+      const mine=nm?!!(cm&&cm.hit(nm)):k==="w"&&rw;if(!mine)continue;const xid=xqId(cc,k,r,t0),ln=!nm&&k==="w"?cmaLine(xid,dp.date):null;
+      out.push({cmah:ln&&ln.h,dim:!!(ln&&ln.dim),date:dp.date,t:t0,end:p.end||"",n:L(CMK[k])+": "+L("Komparsen")+" "+[String(r.count||"").trim(),String(r.part||"").trim()].filter(Boolean).join(" "),
+        where,map,src:"Callsheet",go:d.id||dp.date,cm:xid,cmk:k})}}
   return out};
 /* the mark of one entry: the same three steps as in the callsheet – open → running (pink) → done (check) → open */
 window.cmBtn=(id,date,label,k,oth)=>{const st=cmSt(id),cls="cmk"+(st===2?" cmok":st===1?" cmrun":""),ico=st===2?RIDE_ICO[1]:'<span class="cmc"></span>';

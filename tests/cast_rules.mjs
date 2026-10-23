@@ -117,6 +117,11 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   vm.runInContext("S.dispos=[{date:'"+D+"',cs:"+JSON.stringify(c2)+"}];S.days=[];var MYROLE='kostuem'",C);
   const ev=vm.runInContext("cmEvents(null,'2031-01-01').map(e=>e.n).join(' | ')",C);
   out.push({n:"Meine Termine: Rolle Kostüm sieht Kostüm ohne Namen (Cast und Komparsen), nicht die einer genannten Person",ok:ev==="Kostüm: Wirt (Max) | Kostüm: Komparsen 5 Passanten",got:ev,want:"Kostüm: Wirt (Max) | Kostüm: Komparsen 5 Passanten"});
+  vm.runInContext("setP(['wardrobe.ack']);window.CMASSIGN={}",C);
+  const t1=vm.runInContext("(cmEvents(null,'2031-01-01')[0]||{}).cmah||''",C);
+  vm.runInContext("const e0=cmEvents(null,'2031-01-01')[0];window.CMASSIGN={[e0.cm]:{by:'uX',n:'Anna'}}",C);
+  const e1=vm.runInContext("(()=>{const e=cmEvents(null,'2031-01-01')[0];return (e.dim?'grau ':'')+(e.cmah||'')})()",C);
+  out.push({n:"Kostüm «Ich übernehme»: frei = Knopf, von jemand anderem übernommen = grau mit Name",ok:/data-cmatake/.test(t1)&&/^grau .*Übernommen von Anna/.test(e1),got:t1.slice(0,40)+" | "+e1.slice(0,60),want:"Knopf | grau Übernommen von Anna"});
   vm.runInContext("MYROLE='komparsen'",C);
   const xe=vm.runInContext("xqEvents('2031-01-01').map(e=>e.n+' '+e.t+'-'+e.end).join(' | ')",C);
   out.push({n:"Meine Termine: Rolle Komparsen sieht pro Gruppe Call bis On set",ok:xe==="Komparsen: 5 Passanten 08:00-09:00 | Komparsen: 3 Polizei 08:30-09:30",got:xe,want:"Komparsen: 5 Passanten 08:00-09:00 | Komparsen: 3 Polizei 08:30-09:30"})}

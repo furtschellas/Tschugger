@@ -265,6 +265,16 @@ service cloud.firestore {
       allow delete: if can('rides.manage');
     }
 
+    // Kostüm-Termine übernehmen («Ich übernehme», Cast ohne Namen im Callsheet): lesen die Crew; übernehmen mit «Kostüm quittieren»,
+    // Name verschlüsselt (c), by = eigene uid; ändern/freigeben nur wer übernommen hat oder Admins
+    match /cmassign/{id} {
+      allow read: if crew();
+      allow create: if can('wardrobe.ack') && rideOk(id, ['c', 'd', 'at', 'by']) && cOk(600) && request.resource.data.by == request.auth.uid;
+      allow update: if can('wardrobe.ack') && rideOk(id, ['c', 'd', 'at', 'by']) && cOk(600) && request.resource.data.by == request.auth.uid
+        && (resource.data.by == request.auth.uid || isAdmin());
+      allow delete: if (crew() && resource.data.by == request.auth.uid) || isAdmin();
+    }
+
     // ---------- Szenen aus dem Drehplan (Quittierung, auch Lunch und Wrap) ----------
     // Quittieren (Stand s: 1 = Szene läuft, 2 = abgeschlossen): lesen alle aus der Crew, setzen nur mit «Szenen quittieren» (scenes.ack);
     // Dokument-ID = Datum JJJJMMTT-Szene (keine Namen), Felder: Datum d, Zeitpunkt at, Stand s, Unit u, Szene sc, Beginn b, Ende e (ms)
