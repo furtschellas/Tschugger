@@ -1029,3 +1029,12 @@ html.pdfvon,html.pdfvon body{overflow:hidden}
 #pdfv .pdfvb{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:8px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 #pdfv .pdfvb canvas{display:block;margin:0 auto 8px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.4);max-width:none}   /* zoomed in: wider than the screen, scrolls sideways */
 #pdfv .pdfvl{color:var(--muted);margin:24px}
+/* cast chips in the shooting order and the schedule: where the actor is – P/UP: pink · Call/Kostüm/Maske: pink with white frame · Base/On set: pink frame */
+html body #view .cast span.cqlk1{background:var(--accent);border-color:var(--accent);color:#fff}
+html body #view .cast span.cqlk2{background:var(--accent);border-color:#fff;color:#fff}
+html body #view .cast span.cqlk3{background:transparent;border-color:var(--accent);color:var(--accent)}
+html body #view .cast span:is(.cqlk1,.cqlk2) i{color:#fff}
+html body #view .cast span.cqlk3 i{color:var(--accent)}
+/* cast tile On set: everything grey (labels and plain times too) – only number, role, name (pink) and the On set time (tick time) stand out */
+html body #view .csview #cs-cast .cs-card:has(.cqall) .cs-kv :is(.k,.v){color:var(--muted)}
+html body #view .csview #cs-cast .cs-card:has(.cqall) .cs-kv:last-child .k{color:inherit}
