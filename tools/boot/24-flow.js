@@ -103,7 +103,7 @@ const CMK={w:"Kostüm",m:"Maske"};
 /* the entries of one Kostüm / Maske cell («Marina 07:55 - 08:10 15’; Anna 08:10 - 08:30»): who (full name from the call list when the
    first name matches), start, end */
 function cmParse(v,c){const out=[];for(const seg of String(v==null?"":v).split(/\s*;\s*/)){
-    const m=seg.match(/^\s*(?:([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.' -]*?)\s+)?(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);if(!m)continue;
+    const m=seg.match(/^\s*(?:(\p{L}[\p{L}.'’ -]*?)\s+)?(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/u);if(!m)continue;   /* names with any letters («Łucja», «D’Amico») */
     let who="";if(m[1]){const fn=fold(m[1].trim().split(/\s+/)[0]);
       /* the person from the column head («Make Up - Marina»): the call with that first name – of Maske / Kostüm first when two people share it */
       const hits=arr(c&&c.calls).filter(r=>fold(String(r.name||"")).split(/\s+/)[0]===fn),dep=hits.find(r=>/make|mask|hair|haar|\bmu\b|kost|costum|wardrob|garder/.test(fold(String(r.role||"")+" "+String(r.dept||""))));
@@ -260,7 +260,7 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
     /* extras: Kostüm for the role Kostüm, unless a person is named in the cell (then only that person); Maske only for the person named */
     const cc=Object.assign({},c,{_date:dp.date});
     for(const r of arr(c.extras))for(const k of ["w","m"]){const v=String((k==="w"?r.wardrobe:r.makeup)||"").trim(),t0=cqHm(v);if(!t0)continue;
-      const p=cmParse(v,c)[0]||{},nm=p.who||(v.match(/^\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.' -]*?)\s+\d{1,2}[:.]\d{2}/)||[])[1]||"";
+      const p=cmParse(v,c)[0]||{},nm=p.who||(v.match(/^\s*(\p{L}[\p{L}.'’ -]*?)\s+\d{1,2}[:.]\d{2}/u)||[])[1]||"";
       const mine=nm?!!(cm&&cm.hit(nm)):k==="w"&&rw;if(!mine)continue;
       out.push({date:dp.date,t:t0,end:p.end||"",n:L(CMK[k])+": "+L("Komparsen")+" "+[String(r.count||"").trim(),String(r.part||"").trim()].filter(Boolean).join(" "),
         where,map,src:"Callsheet",go:d.id||dp.date,cm:xqId(cc,k,r,t0),cmk:k})}}

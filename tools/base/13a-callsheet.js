@@ -42,7 +42,8 @@ window.CSI=CSI;
 const CSEXP='<span class="csexp" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span>';
 const CSEXPSM=CSEXP.replace('class="csexp"','class="csexp sm"');   /* the small one (scenes, locations) */
 const CSPH=/(\+?\d[\d ()\/.-]{7,}\d)/g;
-const csIsTel=x=>/^(\+|0)/.test(x)&&x.replace(/\D/g,"").length>=9&&!/\b\d{1,2}\.\d{1,2}\.\d{2,4}\b/.test(x);   /* not a date («03.11.2026 - 05.11.2026») */
+const csIsTel=x=>/^(\+|0)/.test(x)&&x.replace(/\D/g,"").length>=9&&!/\b\d{1,2}\.\d{1,2}\.\d{2,4}\b/.test(x)   /* not a date («03.11.2026 - 05.11.2026») */
+  &&!/^\d{1,2}[.:]\d{2}(\s*[-–\/]\s*\d{1,2}[.:]\d{2})+$/.test(x.trim());   /* nor times («06.30 - 07.15 / 07.45» was hidden behind a lock as a phone number) */
 /* text with phone numbers: callable with the right, else left out */
 function csTx(s){s=String(s==null?"":s);if(!s)return"";const ok=vok("phone");let out="",p=0;
   for(const m of s.matchAll(CSPH)){if(!csIsTel(m[1]))continue;out+=esc(s.slice(p,m.index));out+=ok?'<a href="tel:'+esc(m[1].replace(/[^\d+]/g,""))+'">'+esc(m[1])+'</a>':'<span class="cshid" title="'+esc(L("Nur mit dem Recht «Telefon sehen»"))+'">'+CSI.lock+'</span>';p=m.index+m[0].length}
@@ -61,6 +62,8 @@ let CSTR=null;const csL=t=>{const s2=String(t==null?"":t);return (CSTR&&CSTR[LAN
 /* a small tile (key and value) of the callsheet head */
 const csTile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
 const csA=v=>Array.isArray(v)?v:(v==null||v===""?[]:[v]);
+/* a time of the callsheet: «07:50» or «07.50» (some callsheets write dots – hm() alone read only colons, so «Jetzt», the short line and pickups missed them) */
+const csHm=t=>{const m=String(t==null?"":t).match(/(?:^|[^\d.])(\d{1,2})[:.](\d{2})(?![\d.])/);return m&&+m[1]<30&&+m[2]<60?pad2(+m[1])+":"+m[2]:""};
 const csRoute=(f,t1,to,t2)=>[[t1,f].filter(Boolean).join(" "),[t2,to].filter(Boolean).join(" ")].filter(Boolean).join(" → ");
 const csS=v=>Array.isArray(v)?v.join(", "):String(v==null?"":v);
 /* a part of the callsheet: open or folded */
@@ -73,10 +76,11 @@ csOn("click",e=>{const b=e.target.closest("[data-cstv]");if(!b)return;e.preventD
 function csSec(title,body,open,cls,id,sumx){if(!body)return"";return '<details class="dsec cssec'+(cls?" "+cls:"")+'"'+(id?' id="cs-'+id+'"':'')+(open?' open':'')+'><summary><h3 class="dh">'+(Array.isArray(title)?'<span class="lg">'+esc(title[0])+'</span><span class="sh">'+esc(title[1])+'</span>':esc(title))+'</h3>'+(sumx||'')+CSEXP+'</summary>'+body+'</details>'}
 /* a table of the callsheet: on the computer a table, on the phone one card per row (title = first columns, the rest as «label value») */
 /* «07:40 - 07:55 15'» → «07:40 · 15′» (start and duration, no end time) */
-function csDurT(v){return String(v==null?"":v).replace(/(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})(?:\s*(\d+)\s*['’′]?)?/g,(m0,a,h2,m2,d)=>{let mn=d;if(!mn){const p=a.split(/[:.]/);let x=(+h2*60+ +m2)-(+p[0]*60+ +p[1]);if(x<0)x+=1440;mn=String(x)}return a+" · "+mn+"′"})}
+/* the minutes behind: with ' / ’ / ′, or a short number not followed by a word («07:30 - 08:00 3 Busse» is no duration) */
+function csDurT(v){return String(v==null?"":v).replace(/(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})(?:\s*(\d{1,3})\s*['’′]|\s+(\d{1,3})(?![\d:.]|\s*\p{L}))?/gu,(m0,a,h2,m2,d1,d2)=>{let mn=d1||d2;if(!mn){const p=a.split(/[:.]/);let x=(+h2*60+ +m2)-(+p[0]*60+ +p[1]);if(x<0)x+=1440;mn=String(x)}return a+" · "+mn+"′"})}
 /* wardrobe / make-up: only start time and duration, behind it the initials of who does it («Marina 07:55 - 08:10 15’» → «07:55 · 15′ MA»), no comments */
 function csMk(v,c,kind,row){const out=[];for(const seg of String(v==null?"":v).split(/\s*;\s*/)){
-    const m=seg.match(/^\s*(?:([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.' -]*?)\s+)?(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})(?:\s*(\d+)\s*['’′]?)?/);if(!m)continue;
+    const m=seg.match(/^\s*(?:(\p{L}[\p{L}.'’ -]*?)\s+)?(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})(?:\s*(\d+)\s*['’′]?)?/u);if(!m)continue;   /* names with any letters («Łucja», «D’Amico») */
     let ini="";if(m[1]){const fn=fold(m[1].trim().split(/\s+/)[0]);const full=csA(c&&c.calls).map(r=>String(r.name||"")).find(n=>fold(n).split(/\s+/)[0]===fn)||m[1];
       const w=String(full).trim().split(/\s+/).filter(x=>/^\p{L}/u.test(x));ini=w.length?(w.length>1?w[0][0]+w[w.length-1][0]:w[0].slice(0,2)).toUpperCase():""}
     const tx=csDurT(m[2]+" - "+m[3]+":"+m[4]+(m[5]?" "+m[5]+"’":"")),pr=tx.split(" · ");
@@ -101,7 +105,7 @@ function csRouteH(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let rt=esc(t);t
     if(su&&su!=="#"){const a=[r.t1,String(r.from||"").replace(/https?:\/\/\S+/g,"").trim()].filter(Boolean).join(" "),b=[r.t2,to].filter(Boolean).join(" ");
       rt=(a?esc(a)+" → ":"")+'<a class="rideto" href="'+esc(su)+'" target="_blank" rel="noopener" data-nobub title="'+esc(L("Route in Google Maps"))+'">'+esc(b)+'</a>'}}catch(_){}
   return rt}
-function csRideCell(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let st=0,id="";try{id=typeof rideId==="function"?rideId(date,r):"";st=id&&window.rideState?rideState(id):0}catch(_){}
+function csRideCell(date,r){let st=0,id="";try{id=typeof rideId==="function"?rideId(date,r):"";st=id&&window.rideState?rideState(id):0}catch(_){}
   const I=window.RIDE_ICO||{},mgr0=typeof canPerm==="function"&&canPerm("rides.manage");
   /* clickable only for the Fahrten Manager (popup) and for the driver of this ride (accept / done) */
   let drv=false;try{const me=CSCUR.me!==undefined?CSCUR.me:(typeof csMe==="function"?csMe():null);drv=!!(me&&r.driver&&me.hit(r.driver))}catch(_){}
