@@ -94,8 +94,9 @@ const CQAUTO={
 /* rule 4: a hand tick (id kind «x…», stored on its own) wins; with the right every time is a button */
 function cqManual(f,m,r,t,h){const id=cmId(m.d,"x"+f,r,hm(t)),st=cmSt(id),man=cqMan();
   if(!st&&(!man||(h&&!/cqro/.test(h))))return h;
-  const cur=st||(h?+((h.match(/\bcq([012])\b/)||[])[1]||0):0),tip=CQTIP3()[cur];
-  return man?cqBtn(cur,"x",id,m.d,t,tip,cur,L("Von Hand")+" · "):cqSpan(cur,t,tip)}
+  const cur=st||(h?+((h.match(/\bcq([012])\b/)||[])[1]||0):0),two=f==="p"||f==="c";   /* P/UP and Call: one tap = done */
+  const tip=two?(cur===2?L("Erledigt – antippen = zurücksetzen"):L("Offen – antippen = erledigt")):CQTIP3()[cur];
+  return man?cqBtn(cur,"x",id,m.d,t,tip,cur,L("Von Hand")+" · ").replace('data-cqk="x"','data-cqk="x"'+(two?' data-cq2="1"':'')):cqSpan(cur,t,tip)}
 const CQF={p:"pickup",c:"call",b:"base",o:"onset"};
 function cqField(f,c,r){if(!c||!c._date||!r||!window.cqSee())return null;const v=r[CQF[f]];if(!hm(v))return null;const t=String(v),m=cqModel(c,r);
   if(f!=="o"&&(f==="b"?m.onStarted:m.onStarted||m.baseDone))return {h:cqDone(t,L("Erledigt")+" ("+(m.onStarted?"On set":"Base")+")")};   /* rules 1, 2 */
@@ -104,10 +105,10 @@ function cqField(f,c,r){if(!c||!c._date||!r||!window.cqSee())return null;const v
 window.cqPickup=(c,r)=>cqField("p",c,r);window.cqCall=(c,r)=>cqField("c",c,r);window.cqBase=(c,r)=>cqField("b",c,r);window.cqOnset=(c,r)=>cqField("o",c,r);
 /* rules 1 and 2 for Kostüm / Maske in the callsheet (csMk) */
 window.cqRowDone=(c,r)=>{if(!c||!c._date||!r)return false;const m=cqModel(c,r);return m.onStarted||m.baseDone};
-/* tap: Kostüm/Maske/On set/by hand open → running → done → open; Call open ↔ arrived; Base running ↔ done */
+/* tap: Kostüm/Maske/On set (also by hand) open → running → done → open; P/UP and Call (also by hand) open ↔ done; Base running ↔ done */
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cqk]");if(!b)return;e.preventDefault();e.stopPropagation();
   const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="x"?!cqMan():k==="p"?!cqCanRide():!cmCan(k))return;b.disabled=true;
-  try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),cur=b.dataset.cqcur!=null?+b.dataset.cqcur:st,nx=k==="c"?(st?0:2):k==="b"?(st===2?0:2):(cur+1)%3;
+  try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),cur=b.dataset.cqcur!=null?+b.dataset.cqcur:st,nx=b.dataset.cq2?(cur===2?0:2):k==="c"?(st?0:2):k==="b"?(st===2?0:2):(cur+1)%3;
     if(!nx){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cqd,at:Date.now(),s:nx};await F.setDoc(ref,v);window.RIDEACK[id]=v}
     try{MEMO.clear()}catch(_){}cqKeep()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
 /* Kostüm / Maske running: the duration counts down in minutes from the moment it was started (back to open = original duration again) */
