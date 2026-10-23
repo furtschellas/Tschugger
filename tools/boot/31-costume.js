@@ -39,78 +39,75 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
   return out};
 /* ---------- Cast quittieren (callsheet, cast table): the time itself is the tick.
    open = pink (underlined only where I can tick it) · running = pink box, white time · done = white.
-   Rights: Kostüm «Kostüm quittieren» (wardrobe.ack), Maske «Maske quittieren» (makeup.ack), Call / Base / On set either of them;
-   P/UP is not tapped here – it follows the ride (Fahrten quittieren). «Cast manuell quittieren» (cast.manual): every time by hand.
-   «Cast-Quittierungen sehen» (cast.see): without it (and without a right to tick) only the plain times.
-   The rules of a row, in order:
-   1. On set started (tapped, by hand or the ride Base → set done) → P/UP, Call, Kostüm, Maske and Base done
-   2. Base done (tapped or by hand) → P/UP, Call, Kostüm and Maske done; On set open
-   3. Call done → P/UP done; Kostüm or Maske started → P/UP and Call done
-   4. a hand tick (cast.manual) wins over the automatic state
-   5. automatic: Kostüm or Maske started → P/UP and Call done; P/UP follows the ride (Call too once the ride is done, but Call can always be tapped); both Kostüm and Maske done → Base running;
-      On set open once Kostüm and Maske (or Base) are done, running when the ride Base → set is done, pink frame when that ride is accepted ---------- */
+   P/UP   tap 1 = driver on site (pink box) · tap 2 = on the way (pink box + car) · tap 3 = open again – the same three steps as the ride in «Fahrten».
+          Done (car gone) once Call is tapped, Kostüm or Maske starts or the ride is done.
+   Call   one tap = arrived (the pickup ride counts as done).
+   Kostüm / Maske   open → running (the duration counts down) → done.
+   Base   running once Kostüm and Maske are done · tap = done: the ride Base → set counts as accepted, a car behind Base.
+   On set one tap = done: the ride Base → set counts as done, the car is gone; every step is done, the cast number is pink.
+   The rides run in parallel: what is ticked in «Fahrten» shows here, and what is ticked here shows in «Fahrten».
+   The order of the rules: On set done → every step done · Base done → P/UP, Call, Kostüm, Maske done ·
+   Call done or Kostüm/Maske started → P/UP done (Kostüm/Maske started: Call too).
+   Rights: Kostüm «Kostüm quittieren» (wardrobe.ack), Maske «Maske quittieren» (makeup.ack), Call / Base / On set either of them or
+   «Cast manuell quittieren» (cast.manual: also Base and On set before Kostüm and Maske are done); P/UP «Fahrten quittieren» or cast.manual.
+   «Cast-Quittierungen sehen» (cast.see): without it (and without a right to tick) only the plain times. ---------- */
 const cqCanRide=()=>{try{return canPerm("rides.confirm")||canPerm("rides.manage")}catch(_){return false}};
 const cqMan=()=>{try{return typeof canPerm==="function"&&canPerm("cast.manual")}catch(_){return false}};
+const cqCan=k=>k==="u"?cqCanRide()||cqMan():k==="w"||k==="m"?cmCan(k):cmCan(k)||cqMan();
 window.cqSee=()=>{try{return typeof canPerm==="function"&&(canPerm("cast.see")||canPerm("wardrobe.ack")||canPerm("makeup.ack")||canPerm("cast.manual")||canPerm("rides.confirm")||canPerm("rides.manage"))}catch(_){return false}};
 const CQTIP3=()=>[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")];
+const CQCAR='<svg class="cqcar" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h11l3 5h2v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M9.5 17h5M5 12h14"/></svg>';
 const cqSpan=(st,t,tip,x)=>'<span class="cql cq'+st+(x?" "+x:"")+' cqro" title="'+esc(tip)+'">'+esc(t)+'</span>';
-const cqBtn=(st,k,id,date,t,tip,cur,pre)=>'<button type="button" class="cql cq'+st+'" data-cqk="'+k+'"'+(cur!=null?' data-cqcur="'+cur+'"':'')+' data-cqid="'+esc(id)+'" data-cqd="'+esc(date)+'" title="'+esc((pre||"")+tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>';
+/* a tap button; o = {nx: next state, lk: ride id, ls: ride state after the tap (0 = open again)} */
+const cqBtn=(st,k,id,date,t,tip,o)=>{o=o||{};return '<button type="button" class="cql cq'+st+'" data-cqk="'+k+'" data-cqid="'+esc(id)+'" data-cqd="'+esc(date)+'"'+
+  (o.nx!=null?' data-cqnx="'+o.nx+'"':'')+(o.lk&&o.ls!=null?' data-cqlk="'+esc(o.lk)+'" data-cqls="'+o.ls+'"':'')+' title="'+esc(tip)+'" aria-label="'+esc(t+" – "+tip)+'">'+esc(t)+'</button>'};
 const cqDone=(t,tip)=>cqSpan(2,t,tip);
-/* one time as tick (Kostüm/Maske in the callsheet, P/UP, Call) */
-window.cqLink=(kind,id,date,t)=>{const st=kind==="p"?(window.rideState?rideState(id):0):cmSt(id),can=kind==="p"?false:cmCan(kind);
-  if(!can)return cqSpan(st,t,[L("Offen"),L("Läuft"),L("Erledigt")][st]);
-  const tip=kind==="c"?(st?L("Angekommen – antippen = zurücksetzen"):L("Offen – antippen = angekommen")):CQTIP3()[st];
-  return cqBtn(st,kind,id,date,t,tip)};
-/* the ride of the callsheet that picks up the actor (passenger), at the pickup time if there are several */
+/* Kostüm / Maske in the callsheet: open → running → done */
+window.cqLink=(kind,id,date,t)=>{const st=cmSt(id);if(!cqCan(kind))return cqSpan(st,t,[L("Offen"),L("Läuft"),L("Erledigt")][st]);return cqBtn(st,kind,id,date,t,CQTIP3()[st])};
+/* the rides of the callsheet for the actor (passenger): the pickup (at the pickup time if there are several) and the one from the Base */
 const cqWho=r=>{const k=fold(String(r&&r.actor||"")).replace(/[^a-z ]/g,"").trim();return v=>!!k&&(fold(String(v||"")).includes(k)||k.split(" ").filter(w=>w.length>2).every(w=>fold(String(v||"")).includes(w)))};
-function cqRide(c,r){if(!r||!r.actor||!c||!c._date)return null;const has=cqWho(r);
-  const rs=arr(c.transport).filter(x=>has(x.passengers)).concat(arr(c.crewTransport).filter(x=>has(x.people)));if(!rs.length)return null;
-  const t=hm(r.pickup);return rs.find(x=>hm(x.t1)===t)||rs[0]}
-/* On set: id and the ride of the actor from the Base to the set */
-function cqOnsetInfo(c,r){const id=cmId(c._date,"o",r,hm(r.onset));let ride=null;if(r.actor&&typeof rideId==="function"){const has=cqWho(r);
-    ride=arr(c.transport).filter(x=>has(x.passengers)&&/base/i.test(String(x.from||""))).concat(arr(c.crewTransport).filter(x=>has(x.people)&&/base/i.test(String(x.from||""))))[0]||null}
-  return {id,st:cmSt(id),rs:ride&&window.rideState?rideState(rideId(c._date,ride)):0}}
+const cqRides=(c,r)=>{if(!r||!r.actor||!c)return [];const has=cqWho(r);return arr(c.transport).filter(x=>has(x.passengers)).concat(arr(c.crewTransport).filter(x=>has(x.people)))};
+function cqRide(c,r){const rs=cqRides(c,r).filter(x=>!/base/i.test(String(x.from||"")));if(!rs.length)return null;const t=hm(r.pickup);return rs.find(x=>hm(x.t1)===t)||rs[0]}
+const cqBaseRide=(c,r)=>cqRides(c,r).find(x=>/base/i.test(String(x.from||"")))||null;
 /* everything one row needs, read once */
-function cqModel(c,r){const d=c._date,st=(k,t)=>hm(t)?cmSt(cmId(d,k,r,hm(t))):0;let n=0,all=true,arrived=false;
+function cqModel(c,r){const d=c._date,st=(k,t)=>hm(t)?cmSt(cmId(d,k,r,hm(t))):0,rst=id=>id&&window.rideStep?rideStep(id):0;   /* ride steps 0 open · 1 on site · 2 on the way · 3 done */let n=0,all=true,arrived=false;
   for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c)){n++;const s=cmSt(cmId(d,k,r,p.t));if(s>0)arrived=true;if(s!==2)all=false}
-  const ride=typeof rideId==="function"?cqRide(c,r):null,rid=ride?rideId(d,ride):"",rs=ride&&window.rideState?rideState(rid):0;
-  const on=hm(r.onset)?cqOnsetInfo(c,r):{id:"",st:0,rs:0};
-  const onStarted=!!hm(r.onset)&&(on.st>0||st("xo",r.onset)>0||on.rs===2),baseDone=st("b",r.base)===2||st("xb",r.base)===2;
-  return {d,st,wmDone:n>0&&all,arrived,ride,rid,rs,on,onStarted,baseDone,callDone:st("c",r.call)===2||st("xc",r.call)===2}}
-/* rule 5: the automatic state of one time (html or null = plain time) */
-const CQAUTO={
-  p(m,r,t){if(typeof rideId!=="function")return null;const arr_=L("Angekommen (Kostüm/Maske)");
-    if(!m.ride)return m.arrived?cqDone(t,arr_):null;if(m.arrived&&m.rs!==2)return cqDone(t,arr_);return window.cqLink("p",m.rid,m.d,t)},
-  c(m,r,t){if(m.arrived)return cqDone(t,L("Angekommen (Kostüm/Maske)"));
-    if(m.ride&&m.rs===2)return cqSpan(2,t,L("Angekommen (Fahrt ausgeführt)"));   /* with a ride Call can still be tapped (then P/UP is done too) */
-    return window.cqLink("c",cmId(m.d,"c",r,hm(t)),m.d,t)},
-  b(m,r,t){if(!m.wmDone&&m.st("b",t)!==2)return null;   /* a stored Base tick stays visible */
-    if(hm(r.onset)&&(m.on.st>0||m.on.rs===2))return cqDone(t,L("Erledigt"));
-    const s=m.st("b",t)===2?2:1;if(!cmCan("b"))return cqSpan(s,t,s===2?L("Erledigt"):L("Läuft"));
-    return cqBtn(s,"b",cmId(m.d,"b",r,hm(t)),m.d,t,s===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt"))},
-  o(m,r,t){const {id,st,rs}=m.on,cur=st===2?2:(st===1||rs===2)?1:(m.wmDone||m.baseDone)?0:-1;
-    if(cur<0)return rs===1?'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>':null;
-    const tip=CQTIP3()[cur];if(!cmCan("o"))return cqSpan(cur,t,tip);return cqBtn(cur,"o",id,m.d,t,tip,cur)}};
-/* rule 4: a hand tick (id kind «x…», stored on its own) wins; with the right every time is a button */
-function cqManual(f,m,r,t,h){const id=cmId(m.d,"x"+f,r,hm(t)),st=cmSt(id),man=cqMan();
-  if(!st&&(!man||(h&&!/cqro/.test(h))))return h;
-  const cur=st||(h?+((h.match(/\bcq([012])\b/)||[])[1]||0):0),two=f==="p"||f==="c";   /* P/UP and Call: one tap = done */
-  const tip=two?(cur===2?L("Erledigt – antippen = zurücksetzen"):L("Offen – antippen = erledigt")):CQTIP3()[cur];
-  return man?cqBtn(cur,"x",id,m.d,t,tip,cur,L("Von Hand")+" · ").replace('data-cqk="x"','data-cqk="x"'+(two?' data-cq2="1"':'')):cqSpan(cur,t,tip)}
+  const ok=typeof rideId==="function",ride=ok?cqRide(c,r):null,rid=ride?rideId(d,ride):"",rs=rst(rid),br=ok?cqBaseRide(c,r):null,bid=br?rideId(d,br):"",bs=rst(bid);
+  const onDone=!!hm(r.onset)&&(st("o",r.onset)>0||st("xo",r.onset)>0||bs===3),baseDone=st("b",r.base)===2||st("xb",r.base)===2;
+  return {d,st,wmDone:n>0&&all,arrived,rid,rs,bid,bs,pu:rid?rs:st("u",r.pickup),onDone,baseDone,
+    callDone:st("c",r.call)===2||st("xc",r.call)===2||rs===3,puDone:st("xp",r.pickup)===2}}
 const CQF={p:"pickup",c:"call",b:"base",o:"onset"};
-function cqField(f,c,r){if(!c||!c._date||!r||!window.cqSee())return null;const v=r[CQF[f]];if(!hm(v))return null;const t=String(v),m=cqModel(c,r);
-  if(f!=="o"&&(f==="b"?m.onStarted:m.onStarted||m.baseDone))return {h:cqDone(t,L("Erledigt")+" ("+(m.onStarted?"On set":"Base")+")")};   /* rules 1, 2 */
-  if(f==="p"&&m.callDone)return {h:cqDone(t,L("Erledigt")+" (Call)")};   /* rule 3 */
-  if((f==="p"||f==="c")&&m.arrived)return {h:cqDone(t,L("Angekommen (Kostüm/Maske)"))};   /* Kostüm or Maske started: wins over a hand tick too */
-  let h=null;try{h=CQAUTO[f](m,r,t)}catch(_){}h=cqManual(f,m,r,t,h);return h?{h}:null}
+const CQRULE={
+  /* P/UP: with a ride its three steps (also ticked in «Fahrten»), without a ride stored here */
+  p(m,r,t){if(m.onDone||m.baseDone||m.callDone||m.arrived||m.puDone)return cqDone(t,L("Erledigt"));
+    const cur=Math.min(2,m.pu),car=cur===2?CQCAR:"",tips=[L("Offen – antippen = Fahrer vor Ort"),L("Fahrer vor Ort – antippen = Fahrzeug fährt los"),L("Fahrzeug unterwegs – antippen = zurücksetzen")];
+    if(!cqCan("u"))return cqSpan(cur?1:0,t,tips[cur])+car;const nx=(cur+1)%3;
+    return cqBtn(cur?1:0,"u",m.rid?"":cmId(m.d,"u",r,hm(t)),m.d,t,tips[cur],{nx,lk:m.rid,ls:nx})+car},
+  /* Call: one tap = arrived – the pickup ride is done (back: on the way again) */
+  c(m,r,t){if(m.onDone||m.baseDone)return cqDone(t,L("Erledigt"));if(m.arrived)return cqDone(t,L("Angekommen (Kostüm/Maske)"));const cur=m.callDone?2:0,tip=cur?L("Angekommen – antippen = zurücksetzen"):L("Offen – antippen = angekommen");
+    if(!cqCan("c"))return cqSpan(cur,t,tip);return cqBtn(cur,"c",cmId(m.d,"c",r,hm(t)),m.d,t,tip,{nx:cur?0:2,lk:m.rid,ls:cur?2:3})},
+  /* Base: done → the ride Base → set is on the way (car behind Base) */
+  b(m,r,t){if(m.onDone)return cqDone(t,L("Erledigt"));if(!m.wmDone&&!m.baseDone&&!cqMan())return null;
+    const cur=m.baseDone?2:m.wmDone?1:0,car=m.baseDone&&m.bid?CQCAR:"",tip=cur===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
+    if(!cqCan("b"))return cqSpan(cur,t,tip)+car;
+    return cqBtn(cur,"b",cmId(m.d,"b",r,hm(t)),m.d,t,tip,{nx:cur===2?0:2,lk:m.bid,ls:cur===2?0:2})+car},
+  /* On set: one tap = done – the ride Base → set is done, every step is done */
+  o(m,r,t){const cur=m.onDone?2:0,open=m.onDone||m.wmDone||m.baseDone||cqMan();
+    if(!open)return m.bs===1||m.bs===2?'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>':null;
+    const tip=cur?L("Erledigt – antippen = zurücksetzen"):L("Offen – antippen = erledigt");if(!cqCan("o"))return cqSpan(cur,t,tip);
+    return cqBtn(cur,"o",cmId(m.d,"o",r,hm(t)),m.d,t,tip,{nx:cur?0:2,lk:m.bid,ls:cur?(m.baseDone?2:0):3})}};
+function cqField(f,c,r){if(!c||!c._date||!r||!window.cqSee())return null;const v=r[CQF[f]];if(!hm(v))return null;let h=null;try{h=CQRULE[f](cqModel(c,r),r,String(v))}catch(_){}if(h&&f==="o")h=h.replace('class="cql ','class="cql cqon ');return h?{h}:null}   /* cqon: On set stays coloured when the row is done */
 window.cqPickup=(c,r)=>cqField("p",c,r);window.cqCall=(c,r)=>cqField("c",c,r);window.cqBase=(c,r)=>cqField("b",c,r);window.cqOnset=(c,r)=>cqField("o",c,r);
-/* rules 1 and 2 for Kostüm / Maske in the callsheet (csMk) */
-window.cqRowDone=(c,r)=>{if(!c||!c._date||!r)return false;const m=cqModel(c,r);return m.onStarted||m.baseDone};
-/* tap: Kostüm/Maske/On set (also by hand) open → running → done → open; P/UP and Call (also by hand) open ↔ done; Base running ↔ done */
+/* Kostüm / Maske in the callsheet (csMk): done once Base or On set is done */
+window.cqRowDone=(c,r)=>{if(!c||!c._date||!r)return false;const m=cqModel(c,r);return m.onDone||m.baseDone};
+/* every step done (On set done): the cast number is pink */
+window.cqAll=(c,r)=>{if(!c||!c._date||!r||!window.cqSee())return false;return cqModel(c,r).onDone};
+/* tap: own state (data-cqnx, else open → running → done), and the linked ride in parallel (data-cqlk = ride, data-cqls = its step) */
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cqk]");if(!b)return;e.preventDefault();e.stopPropagation();
-  const k=b.dataset.cqk,id=b.dataset.cqid;if(k==="x"?!cqMan():k==="p"?!cqCanRide():!cmCan(k))return;b.disabled=true;
-  try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);const st=k==="p"?(window.rideState?rideState(id):0):cmSt(id),cur=b.dataset.cqcur!=null?+b.dataset.cqcur:st,nx=b.dataset.cq2?(cur===2?0:2):k==="c"?(st?0:2):k==="b"?(st===2?0:2):(cur+1)%3;
-    if(!nx){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cqd,at:Date.now(),s:nx};await F.setDoc(ref,v);window.RIDEACK[id]=v}
+  const k=b.dataset.cqk,id=b.dataset.cqid;if(!cqCan(k))return;b.disabled=true;
+  const put=async(F,db,id,s)=>{const ref=F.doc(db,"rideack",id);if(!s){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const v={d:b.dataset.cqd,at:Date.now(),s};await F.setDoc(ref,v);window.RIDEACK[id]=v}};
+  try{const {F,db}=await fb();const nx=b.dataset.cqnx!=null?+b.dataset.cqnx:(cmSt(id)+1)%3;if(id)await put(F,db,id,nx);
+    if(b.dataset.cqlk&&b.dataset.cqls!=null&&window.rideSet)await rideSet(b.dataset.cqlk,b.dataset.cqd,+b.dataset.cqls);   /* the ride in «Fahrten» in parallel */
     try{MEMO.clear()}catch(_){}cqKeep()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}},true);
 /* Kostüm / Maske running: the duration counts down in minutes from the moment it was started (back to open = original duration again) */
 const cqLeft=(at,min)=>Math.max(0,Math.ceil(min-(Date.now()-at)/60000));

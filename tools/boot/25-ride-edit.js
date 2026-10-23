@@ -37,7 +37,7 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
       (d2.length?'<optgroup label="'+esc(L("Aufnahmeleitung"))+'">'+d2.map(opt).join("")+'</optgroup>':'')+'<option value="'+OTHER+'">'+esc(L("Andere …"))+'</option></select><input name="driver_x" hidden placeholder="'+esc(L("Fahrer:in"))+'"></label>'};
   const d=mkDialog("rededlg",null,{replace:true});
   d.innerHTML='<div class="a2box redbox"><h3>'+esc(L("Fahrt ändern"))+'</h3><p class="ghint">'+esc(dp.date.split("-").reverse().join(".")+" · "+csRoute(o.from,o.t1,o.to,o.t2))+'</p>'+
-    (canAck?'<div class="redst" role="group" aria-label="'+esc(L("Status"))+'">'+[[0,"Offen"],[1,"Fahrt angenommen / läuft"],[2,"Fahrt ausgeführt"]].map(([v,t])=>'<button type="button" class="ridest rs'+v+'" data-redst="'+v+'" aria-pressed="'+(st===v)+'" title="'+esc(L(t))+'" aria-label="'+esc(L(t))+'">'+rideIco(v)+'</button>').join("")+'</div>':'')+
+    (canAck?'<div class="redst" role="group" aria-label="'+esc(L("Status"))+'">'+[0,1,2,3].map(v=>'<button type="button" class="ridest '+rideStepCls(v)+'" data-redst="'+v+'" aria-pressed="'+(rideStep(id)===v)+'" title="'+esc(rideStepTip(v))+'" aria-label="'+esc(rideStepTip(v))+'">'+(rideStepIco(v)||'')+'</button>').join("")+'</div>':'')+
     '<form data-redform novalidate><div class="redrow">'+inp("t1","Abfahrt",hm(r.t1),"time")+sel("from","Von",r.from,places)+'</div>'+
     '<div class="redrow">'+inp("t2","Ankunft",hm(r.t2),"time")+sel("to","Nach",r.to,places)+'</div>'+sel("vehicle","Fahrzeug",r.vehicle,vehicles)+
     (crew?'':selDrv(r.driver))+
@@ -60,8 +60,7 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
     if(e.target===d||e.target.closest("[data-redx]")){d.remove();return}
     const rm=e.target.closest("[data-redrm]");if(rm){pax.splice(+rm.dataset.redrm,1);drawPax();return}
     if(e.target.closest("[data-redfreeok]")){const f=d.querySelector("[data-redfree]");addPax(f.value);f.value="";f.hidden=true;e.target.hidden=true;return}
-    const sb=e.target.closest("[data-redst]");if(sb){const v=+sb.dataset.redst;try{const {F,db}=await fb();const ref=F.doc(db,"rideack",id);
-        if(!v){await F.deleteDoc(ref);delete window.RIDEACK[id]}else{const x={d:dp.date,at:Date.now(),s:v};await F.setDoc(ref,x);window.RIDEACK[id]=x}
+    const sb=e.target.closest("[data-redst]");if(sb){const v=+sb.dataset.redst;try{await rideSet(id,dp.date,v);
         d.querySelectorAll("[data-redst]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.redst===v)));render()}catch(err){msg.textContent=L("Speichern nicht möglich.")}return}
     if(e.target.closest("[data-redreset]")){try{const {F,db}=await fb();await F.deleteDoc(F.doc(db,"rideedit",id));d.remove();showMsg(L("Original wiederhergestellt."),2500)}catch(err){msg.textContent=L("Speichern nicht möglich.")}}});
   d.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("[data-redfree]")){e.preventDefault();d.querySelector("[data-redfreeok]").click()}});
