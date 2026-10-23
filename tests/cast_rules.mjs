@@ -46,8 +46,8 @@ t("Fahrt Base → Set angenommen, Kostüm/Maske offen → pinker Rahmen bei On s
 t("ohne Fahrt: P/UP offen, Call antippbar",W,{},R2,"cq0 cq0+tap plain plain");
 t("ohne Fahrt: Call angetippt → P/UP abgeschlossen",W,{[id(R2,"c","07:30")]:1},R2,"cq2 cq1+tap plain plain");
 t("Cast manuell: jede Zeit antippbar",["cast.manual"],{},R1,"cq0+tap cq0+tap cq0+tap cq0+tap");
-t("nur sehen (cast.see): Stand ohne Antippen",["cast.see"],{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"cq2 cq2 cq1 cq0");
-t("ohne Recht: nur die Zeiten, kein Stand",[],{[id(R1,"b","07:45")]:2},R1,"plain plain plain plain rowdone");
+t("ohne Recht zum Quittieren: Stand sichtbar, nichts antippbar",[],{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"cq2 cq2 cq1 cq0");
+t("ohne Recht: Base quittiert sichtbar",[],{[id(R1,"b","07:45")]:2},R1,"cq2 cq2 cq2+car cq0 rowdone");
 {const dt=(ack,cnt)=>{set(W,ack);const h=(T.p(cs,R1)||{}).h||"";return (h.match(/class="mkd( cqcd)?"[^>]*>([^<]*)</)||[])[0]?((/cqcd/.test(h)?"countdown ":"plan ")+(h.match(/>(\d+)′</)||[])[1]):"none"};
   const now=Date.now();const a=(n,got,want)=>out.push({n,ok:got===want,got,want});
   set(W,{});C.RIDEACK={[pr]:{s:1,at:now-7*60000}};a("Fahrer vor Ort seit 7 Min. → Wartezeit zählt hoch",(()=>{const h=(T.p(cs,R1)||{}).h||"";return /data-cqup/.test(h)?"up "+(h.match(/>(\d+)′</)||[])[1]:"none"})(),"up 7");
