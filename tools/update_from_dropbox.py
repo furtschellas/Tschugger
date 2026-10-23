@@ -278,6 +278,17 @@ def _pdf_pages(dbx, e, cache):
     except Exception as ex:
         log("PDF-Seiten nicht erzeugt:", _h(e["name"]), type(ex).__name__); return key, []
 
+def _pdf_file(dbx, e, want_files):
+    """the PDF itself, encrypted (blk/<key>.pdf.bin) – opened in the PDF viewer of the app, without Dropbox, also offline; "" when not (yet) there"""
+    pf = "blk/" + _key(e, "|pdf") + ".pdf.bin"
+    if not blk_have(pf) and time.time() < PIC_DEADLINE and PIC_BUDGET[0] > 0:
+        try:
+            PIC_BUDGET[0] -= 1; data = dbx.download(e["id"])
+            if len(data) < 40e6: _enc_write(pf, data)
+        except Exception as ex: log("PDF fehlt:", _h(e["name"]), type(ex).__name__)
+    if blk_have(pf): want_files.add(pf); return pf
+    return ""
+
 def add_reports(dbx, meta, want_files):
     """reports (PDFs) of «3D/20_Reports», one group per sub folder: every page as an encrypted picture for the gallery and the PDF itself
     (encrypted) for the download → meta.reports [{g, n, d, f: [pages], pdf, u}]; True when something changed"""
@@ -1856,6 +1867,8 @@ def main():
             if not f: continue
             k, pg = _pdf_pages(dbx, f, spc); used.add(k); WANT.update(pg)
             if pg and d.get("pg") != pg: d["pg"] = pg; changed = True
+            pf = _pdf_file(dbx, f, WANT)   # the original callsheet in the PDF viewer (Anhänge)
+            if pf and d.get("pdf") != pf: d["pdf"] = pf; changed = True
         sides = []
         shoot = {}
         for d in data.get("days") or []:
@@ -1888,7 +1901,11 @@ def main():
             title = re.sub(r"(?i)[_ ]*\d{1,2}\.\d{1,2}\.\d{4}|[_ ]*dt\s*\d+|\btag\s*\d+\s*", " ", title)
             full = bool(re.search(r"(?i)[_ ]full$", title)); title = re.sub(r"(?i)[_ ]full$", "", title)
             title = re.sub(r"\s+", " ", title.replace("_", " ")).strip(" -") or "Floorplan"
-            sfp.append({"date": date, "name": (title + (" (full)" if full else ""))[:80], "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(f["name"])})
+            it = {"date": date, "name": (title + (" (full)" if full else ""))[:80], "url": "https://www.dropbox.com/preview/TSCHUGGER%20Tigerblood%20-%20DISTRO/" + requests.utils.quote(f["name"])}
+            it["k"] = "fp" if _is_fp(f) else "motif"   # floorplan or Motivplan («Motif See», «Tag 1 Plan – Motif Kapelle»)
+            pf = _pdf_file(dbx, f, WANT)   # the PDF itself for the viewer of the app
+            if pf: it["pdf"] = pf
+            sfp.append(it)
         if sfp != (meta.get("setfp") or []): meta["setfp"] = sfp; changed = True
         spc = {k: v for k, v in spc.items() if k in used}
         if spc != (meta.get("sidesPages") or {}): meta["sidesPages"] = spc; changed = True
