@@ -1316,6 +1316,8 @@ Object.assign(I18N,{
  "Offen – antippen = Fahrer vor Ort":{fr:"Ouvert – toucher = chauffeur sur place",it:"Aperto – tocca = autista sul posto",en:"Open – tap = driver on site"},
  "Fahrzeug unterwegs – antippen = zurücksetzen":{fr:"Véhicule en route – toucher = réinitialiser",it:"Veicolo in viaggio – tocca = ripristinare",en:"Vehicle on the way – tap = reset"},
  "Alle Schritte abgeschlossen":{fr:"Toutes les étapes terminées",it:"Tutti i passi conclusi",en:"All steps done"},
+ "Fahrer vor Ort – antippen = Fahrzeug fährt los":{fr:"Chauffeur sur place – toucher = le véhicule part",it:"Autista sul posto – tocca = il veicolo parte",en:"Driver on site – tap = vehicle leaves"},
+ "Geplante Fahrzeit":{fr:"Temps de trajet prévu",it:"Tempo di viaggio previsto",en:"Planned driving time"},
  "Restzeit":{fr:"Temps restant",it:"Tempo rimanente",en:"Time left"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
