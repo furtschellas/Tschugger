@@ -615,15 +615,15 @@ window.blkImg=function(f){
       if(/^HTTP/.test(err.message||""))throw err;
       try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.open(k).then(c=>c.delete(u))))}catch(_){}
       pt=await dec(await get("reload"))}
-    const ou=URL.createObjectURL(new Blob([pt],{type:/\.mp4\.bin$/.test(f)?"video/mp4":/\.pdf\.bin$/.test(f)?"application/pdf":"image/jpeg"}));BLKURL.set(f,ou);blkTrim();return ou})().catch(err=>{BLKIMG.delete(f);throw err}));
+    const bl=new Blob([pt],{type:/\.mp4\.bin$/.test(f)?"video/mp4":/\.pdf\.bin$/.test(f)?"application/pdf":"image/jpeg"}),ou=URL.createObjectURL(bl);BLKURL.set(f,ou);if(bl.type==="application/pdf")BLKBLOB.set(ou,bl);   /* the PDF viewer reads the file itself (fetch of blob: is not allowed) */blkTrim();return ou})().catch(err=>{BLKIMG.delete(f);throw err}));
   return BLKIMG.get(f);
 };
 /* decrypted pictures/videos stay in memory only up to a limit: the oldest ones not shown on the page are freed
    (browsing many blocking videos on a phone otherwise filled the memory until the tab was closed) */
-const BLKURL=new Map();
+const BLKURL=new Map(),BLKBLOB=new Map();window.blkBlob=u=>BLKBLOB.get(u)||null;
 function blkTrim(){if(BLKURL.size<=60)return;for(const [f,u] of BLKURL){if(BLKURL.size<=40)break;
   let used=false;try{used=!!document.querySelector('[src="'+u+'"]')||!!document.querySelector('[href="'+u+'"]')}catch(_){}
-  if(used)continue;try{URL.revokeObjectURL(u)}catch(_){}BLKURL.delete(f);BLKIMG.delete(f)}}
+  if(used)continue;try{URL.revokeObjectURL(u)}catch(_){}BLKBLOB.delete(u);BLKURL.delete(f);BLKIMG.delete(f)}}
 /* crew list: phone / e-mail from the app profile when the crew list has none (people allowed to see contacts outside the crew list) */
 window.crewFill=function(p){
   if(!ME||!(can("contacts.extra")||can("users.view")))return null;
