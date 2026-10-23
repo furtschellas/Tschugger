@@ -45,7 +45,7 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
    The rules of a row, in order:
    1. On set started (tapped, by hand or the ride Base → set done) → P/UP, Call, Kostüm, Maske and Base done
    2. Base done (tapped or by hand) → P/UP, Call, Kostüm and Maske done; On set open
-   3. Call done → P/UP done
+   3. Call done → P/UP done; Kostüm or Maske started → P/UP and Call done
    4. a hand tick (cast.manual) wins over the automatic state
    5. automatic: Kostüm or Maske started → P/UP and Call done; P/UP follows the ride (Call too once the ride is done, but Call can always be tapped); both Kostüm and Maske done → Base running;
       On set open once Kostüm and Maske (or Base) are done, running when the ride Base → set is done, pink frame when that ride is accepted ---------- */
@@ -101,6 +101,7 @@ const CQF={p:"pickup",c:"call",b:"base",o:"onset"};
 function cqField(f,c,r){if(!c||!c._date||!r||!window.cqSee())return null;const v=r[CQF[f]];if(!hm(v))return null;const t=String(v),m=cqModel(c,r);
   if(f!=="o"&&(f==="b"?m.onStarted:m.onStarted||m.baseDone))return {h:cqDone(t,L("Erledigt")+" ("+(m.onStarted?"On set":"Base")+")")};   /* rules 1, 2 */
   if(f==="p"&&m.callDone)return {h:cqDone(t,L("Erledigt")+" (Call)")};   /* rule 3 */
+  if((f==="p"||f==="c")&&m.arrived)return {h:cqDone(t,L("Angekommen (Kostüm/Maske)"))};   /* Kostüm or Maske started: wins over a hand tick too */
   let h=null;try{h=CQAUTO[f](m,r,t)}catch(_){}h=cqManual(f,m,r,t,h);return h?{h}:null}
 window.cqPickup=(c,r)=>cqField("p",c,r);window.cqCall=(c,r)=>cqField("c",c,r);window.cqBase=(c,r)=>cqField("b",c,r);window.cqOnset=(c,r)=>cqField("o",c,r);
 /* rules 1 and 2 for Kostüm / Maske in the callsheet (csMk) */
