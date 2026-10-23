@@ -135,7 +135,7 @@ function cqDrive(m,cur){if(cur===1)return cqUp(m.puAt,L("Fahrer wartet seit"));i
 const CQRULE={
   /* P/UP: with a ride its three steps (also ticked in «Fahrten»), without a ride stored here */
   p(m,r,t,x){if(m.onDone||m.baseDone||m.callAct||m.arrived)return cqDone(t,L("Erledigt"),x);
-    const cur=Math.min(2,m.pu),car=(cur===2?CQCAR:"")+cqDrive(m,cur),tips=[L("Offen – antippen = Fahrer vor Ort"),L("Fahrer vor Ort – antippen = Fahrzeug fährt los"),L("Fahrzeug unterwegs – antippen = zurücksetzen")];
+    const cur=Math.min(2,m.pu),car=cqDrive(m,cur)+(cur===2?CQCAR:""),tips=[L("Offen – antippen = Fahrer vor Ort"),L("Fahrer vor Ort – antippen = Fahrzeug fährt los"),L("Fahrzeug unterwegs – antippen = zurücksetzen")];
     if(!cqCan("u"))return cqSpan(cur?1:0,t,tips[cur],x)+car;const nx=(cur+1)%3;
     return cqBtn(cur?1:0,"u",m.rid?"":cmId(m.d,"u",r,hm(t)),m.d,t,tips[cur],{nx,lk:m.rid,ls:nx,x})+car},
   /* Call: one tap = arrived (active) – the pickup ride is done (back: on the way again) */
@@ -149,7 +149,7 @@ const CQRULE={
       /* Kostüm / Maske started but not both done: tap Base = both done, the cast waits at the Base (Base active) */
       if(m.arrived){const tip=L("Antippen = Kostüm und Maske abschliessen, Cast wartet an der Base");return cqCan("b")?cqBtn(0,"b","",m.d,t,tip,{nx:-1,a:' data-wmfin="'+esc(m.wmIds.join(","))+'"'}):cqSpan(0,t,tip)}
       if(!cqMan())return null}
-    const cur=m.baseDone?2:m.wmDone?1:0,car=(m.baseDone&&m.bid?CQCAR:"")+(cur===1?cqUp(m.wmAt,L("Wartet auf die Abholung seit")):""),tip=cur===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
+    const cur=m.baseDone?2:m.wmDone?1:0,car=(cur===1?cqUp(m.wmAt,L("Wartet auf die Abholung seit")):"")+(m.baseDone&&m.bid?CQCAR:""),tip=cur===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
     return (cqCan("b")?cqBtn(cur,"b",cmId(m.d,"b",r,hm(t)),m.d,t,tip,{nx:cur===2?0:2,lk:m.bid,ls:cur===2?0:2}):cqSpan(cur,t,tip))+car},
   /* On set: one tap = done – the ride Base → set is done, every step is done; done shows the time of the tick (or of the ride) */
   o(m,r,t,x){const cur=m.onDone?2:0,open=m.onDone||m.wmDone||m.baseDone||cqMan();
