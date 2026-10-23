@@ -1,0 +1,79 @@
+/* ---------- App-Verwaltung (Backup und Aktualisierung) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
+/* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */
+const BK={busy:false,msg:"",ok:false};
+function bkSec(){
+  let last="";try{last=localStorage.getItem("bk:last")||""}catch(_){}
+  return '<div class="bk">'+
+    '<p class="ahint">'+L("Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.")+'</p>'+
+    (last?'<p class="ahint">'+L("Letztes Backup auf diesem Gerät")+': '+esc(fmtStamp(last))+'</p>':'')+
+    '<div class="bkb"><button type="button" class="abtn" data-bk="dl"'+(BK.busy?' disabled':'')+'>'+L("Backup herunterladen")+'</button>'+
+    '<label class="abtn bkup">'+L("Backup wiederherstellen")+'<input type="file" accept="application/json,.json" data-bk="up" hidden></label></div>'+
+    '<p class="ahint">'+L("Beim Wiederherstellen werden die Einträge aus der Datei ergänzt oder überschrieben. Nichts wird gelöscht.")+'</p>'+
+    (BK.msg?'<p class="amsg'+(BK.ok?' ok':'')+'" role="status">'+esc(BK.msg)+'</p>':'')+'</div>';
+}
+async function bkCollect(){
+  const {F,db}=await fb();
+  const col=async n=>{const q=await F.getDocs(F.collection(db,n));return q.docs.map(d=>({id:d.id,data:d.data()}))};
+  /* roles and who has which role belong in the backup too (before, after a restore nobody had a role) */
+  const [members,invites,admins,bdays,cfg,roles,userroles,owners]=await Promise.all([col("members"),col("invites"),col("admins"),col("bdays").catch(()=>[]),F.getDoc(F.doc(db,"config","app")),col("roles").catch(()=>[]),col("userroles").catch(()=>[]),col("owners").catch(()=>[])]);
+  const plain=v=>JSON.parse(JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&typeof x.toDate==="function"?{__ts:x.toDate().toISOString()}:x));
+  return plain({app:"tschugger-crew",version:1,createdAt:new Date().toISOString(),by:ME&&ME.email,config:cfg.exists()?cfg.data():null,members,invites,admins,bdays,roles,userroles,owners});
+}
+async function bkDownload(){
+  const data=await bkCollect();const t=new Date();
+  const name="tschugger-backup-"+t.getFullYear()+"-"+pad2(t.getMonth()+1)+"-"+pad2(t.getDate())+"-"+pad2(t.getHours())+pad2(t.getMinutes())+".json";
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:"application/json"}));
+  const a=document.createElement("a");a.href=url;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
+  try{localStorage.setItem("bk:last",t.toISOString())}catch(_){}
+  return L("Backup gespeichert")+": "+data.members.length+" "+L("Benutzer:innen")+", "+data.invites.length+" "+L("Einladungen")+".";
+}
+async function bkRestore(file){
+  if(file.size>5e6)throw new Error(L("Datei ist zu gross."));
+  let d;try{d=JSON.parse(await file.text())}catch(_){throw new Error(L("Datei ist kein gültiges Backup."))}
+  if(!d||d.app!=="tschugger-crew"||!Array.isArray(d.members)||!Array.isArray(d.invites))throw new Error(L("Datei ist kein gültiges Backup."));
+  if(!confirmSafe(L("Backup vom {d} wiederherstellen? Vorhandene Einträge werden ergänzt oder überschrieben.").replace("{d}",fmtStamp(d.createdAt||""))))return "";
+  const {F,db}=await fb();const back=v=>JSON.parse(JSON.stringify(v),(k,x)=>x&&typeof x==="object"&&typeof x.__ts==="string"?F.Timestamp&&F.Timestamp.fromDate?F.Timestamp.fromDate(new Date(x.__ts)):x.__ts:x);
+  const own=lc(ME&&ME.email),ok=/^[^/]{1,200}$/;const ops=[];
+  if(d.config&&typeof d.config==="object")ops.push(["config","app",d.config]);
+  /* entries the rules never allow are left out (own invitation and own role, the main owner's entries) */
+  const root=ROOT_OWNERS.includes(own);
+  for(const [n,list] of [["roles",d.roles],["admins",d.admins],["invites",d.invites],["members",d.members],["bdays",d.bdays],["userroles",d.userroles],["owners",d.owners]])
+    for(const r of (Array.isArray(list)?list:[]))if(r&&ok.test(String(r.id))&&r.data&&typeof r.data==="object"&&!(n==="members"&&(lc(r.data.email)===own||(!root&&ROOT_OWNERS.includes(lc(r.data.email)))))&&!((n==="invites"||n==="userroles"||n==="admins"||n==="owners")&&(lc(r.id)===own||ROOT_OWNERS.includes(lc(r.id)))))ops.push([n,String(r.id),r.data]);
+  let done=0,fail=0;
+  for(let i=0;i<ops.length;i+=300){const part=ops.slice(i,i+300),batch=F.writeBatch(db);part.forEach(([n,id,v])=>batch.set(F.doc(db,n,id),back(v),{merge:true}));
+    /* a refused entry made the whole batch of 300 fail: then each entry on its own */
+    try{await batch.commit();done+=part.length}catch(err){console.warn("restore batch",err&&err.code||err);
+      for(const [n,id,v] of part){try{await F.setDoc(F.doc(db,n,id),back(v),{merge:true});done++}catch(_){fail++}}}}
+  ADM.loaded=false;
+  return L("Wiederhergestellt")+": "+done+(fail?" · "+L("fehlgeschlagen")+": "+fail:"");
+}
+document.addEventListener("click",async e=>{const b=e.target.closest('[data-bk="dl"]');if(!b||BK.busy||!isOwner())return;
+  BK.busy=true;BK.msg="";render();try{BK.msg=await bkDownload();BK.ok=true}catch(err){console.error(err);BK.msg=errText(err);BK.ok=false}BK.busy=false;render()});
+document.addEventListener("change",async e=>{const i=e.target.closest('[data-bk="up"]');if(!i||BK.busy||!isOwner())return;const f=i.files&&i.files[0];i.value="";if(!f)return;
+  BK.busy=true;BK.msg="";render();try{const m=await bkRestore(f);if(m){BK.msg=m;BK.ok=!/fehlgeschlagen|échoué|non riuscit|failed/i.test(m)}}catch(err){console.error(err);BK.msg=err.message||String(err);BK.ok=false}BK.busy=false;render()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-tmv]");if(!b)return;e.preventDefault();const r=b.closest(".tbrow"),p=r&&r.parentNode;if(!p)return;
+  if(b.dataset.tmv==="up"&&r.previousElementSibling)p.insertBefore(r,r.previousElementSibling);
+  else if(b.dataset.tmv==="down"&&r.nextElementSibling)p.insertBefore(r.nextElementSibling,r);
+  b.focus()});
+/* status of the hourly GitHub update (Dropbox → website), read from status.json in the repository */
+const UPST={d:null,at:0,busy:false};
+function upLoad(){if(UPST.busy||Date.now()-UPST.at<120000)return;UPST.busy=true;
+  fetch("status.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null).then(d=>{UPST.d=d||{state:"none"};UPST.at=Date.now();UPST.busy=false;if(S.tab==="admin")render()})}
+function upSec(){
+  upLoad();const d=UPST.d;const GH="https://github.com/furtschellas/Tschugger";
+  const when=t=>{try{return new Date(t).toLocaleString(LANG==="en"?"en-GB":LANG+"-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(_){return t||""}};
+  let st;if(!d)st='<p class="ahint">'+L("Lade …")+'</p>';
+  else if(d.state==="ok")st='<p class="upst ok">● '+L("Läuft")+' – '+L("zuletzt geprüft")+' '+esc(when(d.at))+(d.updatedAt?' · '+L("Daten vom")+' '+esc(when(d.updatedAt)):'')+(d.version?' · '+esc(d.version):'')+'</p>';
+  else if(d.state==="off")st='<p class="upst warn">● '+L("In den App-Einstellungen ausgeschaltet")+'</p>';
+  else if(d.state==="error")st='<p class="upst err">● '+L("Fehler beim letzten Lauf")+' ('+esc(when(d.at))+'): '+esc(d.msg||"")+'</p>';
+  else st='<p class="upst warn">● '+L("Noch nicht eingerichtet")+(d.missing&&d.missing.length?' – '+L("es fehlen")+': '+d.missing.map(m=>'<code>'+esc(m)+'</code>').join(", "):'')+'</p>';
+  const ok=d&&d.state==="ok";
+  return '<div class="upsec"><p class="ahint"><b>'+L("Automatische Aktualisierung (Dropbox → Webseite)")+'</b></p>'+st+
+    '<p class="ahint">'+L("GitHub liest die Dropbox zweimal pro Stunde (nur lesend), wandelt neue Drehpläne, Crewlisten, Dispos und das Drehbuch um und veröffentlicht sie verschlüsselt auf der Webseite – ohne dass ein Computer laufen muss.")+'</p>'+
+    (ok?'':'<ol class="upsteps"><li>'+L("Dropbox-Zugang (nur lesend) erzeugen:")+' <a href="dropbox-setup.html" target="_blank" rel="noopener">dropbox-setup.html</a> → <code>DROPBOX_APP_KEY</code>, <code>DROPBOX_REFRESH_TOKEN</code></li>'+
+      '<li>'+L("Claude-API-Schlüssel erstellen:")+' <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> → <code>ANTHROPIC_API_KEY</code></li>'+
+      '<li><code>CREW_KEY</code> – '+L("den Schlüssel der Crew-Daten bekommst du von Claude im Chat.")+'</li>'+
+      '<li>'+L("Alle vier in GitHub eintragen:")+' <a href="'+GH+'/settings/secrets/actions" target="_blank" rel="noopener">Settings → Secrets → Actions</a></li>'+
+      '<li>'+L("Ersten Lauf starten:")+' <a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">Actions → «Run workflow»</a></li></ol>')+
+    '<p class="ahint"><a href="'+GH+'/actions/workflows/dropbox-update.yml" target="_blank" rel="noopener">'+L("Läufe auf GitHub ansehen")+'</a></p></div>';
+}
