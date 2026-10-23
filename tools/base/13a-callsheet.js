@@ -407,8 +407,10 @@ function csJumpBar(c,x,me,SU,t){let JB="";
 function csSums(c){  const SU={};{const sm=a=>{a=a.filter(x=>x&&x[1]!==""&&x[1]!=null&&x[1]!==0);return a.length?'<span class="cscount">'+a.map(([k,v,d])=>'<span'+(d?' class="csdrop"':'')+'><b>'+esc(String(v))+'</b> '+(Array.isArray(k)?'<i class="lg">'+esc(k[0])+'</i><i class="sh">'+esc(k[1])+'</i>':esc(k))+'</span>').join("")+'</span>':''};
     const uniq=l=>new Set(l.map(x=>fold(String(x||"")).trim()).filter(Boolean)).size;
     
-    {const nos=csA(c.cast).map(r=>String(r.no||"").trim()).filter(Boolean).sort((a,b)=>(parseInt(a,10)||0)-(parseInt(b,10)||0)||a.localeCompare(b));
-     SU.cast=nos.length?'<span class="cscount csnos">'+nos.map(n=>'<span class="csno">'+esc(n)+'</span>').join("")+'</span>':''}
+    {/* the numbers in the head of «Cast»: pink = On set, pink box = waiting at the Base for the pickup, grey = not called yet */
+     const stg={};if(window.cqStage)for(const r of csA(c.cast)){const n=String(r.no||"").trim();if(n)stg[n]=window.cqStage(Object.assign({},c,{_date:c._date||(typeof x!=="undefined"&&x&&x.date)||""}),r)}
+     const nos=csA(c.cast).map(r=>String(r.no||"").trim()).filter(Boolean).sort((a,b)=>(parseInt(a,10)||0)-(parseInt(b,10)||0)||a.localeCompare(b));
+     SU.cast=nos.length?'<span class="cscount csnos">'+nos.map(n=>'<span class="csno'+(stg[n]===3?' cqnon':stg[n]===2?' cqnbase':stg[n]===0?' cqnwait':'')+'">'+esc(n)+'</span>').join("")+'</span>':''}
     SU.travel=sm([[L("Personen"),csA(c.travel).filter(r=>!r.date||!c._date||r.date===c._date).length]]);
     SU.extras=sm([[L("Komparsen"),csA(c.extras).reduce((a,r)=>a+(parseInt(r.count,10)||0),0),"drop"],[L("Gruppen"),csA(c.extras).length]]);
     SU.veh=sm([[L("Fahrzeuge"),csA(c.vehicles).length]]);

@@ -992,3 +992,14 @@ button.cmk.cmrun,span.cmk.cmrun{background:var(--accent);border-color:var(--acce
 /* Meine Termine: the confirmation of a ride (and Kostüm / Maske) always on the right, above the bell – phone and desktop */
 html body #view .mci>:is(.rideack,.ridek,.cmk){position:absolute;top:8px;right:8px;width:32px;height:32px;margin:0}
 html body #view .mci>span:is(.ridek,.cmk):not(.rideack){display:inline-flex;align-items:center;justify-content:center}
+/* cast tiles on the phone: On set done → one line (number, role, name, On set with the time of the tick); tap opens the rest again */
+@media (max-width:760px){
+html body #view .csview #cs-cast .cs-card:has(.cqall){cursor:pointer}
+html body #view .csview #cs-cast .cs-card:has(.cqall):not(.csopen) .cs-kv{display:none}
+html body #view .csview #cs-cast .cs-card:has(.cqall):not(.csopen) .cs-kv:last-child{display:flex;grid-row:1;grid-column:2;justify-self:end}
+html body #view .csview #cs-cast .cs-card:has(.cqall):not(.csopen) .cs-ct{grid-column:1;grid-row:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+/* head of «Cast»: the numbers – pink = On set, grey = not called yet */
+html body #view .csno.cqnon{color:var(--accent)!important;border-color:var(--accent)!important}
+html body #view .csno.cqnwait{color:var(--muted)!important;opacity:.6}
+html body #view .csno.cqnbase{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
