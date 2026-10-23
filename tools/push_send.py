@@ -217,6 +217,19 @@ def main():
     except Exception as e:
         print("• Nachrichten nicht lesbar:", type(e).__name__)
 
+    # the role of each device's person from the database, not from the device itself (a device could claim any role) – uid → role
+    rmap = None
+    if sa and any(b.get("roles") for _, b, _, _ in bcs):
+        try:
+            own = {d for d, _, _ in fsadmin.list_docs("owners")} | {"furtschellas@gmail.com"}; adm = {d for d, _, _ in fsadmin.list_docs("admins")}
+            ur = {d.lower(): str(f.get("role") or "") for d, f, _ in fsadmin.list_docs("userroles")}
+            rmap = {}
+            for uid, f, _ in fsadmin.list_docs("members"):
+                em = str(f.get("email") or "").lower()
+                if f.get("active") is True: rmap[uid] = "owner" if em in own else "admin" if em in adm else ur.get(em, "")
+            if not rmap: rmap = None   # nothing readable: the device's own entry as before
+        except Exception as e:
+            print("::warning::Rollen für Push nicht lesbar: " + type(e).__name__); rmap = None
     got = {}   # message → devices that received it now (saved in «done»: the history shows who got it)
     bad = set()   # messages with failed devices: not finished, tried again next run
     try:
@@ -238,7 +251,9 @@ def main():
                 if k in sent or did in done: continue
                 roles, depts = b.get("roles"), b.get("depts")
                 if roles is not None or depts is not None:
-                    if not ((who.get("role", "") in (roles or [])) or (bool(who.get("dept")) and who.get("dept") in (depts or []))): continue
+                    role = rmap.get(did.rsplit("_", 1)[0]) if rmap is not None else who.get("role", "")
+                    if rmap is not None and role is None: continue   # no (active) member any more
+                    if not ((role or "") in (roles or []) or (bool(who.get("dept")) and who.get("dept") in (depts or []))): continue
                 if b.get("kind") and (p.get("news") or {}).get(b["kind"], True) is False: continue   # automatic message the person turned off
                 tx = (b.get("i18n") or {}).get(p.get("lang") or "de") or b
                 r = send(sub, json.dumps({"title": tx.get("title", ""), "body": tx.get("body", ""), "url": b.get("url") or "./", "tag": "b" + bid, "icon": "change" if b.get("kind") else "push"}, ensure_ascii=False), pems, 86400)

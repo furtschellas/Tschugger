@@ -165,6 +165,9 @@ def members():
     return out
 
 
+ROTATE_DAYS = int(os.environ.get("ROTATE_DAYS") or 30)   # planned key change at the latest after this many days
+
+
 def due():
     """nightly check: was somebody removed since the last key change? then the old key must not open new data any more.
     secret/keymeta.uids = people with access at the last key change (+ everybody added since); only the service account reads it"""
@@ -173,9 +176,13 @@ def due():
     gone = known - cur if meta else set()
     if not gone and (not meta or sorted(known | cur) != sorted(known)):   # only when somebody was added (not every night)
         fsadmin.patch_doc("secret/keymeta", {"uids": sorted(known | cur), "at": int(meta.get("at") or time.time())})
-    print("::notice::Schlüsselwechsel: %s" % ("%d Person(en) entfernt oder gesperrt seit dem letzten Wechsel – neuer Crew-Schlüssel wird erstellt" % len(gone) if gone else "nicht nötig"))
+    # besides: at the latest every 30 days a new key (a key that leaked unnoticed stops opening new data)
+    age = (time.time() - int(meta.get("at") or 0)) / 86400 if meta.get("at") else 0
+    old = age > ROTATE_DAYS
+    print("::notice::Schlüsselwechsel: %s" % ("%d Person(en) entfernt oder gesperrt seit dem letzten Wechsel – neuer Crew-Schlüssel wird erstellt" % len(gone) if gone
+          else "letzter Wechsel vor %d Tagen – planmässiger neuer Crew-Schlüssel" % age if old else "nicht nötig"))
     o = os.environ.get("GITHUB_OUTPUT")
-    if o: open(o, "a").write("due=%s\n" % ("true" if gone else "false"))
+    if o: open(o, "a").write("due=%s\n" % ("true" if gone or old else "false"))
 
 
 if __name__ == "__main__":

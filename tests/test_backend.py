@@ -340,7 +340,7 @@ check("Daten prüfen: Szenennummern normalisiert", [V.sc_key(x) for x in ("186pt
 
 # key change: nightly check notices removed people; the Firestore entries (Termine, Kalender) are re-encrypted too
 import rotate as RT  # noqa: E402
-_store = {"secret/keymeta": {"uids": ["a", "b"], "at": 1}}
+_store = {"secret/keymeta": {"uids": ["a", "b"], "at": int(time.time())}}
 _mem = ["a"]
 _o = (fsadmin.list_docs, fsadmin.get_doc, fsadmin.patch_doc)
 fsadmin.list_docs = lambda col: [(u, {"active": True}, "") for u in _mem] + [("blocked", {"active": False}, "")] if col == "members" else []
@@ -349,9 +349,11 @@ fsadmin.patch_doc = lambda p, f, update_time=None: (_store.setdefault(p, {}).upd
 _go = os.environ.pop("GITHUB_OUTPUT", None)
 _out = pathlib.Path(tempfile.mkdtemp()) / "o"; os.environ["GITHUB_OUTPUT"] = str(_out)
 RT.due(); _d1 = _out.read_text()
-_mem = ["a", "b", "c"]; _store["secret/keymeta"] = {"uids": ["a", "b"], "at": 1}; RT.due()
+_mem = ["a", "b", "c"]; _store["secret/keymeta"] = {"uids": ["a", "b"], "at": int(time.time())}; RT.due()
 check("Schlüsselwechsel: nach dem Entfernen einer Person nötig, sonst nicht (neue Personen werden gemerkt)",
       _d1.strip() == "due=true" and _out.read_text().strip().endswith("due=false") and _store["secret/keymeta"]["uids"] == ["m:a", "m:b", "m:c"], (_d1, _store))
+_store["secret/keymeta"] = {"uids": ["m:a", "m:b", "m:c"], "at": int(time.time()) - 31 * 86400}; RT.due()
+check("Schlüsselwechsel: planmässig nach 30 Tagen, auch ohne entfernte Person", _out.read_text().strip().endswith("due=true"), public=True)
 fsadmin.list_docs, fsadmin.get_doc, fsadmin.patch_doc = _o
 os.environ.pop("GITHUB_OUTPUT", None)
 if _go: os.environ["GITHUB_OUTPUT"] = _go

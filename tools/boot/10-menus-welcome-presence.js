@@ -176,7 +176,7 @@ async function afterSignIn(u){
   let st;try{st=await checkMember()}catch(err){console.error(err);
     if(isOffline(err)&&S.days.length){hideGate();acctButton(true);render();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
-  if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":"denied");return}
+  if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}
   hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();pushSyncSoon();menusLoad(true);
   const prof=MEMBER||{};
   let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}

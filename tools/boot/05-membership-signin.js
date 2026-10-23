@@ -30,6 +30,8 @@ async function checkMember0(){
     s=await F.getDoc(ref);
   }
   const m=s.data();if(m.active!==true)return isAdmin()?"ok":"blocked";
+  /* «Auf allen Geräten abmelden»: a sign-in from before that moment is ended here (the rules refuse it anyway) */
+  if(m.rev&&typeof m.rev.toMillis==="function"){try{const t=await u.getIdTokenResult();if(Date.parse(t.authTime)<=m.rev.toMillis()){if(window.acctSignOut)await window.acctSignOut(true);return "revoked"}}catch(_){}}
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
   MEMBER=m;return "ok";
 }

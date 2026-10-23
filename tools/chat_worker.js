@@ -33,7 +33,7 @@ const API_KEY = "AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ";
 const SITE = "https://furtschellas.github.io/Tschugger/";
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
-const VERSION = "2026-10-18a";
+const VERSION = "2026-10-24a";
 
 let JWKS = null, JWKS_AT = 0;
 const b64u = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
@@ -65,7 +65,7 @@ async function requireMember(req) {
   const tok = bearer(req);
   const user = await verifyToken(tok);
   const t = MEMBERS.get(user.sub);
-  if (t && Date.now() - t < 10 * 60e3) return { user, tok };
+  if (t && Date.now() - t < 60e3) return { user, tok };   // a blocked or signed-out person loses access within a minute (was 10)
   const r = await fetch(FS + "/secret/key", { headers: { Authorization: "Bearer " + tok } });
   if (r.status === 403 || r.status === 404) { MEMBERS.delete(user.sub); throw Object.assign(new Error("not a member"), { status: 403 }); }
   if (r.status !== 200) throw Object.assign(new Error("firestore " + r.status), { status: 503 });   /* e.g. quota used up: not «no access» */
@@ -138,6 +138,15 @@ async function fsPatch(env, path, fields, userTok, updateTime) {
   const q = Object.keys(fields).map(k => "updateMask.fieldPaths=" + encodeURIComponent(k)).join("&") + (updateTime ? "&currentDocument.updateTime=" + encodeURIComponent(updateTime) : "");
   const body = { fields: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, fenc(v)])) };
   return fsReq(env, path + "?" + q, { method: "PATCH", body: JSON.stringify(body) }, userTok);
+}
+/* the role of every device's person, from the database (not what the device says about itself): uid → "owner" | "admin" | role id | "" */
+async function roleOfUids(env) {
+  const [mem, ur, ad, ow] = await Promise.all(["members", "userroles", "admins", "owners"].map(c => listDocs(env, c).catch(() => null)));
+  if (!mem || !ur || !mem.length) return null;   // not readable (no service account): the device's own entry as before
+  const roleBy = new Map(ur.map(d => [d.id.toLowerCase(), String(fv(d.f.role) || "")])), adm = new Set((ad || []).map(d => d.id.toLowerCase())), own = new Set((ow || []).map(d => d.id.toLowerCase()).concat(["furtschellas@gmail.com"]));
+  const out = new Map();
+  for (const d of mem) { const em = String(fv(d.f.email) || "").toLowerCase(); if (fv(d.f.active) !== true) continue; out.set(d.id, own.has(em) ? "owner" : adm.has(em) ? "admin" : roleBy.get(em) || ""); }
+  return out;
 }
 async function listDocs(env, col) {
   const out = []; let tok = "";
@@ -283,12 +292,16 @@ async function broadcast(req, env, origin, ctx) {
   let n = 0, fail = 0, tried = 0, more = false;
   const done = [], gone = [];
   const todo = [];
+  let rmap = null;
+  if (b.roles && b.roles.length) { try { rmap = await roleOfUids(env); } catch (_) { rmap = null; } }   // only for messages to roles (subrequests)
   for (const dv of devs) {
     const pc = fv(dv.f.c); if (!pc) continue;
     let p; try { p = await crewDec(env, pc); } catch (_) { continue; }
     if (!p.sub || p.on === false) continue;
     const who = p.who || {};
-    if (b.roles || b.depts) { const ok = (b.roles || []).includes(who.role || "") || (!!who.dept && (b.depts || []).includes(who.dept)); if (!ok) continue; }
+    const role = rmap ? (rmap.get(String(dv.id).replace(/_[a-z0-9]{10}$/, "")) ?? null) : (who.role || "");
+    if (rmap && role === null) continue;   // the device's person is no (active) member any more
+    if (b.roles || b.depts) { const ok = (b.roles || []).includes(role || "") || (!!who.dept && (b.depts || []).includes(who.dept)); if (!ok) continue; }
     todo.push([dv.id, p]);
   }
   for (let i = 0; i < todo.length; i += 10) {   // in small groups (subrequest limit), at most PUSH_LIMIT devices
@@ -310,7 +323,7 @@ async function broadcast(req, env, origin, ctx) {
   const later = [];
   if (!fin) later.push(dispatch(env, "push.yml"));   // the rest (and failed devices) by the GitHub run
   // at most 8 deletes here (free-tier subrequest limit, the progress marks above need a few) – the GitHub run removes the rest
-  if (gone.length && saJson(env)) later.push(...gone.slice(0, 8).map(did => fsReq(env, "push/" + did, { method: "DELETE" }).catch(() => {})));
+  if (gone.length && saJson(env)) later.push(...gone.slice(0, rmap ? 4 : 8).map(did => fsReq(env, "push/" + did, { method: "DELETE" }).catch(() => {})));
   if (later.length) ctx.waitUntil(Promise.all(later));
   return json({ ok: true, n, fail, rest: todo.length - tried, claimed: true }, 200, origin);
 }

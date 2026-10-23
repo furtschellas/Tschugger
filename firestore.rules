@@ -35,9 +35,14 @@ service cloud.firestore {
     function can(p) { return canAny([p]); }
     // wer Benutzende oder Rollen sieht (dieselbe Liste an mehreren Stellen)
     function seesUsers() { return isAdmin() || canAny(['users.view', 'users.edit', 'roles.assign', 'roles.edit', 'roles.view']); }
+    // «Auf allen Geräten abmelden» (rev = Serverzeit): Anmeldungen von vorher zählen nicht mehr
     function isMember() {
-      return signedIn() && exists(d('members', request.auth.uid)) && get(d('members', request.auth.uid)).data.active == true;
+      return signedIn() && exists(d('members', request.auth.uid)) && get(d('members', request.auth.uid)).data.active == true
+        && (get(d('members', request.auth.uid)).data.get('rev', null) == null
+            || get(d('members', request.auth.uid)).data.rev.toMillis() < request.auth.token.auth_time * 1000);
     }
+    // rev nur als Serverzeit des Schreibens (nicht frei wählbar)
+    function revOk() { return !('rev' in request.resource.data) || request.resource.data.rev == resource.data.get('rev', null) || request.resource.data.rev == request.time; }
     // Crew = freigeschaltetes Mitglied oder Admin
     function crew() { return isMember() || isAdmin(); }
     // eigenes Gerät (Push): Dokument-ID = uid + '_' + 10 Zeichen
@@ -179,7 +184,7 @@ service cloud.firestore {
       allow update, delete: if isOwner() && !isRoot(resource.data.email);
       // alle Admins dürfen die Profildaten der Benutzenden ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
       allow update: if can('users.edit') && (isOwner() || !ownerEmail(resource.data.email))
-        && changesOnly(profile()) && profileOk();
+        && changesOnly(profile().concat(['rev'])) && profileOk() && revOk();
       allow get: if signedIn() && request.auth.uid == uid;
       allow create: if isOwner() || (isAdmin() && request.auth.uid == uid) || (verified() && request.auth.uid == uid
         && exists(d('invites', myEmail()))
@@ -188,7 +193,7 @@ service cloud.firestore {
         && request.resource.data.email == myEmail() && profileOk());
       allow update: if verified() && request.auth.uid == uid
         && resource.data.active == true
-        && changesOnly(profile().concat(['email', 'lastSeen', 'tour', 'tourAt', 'app', 'devs']))
+        && changesOnly(profile().concat(['email', 'lastSeen', 'tour', 'tourAt', 'app', 'devs', 'rev'])) && revOk()
         && (!('app' in request.resource.data) || (request.resource.data.app is string && request.resource.data.app.size() <= 20))
         && (!('devs' in request.resource.data) || (request.resource.data.devs is map && request.resource.data.devs.size() <= 12))
         && request.resource.data.email == myEmail()
