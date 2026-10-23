@@ -62,7 +62,7 @@ function roleBadges(sc,ids){const P=planRoles(sc),o=SCRIPT?(scriptRoles()[norm(s
     const st=!planned?(vo?L("Voice-over im Drehbuch"):sp?L("spricht im Drehbuch"):mt?L("erwähnt im Drehbuch"):""):o===null?(inP?L("im Drehplan"):""):inP&&(sp||mt)?"✓ "+L("Drehplan und Drehbuch")+(vo?" ("+L("Voice-over")+")":""):inP?"⚠ "+L("nur im Drehplan"):vo?L("Voice-over – muss nicht am Set sein"):sp?"⚠ "+L("spricht im Drehbuch, fehlt im Drehplan"):mt?L("nur erwähnt, nicht im Drehplan"):"";
     return st?'<span class="rbadge'+(/⚠/.test(st)?' warn':'')+'"><b>'+esc(r.name)+'</b> '+esc(st)+'</span>':""}).join("")+'</span>'}
 /* ---------- global search ---------- */
-const nrm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const nrm=fold;
 /* search ignores special characters and spellings: «186 pt1A» = «186pt1a», «Künzler» = «Kuenzler», «D'Alessandro» = «dalessandro» */
 const sqz=x=>nrm(x).replace(/ß/g,"ss").replace(/ae/g,"a").replace(/oe/g,"o").replace(/ue/g,"u").replace(/[^a-z0-9]/g,"");
 const hasT=(text,t)=>{const a=nrm(text);if(a.includes(t))return true;const q=sqz(t);return q.length>1&&sqz(a).includes(q)};

@@ -529,7 +529,7 @@ document.addEventListener("click",async e=>{
 const ADMV={food:true,bday:true,acct:true};try{for(const k in ADMV){const v=localStorage.getItem("admv2:"+k);if(v!==null)ADMV[k]=v==="1"}}catch(_){}
 const ensureAdm=()=>{if(!ADM.loaded&&!ADM.busy&&!ADM.loading&&!ADM.err){ADM.loading=true;admLoad().then(()=>{ADM.err=""}).catch(err=>{console.error(err);ADM.err=String((err&&(err.code||err.message))||err);render()}).finally(()=>{ADM.loading=false})}};
 /* crew entry -> member: same e-mail, otherwise same first + last name */
-const nkey=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z]+/g," ").trim();
+const nkey=nmk;   /* same as the name key of the PREP lists */
 /* lookup tables built once per admin load instead of searching all members for every crew row */
 const AIX={byEmail:new Map(),byName:new Map(),dept:new Map(),mem:null,crew:null};
 const aix=()=>{if(AIX.mem!==ADM.mem||AIX.crew!==S.crew)admIndex();return AIX};
