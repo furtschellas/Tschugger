@@ -14,7 +14,7 @@
    Call   one tap = arrived, active (the pickup ride counts as done) – done while Kostüm or Maske runs; active again between them (the actor
           waits); done once both are done.
    Kostüm / Maske   open → running (the duration counts down) → done; starting one finishes the other one of the same actor that still runs.
-   Base   running once Kostüm and Maske are done (minutes waiting for the pickup counting up) · tap = done: the ride Base → set is on the way,
+   Base   tapped while Kostüm / Maske still run: both done · running once Kostüm and Maske are done (minutes waiting for the pickup counting up) · tap = done: the ride Base → set is on the way,
           a car behind Base.
    On set one tap = done: the ride Base → set is done, the car is gone; every step is done, the cast number is pink.
    The rides run in parallel: what is ticked in «Fahrten» shows here, and what is ticked here shows in «Fahrten».
@@ -99,10 +99,10 @@ const cqRides=(c,r)=>{if(!r||!r.actor||!c)return [];const has=cqWho(r);return ar
 function cqRide(c,r){const rs=cqRides(c,r).filter(x=>!/base/i.test(String(x.from||"")));if(!rs.length)return null;const t=hm(r.pickup);return rs.find(x=>hm(x.t1)===t)||rs[0]}
 const cqBaseRide=(c,r)=>cqRides(c,r).find(x=>/base/i.test(String(x.from||"")))||null;
 /* everything one row needs, read once (ride steps 0 open · 1 on site · 2 on the way · 3 done) */
-function cqModel(c,r){const d=c._date,st=(k,t)=>hm(t)?cmSt(cmId(d,k,r,hm(t))):0,rst=id=>id?rideStep(id):0;let n=0,all=true,arrived=false,running=false,wmAt=0;
-  for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c)){n++;const id=cmId(d,k,r,p.t),s=cmSt(id);if(s>0)arrived=true;if(s===1)running=true;if(s!==2)all=false;else wmAt=Math.max(wmAt,flowAt(id))}
+function cqModel(c,r){const d=c._date,st=(k,t)=>hm(t)?cmSt(cmId(d,k,r,hm(t))):0,rst=id=>id?rideStep(id):0;let n=0,all=true,arrived=false,running=false,wmAt=0;const wmIds=[];
+  for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c)){n++;const id=cmId(d,k,r,p.t),s=cmSt(id);wmIds.push(id);if(s>0)arrived=true;if(s===1)running=true;if(s!==2)all=false;else wmAt=Math.max(wmAt,flowAt(id))}
   const ok=typeof rideId==="function",ride=ok?cqRide(c,r):null,rid=ride?rideId(d,ride):"",rs=rst(rid),br=ok?cqBaseRide(c,r):null,bid=br?rideId(d,br):"",bs=rst(bid);
-  return {d,st,wmDone:n>0&&all,wmAt,arrived,running,ride,rid,rs,bid,bs,pu:rid?rs:st("u",r.pickup),puAt:rid?flowAt(rid):flowAt(cmId(d,"u",r,hm(r.pickup))),puVAt:rid?flowAt("v"+rid):0,
+  return {d,st,wmIds,wmDone:n>0&&all,wmAt,arrived,running,ride,rid,rs,bid,bs,pu:rid?rs:st("u",r.pickup),puAt:rid?flowAt(rid):flowAt(cmId(d,"u",r,hm(r.pickup))),puVAt:rid?flowAt("v"+rid):0,
     onDone:!!hm(r.onset)&&(st("o",r.onset)>0||bs===3),baseDone:st("b",r.base)===2,callAct:st("c",r.call)>0||rs===3}}
 /* minutes behind a time: counting up (waiting since …) or down (from the start of a planned duration) */
 const cqLeft=(at,min)=>Math.max(0,Math.ceil(min-(Date.now()-at)/60000));
@@ -124,7 +124,11 @@ const CQRULE={
     const cur=m.callAct?1:0,tip=cur?L("Angekommen – antippen = zurücksetzen"):L("Offen – antippen = angekommen");
     if(!cqCan("c"))return cqSpan(cur,t,tip);return cqBtn(cur,"c",cmId(m.d,"c",r,hm(t)),m.d,t,tip,{nx:cur?0:1,lk:m.rid,ls:cur?2:3})},
   /* Base: done → the ride Base → set is on the way (car behind Base) */
-  b(m,r,t){if(m.onDone)return cqDone(t,L("Erledigt"));if(!m.wmDone&&!m.baseDone&&!cqMan())return null;
+  b(m,r,t){if(m.onDone)return cqDone(t,L("Erledigt"));
+    /* Kostüm / Maske started but not both done: tap Base = both done, the cast waits at the Base (Base active) */
+    if(!m.wmDone&&!m.baseDone&&m.arrived){const tip=L("Antippen = Kostüm und Maske abschliessen, Cast wartet an der Base");if(!cqCan("b"))return cqSpan(0,t,tip);
+      return cqBtn(0,"b","",m.d,t,tip,{nx:-1}).replace('<button ','<button data-wmfin="'+esc(m.wmIds.join(","))+'" ')}
+    if(!m.wmDone&&!m.baseDone&&!cqMan())return null;
     const cur=m.baseDone?2:m.wmDone?1:0,car=(m.baseDone&&m.bid?CQCAR:"")+(cur===1?cqUp(m.wmAt,L("Wartet auf die Abholung seit")):""),tip=cur===2?L("Erledigt – antippen = zurücksetzen"):L("Läuft – antippen = erledigt");
     if(!cqCan("b"))return cqSpan(cur,t,tip)+car;
     return cqBtn(cur,"b",cmId(m.d,"b",r,hm(t)),m.d,t,tip,{nx:cur===2?0:2,lk:m.bid,ls:cur===2?0:2})+car},
@@ -171,7 +175,8 @@ async function flowTap(b){
     if(nx===1)for(const o of String(b.dataset.cmoth||"").split(",")){if(o&&o!==id&&cmSt(o)===1)await flowPut(o,b.dataset.cmd,2)}   /* the other one still running is done now */
     return}
   const k=b.dataset.cqk,id=b.dataset.cqid,date=b.dataset.cqd;if(!cqCan(k))return;
-  const nx=b.dataset.cqnx!=null?+b.dataset.cqnx:(cmSt(id)+1)%3;await flowPut(id,date,nx);
+  const nx=b.dataset.cqnx!=null?+b.dataset.cqnx:(cmSt(id)+1)%3;if(nx>=0)await flowPut(id,date,nx);
+  for(const o of String(b.dataset.wmfin||"").split(","))if(o&&cmSt(o)!==2)await flowPut(o,date,2);   /* Base tapped early: Kostüm and Maske done */
   /* Kostüm or Maske starts: a Kostüm / Maske of the same actor still running is done now */
   if((k==="w"||k==="m")&&nx===1){const row=b.closest("tr,.cs-card");if(row)for(const o of row.querySelectorAll(".cq1[data-cqwm]")){const oid=o.dataset.cqwm;if(oid&&oid!==id&&cmSt(oid)===1)await flowPut(oid,date,2)}}
   if(b.dataset.cqlk&&b.dataset.cqls!=null)await rideSet(b.dataset.cqlk,date,+b.dataset.cqls)}   /* the ride in «Fahrten» in parallel */

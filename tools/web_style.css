@@ -1003,3 +1003,4 @@ html body #view .csview #cs-cast .cs-card:has(.cqall):not(.csopen) .cs-ct{grid-c
 html body #view .csno.cqnon{color:var(--accent)!important;border-color:var(--accent)!important}
 html body #view .csno.cqnwait{color:var(--muted)!important;opacity:.6}
 html body #view .csno.cqnbase{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
+html body #view .csno.cqnon{border-width:1.5px!important}

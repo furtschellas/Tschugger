@@ -1322,6 +1322,7 @@ Object.assign(I18N,{
  "Kostüm/Maske läuft":{fr:"Costume/maquillage en cours",it:"Costumi/trucco in corso",en:"Costume/make-up running"},
  "Wartet auf Kostüm/Maske":{fr:"Attend costume/maquillage",it:"Aspetta costumi/trucco",en:"Waiting for costume/make-up"},
  "geplant":{fr:"prévu",it:"previsto",en:"planned"},
+ "Antippen = Kostüm und Maske abschliessen, Cast wartet an der Base":{fr:"Toucher = terminer costume et maquillage, le cast attend à la base",it:"Tocca = concludi costumi e trucco, il cast aspetta alla base",en:"Tap = finish costume and make-up, the cast waits at the base"},
  "Restzeit":{fr:"Temps restant",it:"Tempo rimanente",en:"Time left"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},
