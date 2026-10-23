@@ -129,9 +129,11 @@ const CQRULE={
     if(!cqCan("b"))return cqSpan(cur,t,tip)+car;
     return cqBtn(cur,"b",cmId(m.d,"b",r,hm(t)),m.d,t,tip,{nx:cur===2?0:2,lk:m.bid,ls:cur===2?0:2})+car},
   /* On set: one tap = done – the ride Base → set is done, every step is done (cqon: stays coloured when the row is done) */
+  /* done: the time when On set was ticked (or the ride Base → set was done) instead of the planned one */
   o(m,r,t){const cur=m.onDone?2:0,open=m.onDone||m.wmDone||m.baseDone||cqMan();
+    if(cur){const at=flowAt(cmId(m.d,"o",r,hm(t)))||(m.bs===3?flowAt(m.bid):0);if(at)try{t=new Date(at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"})}catch(_){}}
     if(!open)return m.bs===1||m.bs===2?'<span class="cql cqon cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>':null;
-    const tip=cur?L("Erledigt – antippen = zurücksetzen"):L("Offen – antippen = erledigt");if(!cqCan("o"))return cqSpan(cur,t,tip).replace('class="cql ','class="cql cqon ');
+    const tip=cur?L("Erledigt – antippen = zurücksetzen")+" · "+L("geplant")+" "+r.onset:L("Offen – antippen = erledigt");if(!cqCan("o"))return cqSpan(cur,t,tip).replace('class="cql ','class="cql cqon ');
     return cqBtn(cur,"o",cmId(m.d,"o",r,hm(t)),m.d,t,tip,{nx:cur?0:2,lk:m.bid,ls:cur?(m.baseDone?2:0):3}).replace('class="cql ','class="cql cqon ')}};
 const CQF={p:"pickup",c:"call",b:"base",o:"onset"};
 function cqField(f,c,r){if(!c||!c._date||!r)return null;const v=r[CQF[f]];if(!hm(v))return null;let h=null;try{h=CQRULE[f](cqModel(c,r),r,String(v))}catch(_){}return h?{h}:null}

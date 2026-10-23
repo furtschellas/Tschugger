@@ -1321,6 +1321,7 @@ Object.assign(I18N,{
  "Name der Option":{fr:"Nom de l'option",it:"Nome dell'opzione",en:"Name of the option"},
  "Kostüm/Maske läuft":{fr:"Costume/maquillage en cours",it:"Costumi/trucco in corso",en:"Costume/make-up running"},
  "Wartet auf Kostüm/Maske":{fr:"Attend costume/maquillage",it:"Aspetta costumi/trucco",en:"Waiting for costume/make-up"},
+ "geplant":{fr:"prévu",it:"previsto",en:"planned"},
  "Restzeit":{fr:"Temps restant",it:"Tempo rimanente",en:"Time left"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},

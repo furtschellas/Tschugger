@@ -69,4 +69,6 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   const h=T.cmb(wid,D,"x","w",[wid,mid]);const ds={};for(const x of h.matchAll(/data-([a-z]+)="([^"]*)"/g))ds[x[1]]=x[2];
   const btn={dataset:ds,disabled:false,closest:()=>null};for(const f of H)await f({target:{closest:q=>q.includes("[data-cmack]")?btn:null},preventDefault(){},stopPropagation(){}});await new Promise(r=>setTimeout(r,20));
   const got=W2.sort().join(" "),want=[mid+"=2",wid+"=1"].sort().join(" ");out.push({n:"Meine Termine: Kostüm starten schliesst die laufende Maske ab",ok:got===want,got,want})})();
+{const at=Date.UTC(2031,2,2,8,7);C.RIDEACK={[id(R1,"o","08:00")]:{s:2,at}};vm.runInContext('setP(["wardrobe.ack"])',C);const h=(T.o(cs,R1)||{}).h||"";const got=(h.match(/>(\d\d:\d\d)</)||[])[1];
+  out.push({n:"On set erledigt zeigt die Zeit der Quittierung",ok:got==="09:07",got,want:"09:07"})}
 for(const x of out)console.log(JSON.stringify(x));
