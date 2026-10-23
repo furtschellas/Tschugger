@@ -989,3 +989,6 @@ html body .paccname{margin:6px 0 8px}
 /* Meine Termine – Kostüm / Maske running: pink, like the callsheet */
 button.cmk.cmrun,span.cmk.cmrun{background:var(--accent);border-color:var(--accent);color:#fff}
 .cmk.cmrun .cmc{background:#fff}
+/* Meine Termine: the confirmation of a ride (and Kostüm / Maske) always on the right, above the bell – phone and desktop */
+html body #view .mci>:is(.rideack,.ridek,.cmk){position:absolute;top:8px;right:8px;width:32px;height:32px;margin:0}
+html body #view .mci>span:is(.ridek,.cmk):not(.rideack){display:inline-flex;align-items:center;justify-content:center}

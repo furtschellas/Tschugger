@@ -188,8 +188,3 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))re
   if((OLDN>=0&&n!==OLDN)||(nk!=null&&nk!==window.CSNOWK)||(ns!=null&&ns!==window.CSNOWSC))render();OLDN=n},60e3)}
 /* links inside clickable callsheet headers (L-codes, addresses): open the link without toggling or triggering the surrounding element */
 document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.target.closest("a[data-nobub]");if(a)e.stopPropagation()},true);
-/* done rides: the card in one line (route and status), tap opens vehicle, driver and passengers; the choice stays while the page is redrawn */
-window.RIDEOPEN=window.RIDEOPEN||new Set();
-document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest("#view .cs-card");if(!c||!c.querySelector(".ridest.rs2")||e.target.closest("a,button,input,select"))return;
-  const id=(c.querySelector("[data-rideack]")||{}).dataset;const k=id&&id.rideack;const on=!c.classList.contains("csopen");c.classList.toggle("csopen",on);if(k){if(on)RIDEOPEN.add(k);else RIDEOPEN.delete(k)}});
-csAfter(()=>{if(!RIDEOPEN.size)return;document.querySelectorAll("#view .cs-card [data-rideack]").forEach(b=>{if(RIDEOPEN.has(b.dataset.rideack))b.closest(".cs-card").classList.add("csopen")})});
