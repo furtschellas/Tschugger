@@ -38,15 +38,16 @@ async function flowPut(id,date,s){if(!id)return;const {F,db}=await fb();const re
   else{const v={d:date,at:Date.now(),s};await F.setDoc(ref,v);window.RIDEACK[id]=v;FLOWMINE.set(id,{t:Date.now(),v})}}
 /* the ticks live: a subscription on rideack (what someone taps shows on every device within a second) – from the first callsheet of the
    last 60 days on (ticks of past shooting days must not disappear); renewed when that day changes; without live updates (tests, old
-   browser) every 2 minutes as before. Own taps win for a moment over an answer that was already on its way. */
+   browser) every 2 minutes as before – there own taps win for a moment over an answer that was already on its way (live, Firestore
+   shows own writes itself; keeping them would hide a newer tap of another device: found by tests/flow_multi.mjs). */
 let RIDEAT=0,RIDEBUSY=false,ACKSUB=null,ACKFROM="";
 const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
-function ackApply(m,t0){for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}
+function ackApply(m,t0,live){if(!live)for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}
   const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}
 async function rideAckLoad(force){if(typeof ME==="undefined"||!ME)return;const from=ackFrom();if(ACKSUB&&ACKFROM===from)return;
   try{const {F,db}=await fb();const q=F.query(F.collection(db,"rideack"),F.where("d",">=",from));
     if(typeof F.onSnapshot==="function"){if(ACKSUB&&ACKFROM===from)return;if(typeof ACKSUB==="function")ACKSUB();ACKFROM=from;ACKSUB="…";
-      ACKSUB=F.onSnapshot(q,snap=>{const t0=Date.now(),m={};(snap.docs||[]).forEach(x=>{m[x.id]=x.data()});ackApply(m,t0)},err=>{console.warn("rideack",err&&err.code||err);ACKSUB=null;ACKFROM=""});return}
+      ACKSUB=F.onSnapshot(q,snap=>{const t0=Date.now(),m={};(snap.docs||[]).forEach(x=>{m[x.id]=x.data()});ackApply(m,t0,true)},err=>{console.warn("rideack",err&&err.code||err);ACKSUB=null;ACKFROM=""});return}
     if(RIDEBUSY||(!force&&Date.now()-RIDEAT<120e3))return;RIDEBUSY=true;RIDEAT=Date.now();const t0=Date.now();
     const snap=await F.getDocs(q);const m={};snap.forEach(x=>{m[x.id]=x.data()});ackApply(m,t0)}catch(err){if(ACKSUB==="…")ACKSUB=null}RIDEBUSY=false}
 /* after a tick: draw again without moving the page (the open parts and the scroll position stay) */

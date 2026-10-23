@@ -475,4 +475,13 @@ check("Cast quittieren: Regeln laufen", len(_cr) >= 42, len(_cr))
 for _x in _cr:
     check("Cast quittieren: " + _x["n"], _x["ok"], (_x["got"], _x["want"]))
 
+common.GROUP = 'Ablauf mit zwei Geräten'
+try:
+    _fm = [json.loads(x) for x in _sp.run(["node", str(pathlib.Path(__file__).resolve().parent / "flow_multi.mjs")], capture_output=True, text=True, timeout=60).stdout.splitlines() if x.strip()]
+except Exception:  # noqa: BLE001
+    _fm = []
+check("Ablauf mit zwei Geräten: Test läuft", len(_fm) >= 8, len(_fm))
+for _x in _fm:
+    check(_x["n"], _x["ok"], (_x["got"], _x["want"]))
+
 sys.exit(done("Hintergrund"))
