@@ -957,14 +957,14 @@ html body #view .cstrv.trvother .trvd{display:block;flex:0 0 100%;width:100%;mar
 /* cast cards on the phone: P/UP + Call, Kostüm + Maske, Base + On set – two per line; all done (On set done) = thin pink frame */
 @media (max-width:760px){
 /* one grid for the whole tile (Label | Zeit | Label | Zeit): the times stand flush under each other, whatever the label width */
-html body #view .csview #cs-cast .cs-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);column-gap:8px;row-gap:4px;align-items:baseline}
-html body #view .csview #cs-cast .cs-card .cs-ct{grid-column:1/-1}
-html body #view .csview #cs-cast .cs-card .cs-kv{display:contents}
-html body #view .csview #cs-cast .cs-card .cs-kv .k{min-width:0}
-html body #view .csview #cs-cast .cs-card .cs-kv .v{min-width:0;font-variant-numeric:tabular-nums}
-html body #view .csview #cs-cast .cs-card .cs-kv:nth-child(odd) .k{margin-left:6px}
-html body #view .csview #cs-cast .cs-card .cs-kv .v>.mkw:first-child{margin-left:-4px}
-html body #view .csview #cs-cast .cs-card:has(.cql.cq1:not(.cqon):not(.cqpu)){border-color:var(--accent)!important;box-shadow:inset 0 0 0 0 transparent}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);column-gap:8px;row-gap:4px;align-items:baseline}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-ct{grid-column:1/-1}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv{display:contents}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv .k{min-width:0}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv .v{min-width:0;font-variant-numeric:tabular-nums}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv:nth-child(odd) .k{margin-left:6px}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv .v>.mkw:first-child{margin-left:-4px}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cql.cq1:not(.cqon):not(.cqpu)){border-color:var(--accent)!important;box-shadow:inset 0 0 0 0 transparent}
 }
 /* cast: every step done = the cast number in pink; the car behind P/UP / Base while the ride is on the way */
 html body #view .cqall{color:var(--accent)!important}
@@ -987,11 +987,11 @@ html body #view .mci>:is(.rideack,.ridek,.cmk){position:absolute;top:8px;right:8
 html body #view .mci>span:is(.ridek,.cmk):not(.rideack){display:inline-flex;align-items:center;justify-content:center}
 /* cast tiles on the phone: On set done → one line (number, role, name, On set with the time of the tick); tap opens the rest again */
 @media (max-width:760px){
-html body #view .csview #cs-cast .cs-card:has(.cqall){cursor:pointer}
-html body #view .csview #cs-cast .cs-card:has(.cqall):not(.csopen){grid-template-columns:minmax(0,1fr) auto}
-html body #view .csview #cs-cast .cs-card:has(.cqall):not(.csopen) .cs-kv{display:none}
-html body #view .csview #cs-cast .cs-card:has(.cqall):not(.csopen) .cs-kv:last-child{display:flex;grid-row:1;grid-column:2;justify-self:end}
-html body #view .csview #cs-cast .cs-card:has(.cqall):not(.csopen) .cs-ct{grid-column:1;grid-row:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cqall){cursor:pointer}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cqall):not(.csopen){grid-template-columns:minmax(0,1fr) auto}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cqall):not(.csopen) .cs-kv{display:none}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cqall):not(.csopen) .cs-kv:last-child{display:flex;grid-row:1;grid-column:2;justify-self:end}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cqall):not(.csopen) .cs-ct{grid-column:1;grid-row:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 /* head of «Cast»: the numbers – pink = On set, grey = not called yet */
 html body #view .csno.cqnon{color:var(--accent)!important;border-color:var(--accent)!important}
@@ -1000,13 +1000,13 @@ html body #view .csno.cqnbase{background:var(--accent)!important;color:#fff!impo
 html body #view .csno.cqnon{border-width:1.5px!important}
 /* cast tiles on the phone (the grid «label | time | label | time» is above): time, minutes, car – times never broken */
 @media (max-width:760px){
-html body #view .csview #cs-cast .cs-card .cs-kv .v{display:flex;align-items:center;flex-wrap:wrap;gap:0 4px;min-width:0}
-html body #view .csview #cs-cast .cs-card .cs-kv .v .cqcar{margin:0 0 0 2px}   /* the car behind the minutes */
-html body #view .csview #cs-cast .cs-card .cs-kv .v>.mkw{display:inline-flex;align-items:center;gap:4px}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv .v{display:flex;align-items:center;flex-wrap:wrap;gap:0 4px;min-width:0}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv .v .cqcar{margin:0 0 0 2px}   /* the car behind the minutes */
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv .v>.mkw{display:inline-flex;align-items:center;gap:4px}
 }
 @media (max-width:760px){
-html body #view .csview #cs-cast .cs-card .cs-kv .v :is(.cql,.mkd,.mki,.mkt){white-space:nowrap;overflow-wrap:normal;word-break:keep-all}
-html body #view .csview #cs-cast .cs-card .cs-kv .v>.mkw{white-space:nowrap}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv .v :is(.cql,.mkd,.mki,.mkt){white-space:nowrap;overflow-wrap:normal;word-break:keep-all}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card .cs-kv .v>.mkw{white-space:nowrap}
 }
 /* PDF viewer (reports): full screen, pages one below the other */
 #pdfv{position:fixed;inset:0;z-index:9999;background:#1b1529;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
@@ -1025,5 +1025,15 @@ html body #view .cast span.cqlk3{background:transparent;border-color:var(--accen
 html body #view .cast span:is(.cqlk1,.cqlk2) i{color:#fff}
 html body #view .cast span.cqlk3 i{color:var(--accent)}
 /* cast tile On set: everything grey (labels and plain times too) – only number, role, name (pink) and the On set time (tick time) stand out */
-html body #view .csview #cs-cast .cs-card:has(.cqall) .cs-kv :is(.k,.v){color:var(--muted)}
-html body #view .csview #cs-cast .cs-card:has(.cqall) .cs-kv:last-child .k{color:inherit}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cqall) .cs-kv :is(.k,.v){color:var(--muted)}
+html body #view .csview :is(#cs-cast,#cs-extras) .cs-card:has(.cqall) .cs-kv:last-child .k{color:inherit}
+/* extras tiles on the phone (same look as the cast): count + role · Call over the whole line · Kostüm + Maske · On set */
+@media (max-width:760px){
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(n) .k{margin-left:0}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(2) .v{grid-column:2/-1}
+html body #view .csview #cs-extras .cs-card .cs-kv:nth-child(4) .k{margin-left:6px}
+}
+/* «Wie viele sind da?» (Call of a group of extras) */
+#xqpick .xqn{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+#xqpick .xqn .pillbtn{min-width:44px;min-height:40px;justify-content:center}
+#xqpick .xqn .pillbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}

@@ -33,9 +33,9 @@ const flowRedraw=()=>(typeof scRender==="function"?scRender:render)();
 /* write one tick (0 = open again: deleted – always, also when this device does not know it yet: another device may have set it);
    own writes are remembered for a moment so that a reload started before them does not undo them on the screen */
 const FLOWMINE=new Map();
-async function flowPut(id,date,s){if(!id)return;const {F,db}=await fb();const ref=F.doc(db,"rideack",id);
+async function flowPut(id,date,s,n){if(!id)return;const {F,db}=await fb();const ref=F.doc(db,"rideack",id);
   if(!s){await F.deleteDoc(ref);delete window.RIDEACK[id];FLOWMINE.set(id,{t:Date.now(),v:null})}
-  else{const v={d:date,at:Date.now(),s};await F.setDoc(ref,v);window.RIDEACK[id]=v;FLOWMINE.set(id,{t:Date.now(),v})}}
+  else{const v={d:date,at:Date.now(),s};if(n!=null)v.n=n;   /* n: how many of a group of extras are there */await F.setDoc(ref,v);window.RIDEACK[id]=v;FLOWMINE.set(id,{t:Date.now(),v})}}
 /* the ticks live: a subscription on rideack (what someone taps shows on every device within a second) – from the first callsheet of the
    last 60 days on (ticks of past shooting days must not disappear); renewed when that day changes; without live updates (tests, old
    browser) every 2 minutes as before – there own taps win for a moment over an answer that was already on its way (live, Firestore
@@ -66,7 +66,7 @@ const cqMan=()=>flowCan("cast.manual");
 /* Kostüm «Kostüm quittieren», Maske «Maske quittieren»; Call, Base and On set with either of them */
 const cmCan=k=>k==="w"?flowCan("wardrobe.ack"):k==="m"?flowCan("makeup.ack"):flowCan("wardrobe.ack")||flowCan("makeup.ack");
 /* who may tap in the cast table: u = P/UP, w/m = Kostüm/Maske, c/b/o = Call/Base/On set */
-const cqCan=k=>k==="u"?cqCanRide()||cqMan():k==="w"||k==="m"?cmCan(k):cmCan(k)||cqMan();
+const cqCan=k=>k==="xo"?flowCan("extras.ack"):k==="u"?cqCanRide()||cqMan():k==="w"||k==="m"?cmCan(k):cmCan(k)||cqMan();
 
 /* ---------- 3. rides ---------- */
 /* state of a ride (0 open, 1 started, 2 done) – off when switched off in App-Verwaltung → Einstellungen */
@@ -190,6 +190,37 @@ window.cqAll=(c,r)=>cqRowOk(c,r)&&cqModel(c,r).onDone;
 /* Kostüm / Maske running: the duration counts down from the start (back to open = the original duration again) */
 window.cqCd=(id,d)=>{const at=flowAt(id),m=String(d||"").match(/(\d+)/);return at&&m&&window.RIDEACK[id]?cqDown(at,+m[1],L("Restzeit")):""};
 
+/* ---------- 4b. extras (Komparsen): per group – Call with how many are there («3/5»), Kostüm / Maske like the cast, On set ---------- */
+/* Call and On set: «Komparsen quittieren»; Kostüm / Maske: «Kostüm / Maske quittieren». Stored like the cast (rideack, live on every device) */
+const xqCan=()=>flowCan("extras.ack");
+const xqN=r=>{const n=parseInt(String(r&&r.count||"").trim(),10);return n>1&&n<1000?n:0};   /* 0 = no count: Call is a simple tick */
+const xqId=(c,f,r,t)=>cmId(c._date,"x"+f,{no:"x|"+String(r.part||"").trim()+"|"+String(r.count||"").trim()},t);
+function xqModel(c,r){const t={c:cqHm(r.call),w:cqHm(r.wardrobe),m:cqHm(r.makeup),o:cqHm(r.onset)||(String(r.onset||"").trim()?"set":"")},id={};
+  for(const f in t)if(t[f])id[f]=xqId(c,f,r,t[f]);return {t,id,on:!!id.o&&flowSt(id.o)===2}}
+/* the group is On set: the row greys, the On set time stays (like the cast) */
+window.xqAll=(c,r)=>cqRowOk(c,r)&&xqModel(c,r).on;
+window.xqField=(f,c,r)=>{if(!cqRowOk(c,r))return null;const m=xqModel(c,r),t=m.t[f],id=m.id[f];if(!t)return null;
+  const d=c._date,st=flowSt(id),src={c:r.call,w:r.wardrobe,m:r.makeup,o:r.onset}[f],tx=t==="set"?String(src).trim():t;
+  if(f==="w"||f==="m")return {h:cqLink(f,id,d,tx)};
+  if(f==="c"){const N=xqN(r),n=st===1?Math.min(N,+(window.RIDEACK[id]||{}).n||0):0,lab=st===1&&N?tx+" · "+n+"/"+N:tx;
+    const tip=st===2?L("Alle da"):st===1?L("{n} von {N} da").replace("{n}",n).replace("{N}",N):L("Offen");
+    if(!xqCan())return {h:cqSpan(st,lab,tip)};
+    return {h:'<button type="button" class="cql cq'+st+'" data-xqc="'+esc(id)+'" data-xqd="'+esc(d)+'" data-xqn="'+N+'" title="'+esc(tip+" – "+L("antippen zum Ändern"))+'" aria-label="'+esc(lab+" – "+tip)+'">'+esc(lab)+'</button>'}}
+  const on=st===2,at=on?flowAt(id):0,lab=at?cqClock(at)||tx:tx,tip=on?L("Erledigt – antippen = zurücksetzen")+" · "+L("geplant")+" "+src:L("Offen – antippen = erledigt");
+  return {h:xqCan()?cqBtn(on?2:0,"xo",id,d,lab,tip,{nx:on?0:2,x:"cqon"}):cqSpan(on?2:0,lab,tip,"cqon")}};
+/* Call of a group: «Wie viele sind da?» – 1 … N-1, «Alle N», back to open; without a count one tap = all there (again = open) */
+async function xqPick(b){const id=b.dataset.xqc,d=b.dataset.xqd,N=+b.dataset.xqn||0,st=flowSt(id);
+  if(!N){await flowPut(id,d,st?0:2);cqKeep(b);return}
+  const cur=st===2?N:st===1?(+(window.RIDEACK[id]||{}).n||0):0;
+  const btn=(k,t)=>'<button type="button" class="pillbtn'+(k===cur?' on':'')+'" data-xqv="'+k+'">'+esc(t)+'</button>';
+  const dl=mkDialog("xqpick",'<div class="a2box xqbox"><h3>'+esc(L("Wie viele sind da?"))+'</h3><div class="xqn">'+Array.from({length:N-1},(_,i)=>btn(i+1,String(i+1))).join("")+btn(N,L("Alle")+" "+N)+'</div>'+
+    '<div class="a2b">'+(st?'<button type="button" class="lnk" data-xqv="0">'+esc(L("Zurücksetzen"))+'</button>':'')+'<button type="button" class="lnk" data-xqv="-1">'+esc(L("Abbrechen"))+'</button></div></div>',{replace:true});
+  dl.addEventListener("click",async e=>{const x=e.target.closest("[data-xqv]");if(!x&&e.target!==dl)return;const v=x?+x.dataset.xqv:-1;dl.remove();if(v<0||v===cur)return;
+    try{await flowPut(id,d,v>=N?2:v?1:0,v>0&&v<N?v:null);cqKeep(b)}catch(err){showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}});
+  document.body.appendChild(dl);const f=dl.querySelector(".on,[data-xqv]");if(f)f.focus()}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-xqc]");if(!b)return;e.preventDefault();e.stopPropagation();if(!xqCan())return;
+  xqPick(b).catch(err=>showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000))},true);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){const d=document.getElementById("xqpick");if(d){e.preventDefault();d.remove()}}});
 /* ---------- 5. Meine Termine: Kostüm / Maske as appointments (for the person named in the column head and for the actor) ---------- */
 window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function"?csMe():null}catch(_){}if(!cm)return out;
   for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,d=arr(S.days).find(x=>x.date===dp.date)||{};
@@ -239,7 +270,7 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))re
 document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.target.closest("a[data-nobub]");if(a)e.stopPropagation()},true);
 /* cast tiles (phone): a tile whose cast is On set is folded to one line – a tap opens it again; the choice stays while the page is redrawn */
 window.CASTOPEN=window.CASTOPEN||new Set();
-const castKey=c=>{const t=c.querySelector(".cs-ct");return (typeof CSCUR!=="undefined"&&CSCUR.date||"")+"|"+(t?t.textContent.trim():"")};
-document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest("#cs-cast .cs-card");if(!c||!c.querySelector(".cqall")||e.target.closest("a,button,input,select"))return;
+const castKey=c=>{const t=c.querySelector(".cs-ct"),sec=c.closest("[id]");return (typeof CSCUR!=="undefined"&&CSCUR.date||"")+"|"+(sec?sec.id:"")+"|"+(t?t.textContent.trim():"")};
+document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest(":is(#cs-cast,#cs-extras) .cs-card");if(!c||!c.querySelector(".cqall")||e.target.closest("a,button,input,select"))return;
   const k=castKey(c),on=!c.classList.contains("csopen");c.classList.toggle("csopen",on);if(on)CASTOPEN.add(k);else CASTOPEN.delete(k)});
-csAfter(()=>{if(!CASTOPEN.size)return;document.querySelectorAll("#cs-cast .cs-card").forEach(c=>{if(c.querySelector(".cqall")&&CASTOPEN.has(castKey(c)))c.classList.add("csopen")})});
+csAfter(()=>{if(!CASTOPEN.size)return;document.querySelectorAll(":is(#cs-cast,#cs-extras) .cs-card").forEach(c=>{if(c.querySelector(".cqall")&&CASTOPEN.has(castKey(c)))c.classList.add("csopen")})});

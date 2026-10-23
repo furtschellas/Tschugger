@@ -135,7 +135,10 @@ function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";CSTR=
   h=h.replace('<!--CASTPOS-->','');
   /* travel of the cast: one line per person (name · how · from → to · note), the place as short code (L1, Base …) with the map */
    h+=csTravelSec(c,x,me,SU,t);
-  h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset])),false,"","",SU.extras);
+  /* extras: Call (how many are there), Kostüm, Maske, On set to tick like the cast (24-flow); On set = the group grey, count and role pink */
+  {const xq=(f,c_,r,v)=>(window.xqField&&window.xqField(f,c_,r))||v;
+   h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>{const all=window.xqAll&&window.xqAll(c,r),pk=v=>all&&v?{h:'<span class="cqall" title="'+esc(L("Alle Schritte abgeschlossen"))+'">'+esc(v)+'</span>'}:v;
+     return [pk(r.count),pk(r.part),xq("c",c,r,r.call),xq("w",c,r,r.wardrobe),xq("m",c,r,r.makeup),xq("o",c,r,r.onset)]}),2,true),false,"","extras",SU.extras)}
   h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","",SU.veh);
   /* transport and travel */
   /* Fahrten Manager: all rides of the day as done in one go */
