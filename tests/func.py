@@ -1140,6 +1140,7 @@ async def languages(p, port):
     bad = []
     for lang in LANGS:
         await E(f"LANG='{lang}';applyStatic();render()"); await pg.wait_for_timeout(200)
+        if lang != "de": await E(f"new Promise(r=>window.i18nLoad?i18nLoad('{lang}',r):r())")
         for t in await E("tabsOn()"):
             await E(f"S.tab='{t}';render()"); await pg.wait_for_timeout(150)
             if "konnte nicht angezeigt" in await E("document.getElementById('view').innerText"): bad.append(f"{lang}:{t}")
@@ -1150,6 +1151,8 @@ async def languages(p, port):
         for m in re.finditer(r'\bL\("((?:[^"\\]|\\.)+)"\)', f.read_text()):
             try: keys.add(json.loads('"' + m.group(1) + '"'))
             except Exception: pass
+    # the translations come per language from i18n/<lang>.json: all of them loaded for this check
+    await E("Promise.all(['fr','it','en','hi'].map(l=>new Promise(r=>{if(window.i18nLoad)i18nLoad(l,r);else r()})))")
     missing = await E("ks=>{const o={};for(const l of ['fr','it','en']){const m=ks.filter(k=>!(I18N[k]&&I18N[k][l]));if(m.length)o[l]=m}return o}", sorted(keys))
     if missing: print("  fehlende Übersetzungen:", json.dumps(missing, ensure_ascii=False)[:3000])
     check(f"Alle Sprachen: alle {len(keys)} Texte übersetzt (FR, IT, EN)", not missing, {k: len(v) for k, v in missing.items()})
