@@ -47,4 +47,9 @@ t("ohne Fahrt: Call angetippt → P/UP abgeschlossen",W,{[id(R2,"c","07:30")]:2}
 t("Cast manuell: jede Zeit antippbar",["cast.manual"],{},R1,"cq0+tap cq0+tap cq0+tap cq0+tap");
 t("nur sehen (cast.see): Stand ohne Antippen",["cast.see"],{[id(R1,"w","07:05")]:2,[id(R1,"m","07:20")]:2},R1,"cq2 cq2 cq1 cq0");
 t("ohne Recht: nur die Zeiten, kein Stand",[],{[id(R1,"b","07:45")]:2},R1,"plain plain plain plain rowdone");
+{const dt=(ack,cnt)=>{set(W,ack);const h=(T.p(cs,R1)||{}).h||"";return (h.match(/class="mkd( cqcd)?"[^>]*>([^<]*)</)||[])[0]?((/cqcd/.test(h)?"countdown ":"plan ")+(h.match(/>(\d+)′</)||[])[1]):"none"};
+  const now=Date.now();const a=(n,got,want)=>out.push({n,ok:got===want,got,want});
+  a("Fahrer vor Ort → geplante Fahrzeit hinter P/UP",dt(ride(pr,1)),"plan 15");
+  set(W,{});C.RIDEACK={[pr]:{s:1,at:now},["v"+pr]:{s:1,at:now-5*60000}};a("Fahrzeug unterwegs seit 5 Min. → Countdown 10",(()=>{const h=(T.p(cs,R1)||{}).h||"";return /cqcd/.test(h)?"countdown "+(h.match(/>(\d+)′</)||[])[1]:"none"})(),"countdown 10");
+  a("Fahrt abgeschlossen → kein Countdown",dt(ride(pr,3)),"none")}
 for(const x of out)console.log(JSON.stringify(x));
