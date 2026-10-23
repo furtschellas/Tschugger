@@ -97,7 +97,10 @@ const CMK={w:"Kostüm",m:"Maske"};
    first name matches), start, end */
 function cmParse(v,c){const out=[];for(const seg of String(v==null?"":v).split(/\s*;\s*/)){
     const m=seg.match(/^\s*(?:([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.' -]*?)\s+)?(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);if(!m)continue;
-    let who="";if(m[1]){const fn=fold(m[1].trim().split(/\s+/)[0]);who=arr(c&&c.calls).map(r=>String(r.name||"")).find(n=>fold(n).split(/\s+/)[0]===fn)||m[1].trim()}
+    let who="";if(m[1]){const fn=fold(m[1].trim().split(/\s+/)[0]);
+      /* the person from the column head («Make Up - Marina»): the call with that first name – of Maske / Kostüm first when two people share it */
+      const hits=arr(c&&c.calls).filter(r=>fold(String(r.name||"")).split(/\s+/)[0]===fn),dep=hits.find(r=>/make|mask|hair|haar|\bmu\b|kost|costum|wardrob|garder/.test(fold(String(r.role||"")+" "+String(r.dept||""))));
+      who=String((dep||hits[0]||{}).name||"")||m[1].trim()}
     out.push({who,t:pad2(m[2])+":"+m[3],end:pad2(m[4])+":"+m[5]})}return out}
 /* id of one cast tick: day, kind (w m u c b o), role of the cast row, time (no names in the id) */
 /* a time from the callsheet: «07:50» or «07.50» (some callsheets write dots) */
