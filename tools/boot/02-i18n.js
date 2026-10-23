@@ -1328,6 +1328,7 @@ Object.assign(I18N,{
  "Teilen oder speichern":{fr:"Partager ou enregistrer",it:"Condividere o salvare",en:"Share or save"},
  "PDF wird geladen …":{fr:"Chargement du PDF …",it:"Caricamento PDF …",en:"Loading PDF …"},
  "PDF konnte nicht angezeigt werden.":{fr:"Impossible d'afficher le PDF.",it:"Impossibile mostrare il PDF.",en:"The PDF could not be shown."},
+ "Bitte nochmals versuchen.":{fr:"Veuillez réessayer.",it:"Riprova.",en:"Please try again."},
  "Restzeit":{fr:"Temps restant",it:"Tempo rimanente",en:"Time left"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},

@@ -37,7 +37,7 @@ function clogHTML(t){const intro=[],items=[];let cur=null;
   return (intro.length?'<p class="clogi">'+intro.map(esc).join("<br>")+'</p>':'')+'<ul class="clog">'+items.map(i=>'<li><button type="button" class="lnk clsc" data-scene="'+esc(i.sc)+'">Sc'+esc(i.sc)+'</button><span class="clp">'+
     i.parts.map(p=>'<span class="clr">'+(p.k?'<span class="clk '+CLOGK[p.k]+'">'+(p.sl?'SL ':'')+esc(L(CLOGDE[p.k]))+'</span> ':'')+esc(p.t)+'</span>').join("")+'</span></li>').join("")+'</ul>'}
 function scriptChg(){const sx=S.meta&&S.meta.scriptChange,at=sx?Date.parse(sx.at):0;
-  if(!sx||!at||!vok("script")||Date.now()-at>=3*864e5)return null;const seen=+(localStorage.getItem("chgseen:v1")||0);if(chgSeenGone(at,seen))return null;
+  if(!sx||!at||!vok("script")||Date.now()-at>=3*864e5)return null;const seen=chgSeen();if(chgSeenGone(at,seen))return null;
   return {date:localISO(at),at,unread:at>seen,script:1,sx,txt:L("Neue Drehbuch-Version")+" "+(sx.v||"")+(sx.prev&&sx.prev!==sx.v?" ("+L("vorher")+" "+sx.prev+")":sx.prev===sx.v?" ("+L("überarbeitet")+")":"")}}
 function scriptChgHTML(c){const sx=c.sx||{},sc=arr(sx.scenes);
   return '<button type="button" class="lnk tscr" data-tscript>'+esc(c.txt)+'</button>'+
@@ -46,14 +46,15 @@ function scriptChgHTML(c){const sx=c.sx||{},sc=arr(sx.scenes);
 /* the shooting day shown in «Today»: today when shooting, else the next shooting day (a travel or free day today is shown above it) */
 /* start / end of a shooting day as time stamps («08:00–20:00», also over midnight «17:00–03:00») */
 function dayTimes(d){const m=String(d&&d.hours||"").match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/);if(!m)return null;
-  const b=new Date(d.date+"T00:00:00"),st=new Date(b),en=new Date(b);st.setHours(+m[1],+m[2]);en.setHours(+m[3],+m[4]);if(en<=st)en.setDate(en.getDate()+1);return {st:+st,en:+en}}
+  /* in Zurich time (not the time zone of the phone), over midnight on the next calendar day (also over the change of time) */
+  const hh=(h,mi)=>pad2(+h)+":"+mi,st=zurichUTC(d.date,hh(m[1],m[2])).getTime();let en=zurichUTC(d.date,hh(m[3],m[4])).getTime();if(en<=st)en=zurichUTC(isoAdd(d.date,1),hh(m[3],m[4])).getTime();return {st,en}}
 /* lunch of the day (row «Lunch …»), else the middle of the shooting day – from then on the tile shows the drive back */
 function lunchAt(d){const dt=dayTimes(d);const it=arr(d.items).concat(arr((d.unit2||{}).items)).find(i=>!i.sc&&/\b(lunch|mittag)/i.test(String(i.n||""))&&/^\d{1,2}:\d{2}/.test(String(i.t||"")));
-  if(it){const x=new Date(d.date+"T00:00:00");const [h,mi]=String(it.t).split(":");x.setHours(+h,+mi);if(dt&&+x<dt.st)x.setDate(x.getDate()+1);return +x}return dt?dt.st+(dt.en-dt.st)/2:null}
+  if(it){const [h,mi]=String(it.t).split(":"),t=pad2(+h)+":"+mi.slice(0,2);let x=zurichUTC(d.date,t).getTime();if(dt&&x<dt.st)x=zurichUTC(isoAdd(d.date,1),t).getTime();return x}return dt?dt.st+(dt.en-dt.st)/2:null}
 /* the shooting day shown in «Today»: the running one until 1 h after wrap (also over midnight), else the next shooting day;
    on a free or travel day always the next shooting day (with a short note about today above it) */
 function todayDay(){const t=todayISO(),now=Date.now();const ds=(S.days||[]).filter(d=>d.date);
-  const run=ds.find(d=>d.kind==="shoot"&&d.date<=t&&(()=>{const x=dayTimes(d);return x&&now<x.en+3600e3&&(d.date===t||now<x.en+3600e3&&x.en>new Date(t+"T00:00:00"))})());
+  const run=ds.find(d=>d.kind==="shoot"&&d.date<=t&&(()=>{const x=dayTimes(d);return x&&now<x.en+3600e3&&(d.date===t||now<x.en+3600e3&&x.en>zurichUTC(t,"00:00").getTime())})());
   if(run)return run;
   const td=ds.find(d=>d.date===t);
   return ds.find(d=>d.kind==="shoot"&&(d.date>t||(d.date===t&&!(dayTimes(d)&&now>=dayTimes(d).en+3600e3))))||td||ds.find(d=>d.date>t)||null}
@@ -76,7 +77,7 @@ VIEWS.today=function(){
   try{if(isToday&&tShow("now")&&typeof csNowScene==="function"){const ns=csNowScene();if(ns&&ns.ev!=="wrap"){const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
     const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
     const nb=csNowBits(ns,c0,t);
-    const since=b0?' <small>· '+esc(L("seit"))+' '+esc(new Date(b0).toTimeString().slice(0,5))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
+    const since=b0?' <small>· '+esc(L("seit"))+' '+esc(csHM(new Date(b0)))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
     h+='<div class="tcard tnow"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowb">'+(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+'</div></div>'}}}catch(_){}
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
   try{if(me&&vok("mycal")&&tShow("my")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
@@ -117,7 +118,7 @@ VIEWS.today=function(){
   if(dcs&&shT&&typeof csTilesHTML==="function"){let me3=null;try{me3=csMe()}catch(_){}h+='<div class="tcs">'+csTilesHTML(dcs,d,dcs.cs,me3).replace(' id="cs-zeiten"','')+'</div>'}
   else h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k,cl])=>'<div class="ttile'+(cl?' '+cl:'')+'">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
   /* from noon (or lunch, if earlier) on: the tiles of the next shooting day below (times, drive, weather) */
-  try{const la=d.kind==="shoot"&&lunchAt(d),noon=+new Date(d.date+"T12:00:00"),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
+  try{const la=d.kind==="shoot"&&lunchAt(d),noon=zurichUTC(d.date,"12:00").getTime(),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
     if(nd){const ndt=new Date(nd.date+"T12:00:00"),nt=[];
       const nu2=nd.unit2&&typeof nd.unit2==="object"&&nd.unit2.hours?String(nd.unit2.hours):"";
       if(nd.hours)nt.push(['<b>'+esc(nd.hours)+'</b>',L("Drehzeit")+(nu2?" · 1st Unit":"")]);if(nu2)nt.push(['<b>'+esc(nu2)+'</b>',L("Drehzeit")+" · 2nd Unit"]);if(nd.sr&&nd.ss)nt.push(['<b>'+esc(nd.sr+"–"+nd.ss)+'</b>',L("Sonnenzeit")]);

@@ -94,7 +94,7 @@ let MYEV=[],MCNAMES=[];
    events without a time stay visible for their whole day */
 function evRecent(e){const ok=x=>/^\d\d:\d\d$/.test(x||"");if(!ok(e.t)&&!ok(e.end))return e.date>=todayISO();
   const ms=x=>zurichUTC(e.date,x).getTime(),now=Date.now();
-  let end=ok(e.end)?ms(e.end):0;if(end&&ok(e.t)&&end<=ms(e.t))end+=864e5; /* night shoot: end after midnight */
+  let end=ok(e.end)?ms(e.end):0;if(end&&ok(e.t)&&end<=ms(e.t))end=zurichUTC(isoAdd(e.date,1),e.end).getTime(); /* night shoot: end after midnight (next calendar day, also over the change of time) */
   return (ok(e.t)&&ms(e.t)>=now-5*3600e3)||(end&&end>=now)}
 /* the person chosen in «Termine für» counts only while Meine Termine is drawn – Today, the callsheet, push and the assistant are always me */
 function renderMy(){window.PICKON=true;try{return renderMy0()}finally{window.PICKON=false}}
@@ -188,7 +188,7 @@ function renderPlan(){
   if(!S.days.length)return emptyHTML("Planung");
   const PD=planDays();
   const t=todayISO();
-  if(onlyU()){const cd=S.days.find(x=>x.id===S.day);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.day=nd.id}}
+  if(onlyU()&&!String(S.day||"").startsWith("prep:")){const cd=S.days.find(x=>x.id===S.day);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.day=nd.id}}   /* a PREP day stays open */
   /* one PREP button per prep day from today on; past prep days disappear */
   /* weekly-schedule days that fall on a shooting day get no PREP button; they appear below that day's schedule */
   const shootDates=new Set(S.days.filter(d=>d.kind==="shoot").map(d=>d.date));
@@ -253,6 +253,7 @@ function renderPlan(){
       h+='<ol class="tl">'+x.items.map(itemHTML).join("")+'</ol>';
     }else if(!shown.length)h+='<div class="empty">'+L('Keine '+UNAME[u]+' Unit an diesem Tag.')+'</div>';
   }
+  window.__mctx=null;   /* the day of the rows only while they are drawn (else cast chips elsewhere showed the state of this day) */
   const wk=vok("prep")&&S.prepro.find(x=>x.date===d.date);if(wk)h+=renderPrePro(wk,true);
   return h;
 }

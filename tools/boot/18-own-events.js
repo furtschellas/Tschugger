@@ -110,6 +110,7 @@ window.gcalBtn=()=>ownMay()&&window.GCALON?'<button type="button" class="pillbtn
 async function gcDialog(){
   await gcLoad(true);await ownLoad(true);
   const taken=new Map((OWN.list||[]).filter(x=>x.gc).map(x=>[x.gc,x]));const t=todayISO();
+  if(!GC.feed){showMsg(L("Bitte nochmals versuchen."),3000);return}   /* still loading (opened during a load) */
   const items=(GC.feed.items||[]).filter(x=>x.date>=t);
   const d=mkDialog("gcdlg",null,{replace:true});
   let last="";const rows=items.map((x,i)=>{const dt=new Date(x.date+"T12:00:00");const hd=x.date!==last?'<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>':'';last=x.date;const tk=taken.get(x.uid);

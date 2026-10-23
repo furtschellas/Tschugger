@@ -50,7 +50,9 @@ function chgDetect(){
 /* changes: unread ones for 3 days; once marked as read they disappear 2 days later; the newest change always on top */
 const chgSeenGone=(at,seen)=>at<=seen&&Date.now()-seen>2*864e5;
 window.CHGCLR=window.CHGCLR||0;try{window.CHGCLR=+localStorage.getItem("appchgclr")||0}catch(_){}
-function chgList(){const t=todayISO(),now=Date.now(),seen=+(localStorage.getItem("chgseen:v1")||0),clr=+window.CHGCLR||0;return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t&&c.at>clr&&!chgSeenGone(c.at,seen)).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>b.at-a.at||String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
+/* when the changes were last looked at (blocked storage – e.g. Safari «block all cookies» – must not stop the schedule) */
+function chgSeen(){try{return +(localStorage.getItem("chgseen:v1")||0)}catch(_){return 0}}
+function chgList(){const t=todayISO(),now=Date.now(),seen=chgSeen(),clr=+window.CHGCLR||0;return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t&&c.at>clr&&!chgSeenGone(c.at,seen)).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>b.at-a.at||String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
 /* used by the schedule (itemHTML): mark a changed scene */
 /* change marks in the schedule: switched on/off with the round button «Änderungen» (S.pv.g, CSS .pv-no-g) */
 window.chgFor=(date,u,sc)=>{const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};
@@ -74,7 +76,7 @@ async function offlinePrep(force){
   let n=0,fail=0;
   try{
     await getDataKey().catch(()=>{});
-    for(let i=0;i<list.length;i+=6)await Promise.all(list.slice(i,i+6).map(f=>fetch(blkUrl(f),{cache:"force-cache"}).then(r=>{if(r.ok)n++;else fail++}).catch(()=>{fail++})));
+    for(let i=0;i<list.length;i+=6)await Promise.all(list.slice(i,i+6).map(f=>fetch(blkUrl(f),{cache:"force-cache",signal:(typeof AbortSignal!=="undefined"&&AbortSignal.timeout)?AbortSignal.timeout(30e3):undefined}).then(r=>{if(r.ok)n++;else fail++}).catch(()=>{fail++})));
     try{if(window.loadScriptData)await window.loadScriptData()}catch(_){}
     try{localStorage.setItem("offline:v1",JSON.stringify({v:2,at:Date.now(),sig,n,fail,fp:arr(S.meta.floorplans).filter(f=>arr(f.pg).length).length}))}catch(_){}
   }finally{OFF.busy=false}
