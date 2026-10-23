@@ -211,7 +211,7 @@ function roleChanged(prev){if(!prev||!ME||isOwner())return;   /* the owner keeps
   let seen="";try{seen=localStorage.getItem("rc")||""}catch(_){}if(seen===sig)return;
   store("rc",sig);savePrefs();setTimeout(()=>showRoleChange(now,add,rem),2500)}
 function showRoleChange(role,add,rem){if(document.getElementById("rolechg"))return;
-  const lbl=k=>{const x=PERMS.find(p=>p[0]===k);return x?L(x[1]):k};
+  const lbl=k=>{const x=PERMS.find(p=>p[0]===k);return x?permLbl(k,x[1]):k};
   const rn=role==="owner"?L("Owner"):role==="admin"?L("Admin"):role?((typeof OWN!=="undefined"&&(OWN.roles||[]).find(r=>r.id===role))||{}).name||role.charAt(0).toUpperCase()+role.slice(1):L("Keine Rolle");
   const d=mkDialog("rolechg");
   d.innerHTML='<div class="a2box wlbox"><h3>'+esc(L("Deine Rechte wurden geändert"))+'</h3><p>'+esc(L("Deine Rolle"))+': <b>'+esc(rn)+'</b></p>'+

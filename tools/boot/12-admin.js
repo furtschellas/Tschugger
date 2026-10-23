@@ -204,7 +204,7 @@ function reqSec(){
       (can("users.requests")?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
 }
 const permBoxes=sel=>'<div class="perms">'+[...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp"><h5>'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const lock=!isAdmin()&&!MYPERMS.includes(k); /* role editors can only give permissions they have themselves */
-    return '<label class="ck'+(lock?' plock':'')+'"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+(lock?' disabled':'')+'> '+L(t)+'</label>'}).join("")+'</div>').join("")+'</div>';
+    return '<label class="ck'+(lock?' plock':'')+'"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+(lock?' disabled':'')+'> '+esc(permLbl(k,t))+'</label>'}).join("")+'</div>').join("")+'</div>';
 /* roles in order: «Hierarchie» (most permissions first) or alphabetical – the sort button in «Rollen» switches, kept on this device */
 let ROLESORT="h";try{ROLESORT=localStorage.getItem("rolesort")==="a"?"a":"h"}catch(_){}
 function rolesSorted(){const nm=r=>String(r.name||r.id||"");return (ADM.roles||[]).slice().sort((a,b)=>ROLESORT==="a"?nm(a).localeCompare(nm(b),LANG):(arr(b.perms).length-arr(a.perms).length)||nm(a).localeCompare(nm(b),LANG))}
@@ -249,7 +249,8 @@ function permAccessSec(){
         .concat(rolesSorted().map(r=>[r.id,r.name||r.id,arr(r.perms).includes(k),canRoleEdit()&&(isAdmin()||(r.id!==MYROLE&&MYPERMS.includes(k)))]));
       const nr=noRoleOK(k);if(nr)rl.push(['',L("Keine Rolle"),!!(window.PUBV&&window.PUBV[nr]),false]);
       const edit=ADM.paccEdit===k,canEd=rl.some(x=>x[3]);
-      return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]||edit?' open':'')+'><summary><span>'+esc(L(t))+'</span>'+(canEd?'<button type="button" class="paccpen'+(edit?' on':'')+'" data-paccedit="'+k+'" '+ariaTip(L("Rollen ändern"))+'><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'')+'<b class="pacn">'+w.length+'</b></summary>'+
+      return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]||edit?' open':'')+'><summary><span>'+esc(permLbl(k,t))+'</span>'+(canEd?'<button type="button" class="paccpen'+(edit?' on':'')+'" data-paccedit="'+k+'" '+ariaTip(L("Rollen ändern"))+'><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'')+'<b class="pacn">'+w.length+'</b></summary>'+
+        (edit&&can("settings")?'<label class="arl paccname">'+esc(L("Name der Option"))+'<input data-paccname="'+k+'" maxlength="60" value="'+esc(permLbl(k,t))+'" placeholder="'+esc(L(t))+'"></label>':'')+
         (edit?'<div class="paccr">'+rl.map(([id,n,on,ed])=>'<label class="ck paccrole'+(ed?'':' plock')+'"><input type="checkbox" data-pacc="'+esc(id)+'" data-perm="'+k+'"'+(on?' checked':'')+(ed?'':' disabled')+'> '+esc(n)+'</label>').join("")+'</div>'
           :'<div class="paccr">'+(rl.filter(x=>x[2]).map(x=>'<span class="ust role">'+esc(x[1])+'</span>').join("")||'<span class="ghint">'+esc(L("Keine Rolle"))+'</span>')+'</div>')+
         '<details class="paccp" data-sec="paccp-'+k+'"'+(SECS["paccp-"+k]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+w.length+')</summary>'+
@@ -667,3 +668,9 @@ function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 document.addEventListener("change",async e=>{const sl=e.target.closest("select[data-rpadd]");if(!sl||!sl.value)return;e.stopPropagation();const id=sl.dataset.rpadd;SECS["rppl-"+id]=true;await setUserRole(sl.value,id,sl)},true);
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-rpout]");if(!b)return;e.preventDefault();const em=b.dataset.rpout;
   if(!confirmSafe(L("{n} aus der Rolle nehmen?").replace("{n}",b.closest("li").querySelector("span").textContent)))return;await setUserRole(em,"",null)});
+
+/* «Wer hat welchen Zugriff?» → Stift: the name of the option (empty = the standard name) */
+document.addEventListener("change",async e=>{const i=e.target.closest&&e.target.closest("input[data-paccname]");if(!i||!can("settings"))return;const k=i.dataset.paccname,x=PERMS.find(p=>p[0]===k);if(!x)return;
+  let v=String(i.value||"").trim().slice(0,60);if(v===L(x[1]))v="";
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{permNames:{[k]:v}},{merge:true});window.PERMNAMES=Object.assign({},window.PERMNAMES,{[k]:v});try{localStorage.setItem("apppermnames",JSON.stringify(window.PERMNAMES))}catch(_){}
+    showMsg(L("Gespeichert."),2000);render()}catch(err){showMsg(admErr(err),6000)}});

@@ -55,7 +55,6 @@ window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function
 const cqCanRide=()=>{try{return canPerm("rides.confirm")||canPerm("rides.manage")}catch(_){return false}};
 const cqMan=()=>{try{return typeof canPerm==="function"&&canPerm("cast.manual")}catch(_){return false}};
 const cqCan=k=>k==="u"?cqCanRide()||cqMan():k==="w"||k==="m"?cmCan(k):cmCan(k)||cqMan();
-window.cqSee=()=>true;   /* everybody who sees the callsheet sees the state of the cast */
 const CQTIP3=()=>[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")];
 const CQCAR='<svg class="cqcar" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h11l3 5h2v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M9.5 17h5M5 12h14"/></svg>';
 const cqSpan=(st,t,tip,x)=>'<span class="cql cq'+st+(x?" "+x:"")+' cqro" title="'+esc(tip)+'">'+esc(t)+'</span>';
@@ -104,12 +103,12 @@ const CQRULE={
     if(!open)return m.bs===1||m.bs===2?'<span class="cql cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>':null;
     const tip=cur?L("Erledigt – antippen = zurücksetzen"):L("Offen – antippen = erledigt");if(!cqCan("o"))return cqSpan(cur,t,tip);
     return cqBtn(cur,"o",cmId(m.d,"o",r,hm(t)),m.d,t,tip,{nx:cur?0:2,lk:m.bid,ls:cur?(m.baseDone?2:0):3})}};
-function cqField(f,c,r){if(!c||!c._date||!r||!window.cqSee())return null;const v=r[CQF[f]];if(!hm(v))return null;let h=null;try{h=CQRULE[f](cqModel(c,r),r,String(v))}catch(_){}if(h&&f==="o")h=h.replace('class="cql ','class="cql cqon ');return h?{h}:null}   /* cqon: On set stays coloured when the row is done */
+function cqField(f,c,r){if(!c||!c._date||!r)return null;const v=r[CQF[f]];if(!hm(v))return null;let h=null;try{h=CQRULE[f](cqModel(c,r),r,String(v))}catch(_){}if(h&&f==="o")h=h.replace('class="cql ','class="cql cqon ');return h?{h}:null}   /* cqon: On set stays coloured when the row is done */
 window.cqPickup=(c,r)=>cqField("p",c,r);window.cqCall=(c,r)=>cqField("c",c,r);window.cqBase=(c,r)=>cqField("b",c,r);window.cqOnset=(c,r)=>cqField("o",c,r);
 /* Kostüm / Maske in the callsheet (csMk): done once Base or On set is done */
 window.cqRowDone=(c,r)=>{if(!c||!c._date||!r)return false;const m=cqModel(c,r);return m.onDone||m.baseDone};
 /* every step done (On set done): the cast number is pink */
-window.cqAll=(c,r)=>{if(!c||!c._date||!r||!window.cqSee())return false;return cqModel(c,r).onDone};
+window.cqAll=(c,r)=>{if(!c||!c._date||!r)return false;return cqModel(c,r).onDone};
 /* tap: own state (data-cqnx, else open → running → done), and the linked ride in parallel (data-cqlk = ride, data-cqls = its step) */
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cqk]");if(!b)return;e.preventDefault();e.stopPropagation();
   const k=b.dataset.cqk,id=b.dataset.cqid;if(!cqCan(k))return;b.disabled=true;

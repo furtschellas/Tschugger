@@ -590,6 +590,9 @@ async def owner_tests(p, port):
           const dl=document.getElementById('rededlg');const out={t1:r.t1,pax:r.passengers,same:rideId(t,r)===id,mark:cell.includes('rchg'),dlg:!!dl&&dl.querySelector('[name=t1]').value==='07:45'};
           if(dl)dl.remove();document.getElementById('redtest').remove();S.dispos=keep.d;window.RIDEEDIT=keep.e;window.REDVER=keep.v+1;window.canPerm=keep.cp;return out})()""")
         check("Fahrten Manager: Änderung gilt im Callsheet (markiert), Pop-up zum Ändern", re_ in (None, {"t1": "07:45", "pax": "Anna Muster, Lena Test", "same": True, "mark": True, "dlg": True}), re_)
+        pn = await E("""(()=>{if(typeof permLbl!=='function')return null;const k=window.PERMNAMES;window.PERMNAMES={'view.plan':'Plan ansehen'};const a=permLbl('view.plan','Drehplan sehen'),b=permLbl('view.prep','Prep sehen');
+          window.PERMNAMES={'view.plan':''};const c=permLbl('view.plan','Drehplan sehen');window.PERMNAMES=k;return [a,b===L('Prep sehen'),c===L('Drehplan sehen')]})()""")
+        check("Rollen: Name einer Option änderbar (leer = Standardname)", pn in (None, ["Plan ansehen", True, True]), pn)
         # --- scene quittance: setup/lunch/wrap keys, own entries per unit, labels, WhatsApp texts without symbols ---
         sk = await E("""(()=>{if(typeof scRowKeys!=='function'||typeof scShareText!=='function')return null;const keys=scRowKeys([{n:'Setup'},{sc:'1'},{n:'Lunch'},{n:'Set up B'},{n:'Wrap'}],x=>x.n).join(',');
           const lab=[scLabel('setup'),scLabel('setup2'),scLabel('lunch_u2'),scBase('wrap_u3')].join(',');const t=new Date('2030-05-06T09:00').getTime(),dd='2030-05-06';
