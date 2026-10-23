@@ -80,7 +80,10 @@ function csSums(c,x){  const SU={};{const sm=a=>{a=a.filter(x=>x&&x[1]!==""&&x[1
      const nos=csA(c.cast).map(r=>String(r.no||"").trim()).filter(Boolean).sort((a,b)=>(parseInt(a,10)||0)-(parseInt(b,10)||0)||a.localeCompare(b));
      SU.cast=nos.length?'<span class="cscount csnos">'+nos.map(n=>'<span class="csno'+(stg[n]===3?' cqnon':stg[n]===0?' cqnwait':' cqnbase')+'">'+esc(n)+'</span>').join("")+'</span>':''}
     SU.travel=sm([[L("Personen"),csA(c.travel).filter(r=>!r.date||!c._date||r.date===c._date).length]]);
-    SU.extras=sm([[L("Komparsen"),csA(c.extras).reduce((a,r)=>a+(parseInt(r.count,10)||0),0),"drop"],[L("Gruppen"),csA(c.extras).length]]);
+    /* extras: how many are On set already – people (count of the groups ticked On set) and groups, e.g. «On set 3/13 · Gruppen 1/4» */
+    {const ex=csA(c.extras),dt=(x&&x.date)||c._date,on=r=>{try{return !!(dt&&window.xqAll&&window.xqAll(Object.assign({},c,{_date:dt}),r))}catch(_){return false}};
+     const tot=ex.reduce((a,r)=>a+(parseInt(r.count,10)||0),0),pOn=ex.filter(on).reduce((a,r)=>a+(parseInt(r.count,10)||0),0),gOn=ex.filter(on).length;
+     SU.extras=sm([[L("On set"),tot?pOn+"/"+tot:""],[L("Gruppen"),ex.length?gOn+"/"+ex.length:""]])}
     SU.veh=sm([[L("Fahrzeuge"),csA(c.vehicles).length]]);
     SU.trans=sm([[L("Fahrten"),csA(c.transport).length],[L("Fahrzeuge"),uniq(csA(c.transport).map(r=>r.vehicle)),"drop"],[L("Fahrer"),uniq(csA(c.transport).map(r=>r.driver)),"drop"]]);
     SU.ctrans=sm([[L("Fahrten"),csA(c.crewTransport).length],[L("Fahrzeuge"),uniq(csA(c.crewTransport).map(r=>r.vehicle)),"drop"]]);

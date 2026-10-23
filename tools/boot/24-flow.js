@@ -225,11 +225,14 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   xqPick(b).catch(err=>showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000))},true);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const d=document.getElementById("xqpick");if(d){e.preventDefault();d.remove()}}});
 /* ---------- 5. Meine Termine: Kostüm / Maske as appointments (for the person named in the column head and for the actor) ---------- */
-window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function"?csMe():null}catch(_){}if(!cm)return out;
+/* the app role is «Kostüm» (Garderobe, Costume …): every Kostüm appointment of the cast – the callsheet names nobody in the Kostüm column */
+const cmRoleW=()=>{try{const id=typeof MYROLE!=="undefined"?MYROLE||"":"",nm=window.MYROLENAME||((typeof ADM!=="undefined"&&(ADM.roles||[]).find(x=>x.id===id))||{}).name||"";
+  return /kost|garder|costum|wardrob/.test(fold(id+" "+nm))}catch(_){return false}};
+window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function"?csMe():null}catch(_){}const rw=cmRoleW();if(!cm&&!rw)return out;
   for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,d=arr(S.days).find(x=>x.date===dp.date)||{};
     let where="",map="";try{const ls=typeof csLocs==="function"?csLocs(c):[];const b=ls.find(l=>arr(l.kinds).some(k=>/^W \/ H \/ M/.test(k)))||ls.find(l=>arr(l.kinds).includes("Base"));if(b){where=b.name||"";map=b.map||""}}catch(_){}
     for(const r of arr(c.cast))for(const k of ["w","m"]){const v=k==="w"?r.wardrobe:r.makeup;
-      for(const p of cmParse(v,c)){const mine=p.who&&cm.hit(p.who),actor=r.actor&&cm.hit(r.actor);if(!mine&&!actor)continue;
+      for(const p of cmParse(v,c)){const mine=(p.who&&cm&&cm.hit(p.who))||(k==="w"&&rw),actor=r.actor&&cm&&cm.hit(r.actor);if(!mine&&!actor)continue;
         const oth=["w","m"].flatMap(k2=>cmParse(k2==="w"?r.wardrobe:r.makeup,c).map(q=>cmId(dp.date,k2,r,q.t)));   /* the other Kostüm / Maske of this actor */
         out.push({cmo:oth,date:dp.date,t:p.t,end:p.end,n:L(CMK[k])+": "+(mine?[r.role,r.actor&&"("+r.actor+")"].filter(Boolean).join(" "):[r.role,p.who&&L("bei")+" "+p.who].filter(Boolean).join(" · ")),
           where,map,src:"Callsheet",go:d.id||dp.date,cm:cmId(dp.date,k,r,p.t),cmk:k})}}}
