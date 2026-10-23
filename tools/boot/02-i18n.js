@@ -1318,6 +1318,7 @@ Object.assign(I18N,{
  "Fahrer vor Ort – antippen = Fahrzeug fährt los":{fr:"Chauffeur sur place – toucher = le véhicule part",it:"Autista sul posto – tocca = il veicolo parte",en:"Driver on site – tap = vehicle leaves"},
  "Fahrer wartet seit":{fr:"Le chauffeur attend depuis",it:"L'autista aspetta da",en:"Driver waiting for"},
  "Wartet auf die Abholung seit":{fr:"Attend d'être pris en charge depuis",it:"Aspetta di essere prelevato da",en:"Waiting for pickup for"},
+ "Name der Option":{fr:"Nom de l'option",it:"Nome dell'opzione",en:"Name of the option"},
  "Restzeit":{fr:"Temps restant",it:"Tempo rimanente",en:"Time left"},
  "Änderung aufgehoben.":{fr:"Changement annulé.",it:"Modifica annullata.",en:"Change removed.",hi:"बदलाव हटाया गया।"},
  "Änderung wieder angewendet.":{fr:"Changement réappliqué.",it:"Modifica riapplicata.",en:"Change applied again.",hi:"बदलाव फिर लागू।"},

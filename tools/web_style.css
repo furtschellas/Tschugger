@@ -985,3 +985,4 @@ html body #view :is(tr,.cs-card):has(.cqall) :is(.cql:not(.cqon),.mkd,.mki,.mkt,
 html body #view .cs-card:has(.ridest.rs1:not(.rsh)),html body #view .mci:has(:is(.rideack,.ridek).rk1:not(.rkh)){outline:1.5px solid var(--accent);outline-offset:-1px;border-radius:10px}
 html body #view .cs-tbl tr:has(.ridest.rs1:not(.rsh))>td{box-shadow:inset 0 1.5px 0 var(--accent),inset 0 -1.5px 0 var(--accent)}
 html body #view .cs-card:has(.ridest.rs2),html body #view .cs-tbl tr:has(.ridest.rs2),html body #view .mci:has(:is(.rideack,.ridek).rk2){opacity:.45;filter:grayscale(1)}
+html body .paccname{margin:6px 0 8px}
