@@ -31,7 +31,8 @@ function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m
 /* a ride of a callsheet: the same id for everyone (date, times, places, vehicle – no names) */
 function rideId(date,r){if(r&&r._rid)return r._rid;const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 /* map link of a ride's start or destination, from the callsheet: a link in the text of the ride, else the place of the callsheet with that
-   name, code (L1, Set 1, Base, P1 …) or kind (Base, Lunch …) – its map link, else its address; else the motif list; only then (destination) a Google Maps search */
+   name, code (L1, Set 1, Base, P1 …) or kind (Base, Lunch …) – its map link, else its address; else Motivliste, location list (Infos) and the internal
+   Google map; links only from these sources (no free Google search by name – a wrong place is worse than none) */
 function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https?:\/\/\S+/)||[])[0];if(u)return u;const txt=raw.replace(/https?:\/\/\S+/g,"").trim(),n=fold(txt);if(!n)return "";
   const words=new Set(n.split(/[^a-z0-9]+/).filter(Boolean)),isA=t=>/\d{4}\s+\p{L}/u.test(String(t||""));
   const ls=typeof csLocs==="function"&&dp&&dp.cs?csLocs(dp.cs):arr(dp&&dp.locations);
@@ -43,12 +44,14 @@ function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https?:\/\/\
   if(l){if(/^https:\/\//.test(String(l.map||"")))return l.map;const ad=[l.name].concat(arr(l.notes)).find(isA);if(ad)return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(ad)}
   /* lines of the sets («Tech Parking» …) and the location list, with the names as on the callsheet */
   try{const p=typeof csPlace==="function"&&dp&&dp.cs?csPlace(dp.cs,txt):null;if(p&&p.map)return p.map;if(p&&p.addr)return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.addr)}catch(_){}
-  const m=arr(S.locs).find(x=>{const k=fold(String(x&&x.name||""));return k&&(k===n||k.includes(n)||n.includes(k))&&/^https:\/\//.test(String(x.map||""))});if(m)return m.map;
-  /* Google search made more precise with the callsheet: the place (postcode and town) most of its addresses are in, e.g. «Hotel Elite, 3930 Visp» */
-  if(always&&!isA(txt)){const cnt=new Map();const scan=t=>{for(const m of String(t||"").matchAll(/\b(\d{4})\s+(\p{L}[\p{L}-]+(?:\s+\p{L}[\p{L}-]+)?)/gu)){const k=m[1]+" "+m[2];cnt.set(k,(cnt.get(k)||0)+1)}};
-    for(const x of ls){scan(x.name);arr(x.notes).forEach(scan);arr(x.items).forEach(i=>{scan(i&&i.text)})}
-    const reg=[...cnt.entries()].sort((a,b)=>b[1]-a[1])[0];if(reg&&!n.includes(fold(reg[0].split(" ").slice(1).join(" "))))return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(txt+", "+reg[0])}
-  return always?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(txt):isA(txt)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(txt):""}
+  /* then only the production's own sources (no free Google search): Motivliste, location list / Infos, the internal Google map (My Maps) */
+  const same=x=>{const k=fold(String(x||"")).trim();return k.length>2&&(k===n||k.includes(n)||n.includes(k))};
+  const q=a=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(a);
+  for(const x of arr(S.locs))if(x&&(same(x.name)||same(x.venue))){if(/^https:\/\//.test(String(x.map||"")))return x.map;const ad=[x.venue,x.address].filter(Boolean).join(", ");if(isA(ad))return q(ad)}
+  for(const g of arr(S.places))for(const x of arr(g&&g.items))if(x&&same(x.name)){if(/^https:\/\//.test(String(x.map||"")))return x.map;if(x.address)return q(x.name+", "+x.address)}
+  try{for(const f of arr(S.gmap&&S.gmap.f))if(f&&same(f.n)&&Array.isArray(f.x)&&Array.isArray(f.x[0])&&isFinite(f.x[0][0])&&isFinite(f.x[0][1]))return q(f.x[0][0]+","+f.x[0][1])}catch(_){}
+  /* an address written in the callsheet itself */
+  return isA(txt)?q(txt):""}
 function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   const out=[],people=mailPeople(),t=todayISO();
   for(const d of (vok("prep")?S.prepro:[])){if(d.date<t)continue;
