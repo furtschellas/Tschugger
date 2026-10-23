@@ -79,4 +79,10 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   const btn={dataset:ds,disabled:false,closest:()=>null};for(const f of H)await f({target:{closest:q=>q.includes("[data-cqk]")?btn:null},preventDefault(){},stopPropagation(){}});await new Promise(r=>setTimeout(r,20));
   const got=W2.sort().join(" "),want=[mid+"=2",wid+"=2"].sort().join(" ");out.push({n:"Base angetippt während Maske läuft → Kostüm und Maske abgeschlossen",ok:got===want,got,want});
   t("danach: Base aktiv (wartet auf Abholung)",W,{[wid]:2,[mid]:2},R1,"cq2 cq2 cq1+tap cq0+tap")})();
+await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:async(i,v)=>{W2.push(i+"="+v.s)},deleteDoc:async i=>{W2.push(i+"=0")}}});
+  const oid=id(R1,"o","08:00");set(W,{[oid]:2});C.RIDEACK[oid].at=Date.UTC(2031,2,2,8,7);const h=(T.o(cs,R1)||{}).h||"";const ds={};for(const x of h.matchAll(/data-([a-z]+)="([^"]*)"/g))ds[x[1]]=x[2];
+  const btn={dataset:ds,disabled:false,closest:()=>null};for(const f of H)await f({target:{closest:q=>q.includes("[data-cqk]")?btn:null},preventDefault(){},stopPropagation(){}});await new Promise(r=>setTimeout(r,20));
+  const got=W2.join(" ");out.push({n:"On set erledigt (Quittierzeit angezeigt) lässt sich zurücksetzen",ok:got.includes(oid+"=0"),got,want:oid+"=0 …"})})();
+{const R3=Object.assign({},R1,{no:"7",onset:"on set"});t("On set ohne Zeit («on set») ist antippbar",W,{[id(R3,"w","07:05")]:2,[id(R3,"m","07:20")]:2},R3,"cq2 cq2 cq1+tap cq0+tap");
+  t("On set ohne Zeit erledigt",W,{[id(R3,"o","set")]:2},R3,"cq2 cq2 cq2 cq2+tap rowdone pink")}
 for(const x of out)console.log(JSON.stringify(x));

@@ -98,12 +98,14 @@ const cqWho=r=>{const k=fold(String(r&&r.actor||"")).replace(/[^a-z ]/g,"").trim
 const cqRides=(c,r)=>{if(!r||!r.actor||!c)return [];const has=cqWho(r);return arr(c.transport).filter(x=>has(x.passengers)).concat(arr(c.crewTransport).filter(x=>has(x.people)))};
 function cqRide(c,r){const rs=cqRides(c,r).filter(x=>!/base/i.test(String(x.from||"")));if(!rs.length)return null;const t=hm(r.pickup);return rs.find(x=>hm(x.t1)===t)||rs[0]}
 const cqBaseRide=(c,r)=>cqRides(c,r).find(x=>/base/i.test(String(x.from||"")))||null;
+/* On set: its key is the planned time – or «set» when the callsheet has a word there instead of a time («on set») */
+const cqOk=r=>hm(r&&r.onset)||(String(r&&r.onset||"").trim()?"set":"");
 /* everything one row needs, read once (ride steps 0 open · 1 on site · 2 on the way · 3 done) */
 function cqModel(c,r){const d=c._date,st=(k,t)=>hm(t)?cmSt(cmId(d,k,r,hm(t))):0,rst=id=>id?rideStep(id):0;let n=0,all=true,arrived=false,running=false,wmAt=0;const wmIds=[];
   for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c)){n++;const id=cmId(d,k,r,p.t),s=cmSt(id);wmIds.push(id);if(s>0)arrived=true;if(s===1)running=true;if(s!==2)all=false;else wmAt=Math.max(wmAt,flowAt(id))}
   const ok=typeof rideId==="function",ride=ok?cqRide(c,r):null,rid=ride?rideId(d,ride):"",rs=rst(rid),br=ok?cqBaseRide(c,r):null,bid=br?rideId(d,br):"",bs=rst(bid);
   return {d,st,wmIds,wmDone:n>0&&all,wmAt,arrived,running,ride,rid,rs,bid,bs,pu:rid?rs:st("u",r.pickup),puAt:rid?flowAt(rid):flowAt(cmId(d,"u",r,hm(r.pickup))),puVAt:rid?flowAt("v"+rid):0,
-    onDone:!!hm(r.onset)&&(st("o",r.onset)>0||bs===3),baseDone:st("b",r.base)===2,callAct:st("c",r.call)>0||rs===3}}
+    onDone:!!cqOk(r)&&(cmSt(cmId(d,"o",r,cqOk(r)))>0||bs===3),baseDone:st("b",r.base)===2,callAct:st("c",r.call)>0||rs===3}}
 /* minutes behind a time: counting up (waiting since …) or down (from the start of a planned duration) */
 const cqLeft=(at,min)=>Math.max(0,Math.ceil(min-(Date.now()-at)/60000));
 const cqDown=(at,min,tip)=>' <span class="mkd cqcd" data-cqat="'+at+'" data-cqmin="'+min+'" title="'+esc(tip)+'">'+cqLeft(at,min)+'′</span>';
@@ -134,13 +136,13 @@ const CQRULE={
     return cqBtn(cur,"b",cmId(m.d,"b",r,hm(t)),m.d,t,tip,{nx:cur===2?0:2,lk:m.bid,ls:cur===2?0:2})+car},
   /* On set: one tap = done – the ride Base → set is done, every step is done (cqon: stays coloured when the row is done) */
   /* done: the time when On set was ticked (or the ride Base → set was done) instead of the planned one */
-  o(m,r,t){const cur=m.onDone?2:0,open=m.onDone||m.wmDone||m.baseDone||cqMan();
-    if(cur){const at=flowAt(cmId(m.d,"o",r,hm(t)))||(m.bs===3?flowAt(m.bid):0);if(at)try{t=new Date(at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"})}catch(_){}}
+  o(m,r,t){const cur=m.onDone?2:0,open=m.onDone||m.wmDone||m.baseDone||cqMan(),oid=cmId(m.d,"o",r,cqOk(r));   /* the id from the plan – the shown time may be the tick time */
+    if(cur){const at=flowAt(oid)||(m.bs===3?flowAt(m.bid):0);if(at)try{t=new Date(at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"})}catch(_){}}
     if(!open)return m.bs===1||m.bs===2?'<span class="cql cqon cqf cqro" title="'+esc(L("Fahrt zum Set angenommen"))+'">'+esc(t)+'</span>':null;
     const tip=cur?L("Erledigt – antippen = zurücksetzen")+" · "+L("geplant")+" "+r.onset:L("Offen – antippen = erledigt");if(!cqCan("o"))return cqSpan(cur,t,tip).replace('class="cql ','class="cql cqon ');
-    return cqBtn(cur,"o",cmId(m.d,"o",r,hm(t)),m.d,t,tip,{nx:cur?0:2,lk:m.bid,ls:cur?(m.baseDone?2:0):3}).replace('class="cql ','class="cql cqon ')}};
+    return cqBtn(cur,"o",oid,m.d,t,tip,{nx:cur?0:2,lk:m.bid,ls:cur?(m.baseDone?2:0):3}).replace('class="cql ','class="cql cqon ')}};
 const CQF={p:"pickup",c:"call",b:"base",o:"onset"};
-function cqField(f,c,r){if(!c||!c._date||!r)return null;const v=r[CQF[f]];if(!hm(v))return null;let h=null;try{h=CQRULE[f](cqModel(c,r),r,String(v))}catch(_){}return h?{h}:null}
+function cqField(f,c,r){if(!c||!c._date||!r)return null;const v=r[CQF[f]];if(f==="o"?!cqOk(r):!hm(v))return null;let h=null;try{h=CQRULE[f](cqModel(c,r),r,String(v))}catch(_){}return h?{h}:null}
 window.cqPickup=(c,r)=>cqField("p",c,r);window.cqCall=(c,r)=>cqField("c",c,r);window.cqBase=(c,r)=>cqField("b",c,r);window.cqOnset=(c,r)=>cqField("o",c,r);
 /* Kostüm / Maske in the callsheet (csMk): done once Base or On set is done */
 window.cqRowDone=(c,r)=>{if(!c||!c._date||!r)return false;const m=cqModel(c,r);return m.onDone||m.baseDone};

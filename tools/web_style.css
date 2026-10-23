@@ -1009,3 +1009,15 @@ html body #view .csno.cqnon{color:var(--accent)!important;border-color:var(--acc
 html body #view .csno.cqnwait{color:var(--muted)!important;opacity:.6}
 html body #view .csno.cqnbase{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
 html body #view .csno.cqnon{border-width:1.5px!important}
+/* cast tiles on the phone: labels of the same width – the times stand one below the other in each of the two columns; the car left of the time */
+@media (max-width:760px){
+html body #view .csview #cs-cast .cs-card .cs-kv{display:grid;grid-template-columns:3.9em minmax(0,1fr);column-gap:6px;align-items:baseline}
+html body #view .csview #cs-cast .cs-card .cs-kv .k{min-width:0}
+html body #view .csview #cs-cast .cs-card .cs-kv .v{display:flex;align-items:center;flex-wrap:wrap;gap:0 4px;min-width:0}
+html body #view .csview #cs-cast .cs-card .cs-kv .v .cqcar{order:-1;margin:0}
+html body #view .csview #cs-cast .cs-card .cs-kv .v>.mkw{display:inline-flex;align-items:center;gap:4px}
+}
+@media (max-width:760px){
+html body #view .csview #cs-cast .cs-card .cs-kv .v :is(.cql,.mkd,.mki,.mkt){white-space:nowrap;overflow-wrap:normal;word-break:keep-all}
+html body #view .csview #cs-cast .cs-card .cs-kv .v>.mkw{white-space:nowrap}
+}
