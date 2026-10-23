@@ -166,6 +166,9 @@ window.cqPickup=(c,r)=>cqField("p",c,r);window.cqCall=(c,r)=>cqField("c",c,r);wi
 window.cqRowDone=(c,r)=>{if(!cqRowOk(c,r))return false;const m=cqModel(c,r);return m.onDone||m.baseDone};
 /* how far a cast row is: 3 On set · 2 waiting at the Base for the pickup (Base active) · 1 called (Call or later) · 0 not called yet */
 window.cqStage=(c,r)=>{if(!cqRowOk(c,r))return 0;const m=cqModel(c,r);return m.onDone?3:m.wmDone&&!m.baseDone&&hm(r.base)?2:m.callAct||m.arrived||m.baseDone||m.wmDone?1:0};
+/* for the cast chips of the shooting order and the schedule (display only):
+   0 nothing yet · 1 P/UP (driver on site / on the way) · 2 Call, Kostüm or Maske ticked or running · 3 Base done or On set */
+window.cqLook=(c,r)=>{if(!cqRowOk(c,r))return 0;const m=cqModel(c,r);return m.onDone||m.baseDone?3:m.callAct||m.arrived||m.wmDone?2:m.pu>0?1:0};
 /* every step done (On set done): the cast number is pink */
 window.cqAll=(c,r)=>cqRowOk(c,r)&&cqModel(c,r).onDone;
 /* Kostüm / Maske running: the duration counts down from the start (back to open = the original duration again) */

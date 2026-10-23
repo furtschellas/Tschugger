@@ -99,7 +99,10 @@ if(!location.hash&&!window.__REL)S.tab=startTab();
 function castChips(ids){
   const m=(S.meta&&S.meta.cast)||{};
   if(!ids||!ids.length)return"";
-  return '<div class="cast">'+ids.map(i=>'<span><i>'+esc(i)+'</i>'+esc(m[i]||"")+'</span>').join("")+'</div>';
+  /* on a shooting day: where each actor is (display only) – P/UP running, Call/Kostüm/Maske, Base done / On set */
+  let lk=()=>0;try{const d=window.__mctx&&window.__mctx.date,dp=d&&window.cqLook&&arr(S.dispos).find(x=>x&&x.date===d&&x.cs),c=dp&&dp.cs;
+    if(c){if(!c._date)c._date=d;const rows=arr(c.cast);lk=i=>{const r=rows.find(x=>String(x.no||"").trim()===String(i).trim());return r?window.cqLook(c,r):0}}}catch(_){}
+  return '<div class="cast">'+ids.map(i=>{const s=lk(i);return '<span'+(s?' class="cqlk'+s+'"':'')+'><i>'+esc(i)+'</i>'+esc(m[i]||"")+'</span>'}).join("")+'</div>';
 }
 /* schedule view options (scene description, address, cast) – all on by default, remembered per device */
 try{const x=JSON.parse(localStorage.getItem("uf")||"null");if(x&&typeof x==="object")for(const k of ["1","2","3"])if(typeof x[k]==="boolean")S.uf[k]=x[k]}catch(_){}

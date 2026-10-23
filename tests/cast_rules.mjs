@@ -8,7 +8,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=>{PERMS=p};`;
 const H=[];const C={console,document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
-vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8")+";globalThis.T={stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep}",C);
+vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8")+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep}",C);
 const T=C.T,D="2031-03-02";
 const cs={_date:D,calls:[{name:"Anna Probe"},{name:"Mara Test"}],crewTransport:[],
   transport:[{vehicle:"Van",passengers:"Max Muster",from:"Hotel",t1:"06:40",to:"Base",t2:"06:55"},{vehicle:"Van",passengers:"Max Muster",from:"Base",t1:"07:50",to:"Set",t2:"07:58"}]};
@@ -85,4 +85,6 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   const got=W2.join(" ");out.push({n:"On set erledigt (Quittierzeit angezeigt) lässt sich zurücksetzen",ok:got.includes(oid+"=0"),got,want:oid+"=0 …"})})();
 {const R3=Object.assign({},R1,{no:"7",onset:"on set"});t("On set ohne Zeit («on set») ist antippbar",W,{[id(R3,"w","07:05")]:2,[id(R3,"m","07:20")]:2},R3,"cq2 cq2 cq1+tap cq0+tap");
   t("On set ohne Zeit erledigt",W,{[id(R3,"o","set")]:2},R3,"cq2 cq2 cq2 cq2+tap rowdone pink")}
+{const g=ack=>{set(W,ack);return T.look(cs,R1)};const got=[g({}),g(ride(pr,1)),g({[id(R1,"c","07:00")]:1}),g({[id(R1,"m","07:20")]:1}),g({[id(R1,"b","07:45")]:2}),g({[id(R1,"o","08:00")]:2})].join(",");
+  out.push({n:"Cast in Drehfolge/Drehplan: nichts 0, P/UP 1, Call 2, Maske 2, Base 3, On set 3",ok:got==="0,1,2,2,3,3",got,want:"0,1,2,2,3,3"})}
 for(const x of out)console.log(JSON.stringify(x));
