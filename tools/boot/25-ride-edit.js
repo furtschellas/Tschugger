@@ -22,7 +22,7 @@ window.rideEditApply=()=>{for(const dp of (typeof S!=="undefined"&&S.dispos)||[]
 /* find a ride by its id */
 function rideFind(id){for(const dp of S.dispos||[]){const c=dp&&dp.cs;if(!c)continue;for(const k of ["transport","crewTransport"])for(const r of (c[k]||[]))if(r&&r._rid===id)return {dp,c,k,r}}return null}
 /* the popup: status (with «Fahrten quittieren»), times, route, vehicle, driver, passengers */
-function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;const {dp,c,k,r}=f,o=r._orig||r,crew=k==="crewTransport",st=window.rideState?rideState(id):0,canAck=canPerm("rides.confirm")||canPerm("rides.manage");
+function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;const {dp,c,k,r}=f,o=r._orig||r,crew=k==="crewTransport",st=window.rideState?rideState(id):0,canAck=cqCanRide();
   const drivers=[...new Set(String(c.drivers||"").split(/\s*[|\n;]\s*/).map(x=>x.replace(/\+?\d[\d ()\/.-]{7,}\d/g,"").replace(/o\.\s*p\.\s*D.*$/i,"").trim()).filter(Boolean).concat((c.transport||[]).map(x=>x.driver).filter(Boolean)))];
   const crewNames=[...new Set([].concat(...(S.crew||[]).map(g=>(g.people||[]).map(p=>p.name))).filter(Boolean))];
   const inp=(n,lab,v,type,extra)=>'<label>'+esc(L(lab))+'<input name="'+n+'"'+(type?' type="'+type+'"':'')+' value="'+esc(v||"")+'"'+(extra||"")+'></label>';
