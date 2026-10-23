@@ -1,4 +1,4 @@
-// Cast quittieren: the rules of tools/boot/31-costume.js (with the ride steps of 24-rides.js) played through with invented data
+// Ablauf (Fahrten und Cast): the rules of tools/boot/24-flow.js played through with invented data
 // node tests/cast_rules.mjs → JSON lines {n, ok, got, want}
 import fs from "fs";import vm from "vm";import path from "path";import {fileURLToPath} from "url";
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
@@ -8,7 +8,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=>{PERMS=p};`;
 const H=[];const C={console,document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
-vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-rides.js"),"utf8")+"\n"+fs.readFileSync(path.join(ROOT,"tools/boot/31-costume.js"),"utf8")+";globalThis.T={p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep}",C);
+vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8")+";globalThis.T={cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep}",C);
 const T=C.T,D="2031-03-02";
 const cs={_date:D,calls:[{name:"Anna Probe"},{name:"Mara Test"}],crewTransport:[],
   transport:[{vehicle:"Van",passengers:"Max Muster",from:"Hotel",t1:"06:40",to:"Base",t2:"06:55"},{vehicle:"Van",passengers:"Max Muster",from:"Base",t1:"07:50",to:"Set",t2:"07:58"}]};
@@ -59,7 +59,14 @@ t("ohne Recht: Base quittiert sichtbar",[],{[id(R1,"b","07:45")]:2},R1,"cq2 cq2 
 /* a tap: Kostüm starts while Maske still runs → Maske is done */
 await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:async(i,v)=>{W2.push(i+"="+v.s)},deleteDoc:async i=>{W2.push(i+"=0")}}});
   set(W,{[id(R1,"m","07:20")]:1});const wid=id(R1,"w","07:05"),mid=id(R1,"m","07:20");
-  const btn={dataset:{cqk:"w",cqid:wid,cqd:D},disabled:false,closest:q=>q==="[data-cqk]"?btn:q==="tr,.cs-card"?{querySelectorAll:()=>[{dataset:{cqwm:mid}}]}:null};
-  for(const f of H)await f({target:{closest:q=>q==="[data-cqk]"?btn:null},preventDefault(){},stopPropagation(){}});await new Promise(r=>setTimeout(r,20));
+  const btn={dataset:{cqk:"w",cqid:wid,cqd:D},disabled:false,closest:q=>q.includes("[data-cqk]")?btn:q==="tr,.cs-card"?{querySelectorAll:()=>[{dataset:{cqwm:mid}}]}:null};
+  for(const f of H)await f({target:{closest:q=>q.includes("[data-cqk]")?btn:null},preventDefault(){},stopPropagation(){}});await new Promise(r=>setTimeout(r,20));
   const got=W2.sort().join(" "),want=[mid+"=2",wid+"=1"].sort().join(" ");out.push({n:"Kostüm angetippt, Maske läuft noch → Maske abgeschlossen",ok:got===want,got,want})})();
+/* Meine Termine: Kostüm / Maske in three steps; starting one finishes the other one still running */
+await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:async(i,v)=>{W2.push(i+"="+v.s)},deleteDoc:async i=>{W2.push(i+"=0")}}});
+  const wid=id(R1,"w","07:05"),mid=id(R1,"m","07:20");set(W,{[mid]:1});
+  const cls=x=>(x.match(/class="([^"]*)"/)||[])[1];out.push({n:"Meine Termine: Maske läuft = pink",ok:cls(T.cmb(mid,D,"x","m",[wid,mid]))==="cmk cmrun",got:cls(T.cmb(mid,D,"x","m",[wid,mid])),want:"cmk cmrun"});
+  const h=T.cmb(wid,D,"x","w",[wid,mid]);const ds={};for(const x of h.matchAll(/data-([a-z]+)="([^"]*)"/g))ds[x[1]]=x[2];
+  const btn={dataset:ds,disabled:false,closest:()=>null};for(const f of H)await f({target:{closest:q=>q.includes("[data-cmack]")?btn:null},preventDefault(){},stopPropagation(){}});await new Promise(r=>setTimeout(r,20));
+  const got=W2.sort().join(" "),want=[mid+"=2",wid+"=1"].sort().join(" ");out.push({n:"Meine Termine: Kostüm starten schliesst die laufende Maske ab",ok:got===want,got,want})})();
 for(const x of out)console.log(JSON.stringify(x));
