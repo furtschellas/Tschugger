@@ -66,6 +66,13 @@ const cqMan=()=>flowCan("cast.manual");
 /* Kostüm «Kostüm quittieren», Maske «Maske quittieren»; Call, Base and On set with either of them */
 const cmCan=k=>k==="w"?flowCan("wardrobe.ack"):k==="m"?flowCan("makeup.ack"):flowCan("wardrobe.ack")||flowCan("makeup.ack");
 /* who may tap in the cast table: u = P/UP, w/m = Kostüm/Maske, c/b/o = Call/Base/On set */
+/* the own app role by its name (also while simulating): Komparsen, Kostüm … – one place for every check */
+const roleIs=re=>{try{const id=typeof MYROLE!=="undefined"?MYROLE||"":"",nm=window.MYROLENAME||((typeof ADM!=="undefined"&&(ADM.roles||[]).find(x=>x.id===id))||{}).name||"";return re.test(fold(id+" "+nm))}catch(_){return false}};
+const ROLE_X=/kompars|extras?\b|statist/,ROLE_W=/kost|garder|costum|wardrob/;
+window.roleIsExtras=()=>roleIs(ROLE_X);
+/* where Kostüm / Maske happen on a day: the W / H / M place (of the extras when asked), else the Base */
+function flowWhere(c,ex){try{const ls=typeof csLocs==="function"?csLocs(c):[],w=k=>/^W \/ H \/ M/.test(k);
+  const b=(ex&&ls.find(l=>arr(l.kinds).some(k=>w(k)&&/Extras/.test(k))))||ls.find(l=>arr(l.kinds).some(w))||ls.find(l=>arr(l.kinds).includes("Base"));return b?{where:b.name||"",map:b.map||""}:{where:"",map:""}}catch(_){return {where:"",map:""}}}
 const cqCan=k=>k==="xo"?flowCan("extras.ack"):k==="u"?cqCanRide()||cqMan():k==="w"||k==="m"?cmCan(k):cmCan(k)||cqMan();
 
 /* ---------- 3. rides ---------- */
@@ -197,13 +204,18 @@ window.cqCd=(id,d)=>{const at=flowAt(id),m=String(d||"").match(/(\d+)/);return a
 /* Call and On set: «Komparsen quittieren»; Kostüm / Maske: «Kostüm / Maske quittieren». Stored like the cast (rideack, live on every device) */
 const xqCan=()=>flowCan("extras.ack");
 const xqN=r=>{const n=parseInt(String(r&&r.count||"").trim(),10);return n>1&&n<1000?n:0};   /* 0 = no count: Call is a simple tick */
-const xqId=(c,f,r,t)=>cmId(c._date,"x"+f,{no:"x|"+String(r.part||"").trim()+"|"+String(r.count||"").trim()},t);
+/* key of a group: its role and its place among the groups with that role («Passanten» 1st, 2nd …) – not the count: a new callsheet version
+   with 6 instead of 5 kept no tick before, and two equal groups shared one */
+const xqKey=(c,r)=>{const p=String(r.part||"").trim();return "x|"+p+"|"+Math.max(0,arr(c.extras).filter(x=>String(x.part||"").trim()===p).indexOf(r))};
+const xqId=(c,f,r,t)=>cmId(c._date,"x"+f,{no:xqKey(c,r)},t);
 function xqModel(c,r){const t={c:cqHm(r.call),w:cqHm(r.wardrobe),m:cqHm(r.makeup),o:cqHm(r.onset)||(String(r.onset||"").trim()?"set":"")},id={};
   for(const f in t)if(t[f])id[f]=xqId(c,f,r,t[f]);return {t,id,on:!!id.o&&flowSt(id.o)===2}}
 /* the group is On set: the row greys, the On set time stays (like the cast) */
 window.xqAll=(c,r)=>cqRowOk(c,r)&&xqModel(c,r).on;
 window.xqField=(f,c,r)=>{if(!cqRowOk(c,r))return null;const m=xqModel(c,r),t=m.t[f],id=m.id[f];if(!t)return null;
   const d=c._date,st=flowSt(id),src={c:r.call,w:r.wardrobe,m:r.makeup,o:r.onset}[f],tx=t==="set"?String(src).trim():t;
+  /* the group is On set: Call, Kostüm and Maske show done (like the cast) – nothing is written, reset On set and the old state is back */
+  if(f!=="o"&&m.on)return {h:cqDone(tx,L("Erledigt"))};
   if(f==="w"||f==="m")return {h:cqLink(f,id,d,tx)};
   if(f==="c"){const N=xqN(r),n=st===1?Math.min(N,+(window.RIDEACK[id]||{}).n||0):0,lab=st===1&&N?tx+" · "+n+"/"+N:tx;
     const tip=st===2?L("Alle da"):st===1?L("{n} von {N} da").replace("{n}",n).replace("{N}",N):L("Offen");
@@ -226,12 +238,9 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const d=document.getElementById("xqpick");if(d){e.preventDefault();d.remove()}}});
 /* Meine Termine for the role «Komparsen» (Extras, Statisten): per shooting day one appointment per group – Call to On set, Kostüm / Maske below,
    the Call can be ticked right there (same picker «Wie viele sind da?») */
-const xqRoleIs=()=>{try{const id=typeof MYROLE!=="undefined"?MYROLE||"":"",nm=window.MYROLENAME||((typeof ADM!=="undefined"&&(ADM.roles||[]).find(x=>x.id===id))||{}).name||"";
-  return /kompars|extras?\b|statist/.test(fold(id+" "+nm))}catch(_){return false}};
-window.xqEvents=t=>{const out=[];if(!xqRoleIs())return out;
+window.xqEvents=t=>{const out=[];if(!roleIs(ROLE_X))return out;
   for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,cc=Object.assign({},c,{_date:dp.date}),d=arr(S.days).find(x=>x.date===dp.date)||{};
-    let where="",map="";try{const ls=typeof csLocs==="function"?csLocs(c):[],w=k=>/^W \/ H \/ M/.test(k);
-      const b=ls.find(l=>arr(l.kinds).some(k=>w(k)&&/Extras/.test(k)))||ls.find(l=>arr(l.kinds).some(w))||ls.find(l=>arr(l.kinds).includes("Base"));if(b){where=b.name||"";map=b.map||""}}catch(_){}
+    const {where,map}=flowWhere(c,true);
     for(const r of arr(c.extras)){const ct=cqHm(r.call),ot=cqHm(r.onset);if(!ct&&!ot)continue;
       const wm=[[L("Kostüm"),r.wardrobe],[L("Maske"),r.makeup]].filter(x=>String(x[1]||"").trim()).map(x=>x[0]+" "+String(x[1]).trim()).join(" · ");
       let xh="";try{const f=window.xqField("c",cc,r);if(f)xh='Call '+f.h}catch(_){}
@@ -239,11 +248,10 @@ window.xqEvents=t=>{const out=[];if(!xqRoleIs())return out;
   return out};
 /* ---------- 5. Meine Termine: Kostüm / Maske as appointments (for the person named in the column head and for the actor) ---------- */
 /* the app role is «Kostüm» (Garderobe, Costume …): every Kostüm appointment of the cast – the callsheet names nobody in the Kostüm column */
-const cmRoleW=()=>{try{const id=typeof MYROLE!=="undefined"?MYROLE||"":"",nm=window.MYROLENAME||((typeof ADM!=="undefined"&&(ADM.roles||[]).find(x=>x.id===id))||{}).name||"";
-  return /kost|garder|costum|wardrob/.test(fold(id+" "+nm))}catch(_){return false}};
+const cmRoleW=()=>roleIs(ROLE_W);
 window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function"?csMe():null}catch(_){}const rw=cmRoleW();if(!cm&&!rw)return out;
   for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,d=arr(S.days).find(x=>x.date===dp.date)||{};
-    let where="",map="";try{const ls=typeof csLocs==="function"?csLocs(c):[];const b=ls.find(l=>arr(l.kinds).some(k=>/^W \/ H \/ M/.test(k)))||ls.find(l=>arr(l.kinds).includes("Base"));if(b){where=b.name||"";map=b.map||""}}catch(_){}
+    const {where,map}=flowWhere(c,false);
     for(const r of arr(c.cast))for(const k of ["w","m"]){const v=k==="w"?r.wardrobe:r.makeup;
       for(const p of cmParse(v,c)){const mine=p.who?!!(cm&&cm.hit(p.who)):k==="w"&&rw,actor=r.actor&&cm&&cm.hit(r.actor);if(!mine&&!actor)continue;
         const oth=["w","m"].flatMap(k2=>cmParse(k2==="w"?r.wardrobe:r.makeup,c).map(q=>cmId(dp.date,k2,r,q.t)));   /* the other Kostüm / Maske of this actor */

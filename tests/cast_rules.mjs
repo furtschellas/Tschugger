@@ -91,7 +91,7 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   t("Zeiten mit Punkt (13.50, 14.10): Kostüm und Maske fertig → Base aktiv",W,{[id(R5,"w","13.50")]:2,[id(R5,"m","11:00")]:2},R5,"cq2 cq2 cq1+tap cq0+tap")}
 /* extras (Komparsen): per group – Call with how many are there, Kostüm / Maske, On set */
 {const X={count:"5",part:"Passanten",call:"08:00",wardrobe:"08:10",makeup:"08:20",onset:"09:00"},X1={count:"-",part:"Velofahrer",call:"08:30",wardrobe:"",makeup:"",onset:"09:30"};
-  const xid=(r,f,t)=>T.cmId(D,"x"+f,{no:"x|"+r.part+"|"+r.count},t);
+  const xid=(r,f,t)=>T.cmId(D,"x"+f,{no:"x|"+r.part+"|0"},t);   /* role + place among the groups with that role (not the count) */
   const xs=(perms,ack)=>{C.RIDEACK=ack;vm.runInContext("setP("+JSON.stringify(perms)+")",C)};
   const xr=r=>["c","w","m","o"].map(f=>{const h=(T.xf(f,cs,r)||{}).h||"";return h?"cq"+((h.match(/\bcq([012])\b/)||[])[1]||"?")+(/<button/.test(h)?"+tap":"")+((h.match(/(\d+\/\d+)/)||[])[1]?" "+h.match(/(\d+\/\d+)/)[1]:""):"-"}).join(" ")+(T.xa(cs,r)?" grau":"");
   const xt=(n,perms,ack,r,want)=>{xs(perms,ack);const got=xr(r);out.push({n:"Komparsen: "+n,ok:got===want,got,want})};
@@ -100,7 +100,12 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   xt("mit «Komparsen quittieren»: Call und On set antippbar",XA,{},X,"cq0+tap cq0 cq0 cq0+tap");
   xt("3 von 5 da: Call pink mit 3/5",ALL,{[xid(X,"c","08:00")]:{s:1,n:3,at:1}},X,"cq1+tap 3/5 cq0+tap cq0+tap cq0+tap");
   xt("alle da: Call erledigt",ALL,{[xid(X,"c","08:00")]:{s:2,at:1}},X,"cq2+tap cq0+tap cq0+tap cq0+tap");
-  xt("On set: ganze Gruppe grau",ALL,{[xid(X,"c","08:00")]:{s:2,at:1},[xid(X,"o","09:00")]:{s:2,at:Date.UTC(2031,2,2,8,4)}},X,"cq2+tap cq0+tap cq0+tap cq2+tap grau");
+  xt("On set: ganze Gruppe grau, Call/Kostüm/Maske erledigt",ALL,{[xid(X,"c","08:00")]:{s:2,at:1},[xid(X,"o","09:00")]:{s:2,at:Date.UTC(2031,2,2,8,4)}},X,"cq2 cq2 cq2 cq2+tap grau");
+  xt("On set mit 3/5 und laufendem Kostüm: alles erledigt angezeigt (kein pinker Rahmen)",ALL,{[xid(X,"c","08:00")]:{s:1,n:3,at:1},[xid(X,"w","08:10")]:{s:1,at:1},[xid(X,"o","09:00")]:{s:2,at:1}},X,"cq2 cq2 cq2 cq2+tap grau");
+  {const cs3={_date:D,calls:[],extras:[{count:"5",part:"Passanten",call:"08:00",wardrobe:"08:10",makeup:"",onset:"09:00"},{count:"5",part:"Passanten",call:"08:00",wardrobe:"08:10",makeup:"",onset:"09:00"}]};
+   xs(ALL,{});const a=(T.xf("w",cs3,cs3.extras[0]).h.match(/data-cqid="([^"]*)"/)||[])[1],b=(T.xf("w",cs3,cs3.extras[1]).h.match(/data-cqid="([^"]*)"/)||[])[1];
+   const c6=Object.assign({},cs3,{extras:[Object.assign({},cs3.extras[0],{count:"6"}),cs3.extras[1]]}),a6=(T.xf("w",c6,c6.extras[0]).h.match(/data-cqid="([^"]*)"/)||[])[1];
+   out.push({n:"Komparsen: zwei gleiche Gruppen haben je eigene Häkchen, eine geänderte Anzahl behält sie",ok:!!a&&a!==b&&a===a6,got:[a,b,a6].join(" "),want:"a≠b, a=a6"})}
   xs(XA,{});const h=(T.xf("c",cs,X1)||{}).h||"",h5=(T.xf("c",cs,X)||{}).h||"",ho=(T.xf("o",cs,X)||{}).h||"";
   out.push({n:"Komparsen: ohne Anzahl ist Call ein einfacher Haken, mit Anzahl die Auswahl bis 5",ok:/data-xqn="0"/.test(h)&&/data-xqn="5"/.test(h5),got:(h.match(/data-xqn="\d+"/)||[""])[0]+" "+(h5.match(/data-xqn="\d+"/)||[""])[0],want:'data-xqn="0" data-xqn="5"'});
   out.push({n:"Komparsen: On set antippen = erledigt (eigene ID, nicht die vom Cast)",ok:/data-cqk="xo"/.test(ho)&&/data-cqnx="2"/.test(ho)&&ho.includes(xid(X,"o","09:00")),got:(ho.match(/data-cq[a-z]+="[^"]*"/g)||[]).join(" "),want:'data-cqk="xo" … data-cqnx="2"'});
