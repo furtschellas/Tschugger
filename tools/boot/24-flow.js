@@ -140,6 +140,8 @@ function cqField(f,c,r){if(!c||!c._date||!r)return null;const v=r[CQF[f]];if(!hm
 window.cqPickup=(c,r)=>cqField("p",c,r);window.cqCall=(c,r)=>cqField("c",c,r);window.cqBase=(c,r)=>cqField("b",c,r);window.cqOnset=(c,r)=>cqField("o",c,r);
 /* Kostüm / Maske in the callsheet (csMk): done once Base or On set is done */
 window.cqRowDone=(c,r)=>{if(!c||!c._date||!r)return false;const m=cqModel(c,r);return m.onDone||m.baseDone};
+/* how far a cast row is: 3 On set · 2 waiting at the Base for the pickup (Base active) · 1 called (Call or later) · 0 not called yet */
+window.cqStage=(c,r)=>{if(!c||!c._date||!r)return 0;const m=cqModel(c,r);return m.onDone?3:m.wmDone&&!m.baseDone&&hm(r.base)?2:m.callAct||m.arrived||m.baseDone||m.wmDone?1:0};
 /* every step done (On set done): the cast number is pink */
 window.cqAll=(c,r)=>!!(c&&c._date&&r)&&cqModel(c,r).onDone;
 /* Kostüm / Maske running: the duration counts down from the start (back to open = the original duration again) */
@@ -190,3 +192,9 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))re
   if((OLDN>=0&&n!==OLDN)||(nk!=null&&nk!==window.CSNOWK)||(ns!=null&&ns!==window.CSNOWSC))render();OLDN=n},60e3)}
 /* links inside clickable callsheet headers (L-codes, addresses): open the link without toggling or triggering the surrounding element */
 document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.target.closest("a[data-nobub]");if(a)e.stopPropagation()},true);
+/* cast tiles (phone): a tile whose cast is On set is folded to one line – a tap opens it again; the choice stays while the page is redrawn */
+window.CASTOPEN=window.CASTOPEN||new Set();
+const castKey=c=>{const t=c.querySelector(".cs-ct");return (typeof CSCUR!=="undefined"&&CSCUR.date||"")+"|"+(t?t.textContent.trim():"")};
+document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest("#cs-cast .cs-card");if(!c||!c.querySelector(".cqall")||e.target.closest("a,button,input,select"))return;
+  const k=castKey(c),on=!c.classList.contains("csopen");c.classList.toggle("csopen",on);if(on)CASTOPEN.add(k);else CASTOPEN.delete(k)});
+csAfter(()=>{if(!CASTOPEN.size)return;document.querySelectorAll("#cs-cast .cs-card").forEach(c=>{if(c.querySelector(".cqall")&&CASTOPEN.has(castKey(c)))c.classList.add("csopen")})});
