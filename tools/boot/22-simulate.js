@@ -38,7 +38,7 @@ function simStartRole(id,re){if(!simRoleCan(id))return;
 /* after a reload: start the same simulation again once the user list is loaded (the page that was open stays) */
 {let tries=0;const iv=setInterval(()=>{let v=null;try{v=JSON.parse(sessionStorage.getItem("sim")||"null")}catch(_){}
   if(!v||SIMUSER||++tries>120){clearInterval(iv);return}
-  if(typeof ME==="undefined"||!ME||!isAdmin())return;if(!ADM.loaded){if(typeof ensureAdm==="function")ensureAdm();return}
+  if(typeof ME==="undefined"||!ME||!isAdmin())return;if(typeof roleOf!=="function"){if(window.loadAdminUI)window.loadAdminUI().catch(()=>{});return}if(!ADM.loaded){if(typeof ensureAdm==="function")ensureAdm();return}
   clearInterval(iv);const re={back:v.tab||"admin"};if(v.e)simStart(v.e,re);else if(typeof v.r==="string")simStartRole(v.r,re);if(!SIMUSER)simKeep(null)},500)}
 /* quick picker «Ansicht als …» (roles and people) for the admin pages */
 window.simPicker=()=>{if(!isAdmin()||SIMROLE||SIMUSER)return "";

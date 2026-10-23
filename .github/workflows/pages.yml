@@ -74,7 +74,7 @@ jobs:
         run: |
           npm install -g esbuild@0.24.0 eslint@8.57.0 --no-audit --no-fund --loglevel=error || true
           ESBUILD=$(command -v esbuild || true) python tools/make_site.py
-          mkdir -p /tmp/site && cp index.html version.txt /tmp/site/ && { [ -d i18n ] && cp -r i18n /tmp/site/ || true; }
+          mkdir -p /tmp/site && cp index.html version.txt /tmp/site/ && { [ -d i18n ] && cp -r i18n /tmp/site/ || true; } && { [ -f admin.js ] && cp admin.js /tmp/site/ || true; }
       - name: App startet ohne Fehler
         run: python tests/boot_check.py
       - uses: actions/upload-artifact@v4
@@ -216,7 +216,7 @@ jobs:
             git fetch -q origin main && git reset -q --hard origin/main && cp /tmp/tests.json tests.json && git add tests.json
             # all tests passed: the tested app goes live (GitHub Pages takes index.html from main)
             msg="Testresultate"
-            if [ -f /tmp/site/index.html ]; then cp /tmp/site/index.html /tmp/site/version.txt . && { [ -d /tmp/site/i18n ] && rm -rf i18n && cp -r /tmp/site/i18n . && git add -f -A i18n || true; } && git add index.html version.txt && msg="App veröffentlicht (alle Tests bestanden) · Testresultate"; fi
+            if [ -f /tmp/site/index.html ]; then cp /tmp/site/index.html /tmp/site/version.txt . && { [ -d /tmp/site/i18n ] && rm -rf i18n && cp -r /tmp/site/i18n . && git add -f -A i18n || true; } && { [ -f /tmp/site/admin.js ] && cp /tmp/site/admin.js . && git add -f admin.js || true; } && git add index.html version.txt && msg="App veröffentlicht (alle Tests bestanden) · Testresultate"; fi
             git diff --cached --quiet && break
             git commit -q -m "$msg" && git push -q origin HEAD:main && break
             sleep 5
