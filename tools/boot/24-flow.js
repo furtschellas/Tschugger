@@ -37,7 +37,13 @@ async function rideAckLoad(force){if(RIDEBUSY||typeof ME==="undefined"||!ME||(!f
     const s=await F.getDocs(F.query(F.collection(db,"rideack"),F.where("d",">=",from)));const m={};s.forEach(x=>{m[x.id]=x.data()});
     const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))render()}catch(_){}RIDEBUSY=false}
 /* after a tick: draw again without moving the page (the open parts and the scroll position stay) */
-function cqKeep(){try{MEMO.clear()}catch(_){}const y=window.scrollY;render();window.scrollTo(0,y);requestAnimationFrame(()=>window.scrollTo(0,y))}
+/* … and the tapped row (cast tile, table row, appointment) stays exactly where it was on the screen, even when parts above it grow or shrink */
+const CQROW="#view .cs-card,#view tr,#view .mci";
+function cqKeep(b){try{MEMO.clear()}catch(_){}const y=window.scrollY;let i=-1,top=0;
+  try{const row=b&&b.isConnected&&b.closest(CQROW);if(row){i=[...document.querySelectorAll(CQROW)].indexOf(row);top=row.getBoundingClientRect().top}}catch(_){}
+  render();window.scrollTo(0,y);
+  const fix=()=>{if(i<0)return window.scrollTo(0,y);const r=document.querySelectorAll(CQROW)[i];if(r){const d=r.getBoundingClientRect().top-top;if(Math.abs(d)>.5)window.scrollBy(0,d)}};
+  fix();requestAnimationFrame(fix)}
 
 /* ---------- 2. rights ---------- */
 const flowCan=p=>{try{return typeof canPerm==="function"&&canPerm(p)}catch(_){return false}};
@@ -183,7 +189,7 @@ async function flowTap(b){
   if((k==="w"||k==="m")&&nx===1){const row=b.closest("tr,.cs-card");if(row)for(const o of row.querySelectorAll(".cq1[data-cqwm]")){const oid=o.dataset.cqwm;if(oid&&oid!==id&&cmSt(oid)===1)await flowPut(oid,date,2)}}
   if(b.dataset.cqlk&&b.dataset.cqls!=null)await rideSet(b.dataset.cqlk,date,+b.dataset.cqls)}   /* the ride in «Fahrten» in parallel */
 const flowClick=async(e,sel,stop)=>{const b=e.target.closest&&e.target.closest(sel);if(!b)return;e.preventDefault();if(stop)e.stopPropagation();b.disabled=true;
-  try{await flowTap(b);cqKeep()}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}};
+  try{await flowTap(b);cqKeep(b)}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}};
 /* cast and Meine Termine first (capture); rides after the Fahrten Manager pop-up (25-ride-edit) had its chance */
 document.addEventListener("click",e=>flowClick(e,"[data-cqk],[data-cmack]",true),true);
 document.addEventListener("click",e=>flowClick(e,"[data-rideack]",false));
