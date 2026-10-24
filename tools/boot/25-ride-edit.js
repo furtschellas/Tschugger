@@ -87,3 +87,4 @@ function rideBack(){const r=window.REDBACK;if(!r||Date.now()>r.until||document.q
 /* popup closed: back to the ride now, and once more after the new drawing that follows a save (within 4 s) */
 new MutationObserver(m=>{if(window.REDBACK&&m.some(x=>[...x.removedNodes].some(n=>n.nodeType===1&&(n.matches(".redbox")||n.querySelector(".redbox"))))){window.REDBACK.until=Date.now()+4000;requestAnimationFrame(rideBack)}}).observe(document.body,{childList:true});
 csAfter(()=>{if(window.REDBACK&&!document.querySelector(".redbox")&&Date.now()<=window.REDBACK.until)rideBack()});
+function setREDSUB(v){return REDSUB=v}   /* other parts change REDSUB only through this */

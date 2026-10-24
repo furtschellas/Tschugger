@@ -13,9 +13,9 @@ function navDialogs(){const l=[];
 function navClose(d){if(!d)return;if(d.id==="scn"&&typeof closeScene==="function")closeScene();else if(d.id==="search"&&typeof closeSearch==="function")closeSearch();
   else{const x=d.querySelector("[data-bcvx],[data-rcok],[data-rtx],.xclose,[data-scrn='ok'],[data-a2unok]");if(x&&x.closest("#"+(d.id||"_"))===d&&!x.closest("form"))x.click();if(d.isConnected)d.remove()}}
 /* a new page of the app gets its own step back */
-{const _r=render;render=function(){const x=_r.apply(this,arguments);try{
+onRendered(()=>{try{
     if(NAV.last===null){history.replaceState({t:S.tab,base:1},"");history.pushState({t:S.tab},"");NAV.last=S.tab}
-    else if(S.tab!==NAV.last){if(!NAV.pop){history.pushState({t:S.tab},"");NAV.depth++}NAV.last=S.tab}}catch(_){}NAV.pop=false;navBtn();return x}}
+    else if(S.tab!==NAV.last){if(!NAV.pop){history.pushState({t:S.tab},"");NAV.depth++}NAV.last=S.tab}}catch(_){}NAV.pop=false;navBtn()});
 /* a window that opens gets a step back too; closed with its own button, that step is taken away again */
 new MutationObserver(()=>{const n=navDialogs().length;
   if(n>NAV.open){for(let i=NAV.open;i<n;i++)try{history.pushState({t:S.tab,d:1},"")}catch(_){}}

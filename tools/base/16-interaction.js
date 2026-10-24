@@ -21,7 +21,9 @@ window.resetViewState=()=>{try{localStorage.removeItem("viewstate")}catch(_){}S.
 window.addEventListener("pagehide",saveView);const RESUME=30*60e3;   /* back after more than 30 minutes: start page; shorter: the same page */let HID_AT=0;
 window.goStart=()=>{S.want=null;S.srcOpen=false;S.tab=startTab();S.day=null;S.dday=null;S.openSc={};VS_AT=Date.now();store("tab",S.tab);window.scrollTo(0,0);render()};
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){saveView();HID_AT=Date.now()}else{if(HID_AT&&Date.now()-HID_AT>=RESUME&&!(typeof navDialogs==="function"&&navDialogs().length))goStart();HID_AT=0}});
-function store(k,v){try{localStorage.setItem(k,v)}catch(_){}}
+/* other parts listen to stored settings with onStore(fn) (e.g. the settings synced to the account) – instead of replacing store */
+const STORE_HOOKS=[];function onStore(fn){STORE_HOOKS.push(fn)}
+function store(k,v){try{localStorage.setItem(k,v)}catch(_){}for(const f of STORE_HOOKS)try{f(k,v)}catch(_){}}
 
 /* Today «Mein Tag» → the callsheet of that day */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tocs]");if(!b)return;goTab("dispo");S.dday=b.dataset.tocs;render()});

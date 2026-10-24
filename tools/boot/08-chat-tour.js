@@ -152,12 +152,12 @@ function tourDay(kind){const t=todayISO();if(kind==="shoot"){const sd=S.days.fil
 /* demonstrations (language, light/dark) are undone as soon as the step is left */
 function tourDemo(st){
   const want=st&&st.demo,o=TOUR.orig||(TOUR.orig={});
-  if(o.lang&&want!=="lang"){LANG=o.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;delete o.lang;render()}
+  if(o.lang&&want!=="lang"){setLANG(o.lang);store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;delete o.lang;render()}
   if(o.theme&&want!=="theme"){setTheme(o.theme);delete o.theme}
-  if(want==="lang"&&!o.lang){const to=(APPLANGS||[]).find(l=>l!==LANG&&l==="en")||(APPLANGS||[]).find(l=>l!==LANG);if(to){o.lang=LANG;LANG=to;applyStatic();render()}}
+  if(want==="lang"&&!o.lang){const to=(APPLANGS||[]).find(l=>l!==LANG&&l==="en")||(APPLANGS||[]).find(l=>l!==LANG);if(to){o.lang=LANG;setLANG(to);applyStatic();render()}}
   if(want==="theme"&&!o.theme){o.theme=getTheme();setTheme(o.theme==="dark"?"light":"dark")}
 }
-function tourShow(st){if(st.acsub&&typeof ACSUB!=="undefined"&&ACSUB!==st.acsub){ACSUB=st.acsub;if(S.tab===st.tab)render()}if(st.repsub&&typeof window.repSetSub==="function"&&window.repSetSub(st.repsub)&&S.tab===st.tab)render();if(st.asub&&typeof ADM!=="undefined"&&ADM.sub!==st.asub){ADM.sub=st.asub;if(S.tab===st.tab)render()}if(st.day){const id=tourDay(st.day);if(id&&S.day!==id){S.day=id;if(S.tab===st.tab)render()}}if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}else if(st.day)render();window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
+function tourShow(st){if(st.acsub&&typeof ACSUB!=="undefined"&&ACSUB!==st.acsub){setACSUB(st.acsub);if(S.tab===st.tab)render()}if(st.repsub&&typeof window.repSetSub==="function"&&window.repSetSub(st.repsub)&&S.tab===st.tab)render();if(st.asub&&typeof ADM!=="undefined"&&ADM.sub!==st.asub){ADM.sub=st.asub;if(S.tab===st.tab)render()}if(st.day){const id=tourDay(st.day);if(id&&S.day!==id){S.day=id;if(S.tab===st.tab)render()}}if(S.tab!==st.tab){S.tab=st.tab;S.srcOpen=false;render()}else if(st.day)render();window.scrollTo(0,0);const e=tourEl(st);if(e){const r=e.getBoundingClientRect();if(r.bottom>innerHeight-70||r.top<0)e.scrollIntoView({block:"center"})}return e}
 function tourDoneLocal(){try{return !!(localStorage.getItem("tourDone:"+(ME&&ME.uid))||localStorage.getItem("tour"))}catch(_){return false}}
 /* the tour starts by itself only once per person: marked right when it is offered (this device, the synced view settings and the profile) */
 /* app icon status for «Mein Konto»: checked whenever the page is opened (at most every 20 s) */

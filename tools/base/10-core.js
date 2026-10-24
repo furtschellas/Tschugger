@@ -220,3 +220,5 @@ function pickDay(list){
     const nx=list.find(d=>d.date>t);if(w&&nx&&typeof zurichUTC==="function"&&Date.now()>zurichUTC(cc&&w<cc?isoAdd(t,1):t,w).getTime()+3600e3)next=nx}catch(_){}}
   S.day=(next||list[list.length-1]||{}).id||null;
 }
+function setSPT(v){return SPT=v}   /* other parts change SPT only through this */
+function setLANG(v){return LANG=v}   /* other parts change LANG only through this */

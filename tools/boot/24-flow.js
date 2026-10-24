@@ -331,3 +331,5 @@ const castKey=c=>{const t=c.querySelector(".cs-ct"),sec=c.closest("[id]");return
 document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest(":is(#cs-cast,#cs-extras) .cs-card");if(!c||!c.querySelector(".cqall")||e.target.closest("a,button,input,select"))return;
   const k=castKey(c),on=!c.classList.contains("csopen");c.classList.toggle("csopen",on);if(on)CASTOPEN.add(k);else CASTOPEN.delete(k)});
 csAfter(()=>{if(!CASTOPEN.size)return;document.querySelectorAll(":is(#cs-cast,#cs-extras) .cs-card").forEach(c=>{if(c.querySelector(".cqall")&&CASTOPEN.has(castKey(c)))c.classList.add("csopen")})});
+function setACKFROM(v){return ACKFROM=v}   /* other parts change ACKFROM only through this */
+function setACKSUB(v){return ACKSUB=v}   /* other parts change ACKSUB only through this */

@@ -2,7 +2,7 @@
 /* the result is kept on this device: an offline start keeps the role (otherwise crew lost the shooting schedule without network) */
 const memKey=()=>"mc:v1:"+(ME&&ME.uid);
 function memSave(){try{localStorage.setItem(memKey(),JSON.stringify({r:MYROLE,rn:window.MYROLENAME||"",p:MYPERMS,a:COADMIN,ap:ADMINPERMS,o:ADMINS.includes(lc(ME.email)),m:MEMBER}))}catch(_){}}
-function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"null");if(!c)return false;MYROLE=c.r||"";window.MYROLENAME=c.rn||"";MYPERMS=Array.isArray(c.p)?c.p:[];COADMIN=!!c.a;if(Array.isArray(c.ap))ADMINPERMS=c.ap;if(c.m)MEMBER=c.m;if(c.o&&!ADMINS.includes(lc(ME.email)))ADMINS.push(lc(ME.email));return true}catch(_){return false}}
+function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"null");if(!c)return false;setMYROLE(c.r||"");window.MYROLENAME=c.rn||"";setMYPERMS(Array.isArray(c.p)?c.p:[]);setCOADMIN(!!c.a);if(Array.isArray(c.ap))setADMINPERMS(c.ap);if(c.m)setMEMBER(c.m);if(c.o&&!ADMINS.includes(lc(ME.email)))ADMINS.push(lc(ME.email));return true}catch(_){return false}}
 async function checkMember(){
   if(navigator.onLine===false){memRestore();throw Object.assign(new Error("offline"),{code:"unavailable"})}
   let prev=null;try{prev=JSON.parse(localStorage.getItem(memKey())||"null")}catch(_){}
@@ -12,15 +12,15 @@ async function checkMember(){
 async function checkMember0(){
   const {F,db}=await fb();const u=ME;
   if(!isOwner()&&meOk()){try{if((await F.getDoc(F.doc(db,"owners",lc(u.email)))).exists()&&!ADMINS.includes(lc(u.email)))ADMINS.push(lc(u.email))}catch(_){}}
-  if(!isOwner()&&meOk()){try{COADMIN=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(_){COADMIN=false}}
-  MYPERMS=[];MYROLE="";window.MYROLENAME="";ADMINPERMS=ADMIN_DEFAULT.slice();
-  if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())ADMINPERMS=(ad.data().perms||[]).filter(p=>permKnown(p))}catch(_){}}
-  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){MYROLE=String(ur.data().role||"");const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())window.MYROLENAME=String(rd.data().name||""),MYPERMS=(rd.data().perms||[]).filter(p=>permKnown(p))}}catch(_){}
+  if(!isOwner()&&meOk()){try{setCOADMIN((await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists())}catch(_){setCOADMIN(false)}}
+  setMYPERMS([]);setMYROLE("");window.MYROLENAME="";setADMINPERMS(ADMIN_DEFAULT.slice());
+  if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())setADMINPERMS((ad.data().perms||[]).filter(p=>permKnown(p)))}catch(_){}}
+  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){setMYROLE(String(ur.data().role||""));const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())window.MYROLENAME=String(rd.data().name||""),setMYPERMS((rd.data().perms||[]).filter(p=>permKnown(p)))}}catch(_){}
   }
   const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){
     let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
-    if(!inv||!inv.exists()){if(isAdmin()){MEMBER=null;return "ok"}return "none"}
+    if(!inv||!inv.exists()){if(isAdmin()){setMEMBER(null);return "ok"}return "none"}
     let pf={};try{const x=JSON.parse(localStorage.getItem(PENDING_KEY)||"null");if(x&&x.email===lc(u.email))pf=x}catch(_){}
     const doc={active:true,email:lc(u.email),name:[pf.firstName,pf.lastName].filter(Boolean).join(" ")||inv.data().name||"",joinedAt:F.serverTimestamp()};
     for(const k of ["firstName","lastName","lang","birthday","gender","diet","allergies"])if(pf[k])doc[k]=pf[k];
@@ -33,12 +33,12 @@ async function checkMember0(){
   /* «Auf allen Geräten abmelden»: a sign-in from before that moment is ended here (the rules refuse it anyway) */
   if(m.rev&&typeof m.rev.toMillis==="function"){try{const t=await u.getIdTokenResult();if(Date.parse(t.authTime)<=m.rev.toMillis()){if(window.acctSignOut)await window.acctSignOut(true);return "revoked"}}catch(_){}}
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
-  MEMBER=m;return "ok";
+  setMEMBER(m);return "ok";
 }
-function clearLocal(){try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();OWNSUB=null}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();MENUSUB=null}}catch(_){}try{if(typeof CDSUBS!=="undefined"&&CDSUBS){CDSUBS();CDSUBS=null}window.CDOPS=[];window.CDAT=0}catch(_){}try{if(typeof SCSUB!=="undefined"&&SCSUB){SCSUB();SCSUB=null}}catch(_){}try{if(typeof REDSUB!=="undefined"&&REDSUB){if(typeof REDSUB==="function")REDSUB();REDSUB=null}}catch(_){}try{if(window.cmaStop)window.cmaStop()}catch(_){}try{if(typeof ACKSUB!=="undefined"&&ACKSUB){if(typeof ACKSUB==="function")ACKSUB();ACKSUB=null;ACKFROM="";window.RIDEACK={}}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{sessionStorage.removeItem("chatmsgs");if(typeof CHAT!=="undefined")CHAT.msgs=[];if(window.caches)caches.delete("crew-vc").catch(()=>{})}catch(_){}try{for(const k of Object.keys(localStorage))if(k.startsWith("mc:v1:"))localStorage.removeItem(k);localStorage.removeItem("dk:v1");localStorage.removeItem("ak:script");localStorage.removeItem("ak:contacts");if(typeof AREAKEYS!=="undefined")for(const k in AREAKEYS)delete AREAKEYS[k];localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}
+function clearLocal(){try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();setOWNSUB(null)}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();setMENUSUB(null)}}catch(_){}try{if(typeof CDSUBS!=="undefined"&&CDSUBS){CDSUBS();setCDSUBS(null)}window.CDOPS=[];window.CDAT=0}catch(_){}try{if(typeof SCSUB!=="undefined"&&SCSUB){SCSUB();setSCSUB(null)}}catch(_){}try{if(typeof REDSUB!=="undefined"&&REDSUB){if(typeof REDSUB==="function")REDSUB();setREDSUB(null)}}catch(_){}try{if(window.cmaStop)window.cmaStop()}catch(_){}try{if(typeof ACKSUB!=="undefined"&&ACKSUB){if(typeof ACKSUB==="function")ACKSUB();setACKSUB(null);setACKFROM("");window.RIDEACK={}}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{sessionStorage.removeItem("chatmsgs");if(typeof CHAT!=="undefined")CHAT.msgs=[];if(window.caches)caches.delete("crew-vc").catch(()=>{})}catch(_){}try{for(const k of Object.keys(localStorage))if(k.startsWith("mc:v1:"))localStorage.removeItem(k);localStorage.removeItem("dk:v1");localStorage.removeItem("ak:script");localStorage.removeItem("ak:contacts");if(typeof AREAKEYS!=="undefined")for(const k in AREAKEYS)delete AREAKEYS[k];localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}
   /* the settings and seen notices of the person signing out stay off this device: on a shared set laptop the next person got the welcome note skipped
      and a newer «prefsLocalAt» made the device overwrite the next person's settings online (the colour theme stays: it belongs to the device) */
-  try{if(typeof PREFKEYS!=="undefined"){clearTimeout(PREFT);PREFT=null;PREFOK=false;for(const k of PREFKEYS.concat(PREFX))if(k!=="theme")localStorage.removeItem(k)}for(const k of ["prefsLocalAt","testAck"])localStorage.removeItem(k)}catch(_){}S.days=[];S.days0=null;S.dispos0=null;S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();DATAKEY=null;MEMBER=null;LASTSTAMP=null;SCRIPT=null;COADMIN=false;ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
+  try{if(typeof PREFKEYS!=="undefined"){clearTimeout(PREFT);setPREFT(null);setPREFOK(false);for(const k of PREFKEYS.concat(PREFX))if(k!=="theme")localStorage.removeItem(k)}for(const k of ["prefsLocalAt","testAck"])localStorage.removeItem(k)}catch(_){}S.days=[];S.days0=null;S.dispos0=null;S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();setDATAKEY(null);setMEMBER(null);setLASTSTAMP(null);setSCRIPT(null);setCOADMIN(false);ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
 /* ---- sign-in screen ---- */
 let AUTHMODE="login";
 const errText=e=>{const c=(e&&e.code)||"";
@@ -108,7 +108,7 @@ async function onGateSubmit(e){
       if(pw.length<8)throw {code:"weak-password"};
       if(pw!==f.querySelector("#gpw2").value){gateMsg(L("Die Passwörter stimmen nicht überein."),true);if(btn)btn.disabled=false;return}
       const {F,db}=await fb();await A.updatePassword(auth.currentUser,pw);
-      await F.updateDoc(F.doc(db,"starts",lc(auth.currentUser.email)),{mustChange:false});START={mustChange:false};
+      await F.updateDoc(F.doc(db,"starts",lc(auth.currentUser.email)),{mustChange:false});setSTART({mustChange:false});
       showMsg(L("Passwort gespeichert."),3000);await afterSignIn(auth.currentUser)}
     else if(f.dataset.f==="verify"){await ME.reload();if(auth.currentUser.emailVerified){await ME.getIdToken(true);await afterSignIn(auth.currentUser)}else if(await startExists(auth.currentUser))await afterSignIn(auth.currentUser);else gateMsg(L("Noch nicht bestätigt. Schau auch im Spam-Ordner nach."),true)}
   }catch(err){console.error(err);gateMsg(errText(err),true)}
@@ -186,7 +186,7 @@ async function sendMailSafe(fn,target){
   catch(err){if(/continue-uri|unauthorized-domain|invalid-dynamic-link|missing-continue/.test(err&&err.code||""))return await fn(target);throw err}
 }
 async function onGateClick(e){
-  const lb=e.target.closest("[data-glang]");if(lb){LANG=lb.dataset.glang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;showGate(AUTHMODE);render();return}
+  const lb=e.target.closest("[data-glang]");if(lb){setLANG(lb.dataset.glang);store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;showGate(AUTHMODE);render();return}
   const m=e.target.closest("[data-gmode]");if(m){showGate(m.dataset.gmode);return}
   const a=e.target.closest("[data-gact]");if(!a)return;
   const {A,auth}=await fb();

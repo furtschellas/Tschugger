@@ -10,7 +10,7 @@ async function getDataKey(){
     if(!s.exists())throw new Error("no key");
     kv=String(s.data().k||"").trim().replace(/^["'“”«]+|["'“”»]+$/g,"");try{localStorage.setItem("dk:v1",kv)}catch(_){}}
   catch(err){try{kv=localStorage.getItem("dk:v1")||""}catch(_){}if(!kv)throw err}
-  DATAKEY=await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["encrypt","decrypt"]);
+  setDATAKEY(await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["encrypt","decrypt"]));
   return DATAKEY;
 }
 /* own keys per area (Drehbuch, Telefon/E-Mail): Firebase gives them only to people with that right; null = no right */
@@ -107,10 +107,10 @@ async function loadOnce(force){
   const enc=await fetchEnc();
   if(!force&&enc.stamp&&enc.stamp===LASTSTAMP&&S.loaded)return true;
   const key=await getDataKey();
-  let pt;try{pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct))}catch(err){DATAKEY=null;throw err}
+  let pt;try{pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct))}catch(err){setDATAKEY(null);throw err}
   const data=JSON.parse(new TextDecoder().decode(pt));
   if(!data||!Array.isArray(data.days))throw new Error("data format");
-  LASTSTAMP=enc.stamp||null;try{if(LASTSTAMP)localStorage.setItem("dstamp:v1",LASTSTAMP);localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
+  setLASTSTAMP(enc.stamp||null);try{if(LASTSTAMP)localStorage.setItem("dstamp:v1",LASTSTAMP);localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
 }
 function loadErr(err){
   const c=(err&&(err.code||err.name))||"",m=(err&&err.message)||String(err);

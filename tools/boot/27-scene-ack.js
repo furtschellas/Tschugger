@@ -291,3 +291,4 @@ function scPrint(doc){
   const f=document.createElement("iframe");f.style.cssText="position:fixed;width:0;height:0;border:0;right:0;bottom:0";f.addEventListener("load",()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(_){}setTimeout(()=>{f.remove();URL.revokeObjectURL(url)},60000)});f.src=url;document.body.appendChild(f)}
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-sclre]")){SCLOG.list=null;render()}});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-scled]");if(!b)return;e.preventDefault();e.stopPropagation();const [d,k,u]=b.dataset.scled.split("|");scAckDialog(d,k,u||"1")},true);
+function setSCSUB(v){return SCSUB=v}   /* other parts change SCSUB only through this */

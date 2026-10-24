@@ -139,7 +139,7 @@ function addToCalendar(key){
   try{const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
   catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}
 }
-function renderPrePro(one,embedded){PPPEOPLE=null;
+function renderPrePro(one,embedded){setPPPEOPLE(null);
   /* admins: also use the app's user database (people not on the crew list); loads once, then re-renders */
   try{if(typeof window.canPerm==="function"&&perm("contacts.extra")&&typeof ADM!=="undefined"&&!ADM.loaded&&typeof ensureAdm==="function")ensureAdm()}catch(_){}
   const first=S.days.find(d=>d.kind==="shoot"),pm=(S.meta&&S.meta.prepro)||{};

@@ -156,7 +156,10 @@ function viewMorph(v,html){
   /* the page itself may be unchanged at the top: tell the watchers of #view (filters, «jetzt», jump bar …) that it was drawn */
   const c=document.createComment("");v.appendChild(c);v.removeChild(c)}
 window.viewMorph=viewMorph;
-function render(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
+/* other parts hook into every drawing with onRender(fn) (before) / onRendered(fn) (after) – instead of replacing render */
+const RENDER_PRE=[],RENDER_POST=[];function onRender(fn){RENDER_PRE.push(fn)}function onRendered(fn){RENDER_POST.push(fn)}
+function render(){for(const f of RENDER_PRE)try{f()}catch(err){console.warn("render hook",err)}const x=renderCore();for(const f of RENDER_POST)try{f()}catch(err){console.warn("render hook",err)}return x}
+function renderCore(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form")){S.rpend=true;return}} /* never wipe a form someone is typing in – catch up when the field is left */
   S.rpend=false;
   /* a page without access (e.g. the last page of an account whose rights were changed): back to the start page instead of «Kein Zugang» */
@@ -204,3 +207,4 @@ function render(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   saveView();
 }
 
+function setSCRIPTERR(v){return SCRIPTERR=v}   /* other parts change SCRIPTERR only through this */

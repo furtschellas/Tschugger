@@ -2,7 +2,7 @@
 const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false,PREFOK=false;const PREFX=["rc","scrv","csb","iconhint"];
 /* the notices of p.x (or the older single fields) */
 const prefX=p=>{let x={};try{x=JSON.parse(p&&p.x||"{}")||{}}catch(_){}for(const k of PREFX)if(typeof(p&&p[k])==="string"&&x[k]==null)x[k]=p[k];return x};
-{const _store=store;store=function(k,v){_store(k,v);if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}}}
+onStore(k=>{if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}});
 function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 /* a change made just before closing or reloading is saved right away (before, the older copy online won on the next start) */
 const prefsFlush=()=>{if(PREFT){clearTimeout(PREFT);PREFT=null;savePrefs()}};
@@ -29,7 +29,7 @@ function applyPrefs(p){
     const js=k=>{try{return JSON.parse(p[k])}catch(_){return null}};
     for(const [k,o] of [["pv",S.pv],["sv",S.sv],["lv",S.lv]]){const x=js(k);if(x&&typeof x==="object")for(const i in o)if(typeof x[i]==="boolean")o[i]=x[i]}
     for(const k of ["uf","pu"]){const x=js(k);if(x&&typeof x==="object")S[k]=Object.assign({},S[k],...["1","2","3"].filter(u=>typeof x[u]==="boolean").map(u=>({[u]:x[u]})))}
-    if(typeof p.spt==="string")SPT=p.spt==="light"||p.spt==="dark"?p.spt:null;
+    if(typeof p.spt==="string")setSPT(p.spt==="light"||p.spt==="dark"?p.spt:null);
     if(p.theme==="light"||p.theme==="dark")setTheme(p.theme);
   }finally{PREFAPPLY=false}
   if(typeof p.push==="string")pushSyncSoon();
@@ -169,3 +169,5 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
     msg.textContent=L("Vorschlag eingesetzt – prüfen und speichern.")}
   catch(err){msg.className="amsg err";msg.textContent=L("Fehler:")+" "+(err.message||err)}
   b.disabled=false;b.innerHTML=old});
+function setPREFOK(v){return PREFOK=v}   /* other parts change PREFOK only through this */
+function setPREFT(v){return PREFT=v}   /* other parts change PREFT only through this */
