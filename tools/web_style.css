@@ -1070,3 +1070,6 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
   padding:10px 12px;border-radius:14px;background:var(--paper);color:var(--ink);border:1px solid var(--rule);box-shadow:0 6px 24px rgba(0,0,0,.28);max-width:560px;margin:0 auto}
 .scbar .scbt{flex:1 1 140px;font-weight:600}
 .scbar .scbx{background:none;border:0;color:var(--muted);font-size:22px;line-height:1;padding:2px 6px;cursor:pointer}
+.blkppl{margin:8px 0}.blkppl>summary{cursor:pointer;font-weight:600;padding:4px 0}
+.blkq{font:inherit;width:100%;max-width:320px;box-sizing:border-box;padding:7px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);margin:6px 0}
+.blkpl{max-height:320px;overflow:auto}

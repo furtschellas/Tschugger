@@ -81,7 +81,13 @@ function blockTopicOn(tab){const b=blockNow();if(!b||!b.topics||typeof b.topics!
   if(m==="off")return false;return /^\d{4}-\d\d-\d\d$/.test(m)?dateIn(Date.now(),b.tz||TZ0)>=m:true}
 /* the name of the block of a date (« · Indien»), only when there are several blocks */
 function blockTag(date){if(blockList().length<2)return "";const b=blockOf(date);return b?' · <span class="blktag">'+esc(b.name||b.country||b.id)+'</span>':""}
-window.blockTag=blockTag;window.blockTopicOn=blockTopicOn;window.blockOf=blockOf;window.blockNow=blockNow;window.prodTZ=prodTZ;window.tzFor=tzFor;window.blockList=blockList;
+window.blockTag=blockTag;
+/* which blocks this person sees: set by hand in Benutzerverwaltung / Crew (members «blk»), otherwise automatic (all blocks;
+   later from the crew list of each block); people with «Einstellungen» see all */
+function myBlocks(){if(!blockList().length)return null;try{if(typeof can==="function"&&can("settings"))return null}catch(_){}
+  try{const m=typeof MEMBER!=="undefined"?MEMBER:null;if(m&&Array.isArray(m.blk))return m.blk}catch(_){}return null}
+function dayBlockOK(date){const mine=myBlocks();if(!mine)return true;const b=blockOf(date);return !b||mine.includes(b.id)}
+window.myBlocks=myBlocks;window.dayBlockOK=dayBlockOK;window.blockTopicOn=blockTopicOn;window.blockOf=blockOf;window.blockNow=blockNow;window.prodTZ=prodTZ;window.tzFor=tzFor;window.blockList=blockList;
 function localISO(t){return dateIn(t,prodTZ())}
 const todayISO=()=>localISO(Date.now());
 /* «2026-10-24» + n days as a date (calendar days – not 24 h: the change to winter time on 25.10. has 25 hours) */

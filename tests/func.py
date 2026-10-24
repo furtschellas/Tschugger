@@ -900,6 +900,9 @@ async def owner_tests(p, port):
         check("Drehblöcke: Zeitzone und «heute» des laufenden Blocks, Blockname im Drehplan, mit «Einstellungen» alle Themen", all(bk.values()), bk, public=True)
         await E("S.tab='admin';ADM.sub='set';render()"); await pg.wait_for_timeout(800)
         check("Drehblöcke: Abschnitt in App-Verwaltung → App", await E("!!document.querySelector('#view [data-sec=\"set-blocks\"] [data-blkadd]')"))
+        bpl = await E("""(()=>{if(typeof blkPeople!=='function'||!ADM.loaded)return null;const keep=window.BLOCKS;window.BLOCKS=[{id:'b1',name:'A',tz:'Europe/Zurich'},{id:'b2',name:'B',tz:'Europe/Zurich'}];
+          const box=document.createElement('div');box.innerHTML=blkPeople(window.BLOCKS[1]);window.BLOCKS=keep;return {list:box.querySelectorAll('[data-blkp^="b2|"]').length>0,search:!!box.querySelector('[data-blkq]')}})()""")
+        check("Drehblöcke: pro Block Personen zuteilen (Liste mit Suche)", bpl in (None, {"list": True, "search": True}), bpl, public=True)
 
     async def _p7():   # App-Verwaltung (Access, Tour, Dokumente, Log/Tests)
         # Access: roles per permission on top, pencil switches them right there, people to open
@@ -1079,6 +1082,11 @@ async def hidden_data(p, port):
               const on=tabsOn(),r={info:!on.includes('info'),plan:!on.includes('plan')||!had.includes('plan'),dispo:on.includes('dispo')===had.includes('dispo')};
               window.BLOCKS=keep;return r})()""")
             check("Drehblöcke: Themen je Block aus, ab Datum oder an (Rolle ohne «Einstellungen»)", all(bt.values()), bt, public=True)
+            bp = await E("""(()=>{const keep=window.BLOCKS,km=MEMBER,sd=S.days.filter(d=>d.kind==='shoot');if(sd.length<2)return null;const d1=sd[0].date,d2=sd[sd.length-1].date,n0=S.days.length;
+              window.BLOCKS=[{id:'b1',name:'A',tz:'Europe/Zurich',from:'',to:d1},{id:'b2',name:'B',tz:'Europe/Zurich',from:d2,to:''}];
+              setMEMBER(Object.assign({},MEMBER,{blk:['b1']}));const a=!S.days.some(d=>d.date>=d2)&&S.days.some(d=>d.date===d1)&&!S.dispos.some(c=>c&&c.date>=d2);
+              setMEMBER(Object.assign({},MEMBER,{blk:undefined}));const b=S.days.length===n0;window.BLOCKS=keep;setMEMBER(km);cdApplyAll();return {hand:a,auto:b,back:S.days.length===n0}})()""")
+            check("Drehblöcke pro Person: von Hand nur die gewählten Blöcke (Drehtage, Callsheets), automatisch alle", bp in (None, {"hand": True, "auto": True, "back": True}), bp, public=True)
         if phones is None:
             phones = await E("S.crew.flatMap(g=>(g.people||[]).map(p=>String(p.phone||'').replace(/\\D/g,'')).filter(x=>x.length>=8)).slice(0,30)")
         texts = []; links = []

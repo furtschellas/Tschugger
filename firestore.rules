@@ -41,6 +41,8 @@ service cloud.firestore {
         && (get(d('members', request.auth.uid)).data.get('rev', null) == null
             || get(d('members', request.auth.uid)).data.rev.toMillis() < request.auth.token.auth_time * 1000);
     }
+    // Drehblöcke einer Person (von Hand in der Benutzerverwaltung): Liste mit höchstens 20 Block-IDs
+    function blkOk() { return !('blk' in request.resource.data) || (request.resource.data.blk is list && request.resource.data.blk.size() <= 20); }
     // rev nur als Serverzeit des Schreibens (nicht frei wählbar)
     function revOk() { return !('rev' in request.resource.data) || request.resource.data.rev == resource.data.get('rev', null) || request.resource.data.rev == request.time; }
     // Crew = freigeschaltetes Mitglied oder Admin
@@ -184,7 +186,7 @@ service cloud.firestore {
       allow update, delete: if isOwner() && !isRoot(resource.data.email);
       // alle Admins dürfen die Profildaten der Benutzenden ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
       allow update: if can('users.edit') && (isOwner() || !ownerEmail(resource.data.email))
-        && changesOnly(profile().concat(['rev'])) && profileOk() && revOk();
+        && changesOnly(profile().concat(['rev', 'blk'])) && profileOk() && revOk() && blkOk();
       allow get: if signedIn() && request.auth.uid == uid;
       allow create: if isOwner() || (isAdmin() && request.auth.uid == uid) || (verified() && request.auth.uid == uid
         && exists(d('invites', myEmail()))

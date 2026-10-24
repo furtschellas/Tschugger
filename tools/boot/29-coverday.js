@@ -53,9 +53,12 @@ function cdRenumber(days){const win=days.filter(d=>d.kind==="shoot"&&cdNo(d)!=nu
   win.forEach((d,i)=>{if(cdNo(d)===nos[i])return;if(d.short0==null)d.short0=d.short||d.label||"";if(d.short)d.short=cdSetNo(d.short,nos[i]);if(d.label)d.label=cdSetNo(d.label,nos[i])})}
 function cdChrono(days0){if(cdChronoOk(days0))return days0;const days=days0.map(d=>Object.assign({},d));cdRenumber(days);return days}
 window.cdApplyAll=()=>{if(!S.days0)return;S.days=cdTransform(S.days0);
+  /* Drehblöcke: days (and their callsheets) of blocks this person does not see are left out */
+  try{if(myBlocks()){const t=S.days;S.days=t.filter(d=>dayBlockOK(d.date))}}catch(_){}
   /* callsheets of changed days go with their scenes: to the day that now has (most of) these scenes – also a new callsheet that already
      shows the change stays that way; the number in the title follows the shooting day; no matching day: «Callsheet folgt» */
   if(S.dispos0)S.dispos=cdDispos(S.dispos0,S.days);
+  try{if(myBlocks()){S.dispos=S.dispos.filter(c=>!c||!c.date||dayBlockOK(c.date))}}catch(_){}
   try{MEMO.clear()}catch(_){}};
 const cdKey=x=>norm(String(x||"")).replace(/pt.*$/,"");
 const cdDayKeys=d=>new Set([].concat(arr(d&&d.items),arr(d&&d.unit2&&d.unit2.items),arr(d&&d.unit3&&d.unit3.items)).filter(i=>i&&i.sc).map(i=>cdKey(i.sc)));
