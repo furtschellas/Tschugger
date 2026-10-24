@@ -1615,9 +1615,17 @@ def main():
     olds = {(s.get("kind"), base(s.get("name"))): s for s in meta.get("sources", [])}
     fails = dict(meta.get("fails") or {}); seen = set()   # «kind|file|modified» → failed attempts (at most 3 per file version)
     def fkey(kind, f): return kind + ("2" if kind == "dispo" else "") + "|" + base(f["name"]) + "|" + str(f["modified"])   # dispo2: new reading (structure «cs»), fresh tries
+    def x_name(x): return x.get("name") or ""
     def keep_old(kind, f):
-        """the file could not be used: keep the previous entry in the sources, so the file is tried again in the next run"""
-        sources[-1] = olds.get((kind, base(f["name"]))) if kind in ("dispo", "prep") else oldkind.get(kind)
+        """the file could not be used: keep the previous entry in the sources, so the file is tried again in the next run.
+        The entry of THIS file is replaced (found by kind and name) – before, the last entry was taken, and a failed 2nd-unit sheet
+        overwrote the schedule's entry: the whole schedule PDF was read again in every run (API credit)"""
+        if kind == "unit2": return   # the 2nd-unit sheets have their own cache (hash per sheet), no entry of their own here
+        nm = base(f["name"]); new = olds.get((kind, nm)) if kind in ("dispo", "prep") else oldkind.get(kind)
+        idx = [i for i, x in enumerate(sources) if isinstance(x, dict) and x.get("kind") == kind]
+        same = [i for i in idx if base(x_name(sources[i])) == nm]
+        if same: sources[same[-1]] = new
+        elif idx and kind not in ("dispo", "prep"): sources[idx[-1]] = new
     def may_try(kind, f):
         k = fkey(kind, f); seen.add(k)
         # started by hand with «retry»: files skipped after 3 failed attempts are tried again
