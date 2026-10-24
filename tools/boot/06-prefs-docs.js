@@ -124,7 +124,7 @@ export function docsSec(){
       return '<details class="docd" data-sec="doc-'+k+'"'+(SECS["doc-"+k]?' open':'')+'><summary><b>'+esc(L(d.t))+'</b>'+(r.custom?' <span class="ust role">'+L("angepasst")+'</span>':'')+'</summary>'+
         '<form class="docf" data-doc="'+k+'" data-dl="'+dl+'"><p class="ahint">'+esc(L(d.use))+'</p>'+(k==="maint"?'<label class="ck docon"><input type="checkbox" data-mainton'+(maintOn()?' checked':'')+'> '+esc(L("Wartungshinweis eingeschaltet (für alle)"))+'</label><label class="ck docon"><input type="checkbox" data-maintonce'+(maintOnce()?' checked':'')+'> '+esc(L("Jeder Person nur einmal anzeigen (neuer Text: wieder einmal)"))+'</label>':'')+(d.subject!==undefined?'<label>'+L(k==="welcome"||k==="testwelcome"||k==="maint"?"Titel":"Betreff")+'<input name="ds" maxlength="200" value="'+esc(r.subject)+'"></label>':'')+
         '<label>'+L("Text")+'<textarea name="db" rows="'+(k==="disclaimer"?5:12)+'">'+esc(r.body)+'</textarea></label>'+
-        '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+(window.CHATURL?'<button type="button" class="pillbtn docai" data-docai>✨ '+esc(L("Text mit KI überarbeiten"))+'</button>':'')+(r.custom?'<button type="button" class="lnk" data-docreset="'+k+'" data-dl="'+dl+'">'+L("Standard wiederherstellen")+'</button>':'')+(k==="testwelcome"?'<button type="button" class="lnk" data-twagain>'+L("Allen Test-Usern nochmals zeigen")+'</button>':'')+(k!=="welcome"&&k!=="disclaimer"&&k!=="testwelcome"&&k!=="invitewa"&&k!=="maint"&&ME?'<a class="lnk" href="'+esc(mailto(ME.email,k,{vorname:"Test",name:"Test Person",passwort:"Abc123xyz",lang:dl}))+'">'+L("Test an mich")+'</a>':'')+'</div></form></details>'}).join("")+
+        '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+(r.custom?'<button type="button" class="lnk" data-docreset="'+k+'" data-dl="'+dl+'">'+L("Standard wiederherstellen")+'</button>':'')+(k==="testwelcome"?'<button type="button" class="lnk" data-twagain>'+L("Allen Test-Usern nochmals zeigen")+'</button>':'')+(k!=="welcome"&&k!=="disclaimer"&&k!=="testwelcome"&&k!=="invitewa"&&k!=="maint"&&ME?'<a class="lnk" href="'+esc(mailto(ME.email,k,{vorname:"Test",name:"Test Person",passwort:"Abc123xyz",lang:dl}))+'">'+L("Test an mich")+'</a>':'')+'</div></form></details>'}).join("")+
     '<p class="ahint">'+L("Bestätigungs-Mail, Passwort-Zurücksetzen und Anmelde-Link verschickt Firebase. Deren Texte änderst du in der Firebase-Konsole unter Authentication → Templates.")+'</p></div>';
 }
 const docDef=(k,lang)=>lang==="de"?{subject:DOCDEF[k].subject||"",body:DOCDEF[k].body||""}:Object.assign({subject:DOCDEF[k].subject||"",body:DOCDEF[k].body||""},(DOCI18N[k]||{})[lang]||(DOCI18N[k]||{}).en||{});
@@ -167,21 +167,5 @@ document.addEventListener("change",async e=>{const c=e.target.closest&&e.target.
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{maint:{on}}},{merge:true});
     window.DOCS=Object.assign({},window.DOCS,{maint:Object.assign({},(window.DOCS||{}).maint,{on})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
     showMsg(L(on?"Wartungshinweis eingeschaltet.":"Wartungshinweis ausgeschaltet."),2500)}catch(err){c.checked=!on;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
-/* «Text mit KI überarbeiten»: the assistant (Cloudflare Worker → Claude) improves title and text of the open document in its language;
-   the result only goes into the fields – it counts once it is saved */
-const DOCLN={de:"Deutsch (Schweiz, ohne ß, ohne Gender-Doppelpunkt)",fr:"français",it:"italiano",en:"English",hi:"Hindi"};
-document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-docai]");if(!b||!can("settings")||!window.CHATURL)return;e.preventDefault();
-  const f=b.closest("form.docf"),msg=f.querySelector(".amsg"),lang=f.dataset.dl||"de",ti=f.ds?String(f.ds.value||""):"",tx=String(f.db.value||"");if(!tx.trim())return;
-  b.disabled=true;const old=b.innerHTML;b.innerHTML="✨ "+esc(L("KI überarbeitet …"));msg.className="amsg";msg.textContent="";
-  const q="Überarbeite diesen Text der Crew-App, damit er klar, freundlich und gut lesbar ist. Sprache: "+(DOCLN[lang]||lang)+". Inhalt und Fakten genau gleich lassen; "+
-    "Platzhalter in geschweiften Klammern wie {vorname} unverändert lassen; Namen, Drehtage (z. B. DT03) und Szenen nicht ändern; Absätze mit Leerzeile trennen. "+
-    "Antworte NUR mit JSON: {\"titel\":\"…\",\"text\":\"…\"}"+(f.ds?"":" (titel leer lassen)")+".\n\nTITEL: "+ti+"\n\nTEXT:\n"+tx;
-  try{const r=await withTimeout(wkPost("/chat",{q,lang,today:"",who:ME.email,hist:[],ctx:""}),60000,"docai");
-    const j=await r.json().catch(()=>({}));if(!r.ok||!j.a)throw new Error(j.error||r.status);
-    const m=String(j.a).match(/\{[\s\S]*\}/);const o=m?JSON.parse(m[0]):null;if(!o||!o.text)throw new Error(L("Keine brauchbare Antwort."));
-    if(f.ds&&o.titel)f.ds.value=String(o.titel).trim();f.db.value=String(o.text).replace(/ß/g,"ss").trim();
-    msg.textContent=L("Vorschlag eingesetzt – prüfen und speichern.")}
-  catch(err){msg.className="amsg err";msg.textContent=L("Fehler:")+" "+(err.message||err)}
-  b.disabled=false;b.innerHTML=old});
 export function setPREFOK(v){return PREFOK=v}   /* other parts change PREFOK only through this */
 export function setPREFT(v){return PREFT=v}   /* other parts change PREFT only through this */

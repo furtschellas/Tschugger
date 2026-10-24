@@ -909,7 +909,6 @@ html body #view .reppage .repmodes .pillbtn.on{background:var(--accent)!importan
 html body #view .pacc .paccd>summary>span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;word-break:normal;hyphens:auto;-webkit-hyphens:auto}
 html body #view .pacc .paccd>summary>.paccpen,html body #view .pacc .paccd>summary>.pacn{flex:none}
 .docf .docon{margin:4px 0 2px;font-weight:600}
-.docf .arb .docai{width:auto}
 /* callsheet jump bar: solid, not see-through */
 /* the bar is solid but shows exactly the part of the page background (colour glow of the page) that lies behind it: the same gradients,
    sized to the screen and shifted by the position of the bar (--cjx/--cjy, set while scrolling) – no visible edge */
