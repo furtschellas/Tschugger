@@ -331,6 +331,18 @@ check("Szenen-Details: Abteilungen je Szene aus dem Drehplan gelesen",
       and _pb.get(10, {}).get("184e", {}).get("h") == {"FX": "Double BJ (in water), Stunt Double Pirmin", "XX": "6xPolice Officer Valais"}
       and _pb[10]["184e"]["c"] == [["Crew", ["Lifeguard"]], ["Special", ["Cam Boat or Platform"]], ["Loc", ["Warmup Tent"]], ["Stunt", ["Stone (soft dummy, from stunt)"]], ["Props", ["Postcard with QR-code"]]], _pb)
 _pb2 = U.parse_breakdown("Day #8 - SR\n22:00\nTschugger Sched - Sched 261018 - page # 8\n\n\f27 4/8 pgs I/N VALAIS - POLICE STATION - OPEN SPACE\nOFFICE\n\n1, 10\n\n19:15\n1h\n\nPeter interrogating Bax.\nLoc: Salgesch\n\nProps: Flight Tickets, Handcuffs, Story Date: 20.10.2032\n")
+# KI-Tageslimit: Ausgaben werden pro Tag geschätzt; über dem Limit nur noch Callsheets (bis 1.5×), danach nichts
+U.AI["m"] = {}; U.AI["warned"] = False; _lim = U.AI_DAY_USD
+U.ai_add("claude-sonnet-5-5", 1_000_000, 0)   # 3 USD
+check("KI-Kosten: Sonnet-Eingabe wird geschätzt", abs(U.ai_spent() - 3.0) < 1e-6, U.ai_spent())
+U.AI["m"]["ai"]["usd"] = _lim + 0.01
+check("KI-Tageslimit: Drehplan wartet, Callsheet geht noch", not U.ai_allowed("schedule") and U.ai_allowed("dispo"))
+U.AI["m"]["ai"]["usd"] = _lim * 1.5 + 0.01
+check("KI-Tageslimit: über 1.5× auch kein Callsheet mehr", not U.ai_allowed("dispo"))
+U.AI["m"]["ai"]["day"] = "2000-01-01"
+check("KI-Tageslimit: neuer Tag beginnt bei null", U.ai_spent() == 0 and U.ai_allowed("schedule"))
+U.AI["m"] = {}; U.AI["warned"] = False
+
 check("Szenen-Details: Szene direkt nach einem Seitenumbruch (27 auf D8) wird gefunden", (_pb2.get(8, {}).get("27") or {}).get("c") == [["Props", ["Flight Tickets", "Handcuffs"]], ["Story Date", ["20.10.2032"]]], _pb2)
 check("Szenen-Details: «Special: Elec: …» bleibt wie im PDF zusammen", (U.parse_breakdown("Day #1\n186 pt2 1 2/8 pgs E/Ev X 1\n17:30\n\nParty.\nLoc: Tannen\n\nCrew: Drone, Special: Elec: enhance beamer light, Set Dec: Film projection\n").get(1, {}).get("186pt2") or {}).get("c") == [["Crew", ["Drone"]], ["Special: Elec", ["enhance beamer light"]], ["Set Dec", ["Film projection"]]])
 

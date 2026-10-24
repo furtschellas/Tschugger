@@ -44,6 +44,52 @@ ROOTRECCE = (os.environ.get("DROPBOX_ROOT_RECCE") or "ns:13058967505/RECCE").rst
 PIC_DEADLINE = time.time() + 10 * 60   # new previews only for 10 minutes per run; the rest follows in the next runs
 PIC_BUDGET = [int(os.environ.get("PIC_BUDGET") or 250)]   # and at most this many new preview files per run (keeps each push small)   # shared folder «AUFLÖSUNG» (in «TSCHUGGER - 3D Locations»)   # shared folder «3D» (weekly prep schedule, floorplans)
 MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
+MODEL_SMALL = os.environ.get("CLAUDE_MODEL_SMALL") or "claude-haiku-5-5"   # translations: a smaller, cheaper model is enough
+# API credit: estimated spend per day (USD, list prices per million tokens in/out); over the limit only callsheets are read, then nothing
+AI_DAY_USD = float(os.environ.get("AI_DAY_USD") or 10)
+AI_PRICE = {"haiku": (1.0, 5.0), "sonnet": (3.0, 15.0), "opus": (5.0, 25.0)}
+AI = {"m": {}, "warned": False}
+
+
+class Budget(Exception): pass
+
+
+def ai_spent():
+    d = (AI["m"].get("ai") or {})
+    return float(d.get("usd") or 0) if d.get("day") == NOW[:10] else 0.0
+
+
+def ai_add(model, tin, tout):
+    pin, pout = next((v for k, v in AI_PRICE.items() if k in model), AI_PRICE["sonnet"])
+    d = AI["m"].get("ai") or {}
+    if d.get("day") != NOW[:10]: d = {"day": NOW[:10], "usd": 0.0, "n": 0}
+    d["usd"] = round(float(d.get("usd") or 0) + tin / 1e6 * pin + tout / 1e6 * pout, 4); d["n"] = int(d.get("n") or 0) + 1
+    AI["m"]["ai"] = d
+
+
+def ai_allowed(kind):
+    """callsheets first: up to 1.5 × the day limit; everything else only below the limit"""
+    sp = ai_spent()
+    ok = sp < AI_DAY_USD * (1.5 if kind == "dispo" else 1.0)
+    if not ok and not AI["warned"]:
+        AI["warned"] = True
+        print("::warning::KI-Tageslimit erreicht (%.2f von %.0f USD geschätzt) – nur noch Callsheets%s" % (sp, AI_DAY_USD, "" if kind == "dispo" else ", der Rest morgen"), flush=True)
+        ai_alarm(sp)
+    return ok
+
+
+def ai_alarm(sp):
+    """once a day: push to the owner (the reading of documents waits)"""
+    try:
+        d = AI["m"].get("ai") or {}
+        if d.get("alarm") == NOW[:10] or not fsadmin.sa(): return
+        txt = {"de": ("KI-Tageslimit erreicht", "Heute wurden schon etwa %.0f USD für das Einlesen verbraucht. Callsheets werden weiter gelesen, der Rest morgen."),
+               "en": ("AI daily limit reached", "About %.0f USD were spent on reading documents today. Callsheets are still read, the rest tomorrow."),
+               "fr": ("Limite IA du jour atteinte", "Environ %.0f USD ont déjà été utilisés aujourd'hui pour lire les documents. Les feuilles de service sont encore lues, le reste demain."),
+               "it": ("Limite IA giornaliero raggiunto", "Oggi sono già stati usati circa %.0f USD per leggere i documenti. I fogli di chiamata vengono ancora letti, il resto domani.")}
+        i18n = {l: {"title": t, "body": b % sp} for l, (t, b) in txt.items()}
+        if fsadmin.alarm_broadcast(fsadmin.crew_key(), i18n, ["owner"], "https://console.anthropic.com/settings/usage"): d["alarm"] = NOW[:10]; AI["m"]["ai"] = d
+    except Exception as e: log("KI-Alarm nicht gesendet:", type(e).__name__)
 FORCE = os.environ.get("FORCE", "").lower() in ("ja", "yes", "true", "1")
 EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
 TRIGGER = os.environ.get("TRIGGER", "")   # «cron» when the Cloudflare Worker started the run on its schedule
@@ -1127,31 +1173,36 @@ def spec():
 
 class Truncated(RuntimeError): pass
 
-def claude(parts, task, max_tokens=32000):
-    """parts: list of content blocks; returns parsed JSON from the answer."""
-    body = {"model": MODEL, "max_tokens": max_tokens, "stream": True,
+def claude(parts, task, max_tokens=32000, kind="", model=None):
+    """parts: list of content blocks; returns parsed JSON from the answer. kind «dispo» = callsheet (read first when the credit is short)"""
+    if not ai_allowed(kind): raise Budget("KI-Tageslimit")
+    model = model or MODEL
+    body = {"model": model, "max_tokens": max_tokens, "stream": True,
             "system": "Du wandelst Produktionsunterlagen eines Filmdrehs in JSON-Daten für eine Crew-App um. Antworte ausschliesslich mit einem einzigen JSON-Wert, ohne Erklärungen und ohne Markdown.\n\n" + spec(),
             "messages": [{"role": "user", "content": parts + [{"type": "text", "text": task}]}]}
     h = {"x-api-key": os.environ["ANTHROPIC_API_KEY"].strip(), "anthropic-version": "2023-06-01", "content-type": "application/json"}
     for attempt in range(3):
         try:
-            text = []; stop = ""
+            text = []; stop = ""; tin = tout = 0
             with requests.post("https://api.anthropic.com/v1/messages", headers=h, json=body, stream=True, timeout=(30, 600)) as r:
                 if r.status_code != 200:
                     et = ""
                     try: et = ((r.json() or {}).get("error") or {}).get("type") or ""
                     except Exception: pass
                     # visible in the run summary: status and error type of the API only (never content)
-                    print("::warning::Claude-API HTTP %s %s (Modell %s)" % (r.status_code, et, MODEL), flush=True)
+                    print("::warning::Claude-API HTTP %s %s (Modell %s)" % (r.status_code, et, model), flush=True)
                     raise RuntimeError("Claude-API HTTP %s: %s" % (r.status_code, r.text[:200]))
                 for line in r.iter_lines(decode_unicode=True):
                     if not line or not line.startswith("data:"): continue
                     ev = json.loads(line[5:])
                     if ev.get("type") == "content_block_delta" and ev["delta"].get("type") == "text_delta": text.append(ev["delta"]["text"])
+                    if ev.get("type") == "message_start": tin = int(((ev.get("message") or {}).get("usage") or {}).get("input_tokens") or 0)
+                    if ev.get("type") == "message_delta": tout = int((ev.get("usage") or {}).get("output_tokens") or tout)
                     if ev.get("type") == "error":
                         print("::warning::Claude-API Fehler %s" % ((ev.get("error") or {}).get("type") or ""), flush=True)
                         raise RuntimeError("Claude-API Fehler: %s" % ev.get("error"))
                     if ev.get("type") == "message_delta" and (ev.get("delta") or {}).get("stop_reason") == "max_tokens": stop = "max_tokens"
+            ai_add(model, tin, tout)
             if stop == "max_tokens": raise Truncated("Antwort abgeschnitten (zu lang)")
             t = "".join(text).strip()
             t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
@@ -1511,7 +1562,8 @@ def main():
     scr = (dec_area(R / "script.enc.json", "script") or {}).get("script", [])
     if (R / "contacts.enc.json").exists(): merge_contacts(data.get("crew") or [], (dec_area(R / "contacts.enc.json", "contacts") or {}).get("c"))
     u2_also_strip(data.get("days"))
-    meta = data.get("meta") or {}
+    meta = data.setdefault("meta", {})
+    AI["m"] = meta   # the AI spend of the day is kept with the data (encrypted)
     base = lambda n: (n or "").rsplit("/", 1)[-1]
     old = {(s.get("kind"), base(s.get("name"))): s.get("modified") for s in meta.get("sources", [])}
     oldkind = {}
@@ -1539,7 +1591,9 @@ def main():
         if FORCE or TRIGGER == "retry" or fails.get(k, 0) < 3: return True
         keep_old(kind, f); log(kind, "übersprungen nach 3 Fehlversuchen", _h(f["name"])); print("::warning::%s übersprungen nach 3 Fehlversuchen" % kind); return False
     def failed(kind, f, why):
-        k = fkey(kind, f); seen.add(k); fails[k] = fails.get(k, 0) + 1
+        k = fkey(kind, f); seen.add(k)
+        if isinstance(why, Budget): keep_old(kind, f); return   # day limit: tried again later, not counted as a failed attempt
+        fails[k] = fails.get(k, 0) + 1
         keep_old(kind, f); log(kind, "nicht übernommen (Versuch %d/3):" % fails[k], (why if isinstance(why, str) else type(why).__name__)[:120])   # public log: no exception text
         print("::warning::%s nicht übernommen (Versuch %d/3): %s" % (kind, fails[k], why if isinstance(why, str) else type(why).__name__))
 
@@ -1826,8 +1880,8 @@ def main():
         try:
             # the callsheet in two parts (one answer was too long): A = head … vehicles, B = transport … calls
             blk = pdf_block(dbx.download(f["id"]))
-            a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A + CS_BASE + cs_known_hint(data), 32000)
-            b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000)
+            a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A + CS_BASE + cs_known_hint(data), 32000, kind="dispo")
+            b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000, kind="dispo")
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
             cs["v"] = 5   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date; 4: places learnt (names, base rooms, map links); 5: one base with its rooms
             nf = cs_fill_places(cs, data)
@@ -1840,7 +1894,7 @@ def main():
                 if src:
                     tr = claude([{"type": "text", "text": json.dumps(src, ensure_ascii=False)}],
                         "Übersetze jeden Text dieser JSON-Liste nach de, fr, it, en und hi. Namen, Orte, Strassen, Motiv- und Szenentitel, Zeiten und Links unverändert lassen. "
-                        "Antworte kompakt mit {\"de\": [...], \"fr\": [...], \"it\": [...], \"en\": [...], \"hi\": [...]} – gleiche Anzahl und Reihenfolge wie die Liste.", 32000)
+                        "Antworte kompakt mit {\"de\": [...], \"fr\": [...], \"it\": [...], \"en\": [...], \"hi\": [...]} – gleiche Anzahl und Reihenfolge wie die Liste.", 32000, kind="dispo", model=MODEL_SMALL)
                     if isinstance(tr, dict):
                         cs["tr"] = {lg: {o: t for o, t in zip(src, tr.get(lg) or []) if isinstance(t, str) and t and t != o} for lg in ("de", "fr", "it", "en", "hi")}
             except Exception as e: log("Callsheet-Übersetzung:", type(e).__name__)

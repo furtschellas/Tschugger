@@ -68,6 +68,8 @@ jobs:
           DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
           DROPBOX_ROOT: ${{ vars.DROPBOX_ROOT }}
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          CLAUDE_MODEL_SMALL: ${{ vars.CLAUDE_MODEL_SMALL }}
+          AI_DAY_USD: ${{ vars.AI_DAY_USD }}
           FORCE: ${{ github.event.inputs.force }}
         run: python tools/update_from_dropbox.py
       # erfolgreich: Daten, Bilder und Status; fehlgeschlagen: nur der Status (nie halbe Daten oder gelöschte Bilder)
