@@ -42,7 +42,7 @@ def _i18n_split(code):
     "{const a=applyStatic;applyStatic=function(){if(!I18NHAVE.has(LANG))i18nLoad(LANG,()=>{a();try{render()}catch(_){}});return a.apply(this,arguments)}}\n")
 mods=[(n,(_i18n_split(c) or c) if n=="02-i18n.js" else c) for n,c in mods]
 # speed: the App-Verwaltung (backup, users, roles – only for admins) goes to admin.js, loaded when it is opened (12a-admin-core: loadAdminUI)
-LAZY=("12b-admin-backup.js","12c-admin-users.js","12d-admin-roles.js")
+LAZY=("12b-admin-backup.js","12c-admin-users.js","12d-admin-roles.js","12e-admin-blocks.js")
 _lz=[(n,c) for n,c in mods if n in LAZY]
 if len(_lz)==len(LAZY):
   _adm="".join("/* "+n+" */\n"+c+"\n;\n" for n,c in _lz)

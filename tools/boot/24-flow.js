@@ -173,7 +173,7 @@ function cqModel(c,r){const ack=window.RIDEACK,hit=CQMEMO.get(r);if(hit&&hit.c==
 const cqLeft=(at,min)=>Math.max(0,Math.ceil(min-(Date.now()-at)/60000));
 const cqDown=(at,min,tip)=>' <span class="mkd cqcd" data-cqat="'+at+'" data-cqmin="'+min+'" title="'+esc(tip)+'">'+cqLeft(at,min)+'′</span>';
 const cqUp=(at,tip)=>at?' <span class="mkd cqcd" data-cqat="'+at+'" data-cqup="1" title="'+esc(tip)+'">'+Math.max(0,Math.floor((Date.now()-at)/60000))+'′</span>':"";
-const cqClock=at=>{try{return new Date(at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"})}catch(_){return ""}};
+const cqClock=at=>{try{return new Date(at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:typeof prodTZ==="function"?prodTZ():"Europe/Zurich"})}catch(_){return ""}};
 const cqMin=x=>+x.slice(0,2)*60+ +x.slice(3);
 /* P/UP: driver on site – minutes waiting; on the way – the planned driving time of the pickup ride counting down */
 function cqDrive(m,cur){if(cur===1)return cqUp(m.puAt,L("Fahrer wartet seit"));if(cur!==2||!m.ride)return"";

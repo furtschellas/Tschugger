@@ -757,15 +757,26 @@ def u2_also_add(days, sheets=None):
         u2.setdefault("items", []).extend(items)
         log("2nd Unit: Szene", sc, "zusätzlich an Tag", no); print("::notice::2nd Unit zusätzlich: Szene %s an Tag %d – %s, %d Einträge (auch bei der 1st Unit)" % (sc, no, src, len(items)))
 
-def pick_schedule(files):
-    # the Swiss schedule: in 02_Schedule or a subfolder (formerly 02_Schedule/CH) – not the archive and not India
-    c = [f for f in files if low(f).startswith("02_schedule/") and "_archiv" not in low(f) and "india" not in low(f) and low(f).endswith(".pdf")]
+def blk_words(b):
+    """the Dropbox words of a shooting block («Indien, India» or «indien|india») → ["indien", "india"]"""
+    return [w.strip().lower() for w in re.split(r"[|,;/]+", str((b or {}).get("kw") or "")) if len(w.strip()) >= 3]
+
+
+def blk_hit(name, words): return any(re.search(r"(?<![a-z])" + re.escape(w) + r"(?![a-z])", name.lower()) for w in words)
+
+
+def pick_schedule(files, words=None, other=()):
+    """the main schedule (words=None): in 02_Schedule or a subfolder – not the archive, not India and not another shooting block;
+    words: the schedule of a shooting block (its name has one of the words, e.g. «Tschugger Sched 261018 INDIA.pdf»)"""
+    c = [f for f in files if low(f).startswith("02_schedule/") and "_archiv" not in low(f) and "/z old/" not in low(f) and low(f).endswith(".pdf")
+         and (blk_hit(low(f), words) if words else ("india" not in low(f) and not any(blk_hit(low(f), w) for w in other)))]
     def key(f):
         n = f["name"].rsplit("/", 1)[-1]
         d = re.search(r"(\d{6})", n); v = re.search(r"v(\d+)", n, re.I)
         # the plain full schedule «Tschugger Sched 261018 CH.pdf» first; other layouts of the same version («… Colomns CH»,
         # «… Oneline CH») only when it is missing – their text is laid out differently (scene details, units not readable)
         low_n = n.lower()
+        if words: low_n = re.sub(r"\s+(%s)\.pdf$" % "|".join(map(re.escape, words)), " ch.pdf", low_n)   # «… 261018 INDIA.pdf» counts like «… 261018 CH.pdf»
         var = 3 if re.search(r"sched\s+\d{6}(\s*v\d+)?\s+ch\.pdf$", low_n) else 0 if "oneline" in low_n else 1 if re.search(r"colomn|column|spalte", low_n) else (2 if re.search(r"\bch\b", low_n) else 1)
         return (d.group(1) if d else "", int(v.group(1)) if v else 0, var, f["modified"] or "")
     return max(c, key=key) if c else None
@@ -1484,8 +1495,15 @@ def main():
         keep_old(kind, f); log(kind, "nicht übernommen (Versuch %d/3):" % fails[k], (why if isinstance(why, str) else type(why).__name__)[:120])   # public log: no exception text
         print("::warning::%s nicht übernommen (Versuch %d/3): %s" % (kind, fails[k], why if isinstance(why, str) else type(why).__name__))
 
+    # shooting blocks (App-Verwaltung → Drehblöcke): a block with Dropbox words has its own schedule (e.g. «… INDIA.pdf»);
+    # its days carry "blk" and are kept apart while the main schedule is read, then put back in date order
+    BLOCKS = [b for b in (cfg.get("blocks") or []) if isinstance(b, dict) and b.get("id") and blk_words(b)] if isinstance(cfg.get("blocks"), list) else []
+    xdays = [d for d in data.get("days") or [] if d.get("blk")]
+    if isinstance(cfg.get("blocks"), list): xdays = [d for d in xdays if any(d["blk"] == b["id"] for b in BLOCKS)]   # a block removed: its days go
+    data["days"] = [d for d in data.get("days") or [] if not d.get("blk")]
+
     # schedule
-    f = pick_schedule(files)
+    f = pick_schedule(files, None, [blk_words(b) for b in BLOCKS])
     # once: the 2nd unit of the main schedule was overwritten by the sheet before it was kept → read the schedule again (no push)
     need_main = any(isinstance(d.get("unit2"), dict) and d["unit2"].get("src") == "2nd" for d in data.get("days") or []) and not meta.get("unit2Main")
     if f:
@@ -1559,6 +1577,37 @@ def main():
             else:
                 failed("schedule", f, "Ergebnis unvollständig – bisherige Daten bleiben")
           except Exception as e: failed("schedule", f, e)
+
+    # schedules of the shooting blocks (same reading as the main schedule; the days get "blk")
+    for b in BLOCKS:
+        fb = pick_schedule(files, blk_words(b))
+        if not fb: log("Drehblock", b.get("name") or b["id"], ": kein eigener Drehplan gefunden"); continue
+        kind = "schedule:" + b["id"]
+        sources.append({"kind": kind, "name": fb["name"], "modified": fb["modified"]})
+        bold = [d for d in xdays if d.get("blk") == b["id"]]
+        if (is_new(kind, fb) or not bold) and may_try(kind, fb):
+            log("Drehplan Drehblock", b.get("name") or b["id"], ": neu, wird ausgelesen")
+            try:
+                res = claude([pdf_block(dbx.download(fb["id"]))],
+                    "WICHTIG: \"unit2\" nur für Tage, an denen der Drehplan eine eigene Zeile «2nd unit: …» hat. «B-Cam» u.ä. gehören zu den normalen items des Tages, nie in unit2. "
+                    "Erzeuge aus diesem Drehplan ein JSON-Objekt {\"scheduleVersion\": \"Sched …\" (aus dem Dateinamen: %s), \"cast\": {Rollennummer: Rollenname}, \"days\": [ein Objekt pro Kalendertag gemäss Collection \"days\", jeweils mit Feld \"id\" = Datum]}. Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisherige Übersetzungen zum Wiederverwenden (gleicher Text = gleiche Übersetzung): %s"
+                    % (fb["name"].rsplit("/", 1)[-1], json.dumps(strip_ids(bold or data.get("days"))[:40], ensure_ascii=False)[:60000]), 64000)
+                days = [d for d in ((res.get("days") if isinstance(res, dict) else None) or []) if isinstance(d, dict) and re.match(r"\d{4}-\d{2}-\d{2}$", str(d.get("date") or ""))]
+                if len(days) >= max(1, len(bold) // 2):
+                    for d in days: d["blk"] = b["id"]; d["id"] = d["date"]
+                    ch = changed_days(bold, days, TODAY) if bold else []
+                    if ch: NEWS.append({"kind": "plan", "dates": ch, "version": res.get("scheduleVersion") or ""})
+                    xdays = [d for d in xdays if d.get("blk") != b["id"]] + days
+                    meta.setdefault("blockSched", {})[b["id"]] = res.get("scheduleVersion") or ""
+                    for k, v in (res.get("cast") or {}).items(): meta.setdefault("cast", {}).setdefault(str(k), v)
+                    changed = True; log("Drehplan Drehblock", b.get("name") or b["id"], ":", len(days), "Tage")
+                else: failed(kind, fb, "Ergebnis unvollständig – bisherige Daten bleiben")
+            except Exception as e: failed(kind, fb, e)
+    # back together: a date the main schedule and a block both have → the block's day (its own schedule is the newer plan for it)
+    if xdays or any(d.get("blk") for d in data.get("days") or []):
+        bdates = {d["date"] for d in xdays}
+        data["days"] = sorted([d for d in data.get("days") or [] if d.get("date") not in bdates] + xdays, key=lambda d: d.get("date", ""))
+        for i, d in enumerate(data["days"]): d["order"] = i
 
     # 2nd unit: the detailed shooting order (Google Sheet, linked in the Dropbox as «…2nd_Unit…SHOOTING_ORDER….web»)
     # replaces the 2nd unit part of each shooting day in the Drehplan; one sheet tab per day («#5-Salgesch»; «ALT» tabs ignored)

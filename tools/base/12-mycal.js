@@ -222,7 +222,7 @@ function renderPlan(){
   const d=S.days.find(x=>x.id===S.day)||PD[0];if(!d)return h+'<div class="empty">'+L('Noch keine Drehtage.')+'</div>';
   /* round button: the original schedule PDF, opened at the page of this shooting day */
   const spBtn=planPdfBtn(d);
-  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
+  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+blockTag(d.date)+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
   if(d.kind==="shoot")h+=planFactsHTML(d,spBtn);
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
   h+='</div>';
