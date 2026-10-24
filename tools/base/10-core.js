@@ -125,7 +125,10 @@ export const safeUrl=u=>/^https?:\/\/[^\s"'<>]+$/i.test(String(u||""))?String(u)
 export const maps=q=>{const u=locMapIndex().get(norm(q));return u?safeUrl(u):mapsSearch(q)};   /* safeUrl: no quotes or javascript: from the documents */
 /* a location's own link first (two motifs can share an address but have different pins) */
 export const locHref=(l,ad)=>(l&&/^https:\/\//.test(l.map||""))?l.map:maps(ad);
-const mapsSearch=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
+/* Google Maps links: a search (address or place) and a route by car (without «from»: from where the phone is) */
+export const mapsQ=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
+export const mapsDir=(o,de)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+encodeURIComponent(o):"")+"&destination="+encodeURIComponent(de);
+const mapsSearch=q=>mapsQ(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
 export const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};
 export const norm=s=>String(s).toLowerCase().replace(/\s+/g,"");
 /* search hits marked in a text: ranges found in the raw text, then escaped piece by piece (marking inside escaped HTML broke «&#39;» and earlier marks) */

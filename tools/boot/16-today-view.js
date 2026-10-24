@@ -1,4 +1,4 @@
-import {L,LANG,S,TX,ddmm,driveMin,esc,isoAdd,localISO,pad2,todayISO} from "../base/10-core.js";
+import {ddmm,driveMin,esc,isoAdd,L,LANG,localISO,mapsDir,pad2,S,todayISO,TX} from "../base/10-core.js";
 import {UNAME,hasU,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,evRecent,hm,myEvents,myIdentity,telLinks} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
@@ -119,7 +119,7 @@ VIEWS.today=function(){
   const drv=canPlan&&tShow("drive")&&d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
     /* from lunch on (on the shooting day itself): the drive back to the hotel */
     const hotel=d.drive.from||"Hotel",la=lunchAt(d),back=la&&Date.now()>=la&&Date.now()<((dayTimes(d)||{}).en||0)+3600e3;
-    const gm=(o,de)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+encodeURIComponent(o):"")+"&destination="+encodeURIComponent(de);
+    const gm=mapsDir;
     const r=back?{h:gm(dest,hotel),c:gm("",hotel),from:dest,to:hotel,back:1}:{h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest};   /* no origin = current location */
     return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify(r))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′")+(d.drive.km?'<small class="tkm"> · '+Math.round(d.drive.km)+' km</small>':'')+'</b><span>'+esc(L(back?"Rückfahrt":"Anfahrt"))+' ›</span></button>'})():'';
   /* my day from the callsheet (call, ride, my department) right below the tiles */
@@ -136,7 +136,7 @@ VIEWS.today=function(){
       const nu2=nd.unit2&&typeof nd.unit2==="object"&&nd.unit2.hours?String(nd.unit2.hours):"";
       if(nd.hours)nt.push(['<b>'+esc(nd.hours)+'</b>',L("Drehzeit")+(nu2?" · 1st Unit":"")]);if(nu2)nt.push(['<b>'+esc(nu2)+'</b>',L("Drehzeit")+" · 2nd Unit"]);if(nd.sr&&nd.ss)nt.push(['<b>'+esc(nd.sr+"–"+nd.ss)+'</b>',L("Sonnenzeit")]);
       let ndrv="";if(nd.drive&&nd.drive.min){const fi=arr(nd.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=nd.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
-        const gm=(o,de)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+encodeURIComponent(o):"")+"&destination="+encodeURIComponent(de),hotel=nd.drive.from||"Hotel";
+        const gm=mapsDir,hotel=nd.drive.from||"Hotel";
         ndrv='<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(nd.drive.min)+"′")+(nd.drive.km?'<small class="tkm"> · '+Math.round(nd.drive.km)+' km</small>':'')+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'}
       const nwx=tShow("wx")?wxTile(nd):"";
       if(nt.length||ndrv||nwx)h+='<div class="thead tnext"><h3 class="pgt">'+esc(L("Nächster Drehtag"))+'</h3><span class="tdate">'+esc((nd.short||nd.label||"")+" · "+WDL(ndt)+" "+ddmm(ndt))+'</span></div><div class="ttiles">'+nt.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+ndrv+nwx+'</div>'}}}catch(_){}
@@ -144,7 +144,7 @@ VIEWS.today=function(){
   /* first location + drive */
   const first=canPlan&&tShow("loc")?arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc)):null;
   if(first){let ad="";try{ad=addrForItem(first)}catch(_){ad=first.loc}
-    h+=card("tloc",esc(L("Erste Location")),'<div class="tbig">'+esc(first.set||first.loc)+'</div>'+(ad&&!/^tba$/i.test(ad)?'<button type="button" class="lnk tlocad" data-route="'+esc(JSON.stringify({h:"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent((d.drive&&d.drive.from)||"Hotel")+"&destination="+encodeURIComponent(ad),c:"https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(ad),from:(d.drive&&d.drive.from)||"Hotel",to:ad}))+'">'+esc(ad)+'</button>':''))}   /* tap: choose «Vom Hotel» / «Vom aktuellen Standort» */
+    h+=card("tloc",esc(L("Erste Location")),'<div class="tbig">'+esc(first.set||first.loc)+'</div>'+(ad&&!/^tba$/i.test(ad)?'<button type="button" class="lnk tlocad" data-route="'+esc(JSON.stringify({h:mapsDir((d.drive&&d.drive.from)||"Hotel",ad),c:mapsDir("",ad),from:(d.drive&&d.drive.from)||"Hotel",to:ad}))+'">'+esc(ad)+'</button>':''))}   /* tap: choose «Vom Hotel» / «Vom aktuellen Standort» */
   /* menu */
   if(tShow("menu"))try{const mn=window.menuFor?window.menuFor(d.date,"all"):"";if(mn)h+=card("tmenu",esc(L("Mittagessen")),mn)}catch(_){}
   /* scenes */

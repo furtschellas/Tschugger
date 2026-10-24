@@ -1,4 +1,4 @@
-import {ariaTip,ddmm,dlgBtn,esc,fullName,isoAdd,L,mkDialog,pad2,padD,S,safeUrl,telNum,todayISO,TX,tzFor,WD} from "./10-core.js";
+import {ariaTip,ddmm,dlgBtn,esc,fullName,isoAdd,L,mapsQ,mkDialog,pad2,padD,S,safeUrl,telNum,todayISO,TX,tzFor,WD} from "./10-core.js";
 import {WDL} from "./12-mycal.js";
 import {addrForItem} from "./13-crew-views.js";
 import {CSI} from "./13a-callsheet.js";
@@ -61,7 +61,7 @@ export function dayNav(PD,isSel,attr,key,extra,pre){
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-stripnav]");if(!b)return;const st=b.parentElement&&b.parentElement.querySelector(".strip");if(!st)return;
   st.scrollBy({left:(+b.dataset.stripnav)*Math.max(120,st.clientWidth*.8),behavior:"smooth"})});
 /* PREP: preparation / rehearsal week before the first shooting day (data "prepro": one entry per date; meta.prepro: source, contacts) */
-export function ppWhere(w,m){if(!w)return'';const sm=m?safeUrl(m):"";const q=(sm&&sm!=="#"?sm:"")||(/\d{4}\s+\S/.test(w)?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(w.replace(/^On location:\s*/i,"")):"");return '<div class="ppl">'+(q?'<a href="'+esc(q)+'" target="_blank" rel="noopener">'+esc(w)+'</a>':esc(w))+'</div>'}
+export function ppWhere(w,m){if(!w)return'';const sm=m?safeUrl(m):"";const q=(sm&&sm!=="#"?sm:"")||(/\d{4}\s+\S/.test(w)?mapsQ(w.replace(/^On location:\s*/i,"")):"");return '<div class="ppl">'+(q?'<a href="'+esc(q)+'" target="_blank" rel="noopener">'+esc(w)+'</a>':esc(w))+'</div>'}
 function ppItem(i,date,grp,k){return '<div class="ppi'+(i.hl?' hl':'')+'">'+(date&&(i.crew||i.cast)&&vok("email")?'<button type="button" class="calbtn mailbtn" data-ppmail="'+esc(date)+'|'+grp+'|'+k+'" '+ariaTip(L("E-Mail-Verteiler"))+'><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></button>':'')+(date?'<button type="button" class="calbtn" data-cal="'+esc(date)+'|'+grp+'|'+k+'" '+ariaTip(L("In den Kalender"))+'><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>':'')+'<div class="ppt">'+esc(i.t||"")+(i.end?'<br>'+esc(i.end):'')+'</div><div class="ppb"><div class="ppn">'+esc(TX(i,"n")||"")+'</div>'+
   ppParts(i)+(i.who?'<div class="ppw">'+esc(i.who)+'</div>':'')+ppWhere(i.where,i.map)+fpLinks(fpFor(i.n,i.where),[])+(TX(i,"note")?'<div class="ppx">'+esc(TX(i,"note"))+'</div>':'')+'</div></div>'}
 /* participants: collapsible; people with phone or e-mail open a contact card */

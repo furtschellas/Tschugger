@@ -1,4 +1,4 @@
-import {L,S,bdFor,esc,itemHTML,norm,safeUrl} from "./10-core.js";
+import {bdFor,esc,itemHTML,L,mapsQ,norm,S,safeUrl} from "./10-core.js";
 import {addrForItem} from "./13-crew-views.js";
 import {CSEXPSM,CSI,csA,csHm,csKeys,csLocRows,csMyRides,csS,csTx} from "./13a-callsheet.js";
 import {CSCUR,CSHN_RE,csIsAdr,csNowIdx,csSceneLoc} from "./13b-cs-now.js";
@@ -34,7 +34,7 @@ export function csLocGroups(c,ls,date){const sets=ls.filter(l=>!l.kinds),key=l=>
 export function csSetGeo(c,l){const geo=c.geo||{};for(const m of (l._m||[l])){const g=geo[m.map||"loc:"+(m._ix||m.no)];if(Array.isArray(g))return [m.map||"loc:"+(m._ix||m.no),g]}return [l.map||"loc:"+(l._ix||l.no),null]}
 export function csRadioHTML(t){t=String(t||"").trim();if(!t)return"";const b=t.replace(/^(radio\s*channels?|funk(kanäle)?)\s*:?\s*/i,"");const ch=[];const re=/(\d{1,2})\s*:\s*(.*?)(?=\s+\d{1,2}\s*:|$)/g;let m;while((m=re.exec(b)))ch.push([m[1],m[2].trim()]);
   return '<div class="csradio2"><span class="csrlab">'+esc(L("Funkkanäle"))+'</span>'+(ch.length>1?ch.map(([n,l])=>'<span class="csrch"><b>'+esc(n)+'</b>'+esc(l||"–")+'</span>').join(""):'<span>'+esc(t)+'</span>')+'</div>'}
-export function csMapQ(q){q=String(q||"").trim();return q?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q):""}
+export function csMapQ(q){q=String(q||"").trim();return q?mapsQ(q):""}
 export function csLocHref(l,c,date){c=c||CSCUR.c;date=date||CSCUR.date;if(!l)return"";if(l.map)return l.map;let ad="";try{ad=c?csLocAddr(c,l,date):""}catch(_){}return csMapQ(ad)}
 export function csCodeHref(code){const m=String(code||"").match(/^L(\w+)$/);if(!m||!CSCUR.c)return"";return csLocHref(csLocs(CSCUR.c).find(x=>!x.kinds&&String(x.no).trim()===m[1]))}
 export function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':' title="'+esc(code)+'"';

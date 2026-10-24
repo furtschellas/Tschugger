@@ -7,7 +7,7 @@ The rows are built like sceneLogSec/unitRows/scInfo in tools/boot/27-scene-ack.j
 
 Quota: per run one aggregation (count + sum of «at») of sceneack and one read of config/private; the whole
 collection is only read when something changed (or the Drehplan / the link changed). Public log: only counts and codes."""
-import base64, datetime, hashlib, json, os, re, sys, time, unicodedata
+import datetime, hashlib, json, os, re, sys, time, unicodedata
 from zoneinfo import ZoneInfo
 
 import requests
@@ -331,10 +331,8 @@ def main():
     if old.get("sig") == sig and (old.get("ok") or time.time() - old.get("t", 0) < 1800):   # after an error: again after 30 min (or when something changed)
         log("Szenen-Sheet: unverändert" if old.get("ok") else "Szenen-Sheet: letzter Fehler " + str(old.get("err"))); json.dump(old, open(STATE, "w")); return
     STAGE[0] = "daten"
-    key = base64.b64decode(fsadmin.crew_key_b64())
-    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-    e = json.load(open(os.path.join(ROOT, "data.enc.json")))
-    data = json.loads(AESGCM(key).decrypt(base64.b64decode(e["iv"]), base64.b64decode(e["ct"]), None))
+    key = fsadmin.crew_key()
+    data = json.loads(fsadmin.dec_ivct(key, json.load(open(os.path.join(ROOT, "data.enc.json")))))
     acks = [dict(f, id=i) for i, f, _ in fsadmin.list_docs("sceneack")]
     STAGE[0] = "aufbau"
     out = build(acks, data)
