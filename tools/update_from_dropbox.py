@@ -897,6 +897,36 @@ CH_BOX = (45.7, 48.0, 5.8, 10.7)   # Switzerland (and a little around): a positi
 def in_ch(p): return bool(p) and CH_BOX[0] <= p[0] <= CH_BOX[1] and CH_BOX[2] <= p[1] <= CH_BOX[3]
 
 
+# shooting blocks abroad (App-Verwaltung → Drehblöcke, «Land»): the address search also looks in those countries
+COUNTRY = {"schweiz": "ch", "switzerland": "ch", "suisse": "ch", "svizzera": "ch", "indien": "in", "india": "in", "inde": "in",
+           "deutschland": "de", "germany": "de", "allemagne": "de", "frankreich": "fr", "france": "fr", "italien": "it", "italy": "it", "italia": "it",
+           "österreich": "at", "oesterreich": "at", "austria": "at", "liechtenstein": "li", "spanien": "es", "spain": "es", "portugal": "pt",
+           "belgien": "be", "belgium": "be", "niederlande": "nl", "holland": "nl", "netherlands": "nl", "grossbritannien": "gb", "england": "gb",
+           "uk": "gb", "united kingdom": "gb", "usa": "us", "united states": "us", "marokko": "ma", "morocco": "ma", "thailand": "th",
+           "kroatien": "hr", "croatia": "hr", "griechenland": "gr", "greece": "gr", "tschechien": "cz", "ungarn": "hu", "polen": "pl"}
+_GEOCC = [None]
+
+
+def geo_codes():
+    """the countries of the address search: Switzerland and the countries of the shooting blocks (ISO codes for Nominatim)"""
+    if _GEOCC[0] is None:
+        cc = {"ch"}
+        try:
+            for b in fsadmin.blocks():
+                c = str(b.get("country") or "").strip().lower()
+                c = COUNTRY.get(c) or (c if re.fullmatch(r"[a-z]{2}", c) else "")
+                if c: cc.add(c)
+        except Exception: pass
+        _GEOCC[0] = ",".join(sorted(cc))
+    return _GEOCC[0]
+
+
+def in_area(p):
+    """a position that can be right: in Switzerland – or anywhere when a shooting block is abroad (the search is limited to its countries)"""
+    if not p: return False
+    return in_ch(p) or (geo_codes() != "ch" and -90 <= p[0] <= 90 and -180 <= p[1] <= 180)
+
+
 def dist_km(a, b):
     import math
     return 6371 * 2 * math.asin(math.sqrt(math.sin(math.radians(b[0] - a[0]) / 2) ** 2 + math.cos(math.radians(a[0])) * math.cos(math.radians(b[0])) * math.sin(math.radians(b[1] - a[1]) / 2) ** 2))
@@ -916,7 +946,7 @@ def map_pos(u):
                 m = re.search(p, x)
                 if m:
                     pos = [round(float(m.group(1)), 6), round(float(m.group(2)), 6)]
-                    if in_ch(pos): return {"p": pos, "q": q}
+                    if in_area(pos): return {"p": pos, "q": q}
         return None
     try:
         r = requests.get(u, allow_redirects=True, timeout=20, headers={"User-Agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36", "Accept-Language": "de-CH,de"})
@@ -954,11 +984,11 @@ def geocode_any(addr, cache):
     if m: tries.append("%s, %s %s" % (m.group(1).strip(), m.group(2), m.group(3).strip()))
     for t in dict.fromkeys(tries):
         p = geocode(t, cache)
-        if p and in_ch(p): return p, True
+        if p and in_area(p): return p, True
     m = re.search(r"\b(\d{4})\s+([A-Za-zÀ-ÿ\-]+(?:\s[A-Za-zÀ-ÿ\-]+)?)", a)
     if m:
         p = geocode("%s %s" % (m.group(1), m.group(2)), cache)
-        if p and in_ch(p): return p, False
+        if p and in_area(p): return p, False
     return None, False
 
 
@@ -966,18 +996,19 @@ ADDR_RE = re.compile(r"([A-Za-zÀ-ÿ.\-]+(?:[ \-][A-Za-zÀ-ÿ.\-]+)*\s+\d+[a-z]?
 
 
 def geocode(addr, cache):
-    """address → position (OpenStreetMap Nominatim, Switzerland only), cached"""
+    """address → position (OpenStreetMap Nominatim, Switzerland and the countries of the shooting blocks), cached"""
     if not addr: return None
-    if addr in cache: return cache[addr]
+    cc = geo_codes(); key = addr if cc == "ch" else addr + "|" + cc   # with more countries: asked again (before only Switzerland was searched)
+    if key in cache: return cache[key]
     try:
         time.sleep(1.1)
-        r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": addr, "format": "json", "limit": 1, "countrycodes": "ch"},
+        r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": addr, "format": "json", "limit": 1, "countrycodes": cc},
                          headers={"User-Agent": "TschuggerCrewApp/1.0 (furtschellas@gmail.com)"}, timeout=20)
         if not r.ok: return None   # busy (429) or down: not remembered as «not found», the next run asks again
         j = r.json()
-        cache[addr] = [round(float(j[0]["lat"]), 6), round(float(j[0]["lon"]), 6)] if j else None
+        cache[key] = [round(float(j[0]["lat"]), 6), round(float(j[0]["lon"]), 6)] if j else None
     except Exception: return None
-    return cache[addr]
+    return cache[key]
 
 
 def cs_scene_list(txt):
@@ -1407,7 +1438,7 @@ def add_drive_times(data):
         for q in cands:
             try:
                 time.sleep(1.1)
-                r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": q, "format": "json", "limit": 1, "countrycodes": "ch"}, headers=H, timeout=20)
+                r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": q, "format": "json", "limit": 1, "countrycodes": geo_codes()}, headers=H, timeout=20)
                 j = r.json() if r.ok else []
             except Exception as e:
                 log("Geocoding fehlgeschlagen:", type(e).__name__); return None
