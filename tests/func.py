@@ -148,6 +148,12 @@ async def owner_tests(p, port):
             await E("document.querySelector('form[data-af=\"pf\"] button[type=submit]').click()"); await pg.wait_for_timeout(800)
             msg = await E("(document.querySelector('form[data-af=\"pf\"] .amsg')||{}).textContent||''")
             check("Mein Konto: Profil speichern", "gespeichert" in msg.lower(), msg)
+            gs = await E("""(async()=>{if(typeof gastSync!=='function'||typeof ADM==='undefined'||!window.__db)return null;const k=JSON.stringify({ur:ADM.ur,ok:ADM.urOk,r:ADM.roles,m:ADM.mem,i:ADM.inv,a:ADM.adm});
+              ADM.urOk=true;ADM.roles=(ADM.roles||[]).concat([{id:'gast',name:'Gast',perms:[]}]);ADM.mem=[{uid:'g1',email:'gast1@test.ch'},{uid:'g2',email:'hatrolle@test.ch'}];ADM.inv=[{id:'gast2@test.ch'},{id:'adm@test.ch'}];ADM.adm=['adm@test.ch'];ADM.ur={'hatrolle@test.ch':'crew'};
+              await gastSync();const r={g1:(__db['userroles/gast1@test.ch']||{}).role,g2:(__db['userroles/gast2@test.ch']||{}).role,keep:!__db['userroles/hatrolle@test.ch'],adm:!__db['userroles/adm@test.ch']};
+              const o=JSON.parse(k);Object.assign(ADM,{ur:o.ur,urOk:o.ok,roles:o.r,mem:o.m,inv:o.i,adm:o.a});return r})()""")
+            check("Ohne Rolle wird «Gast» (angemeldet und eingeladen), vorhandene Rollen und Admins bleiben",
+                  gs is None or gs == {"g1": "gast", "g2": "gast", "keep": True, "adm": True}, gs)
             ctd = await E("""(()=>{const u=ME&&ME.uid;if(!u||!window.__db)return null;const c=__db['contacts/'+u]||{},m=__db['members/'+u]||{};return {c:c.phone||'',m:'phone' in m||'contactEmail' in m,me:(MEMBER||{}).phone||''}})()""")
             check("Mein Konto: Telefon in contacts gespeichert (nicht mehr in members, das Catering mitliest)",
                   ctd is None or (ctd["c"] == "+41 79 123 45 67" and not ctd["m"] and ctd["me"] == "+41 79 123 45 67"), ctd)

@@ -22,11 +22,14 @@ export async function admLoad(){
   const [i,m,a,ro,ur,ct]=await Promise.all([opt(isAdmin(),F.getDocs(F.collection(db,"invites"))),opt(isAdmin(),F.getDocs(F.collection(db,"members"))),F.getDocs(F.collection(db,"admins")).catch(none),F.getDocs(F.collection(db,"roles")).catch(none),F.getDocs(F.collection(db,"userroles")).then(x=>{ADM.urOk=true;return x}).catch(()=>{ADM.urOk=false;return none()}),F.getDocs(F.collection(db,"contacts")).catch(none)]);
   try{const ow=await F.getDocs(F.collection(db,"owners"));ADM.own=ow.docs.map(d=>d.id);for(const e of ADM.own)if(!ADMINS.includes(e))ADMINS.push(e);for(let k=ADMINS.length-1;k>=0;k--)if(!ROOT_OWNERS.includes(ADMINS[k])&&!ADM.own.includes(ADMINS[k])&&!(ME&&lc(ME.email)===ADMINS[k]))ADMINS.splice(k,1)}catch(_){ADM.own=ADM.own||[]}
   ADM.roles=ro.docs.filter(d=>d.id!=="admin").map(d=>Object.assign({id:d.id},d.data()));
-  if(isOwner()&&!ADM.roles.some(x=>x.id==="crew")){const cp=VIEWPERMS.filter(p=>p!=="view.mycal");try{await F.setDoc(F.doc(db,"roles","crew"),{name:"Crew",perms:cp,at:F.serverTimestamp()});ADM.roles.push({id:"crew",name:"Crew",perms:cp})}catch(err){console.warn("crew role",err&&err.code||err)}}{const ad=ro.docs.find(d=>d.id==="admin");ADM.adminPerms=ad?(ad.data().perms||[]):ADMIN_DEFAULT.slice()}ADM.ur={};ur.docs.forEach(d=>{ADM.ur[d.id]=String((d.data()||{}).role||"")});
+  if(isOwner()&&!ADM.roles.some(x=>x.id==="crew")){const cp=VIEWPERMS.filter(p=>p!=="view.mycal");try{await F.setDoc(F.doc(db,"roles","crew"),{name:"Crew",perms:cp,at:F.serverTimestamp()});ADM.roles.push({id:"crew",name:"Crew",perms:cp})}catch(err){console.warn("crew role",err&&err.code||err)}}if(isOwner()&&!ADM.roles.some(x=>x.id==="gast")){   /* «Gast»: the rights the app gave people without a role (everything but Drehplan, Drehbuch, Blocking; phone, e-mail, Meine Termine as set under Sichtbarkeit) */
+    const pv=window.PUBV||{},gp=VIEWPERMS.filter(p=>!["view.plan","view.script","view.blocking","view.phone","view.email","view.mycal"].includes(p)||(p==="view.phone"&&pv.phone===true)||(p==="view.email"&&pv.email===true)||(p==="view.mycal"&&pv.mycal===true));
+    try{await F.setDoc(F.doc(db,"roles","gast"),{name:"Gast",perms:gp,at:F.serverTimestamp()});ADM.roles.push({id:"gast",name:"Gast",perms:gp})}catch(err){console.warn("gast role",err&&err.code||err)}}
+  {const ad=ro.docs.find(d=>d.id==="admin");ADM.adminPerms=ad?(ad.data().perms||[]):ADMIN_DEFAULT.slice()}ADM.ur={};ur.docs.forEach(d=>{ADM.ur[d.id]=String((d.data()||{}).role||"")});
   if(can("users.requests")){try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.reqErr=""}catch(err){ADM.req=[];ADM.reqErr=(err&&err.code)||String(err)}}else{ADM.req=[];ADM.reqErr=""}
   {const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",ADM.req.length>0);b.dataset.n=ADM.req.length||""}}
   ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));{const cx={};ct.docs.forEach(d=>{cx[d.id]=d.data()||{}});   /* phone and contact e-mail from contacts (an older copy in members until it moved) */
-    ADM.mem=m.docs.map(d=>{const x=Object.assign({uid:d.id},d.data()),c=cx[d.id];if(c){x.phone=c.phone||x.phone||"";x.contactEmail=c.contactEmail||x.contactEmail||""}return x})}ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();
+    ADM.mem=m.docs.map(d=>{const x=Object.assign({uid:d.id},d.data()),c=cx[d.id];if(c){x.phone=c.phone||x.phone||"";x.contactEmail=c.contactEmail||x.contactEmail||""}return x})}ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();gastSync();
 }
 export function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
@@ -88,6 +91,14 @@ export async function assignCrew(em){em=lc(em);if(!em||ADMINS.includes(em)||(ADM
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"userroles",em),{role:"crew",at:F.serverTimestamp()});ADM.ur=ADM.ur||{};ADM.ur[em]="crew"}catch(err){console.warn("crew role",err&&err.code||err);
     /* without a role the person sees no shooting plan: say so instead of failing silently */
     showMsg(L("Rolle «Crew» konnte nicht vergeben werden – bitte unter Rollen zuweisen.")+" ("+em+")",7000)}}
+/* nobody stays without a role: everybody (signed up or invited) without one gets «Gast» – not admins and owners */
+let GASTBUSY=false;
+async function gastSync(){if(GASTBUSY||!isAdmin()||!ADM.urOk||!(ADM.roles||[]).some(x=>x.id==="gast"))return;GASTBUSY=true;
+  try{const {F,db}=await fb(),ur=ADM.ur||{},skip=new Set([...ADMINS,...(ADM.adm||[]),...(ADM.own||[])].map(lc)),me=lc(ME&&ME.email);
+    const ems=[...new Set([...(ADM.mem||[]).map(m=>lc(m.email)),...(ADM.inv||[]).map(i=>lc(i.id))])].filter(e=>e&&/@/.test(e)&&!ur[e]&&!skip.has(e)&&e!==me);
+    let n=0;for(const em of ems){try{await F.setDoc(F.doc(db,"userroles",em),{role:"gast",at:F.serverTimestamp()});ur[em]="gast";n++}catch(err){console.warn("gast",err&&err.code||err)}}
+    ADM.ur=ur;if(n){admIndex();render()}}
+  finally{GASTBUSY=false}}
 /* initials of a name (user list, callsheet) */
 export const initials=n=>String(n||"?").split(/[\s@._-]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
 /* Crew tab: admins see food preferences next to each person (matched by e-mail) */

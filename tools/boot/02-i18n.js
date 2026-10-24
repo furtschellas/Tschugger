@@ -114,6 +114,7 @@ Object.assign(I18N,{
  "Sucht über alles: Szenen, Rollen, Personen, Locations.":{fr:"Cherche partout : scènes, rôles, personnes, locations.",it:"Cerca ovunque: scene, ruoli, persone, location.",en:"Searches everything: scenes, roles, people, locations.",hi:"सब कुछ खोजता है: सीन, भूमिकाएँ, लोग, Locations।"},
  "Test an mich":{fr:"M’envoyer un test",it:"Invia un test a me",en:"Send me a test",hi:"मुझे टेस्ट भेजें"},
  "Tour gemacht":{fr:"Visite faite",it:"Tour fatto",en:"Tour done",hi:"टूर पूरा"},
+ "Wird allen ohne Rolle automatisch zugewiesen.":{fr:"Attribué automatiquement à toutes les personnes sans rôle.",it:"Assegnato automaticamente a tutti senza ruolo.",en:"Given automatically to everybody without a role.",hi:"बिना रोल वाले सभी को अपने आप दिया जाता है।"},
  "Keine Rolle":{fr:"Aucun rôle",it:"Nessun ruolo",en:"No role",hi:"कोई भूमिका नहीं"},
  "Tour angefangen":{fr:"Visite commencée",it:"Tour iniziato",en:"Tour started",hi:"टूर शुरू किया"},
  "Tour offen":{fr:"Visite pas encore faite",it:"Tour non ancora fatto",en:"Tour not done yet",hi:"टूर बाकी"},
