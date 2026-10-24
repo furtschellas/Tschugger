@@ -930,6 +930,11 @@ async def owner_tests(p, port):
         await E("S.tab='admin';ADM.sub='log';render()"); await pg.wait_for_timeout(400)
         dk = await E("({n:(DCK.res||[]).length,areas:[...new Set((DCK.res||[]).map(x=>x.area))],self:(DCK.res||[]).some(x=>x.area==='Selbsttest der App'&&x.lvl==='ok')})")
         check("Dokumente prüfen: Vergleich läuft und meldet Ergebnisse je Bereich", dk["n"] >= 4 and "Drehplan ↔ Drehbuch" in dk["areas"] and dk["self"], dk)
+        cc = await E("""(async()=>{const keep=S.dispos,r0=DCK.res,at=DCK.at;const p=(S.crew[0]&&S.crew[0].people||[])[0];
+          S.dispos=[{date:'2030-05-06',label:'DT99',cs:{calls:[{dept:'Extras Crew',role:'Extra Driver',name:'Zora Unbekannt'},{dept:'Kamera',role:'DoP',name:p?p.name:'x'}],crewTransport:[{vehicle:'Van',people:'Quirin Fremdling'}],transport:[{driver:'TBA'}]}}];
+          await dckRun(true);const l=(DCK.res||[]).filter(x=>x.area==='Callsheets ↔ Crewliste'&&x.lvl==='warn').map(x=>x.text);S.dispos=keep;DCK.res=r0;DCK.at=at;render();
+          return {zora:l.some(t=>t.startsWith('Zora Unbekannt – Extra Driver')),quirin:l.some(t=>t.startsWith('Quirin Fremdling')),known:!l.some(t=>p&&t.startsWith(p.name)),tba:!l.some(t=>/TBA/.test(t))}})()""")
+        check("Dokumente prüfen: Personen auf Callsheets, die nicht in der Crewliste stehen", cc == {"zora": True, "quirin": True, "known": True, "tba": True}, cc, public=True)
         sy = await E("""(()=>{const keep=[S.days,S.locs];S.locs=JSON.parse(JSON.stringify(S.locs));S.locs.forEach(l=>(l.sets||[]).forEach(st=>st.scenes=[]));return 1})()""")
         await E("dckRun()"); await pg.wait_for_timeout(5000)
         sd2 = await E(r"""(async()=>{const sl=await scriptData();const ok=i=>i.sc&&/^\d+[A-Z]?$/.test(i.sc)&&/^I\/(?!E)/.test(i.ie||'');
