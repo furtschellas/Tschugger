@@ -46,7 +46,9 @@ function permAccessSec(){
   const who=k=>everyone.map(e=>{if(ADMINS.includes(e))return [e,L("Owner")];if(ADM.adm.includes(e))return aperm.includes(k)?[e,L("Admin")]:null;const id=ADM.ur[e];
       if(id)return rp(id).includes(k)?[e,((ADM.roles||[]).find(x=>x.id===id)||{}).name||id]:null;const pk=noRoleOK(k);return pk&&window.PUBV&&window.PUBV[pk]?[e,L("Keine Rolle")]:null}).filter(Boolean)
     .sort((a,b)=>nameOf(a[0]).localeCompare(nameOf(b[0]),LANG));
+  const allOpen=PERMS.every(([k])=>SECS["pacc-"+k]);
   return '<div class="admins pacc"><h3>'+L("Wer hat welchen Zugriff?")+'</h3><p class="ahint">'+L("Tippe auf eine Berechtigung, um zu sehen, wer sie hat – und über welche Rolle.")+'</p>'+
+    '<div class="ubar">'+paccAllBtn(allOpen)+'</div>'+
     [...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp paccgrp"><h5 class="paccg">'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const w=who(k);
       /* roles first – switch the permission on or off for a role right here; the people below, to open */
       const rl=[['owner',L("Owner"),true,false]].concat([['admin',L("Admin"),aperm.includes(k),isOwner()&&k!=="settings"]])
@@ -61,6 +63,10 @@ function permAccessSec(){
         (w.length?'<ul class="paccl">'+w.map(([e,r])=>'<li><span>'+esc(nameOf(e))+'</span><span class="ust role">'+esc(r)+'</span></li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+'</details></details>'}).join("")+'</div>').join("")+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-paccedit]");if(!b)return;e.preventDefault();e.stopPropagation();const k=b.dataset.paccedit;ADM.paccEdit=ADM.paccEdit===k?"":k;if(ADM.paccEdit)SECS["pacc-"+k]=true;render()},true);
+/* «Wer hat welchen Zugriff?»: one round button opens or closes all permissions (like the user list) */
+const paccAllBtn=open=>'<button type="button" class="cico uall" data-paccall '+ariaTip(L(open?"Alle zuklappen":"Alle aufklappen"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(open?'<path d="m7 11 5-5 5 5M7 18l5-5 5 5"/>':'<path d="m7 6 5 5 5-5M7 13l5 5 5-5"/>')+'</svg></button>';
+document.addEventListener("click",e=>{const b=e.target.closest("[data-paccall]");if(!b)return;e.preventDefault();
+  const ds=[...document.querySelectorAll(".pacc details.paccd")],open=ds.some(d=>!d.open);ds.forEach(d=>{d.open=open});b.outerHTML=paccAllBtn(open)});
 /* «Wer hat welchen Zugriff?»: a permission switched on/off for a role directly (same rules as «Bearbeiten»: no self-promotion) */
 document.addEventListener("change",async e=>{const c=e.target.closest("input[data-pacc]");if(!c)return;const id=c.dataset.pacc,k=c.dataset.perm,on=c.checked;
   if(!id||id==="owner"||roleLocked(id)||(k==="settings"&&!isOwner())||(id!=="admin"&&!canRoleEdit())||(!isAdmin()&&(id===MYROLE||!MYPERMS.includes(k)))){render();return}

@@ -1,4 +1,4 @@
-import {blockList,blockNow,esc,L,LANG,mName,todayISO,TZ0} from "../base/10-core.js";
+import {blockList,blockNow,esc,L,LANG,mName,saveBtn,todayISO,TZ0} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {showMsg} from "../base/20-data-start.js";
 import {ADMINS} from "./01-config.js";
@@ -47,7 +47,7 @@ function blocksSec(){
       '<div class="arb"><button type="button" class="abtn'+(BLK.del===i?' danger':'')+'" data-blkdel="'+i+'">'+esc(L(BLK.del===i?"Wirklich löschen?":"Block löschen"))+'</button></div></details>'};
   return '<p class="ahint">'+esc(L("Der Dreh in Blöcken (z. B. Schweiz, dann Indien). Die App rechnet «heute» und «jetzt» in der Zeitzone des laufenden Blocks. Ein Block mit eigenem Drehplan bekommt dessen Tage bei der nächsten Aktualisierung."))+'</p>'+
     (bl.length?bl.map(card).join(""):'<p class="ghint">'+esc(L("Noch keine Drehblöcke – alles läuft in Schweizer Zeit."))+'</p>')+
-    '<div class="arb"><button type="button" class="abtn" data-blkadd>'+esc(L("Neuer Block"))+'</button>'+(BLK.edit?'<button type="button" class="abtn" data-blkundo>'+esc(L("Verwerfen"))+'</button><button type="button" class="abtn prim" data-blksave>'+esc(L("Speichern"))+'</button>':'')+'</div>'+
+    '<div class="arb"><button type="button" class="abtn" data-blkadd>'+esc(L("Neuer Block"))+'</button>'+(BLK.edit?'<button type="button" class="abtn" data-blkundo>'+esc(L("Verwerfen"))+'</button>'+saveBtn("data-blksave")+'':'')+'</div>'+
     (BLK.msg?'<p class="ghint" role="status">'+esc(BLK.msg)+'</p>':'')}
 window.blocksSec=blocksSec;
 /* who sees this block: tick people right here (sets their blocks by hand; «Automatisch» again in the person's profile edit) */
