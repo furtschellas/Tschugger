@@ -2001,6 +2001,11 @@ def main():
         print("::notice::Callsheets: %d · Sides: %d (%d mit Seitenbildern) · Gefährdungsbeurteilungen: %d · Setfloorpläne: %d · Callsheet-Seiten: %d" % (len(dispos), len(sides), sum(1 for x in sides if x.get("pg")), len(ras), len(sfp), sum(1 for d in dispos.values() if d.get("pg"))))
     except Exception as e: print("::warning::Sides/Callsheet-Seiten nicht erzeugt: " + type(e).__name__)
     if dispos or data.get("dispos"): data["dispos"] = sorted(dispos.values(), key=lambda d: d.get("date", ""))
+    # overview in the run summary (only dates, day numbers from the file name and counts – no content): which callsheet sits on which date
+    try:
+        def _dt(fn): m = re.search(r"(?i)_(d|dt)(\d+)_", str(fn or "")); return ("DT" + m.group(2)) if m else "?"
+        print("::notice title=Callsheets::" + " · ".join("%s=%s(%d Sz.)" % (d.get("date"), _dt(d.get("file")), len(d.get("scenes") or ((d.get("cs") or {}).get("order") or {}).get("rows") or [])) for d in data.get("dispos") or []), flush=True)
+    except Exception: pass
 
     # screenplay
     f = pick_script(files)
