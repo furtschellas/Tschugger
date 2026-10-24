@@ -50,7 +50,7 @@ document.addEventListener("input",e=>{const el=e.target.closest&&e.target.closes
     BLK.msg="";render();return}
   b[f]=el.value.trim();BLK.msg="";
   if(f==="tz"||!document.querySelector("[data-blksave]"))render()});   /* time zone: clock and check below the field; first change: the save button appears */
-document.addEventListener("click",async e=>{
+document.addEventListener("click",e=>{if(!e.target||!e.target.closest)return;
   if(e.target.closest("[data-blkadd]")){const bl=BLK.edit=blkCur();let n=bl.length+1;while(bl.some(b=>b.id==="b"+n))n++;
     bl.push(bl.length?{id:"b"+n,name:L("Block")+" "+n,country:"",tz:TZ0,from:"",to:"",kw:"",topics:{}}:{id:"b1",name:L("Block")+" 1",country:"Schweiz",tz:TZ0,from:"",to:"",kw:"",topics:{}});
     BLK.msg="";SECS["blk-b"+n]=true;render();return}
@@ -58,7 +58,8 @@ document.addEventListener("click",async e=>{
   const d=e.target.closest("[data-blkdel]");
   if(d){const i=+d.dataset.blkdel;if(BLK.del!==i){BLK.del=i;render();return}
     BLK.edit=blkCur();BLK.edit.splice(i,1);BLK.del=-1;BLK.msg=L("Gelöscht – mit «Speichern» übernehmen.");render();return}
-  if(!e.target.closest("[data-blksave]"))return;
+  if(e.target.closest("[data-blksave]"))blkSave()});
+async function blkSave(){
   const bl=blkCur().map(b=>({id:b.id,name:String(b.name||"").slice(0,40),country:String(b.country||"").slice(0,40),tz:String(b.tz||TZ0),from:b.from||"",to:b.to||"",kw:String(b.kw||"").slice(0,80),
     topics:Object.fromEntries(Object.entries(b.topics||{}).filter(([k,v])=>BLK_TOPICS.some(t=>t[0]===k)&&(v==="off"||/^\d{4}-\d\d-\d\d$/.test(v))))}));
   const pr=blkProblem(bl);if(pr){BLK.msg=pr;render();return}
@@ -66,4 +67,4 @@ document.addEventListener("click",async e=>{
     window.BLOCKS=bl.length?bl:null;try{bl.length?localStorage.setItem("appblocks",JSON.stringify(bl)):localStorage.removeItem("appblocks")}catch(_){}
     BLK.edit=null;BLK.del=-1;BLK.msg=L("Gespeichert.")+(bl.some(b=>b.kw)?" "+L("Die Drehpläne der Blöcke kommen mit der nächsten Aktualisierung."):"")}
   catch(err){BLK.msg=L("Nicht gespeichert")+": "+(err&&err.code||err)}
-  render()});
+  render()}

@@ -25,7 +25,7 @@ def data(today=None):
         for i in range(4):
             sc = str(10 * n + i + 1)
             out.append({"sc": sc, "t": "%02d:%02d" % (8 + i, 0), "dur": "45'", "ie": "I" if i % 2 else "E", "set": sets[i % 3][1], "pg": "1 2/8", "d": "Szene %s: Beispieltext" % sc,
-                        "loc": sets[i % 3][2], "cast": "1, 2"})
+                        "loc": sets[i % 3][2], "cast": ["1", "2"]})
             if i == 1: out.append({"n": "Lunch", "t": "12:00"})
         out.append({"n": "Wrap", "t": "18:00"})
         return out
