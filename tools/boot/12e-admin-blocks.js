@@ -25,7 +25,7 @@ function blocksSec(){
       [["on","An"],["off","Aus"],["date","Ab Datum"]].map(([v,n])=>'<option value="'+v+'"'+(v===mode?' selected':'')+'>'+esc(L(n))+'</option>').join("")+'</select>'+
       (mode==="date"?'<input type="date" data-blkf="'+i+'|td:'+k+'" value="'+esc(m)+'" aria-label="'+esc(L("Ab Datum"))+'">':'')+'</div>'};
   const card=(b,i)=>{const tzok=blkTzOk(b.tz),run=now&&now.id===b.id;
-    return '<details class="blkcard" data-sec="blk-'+esc(b.id)+'"'+(SECS["blk-"+b.id]!==false?' open':'')+'><summary><b>'+esc(b.name||L("Block")+" "+(i+1))+'</b>'+(b.country?' · '+esc(b.country):'')+(run?' <span class="ust role">'+esc(L("läuft"))+'</span>':'')+'</summary>'+
+    return '<details class="blkcard" data-sec="blk-'+esc(b.id)+'"'+(SECS["blk-"+b.id]===true?' open':'')+'><summary><b>'+esc(b.name||L("Block")+" "+(i+1))+'</b>'+(b.country?' · '+esc(b.country):'')+(run?' <span class="ust role">'+esc(L("läuft"))+'</span>':'')+'</summary>'+
       '<div class="blkgrid">'+
       '<label class="arl">'+esc(L("Name"))+'<input data-blkf="'+i+'|name" maxlength="40" value="'+esc(b.name||"")+'" placeholder="'+esc(L("z. B. Block 2"))+'"></label>'+
       '<label class="arl">'+esc(L("Land"))+'<input data-blkf="'+i+'|country" maxlength="40" value="'+esc(b.country||"")+'" placeholder="'+esc(L("z. B. Indien"))+'"></label>'+
