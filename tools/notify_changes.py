@@ -44,7 +44,10 @@ def main():
     if not os.path.exists(p): return 0
     if not fsadmin.sa():
         log("Kein Dienstkonto (FIREBASE_SA) – keine automatischen Push-Nachrichten"); return 0
-    key = base64.b64decode(fsadmin.crew_key_b64())
+    kb = fsadmin.crew_key_b64()
+    if not kb:   # key not readable: the file stays for the next run (no message encrypted with a wrong key)
+        log("Crew-Schlüssel nicht lesbar – Push-Nachrichten beim nächsten Lauf"); return 0
+    key = base64.b64decode(kb)
     pend = json.load(open(p))
     labels = {d["date"]: d.get("label") or "" for d in pend.get("days") or [] if d.get("date")}
     roles = {}
@@ -58,7 +61,7 @@ def main():
         g["dates"].update(n.get("dates") or [])
     if "cs" in groups and "csu" in groups:   # new and updated together: one message «Neues Callsheet»
         groups["cs"]["dates"] |= groups.pop("csu")["dates"]
-    made = 0
+    made = 0; failed = set()
     for k, g in groups.items():
         kind = g["kind"]; dates = sorted(g["dates"])[:6]
         if not dates: continue
@@ -74,7 +77,12 @@ def main():
         b = {"title": i18n["de"]["title"], "body": i18n["de"]["body"], "i18n": i18n, "roles": rl, "push": True, "kind": kind,
              "by": "Automatisch", "at": at, "ch": {"push": True}, "url": "./#go=" + GO[kind] + ":" + dates[0]}
         if fsadmin.new_broadcast(key, b): made += 1
-    if made or not groups: os.remove(p)   # nothing could be created (Firestore not reachable): kept for the next run
+        else: failed.add(k)
+    if not failed: os.remove(p)
+    else:   # only what could not be created stays for the next run (what was sent is not sent twice)
+        ck = lambda n: "csu" if n["kind"] == "cs" and n.get("upd") and "csu" in groups else n["kind"]
+        pend["news"] = [n for n in pend.get("news") or [] if ck(n) in failed]
+        json.dump(pend, open(p, "w"), ensure_ascii=False)
     log("Automatische Push-Nachrichten angelegt:", made)
     print("::notice::Push bei Änderungen: %d von %d Nachrichten angelegt (%s)" % (made, len(groups), ", ".join(sorted(groups)) or "–"))
     return 0

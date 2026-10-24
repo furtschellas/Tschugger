@@ -1,4 +1,4 @@
-import {L,S,esc,fmtDate,ieClass,maps,safeUrl,todayISO} from "./10-core.js";
+import {L,S,esc,fmtDate,ieClass,maps,safeUrl} from "./10-core.js";
 import {nowCardHTML} from "../boot/16-today-view.js";
 import {UNITBAR,nmk} from "./11-schedule-prep.js";
 import {WDL,myPickBar} from "./12-mycal.js";
@@ -106,7 +106,7 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   if(!mineN)h+='<div class="dsp-head"><div><h2>'+dtitle+'</h2><div class="date drow"><span>'+fmtDate(x.date)+'</span>'+UNITBAR+'</div></div></div>';
   else if(UNITBAR)h+='<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>';
   if(typeof myPickBar==='function')h+=myPickBar();
-  if(x.date===todayISO())h+=nowCardHTML(x.date,"csnowc");   /* the callsheet of today: «Jetzt» above the tiles, as in Today */
+  if(x.date===csShootDay())h+=nowCardHTML(x.date,"csnowc");   /* the callsheet of today: «Jetzt» above the tiles, as in Today */
   h+=csTilesHTML(x,day,c,me);
   /* contact on set: the name itself is the call link (only with the phone right) */
   if(c.contact&&(c.contact.name||c.contact.phone)){const ct=c.contact,tel=String(ct.phone||"").replace(/[^\d+]/g,""),nm=ct.name?esc(ct.name):(tel&&vok("phone")?esc(ct.phone):csTx(ct.phone));   /* only the number: plain inside the call link (a link in a link broke the line) */

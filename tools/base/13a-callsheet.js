@@ -1,4 +1,4 @@
-import {L,LANG,S,esc,pad2,safeUrl} from "./10-core.js";
+import {L,LANG,S,esc,hmAny,safeUrl} from "./10-core.js";
 import {nmk} from "./11-schedule-prep.js";
 import {myIdentity,rideId,rideMap} from "./12-mycal.js";
 import {CSCUR,csSceneLoc} from "./13b-cs-now.js";
@@ -69,9 +69,9 @@ export const csMap=u=>u?'<a class="csmap" href="'+esc(safeUrl(u))+'" target="_bl
 let CSTR=null;export const csL=t=>{const s2=String(t==null?"":t);return (CSTR&&CSTR[LANG]&&CSTR[LANG][s2])||s2};
 /* a small tile (key and value) of the callsheet head */
 export const csTile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':'';
-export const csA=v=>Array.isArray(v)?v:(v==null||v===""?[]:[v]);
+export const csA=v=>Array.isArray(v)?(v.some(x=>x==null)?v.filter(x=>x!=null):v):(v==null||v===""?[]:[v]);   /* a «null» in a list of the callsheet no longer breaks the view */
 /* a time of the callsheet: «07:50» or «07.50» (some callsheets write dots – hm() alone read only colons, so «Jetzt», the short line and pickups missed them) */
-export const csHm=t=>{const m=String(t==null?"":t).match(/(?:^|[^\d.])(\d{1,2})[:.](\d{2})(?![\d.])/);return m&&+m[1]<30&&+m[2]<60?pad2(+m[1])+":"+m[2]:""};
+export const csHm=t=>hmAny(t);   /* «19.30» as «19:30» (one helper for the whole app: 10-core hmAny) */
 export const csRoute=(f,t1,to,t2)=>[[t1,f].filter(Boolean).join(" "),[t2,to].filter(Boolean).join(" ")].filter(Boolean).join(" → ");
 export const csS=v=>Array.isArray(v)?v.join(", "):String(v==null?"":v);
 /* a part of the callsheet: open or folded */

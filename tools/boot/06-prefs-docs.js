@@ -44,7 +44,9 @@ function applyPrefs(p){
 }
 export async function loadPrefs(){
   if(!ME||!ME.uid)return;
-  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),10000,"prefs");
+  const u=ME;
+  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",u.uid)),10000,"prefs");
+    if(ME!==u)return;   /* signed out meanwhile: these settings belong to nobody on this device now */
     let lt=0;try{lt=+localStorage.getItem("prefsLocalAt")||0}catch(_){}
     /* settings changed on this device after the copy online was saved: this device wins and is saved */
     PREFOK=true;if(d.exists()&&!(lt&&(+d.data().lt||0)<lt))applyPrefs(d.data());else savePrefs()}catch(err){console.warn("prefs",err&&err.code||err);addEventListener("online",()=>{if(!PREFOK)loadPrefs()},{once:true})}

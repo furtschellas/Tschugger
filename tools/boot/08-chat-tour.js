@@ -55,11 +55,13 @@ function chatPanel(){
     p.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&e.target.matches("textarea")){e.preventDefault();p.querySelector("form").requestSubmit()}});
     p.addEventListener("click",e=>{if(e.target.closest("[data-chatx]")){CHAT.open=false;chatPanel()}else if(e.target.closest("[data-chatclr]")){CHAT.msgs=[];chatKeep();chatPanel()}else{const s=e.target.closest("[data-chatq]");if(s&&!CHAT.busy)chatAsk(s.dataset.chatq)}})}
   const sug=["Wann ist mein nächster Termin?","Wo drehen wir morgen?","Wer ist die Regie?","Wie funktioniert Meine Termine?"];
+  const typed=(p.querySelector(".chin textarea")||{}).value||"";   /* what was typed while waiting for the answer stays */
   p.innerHTML='<div class="chhd"><b>'+L("Assistent")+'</b><span class="chbeta">BETA</span>'+(CHAT.msgs.length?'<button type="button" class="lnk" data-chatclr>'+L("Neu")+'</button>':'')+'<button type="button" class="chx" data-chatx aria-label="'+esc(L("Schliessen"))+'">×</button></div>'+
     '<div class="chmsgs">'+(CHAT.msgs.length?'':'<p class="ghint">'+L("Frag mich etwas zum Drehplan, zu Locations, zur Crew oder zur App.")+'</p><div class="chsug">'+sug.map(q=>'<button type="button" data-chatq="'+esc(L(q))+'">'+esc(L(q))+'</button>').join("")+'</div>')+
     CHAT.msgs.map(m=>'<div class="chm '+(m.r==="u"?"me":m.r==="e"?"err":"bot")+'">'+(m.r==="u"?esc(m.t).replace(/\n/g,"<br>"):chatMd(m.t))+'</div>').join("")+(CHAT.busy?'<div class="chm bot busy"><span></span><span></span><span></span></div>':'')+'</div>'+
     '<form class="chin"><textarea rows="1" maxlength="2000" placeholder="'+esc(L("Frage eingeben …"))+'" aria-label="'+esc(L("Frage"))+'"></textarea><button type="submit" aria-label="'+esc(L("Senden"))+'"'+(CHAT.busy?' disabled':'')+'>➤</button></form>'+
     '<p class="chnote">'+L("Antworten ohne Gewähr – verbindlich sind die Unterlagen der Produktion.")+'</p>';
+  if(typed)p.querySelector(".chin textarea").value=typed;
   p.hidden=false;const ms=p.querySelector(".chmsgs");ms.scrollTop=ms.scrollHeight;if(!CHAT.busy&&matchMedia("(pointer:fine)").matches)p.querySelector("textarea").focus();
 }
 function chatKeep(){try{sessionStorage.setItem("chatmsgs",JSON.stringify(CHAT.msgs.slice(-30)))}catch(_){}}
@@ -114,8 +116,8 @@ const TOUR_STEPS=[
   {tab:"dispo",sel:"#view #cs-order",t:"Drehfolge",x:"In zwei Schritten aufklappen: zuerst die Zeilen, dann alle Szenen. Eine Szene öffnet sich mit jedem Tipp einen Schritt weiter: Eckdaten, dann Beschreibung, Cast, Statisten und Adresse, zuletzt alle Angaben aus dem Breakdown. Der pinke Rahmen zeigt den aktuellen Schritt."},
   {tab:"dispo",sel:"#view #cs-karte",need:()=>window.CSMAPON!==false&&vok("csmap"),t:"Callsheet-Karte",x:"Alle Orte des Tages auf einer Karte – auf Wunsch mit den Punkten, Wegen und Flächen der Google-Karte der Produktion."},
   {tab:"dispo",sel:"#view #cs-loc",t:"Locations im Callsheet",x:"Jeder Drehort mit Karte, Floorplan und Szenen; die Base mit ihren Räumen (Greenroom, W/H/M, Prod, WC) als ein Ort. Der pinke Rahmen zeigt, wo gerade gedreht wird."},
-  {tab:"loc",sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
   {tab:"dispo",sel:"#view #cs-cast",need:()=>vok("dispo"),t:"Cast quittieren",x:"Unterstrichen ist, was du abschliessen kannst – pink = läuft, weiss = erledigt. P/UP: einmal = Fahrer vor Ort, nochmals = Fahrzeug fährt (Auto). Call antippen oder Kostüm/Maske beginnen schliesst P/UP ab. Sind Kostüm und Maske fertig, wird Base pink; Base erledigt = Fahrt zum Set unterwegs. On set antippen schliesst alles ab, die Cast-Nummer wird pink. Die Fahrten laufen parallel mit."},
+  {tab:"loc",sel:'nav.tabs [data-tab="loc"]',t:"Locations",x:"Alle Motive mit Adresse, Karte und den Szenen, die dort gedreht werden."},
   {tab:"loc",sel:"#view .mapbtn",t:"Karte",x:"«Map» öffnet die Karte mit allen Drehorten – praktisch für die Anfahrt."},
   {tab:"loc",sel:"#scall",t:"Szenen",x:"«Szenen» klappt bei allen Motiven die Szenen auf oder zu – so siehst du auf einen Blick, was wo gedreht wird."},
   {tab:"loc",sel:"#view .lch",t:"Ein Motiv",x:"Tippe auf ein Motiv: Adresse, Karte, Floorplans und die Szenen, die dort gedreht werden."},
@@ -199,8 +201,8 @@ const NEWS_TXT={de:{t:"Neu in der Crew-App",f:"Die Tour zeigt dir alles, was du 
  hi:{t:"क्रू ऐप में नया",f:"टूर आपको वह सब दिखाता है जो आप अपने अधिकारों के साथ इस्तेमाल कर सकते हैं।",tour:"टूर देखें",ok:"चलिए शुरू करें"}};
 function newsDue(){let v="";try{v=localStorage.getItem("nv")||""}catch(_){}return v!==NEWS_VER&&!document.getElementById("news")}
 function showNews(){
-  const T=Object.assign({},NEWS_TXT[LANG]||NEWS_TXT.en,{p:NEWS_ITEMS.filter(([ok])=>{try{return ok()}catch(_){return false}}).map(([,tx])=>tx[LANG]||tx.en)}),d=mkDialog("news");
-  d.innerHTML='<div class="a2box wlbox"><div class="nwlogo" aria-hidden="true"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></div><h3>'+esc(T.t)+'</h3>'+T.p.map(x=>'<p'+(x.startsWith("⚠")?' class="nwwarn"':'')+'>'+x+'</p>').join("")+'<p class="ghint">'+T.f+'</p><div class="a2b"><button type="button" data-nwtour>'+esc(T.tour)+'</button><button type="button" class="pri" data-nwok>'+esc(T.ok)+'</button></div></div>';
+  const T=Object.assign({},NEWS_TXT[LANG]||NEWS_TXT.en,{p:NEWS_ITEMS.filter(([ok])=>{try{return ok()}catch(_){return false}}).map(([,tx,f])=>({t:tx[LANG]||tx.en,w:f==="warn"}))}),d=mkDialog("news");   /* «warn» items in their own colour (the flag got lost before) */
+  d.innerHTML='<div class="a2box wlbox"><div class="nwlogo" aria-hidden="true"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></div><h3>'+esc(T.t)+'</h3>'+T.p.map(x=>'<p'+(x.w?' class="nwwarn"':'')+'>'+x.t+'</p>').join("")+'<p class="ghint">'+T.f+'</p><div class="a2b"><button type="button" data-nwtour>'+esc(T.tour)+'</button><button type="button" class="pri" data-nwok>'+esc(T.ok)+'</button></div></div>';
   const done=()=>{store("nv",NEWS_VER);savePrefs();d.remove()};
   d.addEventListener("click",e=>{if(e.target.closest("[data-nwok]")){done();setTimeout(maybePushHint,600)}else if(e.target.closest("[data-nwtour]")){done();tourStart(true)}});
   document.body.appendChild(d);
@@ -223,8 +225,12 @@ export function tourStart(ask,mode){
   TOUR.prev={tab:S.tab,day:S.day};
   /* show a shooting day so the display options and unit buttons can be explained */
   {const t=todayISO(),cur=S.days.find(x=>x.id===S.day);if(S.tab!=="plan"||!cur||cur.kind!=="shoot"){const sd=S.days.filter(x=>x.kind==="shoot");const d=sd.find(x=>x.date>=t)||sd[0];S.tab="plan";if(d)S.day=d.id;render()}}
-  {const keep=S.tab,navOn=t=>{const b=document.querySelector('nav.tabs [data-tab="'+t+'"]');return !!(b&&!b.hidden)};
-    TOUR.all=TOUR_STEPS.filter(st=>{try{if(st.need&&!st.need())return false;return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}});tourMode(mode||"full");S.tab=keep;render()}
+  /* which steps exist: each one shown for a moment – without side effects (before: the open part of App-Verwaltung, Konto and Reports stayed
+     changed, and passing «Log» started the tests) */
+  {const keep=S.tab,ks={adm:ADM.sub,ac:ACSUB,rep:window.repSubGet?window.repSubGet():null},navOn=t=>{const b=document.querySelector('nav.tabs [data-tab="'+t+'"]');return !!(b&&!b.hidden)};
+    window.TOURPROBE=true;try{TOUR.all=TOUR_STEPS.filter(st=>{try{if(st.need&&!st.need())return false;return !!tourShow(st)||(st.sel.startsWith("#view")&&navOn(st.tab))}catch(_){return false}})}finally{window.TOURPROBE=false}
+    ADM.sub=ks.adm;setACSUB(ks.ac);if(ks.rep!=null&&window.repSetSub)window.repSetSub(ks.rep);
+    tourMode(mode||"full");S.tab=keep;render()}
   window.scrollTo(0,0);TOUR.i=ask?-1:0;
   const o=mkDialog("tour",'<div class="tspot"></div><div class="tour-card" role="document"></div>',{cls:"tour"});
   o.addEventListener("click",e=>{const b=e.target.closest("[data-tour]");if(!b)return;const a=b.dataset.tour;

@@ -36,7 +36,9 @@ export function myIdentity(){
 function iAmIn(names,me,people){
   for(const raw of names){const n=raw.replace(/\([^)]*\)/g," ").replace(/\b(tbc|tba|tbd)\b/ig,"").replace(/\s+/g," ").trim();if(!n)continue; /* «Anna Muster (online tbc)» → Anna Muster */
     const g=groupPeople(n,people);if(g){if(g.list.some(x=>(me.email&&x.email===me.email)||x.k===me.k))return true;continue}
-    const f=findPerson(n,[me]);if(f)return true}
+    /* first among all people (an exact other person wins: «Jan Meier» is not me, «Jana Meier»), then the near match with me */
+    const f=findPerson(n,people.filter(x=>x.src!=="user"));if(f){if((me.email&&f.email===me.email)||f.k===me.k)return true;continue}
+    if(findPerson(n,[me]))return true}
   return false;
 }
 export function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
@@ -71,16 +73,16 @@ export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_
     const tr=d.transport;if(tr)arr(tr.rows).forEach(r=>{if(iAmIn(ppNames(r.name),me,people))out.push({date:d.date,t:hm(r.at)||r.at||"",n:"Transport → "+(r.to||""),where:r.from,map:r.fromMap,src:"Transport",go:shootOn(d.date)?d.date:"prep:"+d.date,driver:r.driver})})}
   /* shooting days only from the callsheets: the day counts when its callsheet calls my department, lists me by name, or (general crew call) I work on set */
   for(const dp of S.dispos){if(!dp||dp.date<t)continue;const d=S.days.find(x=>x.date===dp.date)||{};
-    const myDep=fold(me.src||"").split(/[\s/]/)[0];
-    const call=myDep?arr(dp.calls).find(z=>fold(z.dept||"").includes(myDep)):null;
-    const named=arr(dp.contacts).concat(arr(dp.cast).map(c=>({name:c.actor}))).some(c=>c&&c.name&&findPerson(c.name,[me]));
-    const onSet=me.src&&!NOSET.test(fold(me.src));
+    const src=me.src&&me.src!=="user"?me.src:"",myDep=fold(src).split(/[\s/]/)[0];   /* an app account alone is no department */
+    const call=myDep?arr(dp.calls).find(z=>fold(z.dept||"").split(/[^a-z0-9]+/).includes(myDep)):null;   /* whole words: «art» is not in «Camera Department» */
+    const named=arr(dp.contacts).concat(arr(dp.cast).map(c=>({name:c.actor}))).some(c=>c&&c.name&&iAmIn([c.name],me,people));
+    const onSet=src&&!NOSET.test(fold(src));
     if(!call&&!named&&!onSet)continue;
     const st=hm(call&&call.t)||hm(dp.crewCall)||hm(dp.generalCall)||"",en=hm(dp.wrap);
     const loc=arr(dp.locations).map(l=>l.name||l.address).filter(Boolean).join(", ")||(d.kind?dayPlaces(d).join(", "):"");
     out.push({date:dp.date,t:st,end:en,n:(d.short||dp.label||d.label||"")+" · "+L("Drehtag")+(call&&call.dept?" ("+call.dept+")":""),where:loc,map:(arr(dp.locations)[0]||{}).map||"",src:"Callsheet"+(dp.version?" "+dp.version:""),go:d.id||dp.date})}
   /* my rides from the callsheets (driver, passenger, crew transport, travel) */
-  try{const cm=typeof csMe==="function"?csMe():null;if(cm)for(const dp of S.dispos){if(!dp||dp.date<t||!dp.cs)continue;const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};
+  try{const cm=typeof csMe==="function"?csMe():null,seen=new Set();if(cm)for(const dp of S.dispos){if(!dp||dp.date<t||!dp.cs)continue;const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};
     const rides=[...arr(c.transport).filter(r=>cm.hit(r.driver)||cm.hit(r.passengers)).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>cm.hit(r.people)).map(r=>({r,crew:true})),...arr(c.travel).filter(r=>cm.hit(r.name)).map(r=>({r,how:r.how}))];
     for(const {r,drv,how,crew} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();
       /* a confirmed ride disappears one hour after its arrival */
@@ -88,7 +90,9 @@ export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_
       /* more about the ride: who drives (with the phone from the callsheet's driver line), who rides along, notes */
       const dn=drv?"":clean(r.driver),dph=dn&&vok("phone")?((String(c.drivers||"").split(/\s*[|\n;]\s*/).find(x=>fold(x).includes(fold(dn.split(" ")[0])))||"").match(/\+?\d[\d ]{7,}\d/)||[""])[0]:"";
       const pax=clean(r.passengers||r.people||"").split(/\s*,\s*/).filter(x=>x&&!cm.hit(x)).join(", ");   /* the others in the car */
-      out.push({date:(how&&r.date)||dp.date,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:rideMap(r.from,dp),to:clean(r.to),toMap:rideMap(r.to,dp,true),src:"Callsheet",go:d.id||dp.date,ride:true,rid,noack:!!crew||!!how,drv:!!drv,
+      /* a travel section stands on the callsheets of several days: once only; its date only when it is a real date */
+      const rdate=how&&/^\d{4}-\d\d-\d\d$/.test(String(r.date||""))?r.date:dp.date;if(how){const k=[rdate,st,hm(r.t2),clean(r.from),clean(r.to),fold(String(r.name||""))].join("|");if(seen.has(k))continue;seen.add(k)}
+      out.push({date:rdate,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:rideMap(r.from,dp),to:clean(r.to),toMap:rideMap(r.to,dp,true),src:"Callsheet",go:d.id||dp.date,ride:true,rid,noack:!!crew||!!how,drv:!!drv,
         driver:dn?dn+(dph?" "+dph:""):"",pax:pax&&!(how&&!r.passengers&&!r.people)?pax:"",note:clean(r.note||"")})}}}catch(_){}
   /* Kostüm & Maske from the callsheets (tools/boot/24-flow.js) */
   try{if(window.cmEvents)out.push(...window.cmEvents(me,t))}catch(_){}
@@ -178,11 +182,12 @@ function renderPrePro(one,embedded){setPPPEOPLE(null);
   return h;
 }
 export const WDL=dt=>({de:["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"],fr:["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"],it:["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"],en:["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],hi:["रविवार","सोमवार","मंगलवार","बुधवार","गुरुवार","शुक्रवार","शनिवार"]}[LANG]||[])[dt.getDay()]||WD[dt.getDay()];
-export function telLinks(t){return esc(t).replace(/(\+?\d[\d ]{7,}\d)/g,m=>'<a href="tel:'+m.replace(/\s/g,"")+'">'+m+'</a>')}
+export function telLinks(t){if(!vok("phone"))return esc(t);   /* call links only with «Telefonnummern sehen» (the callsheet does the same) */
+  return esc(t).replace(/(\+?\d[\d ]{7,}\d)/g,m=>'<a href="tel:'+m.replace(/\s/g,"")+'">'+m+'</a>')}
 /* the facts of a shooting day (time, drive, weather, length, pages, sun, extras, PDF): schedule and callsheet without callsheet */
 export function planPdfBtn(d){
   const sp=S.meta&&S.meta.schedPdf,dno=(String(d.short0||d.short||d.label||"").match(/\d+/)||[])[0],spi=sp&&sp.day&&dno!==undefined?sp.day[String(+dno)]:undefined;
-  const spBtn=sp&&arr(sp.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="fact factp" data-schedpdf="'+(spi===undefined?0:spi)+'" '+ariaTip(L("Drehplan als PDF (Originalseite dieses Drehtags)"))+'><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span class="v">PDF</span></button>':'';
+  const spBtn=sp&&arr(sp.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="fact factp" data-schedpdf="'+(+spi||0)+'" '+ariaTip(L("Drehplan als PDF (Originalseite dieses Drehtags)"))+'><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span class="v">PDF</span></button>':'';
   return spBtn}
 export function planFactsHTML(d,spBtn){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
@@ -256,7 +261,7 @@ export function renderPlan(){
          that scene, notes without a scene not */
       if(x.src==="2nd"){const its=x.items.filter(i=>i).map(i=>Object.assign({},i,{xn:[]}));
         const key=sc=>String(sc).toLowerCase().replace(/\s+/g,"").replace(/^0+/,"");
-        const refs=n=>{const out=new Set(),t=String(n).toLowerCase().replace(/(\d)\s+(pt|sl)/g,"$1$2");for(const m of t.matchAll(/(?:sc(?:ene|ène|ena)?\.?\s*|szene\s*|#)0*(\d+(?:(?:pt|sl)\d+|[a-z]\b)?)/g))out.add(m[1]);return out};
+        const refs=n=>{const out=new Set(),t=String(n).toLowerCase().replace(/(\d)\s+(pt|sl)/g,"$1$2");for(const m of t.matchAll(/(?:^|[^a-z])(?:sc(?:ene|ène|ena)?\.?\s*|szene\s*|#)0*(\d+(?:(?:pt|sl)\d+|[a-z]\b)?)/g))out.add(m[1]);return out};
         for(const n of TXA(x,"notes")){const r=refs(n);if(!r.size)continue;for(const i of its){if(!i.sc)continue;const k=key(i.sc),b=k.replace(/pt\d+[a-z]?$/,"")/* «5pt3» also hears notes on 5, «25sl2» (slideshow) not those on 25 */;if(r.has(k)||r.has(b))i.xn.push(n)}}
         x=Object.assign({},x,{items:its,notes:[],notes_fr:[],notes_en:[],notes_it:[],notes_hi:[]})}
       /* camera setups of the 2nd unit (rows «A-1 …», «B-2 …» after a scene) go into that scene, under the cast */

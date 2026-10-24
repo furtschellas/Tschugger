@@ -23,7 +23,8 @@ export const hasSelU=d=>(S.pu["2"]&&hasU(d,"2"))||(S.pu["3"]&&hasU(d,"3"));
 document.addEventListener("click",e=>{if(!onlyU())return;const b=e.target.closest("[data-day],[data-dday]");if(!b||b.disabled)return;
   const d=S.days.find(x=>x.id===b.dataset.day||x.date===b.dataset.dday);if(!d||d.kind!=="shoot"||hasSelU(d))return;
   S.pu=Object.assign({},S.pu,{"1":true});store("pu",JSON.stringify(S.pu));
-  toast(L("An diesem Tag findet keine 2nd Unit statt – die 1st Unit ist wieder eingeschaltet."))},true);
+  const un=["2","3"].filter(u=>S.pu[u]).map(u=>(UNAME[u]||u)+" Unit").join(" / ")||"2nd Unit";   /* the unit(s) chosen, not always «2nd» */
+  toast(L("An diesem Tag findet keine 2nd Unit statt – die 1st Unit ist wieder eingeschaltet.").replace(/2nd Unit/g,un))},true);
 /* short note in the middle of the screen that disappears by itself */
 export function toast(t,ms){let o=document.getElementById("toast");if(o)o.remove();o=document.createElement("div");o.id="toast";o.className="toast";o.setAttribute("role","status");o.textContent=t;
   document.body.appendChild(o);requestAnimationFrame(()=>o.classList.add("in"));setTimeout(()=>{o.classList.remove("in");setTimeout(()=>o.remove(),300)},ms||2600)}
@@ -68,7 +69,7 @@ export function ppNames(t){return String(t||"").split(",").map(x=>x.trim()).filt
 function ppChip(n,people){
   const g=groupPeople(n.replace(/\btbc\b/ig,"").trim(),people);if(g)return '<span class="ppc grp">'+esc(n)+'</span>';
   const p=findPerson(n.replace(/\btbc\b/ig,"").trim(),people.filter(x=>x.email||x.phone))||null;
-  return p&&(vok("phone")||vok("email"))?'<button type="button" class="ppc link" data-ppc="'+esc(p.name)+'|'+esc(p.email||"")+'|'+esc(p.phone||"")+'|'+esc(p.role||"")+'|'+esc(p.src||"")+'">'+esc(n)+'</button>':'<span class="ppc">'+esc(n)+'</span>';
+  return p&&(vok("phone")||vok("email"))?'<button type="button" class="ppc link" data-ppc="'+esc(p.name)+'|'+esc(vok("email")?p.email||"":"")+'|'+esc(vok("phone")?p.phone||"":"")+'|'+esc(p.role||"")+'|'+esc(p.src||"")+'">'+esc(n)+'</button>':'<span class="ppc">'+esc(n)+'</span>';
 }
 export function ppParts(i){
   const cr=ppNames(i.crew),ca=ppNames(i.cast);if(!cr.length&&!ca.length)return"";

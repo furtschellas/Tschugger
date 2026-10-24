@@ -87,7 +87,7 @@ function acctInner(){
   const grp={};ACSUBS.forEach(([k])=>grp[k]=[]);
   const head=[];
   const tit=el=>{const h=el.querySelector(":scope>h4");return h?h.textContent.trim():""};
-  const map=new Map([[L("Sprache"),"app"],[L("Profil"),"pro"],[L("Startseite «Today»"),"app"],[L("Offline-Daten"),"app"],[L("App-Icon"),"app"],[L("Einführungstour"),"app"],[L("Darstellung"),"app"],[L("Assistent"),"app"]]);
+  const map=new Map([[L("Sprache"),"app"],[L("Profil"),"pro"],[L("Startseite «Today»"),"app"],[L("Offline-Daten"),"app"],[L("App-Icon und App installieren"),"app"],[L("Einführungstour"),"app"],[L("Darstellung"),"app"],[L("Assistent"),"app"]]);
   [...box.children].forEach(el=>{
     if(el.classList.contains("myhead")||el.classList.contains("acwho")){head.push(el.outerHTML);return}
     if(el.matches("section.psec")){const g=el.classList.contains("pushsec")?"note":(map.get(tit(el))||"app");grp[g].push(el.outerHTML);return}
@@ -98,7 +98,7 @@ function acctInner(){
     const pro=sec.cloneNode(true);pro.classList.add("no-food");if(i>=0)grp.pro[i]=pro.outerHTML;
     const food=sec.cloneNode(true);food.classList.add("only-food");const h=food.querySelector(":scope>h4");if(h)h.textContent=L("Essen");grp.food.push(food.outerHTML)}
   /* order inside «App»: Darstellung first, App-Icon last */
-  {const rank=h=>h.includes('<h4>'+L("Darstellung")+'</h4>')?0:h.includes('<h4>'+L("Sprache")+'</h4>')?0.5:h.includes('<h4>'+L("Einführungstour")+'</h4>')?0.6:h.includes('<h4>'+L("App-Icon")+'</h4>')?2:h.includes('<h4>'+L("App-Symbol erneuern")+'</h4>')?2.1:1;grp.app=grp.app.map((h,i)=>[rank(h),i,h]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).map(x=>x[2])}
+  {const rank=h=>h.includes('<h4>'+L("Darstellung")+'</h4>')?0:h.includes('<h4>'+L("Sprache")+'</h4>')?0.5:h.includes('<h4>'+L("Einführungstour")+'</h4>')?0.6:h.includes('<h4>'+L("App-Icon und App installieren")+'</h4>')?2:h.includes('<h4>'+L("App-Symbol erneuern")+'</h4>')?2.1:1;grp.app=grp.app.map((h,i)=>[rank(h),i,h]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).map(x=>x[2])}
   const subs=ACSUBS.filter(([k])=>grp[k].length);if(!subs.some(([k])=>k===ACSUB))ACSUB=subs.length?subs[0][0]:"pro";
   const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-acsub="'+k+'" aria-selected="'+(ACSUB===k)+'">'+esc(L(t))+'</button>').join("")+'</nav>';
   /* who is signed in: always shown, above the groups */

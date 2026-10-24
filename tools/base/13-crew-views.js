@@ -1,8 +1,8 @@
-import {L,S,TX,TXA,ariaTip,cap,castChips,ddmm,esc,fmtDate,ieClass,locHref,lvButtons,lvClasses,maps,memo,norm,pad2,partsHref,safeUrl,slug,telNum,todayISO} from "./10-core.js";
+import {L,S,TX,TXA,ariaTip,cap,castChips,dateIn,ddmm,esc,fmtDate,ieClass,isoAdd,locHref,lvButtons,lvClasses,maps,memo,norm,pad2,partsHref,prodTZ,safeUrl,slug,telNum,todayISO} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,hasSelU,icsEsc,nextUnitDay,onlyU,planDays,unitLists,unitsOn,zurichUTC} from "./11-schedule-prep.js";
 import {hm,planFactsHTML,planPdfBtn} from "./12-mycal.js";
-import {CSEXP,CSI} from "./13a-callsheet.js";
-import {csNowScene} from "./13b-cs-now.js";
+import {CSEXP,CSI,csHm} from "./13a-callsheet.js";
+import {csHM,csNowScene,csShootDay} from "./13b-cs-now.js";
 import {csOrderRows} from "./13c-cs-places.js";
 import {renderCS} from "./13e-cs-sections.js";
 import {vok} from "./14-render.js";
@@ -68,9 +68,9 @@ export function renderCrew(){
       const showP=vok("phone"),showE=vok("email");const vcW0=vcW;
       /* phone / e-mail missing in the crew list: taken from the person's app profile (marked) */
       const fx=(!p.phone||!p.email)&&typeof window.crewFill==="function"?window.crewFill(p):null;const fromApp='<span class="fromapp" title="'+esc(L("aus dem App-Profil"))+'">App</span>';
-      if(fx&&fx.phone&&!p.phone&&showP)ct+='<a href="tel:'+esc(fx.phone.replace(/\s/g,""))+'"><span>'+esc(fx.phone)+'</span></a>'+fromApp;
+      if(fx&&fx.phone&&!p.phone&&showP)ct+='<a href="tel:'+esc(String(fx.phone).replace(/\s/g,""))+'"><span>'+esc(fx.phone)+'</span></a>'+fromApp;
       if(fx&&fx.email&&!p.email&&showE)ct+='<a class="em" href="mailto:'+esc(fx.email)+'">'+esc(fx.email)+'</a>'+fromApp;
-      if(p.phone&&showP)ct+='<a href="tel:'+esc(p.phone.replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vcN:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
+      if(p.phone&&showP)ct+='<a href="tel:'+esc(String(p.phone).replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vcN:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
       if(p.email&&showE)ct+='<span class="em">'+esc(p.email)+'</span>'+(p.phone&&showP||!showP?'':vcN);
       if(p.note)ct+='<span>'+esc(p.note)+'</span>';
       return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span>'+(showP?vcW0:'')+'</div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';
@@ -260,12 +260,14 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 const setfpHTML=date=>attachHTML(null,date);
 /* one hour after the wrap of a shooting day the callsheet of the next shooting day (if there is one); a wrap after midnight counts for the next morning */
 function csDayAfterWrap(t,pick,by,now){const td=S.days.find(d=>d.date===t)||{},x0=by[t]||{},tm=(x0.cs&&x0.cs.times)||{};
-  const w=hm(tm.wrap||x0.wrap||td.wrap||""),cc=hm(tm.crewCall||x0.crewCall||td.crewCall||"");const nx=pick.find(d=>d.date>t&&by[d.date]);
-  if(!w||!nx||typeof zurichUTC!=="function")return null;const end=zurichUTC(t,w).getTime()+(cc&&w<cc?864e5:0);
+  /* «19.30» counts like «19:30»; a wrap after midnight is on the next calendar day (also right on the day the clocks change) */
+  const w=csHm(tm.wrap||x0.wrap||td.wrap||""),cc=csHm(tm.crewCall||x0.crewCall||td.crewCall||"");const nx=pick.find(d=>d.date>t&&by[d.date]);
+  if(!w||!nx||typeof zurichUTC!=="function")return null;const end=zurichUTC(cc&&w<cc?isoAdd(t,1):t,w).getTime();
   return now>end+3600e3?nx.date:null}
 export function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
-  const t=todayISO(),PD=planDays();
+  /* the shooting day (after midnight of a night shoot still the day being shot), not the calendar day */
+  const t=csShootDay()||todayISO(),PD=planDays();
   if(onlyU()){const cd=S.days.find(x=>x.date===S.dday);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.dday=nd.date}}
   const by={};S.dispos.forEach(x=>by[x.date]=x);
   const pick=PD.filter(d=>d.kind!=="off"&&d.kind!=="travel");
@@ -300,7 +302,7 @@ export function renderDispo(){
   const place=(lbl,p)=>p&&(p.name||p.address)?'<div class="dbox"><div class="dk">'+lbl+'</div><div class="dn">'+esc(p.name||"")+'</div>'+(p.address?'<a href="'+maps([p.name,p.address].filter(Boolean).join(", "))+'" target="_blank" rel="noopener noreferrer">'+esc(p.address)+'</a>':'')+(p.parking?'<div class="ds">'+L('Parken')+': '+esc(p.parking)+'</div>':'')+(p.note?'<div class="ds">'+esc(p.note)+'</div>':'')+'</div>':'';
   h+='<section class="dsec"><h3 class="dh">'+L('Treffpunkt & Orte')+'</h3><div class="dgrid">'+place(L("Base / Treffpunkt"),x.base)+(x.locations||[]).map(l=>place(L("Drehort"),l)).join("")+'</div></section>';
   if((x.meals||[]).length||(x.calls||[]).length){
-    const tl=[...(x.meals||[]).map(m=>({t:m.t,n:m.what+(m.where?' · '+m.where:''),k:"meal"})),...(x.calls||[]).map(c=>({t:c.t,n:c.dept+(c.note?' · '+c.note:''),k:"call"}))].sort((a,b)=>(hm(a.t)||String(a.t||"")).localeCompare(hm(b.t)||String(b.t||""))) /* 9:00 before 10:00 */;
+    const tl=[...(x.meals||[]).map(m=>({t:m.t,n:(m.what||"")+(m.where?' · '+m.where:''),k:"meal"})),...(x.calls||[]).map(c=>({t:c.t,n:(c.dept||"")+(c.note?' · '+c.note:''),k:"call"}))].sort((a,b)=>(hm(a.t)||String(a.t||"")).localeCompare(hm(b.t)||String(b.t||""))) /* 9:00 before 10:00 */;
     h+='<section class="dsec"><h3 class="dh">'+L('Zeiten')+'</h3><ol class="tl">'+tl.map(r=>{const mn=r.k==="meal"&&/\b(lunch|mittag|pranzo|déjeuner)\b/i.test(r.n)&&window.menuFor?window.menuFor(x.date,"all"):"";return '<li class="row ev'+(mn?' lunch':'')+'"><div class="t">'+esc(r.t||"")+'</div><div class="what'+(r.k==="meal"?' meal':'')+'">'+esc(r.n)+mn+'</div></li>'}).join("")+'</ol></section>';
   }
   if((x.scenes||[]).length){
@@ -340,7 +342,7 @@ export function emptyHTML(what){
 export function srcHTML(){
   const m=S.meta;if(!m||!m.sources)return"";
   const KIND={schedule:"Drehplan",crew:"Crewliste",locations:"Motivliste",info:"Infos",script:"Drehbuch",callsheet:"Callsheet",dispo:"Callsheet",prep:"Prep-Wochenplanung",fp:"Floorplans"};
-  const when=iso=>{const t=new Date(iso);return isNaN(t)?"":ddmm(t)+" "+pad2(t.getHours())+":"+pad2(t.getMinutes())};
+  const when=iso=>{const t=new Date(iso);if(isNaN(t))return "";const d=dateIn(t,prodTZ()).split("-");return d[2]+"."+d[1]+". "+csHM(t)};   /* in the shoot's time zone, not the phone's */
   const pm=m.prepro;const srcs=m.sources.slice();
   if(arr(m.floorplans).length&&!srcs.some(x=>x.kind==="fp"))srcs.push({kind:"fp",name:"3D/0_BlockingFloorplans/floorplans locations",stand:arr(m.floorplans).length+" PDF · "+arr(m.blocking).length+" Blocking"});
   if(pm&&pm.source&&!srcs.some(x=>x.kind==="prep"))srcs.push({kind:"prep",name:"3D/11_Planning Prep Rehearsals/"+pm.source,stand:pm.issued});
