@@ -267,19 +267,22 @@ function csDayAfterWrap(t,pick,by,now){const td=S.days.find(d=>d.date===t)||{},x
 export function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   /* the shooting day (after midnight of a night shoot still the day being shot), not the calendar day */
-  const t=csShootDay()||todayISO(),PD=planDays();
+  const t=csShootDay()||todayISO(),by={};S.dispos.forEach(x=>by[x.date]=x);
+  /* a callsheet is always shown – also when the Drehplan has that day as free, travel, without scenes or not at all (changed plan, coverday) */
+  const PD0=planDays(),PD=S.days.filter(d=>PD0.includes(d)||(d.date&&by[d.date]));
+  for(const x of S.dispos)if(x&&x.date&&!S.days.some(d=>d.date===x.date))PD.push({id:"cs-"+x.date,date:x.date,kind:"shoot",label:x.label||"Callsheet",items:[]});
+  PD.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
   if(onlyU()){const cd=S.days.find(x=>x.date===S.dday);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.dday=nd.date}}
-  const by={};S.dispos.forEach(x=>by[x.date]=x);
-  const pick=PD.filter(d=>d.kind!=="off"&&d.kind!=="travel");
+  const pick=PD.filter(d=>(d.kind!=="off"&&d.kind!=="travel")||by[d.date]);
   if(!S.dday||!pick.some(d=>d.date===S.dday)){
     S.dday=((pick.find(d=>d.date>=t)||pick[pick.length-1]||{}).date)||null;
     /* one hour after the wrap of today: the callsheet of the next shooting day, when there is one */
     if(S.dday===t)S.dday=csDayAfterWrap(t,pick,by,Date.now())||t;
   }
-  let h=dayNav(PD,d=>d.date===S.dday,"data-dday","date",d=>d.kind!=="shoot"?{cls:"",mark:""}:(by[d.date]?{cls:" has",mark:" ●"}:{cls:" nodispo",mark:""}));
+  let h=dayNav(PD,d=>d.date===S.dday,"data-dday","date",d=>by[d.date]?{cls:" has",mark:" ●"}:d.kind!=="shoot"?{cls:"",mark:""}:{cls:" nodispo",mark:""});
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
-  const day=S.days.find(d=>d.date===S.dday)||{},x=by[S.dday];
-  if(day.kind&&day.kind!=="shoot")return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+fmtDate(day.date)+'</span>'+UNITBAR+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
+  const day=S.days.find(d=>d.date===S.dday)||PD.find(d=>d.date===S.dday)||{},x=by[S.dday];
+  if(day.kind&&day.kind!=="shoot"&&!x)return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+fmtDate(day.date)+'</span>'+UNITBAR+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
   if(!x){
     /* no callsheet yet: the day from the schedule (facts and a short list of the scenes), with the note that the callsheet follows */
     /* every chosen unit of this day its own list (1st, 2nd, 3rd) – the 2nd unit was missing here */
