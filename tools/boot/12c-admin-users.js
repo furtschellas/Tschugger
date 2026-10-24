@@ -121,7 +121,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dorefresh]
 try{ADM.sort=localStorage.getItem("usort")||"first"}catch(_){ADM.sort="first"}
 document.addEventListener("change",e=>{const sl=e.target.closest("select[data-usort]");if(!sl)return;ADM.sort=sl.value;try{localStorage.setItem("usort",ADM.sort)}catch(_){}render()});
 try{ADM.sub=localStorage.getItem("admsub")||"users"}catch(_){ADM.sub="users"}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;if(b.dataset.asub==="set")for(const k of Object.keys(SECS))if(/^(set-blocks|blk-)/.test(k))SECS[k]=false;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
 VIEWS.admin=function(){
   if(!canAdm())return '<div class="empty">'+L("Für die App-Verwaltung fehlt die Berechtigung.")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>300000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
@@ -158,7 +158,7 @@ VIEWS.admin=function(){
   const srcInner=()=>{const x=typeof srcHTML==="function"?srcHTML():"";return x?x.replace(/^<details[^>]*><summary>[\s\S]*?<\/summary>/,'<div class="src srcin">').replace(/<\/details>$/,'</div>'):'<p class="ghint">–</p>'};
   /* Einstellungen: one form (id setform) whose fields sit in collapsible groups – all open by default */
   const sv='<div class="arb">'+saveBtn('form="setform"')+'</div>';
-  const grp=(k,t,body)=>'<details class="admins asetd setgrp alangs" data-sec="set-'+k+'"'+(SECS["set-"+k]!==false?' open':'')+'><summary>'+L(t)+'</summary>'+(k==="up"?'<button type="button" class="uprf" data-dorefresh '+ariaTip(L("Daten jetzt aktualisieren"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>':'')+body+'</details>';
+  const grp=(k,t,body)=>'<details class="admins asetd setgrp alangs" data-sec="set-'+k+'"'+((k==="blocks"?SECS["set-"+k]===true:SECS["set-"+k]!==false)?' open':'')+'><summary>'+L(t)+'</summary>'+(k==="up"?'<button type="button" class="uprf" data-dorefresh '+ariaTip(L("Daten jetzt aktualisieren"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>':'')+body+'</details>';
   /* Szenen-Protokoll → Google Sheet: the link (config/private), whom to share it with, the last state of the workflow */
   /* the shared Google map (link «Karte») in the callsheet map: on/off, its colours, which layers */
   const gmapSet=()=>{const G=window.GMAPSET||{},ls=(S.gmap&&Array.isArray(S.gmap.l))?S.gmap.l:[],off=new Set(G.off||[]);
