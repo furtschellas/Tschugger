@@ -1261,6 +1261,7 @@ Object.assign(I18N,{
  "via Drehplan geändert":{fr:"modifié via le plan de tournage",it:"modificato tramite il piano di lavorazione",en:"changed via the shooting schedule"},
  "Wartungshinweis":{fr:"Avis de maintenance",it:"Avviso di manutenzione",en:"Maintenance note"},
  "Erscheint bei jedem Öffnen der App als Hinweis mit «OK», solange er eingeschaltet ist. Titel und Text frei wählbar.":{fr:"S'affiche à chaque ouverture de l'app avec « OK », tant qu'il est activé. Titre et texte libres.",it:"Appare a ogni apertura dell'app con «OK», finché è attivo. Titolo e testo liberi.",en:"Shown every time the app opens, with «OK», as long as it is switched on. Title and text are up to you."},
+ "Jeder Person nur einmal anzeigen (neuer Text: wieder einmal)":{fr:"Afficher une seule fois à chaque personne (nouveau texte : encore une fois)",it:"Mostrare una sola volta a ogni persona (nuovo testo: ancora una volta)",en:"Show only once to each person (new text: once more)",hi:"हर व्यक्ति को केवल एक बार दिखाएँ (नया पाठ: फिर एक बार)"},
  "Wartungshinweis eingeschaltet (für alle)":{fr:"Avis de maintenance activé (pour tous)",it:"Avviso di manutenzione attivo (per tutti)",en:"Maintenance note on (for everyone)"},
  "Wartungshinweis eingeschaltet.":{fr:"Avis de maintenance activé.",it:"Avviso di manutenzione attivato.",en:"Maintenance note switched on."},
  "Wartungshinweis ausgeschaltet.":{fr:"Avis de maintenance désactivé.",it:"Avviso di manutenzione disattivato.",en:"Maintenance note switched off."},

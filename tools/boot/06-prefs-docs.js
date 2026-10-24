@@ -6,7 +6,7 @@ import {can,fb,ME,withTimeout,wkPost} from "./03-core-firebase.js";
 import {pushSyncSoon} from "./07-push.js";
 import {ADM,SECS} from "./12a-admin-core.js";
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-export const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];export let PREFT=null,PREFAPPLY=false,PREFOK=false;export const PREFX=["rc","scrv","csb","iconhint","scwa","scwan","scwtd","scwtb","scwte","scwtl","scwtm","scwtw"];
+export const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];export let PREFT=null,PREFAPPLY=false,PREFOK=false;export const PREFX=["rc","scrv","csb","iconhint","scwa","scwan","scwtd","scwtb","scwte","scwtl","scwtm","scwtw","maintseen"];
 /* the notices of p.x (or the older single fields) */
 export const prefX=p=>{let x={};try{x=JSON.parse(p&&p.x||"{}")||{}}catch(_){}for(const k of PREFX)if(typeof(p&&p[k])==="string"&&x[k]==null)x[k]=p[k];return x};
 onStore(k=>{if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}});
@@ -122,7 +122,7 @@ export function docsSec(){
     '<div class="smodes doclangs" role="group">'+DOCLANGS.map(l=>'<button type="button" data-doclang="'+l+'" aria-pressed="'+(l===dl)+'">'+l.toUpperCase()+'</button>').join("")+'</div>'+
     Object.keys(DOCDEF).map(k=>{const d=DOCDEF[k],r=docRaw(k,dl);
       return '<details class="docd" data-sec="doc-'+k+'"'+(SECS["doc-"+k]?' open':'')+'><summary><b>'+esc(L(d.t))+'</b>'+(r.custom?' <span class="ust role">'+L("angepasst")+'</span>':'')+'</summary>'+
-        '<form class="docf" data-doc="'+k+'" data-dl="'+dl+'"><p class="ahint">'+esc(L(d.use))+'</p>'+(k==="maint"?'<label class="ck docon"><input type="checkbox" data-mainton'+(maintOn()?' checked':'')+'> '+esc(L("Wartungshinweis eingeschaltet (für alle)"))+'</label>':'')+(d.subject!==undefined?'<label>'+L(k==="welcome"||k==="testwelcome"||k==="maint"?"Titel":"Betreff")+'<input name="ds" maxlength="200" value="'+esc(r.subject)+'"></label>':'')+
+        '<form class="docf" data-doc="'+k+'" data-dl="'+dl+'"><p class="ahint">'+esc(L(d.use))+'</p>'+(k==="maint"?'<label class="ck docon"><input type="checkbox" data-mainton'+(maintOn()?' checked':'')+'> '+esc(L("Wartungshinweis eingeschaltet (für alle)"))+'</label><label class="ck docon"><input type="checkbox" data-maintonce'+(maintOnce()?' checked':'')+'> '+esc(L("Jeder Person nur einmal anzeigen (neuer Text: wieder einmal)"))+'</label>':'')+(d.subject!==undefined?'<label>'+L(k==="welcome"||k==="testwelcome"||k==="maint"?"Titel":"Betreff")+'<input name="ds" maxlength="200" value="'+esc(r.subject)+'"></label>':'')+
         '<label>'+L("Text")+'<textarea name="db" rows="'+(k==="disclaimer"?5:12)+'">'+esc(r.body)+'</textarea></label>'+
         '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+(window.CHATURL?'<button type="button" class="pillbtn docai" data-docai>✨ '+esc(L("Text mit KI überarbeiten"))+'</button>':'')+(r.custom?'<button type="button" class="lnk" data-docreset="'+k+'" data-dl="'+dl+'">'+L("Standard wiederherstellen")+'</button>':'')+(k==="testwelcome"?'<button type="button" class="lnk" data-twagain>'+L("Allen Test-Usern nochmals zeigen")+'</button>':'')+(k!=="welcome"&&k!=="disclaimer"&&k!=="testwelcome"&&k!=="invitewa"&&k!=="maint"&&ME?'<a class="lnk" href="'+esc(mailto(ME.email,k,{vorname:"Test",name:"Test Person",passwort:"Abc123xyz",lang:dl}))+'">'+L("Test an mich")+'</a>':'')+'</div></form></details>'}).join("")+
     '<p class="ahint">'+L("Bestätigungs-Mail, Passwort-Zurücksetzen und Anmelde-Link verschickt Firebase. Deren Texte änderst du in der Firebase-Konsole unter Authentication → Templates.")+'</p></div>';
@@ -157,6 +157,12 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-cwa]");if(
 
 /* maintenance note on/off (config/app → docs.maint.on, for everybody; default on) */
 export const maintOn=()=>((window.DOCS||{}).maint||{}).on!==false;window.maintOn=maintOn;
+/* «nur einmal»: each person sees the note once (on all their devices: the profile settings remember it); a changed text counts as new */
+export const maintOnce=()=>((window.DOCS||{}).maint||{}).once===true;
+document.addEventListener("change",async e=>{const c=e.target.closest&&e.target.closest("[data-maintonce]");if(!c||!can("settings"))return;const once=c.checked;
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{maint:{once}}},{merge:true});
+    window.DOCS=Object.assign({},window.DOCS,{maint:Object.assign({},(window.DOCS||{}).maint,{once})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
+    showMsg(L("Gespeichert."),2500)}catch(err){c.checked=!once;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
 document.addEventListener("change",async e=>{const c=e.target.closest&&e.target.closest("[data-mainton]");if(!c||!can("settings"))return;const on=c.checked;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{maint:{on}}},{merge:true});
     window.DOCS=Object.assign({},window.DOCS,{maint:Object.assign({},(window.DOCS||{}).maint,{on})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
