@@ -1073,3 +1073,4 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
 .blkppl{margin:8px 0}.blkppl>summary{cursor:pointer;font-weight:600;padding:4px 0}
 .blkq{font:inherit;width:100%;max-width:320px;box-sizing:border-box;padding:7px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);margin:6px 0}
 .blkpl{max-height:320px;overflow:auto}
+.scwag .scwt{max-width:none;font-size:13px;padding:6px 9px;margin:-2px 0 6px}
