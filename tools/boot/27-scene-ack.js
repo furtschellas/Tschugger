@@ -75,7 +75,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   b.disabled=true;
   if(st===0&&scBase(sc)==="wrap"){const now=Date.now();for(const [rid,rx] of Object.entries(window.SCACK))if(rx&&rx.d===date&&rx.s===1&&String(rx.u||"1")===String(u||"1")){const k=rx.sc||rid.split("-").slice(1).join("-");try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now,e:now})}catch(_){}}}
   try{const v=st===0&&scBase(sc)==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};const first=st===0&&!/^(lunch|wrap|setup\d*)$/.test(scBase(sc))&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!/^(lunch|wrap|setup\d*)$/.test(scBase(rx.sc||rid.split("-").slice(1).join("-"))));
-    await scWrite(date,sc,u,v);if(wm==="f")scShareAsk(date,sc,u,wk==="d"?Object.assign({start:1},v):v)}   /* WhatsApp: ask after saving (per kind, Mein Konto → App) */
+    await scWrite(date,sc,u,v);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null)}   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
   catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:saveErr(err),4000)}},true);
 /* after a scene (lunch, wrap) was finished: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
 function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((typeof UNAME!=="undefined"&&UNAME[u])||u)+" Unit":"",dd=" ("+date.split("-").reverse().slice(0,2).join(".")+"."+un+")";
@@ -105,6 +105,17 @@ window.scWaSec=scWaSec;
 const scWaSave=()=>{try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}if(typeof savePrefsSoon==="function")savePrefsSoon()};
 document.addEventListener("change",e=>{const s=e.target.closest&&e.target.closest("[data-scwam]");if(s){const m=scWaModes();m[s.dataset.scwam]=s.value;store("scwa",SCWA_KINDS.map(([k])=>m[k]).join(""));try{localStorage.removeItem("scwa:no")}catch(_){}scWaSave();return}
   const n=e.target.closest&&e.target.closest("[data-scwan]");if(n){store("scwan",n.value.trim().slice(0,20));scWaSave()}});
+/* bar at the bottom after every quittance (a few seconds): what was saved with its time, «Zeit ändern» (state, begin, end) and – with «Fragen» – WhatsApp */
+let SCBART=null;
+function scBar(date,sc,u,v,wa){let b=document.getElementById("scbar");if(b)b.remove();clearTimeout(SCBART);
+  b=document.createElement("div");b.id="scbar";b.className="scbar";b.setAttribute("role","status");
+  const what=v.s===2?(scBase(sc)==="wrap"?L("Drehschluss")+" "+scHM(v.e||v.b):scLabel(sc)+" "+L("abgeschlossen")+" "+scHM(v.e)):scLabel(sc)+" "+(scBase(sc)==="lunch"?L("ab"):L("läuft seit"))+" "+scHM(v.b);
+  b.innerHTML='<span class="scbt">'+esc(what)+'</span><button type="button" class="pillbtn" data-scbared>'+esc(L("Zeit ändern"))+'</button>'+(wa?'<a class="pillbtn scwa" href="'+esc(scWaUrl(scShareText(date,sc,u,wa)))+'" target="_blank" rel="noopener noreferrer" data-scbarwa>WhatsApp</a>':'')+
+    '<button type="button" class="scbx" data-scbarx '+ariaTip(L("Schliessen"))+'>×</button>';
+  const close=()=>{clearTimeout(SCBART);b.remove()};
+  b.addEventListener("click",e=>{if(e.target.closest("[data-scbared]")){close();scAckDialog(date,sc,u);return}if(e.target.closest("[data-scbarwa]")){setTimeout(close,50);return}if(e.target.closest("[data-scbarx]"))close()});
+  document.body.appendChild(b);SCBART=setTimeout(close,wa?12000:8000)}
+window.scBar=scBar;
 function scShareAsk(date,sc,u,v,force){
   const txt=scShareText(date,sc,u,v),d=mkDialog("scwadlg",null,{replace:true});
   d.innerHTML='<div class="a2box scbox"><h3>'+esc(L("Info per WhatsApp senden?"))+'</h3><p class="scwat">'+esc(txt)+'</p>'+
