@@ -454,10 +454,6 @@ async def owner_tests(p, port):
             locOpen:open.some(([t,o])=>/Location/i.test(t)&&o),castClosed:open.some(([t,o])=>t==='Cast'&&!o),tel:!!w.querySelector('a[href^="tel:"]'),noTel:!w2.querySelector('a[href^="tel:"]')&&!w2.textContent.includes('000 00 00')}})()""")
         check("Callsheet wie das Dokument: Zeiten, Drehfolge, Locations-Liste sichtbar, Cast zu, Telefon nur mit Recht",
               cs in (None, {"tiles": True, "order": True, "locOpen": True, "castClosed": True, "tel": True, "noTel": True}), cs, public=True)
-        pvw = await E("""(()=>{if(typeof csPrevHTML!=='function')return null;const sh=S.days.filter(d=>d.kind==='shoot').map(d=>d.date).sort();if(sh.length<2)return null;
-          const keep=S.dispos;S.dispos=[{date:sh[0],cs:{prevision:{title:'PREVISION - D2 Extras: 12 Pages: 3 5/8 / Time Scree 03:30',rows:[{t:'09:15',sc:'12',set:'OFFICE'}]}}}];const h=csPrevHTML(sh[1]),h0=csPrevHTML(sh[0]);S.dispos=keep;
-          return h.includes('09:15')&&h.includes('03:30')&&h.includes('3 5/8')&&h.includes('data-scene="12"')&&h0===''})()""")
-        check("Callsheet: Vorschau erscheint beim Folgetag", pvw in (None, True), pvw, public=True)
         # locations L1, L2 …; map popup: every scene with start and end; set floorplans; 2nd unit camera data; Test-User welcome
         nx = await E("""(()=>{if(typeof renderCS!=='function')return null;const x={date:'2026-10-20',cs:{geo:{'https://a':[46.3,7.6],'https://b':[46.31,7.65]},
             locations:[{no:'1',name:'CHAPEL',map:'https://a'},{no:'2',name:'FOREST',map:'https://b'}],

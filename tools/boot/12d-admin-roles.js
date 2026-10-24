@@ -1,4 +1,4 @@
-import {L,LANG,ariaTip,dlgBtn,esc,saveBtn} from "../base/10-core.js";
+import {ariaTip,dlgBtn,esc,L,LANG,mName,saveBtn} from "../base/10-core.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {ADMINS} from "./01-config.js";
@@ -19,7 +19,7 @@ export function rolesSec(){
   const roles=rolesSorted();
   const pplLbl=id=>cnt(id)+' '+L(cnt(id)===1?"Person":"Personen");
   /* who has this role: folded list, a person added right here (select) or taken out (×) */
-  const nameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name))||(i&&i.name)||cp.name||e};
+  const nameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&(mName(m)))||(i&&i.name)||cp.name||e};
   const everyone=[...new Set(ADM.mem.map(m=>m.email).concat(ADM.inv.map(i=>i.id)))].filter(e=>e&&!ADMINS.includes(e));
   const ppl=id=>(id==="admin"?ADM.adm.slice():Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e))).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),LANG));
   const pplSec=id=>{const l=ppl(id),can_=canRoleAssign()&&(id==="admin"?isAdmin():roleGivable((ADM.roles||[]).find(x=>x.id===id))),cand=can_?everyone.filter(e=>!l.includes(e)&&canRole(e)).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),LANG)):[];
@@ -39,7 +39,7 @@ export function rolesSec(){
 }
 /* who has which permission: every option can be opened and lists the people (owners, admins, roles; people without a role where allowed) */
 function permAccessSec(){
-  const nameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name))||(i&&i.name)||cp.name||e};
+  const nameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&(mName(m)))||(i&&i.name)||cp.name||e};
   const everyone=[...new Set(ADM.mem.map(m=>m.email).concat(ADM.inv.map(i=>i.id)).concat(ADMINS))].filter(Boolean);
   const rp=id=>{const r=(ADM.roles||[]).find(x=>x.id===id);return r?arr(r.perms):[]};const aperm=ADM.adminPerms||ADMIN_DEFAULT;
   const noRoleOK=k=>({"view.phone":"phone","view.email":"email","view.mycal":"mycal"})[k];

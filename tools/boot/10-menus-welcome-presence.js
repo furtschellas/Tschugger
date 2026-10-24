@@ -1,5 +1,5 @@
 import {isStandalone} from "../a2hs.js";
-import {L,LANG,S,WDS,applyStatic,ddmm,esc,localISO,mkDialog,saveBtn,setLANG,todayISO} from "../base/10-core.js";
+import {applyStatic,ddmm,esc,fullName,L,LANG,localISO,mkDialog,S,saveBtn,setLANG,todayISO,WDS} from "../base/10-core.js";
 import {UNAME,hasU,unitsOn} from "../base/11-schedule-prep.js";
 import {WDL} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -218,7 +218,7 @@ export const crewNames=()=>{const p=ME&&crewPerson(window.simEmail());if(!p||!p.
 async function fillNamesFromCrew(){
   if(!MEMBER||!ME)return;
   const cn=crewNames();if(!cn||(MEMBER.firstName===cn.firstName&&(MEMBER.lastName||"")===cn.lastName))return;
-  const upd={firstName:cn.firstName,lastName:cn.lastName,name:[cn.firstName,cn.lastName].filter(Boolean).join(" ")};
+  const upd={firstName:cn.firstName,lastName:cn.lastName,name:fullName(cn)};
   try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),upd);Object.assign(MEMBER,upd)}catch(err){console.error(err)}
 }
 export function setSTART(v){return START=v}   /* other parts change START only through this */

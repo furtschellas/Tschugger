@@ -1,4 +1,4 @@
-import {HIT,L,LANG,S,WD,ariaTip,ddmm,esc} from "../base/10-core.js";
+import {ariaTip,ddmm,esc,fullName,HIT,L,LANG,mName,S,WD} from "../base/10-core.js";
 import {nmk} from "../base/11-schedule-prep.js";
 import {allVCards,saveVcf} from "../base/13-crew-views.js";
 import {VIEWS} from "../base/14-render.js";
@@ -35,7 +35,7 @@ document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.da
 /* departments that are not fed on set: left out of the catering count */
 const NO_CATER=/^(catering|postprod|verleih)/i;
 export function crewDeptOf(m){
-  const e=lc(m.email),k=nkey([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);
+  const e=lc(m.email),k=nkey(mName(m));
   const x=aix();return (e&&x.dept.get("e:"+e))||(k&&x.dept.get("n:"+k))||"";
 }
 /* catering: the crew list shows a short summary at the top and bundles the details in one collapsible block;
@@ -46,7 +46,7 @@ export function caterData(){
   const v=caterData0();CATM={t:Date.now(),n:ADM.mem.length,l:LANG,v};return v}
 function caterData0(){
   const act=ADM.mem.filter(m=>m.active===true&&!NO_CATER.test(crewDeptOf(m))).map(normDiet);
-  const nm=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
+  const nm=m=>mName(m)||(crewPerson(m.email)||{}).name||m.email;
   const alg=m=>String(m.allergies||"").trim();
   const special=act.filter(m=>(m.diet&&m.diet!=="none")||m.intol.length||alg(m));
   const groups=DIETS.filter(d=>d[0]!=="none").map(d=>[L(d[1]),special.filter(m=>m.diet===d[0])]).concat(INTOL.map(i=>[L(i[1]),special.filter(m=>m.intol.includes(i[0]))])).filter(g=>g[1].length);
@@ -101,7 +101,7 @@ const AIX={byEmail:new Map(),byName:new Map(),dept:new Map(),mem:null,crew:null}
 const aix=()=>{if(AIX.mem!==ADM.mem||AIX.crew!==S.crew)admIndex();return AIX};
 export function admIndex(){
   AIX.mem=ADM.mem;AIX.crew=S.crew;AIX.byEmail=new Map();AIX.byName=new Map();AIX.dept=new Map();
-  for(const m of ADM.mem){if(m.email)AIX.byEmail.set(m.email,m);for(const k of [nkey([m.firstName,m.lastName].filter(Boolean).join(" ")),nkey(m.name)])if(k&&!AIX.byName.has(k))AIX.byName.set(k,m)}
+  for(const m of ADM.mem){if(m.email)AIX.byEmail.set(m.email,m);for(const k of [nkey(fullName(m)),nkey(m.name)])if(k&&!AIX.byName.has(k))AIX.byName.set(k,m)}
   for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email),k=nkey(p.name);if(e&&!AIX.dept.has("e:"+e))AIX.dept.set("e:"+e,g.dept||"");if(k&&!AIX.dept.has("n:"+k))AIX.dept.set("n:"+k,g.dept||"")}
 }
 function memberFor(p){
@@ -109,7 +109,7 @@ function memberFor(p){
 }
 const bdShort=iso=>{const m=/^\d{4}-(\d\d)-(\d\d)$/.exec(iso||"");return m?m[2]+"."+m[1]+".":""};
 function bdayEntries(){
-  const name=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||m.email;
+  const name=m=>mName(m)||(crewPerson(m.email)||{}).name||m.email;
   if(isAdmin()&&ADM.loaded)return ADM.mem.filter(m=>m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||"")).map(m=>({name:name(m),md:m.birthday.slice(5)}));
   /* without admin rights (e.g. «Geburtstage sehen» only) the list comes from «bdays» – it was never loaded on this path and always showed «Keine Geburtstage» */
   if(!PUBB.loaded&&ME)loadPubBdays();
@@ -142,7 +142,7 @@ let BSYNC=0;
 export async function syncBdays(force){
   if(!isOwner()||!ADM.loaded||(!force&&Date.now()-BSYNC<10*60*1000))return;BSYNC=Date.now();
   try{const {F,db}=await fb();const cur=await F.getDocs(F.collection(db,"bdays"));const have={};cur.docs.forEach(d=>have[d.id]=d.data());
-    const name=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||"";
+    const name=m=>mName(m)||(crewPerson(m.email)||{}).name||"";
     const want={};ADM.mem.forEach(m=>{if(m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||""))want[m.uid]={name:name(m),md:m.birthday.slice(5)}});
     const ops=[];for(const id in want)if(!have[id]||have[id].name!==want[id].name||have[id].md!==want[id].md)ops.push(["set",id,want[id]]);
     for(const id in have)if(!want[id])ops.push(["del",id]);

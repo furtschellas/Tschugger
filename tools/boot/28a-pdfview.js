@@ -1,4 +1,4 @@
-import {L,esc} from "../base/10-core.js";
+import {esc,L,saveBlob} from "../base/10-core.js";
 /* ---------- PDF viewer in the app (reports …): pages drawn with pdf.js (pdf.min.mjs / pdf.worker.min.mjs next to the app), zoom, share / save.
    The same on every device – Android Chrome can not show a PDF itself and used to download it or send the user to the Dropbox ---------- */
 let PDFLIB=null;
@@ -37,7 +37,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
   if(t.dataset.pdfz){v.zoom=Math.min(4,Math.max(.5,+(v.zoom*(t.dataset.pdfz==="+"?1.25:.8)).toFixed(2)));pdfRedraw();return}
   if(!v.blob)return;const f=new File([v.blob],v.name,{type:"application/pdf"});
   try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:v.name});return}}catch(err){if(err&&err.name==="AbortError")return}
-  const u=URL.createObjectURL(v.blob),a=document.createElement("a");a.href=u;a.download=v.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),6e4)},true);
+  saveBlob(v.blob,v.name)},true);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&PDFV.el&&!e.defaultPrevented){e.preventDefault();pdfClose()}});
 /* the back button of the phone closes the viewer first */
 window.addEventListener("popstate",()=>{if(PDFV.el)pdfClose()});

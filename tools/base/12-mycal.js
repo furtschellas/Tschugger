@@ -1,4 +1,4 @@
-import {HIT,L,LANG,MEMO,S,TX,TXA,WD,ariaTip,blockTag,ddmm,driveMin,esc,fmtDate,isoAdd,itemHTML,pad2,pickDay,pvButtons,safeUrl,todayISO} from "./10-core.js";
+import {ariaTip,blockTag,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,MEMO,mName,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";
@@ -15,15 +15,10 @@ const NOSET=/^(postprod|verleih|buchhalt|autor|casting)/i;
 const myAdmin=()=>{try{return typeof window.canPerm!=="function"||window.canPerm("mycal.all")}catch(_){return false}};
 /* admins can look at the appointments of another person (Meine Termine → «Termine für»); that choice also fills Today and «Mein Drehtag»:
    a bar says so, with the way back to the own data */
-export function myPickBar(){let pick="";try{if(window.PICKON&&myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){}if(!pick)return "";
-  let own="";try{if(typeof MEMBER!=="undefined"&&MEMBER)own=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
-  if(own&&fold(own)===fold(pick))return "";
-  return '<div class="mypickbar" role="status">'+esc(L("Du siehst die Daten von"))+' <b>'+esc(pick)+'</b> '+esc(L("(gewählt in Meine Termine)."))+' <button type="button" class="pillbtn" data-mypickoff>'+esc(L("Zu meinen Daten"))+'</button></div>'}
-document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-mypickoff]")){e.preventDefault();window.MYPICK="";try{MEMO.clear()}catch(_){}render()}});
 export function myIdentity(){
   const people=mailPeople();let nm="",em="";
   try{em=String(window.simEmail?window.simEmail():(typeof ME!=="undefined"&&ME&&ME.email)||"").toLowerCase()}catch(_){}
-  try{if(typeof MEMBER!=="undefined"&&MEMBER)nm=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
+  try{if(typeof MEMBER!=="undefined"&&MEMBER)nm=mName(MEMBER)}catch(_){}
   let pick="";try{if(window.PICKON&&myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){} /* simulating: always the simulated person, never my own pick */
   let p=null;
   if(pick)p=people.find(x=>x.name===pick)||{name:pick,k:nmk(pick)};
@@ -109,7 +104,7 @@ function myIcs(list){
   const ev=list.map(e=>makeICS(e.date,{t:e.t,end:e.end,n:e.n,where:e.where,map:e.map,desc:[e.driver&&L("Fahrer:in")+": "+e.driver,e.pax&&L("Mitfahrende")+": "+e.pax,e.note].filter(Boolean).join(" · ")}).split("BEGIN:VEVENT")[1].split("END:VEVENT")[0]);
   return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Tschugger Crew//Meine Termine//DE","CALSCALE:GREGORIAN","METHOD:PUBLISH"].join("\r\n")+"\r\n"+ev.map(v=>"BEGIN:VEVENT"+v+"END:VEVENT").join("\r\n")+"\r\nEND:VCALENDAR\r\n";
 }
-function saveIcs(ics,name){try{const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}}
+function saveIcs(ics,name){try{saveBlob(new Blob([ics],{type:"text/calendar;charset=utf-8"}),name)}catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}}
 export let MYEV=[],MCNAMES=[];
 /* «Meine Termine»: only upcoming events, events that started at most 5 hours ago and events still running (end time);
    events without a time stay visible for their whole day */
@@ -152,8 +147,7 @@ export function addToCalendar(key){
   const [date,grp,k]=key.split("|");const d=S.prepro.find(x=>x.date===date);if(!d)return;
   const i=(grp==="p"?arr(d.parallel):d.items)[+k];if(!i)return;
   const ics=makeICS(date,i),name=(date+" "+(i.n||"Prep")).replace(/[^\w\-. ]+/g,"").trim().replace(/\s+/g,"_").slice(0,60)+".ics";
-  try{const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
-  catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}
+  saveIcs(ics,name)
 }
 function renderPrePro(one,embedded){setPPPEOPLE(null);
   /* admins: also use the app's user database (people not on the crew list); loads once, then re-renders */

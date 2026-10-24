@@ -1,4 +1,4 @@
-import {I18N,L,LANG,S,ariaTip,esc,localISO,msHM,todayISO} from "../base/10-core.js";
+import {ariaTip,esc,fullName,I18N,L,LANG,localISO,msHM,S,todayISO} from "../base/10-core.js";
 import {CSCUR} from "../base/13b-cs-now.js";
 import {fold,onRender,onRendered,render} from "../base/15-script-tab.js";
 import {fmtDT} from "./01-config.js";
@@ -48,7 +48,7 @@ const AUDOP={error:"gemeldet",set:"gespeichert",update:"geändert",delete:"gelö
 function auditSecInner(){
   if(!AUD.list&&!AUD.busy)auditLoad();
   if(!AUD.list)return '<div class="empty">'+L("Lade Protokoll …")+'</div>';
-  const nameOf=e=>{const cp=typeof crewPerson==="function"?crewPerson(e):null;const m=(ADM.mem||[]).find(x=>x.email===e);return (cp&&cp.name)||(m&&[m.firstName,m.lastName].filter(Boolean).join(" "))||e};
+  const nameOf=e=>{const cp=typeof crewPerson==="function"?crewPerson(e):null;const m=(ADM.mem||[]).find(x=>x.email===e);return (cp&&cp.name)||(m&&fullName(m))||e};
   const memName=uid=>{const m=(ADM.mem||[]).find(x=>x.uid===uid);return m?nameOf(m.email):uid};
   const q=fold(AUD.q);
   const rows=AUD.list.map(x=>{const tgt=x.col==="members"?memName(x.id):x.col==="roles"?(((ADM.roles||[]).find(r=>r.id===x.id)||{}).name||x.id):x.col==="menus"?dmy(x.id):x.col==="config"?"":x.col==="broadcasts"?"":/@/.test(x.id)?nameOf(x.id):x.id;

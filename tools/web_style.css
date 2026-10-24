@@ -923,8 +923,6 @@ html[data-theme="light"] body #view .csjump.csjump,html[data-theme="light"] body
 .gbox [data-gglw]{width:100%;margin-top:0;display:flex;flex-direction:column;gap:10px}
 .gbox [data-gglw][hidden]{display:none}
 html body .gbox [data-gglw] .ggoogle{width:100%;box-sizing:border-box}
-.mypickbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:8px 0 12px;padding:10px 12px;border:1px solid var(--accent);border-radius:12px;background:color-mix(in srgb,var(--accent) 12%,var(--paper));font-size:14px}
-.mypickbar .pillbtn{margin-left:auto}
 /* jump bar right below the day bar when both are stuck at the top: no gap (1 px under the day bar, which lies above it) */
 html body #view .csjump.csjump{top:calc(env(safe-area-inset-top,0px) + var(--striph,0px) - 1px)!important;margin-top:0!important}
 /* Kostüm / Maske: tick per entry, green when done */

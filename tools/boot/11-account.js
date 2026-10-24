@@ -1,5 +1,5 @@
 import {a2hsDo,isIOS,isStandalone,showA2hs} from "../a2hs.js";
-import {$,L,LANG,S,WDS,applyStatic,dlgBtn,esc,getTheme,mkDialog,saveBtn,setLANG,setTheme} from "../base/10-core.js";
+import {$,applyStatic,dlgBtn,esc,fullName,getTheme,L,LANG,mkDialog,S,saveBtn,setLANG,setTheme,WDS} from "../base/10-core.js";
 import {VIEWS,myTabOrder,tabOrder,tabsOn,vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
@@ -156,7 +156,7 @@ async function onAcctSubmit(e){
       const cn=crewNames();
       let PARTIAL=false;
       const upd={firstName:cn?cn.firstName:clean(f.fn.value),lastName:cn?cn.lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",gender:f.gd?f.gd.value:"",phone:String(f.ph.value||"").trim().slice(0,40),contactEmail:lc(String(f.ce.value||"").trim()).slice(0,120),diet:f.dt.value,intol:readBoxes(f,"pint"),allergies:String(f.al.value||"").trim().slice(0,200)};if(f.fu)upd.func=String(f.fu.value||"").trim().slice(0,80);
-      upd.name=[upd.firstName,upd.lastName].filter(Boolean).join(" ");
+      upd.name=fullName(upd);
       const ref=F.doc(db,"members",u.uid);
       const wr=()=>MEMBER?F.updateDoc(ref,upd):F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
       try{await wr()}catch(err){if(!/permission/.test(err&&err.code||""))throw err;await u.reload().catch(()=>{});await u.getIdToken(true);

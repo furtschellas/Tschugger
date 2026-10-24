@@ -1,4 +1,4 @@
-import {L,S,TX,TXA,ariaTip,cap,castChips,dateIn,ddmm,esc,fmtDate,ieClass,isoAdd,locHref,lvButtons,lvClasses,maps,memo,norm,pad2,partsHref,prodTZ,safeUrl,slug,telNum,todayISO} from "./10-core.js";
+import {ariaTip,cap,castChips,dateIn,ddmm,esc,fmtDate,ieClass,isoAdd,L,locHref,lvButtons,lvClasses,maps,memo,norm,pad2,partsHref,prodTZ,S,safeUrl,saveBlob,slug,telNum,todayISO,TX,TXA} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,hasSelU,icsEsc,nextUnitDay,onlyU,planDays,unitLists,unitsOn,zurichUTC} from "./11-schedule-prep.js";
 import {hm,planFactsHTML,planPdfBtn} from "./12-mycal.js";
 import {CSEXP,CSI,csHm} from "./13a-callsheet.js";
@@ -47,7 +47,7 @@ export function saveVcf(v,name,file){
         await c.put(url,new Response(v,{headers:{"Content-Type":"text/vcard;charset=utf-8","Content-Disposition":"inline; filename*=UTF-8''"+encodeURIComponent(fn)}}));location.href=url}).catch(dataUrl);
     }else dataUrl();
     return}
-  try{const u=URL.createObjectURL(new Blob([v],{type:"text/vcard;charset=utf-8"}));const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+  try{saveBlob(new Blob([v],{type:"text/vcard;charset=utf-8"}),fn)}
   catch(_){location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(v)}
 }
 export function renderCrew(){

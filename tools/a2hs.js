@@ -70,6 +70,7 @@ function a2hsFile(){
 }
 /* is the app icon on this device? Chrome/Edge can tell (installed web app), elsewhere we only know when the app runs from the icon.
    If the icon was deleted, the marker is reset so it can be created again */
+window.a2hsCheck=a2hsCheck;   /* Mein Konto → App and the «installed» hint ask through window */
 async function a2hsCheck(){
   if(isStandalone())return "standalone";
   try{if(navigator.getInstalledRelatedApps){const l=await navigator.getInstalledRelatedApps();if(l&&l.length)return "installed";if(a2hsState()==="done")a2hsSet("removed:"+Date.now());return "missing"}}catch(_){}

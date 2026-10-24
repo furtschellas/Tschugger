@@ -1,7 +1,7 @@
 import {L,S,esc,fmtDate,ieClass,maps,safeUrl} from "./10-core.js";
 import {nowCardHTML} from "../boot/16-today-view.js";
 import {UNITBAR,nmk} from "./11-schedule-prep.js";
-import {WDL,myPickBar} from "./12-mycal.js";
+import {WDL} from "./12-mycal.js";
 import {CSEXP,CSEXPSM,CSI,CSPH,csA,csAdr,csDriverByPhone,csDurT,csHm,csL,csMap,csMe,csMk,csRideCell,csRoute,csRouteH,csRows,csS,csSec,csTable,csTvBtn,csTvCls,csTx,setCSTR} from "./13a-callsheet.js";
 import {CSHN_RE,csNear,csNearHTML,csNowBits,csNowIdx,csNowLoc,csNowScene,csSceneLoc,csShootDay,setCSCUR} from "./13b-cs-now.js";
 import {csBadgeIn,csCallPlace,csCodeHref,csKindCode,csLocAddr,csLocFp,csLocGroups,csLocHref,csLocs,csMapQ,csOrderRows,csPlace,csPlaceA,csPlaceH,csRadioHTML,csSetGeo} from "./13c-cs-places.js";
@@ -105,7 +105,6 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   const mineN=me?csMine(c,me).length:0;const dtitle=(mineN?esc(L("Mein"))+' ':'')+esc(x.label||day.label||"Callsheet");
   if(!mineN)h+='<div class="dsp-head"><div><h2>'+dtitle+'</h2><div class="date drow"><span>'+fmtDate(x.date)+'</span>'+UNITBAR+'</div></div></div>';
   else if(UNITBAR)h+='<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>';
-  if(typeof myPickBar==='function')h+=myPickBar();
   if(x.date===csShootDay())h+=nowCardHTML(x.date,"csnowc");   /* the callsheet of today: «Jetzt» above the tiles, as in Today */
   h+=csTilesHTML(x,day,c,me);
   /* contact on set: the name itself is the call link (only with the phone right) */
@@ -163,7 +162,6 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   /* information by department */
   h+=csSec(L("Transport Crew"),csTvBtn("ctrans")+csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,{h:csRouteH(x.date,r)},r.people])   /* crew transport: no confirmation */,1),csTransOpen(c,me),csTvCls("ctrans"),"ctrans",SU.ctrans);
   h+=csSec([L("Infos nach Abteilung"),L("Infos nach Dept.")],csA(c.depts).filter(r=>String(r.text||"").trim()).map(r=>'<div class="csdep'+(csMyDept(c,me,r.dept)?' mine':'')+'"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text)+'</div></div>').join(""),false,"","dept",SU.dept);
-  /* the preview (PREVISION) is shown only on the next day (csPrevHTML) */
   /* calls on set */
   /* calls on set: by department, one short line per person (time · name · job) */
    h+=csCallsSec(c,x,me,SU,t);

@@ -1,4 +1,4 @@
-import {L,LANG,MEMO,S,esc} from "../base/10-core.js";
+import {esc,fullName,L,LANG,MEMO,S} from "../base/10-core.js";
 import {toast} from "../base/11-schedule-prep.js";
 import {vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -26,7 +26,7 @@ const simKeep=v=>{try{if(v)sessionStorage.setItem("sim",JSON.stringify(v));else 
 function simStart(em,re){em=lc(em);if(!simCan(em))return;
   const r=roleOf(em),ro=r==="admin"?{id:"admin",name:L("Admin"),perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:r==="owner"?{id:"owner",name:L("Owner"),perms:PERMS.map(x=>x[0])}:((ADM.roles||[]).find(x=>x.id===r)||{id:"",name:L("Keine Rolle"),perms:[]});
   const mem=(ADM.mem||[]).find(x=>lc(x.email||"")===em)||null,inv=(ADM.inv||[]).find(x=>x.id===em)||{};
-  const name=(mem&&[mem.firstName,mem.lastName].filter(Boolean).join(" "))||inv.name||em;
+  const name=(mem&&fullName(mem))||inv.name||em;
   SIMUSER={email:em,name,rname:ro.name||ro.id||L("Keine Rolle"),keep:{p:MYPERMS.slice(),r:MYROLE,rn:window.MYROLENAME||"",ap:ADMINPERMS.slice(),mem:typeof MEMBER!=="undefined"?MEMBER:null,tab:S.tab,sub:ADM.sub}};
   if(r==="owner")setSIMROLE(null);else{setSIMROLE({adm:r==="admin",user:em});setMYPERMS(r==="admin"?[]:arr(ro.perms).filter(p=>permKnown(p)));setMYROLE(r==="admin"?"":ro.id);if(r==="admin")setADMINPERMS(ro.perms)}window.MYROLENAME=r==="admin"||r==="owner"?"":ro.name||"";
   /* the simulated person's own data: profile (name), callsheet «my day», my appointments – never the admin's */
@@ -55,7 +55,7 @@ function simStartRole(id,re){if(!simRoleCan(id))return;
 /* quick picker «Ansicht als …» (roles and people) for the admin pages */
 window.simPicker=()=>{if(!isAdmin()||SIMROLE||SIMUSER)return "";
   const roles=[["role:",L("Keine Rolle")]].concat(isOwner()?[["role:admin",L("Admin")]]:[],(window.rolesSorted?rolesSorted():(ADM.roles||[])).map(r=>["role:"+r.id,r.name||r.id]));
-  const ppl=[];const seen=new Set();for(const m of (ADM.mem||[])){const em=lc(m.email||"");if(!em||seen.has(em)||!simCan(em))continue;seen.add(em);ppl.push([em,[m.firstName,m.lastName].filter(Boolean).join(" ")||em])}
+  const ppl=[];const seen=new Set();for(const m of (ADM.mem||[])){const em=lc(m.email||"");if(!em||seen.has(em)||!simCan(em))continue;seen.add(em);ppl.push([em,fullName(m)||em])}
   /* invited people without an account yet too (before, only people with an account could be picked here) */
   /* in their own group «Noch ohne Konto» (the remark after each name broke the lines of the phone's list) */
   const inv=[];for(const i of (ADM.inv||[])){const em=lc(i.id||"");if(!em||seen.has(em)||!simCan(em))continue;seen.add(em);inv.push([em,i.name||em])}inv.sort((a,b)=>a[1].localeCompare(b[1],LANG));

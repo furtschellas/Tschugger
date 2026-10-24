@@ -1,4 +1,4 @@
-import {L,LANG,TZ0,blockList,blockNow,esc,todayISO} from "../base/10-core.js";
+import {blockList,blockNow,esc,L,LANG,mName,todayISO,TZ0} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {showMsg} from "../base/20-data-start.js";
 import {ADMINS} from "./01-config.js";
@@ -51,7 +51,7 @@ function blocksSec(){
     (BLK.msg?'<p class="ghint" role="status">'+esc(BLK.msg)+'</p>':'')}
 window.blocksSec=blocksSec;
 /* who sees this block: tick people right here (sets their blocks by hand; «Automatisch» again in the person's profile edit) */
-const blkName=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||m.email||"";
+const blkName=m=>mName(m)||m.email||"";
 function blkPeople(b){if(!can("users.edit"))return "";if(!ADM.loaded){ensureAdm();return '<p class="ghint">'+esc(L("Lade …"))+'</p>'}
   if(BLK.edit&&!blockList().some(x=>x.id===b.id))return '<p class="ghint">'+esc(L("Personen zuteilen: zuerst den Block speichern."))+'</p>';
   const all=(ADM.mem||[]).filter(m=>m&&m.uid&&m.active!==false),q=String(BLK.q[b.id]||"").toLowerCase();
