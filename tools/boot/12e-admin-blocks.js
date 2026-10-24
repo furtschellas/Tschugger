@@ -85,9 +85,9 @@ document.addEventListener("input",e=>{const el=e.target.closest&&e.target.closes
   b[f]=el.value.trim();BLK.msg="";
   if(f==="tz"||!document.querySelector("[data-blksave]"))render()});   /* time zone: clock and check below the field; first change: the save button appears */
 document.addEventListener("click",e=>{if(!e.target||!e.target.closest)return;
-  if(e.target.closest("[data-blkadd]")){const bl=BLK.edit=blkCur();let n=bl.length+1;while(bl.some(b=>b.id==="b"+n))n++;
-    bl.push(bl.length?{id:"b"+n,name:L("Block")+" "+n,country:"",tz:TZ0,from:"",to:"",kw:"",topics:{}}:{id:"b1",name:L("Block")+" 1",country:"Schweiz",tz:TZ0,from:"",to:"",kw:"",topics:{}});
-    BLK.msg="";SECS["blk-b"+n]=true;render();return}
+  if(e.target.closest("[data-blkadd]")){const bl=BLK.edit=blkCur();let n=bl.length+1;while(bl.some(b=>b.id==="b"+n))n++;const nid="b"+Date.now().toString(36);   /* never the id of a deleted block again (people's hand-set blocks still name it) */
+    bl.push(bl.length?{id:nid,name:L("Block")+" "+n,country:"",tz:TZ0,from:"",to:"",kw:"",topics:{}}:{id:nid,name:L("Block")+" 1",country:"Schweiz",tz:TZ0,from:"",to:"",kw:"",topics:{}});
+    BLK.msg="";SECS["blk-"+nid]=true;render();return}
   if(e.target.closest("[data-blkundo]")){BLK.edit=null;BLK.del=-1;BLK.msg="";render();return}
   const d=e.target.closest("[data-blkdel]");
   if(d){const i=+d.dataset.blkdel;if(BLK.del!==i){BLK.del=i;render();return}

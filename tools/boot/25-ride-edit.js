@@ -15,13 +15,15 @@ import {scRender} from "./27-scene-ack.js";
 window.RIDEEDIT=window.RIDEEDIT||{};window.REDVER=0;export let REDSUB=null;
 /* the subscription is marked at once (two quick calls made two subscriptions); a slower older snapshot does not overwrite a newer one;
    like the ticks: from the first callsheet of the last 60 days on (changed rides of past days stayed hidden) */
-let REDSEQ=0;
+let REDSEQ=0,REDFROM="";
+/* from which date on: the first callsheet of the last 60 days (computed again when the callsheets arrive after the start) */
+const redFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
 async function rideEditLoad(){if(REDSUB||typeof ME==="undefined"||!ME)return;REDSUB="…";
-  try{const {F,db}=await fb();const key=await getDataKey();
-    const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;
-    REDSUB=F.onSnapshot(F.query(F.collection(db,"rideedit"),F.where("d",">=",from)),async q=>{const my=++REDSEQ,m={};for(const d of q.docs){try{m[d.id]=await ownDec(key,d.data().c)}catch(_){}}
+  try{const {F,db}=await fb();
+    const from=redFrom();REDFROM=from;
+    REDSUB=F.onSnapshot(F.query(F.collection(db,"rideedit"),F.where("d",">=",from)),async q=>{const my=++REDSEQ,m={};let key=null;try{key=await getDataKey()}catch(_){}for(const d of q.docs){try{m[d.id]=await ownDec(key,d.data().c)}catch(_){}}
       if(my!==REDSEQ||JSON.stringify(m)===JSON.stringify(window.RIDEEDIT))return;window.RIDEEDIT=m;window.REDVER++;try{MEMO.clear()}catch(_){}(typeof scRender==="function"?scRender:render)();try{pushSyncSoon()}catch(_){}},()=>{REDSUB=null})}catch(_){REDSUB=null}}
-setTimeout(rideEditLoad,4500);setInterval(()=>{if(!REDSUB)rideEditLoad()},30e3);   /* also after a late sign-in or a lost connection */
+setTimeout(rideEditLoad,4500);setInterval(()=>{if(typeof REDSUB==="function"&&REDFROM&&redFrom()!==REDFROM){try{REDSUB()}catch(_){}REDSUB=null}if(!REDSUB)rideEditLoad()},30e3);   /* also after a late sign-in or a lost connection */
 /* the changes on the rides of every callsheet (the originals stay in _o_transport / _o_crewTransport) */
 const RED_KEYS=["t1","t2","from","to","vehicle","driver","passengers","people"];
 window.rideEditApply=()=>{for(const dp of (typeof S!=="undefined"&&S.dispos)||[]){const c=dp&&dp.cs;if(c&&dp.date)c._date=dp.date;   /* the day of the callsheet (travel of other days) */
@@ -79,8 +81,13 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
         d.querySelectorAll("[data-redst]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.redst===v)));render()}catch(err){msg.textContent=L("Speichern nicht möglich.")}return}
     if(e.target.closest("[data-redreset]")){try{const {F,db}=await fb();await F.deleteDoc(F.doc(db,"rideedit",id));d.remove();showMsg(L("Original wiederhergestellt."),2500)}catch(err){msg.textContent=L("Speichern nicht möglich.")}}});
   d.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("[data-redfree]")){e.preventDefault();d.querySelector("[data-redfreeok]").click()}});
-  d.addEventListener("submit",async e=>{e.preventDefault();const fm=e.target;const val=n=>{const f0=fm.elements[n];if(!f0)return"";const v=String(f0.value||"").trim();if(v===OTHER){const x=fm.elements[n+"_x"];return x?String(x.value||"").trim():""}return v};
-    const now={t1:val("t1"),t2:val("t2"),from:val("from"),to:val("to"),vehicle:val("vehicle")};if(!crew)now.driver=val("driver");now[crew?"people":"passengers"]=val("pax").split(/\s*,\s*/).filter(Boolean).join(", ");
+  const readForm=fm=>{const val=n=>{const f0=fm.elements[n];if(!f0)return"";const v=String(f0.value||"").trim();if(v===OTHER){const x=fm.elements[n+"_x"];return x?String(x.value||"").trim():""}return v};
+    const now={t1:val("t1"),t2:val("t2"),from:val("from"),to:val("to"),vehicle:val("vehicle")};if(!crew)now.driver=val("driver");now[crew?"people":"passengers"]=val("pax").split(/\s*,\s*/).filter(Boolean).join(", ");return now};
+  d.addEventListener("submit",async e=>{e.preventDefault();const fm=e.target;const mine=readForm(fm);
+    /* two managers: only the fields changed in this window are taken, the others come from the newest saved change (before, saving an
+       older window undid the change another manager had saved in between) */
+    const live=window.RIDEEDIT[id]||{},init=d.__init||{},now={};
+    for(const f in mine)now[f]=mine[f]!==init[f]?mine[f]:(live[f]!=null?String(live[f]):(o[f]==null?"":String(o[f]).trim()));
     /* only what differs from the callsheet is stored */
     const ch={};for(const f in now){const a=String(o[f]==null?"":o[f]).trim(),b=now[f];if((f==="t1"||f==="t2")?hm(a)!==hm(b):a!==b&&noUrl(a)!==b)ch[f]=b}   /* a place with its map link in the callsheet counts as unchanged */
     fm.querySelector("button[type=submit]").disabled=true;
@@ -88,7 +95,7 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
       if(!Object.keys(ch).length)await F.deleteDoc(ref);else await F.setDoc(ref,{c:await ownEnc(ch),d:dp.date,at:Date.now()});
       d.remove();showMsg(L("Fahrt gespeichert."),2500)}
     catch(err){fm.querySelector("button[type=submit]").disabled=false;msg.textContent=saveErr(err)}});
-  document.body.appendChild(d);const f0=d.querySelector("input[name=t1]");if(f0)f0.focus()}
+  document.body.appendChild(d);try{const fm=d.querySelector("form");if(fm)d.__init=readForm(fm)}catch(_){}const f0=d.querySelector("input[name=t1]");if(f0)f0.focus()}
 /* the circle of a ride in the callsheet: with «Fahrten Manager» it opens the popup (before the quick switch of «Fahrten quittieren») */
 document.addEventListener("click",e=>{const b=e.target.closest(".rideack-cs[data-rideack]");if(!b||!canPerm("rides.manage"))return;e.preventDefault();e.stopImmediatePropagation();window.REDBACK={id:b.dataset.rideack,until:Date.now()+15e3};rideEditDialog(b.dataset.rideack)},true);
 /* after the popup (saved, reset or closed): back to the ride in «Transport with driver» – its part open, the ride in view, also after the new drawing */
