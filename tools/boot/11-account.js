@@ -13,7 +13,7 @@ import {TOUR,a2stCheck,chatSec,tourInfo,tourStart} from "./08-chat-tour.js";
 import {WELCOME_OPEN,crewNames,maybeWelcome,setWELCOME_OPEN} from "./10-menus-welcome-presence.js";
 import {ADM,confirmSafe,writeOwnBday} from "./12a-admin-core.js";
 import {offAuto} from "./14-today-changes-offline.js";
-import {todayHidden,todayOn} from "./16-today-view.js";
+import {todayCfg,todayOn,tShow} from "./16-today-view.js";
 import {SIMUSER} from "./22-simulate.js";
 import {fsGet} from "./23-mobile.js";
 /* ---- account sheet: own password, own email, sign out; admin entry ---- */
@@ -52,7 +52,7 @@ export const genderSel=(n,v,req)=>'<select name="'+n+'"'+(req?' required':'')+'>
 function profileForm(onb){
   return '<form data-af="pf" novalidate>'+nameFields()+funcField()+contactFields(MEMBER)+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Geschlecht")+genderSel("gd",(MEMBER&&MEMBER.gender)||"",true)+'</label><fieldset class="efood"><legend>'+L("Essen")+'</legend><label>'+L("Ernährung")+dietSel("dt",(MEMBER&&MEMBER.diet)?normDiet(MEMBER).diet:"",true)+'</label><label class="full">'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label class="full">'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p></fieldset>'+
     /* «Mein Drehtag» on Today: also here in the profile (same setting as Mein Konto › App) */
-    (typeof todayOn==="function"&&todayOn()?'<label class="ck"><input type="checkbox" data-todaypart="mine"'+(typeof todayHidden==="function"&&todayHidden().has("mine")?'':' checked')+'> '+L("«Mein Drehtag» auf Today anzeigen")+'</label>':'')+
+    (typeof todayOn==="function"&&todayOn()&&todayCfg("mine")!=="no"?'<label class="ck"><input type="checkbox" data-todaypart="mine"'+(tShow("mine")?' checked':'')+'> '+L("«Mein Drehtag» auf Today anzeigen")+'</label>':'')+
     ''+saveBtn()+'<p class="amsg" role="alert"></p></form>';
 }
 function acctInnerAll(){

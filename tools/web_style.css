@@ -1075,3 +1075,7 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
 /* callsheet of today: «Jetzt» above the tiles (as in Today) */
 #view .tcard.csnowc{border-radius:14px;padding:14px;margin:0 0 12px;background:var(--sheet)}
 #view .tcard.csnowc .tch{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+/* App-Verwaltung → Today: one line per part, the choice on the right */
+.tdcfg{display:grid;gap:6px;margin:6px 0 10px}
+.tdcfgr{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tdcfgr select{max-width:55%}

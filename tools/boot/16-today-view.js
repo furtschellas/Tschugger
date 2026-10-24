@@ -21,12 +21,18 @@ window.todayOn=todayOn;   /* the tab bar (base/14-render) asks through window: �
 /* which parts Today shows (profile → App): stored with the on/off value, «1|menu,off» = on, without lunch and offline */
 const TODAY_PARTS=[["now","Jetzt gedreht",()=>true],["my","Meine nächsten Termine",()=>vok("mycal")],["mine","Mein Drehtag",()=>true],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
   ["loc","Erste Location",()=>vok("plan")],["menu","Mittagessen",()=>true],["scs","Szenen",()=>vok("plan")],["chg","Änderungen",()=>vok("plan")||vok("script")],["off","Offline am Set",()=>vok("blocking")||vok("plan")]];
-export function todayHidden(){let v="";try{v=localStorage.getItem("today")||""}catch(_){}const i=v.indexOf("|");return new Set(i<0?[]:v.slice(i+1).split(",").filter(Boolean))}
-export const tShow=k=>!todayHidden().has(k);
-window.todayPartsHTML=function(){if(!todayOn())return "";const hid=todayHidden(),ps=TODAY_PARTS.filter(x=>x[2]());
-  return '<p class="ahint"><b>'+esc(L("Was zeigt «Today»?"))+'</b></p>'+ps.map(([k,t])=>'<label class="ck"><input type="checkbox" data-todaypart="'+k+'"'+(hid.has(k)?'':' checked')+'> '+esc(L(t))+'</label>').join("")};
-document.addEventListener("change",e=>{const c=e.target.closest("[data-todayon]");if(!c)return;const hid=[...todayHidden()];store("today",(c.checked?"1":"0")+(hid.length?"|"+hid.join(","):""));if(!c.checked&&S.tab==="today")S.tab="plan";render()});
-document.addEventListener("change",e=>{const c=e.target.closest("[data-todaypart]");if(!c)return;const hid=todayHidden();if(c.checked)hid.delete(c.dataset.todaypart);else hid.add(c.dataset.todaypart);
+/* the person's choice, stored with the on/off value: «menu» = switched off, «+wx» = switched on although the App-Verwaltung offers it «aus» */
+function todayPrefs(){let v="";try{v=localStorage.getItem("today")||""}catch(_){}const i=v.indexOf("|");return new Set(i<0?[]:v.slice(i+1).split(",").filter(Boolean))}
+export function todayHidden(){return new Set([...todayPrefs()].filter(k=>k[0]!=="+"))}
+/* App-Verwaltung → Einstellungen → Today: per part «on» (default), «off» (offered, off until the person switches it on) or «no» (not offered) */
+export const todayCfg=k=>{const c=window.TODAYCFG;const v=c&&typeof c==="object"?c[k]:"";return v==="off"||v==="no"?v:"on"};
+window.TODAY_PART_LIST=()=>TODAY_PARTS.map(([k,t])=>[k,t]);   /* the App-Verwaltung (admin.js) lists them */
+export const tShow=k=>{const c=todayCfg(k);if(c==="no")return false;const p=todayPrefs();return !p.has(k)&&(c!=="off"||p.has("+"+k))};
+window.todayPartsHTML=function(){if(!todayOn())return "";const ps=TODAY_PARTS.filter(x=>x[2]()&&todayCfg(x[0])!=="no");
+  return '<p class="ahint"><b>'+esc(L("Was zeigt «Today»?"))+'</b></p>'+ps.map(([k,t])=>'<label class="ck"><input type="checkbox" data-todaypart="'+k+'"'+(tShow(k)?' checked':'')+'> '+esc(L(t))+'</label>').join("")};
+document.addEventListener("change",e=>{const c=e.target.closest("[data-todayon]");if(!c)return;const hid=[...todayPrefs()];store("today",(c.checked?"1":"0")+(hid.length?"|"+hid.join(","):""));if(!c.checked&&S.tab==="today")S.tab="plan";render()});
+document.addEventListener("change",e=>{const c=e.target.closest("[data-todaypart]");if(!c)return;const hid=todayPrefs(),k=c.dataset.todaypart;
+  if(c.checked){hid.delete(k);if(todayCfg(k)==="off")hid.add("+"+k)}else{hid.add(k);hid.delete("+"+k)}
   store("today","1"+(hid.size?"|"+[...hid].join(","):""));if(typeof savePrefsSoon==="function")savePrefsSoon()});
 /* a new script version (from the Dropbox update): shown for 3 days like the schedule changes, with the scenes from the changelog
    and the whole changelog to open */

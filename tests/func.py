@@ -881,6 +881,13 @@ async def owner_tests(p, port):
         await E("S.tab='acct';ACSUB='app';render();const c=document.querySelector('#view [data-todayon]');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}))"); await pg.wait_for_timeout(200)
         await E("S.tab='acct';ACSUB='app';render();const c=document.querySelector('#view [data-todayon]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))"); await pg.wait_for_timeout(200)
         check("Today aus- und wieder einschalten: die Auswahl der Teile bleibt", await E("todayHidden().has('scs')&&todayOn()"))
+        # App-Verwaltung → Today: «aus» = offered but off until switched on, «nicht angeboten» = not in the list and never shown
+        tc = await E("""(()=>{if(typeof tShow!=='function')return null;const kc=window.TODAYCFG,kv=localStorage.getItem('today');window.TODAYCFG={wx:'off',menu:'no'};localStorage.setItem('today','1');
+          S.tab='acct';ACSUB='app';render();const ks=[...document.querySelectorAll('#view [data-todaypart]')].map(x=>x.dataset.todaypart);const r={wx0:tShow('wx'),menu:tShow('menu'),list:!ks.includes('menu')&&ks.includes('wx'),scs:tShow('scs')};
+          const c=document.querySelector('#view [data-todaypart="wx"]');if(c){c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))}r.wx1=tShow('wx');
+          window.TODAYCFG=kc;if(kv==null)localStorage.removeItem('today');else localStorage.setItem('today',kv);return r})()""")
+        check("App-Verwaltung → Today: «aus» erst nach Einschalten sichtbar, «nicht angeboten» nirgends",
+              tc is None or tc == {"wx0": False, "menu": False, "list": True, "scs": True, "wx1": True}, tc)
         # start page: a start (or coming back after a long pause) opens Today; with Today off the Drehplan at today / the next day
         sp = await E("""(()=>{const keep=localStorage.getItem('today'),tab=S.tab,day=S.day;const r={};
           S.tab='loc';S.day='x';goStart();r.on=S.tab;localStorage.setItem('today','0|'+(keep||'').replace(/^[01]\\|?/,''));S.tab='loc';S.day='x';goStart();r.off=S.tab;
