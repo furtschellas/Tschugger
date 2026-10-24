@@ -19,40 +19,45 @@ export function applyLangs(){
   document.querySelectorAll(".lang").forEach(d=>{d.style.display=APPLANGS.length<2?"none":""});
   if(!APPLANGS.includes(LANG)){setLANG(APPLANGS[0]);store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
 }
+/* one setting of config/app: on window and on this device (for the next start, before config/app is read); drawn again when it changed.
+   true/false is stored as "1"/"0", text as it is, lists and objects as JSON, null removes it */
+function cfgPut(win,v,key,draw=true){if(JSON.stringify(window[win])===JSON.stringify(v))return false;window[win]=v;
+  try{v==null?localStorage.removeItem(key):localStorage.setItem(key,typeof v==="boolean"?(v?"1":"0"):typeof v==="string"?v:JSON.stringify(v))}catch(_){}
+  if(draw)render();return true}
 export async function loadLangs(){
   try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));const l=d.exists()&&d.data().langs;
     if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}
-    const u2=d.exists()?d.data().unit2!==false:true;if(window.UNIT2!==u2){window.UNIT2=u2;try{localStorage.setItem("appunit2",u2?"1":"0")}catch(_){}render()}
-    {const c=d.exists()?d.data():{};const nv={phone:c.phonePublic===true,email:c.emailPublic===true,mycal:c.mycalPublic===true};if(JSON.stringify(nv)!==JSON.stringify(window.PUBV)){window.PUBV=nv;try{localStorage.setItem("apppubv",JSON.stringify(nv))}catch(_){}render()}}
+    cfgPut("UNIT2",d.exists()?d.data().unit2!==false:true,"appunit2");
+    {const c=d.exists()?d.data():{};cfgPut("PUBV",{phone:c.phonePublic===true,email:c.emailPublic===true,mycal:c.mycalPublic===true},"apppubv")}
     {const go=!(d.exists()&&d.data().googleLogin===false);if(window.GOOGLEON!==go){window.GOOGLEON=go;try{localStorage.setItem("appgoogle",go?"1":"0")}catch(_){}try{const g=document.getElementById("gate");if(g&&!g.hidden&&(AUTHMODE==="login"||AUTHMODE==="register")&&!g.querySelector("input:focus"))showGate(AUTHMODE)}catch(_){}}}
-    {const c=d.exists()?d.data():{};window.A2AGAIN=c.a2again===true;try{localStorage.setItem("appa2again",window.A2AGAIN?"1":"0")}catch(_){}}
-    {const c=d.exists()?d.data():{};const z=+c.chgClearAt||0;if(window.CHGCLR!==z){window.CHGCLR=z;try{localStorage.setItem("appchgclr",String(z))}catch(_){}render()}}   /* «Änderungen» in Today emptied for everybody */
+    cfgPut("A2AGAIN",d.exists()&&d.data().a2again===true,"appa2again",false);
+    cfgPut("CHGCLR",d.exists()&&+d.data().chgClearAt||0,"appchgclr");   /* «Änderungen» in Today emptied for everybody */
     {const c=d.exists()?d.data():{};const bl=Array.isArray(c.blocks)&&c.blocks.length?c.blocks:null;if(JSON.stringify(bl)!==JSON.stringify(window.BLOCKS)){window.BLOCKS=bl;try{if(window.cdApplyAll)window.cdApplyAll()}catch(_){}try{bl?localStorage.setItem("appblocks",JSON.stringify(bl)):localStorage.removeItem("appblocks")}catch(_){}render()}}
-    {const c=d.exists()?d.data():{};const pn=c.permNames&&typeof c.permNames==="object"?c.permNames:{};if(JSON.stringify(pn)!==JSON.stringify(window.PERMNAMES)){window.PERMNAMES=pn;try{localStorage.setItem("apppermnames",JSON.stringify(pn))}catch(_){}render()}}
-    {const c=d.exists()?d.data():{},k=typeof c.appCheckKey==="string"?c.appCheckKey:"";if((window.APPCHECKKEY||"")!==k){window.APPCHECKKEY=k;try{localStorage.setItem("appcheck",k)}catch(_){}}}   /* App Check: used from the next start */
-    {const c=d.exists()?d.data():{};const pe=c.pushEnabled!==false;if(window.PUSHEN!==pe){window.PUSHEN=pe;try{localStorage.setItem("apppushon",pe?"1":"0")}catch(_){}render()}}
-    {const c=d.exists()?d.data():{};const ce=c.chatEnabled!==false,te=c.tourEnabled!==false;if(window.CHATEN!==ce||window.TOUREN!==te){window.CHATEN=ce;window.TOUREN=te;try{localStorage.setItem("appchaton",ce?"1":"0");localStorage.setItem("apptouron",te?"1":"0")}catch(_){}}}
+    {const c=d.exists()?d.data():{};cfgPut("PERMNAMES",c.permNames&&typeof c.permNames==="object"?c.permNames:{},"apppermnames")}
+    {const c=d.exists()?d.data():{};cfgPut("APPCHECKKEY",typeof c.appCheckKey==="string"?c.appCheckKey:"","appcheck",false)}   /* App Check: used from the next start */
+    cfgPut("PUSHEN",!(d.exists()&&d.data().pushEnabled===false),"apppushon");
+    {const c=d.exists()?d.data():{};cfgPut("CHATEN",c.chatEnabled!==false,"appchaton",false);cfgPut("TOUREN",c.tourEnabled!==false,"apptouron",false)}
     {let cu=String((d.exists()&&d.data().chatUrl)||"");if(cu&&!/^https:\/\//i.test(cu))cu="";   /* only https – the sign-in token goes there */if(window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
     {const dc=(d.exists()&&d.data().docs)||{};window.DOCS=dc;try{localStorage.setItem("appdocs",JSON.stringify(dc))}catch(_){}}
-    const bp=d.exists()&&d.data().bdayPublic===true;if(window.BDAYPUB!==bp){window.BDAYPUB=bp;try{localStorage.setItem("appbdaypub",bp?"1":"0")}catch(_){}render()}
-    const to=d.exists()&&Array.isArray(d.data().tabOrder)?d.data().tabOrder:null;if(JSON.stringify(window.TABORDER)!==JSON.stringify(to)){window.TABORDER=to;try{to?localStorage.setItem("apptaborder",JSON.stringify(to)):localStorage.removeItem("apptaborder")}catch(_){}render()}
-    const tb=d.exists()&&Array.isArray(d.data().tabs)&&d.data().tabs.length?d.data().tabs:null;if(JSON.stringify(window.TABSON)!==JSON.stringify(tb)){window.TABSON=tb;try{tb?localStorage.setItem("apptabs",JSON.stringify(tb)):localStorage.removeItem("apptabs")}catch(_){}render()}
+    cfgPut("BDAYPUB",d.exists()&&d.data().bdayPublic===true,"appbdaypub");
+    cfgPut("TABORDER",d.exists()&&Array.isArray(d.data().tabOrder)?d.data().tabOrder:null,"apptaborder");
+    cfgPut("TABSON",d.exists()&&Array.isArray(d.data().tabs)&&d.data().tabs.length?d.data().tabs:null,"apptabs");
     window.FAILALARM=d.exists()?d.data().failAlarm!==false:true;
     /* App-Verwaltung → Today: which parts the people are offered ({part: "off"|"no"}) */
-    {const tc=d.exists()&&d.data().todayParts&&typeof d.data().todayParts==="object"?d.data().todayParts:{};if(JSON.stringify(tc)!==JSON.stringify(window.TODAYCFG||{})){window.TODAYCFG=tc;try{localStorage.setItem("apptodaycfg",JSON.stringify(tc))}catch(_){}render()}}
+    cfgPut("TODAYCFG",d.exists()&&d.data().todayParts&&typeof d.data().todayParts==="object"?d.data().todayParts:{},"apptodaycfg");
     window.OWNEV=d.exists()?d.data().ownEvents!==false:true;
     window.CSMAPON=d.exists()?d.data().csMap!==false:true;
-    {const mn=d.exists()?d.data().myNav!==false:true;if(window.MYNAV!==mn){window.MYNAV=mn;try{localStorage.setItem("appmynav",mn?"1":"0")}catch(_){}render()}}
+    cfgPut("MYNAV",!(d.exists()&&d.data().myNav===false),"appmynav");
     /* App-Verwaltung → Produktion: name of the project, production company and its address (exports, title of the app) */
     {const g=k=>d.exists()&&typeof d.data()[k]==="string"?d.data()[k]:"";window.PROJNAME=g("projName");window.PRODCO=g("prodCo");window.PRODADDR=g("prodAddr");try{localStorage.setItem("appproj",JSON.stringify([PROJNAME,PRODCO,PRODADDR]))}catch(_){}if(typeof projApply==="function")projApply()}
     /* times of the quittances: Drehplan / Callsheet, each on phones (pm, cm) and computers (pd, cd) */
     {const at=(d.exists()&&d.data().ackTimes)||{};window.ACKT={pm:at.pm!==false,pd:at.pd!==false,cm:at.cm!==false,cd:at.cd!==false};for(const k in ACKT)document.documentElement.classList.toggle("nosct"+k,!ACKT[k])}
     /* scenes and rides quittiert (App-Verwaltung → Einstellungen; on unless switched off) */
-    {const sa=d.exists()?d.data().sceneAck!==false:true,ra=d.exists()?d.data().rideAck!==false:true;if(window.SCACKON!==sa||window.RIDEACKON!==ra){window.SCACKON=sa;window.RIDEACKON=ra;try{localStorage.setItem("appscack",sa?"1":"0");localStorage.setItem("apprideack",ra?"1":"0")}catch(_){}render()}}   /* map in the callsheet (App-Verwaltung → Einstellungen) */
+    {const c=d.exists()?d.data():{};if(cfgPut("SCACKON",c.sceneAck!==false,"appscack",false)|cfgPut("RIDEACKON",c.rideAck!==false,"apprideack",false))render()}   /* map in the callsheet (App-Verwaltung → Einstellungen) */
     window.GCALON=d.exists()&&!!d.data().gcal;
-    const au=d.exists()?d.data().autoUpdate!==false:true;if(window.AUTOUPD!==au){window.AUTOUPD=au;try{localStorage.setItem("appauto",au?"1":"0")}catch(_){}}
-    const so=d.exists()?d.data().script!==false:true;if(window.SCRIPTON!==so){window.SCRIPTON=so;try{localStorage.setItem("appscript",so?"1":"0")}catch(_){}render()}
-    const u3=d.exists()&&d.data().unit3===true;if(window.UNIT3!==u3){window.UNIT3=u3;try{localStorage.setItem("appunit3",u3?"1":"0")}catch(_){}render()}
+    cfgPut("AUTOUPD",!(d.exists()&&d.data().autoUpdate===false),"appauto",false);
+    cfgPut("SCRIPTON",!(d.exists()&&d.data().script===false),"appscript");
+    cfgPut("UNIT3",d.exists()&&d.data().unit3===true,"appunit3");
     /* links (motive list, map, chat) are in config/private – only for the crew; the older fields in config/app still count */
     let pv={};try{const {auth}=await fb();if(auth.currentUser){const q=await F.getDoc(F.doc(db,"config","private"));if(q.exists())pv=q.data();window.PRIVOK=true}}catch(_){}
     const cf=k=>typeof pv[k]==="string"&&pv[k]?pv[k]:(d.exists()&&typeof d.data()[k]==="string"?d.data()[k]:"");
@@ -60,7 +65,7 @@ export async function loadLangs(){
     /* Google map in the callsheet map: on/off, its colours, hidden layers (config/private) */
     {const g=pv.gmap&&typeof pv.gmap==="object"?pv.gmap:{};window.GMAPSET={on:g.on===true,color:g.color!==false,off:Array.isArray(g.off)?g.off.map(String):[]}}window.SCENESHEET=typeof pv.sceneSheet==="string"?pv.sceneSheet:"";window.SHEETSA=typeof pv.sheetSa==="string"?pv.sheetSa:"";window.SHEETST=pv.sceneSheetSt&&typeof pv.sceneSheetSt==="object"?pv.sceneSheetSt:null;
     {const cu=cf("chatUrl");if(cu&&/^https:\/\//i.test(cu)&&window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
-    const mu=cf("mapUrl");if((window.MAPURL||"")!==mu){window.MAPURL=mu;try{localStorage.setItem("appmap",mu)}catch(_){}render()}
+    if((window.MAPURL||"")!==cf("mapUrl"))cfgPut("MAPURL",cf("mapUrl"),"appmap");
   }catch(err){console.warn("langs",err)}
   applyLangs();
 }
