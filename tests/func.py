@@ -890,6 +890,13 @@ async def owner_tests(p, port):
         await E("S.tab='acct';ACSUB='app';render();const c=document.querySelector('#view [data-todayon]');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}))"); await pg.wait_for_timeout(200)
         await E("S.tab='acct';ACSUB='app';render();const c=document.querySelector('#view [data-todayon]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))"); await pg.wait_for_timeout(200)
         check("Today aus- und wieder einschalten: die Auswahl der Teile bleibt", await E("todayHidden().has('scs')&&todayOn()"))
+        # coverday: a callsheet is never left out, and one that fits its own date stays there
+        cdk = await E("""(()=>{if(typeof cdDispos!=='function')return null;const dy=(d,sc)=>({date:d,kind:'shoot',items:sc.map(x=>({sc:x}))}),cs=(d,sc,f)=>({date:d,file:f,scenes:sc.map(x=>({sc:x}))});
+          const days=[dy('2031-01-01',['1','2']),dy('2031-01-02',['3','4'])];
+          const a=cdDispos([cs('2031-01-01',['3','4'],'neu.pdf'),cs('2031-01-02',['3','4'],'alt.pdf')],days).map(x=>x.file).sort().join(',');
+          const b=cdDispos([cs('2031-01-01',['1','2','3','4'],'mix.pdf')],days).map(x=>x.date).join(',');
+          return {a,b}})()""")
+        check("Coverday: kein Callsheet geht verloren, eines mit passendem Datum bleibt dort", cdk is None or cdk == {"a": "alt.pdf,neu.pdf", "b": "2031-01-01"}, cdk)
         # a callsheet is shown even when the Drehplan has that day as free or not at all (changed plan)
         cso = await E("""(()=>{if(typeof renderDispo!=='function')return null;const kd=S.dispos,kdd=S.dday,ks=S.days;const off=(S.days.find(d=>d.kind==='off')||{}).date;
           const cs={date:'2099-01-02',cs:{times:{crewCall:'07:00'},locations:[],order:{rows:[]}}};S.dispos=kd.concat([cs].concat(off?[{date:off,cs:{times:{crewCall:'06:30'},locations:[],order:{rows:[]}}}]:[]));

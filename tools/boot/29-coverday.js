@@ -78,11 +78,14 @@ function cdDispos(dispos0,days){
   const ksOf=x=>arr(x.scenes).map(r=>cdKey(r&&r.sc)).filter(Boolean),sc=(ks,dt)=>{const s=dk.get(dt);return s?ks.filter(k=>s.has(k)).length:0};
   const keep=[],move=[];
   for(const x of dispos0){const ks=ksOf(x);if(!ks.length){keep.push(x);continue}const own=sc(ks,x.date);
-    const better=sh.some(d=>d.date!==x.date&&sc(ks,d.date)>own&&sc(ks,d.date)>=Math.ceil(ks.length/2));(better?move:keep).push(x)}
+    /* a callsheet whose own date already has at least half of its scenes stays there (it was written for that day, after the change) */
+    const better=own<Math.ceil(ks.length/2)&&sh.some(d=>d.date!==x.date&&sc(ks,d.date)>own&&sc(ks,d.date)>=Math.ceil(ks.length/2));(better?move:keep).push(x)}
   if(!move.length)return dispos0;
   const taken=new Set(keep.map(x=>x.date)),out=keep.slice();
   for(const x of move){const ks=ksOf(x);let best=null,bs=0;for(const d of sh){if(taken.has(d.date))continue;const v=sc(ks,d.date);if(v>bs){best=d;bs=v}}
-    if(!best||bs<Math.ceil(ks.length/2))continue;taken.add(best.date);out.push(Object.assign({},x,{date:best.date,cdFrom:x.date}))}
+    /* no free day with its scenes: it stays on its own date – a callsheet is never left out */
+    if(!best||bs<Math.ceil(ks.length/2)){taken.add(x.date);out.push(x);continue}
+    taken.add(best.date);out.push(Object.assign({},x,{date:best.date,cdFrom:x.date}))}
   /* the number in the title of every callsheet like the shooting day it belongs to now */
   const no=new Map(days.filter(d=>d.kind==="shoot").map(d=>[d.date,cdNo(d)]));
   return out.map(x=>{const n=no.get(x.date);return n!=null&&x.label&&/\d/.test(x.label)&&String(x.label).match(/\d+/)[0]!=String(n)&&+String(x.label).match(/\d+/)[0]!==n?Object.assign({},x,{label:cdSetNo(x.label,n)}):x}).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)}
