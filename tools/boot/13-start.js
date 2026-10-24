@@ -14,8 +14,10 @@ async function checkVersion(){
   try{const r=await fetch("version.txt?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=(await r.text()).trim();
     if(!v||v===APP_VER)return;
     let done="";try{done=sessionStorage.getItem("reloadedFor")||""}catch(_){}
-    if(done===v)return;try{sessionStorage.setItem("reloadedFor",v)}catch(_){}
-    if(document.querySelector("#acct:not([hidden]) form input:focus,#gate:not([hidden]) input:focus"))return;
+    if(done===v)return;
+    /* someone is typing (a form, a chat or a note): later, at the next check – not now and not «never» */
+    const f=document.activeElement;if(f&&(/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)||f.isContentEditable))return;
+    try{sessionStorage.setItem("reloadedFor",v)}catch(_){}
     location.reload();
   }catch(_){}
 }

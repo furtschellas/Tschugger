@@ -43,7 +43,7 @@ setInterval(()=>{if(document.visibilityState==="visible")menusLoad()},120e3);   
 function dayEaters(d){const c=caterData(),dp=(S.dispos||[]).find(x=>x&&x.date===d.date),fd=x=>fold(x).trim();
   let crew=c.act,src=dp?"dispo":"crew";
   if(dp&&arr(dp.calls).length){const deps=arr(dp.calls).map(z=>fd(z.dept)).filter(Boolean);const f=c.act.filter(m=>{const dd=fd(crewDeptOf(m));return dd&&deps.some(x=>x.includes(dd)||dd.includes(x))});if(f.length)crew=f}
-  const cast=dp?arr(dp.cast).filter(x=>x&&(x.actor||x.role)).length:0,ex=parseInt(String((dp&&dp.extras)||d.extras||0).replace(/[^0-9]/g,""))||0;
+  const cast=dp?arr(dp.cast).filter(x=>x&&(x.actor||x.role)).length:0,ex=+(String((dp&&dp.extras)||d.extras||0).match(/\d+/)||[0])[0]||0;   /* «10-15» counts 10, not 1015 */
   const cnt={};crew.forEach(m=>{const k=m.diet&&m.diet!=="none"?m.diet:"none";cnt[k]=(cnt[k]||0)+1});
   const intol={};crew.forEach(m=>m.intol.forEach(i=>{intol[i]=(intol[i]||0)+1}));
   return {total:crew.length+cast+ex,crew:crew.length,cnt,intol,cast,ex,src}}
@@ -191,11 +191,13 @@ export async function afterSignIn(u){
   setME(u);if(!window.PRIVOK)setTimeout(()=>{try{loadLangs().then(()=>{if(S.tab==="admin")render()})}catch(_){}},1500); /* links (motive list, map, chat) can only be read once signed in */
   /* account created by the owner with a start password: counts as confirmed, but a new password must be set first */
   START=null;if(!u.emailVerified||window.__checkStart){try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"starts",lc(u.email))),10000,"start");if(d.exists())START=d.data()}catch(_){}}
+  if(ME!==u)return;   /* signed out or another account meanwhile: that start goes on, not this one */
   if(START&&START.mustChange){showGate("newpw");return}
   if(!u.emailVerified&&!START){showGate("verify");autoVerify(u);return}
   let st;try{st=await checkMember()}catch(err){console.error(err);
     if(isOffline(err)&&S.days.length){hideGate();acctButton(true);render();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
+  if(ME!==u)return;
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}
   hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();pushSyncSoon();menusLoad(true);
   const prof=MEMBER||{};
@@ -204,6 +206,7 @@ export async function afterSignIn(u){
   /* only the small stamp is read when the data on this device is still current (the full file only when it changed) */
   try{await load(false);if(window.loadContacts)window.loadContacts()}catch(err){window.__LOADFAIL=true;console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),isOffline(err)?6000:15000)}
   await fillNamesFromCrew();
+  if(ME!==u)return;
   /* first start, and whenever gender, phone or e-mail is missing: the profile form must be filled in */
   let partialAt=0;try{partialAt=+localStorage.getItem("profPartial:"+ME.uid)||0}catch(_){}
   const needExtra=(!MEMBER||!MEMBER.gender||!String(MEMBER.phone||"").trim()||!String(MEMBER.contactEmail||"").trim())&&Date.now()-partialAt>12*3600e3;

@@ -1,4 +1,4 @@
-import {$,L,LANG,S,TX,TXA,WD,cap,ddmm,esc,fmtDate,markTerms,memo,norm} from "./10-core.js";
+import {$,L,LANG,S,TX,TXA,WD,cap,ddmm,esc,fmtDate,isoAdd,markTerms,memo,norm,todayISO} from "./10-core.js";
 import {UNAME,dayPlaces,hasU,unitLists,unitsOn} from "./11-schedule-prep.js";
 import {openMyCal} from "./12-mycal.js";
 import {addrForItem,fullAddr,groupLocs} from "./13-crew-views.js";
@@ -23,7 +23,8 @@ const escRe=t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 export function normQ(q){
   let qq=nrm(q).replace(/[,;]/g," ").trim();
   const iso=d=>d.getDate()+"."+(d.getMonth()+1)+".";
-  const now=new Date(),tmr=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+  /* «heute» / «morgen» in the shoot's time zone (not the phone's: abroad or just after midnight it was another day) */
+  const td=todayISO(),dd=x=>{const [y,m,d]=x.split("-").map(Number);return new Date(y,m-1,d)},now=dd(td),tmr=dd(isoAdd(td,1));
   qq=qq.replace(/\b(heute|today|aujourd'?hui|oggi)\b/g,iso(now)).replace(/\b(morgen|tomorrow|demain|domani)\b/g,iso(tmr));
   qq=qq.replace(/\b(drehtag|day|tag|dt|jour|giorno|j)\s*#?\s*(\d{1,2})\b/g,"d$2").replace(/#(\d{1,2})\b/g,"d$1");
   qq=qq.replace(/\b(\d{1,2})[./](\d{1,2})\.?(?:\d{2,4})?\b/g,(m,a,b)=>(+a)+"."+(+b)+".");

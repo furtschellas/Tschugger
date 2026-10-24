@@ -18,7 +18,7 @@ function scrNewsDue(){const sx=S.meta&&S.meta.scriptChange;if(!ME||!sx||!sx.at||
   const at=Date.parse(sx.at);if(!at||Date.now()-at>14*864e5)return null;   /* older than two weeks: no longer news */
   let seen="";try{seen=localStorage.getItem("scrv")||""}catch(_){}return seen===scrNewsKey(sx)?null:sx}
 function scrNewsBusy(){return (typeof ONBOARD!=="undefined"&&ONBOARD)||(typeof WELCOME_OPEN!=="undefined"&&WELCOME_OPEN)||(typeof TOUR!=="undefined"&&TOUR.el)||
-  ["news","rolechg","pushhint","scrnews","welcome","gate"].some(id=>{const e=document.getElementById(id);return e&&!e.hidden&&e.offsetParent!==null})}
+  ["news","rolechg","pushhint","scrnews","welcome","gate","twelcome","csbeta","iconhint","tour"].some(id=>{const e=document.getElementById(id);return e&&!e.hidden&&e.offsetParent!==null})}
 export function showScriptNews(sx){
   store("scrv",scrNewsKey(sx));if(typeof savePrefsSoon==="function")savePrefsSoon();
   const sc=arr(sx.scenes),dt=new Date(Date.parse(sx.at));

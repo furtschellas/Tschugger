@@ -24,16 +24,22 @@ function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"nu
 export async function checkMember(){
   if(navigator.onLine===false){memRestore();throw Object.assign(new Error("offline"),{code:"unavailable"})}
   let prev=null;try{prev=JSON.parse(localStorage.getItem(memKey())||"null")}catch(_){}
-  try{const st=await checkMember0();if(st==="ok"){roleChanged(prev);memSave()}return st}
+  const u=ME,was=String(MYPERMS)+"|"+MYROLE+"|"+isAdmin();
+  try{const st=await checkMember0();if(st==="ok"&&ME===u){roleChanged(prev);memSave()}
+    /* other rights: the area keys are read again (a key refused before may be allowed now, and the other way round) */
+    if(was!==String(MYPERMS)+"|"+MYROLE+"|"+isAdmin())for(const k in AREAKEYS)delete AREAKEYS[k];
+    return st}
   catch(err){if(isOffline(err))memRestore();throw err}
 }
+/* a read refused by the rules means «not given»; any other error (network, timeout) stops the check – the caller keeps the last known rights instead of starting with none */
+const notPerm=e=>{if(!/permission/i.test((e&&e.code||"")+" "+(e&&e.message||"")))throw e};
 async function checkMember0(){
   const {F,db}=await fb();const u=ME;
-  if(!isOwner()&&meOk()){try{if((await F.getDoc(F.doc(db,"owners",lc(u.email)))).exists()&&!ADMINS.includes(lc(u.email)))ADMINS.push(lc(u.email))}catch(_){}}
-  if(!isOwner()&&meOk()){try{setCOADMIN((await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists())}catch(_){setCOADMIN(false)}}
+  if(!isOwner()&&meOk()){try{if((await F.getDoc(F.doc(db,"owners",lc(u.email)))).exists()&&!ADMINS.includes(lc(u.email)))ADMINS.push(lc(u.email))}catch(e){notPerm(e)}}
+  if(!isOwner()&&meOk()){try{setCOADMIN((await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists())}catch(e){setCOADMIN(false);notPerm(e)}}
   setMYPERMS([]);setMYROLE("");window.MYROLENAME="";setADMINPERMS(ADMIN_DEFAULT.slice());
   if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())setADMINPERMS((ad.data().perms||[]).filter(p=>permKnown(p)))}catch(_){}}
-  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){setMYROLE(String(ur.data().role||""));const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())window.MYROLENAME=String(rd.data().name||""),setMYPERMS((rd.data().perms||[]).filter(p=>permKnown(p)))}}catch(_){}
+  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){setMYROLE(String(ur.data().role||""));const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())window.MYROLENAME=String(rd.data().name||""),setMYPERMS((rd.data().perms||[]).filter(p=>permKnown(p)))}}catch(e){notPerm(e)}
   }
   const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){
@@ -74,8 +80,10 @@ export const errText=e=>{const c=(e&&e.code)||"";
 function gateEl(){
   let g=document.getElementById("gate");
   if(!g){g=document.createElement("div");g.id="gate";g.className="gate";document.body.appendChild(g);
-    g.addEventListener("submit",onGateSubmit);
-    g.addEventListener("click",onGateClick);}
+    /* an unexpected error in a sign-in step: shown in the form instead of a silent dead button */
+    const safe=f=>e=>{f(e).catch(err=>{console.error(err);try{gateMsg(errText(err),true)}catch(_){}})};
+    g.addEventListener("submit",safe(onGateSubmit));
+    g.addEventListener("click",safe(onGateClick));}
   return g;
 }
 /* Google sign-in only for a Gmail address: shown below the e-mail field as soon as it holds …@gmail.com / …@googlemail.com */
@@ -161,7 +169,7 @@ export async function notifyApproved(em,q){
   }
 }
 /* check again every 5 minutes and when the app comes back to the foreground */
-setInterval(()=>{if(ME&&isAdmin()&&document.visibilityState==="visible")checkRequests()},300000);
+setInterval(()=>{if(ME&&can("users.requests")&&document.visibilityState==="visible")checkRequests()},300000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&can("users.requests"))checkRequests()});
 export async function checkRequests(){
   try{const {F,db}=await fb();let n=0;   /* only the number: one read instead of all requests (Firebase quota) */

@@ -1,7 +1,7 @@
 import {UNAME,unitsOn,zurichUTC} from "./11-schedule-prep.js";
 import {hm} from "./12-mycal.js";
 import {addrForItem} from "./13-crew-views.js";
-import {csNowScene} from "./13b-cs-now.js";
+import {csNowScene,csShootDay} from "./13b-cs-now.js";
 import {store} from "./16-interaction.js";
 import {itemFp} from "./17-scene-reader.js";
 import {arr} from "./20-data-start.js";
@@ -70,7 +70,7 @@ export const WD=new Proxy([],{get:(t,k)=>k==="length"?7:(WDS[LANG]||WDS.de)[k]})
 export const TZ0="Europe/Zurich";
 const ZDFS={};
 function zdf(tz){if(!(tz in ZDFS)){try{ZDFS[tz]=new Intl.DateTimeFormat("en-CA",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit"})}catch(_){ZDFS[tz]=tz===TZ0?null:zdf(TZ0)}}return ZDFS[tz]}
-function dateIn(t,tz){const d=new Date(t),f=zdf(tz||TZ0);if(f)try{const x=f.format(d);if(/^\d{4}-\d\d-\d\d$/.test(x))return x}catch(_){}return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
+export function dateIn(t,tz){const d=new Date(t),f=zdf(tz||TZ0);if(f)try{const x=f.format(d);if(/^\d{4}-\d\d-\d\d$/.test(x))return x}catch(_){}return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
 export function blockList(){const b=window.BLOCKS;return Array.isArray(b)?b.filter(x=>x&&typeof x==="object"&&x.id):[]}
 /* the block of a date: a day of the schedule that came from a block's own schedule, else the dates of the block (from–to; empty = open) */
 function blockOf(date){const bl=blockList();if(!bl.length||!date)return null;
@@ -225,13 +225,15 @@ export function itemHTML(it){
     '</div></li>';
 }
 export const padD=x=>String(x).replace(/^D(\d)$/,"D0$1");
+/* a time in a document: «19:30» or «19.30» (callsheets write both) → "19:30"; "" when none */
+export const hmAny=t=>{const m=String(t==null?"":t).match(/(?:^|[^\d.])(\d{1,2})[:.](\d{2})(?![\d.])/);return m&&+m[1]<30&&+m[2]<60?pad2(+m[1])+":"+m[2]:""};
 export function pickDay(list){
   list=(list||S.days).filter(d=>d.kind!=="off"&&d.kind!=="travel");
   if(S.day&&list.some(d=>d.id===S.day))return;
-  const t=todayISO();
+  const t=(typeof csShootDay==="function"&&csShootDay())||todayISO();   /* after midnight of a night shoot: still that day */
   let next=list.find(d=>d.date>=t);
   /* one hour after the wrap of today: the next day of the plan */
-  if(next&&next.date===t){try{const x=(S.dispos||[]).find(y=>y&&y.date===t)||{},tm=(x.cs&&x.cs.times)||{},w=hm(tm.wrap||x.wrap||next.wrap||""),cc=hm(tm.crewCall||x.crewCall||next.crewCall||"");
+  if(next&&next.date===t){try{const x=(S.dispos||[]).find(y=>y&&y.date===t)||{},tm=(x.cs&&x.cs.times)||{},w=hmAny(tm.wrap||x.wrap||next.wrap||""),cc=hmAny(tm.crewCall||x.crewCall||next.crewCall||"");
     const nx=list.find(d=>d.date>t);if(w&&nx&&typeof zurichUTC==="function"&&Date.now()>zurichUTC(cc&&w<cc?isoAdd(t,1):t,w).getTime()+3600e3)next=nx}catch(_){}}
   S.day=(next||list[list.length-1]||{}).id||null;
 }

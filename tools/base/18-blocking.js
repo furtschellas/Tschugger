@@ -48,7 +48,8 @@ export function openGallery(b,start,pdf){
   const fill=()=>{d.querySelectorAll("img[data-gf]").forEach(img=>{window.blkImg(img.dataset.gf).then(u=>{img.src=u}).catch(()=>{img.closest("button,div").classList.add("galerr")})});
     d.querySelectorAll("video[data-gvid]").forEach(v=>{window.blkImg(v.dataset.gpost).then(u=>{if(!v.src)v.poster=u}).catch(()=>{});
       window.blkImg(v.dataset.gvid).then(u=>{v.src=u;const l=v.parentNode.querySelector(".galload");if(l)l.remove()}).catch(()=>{const l=v.parentNode.querySelector(".galload");if(l)l.textContent=L("Film konnte nicht geladen werden.")})})};
-  const show=i=>{d.innerHTML=i===undefined?grid():view(i);d.dataset.i=i===undefined?"":String(i);fill()};
+  const show=i=>{if(i!==undefined&&!(i>=0&&i<media.length))i=undefined;   /* no such picture (empty list, page past the end): the overview instead of an empty window */
+    d.innerHTML=i===undefined?grid():view(i);d.dataset.i=i===undefined?"":String(i);fill()};
   d.addEventListener("click",e=>{if(e.target===d){d.remove();return}
     const v=e.target.closest("[data-gv]");if(v){gv=v.dataset.gv;try{localStorage.setItem("galview",gv)}catch(_){}show();return}
     const fl=e.target.closest("[data-gfl]");if(fl){gf=fl.dataset.gfl;setF();show();return}

@@ -111,7 +111,7 @@ VIEWS.reports=function(){const subs=repSubs();if(!ME||!subs.length)return '<div 
   /* in the topic «Reports» every box is always open: no folding (summary and expand button without function) */
   body=String(body||"").replace(/<details (class=.tstsec)/g,"<details open $1");
   return '<section class="mypage reppage"><div class="myhead"><h2 class="pgt">'+esc(L("Reports"))+'</h2></div>'+nav+(body||'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+'</section>'};
-window.repSetSub=k=>{if(REPSUB===k)return false;REPSUB=k;return true};
+window.repSetSub=k=>{if(REPSUB===k)return false;REPSUB=k;return true};window.repSubGet=()=>REPSUB;
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repsub]");if(!b)return;REPSUB=b.dataset.repsub;try{localStorage.setItem("repsub",REPSUB)}catch(_){}render();scrollTo(0,0)});
 document.addEventListener("click",e=>{const sm=e.target.closest&&e.target.closest(".reppage details.tstsec>summary");if(!sm)return;
   if(e.target.closest("a,button:not(.tstall),input,select,label"))return;e.preventDefault()},true);

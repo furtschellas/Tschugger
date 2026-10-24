@@ -31,7 +31,8 @@ function snippet(text,terms){
 }
 export function renderScript(){
   if(!SCRIPT){
-    if(!SCRIPTERR)scriptData().then(l=>{if(!l.length)SCRIPTERR=true;if(S.tab==="script")render()},()=>{SCRIPTERR=true;if(S.tab==="script")render()});
+    /* one waiting at a time (before, every drawing while it loaded added another redraw at the end) */
+    if(!SCRIPTERR&&!renderScript.wait){renderScript.wait=1;scriptData().then(l=>{renderScript.wait=0;if(!l.length)SCRIPTERR=true;if(S.tab==="script")render()},()=>{renderScript.wait=0;SCRIPTERR=true;if(S.tab==="script")render()})}
     return '<h3 class="dh">'+esc(L("Drehbuch"))+'</h3><div class="empty">'+(SCRIPTERR?esc(L("Drehbuch konnte nicht geladen werden."))+' <button class="copy" data-scretry>'+esc(L("Aktualisieren"))+'</button>':esc(L("Lade"))+' '+esc(L("Drehbuch"))+' …')+'</div>';
   }
   let last="";try{last=localStorage.getItem("lastsc")||""}catch(_){}
@@ -168,7 +169,8 @@ function viewMorph(v,html){
 window.viewMorph=viewMorph;
 /* other parts hook into every drawing with onRender(fn) (before) / onRendered(fn) (after) – instead of replacing render */
 const RENDER_PRE=[],RENDER_POST=[];export function onRender(fn){RENDER_PRE.push(fn)}export function onRendered(fn){RENDER_POST.push(fn)}
-export function render(){for(const f of RENDER_PRE)try{f()}catch(err){console.warn("render hook",err)}const x=renderCore();for(const f of RENDER_POST)try{f()}catch(err){console.warn("render hook",err)}return x}
+export function render(){window.__mctx=null;   /* a drawing that stopped half-way must not leave the context of its day for the next */
+  for(const f of RENDER_PRE)try{f()}catch(err){console.warn("render hook",err)}const x=renderCore();for(const f of RENDER_POST)try{f()}catch(err){console.warn("render hook",err)}return x}
 function renderCore(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form")){S.rpend=true;return}} /* never wipe a form someone is typing in – catch up when the field is left */
   S.rpend=false;

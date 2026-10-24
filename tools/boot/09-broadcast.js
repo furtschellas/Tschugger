@@ -3,7 +3,7 @@ import {VIEWS} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {ADMINS,fmtD,fmtT} from "./01-config.js";
-import {ME,can,fb,isAdmin,lc,ownDec,ownEnc} from "./03-core-firebase.js";
+import {ME,can,fb,isAdmin,lc,ownDec,ownEnc,withTimeout} from "./03-core-firebase.js";
 import {getDataKey} from "./04-data.js";
 import {waNum} from "./06-prefs-docs.js";
 import {ADM,confirmSafe,ensureAdm} from "./12a-admin-core.js";
@@ -50,7 +50,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-wad]");if(
 export async function bcDeliver(id){
   const {F,db,auth}=await fb();
   if(window.CHATURL){try{const tok=await auth.currentUser.getIdToken();
-    const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({id})});const j=await r.json().catch(()=>({}));
+    const r=await withTimeout(fetch(window.CHATURL.replace(/\/+$/,"")+"/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({id})}),25000,"broadcast");   /* a hanging connection must not block the send button */const j=await r.json().catch(()=>({}));
     if(r.ok){if(!j.claimed)try{await F.updateDoc(F.doc(db,"broadcasts",id),{sent:true,n:j.n||0})}catch(_){}
       return L("Gesendet an {n} Geräte.").replace("{n}",j.n||0)+(j.rest||j.fail?" "+L("Die übrigen folgen in wenigen Minuten."):"")}
     if(r.status===403||r.status===409)return L("Nicht gesendet:")+" "+(j.error||r.status);
@@ -58,7 +58,7 @@ export async function bcDeliver(id){
   return L("Gespeichert – die Nachricht geht mit dem nächsten Lauf (spätestens in 15 Minuten) raus.");
 }
 /* history: every message with date, time, recipients and sender; can be sent again */
-async function bcLoadHist(){BC.hist=[];BC.dev=null;BC.devOn=null;try{const {F,db}=await fb();let q;try{q=await F.getDocs(F.query(F.collection(db,"broadcasts"),F.orderBy("at","desc"),F.limit(100)))}catch(_){q=await F.getDocs(F.collection(db,"broadcasts"))}const key=await getDataKey();
+async function bcLoadHist(){BC.hist=[];BC.histErr="";BC.dev=null;BC.devOn=null;try{const {F,db}=await fb();let q;try{q=await F.getDocs(F.query(F.collection(db,"broadcasts"),F.orderBy("at","desc"),F.limit(100)))}catch(_){q=await F.getDocs(F.collection(db,"broadcasts"))}const key=await getDataKey();
   const out=[];for(const d of q.docs){try{out.push(Object.assign({id:d.id,sent:d.data().sent,n:d.data().n,done:d.data().done||null},await ownDec(key,d.data().c)))}catch(_){}}
   BC.hist=out.sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,100)}catch(err){console.warn("bc hist",err&&err.code||err);BC.histErr=String((err&&err.code)||err)}render()}
 /* who got it: «done» holds the devices; admins may read the device list (push/…) and see whose device it is */
@@ -83,12 +83,12 @@ function bcRcptHTML(b){if(!isAdmin()||b.push===false)return "";
 const bcWho=b=>b.roles||b.depts?[].concat((b.roles||[]).map(r=>r==="owner"?L("Owner"):r==="admin"?L("Admin"):r===""?L("Keine Rolle"):((BC.roles||[]).find(x=>x.id===r)||{}).name||r),(b.depts||[]).map(HIT)).join(", "):L("Alle");
 function bcHistHTML(){
   if(!BC.hist){bcLoadHist();return '<p class="ghint">'+L("Lade …")+'</p>'}
-  if(!BC.hist.length)return '<p class="ghint">'+L("Noch keine Push-Nachrichten gesendet.")+'</p>';
+  if(!BC.hist.length)return '<p class="ghint">'+(BC.histErr?esc(L("Verlauf nicht lesbar:")+" "+BC.histErr):L("Noch keine Push-Nachrichten gesendet."))+'</p>';
   return '<div class="bchist">'+BC.hist.map(b=>{const dt=new Date(b.at||0);
     return '<div class="bch"><div class="bchd"><span class="bct">'+esc(fmtD(dt))+' · '+esc(fmtT(dt))+'</span>'+(b.n!=null?'<span class="ust role">'+esc(L("{n} Geräte").replace("{n}",b.n))+'</span>':'')+'</div>'+
       '<b class="bctt">'+esc(b.title||"")+'</b><p class="bcb">'+esc(b.body||"")+'</p>'+
       '<div class="bcm"><span>'+esc(L("An"))+': '+esc(bcWho(b))+'</span>'+(b.ch?'<span>'+esc(["push","wa","sms","mail"].filter(k=>b.ch[k]).map(k=>({push:"Push",wa:"WhatsApp",sms:"SMS",mail:L("E-Mail")})[k]).join(" · "))+'</span>':'')+'<span>'+esc(L("Von"))+': '+esc(b.by||"")+'</span></div>'+bcRcptHTML(b)+
-      '<div class="arb"><button type="button" class="pillbtn" data-bcre="'+esc(b.id)+'">↻ '+L("Erneut senden")+'</button></div></div>'}).join("")+'</div>';
+      (b.push===false?'':'<div class="arb"><button type="button" class="pillbtn" data-bcre="'+esc(b.id)+'">↻ '+L("Erneut senden")+'</button></div>')+'</div>'}).join("")+'</div>';
 }
 document.addEventListener("click",async e=>{if(!e.target.closest("[data-bcclr]")||!isAdmin())return;if(!confirmSafe(L("Den ganzen Verlauf der Push-Nachrichten löschen?")))return;
   try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"broadcasts"));for(const d of q.docs)await F.deleteDoc(F.doc(db,"broadcasts",d.id));BC.hist=[];showMsg(L("Verlauf geleert."),3000);render()}

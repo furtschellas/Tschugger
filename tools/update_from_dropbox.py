@@ -2313,4 +2313,7 @@ if __name__ == "__main__":
         import traceback
         fr = [f for f in traceback.extract_tb(e.__traceback__) if "/tools/" in f.filename.replace("\\", "/")]
         where = (" (%s:%d)" % (os.path.basename(fr[-1].filename), fr[-1].lineno)) if fr else ""
-        status("error", (type(e).__name__ + where)[:160]); raise
+        status("error", (type(e).__name__ + where)[:160])
+        # no traceback in the log: its message can quote file contents (the repository and its Actions logs are public)
+        print("• Fehler:", type(e).__name__ + where, flush=True)
+        sys.exit(1)

@@ -80,7 +80,7 @@ let CSLF=null;function csLeaflet(){if(window.L&&window.L.map)return Promise.reso
   CSLF=new Promise((ok,no)=>{if(!document.querySelector('link[href="leaflet.css"]')){const c=document.createElement("link");c.rel="stylesheet";c.href="leaflet.css";document.head.appendChild(c)}   /* once, also after a failed try */
     const s=document.createElement("script");s.src="leaflet.js";s.onload=()=>ok(window.L);s.onerror=()=>{CSLF=null;no(new Error("leaflet"))};document.head.appendChild(s)});return CSLF}
 function csMapInit(box){if(!box||box.__map)return;let pts=[];try{pts=JSON.parse(box.dataset.csmap||"[]")}catch(_){}if(!pts.length)return;
-  csLeaflet().then(LF=>{if(box.__map||!box.isConnected)return;const m=LF.map(box,{scrollWheelZoom:false,tap:true});box.__map=m;CSMAPS.push(m);
+  return csLeaflet().then(LF=>{if(box.__map||!box.isConnected)return;const m=LF.map(box,{scrollWheelZoom:false,tap:true});box.__map=m;CSMAPS.push(m);
     /* map or satellite (switch bottom left) */
     const osm=LF.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(m);
     const sat=LF.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, Maxar, Earthstar Geographics"});
@@ -101,7 +101,7 @@ csOn("toggle",e=>{const d=e.target;if(d&&d.id==="cs-karte"&&d.open){const box=d.
 /* a location in the list below the map: show it on its own */
 csOn("click",e=>{const b=e.target.closest("[data-csmapgo]");if(!b)return;const box=b.closest(".csmapw").querySelector("[data-csmap]");if(!box)return;
   const go=()=>{const m=box.__map,mk=box.__mk&&box.__mk[+b.dataset.csmapgo];if(!m||!mk)return;m.setView(mk.getLatLng(),17);mk.openPopup()};
-  if(box.__map)go();else{csMapInit(box);setTimeout(go,900)}});
+  if(box.__map)go();else{const p=csMapInit(box);if(p&&p.then)p.then(()=>setTimeout(go,60)).catch(()=>{});else setTimeout(go,900)}});   /* after the map library has loaded (slow phones: more than 0.9 s) */
 /* enlarge / shrink the map */
 csOn("click",e=>{const b=e.target.closest("[data-csmapbig]");if(!b)return;e.preventDefault();const w=b.closest(".csmapw");w.classList.toggle("big");
   const box=w.querySelector("[data-csmap]");setTimeout(()=>csMapFit(box),80)});
@@ -131,7 +131,7 @@ csOn("click",async e=>{const b=e.target.closest("[data-rideall]");if(!b||typeof 
   b.disabled=true;try{const {F,db}=await fb();const bt=F.writeBatch(db);const now=Date.now();const ids=[...new Set(rs.map(r=>rideId(date,r)).filter(Boolean))];
     for(const id of ids){bt.set(F.doc(db,"rideack",id),{d:date,at:now,s:2});bt.delete(F.doc(db,"rideack","v"+id))}   /* «on the way» ends too */
     await bt.commit();window.RIDEACK=window.RIDEACK||{};for(const id of ids){window.RIDEACK[id]={d:date,at:now,s:2};delete window.RIDEACK["v"+id]}
-    if(typeof savedPop==="function")savedPop(true);render()}
+    if(typeof savedPop==="function")savedPop(true);(typeof scRender==="function"?scRender:render)()}   /* only the rows: the open parts stay open */
   catch(err){b.disabled=false;showMsg(saveErr(err),5000)}});
 
 /* Drehfolge im Callsheet: a tap on a scene opens it in three steps (closed → open → with all details → closed) */
