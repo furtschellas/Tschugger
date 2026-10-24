@@ -47,6 +47,7 @@ MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
 MODEL_SMALL = os.environ.get("CLAUDE_MODEL_SMALL") or "claude-haiku-5-5"   # translations: a smaller, cheaper model is enough
 # API credit: estimated spend per day (USD, list prices per million tokens in/out); over the limit only callsheets are read, then nothing
 AI_DAY_USD = float(os.environ.get("AI_DAY_USD") or 10)
+AI_RUN_MAX = int(os.environ.get("AI_RUN_MAX") or 12)
 AI_PRICE = {"haiku": (1.0, 5.0), "sonnet": (3.0, 15.0), "opus": (5.0, 25.0)}
 AI = {"m": {}, "warned": False, "langs": None, "run": {}}
 
@@ -55,6 +56,7 @@ class Budget(Exception): pass
 
 
 ALL_LANGS = ["de", "fr", "it", "en", "hi"]
+U2_MAX = int(os.environ.get("U2_MAX") or 3); U2N = [0]   # 2nd-unit sheets read per run
 LANG_NAMES = {"de": "Deutsch", "fr": "Französisch", "it": "Italienisch", "en": "Englisch", "hi": "Hindi"}
 
 
@@ -79,6 +81,20 @@ def ai_add(model, tin, tout, kind=""):
     if d.get("day") != NOW[:10]: d = {"day": NOW[:10], "usd": 0.0, "n": 0}
     d["usd"] = round(float(d.get("usd") or 0) + tin / 1e6 * pin + tout / 1e6 * pout, 4); d["n"] = int(d.get("n") or 0) + 1
     AI["m"]["ai"] = d
+    try:   # also in Firestore: the spend of the day is not lost when a run breaks off before publishing
+        if fsadmin.sa(): fsadmin.patch_doc("aiuse/day", {"day": d["day"], "usd": d["usd"], "n": d["n"]})
+    except Exception: pass
+
+
+def ai_load():
+    """the spend of the day: the higher of the data file and Firestore (a run that broke off counts too)"""
+    try:
+        if not fsadmin.sa(): return
+        f = fsadmin.get_doc("aiuse/day") or {}
+        d = AI["m"].get("ai") or {}
+        if f.get("day") == NOW[:10] and float(f.get("usd") or 0) > (float(d.get("usd") or 0) if d.get("day") == NOW[:10] else 0):
+            AI["m"]["ai"] = dict(d, day=f["day"], usd=float(f["usd"]), n=int(f.get("n") or 0))
+    except Exception: pass
 
 
 def ai_allowed(kind):
@@ -1186,37 +1202,73 @@ def spec():
     return SPEC
 
 class Truncated(RuntimeError): pass
+class NoRetry(RuntimeError): pass
+
+def cs_translate(cs, langs=None):
+    """the texts of a callsheet into the app languages that are missing (small model); True when done or nothing to do"""
+    want = [l for l in (langs or AI.get("langs") or ALL_LANGS) if l not in (cs.get("tr") or {}) and l != "xx"]
+    src = [x for x in cs_texts(cs) if x]
+    if not want or not src: return True
+    try:
+        tr = claude([{"type": "text", "text": json.dumps(src, ensure_ascii=False)}],
+            "Übersetze jeden Text dieser JSON-Liste nach %s. Namen, Orte, Strassen, Motiv- und Szenentitel, Zeiten und Links unverändert lassen. "
+            "Antworte kompakt mit {%s} – gleiche Anzahl und Reihenfolge wie die Liste." % (", ".join(want), ", ".join('"%s": [...]' % l for l in want)), 32000,
+            kind="dispo", model=MODEL_SMALL)
+        if not isinstance(tr, dict): raise ValueError("keine Übersetzung")
+        cs.setdefault("tr", {}).update({lg: {o: t for o, t in zip(src, tr.get(lg) or []) if isinstance(t, str) and t and t != o} for lg in want})
+        cs.pop("trTry", None); return True
+    except Exception as e:
+        if not isinstance(e, (Budget, NoRetry)): cs["trTry"] = int(cs.get("trTry") or 0) + 1
+        log("Callsheet-Übersetzung:", type(e).__name__); return False
+
 
 def claude(parts, task, max_tokens=32000, kind="", model=None):
     """parts: list of content blocks; returns parsed JSON from the answer. kind «dispo» = callsheet (read first when the credit is short)"""
+    if AI.get("down"): raise NoRetry("Claude-API nicht verfügbar: " + AI["down"])   # refused once in this run (credit, key): no more tries now
     if not ai_allowed(kind): raise Budget("KI-Tageslimit")
+    if kind != "dispo":   # at most AI_RUN_MAX other readings per run – a loop can never use up the credit in one run
+        AI["calls"] = AI.get("calls", 0) + 1
+        if AI["calls"] > AI_RUN_MAX:
+            if AI["calls"] == AI_RUN_MAX + 1: print("::warning::Höchstens %d KI-Anfragen pro Lauf (ohne Callsheets) – der Rest im nächsten Lauf" % AI_RUN_MAX, flush=True)
+            raise Budget("Lauf-Limit")
     model = model or MODEL
     body = {"model": model, "max_tokens": max_tokens, "stream": True,
             "system": "Du wandelst Produktionsunterlagen eines Filmdrehs in JSON-Daten für eine Crew-App um. Antworte ausschliesslich mit einem einzigen JSON-Wert, ohne Erklärungen und ohne Markdown.\n\n" + spec() + lang_rule(),
             "messages": [{"role": "user", "content": parts + [{"type": "text", "text": task}]}]}
     h = {"x-api-key": os.environ["ANTHROPIC_API_KEY"].strip(), "anthropic-version": "2023-06-01", "content-type": "application/json"}
+    LABEL = (kind if kind != "dispo" or model == MODEL else "Übersetzung" if "Übersetze" in task else kind) if kind else next((k for w, k in (("2ND-UNIT", "2nd Unit"), ("MOTIVLISTE", "Motivliste"), ("Drehplan", "Drehplan"), ("Planung", "Prep"), ("Crew", "Crewliste")) if w in task or any(w in str(p.get("text", ""))[:200] for p in parts if isinstance(p, dict))), "andere")
     for attempt in range(3):
         try:
             text = []; stop = ""; tin = tout = 0
-            with requests.post("https://api.anthropic.com/v1/messages", headers=h, json=body, stream=True, timeout=(30, 600)) as r:
-                if r.status_code != 200:
-                    et = ""
-                    try: et = ((r.json() or {}).get("error") or {}).get("type") or ""
-                    except Exception: pass
-                    # visible in the run summary: status and error type of the API only (never content)
-                    print("::warning::Claude-API HTTP %s %s (Modell %s)" % (r.status_code, et, model), flush=True)
-                    raise RuntimeError("Claude-API HTTP %s: %s" % (r.status_code, r.text[:200]))
-                for line in r.iter_lines(decode_unicode=True):
-                    if not line or not line.startswith("data:"): continue
-                    ev = json.loads(line[5:])
-                    if ev.get("type") == "content_block_delta" and ev["delta"].get("type") == "text_delta": text.append(ev["delta"]["text"])
-                    if ev.get("type") == "message_start": tin = int(((ev.get("message") or {}).get("usage") or {}).get("input_tokens") or 0)
-                    if ev.get("type") == "message_delta": tout = int((ev.get("usage") or {}).get("output_tokens") or tout)
-                    if ev.get("type") == "error":
-                        print("::warning::Claude-API Fehler %s" % ((ev.get("error") or {}).get("type") or ""), flush=True)
-                        raise RuntimeError("Claude-API Fehler: %s" % ev.get("error"))
-                    if ev.get("type") == "message_delta" and (ev.get("delta") or {}).get("stop_reason") == "max_tokens": stop = "max_tokens"
-            ai_add(model, tin, tout, kind if kind != "dispo" or model == MODEL else "Übersetzung" if "Übersetze" in task else kind) if kind else ai_add(model, tin, tout, next((k for w, k in (("2ND-UNIT", "2nd Unit"), ("MOTIVLISTE", "Motivliste"), ("Drehplan", "Drehplan"), ("Planung", "Prep"), ("Crew", "Crewliste")) if w in task or any(w in str(p.get("text", ""))[:200] for p in parts if isinstance(p, dict))), "andere"))
+            try:
+                with requests.post("https://api.anthropic.com/v1/messages", headers=h, json=body, stream=True, timeout=(30, 600)) as r:
+                    if r.status_code != 200:
+                        et = ""
+                        try: et = ((r.json() or {}).get("error") or {}).get("type") or ""
+                        except Exception: pass
+                        # visible in the run summary: status and error type of the API only (never content)
+                        print("::warning::Claude-API HTTP %s %s (Modell %s)" % (r.status_code, et, model), flush=True)
+                        if r.status_code == 400 and any(isinstance(p, dict) and "cache_control" in p for p in parts):
+                            # caching refused: the same request without it (never lose a callsheet over a saving)
+                            parts[:] = [{k: v for k, v in p.items() if k != "cache_control"} if isinstance(p, dict) else p for p in parts]
+                            body["messages"][0]["content"] = parts + [{"type": "text", "text": task}]
+                            raise RuntimeError("ohne Cache nochmals")
+                        if 400 <= r.status_code < 500 and r.status_code != 429: AI["down"] = "HTTP %s %s" % (r.status_code, et); raise NoRetry("Claude-API HTTP %s %s" % (r.status_code, et))   # credit, key, request: trying again does not help
+                        raise RuntimeError("Claude-API HTTP %s: %s" % (r.status_code, r.text[:200]))
+                    for line in r.iter_lines(decode_unicode=True):
+                        if not line or not line.startswith("data:"): continue
+                        ev = json.loads(line[5:])
+                        if ev.get("type") == "content_block_delta" and ev["delta"].get("type") == "text_delta": text.append(ev["delta"]["text"])
+                        if ev.get("type") == "message_start":   # cached input (prompt caching) costs 1.25× to write, 0.1× to read
+                            u = (ev.get("message") or {}).get("usage") or {}
+                            tin = int(u.get("input_tokens") or 0) + 1.25 * int(u.get("cache_creation_input_tokens") or 0) + 0.1 * int(u.get("cache_read_input_tokens") or 0)
+                        if ev.get("type") == "message_delta": tout = int((ev.get("usage") or {}).get("output_tokens") or tout)
+                        if ev.get("type") == "error":
+                            print("::warning::Claude-API Fehler %s" % ((ev.get("error") or {}).get("type") or ""), flush=True)
+                            raise RuntimeError("Claude-API Fehler: %s" % ev.get("error"))
+                        if ev.get("type") == "message_delta" and (ev.get("delta") or {}).get("stop_reason") == "max_tokens": stop = "max_tokens"
+            finally:
+                ai_add(model, tin, tout, LABEL)   # counted also when the answer broke off (the input was paid)
             if stop == "max_tokens": raise Truncated("Antwort abgeschnitten (zu lang)")
             t = "".join(text).strip()
             t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
@@ -1224,7 +1276,7 @@ def claude(parts, task, max_tokens=32000, kind="", model=None):
             # accept {"crew": [...]} style wrappers where a plain array was asked for
             if isinstance(v, dict) and "Array" in task and len(v) == 1 and isinstance(next(iter(v.values())), list): v = next(iter(v.values()))
             return v
-        except Truncated: raise
+        except (Truncated, NoRetry): raise
         except Exception as e:
             log("Claude-Versuch", attempt + 1, "fehlgeschlagen:", type(e).__name__, getattr(getattr(e, "response", None), "status_code", ""))
             time.sleep(10 * (attempt + 1))
@@ -1554,7 +1606,7 @@ def rotating():
     except Exception: return False
 
 def main():
-    global FORCE, AI_DAY_USD
+    global AI_DAY_USD
     WANT.clear()
     if len(KEY) != 32:   # without the right crew key nothing may be published (the app could not open it)
         status("error", "Crew-Schlüssel nicht lesbar – diesmal nichts veröffentlicht"); print("::error::Crew-Schlüssel nicht lesbar – Lauf abgebrochen", flush=True); sys.exit(1)
@@ -1579,6 +1631,7 @@ def main():
     u2_also_strip(data.get("days"))
     meta = data.setdefault("meta", {})
     AI["m"] = meta   # the AI spend of the day is kept with the data (encrypted)
+    ai_load()
     # day limit from App-Einstellungen → Daten (config/app «aiDayUsd»), else the variable AI_DAY_USD / 10
     try:
         v = cfg.get("aiDayUsd")
@@ -1593,10 +1646,8 @@ def main():
         lg = [x for x in (lg or []) if x in ALL_LANGS]
     except Exception: lg = []
     AI["langs"] = sorted(set(lg or ALL_LANGS) | {"de"}, key=ALL_LANGS.index)
-    newl = set(AI["langs"]) - set(meta.get("trLangs") or ALL_LANGS)
-    if newl and not FORCE:
-        FORCE = True; log("Neue Sprache eingeschaltet – alles wird einmal neu eingelesen:", ",".join(sorted(newl)))
-        print("::notice::Neue Sprache (%s): alle Dokumente werden einmal neu übersetzt" % ",".join(sorted(newl)), flush=True)
+    # (a language switched on later: the callsheets from yesterday on get it – see cs_tr_fill; no full re-read: that cost too much)
+    if not lg: AI["langs"] = meta.get("trLangs") or ALL_LANGS   # settings not readable: as last time (never «all new»)
     base = lambda n: (n or "").rsplit("/", 1)[-1]
     old = {(s.get("kind"), base(s.get("name"))): s.get("modified") for s in meta.get("sources", [])}
     oldkind = {}
@@ -1633,7 +1684,7 @@ def main():
         keep_old(kind, f); log(kind, "übersprungen nach 3 Fehlversuchen", _h(f["name"])); print("::warning::%s übersprungen nach 3 Fehlversuchen" % kind); return False
     def failed(kind, f, why):
         k = fkey(kind, f); seen.add(k)
-        if isinstance(why, Budget): keep_old(kind, f); return   # day limit: tried again later, not counted as a failed attempt
+        if isinstance(why, (Budget, NoRetry)): keep_old(kind, f); return   # day limit or API refused (credit, key): tried again later, not counted as a failed attempt of this file
         fails[k] = fails.get(k, 0) + 1
         keep_old(kind, f); log(kind, "nicht übernommen (Versuch %d/3):" % fails[k], (why if isinstance(why, str) else type(why).__name__)[:120])   # public log: no exception text
         print("::warning::%s nicht übernommen (Versuch %d/3): %s" % (kind, fails[k], why if isinstance(why, str) else type(why).__name__))
@@ -1800,7 +1851,20 @@ def main():
                 h = hashlib.sha256(txt.encode()).hexdigest()[:16]
                 old2 = cache.get(gid) or {}
                 if old2.get("h") == h and old2.get("u2") and not FORCE: newc[gid] = old2; continue
-                if not may_try("unit2", {"name": "2nd-unit-" + name, "modified": h}): log("2nd Unit Tag %d: übersprungen" % no); continue
+                # cost guards (the sheet is edited very often – every reading costs API credit):
+                # a finished shooting day is not read again; a changed sheet only once it stayed the same for 25 minutes;
+                # at most U2_MAX sheets per run; a sheet that cannot be read keeps its last good reading
+                if old2.get("u2") and not FORCE:
+                    if str(day.get("date") or "") < TODAY: newc[gid] = old2; continue
+                    if old2.get("ph") != h: newc[gid] = dict(old2, ph=h, pt=int(time.time())); log("2nd Unit Tag %d: geändert – wird gelesen, wenn es 25 Min. gleich bleibt" % no); continue
+                    if time.time() - float(old2.get("pt") or 0) < 25 * 60: newc[gid] = old2; continue
+                if U2N[0] >= U2_MAX:
+                    if old2.get("u2"): newc[gid] = old2
+                    log("2nd Unit Tag %d: nächster Lauf (höchstens %d Blätter pro Lauf)" % (no, U2_MAX)); continue
+                if not may_try("unit2", {"name": "2nd-unit-" + name, "modified": h}):
+                    if old2.get("u2"): newc[gid] = old2
+                    log("2nd Unit Tag %d: übersprungen" % no); continue
+                U2N[0] += 1
                 try:
                     u2 = claude([{"type": "text", "text": "2ND-UNIT SHOOTING ORDER «%s» (Tabelle, Zellen mit | getrennt):\n%s" % (name, txt[:60000])}],
                         "Erzeuge aus dieser genauen Drehreihenfolge der 2nd Unit für Drehtag %d (%s) ein JSON-Objekt für das Feld \"unit2\" eines Tages gemäss Collection \"days\": "
@@ -1810,9 +1874,12 @@ def main():
                         % (no, day.get("date"), json.dumps(day.get("unit2") or {}, ensure_ascii=False)[:20000]), 32000)
                     if isinstance(u2, dict) and isinstance(u2.get("items"), list) and u2["items"]:
                         u2["src"] = "2nd"; newc[gid] = {"h": h, "no": no, "u2": u2}; log("2nd Unit: Blatt", no, "gelesen,", len(u2["items"]), "Einträge")
-                    else: failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
+                    else:
+                        failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
+                        if old2.get("u2"): newc[gid] = old2
                 except Exception as e:
                     log("2nd Unit Tag %d: %s" % (no, type(e).__name__)); failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, e)
+                    if old2.get("u2"): newc[gid] = old2
             U2SUM.append("%d Blätter, Tage %s in der Tabelle, %d gelesen · laut Drehplan an Tag %s"
                   % (len(tabs), ",".join(str(k) for k in sorted(byday)), len(newc), ",".join(str(k) for k in sorted(UD.get("unit2") or [])) or "?"))
             cache = newc
@@ -1920,7 +1987,7 @@ def main():
         log("Callsheet: neu, wird ausgelesen")
         try:
             # the callsheet in two parts (one answer was too long): A = head … vehicles, B = transport … calls
-            blk = pdf_block(dbx.download(f["id"]))
+            blk = dict(pdf_block(dbx.download(f["id"])), cache_control={"type": "ephemeral"})   # part 1 and 2 read the same PDF: the second reads it from the cache (much cheaper)
             a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A + CS_BASE + cs_known_hint(data), 32000, kind="dispo")
             b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000, kind="dispo")
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
@@ -1929,16 +1996,9 @@ def main():
             if nf: log("Callsheet: Kartenlinks ergänzt:", nf)
             md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
             date = str(cs.pop("date", "") or "") or (md and "%s-%s-%s" % md.groups()) or ""
-            # locations and production information in the languages of the app (names, places and streets stay as they are)
-            try:
-                src = [x for x in cs_texts(cs) if x]
-                if src:
-                    tr = claude([{"type": "text", "text": json.dumps(src, ensure_ascii=False)}],
-                        "Übersetze jeden Text dieser JSON-Liste nach %s. Namen, Orte, Strassen, Motiv- und Szenentitel, Zeiten und Links unverändert lassen. "
-                        "Antworte kompakt mit {%s} – gleiche Anzahl und Reihenfolge wie die Liste." % (", ".join(AI["langs"] or ALL_LANGS), ", ".join('\"%s\": [...]' % l for l in AI["langs"] or ALL_LANGS)), 32000, kind="dispo", model=MODEL_SMALL)
-                    if isinstance(tr, dict):
-                        cs["tr"] = {lg: {o: t for o, t in zip(src, tr.get(lg) or []) if isinstance(t, str) and t and t != o} for lg in AI["langs"] or ALL_LANGS}
-            except Exception as e: log("Callsheet-Übersetzung:", type(e).__name__)
+            # locations and production information in the languages of the app (names, places and streets stay as they are);
+            # a failed translation does not make the callsheet be read again (only the translation is tried later, see cs_tr_fill)
+            cs["tr"] = {}; cs_translate(cs)
             d = cs_to_dispo(cs, date, f)
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
                 prev = dispos.get(d["date"])
@@ -1957,6 +2017,16 @@ def main():
                     if d["date"] >= TODAY and (not prev or cs_sig(prev) != cs_sig(d)): NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})
             else: failed("dispo", f, "kein Drehtag erkannt")
         except Exception as e: failed("dispo", f, e)
+    # missing translations (a language switched on later, or a translation that failed): only callsheets from yesterday on,
+    # at most 2 per run, at most 3 tries each – the callsheet itself is not read again
+    yday = (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=1)).isoformat(); nfill = 0
+    for d in sorted(dispos.values(), key=lambda d: d.get("date") or ""):
+        cs = d.get("cs") if isinstance(d.get("cs"), dict) else None
+        if not cs or (d.get("date") or "") < yday or int(cs.get("trTry") or 0) >= 3 or nfill >= 2: continue
+        if all(l in (cs.get("tr") or {}) for l in AI.get("langs") or ALL_LANGS): continue
+        nfill += 1
+        if cs_translate(cs): changed = True; log("Callsheet", d.get("date"), "nachübersetzt")
+        else: changed = True   # the counter of tries is kept
     # positions of the callsheet's map links for the map in the app – checked: inside Switzerland, close to the address of the
     # location (Motivliste or the address on the callsheet), not far from the other places of the day; otherwise the address
     mg = meta.setdefault("mapGeo6", {}); [meta.pop(k, None) for k in ("mapGeo", "mapGeo2", "mapGeo3", "mapGeo4", "mapGeo5")]; gcache = meta.setdefault("geo", {}); stat = {"link": 0, "addr": 0, "rough": 0, "near": 0, "none": 0}
@@ -2360,12 +2430,19 @@ def main():
     except Exception: txt = None
     if txt:
         h = hashlib.sha256(txt.encode()).hexdigest()[:16]
-        if FORCE or h != meta.get("locHash"):
-            log("Motivliste: geändert, wird ausgelesen")
+        # cost guards: a changed sheet is read once it stayed the same for 25 minutes; at most 3 tries per version
+        lp = meta.get("locPend") or {}
+        if h != meta.get("locHash") and not FORCE and lp.get("h") != h: meta["locPend"] = {"h": h, "t": int(time.time()), "n": 0}; lp = meta["locPend"]
+        wait = h != meta.get("locHash") and not FORCE and (time.time() - float(lp.get("t") or 0) < 25 * 60 or int(lp.get("n") or 0) >= 3)
+        if wait and oldkind.get("locations"): sources.append(oldkind["locations"])
+        if not wait and (FORCE or h != meta.get("locHash")):
+            log("Motivliste: geändert, wird ausgelesen"); lp["n"] = int(lp.get("n") or 0) + 1; meta["locPend"] = lp
             try: res = claude([{"type": "text", "text": "MOTIVLISTE (Tabelle, Zellen mit | getrennt, Links in <…>):\n" + txt}],
                 "Erzeuge daraus ein JSON-Array gemäss Collection \"locations\" (Feld \"id\" = \"l00\", \"l01\" …). Bestehende Einträge (für fehlende Maps-Links übernehmen): %s"
                 % json.dumps(strip_ids(data.get("locations")), ensure_ascii=False)[:40000], 32000)
-            except Exception as e: res = None; log("Motivliste nicht übernommen:", type(e).__name__)
+            except Exception as e:
+                res = None; log("Motivliste nicht übernommen:", type(e).__name__)
+                if isinstance(e, (Budget, NoRetry)): lp["n"] = max(0, int(lp.get("n") or 1) - 1)   # not a failed try of this version
             oldn = len(data.get("locations") or [])
             if isinstance(res, list) and (len(res) >= int(oldn * 0.8) or sheet != (oldkind.get("locations") or {}).get("link")):
                 for i, d in enumerate(res): d["order"] = i; d["id"] = "l%02d" % i
@@ -2374,7 +2451,7 @@ def main():
             else:
                 log("Motivliste: deutlich weniger Zeilen – bisherige bleiben")
                 if oldkind.get("locations"): sources.append(oldkind["locations"])
-        elif oldkind.get("locations"): sources.append(oldkind["locations"])
+        elif not wait and oldkind.get("locations"): sources.append(oldkind["locations"])
     elif oldkind.get("locations"):
         log("Motivliste nicht lesbar – bisherige bleibt"); sources.append(oldkind["locations"])
 
@@ -2420,7 +2497,7 @@ def main():
         log("Schlüsselwechsel hat begonnen – nichts veröffentlicht"); print("::notice::Schlüsselwechsel begonnen – nichts veröffentlicht"); return
     # AI spend of this run by kind (estimate, visible in the run summary) and the languages now translated
     if AI["run"]: print("::notice title=KI-Kosten::Dieser Lauf ca. %.2f USD (%s) · heute ca. %.2f von %.0f USD" % (sum(AI["run"].values()), ", ".join("%s %.2f" % kv for kv in sorted(AI["run"].items(), key=lambda kv: -kv[1])), ai_spent(), AI_DAY_USD), flush=True)
-    if AI.get("langs") and not AI["warned"]: meta["trLangs"] = AI["langs"]
+    if AI.get("langs"): meta["trLangs"] = AI["langs"]
     # the picture list of the galleries (large) is a file of its own: the app starts with data.enc.json and loads it afterwards
     bm = meta.pop("bm", None)
     if bm is not None:
