@@ -26,6 +26,7 @@ function cfgPut(win,v,key,draw=true){if(JSON.stringify(window[win])===JSON.strin
   if(draw)render();return true}
 /* the roles (without «admin»), by name – read once (Nachricht an alle, eigene Termine) */
 let ROLESQ=null;
+export function rolesReset(){ROLESQ=null}   /* sign-out: the next person reads the roles again */
 export function rolesList(){if(!ROLESQ)ROLESQ=(async()=>{try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"roles"));
   return q.docs.filter(d=>d.id!=="admin").map(d=>({id:d.id,name:String(d.data().name||d.id)})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}catch(_){ROLESQ=null;return []}})();return ROLESQ}
 /* the Cloudflare Worker (App-Verwaltung → Hilfe → Assistent): its address + a path, and a POST signed with the sign-in token */

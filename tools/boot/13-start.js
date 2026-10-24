@@ -70,7 +70,7 @@ render();
     if(document.visibilityState!=="visible"||!ME||!(ME.emailVerified||START))return;
     /* back to the app: at most every 3 minutes (switching apps all day used up the free Firebase quota) */
     if(e&&e.type==="visibilitychange"&&Date.now()-lastTick<180e3)return;lastTick=Date.now();
-    try{const st=await checkMember();if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}}catch(_){return}
+    try{const st=await checkMember();if(st==="stale")return;if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}}catch(_){return}
     load(false).catch(()=>{});
   };
   setInterval(tick,POLL_MS);

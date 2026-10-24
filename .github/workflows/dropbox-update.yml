@@ -113,6 +113,14 @@ jobs:
           python tools/notify_changes.py
           gh api -X POST repos/${{ github.repository }}/actions/workflows/push.yml/dispatches -f ref=main || true
       # Telefon und Kontakt-E-Mail der Profile: von members nach contacts (nur einmal nötig; danach nichts mehr zu tun)
+      # Push-Nachrichten, die beim letzten Mal nicht angelegt werden konnten (warten verschlüsselt in Firestore)
+      - name: Ausstehende Push-Nachrichten
+        if: success() && hashFiles('pending_push.json') == ''
+        continue-on-error: true
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+        run: python tools/notify_changes.py
       - name: Kontaktdaten verschieben
         if: success()
         continue-on-error: true

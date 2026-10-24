@@ -272,7 +272,7 @@ export function renderDispo(){
   const PD0=planDays(),PD=S.days.filter(d=>PD0.includes(d)||(d.date&&by[d.date]));
   for(const x of S.dispos)if(x&&x.date&&!S.days.some(d=>d.date===x.date))PD.push({id:"cs-"+x.date,date:x.date,kind:"shoot",label:x.label||"Callsheet",items:[]});
   PD.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-  if(onlyU()){const cd=S.days.find(x=>x.date===S.dday);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.dday=nd.date}}
+  if(onlyU()&&!by[S.dday]){const cd=S.days.find(x=>x.date===S.dday);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.dday=nd.date}}
   const pick=PD.filter(d=>(d.kind!=="off"&&d.kind!=="travel")||by[d.date]);
   if(!S.dday||!pick.some(d=>d.date===S.dday)){
     S.dday=((pick.find(d=>d.date>=t)||pick[pick.length-1]||{}).date)||null;

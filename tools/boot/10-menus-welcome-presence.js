@@ -209,7 +209,7 @@ export async function afterSignIn(u){
   if(ME!==u)return;
   /* first start, and whenever gender, phone or e-mail is missing: the profile form must be filled in */
   let partialAt=0;try{partialAt=+localStorage.getItem("profPartial:"+ME.uid)||0}catch(_){}
-  const needExtra=(!MEMBER||!MEMBER.gender||!String(MEMBER.phone||"").trim()||!String(MEMBER.contactEmail||"").trim())&&Date.now()-partialAt>12*3600e3;
+  const needExtra=!window.CTERR&&(!MEMBER||!MEMBER.gender||!String(MEMBER.phone||"").trim()||!String(MEMBER.contactEmail||"").trim())&&Date.now()-partialAt>12*3600e3;
   if(MEMBER&&(!MEMBER.diet||needExtra))setTimeout(()=>showAcct(true),400);else setTimeout(maybeWelcome,600);
   if(window.__justSignedIn)window.__justSignedIn=false;
 }

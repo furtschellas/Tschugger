@@ -254,7 +254,7 @@ document.addEventListener("submit",async e=>{
         {const ba=sf.querySelector('input[name="bauto"]');if(ba)d.blk=ba.checked?F.deleteField():readBoxes(sf,"eblk").slice(0,20)}   /* Drehblöcke: automatic or by hand */
         /* phone and contact e-mail in contacts/{uid}; in members only as long as the rules do not know contacts yet */
         const ct={phone:d.phone,contactEmail:d.contactEmail};
-        try{await F.setDoc(F.doc(db,"contacts",m.uid),ct);d.phone=F.deleteField();d.contactEmail=F.deleteField()}catch(err){if(!/permission/.test(err&&err.code||""))throw err}
+        await F.setDoc(F.doc(db,"contacts",m.uid),ct);d.phone=F.deleteField();d.contactEmail=F.deleteField();   /* never into members (catering and birthdays read those) */
         await F.updateDoc(F.doc(db,"members",m.uid),d)}
       if(inv||!m){const d={name:(m?[g("fn"),g("ln")].filter(Boolean).join(" "):g("nm"))||"",role:g("rl")||""};
         /* role «Crew» only for a NEW invitation – a deliberate «Keine Rolle» stays when the profile is edited later */
@@ -280,7 +280,11 @@ document.addEventListener("submit",async e=>{
     const tdp={};for(const x of [...fl.elements].filter(x=>/^td_/.test(x.name||"")))if(x.value==="off"||x.value==="no")tdp[x.name.slice(3)]=x.value;
     const aid=Math.max(1,Math.min(1000,Math.round(+((fl.elements['aid']||{}).value)||10)));
     await F.setDoc(F.doc(db,"config","app"),{aiDayUsd:aid,langs:l,unit2:u2,unit3:u3,mapUrl:F.deleteField(),bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,appCheckKey:String((fl.elements['ack']||{}).value||"").trim().replace(/[^\w-]/g,"").slice(0,80),locSheet:F.deleteField(),script:so,tabs:tb,tabOrder:tord,autoUpdate:au,failAlarm:!!(fl.elements['fa']||{}).checked,ownEvents:!!(fl.elements['oe']||{}).checked,csMap:!!(fl.elements['cm']||{}).checked,sceneAck:!!(fl.elements['sa']||{}).checked,myNav:!!(fl.elements['mn']||{checked:true}).checked,projName:String((fl.elements['pjn']||{}).value||"").trim().slice(0,60),prodCo:String((fl.elements['pco']||{}).value||"").trim().slice(0,80),prodAddr:String((fl.elements['pad']||{}).value||"").trim().slice(0,300),ackTimes:{pm:!!(fl.elements['tpm']||{checked:true}).checked,pd:!!(fl.elements['tpd']||{checked:true}).checked,cm:!!(fl.elements['tcm']||{checked:true}).checked,cd:!!(fl.elements['tcd']||{checked:true}).checked},rideAck:!!(fl.elements['ra']||{}).checked,chatUrl:F.deleteField(),chatEnabled:!!(fl.elements['ca']||{}).checked,pushEnabled:!!(fl.elements['pn']||{}).checked,tourEnabled:!!(fl.elements['to']||{}).checked,a2again:!!(fl.elements['ia']||{}).checked},{merge:true});
-    await F.updateDoc(F.doc(db,"config","app"),{todayParts:tdp});   /* the whole map (with «merge» a part set back to «an» would keep its old value) */
+    await F.updateDoc(F.doc(db,"config","app"),{todayParts:tdp});
+    /* «Sichtbarkeit»: the role «Gast» (everybody without another role) follows these switches for phone, e-mail and Meine Termine */
+    {const g=(ADM.roles||[]).find(x=>x.id==="gast");if(g){const sw={"view.phone":!!(fl.elements['pp']||{}).checked,"view.email":!!(fl.elements['pe']||{}).checked,"view.mycal":!!(fl.elements['pm']||{}).checked};
+      const np=(g.perms||[]).filter(p=>!(p in sw)).concat(Object.keys(sw).filter(p=>sw[p]));
+      if(JSON.stringify([...np].sort())!==JSON.stringify([...(g.perms||[])].sort()))try{await F.updateDoc(F.doc(db,"roles","gast"),{perms:np});g.perms=np}catch(err){console.warn("gast perms",err&&err.code||err)}}}   /* the whole map (with «merge» a part set back to «an» would keep its old value) */
     /* the saved settings are read back like on every start (one place for all of them – before, some only took effect after a reload) */
     await loadLangs();if(bp)syncBdays(true);render();showMsg(L("Einstellungen gespeichert."),3000)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}
     return}

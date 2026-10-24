@@ -66,7 +66,7 @@ window.scAckBtn=(date,sc,u)=>{if(!date||!sc||window.SCACKON===false)return"";   
     :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+ico+'</span>')+'</span>'};
 /* live for everybody: all quittances (also past shooting days keep their ticks in the Drehplan and callsheet) */
 async function scAckSub(){if(SCSUB||typeof ME==="undefined"||!ME)return;try{const {F,db}=await fb();
-  SCSUB=F.onSnapshot(F.collection(db,"sceneack"),q=>{window.SCACKLOADED=true;const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;scRender();setTimeout(scLunchAuto,500)}},()=>{SCSUB=null;window.SCACKLOADED=true})}catch(_){SCSUB=null;window.SCACKLOADED=true}}
+  SCSUB=F.onSnapshot(F.collection(db,"sceneack"),q=>{const first=!window.SCACKLOADED;window.SCACKLOADED=true;if(first)setTimeout(scRender,0);const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;scRender();setTimeout(scLunchAuto,500)}},()=>{SCSUB=null;window.SCACKLOADED=true})}catch(_){SCSUB=null;window.SCACKLOADED=true}}
 setTimeout(scAckSub,3000);setInterval(()=>{if(!SCSUB)scAckSub()},60e3);
 /* lunch ends by itself: its begin (manual quittance) + the planned lunch of that unit – each unit has its own lunch row in the Drehplan
    (the duration of the row, else until the next row; 60 min when the Drehplan has none) */

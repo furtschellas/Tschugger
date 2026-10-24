@@ -10,6 +10,7 @@ import {fold,render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {arr} from "../base/20-data-start.js";
 import {fmtT} from "./01-config.js";
+import {ME} from "./03-core-firebase.js";
 import {savePrefsSoon} from "./06-prefs-docs.js";
 import {OFF,chgList,chgSeen,chgSeenGone,dmy,offState,unitItems} from "./14-today-changes-offline.js";
 import {wxTile} from "./15-weather.js";
@@ -185,7 +186,7 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-tscript]")||!v
 /* «Jetzt»: the scene being shot now (quittiert, else by the callsheet times) with its place and how long it runs – Today and the callsheet of today */
 export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return "";
     /* the quittances not read yet (first seconds after opening): no «Jetzt» – it would show the first scene of a day that is long done */
-    if(window.SCACKON!==false&&!window.SCACKLOADED&&typeof ME!=="undefined"&&ME)return "";const ns=csNowScene();if(!ns||ns.ev==="wrap")return "";const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
+    if(window.SCACKON!==false&&!window.SCACKLOADED&&ME)return "";const ns=csNowScene();if(!ns||ns.ev==="wrap")return "";const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
     const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
     const nb=csNowBits(ns,c0,t);
     const since=b0?' <small>· '+esc(L("seit"))+' '+esc(csHM(new Date(b0)))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';

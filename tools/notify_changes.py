@@ -41,18 +41,39 @@ def fmt(date, lang, labels):
 
 def main():
     p = os.path.join(ROOT, "pending_push.json")
-    if not os.path.exists(p): return 0
+    has_file = os.path.exists(p)
+    # what could not be sent last time waits in Firestore (encrypted) – the file itself is gone after the run
+    if not has_file and not fsadmin.sa(): return 0
+    if not has_file:
+        try:
+            if not (fsadmin.get_doc("pending/push") or {}).get("c"): return 0
+        except Exception: return 0
     if not fsadmin.sa():
         log("Kein Dienstkonto (FIREBASE_SA) – keine automatischen Push-Nachrichten"); return 0
     kb = fsadmin.crew_key_b64()
     if not kb:   # key not readable: the file stays for the next run (no message encrypted with a wrong key)
         log("Crew-Schlüssel nicht lesbar – Push-Nachrichten beim nächsten Lauf"); return 0
     key = base64.b64decode(kb)
-    pend = json.load(open(p))
+    pend = json.load(open(p)) if has_file else {"news": [], "days": []}
+    try:   # merged with what is still waiting
+        old = (fsadmin.get_doc("pending/push") or {}).get("c")
+        if old:
+            o = fsadmin.dec_json(key, old)
+            pend["news"] = (o.get("news") or []) + (pend.get("news") or [])
+            have = {d.get("date") for d in pend.get("days") or []}
+            pend["days"] = (pend.get("days") or []) + [d for d in o.get("days") or [] if d.get("date") not in have]
+    except Exception as e: log("Ausstehende Push-Nachrichten nicht lesbar:", type(e).__name__)
     labels = {d["date"]: d.get("label") or "" for d in pend.get("days") or [] if d.get("date")}
     roles = {}
-    for rid, f, _ in fsadmin.list_docs("roles"):
-        roles[rid] = f.get("perms") or []
+    try:
+        for rid, f, _ in fsadmin.list_docs("roles"):
+            roles[rid] = f.get("perms") or []
+    except Exception as e:   # roles not readable now: everything waits in Firestore for the next run
+        log("Rollen nicht lesbar:", type(e).__name__)
+        try: fsadmin.patch_doc("pending/push", {"c": fsadmin.enc_json(key, pend), "at": int(time.time())})
+        except Exception: pass
+        if has_file: os.remove(p)
+        return 0
     # merge: one message per kind (several callsheets in one run → one message)
     groups = {}
     for n in pend.get("news") or []:
@@ -78,11 +99,15 @@ def main():
              "by": "Automatisch", "at": at, "ch": {"push": True}, "url": "./#go=" + GO[kind] + ":" + dates[0]}
         if fsadmin.new_broadcast(key, b): made += 1
         else: failed.add(k)
-    if not failed: os.remove(p)
-    else:   # only what could not be created stays for the next run (what was sent is not sent twice)
+    if has_file: os.remove(p)
+    if not failed:
+        try: fsadmin.delete_doc("pending/push")
+        except Exception: pass
+    else:   # only what could not be created waits for the next run, in Firestore (what was sent is not sent twice)
         ck = lambda n: "csu" if n["kind"] == "cs" and n.get("upd") and "csu" in groups else n["kind"]
         pend["news"] = [n for n in pend.get("news") or [] if ck(n) in failed]
-        json.dump(pend, open(p, "w"), ensure_ascii=False)
+        try: fsadmin.patch_doc("pending/push", {"c": fsadmin.enc_json(key, pend), "at": int(time.time())})
+        except Exception as e: log("Ausstehende Push-Nachrichten nicht gespeichert:", type(e).__name__)
     log("Automatische Push-Nachrichten angelegt:", made)
     print("::notice::Push bei Änderungen: %d von %d Nachrichten angelegt (%s)" % (made, len(groups), ", ".join(sorted(groups)) or "–"))
     return 0

@@ -57,8 +57,11 @@ async function bkRestore(file){
       if(now[n]&&!now[n].has(id)&&!back2)continue;
       if(n==="members"&&now.members.has(id)){v=Object.assign({},v);delete v.active;delete v.rev}
       ops.push([n,id,v])}
+  /* phone/e-mail (contacts) only of people who are there after the restore, and only after them (the rules need the person) */
+  const mem=new Set([...now.members,...ops.filter(o=>o[0]==="members").map(o=>o[1])]);
+  const ct=ops.filter(o=>o[0]==="contacts"&&mem.has(o[1])),rest=ops.filter(o=>o[0]!=="contacts");
   let done=0,fail=0;
-  for(let i=0;i<ops.length;i+=300){const part=ops.slice(i,i+300),batch=F.writeBatch(db);part.forEach(([n,id,v])=>batch.set(F.doc(db,n,id),back(v),{merge:true}));
+  for(const list of [rest,ct])for(let i=0;i<list.length;i+=300){const part=list.slice(i,i+300),batch=F.writeBatch(db);part.forEach(([n,id,v])=>batch.set(F.doc(db,n,id),back(v),{merge:true}));
     /* a refused entry made the whole batch of 300 fail: then each entry on its own */
     try{await batch.commit();done+=part.length}catch(err){console.warn("restore batch",err&&err.code||err);
       for(const [n,id,v] of part){try{await F.setDoc(F.doc(db,n,id),back(v),{merge:true});done++}catch(_){fail++}}}}

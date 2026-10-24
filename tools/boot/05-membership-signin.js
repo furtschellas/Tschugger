@@ -5,7 +5,7 @@ import {store} from "../base/16-interaction.js";
 import {setSCRIPT} from "../base/17-scene-reader.js";
 import {CACHE_KEY,showMsg} from "../base/20-data-start.js";
 import {ADMINS,fmtT} from "./01-config.js";
-import {ADMINPERMS,ADMIN_DEFAULT,COADMIN,FB,INTOL,ME,MEMBER,MYPERMS,MYROLE,PENDING_KEY,PERMS,applyLangs,can,clean,fb,isAdmin,isOwner,lc,meOk,permKnown,permLbl,setADMINPERMS,setCOADMIN,setDATAKEY,setLASTSTAMP,setMEMBER,setMYPERMS,setMYROLE,splitName,withTimeout} from "./03-core-firebase.js";
+import {ADMIN_DEFAULT,ADMINPERMS,applyLangs,can,clean,COADMIN,FB,fb,INTOL,isAdmin,isOwner,lc,ME,MEMBER,meOk,MYPERMS,MYROLE,PENDING_KEY,permKnown,permLbl,PERMS,rolesReset,setADMINPERMS,setCOADMIN,setDATAKEY,setLASTSTAMP,setMEMBER,setMYPERMS,setMYROLE,splitName,withTimeout} from "./03-core-firebase.js";
 import {AREAKEYS,isOffline} from "./04-data.js";
 import {PREFKEYS,PREFT,PREFX,mailto,savePrefs,setPREFOK,setPREFT} from "./06-prefs-docs.js";
 import {CHAT} from "./08-chat-tour.js";
@@ -58,12 +58,16 @@ async function checkMember0(){
   if(m.rev&&typeof m.rev.toMillis==="function"){try{const t=await u.getIdTokenResult();if(Date.parse(t.authTime)<=m.rev.toMillis()){if(window.acctSignOut)await window.acctSignOut(true);return "revoked"}}catch(_){}}
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
   /* phone and contact e-mail live in contacts/{uid} (only people with the right read them); an old copy in members moves there once */
+  window.CTERR=false;
   try{const c=await withTimeout(F.getDoc(F.doc(db,"contacts",u.uid)),8000,"contacts"),cd=c.exists()?c.data():{},had="phone" in m||"contactEmail" in m;
     const v={phone:String(cd.phone||m.phone||""),contactEmail:String(cd.contactEmail||m.contactEmail||"")};m.phone=v.phone;m.contactEmail=v.contactEmail;
-    if(had)F.setDoc(F.doc(db,"contacts",u.uid),v).then(()=>F.updateDoc(ref,{phone:F.deleteField(),contactEmail:F.deleteField()})).catch(()=>{})}catch(_){}
+    if(had)F.setDoc(F.doc(db,"contacts",u.uid),v).then(()=>F.updateDoc(ref,{phone:F.deleteField(),contactEmail:F.deleteField()})).catch(()=>{})}
+  catch(_){window.CTERR=true}   /* not readable now: the profile form is not forced open for «missing» phone and e-mail */
+  /* signed out or another account meanwhile: this check is over – nothing of it is kept */
+  if(ME!==u){if(!ME){setMYPERMS([]);setMYROLE("");setCOADMIN(false)}return "stale"}
   setMEMBER(m);return "ok";
 }
-export function clearLocal(){try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();setOWNSUB(null)}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();setMENUSUB(null)}}catch(_){}try{if(typeof CDSUBS!=="undefined"&&CDSUBS){CDSUBS();setCDSUBS(null)}window.CDOPS=[];window.CDAT=0}catch(_){}try{if(typeof SCSUB!=="undefined"&&SCSUB){SCSUB();setSCSUB(null)}}catch(_){}try{if(typeof REDSUB!=="undefined"&&REDSUB){if(typeof REDSUB==="function")REDSUB();setREDSUB(null)}}catch(_){}try{if(window.cmaStop)window.cmaStop()}catch(_){}try{if(typeof ACKSUB!=="undefined"&&ACKSUB){if(typeof ACKSUB==="function")ACKSUB();setACKSUB(null);setACKFROM("");window.RIDEACK={}}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{sessionStorage.removeItem("chatmsgs");if(typeof CHAT!=="undefined")CHAT.msgs=[];if(window.caches)caches.delete("crew-vc").catch(()=>{})}catch(_){}try{for(const k of Object.keys(localStorage))if(k.startsWith("mc:v1:"))localStorage.removeItem(k);localStorage.removeItem("dk:v1");localStorage.removeItem("ak:script");localStorage.removeItem("ak:contacts");if(typeof AREAKEYS!=="undefined")for(const k in AREAKEYS)delete AREAKEYS[k];localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}
+export function clearLocal(){try{rolesReset();window.SCACKLOADED=false;window.SCACK={}}catch(_){}try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();setOWNSUB(null)}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();setMENUSUB(null)}}catch(_){}try{if(typeof CDSUBS!=="undefined"&&CDSUBS){CDSUBS();setCDSUBS(null)}window.CDOPS=[];window.CDAT=0}catch(_){}try{if(typeof SCSUB!=="undefined"&&SCSUB){SCSUB();setSCSUB(null)}}catch(_){}try{if(typeof REDSUB!=="undefined"&&REDSUB){if(typeof REDSUB==="function")REDSUB();setREDSUB(null)}}catch(_){}try{if(window.cmaStop)window.cmaStop()}catch(_){}try{if(typeof ACKSUB!=="undefined"&&ACKSUB){if(typeof ACKSUB==="function")ACKSUB();setACKSUB(null);setACKFROM("");window.RIDEACK={}}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{sessionStorage.removeItem("chatmsgs");if(typeof CHAT!=="undefined")CHAT.msgs=[];if(window.caches)caches.delete("crew-vc").catch(()=>{})}catch(_){}try{for(const k of Object.keys(localStorage))if(k.startsWith("mc:v1:"))localStorage.removeItem(k);localStorage.removeItem("dk:v1");localStorage.removeItem("ak:script");localStorage.removeItem("ak:contacts");if(typeof AREAKEYS!=="undefined")for(const k in AREAKEYS)delete AREAKEYS[k];localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}
   /* the settings and seen notices of the person signing out stay off this device: on a shared set laptop the next person got the welcome note skipped
      and a newer «prefsLocalAt» made the device overwrite the next person's settings online (the colour theme stays: it belongs to the device) */
   try{if(typeof PREFKEYS!=="undefined"){clearTimeout(PREFT);setPREFT(null);setPREFOK(false);for(const k of PREFKEYS.concat(PREFX))if(k!=="theme")localStorage.removeItem(k)}for(const k of ["prefsLocalAt","testAck"])localStorage.removeItem(k)}catch(_){}try{if(window.simReset)window.simReset()}catch(_){}try{if(window.startNotesReset)window.startNotesReset()}catch(_){}
@@ -243,7 +247,7 @@ function roleChanged(prev){if(!prev||!ME||isOwner())return;   /* the owner keeps
   if(!("r" in prev)&&!prev.a)return;   /* nothing known from before (first sign-in on this device): no message */
   const was=prev.a?"admin":(prev.r||""),now=COADMIN?"admin":(MYROLE||"");
   const pp=new Set(prev.a?(prev.ap||[]):(prev.p||[])),np=new Set(now==="admin"?ADMINPERMS:now==="owner"?PERMS.map(x=>x[0]):MYPERMS);
-  const add=[...np].filter(k=>!pp.has(k)),rem=[...pp].filter(k=>!np.has(k));if(was===now)return;   /* only when the role itself changed (new rights of the same role: no message) */
+  const add=[...np].filter(k=>!pp.has(k)),rem=[...pp].filter(k=>!np.has(k));if(was===now||(was===""&&now==="gast"))return;   /* no role → «Gast» (automatic, same rights): no message; only when the role itself changed (new rights of the same role: no message) */
   /* only once per change, also across devices: the shown state is kept with the synced settings */
   let h=0;for(const ch of now+":"+[...np].sort().join(","))h=(h*31+ch.charCodeAt(0))|0;const sig=(h>>>0).toString(36);
   let seen="";try{seen=localStorage.getItem("rc")||""}catch(_){}if(seen===sig)return;

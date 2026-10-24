@@ -96,7 +96,8 @@ let GASTBUSY=false;
 async function gastSync(){if(GASTBUSY||!isAdmin()||!ADM.urOk||!(ADM.roles||[]).some(x=>x.id==="gast"))return;GASTBUSY=true;
   try{const {F,db}=await fb(),ur=ADM.ur||{},skip=new Set([...ADMINS,...(ADM.adm||[]),...(ADM.own||[])].map(lc)),me=lc(ME&&ME.email);
     const ems=[...new Set([...(ADM.mem||[]).map(m=>lc(m.email)),...(ADM.inv||[]).map(i=>lc(i.id))])].filter(e=>e&&/@/.test(e)&&!ur[e]&&!skip.has(e)&&e!==me);
-    let n=0;for(const em of ems){try{await F.setDoc(F.doc(db,"userroles",em),{role:"gast",at:F.serverTimestamp()});ur[em]="gast";n++}catch(err){console.warn("gast",err&&err.code||err)}}
+    let n=0;for(const em of ems){if((ADM.ur||{})[em])continue;   /* a role given meanwhile stays */
+      try{await F.setDoc(F.doc(db,"userroles",em),{role:"gast",at:F.serverTimestamp()});ur[em]="gast";n++}catch(err){console.warn("gast",err&&err.code||err)}}
     ADM.ur=ur;if(n){admIndex();render()}}
   finally{GASTBUSY=false}}
 /* initials of a name (user list, callsheet) */

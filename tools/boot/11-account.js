@@ -164,7 +164,7 @@ async function onAcctSubmit(e){
         try{await wr()}catch(e2){if(!/permission/.test(e2&&e2.code||"")||!("gender" in upd))throw e2;delete upd.gender;delete upd.func;await wr();PARTIAL=true}} /* until the Firestore rules allow «gender», save the rest */
       /* phone and e-mail: in contacts (members only as long as the rules do not know contacts yet) */
       try{await F.setDoc(F.doc(db,"contacts",u.uid),ct);if(MEMBER&&("phone" in MEMBER||"contactEmail" in MEMBER))F.updateDoc(ref,{phone:F.deleteField(),contactEmail:F.deleteField()}).catch(()=>{})}
-      catch(err){if(!/permission/.test(err&&err.code||""))throw err;try{await F.updateDoc(ref,ct)}catch(_){PARTIAL=true}}
+      catch(err){if(!/permission/.test(err&&err.code||""))throw err;PARTIAL=true}   /* never into members (catering and birthdays read those) */
       setMEMBER(Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd,ct));
       writeOwnBday(upd.name,upd.birthday);
       if(isAdmin())ADM.loaded=false;
