@@ -90,10 +90,12 @@ export function csOrderRows(rows,date,locs,one){rows=csA(rows);const ONE=(()=>{c
 /* a place named on the callsheet («Base», «Loc.2», «Parking loc. 1», «Holiday Inn») → name and map link from the Locations */
 /* parking places of the callsheet in the language of the app: «Tech parking» → «Tech Parkplatz», «Crew parking» → «Crew Parkplatz» */
 export const plDe=t=>String(t||"").replace(/\btech\s*parking\b/gi,L("Tech Parkplatz")).replace(/\bcrew\s*parking\b/gi,L("Crew Parkplatz"));window.plDe=plDe;
+/* the distinctive words of the Base's name on this callsheet («Restaurant Waldrand» → «waldrand»): a call place «Waldrand» is the Base */
+const csBaseWords=c=>{try{return csLocs(c).filter(l=>l.kinds&&l.kinds.includes("Base")).flatMap(l=>fold(String(l.name||"")).split(/[^a-z0-9]+/)).filter(w=>w.length>=5&&!/^(restaurant|hotel|base|lunch|parking|church|kirche|halle|room|cast|extras)$/.test(w))}catch(_){return []}};
 export function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls=csLocs(c).filter(l=>!l.kinds);
   const m=t.match(/loc\.?\s*(\d+)/);const park=/park/.test(t);
   if(m){const l=ls.find(x=>(x._nos||[String(x.no).trim()]).includes(m[1]));if(l){if(park){const it=csA(l.items).find(i=>/park/i.test(i.label||""));if(it)return {name:String(txt),map:it.map||l.map||""}}return {name:'Set '+l.no+' · '+(l.name||""),map:l.map||""}}}
-  if(/base|lunch|hermitage/.test(t))for(const l of csA(c.locations))for(const i of csA(l.items))if(/base|w \/ h|lunch/i.test((i.label||"")+" "+(i.text||"")))return {name:String(txt)+(!i.text||!/^base$/i.test(String(txt).trim())?"":" · "+String(i.text).split(",")[0]),map:i.map||""};
+  if(/base|lunch/.test(t)||csBaseWords(c).some(w=>t.includes(w)))for(const l of csA(c.locations))for(const i of csA(l.items))if(/base|w \/ h|lunch/i.test((i.label||"")+" "+(i.text||"")))return {name:String(txt)+(!i.text||!/^base$/i.test(String(txt).trim())?"":" · "+String(i.text).split(",")[0]),map:i.map||""};
   /* a place that is a line of a set on the callsheet («Tech Parking», «Crew Parking», «Private Cars Crew» …): its map link and address */
   {const f=v=>fold(String(v||"")).replace(/[^a-z0-9]/g,""),tt=f(txt);if(tt.length>3)for(const l of csA(c.locations))for(const i of csA(l.items)){const lb=f(i.label);
     if(lb.length>3&&(lb===tt||tt.includes(lb)||lb.includes(tt))){const ad=(String(i.text||"").match(/[^,;]*\d{4}\s+\p{L}[^,;]*/u)||[])[0]||"";
@@ -113,7 +115,7 @@ export function csCallPlace(c,me,call){const ct=csHm(call.t);
   if(r){const p=csPlace(c,r.to);if(p){p.how=L("mit")+" "+[r.vehicle,r.from&&(L("ab")+" "+r.from),r.t1].filter(Boolean).join(" ");return p}}
   /* no ride: the place is not on the callsheet – nothing is guessed */
   return null}
-/* Base, Lunch and Dinner as locations of their own (in the document they are lines of a set: «W / H / M Cast + Lunch: Restaurant Hermitage …») */
+/* Base, Lunch and Dinner as locations of their own (in the document they are lines of a set: «W / H / M Cast + Lunch: Restaurant Waldrand …») */
 /* computed once per callsheet (the calls list asks for every person) */
 const CSLOCMEMO=new WeakMap();export function csLocs(c){if(!c||typeof c!=="object")return[];if(!CSLOCMEMO.has(c))CSLOCMEMO.set(c,csLocs0(c));return CSLOCMEMO.get(c)}
 function csLocs0(c){const sets=[],extra=[];
@@ -128,7 +130,7 @@ function csLocs0(c){const sets=[],extra=[];
   const ROOM=/(@\s*base|\b(at|on|in|im|auf der|in der)\s+(the\s+)?base)\b/i,rooms=[];
   const isAdr0=csIsAdr;
   for(const l0 of csA(c.locations)){const items=[];let last=null;let l=l0;
-    /* «OPEN SPACE W / H / M Extras: Schulhausplatz 4 …» read as the name of a set: the W / H / M part is a place of its own */
+    /* «OPEN SPACE W / H / M Extras: Turnhallenweg 4 …» read as the name of a set: the W / H / M part is a place of its own */
     {const m=String(l.name||"").match(/^(.*?)\s+(w\s*\/\s*h\s*\/\s*m\b.*)$/i);if(m&&m[1].trim()){const part=m[2],adr=(part.split(":").slice(1).join(":")||"").trim();
       const twin=adr&&csA(l.items).find(i=>i.map&&i.map===l.map&&fold(String(i.text||"")).includes(fold(adr.split(/[,-]/)[0].trim())));
       l=Object.assign({},l,{name:m[1].trim()});const it={label:part.split(":")[0].trim(),text:adr||part,map:twin?l.map:""};if(twin)l.map="";l.items=[it].concat(csA(l.items))}}
@@ -137,7 +139,7 @@ function csLocs0(c){const sets=[],extra=[];
       /* lines that belong to the place before them: «To set 1: 4’ with car …», «WC: on base …» */
       if(last&&CSHN_RE.test((lab+" "+txt).trim())&&!i.map){const n=[lab,txt].filter(Boolean).join(": ").replace(/:\s*:/,":");if(!last.notes.includes(n))last.notes.push(n);continue}
       const cm=txt.match(/^([^:,]{1,40}):\s*(.+)$/),head=cm?cm[1]:"",body=cm?cm[2]:txt,par=(body.match(/\(([^)]{1,30})\)/)||[])[1]||"";
-      const kinds=KIND.filter(([re,k])=>re.test(lab)||re.test(head)||re.test(par)||(k==="Base"&&re.test(body.split(",")[0]))).map(([,k])=>k);   /* «Base Church, Kirchplatz 5» is the Base too */
+      const kinds=KIND.filter(([re,k])=>re.test(lab)||re.test(head)||re.test(par)||(k==="Base"&&re.test(body.split(",")[0]))).map(([,k])=>k);   /* «Base Church, Dorfplatz 5» is the Base too */
       if(!kinds.length||(!txt&&!i.map)){items.push(i);last=null;continue}
       let clean=body.replace(/\s*\([^)]{1,30}\)\s*/g," ").trim(),name=clean.split(",")[0].trim(),rest=clean.split(",").slice(1).join(",").trim(),uses="";
       /* «BASE LAKE» as label and the uses first in the text (W / H / M, Lunch …): the base is called by its label, the uses are a line of it */
@@ -149,7 +151,7 @@ function csLocs0(c){const sets=[],extra=[];
       for(const k0 of kinds){const k=k0==="W / H / M"&&who?k0+" "+who:k0;if(!e.kinds.includes(k))e.kinds.push(k)}
       const isAdr=csIsAdr;
       if(name&&(!e.name||(isAdr(e.name)&&!isAdr(name)))){if(e.name&&e.name!==name&&!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=name}
-      {const at=lab.match(/@\s*(.+)$/);if(at&&isAdr(e.name)&&!isAdr(at[1])){if(!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=at[1].trim()}}if(!e.map&&i.map)e.map=i.map;/* «Pfynstrasse 160, 3952 Susten; To set 1: …; WC: …» – each part its own line (address, hints with their icons, the rest with its kind) */
+      {const at=lab.match(/@\s*(.+)$/);if(at&&isAdr(e.name)&&!isAdr(at[1])){if(!e.notes.includes(e.name))e.notes.unshift(e.name);e.name=at[1].trim()}}if(!e.map&&i.map)e.map=i.map;/* «Föhrenweg 160, 3999 Testdorf; To set 1: …; WC: …» – each part its own line (address, hints with their icons, the rest with its kind) */
       if(uses&&!e.notes.includes(uses))e.notes.unshift(uses);
       for(const part of String(rest||"").split(/\s*;\s*/).map(x=>x.trim()).filter(Boolean)){const r2=isAdr(part)||CSHN_RE.test(part)?part:kinds.map(k0=>{const k=k0==="W / H / M"&&who?k0+" "+who:k0;return csKindCode(k)}).join(" / ")+": "+part;if(!e.notes.includes(r2))e.notes.push(r2)}last=e}
     /* the map link of the set is the one of a side place listed with it (e.g. «WHM Extras … https://…» after the set name): not the place of the set */
@@ -158,7 +160,7 @@ function csLocs0(c){const sets=[],extra=[];
   /* the rooms go to the Base (the one with a map first); without a Base they stay lines of their set */
   {const b=extra.find(e=>e.kinds.includes("Base")&&e.map)||extra.find(e=>e.kinds.includes("Base"));
    for(const r of rooms){const n=[r.l,r.t].filter(Boolean).join(": ");if(b){if(!b.notes.includes(n))b.notes.push(n)}else r.set.push({label:r.l,text:r.t})}}
-  /* «LOCATION: Bahnhofstrasse 40 - 3970 Salgesch» read as a set of its own: it is the address of the sets without own address or map link */
+  /* «LOCATION: Bahnweg 40 - 3998 Musterdorf» read as a set of its own: it is the address of the sets without own address or map link */
   {const isA=t=>/\d{4}\s+\p{L}/u.test(String(t||""))&&!/\bset\b/i.test(String(t||""));const adr=sets.filter(l=>isA(l.name)&&!csS(l.scenes).trim());
    if(adr.length===1&&sets.length>1){const a=adr[0];sets.splice(sets.indexOf(a),1);for(const l of sets)if(!l.map&&!csA(l.notes).some(n=>isA(n))){l.notes=[a.name].concat(csA(l.notes));if(a.map)l.map=a.map}
      for(const i of csA(a.items))if(!sets.some(l=>csA(l.items).some(j=>j.map&&j.map===i.map)))sets[0].items=csA(sets[0].items).concat([i])}}

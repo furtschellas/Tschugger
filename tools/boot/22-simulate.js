@@ -33,6 +33,8 @@ function simStart(em,re){em=lc(em);if(!simCan(em))return;
   try{setMEMBER(mem||{name:inv.name||"",email:em})}catch(_){}try{MEMO.clear()}catch(_){}
   simKeep({e:em,tab:(re&&re.back)||SIMUSER.keep.tab});if(re)SIMUSER.keep.tab=re.back||SIMUSER.keep.tab;
   if(!re)S.tab="today";simRefreshChrome();simBar();render();if(!re)scrollTo(0,0)}
+/* sign-out: the simulation ends without giving back the rights of before (they belong to the person who signed out) */
+window.simReset=()=>{simKeep(null);if(!SIMUSER&&!SIMROLE)return;SIMUSER=null;setSIMROLE(null);try{MEMO.clear()}catch(_){}const b=document.getElementById("simbar");if(b)b.remove();document.body.classList.remove("simming")};
 function simEnd(){if(!SIMUSER)return;simKeep(null);const k=SIMUSER.keep;SIMUSER=null;try{MEMO.clear()}catch(_){}setSIMROLE(null);setMYPERMS(k.p);setMYROLE(k.r);window.MYROLENAME=k.rn||"";setADMINPERMS(k.ap);try{setMEMBER(k.mem)}catch(_){}
   S.tab=k.tab||"admin";ADM.sub=k.sub;simRefreshChrome();simBar();render()}
 /* a role without a specific person: «role:<id>» ("" = no role, "admin") – shows exactly what everybody with that role sees */

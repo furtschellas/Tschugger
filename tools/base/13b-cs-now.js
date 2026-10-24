@@ -44,7 +44,7 @@ export function csSceneLoc(locs,r){const n=x=>fold(String(x||"")).replace(/[^a-z
   const st=n(r.set),w=s=>(fold(String(s||"")).match(/[a-z0-9]{4,}/)||[""])[0];
   const names=l=>(l._m||[l]).map(m=>m.name).filter(Boolean);
   return (sc&&ls.find(l=>list(l).includes(sc)))||(st&&ls.find(l=>names(l).some(nm=>st.includes(n(nm))||n(nm).includes(st))))||(st&&ls.find(l=>names(l).some(nm=>w(nm)&&w(nm)===w(r.set))))||null}
-/* address of a location: from the app's location list (by its scenes), else a note with a postcode («Pfynstrasse 160, 3952 Susten») */
+/* address of a location: from the app's location list (by its scenes), else a note with a postcode («Föhrenweg 160, 3999 Testdorf») */
 /* codes L1, L2, Base …: always a link to the place (its map link, else its address in Google Maps); c/date of the callsheet being drawn */
 export let CSCUR={c:null,date:""};
 /* hints of a place («To set …», «WC …»): lines in the open location */

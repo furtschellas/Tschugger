@@ -472,7 +472,7 @@ async def owner_tests(p, port):
           return {hint:!!w.querySelector('#cs-team .cscount .cshint'),order:tr.map(e=>e.classList.contains('trvother')),date:!!w.querySelector('.cstrv.trvother .trvd')}})()""")
         check("Callsheet: Cast gezählt mit Hinweis auf abweichende Totalzeile; Anreise eines anderen Tages separat mit Datum", tv in (None, {"hint": True, "order": [False, True], "date": True}), tv)
         al = await E("""(()=>{if(typeof renderCS!=='function')return null;const x={date:'2030-05-06',cs:{geo:{'loc:1':[46.31,7.57],'https://g/b':[46.312,7.571]},geoSrc:{'loc:1':'addr','https://g/b':'link'},
-            locations:[{no:'1',name:'OFFICE',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Kirchplatz 5',map:'https://g/b'},{label:'Tech Parking',text:'',map:'https://g/b'}]},{no:'2',name:'OPEN SPACE'}],order:{rows:[]}}};
+            locations:[{no:'1',name:'OFFICE',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Dorfplatz 5',map:'https://g/b'},{label:'Tech Parking',text:'',map:'https://g/b'}]},{no:'2',name:'OPEN SPACE'}],order:{rows:[]}}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,{date:x.date});const m=w.querySelector('[data-csmap]');const pts=m?JSON.parse(m.dataset.csmap):[];
           return {codes:pts.filter(p=>!p.m).map(p=>p.c).filter(c=>/^L/.test(c)).sort(),l2rough:(pts.find(p=>p.c==='L2')||{}).r===2,park:pts.some(p=>p.m)}})()""")
         check("Callsheet-Karte: jede Location L1, L2 … erscheint (ohne Kartenlink über die Adresse, sonst ungefähr)", al in (None, {"codes": ["L1", "L2"], "l2rough": True, "park": True}), al)
@@ -524,20 +524,20 @@ async def owner_tests(p, port):
           const t=decodeURIComponent(u.split('text=')[1]||'');return {num:u.startsWith('https://wa.me/41790000000?text='),nonum:u2.startsWith('https://wa.me/?text='),mail:t.includes('anna@example.org'),name:t.includes('Anna'),app:t.includes(location.origin)}})()""")
         check("Einladung per WhatsApp: Text aus den Dokumenten, Nummer im internationalen Format", wa == {"num": True, "nonum": True, "mail": True, "name": True, "app": True}, wa)
         bw = await E("""(()=>{if(typeof csLocs!=='function')return null;const c={locations:[
-            {no:'1',name:'CHAPEL',map:'https://g/a',items:[{label:'TECH PARKING',text:'10’ on foot',map:'https://g/b'},{label:'W / H / M',text:'Cast + Lunch: Restaurant Hermitage, Pfynstrasse 160, 3952 Susten',map:'https://g/h'},{label:'',text:'To set 1: 4’ with car'},{label:'WC',text:'on base'},{label:'DIT/Prod',text:'',map:'https://g/h'}]},
-            {no:'2',name:'FOREST',map:'https://g/d',items:[{label:'Private Cars Cast/ Extras',text:'Restaurant Hermitage (Base)',map:'https://g/h'}]}]};
+            {no:'1',name:'CHAPEL',map:'https://g/a',items:[{label:'TECH PARKING',text:'10’ on foot',map:'https://g/b'},{label:'W / H / M',text:'Cast + Lunch: Restaurant Waldrand, Föhrenweg 160, 3999 Testdorf',map:'https://g/h'},{label:'',text:'To set 1: 4’ with car'},{label:'WC',text:'on base'},{label:'DIT/Prod',text:'',map:'https://g/h'}]},
+            {no:'2',name:'FOREST',map:'https://g/d',items:[{label:'Private Cars Cast/ Extras',text:'Restaurant Waldrand (Base)',map:'https://g/h'}]}]};
           const ls=csLocs(c),k=ls.filter(l=>l.kinds);return {n:k.length,kinds:k[0]&&k[0].kinds.join('|'),name:k[0]&&k[0].name,notes:k[0]&&k[0].notes.length,set1:ls[0].items.length}})()""")
-        check("Callsheet: Base, W/H/M, Lunch und Prod am selben Ort als eine Location, Anfahrt/WC dort", bw in (None, {"n": 1, "kinds": "Base|W / H / M Cast|Lunch|Prod|DIT", "name": "Restaurant Hermitage", "notes": 3, "set1": 1}), bw)
-        dit = await E("""(()=>{if(typeof csLocs!=='function')return null;const c={locations:[{no:'1',name:'OFFICE',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Kirchplatz 5 - 3970 Salgesch',map:'https://g/b'}]},
-            {no:'2',name:'OPEN SPACE',items:[{label:'DIT',text:'Schulhausplatz 4 - 3970 Salgesch',map:'https://g/s'}]}]};
-          const c2={locations:[{no:'1',name:'CHAPEL',items:[{label:'W / H / M',text:'Cast + Lunch: Restaurant Hermitage, Pfynstrasse 160',map:'https://g/h'},{label:'DIT/Prod',text:'',map:'https://g/h'}]}]};
+        check("Callsheet: Base, W/H/M, Lunch und Prod am selben Ort als eine Location, Anfahrt/WC dort", bw in (None, {"n": 1, "kinds": "Base|W / H / M Cast|Lunch|Prod|DIT", "name": "Restaurant Waldrand", "notes": 3, "set1": 1}), bw)
+        dit = await E("""(()=>{if(typeof csLocs!=='function')return null;const c={locations:[{no:'1',name:'OFFICE',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Dorfplatz 5 - 3998 Musterdorf',map:'https://g/b'}]},
+            {no:'2',name:'OPEN SPACE',items:[{label:'DIT',text:'Turnhallenweg 4 - 3998 Musterdorf',map:'https://g/s'}]}]};
+          const c2={locations:[{no:'1',name:'CHAPEL',items:[{label:'W / H / M',text:'Cast + Lunch: Restaurant Waldrand, Föhrenweg 160',map:'https://g/h'},{label:'DIT/Prod',text:'',map:'https://g/h'}]}]};
           const a=csLocs(c).filter(l=>l.kinds).map(l=>l.kinds.join('|')),b=csLocs(c2).filter(l=>l.kinds).map(l=>l.kinds.join('|'));return {other:a,same:b}})()""")
         check("Callsheet: DIT an anderem Ort = eigene Location, am selben Ort zusammen mit Base/Lunch", dit in (None, {"other": ["Base|W / H / M Cast|Lunch", "DIT"], "same": ["W / H / M Cast|Lunch|Prod|DIT"]}), dit)
         dit2 = await E("""(()=>{if(typeof csLocs!=='function')return null;const c={locations:[{no:'1',name:'OFFICE',map:'https://g/o',items:[{label:'DIT',text:'Room 1st floor',map:'https://g/o'}]}]};
           const ls=csLocs(c);return {own:ls.filter(l=>l.kinds).length,inset:(ls[0].items||[]).some(i=>i.label==='DIT')}})()""")
         check("Callsheet: DIT am Ort eines Sets steht beim Set, nicht als eigene Location", dit2 in (None, {"own": 0, "inset": True}), dit2)
         fb = await E("""(()=>{if(typeof csTilesHTML!=='function')return null;const me={name:'Anna Muster',hit:t=>/anna muster/i.test(String(t||''))};
-          const c={times:{crewCall:'08:15'},calls:[{dept:'AD',name:'Anna Muster',t:'-'}],locations:[{no:'1',name:'OFFICE',map:'https://g/o',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Kirchplatz 5 - 3970 Salgesch',map:'https://g/b'}]}]};
+          const c={times:{crewCall:'08:15'},calls:[{dept:'AD',name:'Anna Muster',t:'-'}],locations:[{no:'1',name:'OFFICE',map:'https://g/o',items:[{label:'W / H / M',text:'Cast + Lunch: Base Church, Dorfplatz 5 - 3998 Musterdorf',map:'https://g/b'}]}]};
           const w=document.createElement('div');w.innerHTML=csTilesHTML({date:'2030-05-06'},{date:'2030-05-06'},c,me);const d=w.querySelector('.csdrv');return d?d.querySelector('.k').textContent:''})()""")
         check("Callsheet-Kacheln: ohne sicheren Call-Ort «Anfahrt Base» zur Base des Tages", fb is None or (isinstance(fb, str) and fb.endswith(" Base")), fb)
         rx = await E("""(()=>{if(typeof myEvents!=='function'||typeof csMe!=='function')return null;const keep={d:S.dispos,cm:window.csMe};const t='2030-05-06';
@@ -574,18 +574,18 @@ async def owner_tests(p, port):
           return {near:n1.length===1&&n1[0].code==='Base'&&n1[0].d<1,loc3:L3.join(',')==='L1,L2,L2',mine:sc==='1,3'&&calls===1&&all===2,pdf,btn}})()""")
         check("Callsheet: Nebenorte mit Distanz beim Set, «Nur meins», PDF-Knopf, L-Code bei jeder Szene", nm in (None, {"near": True, "loc3": True, "mine": True, "pdf": True, "btn": True}), nm)
         w2 = await E("""(()=>{if(typeof csLocGroups!=='function'||typeof csRadioHTML!=='function')return null;
-          const c={locations:[{no:'1',name:"OFFICE",scenes:'12',items:[{label:'Location',text:'Bahnhofstrasse 40 - 3970 Salgesch',map:'mL'},{label:'Private Cars @ Base Church',text:'Kirchplatz 5 - 3970 Salgesch',map:'mB'},{label:'W / H / M Cast + Lunch',text:'Base Church, Kirchplatz 5 - 3970 Salgesch',map:'mB'}]},
-            {no:'2',name:'OPEN SPACE W / H / M Extras: Schulhausplatz 4 - 3970 Salgesch',scenes:'22',map:'mS',items:[{label:'DIT',text:'Schulhausplatz 4 - 3970 Salgesch, Room 1st floor',map:'mS'}]}]};
+          const c={locations:[{no:'1',name:"OFFICE",scenes:'12',items:[{label:'Location',text:'Bahnweg 40 - 3998 Musterdorf',map:'mL'},{label:'Private Cars @ Base Church',text:'Dorfplatz 5 - 3998 Musterdorf',map:'mB'},{label:'W / H / M Cast + Lunch',text:'Base Church, Dorfplatz 5 - 3998 Musterdorf',map:'mB'}]},
+            {no:'2',name:'OPEN SPACE W / H / M Extras: Turnhallenweg 4 - 3998 Musterdorf',scenes:'22',map:'mS',items:[{label:'DIT',text:'Turnhallenweg 4 - 3998 Musterdorf, Room 1st floor',map:'mS'}]}]};
           const ls=csLocs(c),k=ls.filter(l=>l.kinds).map(l=>l.kinds.map(csKindCode).join('|')),g=csLocGroups(c,ls,'');const r=csRadioHTML('Radio channel 1: AD / AL 2: Chat 3: Light');
           return {kinds:k.join(','),base:(ls.find(l=>l.kinds&&l.kinds.includes('Base'))||{}).name,set2:(ls.find(l=>l.no==='2')||{}).name,merged:g.filter(l=>!l.kinds).length===1&&g.find(l=>l._codes)._codes.join(',')==='L1,L2'&&(csOrderRows([{t:'09:00',sc:'12',set:'OFFICE'},{t:'10:00',sc:'22',set:'OPEN SPACE'}],'',ls).match(/>L[12]</g)||[]).join(',')==='>L1<,>L2<',radio:(r.match(/csrch/g)||[]).length}})()""")
         check("Callsheet: W/H/M für Cast und Extras getrennt, Sets (L-Codes) an derselben Adresse als eine Location, Szenen mit dem L-Code ihres Sets, Funkkanäle als Chips", w2 in (None, {"kinds": "Base|WHM Cast|Lunch,WHM Extras|DIT", "base": "Base Church", "set2": "OPEN SPACE", "merged": True, "radio": 3}), w2)
         w3 = await E("""(()=>{if(typeof csLocGroups!=='function')return null;
-          const c={locations:[{no:'1',name:'XQZ OFFICE',scenes:'9991',map:'mL',items:[]},{no:'2',name:'XQZ SPACE',scenes:'9992',map:'mS',items:[{label:'W / H / M Extras',text:'Schulhausplatz 4 - 3970 Salgesch',map:'mS'}]}]};
+          const c={locations:[{no:'1',name:'XQZ OFFICE',scenes:'9991',map:'mL',items:[]},{no:'2',name:'XQZ SPACE',scenes:'9992',map:'mS',items:[{label:'W / H / M Extras',text:'Turnhallenweg 4 - 3998 Musterdorf',map:'mS'}]}]};
           const kl=S.locs;S.locs=[];/* without the app's location list (its addresses would decide) */const ls=csLocs(c),g=csLocGroups(c,ls,'');const m=g.find(l=>l._m);const h=renderCS({date:'2030-05-06',cs:c},{date:'2030-05-06'});S.locs=kl;
           return {set2map:(ls.find(l=>l.no==='2')||{}).map||'',merged:!!m&&m._m.length===2,title:/csmset[^]*L1[^]*XQZ OFFICE[^]*L2[^]*XQZ SPACE/.test(h)}})()""")
         check("Callsheet: Kartenlink eines Nebenorts gilt nicht für das Set; Sets gebündelt, Titel je L-Code mit Setbezeichnung", w3 in (None, {"set2map": "", "merged": True, "title": True}), w3)
-        sq = await E("""(()=>{if(typeof csSceneLoc!=='function')return null;const c={locations:[{no:'1',name:'CHAPEL',scenes:''},{no:'2',name:'PFYN FOREST (BUSHES)',scenes:'Seq. 186pt1A'},{no:'ER',name:'PFYN FOREST (PARTY)',scenes:'Seq.186 pt1B/C/pt2'},{no:'4',name:"REGINA’S OFFICE"}]};const ls=csLocs(c);
-          return ['2|ITALY - ISLAND - CHAPEL','186 pt1A|VALAIS - PFYN FOREST','186 pt1B|VALAIS - PFYN FOREST','186 pt2|VALAIS - PFYN FOREST',"12|VALAIS - POLICE STATION - REGINA'S OFFICE"].map(t=>{const [sc,set]=t.split('|');const l=csSceneLoc(ls,{sc,set});return l?'L'+l.no:'-'}).join(',')})()""")
+        sq = await E("""(()=>{if(typeof csSceneLoc!=='function')return null;const c={locations:[{no:'1',name:'CHAPEL',scenes:''},{no:'2',name:'TANNEN FOREST (BUSHES)',scenes:'Seq. 186pt1A'},{no:'ER',name:'TANNEN FOREST (PARTY)',scenes:'Seq.186 pt1B/C/pt2'},{no:'4',name:"REGINA’S OFFICE"}]};const ls=csLocs(c);
+          return ['2|ITALY - ISLAND - CHAPEL','186 pt1A|VALAIS - TANNEN FOREST','186 pt1B|VALAIS - TANNEN FOREST','186 pt2|VALAIS - TANNEN FOREST',"12|VALAIS - POLICE STATION - REGINA'S OFFICE"].map(t=>{const [sc,set]=t.split('|');const l=csSceneLoc(ls,{sc,set});return l?'L'+l.no:'-'}).join(',')})()""")
         check("Callsheet-Drehfolge: L-Code bei jeder Szene («Seq. 186 pt1B/C/pt2», anderer Apostroph)", sq in (None, "L1,L2,L3,L3,L4"), sq)
         sa = await E("""(()=>{if(typeof scAckBtn!=='function'||typeof csNowIdx!=='function')return null;const t=todayISO(),keep=window.SCACK,kp=window.canPerm;const rows=[{t:'00:01',sc:'1'},{t:'00:02',sc:'2'},{t:'00:03',text:'Lunch'},{t:'00:04',sc:'3'}];
           window.SCACK={};const a=csNowIdx(rows,t);window.SCACK={[scAckId(t,'1')]:{d:t,s:2,at:1}};const b=csNowIdx(rows,t);window.SCACK[scAckId(t,'2')]={d:t,s:1,at:1};const c=csNowIdx(rows,t);
@@ -723,10 +723,10 @@ async def owner_tests(p, port):
             if e[0] is not None and e[1] is not None:
                 (check if e[0] == e[1] else warn)("Callsheet %s ↔ Drehplan: Komparsen %s" % (dt, "gleich (%d)" % e[0] if e[0] == e[1] else "verschieden"), *([True] if e[0] == e[1] else ["Callsheet %d, Drehplan %d" % (e[0], e[1])]))
         common.GROUP = g0
-        cpl = await E("""(()=>{if(typeof csCallPlace!=='function')return null;const c={locations:[{no:'1',name:'CHAPEL',items:[{label:'Base',text:'Restaurant Hermitage, Pfyn'}]}],
+        cpl = await E("""(()=>{if(typeof csCallPlace!=='function')return null;const c={locations:[{no:'1',name:'CHAPEL',items:[{label:'Base',text:'Restaurant Waldrand, Föhr'}]}],
           transport:[{from:'Holiday Inn',t1:'09:30',to:'Base',t2:'09:55',vehicle:'PW',driver:'Max Muster',passengers:'Anna Beispiel'}]};
           const me=n=>({hit:t=>String(t||'').includes(n)});const call={t:'09:30'};
-          const d=csCallPlace(c,me('Max Muster'),call),p=csCallPlace(c,me('Anna Beispiel'),call);return {driver:/holiday/i.test(d.name),passenger:/base|hermitage/i.test(p.name)}})()""")
+          const d=csCallPlace(c,me('Max Muster'),call),p=csCallPlace(c,me('Anna Beispiel'),call);return {driver:/holiday/i.test(d.name),passenger:/base|waldrand/i.test(p.name)}})()""")
         check("Callsheet: Call-Ort für Fahrer = Abfahrtsort, für Mitfahrende = Ziel", cpl in (None, {"driver": True, "passenger": True}), cpl, public=True)
         ctv = await E("""(()=>{if(typeof renderCS!=='function')return null;const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;localStorage.removeItem('cscast:v1');
           const x={date:d.date,cs:{cast:[{no:'1',role:'BAX',actor:'X'}]}};const w=document.createElement('div');w.id='view';const old=document.getElementById('view');old.id='view0';document.body.appendChild(w);w.innerHTML=renderCS(x,d);
@@ -888,7 +888,7 @@ async def owner_tests(p, port):
 
         # phone: long addresses get «str.»
         await E("S.tab='loc';render()"); await pg.wait_for_timeout(300)
-        ab = await E("""(()=>{const v=document.getElementById('view');const s=document.createElement('span');s.className='addr';s.style.cssText='display:inline';s.textContent='Restaurant Frohheim, Unterdorfstrasse 12, Bahnhofstrasse 4, 3970 Salgesch Wallis Schweiz';v.prepend(s);fitAddr(v);const t=s.textContent;s.remove();return t})()""")
+        ab = await E("""(()=>{const v=document.getElementById('view');const s=document.createElement('span');s.className='addr';s.style.cssText='display:inline';s.textContent='Restaurant Sonnenhof, Unterdorfstrasse 12, Bahnweg 4, 3998 Musterdorf Wallis Schweiz';v.prepend(s);fitAddr(v);const t=s.textContent;s.remove();return t})()""")
         check("Handy: lange Adressen «…strasse» → «…str.»", "Unterdorfstr. 12" in ab and "strasse" not in ab, ab)
 
 
@@ -1078,6 +1078,21 @@ async def offline_test(p, port):
     await b.close()
 
 
+async def signout_test(p, port):
+    """Abmelden: nichts von der Person bleibt auf dem Gerät (Daten, Schlüssel, Simulation, Start-Hinweise; Firebase-Kopie beim nächsten Start)"""
+    b, pg, errs = await smoke.session(p, port, "owner")
+    E = pg.evaluate
+    try:
+        before = await E("!!localStorage.getItem('crewcache:v1')&&!!localStorage.getItem('dk:v1')")
+        await E("sessionStorage.setItem('sim','{}');document.body.appendChild(Object.assign(document.createElement('div'),{id:'csbeta'}))")
+        await E("acctSignOut()"); await pg.wait_for_timeout(2500)
+        r = await E("({cache:!localStorage.getItem('crewcache:v1'),key:!localStorage.getItem('dk:v1'),fs:localStorage.getItem('fsclear')==='1',sim:!sessionStorage.getItem('sim'),note:!document.getElementById('csbeta'),gate:!document.getElementById('gate').hidden,days:S.days.length===0})")
+        check("Abmelden: Daten, Schlüssel, Simulation und Hinweise weg, Firebase-Kopie wird gelöscht", before and all(r.values()), dict(r, before=before), public=True)
+    finally:
+        await b.close()
+    return errs
+
+
 async def hidden_data(p, port):
     """C11: what a role may not see is really not there – also not in the search or the vCard"""
     phones = None
@@ -1221,7 +1236,7 @@ async def main():
                 except Exception as e:
                     check(f"{name}: Test lief durch", False, f"{type(e).__name__}: {str(e)[:150]}")
             later = []
-            for name, fn in (("Funktionen", owner_tests), ("Offline", offline_test), ("Berechtigungen", hidden_data), ("Sprachen", languages)):
+            for name, fn in (("Funktionen", owner_tests), ("Offline", offline_test), ("Berechtigungen", hidden_data), ("Sprachen", languages), ("Abmelden", signout_test)):
                 i = common.mark(); await unit(name, fn)
                 # the short tests (offline, rights, languages): failed → put aside, once more at the end (the owner tests repeat their parts themselves)
                 if name != "Funktionen" and common.failed_since(i):

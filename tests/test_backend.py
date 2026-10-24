@@ -78,12 +78,12 @@ TODAY = datetime.date.today().isoformat()
 D = lambda n: (datetime.date.today() + datetime.timedelta(days=n)).isoformat()
 day = lambda date, items, **k: dict({"date": date, "items": items}, **k)
 
-a = day(D(1), [{"t": "07:00", "sc": "12", "n": "Polizeistation", "loc": "Salgesch", "n_fr": "Poste"}])
-b = day(D(1), [{"t": "07:00", "sc": "12", "n": "POLIZEISTATION.", "loc": " salgesch ", "n_fr": "autre"}])
-c = day(D(1), [{"t": "07:30", "sc": "12", "n": "Polizeistation", "loc": "Salgesch"}])
+a = day(D(1), [{"t": "07:00", "sc": "12", "n": "Polizeistation", "loc": "Musterdorf", "n_fr": "Poste"}])
+b = day(D(1), [{"t": "07:00", "sc": "12", "n": "POLIZEISTATION.", "loc": " musterdorf ", "n_fr": "autre"}])
+c = day(D(1), [{"t": "07:30", "sc": "12", "n": "Polizeistation", "loc": "Musterdorf"}])
 check("Drehplan: andere Schreibweise und Übersetzung zählen nicht als Änderung", U.day_sig(a) == U.day_sig(b))
 check("Drehplan: geänderte Zeit ist eine Änderung", U.day_sig(a) != U.day_sig(c))
-check("Drehplan: geänderte Szene ist eine Änderung", U.day_sig(a) != U.day_sig(day(D(1), [{"t": "07:00", "sc": "13", "n": "Polizeistation", "loc": "Salgesch"}])))
+check("Drehplan: geänderte Szene ist eine Änderung", U.day_sig(a) != U.day_sig(day(D(1), [{"t": "07:00", "sc": "13", "n": "Polizeistation", "loc": "Musterdorf"}])))
 old = [day(D(-2), [{"t": "1"}]), day(D(1), [{"t": "07:00"}]), day(D(2), [{"t": "08:00"}]), day(D(3), [{"t": "09:00"}], older="x"), {"id": "TBA", "items": []}]
 new = [day(D(-2), [{"t": "2"}]), day(D(1), [{"t": "07:00"}]), day(D(3), [{"t": "10:00"}], older="x"), day(D(4), [{"t": "06:00"}])]
 check("Geänderte Tage: nur ab heute, neue und entfernte, ohne «ältere» und ohne TBA", U.changed_days(old, new, TODAY) == [D(2), D(4)], U.changed_days(old, new, TODAY))
@@ -273,21 +273,21 @@ check("2nd Unit: B-Cam-Zeilen wieder in der 1st Unit (nach Zeit eingereiht), ech
       "unit2" not in _d[0] and [i["sc"] for i in _d[0]["items"]] == ["2", "186pt1A", "186pt1B"] and "unit2" in _d[1] and "unit2" not in _d[2] and _d[2]["items"] == [], _d)
 
 # 2nd unit sheet: tab list (shown and hidden) and the tab colours from the xlsx export – only GREEN tabs count
-class _R: status_code = 200; text = ('<li id="sheet-button-11"><a>#5-Salgesch</a></li><script>items.push({name: "#5-Salgesch", gid: "11"});'
-                                     'items.push({name: "#1-Pfyn", gid: "33"});items.push({name: "#7", gid: "44", hidden: true});</script>')
+class _R: status_code = 200; text = ('<li id="sheet-button-11"><a>#5-Musterdorf</a></li><script>items.push({name: "#5-Musterdorf", gid: "11"});'
+                                     'items.push({name: "#1-Wald", gid: "33"});items.push({name: "#7", gid: "44", hidden: true});</script>')
 _g = U.requests.get; U.requests.get = lambda *a, **k: _R()
 try: _t = U.sheet_tabs("https://docs.google.com/spreadsheets/d/abc/edit")
 finally: U.requests.get = _g
-check("2nd Unit: alle Blätter bekannt, ausgeblendete markiert", [n for _, n in _t] == ["#5-Salgesch", "#1-Pfyn", "#7"] and U.SHEET_HIDDEN == ["#1-Pfyn", "#7"], (_t, U.SHEET_HIDDEN))
+check("2nd Unit: alle Blätter bekannt, ausgeblendete markiert", [n for _, n in _t] == ["#5-Musterdorf", "#1-Wald", "#7"] and U.SHEET_HIDDEN == ["#1-Wald", "#7"], (_t, U.SHEET_HIDDEN))
 import io as _io, openpyxl as _ox  # noqa: E402
-_wb = _ox.Workbook(); _a = _wb.active; _a.title = "#5-Salgesch"; _a.sheet_properties.tabColor = "FF0000"
-_b = _wb.create_sheet("#6 Pfyn"); _b.sheet_properties.tabColor = "34A853"; _b.sheet_state = "hidden"
+_wb = _ox.Workbook(); _a = _wb.active; _a.title = "#5-Musterdorf"; _a.sheet_properties.tabColor = "FF0000"
+_b = _wb.create_sheet("#6 Wald"); _b.sheet_properties.tabColor = "34A853"; _b.sheet_state = "hidden"
 _c = _wb.create_sheet("#7 alt"); _c.sheet_properties.tabColor = "00FF00"
 _wb.create_sheet("#8 ohne Farbe")
 _bio = _io.BytesIO(); _wb.save(_bio)
 _col = U.sheet_colors(raw=_bio.getvalue())
 check("2nd Unit: grüne Blätter erkannt, auch ausgeblendete; rote und ungefärbte nicht",
-      {k: (v["green"], v["hidden"]) for k, v in _col.items()} == {"#5-Salgesch": (False, False), "#6 Pfyn": (True, True), "#7 alt": (True, False), "#8 ohne Farbe": (False, False)}, _col)
+      {k: (v["green"], v["hidden"]) for k, v in _col.items()} == {"#5-Musterdorf": (False, False), "#6 Wald": (True, True), "#7 alt": (True, False), "#8 ohne Farbe": (False, False)}, _col)
 check("2nd Unit: Grün- und Orangetöne zählen, Rot/Gelb/Blau/Weiss nicht",
       [U._is_green(c) for c in ("FF34A853", "00FF00", "B7E1CD", "0B8043", "FF9900", "E69138", "F6B26B", "FCE5CD", "FF0000", "FFFF00", "4285F4", "FFFFFF", "999999")]
       == [True] * 8 + [False] * 5, [U._is_green(c) for c in ("FCE5CD",)])
@@ -299,13 +299,13 @@ _st = """Day #1 - SR: 7:55 SS: 18:37 - Tue 20/10/2026
 186
 pt1A
 
-3/8 pgs E/Ev VALAIS - PFYN FOREST 1, 2
+3/8 pgs E/Ev VALAIS - TANNEN FOREST 1, 2
 
 12:00
 0h45m
 
 Bax + Pirmin crossing thick bushes.
-Loc: Pfynwald Kieswerk Volken E
+Loc: Tannenwald Kieswerk Muster E
 
 Crew: Armourer/SFX, Props: Branch (dummy soft),
 Weapons police in holster, Notes: shoot on other part / no drone, Story Date:
@@ -332,7 +332,7 @@ check("Szenen-Details: Abteilungen je Szene aus dem Drehplan gelesen",
       and _pb[10]["184e"]["c"] == [["Crew", ["Lifeguard"]], ["Special", ["Cam Boat or Platform"]], ["Loc", ["Warmup Tent"]], ["Stunt", ["Stone (soft dummy, from stunt)"]], ["Props", ["Postcard with QR-code"]]], _pb)
 _pb2 = U.parse_breakdown("Day #8 - SR\n22:00\nTschugger Sched - Sched 261018 - page # 8\n\n\f27 4/8 pgs I/N VALAIS - POLICE STATION - OPEN SPACE\nOFFICE\n\n1, 10\n\n19:15\n1h\n\nPeter interrogating Bax.\nLoc: Salgesch\n\nProps: Flight Tickets, Handcuffs, Story Date: 20.10.2032\n")
 check("Szenen-Details: Szene direkt nach einem Seitenumbruch (27 auf D8) wird gefunden", (_pb2.get(8, {}).get("27") or {}).get("c") == [["Props", ["Flight Tickets", "Handcuffs"]], ["Story Date", ["20.10.2032"]]], _pb2)
-check("Szenen-Details: «Special: Elec: …» bleibt wie im PDF zusammen", (U.parse_breakdown("Day #1\n186 pt2 1 2/8 pgs E/Ev X 1\n17:30\n\nParty.\nLoc: Pfyn\n\nCrew: Drone, Special: Elec: enhance beamer light, Set Dec: Film projection\n").get(1, {}).get("186pt2") or {}).get("c") == [["Crew", ["Drone"]], ["Special: Elec", ["enhance beamer light"]], ["Set Dec", ["Film projection"]]])
+check("Szenen-Details: «Special: Elec: …» bleibt wie im PDF zusammen", (U.parse_breakdown("Day #1\n186 pt2 1 2/8 pgs E/Ev X 1\n17:30\n\nParty.\nLoc: Tannen\n\nCrew: Drone, Special: Elec: enhance beamer light, Set Dec: Film projection\n").get(1, {}).get("186pt2") or {}).get("c") == [["Crew", ["Drone"]], ["Special: Elec", ["enhance beamer light"]], ["Set Dec", ["Film projection"]]])
 
 # data check App ↔ Dropbox: scene numbers of the schedule belong to the script scene (parts, slideshow pictures)
 import verify_data as V  # noqa: E402

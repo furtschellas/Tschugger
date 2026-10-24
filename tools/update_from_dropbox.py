@@ -93,6 +93,12 @@ def area_key(area):
     if area not in _AK:
         try: k = fsadmin.area_key_b64(area)
         except Exception as e: k = ""; log("Bereichsschlüssel", area, "nicht lesbar:", type(e).__name__)
+        if not k and fsadmin.sa():
+            # with the service account there always is a key: a read error must not put phone numbers or the script under the crew key
+            # (then everybody in the crew could read them) – stop, nothing is published, the next run tries again
+            status("error", "Bereichsschlüssel nicht lesbar – diesmal nichts veröffentlicht")
+            print("::error::Bereichsschlüssel %s nicht lesbar – Lauf abgebrochen, nichts veröffentlicht" % area, flush=True)
+            sys.exit(1)
         _AK[area] = base64.b64decode(k) if k else None
     return _AK[area]
 
@@ -900,7 +906,7 @@ def map_pos(u):
     """position of a map link, only from map addresses (never from other numbers of a page):
     «!3d…!4d…» = the place itself (best), «q=lat,lon» = a pin, «@lat,lon» = only the centre of the view (rough).
     maps.app.goo.gl often answers with a page that forwards by script: the Google-Maps address in it is used.
-    A link that only names a place («q=Restaurant Hermitage, Susten») gives that text back for the address search."""
+    A link that only names a place («q=Restaurant Waldrand, Susten») gives that text back for the address search."""
     from urllib.parse import unquote, urlparse, parse_qs
     inner = []
     pats = ((r"!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)", "p"), (r"[?&](?:q|ll|query|destination|center)=(-?\d{1,2}\.\d+)(?:,|%2C)\+?(-?\d{1,3}\.\d+)", "q"), (r"/maps/(?:search|place|dir)/(?:[^/?]*/)*?(-?\d{1,2}\.\d+)(?:,|%2C)(?:\+|%20|\s)*(-?\d{1,3}\.\d+)", "q"), (r"@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)", "c"))
@@ -1610,7 +1616,7 @@ def main():
         for i, d in enumerate(data["days"]): d["order"] = i
 
     # 2nd unit: the detailed shooting order (Google Sheet, linked in the Dropbox as «…2nd_Unit…SHOOTING_ORDER….web»)
-    # replaces the 2nd unit part of each shooting day in the Drehplan; one sheet tab per day («#5-Salgesch»; «ALT» tabs ignored)
+    # replaces the 2nd unit part of each shooting day in the Drehplan; one sheet tab per day («#5-Musterdorf»; «ALT» tabs ignored)
     try:
         lk = sorted([f for f in files if f["name"].lower().endswith(".web") and re.search(r"(?i)2nd.?unit", f["name"])], key=lambda f: f["modified"] or "")
         url = ""

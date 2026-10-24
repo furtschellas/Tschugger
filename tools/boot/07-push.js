@@ -96,6 +96,8 @@ window.pushSignOut=async function(){
   try{LOCALT.forEach(clearTimeout);LOCALT=[];clearTimeout(PUSHT)}catch(_){}
   try{if(ME&&ME.uid){const {F,db}=await fb();await withTimeout(F.deleteDoc(F.doc(db,"push",ME.uid+"_"+pushDev())),5000,"push").catch(()=>{})}}catch(_){}
   try{for(const k of Object.keys(localStorage))if(k==="push"||k==="pushlast"||k.startsWith("pushlocal:"))localStorage.removeItem(k)}catch(_){}
+  /* the browser subscription goes too: without network the push document stays, but the sender then gets «gone» and removes it */
+  try{const reg=navigator.serviceWorker&&await withTimeout(navigator.serviceWorker.getRegistration(),3000,"sw");const sub=reg&&reg.pushManager&&await reg.pushManager.getSubscription();if(sub)await withTimeout(sub.unsubscribe(),3000,"unsub")}catch(_){}
 };
 function pushLocalSchedule(){LOCALT.forEach(clearTimeout);LOCALT=[];const c=pushCfg();if(!c.on||!pushOK()||Notification.permission!=="granted")return;
   const now=Date.now();for(const it of pushItems(c)){const d=it.at-now;if(d<-5*60e3||d>6*3600e3)continue;

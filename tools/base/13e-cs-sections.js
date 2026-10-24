@@ -16,7 +16,7 @@ import {RIDE_ICO} from "../boot/24-flow.js";
 function csLocCode(l){return l.kinds?l.kinds.map(csKindCode).join("·"):l._codes?l._codes.join("·"):(l.no?"L"+String(l.no).trim():"")}
 /* title (DN) and second line (LAD: address) of a location */
 function csLocHead(c,l,date){let LAD=csLocAddr(c,l,date),DN=l.name||"";const w=t=>fold(String(t||"")).replace(/[^a-z0-9]/g,"");
-  /* a side place: the title is its kind (Base, else the first kind, e.g. «WHM Extras»), the second line its name and address («Restaurant Hermitage, Pfynstrasse 160, 3952 Susten») */
+  /* a side place: the title is its kind (Base, else the first kind, e.g. «WHM Extras»), the second line its name and address («Restaurant Waldrand, Föhrenweg 160, 3999 Testdorf») */
   if(l.kinds){const isA=/\d{4}\s+\p{L}/u.test(DN),nm=isA?"":DN;const ad=LAD&&!(isA&&w(LAD)!==w(DN)&&!w(LAD).startsWith(w(DN)))?LAD:(isA?DN:LAD);
     LAD=[nm&&!w(ad).includes(w(nm))?nm:"",ad].filter(Boolean).join(", ");DN=l.kinds.includes("Base")?"BASE":csKindCode(l.kinds[0])}
   /* a set named by its address: no second line */
