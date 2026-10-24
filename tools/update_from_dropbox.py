@@ -93,6 +93,12 @@ def area_key(area):
     if area not in _AK:
         try: k = fsadmin.area_key_b64(area)
         except Exception as e: k = ""; log("Bereichsschlüssel", area, "nicht lesbar:", type(e).__name__)
+        if not k and fsadmin.sa():
+            # with the service account there always is a key: a read error must not put phone numbers or the script under the crew key
+            # (then everybody in the crew could read them) – stop, nothing is published, the next run tries again
+            status("error", "Bereichsschlüssel nicht lesbar – diesmal nichts veröffentlicht")
+            print("::error::Bereichsschlüssel %s nicht lesbar – Lauf abgebrochen, nichts veröffentlicht" % area, flush=True)
+            sys.exit(1)
         _AK[area] = base64.b64decode(k) if k else None
     return _AK[area]
 
@@ -1610,7 +1616,7 @@ def main():
         for i, d in enumerate(data["days"]): d["order"] = i
 
     # 2nd unit: the detailed shooting order (Google Sheet, linked in the Dropbox as «…2nd_Unit…SHOOTING_ORDER….web»)
-    # replaces the 2nd unit part of each shooting day in the Drehplan; one sheet tab per day («#5-Salgesch»; «ALT» tabs ignored)
+    # replaces the 2nd unit part of each shooting day in the Drehplan; one sheet tab per day («#5-Musterdorf»; «ALT» tabs ignored)
     try:
         lk = sorted([f for f in files if f["name"].lower().endswith(".web") and re.search(r"(?i)2nd.?unit", f["name"])], key=lambda f: f["modified"] or "")
         url = ""

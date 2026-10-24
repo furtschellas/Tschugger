@@ -90,10 +90,12 @@ export function csOrderRows(rows,date,locs,one){rows=csA(rows);const ONE=(()=>{c
 /* a place named on the callsheet («Base», «Loc.2», «Parking loc. 1», «Holiday Inn») → name and map link from the Locations */
 /* parking places of the callsheet in the language of the app: «Tech parking» → «Tech Parkplatz», «Crew parking» → «Crew Parkplatz» */
 export const plDe=t=>String(t||"").replace(/\btech\s*parking\b/gi,L("Tech Parkplatz")).replace(/\bcrew\s*parking\b/gi,L("Crew Parkplatz"));window.plDe=plDe;
+/* the distinctive words of the Base's name on this callsheet («Restaurant Waldrand» → «waldrand»): a call place «Waldrand» is the Base */
+const csBaseWords=c=>{try{return csLocs(c).filter(l=>l.kinds&&l.kinds.includes("Base")).flatMap(l=>fold(String(l.name||"")).split(/[^a-z0-9]+/)).filter(w=>w.length>=5&&!/^(restaurant|hotel|base|lunch|parking|church|kirche|halle|room|cast|extras)$/.test(w))}catch(_){return []}};
 export function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls=csLocs(c).filter(l=>!l.kinds);
   const m=t.match(/loc\.?\s*(\d+)/);const park=/park/.test(t);
   if(m){const l=ls.find(x=>(x._nos||[String(x.no).trim()]).includes(m[1]));if(l){if(park){const it=csA(l.items).find(i=>/park/i.test(i.label||""));if(it)return {name:String(txt),map:it.map||l.map||""}}return {name:'Set '+l.no+' · '+(l.name||""),map:l.map||""}}}
-  if(/base|lunch|waldrand/.test(t))for(const l of csA(c.locations))for(const i of csA(l.items))if(/base|w \/ h|lunch/i.test((i.label||"")+" "+(i.text||"")))return {name:String(txt)+(!i.text||!/^base$/i.test(String(txt).trim())?"":" · "+String(i.text).split(",")[0]),map:i.map||""};
+  if(/base|lunch/.test(t)||csBaseWords(c).some(w=>t.includes(w)))for(const l of csA(c.locations))for(const i of csA(l.items))if(/base|w \/ h|lunch/i.test((i.label||"")+" "+(i.text||"")))return {name:String(txt)+(!i.text||!/^base$/i.test(String(txt).trim())?"":" · "+String(i.text).split(",")[0]),map:i.map||""};
   /* a place that is a line of a set on the callsheet («Tech Parking», «Crew Parking», «Private Cars Crew» …): its map link and address */
   {const f=v=>fold(String(v||"")).replace(/[^a-z0-9]/g,""),tt=f(txt);if(tt.length>3)for(const l of csA(c.locations))for(const i of csA(l.items)){const lb=f(i.label);
     if(lb.length>3&&(lb===tt||tt.includes(lb)||lb.includes(tt))){const ad=(String(i.text||"").match(/[^,;]*\d{4}\s+\p{L}[^,;]*/u)||[])[0]||"";

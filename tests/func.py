@@ -723,7 +723,7 @@ async def owner_tests(p, port):
             if e[0] is not None and e[1] is not None:
                 (check if e[0] == e[1] else warn)("Callsheet %s ↔ Drehplan: Komparsen %s" % (dt, "gleich (%d)" % e[0] if e[0] == e[1] else "verschieden"), *([True] if e[0] == e[1] else ["Callsheet %d, Drehplan %d" % (e[0], e[1])]))
         common.GROUP = g0
-        cpl = await E("""(()=>{if(typeof csCallPlace!=='function')return null;const c={locations:[{no:'1',name:'CHAPEL',items:[{label:'Base',text:'Restaurant Waldrand, Tannen'}]}],
+        cpl = await E("""(()=>{if(typeof csCallPlace!=='function')return null;const c={locations:[{no:'1',name:'CHAPEL',items:[{label:'Base',text:'Restaurant Waldrand, Föhr'}]}],
           transport:[{from:'Holiday Inn',t1:'09:30',to:'Base',t2:'09:55',vehicle:'PW',driver:'Max Muster',passengers:'Anna Beispiel'}]};
           const me=n=>({hit:t=>String(t||'').includes(n)});const call={t:'09:30'};
           const d=csCallPlace(c,me('Max Muster'),call),p=csCallPlace(c,me('Anna Beispiel'),call);return {driver:/holiday/i.test(d.name),passenger:/base|waldrand/i.test(p.name)}})()""")
@@ -1078,6 +1078,21 @@ async def offline_test(p, port):
     await b.close()
 
 
+async def signout_test(p, port):
+    """Abmelden: nichts von der Person bleibt auf dem Gerät (Daten, Schlüssel, Simulation, Start-Hinweise; Firebase-Kopie beim nächsten Start)"""
+    b, pg, errs = await smoke.session(p, port, "owner")
+    E = pg.evaluate
+    try:
+        before = await E("!!localStorage.getItem('crewcache:v1')&&!!localStorage.getItem('dk:v1')")
+        await E("sessionStorage.setItem('sim','{}');document.body.appendChild(Object.assign(document.createElement('div'),{id:'csbeta'}))")
+        await E("acctSignOut()"); await pg.wait_for_timeout(2500)
+        r = await E("({cache:!localStorage.getItem('crewcache:v1'),key:!localStorage.getItem('dk:v1'),fs:localStorage.getItem('fsclear')==='1',sim:!sessionStorage.getItem('sim'),note:!document.getElementById('csbeta'),gate:!document.getElementById('gate').hidden,days:S.days.length===0})")
+        check("Abmelden: Daten, Schlüssel, Simulation und Hinweise weg, Firebase-Kopie wird gelöscht", before and all(r.values()), dict(r, before=before), public=True)
+    finally:
+        await b.close()
+    return errs
+
+
 async def hidden_data(p, port):
     """C11: what a role may not see is really not there – also not in the search or the vCard"""
     phones = None
@@ -1221,7 +1236,7 @@ async def main():
                 except Exception as e:
                     check(f"{name}: Test lief durch", False, f"{type(e).__name__}: {str(e)[:150]}")
             later = []
-            for name, fn in (("Funktionen", owner_tests), ("Offline", offline_test), ("Berechtigungen", hidden_data), ("Sprachen", languages)):
+            for name, fn in (("Funktionen", owner_tests), ("Offline", offline_test), ("Berechtigungen", hidden_data), ("Sprachen", languages), ("Abmelden", signout_test)):
                 i = common.mark(); await unit(name, fn)
                 # the short tests (offline, rights, languages): failed → put aside, once more at the end (the owner tests repeat their parts themselves)
                 if name != "Funktionen" and common.failed_since(i):

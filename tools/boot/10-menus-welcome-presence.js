@@ -128,16 +128,24 @@ async function maybeTestWelcome(){
   if(!isTester()||TW_OPEN||WELCOME_OPEN||ONBOARD){maybeCsBeta();return}
   TW_OPEN=true;
   if(await twDone()){TW_OPEN=false;maybeCsBeta();return}
-  const v=twVer(),w=docGet("testwelcome",{vorname:(MEMBER&&(MEMBER.firstName||String(MEMBER.name||"").split(" ")[0]))||""});
-  const d=mkDialog("twelcome");
-  d.innerHTML='<div class="a2box wlbox"><span class="wlbeta">BETA</span><h3>'+esc(w.subject)+'</h3>'+w.body.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>'<p>'+esc(x).replace(/\n/g,"<br>")+'</p>').join("")+
-    '<div class="a2b"><button type="button" class="pri" data-twok>'+esc(L("Verstanden"))+'</button></div></div>';
-  d.addEventListener("click",async e=>{const b=e.target.closest("[data-twok]");if(!b)return;b.disabled=true;
-    const at=new Date().toISOString();store("testAck",at+"|"+v);savePrefs();
+  const v=twVer(),w=docGet("testwelcome",{vorname:noteFirst()});
+  startNote("twelcome",w,async()=>{const at=new Date().toISOString();store("testAck",at+"|"+v);savePrefs();
     try{if(MEMBER){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{testAck:at,testVer:v});MEMBER.testAck=at;MEMBER.testVer=v}}catch(err){console.warn("testwelcome",err&&err.code||err)}
-    d.remove();TW_OPEN=false;maybeCsBeta()});
-  document.body.appendChild(d);
+    TW_OPEN=false;maybeCsBeta()});
 }
+/* the first name for the start notes */
+const noteFirst=()=>(MEMBER&&(MEMBER.firstName||String(MEMBER.name||"").split(" ")[0]))||"";
+/* a start note (test users, callsheet beta): «Verstanden», × or Esc all count as read – then the next note follows (before, × left the
+   note «open» for the rest of the session: no tour, no news, and the note came back at every start) */
+function startNote(id,w,ack){const d=mkDialog(id);let done=false;
+  const fin=async()=>{if(done)return;done=true;mo.disconnect();if(!ME||d.dataset.kill)return;try{await ack()}catch(err){console.warn(id,err)}};
+  d.innerHTML='<div class="a2box wlbox"><span class="wlbeta">BETA</span><h3>'+esc(w.subject)+'</h3>'+w.body.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>'<p>'+esc(x).replace(/\n/g,"<br>")+'</p>').join("")+
+    '<div class="a2b"><button type="button" class="pri" data-noteok>'+esc(L("Verstanden"))+'</button></div></div>';
+  d.addEventListener("click",e=>{const b=e.target.closest("[data-noteok]");if(!b)return;b.disabled=true;fin().then(()=>d.remove())});
+  const mo=new MutationObserver(()=>{if(!d.isConnected)fin()});
+  document.body.appendChild(d);mo.observe(document.body,{childList:true})}
+/* sign-out: the start notes go, their flags too (else the chain stays blocked after signing in again) */
+window.startNotesReset=()=>{TW_OPEN=false;CSB_OPEN=false;for(const id of ["twelcome","csbeta","news","pushhint","iconhint","scrnews"]){const x=document.getElementById(id);if(x){x.dataset.kill="1";x.remove()}}};
 /* ---- «Neu: Interaktives Callsheet» (BETA): once for everybody who may see the callsheet; text under Einstellungen → Dokumente ---- */
 let CSB_OPEN=false;
 async function csbDone(){let loc="";try{loc=localStorage.getItem("csb")||""}catch(_){}if(loc)return true;
@@ -147,13 +155,8 @@ async function maybeCsBeta(){
   const may=ME&&!SIMROLE&&!(typeof SIMUSER!=="undefined"&&SIMUSER)&&typeof vok==="function"&&vok("dispo");
   if(!may||CSB_OPEN||TW_OPEN||WELCOME_OPEN||ONBOARD){maybeTour();return}
   CSB_OPEN=true;if(await csbDone()){CSB_OPEN=false;maybeTour();return}
-  const w=docGet("csbeta",{vorname:(MEMBER&&(MEMBER.firstName||String(MEMBER.name||"").split(" ")[0]))||""});
-  const d=mkDialog("csbeta");
-  d.innerHTML='<div class="a2box wlbox"><span class="wlbeta">BETA</span><h3>'+esc(w.subject)+'</h3>'+w.body.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>'<p>'+esc(x).replace(/\n/g,"<br>")+'</p>').join("")+
-    '<div class="a2b"><button type="button" class="pri" data-csbok>'+esc(L("Verstanden"))+'</button></div></div>';
-  d.addEventListener("click",e=>{const b=e.target.closest("[data-csbok]");if(!b)return;b.disabled=true;
-    store("csb",new Date().toISOString().slice(0,16));savePrefs();d.remove();CSB_OPEN=false;maybeTour()});
-  document.body.appendChild(d);
+  const w=docGet("csbeta",{vorname:noteFirst()});
+  startNote("csbeta",w,async()=>{store("csb",new Date().toISOString().slice(0,16));savePrefs();CSB_OPEN=false;maybeTour()});
 }
 /* ---- presence: signed-in members leave a «last seen» mark every 2 minutes while the app is open (shown to admins) ---- */
 let SEENT=null,SEENAT=0;
