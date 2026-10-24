@@ -1051,10 +1051,11 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
 .blkcard{border:1px solid var(--rule);border-radius:10px;padding:8px 10px;margin:8px 0}
 .blkcard>summary{cursor:pointer;padding:4px 0}
 .blkgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:8px 0}
-.blkgrid input{width:100%;box-sizing:border-box}
+.blkgrid input,.blkgrid select{width:100%;box-sizing:border-box}
+.blkgrid select{font:inherit;font-size:15px;font-weight:600;padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
 .blkgrid input[aria-invalid="true"]{border-color:#c0392b}
 .blktops{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 12px;margin:6px 0 10px}
 .blktop{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .blktn{min-width:84px;font-weight:600}
-.blktop select,.blktop input{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--rule);background:transparent;color:inherit}
+.blktop select,.blktop input{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
 .blktag{font-weight:600}

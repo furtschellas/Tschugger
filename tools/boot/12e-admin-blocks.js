@@ -10,6 +10,14 @@ const blkTzOk=tz=>{try{new Intl.DateTimeFormat("en",{timeZone:tz});return !!tz}c
 const blkClock=tz=>{try{return new Date().toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:tz})}catch(_){return ""}};
 function blkZones(){let z=[];try{z=Intl.supportedValuesOf("timeZone")}catch(_){}
   return z.length?z:["Europe/Zurich","Europe/Berlin","Europe/London","Asia/Kolkata","Asia/Dubai","Asia/Bangkok","America/New_York","America/Los_Angeles","Africa/Johannesburg","Australia/Sydney"]}
+/* the usual time zones of a shoot first (with the time difference now), then all others of the world */
+const BLK_TZ=[["Europe/Zurich","Schweiz"],["Asia/Kolkata","Indien"],["Europe/Berlin","Deutschland"],["Europe/Paris","Frankreich"],["Europe/Rome","Italien"],["Europe/Vienna","Österreich"],["Europe/London","Grossbritannien"],["Europe/Lisbon","Portugal"],["Europe/Athens","Griechenland"],["Europe/Istanbul","Türkei"],["Asia/Dubai","Vereinigte Arabische Emirate"],["Asia/Kathmandu","Nepal"],["Asia/Bangkok","Thailand"],["Asia/Tokyo","Japan"],["Africa/Casablanca","Marokko"],["Africa/Johannesburg","Südafrika"],["America/New_York","USA Ostküste"],["America/Los_Angeles","USA Westküste"],["America/Mexico_City","Mexiko"],["America/Sao_Paulo","Brasilien"],["Australia/Sydney","Australien"]];
+function blkOff(tz){try{const p=new Intl.DateTimeFormat("en",{timeZone:tz,timeZoneName:"shortOffset"}).formatToParts(new Date()).find(x=>x.type==="timeZoneName");return p?p.value.replace("GMT","UTC"):""}catch(_){return ""}}
+function blkTzSelect(cur,i){const top=BLK_TZ.filter(([z])=>blkTzOk(z)),known=new Set(top.map(x=>x[0]));
+  const rest=blkZones().filter(z=>!known.has(z)),opt=(z,t)=>'<option value="'+esc(z)+'"'+(z===cur?' selected':'')+'>'+esc(t)+'</option>';
+  return '<select data-blkf="'+i+'|tz">'+(cur&&!known.has(cur)&&!rest.includes(cur)?opt(cur,cur):'')+
+    '<optgroup label="'+esc(L("Häufig"))+'">'+top.map(([z,c])=>opt(z,L(c)+" – "+z+(blkOff(z)?" ("+blkOff(z)+")":""))).join("")+'</optgroup>'+
+    '<optgroup label="'+esc(L("Alle Zeitzonen"))+'">'+rest.map(z=>opt(z,z)).join("")+'</optgroup></select>'}
 function blocksSec(){
   const bl=blkCur(),now=blockNow();
   const topic=(b,i,k,t)=>{const m=(b.topics||{})[k]||"on",mode=/^\d{4}-\d\d-\d\d$/.test(m)?"date":m==="off"?"off":"on";
@@ -21,7 +29,7 @@ function blocksSec(){
       '<div class="blkgrid">'+
       '<label class="arl">'+esc(L("Name"))+'<input data-blkf="'+i+'|name" maxlength="40" value="'+esc(b.name||"")+'" placeholder="'+esc(L("z. B. Block 2"))+'"></label>'+
       '<label class="arl">'+esc(L("Land"))+'<input data-blkf="'+i+'|country" maxlength="40" value="'+esc(b.country||"")+'" placeholder="'+esc(L("z. B. Indien"))+'"></label>'+
-      '<label class="arl">'+esc(L("Zeitzone"))+'<input data-blkf="'+i+'|tz" list="blkzones" autocomplete="off" spellcheck="false" maxlength="60" value="'+esc(b.tz||"")+'" placeholder="Europe/Zurich"'+(tzok||!b.tz?'':' aria-invalid="true"')+'>'+
+      '<label class="arl">'+esc(L("Zeitzone"))+blkTzSelect(b.tz,i)+
         '<small class="ghint">'+(b.tz&&!tzok?esc(L("Unbekannte Zeitzone")):tzok?esc(L("Jetzt dort"))+' '+esc(blkClock(b.tz)):'')+'</small></label>'+
       '<label class="arl">'+esc(L("Von"))+'<input type="date" data-blkf="'+i+'|from" value="'+esc(b.from||"")+'"></label>'+
       '<label class="arl">'+esc(L("Bis"))+'<input type="date" data-blkf="'+i+'|to" value="'+esc(b.to||"")+'"></label>'+
@@ -32,7 +40,6 @@ function blocksSec(){
       '<div class="arb"><button type="button" class="abtn'+(BLK.del===i?' danger':'')+'" data-blkdel="'+i+'">'+esc(L(BLK.del===i?"Wirklich löschen?":"Block löschen"))+'</button></div></details>'};
   return '<p class="ahint">'+esc(L("Der Dreh in Blöcken (z. B. Schweiz, dann Indien). Die App rechnet «heute» und «jetzt» in der Zeitzone des laufenden Blocks. Ein Block mit eigenem Drehplan bekommt dessen Tage bei der nächsten Aktualisierung."))+'</p>'+
     (bl.length?bl.map(card).join(""):'<p class="ghint">'+esc(L("Noch keine Drehblöcke – alles läuft in Schweizer Zeit."))+'</p>')+
-    '<datalist id="blkzones">'+blkZones().map(z=>'<option value="'+esc(z)+'">').join("")+'</datalist>'+
     '<div class="arb"><button type="button" class="abtn" data-blkadd>'+esc(L("Neuer Block"))+'</button>'+(BLK.edit?'<button type="button" class="abtn" data-blkundo>'+esc(L("Verwerfen"))+'</button><button type="button" class="abtn prim" data-blksave>'+esc(L("Speichern"))+'</button>':'')+'</div>'+
     (BLK.msg?'<p class="ghint" role="status">'+esc(BLK.msg)+'</p>':'')}
 window.blocksSec=blocksSec;
