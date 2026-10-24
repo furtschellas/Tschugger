@@ -1,4 +1,4 @@
-import {I18N,L,LANG,S,TX,ariaTip,esc,mkDialog,msHM,norm,pad2,saveBtn,saveErr,todayISO} from "../base/10-core.js";
+import {ariaTip,esc,I18N,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
 import {UNAME} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
@@ -109,7 +109,6 @@ const scWaGet=k=>{try{return localStorage.getItem(k)||""}catch(_){return ""}};
 function scWaParse(v){v=String(v||"").trim();const g=v.match(/chat\.whatsapp\.com\/(?:invite\/)?([A-Za-z0-9]{10,40})/);if(g)return "g:"+g[1];if(/^g:[A-Za-z0-9]{10,40}$/.test(v))return v;
   const n=v.replace(/[^\d+]/g,"").replace(/^\+/,"").replace(/^00/,"");return n.length>=8?n:""}
 const scWaTarget=k=>scWaParse(k&&scWaGet("scwt"+k))||scWaParse(scWaGet("scwan"));
-const scWaNum=()=>{const t=scWaTarget("");return /^g:/.test(t)?"":t};
 const scWaUrl=(txt,k)=>{const t=scWaTarget(k);return /^g:/.test(t)?"https://chat.whatsapp.com/"+t.slice(2):"https://wa.me/"+t+"?text="+encodeURIComponent(txt)};
 const scWaIsGroup=k=>/^g:/.test(scWaTarget(k));
 function scWaOpen(txt,k){try{if(scWaIsGroup(k)){try{navigator.clipboard.writeText(txt)}catch(_){}showMsg(L("Text kopiert – in der WhatsApp-Gruppe einfügen und senden."),6000)}window.open(scWaUrl(txt,k),"_blank","noopener")}catch(_){}}
@@ -274,7 +273,7 @@ function scXlsx(head,data,name,title,stand){const x=v=>String(v==null?"":v).repl
     ["xl/_rels/workbook.xml.rels",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
     ["xl/styles.xml",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="hh:mm"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="2"><border/><border><left/><right/><top/><bottom style="thick"><color rgb="FF000000"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="8"><xf/><xf fontId="1" applyFont="1"/><xf numFmtId="164" applyNumberFormat="1"/><xf applyAlignment="1"><alignment horizontal="center"/></xf><xf borderId="1" applyBorder="1"/><xf fontId="1" borderId="1" applyFont="1" applyBorder="1"/><xf numFmtId="164" borderId="1" applyNumberFormat="1" applyBorder="1"/><xf borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf></cellXfs></styleSheet>'],
     ["xl/worksheets/sheet1.xml",sheet]];
-  const a=document.createElement("a");a.href=URL.createObjectURL(scZip(files));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
+  saveBlob(scZip(files),name)}
 const SCX_HEAD=()=>[L("Aktion"),"DT",L("Datum"),"Unit","S","I/E",L("Seiten"),"Set",L("Plan"),"PD",L("Start"),L("Ende"),L("Dauer"),L("Diff."),L("Beschreibung")];   /* no cast in the scene log */
 document.addEventListener("click",e=>{const g=e.target.closest&&e.target.closest("[data-sclsh]");if(g){e.preventDefault();const u=window.SCENESHEET||"";if(/^https:\/\/docs\.google\.com\/spreadsheets\//.test(u))window.open(u,"_blank","noopener");return}});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-sclx]");if(!b)return;e.preventDefault();const [k,dd,uu]=b.dataset.sclx.split("|"),rows=scExpRows(dd,uu),z0=new Date(),UN0=uu?((typeof UNAME!=="undefined"&&UNAME[uu])||uu)+" Unit":[...new Set(rows.map(r=>r.unit))].join(" + "),
@@ -330,11 +329,11 @@ async function scPdf(rows,days,UN,stamp,pw,uu){
       didDrawCell:h=>{if(h.section==="body"&&h.cell.raw&&h.cell.raw._done){const c=h.cell,x=c.x+c.width/2-2,yy=c.y+c.height/2;doc.setDrawColor(40,150,90);doc.setLineWidth(.6);doc.line(x,yy,x+1.4,yy+1.4);doc.line(x+1.4,yy+1.4,x+4,yy-1.6)}}});
     y=doc.lastAutoTable.finalY+6}
   /* footer on every page: who exported it (left), page x of y (middle), date and time of the export (right) */
-  {const n=doc.getNumberOfPages(),z=new Date(),who=(()=>{/* the signed-in user who makes the export (not the person chosen in «Meine Termine») */try{if(typeof MEMBER!=="undefined"&&MEMBER){const n=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name;if(n)return n}}catch(_){}try{if(typeof ME!=="undefined"&&ME)return ME.displayName||ME.email||""}catch(_){}return ""})(),when=pad2(z.getDate())+"."+pad2(z.getMonth()+1)+"."+z.getFullYear()+" "+pad2(z.getHours())+":"+pad2(z.getMinutes());
+  {const n=doc.getNumberOfPages(),z=new Date(),who=(()=>{/* the signed-in user who makes the export (not the person chosen in «Meine Termine») */try{if(typeof MEMBER!=="undefined"&&MEMBER){const n=mName(MEMBER);if(n)return n}}catch(_){}try{if(typeof ME!=="undefined"&&ME)return ME.displayName||ME.email||""}catch(_){}return ""})(),when=pad2(z.getDate())+"."+pad2(z.getMonth()+1)+"."+z.getFullYear()+" "+pad2(z.getHours())+":"+pad2(z.getMinutes());
    for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(90);doc.text(C(who),12,203);doc.text(i+"/"+n,148.5,203,{align:"center"});doc.text(C(when),285,203,{align:"right"})}doc.setTextColor(0)}
   const blob=doc.output("blob"),url=URL.createObjectURL(blob),name=projFile()+"_Szenen-Protokoll_"+stamp+".pdf";
   /* open in the PDF reader of the device; where a new window is not possible, as a download */
-  if(pw&&!pw.closed)pw.location.href=url;else{const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}
+  if(pw&&!pw.closed)pw.location.href=url;else saveBlob(blob,name)
   setTimeout(()=>URL.revokeObjectURL(url),300000)}
 /* the print view in a new window (a page of its own from a blob), its print dialog offers «Als PDF sichern» */
 function scPrint(doc){

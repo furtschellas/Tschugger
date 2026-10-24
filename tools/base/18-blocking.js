@@ -145,9 +145,8 @@ const ACTIONS=[
     if(onlyU()||(k==="1"&&S.pu["1"])){const nd=nextUnitDay();if(nd){S.day=nd.id;S.dday=nd.date}}render()}],
   ["[data-scene]",b=>openScene(b.dataset.scene)],
   ["[data-spmore]",b=>spLoadMore(b)],
-  ["[data-sqm]",b=>{S.sqm=b.dataset.sqm;S.sqn=0;try{localStorage.setItem("sqm",S.sqm)}catch(_){}document.querySelectorAll("[data-sqm]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));runSearch("sq",false)}],
-  ["[data-sqpick]",b=>{S.sq=b.dataset.sqpick;S.sqn=0;const i=document.getElementById("sq");if(i)i.value=S.sq;runSearch("sq",false)}],
-  ["[data-sqmore]",()=>{S.sqn=(S.sqn||(S.sq?100:40))+60;runSearch("sq",false)}],
+  ["[data-sqm]",b=>{S.sqm=b.dataset.sqm;try{localStorage.setItem("sqm",S.sqm)}catch(_){}document.querySelectorAll("[data-sqm]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));runSearch("sq",false)}],
+  ["[data-sqpick]",b=>{S.sq=b.dataset.sqpick;const i=document.getElementById("sq");if(i)i.value=S.sq;runSearch("sq",false)}],
   ["[data-scretry]",()=>{setSCRIPTERR(false);render()}],
   ["[data-spt]",()=>{const nx=spTheme()==="light"?"dark":"light";setSPT(nx===getTheme()?null:nx);store("spt",SPT||"");svApply()}],
   ["[data-lv]",b=>{const k=b.dataset.lv;S.lv=Object.assign({},S.lv,{[k]:!S.lv[k]});store("lv",JSON.stringify(S.lv));document.querySelectorAll(".lvwrap").forEach(w=>w.className="lvwrap "+lvClasses());document.querySelectorAll("[data-lv]").forEach(x=>x.setAttribute("aria-pressed",String(S.lv[x.dataset.lv])))}],
@@ -171,7 +170,7 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-mcself]"))mcPic
 document.addEventListener("input",e=>{if(e.target.closest&&e.target.closest("#view form"))e.target.dataset.dirty="1"},true);
 document.addEventListener("change",e=>{if(e.target.closest&&e.target.closest("#view form"))e.target.dataset.dirty="1"},true);
 document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;render()}
-  else if(e.target.id==="lq"||e.target.id==="sq"){if(e.target.id==="sq"){S.sq=e.target.value;S.sqn=0}else S.lq=e.target.value;clearTimeout(SRCHT);SRCHT=setTimeout(()=>runSearch(e.target.id,false),180)}});
+  else if(e.target.id==="lq"||e.target.id==="sq"){if(e.target.id==="sq")S.sq=e.target.value;else S.lq=e.target.value;clearTimeout(SRCHT);SRCHT=setTimeout(()=>runSearch(e.target.id,false),180)}});
 let SRCHT=null;
 /* refresh only the result list: the field keeps focus and the keyboard stays open while typing */
 function runSearch(id,submit){
@@ -185,7 +184,7 @@ function runSearch(id,submit){
   if(submit){const i=document.getElementById(id);if(i)i.blur();const r=box.getBoundingClientRect();if(r.top<0||r.top>innerHeight*0.6)window.scrollTo({top:window.scrollY+r.top-90,behavior:"smooth"})}
 }
 document.addEventListener("submit",e=>{const f=e.target.closest&&e.target.closest("[data-sform]");if(!f)return;e.preventDefault();const id=f.dataset.sform,i=document.getElementById(id);
-  if(i){if(id==="sq"){S.sq=i.value;S.sqn=0}else S.lq=i.value}runSearch(id,true)});
+  if(i){if(id==="sq")S.sq=i.value;else S.lq=i.value}runSearch(id,true)});
 let LASTDAY=todayISO();
 document.addEventListener("toggle",e=>{if(e.target&&e.target.matches&&e.target.matches("[data-srcd]"))S.srcOpen=e.target.open},true);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&todayISO()!==LASTDAY){LASTDAY=todayISO();S.day=null;S.dday=null;render()}});

@@ -102,6 +102,11 @@ export const todayISO=()=>localISO(Date.now());
 /* «2026-10-24» + n days as a date (calendar days – not 24 h: the change to winter time on 25.10. has 25 hours) */
 export const isoAdd=(d,n)=>{const x=new Date(String(d)+"T12:00:00Z");x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};
 export const pad2=n=>String(n).padStart(2,"0");
+/* a person's name from a profile or member document: «first last»; mName falls back to the old single field «name» */
+export const fullName=m=>m?[m.firstName,m.lastName].filter(Boolean).join(" "):"";
+export const mName=m=>fullName(m)||(m&&m.name)||"";
+/* hand a file to the browser as a download (the link is freed again after a minute – some phones read it late) */
+export function saveBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),6e4)}
 export const clockHM=d=>pad2(d.getHours())+":"+pad2(d.getMinutes());   /* «07:05» of a Date (local time) */
 export const msHM=ms=>ms?clockHM(new Date(+ms)):"";   /* «07:05» of a time in milliseconds, "" without */
 /* message when saving failed: no permission, else not possible */

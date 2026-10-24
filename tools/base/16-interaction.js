@@ -12,7 +12,7 @@ export function scallLabel(){const b=document.getElementById("scall");if(!b)retu
 export function goTab(tab){S.want=null;const again=S.tab===tab,from=S.tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;
   /* Drehplan ↔ Callsheet: the same day on both sides; otherwise the callsheet opens at the current day */
   if(tab==="dispo"&&!again){const pd=from==="plan"&&S.days.find(d=>d.id===S.day);S.dday=pd?pd.date:null}else if(tab==="dispo")S.dday=null;
-  if(tab==="plan"&&from==="dispo"&&S.dday){const d=S.days.find(x=>x.date===S.dday&&x.kind!=="off");if(d)S.day=d.id}if(tab==="script"){S.sqm="all";S.sq="";S.sqn=0}   /* the script search always starts again with «Alle» */
+  if(tab==="plan"&&from==="dispo"&&S.dday){const d=S.days.find(x=>x.date===S.dday&&x.kind!=="off");if(d)S.day=d.id}if(tab==="script"){S.sqm="all";S.sq=""}   /* the script search always starts again with «Alle» */
 store("tab",tab);window.scrollTo(0,0)}
 /* last chosen day (Schedule, Callsheet), page and open scenes are kept on a reload; a new start, or coming back after
    at least 10 minutes in the background, opens the start page (Today, or the Drehplan at today) */

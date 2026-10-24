@@ -1,4 +1,4 @@
-import {L,S,TX,WD,ariaTip,ddmm,dlgBtn,esc,isoAdd,mkDialog,pad2,padD,safeUrl,telNum,todayISO,tzFor} from "./10-core.js";
+import {ariaTip,ddmm,dlgBtn,esc,fullName,isoAdd,L,mkDialog,pad2,padD,S,safeUrl,telNum,todayISO,TX,tzFor,WD} from "./10-core.js";
 import {WDL} from "./12-mycal.js";
 import {addrForItem} from "./13-crew-views.js";
 import {CSI} from "./13a-callsheet.js";
@@ -122,7 +122,7 @@ function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;const m=[...Array(b.
 export function mailPeople(){
   const out=[],seen=new Set(),add=(name,email,role,src,phone)=>{email=String(email||"").trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){if(name)out.push({name,email:"",phone:phone||"",role:role||"",src,k:nmk(name)});return}const k=nmk(name)+"|"+email;if(seen.has(k))return;seen.add(k);out.push({name,email,phone:phone||"",role:role||"",src,k:nmk(name)})};
   for(const g of S.crew)for(const p of arr(g.people))add(p.name,p.email,p.role,g.dept,p.phone);
-  try{if(typeof ADM!=="undefined"&&ADM&&perm("contacts.extra")){for(const m of arr(ADM.mem))add(m.name||[m.firstName,m.lastName].filter(Boolean).join(" "),m.contactEmail||m.email,"","user",m.phone);for(const i of arr(ADM.inv))add(i.name,i.id,i.role,"user")}}catch(_){}
+  try{if(typeof ADM!=="undefined"&&ADM&&perm("contacts.extra")){for(const m of arr(ADM.mem))add(m.name||fullName(m),m.contactEmail||m.email,"","user",m.phone);for(const i of arr(ADM.inv))add(i.name,i.id,i.role,"user")}}catch(_){}
   return out;
 }
 export function findPerson(name,people){

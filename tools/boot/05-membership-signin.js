@@ -1,5 +1,5 @@
 import {isIOS,isStandalone} from "../a2hs.js";
-import {$,L,LANG,MEMO,S,applyStatic,dlgBtn,esc,mkDialog,setLANG} from "../base/10-core.js";
+import {$,applyStatic,dlgBtn,esc,fullName,L,LANG,MEMO,mkDialog,S,setLANG} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {setSCRIPT} from "../base/17-scene-reader.js";
@@ -46,7 +46,7 @@ async function checkMember0(){
     let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
     if(!inv||!inv.exists()){if(isAdmin()){setMEMBER(null);return "ok"}return "none"}
     let pf={};try{const x=JSON.parse(localStorage.getItem(PENDING_KEY)||"null");if(x&&x.email===lc(u.email))pf=x}catch(_){}
-    const doc={active:true,email:lc(u.email),name:[pf.firstName,pf.lastName].filter(Boolean).join(" ")||inv.data().name||"",joinedAt:F.serverTimestamp()};
+    const doc={active:true,email:lc(u.email),name:fullName(pf)||inv.data().name||"",joinedAt:F.serverTimestamp()};
     for(const k of ["firstName","lastName","lang","birthday","gender","diet","allergies"])if(pf[k])doc[k]=pf[k];
     if(Array.isArray(pf.intol)&&pf.intol.length)doc.intol=pf.intol.filter(k=>INTOL.some(x=>x[0]===k));
     if(!doc.firstName&&!doc.lastName){const sp=splitName(inv.data().name);if(sp.firstName){doc.firstName=clean(sp.firstName);if(sp.lastName)doc.lastName=clean(sp.lastName)}}

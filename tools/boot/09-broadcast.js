@@ -1,4 +1,4 @@
-import {HIT,L,LANG,S,esc,telNum} from "../base/10-core.js";
+import {esc,HIT,L,LANG,mName,S,telNum} from "../base/10-core.js";
 import {VIEWS} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
@@ -65,7 +65,7 @@ async function bcLoadHist(){BC.hist=[];BC.histErr="";BC.dev=null;BC.devOn=null;t
 async function bcLoadDev(){if(BC.dev||!isAdmin())return;BC.dev={};try{const {F,db}=await fb();const key=await getDataKey();const q=await F.getDocs(F.collection(db,"push"));
   for(const d of q.docs){try{const pl=await ownDec(key,d.data().c),w=pl.who||{};BC.dev[d.id]=lc(w.email);(BC.devOn=BC.devOn||{})[d.id]={em:lc(w.email),on:pl.on!==false&&!!pl.sub,rem:!!(pl.items||[]).length,news:pl.news||{},at:+d.data().at||0}}catch(_){}}}catch(err){console.warn("bc dev",err&&err.code||err)}render()}
 function bcPerson(em){if(!em)return "";for(const g of (S.crew||[]))for(const p of (g.people||[]))if(p.name&&lc(p.email)===em)return p.name;
-  const m=(typeof ADM!=="undefined"&&ADM.mem||[]).find(x=>lc(x.email)===em);const n=m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);return n||em}
+  const m=(typeof ADM!=="undefined"&&ADM.mem||[]).find(x=>lc(x.email)===em);const n=m&&(mName(m));return n||em}
 /* who has push switched on on a device (admins): collapsible, always closed when the page is opened */
 function bcDevHTML(){if(!isAdmin())return "";if(!BC.dev){bcLoadDev();return ""}
   const per=new Map();for(const x of Object.values(BC.devOn||{})){if(!x.on||!x.em)continue;const n=bcPerson(x.em);const o=per.get(n)||{n:0,news:false};o.n++;o.news=o.news||Object.values(x.news||{}).some(Boolean);per.set(n,o)}

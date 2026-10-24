@@ -1,4 +1,4 @@
-import {L,MEMO,S,esc,mkDialog,pad2,prodTZ,todayISO} from "../base/10-core.js";
+import {esc,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
 import {hm,myIdentity,rideId} from "../base/12-mycal.js";
 import {csAfter,csMe} from "../base/13a-callsheet.js";
 import {CSCUR,csNowLoc,csNowScene} from "../base/13b-cs-now.js";
@@ -64,7 +64,7 @@ async function cmaLoad(from){if(CMASUB&&CMAFROM===from)return;try{const {F,db}=a
     for(const x of snap.docs||[]){const v=x.data()||{};let n="";try{if(key&&v.c)n=String((await ownDec(key,v.c)).n||"")}catch(_){}m[x.id]={by:v.by||"",n}}
     if(my!==CMASEQ)return;window.CMASSIGN=m;if(S.tab==="my"||S.tab==="today")flowRedraw()},err=>{console.warn("cmassign",err&&err.code||err);CMASUB=null;CMAFROM=""})}catch(_){if(CMASUB==="…")CMASUB=null}}
 window.cmaStop=()=>{try{if(typeof CMASUB==="function")CMASUB()}catch(_){}CMASUB=null;CMAFROM="";window.CMASSIGN={}};
-const cmaMyName=()=>{try{const m=typeof MEMBER!=="undefined"&&MEMBER;const n=m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);if(n)return n;const me=typeof myIdentity==="function"?myIdentity():null;return (me&&me.name)||(ME&&ME.email)||""}catch(_){return ""}};
+const cmaMyName=()=>{try{const m=typeof MEMBER!=="undefined"&&MEMBER;const n=m&&(mName(m));if(n)return n;const me=typeof myIdentity==="function"?myIdentity():null;return (me&&me.name)||(ME&&ME.email)||""}catch(_){return ""}};
 async function cmaSet(id,date,take){const old=window.CMASSIGN[id],undo=()=>{if(old)window.CMASSIGN[id]=old;else delete window.CMASSIGN[id];flowRedraw()};
   if(!take){await dbWrite("delete","cmassign/"+id,null,{undo});delete window.CMASSIGN[id];return}
   const n=cmaMyName().slice(0,80),c=await ownEnc({n});await dbWrite("set","cmassign/"+id,{c,d:date,at:Date.now(),by:ME.uid},{undo});window.CMASSIGN[id]={by:ME.uid,n}}
@@ -146,8 +146,8 @@ function cmParse(v,c){const out=[];for(const seg of String(v==null?"":v).split(/
 /* a time from the callsheet: «07:50» or «07.50» (some callsheets write dots) */
 const cqHm=v=>hm(String(v==null?"":v).replace(/(^|[^\d])(\d{1,2})\.(\d{2})(?!\d)/,"$1$2:$3"));
 const cmId=(date,k,r,t)=>{t=cqHm(t)||t;const s=[date,k,String(r&&(r.no||r.role)||"").trim(),t].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "m"+(h>>>0).toString(36)};
-const cmSt=flowSt,cmDone=id=>flowSt(id)===2;
-window.cmSt=cmSt;window.cmDone=cmDone;window.cmId=cmId;window.cmParse=cmParse;
+const cmSt=flowSt;
+window.cmSt=cmSt;window.cmId=cmId;window.cmParse=cmParse;
 /* texts of the three states */
 const CQST=()=>[L("Offen"),L("Läuft"),L("Erledigt")];
 const CQTIP3=()=>[L("Offen – antippen = läuft"),L("Läuft – antippen = erledigt"),L("Erledigt – antippen = zurücksetzen")];

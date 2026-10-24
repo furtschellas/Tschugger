@@ -1,6 +1,6 @@
 import {L,LANG,S,TX,ddmm,driveMin,esc,isoAdd,localISO,pad2,todayISO} from "../base/10-core.js";
 import {UNAME,hasU,zurichUTC} from "../base/11-schedule-prep.js";
-import {WDL,evRecent,hm,myEvents,myIdentity,myPickBar,telLinks} from "../base/12-mycal.js";
+import {WDL,evRecent,hm,myEvents,myIdentity,telLinks} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
 import {csMe} from "../base/13a-callsheet.js";
 import {csHM,csNowBits,csNowScene} from "../base/13b-cs-now.js";
@@ -17,6 +17,7 @@ import {scAckId} from "./27-scene-ack.js";
 /* ---------- 1) «Heute»: everything for today (or the next working day) on one page ---------- */
 /* «Today» on/off per person (profile, synced with the view settings) */
 export function todayOn(){try{const v=localStorage.getItem("today")||"";return !(v==="0"||v.startsWith("0|"))}catch(_){return true}}
+window.todayOn=todayOn;   /* the tab bar (base/14-render) asks through window: «Today» switched off in the profile */
 /* which parts Today shows (profile → App): stored with the on/off value, «1|menu,off» = on, without lunch and offline */
 const TODAY_PARTS=[["now","Jetzt gedreht",()=>true],["my","Meine nächsten Termine",()=>vok("mycal")],["mine","Mein Drehtag",()=>true],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
   ["loc","Erste Location",()=>vok("plan")],["menu","Mittagessen",()=>true],["scs","Szenen",()=>vok("plan")],["chg","Änderungen",()=>vok("plan")||vok("script")],["off","Offline am Set",()=>vok("blocking")||vok("plan")]];
@@ -87,7 +88,7 @@ VIEWS.today=function(){
   const dp=canDispo?((S.dispos||[]).find(x=>x&&x.date===d.date)||null):null;
   const card=(cls,title,body)=>body?'<div class="tcard '+cls+'"><div class="tch">'+title+'</div>'+body+'</div>':'';
   const thead='<div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+ddmm(dt))+'</span></div>';
-  let h='<section class="today">'+(typeof myPickBar==="function"?myPickBar():"");
+  let h='<section class="today">';
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* for everybody, first of all and only while shooting: the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
   if(isToday&&tShow("now"))h+=nowCardHTML(t);

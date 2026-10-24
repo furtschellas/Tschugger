@@ -1,4 +1,4 @@
-import {$,L,LANG,S,ariaTip,blockList,dlgBtn,esc,mkDialog,msHM,pad2,saveBtn,telNum} from "../base/10-core.js";
+import {$,ariaTip,blockList,dlgBtn,esc,L,LANG,mkDialog,mName,msHM,pad2,S,saveBtn,telNum} from "../base/10-core.js";
 import {srcHTML} from "../base/13-crew-views.js";
 import {VIEWS,tabOrder0} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -85,7 +85,7 @@ export function editForm(r,withRole){
        '<fieldset class="efood"><legend>'+L("Essen")+'</legend><label>'+L("Ernährung")+dietSel("edt",normDiet(m).diet)+'</label><label>'+L("Verträglichkeiten")+'</label>'+intolBoxes("eint",normDiet(m).intol)+'<label>'+L("Weitere Allergien (optional)")+'<input name="eal" maxlength="200" value="'+v(m.allergies)+'"></label></fieldset>'+blkFields(m)
      :'<label>'+L("Name")+'<input name="nm" maxlength="80" value="'+v(i.name||r.name)+'"></label><label>'+L("Funktion")+'<input name="rl" maxlength="80" value="'+v(i.role||r.role)+'"></label>')+
     '<p class="ahint">'+L("Die E-Mail-Adresse kann nicht geändert werden – dafür die Person entfernen und mit der neuen Adresse einladen.")+'</p>'+
-    (m&&m.uid&&can("users.edit")&&!(ME&&m.uid===ME.uid)?'<p><button type="button" class="pillbtn" data-signall="'+esc(m.uid)+'" data-nm="'+esc([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||r.email)+'">'+esc(L("Auf allen Geräten abmelden"))+'</button></p>':'')+
+    (m&&m.uid&&can("users.edit")&&!(ME&&m.uid===ME.uid)?'<p><button type="button" class="pillbtn" data-signall="'+esc(m.uid)+'" data-nm="'+esc(mName(m)||r.email)+'">'+esc(L("Auf allen Geräten abmelden"))+'</button></p>':'')+
     ''+saveBtn()+'</form>';
 }
 function reqSec(){
@@ -158,7 +158,7 @@ VIEWS.admin=function(){
   const invBy={};ADM.inv.forEach(i=>invBy[i.id]=i);
   const rows=[];const seen=new Set();
   /* display name: crew list first, otherwise the first/last name the person entered */
-  const nm=m=>{if(!m)return"";const cp=crewPerson(m.email);return (cp&&cp.name)||[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||""};
+  const nm=m=>{if(!m)return"";const cp=crewPerson(m.email);return (cp&&cp.name)||mName(m)};
   for(const i of ADM.inv){const m=memBy[i.id];rows.push({email:i.id,name:nm(m)||i.name||"",inv:true,m});seen.add(i.id)}
   for(const m of ADM.mem)if(!seen.has(m.email))rows.push({email:m.email,name:nm(m),inv:false,m});
   /* sortable: name, first name, status, role, newest, department (crew list), e-mail */
@@ -331,7 +331,6 @@ document.addEventListener("click",async e=>{
       /* an admin or owner who is removed loses these rights too (before, the admin entry stayed and kept all rights) */
       await F.deleteDoc(F.doc(db,"admins",lc(b.dataset.em))).catch(()=>{});if(isOwner())await F.deleteDoc(F.doc(db,"owners",lc(b.dataset.em))).catch(()=>{});
       await F.deleteDoc(F.doc(db,"members",b.dataset.uid));showMsg(L("Entfernt."),3000)}}
-    else if(a==="mkadmin"&&isAdmin()&&!ADMINS.includes(b.dataset.em)){await F.setDoc(F.doc(db,"admins",b.dataset.em),{addedAt:F.serverTimestamp()});showMsg(b.dataset.em+" "+L("ist jetzt Admin."),3000)}
     else if(a==="rmadmin"&&isAdmin()&&!ADMINS.includes(b.dataset.em)){if(confirmSafe(L("{e} die Admin-Rechte entziehen?").replace("{e}",b.dataset.em))){await F.deleteDoc(F.doc(db,"admins",b.dataset.em));showMsg(L("Admin-Rechte entzogen."),3000)}}
     else if(a==="uninvite"){await F.deleteDoc(F.doc(db,"invites",b.dataset.em));await F.deleteDoc(F.doc(db,"userroles",lc(b.dataset.em))).catch(()=>{});   /* a new invitation later starts with «Crew» again */showMsg(L("Einladung gelöscht."),3000)}
     await admLoad();
