@@ -21,11 +21,11 @@ async function bkCollect(){
   const {F,db}=await fb();
   const col=async n=>{const q=await F.getDocs(F.collection(db,n));return q.docs.map(d=>({id:d.id,data:d.data()}))};
   /* roles and who has which role belong in the backup too (before, after a restore nobody had a role) */
-  const [members,invites,admins,bdays,cfg,roles,userroles,owners]=await Promise.all([col("members"),col("invites"),col("admins"),col("bdays").catch(()=>[]),F.getDoc(F.doc(db,"config","app")),col("roles").catch(()=>[]),col("userroles").catch(()=>[]),col("owners").catch(()=>[])]);
+  const [members,invites,admins,bdays,cfg,roles,userroles,owners,contacts]=await Promise.all([col("members"),col("invites"),col("admins"),col("bdays").catch(()=>[]),F.getDoc(F.doc(db,"config","app")),col("roles").catch(()=>[]),col("userroles").catch(()=>[]),col("owners").catch(()=>[]),col("contacts").catch(()=>[])]);
   /* dates of Firestore as {__ts}: walked BEFORE JSON (a Timestamp turns itself into {seconds,nanoseconds} in JSON.stringify, so the old
      replacer never saw it – a restored «rev» then locked the person out) */
   const plain=v=>v&&typeof v==="object"?(typeof v.toDate==="function"?{__ts:v.toDate().toISOString()}:Array.isArray(v)?v.map(plain):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,plain(x)]))):v;
-  return plain({app:"tschugger-crew",version:1,createdAt:new Date().toISOString(),by:ME&&ME.email,config:cfg.exists()?cfg.data():null,members,invites,admins,bdays,roles,userroles,owners});
+  return plain({app:"tschugger-crew",version:1,createdAt:new Date().toISOString(),by:ME&&ME.email,config:cfg.exists()?cfg.data():null,members,invites,admins,bdays,roles,userroles,owners,contacts});
 }
 async function bkDownload(){
   const data=await bkCollect();const t=new Date();
@@ -52,7 +52,7 @@ async function bkRestore(file){
   if(d.config&&typeof d.config==="object")ops.push(["config","app",d.config]);
   /* entries the rules never allow are left out (own invitation and own role, the main owner's entries) */
   const root=ROOT_OWNERS.includes(own);
-  for(const [n,list] of [["roles",d.roles],["admins",d.admins],["invites",d.invites],["members",d.members],["bdays",d.bdays],["userroles",d.userroles],["owners",d.owners]])
+  for(const [n,list] of [["roles",d.roles],["admins",d.admins],["invites",d.invites],["members",d.members],["bdays",d.bdays],["userroles",d.userroles],["owners",d.owners],["contacts",d.contacts]])
     for(const r of (Array.isArray(list)?list:[]))if(r&&ok.test(String(r.id))&&r.data&&typeof r.data==="object"&&!(n==="members"&&(lc(r.data.email)===own||(!root&&ROOT_OWNERS.includes(lc(r.data.email)))))&&!((n==="invites"||n==="userroles"||n==="admins"||n==="owners")&&(lc(r.id)===own||ROOT_OWNERS.includes(lc(r.id))))){const id=String(r.id);let v=r.data;
       if(now[n]&&!now[n].has(id)&&!back2)continue;
       if(n==="members"&&now.members.has(id)){v=Object.assign({},v);delete v.active;delete v.rev}

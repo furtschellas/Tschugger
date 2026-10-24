@@ -155,13 +155,17 @@ async function onAcctSubmit(e){
     if(f.dataset.af==="pf"){
       const cn=crewNames();
       let PARTIAL=false;
-      const upd={firstName:cn?cn.firstName:clean(f.fn.value),lastName:cn?cn.lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",gender:f.gd?f.gd.value:"",phone:String(f.ph.value||"").trim().slice(0,40),contactEmail:lc(String(f.ce.value||"").trim()).slice(0,120),diet:f.dt.value,intol:readBoxes(f,"pint"),allergies:String(f.al.value||"").trim().slice(0,200)};if(f.fu)upd.func=String(f.fu.value||"").trim().slice(0,80);
+      const upd={firstName:cn?cn.firstName:clean(f.fn.value),lastName:cn?cn.lastName:clean(f.ln.value),lang:f.lg.value,birthday:f.bd.value||"",gender:f.gd?f.gd.value:"",diet:f.dt.value,intol:readBoxes(f,"pint"),allergies:String(f.al.value||"").trim().slice(0,200)};if(f.fu)upd.func=String(f.fu.value||"").trim().slice(0,80);
       upd.name=fullName(upd);
+      const ct={phone:String(f.ph.value||"").trim().slice(0,40),contactEmail:lc(String(f.ce.value||"").trim()).slice(0,120)};   /* in contacts/{uid}, not in members */
       const ref=F.doc(db,"members",u.uid);
       const wr=()=>MEMBER?F.updateDoc(ref,upd):F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
       try{await wr()}catch(err){if(!/permission/.test(err&&err.code||""))throw err;await u.reload().catch(()=>{});await u.getIdToken(true);
-        try{await wr()}catch(e2){if(!/permission/.test(e2&&e2.code||"")||!("gender" in upd))throw e2;delete upd.gender;delete upd.phone;delete upd.contactEmail;delete upd.func;await wr();PARTIAL=true}} /* until the Firestore rules allow «gender», save the rest */
-      setMEMBER(Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd));
+        try{await wr()}catch(e2){if(!/permission/.test(e2&&e2.code||"")||!("gender" in upd))throw e2;delete upd.gender;delete upd.func;await wr();PARTIAL=true}} /* until the Firestore rules allow «gender», save the rest */
+      /* phone and e-mail: in contacts (members only as long as the rules do not know contacts yet) */
+      try{await F.setDoc(F.doc(db,"contacts",u.uid),ct);if(MEMBER&&("phone" in MEMBER||"contactEmail" in MEMBER))F.updateDoc(ref,{phone:F.deleteField(),contactEmail:F.deleteField()}).catch(()=>{})}
+      catch(err){if(!/permission/.test(err&&err.code||""))throw err;try{await F.updateDoc(ref,ct)}catch(_){PARTIAL=true}}
+      setMEMBER(Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd,ct));
       writeOwnBday(upd.name,upd.birthday);
       if(isAdmin())ADM.loaded=false;
       if(upd.lang!==LANG&&WDS[upd.lang]){setLANG(upd.lang);store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}

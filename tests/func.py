@@ -148,6 +148,9 @@ async def owner_tests(p, port):
             await E("document.querySelector('form[data-af=\"pf\"] button[type=submit]').click()"); await pg.wait_for_timeout(800)
             msg = await E("(document.querySelector('form[data-af=\"pf\"] .amsg')||{}).textContent||''")
             check("Mein Konto: Profil speichern", "gespeichert" in msg.lower(), msg)
+            ctd = await E("""(()=>{const u=ME&&ME.uid;if(!u||!window.__db)return null;const c=__db['contacts/'+u]||{},m=__db['members/'+u]||{};return {c:c.phone||'',m:'phone' in m||'contactEmail' in m,me:(MEMBER||{}).phone||''}})()""")
+            check("Mein Konto: Telefon in contacts gespeichert (nicht mehr in members, das Catering mitliest)",
+                  ctd is None or (ctd["c"] == "+41 79 123 45 67" and not ctd["m"] and ctd["me"] == "+41 79 123 45 67"), ctd)
         await E("S.tab='acct';ACSUB='app';render()"); await pg.wait_for_timeout(300)
         await E("(()=>{const c=pushCfg();c.news.plan=false;c.news.cs=true;pushSave(c)})()")
         dt = await E("window.__dt||''")

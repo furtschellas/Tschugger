@@ -5,8 +5,10 @@ export const doc=(db,...p)=>({path:p.join("/"),id:p[p.length-1]});
 export const collection=(db,...p)=>({path:p.join("/")});
 export const serverTimestamp=()=>new Date().toISOString();
 export async function getDoc(r){if(!navigator.onLine)throw Object.assign(new Error("Failed to get document because the client is offline."),{code:"unavailable"});if(W.__deny&&W.__deny(r.path,"read"))throw Object.assign(new Error("permission-denied"),{code:"permission-denied"});const d=W.__db[r.path];return {exists:()=>!!d,data:()=>d,id:r.id}}
-export async function setDoc(r,d){_fire(r);if(W.__deny&&W.__deny(r.path,"write",d))throw Object.assign(new Error("permission-denied"),{code:"permission-denied"});W.__db[r.path]=Object.assign({},d)}
-export async function updateDoc(r,d){_fire(r);if(W.__deny&&W.__deny(r.path,"write",d))throw Object.assign(new Error("permission-denied"),{code:"permission-denied"});W.__db[r.path]=Object.assign({},W.__db[r.path],d)}
+export const deleteField=()=>({__deleteField:1});
+const _del=o=>{for(const k of Object.keys(o))if(o[k]&&o[k].__deleteField)delete o[k];return o};
+export async function setDoc(r,d){_fire(r);if(W.__deny&&W.__deny(r.path,"write",d))throw Object.assign(new Error("permission-denied"),{code:"permission-denied"});W.__db[r.path]=_del(Object.assign({},d))}
+export async function updateDoc(r,d){_fire(r);if(W.__deny&&W.__deny(r.path,"write",d))throw Object.assign(new Error("permission-denied"),{code:"permission-denied"});W.__db[r.path]=_del(Object.assign({},W.__db[r.path],d))}
 export async function deleteDoc(r){_fire(r);delete W.__db[r.path]}
 export async function getDocs(c){const r=await _list(c);if(!c.q)return r;const w=c.q.filter(x=>x&&x.where&&x.where[0]==="__id__");return {docs:r.docs.filter(d=>w.every(([,op,v])=>op===">="?d.id>=v:op==="<="?d.id<=v:op==="=="?d.id===v:true))}}
 async function _list(c){if(W.__deny&&W.__deny(c.path,"list"))throw Object.assign(new Error("permission-denied"),{code:"permission-denied"});return {docs:Object.keys(W.__db).filter(k=>k.startsWith(c.path+"/")&&k.split("/").length===2).map(k=>({id:k.split("/")[1],data:()=>W.__db[k]}))}}

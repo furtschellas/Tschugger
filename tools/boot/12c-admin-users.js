@@ -252,6 +252,9 @@ document.addEventListener("submit",async e=>{
         /* «Funktion» belongs to the member (the card shows m.func) – before, it was only written to the invitation and never appeared */
         if(g("rl")!==null)d.func=g("rl").slice(0,80);
         {const ba=sf.querySelector('input[name="bauto"]');if(ba)d.blk=ba.checked?F.deleteField():readBoxes(sf,"eblk").slice(0,20)}   /* Drehblöcke: automatic or by hand */
+        /* phone and contact e-mail in contacts/{uid}; in members only as long as the rules do not know contacts yet */
+        const ct={phone:d.phone,contactEmail:d.contactEmail};
+        try{await F.setDoc(F.doc(db,"contacts",m.uid),ct);d.phone=F.deleteField();d.contactEmail=F.deleteField()}catch(err){if(!/permission/.test(err&&err.code||""))throw err}
         await F.updateDoc(F.doc(db,"members",m.uid),d)}
       if(inv||!m){const d={name:(m?[g("fn"),g("ln")].filter(Boolean).join(" "):g("nm"))||"",role:g("rl")||""};
         /* role «Crew» only for a NEW invitation – a deliberate «Keine Rolle» stays when the profile is edited later */
@@ -332,6 +335,7 @@ document.addEventListener("click",async e=>{
     else if(a==="remove"){if(confirmSafe(L("{e} entfernen? Die Person kommt danach nicht mehr in die App.").replace("{e}",b.dataset.em))){await F.deleteDoc(F.doc(db,"invites",b.dataset.em)).catch(()=>{});await F.deleteDoc(F.doc(db,"userroles",lc(b.dataset.em))).catch(()=>{});
       /* an admin or owner who is removed loses these rights too (before, the admin entry stayed and kept all rights) */
       await F.deleteDoc(F.doc(db,"admins",lc(b.dataset.em))).catch(()=>{});if(isOwner())await F.deleteDoc(F.doc(db,"owners",lc(b.dataset.em))).catch(()=>{});
+      try{await F.deleteDoc(F.doc(db,"contacts",b.dataset.uid))}catch(_){}   /* phone and contact e-mail go with the person */
       await F.deleteDoc(F.doc(db,"members",b.dataset.uid));showMsg(L("Entfernt."),3000)}}
     else if(a==="rmadmin"&&isAdmin()&&!ADMINS.includes(b.dataset.em)){if(confirmSafe(L("{e} die Admin-Rechte entziehen?").replace("{e}",b.dataset.em))){await F.deleteDoc(F.doc(db,"admins",b.dataset.em));showMsg(L("Admin-Rechte entzogen."),3000)}}
     else if(a==="uninvite"){await F.deleteDoc(F.doc(db,"invites",b.dataset.em));await F.deleteDoc(F.doc(db,"userroles",lc(b.dataset.em))).catch(()=>{});   /* a new invitation later starts with «Crew» again */showMsg(L("Einladung gelöscht."),3000)}

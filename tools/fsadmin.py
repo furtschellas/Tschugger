@@ -167,6 +167,16 @@ def patch_doc(path, fields, update_time=None):
     return r.status_code == 200
 
 
+def delete_fields(path, names, update_time=None):
+    """remove fields of a document (needs FIREBASE_SA); with update_time: only if nobody changed the document since"""
+    h, _ = _auth()
+    if not h: return False
+    params = [("updateMask.fieldPaths", k) for k in names]
+    if update_time: params.append(("currentDocument.updateTime", update_time))
+    r = requests.patch(BASE + "/" + path, headers=h, params=params, json={"fields": {}}, timeout=30)
+    return r.status_code == 200
+
+
 def create_doc(col, fields, raw=None):
     """new document with a random id (needs FIREBASE_SA); raw: already encoded Firestore values (e.g. timestamps)"""
     h, _ = _auth()

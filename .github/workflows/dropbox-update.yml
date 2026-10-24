@@ -110,6 +110,13 @@ jobs:
           done
           python tools/notify_changes.py
           gh api -X POST repos/${{ github.repository }}/actions/workflows/push.yml/dispatches -f ref=main || true
+      # Telefon und Kontakt-E-Mail der Profile: von members nach contacts (nur einmal nötig; danach nichts mehr zu tun)
+      - name: Kontaktdaten verschieben
+        if: success()
+        continue-on-error: true
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: python tools/migrate_contacts.py
       - name: Status bei Fehler veröffentlichen
         if: failure() || cancelled()   # also when the 40-minute limit stopped the run
         env:

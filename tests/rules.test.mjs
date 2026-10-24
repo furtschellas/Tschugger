@@ -285,6 +285,24 @@ await check("Abmelden überall: rev mit fester Zahl nicht", assertFails(updateDo
 await check("Abmelden überall: rev als Serverzeit geht", assertSucceeds(updateDoc(doc(as("other"), "members/uOther"), { rev: serverTimestamp() })));
 await check("Abmelden überall: ältere Anmeldung liest danach keine Crew-Daten mehr", assertFails(getDoc(doc(env.authenticatedContext(U.other[0], { email: U.other[1], email_verified: true, auth_time: Math.floor(Date.now() / 1000) - 3600 }).firestore(), "secret/key"))));
 await check("Abmelden überall: neue Anmeldung liest wieder", assertSucceeds(getDoc(doc(env.authenticatedContext(U.other[0], { email: U.other[1], email_verified: true, auth_time: Math.floor(Date.now() / 1000) + 60 }).firestore(), "secret/key"))));
+// ---------- contacts (phone, contact e-mail of the profile): separate from members ----------
+await env.withSecurityRulesDisabled(async c => {
+  const db = c.firestore();
+  await setDoc(doc(db, "roles/food"), { name: "Catering", perms: ["view.plan", "crew.food"] });
+  await setDoc(doc(db, "userroles/other@test.ch"), { role: "food" });
+  await setDoc(doc(db, "contacts/uPower"), { phone: "+41 00 000 00 00", contactEmail: "p@test.ch" });
+});
+await check("Kontakt: eigene Nummer speichern", assertSucceeds(setDoc(doc(as("crew"), "contacts/uCrew"), { phone: "+41 00 000 00 01", contactEmail: "c@test.ch" })));
+await check("Kontakt: eigene lesen", assertSucceeds(getDoc(doc(as("crew"), "contacts/uCrew"))));
+await check("Kontakt: nur Telefon und Kontakt-E-Mail", assertFails(setDoc(doc(as("crew"), "contacts/uCrew"), { phone: "1", role: "admin" })));
+await check("Kontakt: keine Zahl statt Text", assertFails(setDoc(doc(as("crew"), "contacts/uCrew"), { phone: 41 })));
+await check("Kontakt: nicht die Nummer einer anderen Person ändern", assertFails(setDoc(doc(as("crew"), "contacts/uPower"), { phone: "1" })));
+await check("Kontakt: ohne Recht nicht die Nummer anderer lesen", assertFails(getDoc(doc(as("crew"), "contacts/uPower"))));
+await check("Kontakt: Catering (crew.food) liest Profile, aber keine Nummern", assertFails(getDoc(doc(as("other"), "contacts/uPower"))));
+await check("Kontakt: Admin liest alle", assertSucceeds(getDocs(collection(as("admin"), "contacts"))));
+await check("Kontakt: Owner ändert die Nummer einer Person", assertSucceeds(setDoc(doc(as("owner"), "contacts/uPower"), { phone: "+41 00 000 00 02" })));
+await check("Kontakt: nicht eingeladene Person nicht", assertFails(setDoc(doc(as("stranger"), "contacts/uStr"), { phone: "1" })));
+
 await check("Unbekannte Sammlung: alles gesperrt", assertFails(setDoc(doc(as("owner"), "irgendwas/x"), { a: 1 })));
 
 await env.cleanup();
