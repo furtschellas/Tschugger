@@ -124,6 +124,38 @@ function fitAddr(root){if(!root||innerWidth>600)return;
   root.querySelectorAll('.addr,a[target="_blank"]').forEach(el=>{if(!/strasse/i.test(el.textContent)||lines(el)<2)return;
     el.childNodes.forEach(n=>{if(n.nodeType===3)n.nodeValue=n.nodeValue.replace(/(\p{L})strasse\b/giu,"$1str.").replace(/\bStrasse\b/g,"Str.").replace(/\bstrasse\b/g,"str.")})})}
 window.addEventListener("resize",()=>{clearTimeout(window.__fnT);window.__fnT=setTimeout(()=>{fitNav();try{fitAddr(document.getElementById("view"))}catch(_){}},120)});
+/* ---------- targeted redraw: the new page is compared with the one on the screen and only what changed is touched (scroll position,
+   focus, running maps and pictures stay; much less work after a tap). Same result as replacing everything: attributes, texts and form values
+   follow the new page exactly – except the field someone is typing in. Fallback: replace everything (error, or localStorage «morph»=0) ---------- */
+const MORPHOFF=(()=>{try{return localStorage.getItem("morph")==="0"}catch(_){return false}})();
+function viewMorph(v,html){
+  if(MORPHOFF){v.innerHTML=html;return}
+  const t=document.createElement("template");t.innerHTML=html;const nw=t.content;
+  const same=(a,b)=>a.nodeType===b.nodeType&&(a.nodeType!==1||(a.tagName===b.tagName&&(a.id||"")===(b.id||"")&&(a.getAttribute("data-k")||"")===(b.getAttribute("data-k")||"")));
+  const kept=el=>el.nodeType===1&&(el.__map||el.classList.contains("leaflet-container"));   /* a running map: kept as long as its points are the same */
+  function node(a,b){
+    if(a.nodeType!==1){if(a.nodeValue!==b.nodeValue)a.nodeValue=b.nodeValue;return a}
+    if(kept(a)){if(a.getAttribute("data-csmap")!==b.getAttribute("data-csmap")){a.replaceWith(b);return b}return a}
+    for(const at of [...a.attributes])if(!b.hasAttribute(at.name))a.removeAttribute(at.name);
+    for(const at of [...b.attributes])if(a.getAttribute(at.name)!==at.value)a.setAttribute(at.name,at.value);
+    const tg=a.tagName,act=a===document.activeElement;
+    if(tg==="TEXTAREA"){if(!act&&a.value!==b.value)a.value=b.value;return a}
+    kids(a,b);
+    if(tg==="INPUT"&&!act){const v0=b.getAttribute("value");if(a.type==="checkbox"||a.type==="radio")a.checked=b.hasAttribute("checked");else if(a.type!=="file"&&a.value!==(v0==null?"":v0))a.value=v0==null?"":v0}
+    if(tg==="SELECT"&&!act){const i=[...b.options].findIndex(o=>o.hasAttribute("selected"));a.selectedIndex=i>=0?i:(a.options.length?0:-1)}
+    if(tg==="DETAILS")a.open=b.hasAttribute("open");
+    return a}
+  function kids(a,b){let ac=a.firstChild,bc=b.firstChild;
+    while(bc){const nb=bc.nextSibling;
+      if(ac&&same(ac,bc)){node(ac,bc);ac=ac.nextSibling}
+      else{let m=null;if(bc.nodeType===1&&bc.id){for(let x=ac&&ac.nextSibling;x;x=x.nextSibling)if(x.nodeType===1&&x.id===bc.id){m=x;break}}
+        if(m&&same(m,bc)){a.insertBefore(m,ac);node(m,bc)}else a.insertBefore(bc,ac)}
+      bc=nb}
+    while(ac){const n=ac.nextSibling;a.removeChild(ac);ac=n}}
+  try{kids(v,nw)}catch(err){console.warn("morph",err);v.innerHTML=html;return}
+  /* the page itself may be unchanged at the top: tell the watchers of #view (filters, «jetzt», jump bar …) that it was drawn */
+  const c=document.createComment("");v.appendChild(c);v.removeChild(c)}
+window.viewMorph=viewMorph;
 function render(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form")){S.rpend=true;return}} /* never wipe a form someone is typing in – catch up when the field is left */
   S.rpend=false;
@@ -151,7 +183,7 @@ function render(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   /* keep what someone has typed or ticked in an open form when the page re-renders (data refresh, list reload) */
   const fkey=f=>[f.className,f.dataset.role,f.dataset.af,f.dataset.adm,f.dataset.em].map(x=>x||"").join("|");
   const keep={};v.querySelectorAll("form").forEach(f=>{const vals=[];f.querySelectorAll("input,select,textarea").forEach(el=>{if(el.type==="file"||el.type==="hidden"||el.type==="submit")return;vals.push([el.name,el.value,el.type==="checkbox"||el.type==="radio"?el.checked:null,el.dataset.dirty==="1"])});keep[fkey(f)]=vals});
-  v.innerHTML=html;
+  viewMorph(v,html);
   v.querySelectorAll("form").forEach(f=>{const vals=keep[fkey(f)];if(!vals)return;const els=[...f.querySelectorAll("input,select,textarea")].filter(el=>!(el.type==="file"||el.type==="hidden"||el.type==="submit"));
     vals.forEach((x,i)=>{const el=els[i];if(!el||el.name!==x[0]||!x[3])return;if(x[2]!==null)el.checked=x[2];else el.value=x[1];el.dataset.dirty="1"})});
   if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
