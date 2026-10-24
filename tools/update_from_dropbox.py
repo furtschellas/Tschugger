@@ -1554,7 +1554,7 @@ def rotating():
     except Exception: return False
 
 def main():
-    global FORCE
+    global FORCE, AI_DAY_USD
     WANT.clear()
     if len(KEY) != 32:   # without the right crew key nothing may be published (the app could not open it)
         status("error", "Crew-Schlüssel nicht lesbar – diesmal nichts veröffentlicht"); print("::error::Crew-Schlüssel nicht lesbar – Lauf abgebrochen", flush=True); sys.exit(1)
@@ -1579,6 +1579,12 @@ def main():
     u2_also_strip(data.get("days"))
     meta = data.setdefault("meta", {})
     AI["m"] = meta   # the AI spend of the day is kept with the data (encrypted)
+    # day limit from App-Einstellungen → Daten (config/app «aiDayUsd»), else the variable AI_DAY_USD / 10
+    try:
+        v = cfg.get("aiDayUsd")
+        if isinstance(v, dict): v = v.get("doubleValue", v.get("integerValue"))
+        if v is not None and float(v) > 0: AI_DAY_USD = float(v)
+    except Exception: pass
     # translations only into the languages switched on in the app (App-Einstellungen → Anzeige → Sprachen); German always.
     # A language switched on later: everything is read once more (with that language), as with «force»
     try:

@@ -63,6 +63,7 @@ export async function loadLangs(){
     /* scenes and rides quittiert (App-Verwaltung → Einstellungen; on unless switched off) */
     {const c=d.exists()?d.data():{};if(cfgPut("SCACKON",c.sceneAck!==false,"appscack",false)|cfgPut("RIDEACKON",c.rideAck!==false,"apprideack",false))render()}   /* map in the callsheet (App-Verwaltung → Einstellungen) */
     window.GCALON=d.exists()&&!!d.data().gcal;
+    window.AIDAYUSD=d.exists()&&+d.data().aiDayUsd>0?+d.data().aiDayUsd:10;
     cfgPut("AUTOUPD",!(d.exists()&&d.data().autoUpdate===false),"appauto",false);
     cfgPut("SCRIPTON",!(d.exists()&&d.data().script===false),"appscript");
     cfgPut("UNIT3",d.exists()&&d.data().unit3===true,"appunit3");
