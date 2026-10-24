@@ -594,6 +594,15 @@ async def owner_tests(p, port):
           window.canPerm=p=>p==='scenes.see';const v=scAckBtn(t,'1');window.canPerm=p=>p==='scenes.ack';const w=scAckBtn(t,'3');window.SCACK=keep;window.canPerm=kp;
           return {a,b,c,d,view:/<span class="scack sk2"/.test(v)&&!/<button/.test(v),btn:/<button[^>]*data-scack=/.test(w),id:scAckId('2026-10-21','186 pt1A'),same:scAckId('2026-10-21','DJ 21 CONT')===scAckId('2026-10-21','21')}})()""")
         check("Drehplan und Callsheet: Szenen quittieren gemeinsam (offen → läuft → erledigt), «jetzt» folgt der Quittierung, Knopf nur mit Berechtigung", sa in (None, {"a": sa and sa["a"], "b": 1, "c": 1, "d": -1, "view": True, "btn": True, "id": "20261021-186pt1a", "same": True}), sa, public=True)
+        # lunch ends by itself: begin + the planned lunch of that unit (Drehplan row, else 60 min); a scene started during lunch ends it
+        la = await E("""(async()=>{if(typeof scLunchAuto!=='function')return null;const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;
+          const keep=JSON.stringify(window.SCACK),kp=window.canPerm;window.canPerm=()=>true;const id=scAckId(d.date,'lunch'),b=Date.now()-6*3600e3;
+          window.SCACK={[id]:{d:d.date,s:1,b,u:'1',sc:'lunch'}};await scLunchAuto();const x=window.SCACK[id]||{};
+          const r={s:x.s,dur:x.e?Math.round((x.e-b)/60000):-1,min:scLunchMin(d.date,'1')};
+          window.SCACK={[id]:{d:d.date,s:1,b:Date.now(),u:'1',sc:'lunch'}};await scLunchAuto();r.early=(window.SCACK[id]||{}).s;
+          window.SCACK=JSON.parse(keep);window.canPerm=kp;return r})()""")
+        check("Lunch endet automatisch: Beginn + geplante Lunch-Dauer der Unit, nicht vorher",
+              la is None or (la["s"] == 2 and la["dur"] == la["min"] and la["min"] > 0 and la["early"] == 1), la, public=True)
         re_ = await E("""(()=>{if(typeof rideEditApply!=='function')return null;const keep={d:S.dispos,e:window.RIDEEDIT,v:window.REDVER,cp:window.canPerm};const t='2030-05-06';
           const r0={t1:'07:30',t2:'08:00',from:'Hotel',to:'Base',vehicle:'Van 1',driver:'Max Fahrer',passengers:'Anna Muster'};S.dispos=[{date:t,cs:{transport:[r0]}}];
           const id=rideId(t,r0);window.RIDEEDIT={[id]:{t1:'07:45',passengers:'Anna Muster, Lena Test'}};window.REDVER=(window.REDVER||0)+1;rideEditApply();const r=S.dispos[0].cs.transport[0];

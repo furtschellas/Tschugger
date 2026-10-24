@@ -66,8 +66,24 @@ window.scAckBtn=(date,sc,u)=>{if(!date||!sc||window.SCACKON===false)return"";   
     :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+ico+'</span>')+'</span>'};
 /* live for everybody: all quittances (also past shooting days keep their ticks in the Drehplan and callsheet) */
 async function scAckSub(){if(SCSUB||typeof ME==="undefined"||!ME)return;try{const {F,db}=await fb();
-  SCSUB=F.onSnapshot(F.collection(db,"sceneack"),q=>{const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;scRender()}},()=>{SCSUB=null})}catch(_){SCSUB=null}}
+  SCSUB=F.onSnapshot(F.collection(db,"sceneack"),q=>{const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;scRender();setTimeout(scLunchAuto,500)}},()=>{SCSUB=null})}catch(_){SCSUB=null}}
 setTimeout(scAckSub,3000);setInterval(()=>{if(!SCSUB)scAckSub()},60e3);
+/* lunch ends by itself: its begin (manual quittance) + the planned lunch of that unit – each unit has its own lunch row in the Drehplan
+   (the duration of the row, else until the next row; 60 min when the Drehplan has none) */
+function scLunchMin(date,u){try{const day=(S.days||[]).find(d=>d.date===date&&d.kind==="shoot");if(!day)return 60;
+    const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items),i=its.findIndex(x=>!x.sc&&window.scEvKey(x.n)==="lunch");if(i<0)return 60;
+    const it=its[i],m=String(it.dur||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′m]/);if(m){const v=m[3]?+m[3]:(+m[1])*60+(+m[2]);if(v>0)return v}
+    const t0=scMs(date,hm(it.t));if(t0)for(let j=i+1;j<its.length;j++){const t1=scMs(date,hm(its[j].t));if(t1>t0)return Math.round((t1-t0)/60000)}}catch(_){}
+  return 60}
+const scLunchEnd=x=>(+x.b||+x.at||0)+scLunchMin(x.d,String(x.u||"1"))*60000;
+/* every open app with the right «Szenen quittieren» closes a lunch whose time is up – with the planned end, not the moment of writing */
+let SCLBUSY=false;
+async function scLunchAuto(){if(SCLBUSY||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn()))return;SCLBUSY=true;
+  try{const now=Date.now();for(const [id,x] of Object.entries(window.SCACK)){const k=x&&(x.sc||id.split("-").slice(1).join("-"));
+      if(!x||x.s!==1||scBase(k)!=="lunch"||!(+x.b||+x.at))continue;const e=scLunchEnd(x);if(now<e)continue;
+      try{await scWrite(x.d,k,x.u,{s:2,b:+x.b||+x.at,e})}catch(_){}}}
+  finally{SCLBUSY=false}}
+setInterval(scLunchAuto,30e3);
 /* the scene running in a unit on that day (other than this one): its scene number, else "" */
 function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCACK))if(x&&x.d===date&&x.s===1&&String(x.u||"1")===String(u||"1")&&id!==except)return x.sc||id.split("-").slice(1).join("-");return""}
 const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;const d=new Date(date+"T00:00:00");d.setHours(+m[1],+m[2],0,0);return d.getTime()};
@@ -78,12 +94,15 @@ async function scWrite(date,sc,u,v){const id=scAckId(date,sc),old=window.SCACK[i
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("button[data-scack]");if(!b)return;e.preventDefault();e.stopPropagation();if(typeof canPerm!=="function"||!canPerm("scenes.ack"))return;
   const [date,sc,u]=b.dataset.scack.split("|");const id=scAckId(date,sc),st=scState(date,sc),x=window.SCACK[id]||{};
   if(st===2){scAckDialog(date,sc,u);return}
-  if(st===0){const run=scRunning(date,u,id);if(run){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}}
+  if(st===0){const run=scRunning(date,u,id);
+    /* the next scene starts during lunch: the lunch ends now (at the latest at its planned end) – not awaited, WhatsApp «direkt» must open in this tap */
+    if(run&&scBase(run)==="lunch"){const lx=window.SCACK[scAckId(date,run)]||{},lb=+lx.b||+lx.at||Date.now();scWrite(date,run,u,{s:2,b:lb,e:Math.max(lb,Math.min(scLunchEnd(lx),Date.now()))}).catch(()=>{})}
+    else if(run){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}}
   /* WhatsApp per kind of quittance (Mein Konto → App): «direkt» opens WhatsApp right in this tap (a phone allows it only here, not after saving) */
   const wv=st===0&&scBase(sc)==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};
   const wk=scWaKind(date,sc,u,wv),wm=scWaMode(wk);if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},wv):wv),wk);
   b.disabled=true;
-  if(st===0&&scBase(sc)==="wrap"){const now=Date.now();for(const [rid,rx] of Object.entries(window.SCACK))if(rx&&rx.d===date&&rx.s===1&&String(rx.u||"1")===String(u||"1")){const k=rx.sc||rid.split("-").slice(1).join("-");try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now,e:now})}catch(_){}}}
+  if(st===0&&scBase(sc)==="wrap"){const now=Date.now();for(const [rid,rx] of Object.entries(window.SCACK))if(rx&&rx.d===date&&rx.s===1&&String(rx.u||"1")===String(u||"1")){const k=rx.sc||rid.split("-").slice(1).join("-");try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now,e:scBase(k)==="lunch"?Math.max(+rx.b||+rx.at||now,Math.min(scLunchEnd(rx),now)):now})}catch(_){}}}
   try{const v=st===0&&scBase(sc)==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};const first=st===0&&!/^(lunch|wrap|setup\d*)$/.test(scBase(sc))&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!/^(lunch|wrap|setup\d*)$/.test(scBase(rx.sc||rid.split("-").slice(1).join("-"))));
     await scWrite(date,sc,u,v);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null,wk)}   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
   catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:saveErr(err),4000)}},true);
