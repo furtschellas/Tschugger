@@ -21,7 +21,10 @@ import {CDSUBS,setCDSUBS} from "./29-coverday.js";
 const memKey=()=>"mc:v1:"+(ME&&ME.uid);
 function memSave(){try{localStorage.setItem(memKey(),JSON.stringify({r:MYROLE,rn:window.MYROLENAME||"",p:MYPERMS,a:COADMIN,ap:ADMINPERMS,o:ADMINS.includes(lc(ME.email)),m:MEMBER}))}catch(_){}}
 function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"null");if(!c)return false;setMYROLE(c.r||"");window.MYROLENAME=c.rn||"";setMYPERMS(Array.isArray(c.p)?c.p:[]);setCOADMIN(!!c.a);if(Array.isArray(c.ap))setADMINPERMS(c.ap);if(c.m)setMEMBER(c.m);if(c.o&&!ADMINS.includes(lc(ME.email)))ADMINS.push(lc(ME.email));return true}catch(_){return false}}
-export async function checkMember(){
+/* one check at a time per person: a second start (verify poll, button, return to the app) waits for the running one */
+let CMQ=null;
+export function checkMember(){if(CMQ&&CMQ.u===ME)return CMQ.p;const u=ME,p=checkMember1().finally(()=>{if(CMQ&&CMQ.p===p)CMQ=null});CMQ={u,p};return p}
+async function checkMember1(){
   if(navigator.onLine===false){memRestore();throw Object.assign(new Error("offline"),{code:"unavailable"})}
   let prev=null;try{prev=JSON.parse(localStorage.getItem(memKey())||"null")}catch(_){}
   const u=ME,was=String(MYPERMS)+"|"+MYROLE+"|"+isAdmin();
@@ -53,7 +56,8 @@ async function checkMember0(){
     for(const k of ["firstName","lastName","lang","birthday","gender","diet","allergies"])if(pf[k])doc[k]=pf[k];
     if(Array.isArray(pf.intol)&&pf.intol.length)doc.intol=pf.intol.filter(k=>INTOL.some(x=>x[0]===k));
     if(!doc.firstName&&!doc.lastName){const sp=splitName(inv.data().name);if(sp.firstName){doc.firstName=clean(sp.firstName);if(sp.lastName)doc.lastName=clean(sp.lastName)}}
-    await F.setDoc(ref,doc);try{localStorage.removeItem(PENDING_KEY)}catch(_){}
+    try{await F.setDoc(ref,doc)}catch(e){notPerm(e);   /* refused: another start of this person created it just now – it is read below */}
+    try{localStorage.removeItem(PENDING_KEY)}catch(_){}
     s=await F.getDoc(ref);
   }
   const m=s.data();if(m.active!==true)return ROOT_OWNERS.includes(lc(u.email))?"ok":"blocked";   /* blocked: also admins (the rules refuse them too); only the fixed owner stays */
@@ -70,7 +74,10 @@ async function checkMember0(){
   if(ME!==u){if(!ME){setMYPERMS([]);setMYROLE("");setCOADMIN(false)}return "stale"}
   setMEMBER(m);return "ok";
 }
-export function clearLocal(){try{rolesReset();window.SCACKLOADED=false;window.SCACK={}}catch(_){}try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();setOWNSUB(null)}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();setMENUSUB(null)}}catch(_){}try{if(typeof CDSUBS!=="undefined"&&CDSUBS){CDSUBS();setCDSUBS(null)}window.CDOPS=[];window.CDAT=0}catch(_){}try{if(typeof SCSUB!=="undefined"&&SCSUB){SCSUB();setSCSUB(null)}}catch(_){}try{if(typeof REDSUB!=="undefined"&&REDSUB){if(typeof REDSUB==="function")REDSUB();setREDSUB(null)}}catch(_){}try{if(window.cmaStop)window.cmaStop()}catch(_){}try{if(typeof ACKSUB!=="undefined"&&ACKSUB){if(typeof ACKSUB==="function")ACKSUB();setACKSUB(null);setACKFROM("");window.RIDEACK={}}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{sessionStorage.removeItem("chatmsgs");if(typeof CHAT!=="undefined")CHAT.msgs=[];if(window.caches)caches.delete("crew-vc").catch(()=>{})}catch(_){}try{for(const k of Object.keys(localStorage))if(k.startsWith("mc:v1:"))localStorage.removeItem(k);localStorage.removeItem("dk:v1");localStorage.removeItem("ak:script");localStorage.removeItem("ak:contacts");if(typeof AREAKEYS!=="undefined")for(const k in AREAKEYS)delete AREAKEYS[k];localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}
+export function clearLocal(){try{rolesReset();window.SCACKLOADED=false;window.SCACK={}}catch(_){}
+  /* nothing of the previous person stays for the next one on this device: role, admin rights, ride changes, scene log, maintenance note */
+  try{setMYROLE("");window.MYROLENAME="";setADMINPERMS(ADMIN_DEFAULT.slice());ADMINS.splice(0,ADMINS.length,...ROOT_OWNERS);
+    window.RIDEEDIT={};window.REDVER=(window.REDVER||0)+1;if(typeof SCLOG!=="undefined")SCLOG.list=null;window.__MAINTRESET=true}catch(_){}try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();setOWNSUB(null)}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();setMENUSUB(null)}}catch(_){}try{if(typeof CDSUBS!=="undefined"&&CDSUBS){CDSUBS();setCDSUBS(null)}window.CDOPS=[];window.CDAT=0}catch(_){}try{if(typeof SCSUB!=="undefined"&&SCSUB){SCSUB();setSCSUB(null)}}catch(_){}try{if(typeof REDSUB!=="undefined"&&REDSUB){if(typeof REDSUB==="function")REDSUB();setREDSUB(null)}}catch(_){}try{if(window.cmaStop)window.cmaStop()}catch(_){}try{if(typeof ACKSUB!=="undefined"&&ACKSUB){if(typeof ACKSUB==="function")ACKSUB();setACKSUB(null);setACKFROM("");window.RIDEACK={}}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{sessionStorage.removeItem("chatmsgs");if(typeof CHAT!=="undefined")CHAT.msgs=[];if(window.caches)caches.delete("crew-vc").catch(()=>{})}catch(_){}try{for(const k of Object.keys(localStorage))if(k.startsWith("mc:v1:"))localStorage.removeItem(k);localStorage.removeItem("dk:v1");localStorage.removeItem("ak:script");localStorage.removeItem("ak:contacts");if(typeof AREAKEYS!=="undefined")for(const k in AREAKEYS)delete AREAKEYS[k];localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}
   /* the settings and seen notices of the person signing out stay off this device: on a shared set laptop the next person got the welcome note skipped
      and a newer «prefsLocalAt» made the device overwrite the next person's settings online (the colour theme stays: it belongs to the device) */
   try{if(typeof PREFKEYS!=="undefined"){clearTimeout(PREFT);setPREFT(null);setPREFOK(false);for(const k of PREFKEYS.concat(PREFX))if(k!=="theme")localStorage.removeItem(k)}for(const k of ["prefsLocalAt","testAck"])localStorage.removeItem(k)}catch(_){}try{if(window.simReset)window.simReset()}catch(_){}try{if(window.startNotesReset)window.startNotesReset()}catch(_){}

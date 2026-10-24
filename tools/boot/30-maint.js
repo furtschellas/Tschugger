@@ -7,7 +7,7 @@ import {ONBOARD} from "./11-account.js";
 /* ---- maintenance note: at every start of the app (once per opening, after the welcome note), closed with «OK».
    Text: App-Verwaltung → Dokumente → «Wartungshinweis» (per language), switched on and off there (for everybody) ---- */
 let MAINT_DONE=false;
-function maybeMaint(){if(MAINT_DONE||!ME||navigator.webdriver||!(window.maintOn&&maintOn())||(typeof WELCOME_OPEN!=="undefined"&&WELCOME_OPEN)||(typeof ONBOARD!=="undefined"&&ONBOARD)||document.querySelector(".a2hs:not([hidden]),.tour-card"))return;
+function maybeMaint(){if(window.__MAINTRESET){window.__MAINTRESET=false;MAINT_DONE=false}if(MAINT_DONE||!ME||navigator.webdriver||!(window.maintOn&&maintOn())||(typeof WELCOME_OPEN!=="undefined"&&WELCOME_OPEN)||(typeof ONBOARD!=="undefined"&&ONBOARD)||document.querySelector(".a2hs:not([hidden]),.tour-card"))return;
   const T=docGet("maint",{});if(!String(T.body||"").trim())return;
   /* «nur einmal pro Person»: the text (title + body) as a short mark – seen = not again, a new text = once more */
   const mk=(s=>{let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return (h>>>0).toString(36)})(String(T.subject||"")+"|"+String(T.body||"")),once=maintOnce();

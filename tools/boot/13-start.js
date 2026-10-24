@@ -64,12 +64,15 @@ render();
     });
   }catch(err){console.error(err);if(!S.days.length)showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);else{hideGate();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000)}}
   /* back online after starting without connection: start sign-in again */
-  window.addEventListener("online",()=>{if(!FB&&!FBP)location.reload();else if(ME)tick()});
+  /* back online: after an offline start (or the sign-in screen shown for lack of network) the whole start again – settings, check, data */
+  window.addEventListener("online",()=>{if(!FB&&!FBP)location.reload();else if(ME){const g=document.getElementById("gate");if(window.__OFFSTART||(g&&!g.hidden)){window.__OFFSTART=false;afterSignIn(ME)}else tick()}});
   let lastTick=0;
   const tick=async(e)=>{
     if(document.visibilityState!=="visible"||!ME||!(ME.emailVerified||START))return;
     /* back to the app: at most every 3 minutes (switching apps all day used up the free Firebase quota) */
     if(e&&e.type==="visibilitychange"&&Date.now()-lastTick<180e3)return;lastTick=Date.now();
+    /* «Ansicht als …»: the check would put back the admin's own rights in the middle of the simulation – only the data */
+    if((typeof SIMUSER!=="undefined"&&SIMUSER)||(typeof SIMROLE!=="undefined"&&SIMROLE)){load(false).catch(()=>{});return}
     try{const st=await checkMember();if(st==="stale")return;if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}}catch(_){return}
     load(false).catch(()=>{});
   };
@@ -79,7 +82,10 @@ render();
 
 /* Hindi (हिन्दी): texts of the app; missing ones fall back to English. Main topics and titles are translated only in Hindi */
 /* signed out (also: no stored sign-in any more at the start, e.g. account blocked or deleted): everything of the person leaves this device */
-function signedOut(){setME(null);setMYPERMS([]);{const w=document.getElementById("welcome");if(w)w.remove();setWELCOME_OPEN(false)}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
+function signedOut(){
+  /* the session ended from outside (password changed elsewhere, revoked): its push reminders leave this device too */
+  if(ME&&window.pushSignOut)try{Promise.resolve(window.pushSignOut()).catch(()=>{})}catch(_){}
+  setME(null);setMYPERMS([]);{const w=document.getElementById("welcome");if(w)w.remove();setWELCOME_OPEN(false)}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
   /* the sign-in screen may already be open (person switched to «create account» while Firebase was starting): keep it and what was typed */
   const g=document.getElementById("gate");if(g&&!g.hidden&&["login","register","reset"].includes(AUTHMODE)&&g.querySelector("form"))return;
   showGate("login")}

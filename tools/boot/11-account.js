@@ -179,6 +179,8 @@ async function onAcctSubmit(e){
       if(f.pw.value!==f.pw2.value)throw {code:"x",message:L("Die Passwörter stimmen nicht überein.")};
       await A.updatePassword(u,f.pw.value);msg.classList.add("ok");msg.textContent=L("Passwort geändert.");f.reset();
     }else{
+      /* role and admin rights belong to the address: with a new address they are gone until the production gives them again */
+      if((isAdmin()||MYROLE)&&lc(f.em.value.trim())!==lc(u.email)){let ok=true;try{ok=window.confirm(L("Deine Rolle und Rechte gehören zur bisherigen E-Mail-Adresse. Nach der Änderung muss die Produktion sie dir neu geben. Trotzdem ändern?"))}catch(_){}if(!ok)return}
       await A.verifyBeforeUpdateEmail(u,f.em.value.trim(),{url:location.origin+location.pathname});msg.classList.add("ok");msg.textContent=L("Bestätigungslink an die neue Adresse gesendet. Die Änderung gilt, sobald du ihn antippst.");f.reset();
     }
   }catch(err){console.error(err);msg.textContent=(err&&err.code==="x"?err.message:(/email-already-in-use/.test(err.code||"")?L("Diese Adresse wird schon verwendet."):errText(err)))+(err&&err.code&&err.code!=="x"?" ["+err.code+"]":"")}

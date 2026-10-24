@@ -190,13 +190,15 @@ export let START=null;
 export async function afterSignIn(u){
   setME(u);if(!window.PRIVOK)setTimeout(()=>{try{loadLangs().then(()=>{if(S.tab==="admin")render()})}catch(_){}},1500); /* links (motive list, map, chat) can only be read once signed in */
   /* account created by the owner with a start password: counts as confirmed, but a new password must be set first */
-  START=null;if(!u.emailVerified||window.__checkStart){try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"starts",lc(u.email))),10000,"start");if(d.exists())START=d.data()}catch(_){}}
+  START=null;if(!u.emailVerified||window.__checkStart){try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"starts",lc(u.email))),10000,"start");if(d.exists())START=d.data()}catch(_){
+    /* not readable (offline): someone already admitted on this device is not sent to «confirm your e-mail» */
+    try{const c=JSON.parse(localStorage.getItem("mc:v1:"+u.uid)||"null");if(c&&c.m)START={cached:true}}catch(_){}}}
   if(ME!==u)return;   /* signed out or another account meanwhile: that start goes on, not this one */
   if(START&&START.mustChange){showGate("newpw");return}
   if(!u.emailVerified&&!START){showGate("verify");autoVerify(u);return}
   let st;try{st=await checkMember()}catch(err){console.error(err);
     /* not reachable, quota used up or a server error – with data on this device: show it (only a refusal of the rules means «no access») */
-    if(S.days.length&&!/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){hideGate();acctButton(true);render();showMsg(L(isOffline(err)?"Offline – du siehst den zuletzt geladenen Stand.":"Server gerade nicht erreichbar – du siehst den zuletzt geladenen Stand."),6000);return}
+    if(S.days.length&&!/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){hideGate();acctButton(true);render();window.__OFFSTART=true;showMsg(L(isOffline(err)?"Offline – du siehst den zuletzt geladenen Stand.":"Server gerade nicht erreichbar – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(ME!==u)return;
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}

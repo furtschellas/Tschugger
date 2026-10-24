@@ -31,7 +31,7 @@ async function getAreaKey(area){
     if(!s.exists()){AREAKEYS[area]=undefined;return undefined} /* not yet introduced: the file still uses the crew key */
     kv=String(s.data().k||"").trim();try{localStorage.setItem("ak:"+area,kv)}catch(_){}}
   catch(err){if(/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){try{localStorage.removeItem("ak:"+area)}catch(_){}AREAKEYS[area]=null;return null}
-    try{kv=localStorage.getItem("ak:"+area)||""}catch(_){}if(!kv)return null}
+    try{kv=localStorage.getItem("ak:"+area)||""}catch(_){}if(!kv)throw err}   /* network error without a kept key: not «no right» (the data on the device stays) */
   AREAKEYS[area]=await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["decrypt"]);
   return AREAKEYS[area];
 }
@@ -39,7 +39,10 @@ async function getAreaKey(area){
 async function decArea(enc,area){
   const ak=await getAreaKey(area);if(ak===null)throw Object.assign(new Error("no access"),{code:"permission-denied"});
   const iv=b64(enc.iv),ct=b64(enc.ct);
-  if(ak)try{return await crypto.subtle.decrypt({name:"AES-GCM",iv},ak,ct)}catch(_){}
+  if(ak)try{return await crypto.subtle.decrypt({name:"AES-GCM",iv},ak,ct)}catch(_){
+    /* the area key was changed meanwhile: read it once more */
+    delete AREAKEYS[area];try{localStorage.removeItem("ak:"+area)}catch(_){}
+    try{const k2=await getAreaKey(area);if(k2)return await crypto.subtle.decrypt({name:"AES-GCM",iv},k2,ct)}catch(_){}}
   return crypto.subtle.decrypt({name:"AES-GCM",iv},await getDataKey(),ct);
 }
 /* phone numbers and e-mail addresses of the crew list: own file, loaded after the data (only with that right) */
@@ -119,7 +122,9 @@ async function loadOnce(force){
      the data not opening with the key in hand: once more with a freshly read key */
   if(enc.stamp&&enc.stamp!==LASTSTAMP&&LASTSTAMP)setDATAKEY(null);
   const dec=k=>crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},k,b64(enc.ct));
-  let pt;try{pt=await dec(await getDataKey())}catch(err){setDATAKEY(null);try{localStorage.removeItem("dk:v1")}catch(_){}pt=await dec(await getDataKey())}
+  let pt;try{pt=await dec(await getDataKey())}catch(err){let old="";try{old=localStorage.getItem("dk:v1")||"";localStorage.removeItem("dk:v1")}catch(_){}setDATAKEY(null);
+    /* a fresh key could not be read (offline, quota): the old one stays on the device (the offline files still need it) */
+    try{pt=await dec(await getDataKey())}catch(e2){try{if(old&&!localStorage.getItem("dk:v1"))localStorage.setItem("dk:v1",old)}catch(_){}throw e2}}
   const data=JSON.parse(new TextDecoder().decode(pt));
   if(!data||!Array.isArray(data.days))throw new Error("data format");
   setLASTSTAMP(enc.stamp||null);window.__DSTAMP=LASTSTAMP;try{localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}   /* the stamp is kept only together with the data (saveCache) */applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
