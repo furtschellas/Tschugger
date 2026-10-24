@@ -1,5 +1,5 @@
 /* ---------- Dokumente prüfen: vergleicht die Dokumente aus der Dropbox untereinander und mit der App ----------
-   Drehplan ↔ Locations ↔ Drehbuch ↔ Cast-Liste, Prep Weekly ↔ Daily, Callsheets ↔ Drehplan, Namen ↔ Crewliste,
+   Drehplan ↔ Locations ↔ Drehbuch ↔ Cast-Liste, Prep Weekly ↔ Daily, Callsheets ↔ Drehplan, Callsheets ↔ Crewliste, Namen ↔ Crewliste,
    dazu ein kurzer Selbsttest der App. Alles läuft im Browser mit den Daten, die die Person sehen darf – nichts geht weg.
    Sichtbar für Admins in App-Verwaltung → Log, für alle mit dem Recht «Dokumente prüfen» in Mein Konto → App. */
 const DCK={res:null,busy:false,at:0,open:false};
@@ -122,6 +122,18 @@ async function dckRun(auto){
         if(cc&&pc&&cc>pc)w("warn",L("Callsheets ↔ Drehplan"),dday(x.date)+": "+L("Crew Call {a} ist nach Drehbeginn {b} laut Drehplan.").replace("{a}",cc).replace("{b}",pc))}
       const next=days.filter(d=>d.kind==="shoot"&&d.date>=t).slice(0,2).filter(d=>!(S.dispos||[]).some(x=>x.date===d.date));
       if(next.length)w("info",L("Callsheets ↔ Drehplan"),L("Noch kein Callsheet für:")+" "+next.map(d=>(d.short||d.label)+" "+dday(d.date)).join(", "))}
+    /* 6b) Callsheets ↔ Crewliste: people on a callsheet (calls on set, crew transport, drivers) who are not on the crew list */
+    if(vok("dispo")&&vok("crew")){const people=mailPeople().filter(p=>p.src!=="user"),miss=new Map();
+      const clean=n=>String(n||"").replace(/\([^)]*\)/g,"").replace(/\b(tbc|tba|tbd|o\.?p\.?d\.?)\b/ig,"").replace(/\s+/g," ").trim();
+      const skip=n=>!n||n.length<5||/\d/.test(n)||!/\s/.test(n)||/^(all|alle|crew|team|cast|extras?|shuttle|self|drive|on set|location|base|via|s\. )/i.test(n);
+      const names=t=>String(t||"").split(/,|;|\/|\+| und | and | & /).map(clean).filter(n=>!skip(n));
+      for(const x of (S.dispos||[])){const c=x&&x.cs;if(!c)continue;const day=(x.label||"")+" "+dday(x.date),add=(n,what)=>{if(findPerson(n,people))return;const k=nmk(n);if(!miss.has(k))miss.set(k,{n,r:new Set(),d:[]});const m=miss.get(k);if(what)m.r.add(what);if(!m.d.includes(day))m.d.push(day)};
+        for(const r of arr(c.calls))for(const n of names(r.name))add(n,r.role||r.dept);
+        for(const r of arr(c.crewTransport))for(const n of names(r.people))add(n,r.vehicle?L("Fahrt")+" "+r.vehicle:"");
+        for(const r of arr(c.transport).concat(arr(c.crewTransport)))for(const n of names(r.driver))add(n,L("Fahrer"))}
+      if(miss.size){for(const m of [...miss.values()].sort((a,b)=>a.n.localeCompare(b.n,LANG)).slice(0,40))w("warn",L("Callsheets ↔ Crewliste"),m.n+(m.r.size?" – "+[...m.r].slice(0,3).join(", "):"")+" ("+m.d.slice(0,4).join(", ")+(m.d.length>4?" …":"")+")");
+        w("info",L("Callsheets ↔ Crewliste"),L("Diese Personen stehen auf Callsheets, aber nicht in der Crewliste. Bitte der Produktion melden, damit sie in die Crewliste kommen."))}
+      else if((S.dispos||[]).some(x=>x&&x.cs))w("ok",L("Callsheets ↔ Crewliste"),L("Alle Personen der Callsheets stehen in der Crewliste."))}
     /* 7) how fresh the data is */
     {const m=S.meta||{},at=Date.parse((typeof lastCheck==="function"?lastCheck(m):m.updatedAt)||"");if(at&&Date.now()-at>6*3600e3)w("warn",L("Aktualität"),L("Die Daten wurden seit über 6 Stunden nicht mehr aus der Dropbox geprüft."));
       else if(at)w("ok",L("Aktualität"),L("Zuletzt mit der Dropbox abgeglichen:")+" "+fmtDT(at))}
