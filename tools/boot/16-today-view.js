@@ -130,7 +130,8 @@ VIEWS.today=function(){
   const dcs=(S.dispos||[]).find(x=>x&&x.date===d.date&&x.cs);
   if(dcs&&shT&&typeof csTilesHTML==="function"){let me3=null;try{me3=csMe()}catch(_){}h+='<div class="tcs">'+csTilesHTML(dcs,d,dcs.cs,me3).replace(' id="cs-zeiten"','')+'</div>'}
   else h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k,cl])=>'<div class="ttile'+(cl?' '+cl:'')+'">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
-  /* from noon (or lunch, if earlier) on: the tiles of the next shooting day below (times, drive, weather) */
+  /* from noon (or lunch, if earlier) on: the tiles of the next shooting day (times, drive, weather) – shown below the scenes */
+  let nextH="";
   try{const la=d.kind==="shoot"&&lunchAt(d),noon=zurichUTC(d.date,"12:00").getTime(),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
     if(nd){const ndt=new Date(nd.date+"T12:00:00"),nt=[];
       const nu2=nd.unit2&&typeof nd.unit2==="object"&&nd.unit2.hours?String(nd.unit2.hours):"";
@@ -139,7 +140,7 @@ VIEWS.today=function(){
         const gm=mapsDir,hotel=nd.drive.from||"Hotel";
         ndrv='<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(nd.drive.min)+"′")+(nd.drive.km?'<small class="tkm"> · '+Math.round(nd.drive.km)+' km</small>':'')+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'}
       const nwx=tShow("wx")?wxTile(nd):"";
-      if(nt.length||ndrv||nwx)h+='<div class="thead tnext"><h3 class="pgt">'+esc(L("Nächster Drehtag"))+'</h3><span class="tdate">'+esc((nd.short||nd.label||"")+" · "+WDL(ndt)+" "+ddmm(ndt))+'</span></div><div class="ttiles">'+nt.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+ndrv+nwx+'</div>'}}}catch(_){}
+      if(nt.length||ndrv||nwx)nextH+='<div class="thead tnext"><h3 class="pgt">'+esc(L("Nächster Drehtag"))+'</h3><span class="tdate">'+esc((nd.short||nd.label||"")+" · "+WDL(ndt)+" "+ddmm(ndt))+'</span></div><div class="ttiles">'+nt.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+ndrv+nwx+'</div>'}}}catch(_){}
   if(!dp&&canDispo&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
   /* first location + drive */
   const first=canPlan&&tShow("loc")?arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc)):null;
@@ -154,6 +155,7 @@ VIEWS.today=function(){
     /* one line per scene: time, scene, set and – as far as there is room – the description (cut with «…») */
     const set=String(it.set||"").replace(/^VALAIS\s*[–-]\s*/i,""),ds=String((LANG==="en"?it.d:(it["d_"+LANG]||it.d))||"").trim();
     return '<li'+(cg?' class="chg" title="'+esc(cg)+'"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset" title="'+esc([set,ds].filter(Boolean).join(" – "))+'">'+(u!=="1"?'<span class="td-unit">'+esc(UNAME[u])+'</span> ':'')+esc(set)+(ds?'<span class="tds"> · '+esc(ds)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
+  h+=nextH;
   /* my events */
   /* changes */
   const cl=canPlan?chgList():[];
