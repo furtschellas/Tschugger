@@ -22,7 +22,9 @@ async function bkCollect(){
   const col=async n=>{const q=await F.getDocs(F.collection(db,n));return q.docs.map(d=>({id:d.id,data:d.data()}))};
   /* roles and who has which role belong in the backup too (before, after a restore nobody had a role) */
   const [members,invites,admins,bdays,cfg,roles,userroles,owners]=await Promise.all([col("members"),col("invites"),col("admins"),col("bdays").catch(()=>[]),F.getDoc(F.doc(db,"config","app")),col("roles").catch(()=>[]),col("userroles").catch(()=>[]),col("owners").catch(()=>[])]);
-  const plain=v=>JSON.parse(JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&typeof x.toDate==="function"?{__ts:x.toDate().toISOString()}:x));
+  /* dates of Firestore as {__ts}: walked BEFORE JSON (a Timestamp turns itself into {seconds,nanoseconds} in JSON.stringify, so the old
+     replacer never saw it – a restored «rev» then locked the person out) */
+  const plain=v=>v&&typeof v==="object"?(typeof v.toDate==="function"?{__ts:v.toDate().toISOString()}:Array.isArray(v)?v.map(plain):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,plain(x)]))):v;
   return plain({app:"tschugger-crew",version:1,createdAt:new Date().toISOString(),by:ME&&ME.email,config:cfg.exists()?cfg.data():null,members,invites,admins,bdays,roles,userroles,owners});
 }
 async function bkDownload(){
@@ -38,13 +40,24 @@ async function bkRestore(file){
   let d;try{d=JSON.parse(await file.text())}catch(_){throw new Error(L("Datei ist kein gültiges Backup."))}
   if(!d||d.app!=="tschugger-crew"||!Array.isArray(d.members)||!Array.isArray(d.invites))throw new Error(L("Datei ist kein gültiges Backup."));
   if(!confirmSafe(L("Backup vom {d} wiederherstellen? Vorhandene Einträge werden ergänzt oder überschrieben.").replace("{d}",fmtStamp(d.createdAt||""))))return "";
-  const {F,db}=await fb();const back=v=>JSON.parse(JSON.stringify(v),(k,x)=>x&&typeof x==="object"&&typeof x.__ts==="string"?F.Timestamp&&F.Timestamp.fromDate?F.Timestamp.fromDate(new Date(x.__ts)):x.__ts:x);
+  const {F,db}=await fb();
+  /* dates back to Firestore dates – also from older backup files ({seconds,nanoseconds}) */
+  const ts=x=>x&&typeof x==="object"&&(typeof x.__ts==="string"?new Date(x.__ts):(typeof x.seconds==="number"&&typeof x.nanoseconds==="number"&&Object.keys(x).length===2)?new Date(x.seconds*1000+Math.round(x.nanoseconds/1e6)):null);
+  const back=v=>JSON.parse(JSON.stringify(v),(k,x)=>{const t=ts(x);return t&&F.Timestamp&&F.Timestamp.fromDate?F.Timestamp.fromDate(t):x});
+  /* what was taken away since the backup stays taken away: a blocked person stays blocked («active»), «Auf allen Geräten abmelden» stays («rev»);
+     people, admins and owners removed since then come back only when wished */
+  const now={};for(const n of ["members","admins","owners"]){try{now[n]=new Set((await F.getDocs(F.collection(db,n))).docs.map(x=>x.id))}catch(_){now[n]=new Set()}}
+  const gone=[["members",d.members],["admins",d.admins],["owners",d.owners]].reduce((a,[n,l])=>a+(Array.isArray(l)?l.filter(r=>r&&!now[n].has(String(r.id))).length:0),0);
+  const back2=gone&&confirmSafe(L("{n} Personen oder Rechte aus dem Backup gibt es heute nicht mehr (seither entfernt). Auch diese zurückholen?").replace("{n}",gone));
   const own=lc(ME&&ME.email),ok=/^[^/]{1,200}$/;const ops=[];
   if(d.config&&typeof d.config==="object")ops.push(["config","app",d.config]);
   /* entries the rules never allow are left out (own invitation and own role, the main owner's entries) */
   const root=ROOT_OWNERS.includes(own);
   for(const [n,list] of [["roles",d.roles],["admins",d.admins],["invites",d.invites],["members",d.members],["bdays",d.bdays],["userroles",d.userroles],["owners",d.owners]])
-    for(const r of (Array.isArray(list)?list:[]))if(r&&ok.test(String(r.id))&&r.data&&typeof r.data==="object"&&!(n==="members"&&(lc(r.data.email)===own||(!root&&ROOT_OWNERS.includes(lc(r.data.email)))))&&!((n==="invites"||n==="userroles"||n==="admins"||n==="owners")&&(lc(r.id)===own||ROOT_OWNERS.includes(lc(r.id)))))ops.push([n,String(r.id),r.data]);
+    for(const r of (Array.isArray(list)?list:[]))if(r&&ok.test(String(r.id))&&r.data&&typeof r.data==="object"&&!(n==="members"&&(lc(r.data.email)===own||(!root&&ROOT_OWNERS.includes(lc(r.data.email)))))&&!((n==="invites"||n==="userroles"||n==="admins"||n==="owners")&&(lc(r.id)===own||ROOT_OWNERS.includes(lc(r.id))))){const id=String(r.id);let v=r.data;
+      if(now[n]&&!now[n].has(id)&&!back2)continue;
+      if(n==="members"&&now.members.has(id)){v=Object.assign({},v);delete v.active;delete v.rev}
+      ops.push([n,id,v])}
   let done=0,fail=0;
   for(let i=0;i<ops.length;i+=300){const part=ops.slice(i,i+300),batch=F.writeBatch(db);part.forEach(([n,id,v])=>batch.set(F.doc(db,n,id),back(v),{merge:true}));
     /* a refused entry made the whole batch of 300 fail: then each entry on its own */

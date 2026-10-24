@@ -4,7 +4,7 @@ import {arr,showMsg} from "../base/20-data-start.js";
 import {ADMINS} from "./01-config.js";
 import {ADMIN_DEFAULT,ME,MYPERMS,MYROLE,PERMS,VIEWPERMS,can,crewPerson,fb,isAdmin,isOwner,lc,permKnown,permLbl,readBoxes} from "./03-core-firebase.js";
 import {ADM,SECS,admErr,admIndex,admLoad,confirmSafe} from "./12a-admin-core.js";
-import {canRole,roleLocked,rolePermsOf} from "./12c-admin-users.js";
+import {canRole,roleGivable,roleLocked,rolePermsOf} from "./12c-admin-users.js";
 import {auditSum} from "./17-audit-misc.js";
 /* ---------- App-Verwaltung (Rollen und Rechte) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
 const permBoxes=sel=>'<div class="perms">'+[...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp"><h5>'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const lock=(!isAdmin()&&!MYPERMS.includes(k))||(k==="settings"&&!isOwner()); /* role editors can only give permissions they have themselves */
@@ -22,7 +22,7 @@ export function rolesSec(){
   const nameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name))||(i&&i.name)||cp.name||e};
   const everyone=[...new Set(ADM.mem.map(m=>m.email).concat(ADM.inv.map(i=>i.id)))].filter(e=>e&&!ADMINS.includes(e));
   const ppl=id=>(id==="admin"?ADM.adm.slice():Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e))).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),LANG));
-  const pplSec=id=>{const l=ppl(id),can_=canRoleAssign()&&(id!=="admin"||isAdmin()),cand=can_?everyone.filter(e=>!l.includes(e)&&canRole(e)).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),LANG)):[];
+  const pplSec=id=>{const l=ppl(id),can_=canRoleAssign()&&(id==="admin"?isAdmin():roleGivable((ADM.roles||[]).find(x=>x.id===id))),cand=can_?everyone.filter(e=>!l.includes(e)&&canRole(e)).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),LANG)):[];
     return '<details class="arppl" data-sec="rppl-'+esc(id)+'"'+(SECS["rppl-"+id]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+l.length+')</summary>'+
       (l.length?'<ul class="paccl">'+l.map(e=>'<li><span>'+esc(nameOf(e))+'</span>'+(can_&&canRole(e)?'<button type="button" class="lnk arpx" data-rpout="'+esc(e)+'" '+ariaTip(L("Aus der Rolle nehmen"))+'>×</button>':'')+'</li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+
       (cand.length?'<label class="arl arpadd">'+L("Person hinzufügen")+'<select data-rpadd="'+esc(id)+'"><option value="">'+esc(L("Person wählen …"))+'</option>'+cand.map(e=>'<option value="'+esc(e)+'">'+esc(nameOf(e))+(nameOf(e)!==e?' · '+esc(e):'')+'</option>').join("")+'</select></label>':'')+'</details>'};
@@ -78,7 +78,7 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form.arol
   if(!isAdmin()&&f.dataset.role){const cur=((ADM.roles||[]).find(x=>x.id===f.dataset.role)||{}).perms||[];for(const p of cur)if(!MYPERMS.includes(p)&&!perms.includes(p))perms.push(p)}
   /* rights not shown right now (e.g. the report rights before the reports are loaded) stay – saving removed them before */
   if(f.dataset.role){const cur=f.dataset.role==="admin"?(ADM.adminPerms||[]):rolePermsOf(f.dataset.role);for(const p of cur)if(!PERMS.some(x=>x[0]===p)&&!perms.includes(p))perms.push(p)}
-  let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id))id+="-"+Date.now().toString(36).slice(-4)}
+  let id=f.dataset.role;if(!id){id=fold(name).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"rolle";if((ADM.roles||[]).some(x=>x.id===id)||["admin","owner"].includes(id))id+="-"+Date.now().toString(36).slice(-4)}   /* a new role «Admin» must not overwrite the rights of the admins */
   const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),{name,perms,at:F.serverTimestamp()});ADM.redit="";/* collapse right away (the reload below takes a moment) */if(id==="admin")ADM.adminPerms=perms;else{const r=(ADM.roles||[]).find(x=>x.id===id);if(r){r.name=name;r.perms=perms}else(ADM.roles||(ADM.roles=[])).push({id,name,perms})}document.activeElement&&document.activeElement.blur&&document.activeElement.blur();render();showMsg(L("Rolle gespeichert."),2500);admLoad().catch(err=>console.warn("roles reload",err&&err.code||err))}
   catch(err){if(btn)btn.disabled=false;console.error(err);{const m=f.querySelector(".amsg");if(m){m.className="amsg";m.textContent=admErr(err)}}showMsg(admErr(err),9000)}});

@@ -12,7 +12,7 @@ import {SECS,confirmSafe} from "./12a-admin-core.js";
    and laid over the Drehplan in the app. A newer Drehplan has priority: the changes then wait for a decision («zu prüfen»),
    with a proposal per change (already in the new Drehplan → remove; different → apply again or remove) ---------- */
 window.CDOPS=window.CDOPS||[];let CDSUB=null;const CD={form:{op:"swap",u:"all",a:"",b:"",push:true},busy:false,msg:""};
-const cdCan=()=>{try{return isOwner()||isAdmin()||can("coverday.manage")}catch(_){return false}};
+const cdCan=()=>{try{return can("coverday.manage")}catch(_){return false}};   /* as in the rules: also for admins only with this right in the Admin role */
 /* fields that stay with the date (sun, order) – everything else is the content of the day and moves */
 const CDKEEP=new Set(["date","id","sr","ss","order"]);
 const cdDD=d=>String(d||"").split("-").reverse().slice(0,2).join(".")+".";
@@ -105,7 +105,15 @@ async function cdSub(){if(CDSUBS||!ME)return;try{const {F,db}=await fb();CDSUBS=
 let CDFAIL=0;setInterval(()=>{try{if(ME&&!CDSUBS&&((typeof MEMBER!=="undefined"&&MEMBER)||isAdmin())&&Date.now()-CDFAIL>3e5)cdSub()}catch(_){}},4000);
 /* «at» of coverday/state = version of the changes; the device sends it with its reminders (push), so the server knows whether they already
    follow the changes */
-async function cdSave(ops){const {F,db}=await fb();const c=await ownEnc({ops}),at=Date.now();await F.setDoc(F.doc(db,"coverday","state"),{c,at});window.CDAT=at;window.CDOPS=ops;cdApplyAll();render();try{pushSyncSoon()}catch(_){}}
+/* saving: in a transaction on the newest state in Firestore – two managers at the same moment no longer overwrite each other's change
+   (mutate changes the list the same way as on this device); cancelled changes lose their large day copy (raw), the oldest go when it grows too big */
+function cdPrune(ops){for(const o of ops)if(o.st==="off")delete o.raw;
+  while(JSON.stringify(ops).length>36000){const i=ops.findIndex(o=>o.st==="off");if(i<0)break;ops.splice(i,1)}return ops}
+async function cdSave(mutate){const {F,db}=await fb(),ref=F.doc(db,"coverday","state");let out=null;
+  await F.runTransaction(db,async tx=>{const snap=await tx.get(ref);let ops=arr(window.CDOPS);
+    if(snap.exists()&&snap.data().c){try{ops=arr((await ownDec(await getDataKey(),snap.data().c)).ops)}catch(_){}}   /* not readable (key change): the copy of this device */
+    ops=ops.map(x=>Object.assign({},x));mutate(ops);cdPrune(ops);const c=await ownEnc({ops}),at=Date.now();tx.set(ref,{c,at});out={ops,at}});
+  window.CDAT=out.at;window.CDOPS=out.ops;cdApplyAll();render();try{pushSyncSoon()}catch(_){}}
 /* proposal for a change that waits because of a newer Drehplan */
 function cdProposal(op){const raw=S.days0||[],d=dt=>raw.find(x=>x.date===dt),sn=op.snap||{};
   if(!d(op.a)||(op.op!=="shift"&&!d(op.b)&&op.op==="swap"))return ["gone",L("Ein Tag dieser Änderung gibt es im neuen Drehplan nicht mehr – aufheben.")];
@@ -175,15 +183,15 @@ document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.c
   if(s.dataset.cdre!=null){const o=arr(window.CDOPS).find(x=>x.id===s.dataset.cdre);if(!o)return;ask=await cdAsk(L("Coverday-Änderung wieder anwenden? Sie gilt sofort für alle."),cdOpText(o),L("Wieder anwenden"),true);if(!ask.ok)return}
   if(s.dataset.cdsave!=null){const pv0=cdPreview(CD.form);if(!pv0.ok||!confirmSafe(L("Coverday-Änderung wirklich übernehmen? Sie gilt sofort für alle.")+"\n\n"+pv0.t))return}
   const ops=arr(window.CDOPS).map(x=>Object.assign({},x));CD.busy=true;
-  try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(!o)return;const wasOn=!cdReview(o);o.st="off";o.off=Date.now();await cdSave(ops);
+  try{if(s.dataset.cdoff!=null){const o=ops.find(x=>x.id===s.dataset.cdoff);if(!o)return;const wasOn=!cdReview(o);o.st="off";o.off=Date.now();await cdSave(l=>{const x=l.find(y=>y.id===o.id);if(x){x.st="off";x.off=o.off}});
       const pushed=wasOn&&ask&&ask.push?await cdPush(L("Coverday aufgehoben:")+" "+cdOpText(o)+" – "+L("es gilt wieder der Drehplan."),o.a):false;
       cdReport(L("Änderung aufgehoben."),cdVerify(o,false),pushed)}
-    else if(s.dataset.cdre!=null){const o=ops.find(x=>x.id===s.dataset.cdre);if(!o)return;o.at=Date.now();o.raw=cdRaw(o,S.days0||[]);await cdSave(ops);
+    else if(s.dataset.cdre!=null){const o=ops.find(x=>x.id===s.dataset.cdre);if(!o)return;o.at=Date.now();o.raw=cdRaw(o,S.days0||[]);await cdSave(l=>{const x=l.find(y=>y.id===o.id);if(x){x.at=o.at;x.raw=o.raw}});
       const pushed=ask&&ask.push?await cdPush(cdOpText(o),o.op==="move"?o.b:o.a):false;cdReport(L("Änderung wieder angewendet."),cdVerify(o,true),pushed)}
     else{const f=CD.form,pv=cdPreview(f);if(!pv.ok)return;const raw=S.days||S.days0,d=dt=>raw.find(x=>x.date===dt);
       const snap=f.op==="shift"?{a:cdScenes(d(f.a),f.u)}:{a:cdScenes(d(f.a),f.u),b:cdScenes(d(f.b),f.u)};
       const op={id:Math.random().toString(36).slice(2,10),op:f.op,u:f.u==="2"?"2":"all",a:f.a,b:f.op==="shift"?"":f.b,at:Date.now(),by:ME&&ME.email||"",snap,st:"on",push:!!(f.push&&can("push.send"))};op.raw=cdRaw(op,S.days0||raw);
-      ops.push(op);await cdSave(ops);CD.form={op:f.op,u:f.u,a:"",b:"",push:f.push};CD.msg=L("Übernommen:")+" "+pv.t;
+      ops.push(op);await cdSave(l=>l.push(op));CD.form={op:f.op,u:f.u,a:"",b:"",push:f.push};CD.msg=L("Übernommen:")+" "+pv.t;
       const pushed=op.push?await cdPush(cdOpText(op),f.op==="move"?f.b:f.a):false;cdReport(L("Übernommen:")+" "+pv.t+".",cdVerify(op,true),pushed)}}
   catch(err){CD.msg=(typeof saveErr==="function"?saveErr(err):L("Fehler:")+" "+(err.message||err))}
   finally{CD.busy=false;render()}},true);

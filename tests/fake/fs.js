@@ -23,3 +23,5 @@ export const query=(c,...q)=>Object.assign({},c,{q});
 /* realtime listener like Firestore: first the current documents, then again after every write */
 export function onSnapshot(c,cb,err){const s={col:String(c.path||"").split("/")[0],run:()=>getDocs(c).then(cb,e=>err&&err(e))};(W.__subs=W.__subs||[]).push(s);s.run();return ()=>{W.__subs=W.__subs.filter(x=>x!==s)}}
 const _fire=r=>{const col=String(r&&r.path||"").split("/")[0];setTimeout(()=>(W.__subs||[]).forEach(s=>{if(s.col===col)s.run()}),0)};
+/* transaction: reads now, writes after the function (as in Firestore) */
+export async function runTransaction(db,fn){const w=[];const tx={get:r=>getDoc(r),set:(r,d)=>{w.push(()=>setDoc(r,d));return tx},update:(r,d)=>{w.push(()=>updateDoc(r,d));return tx},delete:r=>{w.push(()=>deleteDoc(r));return tx}};const res=await fn(tx);for(const f of w)await f();return res}

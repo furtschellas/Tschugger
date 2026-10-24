@@ -58,11 +58,11 @@ const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOStr
 function ackApply(m,t0,live){if(!live)for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}
   const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}
 /* «Ich übernehme» (Kostüm of the cast without a name in the callsheet): who took which Kostüm – live, the name encrypted (cmassign/{tick id}) */
-window.CMASSIGN=window.CMASSIGN||{};let CMASUB=null,CMAFROM="";
+window.CMASSIGN=window.CMASSIGN||{};let CMASUB=null,CMAFROM="",CMASEQ=0;
 async function cmaLoad(from){if(CMASUB&&CMAFROM===from)return;try{const {F,db}=await fb();if(typeof F.onSnapshot!=="function")return;if(typeof CMASUB==="function")CMASUB();CMAFROM=from;CMASUB="…";
-  CMASUB=F.onSnapshot(F.query(F.collection(db,"cmassign"),F.where("d",">=",from)),async snap=>{const m={};let key=null;try{key=await getDataKey()}catch(_){}
+  CMASUB=F.onSnapshot(F.query(F.collection(db,"cmassign"),F.where("d",">=",from)),async snap=>{const my=++CMASEQ,m={};let key=null;try{key=await getDataKey()}catch(_){}   /* decrypting takes a moment: an older answer that finishes later must not win */
     for(const x of snap.docs||[]){const v=x.data()||{};let n="";try{if(key&&v.c)n=String((await ownDec(key,v.c)).n||"")}catch(_){}m[x.id]={by:v.by||"",n}}
-    window.CMASSIGN=m;if(S.tab==="my"||S.tab==="today")flowRedraw()},err=>{console.warn("cmassign",err&&err.code||err);CMASUB=null;CMAFROM=""})}catch(_){if(CMASUB==="…")CMASUB=null}}
+    if(my!==CMASEQ)return;window.CMASSIGN=m;if(S.tab==="my"||S.tab==="today")flowRedraw()},err=>{console.warn("cmassign",err&&err.code||err);CMASUB=null;CMAFROM=""})}catch(_){if(CMASUB==="…")CMASUB=null}}
 window.cmaStop=()=>{try{if(typeof CMASUB==="function")CMASUB()}catch(_){}CMASUB=null;CMAFROM="";window.CMASSIGN={}};
 const cmaMyName=()=>{try{const m=typeof MEMBER!=="undefined"&&MEMBER;const n=m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);if(n)return n;const me=typeof myIdentity==="function"?myIdentity():null;return (me&&me.name)||(ME&&ME.email)||""}catch(_){return ""}};
 async function cmaSet(id,date,take){const old=window.CMASSIGN[id],undo=()=>{if(old)window.CMASSIGN[id]=old;else delete window.CMASSIGN[id];flowRedraw()};
