@@ -192,6 +192,9 @@ def crew_key_b64():
             if k: return k
         except Exception as e:
             print("• Schlüssel aus Firestore nicht lesbar:", type(e).__name__)
+        # with the service account the key in Firestore is the only right one: the old secret CREW_KEY is out of date after any key change
+        # (messages encrypted with it could not be read by anybody) – no key here; the caller stops
+        return ""
     return os.environ.get("CREW_KEY", "").strip().strip('"\'')
 
 

@@ -76,3 +76,9 @@ jobs:
           git config http.postBuffer 524288000
           for i in 1 2 3; do git pull -q --rebase origin main && git push origin HEAD:main && exit 0; sleep 10; done
           exit 1
+      # the key is switched only now: if publishing failed, the data in the repository still matches the old key and the next run continues
+      - name: Schlüssel aktivieren
+        if: success() && steps.rot.outcome == 'success' && (github.event.inputs.what || 'crew') == 'crew'
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: python tools/rotate.py finalize

@@ -112,8 +112,11 @@ async function loadOnce(force){
   if(!force&&LASTSTAMP&&(S.loaded||window.CACHEOK)){const st=await fetchStamp();if(st&&st.s===LASTSTAMP){try{localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}if(!S.loaded){S.loaded=true;scheduleRender()}return true}}
   const enc=await fetchEnc();
   if(!force&&enc.stamp&&enc.stamp===LASTSTAMP&&S.loaded)return true;
-  const key=await getDataKey();
-  let pt;try{pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},key,b64(enc.ct))}catch(err){setDATAKEY(null);throw err}
+  /* new data: the key is asked for again (after a monthly key change the app must not go on writing reminders and own entries with the old one);
+     the data not opening with the key in hand: once more with a freshly read key */
+  if(enc.stamp&&enc.stamp!==LASTSTAMP&&LASTSTAMP)setDATAKEY(null);
+  const dec=k=>crypto.subtle.decrypt({name:"AES-GCM",iv:b64(enc.iv)},k,b64(enc.ct));
+  let pt;try{pt=await dec(await getDataKey())}catch(err){setDATAKEY(null);try{localStorage.removeItem("dk:v1")}catch(_){}pt=await dec(await getDataKey())}
   const data=JSON.parse(new TextDecoder().decode(pt));
   if(!data||!Array.isArray(data.days))throw new Error("data format");
   setLASTSTAMP(enc.stamp||null);try{if(LASTSTAMP)localStorage.setItem("dstamp:v1",LASTSTAMP);localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;

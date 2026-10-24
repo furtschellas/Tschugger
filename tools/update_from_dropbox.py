@@ -35,7 +35,7 @@ if not (os.environ.get("CREW_KEY", "").strip() or os.environ.get("FIREBASE_SA", 
 if _missing and __name__ == "__main__":
     print("• Noch nicht eingerichtet – fehlende Secrets:", ", ".join(_missing))
     status("setup", "Noch nicht eingerichtet", missing=_missing); sys.exit(0)
-KEY = base64.b64decode(fsadmin.crew_key_b64() or os.environ.get("CREW_KEY", "").strip())
+KEY = base64.b64decode(fsadmin.crew_key_b64() or ("" if fsadmin.sa() else os.environ.get("CREW_KEY", "").strip()))
 ROOT = (os.environ.get("DROPBOX_ROOT") or "ns:14935064499").rstrip("/")
 ROOT3D = (os.environ.get("DROPBOX_ROOT_3D") or "ns:13132709057").rstrip("/")
 ROOTAUF = (os.environ.get("DROPBOX_ROOT_AUF") or "ns:15240921299").rstrip("/")
@@ -973,7 +973,8 @@ def geocode(addr, cache):
         time.sleep(1.1)
         r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": addr, "format": "json", "limit": 1, "countrycodes": "ch"},
                          headers={"User-Agent": "TschuggerCrewApp/1.0 (furtschellas@gmail.com)"}, timeout=20)
-        j = r.json() if r.ok else []
+        if not r.ok: return None   # busy (429) or down: not remembered as «not found», the next run asks again
+        j = r.json()
         cache[addr] = [round(float(j[0]["lat"]), 6), round(float(j[0]["lon"]), 6)] if j else None
     except Exception: return None
     return cache[addr]
@@ -1451,6 +1452,8 @@ def rotating():
 
 def main():
     WANT.clear()
+    if len(KEY) != 32:   # without the right crew key nothing may be published (the app could not open it)
+        status("error", "Crew-Schlüssel nicht lesbar – diesmal nichts veröffentlicht"); print("::error::Crew-Schlüssel nicht lesbar – Lauf abgebrochen", flush=True); sys.exit(1)
     if rotating():
         log("Schlüsselwechsel läuft – diese Aktualisierung wird übersprungen"); print("::notice::Schlüsselwechsel läuft – Aktualisierung übersprungen"); return
     cfg = {}

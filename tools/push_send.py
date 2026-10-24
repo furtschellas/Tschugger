@@ -29,7 +29,16 @@ NOW = time.time()
 CLAIM = "mailto:furtschellas@gmail.com"
 
 
-dec = fsadmin.dec_json
+_PREV = []
+def dec(key, c):
+    """a device or message still written with the key before the last key change (an app that was open during the change): read with that one"""
+    try: return fsadmin.dec_json(key, c)
+    except Exception:
+        if not _PREV:
+            try: k = (fsadmin.get_doc("secret/keyprev") or {}).get("k"); _PREV.append(base64.b64decode(k) if k else b"")
+            except Exception: _PREV.append(b"")
+        if _PREV[0]: return fsadmin.dec_json(_PREV[0], c)
+        raise
 
 
 # ---------- Coverday: reminders of a device that does not know the newest changes yet ----------
@@ -62,7 +71,7 @@ def cd_stale(item, p, cd):
     try:
         from zoneinfo import ZoneInfo
         import datetime as _dt
-        day = _dt.datetime.fromtimestamp(st, ZoneInfo("Europe/Zurich")).strftime("%Y-%m-%d")
+        day = _dt.datetime.fromtimestamp(st, ZoneInfo(fsadmin.tz_at(st * 1000))).strftime("%Y-%m-%d")   # the day in the time zone of the shooting block
     except Exception:
         day = time.strftime("%Y-%m-%d", time.gmtime(st))
     return any(t > dev and (day in ds or (sh and day >= sh)) for t, ds, sh in ops)
