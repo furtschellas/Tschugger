@@ -1059,3 +1059,9 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
 .blktn{min-width:84px;font-weight:600}
 .blktop select,.blktop input{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
 .blktag{font-weight:600}
+/* Mein Konto → App → WhatsApp beim Quittieren */
+.scwag{display:grid;gap:6px;margin:8px 0 12px}
+.scwar{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left}
+.scwar small{display:block}
+.scwar select{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.scwan{font:inherit;font-size:15px;padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);width:100%;max-width:260px;box-sizing:border-box}

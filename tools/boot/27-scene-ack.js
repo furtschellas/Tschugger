@@ -69,10 +69,13 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   const [date,sc,u]=b.dataset.scack.split("|");const id=scAckId(date,sc),st=scState(date,sc),x=window.SCACK[id]||{};
   if(st===2){scAckDialog(date,sc,u);return}
   if(st===0){const run=scRunning(date,u,id);if(run){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}}
+  /* WhatsApp per kind of quittance (Mein Konto → App): «direkt» opens WhatsApp right in this tap (a phone allows it only here, not after saving) */
+  const wv=st===0&&scBase(sc)==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};
+  const wk=scWaKind(date,sc,u,wv),wm=scWaMode(wk);if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},wv):wv));
   b.disabled=true;
   if(st===0&&scBase(sc)==="wrap"){const now=Date.now();for(const [rid,rx] of Object.entries(window.SCACK))if(rx&&rx.d===date&&rx.s===1&&String(rx.u||"1")===String(u||"1")){const k=rx.sc||rid.split("-").slice(1).join("-");try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now,e:now})}catch(_){}}}
   try{const v=st===0&&scBase(sc)==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};const first=st===0&&!/^(lunch|wrap|setup\d*)$/.test(scBase(sc))&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!/^(lunch|wrap|setup\d*)$/.test(scBase(rx.sc||rid.split("-").slice(1).join("-"))));
-    await scWrite(date,sc,u,v);if(v.s===2)scShareAsk(date,sc,u,v);else if(first)scShareAsk(date,sc,u,Object.assign({start:1},v))}   /* WhatsApp when something is finished and at the start of shooting (first scene of the day) */
+    await scWrite(date,sc,u,v);if(wm==="f")scShareAsk(date,sc,u,wk==="d"?Object.assign({start:1},v):v)}   /* WhatsApp: ask after saving (per kind, Mein Konto → App) */
   catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:saveErr(err),4000)}},true);
 /* after a scene (lunch, wrap) was finished: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
 function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((typeof UNAME!=="undefined"&&UNAME[u])||u)+" Unit":"",dd=" ("+date.split("-").reverse().slice(0,2).join(".")+"."+un+")";
@@ -80,12 +83,33 @@ function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((typeof UNAME!=="u
   if(scBase(sc)==="wrap")return "Wrap "+scHM(v.e||v.b)+" – "+L("Drehtag abgeschlossen")+dd;
   if(scBase(sc)==="lunch")return v.s===1?"Lunch "+L("ab")+" "+scHM(v.b)+dd:L("Lunch vorbei, es geht weiter")+" "+scHM(v.e)+dd;
   return v.s===1?scLabel(sc)+" "+L("läuft seit")+" "+scHM(v.b)+dd:scLabel(sc)+" "+L("abgeschlossen")+" "+scHM(v.b)+"–"+scHM(v.e)+" ("+scDur((v.e||0)-(v.b||0))+")"+dd}
-function scShareAsk(date,sc,u,v,force){try{if(!force&&localStorage.getItem("scwa:no")==="1")return}catch(_){}
+/* ---------- WhatsApp per kind of quittance: Drehstart (first scene of the day), Szene Beginn, Szene Abschluss, Lunch Beginn, Lunch Ende, Drehschluss.
+   Per person (Mein Konto → App, synced with the account): «n» aus, «f» fragen (after saving), «a» WhatsApp direkt öffnen; recipient: choose in WhatsApp or a fixed number */
+const SCWA_KINDS=[["d","Drehstart","erste Szene des Tages","f"],["b","Szene Beginn","","n"],["e","Szene Abschluss","","f"],["l","Lunch Beginn","","n"],["m","Lunch Ende","","f"],["w","Drehschluss","Wrap","f"]];
+function scWaModes(){let s="";try{s=localStorage.getItem("scwa")||"";if(!s&&localStorage.getItem("scwa:no")==="1")s="nnnnnn"}catch(_){}   /* «nicht mehr fragen» of before: all off */
+  return Object.fromEntries(SCWA_KINDS.map(([k,,,d0],i)=>[k,/^[nfa]$/.test(s[i]||"")?s[i]:d0]))}
+const scWaMode=k=>k?scWaModes()[k]:"n";
+function scWaKind(date,sc,u,v){const bs=scBase(sc);if(bs==="wrap")return "w";if(bs==="lunch")return v.s===1?"l":"m";
+  if(v.s===2)return "e";
+  const first=!/^(setup\d*)$/.test(bs)&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!/^(lunch|wrap|setup\d*)$/.test(scBase(rx.sc||rid.split("-").slice(1).join("-"))));
+  return first&&scWaMode("d")!=="n"?"d":"b"}
+const scWaNum=()=>{try{return String(localStorage.getItem("scwan")||"").replace(/[^\d]/g,"").replace(/^00/,"")}catch(_){return ""}};
+const scWaUrl=txt=>{const n=scWaNum();return "https://wa.me/"+(n.length>=8?n:"")+"?text="+encodeURIComponent(txt)};
+function scWaOpen(txt){try{window.open(scWaUrl(txt),"_blank","noopener")}catch(_){}}
+function scWaSec(){if(typeof canPerm!=="function"||!canPerm("scenes.ack"))return "";const m=scWaModes(),n=(()=>{try{return localStorage.getItem("scwan")||""}catch(_){return ""}})();
+  return '<section class="psec"><h4>'+esc(L("WhatsApp beim Quittieren"))+'</h4><p class="ghint">'+esc(L("Nach dem Quittieren einer Szene eine kurze Info per WhatsApp – pro Art einstellbar. «Fragen»: nach dem Speichern erscheint ein Knopf. «Direkt»: WhatsApp öffnet sich sofort mit dem fertigen Text; senden tippst du selbst."))+'</p>'+
+    '<div class="scwag">'+SCWA_KINDS.map(([k,t,sub])=>'<div class="scwar"><span>'+esc(L(t))+(sub?' <small class="ghint">'+esc(L(sub))+'</small>':'')+'</span><select data-scwam="'+k+'" aria-label="'+esc(L(t))+'">'+[["n","Aus"],["f","Fragen"],["a","Direkt"]].map(([v,x])=>'<option value="'+v+'"'+(m[k]===v?' selected':'')+'>'+esc(L(x))+'</option>').join("")+'</select></div>').join("")+'</div>'+
+    '<p class="ghint"><b>'+esc(L("Empfänger"))+'</b> – '+esc(L("Leer: du wählst in WhatsApp jedes Mal den Chat oder die Gruppe. Mit Nummer: WhatsApp öffnet direkt diesen Chat (nur Personen, keine Gruppen)."))+'</p>'+
+    '<input class="scwan" data-scwan type="tel" inputmode="tel" maxlength="20" autocomplete="off" value="'+esc(n)+'" placeholder="'+esc(L("z. B. +41 79 123 45 67"))+'"></section>'}
+window.scWaSec=scWaSec;
+const scWaSave=()=>{try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}if(typeof savePrefsSoon==="function")savePrefsSoon()};
+document.addEventListener("change",e=>{const s=e.target.closest&&e.target.closest("[data-scwam]");if(s){const m=scWaModes();m[s.dataset.scwam]=s.value;store("scwa",SCWA_KINDS.map(([k])=>m[k]).join(""));try{localStorage.removeItem("scwa:no")}catch(_){}scWaSave();return}
+  const n=e.target.closest&&e.target.closest("[data-scwan]");if(n){store("scwan",n.value.trim().slice(0,20));scWaSave()}});
+function scShareAsk(date,sc,u,v,force){
   const txt=scShareText(date,sc,u,v),d=mkDialog("scwadlg",null,{replace:true});
   d.innerHTML='<div class="a2box scbox"><h3>'+esc(L("Info per WhatsApp senden?"))+'</h3><p class="scwat">'+esc(txt)+'</p>'+
-    '<div class="arb"><a class="scwa" href="https://wa.me/?text='+encodeURIComponent(txt)+'" target="_blank" rel="noopener noreferrer" data-scwago>WhatsApp</a><button type="button" class="lnk" data-scwax>'+esc(L("Nein"))+'</button></div>'+
-    '<label class="ck scwano"><input type="checkbox" data-scwano> '+esc(L("Nicht mehr fragen (dieses Gerät)"))+'</label></div>';
-  d.addEventListener("change",e=>{if(e.target.closest("[data-scwano]")){try{e.target.checked?localStorage.setItem("scwa:no","1"):localStorage.removeItem("scwa:no")}catch(_){}}});
+    '<div class="arb"><a class="scwa" href="'+esc(scWaUrl(txt))+'" target="_blank" rel="noopener noreferrer" data-scwago>WhatsApp</a><button type="button" class="lnk" data-scwax>'+esc(L("Nein"))+'</button></div>'+
+    '<p class="ghint scwano">'+esc(L("Einstellen pro Art: Mein Konto → App → WhatsApp beim Quittieren."))+'</p></div>';
   d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-scwax]")||e.target.closest("[data-scwago]"))setTimeout(()=>d.remove(),50)});
   document.body.appendChild(d)}
 /* popup of a quittiert scene: state, begin and end time; «offen» takes the quittance away */
