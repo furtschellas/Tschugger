@@ -1,3 +1,14 @@
+import {L,MEMO,S,esc,mkDialog,pad2,prodTZ,todayISO} from "../base/10-core.js";
+import {hm,myIdentity,rideId} from "../base/12-mycal.js";
+import {csAfter,csMe} from "../base/13a-callsheet.js";
+import {CSCUR,csNowLoc,csNowScene} from "../base/13b-cs-now.js";
+import {csLocs} from "../base/13c-cs-places.js";
+import {fold,render} from "../base/15-script-tab.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {ME,MEMBER,MYROLE,dbWrite,fb,isAdmin,ownDec,ownEnc} from "./03-core-firebase.js";
+import {getDataKey} from "./04-data.js";
+import {ADM} from "./12a-admin-core.js";
+import {scRender} from "./27-scene-ack.js";
 /* ========== Ablauf: Fahrten und Cast auf einer Ebene ==========
    One store for every tick (rideack/{id}, id = check sum, no names: {d date, at ms, s 1 running / 2 done}), one way to write it,
    one tap handler – used by the rides (callsheet, Meine Termine, Fahrten Manager), the cast table and Kostüm / Maske in Meine Termine.
@@ -42,7 +53,7 @@ async function flowPut(id,date,s,n){if(!id)return;const old=window.RIDEACK[id];
    last 60 days on (ticks of past shooting days must not disappear); renewed when that day changes; without live updates (tests, old
    browser) every 2 minutes as before – there own taps win for a moment over an answer that was already on its way (live, Firestore
    shows own writes itself; keeping them would hide a newer tap of another device: found by tests/flow_multi.mjs). */
-let RIDEAT=0,RIDEBUSY=false,ACKSUB=null,ACKFROM="";
+export let RIDEAT=0,RIDEBUSY=false,ACKSUB=null,ACKFROM="";
 const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
 function ackApply(m,t0,live){if(!live)for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}
   const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}
@@ -83,7 +94,7 @@ function cqKeep(b){try{MEMO.clear()}catch(_){}const y=window.scrollY;let i=-1,to
 
 /* ---------- 2. rights ---------- */
 const flowCan=p=>{try{return typeof canPerm==="function"&&canPerm(p)}catch(_){return false}};
-const cqCanRide=()=>flowCan("rides.confirm")||flowCan("rides.manage");
+export const cqCanRide=()=>flowCan("rides.confirm")||flowCan("rides.manage");
 const cqMan=()=>flowCan("cast.manual");
 /* Kostüm «Kostüm quittieren», Maske «Maske quittieren»; Call, Base and On set with either of them */
 const cmCan=k=>k==="w"?flowCan("wardrobe.ack"):k==="m"?flowCan("makeup.ack"):flowCan("wardrobe.ack")||flowCan("makeup.ack");
@@ -101,7 +112,7 @@ const cqCan=k=>k==="xo"?flowCan("extras.ack"):k==="u"?cqCanRide()||cqMan():k==="
 /* state of a ride (0 open, 1 started, 2 done) – off when switched off in App-Verwaltung → Einstellungen */
 window.rideState=id=>window.RIDEACKON===false?0:flowSt(id);
 window.rideAt=flowAt;
-const RIDE_ICO={1:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+export const RIDE_ICO={1:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   2:'<svg viewBox="0 0 24 24" width="20" height="18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12.5l4.5 4.5L16.5 7.5"/><path d="M11 16l1 1L21.5 7.5"/></svg>',
   car:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16V12l2-5h10l2 5v4"/><path d="M4 16h16v2H4z"/><circle cx="8" cy="16" r="1.6"/><circle cx="16" cy="16" r="1.6"/><path d="M5 12h14"/><path class="rmove" d="M1 9h2M0.5 12h2"/></svg>',
   here:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>'};
@@ -331,5 +342,5 @@ const castKey=c=>{const t=c.querySelector(".cs-ct"),sec=c.closest("[id]");return
 document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest(":is(#cs-cast,#cs-extras) .cs-card");if(!c||!c.querySelector(".cqall")||e.target.closest("a,button,input,select"))return;
   const k=castKey(c),on=!c.classList.contains("csopen");c.classList.toggle("csopen",on);if(on)CASTOPEN.add(k);else CASTOPEN.delete(k)});
 csAfter(()=>{if(!CASTOPEN.size)return;document.querySelectorAll(":is(#cs-cast,#cs-extras) .cs-card").forEach(c=>{if(c.querySelector(".cqall")&&CASTOPEN.has(castKey(c)))c.classList.add("csopen")})});
-function setACKFROM(v){return ACKFROM=v}   /* other parts change ACKFROM only through this */
-function setACKSUB(v){return ACKSUB=v}   /* other parts change ACKSUB only through this */
+export function setACKFROM(v){return ACKFROM=v}   /* other parts change ACKFROM only through this */
+export function setACKSUB(v){return ACKSUB=v}   /* other parts change ACKSUB only through this */

@@ -1,10 +1,17 @@
+import {L,S} from "../base/10-core.js";
+import {onRendered,render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {closeScene} from "../base/17-scene-reader.js";
+import {closeSearch} from "../base/19-search.js";
+import {showMsg} from "../base/20-data-start.js";
+import {ONBOARD} from "./11-account.js";
 /* =====================================================================
    ZURÜCK-KNOPF DES TELEFONS: schliesst zuerst ein offenes Fenster (Pop-up, Szene, Suche, Galerie),
    sonst geht er zur vorherigen Seite der App (z. B. Drehbuch → Drehplan). Erst auf der ersten Seite verlässt er die App.
    ===================================================================== */
 const NAV={last:null,pop:false,skip:0,open:0,depth:0};
 /* windows that the back button may close (the welcome, the tour and the start screen are left alone) */
-function navDialogs(){const l=[];
+export function navDialogs(){const l=[];
   document.querySelectorAll("body > .a2hs").forEach(d=>{if(!d.hidden&&d.isConnected&&!["welcome","gate","splash"].includes(d.id)&&!(d.id==="acct"&&typeof ONBOARD!=="undefined"&&ONBOARD)&&getComputedStyle(d).display!=="none")l.push(d)});
   const g=document.getElementById("blkgal");if(g&&!l.includes(g))l.push(g);
   const sc=document.getElementById("scn");if(sc&&!sc.hidden)l.push(sc);

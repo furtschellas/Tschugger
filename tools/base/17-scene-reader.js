@@ -1,6 +1,13 @@
+import {L,S,TX,WD,ariaTip,bdHTML,bdXX,cap,castChips,ddmm,esc,maps,memo,mkDialog,norm,pad2,safeUrl} from "./10-core.js";
+import {UNAME,unitLists} from "./11-schedule-prep.js";
+import {addrForItem} from "./13-crew-views.js";
+import {vok} from "./14-render.js";
+import {fold} from "./15-script-tab.js";
+import {openScene} from "./18-blocking.js";
+import {arr} from "./20-data-start.js";
 /* ---------- screenplay: tapping a scene description shows that scene from the script (original text, not translated) ---------- */
-let SCRIPT=null,SCRIPTP=null;
-function scriptData(){
+export let SCRIPT=null,SCRIPTP=null;
+export function scriptData(){
   if(SCRIPT)return Promise.resolve(SCRIPT);
   if(!SCRIPTP)SCRIPTP=(async()=>{
     let list=null;
@@ -11,7 +18,7 @@ function scriptData(){
   return SCRIPTP;
 }
 /* "186pt1A" → 186, "6 SL4" → 6SL, "184CA" → 184CA */
-function findScene(list,sc){
+export function findScene(list,sc){
   const by=new Map(list.map(x=>[String(x.sc).toLowerCase().replace(/\s+/g,""),x]));
   const n=String(sc||"").toLowerCase().replace(/\s+/g,"");
   const a=n.replace(/pt\d+[a-z]*$/,"");
@@ -23,7 +30,7 @@ function findScene(list,sc){
    a block that starts with a character cue is dialogue (cue, (parentheticals), lines) */
 const isCue=x=>/^[A-ZÄÖÜÉÈÀ0-9 .’'\-()\/&]+$/.test(x)&&x.length<44&&/[A-Z]{2}/.test(x)&&!/^(CUT|FADE|SMASH|MATCH)\b/.test(x);
 const joinLines=a=>esc(a.join(" ").replace(/(\w)- ([a-zäöüéèà])/g,"$1$2").replace(/(\w)- ([A-ZÄÖÜ])/g,"$1-$2").replace(/\s+/g," "));
-function scriptHTML(t){
+export function scriptHTML(t){
   return String(t||"").split(/\n\s*\n/).map(block=>{
     const ls=block.split("\n").map(x=>x.trim()).filter(Boolean);if(!ls.length)return"";
     if(ls.length===1&&/^(CUT TO|FADE (IN|OUT)|SMASH CUT|MATCH CUT|DISSOLVE)/.test(ls[0]))return '<p class="sp-trn">'+esc(ls[0])+'</p>';
@@ -43,22 +50,22 @@ function scriptHTML(t){
     return '<p class="sp-act">'+joinLines(ls)+'</p>';
   }).join("");
 }
-function sceneSheet(){
+export function sceneSheet(){
   let s=document.getElementById("scn");
   if(!s){s=mkDialog("scn",null,{cls:"scrn"});document.body.appendChild(s);
     s.addEventListener("click",e=>{const n=e.target.closest("[data-scene]");if(n){e.stopPropagation();openScene(n.dataset.scene);return}if(e.target===s||e.target.closest("[data-scnclose]"))closeScene()});
     document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!e.defaultPrevented&&!s.hidden)closeScene()})}
   return s;
 }
-function closeScene(){const s=document.getElementById("scn");if(s){s.hidden=true;s.innerHTML=""}document.body.style.overflow=""}
+export function closeScene(){const s=document.getElementById("scn");if(s){s.hidden=true;s.innerHTML=""}document.body.style.overflow=""}
 /* schedule facts for the scene shown in the script viewer (day, time, unit, pages, duration, cast …) */
 /* "09:00" + "3h30" -> "12:30" */
 function endTime(t,dur){
   const a=/^(\d{1,2})[:.](\d{2})/.exec(t||""),ds=String(dur||"").trim(),mm=/^(\d+)\s*min$/i.exec(ds),b=/^(\d+)\s*h\s*(\d{1,2})?$/i.exec(ds)||(mm?[0,0,mm[1]]:null);
   if(!a||!b)return"";const m=(+a[1]*60+ +a[2]+(+b[1]||0)*60+(+b[2]||0))%1440;return pad2(Math.floor(m/60))+":"+pad2(m%60);
 }
-function schedIndex(){return memo("scsched",()=>{const m={};for(const d of S.days)for(const [u,its] of unitLists(d))for(const it of its){if(!it.sc)continue;const k=norm(it.sc);(m[k]=m[k]||[]).push({d,u,it})}return m})}
-function sceneFacts(reqSc,x,list){
+export function schedIndex(){return memo("scsched",()=>{const m={};for(const d of S.days)for(const [u,its] of unitLists(d))for(const it of its){if(!it.sc)continue;const k=norm(it.sc);(m[k]=m[k]||[]).push({d,u,it})}return m})}
+export function sceneFacts(reqSc,x,list){
   const want=String(reqSc||"").toLowerCase().replace(/\s+/g,"");
   const ex=schedIndex()[want];if(ex&&ex.length)return factsHTML(ex); /* fast path: exact scene number */
   const hits=[];
@@ -71,10 +78,10 @@ function sceneFacts(reqSc,x,list){
 }
 /* floorplans (PDF) and blocking photos from the 3D folder, matched to sets, places and scene numbers */
 const fpk=t=>fold(t).replace(/[^a-z0-9]/g,"");
-function fpFor(set,loc){const st=fpk(set),lc=fpk(loc);return arr(S.meta&&S.meta.floorplans).filter(f=>{const r=f.rule||{},ws=arr(r.set).map(fpk),wl=arr(r.loc).map(fpk);
+export function fpFor(set,loc){const st=fpk(set),lc=fpk(loc);return arr(S.meta&&S.meta.floorplans).filter(f=>{const r=f.rule||{},ws=arr(r.set).map(fpk),wl=arr(r.loc).map(fpk);
   return (ws.length||wl.length)&&ws.every(w=>st.includes(w))&&(!wl.length||wl.some(w=>lc.includes(w)))&&!arr(r.not).map(fpk).some(w=>st.includes(w)||lc.includes(w))})}
 /* blocking pictures: each picture is stored once in meta.bm, the scenes refer to it by number (mi) */
-function bmed(b){if(!b)return[];const bm=arr(S.meta&&S.meta.bm);const all=Array.isArray(b.media)?b.media:arr(b.mi).map(i=>bm[i]).filter(Boolean);
+export function bmed(b){if(!b)return[];const bm=arr(S.meta&&S.meta.bm);const all=Array.isArray(b.media)?b.media:arr(b.mi).map(i=>bm[i]).filter(Boolean);
   /* recce photos only when the scene has no other pictures – never mixed */
   const other=all.filter(m=>m.g!=="recce");return other.length?other:all}
 /* scene key → {b: base scene, k: "pt"|"sl"|"", n: part number}: «186pt1A» → 186/pt/1, «25 SL2» → 25/sl/2 (slideshow – its own scene, not part of 25), «184C» → 184c */
@@ -82,11 +89,11 @@ function scParts(s){const t=String(s||"").toLowerCase().replace(/\s+/g,"").repla
 /* blocking for a scene: its own entry; a part «186pt1A» also gets the part «186pt1» and the general pictures of 186 – never those of another part (186pt2);
    a slideshow picture «25SL2» only «25SL»/«25SL2», never scene 25 */
 /* the gallery opens exactly the pictures the button belongs to (for «186pt1A» only part 1 and the general ones – never the whole folder) */
-const BLKREG=new Map();let BLKN=0;
+export const BLKREG=new Map();let BLKN=0;
 /* stable key: folder name + its pictures (the same gallery always gets the same key – no growing list, no lost buttons) */
 function blkReg(b){let h=5381;for(const m of bmed(b)){const t=String(m.f||m.n||"");for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0}
   const k="g:"+b.name+"|"+(h>>>0).toString(36)+"|"+bmed(b).length;BLKREG.set(k,b);return k}
-function blkFor(sc){const N=scParts(sc);if(!N.t)return[];
+export function blkFor(sc){const N=scParts(sc);if(!N.t)return[];
   const hit=x=>{const X=scParts(x);if(X.t===N.t)return true;if(!N.k||X.b!==N.b)return false;
     if(N.k==="pt")return !X.k||(X.k==="pt"&&X.n===N.n);return X.k==="sl"&&(!X.n||X.n===N.n)};
   const other=v=>{if(!v||!N.k)return false;const P=scParts(v);return P.b===N.b&&P.k&&(P.k!==N.k||(P.n&&N.n&&P.n!==N.n))};
@@ -101,7 +108,7 @@ const ICAM='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="
 const IFOLD='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a1.5 1.5 0 0 1 1.5-1.5H9l2 2.2h8.5A1.5 1.5 0 0 1 21 9.7V17.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>';
 /* folder path of a Dropbox link (last parts), shown in the choice of picture folders */
 function fldPath(u,name){try{const x=new URL(u);let p=decodeURIComponent(x.pathname+(x.searchParams.get("preview")?"":"")).replace(/^\/(home|preview|work\/[^/]+|scl\/fo\/[^/]+\/[^/]+)/,"");const parts=p.split("/").filter(Boolean);if(parts.length)return parts.slice(-3).join(" / ")}catch(_){}return String(name||"")}
-function fpLinks(fps,blk,lead){const bl=vok("blocking")?arr(blk):[];
+export function fpLinks(fps,blk,lead){const bl=vok("blocking")?arr(blk):[];
   /* camera per picture folder; the Dropbox folder only once – with several folders the button asks which one */
   const fl=bl.filter(b=>b.url).map(b=>({n:b.title||b.name,u:b.url})).filter((f,i,a)=>a.findIndex(x=>x.u===f.u)===i);
   const fold=!fl.length?[]:['<a class="fpl blk fold" href="'+esc(safeUrl(fl[0].u))+'"'+(fl.length>1?' data-folders="'+esc(JSON.stringify(fl))+'"':'')+' target="_blank" rel="noopener noreferrer" '+ariaTip(L("Ordner in Dropbox öffnen"))+'>'+IFOLD+'</a>'];
@@ -114,14 +121,14 @@ function fpLinks(fps,blk,lead){const bl=vok("blocking")?arr(blk):[];
   const l=pink.concat(white);return l.length?'<div class="fpls">'+l.join("")+'</div>':""}
 /* the PDFs of a scene (Auflösung): one button each, opening the PDF pages directly in the app (encrypted copies, also offline);
    a PDF whose pages are not in the app yet opens in Dropbox as before */
-const pdfLbl=n=>String(n).replace(/\.pdf$/i,"").replace(/^scene[\s_]*/i,"").replace(/(^|[^0-9A-Za-z])0+(?=\d)/g,"$1");
-function pdfDocs(b){const docs=new Map();for(const m of bmed(b))if(m.g==="pdf"){const k=String(m.n).split(" · ")[0];if(!docs.has(k))docs.set(k,0);docs.set(k,docs.get(k)+1)}return docs}
-function pdfBtns(b){const docs=typeof window.blkImg==="function"?pdfDocs(b):[],out=[],done=new Set();   /* in-app pages only where the viewer exists, else the Dropbox links */
+export const pdfLbl=n=>String(n).replace(/\.pdf$/i,"").replace(/^scene[\s_]*/i,"").replace(/(^|[^0-9A-Za-z])0+(?=\d)/g,"$1");
+export function pdfDocs(b){const docs=new Map();for(const m of bmed(b))if(m.g==="pdf"){const k=String(m.n).split(" · ")[0];if(!docs.has(k))docs.set(k,0);docs.set(k,docs.get(k)+1)}return docs}
+export function pdfBtns(b){const docs=typeof window.blkImg==="function"?pdfDocs(b):[],out=[],done=new Set();   /* in-app pages only where the viewer exists, else the Dropbox links */
   for(const [k,n] of docs){done.add(pdfLbl(k));out.push('<button type="button" class="fpl scp" data-blkpdf="'+esc(b.name)+'" data-pdfn="'+esc(k)+'" title="'+esc(k+" · "+n+" "+L(n===1?"Seite":"Seiten"))+'">'+esc(pdfLbl(k))+'</button>')}
   for(const f of arr(b.pdfs))if(!done.has(f.l))out.push('<a class="fpl scp" href="'+esc(safeUrl(f.u))+'" target="_blank" rel="noopener noreferrer">'+esc(f.l)+'</a>');
   return out}
-function itemFp(it,lead){return fpLinks(fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")),blkFor(it.sc),lead)}
-function factsHTML(hits){
+export function itemFp(it,lead){return fpLinks(fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")),blkFor(it.sc),lead)}
+export function factsHTML(hits){
   const show=hits.slice().sort((a,b)=>a.d.date<b.d.date?-1:a.d.date>b.d.date?1:String(a.it.t).localeCompare(String(b.it.t)));
   if(!show.length)return"";
   return '<div class="spf">'+show.map(({d,u,it})=>{
@@ -144,7 +151,7 @@ function spHeadEn(x){const it=schedFirst(x.sc,"set");
   const pre=/I\+E|E\+I/.test(io)?"INT./EXT.":io.startsWith("I")?"INT.":io.startsWith("E")?"EXT.":"";
   const tod=/^N/i.test(t)?"NIGHT":/^Ev/i.test(t)?"EVENING":/^Mo/i.test(t)?"MORNING":/^D/i.test(t)?"DAY":"";
   return [pre,String(it.set).trim()].filter(Boolean).join(" ")+(tod?" - "+tod:"")}
-function spTitle(x){const de=spHead(x),en=spHeadEn(x);return '<span class="sct'+(en?' en':'')+'"><span class="hde">'+esc(de)+'</span>'+(en?'<span class="hen">'+esc(en)+'</span>':'')+'</span>'}
+export function spTitle(x){const de=spHead(x),en=spHeadEn(x);return '<span class="sct'+(en?' en':'')+'"><span class="hde">'+esc(de)+'</span>'+(en?'<span class="hen">'+esc(en)+'</span>':'')+'</span>'}
 function spHead(x){
   const h=String(x.head||"").trim();if(!h||TOD_RE.test(h))return h;
   const ie=(schedFirst(x.sc,"ie")||{}).ie||"";
@@ -152,7 +159,7 @@ function spHead(x){
   return tod?h+" - "+tod:h;
 }
 /* day/night marker for the slugline: schedule I/E first, else the time word in the heading */
-function spTod(x){
+export function spTod(x){
   const t=(((schedFirst(x.sc,"ie")||{}).ie||"").split("/")[1]||"");
   const h=String(x.head||"").toUpperCase();
   const k=/^N/i.test(t)?"n":/^Ev/i.test(t)?"ev":/^Mo/i.test(t)?"mo":/^D/i.test(t)?"d":
@@ -161,4 +168,4 @@ function spTod(x){
   const lbl={d:"Tag",mo:"Tag",ev:"Abend",n:"Nacht"}[k];
   return '<span class="sptod sptod-'+k+'">'+esc(L(lbl))+'</span>';
 }
-function setSCRIPT(v){return SCRIPT=v}   /* other parts change SCRIPT only through this */
+export function setSCRIPT(v){return SCRIPT=v}   /* other parts change SCRIPT only through this */

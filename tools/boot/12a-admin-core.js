@@ -1,10 +1,22 @@
+import {HIT,L,LANG,S,WD,ariaTip,ddmm,esc} from "../base/10-core.js";
+import {nmk} from "../base/11-schedule-prep.js";
+import {allVCards,saveVcf} from "../base/13-crew-views.js";
+import {VIEWS} from "../base/14-render.js";
+import {render} from "../base/15-script-tab.js";
+import {showMsg} from "../base/20-data-start.js";
+import {ADMINS,ROOT_OWNERS} from "./01-config.js";
+import {ADMIN_DEFAULT,DIETS,INTOL,ME,VIEWPERMS,can,crewPerson,dietText,fb,isAdmin,isOwner,lc,normDiet} from "./03-core-firebase.js";
+import {getDataKey} from "./04-data.js";
+import {mailto} from "./06-prefs-docs.js";
+import {menuSec} from "./10-menus-welcome-presence.js";
+/* global editForm */   // from the App-Verwaltung (admin.js, loaded on demand)
 /* ---------- App-Verwaltung (Kern: Daten, Crew-Liste, Catering, Geburtstage, Bilder) – part of the former 12-admin.js; loaded with the app ---------- */
 /* ---- admin: invitations and members (German only; visible to admins) ---- */
 /* error text of the App-Verwaltung: without permission a hint to publish the Firestore rules, else the error itself */
 /* the buttons follow the rules now – a refusal means this change is not allowed for this person (not «rules missing», which misled before) */
-const admErr=err=>/permission/.test((err&&err.code)||"")?L("Keine Berechtigung für diese Änderung."):L("Fehler:")+" "+(err.message||err);
-const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false,open:new Set()};
-async function admLoad(){
+export const admErr=err=>/permission/.test((err&&err.code)||"")?L("Keine Berechtigung für diese Änderung."):L("Fehler:")+" "+(err.message||err);
+export const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false,open:new Set()};
+export async function admLoad(){
   const {F,db}=await fb();
   const none=()=>({docs:[]}),opt=(ok,pr)=>ok?pr:pr.catch(none);
   const [i,m,a,ro,ur]=await Promise.all([opt(isAdmin(),F.getDocs(F.collection(db,"invites"))),opt(isAdmin(),F.getDocs(F.collection(db,"members"))),F.getDocs(F.collection(db,"admins")).catch(none),F.getDocs(F.collection(db,"roles")).catch(none),F.getDocs(F.collection(db,"userroles")).then(x=>{ADM.urOk=true;return x}).catch(()=>{ADM.urOk=false;return none()})]);
@@ -15,21 +27,21 @@ async function admLoad(){
   {const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",ADM.req.length>0);b.dataset.n=ADM.req.length||""}}
   ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.mem=m.docs.map(d=>Object.assign({uid:d.id},d.data()));ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();
 }
-function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
+export function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
-const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-push","set-src","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.catcard=localStorage.getItem("sec:catcard")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
+export const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-push","set-src","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.catcard=localStorage.getItem("sec:catcard")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
 const secOpen=(k,title,body)=>'<details class="asec '+k+'" data-sec="'+k+'"'+(SECS[k]!==false?' open':'')+'><summary>'+esc(title)+'</summary><div class="asb">'+body+'</div></details>';
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;if(/^(set-blocks|blk-|blkp-)/.test(d.dataset.sec))return;   /* Drehblöcke: always closed when the page is opened again (not remembered) */try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
 /* departments that are not fed on set: left out of the catering count */
 const NO_CATER=/^(catering|postprod|verleih)/i;
-function crewDeptOf(m){
+export function crewDeptOf(m){
   const e=lc(m.email),k=nkey([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);
   const x=aix();return (e&&x.dept.get("e:"+e))||(k&&x.dept.get("n:"+k))||"";
 }
 /* catering: the crew list shows a short summary at the top and bundles the details in one collapsible block;
    the Catering page (tab instead of Script for people with the catering permission) shows everything at a glance */
 let CATM=null;
-function caterData(){
+export function caterData(){
   if(CATM&&Date.now()-CATM.t<800&&CATM.n===ADM.mem.length&&CATM.l===LANG)return CATM.v;
   const v=caterData0();CATM={t:Date.now(),n:ADM.mem.length,l:LANG,v};return v}
 function caterData0(){
@@ -71,23 +83,23 @@ VIEWS.cater=function(){
 window.caterTab=()=>!!(ME&&(can("crew.food")||canMenu()));
 
 /* new users get the role «Crew» automatically (an invitation creates userroles/{email} = crew) */
-async function assignCrew(em){em=lc(em);if(!em||ADMINS.includes(em)||(ADM.adm||[]).includes(em)||(ADM.ur||{})[em])return;
+export async function assignCrew(em){em=lc(em);if(!em||ADMINS.includes(em)||(ADM.adm||[]).includes(em)||(ADM.ur||{})[em])return;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"userroles",em),{role:"crew",at:F.serverTimestamp()});ADM.ur=ADM.ur||{};ADM.ur[em]="crew"}catch(err){console.warn("crew role",err&&err.code||err);
     /* without a role the person sees no shooting plan: say so instead of failing silently */
     showMsg(L("Rolle «Crew» konnte nicht vergeben werden – bitte unter Rollen zuweisen.")+" ("+em+")",7000)}}
 /* initials of a name (user list, callsheet) */
-const initials=n=>String(n||"?").split(/[\s@._-]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
+export const initials=n=>String(n||"?").split(/[\s@._-]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
 /* Crew tab: admins see food preferences next to each person (matched by e-mail) */
 /* Crew tab (admins only): toggles for food preferences and birthdays */
 /* food + birthdays are on by default for admins; the choice is remembered (v2 keys reset older "off" states) */
 const ADMV={food:true,bday:true,acct:true};try{for(const k in ADMV){const v=localStorage.getItem("admv2:"+k);if(v!==null)ADMV[k]=v==="1"}}catch(_){}
-const ensureAdm=()=>{if(!ADM.loaded&&!ADM.busy&&!ADM.loading&&!ADM.err){ADM.loading=true;admLoad().then(()=>{ADM.err=""}).catch(err=>{console.error(err);ADM.err=String((err&&(err.code||err.message))||err);render()}).finally(()=>{ADM.loading=false})}};
+export const ensureAdm=()=>{if(!ADM.loaded&&!ADM.busy&&!ADM.loading&&!ADM.err){ADM.loading=true;admLoad().then(()=>{ADM.err=""}).catch(err=>{console.error(err);ADM.err=String((err&&(err.code||err.message))||err);render()}).finally(()=>{ADM.loading=false})}};
 /* crew entry -> member: same e-mail, otherwise same first + last name */
 const nkey=nmk;   /* same as the name key of the PREP lists */
 /* lookup tables built once per admin load instead of searching all members for every crew row */
 const AIX={byEmail:new Map(),byName:new Map(),dept:new Map(),mem:null,crew:null};
 const aix=()=>{if(AIX.mem!==ADM.mem||AIX.crew!==S.crew)admIndex();return AIX};
-function admIndex(){
+export function admIndex(){
   AIX.mem=ADM.mem;AIX.crew=S.crew;AIX.byEmail=new Map();AIX.byName=new Map();AIX.dept=new Map();
   for(const m of ADM.mem){if(m.email)AIX.byEmail.set(m.email,m);for(const k of [nkey([m.firstName,m.lastName].filter(Boolean).join(" ")),nkey(m.name)])if(k&&!AIX.byName.has(k))AIX.byName.set(k,m)}
   for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email),k=nkey(p.name);if(e&&!AIX.dept.has("e:"+e))AIX.dept.set("e:"+e,g.dept||"");if(k&&!AIX.dept.has("n:"+k))AIX.dept.set("n:"+k,g.dept||"")}
@@ -112,14 +124,14 @@ function bdayHTML(){
   return secOpen("bcal",L("Geburtstage während des Drehs")+(hits.length?" · "+hits.length:""),(hits.length?hits.map(x=>{const d=new Date(x.iso+"T12:00:00");return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+ddmm(d))+'</span><b>'+esc(x.name)+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>'));
 }
 /* birthday list for everyone (when the main admin allows it): bdays/{uid} = {name, md "MM-DD"}; no year, no other data */
-const PUBB={list:[],loaded:false,loading:false};
+export const PUBB={list:[],loaded:false,loading:false};
 async function loadPubBdays(){
   if(PUBB.loading)return;PUBB.loading=true;
   try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"bdays"));PUBB.list=q.docs.map(d=>d.data()).filter(x=>x&&x.md);PUBB.loaded=true;render()}
   catch(err){console.warn("bdays",err);PUBB.loaded=true;setTimeout(()=>{PUBB.loaded=false},60000)}
   PUBB.loading=false;
 }
-async function writeOwnBday(name,birthday){
+export async function writeOwnBday(name,birthday){
   try{const {F,db}=await fb();const ref=F.doc(db,"bdays",ME.uid);
     if(/^\d{4}-\d\d-\d\d$/.test(birthday||""))await F.setDoc(ref,{name:name||"",md:birthday.slice(5)});else await F.deleteDoc(ref).catch(()=>{});
     PUBB.loaded=false;
@@ -127,7 +139,7 @@ async function writeOwnBday(name,birthday){
 }
 /* main admin: keep bdays/ in line with active members (also fills it for people who registered earlier) */
 let BSYNC=0;
-async function syncBdays(force){
+export async function syncBdays(force){
   if(!isOwner()||!ADM.loaded||(!force&&Date.now()-BSYNC<10*60*1000))return;BSYNC=Date.now();
   try{const {F,db}=await fb();const cur=await F.getDocs(F.collection(db,"bdays"));const have={};cur.docs.forEach(d=>have[d.id]=d.data());
     const name=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||(crewPerson(m.email)||{}).name||"";
@@ -216,7 +228,7 @@ window.crewExtra=function(p){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-ced]");if(!b||!can("users.edit"))return;e.preventDefault();e.stopPropagation();ADM.cedit=ADM.cedit===b.dataset.ced?"":b.dataset.ced;render()},true);
 
 
-function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
+export function confirmSafe(t){try{return window.confirm(t)}catch(_){return true}}
 
 /* ---------- the App-Verwaltung (users, roles, settings, backup) is loaded only when it is opened (admin.js): a faster start for everybody else.
    Without a separate file (local build) the parts are in the page and this does nothing ---------- */

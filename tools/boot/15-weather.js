@@ -1,3 +1,9 @@
+import {L,S,ddmm,esc,localISO,mkDialog,xBtn} from "../base/10-core.js";
+import {WDL} from "../base/12-mycal.js";
+import {addrForItem} from "../base/13-crew-views.js";
+import {render} from "../base/15-script-tab.js";
+import {arr} from "../base/20-data-start.js";
+import {fmtT} from "./01-config.js";
 /* ---------- weather for the first scene of the day (Open-Meteo, no key needed) ---------- */
 /* line icons in the page style (pink outlines) instead of emojis */
 const ICS=(paths,sz,cls)=>'<svg class="lic '+(cls||"")+'" viewBox="0 0 24 24" width="'+(sz||20)+'" height="'+(sz||20)+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths+'</svg>';
@@ -44,7 +50,7 @@ async function wxLoad(d){
 }
 function wxGet(d){const p=wxPlace(d);if(!p)return null;const w=WX[d.date+"|"+p.town];if(!w||(!w.busy&&Date.now()-w.at>3600e3))wxLoad(d);
   if(!w||!w.j){let c=null;try{c=JSON.parse(localStorage.getItem("wx:"+d.date+"|"+p.town)||"null")}catch(_){}return c&&c.j?Object.assign({p},c):{p,busy:true}}return w}
-function wxTile(d){
+export function wxTile(d){
   const w=wxGet(d);if(!w)return "";const dl=w.j&&w.j.daily;
   if(!dl||!dl.time||!dl.time.length)return '<button type="button" class="ttile twx" data-wx="'+esc(d.date)+'"><b>'+(w.err?"–":"…")+'</b><span>'+esc(L("Wetter"))+' · '+esc(w.p.town)+'</span></button>';
   const c=dl.weather_code[0];

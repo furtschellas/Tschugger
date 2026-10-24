@@ -1,12 +1,20 @@
+import {L,LANG,ariaTip,dlgBtn,esc,saveBtn} from "../base/10-core.js";
+import {fold,render} from "../base/15-script-tab.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {ADMINS} from "./01-config.js";
+import {ADMIN_DEFAULT,ME,MYPERMS,MYROLE,PERMS,VIEWPERMS,can,crewPerson,fb,isAdmin,isOwner,lc,permKnown,permLbl,readBoxes} from "./03-core-firebase.js";
+import {ADM,SECS,admErr,admIndex,admLoad,confirmSafe} from "./12a-admin-core.js";
+import {canRole,roleLocked,rolePermsOf} from "./12c-admin-users.js";
+import {auditSum} from "./17-audit-misc.js";
 /* ---------- App-Verwaltung (Rollen und Rechte) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
 const permBoxes=sel=>'<div class="perms">'+[...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp"><h5>'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const lock=(!isAdmin()&&!MYPERMS.includes(k))||(k==="settings"&&!isOwner()); /* role editors can only give permissions they have themselves */
     return '<label class="ck'+(lock?' plock':'')+'"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+(lock?' disabled':'')+'> '+esc(permLbl(k,t))+'</label>'}).join("")+'</div>').join("")+'</div>';
 /* roles in order: «Hierarchie» (most permissions first) or alphabetical – the sort button in «Rollen» switches, kept on this device */
 let ROLESORT="h";try{ROLESORT=localStorage.getItem("rolesort")==="a"?"a":"h"}catch(_){}
-function rolesSorted(){const nm=r=>String(r.name||r.id||"");return (ADM.roles||[]).slice().sort((a,b)=>ROLESORT==="a"?nm(a).localeCompare(nm(b),LANG):(arr(b.perms).length-arr(a.perms).length)||nm(a).localeCompare(nm(b),LANG))}
+export function rolesSorted(){const nm=r=>String(r.name||r.id||"");return (ADM.roles||[]).slice().sort((a,b)=>ROLESORT==="a"?nm(a).localeCompare(nm(b),LANG):(arr(b.perms).length-arr(a.perms).length)||nm(a).localeCompare(nm(b),LANG))}
 window.rolesSorted=rolesSorted;
 document.addEventListener("click",e=>{if(!e.target.closest||!e.target.closest("[data-rolesort]"))return;ROLESORT=ROLESORT==="a"?"h":"a";try{localStorage.setItem("rolesort",ROLESORT)}catch(_){}render()});
-function rolesSec(){
+export function rolesSec(){
   const cnt=id=>id==="admin"?ADM.adm.length:Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e)).length;
   const roles=rolesSorted();
   const pplLbl=id=>cnt(id)+' '+L(cnt(id)===1?"Person":"Personen");

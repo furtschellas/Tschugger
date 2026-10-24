@@ -1,8 +1,14 @@
+import {L,MEMO,S} from "../base/10-core.js";
+import {CLEAN,arr,saveCache,scheduleRender} from "../base/20-data-start.js";
+import {DATA_URL} from "./01-config.js";
+import {DATAKEY,LASTSTAMP,MEMBER,b64,fb,isAdmin,setDATAKEY,setLASTSTAMP,withTimeout} from "./03-core-firebase.js";
+import {pushSyncSoon} from "./07-push.js";
+import {chgDetect,offlinePrep} from "./14-today-changes-offline.js";
 /* ---- data: fetch encrypted file, decrypt with the key from Firestore ---- */
 /* the encrypted data file is requested right at start, in parallel with the sign-in check; the first load uses that answer */
 let PREENC=null;try{if(navigator.onLine!==false&&!LASTSTAMP)PREENC=fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)}catch(_){}
 async function fetchEnc(){if(PREENC){const p=PREENC;PREENC=null;const j=await p;if(j&&j.ct)return j}const ac=typeof AbortController==="function"?new AbortController():null;const tm=setTimeout(()=>ac&&ac.abort(),25000);let r;try{r=await fetch(DATA_URL+"?t="+Date.now(),{cache:"no-store",signal:ac?ac.signal:undefined})}catch(err){throw Object.assign(new Error("network: "+(err&&err.name||err)),{code:"unavailable"})}finally{clearTimeout(tm)}if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
-async function getDataKey(){
+export async function getDataKey(){
   if(DATAKEY)return DATAKEY;
   /* the key is also kept on this device (only for signed-in crew), so blocking pictures open offline on set */
   let kv="";
@@ -14,7 +20,7 @@ async function getDataKey(){
   return DATAKEY;
 }
 /* own keys per area (Drehbuch, Telefon/E-Mail): Firebase gives them only to people with that right; null = no right */
-const AREAKEYS={};
+export const AREAKEYS={};
 async function getAreaKey(area){
   if(area in AREAKEYS)return AREAKEYS[area];
   let kv="";
@@ -92,7 +98,7 @@ window.loadScriptData=async function(){
   }
 };
 let LOADP=null;
-function load(force){
+export function load(force){
   if(LOADP)return LOADP;
   LOADP=loadOnce(force).finally(()=>{LOADP=null});
   return LOADP;
@@ -112,7 +118,7 @@ async function loadOnce(force){
   if(!data||!Array.isArray(data.days))throw new Error("data format");
   setLASTSTAMP(enc.stamp||null);try{if(LASTSTAMP)localStorage.setItem("dstamp:v1",LASTSTAMP);localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
 }
-function loadErr(err){
+export function loadErr(err){
   const c=(err&&(err.code||err.name))||"",m=(err&&err.message)||String(err);
   let why;
   if(/permission/.test(c)||/permission/i.test(m))why="Kein Zugriff auf den Schlüssel (Firebase-Regeln prüfen)";
@@ -122,4 +128,4 @@ function loadErr(err){
   else why=m;
   return L("Daten konnten nicht geladen werden. Bitte Internetverbindung prüfen.")+" ["+why+"]";
 }
-const isOffline=err=>!navigator.onLine||/unavailable|network|offline|failed to fetch|load failed/i.test(((err&&err.code)||"")+" "+((err&&err.message)||""));
+export const isOffline=err=>!navigator.onLine||/unavailable|network|offline|failed to fetch|load failed/i.test(((err&&err.code)||"")+" "+((err&&err.message)||""));

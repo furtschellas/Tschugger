@@ -1,3 +1,12 @@
+import {L,MEMO,S,dayBlockOK,esc,mkDialog,myBlocks,norm,saveBtn,saveErr,todayISO} from "../base/10-core.js";
+import {WDL} from "../base/12-mycal.js";
+import {render} from "../base/15-script-tab.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {ME,MEMBER,can,fb,isAdmin,isOwner,ownDec,ownEnc} from "./03-core-firebase.js";
+import {getDataKey} from "./04-data.js";
+import {pushSyncSoon} from "./07-push.js";
+import {bcDeliver} from "./09-broadcast.js";
+import {SECS,confirmSafe} from "./12a-admin-core.js";
 /* ---------- Coverday Management (App-Verwaltung → «Coverday», permission «Coverday verwalten»): whole shooting days swapped, moved
    or moved on by one shooting day (weather) – for all units or the 2nd unit only. The changes are stored encrypted in coverday/state
    and laid over the Drehplan in the app. A newer Drehplan has priority: the changes then wait for a decision («zu prüfen»),
@@ -87,7 +96,7 @@ function cdCsCheck(){const out=[];for(const x of arr(S.dispos)){const ks=arr(x.s
   const d=arr(S.days).find(y=>y.date===x.date),dk=cdDayKeys(d);if(ks.filter(k=>dk.has(k)).length<Math.ceil(ks.length/2))out.push(cdDD(x.date))}return out}
 window.cdCsCheck=cdCsCheck;
 /* the changes: one encrypted document (coverday/state), live for the crew */
-let CDSUBS=null;
+export let CDSUBS=null;
 async function cdSub(){if(CDSUBS||!ME)return;try{const {F,db}=await fb();CDSUBS=F.onSnapshot(F.doc(db,"coverday","state"),async snap=>{let ops=[];
     try{if(snap.exists()&&snap.data().c)ops=arr((await ownDec(await getDataKey(),snap.data().c)).ops)}catch(_){CDSUBS&&CDSUBS();CDSUBS=null;CDFAIL=Date.now();return}
     const at=snap.exists()&&+snap.data().at||0;if(at!==window.CDAT){window.CDAT=at;try{pushSyncSoon()}catch(_){}}
@@ -179,4 +188,4 @@ document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.c
   catch(err){CD.msg=(typeof saveErr==="function"?saveErr(err):L("Fehler:")+" "+(err.message||err))}
   finally{CD.busy=false;render()}},true);
 document.addEventListener("submit",e=>{if(e.target.closest&&e.target.closest("[data-cdform]"))e.preventDefault()},true);
-function setCDSUBS(v){return CDSUBS=v}   /* other parts change CDSUBS only through this */
+export function setCDSUBS(v){return CDSUBS=v}   /* other parts change CDSUBS only through this */

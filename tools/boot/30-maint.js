@@ -1,3 +1,8 @@
+import {L,esc,mkDialog} from "../base/10-core.js";
+import {ME} from "./03-core-firebase.js";
+import {docGet,maintOn} from "./06-prefs-docs.js";
+import {WELCOME_OPEN} from "./10-menus-welcome-presence.js";
+import {ONBOARD} from "./11-account.js";
 /* ---- maintenance note: at every start of the app (once per opening, after the welcome note), closed with «OK».
    Text: App-Verwaltung → Dokumente → «Wartungshinweis» (per language), switched on and off there (for everybody) ---- */
 let MAINT_DONE=false;

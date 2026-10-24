@@ -1,8 +1,23 @@
+import {L,LANG,S,TX,esc,todayISO} from "../base/10-core.js";
+import {findPerson,groupPeople,mailPeople,nmk,ppNames} from "../base/11-schedule-prep.js";
+import {hm} from "../base/12-mycal.js";
+import {VIEWS,tabsOn,vok} from "../base/14-render.js";
+import {fold,lastCheck,render} from "../base/15-script-tab.js";
+import {scriptData} from "../base/17-scene-reader.js";
+import {arr} from "../base/20-data-start.js";
+import {fmtDT} from "./01-config.js";
+import {ADMINPERMS,ADMIN_DEFAULT,ME,MYPERMS,MYROLE,SIMROLE,can,canAdm,isAdmin,isOwner,permKnown,setADMINPERMS,setMYPERMS,setMYROLE,setSIMROLE} from "./03-core-firebase.js";
+import {getDataKey} from "./04-data.js";
+import {bcButton} from "./09-broadcast.js";
+import {ACSUB,acctButton} from "./11-account.js";
+import {ADM} from "./12a-admin-core.js";
+import {dmy} from "./14-today-changes-offline.js";
+import {TST_RUN,logHead,logSu,logWhen,tstIco} from "./17-audit-misc.js";
 /* ---------- Dokumente prüfen: vergleicht die Dokumente aus der Dropbox untereinander und mit der App ----------
    Drehplan ↔ Locations ↔ Drehbuch ↔ Cast-Liste, Prep Weekly ↔ Daily, Callsheets ↔ Drehplan, Callsheets ↔ Crewliste, Namen ↔ Crewliste,
    dazu ein kurzer Selbsttest der App. Alles läuft im Browser mit den Daten, die die Person sehen darf – nichts geht weg.
    Sichtbar für Admins in App-Verwaltung → Log, für alle mit dem Recht «Dokumente prüfen» in Mein Konto → App. */
-const DCK={res:null,busy:false,at:0,open:false};
+export const DCK={res:null,busy:false,at:0,open:false};
 try{const l=JSON.parse(localStorage.getItem("dck:last")||"null");if(l&&Array.isArray(l.res)){DCK.res=l.res;DCK.at=l.at||0}}catch(_){} /* the last check of this device is shown again */
 /* screenplay text: action lines (and speaker cues) vs. what is said – a name inside dialogue does not put the person on set */
 function dckSplit(t){const act=[],dlg=[];let inD=false;for(const raw of String(t||"").split("\n")){const l=raw.trim();
@@ -11,7 +26,7 @@ function dckSplit(t){const act=[],dlg=[];let inD=false;for(const raw of String(t
     if(/^\(.*\)$/.test(l)&&inD)continue;(inD?dlg:act).push(l)}
   return {a:fold(act.join(" ")),d:fold(dlg.join(" "))}}
 const dckAction=t=>dckSplit(t).a,dckDialog=t=>dckSplit(t).d;
-const dckMay=()=>!!ME&&(isAdmin()||can("data.check"));
+export const dckMay=()=>!!ME&&(isAdmin()||can("data.check"));
 const dnz=t=>fold(String(t||"")).replace(/[^a-z0-9]+/g," ").trim();
 const dsc=x=>String(x||"").toUpperCase().replace(/\s+/g,"").replace(/^SC/,"");
 /* scene parts («186PT1A», «25SL2») belong to their scene: 186, 25 */
@@ -20,7 +35,7 @@ const dhas=(set,s)=>set.has(s)||set.has(dbase(s))||set.has(dnum(s));
 const dday=d=>{try{return dmy(d)}catch(_){return d}};   /* same day format as everywhere («Sa, 17.10.») */
 /* a page drawn for a test only (not shown, the visible page stays as it is); an error in the page throws */
 function offView(t){const d=document.createElement("div");d.innerHTML=VIEWS[t]?VIEWS[t]():"";return d}
-async function dckRun(auto){
+export async function dckRun(auto){
   if(DCK.busy)return;DCK.busy=true;const t0=Date.now();render();
   const out=[],w=(lvl,area,text)=>out.push({lvl,area,text});   /* lvl: warn = Unstimmigkeit, info = Hinweis, ok = in Ordnung */
   const t=todayISO(),days=(S.days||[]).filter(d=>d&&d.date);
@@ -168,10 +183,10 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-dckrun]")&&dckM
 /* ---------- Berechtigungen testen (App-Verwaltung → Log/Tests, Owner und Admins): die App einen Moment mit den Rechten jeder Rolle ansehen ----------
    Pro Rolle: welche Bereiche sie sieht, welche Zusatzrechte sie hat, ob jede Seite ohne Fehler erscheint, ob Telefon/E-Mail
    nur mit Recht sichtbar sind und ob die Kopf-Symbole stimmen. Danach ist alles wieder wie vorher. Nichts wird gespeichert. */
-const RTS={res:null,busy:false,at:0,open:false};
+export const RTS={res:null,busy:false,at:0,open:false};
 const RTN={today:"Today",plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",cater:"Catering",info:"Info"};
 try{const l=JSON.parse(localStorage.getItem("rt:last")||"null");if(l&&Array.isArray(l.res)){RTS.res=l.res;RTS.at=l.at||0}}catch(_){} /* the last test of this device is shown again */
-async function roleTestRun(auto){
+export async function roleTestRun(auto){
   if(RTS.busy||!isAdmin())return;RTS.busy=true;render();
   const keep={p:MYPERMS.slice(),r:MYROLE,tab:S.tab,sub:ADM.sub,ac:typeof ACSUB!=="undefined"?ACSUB:null,ap:ADMINPERMS};
   const roles=[{id:"admin",name:L("Admin"),adm:true,perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}].concat((ADM.roles||[]).map(r=>({id:r.id,name:r.name||r.id,perms:arr(r.perms)}))).concat([{id:"",name:L("Keine Rolle"),perms:[]}]);

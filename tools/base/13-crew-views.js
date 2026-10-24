@@ -1,3 +1,15 @@
+import {L,S,TX,TXA,ariaTip,cap,castChips,ddmm,esc,fmtDate,ieClass,locHref,lvButtons,lvClasses,maps,memo,norm,pad2,partsHref,safeUrl,slug,telNum,todayISO} from "./10-core.js";
+import {UNAME,UNITBAR,dayNav,hasSelU,icsEsc,nextUnitDay,onlyU,planDays,unitLists,unitsOn,zurichUTC} from "./11-schedule-prep.js";
+import {hm,planFactsHTML,planPdfBtn} from "./12-mycal.js";
+import {CSEXP,CSI} from "./13a-callsheet.js";
+import {csNowScene} from "./13b-cs-now.js";
+import {csOrderRows} from "./13c-cs-places.js";
+import {renderCS} from "./13e-cs-sections.js";
+import {vok} from "./14-render.js";
+import {searchBox} from "./15-script-tab.js";
+import {blkFor,fpFor,fpLinks} from "./17-scene-reader.js";
+import {openGallery} from "./18-blocking.js";
+import {arr,showMsg} from "./20-data-start.js";
 /* day.month. without weekday (any language) */
 const dmShort=iso=>{const [,m,d]=String(iso||'').split('-');return d&&m?d+'.'+m+'.':''};
 /* vCard 3.0 for one crew member, so it can be added to the phone's contacts */
@@ -12,7 +24,7 @@ function vCardText(p,g){
   return L1.join("\r\n")+"\r\n";
 }
 /* one contact: Android opens the phone's "new contact" screen pre-filled (intent), iPhone shows the contact card; elsewhere a .vcf file */
-function saveVCard(p,g){
+export function saveVCard(p,g){
   if(/Android/i.test(navigator.userAgent)){
     const x=(k,v)=>v?"S."+k+"="+encodeURIComponent(String(v).trim())+";":"";
     location.href="intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;"+x("name",p.name)+x("phone",p.phone&&telNum(p.phone))+"i.phone_type=2;"+x("email",p.email)+x("job_title",p.role)+x("company","TSCHUGGER Tigerblood")+"end";
@@ -22,8 +34,8 @@ function saveVCard(p,g){
   }
   saveVcf(vCardText(p,g),String(p.name||"").replace(/[\\/:*?"<>|]/g,"").trim()||"Kontakt");
 }
-function allVCards(){let out="",n=0;for(const g of S.crew)for(const p of (g.people||[]))if(p.name&&(p.phone||p.email)){out+=vCardText(p,g);n++}return {text:out,n}}
-function saveVcf(v,name,file){
+export function allVCards(){let out="",n=0;for(const g of S.crew)for(const p of (g.people||[]))if(p.name&&(p.phone||p.email)){out+=vCardText(p,g);n++}return {text:out,n}}
+export function saveVcf(v,name,file){
   const fn=name+".vcf",dataUrl=()=>{location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(v)};
   const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
   /* iPhone: newer iOS versions block opening «data:» addresses (nothing happened) – the service worker serves the
@@ -38,7 +50,7 @@ function saveVcf(v,name,file){
   try{const u=URL.createObjectURL(new Blob([v],{type:"text/vcard;charset=utf-8"}));const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
   catch(_){location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(v)}
 }
-function renderCrew(){
+export function renderCrew(){
   if(!S.crew.length)return emptyHTML("Crewliste");
   const q=S.q.trim().toLowerCase();
   let h='<input class="search" id="q" type="search" placeholder="'+L("Crew suchen")+'" value="'+esc(S.q)+'" aria-label="'+esc(L("Crew durchsuchen"))+'">';
@@ -80,7 +92,7 @@ function scene5Parts(){
 const BUNDLES=()=>(LOCCFG().bundles||[]).map(b=>Object.assign({},b,{re:locRe(b)}));
 const TITLES=()=>(LOCCFG().titles||[]).map(t=>Object.assign({},t,{re:locRe(t)}));
 const bundleOf=l=>BUNDLES().find(b=>b.re.test([l.name,l.venue,l.address].join(" ")));
-function groupLocs(){return memo("groups",buildGroups)}
+export function groupLocs(){return memo("groups",buildGroups)}
 function buildGroups(){
   const g=[],idx={};
   const s5locs=[];let s5at=-1;
@@ -114,8 +126,8 @@ function buildGroups(){
 const LOCCFG=()=>(S.meta&&S.meta.locCfg)||{};
 const locRe=x=>{try{return new RegExp(x.re,"i")}catch(_){return /$^/}};
 const LOCADDR=()=>LOCCFG().addr||{};
-const fullAddr=loc=>LOCADDR()[norm(loc)]||loc;
-function addrForItem(it){
+export const fullAddr=loc=>LOCADDR()[norm(loc)]||loc;
+export function addrForItem(it){
   const a=LOCADDR()[norm(it.loc||"")];if(a)return a;
   return memo("ad|"+(it.sc||"")+"|"+(it.loc||""),()=>{
     const n=norm(it.sc||"");
@@ -129,7 +141,7 @@ function s5Addresses(g){
   for(const p of g.parts){const a=fullAddr(p.it.loc);if(!m.has(a))m.set(a,[]);m.get(a).push(p)}
   return [...m.entries()];
 }
-function ufOn(){return !unitsOn().every(u=>S.uf[u])}
+export function ufOn(){return !unitsOn().every(u=>S.uf[u])}
 function rawUnits(sc){return sceneTexts(sc,null).map(x=>x.u)}
 function unitBadges(us){
   return '<span class="ubs">'+["1","2","3"].filter(u=>us.includes(u)).map(u=>'<span class="ub'+(u==="1"?'':' u'+u)+'">'+UNAME[u]+' Unit</span>').join("")+'</span>';
@@ -162,7 +174,7 @@ const allScenes=()=>memo("allsc",()=>{
   }
   return out;
 });
-function sceneTexts(scenes,uf){
+export function sceneTexts(scenes,uf){
   if(uf===undefined)uf=ufOn()?S.uf:null;
   const uk=uf?["1","2","3"].filter(u=>uf[u]).join(""):"*";
   return memo("st|"+uk+"|"+scenes.join(","),()=>{
@@ -197,13 +209,13 @@ function locCard(g0){
   let now=false;try{const ns=typeof csNowScene==="function"&&csNowScene();now=!!ns&&allSc.some(x=>norm(x)===norm(ns.sc))}catch(_){}
   const card=cardWrap("card:"+g.key,head,addrHTML,body+fpLinks(fps,[]));return now?card.replace('<div class="lc scd','<div class="lc scd lcnow'):card;
 }
-function renderLoc(){
+export function renderLoc(){
   if(!S.locs.length)return emptyHTML("Motivliste");
   const gs=groupLocs().filter(g=>{if(!ufOn())return true;if(g.s5)return g.parts.some(p=>S.uf[p.u]);return sceneTexts(g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))).length>0});
   return '<div class="lvwrap '+lvClasses()+'">'+lvButtons((/^https:\/\//.test(window.MAPURL||"")?'<a class="mapbtn" href="'+esc(window.MAPURL)+'" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>Map</a>':'')+'<button class="scall" id="scall" data-scall="1" aria-expanded="false" aria-label="'+L("Alle Szenen auf- oder zuklappen")+'">'+cap(L("Szenen"))+'</button>')+
     searchBox("lq",S.lq,L("Location, Adresse, Szene …"))+'<div id="lqres">'+locResults(gs)+'</div></div>';
 }
-function locResults(gs){
+export function locResults(gs){
   return (()=>{
       if(!gs.length)return '<div class="empty">'+(S.uf["1"]||S.uf["2"]||S.uf["3"]?L('Keine Locations für diese Unit.'):L('Bitte mindestens eine Unit wählen.'))+'</div>';
       const terms=String(S.lq||"").toLowerCase().split(/\s+/).filter(Boolean);
@@ -251,7 +263,7 @@ function csDayAfterWrap(t,pick,by,now){const td=S.days.find(d=>d.date===t)||{},x
   const w=hm(tm.wrap||x0.wrap||td.wrap||""),cc=hm(tm.crewCall||x0.crewCall||td.crewCall||"");const nx=pick.find(d=>d.date>t&&by[d.date]);
   if(!w||!nx||typeof zurichUTC!=="function")return null;const end=zurichUTC(t,w).getTime()+(cc&&w<cc?864e5:0);
   return now>end+3600e3?nx.date:null}
-function renderDispo(){
+export function renderDispo(){
   if(!S.days.length)return emptyHTML("Callsheet");
   const t=todayISO(),PD=planDays();
   if(onlyU()){const cd=S.days.find(x=>x.date===S.dday);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.dday=nd.date}}
@@ -312,7 +324,7 @@ function renderDispo(){
   h+=attachHTML(x,x.date)+sidesHTML(x.date)+raHTML(x.date);
   return h;
 }
-function renderInfo(){
+export function renderInfo(){
   if(!S.places.length)return emptyHTML("Infos");
   let h='';
   for(const g of S.places){
@@ -322,10 +334,10 @@ function renderInfo(){
   }
   return h;
 }
-function emptyHTML(what){
+export function emptyHTML(what){
   return '<div class="empty">'+(S.loaded?L(what)+' '+L('ist noch leer. Die Daten kommen automatisch aus der Dropbox der Produktion.'):L('Lade')+' '+L(what)+' …')+'</div>';
 }
-function srcHTML(){
+export function srcHTML(){
   const m=S.meta;if(!m||!m.sources)return"";
   const KIND={schedule:"Drehplan",crew:"Crewliste",locations:"Motivliste",info:"Infos",script:"Drehbuch",callsheet:"Callsheet",dispo:"Callsheet",prep:"Prep-Wochenplanung",fp:"Floorplans"};
   const when=iso=>{const t=new Date(iso);return isNaN(t)?"":ddmm(t)+" "+pad2(t.getHours())+":"+pad2(t.getMinutes())};

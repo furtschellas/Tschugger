@@ -1,5 +1,23 @@
+import {a2hsDo,isIOS,isStandalone,showA2hs} from "../a2hs.js";
+import {$,L,LANG,S,WDS,applyStatic,dlgBtn,esc,getTheme,mkDialog,saveBtn,setLANG,setTheme} from "../base/10-core.js";
+import {VIEWS,myTabOrder,tabOrder,tabsOn,vok} from "../base/14-render.js";
+import {render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {showMsg} from "../base/20-data-start.js";
+import {fmtD} from "./01-config.js";
+import {APPLANGS,FB,ME,MEMBER,MYROLE,can,canAdm,clean,crewPerson,dietSel,fb,intolBoxes,isAdmin,isOwner,langSel,lc,normDiet,readBoxes,setME,setMEMBER,setMYPERMS} from "./03-core-firebase.js";
+import {checkRequests,clearLocal,errText,sendMailSafe,showGate} from "./05-membership-signin.js";
+import {PREFOK,savePrefsSoon} from "./06-prefs-docs.js";
+import {pushSec} from "./07-push.js";
+import {TOUR,a2stCheck,chatSec,tourInfo,tourStart} from "./08-chat-tour.js";
+import {WELCOME_OPEN,crewNames,maybeWelcome,setWELCOME_OPEN} from "./10-menus-welcome-presence.js";
+import {ADM,confirmSafe,writeOwnBday} from "./12a-admin-core.js";
+import {offAuto} from "./14-today-changes-offline.js";
+import {todayHidden,todayOn} from "./16-today-view.js";
+import {SIMUSER} from "./22-simulate.js";
+import {fsGet} from "./23-mobile.js";
 /* ---- account sheet: own password, own email, sign out; admin entry ---- */
-function acctButton(on){
+export function acctButton(on){
   let b=document.getElementById("acctBtn");
   if(!b){b=document.createElement("button");b.id="acctBtn";b.className="refresh";b.type="button";
     b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
@@ -15,9 +33,9 @@ function acctButton(on){
   if(on&&can("users.requests"))checkRequests();
 }
 const isPwUser=()=>!!(ME&&(ME.providerData||[]).some(p=>p.providerId==='password'));
-let ONBOARD=false;
+export let ONBOARD=false;
 /* phone + contact e-mail (required); prefilled from the crew list / sign-in address */
-function contactFields(m,pre){const cp=(typeof crewPerson==="function"&&ME&&crewPerson(lc(ME.email)))||{};pre=pre||"";
+export function contactFields(m,pre){const cp=(typeof crewPerson==="function"&&ME&&crewPerson(lc(ME.email)))||{};pre=pre||"";
   return '<label>'+L("Telefon")+'<input type="tel" name="'+pre+'ph" autocomplete="tel" inputmode="tel" required placeholder="+41 79 123 45 67" value="'+esc((m&&m.phone)||(!pre&&cp.phone)||"")+'"></label>'+
     '<label>'+L("E-Mail")+'<input type="email" name="'+pre+'ce" autocomplete="email" required value="'+esc((m&&m.contactEmail)||(!pre&&ME&&ME.email)||(m&&m.email)||"")+'"></label>';}
 /* function (job): from the crew list when listed there, otherwise the person enters it in the profile (members.func) */
@@ -29,8 +47,8 @@ function nameFields(){
   if(cn)return '<div class="pname"><span>'+L("Vorname")+'</span><b>'+esc(cn.firstName)+'</b><span>'+L("Nachname")+'</span><b>'+esc(cn.lastName||"–")+'</b></div><p class="ghint">'+L("Aus der Crewliste übernommen.")+'</p>';
   return '<label>'+L("Vorname")+'<input type="text" name="fn" autocomplete="given-name" required value="'+esc((MEMBER&&MEMBER.firstName)||"")+'"></label><label>'+L("Nachname")+'<input type="text" name="ln" autocomplete="family-name" required value="'+esc((MEMBER&&MEMBER.lastName)||"")+'"></label>';
 }
-const GENDERS=[["m","Männlich"],["w","Weiblich"],["d","Divers"]];
-const genderSel=(n,v,req)=>'<select name="'+n+'"'+(req?' required':'')+'><option value="">–</option>'+GENDERS.map(([k,t])=>'<option value="'+k+'"'+(v===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
+export const GENDERS=[["m","Männlich"],["w","Weiblich"],["d","Divers"]];
+export const genderSel=(n,v,req)=>'<select name="'+n+'"'+(req?' required':'')+'><option value="">–</option>'+GENDERS.map(([k,t])=>'<option value="'+k+'"'+(v===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
 function profileForm(onb){
   return '<form data-af="pf" novalidate>'+nameFields()+funcField()+contactFields(MEMBER)+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Geschlecht")+genderSel("gd",(MEMBER&&MEMBER.gender)||"",true)+'</label><fieldset class="efood"><legend>'+L("Essen")+'</legend><label>'+L("Ernährung")+dietSel("dt",(MEMBER&&MEMBER.diet)?normDiet(MEMBER).diet:"",true)+'</label><label class="full">'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label class="full">'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p></fieldset>'+
     /* «Mein Drehtag» on Today: also here in the profile (same setting as Mein Konto › App) */
@@ -63,7 +81,7 @@ document.addEventListener("click",e=>{const r=e.target.closest&&e.target.closest
   const all=tabOrder(),rest=all.filter(x=>!vis.includes(x));try{localStorage.setItem("mytaborder",JSON.stringify(vis.concat(rest)))}catch(_){}render()});
 /* «Mein Konto» in groups like the app management: Profil (with password/e-mail) · Essen · Benachrichtigungen · App */
 const ACSUBS=[["pro","Profil"],["food","Essen"],["app","App"],["note","Push"]];   /* App before Push */
-let ACSUB="pro";try{ACSUB=localStorage.getItem("acsub")||"pro"}catch(_){}
+export let ACSUB="pro";try{ACSUB=localStorage.getItem("acsub")||"pro"}catch(_){}
 function acctInner(){
   const raw=acctInnerAll();const box=document.createElement("div");box.innerHTML=raw;
   const grp={};ACSUBS.forEach(([k])=>grp[k]=[]);
@@ -97,7 +115,7 @@ function wireAcctPage(){if(ACCTWIRED)return;ACCTWIRED=true;
 function markNeed(root){const f=root.querySelector('form[data-af="pf"]');if(!f)return;
   const upd=()=>f.querySelectorAll("input[required],select[required]").forEach(el=>el.classList.toggle("need",!String(el.value||"").trim()));
   upd();if(!f.dataset.need){f.dataset.need="1";f.addEventListener("input",upd);f.addEventListener("change",upd)}}
-function showAcct(needProfile){
+export function showAcct(needProfile){
   ONBOARD=needProfile===true&&!!MEMBER;
   if(ONBOARD){
     let s=document.getElementById("acct");
@@ -210,4 +228,4 @@ document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closes
     '<p class="ghint">'+esc(L("Diesen Hinweis kannst du unter Mein Konto → App wieder einschalten."))+'</p><div class="a2b">'+dlgBtn("pri",'data-ihok',"Verstanden")+'</div></div>';
   d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-ihok]")){d.remove();store("iconhint","seen");try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}if(typeof savePrefsSoon==="function")savePrefsSoon()}});
   document.body.appendChild(d)},3000)}
-function setACSUB(v){return ACSUB=v}   /* other parts change ACSUB only through this */
+export function setACSUB(v){return ACSUB=v}   /* other parts change ACSUB only through this */

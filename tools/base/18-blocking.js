@@ -1,3 +1,13 @@
+import {$,L,LANG,MEMO,S,SPT,applyStatic,esc,getTheme,lvClasses,mkDialog,pvApply,safeUrl,setLANG,setSPT,setTheme,spTheme,svApply,svButtons,svClasses,todayISO} from "./10-core.js";
+import {nextUnitDay,onlyU,ppContact,ppMail} from "./11-schedule-prep.js";
+import {MCNAMES,addToCalendar,myClick} from "./12-mycal.js";
+import {addrForItem,groupLocs,locResults,saveVCard,sceneTexts,ufOn} from "./13-crew-views.js";
+import {vok} from "./14-render.js";
+import {fitRows,fold,render,scriptResults,setSCRIPTERR} from "./15-script-tab.js";
+import {goTab,scallLabel,setOpen,store} from "./16-interaction.js";
+import {BLKREG,blkFor,bmed,findScene,fpFor,fpLinks,pdfBtns,pdfDocs,pdfLbl,sceneFacts,sceneSheet,scriptData,scriptHTML,spTitle,spTod} from "./17-scene-reader.js";
+import {renderSearch} from "./19-search.js";
+import {arr} from "./20-data-start.js";
 /* ---------- blocking gallery: photos and video stills of a scene folder in a pop-up ---------- */
 /* floorplans: the pages are stored as pictures with the app – they open in the gallery (also offline) */
 document.addEventListener("click",e=>{const a=e.target.closest("[data-fpg]");if(!a||typeof window.blkImg!=="function")return;const f=arr(S.meta&&S.meta.floorplans).find(x=>(x.file||x.name)===a.dataset.fpg);if(!f||!arr(f.pg).length)return;
@@ -17,7 +27,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-folders]")
 document.addEventListener("click",e=>{const a=e.target.closest("[data-blkgs]");if(!a||typeof window.blkImg!=="function")return;e.preventDefault();e.stopPropagation();let l=[];try{l=JSON.parse(a.dataset.blkgs)}catch(_){return}
   const o=mkDialog("fldpick",'<div class="a2box"><h3>'+esc(L("Welche Bilder anzeigen?"))+'</h3><div class="fldl">'+l.map((f,i)=>'<button type="button" class="pillbtn fldg" data-gi="'+i+'"><b>'+esc(f.p||f.n)+'</b> · '+f.c+' '+esc(L("Bilder"))+'</button>').join("")+'</div></div>',{replace:true});
   o.addEventListener("click",ev=>{const g=ev.target.closest("[data-gi]");if(g){const f=l[+g.dataset.gi],b=f&&BLKREG.get(f.k);setTimeout(()=>o.remove(),0);if(b)openGallery(b);return}if(ev.target===o)setTimeout(()=>o.remove(),0)});document.body.appendChild(o)},true);
-function openGallery(b,start,pdf){
+export function openGallery(b,start,pdf){
   let d=mkDialog("blkgal",null,{replace:true});if(pdf)d.classList.add("galpdf");   /* PDF pages: the whole screen, narrow margins */
   const all=pdf?bmed(b).filter(m=>m.g==="pdf"&&String(m.n).split(" · ")[0]===pdf):bmed(b),title=pdf?L("Auflösung")+" "+pdfLbl(pdf):(b.title||(L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ")));
   /* view options: size (small / large / list), filter (all / photos / videos); size is remembered */
@@ -76,7 +86,7 @@ function openGallery(b,start,pdf){
 /* blocking of a script scene that is not (yet) in the schedule */
 /* the scene in the shooting schedule (for the floorplan of its location) */
 function scItem(sc){const k=String(sc||"").toLowerCase().replace(/\s+/g,"");if(!k)return null;for(const d of S.days||[])for(const it of arr(d.items).concat(arr((d.unit2||{}).items),arr((d.unit3||{}).items)))if(String(it.sc||"").toLowerCase().replace(/\s+/g,"")===k)return it;return null}
-function blkRow(sc){const it=scItem(sc);const h=fpLinks(it?fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")):[],blkFor(sc));return h?'<div class="spblk">'+h+'</div>':''}
+export function blkRow(sc){const it=scItem(sc);const h=fpLinks(it?fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")):[],blkFor(sc));return h?'<div class="spblk">'+h+'</div>':''}
 function spPage(x,ctx,list,reqSc){const f=sceneFacts(reqSc||x.sc,x,list);return '<div class="sp-scene">'+(f||blkRow(x.sc))+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+spTitle(x)+'</span><span class="spr">'+spTod(x)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
 function spMore(dir,list,j){
   const y=list[j];if(!y)return'';
@@ -94,7 +104,7 @@ async function spLoadMore(b){
   if(t.firstChild)b.replaceWith(t.firstChild);else b.remove();
 }
 let SCN_SEQ=0;
-async function openScene(sc){
+export async function openScene(sc){
   if(window.SCRIPTON===false||!vok("script"))return;
   const seq=++SCN_SEQ,s=sceneSheet();document.body.style.overflow="hidden";s.hidden=false;
   const shell=(b,nav)=>'<div class="scnbox"><div class="scnhd"><b>'+esc(L("Drehbuch"))+'</b>'+(nav||'')+'<button class="scnx" data-scnclose aria-label="'+esc(L("Schliessen"))+'">×</button>'+svButtons()+'</div>'+b+'</div>';

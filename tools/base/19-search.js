@@ -1,3 +1,12 @@
+import {$,L,LANG,S,TX,TXA,WD,cap,ddmm,esc,fmtDate,markTerms,memo,norm} from "./10-core.js";
+import {UNAME,dayPlaces,hasU,unitLists,unitsOn} from "./11-schedule-prep.js";
+import {openMyCal} from "./12-mycal.js";
+import {addrForItem,fullAddr,groupLocs} from "./13-crew-views.js";
+import {vok} from "./14-render.js";
+import {fitRows,fold,render} from "./15-script-tab.js";
+import {SCRIPT,schedIndex} from "./17-scene-reader.js";
+import {arr} from "./20-data-start.js";
+import {ONBOARD} from "../boot/11-account.js";
 /* ---------- search modes («Direktlinks»): Alle · Rolle · Szene · Drehtag · Person · Motiv · Text, in the global and the script search ---------- */
 const SMODES=[["all","Alle"],["role","Rolle"],["sc","Szene"],["day","Drehtag"],["person","Person"],["loc","Motiv"],["text","Text"]];
 const SMODE_OK=k=>SMODES.some(x=>x[0]===k);
@@ -5,13 +14,13 @@ const SMODE_OK=k=>SMODES.some(x=>x[0]===k);
 const SMODE_SH={de:{sc:"SZ",day:"Tag",loc:"Loc",person:"Pers",text:"Txt"},en:{sc:"Sc",day:"Day",loc:"Loc"},fr:{sc:"Sc",day:"Jour",loc:"Loc"},it:{sc:"Sc",day:"Gior.",loc:"Loc"}};
 try{S.gm=localStorage.getItem("gm")||"all";S.sqm=localStorage.getItem("sqm")||"all"}catch(_){S.gm=S.sqm="all"}
 if(!SMODE_OK(S.gm))S.gm="all";if(!SMODE_OK(S.sqm))S.sqm="all";
-const modeChips=(cur,attr)=>'<div class="smodes" role="group" aria-label="'+esc(L("Suchen nach"))+'">'+SMODES.map(([k,t])=>{const sh=(SMODE_SH[LANG]||SMODE_SH.en)[k];return '<button type="button" '+attr+'="'+k+'" aria-pressed="'+(cur===k)+'"'+(sh?' aria-label="'+esc(L(t))+'"':'')+'>'+(sh?'<span class="sm-l">'+esc(L(t))+'</span><span class="sm-s">'+esc(sh)+'</span>':esc(L(t)))+'</button>'}).join("")+'</div>';
-const SHINT={all:"Suche nach Szenennummer (z. B. 186), Drehtag (D5, Day 5, 26.10., Montag, heute, morgen), Motiv, Adresse, Rolle (z. B. Regina), Crew-Name, Funktion oder Telefonnummer.",
+export const modeChips=(cur,attr)=>'<div class="smodes" role="group" aria-label="'+esc(L("Suchen nach"))+'">'+SMODES.map(([k,t])=>{const sh=(SMODE_SH[LANG]||SMODE_SH.en)[k];return '<button type="button" '+attr+'="'+k+'" aria-pressed="'+(cur===k)+'"'+(sh?' aria-label="'+esc(L(t))+'"':'')+'>'+(sh?'<span class="sm-l">'+esc(L(t))+'</span><span class="sm-s">'+esc(sh)+'</span>':esc(L(t)))+'</button>'}).join("")+'</div>';
+export const SHINT={all:"Suche nach Szenennummer (z. B. 186), Drehtag (D5, Day 5, 26.10., Montag, heute, morgen), Motiv, Adresse, Rolle (z. B. Regina), Crew-Name, Funktion oder Telefonnummer.",
   role:"Rolle eingeben, z. B. Regina oder 8. Leer lassen für die Liste aller Rollen.",sc:"Szenennummer eingeben, z. B. 186 oder 4A.",day:"Drehtag eingeben: D5, 26.10., Montag, heute oder morgen.",
   person:"Name, Funktion oder Telefonnummer eingeben.",loc:"Motiv oder Adresse eingeben, z. B. Kapelle oder Ortsname.",text:"Wörter aus Szenenbeschrieb, Notizen oder Infos eingeben."};
 const escRe=t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 /* query normalising shared by both searches: today/tomorrow, D5/Day 5/#5, dates as d.m. */
-function normQ(q){
+export function normQ(q){
   let qq=nrm(q).replace(/[,;]/g," ").trim();
   const iso=d=>d.getDate()+"."+(d.getMonth()+1)+".";
   const now=new Date(),tmr=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
@@ -21,15 +30,15 @@ function normQ(q){
   return qq;
 }
 const WDALL=[["sonntag","sunday","dimanche","domenica"],["montag","monday","lundi","lunedi"],["dienstag","tuesday","mardi","martedi"],["mittwoch","wednesday","mercredi","mercoledi"],["donnerstag","thursday","jeudi","giovedi"],["freitag","friday","vendredi","venerdi"],["samstag","saturday","samedi","sabato"]];
-function dayKeys(d){const x=new Date(d.date+"T12:00:00");return nrm([d.short,d.label,x.getDate()+"."+(x.getMonth()+1)+".",ddmm(x),WDALL[x.getDay()].join(" "),WD[x.getDay()]].join(" "))}
+export function dayKeys(d){const x=new Date(d.date+"T12:00:00");return nrm([d.short,d.label,x.getDate()+"."+(x.getMonth()+1)+".",ddmm(x),WDALL[x.getDay()].join(" "),WD[x.getDay()]].join(" "))}
 /* roles (characters of the cast list) with the names they go by in the script */
 const GENW=new Set(["mafioso","teenager","aunt","tante","dr","neighbour","nachbar","fisherman","fischer","karate","the","der","die"]);
 function roleList(){return memo("roles",()=>{const c=(S.meta&&S.meta.cast)||{};
   return Object.keys(c).sort((a,b)=>(parseInt(a,10)||0)-(parseInt(b,10)||0)).map(id=>{const name=String(c[id]||"");const al=new Set();
     for(const part of fold(name).split("/").map(x=>x.trim()).filter(Boolean)){al.add(part.replace(/\./g,""));const w=part.replace(/\./g,"").split(/\s+/).filter(Boolean);if(w.length>1){const last=w[w.length-1];if(last.length>=3&&!GENW.has(last))al.add(last)}}
     return {id:String(id),name,al:[...al].filter(x=>x.length>=2)}})})}
-function rolesFor(terms){return roleList().filter(r=>terms.every(t=>r.id===t||hasT(r.name,t)||r.al.some(a=>hasT(a,t))))}
-function planRoles(sc){const s=new Set();for(const h of (schedIndex()[norm(sc)]||[]))for(const c of arr(h.it.cast))s.add(String(c));return s}
+export function rolesFor(terms){return roleList().filter(r=>terms.every(t=>r.id===t||hasT(r.name,t)||r.al.some(a=>hasT(a,t))))}
+export function planRoles(sc){const s=new Set();for(const h of (schedIndex()[norm(sc)]||[]))for(const c of arr(h.it.cast))s.add(String(c));return s}
 /* who appears in each script scene: sp = the role speaks (dialogue heading in capitals), mt = the role is only mentioned in the text */
 const SPK=/^[ \t]*([A-ZÄÖÜÉÈÀ][A-ZÄÖÜÉÈÀ0-9 .'’\-\/]{1,40}?)(?:\s*\(([^)]*)\))?[ \t]*$/gm;
 /* voice-over / off: «IDA (V.O.)», «ARMIN (O.S.)» – the role speaks, but need not be on set */
@@ -44,19 +53,19 @@ function scriptRoles(){return memo("scroles:"+(SCRIPT?SCRIPT.length:0),()=>{cons
     out[k]=o}return out})}
 const inScript=(o,id)=>!!o&&(o.sp.has(id)||o.mt.has(id));
 /* actors (callsheets) → role ids */
-function actorRoles(terms){const ids=new Set();const R=roleList();
+export function actorRoles(terms){const ids=new Set();const R=roleList();
   for(const dp of S.dispos)for(const c of arr(dp&&dp.cast)){const a=fold(c.actor||"");if(!a||!terms.every(t=>hasT(a,t)))continue;
     const no=String(c.no||"").replace(/\D/g,"");if(no&&R.some(r=>r.id===no))ids.add(no);else{const hit=R.find(r=>fold(r.name)===fold(c.role||""));if(hit)ids.add(hit.id)}}
   return [...ids]}
 /* role overview: scenes per role in the schedule and in the script, and where they disagree */
-function roleOverview(withScript,attr){
+export function roleOverview(withScript,attr){
   const sched=schedIndex(),sr=withScript&&SCRIPT?scriptRoles():null,R=roleList();if(!R.length)return '<p class="shint">'+esc(L("Keine Rollen in der Besetzungsliste."))+'</p>';
   const plan={};for(const k in sched)for(const h of sched[k])for(const c of arr(h.it.cast)){(plan[c]=plan[c]||new Set()).add(k)}
   return '<div class="rolegrid">'+R.map(r=>{const P=plan[r.id]||new Set();let B=0,diff=0;
     if(sr){for(const k in sr){const o=sr[k],inB=inScript(o,r.id),inP=P.has(k);if(inB)B++;if(sched[k]&&((o.sp.has(r.id)&&!(o.vo&&o.vo.has(r.id))&&!inP)||(inP&&!inB)))diff++}}
     return '<button type="button" class="rolerow" '+attr+'="'+esc(r.name)+'"><span class="rn"><i>'+esc(r.id)+'</i>'+esc(r.name)+'</span><span class="rc">'+esc(L("Drehplan"))+' '+P.size+(sr?' · '+esc(L("Drehbuch"))+' '+B:'')+(diff?' · <b class="rdiff">⚠ '+diff+'</b>':'')+'</span></button>'}).join("")+'</div>'+(sr?'<p class="shint">⚠ = '+esc(L("Geplante Szenen, in denen die Rolle laut Drehbuch spricht, aber nicht im Drehplan steht – oder im Drehplan steht, im Drehbuch aber nicht vorkommt."))+'</p>':'');
 }
-function roleBadges(sc,ids){const P=planRoles(sc),o=SCRIPT?(scriptRoles()[norm(sc)]||{sp:new Set(),mt:new Set()}):null,planned=(schedIndex()[norm(sc)]||[]).length>0,R=roleList();
+export function roleBadges(sc,ids){const P=planRoles(sc),o=SCRIPT?(scriptRoles()[norm(sc)]||{sp:new Set(),mt:new Set()}):null,planned=(schedIndex()[norm(sc)]||[]).length>0,R=roleList();
   return '<span class="rbadges">'+ids.map(id=>{const r=R.find(x=>x.id===id);if(!r)return"";const inP=P.has(id),sp=o?o.sp.has(id):null,mt=o?o.mt.has(id):null;
     const vo=o&&o.vo?o.vo.has(id):false;
     const st=!planned?(vo?L("Voice-over im Drehbuch"):sp?L("spricht im Drehbuch"):mt?L("erwähnt im Drehbuch"):""):o===null?(inP?L("im Drehplan"):""):inP&&(sp||mt)?"✓ "+L("Drehplan und Drehbuch")+(vo?" ("+L("Voice-over")+")":""):inP?"⚠ "+L("nur im Drehplan"):vo?L("Voice-over – muss nicht am Set sein"):sp?"⚠ "+L("spricht im Drehbuch, fehlt im Drehplan"):mt?L("nur erwähnt, nicht im Drehplan"):"";
@@ -116,7 +125,7 @@ function searchAll(q,mode){
   return {R,terms};
 }
 let SR=[],LASTQ="";
-function renderSearch(){
+export function renderSearch(){
   const q=$("#gq").value,res=searchAll(q,S.gm),box=$("#gres");SR=[];
   const gm=$("#gmodes");if(gm){gm.innerHTML=modeChips(S.gm,"data-gm");try{fitRows(gm)}catch(_){}}
   if(!res){box.innerHTML=(S.gm==="role"?roleOverview(false,"data-gpick"):'')+'<p class="shint">'+L(SHINT[S.gm]||SHINT.all)+'</p>';return}
@@ -133,7 +142,7 @@ function renderSearch(){
   box.innerHTML=n?h:'<p class="shint">'+L('Nichts gefunden für')+' «'+esc(q)+'».</p>';
 }
 function openSearch(){$("#search").hidden=false;document.body.style.overflow="hidden";const i=$("#gq");i.focus();i.select();renderSearch()}
-function closeSearch(){$("#search").hidden=true;document.body.style.overflow=""}
+export function closeSearch(){$("#search").hidden=true;document.body.style.overflow=""}
 $("#searchBtn").addEventListener("click",openSearch);
 $("#myCalBtn").addEventListener("click",()=>openMyCal());
 /* every pop-up: × at the top right, Esc closes the topmost one (the first-start profile form stays until it is filled in) */

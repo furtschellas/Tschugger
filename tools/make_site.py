@@ -2,26 +2,40 @@
 The data layer at the end of the app (Claude database) is swapped for an encrypted data file."""
 import pathlib,re,hashlib
 T=pathlib.Path(__file__).resolve().parent;R=T.parent
-# the app itself lives in parts (tools/base: head, styles, markup, script parts in order); tools/app.html is put together from them
+# the app itself lives in parts (tools/base: head, styles, markup, script parts in order; tools/boot: the website parts; tools/a2hs.js).
+# The script parts are ES modules (import/export); tools/modlink.mjs puts them together (checks every import, keeps the order).
+import json as _json,subprocess as _subp,shutil as _shutil
+NODE=_shutil.which("node")
+assert NODE, "node fehlt – der Build braucht node (tools/modlink.mjs)"
+def link(mode,modules,external=(),bridge=(),deny=(),alias=None,label=""):
+  spec={"mode":mode,"label":label,"alias":alias or {},"modules":[{"name":n,"path":pth,"code":c} for n,pth,c in modules],"external":[{"path":pth,"code":c} for pth,c in external],"bridge":sorted(set(bridge)),"deny":list(deny)}
+  r=_subp.run([NODE,str(T/"modlink.mjs")],input=_json.dumps(spec).encode(),capture_output=True,timeout=120)
+  if r.returncode!=0: raise SystemExit("Module ("+label+"): "+(r.stderr.decode()[:3000] or "Fehler"))
+  return r.stdout.decode()
 BASE=[p for p in sorted((T/"base").glob("*")) if p.suffix in (".html",".js")]
-if BASE:(T/"app.html").write_text("".join(p.read_text() for p in BASE))
+parts=sorted((T/"boot").glob("*.js"))
+assert parts, "tools/boot/*.js fehlt"
+MOD=lambda p:("base/"+p.name if p.parent.name=="base" else "boot/"+p.name if p.parent.name=="boot" else p.name)   # path of a module (relative to tools/)
+BASEJS=[(p.name,MOD(p),p.read_text()) for p in BASE if p.suffix==".js"]
+BOOTJS=[("a2hs.js","a2hs.js",(T/"a2hs.js").read_text())]+[(p.name,MOD(p),p.read_text()) for p in parts]
+# tools/app.html (the app on its own): the parts one after the other, import/export taken out (global names as before)
+if BASE:
+  _js=iter(_json.loads(link("split",BASEJS,[(pth,c) for _,pth,c in BOOTJS],label="app.html")))
+  (T/"app.html").write_text("".join(p.read_text() if p.suffix==".html" else next(_js) for p in BASE))
 src=(T/"app.html").read_text()
 START="\napplyStatic();\nloadCache();\nrender();\n"
 assert src.count(START)==1, "app.html: Startblock «applyStatic(); loadCache(); render();» nicht genau einmal gefunden"
 assert src.count("</style>")>=1 and "</script>" in src, "app.html: </style> oder </script> fehlt"
-i=src.index(START);j=src.rindex("</script>")
-parts=sorted((T/"boot").glob("*.js"))
-assert parts, "tools/boot/*.js fehlt"
-# every part runs in a script of its own: an error in one part stops only that part, the rest of the app keeps working
-# (each part is valid JavaScript on its own – the syntax test checks that; global names are shared between the scripts)
-mods=[("a2hs.js",(T/"a2hs.js").read_text())]+[(p.name,p.read_text()) for p in parts]
+_si=src.index("<script>",src.index("</nav>"))+len("<script>")   # the app's script starts after the navigation
+j=src.rindex("</script>")
+mods=[(n,c) for n,_,c in BOOTJS]
 # speed: the translations (tools/boot/02-i18n.js, ~300 KB for all languages) go to i18n/<lang>.json – a device loads only its own language
 # (German is the text of the code itself: nothing to load); without node the file stays in the page as before
 def _i18n_split(code):
   import json as _j,subprocess as _sp,shutil as _sh
   node=_sh.which("node")
   if not node: return None
-  js="const I18N={};"+code+"\n;const o={};for(const l of ['fr','it','en','hi']){const t={};for(const k in I18N){const v=I18N[k]||{},x={};if(v[l])x[l]=v[l];if(l!=='en'&&v.en)x.en=v.en;if(Object.keys(x).length)t[k]=x}o[l]=t}process.stdout.write(JSON.stringify({o,LANGS}))"
+  js="const I18N={};"+re.sub(r"(?m)^export ","",re.sub(r"(?m)^import \{[^}]*\} from \"[^\"]+\";\n","",code))+"\n;const o={};for(const l of ['fr','it','en','hi']){const t={};for(const k in I18N){const v=I18N[k]||{},x={};if(v[l])x[l]=v[l];if(l!=='en'&&v.en)x.en=v.en;if(Object.keys(x).length)t[k]=x}o[l]=t}process.stdout.write(JSON.stringify({o,LANGS}))"
   try:
     r=_sp.run([node,"-"],input=js.encode(),capture_output=True,timeout=60)   # the script on stdin (too long for the command line)
     if r.returncode!=0 or not r.stdout: return None
@@ -30,7 +44,7 @@ def _i18n_split(code):
   out=R/"i18n";out.mkdir(exist_ok=True)
   for l,t in d["o"].items():(out/(l+".json")).write_text(_j.dumps(t,ensure_ascii=False,separators=(",",":"),sort_keys=True))
   ver=hashlib.sha1(_j.dumps(d["o"],sort_keys=True).encode()).hexdigest()[:10]
-  return ("const LANGS="+_j.dumps(d["LANGS"],ensure_ascii=False)+";\n"
+  return ("export const LANGS="+_j.dumps(d["LANGS"],ensure_ascii=False)+";\n"
     "/* translations: only the chosen language (i18n/<lang>.json, kept on the device); German is the text of the code itself */\n"
     "const I18NV=\""+ver+"\";window.I18NHAVE=new Set([\"de\"]);\n"
     "function i18nMerge(o){for(const k in o)I18N[k]=Object.assign(I18N[k]||{},o[k])}\n"
@@ -43,14 +57,29 @@ def _i18n_split(code):
 mods=[(n,(_i18n_split(c) or c) if n=="02-i18n.js" else c) for n,c in mods]
 # speed: the App-Verwaltung (backup, users, roles – only for admins) goes to admin.js, loaded when it is opened (12a-admin-core: loadAdminUI)
 LAZY=("12b-admin-backup.js","12c-admin-users.js","12d-admin-roles.js","12e-admin-blocks.js")
+_path={n:pth for n,pth,_ in BOOTJS}
+# names used from outside the app's own scope: tests (page.evaluate), the start screen, other scripts (window.X) and admin.js ↔ page
+_tok=lambda t:set(re.findall(r"[A-Za-z_$][\w$]*",t))
+_outside=set()
+for f in list((R/"tests").glob("*.py"))+list((R/"tests").glob("*.mjs"))+list(T.glob("*.html"))+[R/"sw.js"]:
+  if f.exists() and f.name not in ("app.html",):_outside|=_tok(f.read_text(errors="ignore"))
+_alljs="\n".join(c for _,_,c in BASEJS+BOOTJS)
+_outside|=set(re.findall(r"(?:window|self|globalThis)\.([A-Za-z_$][\w$]*)",_alljs))
+_lzc="\n".join(c for n,c in mods if n in LAZY);_mainc="\n".join([c for _,_,c in BASEJS]+[c for n,c in mods if n not in LAZY])
+_brmain=_outside|_tok(_lzc)   # page: what admin.js uses from it (through window)
+_bradm=_outside|_tok(_mainc)   # admin.js: what the page uses from it (e.g. typeof editForm)
+DENY=("L",)   # «L» on window is the map library (Leaflet); the app's translation function L stays inside (tests: __L)
 _lz=[(n,c) for n,c in mods if n in LAZY]
+_main=[(n,c) for n,c in mods if n not in LAZY]
+_basew=[(n,pth,(c.split(START)[0] if n=="20-data-start.js" else c)) for n,pth,c in BASEJS]   # the website starts in tools/boot/13-start.js
 if len(_lz)==len(LAZY):
-  _adm="".join("/* "+n+" */\n"+c+"\n;\n" for n,c in _lz)
+  _adm=link("bundle",[(n,_path[n],c) for n,c in _lz],[(pth,c) for _,pth,c in _basew]+[(_path[n],c) for n,c in _main],bridge=_bradm,deny=DENY,alias={"L":"__L"},label="admin.js")
   _av=hashlib.sha1(_adm.encode()).hexdigest()[:10]
-  (R/"admin.js").write_text(_adm)
-  mods=[(n,c.replace("__ADMINJS_VER__",_av)) for n,c in mods if n not in LAZY]
-boot="\n</script>\n"+"".join("<script>/* "+n+" */\n"+c+"\n</script>\n" for n,c in mods)+"<script>window.__APPOK=1</script>\n"
-body=src[:i]+boot+src[j+len("</script>"):]
+  (R/"admin.js").write_text(_adm+"\n")
+  _main=[(n,c.replace("__ADMINJS_VER__",_av)) for n,c in _main]
+_mainjs=link("bundle",_basew+[(n,_path[n],c) for n,c in _main],[(_path[n],c) for n,c in _lz],bridge=_brmain,deny=DENY,label="Seite")
+boot="\n</script>\n<script>"+_mainjs+"\n</script>\n<script>window.__APPOK=1</script>\n"
+body=src[:_si]+boot+src[j+len("</script>"):]
 body=body.replace("</style>",(T/"web_style.css").read_text()+"\n</style>\n</head>\n<body>\n"+(T/"splash.html").read_text(),1)   # start screen first
 assert "claude.use" not in body.split("<script>",2)[-1].split("/* ---------- web boot")[1]
 out=(T/"web_head.html").read_text()+body.replace('<meta name="claude:viewport-fit-sides" content="cover">\n',"")+"\n</body>\n</html>\n"

@@ -1,3 +1,4 @@
+import {I18N} from "../base/10-core.js";
 Object.assign(I18N,{
  "Anmelden":{it:"Accedi",fr:"Se connecter",en:"Sign in",hi:"साइन इन"},
  "E-Mail":{it:"E-mail",fr:"E-mail",en:"Email",hi:"ईमेल"},
@@ -734,7 +735,7 @@ Object.assign(I18N,{
  "Nur für die Produktion sichtbar.":{fr:"Visible uniquement par la production.",it:"Visibile solo alla produzione.",en:"Only visible to the production.",hi:"केवल प्रोडक्शन को दिखाई देता है।"},
  "Allergien":{fr:"Allergies",it:"Allergie",en:"Allergies",hi:"एलर्जी"}
 });
-const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"],["hi","हिन्दी"]];
+export const LANGS=[["de","Deutsch"],["fr","Français"],["it","Italiano"],["en","English"],["hi","हिन्दी"]];
 Object.assign(I18N,{
  "Die App erinnert dich auf Wunsch vor deinen Terminen und meldet neue Drehpläne, Callsheets und Drehbuch-Versionen – auch wenn sie geschlossen ist.":{fr:"Sur demande, l’app te rappelle tes rendez-vous et signale les nouveaux plans de tournage, callsheets et versions du scénario – même fermée.",it:"Su richiesta l’app ti ricorda i tuoi appuntamenti e segnala nuovi piani di lavorazione, callsheet e versioni della sceneggiatura – anche quando è chiusa.",en:"If you like, the app reminds you before your appointments and tells you about new shooting schedules, callsheets and script versions – even when it is closed.",hi:"आप चाहें तो ऐप आपको अपॉइंटमेंट से पहले याद दिलाता है और नए Schedules, Callsheets और Script संस्करणों की सूचना देता है – बंद होने पर भी।"},
  "Neue Drehbuch-Versionen":{fr:"Nouvelles versions du scénario",it:"Nuove versioni della sceneggiatura",en:"New script versions",hi:"नए Script संस्करण"},

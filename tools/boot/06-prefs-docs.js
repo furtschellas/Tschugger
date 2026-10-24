@@ -1,13 +1,20 @@
+import {L,LANG,S,deG,esc,saveBtn,setSPT,setTheme} from "../base/10-core.js";
+import {render} from "../base/15-script-tab.js";
+import {onStore} from "../base/16-interaction.js";
+import {showMsg} from "../base/20-data-start.js";
+import {ME,can,fb,withTimeout} from "./03-core-firebase.js";
+import {pushSyncSoon} from "./07-push.js";
+import {ADM,SECS} from "./12a-admin-core.js";
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false,PREFOK=false;const PREFX=["rc","scrv","csb","iconhint","scwa","scwan","scwtd","scwtb","scwte","scwtl","scwtm","scwtw"];
+export const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];export let PREFT=null,PREFAPPLY=false,PREFOK=false;export const PREFX=["rc","scrv","csb","iconhint","scwa","scwan","scwtd","scwtb","scwte","scwtl","scwtm","scwtw"];
 /* the notices of p.x (or the older single fields) */
-const prefX=p=>{let x={};try{x=JSON.parse(p&&p.x||"{}")||{}}catch(_){}for(const k of PREFX)if(typeof(p&&p[k])==="string"&&x[k]==null)x[k]=p[k];return x};
+export const prefX=p=>{let x={};try{x=JSON.parse(p&&p.x||"{}")||{}}catch(_){}for(const k of PREFX)if(typeof(p&&p[k])==="string"&&x[k]==null)x[k]=p[k];return x};
 onStore(k=>{if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}});
-function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
+export function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 /* a change made just before closing or reloading is saved right away (before, the older copy online won on the next start) */
 const prefsFlush=()=>{if(PREFT){clearTimeout(PREFT);PREFT=null;savePrefs()}};
 addEventListener("pagehide",prefsFlush);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")prefsFlush()});
-async function savePrefs(){
+export async function savePrefs(){
   if(!ME||!ME.uid)return;const p={};
   /* at most 400 characters per setting – but JSON is never cut (broken JSON would reset the setting elsewhere): the push settings drop their
      oldest switched-off reminders, anything else too long stays on this device only */
@@ -35,7 +42,7 @@ function applyPrefs(p){
   if(typeof p.push==="string")pushSyncSoon();
   render();
 }
-async function loadPrefs(){
+export async function loadPrefs(){
   if(!ME||!ME.uid)return;
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),10000,"prefs");
     let lt=0;try{lt=+localStorage.getItem("prefsLocalAt")||0}catch(_){}
@@ -97,17 +104,17 @@ const DOCI18N={
   en:{subject:"Your access to the TSCHUGGER app",body:"Hi {vorname}\n\nyour account for the TSCHUGGER Tigerblood crew app is ready:\n{app}\n\nEmail: {email}\nStart password: {passwort}\n\nWhen you sign in for the first time you choose your own password.\n\n{disclaimer}\n\nSee you on set!"}}};
 const DOCLANGS=["de","fr","it","en","hi"];
 /* text of a document in one language: own text (config/app.docs[k][lang]; German also from the older docs[k].subject/body) or the default */
-const docRaw=(k,lang)=>{lang=DOCLANGS.includes(lang)?lang:LANG;const c=(window.DOCS||{})[k]||{};const d=DOCDEF[k];
+export const docRaw=(k,lang)=>{lang=DOCLANGS.includes(lang)?lang:LANG;const c=(window.DOCS||{})[k]||{};const d=DOCDEF[k];
   const own=lang==="de"?(c.de&&(c.de.body||c.de.subject)?c.de:(c.body||c.subject?{subject:c.subject,body:c.body}:null)):(c[lang]&&(c[lang].body||c[lang].subject)?c[lang]:null);
   const def=lang==="de"?{subject:d.subject,body:d.body}:Object.assign({subject:d.subject,body:d.body},(DOCI18N[k]||{})[lang]||(DOCI18N[k]||{}).en||{});
   return {subject:own&&own.subject&&String(own.subject).trim()?own.subject:(def.subject||""),body:own&&own.body&&String(own.body).trim()?own.body:def.body,custom:!!own}};
-function docGet(k,v,lang){v=v||{};lang=lang||v.lang||LANG;const r=docRaw(k,lang);
+export function docGet(k,v,lang){v=v||{};lang=lang||v.lang||LANG;const r=docRaw(k,lang);
   const map=Object.assign({app:location.origin+location.pathname,disclaimer:k==="disclaimer"?"":docRaw("disclaimer",lang).body,vorname:"",name:"",email:"",passwort:""},v);
   const fill=t=>String(t||"").replace(/\{(\w+)\}/g,(m,x)=>x in map?map[x]:m).replace(/\n{3,}/g,"\n\n").replace(/^(Hallo|Bonjour|Ciao|Hi) \n/,"$1\n");
   const g=t=>lang==="de"&&typeof deG==="function"?deG(t):t;
   return {subject:g(fill(r.subject)),body:g(fill(r.body))}}
-const mailto=(em,k,v)=>{const d=docGet(k,Object.assign({email:em},v));return "mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(d.subject)+"&body="+encodeURIComponent(d.body)};
-function docsSec(){
+export const mailto=(em,k,v)=>{const d=docGet(k,Object.assign({email:em},v));return "mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(d.subject)+"&body="+encodeURIComponent(d.body)};
+export function docsSec(){
   const dl=DOCLANGS.includes(ADM.doclang)?ADM.doclang:(DOCLANGS.includes(LANG)?LANG:"de");
   return '<div class="admins docs"><h3>'+L("Dokumente")+'</h3><p class="ahint">'+L("Alle Texte, die die App verschickt oder anzeigt. Platzhalter: {vorname} {name} {email} {app} {passwort} {disclaimer}. Du bearbeitest jeweils nur die gewählte Sprache; ohne eigenen Text gilt die Standardfassung.")+'</p>'+
     '<div class="smodes doclangs" role="group">'+DOCLANGS.map(l=>'<button type="button" data-doclang="'+l+'" aria-pressed="'+(l===dl)+'">'+l.toUpperCase()+'</button>').join("")+'</div>'+
@@ -140,14 +147,14 @@ document.addEventListener("click",async e=>{if(!e.target.closest("[data-twagain]
     window.DOCS=Object.assign({},window.DOCS,{testwelcome:Object.assign({},(window.DOCS||{}).testwelcome,{ver:v})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
     showMsg(L("Wird allen Test-Usern beim nächsten Öffnen nochmals gezeigt."),3500)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
 /* invitation by WhatsApp: opens WhatsApp with the text «Einladung WhatsApp» (to the number of the person when the crew list has it) */
-function waNum(t){let d=String(t||"").replace(/[^\d+]/g,"");if(d.startsWith("+"))return d.slice(1);if(d.startsWith("00"))return d.slice(2);if(/^0\d{9}$/.test(d))return "41"+d.slice(1);return d}
+export function waNum(t){let d=String(t||"").replace(/[^\d+]/g,"");if(d.startsWith("+"))return d.slice(1);if(d.startsWith("00"))return d.slice(2);if(/^0\d{9}$/.test(d))return "41"+d.slice(1);return d}
 function waInvite(em,name,phone){const d=docGet("invitewa",{email:em,vorname:String(name||"").split(/\s+/)[0],name:name||""});const n=waNum(phone);
   return "https://wa.me/"+(n.length>=8?n:"")+"?text="+encodeURIComponent(d.body)}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-cwa]");if(!b||!can("users.invite"))return;   /* the same right that shows the button */e.preventDefault();e.stopPropagation();
   window.open(waInvite(b.dataset.cwa,b.dataset.nm||"",b.dataset.ph||""),"_blank","noopener")},true);
 
 /* maintenance note on/off (config/app → docs.maint.on, for everybody; default on) */
-const maintOn=()=>((window.DOCS||{}).maint||{}).on!==false;window.maintOn=maintOn;
+export const maintOn=()=>((window.DOCS||{}).maint||{}).on!==false;window.maintOn=maintOn;
 document.addEventListener("change",async e=>{const c=e.target.closest&&e.target.closest("[data-mainton]");if(!c||!can("settings"))return;const on=c.checked;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{maint:{on}}},{merge:true});
     window.DOCS=Object.assign({},window.DOCS,{maint:Object.assign({},(window.DOCS||{}).maint,{on})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
@@ -169,5 +176,5 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
     msg.textContent=L("Vorschlag eingesetzt – prüfen und speichern.")}
   catch(err){msg.className="amsg err";msg.textContent=L("Fehler:")+" "+(err.message||err)}
   b.disabled=false;b.innerHTML=old});
-function setPREFOK(v){return PREFOK=v}   /* other parts change PREFOK only through this */
-function setPREFT(v){return PREFT=v}   /* other parts change PREFT only through this */
+export function setPREFOK(v){return PREFOK=v}   /* other parts change PREFOK only through this */
+export function setPREFT(v){return PREFT=v}   /* other parts change PREFT only through this */

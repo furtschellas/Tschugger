@@ -1,8 +1,15 @@
 # Website-Teil der Crew-App (früher tools/web_boot.js)
 
-Die Dateien werden von `tools/make_site.py` in Namensreihenfolge **ohne Trennzeichen** aneinandergehängt
-und zusammen mit `tools/app.html` (Grundteil aus `tools/base`) zu `index.html` gebaut. Es ist also ein einziges Skript:
-alles teilt denselben globalen Bereich, die Reihenfolge zählt (Nummern vorne).
+Jede Datei ist ein **ES-Modul**: oben `import {…} from "…"` (was sie von anderen Teilen braucht), `export` vor dem,
+was andere Teile brauchen. `tools/modlink.mjs` (aufgerufen von `tools/make_site.py`) prüft beim Bauen jeden Import
+(gibt es den Namen in der genannten Datei?) und dass kein Name doppelt vorkommt, und setzt die Teile **in der Reihenfolge
+der Dateinamen** zu einem Skript zusammen (Grundteil `tools/base` zuerst). Jeder Start-Schritt läuft dabei in einem eigenen
+try/catch: ein Fehler stoppt nur diesen Schritt, nicht die App.
+
+- Variablen eines anderen Teils nur über dessen Setter ändern (z. B. `setME(…)`), nie direkt.
+- In jede Zeichnung einhängen: `onRender(fn)` (vorher) / `onRendered(fn)` (nachher); gespeicherte Einstellungen: `onStore(fn)`.
+- Die App-Verwaltung (12b–12e) ist ein eigenes Bündel `admin.js`, geladen beim Öffnen; sie und die Tests erreichen die Namen
+  der Seite über `window` (nur die Namen, die sie brauchen). `window.L` ist die Kartenbibliothek, die Übersetzung heisst dort `__L`.
 
 | Datei | Inhalt |
 |---|---|

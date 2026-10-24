@@ -1,8 +1,10 @@
 // Ablauf mit zwei Geräten: two app instances (tools/boot/24-flow.js) on ONE shared, invented Firestore with live updates (onSnapshot).
 // A driver phone and a make-up phone tap in parallel; every step both must show the same state.  node tests/flow_multi.mjs → JSON lines {n, ok, got, want}
 import fs from "fs";import vm from "vm";import path from "path";import {fileURLToPath} from "url";
+/* the app's parts are ES modules: take import/export out to run one part here on its own (as tools/modlink.mjs does for the browser) */
+const unmod=s=>s.replace(/^import \{[^}]*\} from "[^"]+";\n/gm,"").replace(/(^|[;}\s])export (?=(?:async\s+)?function\b|const\b|let\b|var\b|class\b)/gm,"$1");
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
-const SRC=fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8");
+const SRC=unmod(fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8"));
 const D="2031-03-02";
 /* the shared database: documents of «rideack», listeners get the whole collection after every write (like Firestore) */
 const DB={docs:{},subs:new Set(),log:[]};

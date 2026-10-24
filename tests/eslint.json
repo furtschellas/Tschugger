@@ -1,6 +1,6 @@
 {
   "root": true,
-  "parserOptions": {"ecmaVersion": 2022, "sourceType": "script"},
+  "parserOptions": {"ecmaVersion": 2022, "sourceType": "module"},
   "env": {"browser": true, "es2022": true},
   "rules": {
     "no-dupe-keys": "error",
@@ -16,6 +16,7 @@
     "no-sparse-arrays": "error",
     "no-func-assign": "error",
     "no-const-assign": "error",
+    "no-import-assign": "error",
     "no-dupe-args": "error",
     "no-invalid-regexp": "error",
     "no-loss-of-precision": "error",

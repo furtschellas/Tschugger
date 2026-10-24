@@ -1,7 +1,24 @@
+import {isStandalone} from "../a2hs.js";
+import {L,LANG,S,WDS,applyStatic,ddmm,esc,localISO,mkDialog,saveBtn,setLANG,todayISO} from "../base/10-core.js";
+import {UNAME,hasU,unitsOn} from "../base/11-schedule-prep.js";
+import {WDL} from "../base/12-mycal.js";
+import {vok} from "../base/14-render.js";
+import {fold,render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {DIETS,FB,INTOL,ME,MEMBER,MYROLE,SIMROLE,clean,crewPerson,fb,isAdmin,lc,loadLangs,setME,splitName,withTimeout} from "./03-core-firebase.js";
+import {isOffline,load,loadErr} from "./04-data.js";
+import {autoVerify,checkMember,clearLocal,hideGate,showGate} from "./05-membership-signin.js";
+import {docGet,docRaw,loadPrefs,prefX,savePrefs} from "./06-prefs-docs.js";
+import {pushSyncSoon} from "./07-push.js";
+import {maybeTour} from "./08-chat-tour.js";
+import {ONBOARD,acctButton,showAcct} from "./11-account.js";
+import {ADM,PUBB,admLoad,caterData,crewDeptOf} from "./12a-admin-core.js";
+import {SIMUSER} from "./22-simulate.js";
 /* ---- lunch menus: catering enters a menu per shooting day and unit (permission «Menüs eingeben»);
    the schedule shows it at «Lunch» of that day and unit ---- */
 window.MENUS={};try{window.MENUS=JSON.parse(localStorage.getItem("menus")||"{}")||{}}catch(_){}
-let MENUAT=0,MENUSUB=null,MENUFROM="";
+export let MENUAT=0,MENUSUB=null,MENUFROM="";
 /* realtime listener on the menus from yesterday on: Firebase sends only changes (no more reading all every few minutes) */
 function menusApply(docs,from){const m={};docs.forEach(d=>{if(d.id>=from)m[d.id]=d.data()});
   if(JSON.stringify(m)!==JSON.stringify(window.MENUS)){window.MENUS=m;try{localStorage.setItem("menus",JSON.stringify(m))}catch(_){}render()}}
@@ -43,7 +60,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-menux]");i
   const f=b.closest("form[data-menu]"),date=f.dataset.menu,cur={};f.querySelectorAll("input[name^=u]").forEach(x=>{if(x.value)cur[x.name]=x.value});
   if(Object.keys(cur).length)window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],cur)});
   MENUX.add(b.dataset.menux);document.activeElement&&document.activeElement.blur&&document.activeElement.blur();render()});
-function menuSec(){
+export function menuSec(){
   const t=todayISO(),days=S.days.filter(d=>d.kind==="shoot"&&d.date>=t);const units=typeof unitsOn==="function"?unitsOn():["1"];
   if(!days.length)return '<p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>';
   return '<p class="ghint">'+L("Zwei Menüs pro Drehtag und Unit – sie erscheinen im Drehplan und im Callsheet beim Lunch.")+'</p>'+days.map(d=>{const m=(window.MENUS||{})[d.date]||{};const dt=new Date(d.date+"T12:00:00");
@@ -72,7 +89,7 @@ const WTXT={
  it:{t:"Benvenuta/o nell'app TSCHUGGER!",p:["Che bello averti a bordo. Qui trovi piano di lavorazione, callsheet, lista crew, location e sceneggiatura di TSCHUGGER Tigerblood in un unico posto.","Nota bene: l'app è una versione di prova BETA. Tutti i dati visualizzati sono senza garanzia. La produzione e gli sviluppatori NON si assumono alcuna garanzia sulla correttezza, completezza o attualità dei dati. Fanno fede sempre i documenti ufficiali della produzione (piano di lavorazione, callsheet, dispo).","Tutti i contenuti sono riservati e destinati solo alla crew – per favore non diffonderli.","Hai trovato un errore o hai un desiderio? Rivolgiti a Stefan Künzler."],c:"Ho letto e compreso le indicazioni.",b:"Conferma"},
  hi:{"t": "TSCHUGGER ऐप में आपका स्वागत है!", "p": ["आपके साथ होने की खुशी है। यहाँ TSCHUGGER Tigerblood का शेड्यूल, Callsheets, Crew सूची, लोकेशन और स्क्रिप्ट एक ही जगह मिलेंगे।", "कृपया ध्यान दें: यह ऐप BETA परीक्षण संस्करण है। दिखाया गया सारा डेटा बिना गारंटी के है। प्रोडक्शन और डेवलपर्स डेटा के सही, पूर्ण या अद्यतन होने की कोई गारंटी नहीं देते। प्रोडक्शन के आधिकारिक दस्तावेज़ (शेड्यूल, Callsheet, Dispo) ही मान्य हैं।", "सारी सामग्री गोपनीय है और केवल Crew के लिए है – कृपया आगे न भेजें।", "कोई गलती मिली या कोई सुझाव है? Stefan Künzler से संपर्क करें।"], "c": "मैंने ये निर्देश पढ़ और समझ लिए हैं।", "b": "पुष्टि करें"},
  en:{t:"Welcome to the TSCHUGGER app!",p:["Great to have you on board. Here you'll find the shooting schedule, callsheets, crew list, locations and script of TSCHUGGER Tigerblood in one place.","Please note: the app is a BETA test version. All data shown is without guarantee. The production and the developers accept NO liability for the data being correct, complete or up to date. The official production documents (shooting schedule, callsheet, dispo) are always binding.","All content is confidential and for the crew only – please do not share it.","Found a mistake or have a wish? Get in touch with Stefan Künzler."],c:"I have read and understood these notes.",b:"Confirm"}};
-let WELCOME_OPEN=false;
+export let WELCOME_OPEN=false;
 async function welcomeDone(){
   if(MEMBER&&MEMBER.welcomeAck&&MEMBER.welcomeVer===WELCOME_VER)return true;
   let loc="";try{loc=localStorage.getItem("welcomeAck")||""}catch(_){}
@@ -80,7 +97,7 @@ async function welcomeDone(){
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().welcomeAck;if(w&&String(w).split("|")[1]===WELCOME_VER){try{localStorage.setItem("welcomeAck",w)}catch(_){}return true}}catch(_){}
   return false;
 }
-async function maybeWelcome(){
+export async function maybeWelcome(){
   if(!ME||WELCOME_OPEN||ONBOARD)return;
   /* locked BEFORE the check: two sign-in paths at the same moment showed the note twice */
   WELCOME_OPEN=true;if(await welcomeDone()){WELCOME_OPEN=false;maybeTestWelcome();return}
@@ -141,7 +158,7 @@ async function maybeCsBeta(){
 /* ---- presence: signed-in members leave a «last seen» mark every 2 minutes while the app is open (shown to admins) ---- */
 let SEENT=null,SEENAT=0;
 /* «app-ios», «web-android» …: installed app or browser, and the kind of device (shown to admins in the user list) */
-const appKind=()=>{const ua=navigator.userAgent||"",inst=typeof isStandalone==="function"&&isStandalone();
+export const appKind=()=>{const ua=navigator.userAgent||"",inst=typeof isStandalone==="function"&&isStandalone();
   const dev=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)?"ios":/Android/i.test(ua)?"android":"desktop";return (inst?"app-":"web-")+dev};
 async function markSeen(){
   if(!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
@@ -160,14 +177,14 @@ async function markSeen(){
 setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading&&Date.now()-(ADM.at||0)>=900e3){   /* the user list is read again at most every 15 minutes (Firebase quota) */ADM.at=Date.now();ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
 function startSeen(){clearInterval(SEENT);SEENAT=0;markSeen();SEENT=setInterval(markSeen,120e3)}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")markSeen()});
-const seenMs=m=>{const j=m&&m.lastSeen;return j?(j.seconds?j.seconds*1000:(j.toMillis?j.toMillis():Date.parse(j)||0)):0};
-const isOnline=m=>Date.now()-seenMs(m)<4*60e3;
-function seenText(m){const t=seenMs(m);if(!t)return m&&m.active===true?L("noch nie online"):"";const d=Date.now()-t;if(d<4*60e3)return L("gerade aktiv");
+export const seenMs=m=>{const j=m&&m.lastSeen;return j?(j.seconds?j.seconds*1000:(j.toMillis?j.toMillis():Date.parse(j)||0)):0};
+export const isOnline=m=>Date.now()-seenMs(m)<4*60e3;
+export function seenText(m){const t=seenMs(m);if(!t)return m&&m.active===true?L("noch nie online"):"";const d=Date.now()-t;if(d<4*60e3)return L("gerade aktiv");
   const mi=Math.round(d/60e3);if(mi<60)return L("zuletzt online")+" "+L("vor {n} Min.").replace("{n}",mi);
   const dt=new Date(t),hm=dt.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"}),day=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime(),dd=Math.round((day(new Date())-day(dt))/864e5);
   return L("zuletzt online")+" "+(dd===0?L("heute")+" "+hm:dd===1?L("gestern")+" "+hm:dt.toLocaleDateString("de-CH")+" "+hm)}
-let START=null;
-async function afterSignIn(u){
+export let START=null;
+export async function afterSignIn(u){
   setME(u);if(!window.PRIVOK)setTimeout(()=>{try{loadLangs().then(()=>{if(S.tab==="admin")render()})}catch(_){}},1500); /* links (motive list, map, chat) can only be read once signed in */
   /* account created by the owner with a start password: counts as confirmed, but a new password must be set first */
   START=null;if(!u.emailVerified||window.__checkStart){try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"starts",lc(u.email))),10000,"start");if(d.exists())START=d.data()}catch(_){}}
@@ -191,13 +208,13 @@ async function afterSignIn(u){
   if(window.__justSignedIn)window.__justSignedIn=false;
 }
 /* names come from the crew list (matched by e-mail) when the profile has none yet */
-const crewNames=()=>{const p=ME&&crewPerson(window.simEmail());if(!p||!p.name)return null;const sp=splitName(p.name);return sp.firstName?{firstName:clean(sp.firstName),lastName:clean(sp.lastName||"")}:null};
+export const crewNames=()=>{const p=ME&&crewPerson(window.simEmail());if(!p||!p.name)return null;const sp=splitName(p.name);return sp.firstName?{firstName:clean(sp.firstName),lastName:clean(sp.lastName||"")}:null};
 async function fillNamesFromCrew(){
   if(!MEMBER||!ME)return;
   const cn=crewNames();if(!cn||(MEMBER.firstName===cn.firstName&&(MEMBER.lastName||"")===cn.lastName))return;
   const upd={firstName:cn.firstName,lastName:cn.lastName,name:[cn.firstName,cn.lastName].filter(Boolean).join(" ")};
   try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),upd);Object.assign(MEMBER,upd)}catch(err){console.error(err)}
 }
-function setSTART(v){return START=v}   /* other parts change START only through this */
-function setMENUSUB(v){return MENUSUB=v}   /* other parts change MENUSUB only through this */
-function setWELCOME_OPEN(v){return WELCOME_OPEN=v}   /* other parts change WELCOME_OPEN only through this */
+export function setSTART(v){return START=v}   /* other parts change START only through this */
+export function setMENUSUB(v){return MENUSUB=v}   /* other parts change MENUSUB only through this */
+export function setWELCOME_OPEN(v){return WELCOME_OPEN=v}   /* other parts change WELCOME_OPEN only through this */
