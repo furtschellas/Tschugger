@@ -195,7 +195,8 @@ export async function afterSignIn(u){
   if(START&&START.mustChange){showGate("newpw");return}
   if(!u.emailVerified&&!START){showGate("verify");autoVerify(u);return}
   let st;try{st=await checkMember()}catch(err){console.error(err);
-    if(isOffline(err)&&S.days.length){hideGate();acctButton(true);render();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000);return}
+    /* not reachable, quota used up or a server error – with data on this device: show it (only a refusal of the rules means «no access») */
+    if(S.days.length&&!/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){hideGate();acctButton(true);render();showMsg(L(isOffline(err)?"Offline – du siehst den zuletzt geladenen Stand.":"Server gerade nicht erreichbar – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(ME!==u)return;
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}

@@ -34,7 +34,7 @@ export const wkUrl=p=>String(window.CHATURL||"").replace(/\/+$/,"")+p;
 export async function wkPost(path,body){const {auth}=await fb();const tok=await auth.currentUser.getIdToken();
   return fetch(wkUrl(path),{method:"POST",headers:Object.assign({Authorization:"Bearer "+tok},body!==undefined?{"Content-Type":"application/json"}:{}),body:body!==undefined?JSON.stringify(body):undefined})}
 export async function loadLangs(){
-  try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));const l=d.exists()&&d.data().langs;
+  try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));window.APPOK=true;   /* read: only then may the settings form be saved (else defaults would overwrite them) */const l=d.exists()&&d.data().langs;
     if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}
     cfgPut("UNIT2",d.exists()?d.data().unit2!==false:true,"appunit2");
     {const c=d.exists()?d.data():{};cfgPut("PUBV",{phone:c.phonePublic===true,email:c.emailPublic===true,mycal:c.mycalPublic===true},"apppubv")}

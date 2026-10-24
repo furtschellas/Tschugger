@@ -4,7 +4,7 @@ import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {setSCRIPT} from "../base/17-scene-reader.js";
 import {CACHE_KEY,showMsg} from "../base/20-data-start.js";
-import {ADMINS,fmtT} from "./01-config.js";
+import {ADMINS,fmtT,ROOT_OWNERS} from "./01-config.js";
 import {ADMIN_DEFAULT,ADMINPERMS,applyLangs,can,clean,COADMIN,FB,fb,INTOL,isAdmin,isOwner,lc,ME,MEMBER,meOk,MYPERMS,MYROLE,PENDING_KEY,permKnown,permLbl,PERMS,rolesReset,setADMINPERMS,setCOADMIN,setDATAKEY,setLASTSTAMP,setMEMBER,setMYPERMS,setMYROLE,splitName,withTimeout} from "./03-core-firebase.js";
 import {AREAKEYS,isOffline} from "./04-data.js";
 import {PREFKEYS,PREFT,PREFX,mailto,savePrefs,setPREFOK,setPREFT} from "./06-prefs-docs.js";
@@ -29,18 +29,21 @@ export async function checkMember(){
     /* other rights: the area keys are read again (a key refused before may be allowed now, and the other way round) */
     if(was!==String(MYPERMS)+"|"+MYROLE+"|"+isAdmin())for(const k in AREAKEYS)delete AREAKEYS[k];
     return st}
-  catch(err){if(isOffline(err))memRestore();throw err}
+  catch(err){if(!/permission/i.test((err&&err.code||"")+" "+(err&&err.message||"")))memRestore();throw err}   /* offline, quota used up, server error: the last known rights */
 }
 /* a read refused by the rules means «not given»; any other error (network, timeout) stops the check – the caller keeps the last known rights instead of starting with none */
 const notPerm=e=>{if(!/permission/i.test((e&&e.code||"")+" "+(e&&e.message||"")))throw e};
 async function checkMember0(){
   const {F,db}=await fb();const u=ME;
   if(!isOwner()&&meOk()){try{if((await F.getDoc(F.doc(db,"owners",lc(u.email)))).exists()&&!ADMINS.includes(lc(u.email)))ADMINS.push(lc(u.email))}catch(e){notPerm(e)}}
-  if(!isOwner()&&meOk()){try{setCOADMIN((await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists())}catch(e){setCOADMIN(false);notPerm(e)}}
-  setMYPERMS([]);setMYROLE("");window.MYROLENAME="";setADMINPERMS(ADMIN_DEFAULT.slice());
-  if(COADMIN){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())setADMINPERMS((ad.data().perms||[]).filter(p=>permKnown(p)))}catch(_){}}
-  if(!isAdmin()){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){setMYROLE(String(ur.data().role||""));const rd=MYROLE?await F.getDoc(F.doc(db,"roles",MYROLE)):null;if(rd&&rd.exists())window.MYROLENAME=String(rd.data().name||""),setMYPERMS((rd.data().perms||[]).filter(p=>permKnown(p)))}}catch(e){notPerm(e)}
-  }
+  /* the rights are read into local values and set together at the end: in between the person keeps the rights they had
+     (before, they had none for a moment – a push sync or a drawing in that gap removed reminders or switched the page) */
+  let co=false,ap=ADMIN_DEFAULT.slice(),role="",rname="",perms=[];
+  if(!isOwner()&&meOk()){try{co=(await F.getDoc(F.doc(db,"admins",lc(u.email)))).exists()}catch(e){notPerm(e)}}
+  if(co){try{const ad=await F.getDoc(F.doc(db,"roles","admin"));if(ad.exists())ap=(ad.data().perms||[]).filter(p=>permKnown(p))}catch(e){notPerm(e)}}
+  if(!isOwner()&&!co){try{const ur=await F.getDoc(F.doc(db,"userroles",lc(u.email)));if(ur.exists()){role=String(ur.data().role||"");const rd=role?await F.getDoc(F.doc(db,"roles",role)):null;if(rd&&rd.exists()){rname=String(rd.data().name||"");perms=(rd.data().perms||[]).filter(p=>permKnown(p))}}}catch(e){notPerm(e)}}
+  if(ME!==u)return "stale";
+  setCOADMIN(co);setADMINPERMS(ap);setMYROLE(role);window.MYROLENAME=rname;setMYPERMS(perms);
   const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){
     let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
@@ -53,7 +56,7 @@ async function checkMember0(){
     await F.setDoc(ref,doc);try{localStorage.removeItem(PENDING_KEY)}catch(_){}
     s=await F.getDoc(ref);
   }
-  const m=s.data();if(m.active!==true)return ADMINS.includes(lc(u.email))?"ok":"blocked";   /* blocked: also admins (the rules refuse them too); only the fixed owner stays */
+  const m=s.data();if(m.active!==true)return ROOT_OWNERS.includes(lc(u.email))?"ok":"blocked";   /* blocked: also admins (the rules refuse them too); only the fixed owner stays */
   /* «Auf allen Geräten abmelden»: a sign-in from before that moment is ended here (the rules refuse it anyway) */
   if(m.rev&&typeof m.rev.toMillis==="function"){try{const t=await u.getIdTokenResult();if(Date.parse(t.authTime)<=m.rev.toMillis()){if(window.acctSignOut)await window.acctSignOut(true);return "revoked"}}catch(_){}}
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});

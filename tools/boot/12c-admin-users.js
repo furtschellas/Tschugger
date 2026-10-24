@@ -275,6 +275,7 @@ document.addEventListener("submit",async e=>{
     if(ss&&!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(ss)){showMsg(L("Bitte einen Google-Sheets-Link eingeben."),4000);return}
     if(sh&&!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[\w-]+/.test(sh)){showMsg(L("Bitte einen Google-Sheets-Link eingeben."),4000);return}
     /* links only for the crew – only written when they were really loaded (else empty fields would delete them for everyone) */
+    if(!window.APPOK){await loadLangs();render();showMsg(L(window.APPOK?"Einstellungen neu geladen – bitte prüfen und nochmals speichern.":"Einstellungen konnten nicht geladen werden – bitte später nochmals speichern."),6000);return}
     if(!window.PRIVOK){await loadLangs();render();showMsg(L(window.PRIVOK?"Links neu geladen – bitte prüfen und nochmals speichern.":"Links konnten nicht geladen werden – bitte später nochmals speichern."),6000);return}
     await F.setDoc(F.doc(db,"config","private"),{mapUrl:mu,locSheet:sh,chatUrl:cu,sceneSheet:ss,gmap:gmv},{merge:true});window.GMAPSET=gmv;window.SCENESHEET=ss;
     const tdp={};for(const x of [...fl.elements].filter(x=>/^td_/.test(x.name||"")))if(x.value==="off"||x.value==="no")tdp[x.name.slice(3)]=x.value;

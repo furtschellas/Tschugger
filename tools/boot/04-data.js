@@ -15,7 +15,10 @@ export async function getDataKey(){
   try{const {F,db}=await fb();const s=await withTimeout(F.getDoc(F.doc(db,"secret","key")),navigator.onLine===false?3000:20000,"key");
     if(!s.exists())throw new Error("no key");
     kv=String(s.data().k||"").trim().replace(/^["'“”«]+|["'“”»]+$/g,"");try{localStorage.setItem("dk:v1",kv)}catch(_){}}
-  catch(err){try{kv=localStorage.getItem("dk:v1")||""}catch(_){}if(!kv)throw err}
+  catch(err){
+    /* refused by the rules (blocked, removed): the key kept on this device must not open new data any more */
+    if(/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){try{localStorage.removeItem("dk:v1")}catch(_){}throw err}
+    try{kv=localStorage.getItem("dk:v1")||""}catch(_){}if(!kv)throw err}
   setDATAKEY(await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["encrypt","decrypt"]));
   return DATAKEY;
 }
@@ -119,7 +122,7 @@ async function loadOnce(force){
   let pt;try{pt=await dec(await getDataKey())}catch(err){setDATAKEY(null);try{localStorage.removeItem("dk:v1")}catch(_){}pt=await dec(await getDataKey())}
   const data=JSON.parse(new TextDecoder().decode(pt));
   if(!data||!Array.isArray(data.days))throw new Error("data format");
-  setLASTSTAMP(enc.stamp||null);try{if(LASTSTAMP)localStorage.setItem("dstamp:v1",LASTSTAMP);localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
+  setLASTSTAMP(enc.stamp||null);window.__DSTAMP=LASTSTAMP;try{localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}   /* the stamp is kept only together with the data (saveCache) */applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
 }
 export function loadErr(err){
   const c=(err&&(err.code||err.name))||"",m=(err&&err.message)||String(err);

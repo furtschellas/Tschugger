@@ -24,7 +24,7 @@ const DEG={"Benutzerverwaltung":"Benutzende","Benutzer":"Benutzende","Als Benutz
 export const deG=k=>typeof k!=="string"?k:(DEG[k]||k.replace(/Administrator:innen/g,"Admins").replace(/Benutzer:innen/g,"Personen").replace(/Benutzer:in\b/g,"Person").replace(/Entwickler:innen/g,"Entwicklungsteam").replace(/Teilnehmer:innen/g,"Teilnehmende").replace(/Mitarbeiter:innen/g,"Mitarbeitende").replace(/Kompars:innen/g,"Komparserie").replace(/Fahrer:in\b/g,"Fahrdienst").replace(/Darsteller:in\b/g,"Cast"));
 const L0=k=>LANG==="de"?deG(k):((I18N[k]&&(I18N[k][LANG]||I18N[k].en))||k); /* missing translation: English before German */
 /* another project name (App-Verwaltung → Produktion) replaces «TSCHUGGER Tigerblood» in all texts */
-export const L=k=>{const t=L0(k);return window.PROJNAME&&typeof t==="string"&&/tigerblood/i.test(t)?t.replace(/TSCHUGGER Tigerblood/gi,String(window.PROJNAME).trim()):t};
+export const L=k=>{const t=L0(k);return window.PROJNAME&&typeof t==="string"&&/tigerblood/i.test(t)?t.replace(/TSCHUGGER Tigerblood/gi,esc(String(window.PROJNAME).trim())):t};   /* escaped: texts go into HTML (also on the sign-in page) */
 window.__L=L;   /* the translation function for tests and other scripts (window.L is the map library Leaflet) */
 export const WDS={de:["So","Mo","Di","Mi","Do","Fr","Sa"],fr:["Di","Lu","Ma","Me","Je","Ve","Sa"],it:["Do","Lu","Ma","Me","Gi","Ve","Sa"],en:["Su","Mo","Tu","We","Th","Fr","Sa"],hi:["रवि","सोम","मंगल","बुध","गुरु","शुक्र","शनि"]};
 export const LOC={de:"de-CH",fr:"fr-CH",it:"it-CH",en:"en-GB",hi:"hi-IN"};
