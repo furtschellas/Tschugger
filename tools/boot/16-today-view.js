@@ -90,11 +90,7 @@ VIEWS.today=function(){
   let h='<section class="today">'+(typeof myPickBar==="function"?myPickBar():"");
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* for everybody, first of all and only while shooting: the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
-  try{if(isToday&&tShow("now")&&typeof csNowScene==="function"){const ns=csNowScene();if(ns&&ns.ev!=="wrap"){const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
-    const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
-    const nb=csNowBits(ns,c0,t);
-    const since=b0?' <small>· '+esc(L("seit"))+' '+esc(csHM(new Date(b0)))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
-    h+='<div class="tcard tnow"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowb">'+(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+'</div></div>'}}}catch(_){}
+  if(isToday&&tShow("now"))h+=nowCardHTML(t);
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
   try{if(me&&vok("mycal")&&tShow("my")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
     h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'<button type="button" class="tmyall" data-tomy>'+esc(L("Alle"))+' ›</button></div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· '+esc(L("Fahrer:in"))+': '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+'</div>'}}catch(_){}
@@ -177,3 +173,9 @@ VIEWS.today=function(){
 /* the app opens on «Today» (unless a link asks for another page) */
 
 document.addEventListener("click",e=>{if(!e.target.closest("[data-tscript]")||!vok("script"))return;S.tab="script";try{store("tab","script")}catch(_){}window.scrollTo(0,0);render()});
+/* «Jetzt»: the scene being shot now (quittiert, else by the callsheet times) with its place and how long it runs – Today and the callsheet of today */
+export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return "";const ns=csNowScene();if(!ns||ns.ev==="wrap")return "";const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
+    const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
+    const nb=csNowBits(ns,c0,t);
+    const since=b0?' <small>· '+esc(L("seit"))+' '+esc(csHM(new Date(b0)))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
+    return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowb">'+(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+'</div></div>'}catch(_){return ""}}

@@ -935,6 +935,9 @@ async def owner_tests(p, port):
           await dckRun(true);const l=(DCK.res||[]).filter(x=>x.area==='Callsheets ↔ Crewliste'&&x.lvl==='warn').map(x=>x.text);S.dispos=keep;DCK.res=r0;DCK.at=at;render();
           return {zora:l.some(t=>t.startsWith('Zora Unbekannt – Extra Driver')),quirin:l.some(t=>t.startsWith('Quirin Fremdling')),known:!l.some(t=>p&&t.startsWith(p.name)),tba:!l.some(t=>/TBA/.test(t))}})()""")
         check("Dokumente prüfen: Personen auf Callsheets, die nicht in der Crewliste stehen", cc == {"zora": True, "quirin": True, "known": True, "tba": True}, cc, public=True)
+        jn = await E("""(()=>{const t=todayISO();if(typeof nowCardHTML!=='function'||!(S.dispos||[]).some(x=>x&&x.date===t&&x.cs))return null;const want=!!nowCardHTML(t);const k=[S.tab,S.dday];S.tab='dispo';S.dday=t;render();
+          const v=document.getElementById('view'),n=v.querySelector('.tcard.csnowc'),tl=v.querySelector('.cstiles');const r={same:!!n===want,above:!n||!!(tl&&(n.compareDocumentPosition(tl)&Node.DOCUMENT_POSITION_FOLLOWING))};S.tab=k[0];S.dday=k[1];render();return r})()""")
+        check("Callsheet von heute: «Jetzt» wie in Today, oberhalb der Kacheln", jn in (None, {"same": True, "above": True}), jn, public=True)
         sy = await E("""(()=>{const keep=[S.days,S.locs];S.locs=JSON.parse(JSON.stringify(S.locs));S.locs.forEach(l=>(l.sets||[]).forEach(st=>st.scenes=[]));return 1})()""")
         await E("dckRun()"); await pg.wait_for_timeout(5000)
         sd2 = await E(r"""(async()=>{const sl=await scriptData();const ok=i=>i.sc&&/^\d+[A-Z]?$/.test(i.sc)&&/^I\/(?!E)/.test(i.ie||'');
