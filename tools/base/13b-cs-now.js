@@ -1,8 +1,9 @@
 /* ---------- Callsheet (2/6): «now» – the running row and scene, the place now, nearby places (Zurich time) ---------- */
 const csIsWrap=r=>!!r&&!r.sc&&/\b(wrap|drehschluss)\b/i.test(String(r.text||r.syn||""));
 /* «now» as hh:mm in Zurich (the shooting time – also on a phone set to another time zone) */
-const CSZHM=(()=>{try{return new Intl.DateTimeFormat("de-CH",{timeZone:"Europe/Zurich",hour:"2-digit",minute:"2-digit",hourCycle:"h23"})}catch(_){return null}})();
-function csHM(d){d=d||new Date();if(CSZHM)try{const x=CSZHM.format(d);if(/^\d\d:\d\d$/.test(x))return x}catch(_){}return clockHM(d)}
+const CSZHMS={};   /* the clock of the shoot: in the time zone of the running block (Swiss time without blocks) */
+function cszhm(tz){if(!(tz in CSZHMS)){try{CSZHMS[tz]=new Intl.DateTimeFormat("de-CH",{timeZone:tz,hour:"2-digit",minute:"2-digit",hourCycle:"h23"})}catch(_){CSZHMS[tz]=null}}return CSZHMS[tz]}
+function csHM(d){d=d||new Date();const f=cszhm(prodTZ());if(f)try{const x=f.format(d);if(/^\d\d:\d\d$/.test(x))return x}catch(_){}return clockHM(d)}
 /* the shooting day running now: after midnight a night shoot of yesterday stays «today» until its wrap (at the latest 06:00) –
    before, everything about «now» (running row, place, cast frame) disappeared at midnight */
 function csShootDay(){const t=todayISO();if(csHM()>="06:00"||typeof isoAdd!=="function")return t;const y=isoAdd(t,-1),dp=(S.dispos||[]).find(z=>z&&z.date===y);if(!dp||!dp.cs)return t;

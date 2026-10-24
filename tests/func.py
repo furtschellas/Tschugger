@@ -880,6 +880,16 @@ async def owner_tests(p, port):
         check("Handy: lange Adressen «…strasse» → «…str.»", "Unterdorfstr. 12" in ab and "strasse" not in ab, ab)
 
 
+        # Drehblöcke: the running block decides the time zone («heute», clock) and which main topics are shown; App-Verwaltung → App → Drehblöcke
+        bk = await E("""(()=>{const keep=window.BLOCKS,t=dateIn(Date.now(),'Europe/Zurich');
+          window.BLOCKS=[{id:'b1',name:'Block 1',tz:'Europe/Zurich',from:'2000-01-01',to:'2000-02-01',topics:{}},{id:'b2',name:'Indien',tz:'Pacific/Kiritimati',from:t,to:'',topics:{crew:'off',loc:'2999-01-01',plan:t}}];
+          const k=dateIn(Date.now(),'Pacific/Kiritimati'),r={tz:prodTZ()==='Pacific/Kiritimati',today:todayISO()===k,tag:blockTag(t).includes('Indien'),
+            allOwner:['crew','loc','plan'].every(x=>tabsOn().includes(x))};
+          window.BLOCKS=keep;return r})()""")
+        check("Drehblöcke: Zeitzone und «heute» des laufenden Blocks, Blockname im Drehplan, mit «Einstellungen» alle Themen", all(bk.values()), bk, public=True)
+        await E("S.tab='admin';ADM.sub='set';render()"); await pg.wait_for_timeout(800)
+        check("Drehblöcke: Abschnitt in App-Verwaltung → App", await E("!!document.querySelector('#view [data-sec=\"set-blocks\"] [data-blkadd]')"))
+
     async def _p7():   # App-Verwaltung (Access, Tour, Dokumente, Log/Tests)
         # Access: roles per permission on top, pencil switches them right there, people to open
         await E("ADM.paccEdit='';S.tab='admin';ADM.sub='roles';render()"); await pg.wait_for_timeout(1500)   # a first try that stopped half-way may have left the pencil on
@@ -1052,6 +1062,12 @@ async def hidden_data(p, port):
         b, pg, errs = await smoke.session(p, port, who)
         E = pg.evaluate
         perms = await E("({phone:vok('phone'),email:vok('email'),crew:vok('crew'),food:can('crew.food'),bday:can('crew.bday'),adm:isAdmin()})")
+        if who == "crew":   # Drehblöcke: a topic switched off (or released only later) for the running block is gone; released from today: there
+            bt = await E("""(()=>{const keep=window.BLOCKS,t=dateIn(Date.now(),'Europe/Zurich'),had=tabsOn();
+              window.BLOCKS=[{id:'b2',name:'Indien',tz:'Europe/Zurich',from:t,to:'',topics:{info:'off',plan:'2999-01-01',dispo:t}}];
+              const on=tabsOn(),r={info:!on.includes('info'),plan:!on.includes('plan')||!had.includes('plan'),dispo:on.includes('dispo')===had.includes('dispo')};
+              window.BLOCKS=keep;return r})()""")
+            check("Drehblöcke: Themen je Block aus, ab Datum oder an (Rolle ohne «Einstellungen»)", all(bt.values()), bt, public=True)
         if phones is None:
             phones = await E("S.crew.flatMap(g=>(g.people||[]).map(p=>String(p.phone||'').replace(/\\D/g,'')).filter(x=>x.length>=8)).slice(0,30)")
         texts = []; links = []

@@ -55,8 +55,34 @@ const xBtn=attr=>'<button type="button" class="xclose" '+attr+' aria-label="'+es
 const WD=new Proxy([],{get:(t,k)=>k==="length"?7:(WDS[LANG]||WDS.de)[k]});
 /* YYYY-MM-DD in local time (toISOString would give the UTC day: after midnight Swiss time still the day before) */
 /* the date in Switzerland (the shoot), also on a phone set to another time zone */
-let ZDF=null;try{ZDF=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Zurich",year:"numeric",month:"2-digit",day:"2-digit"})}catch(_){}
-function localISO(t){const d=new Date(t);if(ZDF)try{const x=ZDF.format(d);if(/^\d{4}-\d\d-\d\d$/.test(x))return x}catch(_){}return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
+/* shooting blocks (App-Verwaltung → Drehblöcke, config/app «blocks»): each block has its country and time zone; the app works in
+   the time zone of the block that is running (Block 2 in India: «heute», «jetzt» and the clock of the callsheet in Indian time).
+   Without blocks everything stays Swiss time. */
+const TZ0="Europe/Zurich";
+const ZDFS={};
+function zdf(tz){if(!(tz in ZDFS)){try{ZDFS[tz]=new Intl.DateTimeFormat("en-CA",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit"})}catch(_){ZDFS[tz]=tz===TZ0?null:zdf(TZ0)}}return ZDFS[tz]}
+function dateIn(t,tz){const d=new Date(t),f=zdf(tz||TZ0);if(f)try{const x=f.format(d);if(/^\d{4}-\d\d-\d\d$/.test(x))return x}catch(_){}return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
+function blockList(){const b=window.BLOCKS;return Array.isArray(b)?b.filter(x=>x&&typeof x==="object"&&x.id):[]}
+/* the block of a date: a day of the schedule that came from a block's own schedule, else the dates of the block (from–to; empty = open) */
+function blockOf(date){const bl=blockList();if(!bl.length||!date)return null;
+  try{const d=S.days.find(x=>x.date===date&&x.blk);if(d){const b=bl.find(x=>x.id===d.blk);if(b)return b}}catch(_){}
+  return bl.find(b=>(!b.from||date>=b.from)&&(!b.to||date<=b.to))||null}
+function tzFor(date){const b=blockOf(date);return (b&&b.tz)||TZ0}
+/* the block running now (first by Swiss date, then again by the date in that block's own time zone) */
+const BNC={at:0,ref:null,n:0,b:null};   /* asked on every date shown: worked out at most every 10 s (or when the blocks or the days change) */
+function blockNow(){const bl=window.BLOCKS,n=(typeof S!=="undefined"&&S.days)?S.days.length:0,now=Date.now();if(!Array.isArray(bl)||!bl.length)return null;
+  if(BNC.ref===bl&&BNC.n===n&&now-BNC.at<1e4)return BNC.b;
+  let b=blockOf(dateIn(now,TZ0));if(b&&b.tz&&b.tz!==TZ0)b=blockOf(dateIn(now,b.tz))||b;
+  Object.assign(BNC,{at:now,ref:bl,n,b});return b}
+function prodTZ(){const b=blockNow();return (b&&b.tz)||TZ0}
+/* main topics per block: «on», «off» or a date from which on they are shown (step by step release); people with «Einstellungen» see all */
+function blockTopicOn(tab){const b=blockNow();if(!b||!b.topics||typeof b.topics!=="object")return true;const m=b.topics[tab];
+  if(m==null||m===""||m==="on")return true;try{if(typeof can==="function"&&can("settings"))return true}catch(_){}
+  if(m==="off")return false;return /^\d{4}-\d\d-\d\d$/.test(m)?dateIn(Date.now(),b.tz||TZ0)>=m:true}
+/* the name of the block of a date (« · Indien»), only when there are several blocks */
+function blockTag(date){if(blockList().length<2)return "";const b=blockOf(date);return b?' · <span class="blktag">'+esc(b.name||b.country||b.id)+'</span>':""}
+window.blockTag=blockTag;window.blockTopicOn=blockTopicOn;window.blockOf=blockOf;window.blockNow=blockNow;window.prodTZ=prodTZ;window.tzFor=tzFor;window.blockList=blockList;
+function localISO(t){return dateIn(t,prodTZ())}
 const todayISO=()=>localISO(Date.now());
 /* «2026-10-24» + n days as a date (calendar days – not 24 h: the change to winter time on 25.10. has 25 hours) */
 const isoAdd=(d,n)=>{const x=new Date(String(d)+"T12:00:00Z");x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};

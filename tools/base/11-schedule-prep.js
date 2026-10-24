@@ -85,7 +85,7 @@ function zurichUTC(date,hm){
   const [y,mo,d]=date.split("-").map(Number),[h,mi]=hm.split(":").map(Number);
   let ts=Date.UTC(y,mo-1,d,h,mi)-2*3600e3;
   const want=Date.UTC(y,mo-1,d,h,mi);
-  for(let n=0;n<2;n++){const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Zurich",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(ts));
+  for(let n=0;n<2;n++){const p=new Intl.DateTimeFormat("en-GB",{timeZone:tzFor(date),year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(ts));
     const g=t=>+(p.find(x=>x.type===t)||{}).value;ts+=want-Date.UTC(g("year"),g("month")-1,g("day"),g("hour"),g("minute"))}   /* whole date compared: also right on the 1st of a month */
   return new Date(ts);
 }

@@ -38,6 +38,8 @@ def parse(ics, today=None):
         if isinstance(s, datetime.datetime):
             s = (s if s.tzinfo else s.replace(tzinfo=tz)).astimezone(tz)
             e = (e if (e is None or e.tzinfo) else e.replace(tzinfo=tz)); e = e.astimezone(tz) if e else None
+            bz = zoneinfo.ZoneInfo(fsadmin.tz_for(s.date().isoformat()))   # a day of a shooting block abroad: shown in its time zone
+            if str(bz) != TZ: s = s.astimezone(bz); e = e.astimezone(bz) if e else None
             date, t = s.date().isoformat(), s.strftime("%H:%M")
             end = e.strftime("%H:%M") if e and e.date() == s.date() else ""
         else:   # all-day

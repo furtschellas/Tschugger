@@ -15,6 +15,7 @@ function tabsOn(){
   const scrAt=t.indexOf("script");
   if(window.SCRIPTON===false||!vok("script"))t=t.filter(x=>x!=="script");
   for(const [tab,k] of [["crew","crew"],["plan","plan"],["dispo","dispo"],["loc","loc"],["info","info"]])if(!vok(k))t=t.filter(x=>x!==tab);
+  t=t.filter(x=>blockTopicOn(x));   /* Drehblöcke: main topics switched off for the running block (or released only from a date on) */
   /* catering page: for people with the catering permission it takes the place of the script (when they don't see the script) */
   try{if(window.caterTab&&window.caterTab()&&!t.includes("script")){const at=scrAt<0?t.length:Math.min(scrAt,t.length);t.splice(at,0,"cater")}}catch(_){}
   /* «Today» is always the first (left-most) area */

@@ -193,3 +193,39 @@ def crew_key_b64():
         except Exception as e:
             print("• Schlüssel aus Firestore nicht lesbar:", type(e).__name__)
     return os.environ.get("CREW_KEY", "").strip().strip('"\'')
+
+
+# ---------- shooting blocks (App-Verwaltung → Drehblöcke, config/app «blocks»): each block has its own time zone ----------
+TZ0 = "Europe/Zurich"
+_BLOCKS = [None]
+
+
+def blocks():
+    """the shooting blocks (read once per run); [] without blocks or when config/app cannot be read"""
+    if _BLOCKS[0] is None:
+        try:
+            if not sa(): raise RuntimeError("no service account")   # tests and local runs: Swiss time
+            b = (get_doc("config/app") or {}).get("blocks")
+            _BLOCKS[0] = [x for x in b if isinstance(x, dict) and x.get("id")] if isinstance(b, list) else []
+        except Exception: _BLOCKS[0] = []
+    return _BLOCKS[0]
+
+
+def tz_for(date, days=None):
+    """time zone of the block of a date (YYYY-MM-DD): a day of the schedule with "blk" first, then the dates of the blocks; Swiss time otherwise"""
+    bl = blocks()
+    if not bl or not date: return TZ0
+    for d in days or []:
+        if isinstance(d, dict) and d.get("date") == date and d.get("blk"):
+            for b in bl:
+                if b["id"] == d["blk"]: return b.get("tz") or TZ0
+    for b in bl:
+        if (not b.get("from") or date >= b["from"]) and (not b.get("to") or date <= b["to"]): return b.get("tz") or TZ0
+    return TZ0
+
+
+def tz_at(ms, days=None):
+    """time zone in force at a moment (ms): the block of the Swiss date"""
+    import datetime, zoneinfo
+    return tz_for(datetime.datetime.fromtimestamp(ms / 1000, zoneinfo.ZoneInfo(TZ0)).date().isoformat(), days)
+
