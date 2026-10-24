@@ -22,7 +22,8 @@ const fold=t=>String(t||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").to
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));const L=x=>x;
 const S={tab:"dispo",dispos:[{date:"${D}",cs:{}}]};const ME={uid:"u"};const csAfter=()=>{};const todayISO=()=>"${D}";
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
-const PERMS=${JSON.stringify(perms)};const canPerm=p=>PERMS.includes(p);const fb=async()=>({F:globalThis.__F,db:0});`;
+const PERMS=${JSON.stringify(perms)};const canPerm=p=>PERMS.includes(p);const fb=async()=>({F:globalThis.__F,db:0});
+const dbWrite=async(op,path,data)=>{const {F,db}=await fb();const ref=F.doc(db,...path.split("/"));if(op==="delete")await F.deleteDoc(ref);else await F.setDoc(ref,data);return "ok"};`;
   const H=[];const C={console,Date,setTimeout,setInterval(){},requestAnimationFrame(){},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},__F:F,
     document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]}};C.window=C;C.RIDEACK={};vm.createContext(C);
   vm.runInContext(helpers+SRC+";globalThis.T={p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,w:(c,r)=>{const p=cmParse(r.wardrobe,c)[0];return p?{h:cqLink('w',cmId(c._date,'w',r,p.t),c._date,p.t)}:null},load:rideAckLoad,step:rideStep,cmId,rideId}",C);
