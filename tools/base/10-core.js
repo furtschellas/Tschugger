@@ -208,7 +208,7 @@ export function itemHTML(it){
     const ek=typeof scRowKeys==="function"&&window.__mctx&&window.__mctx.date?(()=>{const c=window.__mctx,dy=(S.days||[]).find(x=>x.date===c.date);if(!dy)return scEvKey(it.n);
       const l=arr(c.u==="2"?(dy.unit2||{}).items:c.u==="3"?(dy.unit3||{}).items:dy.items);let i=l.indexOf(it);if(i<0)i=l.findIndex(x=>!x.sc&&x.t===it.t&&x.n===it.n);const k0=i<0?scEvKey(it.n):scRowKeys(l,x=>x.n)[i];return k0&&c.u&&c.u!=="1"?k0+"_u"+c.u:k0})():"",   /* 2nd/3rd unit: own lunch, wrap and setups */eb=ek&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,ek,window.__mctx.u||"1"):"";
     /* the pink frame of «jetzt» also on setup, lunch and wrap when that is the step now */
-    let evNow=false;try{const c0=window.__mctx;if(ek&&c0&&!c0.cs&&c0.date===todayISO()&&typeof csNowScene==="function"){const ns=csNowScene();evNow=!!ns&&ns.ev===ek}}catch(_){}
+    let evNow=false;try{const c0=window.__mctx;if(ek&&c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=csNowScene();evNow=!!ns&&ns.ev===ek}}catch(_){}
     return '<li class="row ev'+(mn?' lunch':'')+(eb?' evack':'')+(evNow?' now':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+eb+mn+'</div></li>';
   }
   const meta=[];
@@ -220,7 +220,7 @@ export function itemHTML(it){
   if(it.xx)meta.push('<span>'+esc(it.xx)+' Extras'+'</span>');
   const cg=window.chgFor&&window.__mctx?window.chgFor(window.__mctx.date,window.__mctx.u,it.sc):"";
   /* Drehplan of today: the scene being shot now gets the pink frame (as in the callsheet) */
-  let nowSc=false;try{const c0=window.__mctx;if(c0&&!c0.cs&&c0.date===todayISO()&&typeof csNowScene==="function"){const ns=csNowScene();nowSc=!!ns&&norm(ns.sc)===norm(it.sc)}}catch(_){}
+  let nowSc=false;try{const c0=window.__mctx;if(c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=csNowScene();nowSc=!!ns&&norm(ns.sc)===norm(it.sc)}}catch(_){}
   const done=window.__mctx&&window.__mctx.date&&typeof scState==="function"&&scState(window.__mctx.date,it.sc)===2;
   return '<li class="row'+(cg?' chg':'')+(nowSc?' scnow':'')+(done?' scdone':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span>'+(window.__mctx&&window.__mctx.date&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,it.sc,window.__mctx.u||"1"):'')+'</div>'+

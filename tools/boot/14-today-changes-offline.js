@@ -36,6 +36,10 @@ export function chgDetect(){
   if(!old||!old.sc)return;
   const skipU2=old.v2!==1;
   const t=todayISO(),out=[],at=Date.now();
+  /* a scene on several days: numbered again from today on in both – yesterday's day of a scene shot twice is not «moved» to today */
+  const rekey=m=>{const g={};for(const k in m){const x=m[k];if(!x||!x.date||x.date<t)continue;(g[k.split("#")[0]]=g[k.split("#")[0]]||[]).push(x)}
+    const o={};for(const b in g)g[b].sort((p,q)=>(p.date+p.t).localeCompare(q.date+q.t)).forEach((x,i)=>{o[i?b+"#"+(i+1):b]=x});return o};
+  old.sc=rekey(old.sc);now.sc=rekey(now.sc);
   const add=(o)=>out.push(Object.assign({id:Math.random().toString(36).slice(2,9),at},o));
   for(const k in now.sc){const a=old.sc[k],b=now.sc[k];if(skipU2&&(b.u==="2"||(a&&a.u==="2")))continue;
     if(!a){add({date:b.date,u:b.u,sc:b.sc,kind:"new",txt:L("Neu im Drehplan")+(b.t?" · "+b.t:"")});continue}

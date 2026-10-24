@@ -1,5 +1,6 @@
-import {ariaTip,esc,I18N,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
-import {UNAME} from "../base/11-schedule-prep.js";
+import {ariaTip,esc,I18N,isoAdd,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
+import {UNAME,zurichUTC} from "../base/11-schedule-prep.js";
+import {csHM} from "../base/13b-cs-now.js";
 import {hm} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
@@ -13,7 +14,8 @@ import {TST_RUN,logHead,savedPop,tstIco} from "./17-audit-misc.js";
 window.SCACK=window.SCACK||{};export let SCSUB=null;
 /* the times of the quittances (begin–end, running since) only with the permission «Quittierungszeiten sehen» */
 window.scTimesOk=()=>typeof canPerm==="function"&&canPerm("scenes.times");
-const scHM=msHM;
+/* times of the quittances in the time zone of the shooting block (as everything else in the app), not of the phone */
+const scHM=ms=>ms?(typeof csHM==="function"?csHM(new Date(+ms)):msHM(ms)):"";
 /* running time: 7′, 1h05 */
 const scDur=ms=>{const m=Math.max(0,Math.floor(ms/60000));return m<60?m+"′":Math.floor(m/60)+"h"+pad2(m%60)};
 /* the counters of running scenes count on without drawing the page again */
@@ -86,7 +88,12 @@ async function scLunchAuto(){if(SCLBUSY||typeof canPerm!=="function"||!canPerm("
 setInterval(scLunchAuto,30e3);
 /* the scene running in a unit on that day (other than this one): its scene number, else "" */
 function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCACK))if(x&&x.d===date&&x.s===1&&String(x.u||"1")===String(u||"1")&&id!==except)return x.sc||id.split("-").slice(1).join("-");return""}
-const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;const d=new Date(date+"T00:00:00");d.setHours(+m[1],+m[2],0,0);return d.getTime()};
+/* a time typed for a scene: on the shooting day – or the next calendar day when it lies more than 12 h before the reference
+   (night shoot: 00:40 after 23:30 belongs to the next day; DST-safe through the calendar date) */
+const scMsNear=(date,t,ref)=>{const v=scMs(date,t);if(!v||!ref)return v;if(ref-v>12*3600e3){const n=scMs(isoAdd(date,1),t);return n||v}return v};
+const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;
+  try{if(typeof zurichUTC==="function")return zurichUTC(date,pad2(+m[1])+":"+m[2]).getTime()}catch(_){}   /* in the block's time zone, over the change of time */
+  const d=new Date(date+"T00:00:00");d.setHours(+m[1],+m[2],0,0);return d.getTime()};
 async function scWrite(date,sc,u,v){const id=scAckId(date,sc),old=window.SCACK[id],undo=()=>{if(old)window.SCACK[id]=old;else delete window.SCACK[id];scRender()};
   /* through the data layer: offline the scene state shows at once and is sent later */
   if(!v){await dbWrite("delete","sceneack/"+id,null,{undo});delete window.SCACK[id]}else{v=Object.assign({d:date,at:Date.now(),u:String(u||"1"),sc:String(sc).slice(0,24)},v);for(const k of ["b","e"])if(v[k]==null)delete v[k];await dbWrite("set","sceneack/"+id,v,{undo});window.SCACK[id]=v}if(typeof SCLOG!=="undefined"&&SCLOG.list){const i=SCLOG.list.findIndex(x=>x.id===id);if(i>=0)SCLOG.list.splice(i,1);if(v)SCLOG.list.push(Object.assign({id},v))}scRender()}
@@ -171,7 +178,7 @@ function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{}
     if(ev.target.closest("[data-scdel]")){const bt=ev.target.closest("[data-scdel]");bt.disabled=true;scWrite(date,sc,u,null).then(()=>{d.remove();if(typeof savedPop==="function")savedPop(true)}).catch(err=>{bt.disabled=false;msg.textContent=saveErr(err)});return}
     if(ev.target===d||ev.target.closest("[data-scx]"))d.remove()});
   f.e.disabled=cur!==2;f.b.disabled=cur===0;
-  f.addEventListener("submit",async ev=>{ev.preventDefault();if(ev.submitter&&ev.submitter.dataset.scwasub)f.dataset.wa="1";else delete f.dataset.wa;const bm=scMs(date,f.b.value),em=scMs(date,f.e.value);
+  f.addEventListener("submit",async ev=>{ev.preventDefault();if(ev.submitter&&ev.submitter.dataset.scwasub)f.dataset.wa="1";else delete f.dataset.wa;const bm=scMsNear(date,f.b.value,+x.b||+x.at||Date.now()),em=scMsNear(date,f.e.value,bm||+x.b||+x.at||Date.now());
     if(cur===1){const run=scRunning(date,u,id);if(run){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
     if(cur===2&&bm&&em&&em<bm){msg.textContent=L("Das Ende liegt vor dem Beginn.");return}
     f.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=true);

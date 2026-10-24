@@ -89,7 +89,8 @@ VIEWS.today=function(){
     return '<section class="today"><h2 class="pgt">'+L("Heute")+'</h2><p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>'+
       (sc?'<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(sc.unread?' <span class="chgdot">1 '+esc(L("neu"))+'</span>':'')+'</div>'+chgListHTML([sc])+''+
         (sc.unread?'<div class="tacts"><button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button></div>':'')+'</div>':'')+'</section>'}
-  const isToday=d.date===t,dt=new Date(d.date+"T12:00:00");
+  /* after midnight of a night shoot the shooting day is still «today» (until its wrap) – also for «Jetzt» */
+  const sd=typeof csShootDay==="function"?csShootDay():t,isToday=d.date===t||d.date===sd,dt=new Date(d.date+"T12:00:00");
   /* only what the person may see: schedule parts need «Drehplan sehen», callsheet parts «Callsheet sehen» */
   const canPlan=vok("plan"),canDispo=vok("dispo");
   const dp=canDispo?((S.dispos||[]).find(x=>x&&x.date===d.date)||null):null;
@@ -98,7 +99,7 @@ VIEWS.today=function(){
   let h='<section class="today">';
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* for everybody, first of all and only while shooting: the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
-  if(isToday&&tShow("now"))h+=nowCardHTML(t);
+  if(isToday&&tShow("now"))h+=nowCardHTML(d.date);
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
   try{if(me&&vok("mycal")&&tShow("my")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
     h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'<button type="button" class="tmyall" data-tomy>'+esc(L("Alle"))+' ›</button></div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· '+esc(L("Fahrer:in"))+': '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+'</div>'}}catch(_){}
