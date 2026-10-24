@@ -1,6 +1,5 @@
 import {ariaTip,esc,I18N,isoAdd,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
-import {UNAME,zurichUTC} from "../base/11-schedule-prep.js";
-import {csHM} from "../base/13b-cs-now.js";
+import {UNAME} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
@@ -14,8 +13,7 @@ import {TST_RUN,logHead,savedPop,tstIco} from "./17-audit-misc.js";
 window.SCACK=window.SCACK||{};export let SCSUB=null;
 /* the times of the quittances (begin–end, running since) only with the permission «Quittierungszeiten sehen» */
 window.scTimesOk=()=>typeof canPerm==="function"&&canPerm("scenes.times");
-/* times of the quittances in the time zone of the shooting block (as everything else in the app), not of the phone */
-const scHM=ms=>ms?(typeof csHM==="function"?csHM(new Date(+ms)):msHM(ms)):"";
+const scHM=msHM;
 /* running time: 7′, 1h05 */
 const scDur=ms=>{const m=Math.max(0,Math.floor(ms/60000));return m<60?m+"′":Math.floor(m/60)+"h"+pad2(m%60)};
 /* the counters of running scenes count on without drawing the page again */
@@ -92,7 +90,6 @@ function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCAC
    (night shoot: 00:40 after 23:30 belongs to the next day; DST-safe through the calendar date) */
 const scMsNear=(date,t,ref)=>{const v=scMs(date,t);if(!v||!ref)return v;if(ref-v>12*3600e3){const n=scMs(isoAdd(date,1),t);return n||v}return v};
 const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;
-  try{if(typeof zurichUTC==="function")return zurichUTC(date,pad2(+m[1])+":"+m[2]).getTime()}catch(_){}   /* in the block's time zone, over the change of time */
   const d=new Date(date+"T00:00:00");d.setHours(+m[1],+m[2],0,0);return d.getTime()};
 async function scWrite(date,sc,u,v){const id=scAckId(date,sc),old=window.SCACK[id],undo=()=>{if(old)window.SCACK[id]=old;else delete window.SCACK[id];scRender()};
   /* through the data layer: offline the scene state shows at once and is sent later */
