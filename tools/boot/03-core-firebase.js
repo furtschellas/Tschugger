@@ -11,6 +11,7 @@ import {auditWrap} from "./17-audit-misc.js";
 /* languages offered in the app; the main admin picks them (Firestore config/app.langs), cached for the sign-in screen */
 export let APPLANGS=["de","fr","it","en"];window.UNIT3=false;window.BDAYPUB=false;window.DOCS={};try{window.DOCS=JSON.parse(localStorage.getItem("appdocs")||"{}")||{}}catch(_){}window.GOOGLEON=true;try{window.GOOGLEON=localStorage.getItem("appgoogle")!=="0"}catch(_){}window.PUBV={phone:false,email:false,mycal:false};try{const x=JSON.parse(localStorage.getItem("apppubv")||"null");if(x&&typeof x==="object")Object.assign(window.PUBV,x)}catch(_){}window.SCRIPTON=true;window.TABSON=null;window.TABORDER=null;window.AUTOUPD=true;try{try{const o=JSON.parse(localStorage.getItem("apptaborder")||"null");if(Array.isArray(o))window.TABORDER=o}catch(_){}window.AUTOUPD=localStorage.getItem("appauto")!=="0";try{const t=JSON.parse(localStorage.getItem("apptabs")||"null");if(Array.isArray(t)&&t.length)window.TABSON=t}catch(_){}window.SCRIPTON=localStorage.getItem("appscript")!=="0";window.BDAYPUB=localStorage.getItem("appbdaypub")==="1";const u=localStorage.getItem("appunit2");if(u!==null)window.UNIT2=u==="1";window.UNIT3=localStorage.getItem("appunit3")==="1";const mu=localStorage.getItem("appmap");if(mu)window.MAPURL=mu}catch(_){}
 try{window.SCACKON=localStorage.getItem("appscack")!=="0";window.RIDEACKON=localStorage.getItem("apprideack")!=="0"}catch(_){window.SCACKON=window.RIDEACKON=true}   /* quittieren on/off, until config/app is loaded */
+window.TODAYCFG={};try{const x=JSON.parse(localStorage.getItem("apptodaycfg")||"null");if(x&&typeof x==="object")window.TODAYCFG=x}catch(_){}   /* Today parts offered, until config/app is loaded */
 try{const x=JSON.parse(localStorage.getItem("applangs")||"null");if(Array.isArray(x)&&x.length)APPLANGS=x.filter(l=>LANGS.some(z=>z[0]===l))}catch(_){}
 export function applyLangs(){
   if(!APPLANGS.length)APPLANGS=["de"];
@@ -37,6 +38,8 @@ export async function loadLangs(){
     const to=d.exists()&&Array.isArray(d.data().tabOrder)?d.data().tabOrder:null;if(JSON.stringify(window.TABORDER)!==JSON.stringify(to)){window.TABORDER=to;try{to?localStorage.setItem("apptaborder",JSON.stringify(to)):localStorage.removeItem("apptaborder")}catch(_){}render()}
     const tb=d.exists()&&Array.isArray(d.data().tabs)&&d.data().tabs.length?d.data().tabs:null;if(JSON.stringify(window.TABSON)!==JSON.stringify(tb)){window.TABSON=tb;try{tb?localStorage.setItem("apptabs",JSON.stringify(tb)):localStorage.removeItem("apptabs")}catch(_){}render()}
     window.FAILALARM=d.exists()?d.data().failAlarm!==false:true;
+    /* App-Verwaltung → Today: which parts the people are offered ({part: "off"|"no"}) */
+    {const tc=d.exists()&&d.data().todayParts&&typeof d.data().todayParts==="object"?d.data().todayParts:{};if(JSON.stringify(tc)!==JSON.stringify(window.TODAYCFG||{})){window.TODAYCFG=tc;try{localStorage.setItem("apptodaycfg",JSON.stringify(tc))}catch(_){}render()}}
     window.OWNEV=d.exists()?d.data().ownEvents!==false:true;
     window.CSMAPON=d.exists()?d.data().csMap!==false:true;
     {const mn=d.exists()?d.data().myNav!==false:true;if(window.MYNAV!==mn){window.MYNAV=mn;try{localStorage.setItem("appmynav",mn?"1":"0")}catch(_){}render()}}
