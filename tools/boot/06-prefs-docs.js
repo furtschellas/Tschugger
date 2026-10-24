@@ -1,5 +1,5 @@
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
-const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false,PREFOK=false;const PREFX=["rc","scrv","csb","iconhint"];
+const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];let PREFT=null,PREFAPPLY=false,PREFOK=false;const PREFX=["rc","scrv","csb","iconhint","scwa","scwan"];
 /* the notices of p.x (or the older single fields) */
 const prefX=p=>{let x={};try{x=JSON.parse(p&&p.x||"{}")||{}}catch(_){}for(const k of PREFX)if(typeof(p&&p[k])==="string"&&x[k]==null)x[k]=p[k];return x};
 onStore(k=>{if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}});
