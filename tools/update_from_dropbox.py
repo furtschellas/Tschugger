@@ -1138,12 +1138,19 @@ def claude(parts, task, max_tokens=32000):
             text = []; stop = ""
             with requests.post("https://api.anthropic.com/v1/messages", headers=h, json=body, stream=True, timeout=(30, 600)) as r:
                 if r.status_code != 200:
+                    et = ""
+                    try: et = ((r.json() or {}).get("error") or {}).get("type") or ""
+                    except Exception: pass
+                    # visible in the run summary: status and error type of the API only (never content)
+                    print("::warning::Claude-API HTTP %s %s (Modell %s)" % (r.status_code, et, MODEL), flush=True)
                     raise RuntimeError("Claude-API HTTP %s: %s" % (r.status_code, r.text[:200]))
                 for line in r.iter_lines(decode_unicode=True):
                     if not line or not line.startswith("data:"): continue
                     ev = json.loads(line[5:])
                     if ev.get("type") == "content_block_delta" and ev["delta"].get("type") == "text_delta": text.append(ev["delta"]["text"])
-                    if ev.get("type") == "error": raise RuntimeError("Claude-API Fehler: %s" % ev.get("error"))
+                    if ev.get("type") == "error":
+                        print("::warning::Claude-API Fehler %s" % ((ev.get("error") or {}).get("type") or ""), flush=True)
+                        raise RuntimeError("Claude-API Fehler: %s" % ev.get("error"))
                     if ev.get("type") == "message_delta" and (ev.get("delta") or {}).get("stop_reason") == "max_tokens": stop = "max_tokens"
             if stop == "max_tokens": raise Truncated("Antwort abgeschnitten (zu lang)")
             t = "".join(text).strip()
@@ -1528,7 +1535,8 @@ def main():
         sources[-1] = olds.get((kind, base(f["name"]))) if kind in ("dispo", "prep") else oldkind.get(kind)
     def may_try(kind, f):
         k = fkey(kind, f); seen.add(k)
-        if FORCE or fails.get(k, 0) < 3: return True
+        # started by hand with «retry»: files skipped after 3 failed attempts are tried again
+        if FORCE or TRIGGER == "retry" or fails.get(k, 0) < 3: return True
         keep_old(kind, f); log(kind, "übersprungen nach 3 Fehlversuchen", _h(f["name"])); print("::warning::%s übersprungen nach 3 Fehlversuchen" % kind); return False
     def failed(kind, f, why):
         k = fkey(kind, f); seen.add(k); fails[k] = fails.get(k, 0) + 1
