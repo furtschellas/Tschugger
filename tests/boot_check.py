@@ -36,9 +36,9 @@ async def main():
         if "Copyright MrK 2026" not in await pg.evaluate("(document.getElementById('spcopy')||{}).textContent||''"): errs.append("Startbildschirm ohne Copyright unten")
         await pg.wait_for_timeout(2200)
         ok = await pg.evaluate("typeof render==='function'&&typeof VIEWS==='object'")
-        # every part in its own script: a broken part must not stop the others
-        n = await pg.evaluate("document.querySelectorAll('script').length")
-        if n < 15: errs.append("App-Teile nicht getrennt (nur %d Skripte)" % n)
+        # a broken part must not stop the others: the modules are linked with every start step in its own try/catch (tools/modlink.mjs)
+        n = await pg.evaluate("[...document.querySelectorAll('script')].reduce((a,s)=>a+(s.textContent.split('catch(e){__E(').length-1),0)")
+        if n < 300: errs.append("App-Teile nicht abgesichert (nur %d geschützte Start-Schritte)" % n)
         # reopened after more than 30 minutes (the phone had closed the app – technically a reload): logo with versions
         # the old page must not write «seen just now» while it unloads (on a phone there is no old page after a restart)
         await pg.evaluate("sessionStorage.setItem('bcLV',String(Date.now()-40*60e3));Storage.prototype.setItem=function(){}")

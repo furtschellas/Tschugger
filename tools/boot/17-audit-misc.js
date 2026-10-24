@@ -1,6 +1,19 @@
+import {I18N,L,LANG,S,ariaTip,esc,localISO,msHM,todayISO} from "../base/10-core.js";
+import {CSCUR} from "../base/13b-cs-now.js";
+import {fold,onRender,onRendered,render} from "../base/15-script-tab.js";
+import {fmtDT} from "./01-config.js";
+import {FB,ME,MEMBER,MYROLE,SIMROLE,crewPerson,fb,isAdmin,isOwner,lc} from "./03-core-firebase.js";
+import {chatFab} from "./08-chat-tour.js";
+import {bcButton} from "./09-broadcast.js";
+import {appKind} from "./10-menus-welcome-presence.js";
+import {ACSUB} from "./11-account.js";
+import {ADM} from "./12a-admin-core.js";
+import {dmy} from "./14-today-changes-offline.js";
+import {DCK,RTS,dckMay,dckRun,roleTestRun} from "./19-data-check.js";
+import {SIMUSER} from "./22-simulate.js";
 /* ---------- 11) Protokoll: who changed what in the administration (roles, users, menus, settings, messages) ---------- */
 const AUDIT_COLS=["roles","userroles","admins","owners","invites","members","menus","config","broadcasts","starts","requests","sceneack","coverday"];
-function auditSum(col,data,op){
+export function auditSum(col,data,op){
   if(op==="delete")return "";
   if(col==="broadcasts")return data&&data.c?L("Nachricht gesendet"):(data&&data.sent?L("versendet"):"");
   if(!data||typeof data!=="object")return "";
@@ -10,7 +23,7 @@ function auditSum(col,data,op){
     let s=Array.isArray(v)?v.join(", "):typeof v==="object"?JSON.stringify(v):String(v);if(s.length>60)s=s.slice(0,57)+"…";out.push(k+": "+s)}
   return out.join(" · ").slice(0,280);
 }
-function auditWrap(fs){
+export function auditWrap(fs){
   const F=Object.assign({},fs);
   const log=(op,ref,data)=>{try{const path=String(ref&&ref.path||"");const [col,id]=path.split("/");if(!AUDIT_COLS.includes(col)||!ME||!ME.email)return;
     if(col==="members"&&id===ME.uid)return; /* own profile, last seen */
@@ -58,13 +71,13 @@ function audDays(rows,li){const g=new Map();for(const x of rows){const k=x.ms?lo
 document.addEventListener("input",e=>{const i=e.target.closest("[data-audq]");if(!i)return;AUD.q=i.value;clearTimeout(AUD.t);AUD.t=setTimeout(()=>{const v=document.querySelector("#view");const pos=i.selectionStart;render();const n=document.querySelector("[data-audq]");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}},250)});
 document.addEventListener("click",e=>{if(e.target.closest("[data-audre]")){AUD.list=null;render()}});
 /* the change log to open (closed by default; stays open while you work on the page) */
-function auditSec(){const h=auditSecInner();if(!AUD.list)return h;const nw=AUD.list[0]&&AUD.list[0].ms;
+export function auditSec(){const h=auditSecInner();if(!AUD.list)return h;const nw=AUD.list[0]&&AUD.list[0].ms;
   return '<details class="tstsec audd"'+(AUD.open||AUD.q?' open':'')+' data-lsec="aud"><summary class="lsum">'+logHead(esc(L("Log")),'<span class="tsth">'+AUD.list.length+' '+esc(L("Einträge"))+'</span>',nw?esc(logWhen(nw)):"")+'</summary>'+h+'</details>'}
 /* time in the title line of every box (like «Automatische Tests») */
-const logWhen=fmtDT;   /* time in the title line of every box */
+export const logWhen=fmtDT;   /* time in the title line of every box */
 window.logWhen=logWhen;
 /* sub-parts (data-su) are open only while you stay on the page: every new visit of Log/Tests starts with everything closed */
-const logSu=k=>TST.su[k]?' open':'';window.logSu=logSu;
+export const logSu=k=>TST.su[k]?' open':'';window.logSu=logSu;
 function logReset(){TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false;if(window.scLogReset)scLogReset()}
 {let last="";onRender(()=>{if((typeof RTS!=="undefined"&&RTS.busy)||(typeof DCK!=="undefined"&&DCK.busy))return;   /* the tests switch pages for a moment: not a new visit */
   const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test")?ADM.sub:"";if(now&&now!==last){logReset();setTimeout(()=>logAutoRun(now),250)}last=now})}
@@ -91,7 +104,7 @@ function ghProgress(){const r=GH.run;if(!r||r.status==="completed")return null;
   return {pct:r.status==="queued"?2:Math.max(4,Math.round(done/tot*100)),label:r.status==="queued"?L("wartet auf GitHub …"):(cur?cur.name:L("läuft …"))}}
 
 /* title line of every box: title, then the last result (on the phone on a line of its own), the open/close button top right */
-const logHead=(t,st,tm,pg)=>'<span class="lsh"><b>'+t+'</b>'+(st?'<span class="lss">'+st+'</span>':'')+(tm?'<span class="lst">'+tm+'</span>':'')+'</span>'+tstAllBtn(pg);window.logHead=logHead;
+export const logHead=(t,st,tm,pg)=>'<span class="lsh"><b>'+t+'</b>'+(st?'<span class="lss">'+st+'</span>':'')+(tm?'<span class="lst">'+tm+'</span>':'')+'</span>'+tstAllBtn(pg);window.logHead=logHead;
 /* a tap on «Log» (also when already there) shows every box closed again */
 document.addEventListener("click",e=>{const b=e.target.closest('[data-asub="log"],[data-asub="test"]');if(b&&S.tab==="admin"&&ADM.sub===b.dataset.asub){logReset();setTimeout(()=>logAutoRun(b.dataset.asub),250)}},true);
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("audd"))AUD.open=e.target.open},true);
@@ -110,12 +123,12 @@ document.addEventListener("DOMContentLoaded",()=>{try{iconTitles()}catch(_){}});
 
 /* results of the automatic tests (GitHub, before every release of new code): App-Verwaltung → Log, collapsible */
 const TST={d:null,busy:false,run:false,msg:"",open:false,closed:false,su:{}}; /* parts stay closed until opened (only for this visit) */
-const TST_RUN='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 10.5A7.6 7.6 0 0 0 6 7.2L4.5 8.8"/><path d="M4.5 4.5v4.3h4.3"/><path d="M4.5 13.5A7.6 7.6 0 0 0 18 16.8l1.5-1.6"/><path d="M19.5 19.5v-4.3h-4.3"/></svg>';   /* restart: two arrows in a circle, centred */
+export const TST_RUN='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 10.5A7.6 7.6 0 0 0 6 7.2L4.5 8.8"/><path d="M4.5 4.5v4.3h4.3"/><path d="M4.5 13.5A7.6 7.6 0 0 0 18 16.8l1.5-1.6"/><path d="M19.5 19.5v-4.3h-4.3"/></svg>';   /* restart: two arrows in a circle, centred */
 const TST_ALL='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>';
 async function testsLoad(){if(TST.busy)return;TST.busy=true;try{const r=await fetch("./tests.json?t="+Date.now(),{cache:"no-store"});TST.d=r.ok?await r.json():{none:true}}catch(_){TST.d={none:true}}TST.busy=false;render()}
 /* buttons in Log/Tests: only the symbol (the text is the tooltip and for screen readers) */
 const TST_LOAD='<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>';
-const tstIco=(attr,ic,t,dis,pg)=>{const p=pg&&pg.pct!=null?Math.max(0,Math.min(100,pg.pct)):null;
+export const tstIco=(attr,ic,t,dis,pg)=>{const p=pg&&pg.pct!=null?Math.max(0,Math.min(100,pg.pct)):null;
   return '<button type="button" class="lbtn tsticon'+(pg?' prog'+(p==null?' ind':''):'')+'" '+attr+(dis?' disabled':'')+(pg&&p!=null?' style="--p:'+p+'"':'')+' '+ariaTip(L(t))+'>'+ic+'</button>'};window.tstIco=tstIco;
 /* open/close button at the right end of every box in Log/Tests */
 /* while a test runs, the button shows the progress as a ring around it (pct = percent, null = running, unknown how far) */
@@ -143,7 +156,7 @@ function tstGroupsHTML(suite,cs){
   const ord=k=>{const i=TST_THEMES.findIndex(x=>x[0]===k);return i<0?99:i};
   return [...groups].sort((a,b)=>a[1].every(r=>r.ok)-b[1].every(r=>r.ok)||ord(a[0])-ord(b[0])).map(([k,l])=>{const bad=l.filter(r=>!r.ok).length,key="tg:"+suite+":"+k;
     return '<details class="tstsu tstgrp'+(bad?' bad':'')+'" data-su="'+esc(key)+'"'+(bad?' open':logSu(key))+'><summary>'+(bad?'✗ ':'✓ ')+esc(L(k))+' · '+(bad?(l.length-bad)+'/'+l.length:l.length)+'</summary><ul class="tstl">'+l.sort((a,b)=>a.ok-b.ok).map(li).join("")+'</ul></details>'}).join("")}
-function testsSec(){
+export function testsSec(){
   if(!TST.d){testsLoad();return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("Lade …")))+'</summary></details>'}
   const d=TST.d;if(d.none)return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("noch keine Resultate")))+'</summary></details>';
   const when=fmtDT(d.at||0);
@@ -204,7 +217,7 @@ let SAVEAT=0,SAVEPOPAT=0;
 const SAVE_RE=/speichern|sichern|save|enregistr|salva|सहेज/i;
 document.addEventListener("submit",()=>{SAVEAT=Date.now()},true);
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button,[role=button]");if(b&&(b.type==="submit"||SAVE_RE.test(b.textContent||"")||SAVE_RE.test(b.getAttribute("aria-label")||"")))SAVEAT=Date.now()},true);
-function savedPop(force){if(!force&&Date.now()-SAVEAT>12000)return;if(Date.now()-SAVEPOPAT<1500)return;SAVEPOPAT=Date.now();SAVEAT=0;
+export function savedPop(force){if(!force&&Date.now()-SAVEAT>12000)return;if(Date.now()-SAVEPOPAT<1500)return;SAVEPOPAT=Date.now();SAVEAT=0;
   let p=document.getElementById("savepop");if(!p){p=document.createElement("div");p.id="savepop";p.setAttribute("role","status");p.setAttribute("aria-live","polite");document.body.appendChild(p)}
   p.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>'+esc(L("Gespeichert"))+'</span>';
   p.classList.remove("on");void p.offsetWidth;p.classList.add("on");clearTimeout(p.__t);p.__t=setTimeout(()=>p.classList.remove("on"),1800)}

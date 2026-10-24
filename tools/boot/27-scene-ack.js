@@ -1,6 +1,16 @@
+import {I18N,L,LANG,S,TX,ariaTip,esc,mkDialog,msHM,norm,pad2,saveBtn,saveErr,todayISO} from "../base/10-core.js";
+import {UNAME} from "../base/11-schedule-prep.js";
+import {hm} from "../base/12-mycal.js";
+import {fold,render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {schedIndex} from "../base/17-scene-reader.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {ME,MEMBER,can,dbWrite,fb,isAdmin} from "./03-core-firebase.js";
+import {savePrefsSoon} from "./06-prefs-docs.js";
+import {TST_RUN,logHead,savedPop,tstIco} from "./17-audit-misc.js";
 /* ---------- scenes of the shooting day «quittiert» in the Drehplan: open → running (tap) → done (tap); sceneack/{date-scene}, no names.
    Everybody sees the state live; tapping only with the permission «Szenen quittieren». «Jetzt» follows: the running scene, else the next open one after the last done ---------- */
-window.SCACK=window.SCACK||{};let SCSUB=null;
+window.SCACK=window.SCACK||{};export let SCSUB=null;
 /* the times of the quittances (begin–end, running since) only with the permission «Quittierungszeiten sehen» */
 window.scTimesOk=()=>typeof canPerm==="function"&&canPerm("scenes.times");
 const scHM=msHM;
@@ -9,7 +19,7 @@ const scDur=ms=>{const m=Math.max(0,Math.floor(ms/60000));return m<60?m+"′":Ma
 /* the counters of running scenes count on without drawing the page again */
 setInterval(()=>document.querySelectorAll("[data-scrun]").forEach(el=>{el.textContent=scDur(Date.now()-(+el.dataset.scrun))}),20e3);
 /* one id per scene and day for Drehplan and callsheet alike: «186 pt1A», «186pt1A», «Sc. 186 PT1A», «DJ 186pt1a» → 186pt1a; «21 CONT» = 21 */
-function scAckId(date,sc){return String(date||"").replace(/-/g,"")+"-"+fold(String(sc||"")).replace(/[^a-z0-9]/g,"").replace(/^(dj|d|j|sc|sz|seq|scene|szene)(?=\d)/,"").replace(/(cont|continued|forts|fortsetzung)$/,"").slice(0,24)}
+export function scAckId(date,sc){return String(date||"").replace(/-/g,"")+"-"+fold(String(sc||"")).replace(/[^a-z0-9]/g,"").replace(/^(dj|d|j|sc|sz|seq|scene|szene)(?=\d)/,"").replace(/(cont|continued|forts|fortsetzung)$/,"").slice(0,24)}
 window.scAckId=scAckId;
 /* lunch and wrap rows of the schedule / shooting order are quittiert too: their key «lunch» / «wrap», else "" */
 window.scEvKey=t=>{t=String(t||"");return /\b(lunch|mittag|pranzo|d[ée]jeuner)\b/i.test(t)?"lunch":/\b(wrap|drehschluss)\b/i.test(t)?"wrap":""};
@@ -25,7 +35,7 @@ window.scLabel=k=>{k=scBase(k);const m=k.match(/^setup(\d*)$/);return k==="lunch
 window.scState=(date,sc)=>{if(window.SCACKON===false)return 0;const x=window.SCACK[scAckId(date,sc)];return x?(x.s===1?1:2):0};
 /* any scene of that day quittiert (then «jetzt» follows the quittances instead of the clock) */
 /* draw again but keep what is open (callsheet parts, scene details, locations) and the scroll position */
-function scRender(){const v=document.getElementById("view");if(!v){render();return}
+export function scRender(){const v=document.getElementById("view");if(!v){render();return}
   const secs=[...v.querySelectorAll("details[id]")].filter(d=>d.open).map(d=>d.id),scs=[...v.querySelectorAll("li[data-sc]")].filter(li=>{const d=li.querySelector("details.csscd");return d&&d.open}).map(li=>li.dataset.sc),
     all=[...v.querySelectorAll("details[id]")].filter(d=>d.dataset.all).map(d=>[d.id,d.dataset.all]),y=scrollY;
   render();
@@ -152,7 +162,7 @@ function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{}
   document.body.appendChild(d)}
 window.scAckDialog=scAckDialog;
 /* Einstellungen → Log: the scene log (begin, end and duration of every quittiert scene, by day) */
-const SCLOG={list:null,busy:false,open:false};
+export const SCLOG={list:null,busy:false,open:false};
 /* every new visit of «Log» shows it closed again (like the other boxes) */
 window.scLogReset=()=>{SCLOG.open=false};
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.lsec==="sclog")SCLOG.open=d.open},true);
@@ -334,4 +344,4 @@ function scPrint(doc){
   const f=document.createElement("iframe");f.style.cssText="position:fixed;width:0;height:0;border:0;right:0;bottom:0";f.addEventListener("load",()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(_){}setTimeout(()=>{f.remove();URL.revokeObjectURL(url)},60000)});f.src=url;document.body.appendChild(f)}
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-sclre]")){SCLOG.list=null;render()}});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-scled]");if(!b)return;e.preventDefault();e.stopPropagation();const [d,k,u]=b.dataset.scled.split("|");scAckDialog(d,k,u||"1")},true);
-function setSCSUB(v){return SCSUB=v}   /* other parts change SCSUB only through this */
+export function setSCSUB(v){return SCSUB=v}   /* other parts change SCSUB only through this */

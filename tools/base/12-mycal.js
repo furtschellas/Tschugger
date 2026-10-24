@@ -1,14 +1,26 @@
+import {HIT,L,LANG,MEMO,S,TX,TXA,WD,ariaTip,blockTag,ddmm,driveMin,esc,fmtDate,isoAdd,itemHTML,pad2,pickDay,pvButtons,safeUrl,todayISO} from "./10-core.js";
+import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
+import {addrForItem,emptyHTML} from "./13-crew-views.js";
+import {csMe} from "./13a-callsheet.js";
+import {csLocs,csPlace} from "./13c-cs-places.js";
+import {csShort} from "./13d-cs-mine.js";
+import {perm,vok} from "./14-render.js";
+import {fold,render} from "./15-script-tab.js";
+import {store} from "./16-interaction.js";
+import {arr} from "./20-data-start.js";
+import {ME,MEMBER} from "../boot/03-core-firebase.js";
+import {ADM,ensureAdm} from "../boot/12a-admin-core.js";
 /* ---------- «Meine Termine»: every event of all documents (shooting schedule, callsheets, weekly schedule, transport) the signed-in person takes part in ---------- */
 const NOSET=/^(postprod|verleih|buchhalt|autor|casting)/i;
 const myAdmin=()=>{try{return typeof window.canPerm!=="function"||window.canPerm("mycal.all")}catch(_){return false}};
 /* admins can look at the appointments of another person (Meine Termine → «Termine für»); that choice also fills Today and «Mein Drehtag»:
    a bar says so, with the way back to the own data */
-function myPickBar(){let pick="";try{if(window.PICKON&&myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){}if(!pick)return "";
+export function myPickBar(){let pick="";try{if(window.PICKON&&myAdmin()&&!(window.simOn&&window.simOn()))pick=(window.MYPICK||"")||""}catch(_){}if(!pick)return "";
   let own="";try{if(typeof MEMBER!=="undefined"&&MEMBER)own=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
   if(own&&fold(own)===fold(pick))return "";
   return '<div class="mypickbar" role="status">'+esc(L("Du siehst die Daten von"))+' <b>'+esc(pick)+'</b> '+esc(L("(gewählt in Meine Termine)."))+' <button type="button" class="pillbtn" data-mypickoff>'+esc(L("Zu meinen Daten"))+'</button></div>'}
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-mypickoff]")){e.preventDefault();window.MYPICK="";try{MEMO.clear()}catch(_){}render()}});
-function myIdentity(){
+export function myIdentity(){
   const people=mailPeople();let nm="",em="";
   try{em=String(window.simEmail?window.simEmail():(typeof ME!=="undefined"&&ME&&ME.email)||"").toLowerCase()}catch(_){}
   try{if(typeof MEMBER!=="undefined"&&MEMBER)nm=[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")||MEMBER.name||""}catch(_){}
@@ -27,13 +39,13 @@ function iAmIn(names,me,people){
     const f=findPerson(n,[me]);if(f)return true}
   return false;
 }
-function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
+export function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
 /* a ride of a callsheet: the same id for everyone (date, times, places, vehicle – no names) */
-function rideId(date,r){if(r&&r._rid)return r._rid;const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
+export function rideId(date,r){if(r&&r._rid)return r._rid;const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 /* map link of a ride's start or destination, from the callsheet: a link in the text of the ride, else the place of the callsheet with that
    name, code (L1, Set 1, Base, P1 …) or kind (Base, Lunch …) – its map link, else its address; else Motivliste, location list (Infos) and the internal
    Google map; links only from these sources (no free Google search by name – a wrong place is worse than none) */
-function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https?:\/\/\S+/)||[])[0];if(u)return u;const txt=raw.replace(/https?:\/\/\S+/g,"").trim(),n=fold(txt);if(!n)return "";
+export function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https?:\/\/\S+/)||[])[0];if(u)return u;const txt=raw.replace(/https?:\/\/\S+/g,"").trim(),n=fold(txt);if(!n)return "";
   const words=new Set(n.split(/[^a-z0-9]+/).filter(Boolean)),isA=t=>/\d{4}\s+\p{L}/u.test(String(t||""));
   const ls=typeof csLocs==="function"&&dp&&dp.cs?csLocs(dp.cs):arr(dp&&dp.locations);
   const code=l=>{try{return typeof csShort==="function"?fold(csShort(l)):""}catch(_){return ""}};
@@ -52,7 +64,7 @@ function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https?:\/\/\
   try{for(const f of arr(S.gmap&&S.gmap.f))if(f&&same(f.n)&&Array.isArray(f.x)&&Array.isArray(f.x[0])&&isFinite(f.x[0][0])&&isFinite(f.x[0][1]))return q(f.x[0][0]+","+f.x[0][1])}catch(_){}
   /* an address written in the callsheet itself */
   return isA(txt)?q(txt):""}
-function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_){}
+export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   const out=[],people=mailPeople(),t=todayISO();
   for(const d of (vok("prep")?S.prepro:[])){if(d.date<t)continue;
     for(const [grp,list] of [["i",d.items],["p",arr(d.parallel)]])list.forEach((i,k)=>{if(/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n||"").trim()))return;if(iAmIn(ppNames(i.crew).concat(ppNames(i.cast)),me,people))out.push({date:d.date,t:hm(i.t)||i.t||"",end:hm(i.end),n:i.n,where:i.where,map:i.map,src:"Weekly Schedule",go:shootOn(d.date)?d.date:"prep:"+d.date,cal:d.date+"|"+grp+"|"+k})});
@@ -94,15 +106,15 @@ function myIcs(list){
   return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Tschugger Crew//Meine Termine//DE","CALSCALE:GREGORIAN","METHOD:PUBLISH"].join("\r\n")+"\r\n"+ev.map(v=>"BEGIN:VEVENT"+v+"END:VEVENT").join("\r\n")+"\r\nEND:VCALENDAR\r\n";
 }
 function saveIcs(ics,name){try{const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}catch(_){location.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics)}}
-let MYEV=[],MCNAMES=[];
+export let MYEV=[],MCNAMES=[];
 /* «Meine Termine»: only upcoming events, events that started at most 5 hours ago and events still running (end time);
    events without a time stay visible for their whole day */
-function evRecent(e){const ok=x=>/^\d\d:\d\d$/.test(x||"");if(!ok(e.t)&&!ok(e.end))return e.date>=todayISO();
+export function evRecent(e){const ok=x=>/^\d\d:\d\d$/.test(x||"");if(!ok(e.t)&&!ok(e.end))return e.date>=todayISO();
   const ms=x=>zurichUTC(e.date,x).getTime(),now=Date.now();
   let end=ok(e.end)?ms(e.end):0;if(end&&ok(e.t)&&end<=ms(e.t))end=zurichUTC(isoAdd(e.date,1),e.end).getTime(); /* night shoot: end after midnight (next calendar day, also over the change of time) */
   return (ok(e.t)&&ms(e.t)>=now-5*3600e3)||(end&&end>=now)}
 /* the person chosen in «Termine für» counts only while Meine Termine is drawn – Today, the callsheet, push and the assistant are always me */
-function renderMy(){window.PICKON=true;try{return renderMy0()}finally{window.PICKON=false}}
+export function renderMy(){window.PICKON=true;try{return renderMy0()}finally{window.PICKON=false}}
 function renderMy0(){
   if(!vok("mycal"))return '<div class="empty">'+esc(L("Kein Zugang"))+'</div>';
   const me=myIdentity();const people=mailPeople().filter(x=>x.src&&x.src!=="user");
@@ -125,14 +137,14 @@ function renderMy0(){
         return '<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>'})()+'</div>'})}
   return h+'</section>';
 }
-function openMyCal(){S.tab="my";S.srcOpen=false;window.scrollTo(0,0);render()}
-function myClick(e){
+export function openMyCal(){S.tab="my";S.srcOpen=false;window.scrollTo(0,0);render()}
+export function myClick(e){
   const g=e.target.closest("[data-mcgo]");if(g&&g.dataset.mcgo){S.tab="plan";S.day=g.dataset.mcgo;store("tab","plan");render();window.scrollTo(0,0);return true}
   const c=e.target.closest("[data-mcics]");if(c){const ev=MYEV[+c.dataset.mcics];saveIcs(myIcs([ev]),(ev.date+"_"+ev.n).replace(/[^\w\-. ]+/g,"").replace(/\s+/g,"_").slice(0,60)+".ics");return true}
   if(e.target.closest("[data-mcall]")){saveIcs(myIcs(MYEV),"Tschugger_Meine_Termine.ics");return true}
   return false;
 }
-function addToCalendar(key){
+export function addToCalendar(key){
   const [date,grp,k]=key.split("|");const d=S.prepro.find(x=>x.date===date);if(!d)return;
   const i=(grp==="p"?arr(d.parallel):d.items)[+k];if(!i)return;
   const ics=makeICS(date,i),name=(date+" "+(i.n||"Prep")).replace(/[^\w\-. ]+/g,"").trim().replace(/\s+/g,"_").slice(0,60)+".ics";
@@ -165,14 +177,14 @@ function renderPrePro(one,embedded){setPPPEOPLE(null);
   }
   return h;
 }
-const WDL=dt=>({de:["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"],fr:["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"],it:["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"],en:["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],hi:["रविवार","सोमवार","मंगलवार","बुधवार","गुरुवार","शुक्रवार","शनिवार"]}[LANG]||[])[dt.getDay()]||WD[dt.getDay()];
-function telLinks(t){return esc(t).replace(/(\+?\d[\d ]{7,}\d)/g,m=>'<a href="tel:'+m.replace(/\s/g,"")+'">'+m+'</a>')}
+export const WDL=dt=>({de:["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"],fr:["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"],it:["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"],en:["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],hi:["रविवार","सोमवार","मंगलवार","बुधवार","गुरुवार","शुक्रवार","शनिवार"]}[LANG]||[])[dt.getDay()]||WD[dt.getDay()];
+export function telLinks(t){return esc(t).replace(/(\+?\d[\d ]{7,}\d)/g,m=>'<a href="tel:'+m.replace(/\s/g,"")+'">'+m+'</a>')}
 /* the facts of a shooting day (time, drive, weather, length, pages, sun, extras, PDF): schedule and callsheet without callsheet */
-function planPdfBtn(d){
+export function planPdfBtn(d){
   const sp=S.meta&&S.meta.schedPdf,dno=(String(d.short0||d.short||d.label||"").match(/\d+/)||[])[0],spi=sp&&sp.day&&dno!==undefined?sp.day[String(+dno)]:undefined;
   const spBtn=sp&&arr(sp.pg).length&&typeof window.blkImg==="function"?'<button type="button" class="fact factp" data-schedpdf="'+(spi===undefined?0:spi)+'" '+ariaTip(L("Drehplan als PDF (Originalseite dieses Drehtags)"))+'><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span class="v">PDF</span></button>':'';
   return spBtn}
-function planFactsHTML(d,spBtn){
+export function planFactsHTML(d,spBtn){
     const f=[[L("Dreh"),d.hours],[L("Länge"),d.length],[L("Seiten"),d.pages],[L("Sonne"),d.sr&&d.ss?d.sr+"–"+d.ss:(d.sr||d.ss)]];
     if(d.extras)f.push(["Extras",d.extras]);
     /* drive from the crew hotel: +3 min buffer (over 20 min: +15 %); the route itself only when opened; shown next to the shooting time */
@@ -189,7 +201,7 @@ function planFactsHTML(d,spBtn){
     if(spBtn)fx.push(spBtn);   /* direct link to the schedule PDF, after «Sonne» */
     return '<div class="facts">'+fx.join("")+'</div>';
 }
-function renderPlan(){
+export function renderPlan(){
   if(!S.days.length)return emptyHTML("Planung");
   const PD=planDays();
   const t=todayISO();

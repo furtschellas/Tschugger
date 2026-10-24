@@ -1,19 +1,27 @@
+import {L,S,bdFor,esc,itemHTML,norm,safeUrl} from "./10-core.js";
+import {addrForItem} from "./13-crew-views.js";
+import {CSEXPSM,CSI,csA,csHm,csKeys,csLocRows,csMyRides,csS,csTx} from "./13a-callsheet.js";
+import {CSCUR,CSHN_RE,csIsAdr,csNowIdx,csSceneLoc} from "./13b-cs-now.js";
+import {vok} from "./14-render.js";
+import {fold} from "./15-script-tab.js";
+import {fpFor,schedIndex} from "./17-scene-reader.js";
+import {arr} from "./20-data-start.js";
 /* ---------- Callsheet (3/6): places – kinds and codes, location groups, addresses, the shooting order, csLocs ---------- */
 /* code of a kind of place: «W / H / M Extras» → «W/H/M Extras», «Base» */
-const csKindCode=k=>String(k).replace(/^W\s*\/\s*H\s*\/\s*M/i,"WHM").replace(/\s*\/\s*/g,"/").trim();
+export const csKindCode=k=>String(k).replace(/^W\s*\/\s*H\s*\/\s*M/i,"WHM").replace(/\s*\/\s*/g,"/").trim();
 /* the code of a place as a badge: an icon per kind of place (set, Base, W/H/M, Lunch, Dinner, Prod, DIT, Parking) and the short text */
 const CSKICO={"Base":"base","W / H / M":"whm","Lunch":"lunch","Dinner":"dinner","Prod":"prod","DIT":"dit"};
 function csKindIco(k){const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],b=String(k).replace(/ (Cast|Extras)$/,"");if(b==="W / H / M"&&q)return q==="Cast"?CSI.whmc:CSI.whme;return CSI[CSKICO[b]]||(/park/i.test(b)?CSI.park:"")}
 const csKindB=k=>{const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],t=csKindCode(k).replace(/ (Cast|Extras)$/,q?" "+L(q):"");const ic=csKindIco(k);return '<b class="csk" title="'+esc(t)+'" aria-label="'+esc(t)+'">'+(ic||'<span>'+esc(t)+'</span>')+'</b>'};
-function csBadgeIn(l,codes){if(!l.kinds)return '<span>'+esc((codes||["L"+String(l.no||"").trim()]).join("·"))+'</span>'+(l._kx||[]).map(csKindB).join("");   /* a set with DIT / Prod at its place: their icon too */
+export function csBadgeIn(l,codes){if(!l.kinds)return '<span>'+esc((codes||["L"+String(l.no||"").trim()]).join("·"))+'</span>'+(l._kx||[]).map(csKindB).join("");   /* a set with DIT / Prod at its place: their icon too */
   /* side place: the icons, with the group (Cast / Extras) and a kind without icon as text */
   return l.kinds.map(csKindB).join("")}
-function csPlaceH(inner,href,title,cls){const t=title?' title="'+esc(title)+'" aria-label="'+esc(title)+'"':'',k='csplace csbadge'+(cls?' '+cls:'');
+export function csPlaceH(inner,href,title,cls){const t=title?' title="'+esc(title)+'" aria-label="'+esc(title)+'"':'',k='csplace csbadge'+(cls?' '+cls:'');
   return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+inner+'</a>':'<span class="'+k+'"'+t+'>'+inner+'</span>'}
 /* the locations of the day: every set has its code L1, L2 … (its scenes carry it); sets at the same place (same map link or address,
    a set without either at the only place there is) are shown as one location with their codes «L1·L2» */
 /* not kept between drawings: the addresses can come later with the app's location list */
-function csLocGroups(c,ls,date){const sets=ls.filter(l=>!l.kinds),key=l=>{let a="";try{a=csLocAddr(c,l,date)}catch(_){}return fold(String(l.map||a||"")).replace(/\s+/g," ").trim()};
+export function csLocGroups(c,ls,date){const sets=ls.filter(l=>!l.kinds),key=l=>{let a="";try{a=csLocAddr(c,l,date)}catch(_){}return fold(String(l.map||a||"")).replace(/\s+/g," ").trim()};
   const keys=new Map(sets.map(l=>[l,key(l)])),K=[...new Set([...keys.values()].filter(Boolean))];
   const groups=[];for(const l of sets){let k=keys.get(l);if(!k){if(K.length!==1){groups.push([l]);continue}k=K[0]}let g=groups.find(x=>x.k===k);if(!g){g=[];g.k=k;groups.push(g)}g.push(l)}
   const uq=a=>[...new Set(a.filter(Boolean))];const out=[];
@@ -23,18 +31,18 @@ function csLocGroups(c,ls,date){const sets=ls.filter(l=>!l.kinds),key=l=>{let a=
       notes:uq([].concat(...g.map(x=>csA(x.notes).map(String)))),items:[].concat(...g.map(x=>csA(x.items))),_m:g,_nos:[].concat(...g.map(x=>x._nos||[]))}))}
   return out}
 /* position of a set: its map link, else the address the updater found (key «loc:n» = n-th set of the document) */
-function csSetGeo(c,l){const geo=c.geo||{};for(const m of (l._m||[l])){const g=geo[m.map||"loc:"+(m._ix||m.no)];if(Array.isArray(g))return [m.map||"loc:"+(m._ix||m.no),g]}return [l.map||"loc:"+(l._ix||l.no),null]}
-function csRadioHTML(t){t=String(t||"").trim();if(!t)return"";const b=t.replace(/^(radio\s*channels?|funk(kanäle)?)\s*:?\s*/i,"");const ch=[];const re=/(\d{1,2})\s*:\s*(.*?)(?=\s+\d{1,2}\s*:|$)/g;let m;while((m=re.exec(b)))ch.push([m[1],m[2].trim()]);
+export function csSetGeo(c,l){const geo=c.geo||{};for(const m of (l._m||[l])){const g=geo[m.map||"loc:"+(m._ix||m.no)];if(Array.isArray(g))return [m.map||"loc:"+(m._ix||m.no),g]}return [l.map||"loc:"+(l._ix||l.no),null]}
+export function csRadioHTML(t){t=String(t||"").trim();if(!t)return"";const b=t.replace(/^(radio\s*channels?|funk(kanäle)?)\s*:?\s*/i,"");const ch=[];const re=/(\d{1,2})\s*:\s*(.*?)(?=\s+\d{1,2}\s*:|$)/g;let m;while((m=re.exec(b)))ch.push([m[1],m[2].trim()]);
   return '<div class="csradio2"><span class="csrlab">'+esc(L("Funkkanäle"))+'</span>'+(ch.length>1?ch.map(([n,l])=>'<span class="csrch"><b>'+esc(n)+'</b>'+esc(l||"–")+'</span>').join(""):'<span>'+esc(t)+'</span>')+'</div>'}
-function csMapQ(q){q=String(q||"").trim();return q?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q):""}
-function csLocHref(l,c,date){c=c||CSCUR.c;date=date||CSCUR.date;if(!l)return"";if(l.map)return l.map;let ad="";try{ad=c?csLocAddr(c,l,date):""}catch(_){}return csMapQ(ad)}
-function csCodeHref(code){const m=String(code||"").match(/^L(\w+)$/);if(!m||!CSCUR.c)return"";return csLocHref(csLocs(CSCUR.c).find(x=>!x.kinds&&String(x.no).trim()===m[1]))}
-function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':' title="'+esc(code)+'"';
+export function csMapQ(q){q=String(q||"").trim();return q?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q):""}
+export function csLocHref(l,c,date){c=c||CSCUR.c;date=date||CSCUR.date;if(!l)return"";if(l.map)return l.map;let ad="";try{ad=c?csLocAddr(c,l,date):""}catch(_){}return csMapQ(ad)}
+export function csCodeHref(code){const m=String(code||"").match(/^L(\w+)$/);if(!m||!CSCUR.c)return"";return csLocHref(csLocs(CSCUR.c).find(x=>!x.kinds&&String(x.no).trim()===m[1]))}
+export function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':' title="'+esc(code)+'"';
   /* a base (Base, WHM, Lunch, Prod, DIT …): its own icon and the gold colour; sets (L1 …) stay text */
   const ic=/^L\d/i.test(String(code))?"":csKindIco(String(code).replace(/^WHM\b/i,"W / H / M").replace(/^Prod\b.*/i,"Prod")),k='csplace'+(ic?' csbadge csbase':'')+(cls?' '+cls:''),in_=ic?ic+'<span class="vh">'+esc(code)+'</span>':esc(code);
   return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+in_+'</a>':'<span class="'+k+'"'+t+'>'+in_+'</span>'}
 /* the address of a place is asked for many times per drawing (scene rows, short line, map, tiles …): worked out once per drawing */
-function csLocAddr(c,l,date){const M=typeof CSCUR!=="undefined"&&CSCUR.c===c&&CSCUR.addr;if(!M||!l||typeof l!=="object")return csLocAddr0(c,l,date);
+export function csLocAddr(c,l,date){const M=typeof CSCUR!=="undefined"&&CSCUR.c===c&&CSCUR.addr;if(!M||!l||typeof l!=="object")return csLocAddr0(c,l,date);
   const k=String(date||"");let e=M.get(l);if(!e)M.set(l,e={});if(!(k in e))e[k]=csLocAddr0(c,l,date);return e[k]}
 function csLocAddr0(c,l,date){let ad="";
   /* 1. the app's location list: a set there with one of the scenes of this location, or with the same name */
@@ -46,14 +54,14 @@ function csLocAddr0(c,l,date){let ad="";
   if(!ad||/^tba$/i.test(ad)){const n=csA(l.notes).map(String).concat(csA(l.items).map(i=>String(i.text||""))).find(t=>/\b\d{4}\b/.test(t)&&/[A-Za-zÀ-ÿ]{3,}/.test(t));ad=n?n.replace(/https?:\/\/\S+/g,"").split(/\.\s|\n|\s*;\s*|\s\/\/\s/).find(p=>/\b\d{4}\b/.test(p))||"":"";ad=ad.trim()}
   return /^tba$/i.test(ad)?"":ad}
 /* floorplans of a location (3D folder, matched like in the schedule: set and place of its scenes) – only with the right for blocking */
-function csLocFp(c,l,date,icon){if(l.kinds||typeof fpFor!=="function"||!vok("blocking"))return"";const out=new Map();
+export function csLocFp(c,l,date,icon){if(l.kinds||typeof fpFor!=="function"||!vok("blocking"))return"";const out=new Map();
   try{for(const r of csLocRows(c,l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it)for(const f of fpFor(it.set,it.loc))out.set(f.file||f.name,f)}
     if(!out.size)for(const f of fpFor(l.name||"",""))out.set(f.file||f.name,f)}catch(_){}
   if(!out.size)return"";
   /* in the head of the location: one round icon per floorplan (the name in the tooltip) */
   if(icon)return [...out.values()].map(f=>'<a class="cshn csfpi" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer" title="'+esc("Floorplan · "+f.name)+'" aria-label="'+esc("Floorplan · "+f.name)+'">'+CSI.fp+'</a>').join("");
   return '<div class="csfp">'+[...out.values()].map(f=>'<a class="pillbtn" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+CSI.doc+' Floorplan · '+esc(f.name)+'</a>').join("")+'</div>'}
-function csOrderRows(rows,date,locs,one){rows=csA(rows);const ONE=(()=>{const s0=csA(locs).filter(l=>!l.kinds&&l.no);return s0.length===1?s0[0]:null})();if(!rows.length)return"";const ni=date?csNowIdx(rows,date):-1,RK=date?csKeys(rows):[];return '<ol class="tl csorder">'+rows.map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
+export function csOrderRows(rows,date,locs,one){rows=csA(rows);const ONE=(()=>{const s0=csA(locs).filter(l=>!l.kinds&&l.no);return s0.length===1?s0[0]:null})();if(!rows.length)return"";const ni=date?csNowIdx(rows,date):-1,RK=date?csKeys(rows):[];return '<ol class="tl csorder">'+rows.map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
     if(!r.sc){const ek=RK[i]||"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(date,ek,"1"):"";
       return '<li class="row ev'+nw+(eb?' evack':'')+'"><div class="t">'+esc(r.t||"")+nb+'</div><div class="what">'+csTx(r.text||r.syn||"")+eb+'</div></li>'}
     /* scenes look like in the schedule (same row, details, cast, buttons): the scheduled row of that day with the callsheet time */
@@ -81,8 +89,8 @@ function csOrderRows(rows,date,locs,one){rows=csA(rows);const ONE=(()=>{const s0
 /* what concerns me on this callsheet: call, cast times, rides, travel, my department */
 /* a place named on the callsheet («Base», «Loc.2», «Parking loc. 1», «Holiday Inn») → name and map link from the Locations */
 /* parking places of the callsheet in the language of the app: «Tech parking» → «Tech Parkplatz», «Crew parking» → «Crew Parkplatz» */
-const plDe=t=>String(t||"").replace(/\btech\s*parking\b/gi,L("Tech Parkplatz")).replace(/\bcrew\s*parking\b/gi,L("Crew Parkplatz"));window.plDe=plDe;
-function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls=csLocs(c).filter(l=>!l.kinds);
+export const plDe=t=>String(t||"").replace(/\btech\s*parking\b/gi,L("Tech Parkplatz")).replace(/\bcrew\s*parking\b/gi,L("Crew Parkplatz"));window.plDe=plDe;
+export function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls=csLocs(c).filter(l=>!l.kinds);
   const m=t.match(/loc\.?\s*(\d+)/);const park=/park/.test(t);
   if(m){const l=ls.find(x=>(x._nos||[String(x.no).trim()]).includes(m[1]));if(l){if(park){const it=csA(l.items).find(i=>/park/i.test(i.label||""));if(it)return {name:String(txt),map:it.map||l.map||""}}return {name:'Set '+l.no+' · '+(l.name||""),map:l.map||""}}}
   if(/base|lunch|waldrand/.test(t))for(const l of csA(c.locations))for(const i of csA(l.items))if(/base|w \/ h|lunch/i.test((i.label||"")+" "+(i.text||"")))return {name:String(txt)+(!i.text||!/^base$/i.test(String(txt).trim())?"":" · "+String(i.text).split(",")[0]),map:i.map||""};
@@ -95,7 +103,7 @@ function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;const ls
       if(ns.some(n=>n===tt||tt.includes(n)||n.includes(tt)))return {name:String(txt),map:/^https:\/\//.test(String(l.map||""))?l.map:"",addr:String(l.address||""),disp:String(txt)}}}
   return {name:String(txt),map:""}}
 /* where my call is: the end of my first ride (if it arrives around my call), else the set shooting at that time, else set 1 */
-function csCallPlace(c,me,call){const ct=csHm(call.t);
+export function csCallPlace(c,me,call){const ct=csHm(call.t);
   /* I drive: my call is where my first ride starts (pickup place), not where it goes */
   {const dr=csA(c.transport).concat(csA(c.crewTransport)).filter(r=>me.hit(r.driver)&&csHm(r.t1)).sort((a,b)=>csHm(a.t1).localeCompare(csHm(b.t1)));
    const r=dr.find(r=>!ct||csHm(r.t1)>=ct)||dr[0];
@@ -107,7 +115,7 @@ function csCallPlace(c,me,call){const ct=csHm(call.t);
   return null}
 /* Base, Lunch and Dinner as locations of their own (in the document they are lines of a set: «W / H / M Cast + Lunch: Restaurant Waldrand …») */
 /* computed once per callsheet (the calls list asks for every person) */
-const CSLOCMEMO=new WeakMap();function csLocs(c){if(!c||typeof c!=="object")return[];if(!CSLOCMEMO.has(c))CSLOCMEMO.set(c,csLocs0(c));return CSLOCMEMO.get(c)}
+const CSLOCMEMO=new WeakMap();export function csLocs(c){if(!c||typeof c!=="object")return[];if(!CSLOCMEMO.has(c))CSLOCMEMO.set(c,csLocs0(c));return CSLOCMEMO.get(c)}
 function csLocs0(c){const sets=[],extra=[];
   /* Base, W / H / M, Lunch, Dinner and the production office (DIT/Prod): from the label, the words before «:» or «(Base)» in the text */
   const KIND=[[/\bbase\b/i,"Base"],[/w\s*\/\s*h\s*\/\s*m/i,"W / H / M"],[/lunch|mittag/i,"Lunch"],[/dinner|diner|abendessen/i,"Dinner"],[/\bprod\b|production office|produktionsb/i,"Prod"],[/\bdit\b/i,"DIT"]];   /* DIT at another place than the others: a location of its own */

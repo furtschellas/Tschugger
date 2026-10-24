@@ -1,3 +1,21 @@
+import {$,L,LANG,S,ariaTip,blockList,dlgBtn,esc,mkDialog,msHM,pad2,saveBtn,telNum} from "../base/10-core.js";
+import {srcHTML} from "../base/13-crew-views.js";
+import {VIEWS,tabOrder0} from "../base/14-render.js";
+import {render} from "../base/15-script-tab.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {ADMINS,FB_CONFIG,ROOT_OWNERS,fmtD} from "./01-config.js";
+import {LANGS} from "./02-i18n.js";
+import {ADMIN_DEFAULT,APPLANGS,ME,MYPERMS,can,canAdm,crewPerson,dietSel,dietText,fb,intolBoxes,isAdmin,isOwner,langSel,lc,loadLangs,normDiet,readBoxes} from "./03-core-firebase.js";
+import {errText,notifyApproved,sendMailSafe} from "./05-membership-signin.js";
+import {docsSec,mailto} from "./06-prefs-docs.js";
+import {pushStatusSec} from "./07-push.js";
+import {chatSetSec,tourInfo} from "./08-chat-tour.js";
+import {isOnline,seenMs,seenText} from "./10-menus-welcome-presence.js";
+import {GENDERS,contactFields,genderSel} from "./11-account.js";
+import {ADM,SECS,admErr,admIndex,admLoad,assignCrew,confirmSafe,crewEmails,initials,syncBdays} from "./12a-admin-core.js";
+import {bkSec,upSec} from "./12b-admin-backup.js";
+import {rolesSec,rolesSorted} from "./12d-admin-roles.js";
+import {auditSec,testsSec} from "./17-audit-misc.js";
 /* ---------- App-Verwaltung (Benutzer:innen und Seite) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
 /* owner only: account with a one-time start password, created in a second Firebase instance so the owner stays signed in */
 function genPw(){const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=new Uint32Array(12);crypto.getRandomValues(r);
@@ -42,12 +60,12 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",b.dataset.signall),{rev:F.serverTimestamp()});showMsg(L("Auf allen Geräten abgemeldet."),4000)}catch(err){b.disabled=false;showMsg(admErr(err),6000)}},true);
 /* role picker (owner): Benutzer:in, Admin or one of the custom roles */
 /* the same limits as the rules: without admin rights nobody whose current role has rights one lacks (no demoting a «bigger» person) */
-const rolePermsOf=id=>id==="admin"?(ADM.adminPerms||ADMIN_DEFAULT):arr(((ADM.roles||[]).find(x=>x.id===id)||{}).perms);
+export const rolePermsOf=id=>id==="admin"?(ADM.adminPerms||ADMIN_DEFAULT):arr(((ADM.roles||[]).find(x=>x.id===id)||{}).perms);
 const roleMine=id=>!id||id==="crew"&&!(ADM.roles||[]).some(x=>x.id===id)||rolePermsOf(id).every(p=>MYPERMS.includes(p));
-const canRole=e=>!!e&&!ROOT_OWNERS.includes(e)&&!(ME&&lc(ME.email)===e)&&(isOwner()||(isAdmin()&&!ADMINS.includes(e))||(can("roles.assign")&&!ADMINS.includes(e)&&!ADM.adm.includes(e)&&roleMine((ADM.ur||{})[e])));
+export const canRole=e=>!!e&&!ROOT_OWNERS.includes(e)&&!(ME&&lc(ME.email)===e)&&(isOwner()||(isAdmin()&&!ADMINS.includes(e))||(can("roles.assign")&&!ADMINS.includes(e)&&!ADM.adm.includes(e)&&roleMine((ADM.ur||{})[e])));
 /* the Admin role and roles holding «Einstellungen» are changed by the owner only (rules: an admin could otherwise give himself «Einstellungen») */
-const roleLocked=id=>!isOwner()&&(id==="admin"||(isAdmin()&&rolePermsOf(id).includes("settings")));
-const roleOf=e=>{if(ADMINS.includes(e))return "owner";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
+export const roleLocked=id=>!isOwner()&&(id==="admin"||(isAdmin()&&rolePermsOf(id).includes("settings")));
+export const roleOf=e=>{if(ADMINS.includes(e))return "owner";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
 const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).name||"");
 const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Keine Rolle (eingeschränkt)")+'</option>'+(isOwner()?'<option value="owner"'+(roleOf(r.email)==="owner"?' selected':'')+'>'+L("Owner")+'</option>':'')+(isAdmin()?'<option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>':'')+rolesSorted().map(x=>{const mine=roleOf(r.email)===x.id,ok=(isAdmin()||(x.perms||[]).every(p=>MYPERMS.includes(p)))&&(isOwner()||!(x.perms||[]).includes("settings"));/* only roles with one's own rights can be given */return ok||mine?'<option value="'+esc(x.id)+'"'+(mine?' selected':'')+(ok?'':' disabled')+'>'+esc(x.name||x.id)+'</option>':''}).join("")+'</select></label>';
 /* Drehblöcke: which blocks this person sees – automatic (crew list) or set by hand */
@@ -56,7 +74,7 @@ function blkFields(m){const bl=blockList();if(!bl.length)return "";const man=Arr
     '<div class="chk eblks"'+(man?'':' hidden')+'>'+bl.map(b=>'<label class="ck"><input type="checkbox" name="eblk" value="'+esc(b.id)+'"'+(on.has(b.id)?' checked':'')+'> '+esc(b.name||b.id)+(b.country?' · '+esc(b.country):'')+'</label>').join("")+'</div>'+
     '<p class="ghint">'+esc(L("Ohne «Automatisch» sieht die Person nur die angekreuzten Blöcke (Drehtage und Callsheets). Mit «Einstellungen» sieht man immer alle."))+'</p></fieldset>'}
 document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest('input[name="bauto"]');if(!c)return;const f=c.closest("fieldset");const box=f&&f.querySelector(".eblks");if(box)box.hidden=c.checked});
-function editForm(r,withRole){
+export function editForm(r,withRole){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
   return (window.simBtn?window.simBtn(r.email):'')+(withRole&&canRole(r.email)?'<div class="aerole">'+roleSel(r)+'</div>':'')+'<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
     (m?'<label>'+L("Vorname")+'<input name="fn" maxlength="60" value="'+v(m.firstName)+'"></label><label>'+L("Nachname")+'<input name="ln" maxlength="60" value="'+v(m.lastName)+'"></label>'+

@@ -1,11 +1,27 @@
+import {L,LANG,S,TX,ddmm,driveMin,esc,isoAdd,localISO,pad2,todayISO} from "../base/10-core.js";
+import {UNAME,hasU,zurichUTC} from "../base/11-schedule-prep.js";
+import {WDL,evRecent,hm,myEvents,myIdentity,myPickBar,telLinks} from "../base/12-mycal.js";
+import {addrForItem} from "../base/13-crew-views.js";
+import {csMe} from "../base/13a-callsheet.js";
+import {csHM,csNowBits,csNowScene} from "../base/13b-cs-now.js";
+import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
+import {VIEWS,tabsOn,vok} from "../base/14-render.js";
+import {fold,render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {arr} from "../base/20-data-start.js";
+import {fmtT} from "./01-config.js";
+import {savePrefsSoon} from "./06-prefs-docs.js";
+import {OFF,chgList,chgSeen,chgSeenGone,dmy,offState,unitItems} from "./14-today-changes-offline.js";
+import {wxTile} from "./15-weather.js";
+import {scAckId} from "./27-scene-ack.js";
 /* ---------- 1) «Heute»: everything for today (or the next working day) on one page ---------- */
 /* «Today» on/off per person (profile, synced with the view settings) */
-function todayOn(){try{const v=localStorage.getItem("today")||"";return !(v==="0"||v.startsWith("0|"))}catch(_){return true}}
+export function todayOn(){try{const v=localStorage.getItem("today")||"";return !(v==="0"||v.startsWith("0|"))}catch(_){return true}}
 /* which parts Today shows (profile → App): stored with the on/off value, «1|menu,off» = on, without lunch and offline */
 const TODAY_PARTS=[["now","Jetzt gedreht",()=>true],["my","Meine nächsten Termine",()=>vok("mycal")],["mine","Mein Drehtag",()=>true],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
   ["loc","Erste Location",()=>vok("plan")],["menu","Mittagessen",()=>true],["scs","Szenen",()=>vok("plan")],["chg","Änderungen",()=>vok("plan")||vok("script")],["off","Offline am Set",()=>vok("blocking")||vok("plan")]];
-function todayHidden(){let v="";try{v=localStorage.getItem("today")||""}catch(_){}const i=v.indexOf("|");return new Set(i<0?[]:v.slice(i+1).split(",").filter(Boolean))}
-const tShow=k=>!todayHidden().has(k);
+export function todayHidden(){let v="";try{v=localStorage.getItem("today")||""}catch(_){}const i=v.indexOf("|");return new Set(i<0?[]:v.slice(i+1).split(",").filter(Boolean))}
+export const tShow=k=>!todayHidden().has(k);
 window.todayPartsHTML=function(){if(!todayOn())return "";const hid=todayHidden(),ps=TODAY_PARTS.filter(x=>x[2]());
   return '<p class="ahint"><b>'+esc(L("Was zeigt «Today»?"))+'</b></p>'+ps.map(([k,t])=>'<label class="ck"><input type="checkbox" data-todaypart="'+k+'"'+(hid.has(k)?'':' checked')+'> '+esc(L(t))+'</label>').join("")};
 document.addEventListener("change",e=>{const c=e.target.closest("[data-todayon]");if(!c)return;const hid=[...todayHidden()];store("today",(c.checked?"1":"0")+(hid.length?"|"+hid.join(","):""));if(!c.checked&&S.tab==="today")S.tab="plan";render()});
@@ -25,7 +41,7 @@ function chgUnitsHTML(cl){const g={};cl.forEach(c=>{const u=c.script||!c.u?"1":S
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.matches("details[data-chgu]"))CHGOPEN[d.dataset.chgu]=d.open},true);
 /* changelog text → one line per scene, with «added / deleted / changed / clarified» marked (lines broken by the PDF are joined again) */
 const CLOGK={added:"add",deleted:"del",changed:"chg",clarified:"clr"},CLOGDE={added:"neu hinzugefügt",deleted:"gestrichen",changed:"geändert",clarified:"präzisiert"};
-function clogHTML(t){const intro=[],items=[];let cur=null;
+export function clogHTML(t){const intro=[],items=[];let cur=null;
   for(let x of String(t||"").split("\n")){x=x.replace(/\s{2,}/g," ").trim();if(!x)continue;
     const m=x.match(/^Sc\s?(\d+[A-Z]{0,3})\b\s*(.*)$/);
     if(m){cur={sc:m[1],parts:[]};items.push(cur);x=m[2];if(!x)continue}
@@ -36,7 +52,7 @@ function clogHTML(t){const intro=[],items=[];let cur=null;
     else intro.push(x)}
   return (intro.length?'<p class="clogi">'+intro.map(esc).join("<br>")+'</p>':'')+'<ul class="clog">'+items.map(i=>'<li><button type="button" class="lnk clsc" data-scene="'+esc(i.sc)+'">Sc'+esc(i.sc)+'</button><span class="clp">'+
     i.parts.map(p=>'<span class="clr">'+(p.k?'<span class="clk '+CLOGK[p.k]+'">'+(p.sl?'SL ':'')+esc(L(CLOGDE[p.k]))+'</span> ':'')+esc(p.t)+'</span>').join("")+'</span></li>').join("")+'</ul>'}
-function scriptChg(){const sx=S.meta&&S.meta.scriptChange,at=sx?Date.parse(sx.at):0;
+export function scriptChg(){const sx=S.meta&&S.meta.scriptChange,at=sx?Date.parse(sx.at):0;
   if(!sx||!at||!vok("script")||Date.now()-at>=3*864e5)return null;const seen=chgSeen();if(chgSeenGone(at,seen))return null;
   return {date:localISO(at),at,unread:at>seen,script:1,sx,txt:L("Neue Drehbuch-Version")+" "+(sx.v||"")+(sx.prev&&sx.prev!==sx.v?" ("+L("vorher")+" "+sx.prev+")":sx.prev===sx.v?" ("+L("überarbeitet")+")":"")}}
 function scriptChgHTML(c){const sx=c.sx||{},sc=arr(sx.scenes);

@@ -1,10 +1,20 @@
+import {L,S,cap,esc,fmtDate,safeUrl,saveErr,todayISO} from "./10-core.js";
+import {rideId} from "./12-mycal.js";
+import {CSI,csA,csAfter,csHm,csOn,csRows,csTile} from "./13a-callsheet.js";
+import {CSCUR,csHM,csShootDay} from "./13b-cs-now.js";
+import {csOrderRows} from "./13c-cs-places.js";
+import {fold,render} from "./15-script-tab.js";
+import {showMsg} from "./20-data-start.js";
+import {fb} from "../boot/03-core-firebase.js";
+import {confirmSafe} from "../boot/12a-admin-core.js";
+import {savedPop} from "../boot/17-audit-misc.js";
 /* ---------- Callsheet (6/6): after drawing – search and «Nur meins», preview, cast view, map, cast now ---------- */
 /* jump bar: open the part and go there */
 csOn("click",e=>{const b=e.target.closest("[data-csj]");if(!b)return;const all=({trans:["trans","ctrans"]}[b.dataset.csj]||[b.dataset.csj]).map(k=>document.getElementById("cs-"+k)).filter(Boolean);const el=all[0]||document.getElementById("cs-travel");if(!el)return;/* only the chosen part open: the other open parts close (the production information stays) */
   document.querySelectorAll("#view details.cssec[open]").forEach(d=>{if(!all.includes(d)&&!d.classList.contains("csinfo"))d.open=false});
   all.forEach(d=>{if(d.tagName==="DETAILS")d.open=true});if(el.tagName==="DETAILS")el.open=true;el.scrollIntoView({block:"start",behavior:"smooth"})});
 /* search in the callsheet and «Nur meins»: only matching rows, cards and lines; parts with a search hit open */
-let CSMINE=false;try{CSMINE=localStorage.getItem("csmine:v1")==="1"}catch(_){}
+export let CSMINE=false;try{CSMINE=localStorage.getItem("csmine:v1")==="1"}catch(_){}
 const CSITEMS=".csorder>li,.cs-card,.cs-tbl tbody tr,.cscall-r,.csdep,.csloc,.cskey>div,.cslist,.csinfo p,.cstrv,.csdrv-r";
 function csMineTest(){const me=CSCUR.me,c=CSCUR.c;if(!me||!c)return null;
   /* my scenes as cast: my number in the cast column of the shooting order */
@@ -48,7 +58,7 @@ function csPrevHTML(date){const p=csPrevFor(date);if(!p)return"";const ti=String
 csOn("click",e=>{const b=e.target.closest("[data-csqb]");if(!b)return;const q=document.getElementById("csq");if(!q)return;q.hidden=!q.hidden;b.setAttribute("aria-pressed",String(!q.hidden));if(!q.hidden)q.focus();else if(q.value){q.value="";q.dispatchEvent(new Event("input",{bubbles:true}))}});
 /* cast: cards or table (remembered on this device) */
 /* cast: always tiles when opened; «Als Tabelle» only until it is closed again */
-let CSCASTT=false;function csCastMode(){return CSCASTT}
+let CSCASTT=false;export function csCastMode(){return CSCASTT}
 function csApplyCast(){const d=document.getElementById("cs-cast");if(!d)return;const t=csCastMode();d.classList.toggle("cs-astbl",t);const b=d.querySelector("[data-cstview]");
   if(b)b.innerHTML=(t?CSI.cards:CSI.table)+'<span>'+esc(L(t?"Als Kacheln":"Als Tabelle"))+'</span>'}
 csOn("click",e=>{if(!e.target.closest("[data-cstview]"))return;CSCASTT=!CSCASTT;csApplyCast()});
@@ -97,7 +107,7 @@ csOn("click",e=>{const b=e.target.closest("[data-csmapbig]");if(!b)return;e.prev
   const box=w.querySelector("[data-csmap]");setTimeout(()=>csMapFit(box),80)});
 
 /* cast: role and actor columns on/off (remembered on this device; both shown at first) */
-function csCols(){try{return new Set(String(localStorage.getItem("cscols:v1")||"").split(",").filter(Boolean))}catch(_){return new Set()}}
+export function csCols(){try{return new Set(String(localStorage.getItem("cscols:v1")||"").split(",").filter(Boolean))}catch(_){return new Set()}}
 csOn("click",e=>{const b=e.target.closest("[data-cscol]");if(!b)return;e.preventDefault();const k=b.dataset.cscol,h=csCols();if(h.has(k))h.delete(k);else h.add(k);
   try{localStorage.setItem("cscols:v1",[...h].join(","))}catch(_){}const d=document.getElementById("cs-cast");if(d){d.classList.toggle("hide-"+k,h.has(k))}b.setAttribute("aria-pressed",String(!h.has(k)))});
 

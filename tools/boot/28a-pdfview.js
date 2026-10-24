@@ -1,3 +1,4 @@
+import {L,esc} from "../base/10-core.js";
 /* ---------- PDF viewer in the app (reports …): pages drawn with pdf.js (pdf.min.mjs / pdf.worker.min.mjs next to the app), zoom, share / save.
    The same on every device – Android Chrome can not show a PDF itself and used to download it or send the user to the Dropbox ---------- */
 let PDFLIB=null;

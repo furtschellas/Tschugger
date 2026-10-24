@@ -1,7 +1,17 @@
+import {L,LANG,MEMO,S,esc} from "../base/10-core.js";
+import {toast} from "../base/11-schedule-prep.js";
+import {vok} from "../base/14-render.js";
+import {render} from "../base/15-script-tab.js";
+import {arr} from "../base/20-data-start.js";
+import {ADMINPERMS,ADMIN_DEFAULT,ME,MEMBER,MYPERMS,MYROLE,PERMS,SIMROLE,isAdmin,isOwner,lc,permKnown,setADMINPERMS,setMEMBER,setMYPERMS,setMYROLE,setSIMROLE} from "./03-core-firebase.js";
+import {bcButton} from "./09-broadcast.js";
+import {acctButton} from "./11-account.js";
+import {ADM,ensureAdm} from "./12a-admin-core.js";
+/* global roleOf, rolesSorted */   // from the App-Verwaltung (admin.js, loaded on demand)
 /* ---------- view the app as another person (owner and admins): App-Verwaltung → Benutzer → Profil → «Ansicht als …» ----------
    Only the view changes (rights of the person's role, «Meine Termine», own events, department); nothing is saved while simulating.
    A pink bar on top shows whose view it is and ends the simulation. Owners can only be simulated by owners. */
-let SIMUSER=null;
+export let SIMUSER=null;
 window.simEmail=()=>SIMUSER?SIMUSER.email:((typeof ME!=="undefined"&&ME&&ME.email)||"");
 window.simOn=()=>!!SIMUSER;
 function simCan(em){if(!isAdmin()||SIMROLE||!em)return false;const r=roleOf(em);return lc(em)!==lc(ME&&ME.email||"")&&(r!=="owner"||isOwner())&&(r!=="admin"||isOwner())}

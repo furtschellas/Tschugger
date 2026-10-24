@@ -1,3 +1,13 @@
+import {$,L,MEMO,S,applyStatic} from "../base/10-core.js";
+import {fmtStamp,lastCheck,render} from "../base/15-script-tab.js";
+import {setSCRIPT} from "../base/17-scene-reader.js";
+import {loadCache,showMsg} from "../base/20-data-start.js";
+import {POLL_MS} from "./01-config.js";
+import {FB,FBP,ME,applyLangs,fb,loadLangs,setME,setMYPERMS} from "./03-core-firebase.js";
+import {isOffline,load,loadErr} from "./04-data.js";
+import {AUTHMODE,checkMember,clearLocal,errText,hideGate,showGate} from "./05-membership-signin.js";
+import {START,afterSignIn,setWELCOME_OPEN} from "./10-menus-welcome-presence.js";
+import {acctButton} from "./11-account.js";
 /* ---------- new app version: reload once when the published version differs ---------- */
 const APP_VER="__APP_VER__";
 async function checkVersion(){

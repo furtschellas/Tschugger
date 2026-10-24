@@ -1,6 +1,8 @@
 // Ablauf (Fahrten und Cast): the rules of tools/boot/24-flow.js played through with invented data
 // node tests/cast_rules.mjs → JSON lines {n, ok, got, want}
 import fs from "fs";import vm from "vm";import path from "path";import {fileURLToPath} from "url";
+/* the app's parts are ES modules: take import/export out to run one part here on its own (as tools/modlink.mjs does for the browser) */
+const unmod=s=>s.replace(/^import \{[^}]*\} from "[^"]+";\n/gm,"").replace(/(^|[;}\s])export (?=(?:async\s+)?function\b|const\b|let\b|var\b|class\b)/gm,"$1");
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const helpers=`const pad2=n=>String(n).padStart(2,"0");function hm(t){const m=String(t||"").match(/(\\d{1,2}):(\\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
 const fold=t=>String(t||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase();const arr=x=>Array.isArray(x)?x:[];
@@ -8,7 +10,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 var MYROLE="";let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=>{PERMS=p};`;
 const H=[];const C={console,document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
-vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8")+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep,xf:xqField,xa:xqAll}",C);
+vm.runInContext(helpers+unmod(fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8"))+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep,xf:xqField,xa:xqAll}",C);
 const T=C.T,D="2031-03-02";
 /* the data layer (03-core-firebase dbWrite): here straight to the fake database of each test */
 C.dbWrite=async(op,path,data)=>{const {F,db}=await C.fb();const ref=F.doc(db,...path.split("/"));if(op==="delete")await F.deleteDoc(ref);else await F.setDoc(ref,data);return "ok"};

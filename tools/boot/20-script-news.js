@@ -1,3 +1,15 @@
+import {L,S,dlgBtn,esc,localISO,mkDialog} from "../base/10-core.js";
+import {vok} from "../base/14-render.js";
+import {render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {arr} from "../base/20-data-start.js";
+import {ME} from "./03-core-firebase.js";
+import {savePrefsSoon} from "./06-prefs-docs.js";
+import {TOUR} from "./08-chat-tour.js";
+import {WELCOME_OPEN} from "./10-menus-welcome-presence.js";
+import {ONBOARD} from "./11-account.js";
+import {dmy} from "./14-today-changes-offline.js";
+import {clogHTML} from "./16-today-view.js";
 /* =====================================================================
    NEUE DREHBUCH-VERSION: einmalige Nachricht (nur mit «Drehbuch sehen»), mit Szenen und dem ganzen Changelog zum Aufklappen
    ===================================================================== */
@@ -7,7 +19,7 @@ function scrNewsDue(){const sx=S.meta&&S.meta.scriptChange;if(!ME||!sx||!sx.at||
   let seen="";try{seen=localStorage.getItem("scrv")||""}catch(_){}return seen===scrNewsKey(sx)?null:sx}
 function scrNewsBusy(){return (typeof ONBOARD!=="undefined"&&ONBOARD)||(typeof WELCOME_OPEN!=="undefined"&&WELCOME_OPEN)||(typeof TOUR!=="undefined"&&TOUR.el)||
   ["news","rolechg","pushhint","scrnews","welcome","gate"].some(id=>{const e=document.getElementById(id);return e&&!e.hidden&&e.offsetParent!==null})}
-function showScriptNews(sx){
+export function showScriptNews(sx){
   store("scrv",scrNewsKey(sx));if(typeof savePrefsSoon==="function")savePrefsSoon();
   const sc=arr(sx.scenes),dt=new Date(Date.parse(sx.at));
   const d=mkDialog("scrnews");

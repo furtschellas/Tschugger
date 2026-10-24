@@ -1,3 +1,11 @@
+import {L,S,esc,safeUrl} from "../base/10-core.js";
+import {VIEWS} from "../base/14-render.js";
+import {fold,render} from "../base/15-script-tab.js";
+import {openGallery} from "../base/18-blocking.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {ME,MYPERMS,PERMS,can,isAdmin,isOwner} from "./03-core-firebase.js";
+import {logHead,tstIco} from "./17-audit-misc.js";
+import {SCLOG} from "./27-scene-ack.js";
 /* ---------- Einstellungen → Logs → «Reports»: the PDFs of the Dropbox folder «3D/20_Reports» (production, DIT, sound …), one group per sub folder.
    Every report: the gallery (pages as pictures, like the floorplans), the file in the Dropbox and the PDF. Who sees a group: the permission
    «Reports: <folder>» (one per sub folder, in the roles under «Reports»); admins and the owner see all ---------- */

@@ -1,13 +1,23 @@
+import {HIT,L,LANG,S,ariaTip,ddmm,dlgBtn,esc,mkDialog,saveBtn,todayISO} from "../base/10-core.js";
+import {mailPeople} from "../base/11-schedule-prep.js";
+import {WDL,myIdentity} from "../base/12-mycal.js";
+import {fold,render} from "../base/15-script-tab.js";
+import {showMsg} from "../base/20-data-start.js";
+import {fmtDT} from "./01-config.js";
+import {ME,MYROLE,can,fb,isAdmin,isOwner,lc,ownDec,ownEnc} from "./03-core-firebase.js";
+import {getDataKey} from "./04-data.js";
+import {pushSyncSoon} from "./07-push.js";
+import {confirmSafe} from "./12a-admin-core.js";
 /* ---------- eigene Termine: in «Meine Termine» mit + anlegen, an alle, Rollen, Abteilungen oder einzelne Personen ----------
    events/{id} = {c (verschlüsselt mit dem Crew-Schlüssel), at, by (uid)}; Inhalt: title, date, t, end, where, note,
    roles|null, depts|null, people|null ([{name,k,email}]), byEmail, byName. Alle null = an alle.
    Anlegen: Recht «Eigene Termine erstellen» (events.add); ändern/löschen: wer ihn angelegt hat, und Admins.
    Ein- und ausschalten: App-Verwaltung → App → Termine (config/app.ownEvents). */
-const OWN={list:null,busy:false,at:0,roles:null};
+export const OWN={list:null,busy:false,at:0,roles:null};
 const ownOn=()=>window.OWNEV!==false;
 /* the events come through a realtime listener: Firebase sends only what changed (instead of reading all of them every
    5 minutes – that used up the free Firebase quota). force (after saving) reads once directly. */
-let OWNSUB=null;
+export let OWNSUB=null;
 let OWNSEQ=0;
 async function ownApply(docs,key){const seq=++OWNSEQ;const out=[];for(const d of docs){try{const x=d.data();out.push(Object.assign(await ownDec(key,x.c),{id:d.id,byUid:x.by,gc:x.gc||""}))}catch(_){}}
   if(seq!==OWNSEQ)return;   /* a newer update already arrived */
@@ -142,4 +152,4 @@ window.ownDayHTML=function(date){
   const list=window.ownEvents(me).filter(e=>e.date===date).sort((a,b)=>(a.t||"00:00").localeCompare(b.t||"00:00"));if(!list.length)return "";
   return '<div class="oeday"><h3 class="uh">'+esc(L("Weitere Termine"))+'</h3>'+list.map(e=>'<div class="oerowd"><span class="oet">'+esc(e.t||"")+(e.end?'–'+esc(e.end):'')+'</span><span class="oeb"><b>'+esc(e.n||"")+'</b>'+
     (e.where?'<span class="oew">'+esc(e.where)+'</span>':'')+(e.note?'<span class="oen">'+esc(e.note)+'</span>':'')+'<span class="oes">'+esc(e.src)+'</span></span>'+window.ownEvEditBtn(e)+'</div>').join("")+'</div>'};
-function setOWNSUB(v){return OWNSUB=v}   /* other parts change OWNSUB only through this */
+export function setOWNSUB(v){return OWNSUB=v}   /* other parts change OWNSUB only through this */

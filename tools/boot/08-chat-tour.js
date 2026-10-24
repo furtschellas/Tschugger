@@ -1,7 +1,21 @@
+import {a2hsAuto,a2hsDue,isIOS,showA2hs} from "../a2hs.js";
+import {L,LANG,S,applyStatic,dlgBtn,esc,getTheme,localISO,mkDialog,setLANG,setTheme,todayISO} from "../base/10-core.js";
+import {myEvents,myIdentity} from "../base/12-mycal.js";
+import {tabsOn,vok} from "../base/14-render.js";
+import {render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {APPLANGS,FB,ME,MEMBER,MYROLE,can,canAdm,fb,isAdmin,isOwner,withTimeout} from "./03-core-firebase.js";
+import {savePrefs} from "./06-prefs-docs.js";
+import {PUSH_LEADS,PUSH_NEWS,PUSH_TYPES,pushCfg,pushEnable,pushOK,pushSave,pushStandalone} from "./07-push.js";
+import {WELCOME_OPEN} from "./10-menus-welcome-presence.js";
+import {ACSUB,ONBOARD,setACSUB} from "./11-account.js";
+import {ADM,confirmSafe} from "./12a-admin-core.js";
+import {OWN} from "./18-own-events.js";
 /* ---- chat assistant: asks Claude through the production's Cloudflare Worker (config/app.chatUrl); every person can switch it off in «Mein Konto» ---- */
 window.CHATURL="";window.CHATEN=true;window.TOUREN=true;window.PUSHEN=true;try{window.PUSHEN=localStorage.getItem("apppushon")!=="0"}catch(_){}try{window.CHATURL=localStorage.getItem("appchat")||"";window.CHATEN=localStorage.getItem("appchaton")!=="0";window.TOUREN=localStorage.getItem("apptouron")!=="0"}catch(_){}
 const chatOn=()=>{let v=null;try{v=localStorage.getItem("chat")}catch(_){}return v!=="0"};
-const CHAT={open:false,busy:false,msgs:[]};try{CHAT.msgs=JSON.parse(sessionStorage.getItem("chatmsgs")||"[]")||[]}catch(_){}
+export const CHAT={open:false,busy:false,msgs:[]};try{CHAT.msgs=JSON.parse(sessionStorage.getItem("chatmsgs")||"[]")||[]}catch(_){}
 const APPHELP=`So ist die App aufgebaut (unten die Bereiche, oben die Knöpfe):
 - Schedule: Drehplan Tag für Tag mit Szenen, Motiven, Units (1st/2nd Unit); Knopf «Script» öffnet die Szene im Drehbuch, Kamera-Knopf zeigt Blocking-Fotos/Filme, Zahlen-Knöpfe öffnen Floorplans (PDF).
 - Callsheet: Dispo des Tages (Crew Call, Drehbeginn, Wrap, Locations, Cast, Abteilungen).
@@ -25,7 +39,7 @@ function chatCtx(){
   const mine=out.findIndex(x=>/^MEINE TERMINE/.test(x));if(mine>1)out.splice(1,0,out.splice(mine,1)[0]);
   return out.join("\n\n").slice(0,55000);
 }
-function chatFab(){
+export function chatFab(){
   let b=document.getElementById("chatFab");const g=document.getElementById("gate"),show=!!(ME&&window.CHATURL&&window.CHATEN&&chatOn()&&!ONBOARD&&!WELCOME_OPEN&&(!g||g.hidden));
   if(!b){b=document.createElement("button");b.id="chatFab";b.type="button";b.className="chatfab";
     b.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/></svg>';
@@ -60,9 +74,9 @@ async function chatAsk(q){
   catch(err){CHAT.msgs.push({r:"e",t:L(navigator.onLine===false?"Keine Verbindung.":"Der Assistent ist gerade nicht erreichbar.")})}
   CHAT.busy=false;chatKeep();chatPanel();
 }
-function chatSec(){if(!window.CHATURL||!window.CHATEN)return "";
+export function chatSec(){if(!window.CHATURL||!window.CHATEN)return "";
   return '<section class="psec"><h4>'+L("Assistent")+'</h4><label class="ck"><input type="checkbox" data-chaton'+(chatOn()?' checked':'')+'> '+L("Chat-Assistent anzeigen (Knopf unten rechts)")+'</label></section>'}
-function chatSetSec(){
+export function chatSetSec(){
   return '<p class="ahint"><b>'+L("Änderungen in Today")+'</b> – '+L("Leert die Liste «Änderungen» in Today auf allen Geräten; neue Änderungen erscheinen danach wieder normal.")+(window.CHGCLR?' ('+L("zuletzt geleert")+' '+esc(new Date(window.CHGCLR).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))+')':'')+'</p><div class="arb"><button type="button" class="pillbtn" data-chgclrall>'+L("Änderungsliste für alle leeren")+'</button></div>'+
     '<p class="ahint"><b>'+L("Push-Nachrichten")+'</b> – '+L("Ausgeschaltet verschickt die App an niemanden mehr Push-Nachrichten – keine Erinnerungen, keine automatischen Meldungen, keine Nachrichten an alle –, egal was die einzelnen Personen in ihrem Profil eingestellt haben. Glocken und Briefumschlag verschwinden.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="pn"'+(window.PUSHEN!==false?' checked':'')+'> '+L("Push-Nachrichten anbieten")+'</label></div>'+
     '<p class="ahint"><b>'+L("Als App installieren")+'</b> – '+L("Wer die Crew-App noch nicht installiert hat, wird beim ersten Öffnen einmal gefragt. Eingeschaltet: alle 3 Tage wieder, bis die App installiert ist. Wer sie installiert hat, siehst du in der Benutzerübersicht.")+'</p><div class="chk"><label class="ck"><input form="setform" type="checkbox" name="ia"'+(window.A2AGAIN===true?' checked':'')+'> '+L("Immer wieder zum Installieren auffordern")+'</label></div>'+
@@ -145,7 +159,7 @@ const TOUR_STEPS=[
   {tab:"admin",asub:"test",sel:'#view .asub [data-asub="test"],#view .dcktab .dcksec',need:()=>!isAdmin()&&can("data.check"),t:"Dokumente prüfen",x:"Vergleicht Drehplan, Drehbuch, Locations, Prep und Callsheets und zeigt Unstimmigkeiten."},
   {tab:"plan",sel:"#chatFab",t:"Assistent",x:"Frag den Assistenten, z. B. «Wo drehen wir morgen?» – er kennt die Daten der App."}
 ];
-const TOUR={i:-1,steps:[],el:null};
+export const TOUR={i:-1,steps:[],el:null};
 const tourEl=st=>{let e=document.querySelector(st.sel);for(let k=0;e&&k<(st.up||0);k++)e=e.parentElement;if(!e||e.hidden||e.closest("[hidden]"))return null;const r=e.getBoundingClientRect();return r.width&&r.height?e:null};
 function tourDay(kind){const t=todayISO();if(kind==="shoot"){const sd=S.days.filter(x=>x.kind==="shoot");const d=sd.find(x=>x.date>=t)||sd[0];return d?d.id:null}
   if(kind==="prep"){const pp=(S.prepro||[]).filter(d=>arr(d.items).some(i=>i.crew||i.cast));const d=pp.find(x=>x.date>=t)||pp[0];return d?"prep:"+d.date:null}return null}
@@ -161,7 +175,7 @@ function tourShow(st){if(st.acsub&&typeof ACSUB!=="undefined"&&ACSUB!==st.acsub)
 function tourDoneLocal(){try{return !!(localStorage.getItem("tourDone:"+(ME&&ME.uid))||localStorage.getItem("tour"))}catch(_){return false}}
 /* the tour starts by itself only once per person: marked right when it is offered (this device, the synced view settings and the profile) */
 /* app icon status for «Mein Konto»: checked whenever the page is opened (at most every 20 s) */
-function a2stCheck(){if(typeof window.a2hsCheck!=="function")return;const now=Date.now();if(window.A2ST&&(window.A2ST.busy||now-window.A2ST.at<20000))return;
+export function a2stCheck(){if(typeof window.a2hsCheck!=="function")return;const now=Date.now();if(window.A2ST&&(window.A2ST.busy||now-window.A2ST.at<20000))return;
   window.A2ST=Object.assign({},window.A2ST,{busy:true,at:now});window.a2hsCheck().then(v=>{const ch=!window.A2ST||window.A2ST.v!==v;window.A2ST={v,at:Date.now(),busy:false};if(ch)render()}).catch(()=>{window.A2ST={v:"unknown",at:Date.now(),busy:false}})}
 async function tourMark(how){
   store("nv",NEWS_VER);savePrefs(); /* new people get to know the new features in the tour */
@@ -193,7 +207,7 @@ function showNews(){
   /* closed in any way (also ✕): seen */
   const ob=new MutationObserver(()=>{if(!d.isConnected||d.hidden){ob.disconnect();store("nv",NEWS_VER);savePrefs()}});ob.observe(document.body,{childList:true});ob.observe(d,{attributes:true,attributeFilter:["hidden"]});
 }
-async function maybeTour(){
+export async function maybeTour(){
   if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||TOUR.pending)return;
   if(typeof a2hsDue==="function"&&a2hsDue()&&!TOUR.a2asked&&typeof a2hsAuto==="function"&&a2hsAuto()){TOUR.a2asked=true} /* install dialog comes by itself with the next tap */
   if(typeof a2hsDue==="function"&&a2hsDue()&&!TOUR.a2asked){TOUR.a2asked=true;showA2hs();const s=document.getElementById("a2hs");if(s){const ob=new MutationObserver(()=>{if(s.hidden||!s.isConnected){ob.disconnect();setTimeout(maybeTour,400)}});ob.observe(s,{attributes:true,attributeFilter:["hidden"]})}return}
@@ -204,7 +218,7 @@ async function maybeTour(){
 /* the short tour: only the most important functions (at most 15 steps) */
 const TOUR_SHORT=["Deine Tour","Today","Jetzt","Meine nächsten Termine","Schedule","Szenen quittieren","Callsheet","Drehfolge","Locations","Crew","Script","Meine Termine","Suche","Reports","Mein Konto"];
 function tourMode(m){TOUR.mode=m;if(TOUR.all)TOUR.steps=m==="short"?TOUR.all.filter(st=>TOUR_SHORT.includes(st.t)).slice(0,15):TOUR.all.slice()}
-function tourStart(ask,mode){
+export function tourStart(ask,mode){
   if(TOUR.el)TOUR.el.remove();if(CHAT.open){CHAT.open=false;chatPanel()}
   TOUR.prev={tab:S.tab,day:S.day};
   /* show a shooting day so the display options and unit buttons can be explained */
@@ -280,7 +294,7 @@ function maybePushHint(){
   hintMark();const obs=new MutationObserver(()=>{if(!d.isConnected){obs.disconnect();if(TOUR.afterHint){TOUR.afterHint=false;setTimeout(maybeTour,400)}}});obs.observe(document.body,{childList:true});
   document.body.appendChild(d);
 }
-const tourInfo=m=>!m?"":m.tour==="done"?L("Tour gemacht"):m.tour==="skip"?L("Tour übersprungen"):m.tour==="shown"?L("Tour angefangen"):L("Tour offen");
+export const tourInfo=m=>!m?"":m.tour==="done"?L("Tour gemacht"):m.tour==="skip"?L("Tour übersprungen"):m.tour==="shown"?L("Tour angefangen"):L("Tour offen");
 
 document.addEventListener("click",async e=>{if(!e.target.closest||!e.target.closest("[data-chgclrall]")||!can("settings"))return;e.preventDefault();
   if(!confirmSafe(L("Die Liste «Änderungen» in Today für alle leeren?")))return;const at=Date.now();

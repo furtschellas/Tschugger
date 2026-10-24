@@ -1,7 +1,13 @@
+import {L,LANG,S,esc,pad2} from "../base/10-core.js";
+import {fmtStamp,render} from "../base/15-script-tab.js";
+import {ROOT_OWNERS} from "./01-config.js";
+import {ME,fb,isOwner,lc} from "./03-core-firebase.js";
+import {errText} from "./05-membership-signin.js";
+import {ADM,confirmSafe} from "./12a-admin-core.js";
 /* ---------- App-Verwaltung (Backup und Aktualisierung) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
 /* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */
 const BK={busy:false,msg:"",ok:false};
-function bkSec(){
+export function bkSec(){
   let last="";try{last=localStorage.getItem("bk:last")||""}catch(_){}
   return '<div class="bk">'+
     '<p class="ahint">'+L("Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.")+'</p>'+
@@ -59,7 +65,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-tmv]");if(
 const UPST={d:null,at:0,busy:false};
 function upLoad(){if(UPST.busy||Date.now()-UPST.at<120000)return;UPST.busy=true;
   fetch("status.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null).then(d=>{UPST.d=d||{state:"none"};UPST.at=Date.now();UPST.busy=false;if(S.tab==="admin")render()})}
-function upSec(){
+export function upSec(){
   upLoad();const d=UPST.d;const GH="https://github.com/furtschellas/Tschugger";
   const when=t=>{try{return new Date(t).toLocaleString(LANG==="en"?"en-GB":LANG+"-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(_){return t||""}};
   let st;if(!d)st='<p class="ahint">'+L("Lade …")+'</p>';

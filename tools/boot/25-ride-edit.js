@@ -1,7 +1,18 @@
+import {L,MEMO,S,TX,dlgBtn,esc,mkDialog,saveBtn,saveErr,todayISO} from "../base/10-core.js";
+import {hm,rideId} from "../base/12-mycal.js";
+import {csAfter,csRoute} from "../base/13a-callsheet.js";
+import {csLocs} from "../base/13c-cs-places.js";
+import {render} from "../base/15-script-tab.js";
+import {showMsg} from "../base/20-data-start.js";
+import {ME,fb,ownDec,ownEnc} from "./03-core-firebase.js";
+import {getDataKey} from "./04-data.js";
+import {pushSyncSoon} from "./07-push.js";
+import {cqCanRide} from "./24-flow.js";
+import {scRender} from "./27-scene-ack.js";
 /* ---------- rides of the callsheet changed in the app (permission «Fahrten Manager»): times, route, vehicle, driver, passengers
    rideedit/{id of the original ride} = {c (encrypted with the crew key – names), d (date), at}; the Dropbox stays untouched,
    the change applies to exactly this ride of the callsheet (a new callsheet with another ride replaces it) ---------- */
-window.RIDEEDIT=window.RIDEEDIT||{};window.REDVER=0;let REDSUB=null;
+window.RIDEEDIT=window.RIDEEDIT||{};window.REDVER=0;export let REDSUB=null;
 /* the subscription is marked at once (two quick calls made two subscriptions); a slower older snapshot does not overwrite a newer one;
    like the ticks: from the first callsheet of the last 60 days on (changed rides of past days stayed hidden) */
 let REDSEQ=0;
@@ -87,4 +98,4 @@ function rideBack(){const r=window.REDBACK;if(!r||Date.now()>r.until||document.q
 /* popup closed: back to the ride now, and once more after the new drawing that follows a save (within 4 s) */
 new MutationObserver(m=>{if(window.REDBACK&&m.some(x=>[...x.removedNodes].some(n=>n.nodeType===1&&(n.matches(".redbox")||n.querySelector(".redbox"))))){window.REDBACK.until=Date.now()+4000;requestAnimationFrame(rideBack)}}).observe(document.body,{childList:true});
 csAfter(()=>{if(window.REDBACK&&!document.querySelector(".redbox")&&Date.now()<=window.REDBACK.until)rideBack()});
-function setREDSUB(v){return REDSUB=v}   /* other parts change REDSUB only through this */
+export function setREDSUB(v){return REDSUB=v}   /* other parts change REDSUB only through this */

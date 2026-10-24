@@ -1,9 +1,27 @@
+import {isIOS,isStandalone} from "../a2hs.js";
+import {$,L,LANG,MEMO,S,applyStatic,dlgBtn,esc,mkDialog,setLANG} from "../base/10-core.js";
+import {render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {setSCRIPT} from "../base/17-scene-reader.js";
+import {CACHE_KEY,showMsg} from "../base/20-data-start.js";
+import {ADMINS,fmtT} from "./01-config.js";
+import {ADMINPERMS,ADMIN_DEFAULT,COADMIN,FB,INTOL,ME,MEMBER,MYPERMS,MYROLE,PENDING_KEY,PERMS,applyLangs,can,clean,fb,isAdmin,isOwner,lc,meOk,permKnown,permLbl,setADMINPERMS,setCOADMIN,setDATAKEY,setLASTSTAMP,setMEMBER,setMYPERMS,setMYROLE,splitName,withTimeout} from "./03-core-firebase.js";
+import {AREAKEYS,isOffline} from "./04-data.js";
+import {PREFKEYS,PREFT,PREFX,mailto,savePrefs,setPREFOK,setPREFT} from "./06-prefs-docs.js";
+import {CHAT} from "./08-chat-tour.js";
+import {MENUSUB,afterSignIn,setMENUSUB,setSTART} from "./10-menus-welcome-presence.js";
+import {ADM} from "./12a-admin-core.js";
+import {OWN,OWNSUB,setOWNSUB} from "./18-own-events.js";
+import {ACKSUB,setACKFROM,setACKSUB} from "./24-flow.js";
+import {REDSUB,setREDSUB} from "./25-ride-edit.js";
+import {SCSUB,setSCSUB} from "./27-scene-ack.js";
+import {CDSUBS,setCDSUBS} from "./29-coverday.js";
 /* ---- membership: invited addresses join once (members/{uid}); blocked = active:false ---- */
 /* the result is kept on this device: an offline start keeps the role (otherwise crew lost the shooting schedule without network) */
 const memKey=()=>"mc:v1:"+(ME&&ME.uid);
 function memSave(){try{localStorage.setItem(memKey(),JSON.stringify({r:MYROLE,rn:window.MYROLENAME||"",p:MYPERMS,a:COADMIN,ap:ADMINPERMS,o:ADMINS.includes(lc(ME.email)),m:MEMBER}))}catch(_){}}
 function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"null");if(!c)return false;setMYROLE(c.r||"");window.MYROLENAME=c.rn||"";setMYPERMS(Array.isArray(c.p)?c.p:[]);setCOADMIN(!!c.a);if(Array.isArray(c.ap))setADMINPERMS(c.ap);if(c.m)setMEMBER(c.m);if(c.o&&!ADMINS.includes(lc(ME.email)))ADMINS.push(lc(ME.email));return true}catch(_){return false}}
-async function checkMember(){
+export async function checkMember(){
   if(navigator.onLine===false){memRestore();throw Object.assign(new Error("offline"),{code:"unavailable"})}
   let prev=null;try{prev=JSON.parse(localStorage.getItem(memKey())||"null")}catch(_){}
   try{const st=await checkMember0();if(st==="ok"){roleChanged(prev);memSave()}return st}
@@ -35,13 +53,13 @@ async function checkMember0(){
   if(m.email!==lc(u.email))F.updateDoc(ref,{email:lc(u.email)}).catch(()=>{});
   setMEMBER(m);return "ok";
 }
-function clearLocal(){try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();setOWNSUB(null)}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();setMENUSUB(null)}}catch(_){}try{if(typeof CDSUBS!=="undefined"&&CDSUBS){CDSUBS();setCDSUBS(null)}window.CDOPS=[];window.CDAT=0}catch(_){}try{if(typeof SCSUB!=="undefined"&&SCSUB){SCSUB();setSCSUB(null)}}catch(_){}try{if(typeof REDSUB!=="undefined"&&REDSUB){if(typeof REDSUB==="function")REDSUB();setREDSUB(null)}}catch(_){}try{if(window.cmaStop)window.cmaStop()}catch(_){}try{if(typeof ACKSUB!=="undefined"&&ACKSUB){if(typeof ACKSUB==="function")ACKSUB();setACKSUB(null);setACKFROM("");window.RIDEACK={}}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{sessionStorage.removeItem("chatmsgs");if(typeof CHAT!=="undefined")CHAT.msgs=[];if(window.caches)caches.delete("crew-vc").catch(()=>{})}catch(_){}try{for(const k of Object.keys(localStorage))if(k.startsWith("mc:v1:"))localStorage.removeItem(k);localStorage.removeItem("dk:v1");localStorage.removeItem("ak:script");localStorage.removeItem("ak:contacts");if(typeof AREAKEYS!=="undefined")for(const k in AREAKEYS)delete AREAKEYS[k];localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}
+export function clearLocal(){try{if(typeof OWNSUB!=="undefined"&&OWNSUB){OWNSUB();setOWNSUB(null)}if(typeof MENUSUB!=="undefined"&&MENUSUB){MENUSUB();setMENUSUB(null)}}catch(_){}try{if(typeof CDSUBS!=="undefined"&&CDSUBS){CDSUBS();setCDSUBS(null)}window.CDOPS=[];window.CDAT=0}catch(_){}try{if(typeof SCSUB!=="undefined"&&SCSUB){SCSUB();setSCSUB(null)}}catch(_){}try{if(typeof REDSUB!=="undefined"&&REDSUB){if(typeof REDSUB==="function")REDSUB();setREDSUB(null)}}catch(_){}try{if(window.cmaStop)window.cmaStop()}catch(_){}try{if(typeof ACKSUB!=="undefined"&&ACKSUB){if(typeof ACKSUB==="function")ACKSUB();setACKSUB(null);setACKFROM("");window.RIDEACK={}}}catch(_){}try{if(typeof OWN!=="undefined")OWN.list=null;window.MENUS={};for(const k of ["ownev:v1","menus","snap:v1","chg:v1"])localStorage.removeItem(k)}catch(_){}try{sessionStorage.removeItem("chatmsgs");if(typeof CHAT!=="undefined")CHAT.msgs=[];if(window.caches)caches.delete("crew-vc").catch(()=>{})}catch(_){}try{for(const k of Object.keys(localStorage))if(k.startsWith("mc:v1:"))localStorage.removeItem(k);localStorage.removeItem("dk:v1");localStorage.removeItem("ak:script");localStorage.removeItem("ak:contacts");if(typeof AREAKEYS!=="undefined")for(const k in AREAKEYS)delete AREAKEYS[k];localStorage.removeItem(CACHE_KEY);localStorage.removeItem("dstamp:v1");localStorage.removeItem("scriptcache");localStorage.removeItem("scriptenc")}catch(_){}
   /* the settings and seen notices of the person signing out stay off this device: on a shared set laptop the next person got the welcome note skipped
      and a newer «prefsLocalAt» made the device overwrite the next person's settings online (the colour theme stays: it belongs to the device) */
   try{if(typeof PREFKEYS!=="undefined"){clearTimeout(PREFT);setPREFT(null);setPREFOK(false);for(const k of PREFKEYS.concat(PREFX))if(k!=="theme")localStorage.removeItem(k)}for(const k of ["prefsLocalAt","testAck"])localStorage.removeItem(k)}catch(_){}S.days=[];S.days0=null;S.dispos0=null;S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();setDATAKEY(null);setMEMBER(null);setLASTSTAMP(null);setSCRIPT(null);setCOADMIN(false);ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
 /* ---- sign-in screen ---- */
-let AUTHMODE="login";
-const errText=e=>{const c=(e&&e.code)||"";
+export let AUTHMODE="login";
+export const errText=e=>{const c=(e&&e.code)||"";
   if(/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c))return L("E-Mail oder Passwort falsch.");
   if(/email-already-in-use/.test(c))return L("Für diese Adresse gibt es schon ein Konto. Bitte anmelden.");
   if(/invalid-email/.test(c))return L("Ungültige E-Mail-Adresse.");
@@ -62,7 +80,7 @@ const isGmail=v=>/@(gmail|googlemail)\.com\s*$/i.test(String(v||""));
 function ggUpd(){const w=document.querySelector("[data-gglw]"),i=document.getElementById("gem");if(w)w.hidden=!(i&&isGmail(i.value))}
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="gem")ggUpd()});
 function GBTN(){if(window.GOOGLEON===false||(isIOS()&&isStandalone()))return '';return '<div data-gglw hidden><div class="gor"><span>'+L("oder")+'</span></div><button type="button" class="gbtn ggoogle" data-gact="google"><svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>'+L("Mit Google anmelden")+'</button></div>'}
-function showGate(mode,msg,isErr){
+export function showGate(mode,msg,isErr){
   AUTHMODE=mode||AUTHMODE;const g=gateEl();
   const em=ME?esc(ME.email):(g.querySelector("#gem")?esc(g.querySelector("#gem").value):"");
   const head=(n=>{const i=n.indexOf(" ");return '<h2>'+(i>0?esc(n.slice(0,i))+' <span>'+esc(n.slice(i+1))+'</span>':esc(n))+'</h2>'})(window.PROJNAME?projName():"Tschugger Tigerblood");
@@ -90,7 +108,7 @@ function verifyPoll(on){clearInterval(VERIFYT);VERIFYT=null;if(!on)return;
     if((VERIFYN=(VERIFYN||0)+1)%3===0&&await startExists(u)){verifyPoll(false);afterSignIn(auth.currentUser)}}catch(_){}},5000)}
 let VERIFYN=0;
 async function startExists(u){try{const {F,db}=await fb();return (await F.getDoc(F.doc(db,"starts",lc(u.email)))).exists()}catch(_){return false}}
-function hideGate(){verifyPoll(false);const g=document.getElementById("gate");if(g){g.hidden=true;g.innerHTML=""}document.body.style.overflow=""}
+export function hideGate(){verifyPoll(false);const g=document.getElementById("gate");if(g){g.hidden=true;g.innerHTML=""}document.body.style.overflow=""}
 function gateMsg(t,isErr){const p=document.querySelector("#gate .gerr,#gate .gok");if(p){p.className=isErr?"gerr":"gok";p.textContent=t}}
 async function onGateSubmit(e){
   e.preventDefault();const f=e.target;const btn=f.querySelector("button[type=submit]");if(btn)btn.disabled=true;gateMsg("",true);
@@ -126,7 +144,7 @@ function reqBox(){
 }
 /* after approval: Firebase sends the person an e-mail with a one-tap sign-in link (needs "E-Mail-Link" sign-in enabled in Firebase);
    if that is not possible, a prepared e-mail opens in the admin's mail app */
-async function notifyApproved(em,q){
+export async function notifyApproved(em,q){
   const url=location.origin+location.pathname+"?approved=1&em="+encodeURIComponent(em);
   try{
     const {A,auth}=await fb();if(typeof A.sendSignInLinkToEmail!=="function")throw new Error("no email link");
@@ -142,7 +160,7 @@ async function notifyApproved(em,q){
 /* check again every 5 minutes and when the app comes back to the foreground */
 setInterval(()=>{if(ME&&isAdmin()&&document.visibilityState==="visible")checkRequests()},300000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&ME&&can("users.requests"))checkRequests()});
-async function checkRequests(){
+export async function checkRequests(){
   try{const {F,db}=await fb();let n=0;   /* only the number: one read instead of all requests (Firebase quota) */
     if(typeof F.getCountFromServer==="function"){try{n=(await F.getCountFromServer(F.collection(db,"requests"))).data().count||0}catch(_){const r=await F.getDocs(F.collection(db,"requests"));n=r.size||r.docs.length}}
     else{const r=await F.getDocs(F.collection(db,"requests"));n=r.size||r.docs.length}
@@ -175,12 +193,12 @@ async function sendVerify(u,manual){
   catch(err){console.error("verify mail",err);VM.err=/too-many/.test(err&&err.code||"")?L("Zu viele Versuche – bitte in ein paar Minuten nochmals."):errText(err)}
   finally{VM.busy=false;if(AUTHMODE==="verify")showGate("verify")}
 }
-function autoVerify(u){
+export function autoVerify(u){
   let last=0;try{last=+localStorage.getItem(vmKey(u))||0}catch(_){}
   if(!VM.at&&last)VM.at=last;
   if(Date.now()-Math.max(last,VM.at)>600000)sendVerify(u);
 }
-async function sendMailSafe(fn,target){
+export async function sendMailSafe(fn,target){
   const {auth}=await fb();auth.languageCode=LANG;
   try{return await fn(target,{url:location.origin+location.pathname})}
   catch(err){if(/continue-uri|unauthorized-domain|invalid-dynamic-link|missing-continue/.test(err&&err.code||""))return await fn(target);throw err}

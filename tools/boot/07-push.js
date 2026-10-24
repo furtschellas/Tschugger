@@ -1,17 +1,30 @@
+import {isIOS} from "../a2hs.js";
+import {L,LANG,S,ddmm,esc,todayISO} from "../base/10-core.js";
+import {dayPlaces,zurichUTC} from "../base/11-schedule-prep.js";
+import {WDL,hm,myEvents,myIdentity,openMyCal} from "../base/12-mycal.js";
+import {vok} from "../base/14-render.js";
+import {render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {fmtDT} from "./01-config.js";
+import {ME,MYROLE,fb,isAdmin,isOwner,lc,ownEnc,withTimeout} from "./03-core-firebase.js";
+import {SECS} from "./12a-admin-core.js";
+import {scriptChg,tShow,todayOn} from "./16-today-view.js";
+import {showScriptNews} from "./20-script-news.js";
 /* ---- push notifications for upcoming events: settings in «Mein Konto» (on by default, lead time, which kinds of events),
    every event can be switched off on its own; each device stores its upcoming reminders encrypted in push/{uid}_{device},
    a GitHub run (started every 10 minutes by the Cloudflare Worker) sends the due ones ---- */
 const VAPID_PUB="BEP6-lmT3gVm_ZL1R3qiyBzrntxU6dkKtCEbqanP4KjR9xFTTJNtg8Jm1lxWTs7Z2790ZdoNeV4HtNd1jQEjGeo";
 /* rides (pickup, driving): their own lead time, also short ones */
 const PUSH_LEADS_RIDE=[[5,"5 Min. vorher"],[10,"10 Min. vorher"],[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"]];
-const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"],[180,"3 Std. vorher"],[1440,"1 Tag vorher"]];
-const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
-function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
+export const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"],[180,"3 Std. vorher"],[1440,"1 Tag vorher"]];
+export const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
+export function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
   const nd=c.on===false?false:true;  /* reminders were switched off: change pushes start off too */
   return {hint:c.hint||0,news:Object.assign({plan:nd,cs:nd,prep:nd,script:nd},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,leadRide:PUSH_LEADS_RIDE.some(x=>x[0]===c.leadRide)?c.leadRide:(PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60),types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
-function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
-const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
-const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
+export function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
+export const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+export const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
 function pushDev(){let d="";try{d=localStorage.getItem("pushdev")||""}catch(_){}if(!/^[a-z0-9]{10}$/.test(d)){d=Array.from(crypto.getRandomValues(new Uint8Array(10)),x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");try{localStorage.setItem("pushdev",d)}catch(_){}}return d}
 const pushId=s=>{let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)};
 const hmOf=hm;   /* same as hm() in 12-mycal.js */
@@ -33,7 +46,7 @@ function pushItems(c){c=c||pushCfg();const now=Date.now(),lim=now+15*864e5;
       /* a ride: the tap opens the route to its destination in Google Maps (only https links) */
       url:e.go&&/^https:\/\/[^\s"'<>]+$/.test(e.go)?e.go.slice(0,400):"./#my"}}).filter(x=>x.start>now&&x.start<lim).slice(0,80)}
 let PUSHT=null,PUSHBUSY=false,PUSHDIRTY=false;
-function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>{try{pushLocalSchedule()}catch(_){}pushSync().catch(err=>console.warn("push",err&&err.code||err))},2500)}
+export function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>{try{pushLocalSchedule()}catch(_){}pushSync().catch(err=>console.warn("push",err&&err.code||err))},2500)}
 async function pushReg(){return navigator.serviceWorker.getRegistration?((await navigator.serviceWorker.getRegistration())||(await navigator.serviceWorker.ready)):navigator.serviceWorker.ready}
 const u8=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");s+="===".slice((s.length+3)%4);return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
 /* public push key: the one the Cloudflare Worker reports (after a key change), else the built-in one */
@@ -58,7 +71,7 @@ async function pushSync(){
     await F.setDoc(ref,{c:enc,at:F.serverTimestamp()});try{localStorage.setItem("pushlast",h)}catch(_){}
   }finally{PUSHBUSY=false;if(PUSHDIRTY){PUSHDIRTY=false;setTimeout(()=>pushSync(),300)}}
 }
-async function pushEnable(){
+export async function pushEnable(){
   if(!pushOK())return;const p=await Notification.requestPermission();
   if(p!=="granted"){showMsg(L("Push-Nachrichten wurden im Browser nicht erlaubt."),6000);render();return}
   try{await withTimeout(pushSub(true),10000,"push")}catch(err){console.error(err);showMsg(L("Fehler:")+" "+(err.message||err),6000)}
@@ -96,7 +109,7 @@ async function pushStatusLoad(){if(PST.busy)return;PST.busy=true;const d={};
   try{const r=await fetch("https://api.github.com/repos/furtschellas/Tschugger/actions/workflows/push.yml/runs?per_page=12");const j=await r.json();const xs=j.workflow_runs||[];const x=xs[0];
     if(x)d.run={at:x.created_at,ok:x.conclusion,ev:x.event};d.runs=xs.map(y=>({at:Date.parse(y.created_at),ev:y.event}))}catch(_){}
   PST.d=d;PST.busy=false;render()}
-function pushStatusSec(){
+export function pushStatusSec(){
   if(!PST.d){pushStatusLoad();return '<p class="ghint">'+L("Lade …")+'</p>'}
   const d=PST.d,w=d.worker,ok=t=>'<li class="ok">✓ '+t+'</li>',bad=t=>'<li class="bad">✗ '+t+'</li>';
   const when=t=>{try{return fmtDT(t)}catch(_){return t}};
@@ -120,10 +133,10 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-pstat]")){PST.d
 window.pushBell=function(e){const c=pushCfg();if(!c.on||!c.types.my||!pushOK())return "";const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));const off=!!c.off[id];
   return '<button type="button" class="pbell'+(off?' off':'')+'" data-pushev="'+id+'" data-pushdate="'+esc(e.date)+'" aria-pressed="'+(!off)+'" aria-label="'+esc(L(off?"Push-Nachricht einschalten":"Push-Nachricht ausschalten"))+'" title="'+esc(L(off?"Push-Nachricht aus":"Push-Nachricht an"))+'"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'+(off?'<path d="M3 3l18 18"/>':'')+'</svg></button>'};
 /* push on changes (sent automatically after the Dropbox update): only what the person may see, each can be turned off */
-const PUSH_NEWS=[["plan","Änderungen am Drehplan","plan"],["cs","Neue und geänderte Callsheets","dispo"],["prep","Änderungen der Prep-Planung","prep"],["script","Neue Drehbuch-Versionen","script"]];
+export const PUSH_NEWS=[["plan","Änderungen am Drehplan","plan"],["cs","Neue und geänderte Callsheets","dispo"],["prep","Änderungen der Prep-Planung","prep"],["script","Neue Drehbuch-Versionen","script"]];
 function newsFor(c){const o={};for(const [k,,v] of PUSH_NEWS)o[k]=!!c.news[k]&&vok(v);return o}
 function newsAny(c){return PUSH_NEWS.some(([k,,v])=>c.news[k]&&vok(v))}
-function pushSec(){
+export function pushSec(){
   const c=pushCfg();let dev="";
   if(!pushOK())dev='<p class="ghint">'+L(isIOS()&&!pushStandalone()?"Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.":"Dieser Browser unterstützt keine Push-Nachrichten.")+'</p>';
   else if(Notification.permission==="denied")dev='<p class="ghint">'+L("Push-Nachrichten sind in den Einstellungen dieses Browsers blockiert. Erlaube sie dort für diese Seite.")+'</p>';

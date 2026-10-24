@@ -1,9 +1,18 @@
+import {L,S,ddmm,esc,mkDialog,todayISO,xBtn} from "../base/10-core.js";
+import {WDL,openMyCal} from "../base/12-mycal.js";
+import {vok} from "../base/14-render.js";
+import {render} from "../base/15-script-tab.js";
+import {store} from "../base/16-interaction.js";
+import {bmed} from "../base/17-scene-reader.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {ME} from "./03-core-firebase.js";
+import {getDataKey} from "./04-data.js";
 /* =====================================================================
    HEUTE · ÄNDERUNGEN · OFFLINE · PROTOKOLL
    ===================================================================== */
-const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+", "+ddmm(dt)};
+export const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+", "+ddmm(dt)};
 const scKey=x=>String(x||"").toLowerCase().replace(/\s+/g,"");
-const unitItems=d=>[["1",arr(d.items)],["2",arr((d.unit2||{}).items)],["3",arr((d.unit3||{}).items)]];
+export const unitItems=d=>[["1",arr(d.items)],["2",arr((d.unit2||{}).items)],["3",arr((d.unit3||{}).items)]];
 
 /* ---------- 2) changes since the last visit on this device ---------- */
 /* a snapshot of the schedule (scenes with date, unit, time, place) and the callsheet times is kept on the device;
@@ -20,7 +29,7 @@ function chgLoad(){try{return JSON.parse(localStorage.getItem("chg:v1")||"[]")||
 function chgSave(l){try{localStorage.setItem("chg:v1",JSON.stringify(l.slice(0,120)))}catch(_){}}
 /* once on every device: the changes of the 2nd unit leave the list on «Heute» (1st/3rd unit and callsheets stay) */
 try{if(!localStorage.getItem("chgu2clr:v1")){chgSave(chgLoad().filter(c=>String(c.u||"1")!=="2"));localStorage.setItem("chgu2clr:v1","1")}}catch(_){}
-function chgDetect(){
+export function chgDetect(){
   if(!(S.days||[]).length)return;
   const now=chgSnap();now.v2=1;let old=null;try{old=JSON.parse(localStorage.getItem("snap:v1")||"null")}catch(_){}
   try{localStorage.setItem("snap:v1",JSON.stringify(now))}catch(_){}
@@ -48,23 +57,23 @@ function chgDetect(){
   try{if(document.visibilityState==="visible"&&vok("plan"))showMsg(L("Drehplan geändert")+": "+out.length+" "+L(out.length===1?"Änderung":"Änderungen")+" – "+L("siehe «Heute»"),6000)}catch(_){}
 }
 /* changes: unread ones for 3 days; once marked as read they disappear 2 days later; the newest change always on top */
-const chgSeenGone=(at,seen)=>at<=seen&&Date.now()-seen>2*864e5;
+export const chgSeenGone=(at,seen)=>at<=seen&&Date.now()-seen>2*864e5;
 window.CHGCLR=window.CHGCLR||0;try{window.CHGCLR=+localStorage.getItem("appchgclr")||0}catch(_){}
 /* when the changes were last looked at (blocked storage – e.g. Safari «block all cookies» – must not stop the schedule) */
-function chgSeen(){try{return +(localStorage.getItem("chgseen:v1")||0)}catch(_){return 0}}
-function chgList(){const t=todayISO(),now=Date.now(),seen=chgSeen(),clr=+window.CHGCLR||0;return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t&&c.at>clr&&!chgSeenGone(c.at,seen)).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>b.at-a.at||String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
+export function chgSeen(){try{return +(localStorage.getItem("chgseen:v1")||0)}catch(_){return 0}}
+export function chgList(){const t=todayISO(),now=Date.now(),seen=chgSeen(),clr=+window.CHGCLR||0;return chgLoad().filter(c=>now-c.at<3*864e5&&c.date>=t&&c.at>clr&&!chgSeenGone(c.at,seen)).map(c=>Object.assign({},c,{unread:c.at>seen})).sort((a,b)=>b.at-a.at||String(a.sc||"").localeCompare(String(b.sc||""),undefined,{numeric:true}))}
 /* used by the schedule (itemHTML): mark a changed scene */
 /* change marks in the schedule: switched on/off with the round button «Änderungen» (S.pv.g, CSS .pv-no-g) */
 window.chgFor=(date,u,sc)=>{const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};
 document.addEventListener("click",e=>{if(!e.target.closest("[data-chgseen]"))return;try{localStorage.setItem("chgseen:v1",String(Date.now()))}catch(_){}render()});
 
 /* ---------- 3) offline on set: data key, today's + tomorrow's blocking pictures and the script stay on the device ---------- */
-const OFF={busy:false};
-function offState(){try{return JSON.parse(localStorage.getItem("offline:v1")||"null")}catch(_){return null}}
+export const OFF={busy:false};
+export function offState(){try{return JSON.parse(localStorage.getItem("offline:v1")||"null")}catch(_){return null}}
 /* today (or the next working day) and the day after it */
 /* offline: no photos – only the blocking PDF pages and the floorplans, for all shooting days */
-const offAuto=()=>{try{return localStorage.getItem("offline")!=="0"}catch(_){return true}};
-async function offlinePrep(force){
+export const offAuto=()=>{try{return localStorage.getItem("offline")!=="0"}catch(_){return true}};
+export async function offlinePrep(force){
   if(OFF.busy||!ME||navigator.onLine===false||!S.meta||!(vok("blocking")||vok("plan")))return;
   if(!force&&!offAuto())return; /* switched off in the profile: only on request */
   const st=offState(),files=new Set();

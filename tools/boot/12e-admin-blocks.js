@@ -1,3 +1,9 @@
+import {L,LANG,TZ0,blockList,blockNow,esc,todayISO} from "../base/10-core.js";
+import {render} from "../base/15-script-tab.js";
+import {showMsg} from "../base/20-data-start.js";
+import {ADMINS} from "./01-config.js";
+import {ME,MEMBER,can,fb,setMEMBER} from "./03-core-firebase.js";
+import {ADM,SECS,ensureAdm} from "./12a-admin-core.js";
 /* ---------- App-Verwaltung → App → Drehblöcke ----------
    The shoot in several blocks (e.g. Block 1 Schweiz, Block 2 Indien). Per block: name, country, time zone (set by hand),
    dates, the words of its own schedule in the Dropbox («Indien, India» → «Tschugger Sched 261018 INDIA.pdf») and which

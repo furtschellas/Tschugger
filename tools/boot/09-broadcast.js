@@ -1,7 +1,16 @@
+import {HIT,L,LANG,S,esc,telNum} from "../base/10-core.js";
+import {VIEWS} from "../base/14-render.js";
+import {render} from "../base/15-script-tab.js";
+import {arr,showMsg} from "../base/20-data-start.js";
+import {ADMINS,fmtD,fmtT} from "./01-config.js";
+import {ME,can,fb,isAdmin,lc,ownDec,ownEnc} from "./03-core-firebase.js";
+import {getDataKey} from "./04-data.js";
+import {waNum} from "./06-prefs-docs.js";
+import {ADM,confirmSafe,ensureAdm} from "./12a-admin-core.js";
 /* ---- push message to everybody (or selected roles / departments), sent right away: permission «push.send».
    The message is stored encrypted in broadcasts/{id}; the Cloudflare Worker starts the sending run at once ---- */
 const BC={roles:null,sel:{roles:[],depts:[]},mode:"all",busy:false,msg:"",ok:false};
-function bcButton(){
+export function bcButton(){
   let b=document.getElementById("bcBtn");const mc=document.getElementById("myCalBtn");if(!mc)return;
   if(!b){b=document.createElement("button");b.id="bcBtn";b.className="refresh";b.type="button";
     b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="15.5" rx="2"/><path d="m3.5 8 8.5 6.5 8.5-6.5"/></svg>';
@@ -38,7 +47,7 @@ function bcWaHTML(){const w=BC.waList;if(!w)return "";w.list=w.list.filter(x=>x.
     (w.list.length?'<ul class="walist">'+w.list.map(x=>'<li><span><b>'+esc(x.name)+'</b><small>'+esc(HIT(x.dept))+'</small></span><a class="pillbtn wabtn" href="https://wa.me/'+esc(waNum(x.ph))+'?text='+t+'" target="_blank" rel="noopener" data-wad>WhatsApp</a></li>').join("")+'</ul>':'<p class="ghint">'+L("Keine Telefonnummern für diese Empfänger gefunden.")+'</p>')+'</div>'}
 document.addEventListener("click",e=>{const a=e.target.closest("[data-wad]");if(a){a.classList.add("done");a.textContent="✓ WhatsApp";return}if(e.target.closest("[data-wax]")){BC.waList=null;render()}});
 /* send right away through the Cloudflare Worker; without it the next run picks the message up */
-async function bcDeliver(id){
+export async function bcDeliver(id){
   const {F,db,auth}=await fb();
   if(window.CHATURL){try{const tok=await auth.currentUser.getIdToken();
     const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({id})});const j=await r.json().catch(()=>({}));

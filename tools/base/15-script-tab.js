@@ -1,7 +1,17 @@
+import {$,L,LANG,LOC,S,TX,WD,ddmm,esc,markTerms,memo,norm,pvApply,svClasses,svToggles,todayISO,ufButtons} from "./10-core.js";
+import {onlyU,unitLists,unitsOn} from "./11-schedule-prep.js";
+import {addrForItem,srcHTML} from "./13-crew-views.js";
+import {ALLTABS,VIEWS,tabsOn,vok} from "./14-render.js";
+import {saveView,scallLabel,store} from "./16-interaction.js";
+import {SCRIPT,closeScene,factsHTML,schedIndex,scriptData,spTitle,spTod} from "./17-scene-reader.js";
+import {blkRow} from "./18-blocking.js";
+import {SHINT,actorRoles,dayKeys,modeChips,normQ,planRoles,roleBadges,roleOverview,rolesFor} from "./19-search.js";
+import {arr} from "./20-data-start.js";
+import {ME,can,canAdm} from "../boot/03-core-firebase.js";
 /* ---------- script tab: every scene of the screenplay, tap opens the reader ---------- */
 let SCRIPTERR=false;
 /* accent- and case-insensitive text for searching */
-const fold=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+export const fold=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 /* one searchable text per scene: number, heading, script text and everything the schedule knows (set, description in all languages, cast names, address) */
 function scriptIndex(sched){
   return memo("scidx:"+(SCRIPT?SCRIPT.length:0),()=>{const cast=(S.meta&&S.meta.cast)||{};
@@ -19,7 +29,7 @@ function snippet(text,terms){
   const out=markTerms(t.slice(a,b).replace(/\s+/g," "),terms,2);
   return '<span class="sclsn">'+(a>0?'… ':'')+out+(b<t.length?' …':'')+'</span>';
 }
-function renderScript(){
+export function renderScript(){
   if(!SCRIPT){
     if(!SCRIPTERR)scriptData().then(l=>{if(!l.length)SCRIPTERR=true;if(S.tab==="script")render()},()=>{SCRIPTERR=true;if(S.tab==="script")render()});
     return '<h3 class="dh">'+esc(L("Drehbuch"))+'</h3><div class="empty">'+(SCRIPTERR?esc(L("Drehbuch konnte nicht geladen werden."))+' <button class="copy" data-scretry>'+esc(L("Aktualisieren"))+'</button>':esc(L("Lade"))+' '+esc(L("Drehbuch"))+' …')+'</div>';
@@ -31,7 +41,7 @@ function renderScript(){
     searchBox("sq",S.sq,L("Szene, Motiv, Rolle, Text …"))+modeChips(S.sqm,"data-sqm")+'<div id="scres">'+scriptResults()+'</div></div>';
 }
 /* search field with a search button; Enter / the keyboard's search key run the search right away */
-function searchBox(id,val,ph){
+export function searchBox(id,val,ph){
   return '<form class="sbox" role="search" data-sform="'+id+'"><input id="'+id+'" class="search" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="'+esc(ph)+'" value="'+esc(val||"")+'">'+
     '<button type="submit" class="sbtn" aria-label="'+esc(L("Suchen"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></svg></button></form>';
 }
@@ -57,7 +67,7 @@ function pickOverview(mode,sched){
   if(mode==="loc"){const m=new Map();for(const k in sched)for(const h of sched[k]){const t=String(h.it.set||"").trim();if(!t)continue;if(!m.has(t))m.set(t,new Set());m.get(t).add(k)}
     if(!m.size)return "";return '<div class="rolegrid">'+[...m].sort((a,b)=>a[0].localeCompare(b[0],LANG)).map(([t,ks])=>row(t,esc(t),ks.size+' '+esc(L(ks.size===1?"Szene":"Szenen")))).join("")+'</div>'}
   return ""}
-function scriptResults(){
+export function scriptResults(){
   const sched=schedIndex(),mode=S.sqm||"all";
   const terms=(mode==="day"?normQ(S.sq||""):fold(S.sq||"")).split(/\s+/).filter(Boolean);
   if(!terms.length&&mode!=="all")return (mode==="role"?roleOverview(true,"data-sqpick"):pickOverview(mode,sched))+'<p class="shint">'+esc(L(mode==="person"?"Name der Schauspielerin oder des Schauspielers eingeben (aus den Callsheets).":mode==="text"?"Wörter aus dem Drehbuchtext eingeben.":SHINT[mode]))+'</p>';
@@ -77,8 +87,8 @@ function scriptResults(){
       (hits.length?'':'<span class="sclid"><i>'+esc(L("nicht geplant"))+'</i></span>')+(rIds.length&&rbOn?roleBadges(x.sc,rIds):'')+(terms.length&&!rIds.length?(snippet(x.text,terms)||'<span class="sclsn">'+esc(L("Treffer im Drehplan (Motiv, Cast oder Beschreibung)"))+'</span>'):'')+'</button>'+(hits.length?factsHTML(hits):blkRow(x.sc))+'</li>';
   }).join("")+'</ul>'+(rows.length>vis.length?'<button class="sp-more" data-sqmore>'+esc(L("Weitere Szenen anzeigen"))+' ('+(rows.length-vis.length)+')</button>':'');
 }
-function fmtStamp(iso){try{return new Date(iso).toLocaleString(LOC[LANG],{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}catch(_){return ""}}
-function lastCheck(m){return m?[m.checkedAt,m.updatedAt].filter(Boolean).sort().pop()||null:null}
+export function fmtStamp(iso){try{return new Date(iso).toLocaleString(LOC[LANG],{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}catch(_){return ""}}
+export function lastCheck(m){return m?[m.checkedAt,m.updatedAt].filter(Boolean).sort().pop()||null:null}
 function subT(m){
   const t=TX(m,"subtitle");if(LANG==="de"||t!==m.subtitle)return t;
   return t.replace(/^Dreh\s+(?:im\s+)?Wallis/i,({fr:"Tournage en Valais",it:"Riprese in Vallese"})[LANG]||"Shooting in Valais").replace(/^Dreh\b/i,({fr:"Tournage",it:"Riprese"})[LANG]||"Shoot");
@@ -96,7 +106,7 @@ function renderHeader(){
 }
 /* the main admin can switch the 2nd unit off (website: window.UNIT2=false); then only the 1st unit is shown and the unit buttons disappear */
 /* shrink the round buttons of a toolbar evenly until the row fits on one line */
-function fitRows(root){
+export function fitRows(root){
   (root||document).querySelectorAll(".svb,.dtitle,.lvb,.admv").forEach(r=>{
     r.style.removeProperty("--circ");
     if(!r.offsetParent||r.scrollWidth<=r.clientWidth+1)return;
@@ -119,7 +129,7 @@ document.addEventListener("focusout",e=>{if(!S.rpend||!e.target.closest||!e.targ
 function fitNav(){const n=document.querySelector("nav.tabs");if(!n)return;n.classList.remove("short");
   if([...n.querySelectorAll("button:not([hidden]) .lbl")].some(l=>l.scrollWidth>l.clientWidth+1))n.classList.add("short")}
 /* Handy: Adressen, die umbrechen, kürzen «…strasse» zu «…str.» (nur der sichtbare Text, der Link bleibt) */
-function fitAddr(root){if(!root||innerWidth>600)return;
+export function fitAddr(root){if(!root||innerWidth>600)return;
   const lines=el=>{const cs=getComputedStyle(el);if(cs.display==="inline")return el.getClientRects().length;const lh=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.3;return Math.round(el.getBoundingClientRect().height/lh)};
   root.querySelectorAll('.addr,a[target="_blank"]').forEach(el=>{if(!/strasse/i.test(el.textContent)||lines(el)<2)return;
     el.childNodes.forEach(n=>{if(n.nodeType===3)n.nodeValue=n.nodeValue.replace(/(\p{L})strasse\b/giu,"$1str.").replace(/\bStrasse\b/g,"Str.").replace(/\bstrasse\b/g,"str.")})})}
@@ -157,8 +167,8 @@ function viewMorph(v,html){
   const c=document.createComment("");v.appendChild(c);v.removeChild(c)}
 window.viewMorph=viewMorph;
 /* other parts hook into every drawing with onRender(fn) (before) / onRendered(fn) (after) – instead of replacing render */
-const RENDER_PRE=[],RENDER_POST=[];function onRender(fn){RENDER_PRE.push(fn)}function onRendered(fn){RENDER_POST.push(fn)}
-function render(){for(const f of RENDER_PRE)try{f()}catch(err){console.warn("render hook",err)}const x=renderCore();for(const f of RENDER_POST)try{f()}catch(err){console.warn("render hook",err)}return x}
+const RENDER_PRE=[],RENDER_POST=[];export function onRender(fn){RENDER_PRE.push(fn)}export function onRendered(fn){RENDER_POST.push(fn)}
+export function render(){for(const f of RENDER_PRE)try{f()}catch(err){console.warn("render hook",err)}const x=renderCore();for(const f of RENDER_POST)try{f()}catch(err){console.warn("render hook",err)}return x}
 function renderCore(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form")){S.rpend=true;return}} /* never wipe a form someone is typing in – catch up when the field is left */
   S.rpend=false;
@@ -207,4 +217,4 @@ function renderCore(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   saveView();
 }
 
-function setSCRIPTERR(v){return SCRIPTERR=v}   /* other parts change SCRIPTERR only through this */
+export function setSCRIPTERR(v){return SCRIPTERR=v}   /* other parts change SCRIPTERR only through this */

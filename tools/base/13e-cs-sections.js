@@ -1,3 +1,14 @@
+import {L,S,esc,fmtDate,ieClass,maps,safeUrl} from "./10-core.js";
+import {UNITBAR,nmk} from "./11-schedule-prep.js";
+import {WDL,myPickBar} from "./12-mycal.js";
+import {CSEXP,CSEXPSM,CSI,CSPH,csA,csAdr,csDriverByPhone,csDurT,csHm,csL,csMap,csMe,csMk,csRideCell,csRoute,csRouteH,csRows,csS,csSec,csTable,csTvBtn,csTvCls,csTx,setCSTR} from "./13a-callsheet.js";
+import {CSHN_RE,csNear,csNearHTML,csNowBits,csNowIdx,csNowLoc,csNowScene,csSceneLoc,csShootDay,setCSCUR} from "./13b-cs-now.js";
+import {csBadgeIn,csCallPlace,csCodeHref,csKindCode,csLocAddr,csLocFp,csLocGroups,csLocHref,csLocs,csMapQ,csOrderRows,csPlace,csPlaceA,csPlaceH,csRadioHTML,csSetGeo} from "./13c-cs-places.js";
+import {csCastOpen,csCmFirst,csExOpen,csJumpBar,csMine,csMyDept,csShort,csSums,csTeamSec,csTilesHTML,csTransOpen} from "./13d-cs-mine.js";
+import {csCastMode,csCols} from "./13f-cs-events.js";
+import {vok} from "./14-render.js";
+import {fold} from "./15-script-tab.js";
+import {RIDE_ICO} from "../boot/24-flow.js";
 /* ---------- Callsheet (5/6): the sections (locations, map, travel, calls) and renderCS ---------- */
 /* ---------- Locations: one box per location (sets at the same address together, bases with their icons) ---------- */
 /* code of a location: L1, «L1·L2» for sets at one address, the kinds of a base */
@@ -84,7 +95,7 @@ function csCallsSec(c,x,me,SU,t){let h="";
      const tm=String(r.t||"").match(/^(\d{1,2}:\d{2})\s*(.*)$/);
      return '<div class="cscall-r'+(me&&me.hit(r.name)?' mine':'')+'"><span class="t">'+esc(tm?tm[1]:(r.t||""))+(tm&&tm[2]?'<i>'+esc(tm[2])+'</i>':'')+'</span><span class="cp">'+tag+'</span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>'}).join("")+'</div>').join(""),false,"","calls",SU.calls)}
   return h}
-function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";setCSTR(c.tr||null);setCSCUR({c,date:x.date||"",me,addr:new Map()});
+export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";setCSTR(c.tr||null);setCSCUR({c,date:x.date||"",me,addr:new Map()});
   let JB="";
   /* jump bar (sticky) and search over the whole callsheet */
    JB=csJumpBar(c,x,me,null,t);
