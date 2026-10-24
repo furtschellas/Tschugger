@@ -840,8 +840,15 @@ def u2_also_add(days, sheets=None):
         log("2nd Unit: Szene", sc, "zusätzlich an Tag", no); print("::notice::2nd Unit zusätzlich: Szene %s an Tag %d – %s, %d Einträge (auch bei der 1st Unit)" % (sc, no, src, len(items)))
 
 def blk_words(b):
-    """the Dropbox words of a shooting block («Indien, India» or «indien|india») → ["indien", "india"]"""
-    return [w.strip().lower() for w in re.split(r"[|,;/]+", str((b or {}).get("kw") or "")) if len(w.strip()) >= 3]
+    """the Dropbox words of a shooting block («Indien, India» or «indien|india») → ["indien", "india"];
+    without own words: the country of the block in its common spellings («Indien» → indien, india, inde) – so a block
+    «Indien» finds «Tschugger Sched 261018 INDIA.pdf» without further setting (Switzerland never: that is the main schedule)"""
+    w = [x.strip().lower() for x in re.split(r"[|,;/]+", str((b or {}).get("kw") or "")) if len(x.strip()) >= 3]
+    if w: return w
+    c = str((b or {}).get("country") or "").strip().lower()
+    code = COUNTRY.get(c) or (c if re.fullmatch(r"[a-z]{2}", c) else "")
+    if not code or code == "ch": return []
+    return sorted({k for k, v in COUNTRY.items() if v == code and len(k) >= 3 and " " not in k} | ({c} if len(c) >= 3 else set()))
 
 
 def blk_hit(name, words): return any(re.search(r"(?<![a-z])" + re.escape(w) + r"(?![a-z])", name.lower()) for w in words)
@@ -1775,7 +1782,10 @@ def main():
     # schedules of the shooting blocks (same reading as the main schedule; the days get "blk")
     for b in BLOCKS:
         fb = pick_schedule(files, blk_words(b))
-        if not fb: log("Drehblock", b.get("name") or b["id"], ": kein eigener Drehplan gefunden"); continue
+        if not fb:
+            log("Drehblock", b.get("name") or b["id"], ": kein eigener Drehplan gefunden")
+            print("::notice title=Drehblöcke::%s: kein eigener Drehplan (Wörter: %s)" % (b.get("name") or b["id"], ", ".join(blk_words(b)) or "keine"), flush=True); continue
+        print("::notice title=Drehblöcke::%s: Drehplan %s" % (b.get("name") or b["id"], fb["name"].rsplit("/", 1)[-1]), flush=True)
         kind = "schedule:" + b["id"]
         sources.append({"kind": kind, "name": fb["name"], "modified": fb["modified"]})
         bold = [d for d in xdays if d.get("blk") == b["id"]]

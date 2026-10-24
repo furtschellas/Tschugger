@@ -342,6 +342,8 @@ check("KI-Tageslimit: über 1.5× auch kein Callsheet mehr", not U.ai_allowed("d
 U.AI["m"]["ai"]["day"] = "2000-01-01"
 check("KI-Tageslimit: neuer Tag beginnt bei null", U.ai_spent() == 0 and U.ai_allowed("schedule"))
 U.AI["m"] = {}; U.AI["warned"] = False
+# Drehblock ohne eigene Wörter: das Land findet den Drehplan («Indien» → «… INDIA.pdf»); die Schweiz nie (Hauptdrehplan)
+check("Drehblock: Land «Indien» findet «… INDIA.pdf»", "india" in U.blk_words({"country": "Indien"}) and U.blk_words({"country": "Schweiz"}) == [] and U.blk_words({"kw": "Mumbai", "country": "Indien"}) == ["mumbai"])
 # Übersetzungen nur in die eingeschalteten Sprachen (Deutsch immer); alle eingeschaltet = keine Einschränkung
 U.AI["langs"] = ["de", "fr", "en"]; _lr = U.lang_rule()
 check("Sprachen: nur eingeschaltete werden übersetzt", "Italienisch" in _lr and "Hindi" in _lr and "nur für Deutsch, Französisch, Englisch" in _lr, _lr)
