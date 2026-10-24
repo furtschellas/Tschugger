@@ -263,10 +263,11 @@ def write_sheet(sid, out, proj=""):
     tabs = {t: [[tval(v) if i in TCOL else v for i, v in enumerate(r)] for r in rows] for t, rows in tabs.items()}
     for t, rows in tabs.items():
         rng = "'" + t.replace("'", "''") + "'"
-        sheets_call(tok, "POST", sid + "/values/" + requests.utils.quote(rng + "!A:Z", safe="") + ":clear", json={})
         # RAW: pages like «1 1/8» and times stay text (no date), durations stay numbers
+        # written first, then only the rows below cleared: a failed write never leaves an empty sheet behind
         sheets_call(tok, "PUT", sid + "/values/" + requests.utils.quote(rng + "!A1", safe=""), params={"valueInputOption": "RAW"},
                     json={"values": [[(proj or "TSCHUGGER Tigerblood") + " · Szenen-Protokoll · " + t] + [""] * (len(HEAD) - 2) + [stamp]] + [HEAD] + rows})   # «Stand» above «Beschreibung»   # like the title of the PDF
+        sheets_call(tok, "POST", sid + "/values/" + requests.utils.quote(rng + "!A" + str(len(rows) + 3) + ":Z", safe="") + ":clear", json={})
     # a filter on every column and the column widths fitting the content
     meta = sheets_call(tok, "GET", sid, params={"fields": "sheets(properties(sheetId,title))"})
     ids = {x["properties"]["title"]: x["properties"]["sheetId"] for x in meta.get("sheets") or []}

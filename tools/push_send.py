@@ -226,7 +226,7 @@ def main():
         print("• Nachrichten nicht lesbar:", type(e).__name__)
 
     # the role of each device's person from the database, not from the device itself (a device could claim any role) – uid → role
-    rmap = None
+    rmap = None; rerr = False
     if sa and any(b.get("roles") for _, b, _, _ in bcs):
         try:
             own = {d for d, _, _ in fsadmin.list_docs("owners")} | {"furtschellas@gmail.com"}; adm = {d for d, _, _ in fsadmin.list_docs("admins")}
@@ -237,7 +237,7 @@ def main():
                 if f.get("active") is True: rmap[uid] = "owner" if em in own else "admin" if em in adm else ur.get(em, "")
             if not rmap: rmap = None   # nothing readable: the device's own entry as before
         except Exception as e:
-            print("::warning::Rollen für Push nicht lesbar: " + type(e).__name__); rmap = None
+            print("::warning::Rollen für Push nicht lesbar: " + type(e).__name__); rmap = None; rerr = True
     got = {}   # message → devices that received it now (saved in «done»: the history shows who got it)
     bad = set()   # messages with failed devices: not finished, tried again next run
     try:
@@ -259,6 +259,8 @@ def main():
                 if k in sent or did in done: continue
                 roles, depts = b.get("roles"), b.get("depts")
                 if roles is not None or depts is not None:
+                    # roles could not be read (error): not sent now (the device's own entry could claim any role) – next run
+                    if rerr: bad.add(bid); continue
                     role = rmap.get(did.rsplit("_", 1)[0]) if rmap is not None else who.get("role", "")
                     if rmap is not None and role is None: continue   # no (active) member any more
                     if not ((role or "") in (roles or []) or (bool(who.get("dept")) and who.get("dept") in (depts or []))): continue
