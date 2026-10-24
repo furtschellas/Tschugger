@@ -273,6 +273,13 @@ await check("Härtung: Anfrage mit zu langer Rolle nicht", assertFails(setDoc(do
 await check("Drehblöcke: Admin setzt die Blöcke einer Person", assertSucceeds(updateDoc(doc(as("admin"), "members/uCrew"), { blk: ["b2"] })));
 await check("Drehblöcke: höchstens 20 und nur als Liste", assertFails(updateDoc(doc(as("admin"), "members/uCrew"), { blk: "b2" })));
 await check("Drehblöcke: die Person ändert ihre Blöcke nicht selbst", assertFails(updateDoc(doc(as("crew"), "members/uCrew"), { blk: ["b1", "b2"] })));
+/* gesperrte Admins: keine Rechte mehr (vorher galt «gesperrt» nur für Mitglieder ohne Admin-Eintrag) */
+await check("Admin gesperrt: kein Crew-Schlüssel mehr", assertFails((async () => { await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "members/uAdmin"), { active: false, email: "admin@test.ch" }) }); return getDoc(doc(as("admin"), "secret/key")) })()));
+await check("Admin gesperrt: keine Benutzerverwaltung", assertFails(getDocs(collection(as("admin"), "requests"))));
+await env.withSecurityRulesDisabled(async c => { await deleteDoc(doc(c.firestore(), "members/uAdmin")) });
+await check("Admin ohne Mitglied-Eintrag bleibt Admin", assertSucceeds(getDoc(doc(as("admin"), "secret/key"))));
+await check("Rollen: nicht eingeladene Person liest keine Rollen", assertFails(getDoc(doc(as("stranger"), "roles/crew"))));
+await check("Rollen: Crew liest Rollen", assertSucceeds(getDoc(doc(as("crew"), "roles/crew"))));
 /* «Auf allen Geräten abmelden»: rev nur als Serverzeit; danach ist eine ältere Anmeldung kein Mitglied mehr (zuletzt, «other» wird dabei abgemeldet) */
 await check("Abmelden überall: rev mit fester Zahl nicht", assertFails(updateDoc(doc(as("other"), "members/uOther"), { rev: 5 })));
 await check("Abmelden überall: rev als Serverzeit geht", assertSucceeds(updateDoc(doc(as("other"), "members/uOther"), { rev: serverTimestamp() })));

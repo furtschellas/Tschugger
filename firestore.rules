@@ -12,10 +12,12 @@ service cloud.firestore {
     // Besitzer (fest) und weitere Admins, die der Besitzer unter admins/{email} einträgt
     function isRoot(e) { return e in ['furtschellas@gmail.com']; }
     function ownerEmail(e) { return isRoot(e) || exists(d('owners', e)); }
-    function isOwner() { return verified() && ownerEmail(myEmail()); }
+    // ein gesperrtes Konto (active = false) oder «Auf allen Geräten abmelden» (rev) gilt auch für Owner und Admins (ausser dem festen Owner)
+    function memberOk() { return !exists(d('members', request.auth.uid)) || isMember(); }
+    function isOwner() { return verified() && (isRoot(myEmail()) || (exists(d('owners', myEmail())) && memberOk())); }
     function isAdmin() {
       return isOwner()
-        || (verified() && exists(d('admins', myEmail())));
+        || (verified() && exists(d('admins', myEmail())) && memberOk());
     }
     // Rollen: der Besitzer legt roles/{id} (name, perms) an und weist sie unter userroles/{email} zu.
     // can(p): Besitzer alles; Admins alles ausser 'settings'; sonst die Berechtigungen der eigenen Rolle
@@ -117,7 +119,8 @@ service cloud.firestore {
     }
     // Rollen: Admins, oder «Rollen bearbeiten» (nicht Admin-Rolle, nicht die eigene, nur eigene Rechte); Admin-Rolle nur der Owner
     match /roles/{id} {
-      allow read: if signedIn();
+      // lesen: die Crew; die eigene Rolle auch beim ersten Anmelden (bevor das Mitglied angelegt ist)
+      allow read: if crew() || (verified() && hasRole() && myRole() == id);
       // Rollen anlegen/ändern/löschen: Admins, oder wer «Rollen bearbeiten» hat (nicht die Admin-Rolle)
       // nicht die eigene Rolle und nur Berechtigungen, die man selbst hat (keine Selbst-Beförderung)
       // die Admin-Rolle (Rechte der Admins) passt nur der Owner an – sonst könnte sich ein Admin selbst «Einstellungen» geben
