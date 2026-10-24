@@ -3,7 +3,7 @@
    dates, the words of its own schedule in the Dropbox («Indien, India» → «Tschugger Sched 261018 INDIA.pdf») and which
    main topics are shown while it runs: on, off, or from a date on (released step by step).
    Saved in config/app «blocks» (read by everybody, written with «Einstellungen» – no new rule needed). */
-const BLK={edit:null,del:-1,msg:""};
+const BLK={edit:null,del:-1,msg:"",q:{}};
 const BLK_TOPICS=[["today","Today"],["dispo","Callsheet"],["plan","Schedule"],["loc","Locations"],["crew","Crew"],["script","Script"],["info","Info"]];
 const blkCur=()=>BLK.edit||JSON.parse(JSON.stringify(blockList()));
 const blkTzOk=tz=>{try{new Intl.DateTimeFormat("en",{timeZone:tz});return !!tz}catch(_){return false}};
@@ -37,12 +37,33 @@ function blocksSec(){
         '<small class="ghint">'+esc(L("Wörter im Dateinamen des eigenen Drehplans. Leer = Hauptdrehplan."))+'</small></label></div>'+
       '<p class="ahint"><b>'+esc(L("Hauptthemen"))+'</b> – '+esc(L("Was die Crew sieht, solange dieser Block läuft. «Ab Datum»: erst ab diesem Tag (Schritt für Schritt freigeben). Mit «Einstellungen» siehst du immer alles."))+'</p>'+
       '<div class="blktops">'+BLK_TOPICS.map(([k,t])=>topic(b,i,k,t)).join("")+'</div>'+
+      blkPeople(b)+
       '<div class="arb"><button type="button" class="abtn'+(BLK.del===i?' danger':'')+'" data-blkdel="'+i+'">'+esc(L(BLK.del===i?"Wirklich löschen?":"Block löschen"))+'</button></div></details>'};
   return '<p class="ahint">'+esc(L("Der Dreh in Blöcken (z. B. Schweiz, dann Indien). Die App rechnet «heute» und «jetzt» in der Zeitzone des laufenden Blocks. Ein Block mit eigenem Drehplan bekommt dessen Tage bei der nächsten Aktualisierung."))+'</p>'+
     (bl.length?bl.map(card).join(""):'<p class="ghint">'+esc(L("Noch keine Drehblöcke – alles läuft in Schweizer Zeit."))+'</p>')+
     '<div class="arb"><button type="button" class="abtn" data-blkadd>'+esc(L("Neuer Block"))+'</button>'+(BLK.edit?'<button type="button" class="abtn" data-blkundo>'+esc(L("Verwerfen"))+'</button><button type="button" class="abtn prim" data-blksave>'+esc(L("Speichern"))+'</button>':'')+'</div>'+
     (BLK.msg?'<p class="ghint" role="status">'+esc(BLK.msg)+'</p>':'')}
 window.blocksSec=blocksSec;
+/* who sees this block: tick people right here (sets their blocks by hand; «Automatisch» again in the person's profile edit) */
+const blkName=m=>[m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||m.email||"";
+function blkPeople(b){if(!can("users.edit"))return "";if(!ADM.loaded){ensureAdm();return '<p class="ghint">'+esc(L("Lade …"))+'</p>'}
+  if(BLK.edit&&!blockList().some(x=>x.id===b.id))return '<p class="ghint">'+esc(L("Personen zuteilen: zuerst den Block speichern."))+'</p>';
+  const all=(ADM.mem||[]).filter(m=>m&&m.uid&&m.active!==false),q=String(BLK.q[b.id]||"").toLowerCase();
+  const sees=m=>!Array.isArray(m.blk)||m.blk.includes(b.id),boss=m=>ADMINS.includes(m.email)||(ADM.adm||[]).includes(m.email);
+  const list=all.filter(m=>!q||blkName(m).toLowerCase().includes(q)).sort((x,y)=>blkName(x).localeCompare(blkName(y),LANG));
+  return '<details class="blkppl" data-sec="blkp-'+esc(b.id)+'"'+(SECS["blkp-"+b.id]===true?' open':'')+'><summary>'+esc(L("Personen"))+' ('+all.filter(sees).length+'/'+all.length+')</summary>'+
+    '<input type="search" class="blkq" data-blkq="'+esc(b.id)+'" value="'+esc(BLK.q[b.id]||"")+'" placeholder="'+esc(L("Suchen"))+'" aria-label="'+esc(L("Suchen"))+'">'+
+    '<div class="chk blkpl">'+list.map(m=>'<label class="ck"><input type="checkbox" data-blkp="'+esc(b.id)+'|'+esc(m.uid)+'"'+(sees(m)||boss(m)?' checked':'')+(boss(m)?' disabled':'')+'> '+esc(blkName(m))+
+      (boss(m)?' <small class="ghint">'+esc(L("sieht alles"))+'</small>':!Array.isArray(m.blk)?' <small class="ghint">'+esc(L("automatisch"))+'</small>':'')+'</label>').join("")+'</div>'+
+    '<p class="ghint">'+esc(L("Häkchen entfernen: die Person sieht diesen Block nicht mehr (Drehtage und Callsheets). Zurück auf «Automatisch» beim Bearbeiten der Person."))+'</p></details>'}
+document.addEventListener("input",e=>{const q=e.target.closest&&e.target.closest("[data-blkq]");if(!q)return;BLK.q[q.dataset.blkq]=q.value;render()});
+document.addEventListener("change",async e=>{const c=e.target.closest&&e.target.closest("[data-blkp]");if(!c||!can("users.edit"))return;
+  const [bid,uid]=c.dataset.blkp.split("|"),m=(ADM.mem||[]).find(x=>x.uid===uid);if(!m)return;
+  const ids=blockList().map(x=>x.id),cur=Array.isArray(m.blk)?m.blk.filter(x=>ids.includes(x)):ids.slice();
+  const nb=c.checked?[...new Set(cur.concat(bid))]:cur.filter(x=>x!==bid),old=m.blk;c.disabled=true;
+  try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",uid),{blk:nb});m.blk=nb;if(ME&&ME.uid===uid&&typeof setMEMBER==="function")setMEMBER(Object.assign({},MEMBER,{blk:nb}))}
+  catch(err){m.blk=old;showMsg(L("Nicht gespeichert")+": "+(err&&err.code||err),4000)}
+  render()});
 function blkProblem(bl){
   for(const b of bl){const n=b.name||b.id;
     if(!b.tz||!blkTzOk(b.tz))return L("Zeitzone prüfen")+": "+n;

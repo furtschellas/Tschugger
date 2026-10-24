@@ -50,13 +50,19 @@ const roleLocked=id=>!isOwner()&&(id==="admin"||(isAdmin()&&rolePermsOf(id).incl
 const roleOf=e=>{if(ADMINS.includes(e))return "owner";if(ADM.adm.includes(e))return "admin";const id=ADM.ur[e];return id&&ADM.roles.some(x=>x.id===id)?id:""};
 const roleName=id=>id==="admin"?L("Admin"):((ADM.roles.find(x=>x.id===id)||{}).name||"");
 const roleSel=r=>'<label class="rolesel">'+L("Rolle")+' <select data-urole="'+esc(r.email)+'"><option value="">'+L("Keine Rolle (eingeschränkt)")+'</option>'+(isOwner()?'<option value="owner"'+(roleOf(r.email)==="owner"?' selected':'')+'>'+L("Owner")+'</option>':'')+(isAdmin()?'<option value="admin"'+(roleOf(r.email)==="admin"?' selected':'')+'>'+L("Admin")+'</option>':'')+rolesSorted().map(x=>{const mine=roleOf(r.email)===x.id,ok=(isAdmin()||(x.perms||[]).every(p=>MYPERMS.includes(p)))&&(isOwner()||!(x.perms||[]).includes("settings"));/* only roles with one's own rights can be given */return ok||mine?'<option value="'+esc(x.id)+'"'+(mine?' selected':'')+(ok?'':' disabled')+'>'+esc(x.name||x.id)+'</option>':''}).join("")+'</select></label>';
+/* Drehblöcke: which blocks this person sees – automatic (crew list) or set by hand */
+function blkFields(m){const bl=blockList();if(!bl.length)return "";const man=Array.isArray(m.blk),on=new Set(man?m.blk:[]);
+  return '<fieldset class="eblk"><legend>'+L("Drehblöcke")+'</legend><label class="ck"><input type="checkbox" name="bauto"'+(man?'':' checked')+'> '+esc(L("Automatisch (aus der Crewliste)"))+'</label>'+
+    '<div class="chk eblks"'+(man?'':' hidden')+'>'+bl.map(b=>'<label class="ck"><input type="checkbox" name="eblk" value="'+esc(b.id)+'"'+(on.has(b.id)?' checked':'')+'> '+esc(b.name||b.id)+(b.country?' · '+esc(b.country):'')+'</label>').join("")+'</div>'+
+    '<p class="ghint">'+esc(L("Ohne «Automatisch» sieht die Person nur die angekreuzten Blöcke (Drehtage und Callsheets). Mit «Einstellungen» sieht man immer alle."))+'</p></fieldset>'}
+document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest('input[name="bauto"]');if(!c)return;const f=c.closest("fieldset");const box=f&&f.querySelector(".eblks");if(box)box.hidden=c.checked});
 function editForm(r,withRole){
   const m=r.m,i=ADM.inv.find(x=>x.id===r.email)||{},v=x=>esc(x||"");
   return (window.simBtn?window.simBtn(r.email):'')+(withRole&&canRole(r.email)?'<div class="aerole">'+roleSel(r)+'</div>':'')+'<form class="aedit" data-adm="save" data-em="'+esc(r.email)+'">'+
     (m?'<label>'+L("Vorname")+'<input name="fn" maxlength="60" value="'+v(m.firstName)+'"></label><label>'+L("Nachname")+'<input name="ln" maxlength="60" value="'+v(m.lastName)+'"></label>'+
        '<label>'+L("Funktion")+'<input name="rl" maxlength="80" value="'+v(i.role||r.role||(m&&m.func))+'"></label>'+
        '<label>'+L("Sprache der App")+langSel("lg",m.lang||"de")+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" value="'+v(m.birthday)+'"></label><label>'+L("Geschlecht (optional)")+genderSel("gd",m.gender||"")+'</label>'+contactFields(m,"e")+
-       '<fieldset class="efood"><legend>'+L("Essen")+'</legend><label>'+L("Ernährung")+dietSel("edt",normDiet(m).diet)+'</label><label>'+L("Verträglichkeiten")+'</label>'+intolBoxes("eint",normDiet(m).intol)+'<label>'+L("Weitere Allergien (optional)")+'<input name="eal" maxlength="200" value="'+v(m.allergies)+'"></label></fieldset>'
+       '<fieldset class="efood"><legend>'+L("Essen")+'</legend><label>'+L("Ernährung")+dietSel("edt",normDiet(m).diet)+'</label><label>'+L("Verträglichkeiten")+'</label>'+intolBoxes("eint",normDiet(m).intol)+'<label>'+L("Weitere Allergien (optional)")+'<input name="eal" maxlength="200" value="'+v(m.allergies)+'"></label></fieldset>'+blkFields(m)
      :'<label>'+L("Name")+'<input name="nm" maxlength="80" value="'+v(i.name||r.name)+'"></label><label>'+L("Funktion")+'<input name="rl" maxlength="80" value="'+v(i.role||r.role)+'"></label>')+
     '<p class="ahint">'+L("Die E-Mail-Adresse kann nicht geändert werden – dafür die Person entfernen und mit der neuen Adresse einladen.")+'</p>'+
     (m&&m.uid&&can("users.edit")&&!(ME&&m.uid===ME.uid)?'<p><button type="button" class="pillbtn" data-signall="'+esc(m.uid)+'" data-nm="'+esc([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name||r.email)+'">'+esc(L("Auf allen Geräten abmelden"))+'</button></p>':'')+
@@ -121,7 +127,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dorefresh]
 try{ADM.sort=localStorage.getItem("usort")||"first"}catch(_){ADM.sort="first"}
 document.addEventListener("change",e=>{const sl=e.target.closest("select[data-usort]");if(!sl)return;ADM.sort=sl.value;try{localStorage.setItem("usort",ADM.sort)}catch(_){}render()});
 try{ADM.sub=localStorage.getItem("admsub")||"users"}catch(_){ADM.sub="users"}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;if(b.dataset.asub==="set")for(const k of Object.keys(SECS))if(/^(set-blocks|blk-)/.test(k))SECS[k]=false;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;if(b.dataset.asub==="set")for(const k of Object.keys(SECS))if(/^(set-blocks|blk-|blkp-)/.test(k))SECS[k]=false;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
 VIEWS.admin=function(){
   if(!canAdm())return '<div class="empty">'+L("Für die App-Verwaltung fehlt die Berechtigung.")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>300000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}
@@ -225,6 +231,7 @@ document.addEventListener("submit",async e=>{
       if(m){const fn=g("fn"),ln=g("ln"),d={firstName:fn,lastName:ln,name:[fn,ln].filter(Boolean).join(" ")||m.name||"",lang:g("lg")||m.lang||"de",birthday:g("bd")||"",gender:g("gd")||"",phone:(g("eph")||"").slice(0,40),contactEmail:lc(g("ece")||"").slice(0,120),diet:g("edt")||"none",intol:readBoxes(sf,"eint"),allergies:(g("eal")||"").slice(0,200)};
         /* «Funktion» belongs to the member (the card shows m.func) – before, it was only written to the invitation and never appeared */
         if(g("rl")!==null)d.func=g("rl").slice(0,80);
+        {const ba=sf.querySelector('input[name="bauto"]');if(ba)d.blk=ba.checked?F.deleteField():readBoxes(sf,"eblk").slice(0,20)}   /* Drehblöcke: automatic or by hand */
         await F.updateDoc(F.doc(db,"members",m.uid),d)}
       if(inv||!m){const d={name:(m?[g("fn"),g("ln")].filter(Boolean).join(" "):g("nm"))||"",role:g("rl")||""};
         /* role «Crew» only for a NEW invitation – a deliberate «Keine Rolle» stays when the profile is edited later */

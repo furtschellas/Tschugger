@@ -16,7 +16,7 @@ async function loadLangs(){
     {const go=!(d.exists()&&d.data().googleLogin===false);if(window.GOOGLEON!==go){window.GOOGLEON=go;try{localStorage.setItem("appgoogle",go?"1":"0")}catch(_){}try{const g=document.getElementById("gate");if(g&&!g.hidden&&(AUTHMODE==="login"||AUTHMODE==="register")&&!g.querySelector("input:focus"))showGate(AUTHMODE)}catch(_){}}}
     {const c=d.exists()?d.data():{};window.A2AGAIN=c.a2again===true;try{localStorage.setItem("appa2again",window.A2AGAIN?"1":"0")}catch(_){}}
     {const c=d.exists()?d.data():{};const z=+c.chgClearAt||0;if(window.CHGCLR!==z){window.CHGCLR=z;try{localStorage.setItem("appchgclr",String(z))}catch(_){}render()}}   /* «Änderungen» in Today emptied for everybody */
-    {const c=d.exists()?d.data():{};const bl=Array.isArray(c.blocks)&&c.blocks.length?c.blocks:null;if(JSON.stringify(bl)!==JSON.stringify(window.BLOCKS)){window.BLOCKS=bl;try{bl?localStorage.setItem("appblocks",JSON.stringify(bl)):localStorage.removeItem("appblocks")}catch(_){}render()}}
+    {const c=d.exists()?d.data():{};const bl=Array.isArray(c.blocks)&&c.blocks.length?c.blocks:null;if(JSON.stringify(bl)!==JSON.stringify(window.BLOCKS)){window.BLOCKS=bl;try{if(window.cdApplyAll)window.cdApplyAll()}catch(_){}try{bl?localStorage.setItem("appblocks",JSON.stringify(bl)):localStorage.removeItem("appblocks")}catch(_){}render()}}
     {const c=d.exists()?d.data():{};const pn=c.permNames&&typeof c.permNames==="object"?c.permNames:{};if(JSON.stringify(pn)!==JSON.stringify(window.PERMNAMES)){window.PERMNAMES=pn;try{localStorage.setItem("apppermnames",JSON.stringify(pn))}catch(_){}render()}}
     {const c=d.exists()?d.data():{},k=typeof c.appCheckKey==="string"?c.appCheckKey:"";if((window.APPCHECKKEY||"")!==k){window.APPCHECKKEY=k;try{localStorage.setItem("appcheck",k)}catch(_){}}}   /* App Check: used from the next start */
     {const c=d.exists()?d.data():{};const pe=c.pushEnabled!==false;if(window.PUSHEN!==pe){window.PUSHEN=pe;try{localStorage.setItem("apppushon",pe?"1":"0")}catch(_){}render()}}
@@ -153,7 +153,7 @@ async function fbInit(){
 function setLASTSTAMP(v){return LASTSTAMP=v}   /* other parts change LASTSTAMP only through this */
 function setDATAKEY(v){return DATAKEY=v}   /* other parts change DATAKEY only through this */
 function setCOADMIN(v){return COADMIN=v}   /* other parts change COADMIN only through this */
-function setMEMBER(v){return MEMBER=v}   /* other parts change MEMBER only through this */
+function setMEMBER(v){const b0=JSON.stringify(MEMBER&&MEMBER.blk||null);MEMBER=v;if(JSON.stringify(v&&v.blk||null)!==b0)try{if(window.cdApplyAll)window.cdApplyAll()}catch(_){}return v}   /* other blocks for this person: days again */   /* other parts change MEMBER only through this */
 function setMYPERMS(v){return MYPERMS=v}   /* other parts change MYPERMS only through this */
 function setMYROLE(v){return MYROLE=v}   /* other parts change MYROLE only through this */
 function setADMINPERMS(v){return ADMINPERMS=v}   /* other parts change ADMINPERMS only through this */
