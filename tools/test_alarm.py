@@ -4,7 +4,7 @@ Push-Nachricht nur an die Owner (verschlüsselt mit dem Crew-Schlüssel, wie all
 kommt über ein GitHub-Issue (GitHub schickt sie). Im öffentlichen Protokoll stehen nur Namen von Prüfungen, keine Daten.
 Aufruf: test_alarm.py <tests.json> <link zum Lauf>
 """
-import base64, json, os, sys, time
+import json, os, sys
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -38,11 +38,9 @@ def main():
     n, short, _ = message(path)
     if not fsadmin.sa():
         print("• Kein Dienstkonto – keine Push-Nachricht"); return 0
-    key = base64.b64decode(fsadmin.crew_key_b64())
+    key = fsadmin.crew_key()
     i18n = {l: {"title": t, "body": b.format(n=n, f=short)} for l, (t, b) in TXT.items()}
-    b = {"title": i18n["de"]["title"], "body": i18n["de"]["body"], "i18n": i18n, "roles": ["owner"], "push": True,
-         "kind": "alarm", "by": "Automatisch", "at": int(time.time() * 1000), "ch": {"push": True}, "url": url or "./"}
-    ok = fsadmin.new_broadcast(key, b)
+    ok = fsadmin.alarm_broadcast(key, i18n, ["owner"], url or "./")
     print("• Alarm an Owner:", "angelegt" if ok else "nicht angelegt", "·", n, "Fehler")
     return 0
 

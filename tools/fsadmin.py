@@ -73,6 +73,19 @@ def dec_json(key, c):
     return json.loads(AESGCM(key).decrypt(raw[:12], raw[12:], None))
 
 
+def dec_ivct(key, e):
+    """the older file format {"iv": …, "ct": …} (base64) → bytes"""
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    return AESGCM(key).decrypt(base64.b64decode(e["iv"]), base64.b64decode(e["ct"]), None)
+
+
+def alarm_broadcast(key, i18n, roles, url):
+    """automatic alarm push (German text as title/body, all languages in i18n) to the given roles"""
+    b = {"title": i18n["de"]["title"], "body": i18n["de"]["body"], "i18n": i18n, "roles": roles, "push": True,
+         "kind": "alarm", "by": "Automatisch", "at": int(time.time() * 1000), "ch": {"push": True}, "url": url}
+    return new_broadcast(key, b)
+
+
 def new_broadcast(key, b):
     """automatic «message to everybody»: encrypted, with the server time as «at» (only the last 24 h are sent)"""
     import datetime
@@ -181,6 +194,13 @@ def area_key_b64(area, create=True):
     if k or not create: return k
     k = base64.b64encode(secrets.token_bytes(32)).decode()
     return k if patch_doc("secret/key" + area, {"k": k, "at": int(time.time())}) else ""
+
+
+def crew_key():
+    """the crew key as bytes; stops with a short error when it cannot be read (nothing is encrypted with a wrong key)"""
+    k = crew_key_b64()
+    if not k: raise RuntimeError("Crew-Schlüssel nicht lesbar")
+    return base64.b64decode(k)
 
 
 def crew_key_b64():

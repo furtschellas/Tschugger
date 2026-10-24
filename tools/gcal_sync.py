@@ -9,7 +9,7 @@ und ändern sie, App-Verwaltung → App → Termine). Dieses Skript
     werden nachgeführt (die gewählten Empfänger bleiben), im Kalender gelöschte Termine verschwinden aus der App.
 Braucht das Dienstkonto (FIREBASE_SA). Das Repository ist öffentlich: im Protokoll stehen nur Zahlen.
 """
-import base64, datetime, json, os, sys, time, zoneinfo
+import datetime, json, os, sys, time, zoneinfo
 
 import requests
 
@@ -90,7 +90,7 @@ def main():
     if url.lower().startswith("webcal://"): url = "https://" + url[9:]   # iCloud gives webcal:// addresses
     if not url.startswith("https://"):
         log("Kalender-Adresse ungültig"); return 0
-    key = base64.b64decode(fsadmin.crew_key_b64())
+    key = fsadmin.crew_key()
     try:
         r = requests.get(url, timeout=30)
         r.raise_for_status()

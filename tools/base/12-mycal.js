@@ -1,4 +1,4 @@
-import {ariaTip,blockTag,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,MEMO,mName,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
+import {ariaTip,blockTag,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,mapsDir,mapsQ,MEMO,mName,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";
@@ -50,12 +50,12 @@ export function rideMap(v,dp,always){const raw=String(v||""),u=(raw.match(/https
   const hit=l=>{const m=fold(String(l&&l.name||""));if(m&&(m===n||m.includes(n)||n.includes(m)))return true;const c=code(l);if(c&&words.has(c))return true;
     if(num&&String(l.no||"").trim().toLowerCase()===num)return true;return arr(l.kinds).some(k=>words.has(fold(k).split(" ")[0]))};
   const l=ls.find(hit);
-  if(l){if(/^https:\/\//.test(String(l.map||"")))return l.map;const ad=[l.name].concat(arr(l.notes)).find(isA);if(ad)return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(ad)}
+  if(l){if(/^https:\/\//.test(String(l.map||"")))return l.map;const ad=[l.name].concat(arr(l.notes)).find(isA);if(ad)return mapsQ(ad)}
   /* lines of the sets («Tech Parking» …) and the location list, with the names as on the callsheet */
-  try{const p=typeof csPlace==="function"&&dp&&dp.cs?csPlace(dp.cs,txt):null;if(p&&p.map)return p.map;if(p&&p.addr)return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.addr)}catch(_){}
+  try{const p=typeof csPlace==="function"&&dp&&dp.cs?csPlace(dp.cs,txt):null;if(p&&p.map)return p.map;if(p&&p.addr)return mapsQ(p.addr)}catch(_){}
   /* then only the production's own sources (no free Google search): Motivliste, location list / Infos, the internal Google map (My Maps) */
   const same=x=>{const k=fold(String(x||"")).trim();return k.length>2&&(k===n||k.includes(n)||n.includes(k))};
-  const q=a=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(a);
+  const q=mapsQ;
   for(const x of arr(S.locs))if(x&&(same(x.name)||same(x.venue))){if(/^https:\/\//.test(String(x.map||"")))return x.map;const ad=[x.venue,x.address].filter(Boolean).join(", ");if(isA(ad))return q(ad)}
   for(const g of arr(S.places))for(const x of arr(g&&g.items))if(x&&same(x.name)){if(/^https:\/\//.test(String(x.map||"")))return x.map;if(x.address)return q(x.name+", "+x.address)}
   try{for(const f of arr(S.gmap&&S.gmap.f))if(f&&same(f.n)&&Array.isArray(f.x)&&Array.isArray(f.x[0])&&isFinite(f.x[0][0])&&isFinite(f.x[0][1]))return q(f.x[0][0]+","+f.x[0][1])}catch(_){}
@@ -189,8 +189,8 @@ export function planFactsHTML(d,spBtn){
     /* drive from the crew hotel: +3 min buffer (over 20 min: +15 %); the route itself only when opened; shown next to the shooting time */
     /* the drive to the first set: tap → route from the hotel or from where you are (like in «Today») */
     const dv=d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
-      const from=d.drive.from||"Hotel",url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(from)+"&destination="+encodeURIComponent(dest),
-        here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(dest);
+      const from=d.drive.from||"Hotel",url=mapsDir(from,dest),
+        here=mapsDir("",dest);
       return '<button type="button" class="fact factr" data-route="'+esc(JSON.stringify({h:url,c:here,from,to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><span class="k">'+L("Anfahrt")+'</span><span class="v">'+esc(driveMin(d.drive.min)+"′"+(d.drive.km?"\u2009·\u2009"+Math.round(d.drive.km)+"\u2009km":""))+' ›</span></button>'})():'';
     /* the drive to the set sits right next to the shooting time */
     const fx=f.filter(x=>x[1]).map(x=>'<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>');

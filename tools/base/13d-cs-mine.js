@@ -1,4 +1,4 @@
-import {L,LANG,S,esc,safeUrl} from "./10-core.js";
+import {esc,L,LANG,mapsDir,S,safeUrl} from "./10-core.js";
 import {nmk} from "./11-schedule-prep.js";
 import {CSI,csA,csDurT,csHm,csIDrive,csMyCall,csMyRides,csMyWords,csRows,csS,csSec,csTile,csTx} from "./13a-callsheet.js";
 import {csCallPlace,csLocAddr,csLocs,csMapQ,csPlace,plDe} from "./13c-cs-places.js";
@@ -67,7 +67,7 @@ export function csTilesHTML(x,day,c,me){const t=c.times||{};
       const to=(pl.addr||String(pl.name||"").replace(/^[^:]*:\s*/,"").replace(/^Set\s*\w+\s*·\s*/,"")).trim();if(!to&&!pl.map)return"";
       /* only a name without address but a map link (e.g. «Tech Parking»): the map link, not a Google search for the name */
       if(pl.map&&!pl.addr&&!/\d{4}\s+\p{L}/u.test(to)&&pl.disp)return '<a class="dt csdrv" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc(plDe(pl.disp).slice(0,18))+' ›</div></a>';if(!to)return '<a class="dt csdrv" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc(L("Karte"))+' ›</div></a>';
-      const from=(day&&day.drive&&day.drive.from)||"Hotel",enc=encodeURIComponent,url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+enc(from)+"&destination="+enc(to),here="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+enc(to);
+      const from=(day&&day.drive&&day.drive.from)||"Hotel",url=mapsDir(from,to),here=mapsDir("",to);
       return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc((()=>{if(pl.fbk)return pl.fbn.slice(0,18)||L("Route");if(pl.disp)return plDe(pl.disp).slice(0,18);const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})())+' ›</div></button>'})()+'</div>';}
 /* parts of the callsheet (each one a folded section; c = callsheet, x = day of the dispo, me = me, SU = sums of the folded parts, t = times) */
 export function csJumpBar(c,x,me,SU,t){let JB="";

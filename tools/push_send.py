@@ -15,7 +15,6 @@ Das Repository ist öffentlich: im Protokoll stehen nur Zahlen, keine Titel, Nam
 """
 import base64, json, os, re, sys, time
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pywebpush import webpush, WebPushException
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -90,7 +89,7 @@ def vapid_keys(key):
     if os.environ.get("VAPID_PRIVATE", "").strip(): out.append(os.environ["VAPID_PRIVATE"].strip())
     try:
         e = json.load(open(os.path.join(HERE, "vapid.enc.json")))
-        out.append(AESGCM(key).decrypt(base64.b64decode(e["iv"]), base64.b64decode(e["ct"]), None).decode())
+        out.append(fsadmin.dec_ivct(key, e).decode())
     except Exception:
         pass
     return list(dict.fromkeys(_vkey(k) for k in out if k))
