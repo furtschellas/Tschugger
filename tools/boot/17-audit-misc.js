@@ -66,8 +66,8 @@ window.logWhen=logWhen;
 /* sub-parts (data-su) are open only while you stay on the page: every new visit of Log/Tests starts with everything closed */
 const logSu=k=>TST.su[k]?' open':'';window.logSu=logSu;
 function logReset(){TST.su={};TST.open=false;AUD.open=false;if(typeof RTS!=="undefined")RTS.open=false;if(typeof DCK!=="undefined")DCK.open=false;if(window.scLogReset)scLogReset()}
-{let last="";const _r=render;render=function(){if((typeof RTS!=="undefined"&&RTS.busy)||(typeof DCK!=="undefined"&&DCK.busy))return _r.apply(this,arguments);   /* the tests switch pages for a moment: not a new visit */
-  const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test")?ADM.sub:"";if(now&&now!==last){logReset();setTimeout(()=>logAutoRun(now),250)}last=now;return _r.apply(this,arguments)}}
+{let last="";onRender(()=>{if((typeof RTS!=="undefined"&&RTS.busy)||(typeof DCK!=="undefined"&&DCK.busy))return;   /* the tests switch pages for a moment: not a new visit */
+  const now=S.tab==="admin"&&(ADM.sub==="log"||ADM.sub==="test")?ADM.sub:"";if(now&&now!==last){logReset();setTimeout(()=>logAutoRun(now),250)}last=now})}
 /* every tap on Log/Tests starts the permission and document tests again; the automatic tests on GitHub start when their
    box is opened; the progress is shown in the open/close button */
 async function logAutoRun(sub){
@@ -103,7 +103,7 @@ document.addEventListener("click",e=>{const ae=document.activeElement;if(ae&&/^(
 document.addEventListener("change",e=>{if(!e.target.matches||!e.target.matches("select"))return;const ae=document.activeElement;if(ae&&ae!==e.target&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&ae.form&&!ae.form.contains(e.target))try{ae.blur()}catch(_){}},true);
 /* main topics (bottom bar): English names in every language except Hindi */
 function hiTabs(){document.querySelectorAll("nav.tabs button[data-tab] .lbl").forEach(l=>{if(!l.dataset.orig)l.dataset.orig=l.textContent.trim();const o=l.dataset.orig;if(!l.dataset.so&&l.dataset.s)l.dataset.so=l.dataset.s;const hi=LANG==="hi"&&I18N[o]&&I18N[o].hi;l.textContent=hi?I18N[o].hi:o;if(l.dataset.so)l.dataset.s=hi?I18N[o].hi:l.dataset.so})}
-{const _r=render;render=function(){const x=_r.apply(this,arguments);try{hiTabs()}catch(_){}try{chatFab()}catch(_){}try{bcButton()}catch(_){}return x}}
+onRendered(()=>{try{hiTabs()}catch(_){}try{chatFab()}catch(_){}try{bcButton()}catch(_){}});
 /* every button that shows only a symbol gets a tooltip with its function (from its label for screen readers); the observer also covers every render() */
 function iconTitles(){document.querySelectorAll("button[aria-label]:not([title]),a[aria-label]:not([title])").forEach(b=>{b.title=b.getAttribute("aria-label")})}
 document.addEventListener("DOMContentLoaded",()=>{try{iconTitles()}catch(_){}});new MutationObserver(()=>{try{iconTitles()}catch(_){}}).observe(document.documentElement,{childList:true,subtree:true});

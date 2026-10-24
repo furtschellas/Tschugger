@@ -22,7 +22,7 @@ render();
   const b=$("#refresh");b.hidden=false;
   b.addEventListener("click",async()=>{
     if(b.classList.contains("spin"))return;b.classList.add("spin");
-    try{SCRIPT=null;MEMO.clear();
+    try{setSCRIPT(null);MEMO.clear();
       if(await load(true)){const c=lastCheck(S.meta);render();showMsg(L("Neueste Daten geladen.")+(c?" "+L("Dropbox zuletzt geprüft")+" "+fmtStamp(c)+".":"")+(window.AUTOUPD!==false?" "+L("Die Daten werden jede Stunde automatisch aus der Dropbox geladen."):""),7000)}
       else showMsg(L("Bitte zuerst anmelden."),5000)}
     catch(err){console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),6000)}
@@ -46,8 +46,8 @@ render();
     A.onAuthStateChanged(auth,u=>{
       if(u){try{localStorage.setItem("wasin","1")}catch(_){}}
       if(!u&&!waitedIn&&Date.now()-T0<8000){let was=false;try{was=localStorage.getItem("wasin")==="1"}catch(_){}
-        if(was){waitedIn=true;if(!S.days.length)showGate("wait");setTimeout(()=>{if(!auth.currentUser){try{localStorage.removeItem("wasin")}catch(_){}ME=null;showGate("login")}},6000);return}}
-      if(!u){ME=null;MYPERMS=[];{const w=document.getElementById("welcome");if(w)w.remove();WELCOME_OPEN=false}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
+        if(was){waitedIn=true;if(!S.days.length)showGate("wait");setTimeout(()=>{if(!auth.currentUser){try{localStorage.removeItem("wasin")}catch(_){}setME(null);showGate("login")}},6000);return}}
+      if(!u){setME(null);setMYPERMS([]);{const w=document.getElementById("welcome");if(w)w.remove();setWELCOME_OPEN(false)}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();
         /* the sign-in screen may already be open (person switched to «create account» while Firebase was starting): keep it and what was typed */
         const g=document.getElementById("gate");if(g&&!g.hidden&&["login","register","reset"].includes(AUTHMODE)&&g.querySelector("form"))return;
         showGate("login");return}

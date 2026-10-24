@@ -161,3 +161,4 @@ function spTod(x){
   const lbl={d:"Tag",mo:"Tag",ev:"Abend",n:"Nacht"}[k];
   return '<span class="sptod sptod-'+k+'">'+esc(L(lbl))+'</span>';
 }
+function setSCRIPT(v){return SCRIPT=v}   /* other parts change SCRIPT only through this */

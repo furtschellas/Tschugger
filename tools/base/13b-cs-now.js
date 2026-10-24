@@ -66,3 +66,4 @@ function csNear(c,ls,date){const geo=c.geo||{},out=new Map(),sets=[];
   for(const a of out.values())a.sort((x,y)=>x.d-y.d);return out}
 const csDist=d=>d<0.05?L("vor Ort"):d<1?Math.round(d*1000/10)*10+" m":(Math.round(d*10)/10).toFixed(1).replace(/\.0$/,"")+" km";
 function csNearHTML(a){return a&&a.length?'<div class="csnear">'+a.map(p=>'<a class="csnearc" href="'+esc(safeUrl(p.u||""))+'" target="_blank" rel="noopener noreferrer" title="'+esc(csL(p.name))+'">'+(p.h?'<span class="csplace csbadge csbase">'+p.h+'</span>':'<span class="csplace">'+(/park/i.test(p.code)?CSI.park:'')+esc(csL(p.code))+'</span>')+'<small>'+esc(csDist(p.d))+'</small></a>').join("")+'</div>':''}
+function setCSCUR(v){return CSCUR=v}   /* other parts change CSCUR only through this */

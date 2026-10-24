@@ -168,7 +168,7 @@ function seenText(m){const t=seenMs(m);if(!t)return m&&m.active===true?L("noch n
   return L("zuletzt online")+" "+(dd===0?L("heute")+" "+hm:dd===1?L("gestern")+" "+hm:dt.toLocaleDateString("de-CH")+" "+hm)}
 let START=null;
 async function afterSignIn(u){
-  ME=u;if(!window.PRIVOK)setTimeout(()=>{try{loadLangs().then(()=>{if(S.tab==="admin")render()})}catch(_){}},1500); /* links (motive list, map, chat) can only be read once signed in */
+  setME(u);if(!window.PRIVOK)setTimeout(()=>{try{loadLangs().then(()=>{if(S.tab==="admin")render()})}catch(_){}},1500); /* links (motive list, map, chat) can only be read once signed in */
   /* account created by the owner with a start password: counts as confirmed, but a new password must be set first */
   START=null;if(!u.emailVerified||window.__checkStart){try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"starts",lc(u.email))),10000,"start");if(d.exists())START=d.data()}catch(_){}}
   if(START&&START.mustChange){showGate("newpw");return}
@@ -180,7 +180,7 @@ async function afterSignIn(u){
   hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();pushSyncSoon();menusLoad(true);
   const prof=MEMBER||{};
   let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}
-  if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){LANG=prof.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
+  if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){setLANG(prof.lang);store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
   /* only the small stamp is read when the data on this device is still current (the full file only when it changed) */
   try{await load(false);if(window.loadContacts)window.loadContacts()}catch(err){window.__LOADFAIL=true;console.error(err);showMsg(isOffline(err)&&S.days.length?L("Offline – du siehst den zuletzt geladenen Stand."):loadErr(err),isOffline(err)?6000:15000)}
   await fillNamesFromCrew();
@@ -198,3 +198,6 @@ async function fillNamesFromCrew(){
   const upd={firstName:cn.firstName,lastName:cn.lastName,name:[cn.firstName,cn.lastName].filter(Boolean).join(" ")};
   try{const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),upd);Object.assign(MEMBER,upd)}catch(err){console.error(err)}
 }
+function setSTART(v){return START=v}   /* other parts change START only through this */
+function setMENUSUB(v){return MENUSUB=v}   /* other parts change MENUSUB only through this */
+function setWELCOME_OPEN(v){return WELCOME_OPEN=v}   /* other parts change WELCOME_OPEN only through this */

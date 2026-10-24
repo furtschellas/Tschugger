@@ -147,3 +147,4 @@ const csKeys=rows=>typeof scRowKeys==="function"?scRowKeys(csA(rows),r=>r.text||
 const csAck=date=>typeof scHas==="function"&&scHas(date);
 /* the scenes of the shooting order shot at one location */
 const csLocRows=(c,l)=>csRows(c).filter(r=>r.sc&&csSceneLoc([l],r)===l);
+function setCSTR(v){return CSTR=v}   /* other parts change CSTR only through this */

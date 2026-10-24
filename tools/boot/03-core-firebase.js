@@ -6,7 +6,7 @@ function applyLangs(){
   if(!APPLANGS.length)APPLANGS=["de"];
   document.querySelectorAll(".lang button[data-lang],.lang button[data-glang]").forEach(b=>{b.style.display=APPLANGS.includes(b.dataset.lang||b.dataset.glang)?"":"none"});
   document.querySelectorAll(".lang").forEach(d=>{d.style.display=APPLANGS.length<2?"none":""});
-  if(!APPLANGS.includes(LANG)){LANG=APPLANGS[0];store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
+  if(!APPLANGS.includes(LANG)){setLANG(APPLANGS[0]);store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
 }
 async function loadLangs(){
   try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));const l=d.exists()&&d.data().langs;
@@ -150,3 +150,12 @@ async function fbInit(){
   FB.auth.languageCode=LANG;
   return FB;
 }
+function setLASTSTAMP(v){return LASTSTAMP=v}   /* other parts change LASTSTAMP only through this */
+function setDATAKEY(v){return DATAKEY=v}   /* other parts change DATAKEY only through this */
+function setCOADMIN(v){return COADMIN=v}   /* other parts change COADMIN only through this */
+function setMEMBER(v){return MEMBER=v}   /* other parts change MEMBER only through this */
+function setMYPERMS(v){return MYPERMS=v}   /* other parts change MYPERMS only through this */
+function setMYROLE(v){return MYROLE=v}   /* other parts change MYROLE only through this */
+function setADMINPERMS(v){return ADMINPERMS=v}   /* other parts change ADMINPERMS only through this */
+function setME(v){return ME=v}   /* other parts change ME only through this */
+function setSIMROLE(v){return SIMROLE=v}   /* other parts change SIMROLE only through this */

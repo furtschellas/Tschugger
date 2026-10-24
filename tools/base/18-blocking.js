@@ -114,7 +114,7 @@ async function openScene(sc){
 }
 const ACTIONS=[
   ["[data-thm]",()=>setTheme(getTheme()==="light"?"dark":"light")],
-  ["[data-lang]",b=>{LANG=b.dataset.lang;store("lang",LANG);applyStatic();render();if(!$("#search").hidden)renderSearch()}],
+  ["[data-lang]",b=>{setLANG(b.dataset.lang);store("lang",LANG);applyStatic();render();if(!$("#search").hidden)renderSearch()}],
   ["[data-sckey]",b=>{setOpen(b,!S.openSc[b.dataset.sckey]);scallLabel()}],
   ["[data-scall]",()=>{const bs=[...document.querySelectorAll("[data-sckey]")];const open=!bs.every(x=>S.openSc[x.dataset.sckey]);bs.forEach(x=>setOpen(x,open));scallLabel()}],
   ["[data-uf]",b=>{S.uf=Object.assign({},S.uf,{[b.dataset.uf]:!S.uf[b.dataset.uf]});store("uf",JSON.stringify(S.uf));render()}],
@@ -137,8 +137,8 @@ const ACTIONS=[
   ["[data-sqm]",b=>{S.sqm=b.dataset.sqm;S.sqn=0;try{localStorage.setItem("sqm",S.sqm)}catch(_){}document.querySelectorAll("[data-sqm]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));runSearch("sq",false)}],
   ["[data-sqpick]",b=>{S.sq=b.dataset.sqpick;S.sqn=0;const i=document.getElementById("sq");if(i)i.value=S.sq;runSearch("sq",false)}],
   ["[data-sqmore]",()=>{S.sqn=(S.sqn||(S.sq?100:40))+60;runSearch("sq",false)}],
-  ["[data-scretry]",()=>{SCRIPTERR=false;render()}],
-  ["[data-spt]",()=>{const nx=spTheme()==="light"?"dark":"light";SPT=nx===getTheme()?null:nx;store("spt",SPT||"");svApply()}],
+  ["[data-scretry]",()=>{setSCRIPTERR(false);render()}],
+  ["[data-spt]",()=>{const nx=spTheme()==="light"?"dark":"light";setSPT(nx===getTheme()?null:nx);store("spt",SPT||"");svApply()}],
   ["[data-lv]",b=>{const k=b.dataset.lv;S.lv=Object.assign({},S.lv,{[k]:!S.lv[k]});store("lv",JSON.stringify(S.lv));document.querySelectorAll(".lvwrap").forEach(w=>w.className="lvwrap "+lvClasses());document.querySelectorAll("[data-lv]").forEach(x=>x.setAttribute("aria-pressed",String(S.lv[x.dataset.lv])))}],
   ["[data-sv]",b=>{const k=b.dataset.sv;S.sv=Object.assign({},S.sv,{[k]:!S.sv[k]});store("sv",JSON.stringify(S.sv));svApply()}],
   ["[data-pv]",b=>{const k=b.dataset.pv;S.pv=Object.assign({},S.pv,{[k]:!S.pv[k]});store("pv",JSON.stringify(S.pv));pvApply()}],

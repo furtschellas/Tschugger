@@ -18,12 +18,12 @@ function simStart(em,re){em=lc(em);if(!simCan(em))return;
   const mem=(ADM.mem||[]).find(x=>lc(x.email||"")===em)||null,inv=(ADM.inv||[]).find(x=>x.id===em)||{};
   const name=(mem&&[mem.firstName,mem.lastName].filter(Boolean).join(" "))||inv.name||em;
   SIMUSER={email:em,name,rname:ro.name||ro.id||L("Keine Rolle"),keep:{p:MYPERMS.slice(),r:MYROLE,rn:window.MYROLENAME||"",ap:ADMINPERMS.slice(),mem:typeof MEMBER!=="undefined"?MEMBER:null,tab:S.tab,sub:ADM.sub}};
-  if(r==="owner")SIMROLE=null;else{SIMROLE={adm:r==="admin",user:em};MYPERMS=r==="admin"?[]:arr(ro.perms).filter(p=>permKnown(p));MYROLE=r==="admin"?"":ro.id;if(r==="admin")ADMINPERMS=ro.perms}window.MYROLENAME=r==="admin"||r==="owner"?"":ro.name||"";
+  if(r==="owner")setSIMROLE(null);else{setSIMROLE({adm:r==="admin",user:em});setMYPERMS(r==="admin"?[]:arr(ro.perms).filter(p=>permKnown(p)));setMYROLE(r==="admin"?"":ro.id);if(r==="admin")setADMINPERMS(ro.perms)}window.MYROLENAME=r==="admin"||r==="owner"?"":ro.name||"";
   /* the simulated person's own data: profile (name), callsheet «my day», my appointments – never the admin's */
-  try{MEMBER=mem||{name:inv.name||"",email:em}}catch(_){}try{MEMO.clear()}catch(_){}
+  try{setMEMBER(mem||{name:inv.name||"",email:em})}catch(_){}try{MEMO.clear()}catch(_){}
   simKeep({e:em,tab:(re&&re.back)||SIMUSER.keep.tab});if(re)SIMUSER.keep.tab=re.back||SIMUSER.keep.tab;
   if(!re)S.tab="today";simRefreshChrome();simBar();render();if(!re)scrollTo(0,0)}
-function simEnd(){if(!SIMUSER)return;simKeep(null);const k=SIMUSER.keep;SIMUSER=null;try{MEMO.clear()}catch(_){}SIMROLE=null;MYPERMS=k.p;MYROLE=k.r;window.MYROLENAME=k.rn||"";ADMINPERMS=k.ap;try{MEMBER=k.mem}catch(_){}
+function simEnd(){if(!SIMUSER)return;simKeep(null);const k=SIMUSER.keep;SIMUSER=null;try{MEMO.clear()}catch(_){}setSIMROLE(null);setMYPERMS(k.p);setMYROLE(k.r);window.MYROLENAME=k.rn||"";setADMINPERMS(k.ap);try{setMEMBER(k.mem)}catch(_){}
   S.tab=k.tab||"admin";ADM.sub=k.sub;simRefreshChrome();simBar();render()}
 /* a role without a specific person: «role:<id>» ("" = no role, "admin") – shows exactly what everybody with that role sees */
 function simRoleCan(id){return isAdmin()&&!SIMROLE&&!SIMUSER&&(id!=="admin"||isOwner())}
@@ -31,8 +31,8 @@ function simStartRole(id,re){if(!simRoleCan(id))return;
   const ro=id==="admin"?{id:"admin",name:L("Admin"),perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:id?((ADM.roles||[]).find(x=>x.id===id)||null):{id:"",name:L("Keine Rolle"),perms:[]};
   if(!ro)return;
   SIMUSER={email:"",name:L("Rolle")+" «"+(ro.name||ro.id||L("Keine Rolle"))+"»",rname:L("ohne Person"),keep:{p:MYPERMS.slice(),r:MYROLE,rn:window.MYROLENAME||"",ap:ADMINPERMS.slice(),mem:typeof MEMBER!=="undefined"?MEMBER:null,tab:S.tab,sub:ADM.sub}};
-  SIMROLE={adm:id==="admin",user:""};MYPERMS=id==="admin"?[]:arr(ro.perms).filter(p=>permKnown(p));MYROLE=id==="admin"?"":ro.id;if(id==="admin")ADMINPERMS=ro.perms;window.MYROLENAME=id==="admin"?"":ro.name||"";
-  try{MEMBER=null}catch(_){}
+  setSIMROLE({adm:id==="admin",user:""});setMYPERMS(id==="admin"?[]:arr(ro.perms).filter(p=>permKnown(p)));setMYROLE(id==="admin"?"":ro.id);if(id==="admin")setADMINPERMS(ro.perms);window.MYROLENAME=id==="admin"?"":ro.name||"";
+  try{setMEMBER(null)}catch(_){}
   simKeep({r:id,tab:(re&&re.back)||SIMUSER.keep.tab});if(re)SIMUSER.keep.tab=re.back||SIMUSER.keep.tab;
   if(!re)S.tab="today";simRefreshChrome();simBar();render();if(!re)scrollTo(0,0)}
 /* after a reload: start the same simulation again once the user list is loaded (the page that was open stays) */

@@ -155,3 +155,4 @@ function ppMail(key){if(!vok("email"))return;
     if(x&&x.dataset.mb==="copy"){try{await navigator.clipboard.writeText(found.map(p=>p.email).join(", "));x.textContent=L("Kopiert")}catch(_){prompt("",found.map(p=>p.email).join(", "))}}});
   document.body.appendChild(b);
 }
+function setPPPEOPLE(v){return PPPEOPLE=v}   /* other parts change PPPEOPLE only through this */

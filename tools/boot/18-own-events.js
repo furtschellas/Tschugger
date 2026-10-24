@@ -142,3 +142,4 @@ window.ownDayHTML=function(date){
   const list=window.ownEvents(me).filter(e=>e.date===date).sort((a,b)=>(a.t||"00:00").localeCompare(b.t||"00:00"));if(!list.length)return "";
   return '<div class="oeday"><h3 class="uh">'+esc(L("Weitere Termine"))+'</h3>'+list.map(e=>'<div class="oerowd"><span class="oet">'+esc(e.t||"")+(e.end?'–'+esc(e.end):'')+'</span><span class="oeb"><b>'+esc(e.n||"")+'</b>'+
     (e.where?'<span class="oew">'+esc(e.where)+'</span>':'')+(e.note?'<span class="oen">'+esc(e.note)+'</span>':'')+'<span class="oes">'+esc(e.src)+'</span></span>'+window.ownEvEditBtn(e)+'</div>').join("")+'</div>'};
+function setOWNSUB(v){return OWNSUB=v}   /* other parts change OWNSUB only through this */

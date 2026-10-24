@@ -176,3 +176,4 @@ document.addEventListener("click",async e=>{const s=e.target.closest&&e.target.c
   catch(err){CD.msg=(typeof saveErr==="function"?saveErr(err):L("Fehler:")+" "+(err.message||err))}
   finally{CD.busy=false;render()}},true);
 document.addEventListener("submit",e=>{if(e.target.closest&&e.target.closest("[data-cdform]"))e.preventDefault()},true);
+function setCDSUBS(v){return CDSUBS=v}   /* other parts change CDSUBS only through this */

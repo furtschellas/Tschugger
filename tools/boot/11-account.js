@@ -143,10 +143,10 @@ async function onAcctSubmit(e){
       const wr=()=>MEMBER?F.updateDoc(ref,upd):F.setDoc(ref,Object.assign({active:true,email:lc(u.email),joinedAt:F.serverTimestamp()},upd));
       try{await wr()}catch(err){if(!/permission/.test(err&&err.code||""))throw err;await u.reload().catch(()=>{});await u.getIdToken(true);
         try{await wr()}catch(e2){if(!/permission/.test(e2&&e2.code||"")||!("gender" in upd))throw e2;delete upd.gender;delete upd.phone;delete upd.contactEmail;delete upd.func;await wr();PARTIAL=true}} /* until the Firestore rules allow «gender», save the rest */
-      MEMBER=Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd);
+      setMEMBER(Object.assign({},MEMBER||{active:true,email:lc(u.email)},upd));
       writeOwnBday(upd.name,upd.birthday);
       if(isAdmin())ADM.loaded=false;
-      if(upd.lang!==LANG&&WDS[upd.lang]){LANG=upd.lang;store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
+      if(upd.lang!==LANG&&WDS[upd.lang]){setLANG(upd.lang);store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
       if(PARTIAL){try{localStorage.setItem("profPartial:"+u.uid,String(Date.now()))}catch(_){}console.warn("profile: gender/phone/e-mail not saved – Firestore rules not published yet");showMsg(L("Profil gespeichert. Geschlecht, Telefon und E-Mail konnten noch nicht gespeichert werden – die Produktion muss die neuen App-Regeln aktivieren."),9000)}
       if(ONBOARD){ONBOARD=false;document.getElementById("acct").hidden=true;setTimeout(maybeWelcome,300);if(!PARTIAL)showMsg(L("Profil gespeichert."),3000);btn.disabled=false;return}
       msg.classList.add("ok");msg.textContent=L("Profil gespeichert.");btn.disabled=false;return;
@@ -167,7 +167,7 @@ async function onAcctSubmit(e){
 /* sign out on this device (also after «Auf allen Geräten abmelden»): straight to the sign-in screen */
 window.acctSignOut=async quiet=>{S.tab="plan";store("tab","plan");
   try{const {A,auth}=await fb();if(window.pushSignOut)await window.pushSignOut();await A.signOut(auth)}catch(err){console.error(err)}try{localStorage.setItem("fsclear","1");localStorage.removeItem("wasin")}catch(_){}
-  ME=null;MYPERMS=[];{const w=document.getElementById("welcome");if(w)w.remove();WELCOME_OPEN=false;if(TOUR.el){TOUR.el.remove();TOUR.el=null}}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();render();showGate("login");
+  setME(null);setMYPERMS([]);{const w=document.getElementById("welcome");if(w)w.remove();setWELCOME_OPEN(false);if(TOUR.el){TOUR.el.remove();TOUR.el=null}}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();render();showGate("login");
   if(quiet)showMsg(L("Auf allen Geräten abgemeldet – bitte neu anmelden."),6000)};
 function a2Uninstall(){let d=document.getElementById("a2un");if(d)d.remove();
   const ua=navigator.userAgent,ios=typeof isIOS==="function"&&isIOS(),and=/android/i.test(ua),mac=/macintosh/i.test(ua)&&!ios,edge=/edg\//i.test(ua),saf=/safari/i.test(ua)&&!/chrome|chromium|edg\//i.test(ua);
@@ -210,3 +210,4 @@ document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closes
     '<p class="ghint">'+esc(L("Diesen Hinweis kannst du unter Mein Konto → App wieder einschalten."))+'</p><div class="a2b">'+dlgBtn("pri",'data-ihok',"Verstanden")+'</div></div>';
   d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-ihok]")){d.remove();store("iconhint","seen");try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}if(typeof savePrefsSoon==="function")savePrefsSoon()}});
   document.body.appendChild(d)},3000)}
+function setACSUB(v){return ACSUB=v}   /* other parts change ACSUB only through this */
