@@ -33,9 +33,11 @@ const flowRedraw=()=>(typeof scRender==="function"?scRender:render)();
 /* write one tick (0 = open again: deleted – always, also when this device does not know it yet: another device may have set it);
    own writes are remembered for a moment so that a reload started before them does not undo them on the screen */
 const FLOWMINE=new Map();
-async function flowPut(id,date,s,n){if(!id)return;const {F,db}=await fb();const ref=F.doc(db,"rideack",id);
-  if(!s){await F.deleteDoc(ref);delete window.RIDEACK[id];FLOWMINE.set(id,{t:Date.now(),v:null})}
-  else{const v={d:date,at:Date.now(),s};if(n!=null)v.n=n;   /* n: how many of a group of extras are there */await F.setDoc(ref,v);window.RIDEACK[id]=v;FLOWMINE.set(id,{t:Date.now(),v})}}
+async function flowPut(id,date,s,n){if(!id)return;const old=window.RIDEACK[id];
+  /* through the data layer: offline the tick shows at once and is sent later (a refusal puts the old state back) */
+  const undo=()=>{if(old)window.RIDEACK[id]=old;else delete window.RIDEACK[id];FLOWMINE.delete(id);flowRedraw()};
+  if(!s){await dbWrite("delete","rideack/"+id,null,{undo});delete window.RIDEACK[id];FLOWMINE.set(id,{t:Date.now(),v:null})}
+  else{const v={d:date,at:Date.now(),s};if(n!=null)v.n=n;   /* n: how many of a group of extras are there */await dbWrite("set","rideack/"+id,v,{undo});window.RIDEACK[id]=v;FLOWMINE.set(id,{t:Date.now(),v})}}
 /* the ticks live: a subscription on rideack (what someone taps shows on every device within a second) – from the first callsheet of the
    last 60 days on (ticks of past shooting days must not disappear); renewed when that day changes; without live updates (tests, old
    browser) every 2 minutes as before – there own taps win for a moment over an answer that was already on its way (live, Firestore
@@ -52,9 +54,9 @@ async function cmaLoad(from){if(CMASUB&&CMAFROM===from)return;try{const {F,db}=a
     window.CMASSIGN=m;if(S.tab==="my"||S.tab==="today")flowRedraw()},err=>{console.warn("cmassign",err&&err.code||err);CMASUB=null;CMAFROM=""})}catch(_){if(CMASUB==="…")CMASUB=null}}
 window.cmaStop=()=>{try{if(typeof CMASUB==="function")CMASUB()}catch(_){}CMASUB=null;CMAFROM="";window.CMASSIGN={}};
 const cmaMyName=()=>{try{const m=typeof MEMBER!=="undefined"&&MEMBER;const n=m&&([m.firstName,m.lastName].filter(Boolean).join(" ")||m.name);if(n)return n;const me=typeof myIdentity==="function"?myIdentity():null;return (me&&me.name)||(ME&&ME.email)||""}catch(_){return ""}};
-async function cmaSet(id,date,take){const {F,db}=await fb();const ref=F.doc(db,"cmassign",id);
-  if(!take){await F.deleteDoc(ref);delete window.CMASSIGN[id];return}
-  const n=cmaMyName().slice(0,80),c=await ownEnc({n});await F.setDoc(ref,{c,d:date,at:Date.now(),by:ME.uid});window.CMASSIGN[id]={by:ME.uid,n}}
+async function cmaSet(id,date,take){const old=window.CMASSIGN[id],undo=()=>{if(old)window.CMASSIGN[id]=old;else delete window.CMASSIGN[id];flowRedraw()};
+  if(!take){await dbWrite("delete","cmassign/"+id,null,{undo});delete window.CMASSIGN[id];return}
+  const n=cmaMyName().slice(0,80),c=await ownEnc({n});await dbWrite("set","cmassign/"+id,{c,d:date,at:Date.now(),by:ME.uid},{undo});window.CMASSIGN[id]={by:ME.uid,n}}
 /* the line below a Kostüm appointment: «Ich übernehme» · «Von dir übernommen · Freigeben» · «Übernommen von Anna» (then the appointment grey) */
 function cmaLine(id,date){const a=window.CMASSIGN[id],mine=a&&typeof ME!=="undefined"&&ME&&a.by===ME.uid,can=cmCan("w");
   if(!a)return {h:can?'<button type="button" class="pillbtn cmab" data-cmatake="'+esc(id)+'" data-cmad="'+esc(date)+'">'+esc(L("Ich übernehme"))+'</button>':''};

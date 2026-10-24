@@ -121,6 +121,16 @@ async function fb(){
   if(!FBP)FBP=(document.readyState==="loading"?new Promise(r=>document.addEventListener("DOMContentLoaded",r,{once:true})):Promise.resolve()).then(fbInit).catch(err=>{FBP=null;throw err});
   return FBP;
 }
+/* ---------- data layer: writes of ticks, scenes, takings … all the same way. Offline Firebase keeps a write and sends it later – an await
+   would hang until then (button stuck, screen not updated). dbWrite answers after at most 6 s: "ok" (saved) or "queued" (kept on this device,
+   sent when online); a later refusal runs undo() and says so. A refusal within the 6 s throws as before. ---------- */
+async function dbWrite(op,path,data,o){o=o||{};const {F,db}=await fb();const ref=F.doc(db,...String(path).split("/"));
+  const p=op==="delete"?F.deleteDoc(ref):op==="update"?F.updateDoc(ref,data):F.setDoc(ref,data,o.merge?{merge:true}:{});
+  let late=false;const r=await Promise.race([p.then(()=>"ok"),new Promise(ok=>setTimeout(()=>ok("queued"),o.wait||6000))]);
+  if(r==="queued"){late=true;p.then(()=>{if(o.done)o.done()}).catch(err=>{try{if(o.undo)o.undo()}catch(_){}showMsg(err&&err.code==="simulation"?err.message:L("Nicht gespeichert:")+" "+(err&&(err.code||err.message)||err),6000)});
+    if(navigator.onLine===false||late)showMsg(L("Gespeichert auf diesem Gerät – wird gesendet, sobald eine Verbindung da ist."),3500)}
+  return r}
+window.dbWrite=dbWrite;
 async function fbInit(){
   const base="https://www.gstatic.com/firebasejs/"+FB_V+"/";
   const [app,auth,fs]=await withTimeout(Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]),20000,"firebase");

@@ -10,6 +10,8 @@ var MYROLE="";let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=
 const H=[];const C={console,document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
 vm.runInContext(helpers+fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8")+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep,xf:xqField,xa:xqAll}",C);
 const T=C.T,D="2031-03-02";
+/* the data layer (03-core-firebase dbWrite): here straight to the fake database of each test */
+C.dbWrite=async(op,path,data)=>{const {F,db}=await C.fb();const ref=F.doc(db,...path.split("/"));if(op==="delete")await F.deleteDoc(ref);else await F.setDoc(ref,data);return "ok"};
 const cs={_date:D,calls:[{name:"Anna Probe"},{name:"Mara Test"}],crewTransport:[],
   transport:[{vehicle:"Van",passengers:"Max Muster",from:"Hotel",t1:"06:40",to:"Base",t2:"06:55"},{vehicle:"Van",passengers:"Max Muster",from:"Base",t1:"07:50",to:"Set",t2:"07:58"}]};
 const R1={no:"1",actor:"Max Muster",pickup:"06:40",call:"07:00",wardrobe:"Anna 07:05 - 07:20 15’",makeup:"Mara 07:20 - 07:45 25’",base:"07:45",onset:"08:00"};
