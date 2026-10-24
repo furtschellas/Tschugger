@@ -1229,6 +1229,23 @@ def cs_translate(cs, langs=None):
         log("Callsheet-Übersetzung:", type(e).__name__); return False
 
 
+def read_schedule(pdfb, task, kind=""):
+    """a schedule: in one answer; when it is too long (Truncated) in parts of 8 calendar days each (at most 6 parts)"""
+    try: return claude([pdfb], task, 64000, kind=kind)
+    except Truncated: log("Drehplan zu lang für eine Antwort – wird in Teilen gelesen")
+    out, cast, ver, after = [], {}, "", ""
+    pdfc = dict(pdfb, cache_control={"type": "ephemeral"})   # the same PDF in every part: read from the cache (cheaper)
+    for _ in range(6):
+        part = claude([pdfc], task + "\n\nTEILWEISE: Gib in \"days\" NUR die ersten 8 Kalendertage%s zurück (in Datumsreihenfolge), "
+                      "die weiteren folgen in einer nächsten Anfrage." % ((" NACH dem %s" % after) if after else ""), 64000, kind=kind)
+        ds = [d for d in ((part.get("days") if isinstance(part, dict) else None) or []) if isinstance(d, dict) and re.match(r"\d{4}-\d{2}-\d{2}$", str(d.get("date") or "")) and (not after or d["date"] > after)]
+        if isinstance(part, dict): cast.update(part.get("cast") or {}); ver = ver or part.get("scheduleVersion") or ""
+        if not ds: break
+        out += ds; after = max(d["date"] for d in ds)
+        if len(ds) < 8: break
+    return {"scheduleVersion": ver, "cast": cast, "days": out}
+
+
 def claude(parts, task, max_tokens=32000, kind="", model=None):
     """parts: list of content blocks; returns parsed JSON from the answer. kind «dispo» = callsheet (read first when the credit is short)"""
     if AI.get("down"): raise NoRetry("Claude-API nicht verfügbar: " + AI["down"])   # refused once in this run (credit, key): no more tries now
@@ -1792,10 +1809,11 @@ def main():
         if (is_new(kind, fb) or not bold) and may_try(kind, fb):
             log("Drehplan Drehblock", b.get("name") or b["id"], ": neu, wird ausgelesen")
             try:
-                res = claude([pdf_block(dbx.download(fb["id"]))],
-                    "WICHTIG: \"unit2\" nur für Tage, an denen der Drehplan eine eigene Zeile «2nd unit: …» hat. «B-Cam» u.ä. gehören zu den normalen items des Tages, nie in unit2. "
+                pdfb = pdf_block(dbx.download(fb["id"]))
+                task = ("WICHTIG: \"unit2\" nur für Tage, an denen der Drehplan eine eigene Zeile «2nd unit: …» hat. «B-Cam» u.ä. gehören zu den normalen items des Tages, nie in unit2. "
                     "Erzeuge aus diesem Drehplan ein JSON-Objekt {\"scheduleVersion\": \"Sched …\" (aus dem Dateinamen: %s), \"cast\": {Rollennummer: Rollenname}, \"days\": [ein Objekt pro Kalendertag gemäss Collection \"days\", jeweils mit Feld \"id\" = Datum]}. Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisherige Übersetzungen zum Wiederverwenden (gleicher Text = gleiche Übersetzung): %s"
-                    % (fb["name"].rsplit("/", 1)[-1], json.dumps(strip_ids(bold or data.get("days"))[:40], ensure_ascii=False)[:60000]), 64000)
+                    % (fb["name"].rsplit("/", 1)[-1], json.dumps(strip_ids(bold or data.get("days"))[:40], ensure_ascii=False)[:60000]))
+                res = read_schedule(pdfb, task, kind)
                 days = [d for d in ((res.get("days") if isinstance(res, dict) else None) or []) if isinstance(d, dict) and re.match(r"\d{4}-\d{2}-\d{2}$", str(d.get("date") or ""))]
                 if len(days) >= max(1, len(bold) // 2):
                     for d in days: d["blk"] = b["id"]; d["id"] = d["date"]

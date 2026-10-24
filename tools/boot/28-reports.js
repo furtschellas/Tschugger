@@ -32,7 +32,7 @@ function repDay(r){const n=String(r.n||""),shd=(S.days||[]).filter(d=>d.kind==="
 const repFmt=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||"")?d.split("-").reverse().join("."):"";
 /* every sub folder its own box in «Logs» (only with its permission); below: all reports in the gallery, by shooting day or by department */
 /* the name of a folder as a sub topic: Produktion, Sound, DIT – other folders keep their name */
-const repTitle=g=>({"production report":"Produktion","production reports":"Produktion","produktion":"Produktion","sound":"Sound","dit":"DIT"})[fold(String(g||"")).trim()]||String(g||"")||L("Allgemein");
+const repTitle=g=>({"production report":"Produktion","production reports":"Produktion","produktion":"Produktion","sound":"Sound","dit":"DIT","cutter report":"Edit","cutter reports":"Edit","cutter":"Edit"})[fold(String(g||"")).trim()]||String(g||"")||L("Allgemein");
 const REPORDER=["produktion","sound","dit"];
 window.repGroups=()=>[...new Set(repList().map(r=>String(r.g||"")).concat(repFolders()))].filter(g=>canRep(g)).sort((a,b)=>{const ia=REPORDER.indexOf(fold(repTitle(a))),ib=REPORDER.indexOf(fold(repTitle(b)));return (ia<0?9:ia)-(ib<0?9:ib)||a.localeCompare(b)});
 /* only: one folder (its box) or "*" (all reports in the gallery); without: everything (Logs) */
@@ -73,7 +73,7 @@ function repGallery(list,title){const media=[];for(const r of list){const dy=rep
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repall]");if(!b)return;e.preventDefault();e.stopPropagation();
   const m=b.dataset.repall,all=repList().filter(r=>canRep(r.g)&&arr(r.f).length);let list=all.slice(),title=L("Alle Reports");
   const dk=r=>repDay(r).date||"",gk=r=>String(r.g||"").toLowerCase();
-  if(m.startsWith("g|")){const k=m.slice(2);list=all.filter(r=>repSlug(r.g)===k).sort((a,b)=>dk(b).localeCompare(dk(a))||String(a.n).localeCompare(String(b.n)));title=L("Reports")+" · "+((list[0]||{}).g||"")}
+  if(m.startsWith("g|")){const k=m.slice(2);list=all.filter(r=>repSlug(r.g)===k).sort((a,b)=>dk(b).localeCompare(dk(a))||String(a.n).localeCompare(String(b.n)));title=L("Reports")+" · "+repTitle((list[0]||{}).g||"")}
   else if(m==="day"){list.sort((a,b)=>dk(a).localeCompare(dk(b))||gk(a).localeCompare(gk(b))||String(a.n).localeCompare(String(b.n)));title+=" · "+L("Nach Drehtag")}
   else if(m==="dept"){list.sort((a,b)=>gk(a).localeCompare(gk(b))||dk(a).localeCompare(dk(b))||String(a.n).localeCompare(String(b.n)));title+=" · "+L("Nach Department")}
   else{list.sort((a,b)=>dk(b).localeCompare(dk(a))||gk(a).localeCompare(gk(b)));title+=" · "+L("Neueste zuerst")}
@@ -81,7 +81,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-repg],[data-repu],[data-reppdf]");if(!t)return;e.preventDefault();e.stopPropagation();
   const id=t.dataset.repg||t.dataset.repu||t.dataset.reppdf,r=repList()[+id];if(!r||!canRep(r.g))return;
   if(t.dataset.repu!=null){window.open(safeUrl(r.u),"_blank","noopener");return}
-  if(t.dataset.repg!=null){if(typeof openGallery==="function")openGallery({name:"rep:"+r.n,title:(r.g?r.g+" · ":"")+r.n,sc:[],url:r.u,media:arr(r.f).map((p,k)=>({n:r.n+(r.f.length>1?" · "+(k+1)+"/"+r.f.length:""),t:"img",f:p,u:r.u}))});return}
+  if(t.dataset.repg!=null){if(typeof openGallery==="function")openGallery({name:"rep:"+r.n,title:(r.g?repTitle(r.g)+" · ":"")+r.n,sc:[],url:r.u,media:arr(r.f).map((p,k)=>({n:r.n+(r.f.length>1?" · "+(k+1)+"/"+r.f.length:""),t:"img",f:p,u:r.u}))});return}
   /* PDF: decrypted and shown in the app's own PDF viewer (28a-pdfview) – no Dropbox, the same on every device */
   window.blkImg(r.pdf).then(u=>window.pdfView(u,(r.g?repTitle(r.g)+" · ":"")+r.n,r.n+".pdf")).catch(()=>showMsg(L("PDF nicht verfügbar (offline?)."),4000))},true);
 try{window.repPermsSync()}catch(_){}
