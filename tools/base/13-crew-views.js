@@ -1,4 +1,4 @@
-import {ariaTip,cap,castChips,dateIn,ddmm,esc,fmtDate,ieClass,isoAdd,L,locHref,lvButtons,lvClasses,maps,memo,norm,pad2,partsHref,prodTZ,S,safeUrl,saveBlob,slug,telNum,todayISO,TX,TXA} from "./10-core.js";
+import {ariaTip,cap,castChips,dateIn,esc,fmtDate,ieClass,isoAdd,L,locHref,lvButtons,lvClasses,maps,memo,norm,partsHref,prodTZ,S,safeUrl,saveBlob,slug,telNum,todayISO,TX,TXA} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,hasSelU,icsEsc,nextUnitDay,onlyU,planDays,unitLists,unitsOn,zurichUTC} from "./11-schedule-prep.js";
 import {hm,planFactsHTML,planPdfBtn} from "./12-mycal.js";
 import {CSEXP,CSI,csHm} from "./13a-callsheet.js";

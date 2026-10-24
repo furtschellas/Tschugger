@@ -24,6 +24,14 @@ export function applyLangs(){
 function cfgPut(win,v,key,draw=true){if(JSON.stringify(window[win])===JSON.stringify(v))return false;window[win]=v;
   try{v==null?localStorage.removeItem(key):localStorage.setItem(key,typeof v==="boolean"?(v?"1":"0"):typeof v==="string"?v:JSON.stringify(v))}catch(_){}
   if(draw)render();return true}
+/* the roles (without «admin»), by name – read once (Nachricht an alle, eigene Termine) */
+let ROLESQ=null;
+export function rolesList(){if(!ROLESQ)ROLESQ=(async()=>{try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"roles"));
+  return q.docs.filter(d=>d.id!=="admin").map(d=>({id:d.id,name:String(d.data().name||d.id)})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}catch(_){ROLESQ=null;return []}})();return ROLESQ}
+/* the Cloudflare Worker (App-Verwaltung → Hilfe → Assistent): its address + a path, and a POST signed with the sign-in token */
+export const wkUrl=p=>String(window.CHATURL||"").replace(/\/+$/,"")+p;
+export async function wkPost(path,body){const {auth}=await fb();const tok=await auth.currentUser.getIdToken();
+  return fetch(wkUrl(path),{method:"POST",headers:Object.assign({Authorization:"Bearer "+tok},body!==undefined?{"Content-Type":"application/json"}:{}),body:body!==undefined?JSON.stringify(body):undefined})}
 export async function loadLangs(){
   try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));const l=d.exists()&&d.data().langs;
     if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}

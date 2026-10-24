@@ -1,9 +1,9 @@
-import {esc,HIT,L,LANG,mName,S,telNum} from "../base/10-core.js";
+import {esc,HIT,L,mName,S,telNum} from "../base/10-core.js";
 import {VIEWS} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {ADMINS,fmtD,fmtT} from "./01-config.js";
-import {ME,can,fb,isAdmin,lc,ownDec,ownEnc,withTimeout} from "./03-core-firebase.js";
+import {can,fb,isAdmin,lc,ME,ownDec,ownEnc,rolesList,withTimeout,wkUrl} from "./03-core-firebase.js";
 import {getDataKey} from "./04-data.js";
 import {waNum} from "./06-prefs-docs.js";
 import {ADM,confirmSafe,ensureAdm} from "./12a-admin-core.js";
@@ -19,7 +19,7 @@ export function bcButton(){
 }
 setInterval(()=>{try{bcButton()}catch(_){}},20000);
 function bcDepts(){return [...new Set((S.crew||[]).map(g=>g.dept).filter(Boolean))]}
-async function bcLoadRoles(){if(BC.roles)return;BC.roles=[];try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"roles"));BC.roles=q.docs.filter(d=>d.id!=="admin").map(d=>({id:d.id,name:String(d.data().name||d.id)})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}catch(_){}render()}
+async function bcLoadRoles(){if(BC.roles)return;BC.roles=[];BC.roles=(await rolesList()).slice();render()}
 /* SMS: opens the phone's SMS app with the numbers of the recipients (crew list / app profiles) and the text */
 function bcSms(pl){
   const nums=bcSmsNums(pl);
@@ -50,11 +50,11 @@ document.addEventListener("click",e=>{const a=e.target.closest("[data-wad]");if(
 export async function bcDeliver(id){
   const {F,db,auth}=await fb();
   if(window.CHATURL){try{const tok=await auth.currentUser.getIdToken();
-    const r=await withTimeout(fetch(window.CHATURL.replace(/\/+$/,"")+"/broadcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({id})}),25000,"broadcast");   /* a hanging connection must not block the send button */const j=await r.json().catch(()=>({}));
+    const r=await withTimeout(fetch(wkUrl("/broadcast"),{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({id})}),25000,"broadcast");   /* a hanging connection must not block the send button */const j=await r.json().catch(()=>({}));
     if(r.ok){if(!j.claimed)try{await F.updateDoc(F.doc(db,"broadcasts",id),{sent:true,n:j.n||0})}catch(_){}
       return L("Gesendet an {n} Geräte.").replace("{n}",j.n||0)+(j.rest||j.fail?" "+L("Die übrigen folgen in wenigen Minuten."):"")}
     if(r.status===403||r.status===409)return L("Nicht gesendet:")+" "+(j.error||r.status);
-    await fetch(window.CHATURL.replace(/\/+$/,"")+"/notify",{method:"POST",headers:{Authorization:"Bearer "+tok}}).catch(()=>{});return L("Gesendet – die Nachricht kommt in etwa einer Minute an.")}catch(_){}}
+    await fetch(wkUrl("/notify"),{method:"POST",headers:{Authorization:"Bearer "+tok}}).catch(()=>{});return L("Gesendet – die Nachricht kommt in etwa einer Minute an.")}catch(_){}}
   return L("Gespeichert – die Nachricht geht mit dem nächsten Lauf (spätestens in 15 Minuten) raus.");
 }
 /* history: every message with date, time, recipients and sender; can be sent again */

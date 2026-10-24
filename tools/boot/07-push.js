@@ -7,7 +7,7 @@ import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {fmtDT} from "./01-config.js";
-import {ME,MYROLE,fb,isAdmin,isOwner,lc,ownEnc,withTimeout} from "./03-core-firebase.js";
+import {fb,isAdmin,isOwner,lc,ME,MYROLE,ownEnc,withTimeout,wkPost,wkUrl} from "./03-core-firebase.js";
 import {SECS} from "./12a-admin-core.js";
 import {scriptChg,tShow,todayOn} from "./16-today-view.js";
 import {showScriptNews} from "./20-script-news.js";
@@ -52,7 +52,7 @@ const u8=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");s+="===".slice((s.length+3)
 /* public push key: the one the Cloudflare Worker reports (after a key change), else the built-in one */
 let VAPIDQ=null;
 function vapidPub(){let k="";try{k=localStorage.getItem("vapidpub")||""}catch(_){}return /^B[A-Za-z0-9_-]{80,}$/.test(k)?k:VAPID_PUB}
-async function vapidRefresh(){if(!window.CHATURL)return vapidPub();if(!VAPIDQ)VAPIDQ=fetch(window.CHATURL.replace(/\/+$/,"")+"/",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&/^B[A-Za-z0-9_-]{80,}$/.test(j.vapidPub||""))try{localStorage.setItem("vapidpub",j.vapidPub)}catch(_){}return vapidPub()}).catch(()=>vapidPub());return VAPIDQ}
+async function vapidRefresh(){if(!window.CHATURL)return vapidPub();if(!VAPIDQ)VAPIDQ=fetch(wkUrl("/"),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&/^B[A-Za-z0-9_-]{80,}$/.test(j.vapidPub||""))try{localStorage.setItem("vapidpub",j.vapidPub)}catch(_){}return vapidPub()}).catch(()=>vapidPub());return VAPIDQ}
 const b64uOf=buf=>{const b=new Uint8Array(buf||[]);let s="";for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
 async function pushSub(create){const reg=await pushReg();let sub=await reg.pushManager.getSubscription();const k=await withTimeout(vapidRefresh(),4000,"vapid").catch(()=>vapidPub());
   /* subscribed with an older key: subscribe again with the current one */
@@ -81,8 +81,7 @@ async function pushTest(){
   const msg=t=>showMsg(t,7000);
   try{if(Notification.permission!=="granted"){msg(L("Push-Nachrichten sind auf diesem Gerät noch nicht erlaubt."));return}
     try{localStorage.removeItem("pushlast")}catch(_){}await pushSync();
-    if(window.CHATURL){const {auth}=await fb();const tok=await auth.currentUser.getIdToken();
-      const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/selftest",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({title:L("Test-Nachricht"),body:L("So sehen Erinnerungen an deine Termine aus.")})});
+    if(window.CHATURL){const r=await wkPost("/selftest",{title:L("Test-Nachricht"),body:L("So sehen Erinnerungen an deine Termine aus.")});
       const j=await r.json().catch(()=>({}));
       if(r.ok&&j.n>0){msg(L("Test über den Server an {n} Gerät(e) gesendet.").replace("{n}",j.n));return}
       msg(L("Server-Test fehlgeschlagen:")+" "+(j.error||(j.devices===0?L("dieses Gerät ist noch nicht registriert"):JSON.stringify(j.st||r.status))));return}
@@ -107,7 +106,7 @@ function pushLocalSchedule(){LOCALT.forEach(clearTimeout);LOCALT=[];const c=push
 const PST={busy:false,d:null};
 async function pushStatusLoad(){if(PST.busy)return;PST.busy=true;const d={};
   try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"push"));d.devices=q.docs.length;d.mine=ME?q.docs.filter(x=>x.id.startsWith(ME.uid+"_")).length:0}catch(err){d.devErr=String((err&&err.code)||err)}
-  if(window.CHATURL){try{const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/");d.worker=r.ok?await r.json():{error:r.status}}catch(err){d.worker={error:String(err.message||err)}}}
+  if(window.CHATURL){try{const r=await fetch(wkUrl("/"));d.worker=r.ok?await r.json():{error:r.status}}catch(err){d.worker={error:String(err.message||err)}}}
   try{const r=await fetch("https://api.github.com/repos/furtschellas/Tschugger/actions/workflows/push.yml/runs?per_page=12");const j=await r.json();const xs=j.workflow_runs||[];const x=xs[0];
     if(x)d.run={at:x.created_at,ok:x.conclusion,ev:x.event};d.runs=xs.map(y=>({at:Date.parse(y.created_at),ev:y.event}))}catch(_){}
   PST.d=d;PST.busy=false;render()}

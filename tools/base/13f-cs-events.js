@@ -1,8 +1,8 @@
-import {L,S,cap,esc,fmtDate,safeUrl,saveErr,todayISO} from "./10-core.js";
+import {L,S,esc,safeUrl,saveErr,todayISO} from "./10-core.js";
 import {rideId} from "./12-mycal.js";
-import {CSI,csA,csAfter,csHm,csOn,csRows,csTile} from "./13a-callsheet.js";
+import {CSI,csA,csAfter,csHm,csOn,csRows} from "./13a-callsheet.js";
 import {CSCUR,csHM,csShootDay} from "./13b-cs-now.js";
-import {csOrderRows} from "./13c-cs-places.js";
+
 import {fold,render} from "./15-script-tab.js";
 import {showMsg} from "./20-data-start.js";
 import {fb} from "../boot/03-core-firebase.js";

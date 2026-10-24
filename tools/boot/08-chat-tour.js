@@ -5,7 +5,7 @@ import {tabsOn,vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {arr,showMsg} from "../base/20-data-start.js";
-import {APPLANGS,FB,ME,MEMBER,MYROLE,can,canAdm,fb,isAdmin,isOwner,withTimeout} from "./03-core-firebase.js";
+import {APPLANGS,can,canAdm,FB,fb,isAdmin,isOwner,ME,MEMBER,MYROLE,withTimeout,wkUrl} from "./03-core-firebase.js";
 import {savePrefs} from "./06-prefs-docs.js";
 import {PUSH_LEADS,PUSH_NEWS,PUSH_TYPES,pushCfg,pushEnable,pushOK,pushSave,pushStandalone} from "./07-push.js";
 import {WELCOME_OPEN} from "./10-menus-welcome-presence.js";
@@ -68,7 +68,7 @@ function chatKeep(){try{sessionStorage.setItem("chatmsgs",JSON.stringify(CHAT.ms
 async function chatAsk(q){
   CHAT.msgs.push({r:"u",t:q});CHAT.busy=true;chatKeep();chatPanel();
   try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();
-    const r=await withTimeout(fetch(window.CHATURL.replace(/\/+$/,"")+"/chat",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},
+    const r=await withTimeout(fetch(wkUrl("/chat"),{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},
       body:JSON.stringify({q,lang:LANG,today:new Date().toLocaleString("de-CH",{weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}),who:(MEMBER&&MEMBER.name||"")+" <"+ME.email+">",
         hist:CHAT.msgs.slice(0,-1).filter(m=>m.r!=="e").slice(-10),ctx:chatCtx()})}),60000,"chat");
     const j=await r.json().catch(()=>({}));

@@ -2,7 +2,7 @@ import {L,MEMO,S,dayBlockOK,esc,mkDialog,myBlocks,norm,saveBtn,saveErr,todayISO}
 import {WDL} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
-import {ME,MEMBER,can,fb,isAdmin,isOwner,ownDec,ownEnc} from "./03-core-firebase.js";
+import {ME,MEMBER,can,fb,isAdmin,ownDec,ownEnc} from "./03-core-firebase.js";
 import {getDataKey} from "./04-data.js";
 import {pushSyncSoon} from "./07-push.js";
 import {bcDeliver} from "./09-broadcast.js";

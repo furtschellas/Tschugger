@@ -2,7 +2,7 @@ import {ariaTip,esc,fullName,I18N,L,LANG,localISO,msHM,S,todayISO} from "../base
 import {CSCUR} from "../base/13b-cs-now.js";
 import {fold,onRender,onRendered,render} from "../base/15-script-tab.js";
 import {fmtDT} from "./01-config.js";
-import {FB,ME,MEMBER,MYROLE,SIMROLE,crewPerson,fb,isAdmin,isOwner,lc} from "./03-core-firebase.js";
+import {crewPerson,FB,fb,isAdmin,isOwner,lc,ME,MEMBER,MYROLE,SIMROLE,wkPost,wkUrl} from "./03-core-firebase.js";
 import {chatFab} from "./08-chat-tour.js";
 import {bcButton} from "./09-broadcast.js";
 import {appKind} from "./10-menus-welcome-presence.js";
@@ -184,7 +184,7 @@ document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.datas
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&d.dataset.su)TST.su[d.dataset.su]=d.open},true);
 document.addEventListener("click",e=>{if(e.target.closest("[data-tstrun]"))tstStart(false)});
 async function tstStart(auto){if(!isAdmin()||TST.run||!window.CHATURL)return;TST.run=true;TST.msg="";render();
-  try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/tests",{method:"POST",headers:{Authorization:"Bearer "+tok}});const j=await r.json().catch(()=>({}));
+  try{const r=await wkPost("/tests");const j=await r.json().catch(()=>({}));
     TST.msg=r.ok?L("Tests gestartet – das Ergebnis erscheint hier in etwa 10–15 Minuten."):r.status===404?L("Der Cloudflare Worker hat noch den alten Code und kennt diese Funktion nicht. Neuen Code einsetzen: Cloudflare → Workers & Pages → Worker → «Edit code» → Inhalt von tools/chat_worker.js einfügen → «Deploy». Oder einmalig die automatische Übertragung einrichten (siehe .github/workflows/worker.yml)."):(j.error||("HTTP "+r.status));
     if(r.ok){const t0=Date.now(),before=TST.d&&TST.d.at;const poll=async()=>{if(Date.now()-t0>25*60e3){TST.run=false;render();return}TST.d=null;await testsLoad();if(TST.d&&TST.d.at&&TST.d.at!==before){TST.run=false;TST.msg="";render();return}setTimeout(poll,60e3)};setTimeout(poll,90e3)}else TST.run=false}
   catch(err){TST.run=false;TST.msg=L("Fehler:")+" "+(err.message||err)}if(auto&&TST.msg&&!/gestartet/.test(TST.msg))TST.msg="";setTimeout(ghPoll,4000);render()}
@@ -208,7 +208,7 @@ setInterval(errReport,30000);setTimeout(errReport,8000);
 /* ---------- the worker in Cloudflare: admins see in Log/Tests when it runs an older version than this app expects ---------- */
 const WK={v:null,at:0};
 async function workerCheck(){if(!window.CHATURL||!isAdmin()||Date.now()-WK.at<10*60e3)return;WK.at=Date.now();
-  try{const r=await fetch(window.CHATURL.replace(/\/+$/,"")+"/",{cache:"no-store"});const j=r.ok?await r.json():null;WK.v=j&&j.v||"?";if(S.tab==="admin")render()}catch(_){WK.v="?"}}
+  try{const r=await fetch(wkUrl("/"),{cache:"no-store"});const j=r.ok?await r.json():null;WK.v=j&&j.v||"?";if(S.tab==="admin")render()}catch(_){WK.v="?"}}
 window.workerWarnHTML=function(){workerCheck();const want=window.WORKERVER||"";if(!want||!WK.v||WK.v===want)return "";
   return '<div class="wkwarn" role="status"><b>'+esc(L("Cloudflare Worker veraltet"))+'</b><br>'+esc(L("Er läuft mit Version {a}, die App erwartet {b}. Bitte den Code aus tools/chat_worker.js in Cloudflare einsetzen.").replace("{a}",WK.v==="?"?L("unbekannt"):WK.v).replace("{b}",want))+'</div>'};
 

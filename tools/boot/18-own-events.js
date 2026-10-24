@@ -4,7 +4,7 @@ import {WDL,myIdentity} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {showMsg} from "../base/20-data-start.js";
 import {fmtDT} from "./01-config.js";
-import {ME,MYROLE,can,fb,isAdmin,isOwner,lc,ownDec,ownEnc} from "./03-core-firebase.js";
+import {can,fb,isAdmin,isOwner,lc,ME,MYROLE,ownDec,ownEnc,rolesList} from "./03-core-firebase.js";
 import {getDataKey} from "./04-data.js";
 import {pushSyncSoon} from "./07-push.js";
 import {confirmSafe} from "./12a-admin-core.js";
@@ -53,7 +53,7 @@ window.ownEvAddBtn=()=>ownMay()?'<button type="button" class="pillbtn oeadd" dat
 window.ownEvEditBtn=e=>e&&e.own&&ME&&(isAdmin()||(e.byEmail&&lc(e.byEmail)===lc(ME.email)))?'<button type="button" class="calbtn oeed" data-oeed="'+esc(e.own)+'" '+ariaTip(L("Termin bearbeiten"))+'><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'';
 
 /* ---------- dialog: new / edit ---------- */
-async function ownRoles(){if(OWN.roles)return OWN.roles;OWN.roles=[];try{const {F,db}=await fb();const q=await F.getDocs(F.collection(db,"roles"));OWN.roles=q.docs.filter(d=>d.id!=="admin").map(d=>({id:d.id,name:String(d.data().name||d.id)})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}catch(_){}return OWN.roles}
+async function ownRoles(){if(OWN.roles)return OWN.roles;OWN.roles=[];OWN.roles=(await rolesList()).slice();return OWN.roles}
 function ownPeople(){const seen=new Set();return mailPeople().filter(p=>p.name&&!seen.has(p.k)&&seen.add(p.k)).map(p=>({name:p.name,k:p.k,email:lc(p.email||"")})).sort((a,b)=>a.name.localeCompare(b.name,LANG))}
 /* below «Speichern»: the appointments already added (own ones; admins: all) – tap one to change it */
 function ownAud(ev){if(!ev.roles&&!ev.depts&&!ev.people)return L("Alle");const r=(ev.roles||[]).map(x=>x==="owner"?L("Owner"):x==="admin"?L("Admin"):x===""?L("Keine Rolle"):((OWN.roles||[]).find(y=>y.id===x)||{}).name||x);

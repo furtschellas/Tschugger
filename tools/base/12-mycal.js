@@ -1,4 +1,4 @@
-import {ariaTip,blockTag,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,mapsDir,mapsQ,MEMO,mName,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
+import {ariaTip,blockTag,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,mapsDir,mapsQ,mName,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";

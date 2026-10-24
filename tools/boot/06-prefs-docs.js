@@ -2,7 +2,7 @@ import {L,LANG,S,deG,esc,saveBtn,setSPT,setTheme} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {onStore} from "../base/16-interaction.js";
 import {showMsg} from "../base/20-data-start.js";
-import {ME,can,fb,withTimeout} from "./03-core-firebase.js";
+import {can,fb,ME,withTimeout,wkPost} from "./03-core-firebase.js";
 import {pushSyncSoon} from "./07-push.js";
 import {ADM,SECS} from "./12a-admin-core.js";
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
@@ -170,8 +170,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   const q="Überarbeite diesen Text der Crew-App, damit er klar, freundlich und gut lesbar ist. Sprache: "+(DOCLN[lang]||lang)+". Inhalt und Fakten genau gleich lassen; "+
     "Platzhalter in geschweiften Klammern wie {vorname} unverändert lassen; Namen, Drehtage (z. B. DT03) und Szenen nicht ändern; Absätze mit Leerzeile trennen. "+
     "Antworte NUR mit JSON: {\"titel\":\"…\",\"text\":\"…\"}"+(f.ds?"":" (titel leer lassen)")+".\n\nTITEL: "+ti+"\n\nTEXT:\n"+tx;
-  try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();
-    const r=await withTimeout(fetch(window.CHATURL.replace(/\/+$/,"")+"/chat",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({q,lang,today:"",who:ME.email,hist:[],ctx:""})}),60000,"docai");
+  try{const r=await withTimeout(wkPost("/chat",{q,lang,today:"",who:ME.email,hist:[],ctx:""}),60000,"docai");
     const j=await r.json().catch(()=>({}));if(!r.ok||!j.a)throw new Error(j.error||r.status);
     const m=String(j.a).match(/\{[\s\S]*\}/);const o=m?JSON.parse(m[0]):null;if(!o||!o.text)throw new Error(L("Keine brauchbare Antwort."));
     if(f.ds&&o.titel)f.ds.value=String(o.titel).trim();f.db.value=String(o.text).replace(/ß/g,"ss").trim();
