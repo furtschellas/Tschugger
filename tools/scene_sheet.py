@@ -65,7 +65,8 @@ def items(day, u):
     elif u == "3": x = (day.get("unit3") or {}).get("items")
     else: x = day.get("items")
     return [i for i in (x if isinstance(x, list) else []) if isinstance(i, dict)]
-def clock(msv): return datetime.datetime.fromtimestamp(msv / 1000, ZoneInfo(fsadmin.tz_at(msv))).strftime("%H:%M") if msv else ""   # in the time zone of the shooting block
+def _tz(z): return TZ if z == fsadmin.TZ0 else ZoneInfo(z)   # Swiss time: the module's TZ (the tests set it to the browser's)
+def clock(msv): return datetime.datetime.fromtimestamp(msv / 1000, _tz(fsadmin.tz_at(msv))).strftime("%H:%M") if msv else ""   # in the time zone of the shooting block
 def num(v):
     try: return int(v or 0)
     except Exception:
@@ -79,7 +80,7 @@ def unit_rows(d, u, l, day, cs):
     def ms(hhmm):
         v = re.match(r"^(\d{1,2}):(\d{2})$", str(hhmm or ""))
         if not v: return 0
-        x = datetime.datetime.fromisoformat(d).replace(hour=int(v.group(1)), minute=int(v.group(2)), tzinfo=ZoneInfo(fsadmin.tz_for(d, [day])))
+        x = datetime.datetime.fromisoformat(d).replace(hour=int(v.group(1)), minute=int(v.group(2)), tzinfo=_tz(fsadmin.tz_for(d, [day])))
         return int(x.timestamp() * 1000)
     def p_ix(k):
         b = base(k)

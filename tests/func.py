@@ -326,10 +326,11 @@ async def owner_tests(p, port):
         check("Alle Symbol-Knöpfe zeigen beim Darüberfahren ihre Funktion", nt == [], nt, public=True)
 
         # stability: errors are reported without data (once), the worker version is checked, unchanged data is not loaded again
+        pre = await E("(window.__ERRS||[]).map(e=>String(e.f||'').replace(/^.*\\//,'')+':'+(e.l||0)+':'+String(e.m||'').replace(/[^A-Za-z ]/g,'').slice(0,40))")
         er = await E("""(async()=>{ERRN=0;ERRSENT.clear();localStorage.removeItem('errsent:v1');__ERRS.push({m:'boom at x@y.ch +41 79 123 45 67',f:'12-admin.js',l:7,t:Date.now()});
           await errReport();const a=Object.values(window.__db).filter(d=>d&&d.op==='error');const one=a.length;__ERRS.push({m:'boom at x@y.ch +41 79 123 45 67',f:'12-admin.js',l:7});await errReport();
           const s=(a[0]||{}).sum||'';return {one,again:Object.values(window.__db).filter(d=>d&&d.op==='error').length,clean:!/@|\\d{3} \\d{2}/.test(s),file:s.includes('12-admin.js')}})()""")
-        check("Stabilität: Fehler werden ohne Daten einmal an die Owner gemeldet (Log)", er == {"one": 1, "again": 1, "clean": True, "file": True}, er, public=True)
+        check("Stabilität: Fehler werden ohne Daten einmal an die Owner gemeldet (Log)", er == {"one": 1, "again": 1, "clean": True, "file": True}, dict(er, pre=pre[:3]), public=True)
         ww = await E("(()=>{WK.v='2000-01-01';WK.at=Date.now();S.tab='admin';ADM.sub='log';render();const w=!!document.querySelector('#view .wkwarn');WK.v=window.WORKERVER;render();const n=!document.querySelector('#view .wkwarn');return {warn:w,ok:n}})()")
         check("Stabilität: veralteter Worker wird in Log/Tests gemeldet, aktueller nicht", ww == {"warn": True, "ok": True}, ww, public=True)
         sk = await E("""(async()=>{const st=LASTSTAMP;let enc=0;const oF=fetchEnc,oS=fetchStamp;fetchEnc=async()=>{enc++;return oF()};fetchStamp=async()=>({s:'x1'});LASTSTAMP='x1';window.CACHEOK=true;
