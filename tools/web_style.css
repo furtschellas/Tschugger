@@ -1074,3 +1074,6 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
 .blkq{font:inherit;width:100%;max-width:320px;box-sizing:border-box;padding:7px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);margin:6px 0}
 .blkpl{max-height:320px;overflow:auto}
 .scwag .scwt{max-width:none;font-size:13px;padding:6px 9px;margin:-2px 0 6px}
+/* callsheet of today: «Jetzt» above the tiles (as in Today) */
+#view .tcard.csnowc{border-radius:14px;padding:14px;margin:0 0 12px;background:var(--sheet)}
+#view .tcard.csnowc .tch{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
