@@ -72,7 +72,8 @@ def crew():
     # the next run continues with the same key – nothing that was already re-encrypted is lost
     nx = (fsadmin.get_doc("secret/keynext") or {}).get("k")
     new = base64.b64decode(nx) if nx else secrets.token_bytes(32); new_b64 = base64.b64encode(new).decode()
-    if not nx and not fsadmin.patch_doc("secret/keynext", {"k": new_b64, "at": int(time.time())}):
+    # «at» new also when an interrupted change is continued: the Dropbox runs wait while it is fresh (else they would write with the old key in between)
+    if not fsadmin.patch_doc("secret/keynext", {"k": new_b64, "at": int(time.time())}):
         sys.exit("secret/keynext nicht geschrieben – nichts geändert")
     # 1. encrypted JSON files in the repository
     n = 0
@@ -129,26 +130,42 @@ def crew():
             open(p, "wb").write(out)
         log("Bilder in blk/ neu verschlüsselt:", len(files) - bad, "· nicht lesbar:", bad, "(ohne R2 wächst das Repository dadurch einmal um ihre Grösse)")
     # 3. push devices and messages in Firestore
-    m = 0
+    m, lost = 0, 0
     def redo(path, c):
+        nonlocal lost
         if not c: return 0
         try: r = reenc(old, new, base64.b64decode(c))
         except Exception: return 0
         if r is None: return 0
-        return 1 if fsadmin.patch_doc(path, {"c": base64.b64encode(r).decode()}) else 0
-    # push devices, messages, own events (Termine) and changed rides (rideedit); gcal/feed = imported Google calendar
-    for col in ("push", "broadcasts", "events", "rideedit"):
+        if fsadmin.patch_doc(path, {"c": base64.b64encode(r).decode()}): return 1
+        lost += 1; return 0
+    # everything the app encrypts with the crew key: push devices, messages, own events (Termine), changed rides (rideedit),
+    # Coverday and Kostüm-Übernahmen (before, these two were forgotten: after a change they could not be read any more); gcal/feed = Google calendar
+    for col in ("push", "broadcasts", "events", "rideedit", "coverday", "cmassign"):
         for did, f, _ in fsadmin.list_docs(col): m += redo(col + "/" + did, f.get("c"))
     m += redo("gcal/feed", (fsadmin.get_doc("gcal/feed") or {}).get("c"))
-    log("Firestore-Einträge neu verschlüsselt (Push, Nachrichten, Termine, Kalender):", m)
-    # 4. the key itself (last); the old one stays for the service account only
+    log("Firestore-Einträge neu verschlüsselt (Push, Nachrichten, Termine, Fahrten, Coverday, Kostüm, Kalender):", m)
+    if lost: sys.exit("%d Firestore-Einträge nicht neu geschrieben – Schlüssel NICHT gewechselt (der nächste Lauf macht weiter)" % lost)
+    log("Daten mit dem neuen Schlüssel bereit – der Schlüssel wird erst nach dem Veröffentlichen gewechselt (rotate.py finalize)")
+
+
+def finalize():
+    """4. the key itself – only after the re-encrypted files are published (keys.yml): if publishing fails, the key stays and the
+    data in the repository still matches it; the next run continues with the same new key (secret/keynext)"""
+    old_b64 = fsadmin.crew_key_b64()
+    new_b64 = (fsadmin.get_doc("secret/keynext") or {}).get("k")
+    if not new_b64: log("Kein vorbereiteter Schlüssel (secret/keynext) – nichts zu tun"); return
+    anew = {}
+    for area in ("script", "contacts"):
+        k = (fsadmin.get_doc("secret/keynext" + area) or {}).get("k")
+        if k: anew[area] = k
     for area, k in anew.items():
         if k == fsadmin.area_key_b64(area, create=False): continue
-        fsadmin.patch_doc("secret/keyprev" + area, {"k": fsadmin.area_key_b64(area, create=False), "at": int(time.time())})
+        if not fsadmin.patch_doc("secret/keyprev" + area, {"k": fsadmin.area_key_b64(area, create=False), "at": int(time.time())}): sys.exit("secret/keyprev" + area + " nicht geschrieben")
         if not fsadmin.patch_doc("secret/key" + area, {"k": k, "at": int(time.time())}): sys.exit("secret/key" + area + " nicht geschrieben – Dateien NICHT veröffentlichen")
         try: fsadmin.delete_doc("secret/keynext" + area)
         except Exception: pass
-    fsadmin.patch_doc("secret/keyprev", {"k": old_b64, "at": int(time.time())})
+    if not fsadmin.patch_doc("secret/keyprev", {"k": old_b64, "at": int(time.time())}): sys.exit("secret/keyprev nicht geschrieben – Schlüssel nicht gewechselt")
     if not fsadmin.patch_doc("secret/key", {"k": new_b64}): sys.exit("secret/key nicht geschrieben – Dateien NICHT veröffentlichen")
     try: fsadmin.delete_doc("secret/keynext")
     except Exception: pass
@@ -190,5 +207,6 @@ if __name__ == "__main__":
     what = (sys.argv[1:] or [""])[0]
     if what == "vapid": vapid()
     elif what == "crew": crew()
+    elif what == "finalize": finalize()
     elif what == "due": due()
-    else: sys.exit("vapid, crew oder due")
+    else: sys.exit("vapid, crew, finalize oder due")

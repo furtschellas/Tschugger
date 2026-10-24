@@ -33,7 +33,7 @@ const API_KEY = "AIzaSyBrHUJumAArmHv92qhZEbUFXSWrwvZaKjQ";
 const SITE = "https://furtschellas.github.io/Tschugger/";
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
-const VERSION = "2026-10-24a";
+const VERSION = "2026-10-24b";
 
 let JWKS = null, JWKS_AT = 0;
 const b64u = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
@@ -181,7 +181,8 @@ async function crewKeyRaw(env) {
   if (saJson(env)) {
     try { const r = await fsReq(env, "secret/key"); if (r.ok) k = String(fv(((await r.json()).fields || {}).k) || ""); } catch (_) {}
   }
-  k = (k || String(env.CREW_KEY || "")).trim().replace(/^["'“”«]+|["'“”»]+$/g, "");
+  // with the service account only the key from Firestore counts (the secret CREW_KEY is out of date after a key change)
+  k = (k || (saJson(env) ? "" : String(env.CREW_KEY || ""))).trim().replace(/^["'“”«]+|["'“”»]+$/g, "");
   if (!k) throw new Error("CREW_KEY fehlt im Worker.");
   CK = k; CK_AT = Date.now(); return k;
 }
@@ -317,6 +318,7 @@ async function broadcast(req, env, origin, ctx) {
     // the GitHub run skips the devices that got it already (before, everybody got the message a second time)
     if (i + 10 < todo.length && tried < lim) await fsPatch(env, "broadcasts/" + id, { done }, g.tok).catch(() => {});
   }
+  if (!more && tried < todo.length) more = true;   // the last group was cut at PUSH_LIMIT: the rest goes by the GitHub run (before, it was marked as finished and these devices got nothing)
   const fin = !more && !fail;
   let endOk = false;
   for (let k = 0; k < 2 && !endOk; k++) { try { endOk = (await fsPatch(env, "broadcasts/" + id, { n, done, fin }, g.tok)).ok; } catch (_) {} }
@@ -388,9 +390,11 @@ async function dispatch(env, wf, inputs) {
 async function blk(req, env, url, ctx, origin) {
   if (!env.BLK) return new Response("no storage", { status: 404, headers: cors(origin) });
   const key = url.pathname.replace(/^\/+/, "");
-  if (!/^blk\/[0-9a-f]{20}(p\d+|\.mp4)?\.bin$/.test(key)) return new Response("bad name", { status: 400, headers: cors(origin) });
+  if (!/^blk\/[0-9a-f]{20}(p\d+|\.mp4|\.pdf)?\.bin$/.test(key)) return new Response("bad name", { status: 400, headers: cors(origin) });
   const cache = caches.default, ck = new Request(url.origin + "/" + key);
-  let res = await cache.match(ck);
+  // the app asks again with «no-cache» when a copy does not open (e.g. still from before a key change): then fresh from R2, the edge copy is replaced
+  const fresh = /no-cache/i.test((req.headers.get("cache-control") || "") + (req.headers.get("pragma") || ""));
+  let res = fresh ? null : await cache.match(ck);
   if (!res) {
     const o = await env.BLK.get(key);
     if (!o) return new Response("not found", { status: 404, headers: cors(origin) });

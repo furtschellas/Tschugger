@@ -360,6 +360,8 @@ if _go: os.environ["GITHUB_OUTPUT"] = _go
 _rs = (ROOT_T := pathlib.Path(__file__).resolve().parent.parent / "tools" / "rotate.py").read_text()
 check("Schlüsselwechsel: Termine, Google-Kalender und Galerie-Bilderliste werden neu verschlüsselt",
       '"events"' in _rs and '"gcal/feed"' in _rs and '"media.enc.json"' in _rs)
+check("Schlüsselwechsel: auch Coverday und Kostüm-Übernahmen; Schlüssel erst nach dem Veröffentlichen gewechselt",
+      '"coverday"' in _rs and '"cmassign"' in _rs and "def finalize" in _rs and "rotate.py finalize" in (ROOT_T.parent.parent / ".github" / "workflows" / "keys.yml").read_text())
 
 # own key for phone numbers / e-mail addresses: split from the crew list and merged back the same way
 _crew = [{"id": "c00", "people": [{"name": "A", "role": "x", "phone": "+41 1", "email": "a@test.ch", "hotel": "H"}, {"name": "B"}]}]
