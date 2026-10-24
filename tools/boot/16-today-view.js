@@ -109,7 +109,7 @@ VIEWS.today=function(){
   /* title of the (next) shooting day below my events */
   h+=thead;
   /* calls */
-  let myCall="";try{if(me&&dp){const myDep=fold(me.src||"").split(/[\s/]/)[0];const c=myDep?arr(dp.calls).find(z=>fold(z.dept||"").includes(myDep)):null;if(c)myCall=hm(c.t)+" · "+c.dept}}catch(_){}
+  let myCall="";try{if(me&&dp){const myDep=fold(me.src||"").split(/[\s/]/)[0];const c=myDep?arr(dp.calls).find(z=>fold(z.dept||"").split(/[^a-z0-9]+/).includes(myDep)):null;if(c)myCall=hm(c.t)+" · "+c.dept}}catch(_){}
   const tiles=[],shT=tShow("time");
   if(shT&&myCall)tiles.push(['<b>'+esc(myCall.split(" · ")[0])+'</b>',L("Mein Call")+" · "+esc(myCall.split(" · ").slice(1).join(" · "))]);
   if(shT&&dp&&(dp.crewCall||dp.generalCall))tiles.push(['<b>'+esc(dp.crewCall||dp.generalCall)+'</b>',"Crew Call","big"]);

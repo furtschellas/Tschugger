@@ -25,6 +25,8 @@ function vCardText(p,g){
 }
 /* one contact: Android opens the phone's "new contact" screen pre-filled (intent), iPhone shows the contact card; elsewhere a .vcf file */
 export function saveVCard(p,g){
+  /* only what this person may see: no e-mail without «E-Mail-Adressen sehen», no phone without «Telefonnummern sehen» */
+  p=Object.assign({},p);if(!vok("email"))delete p.email;if(!vok("phone"))delete p.phone;
   if(/Android/i.test(navigator.userAgent)){
     const x=(k,v)=>v?"S."+k+"="+encodeURIComponent(String(v).trim())+";":"";
     location.href="intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;"+x("name",p.name)+x("phone",p.phone&&telNum(p.phone))+"i.phone_type=2;"+x("email",p.email)+x("job_title",p.role)+x("company","TSCHUGGER Tigerblood")+"end";
@@ -34,7 +36,7 @@ export function saveVCard(p,g){
   }
   saveVcf(vCardText(p,g),String(p.name||"").replace(/[\\/:*?"<>|]/g,"").trim()||"Kontakt");
 }
-export function allVCards(){let out="",n=0;for(const g of S.crew)for(const p of (g.people||[]))if(p.name&&(p.phone||p.email)){out+=vCardText(p,g);n++}return {text:out,n}}
+export function allVCards(){let out="",n=0;const ve=vok("email"),vp=vok("phone");for(const g of S.crew)for(const p0 of (g.people||[])){const p=Object.assign({},p0);if(!ve)delete p.email;if(!vp)delete p.phone;if(p.name&&(p.phone||p.email)){out+=vCardText(p,g);n++}}return {text:out,n}}
 export function saveVcf(v,name,file){
   const fn=name+".vcf",dataUrl=()=>{location.href="data:text/vcard;charset=utf-8,"+encodeURIComponent(v)};
   const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);

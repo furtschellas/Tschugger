@@ -254,7 +254,8 @@ document.addEventListener("submit",async e=>{
         {const ba=sf.querySelector('input[name="bauto"]');if(ba)d.blk=ba.checked?F.deleteField():readBoxes(sf,"eblk").slice(0,20)}   /* Drehblöcke: automatic or by hand */
         /* phone and contact e-mail in contacts/{uid}; in members only as long as the rules do not know contacts yet */
         const ct={phone:d.phone,contactEmail:d.contactEmail};
-        await F.setDoc(F.doc(db,"contacts",m.uid),ct);d.phone=F.deleteField();d.contactEmail=F.deleteField();   /* never into members (catering and birthdays read those) */
+        /* phone and e-mail could not be read: not written (the form showed empty fields – the real data would be overwritten) */
+        if(ADM.ctOk!==false){await F.setDoc(F.doc(db,"contacts",m.uid),ct);d.phone=F.deleteField();d.contactEmail=F.deleteField()}else{delete d.phone;delete d.contactEmail}   /* never into members (catering and birthdays read those) */
         await F.updateDoc(F.doc(db,"members",m.uid),d)}
       if(inv||!m){const d={name:(m?[g("fn"),g("ln")].filter(Boolean).join(" "):g("nm"))||"",role:g("rl")||""};
         /* role «Crew» only for a NEW invitation – a deliberate «Keine Rolle» stays when the profile is edited later */
@@ -283,7 +284,8 @@ document.addEventListener("submit",async e=>{
     await F.setDoc(F.doc(db,"config","app"),{aiDayUsd:aid,langs:l,unit2:u2,unit3:u3,mapUrl:F.deleteField(),bdayPublic:bp,phonePublic:!!(fl.elements['pp']||{}).checked,emailPublic:!!(fl.elements['pe']||{}).checked,mycalPublic:!!(fl.elements['pm']||{}).checked,googleLogin:!!(fl.elements['go']||{}).checked,appCheckKey:String((fl.elements['ack']||{}).value||"").trim().replace(/[^\w-]/g,"").slice(0,80),locSheet:F.deleteField(),script:so,tabs:tb,tabOrder:tord,autoUpdate:au,failAlarm:!!(fl.elements['fa']||{}).checked,ownEvents:!!(fl.elements['oe']||{}).checked,csMap:!!(fl.elements['cm']||{}).checked,sceneAck:!!(fl.elements['sa']||{}).checked,myNav:!!(fl.elements['mn']||{checked:true}).checked,projName:String((fl.elements['pjn']||{}).value||"").trim().slice(0,60),prodCo:String((fl.elements['pco']||{}).value||"").trim().slice(0,80),prodAddr:String((fl.elements['pad']||{}).value||"").trim().slice(0,300),ackTimes:{pm:!!(fl.elements['tpm']||{checked:true}).checked,pd:!!(fl.elements['tpd']||{checked:true}).checked,cm:!!(fl.elements['tcm']||{checked:true}).checked,cd:!!(fl.elements['tcd']||{checked:true}).checked},rideAck:!!(fl.elements['ra']||{}).checked,chatUrl:F.deleteField(),chatEnabled:!!(fl.elements['ca']||{}).checked,pushEnabled:!!(fl.elements['pn']||{}).checked,tourEnabled:!!(fl.elements['to']||{}).checked,a2again:!!(fl.elements['ia']||{}).checked},{merge:true});
     await F.updateDoc(F.doc(db,"config","app"),{todayParts:tdp});
     /* «Sichtbarkeit»: the role «Gast» (everybody without another role) follows these switches for phone, e-mail and Meine Termine */
-    {const g=(ADM.roles||[]).find(x=>x.id==="gast");if(g){const sw={"view.phone":!!(fl.elements['pp']||{}).checked,"view.email":!!(fl.elements['pe']||{}).checked,"view.mycal":!!(fl.elements['pm']||{}).checked};
+    /* only when one of these three switches was changed here – rights given to «Gast» under Access stay */
+    {const g=(ADM.roles||[]).find(x=>x.id==="gast"),pv0=window.PUBV||{},chg=!!(fl.elements['pp']||{}).checked!==(pv0.phone===true)||!!(fl.elements['pe']||{}).checked!==(pv0.email===true)||!!(fl.elements['pm']||{}).checked!==(pv0.mycal===true);if(g&&chg){const sw={"view.phone":!!(fl.elements['pp']||{}).checked,"view.email":!!(fl.elements['pe']||{}).checked,"view.mycal":!!(fl.elements['pm']||{}).checked};
       const np=(g.perms||[]).filter(p=>!(p in sw)).concat(Object.keys(sw).filter(p=>sw[p]));
       if(JSON.stringify([...np].sort())!==JSON.stringify([...(g.perms||[])].sort()))try{await F.updateDoc(F.doc(db,"roles","gast"),{perms:np});g.perms=np}catch(err){console.warn("gast perms",err&&err.code||err)}}}   /* the whole map (with «merge» a part set back to «an» would keep its old value) */
     /* the saved settings are read back like on every start (one place for all of them – before, some only took effect after a reload) */
@@ -329,22 +331,31 @@ document.addEventListener("click",async e=>{
         catch(err){if(!/permission/.test(err&&err.code||"")||can("users.invite")||can("users.edit"))throw err}await assignCrew(em);await notifyApproved(em,q)}
       await F.deleteDoc(F.doc(db,"requests",em));ADM.req=(ADM.req||[]).filter(x=>x.id!==em);
       showMsg(a==="reqok"?L("Freigeschaltet:")+" "+(q.name||em):L("Anfrage abgelehnt."),4000);ADM.busy=false;await admLoad();return}
-    if(a==="crew"){const list=crewEmails().filter(c=>!ADM.inv.some(i=>i.id===c.email)&&!ADM.mem.some(m=>m.email===c.email));
+    /* not the person clicking, owners and admins (the rules refuse an entry for oneself – the whole batch of 200 failed) */
+    if(a==="crew"){const me=lc(ME&&ME.email);const list=crewEmails().filter(c=>!ADM.inv.some(i=>i.id===c.email)&&!ADM.mem.some(m=>m.email===c.email)&&c.email!==me&&!ADMINS.includes(c.email)&&!(ADM.adm||[]).includes(c.email));
       if(confirmSafe(L("{n} Adressen aus der Crewliste einladen?").replace("{n}",list.length))){
         for(let i=0;i<list.length;i+=200){const batch=F.writeBatch(db);list.slice(i,i+200).forEach(c=>{batch.set(F.doc(db,"invites",c.email),{name:String(c.name||"").slice(0,120),role:String(c.role||"").slice(0,80),addedAt:F.serverTimestamp()});
           /* a role only where surely none exists yet (without the right to read the roles the list is empty and the batch – up to 200 invitations – failed) */
           if(ADM.urOk&&!ADM.ur[c.email]&&!ADM.adm.includes(c.email)&&!ADMINS.includes(c.email))batch.set(F.doc(db,"userroles",c.email),{role:"crew",at:F.serverTimestamp()})});await batch.commit()}
+        /* without the right to read the roles: «Crew» one by one (a new entry is allowed) – else they would all become «Gast» */
+        if(!ADM.urOk)for(const c of list)await assignCrew(c.email);
         showMsg(L("{n} Adressen eingeladen.").replace("{n}",list.length),4000)}}
     else if((a==="block"||a==="remove"||a==="uninvite")&&ADMINS.includes(b.dataset.em||(ADM.mem.find(m=>m.uid===b.dataset.uid)||{}).email)){showMsg(L("Der Owner kann nicht gesperrt oder entfernt werden."),4000)}
     else if(a==="block"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:false});showMsg(L("Gesperrt."),3000)}
     else if(a==="unblock"){await F.updateDoc(F.doc(db,"members",b.dataset.uid),{active:true});showMsg(L("Entsperrt."),3000)}
-    else if(a==="remove"){if(confirmSafe(L("{e} entfernen? Die Person kommt danach nicht mehr in die App.").replace("{e}",b.dataset.em))){await F.deleteDoc(F.doc(db,"invites",b.dataset.em)).catch(()=>{});await F.deleteDoc(F.doc(db,"userroles",lc(b.dataset.em))).catch(()=>{});
+    else if(a==="remove"){if(confirmSafe(L("{e} entfernen? Die Person kommt danach nicht mehr in die App.").replace("{e}",b.dataset.em))){
+      /* the person first – if that fails, nothing else is removed (before, role and invitation were gone while the person stayed) */
+      await F.deleteDoc(F.doc(db,"members",b.dataset.uid));
+      await F.deleteDoc(F.doc(db,"invites",b.dataset.em)).catch(()=>{});await F.deleteDoc(F.doc(db,"userroles",lc(b.dataset.em))).catch(()=>{});
+      await F.deleteDoc(F.doc(db,"bdays",b.dataset.uid)).catch(()=>{});await F.deleteDoc(F.doc(db,"starts",lc(b.dataset.em))).catch(()=>{});
       /* an admin or owner who is removed loses these rights too (before, the admin entry stayed and kept all rights) */
       await F.deleteDoc(F.doc(db,"admins",lc(b.dataset.em))).catch(()=>{});if(isOwner())await F.deleteDoc(F.doc(db,"owners",lc(b.dataset.em))).catch(()=>{});
       try{await F.deleteDoc(F.doc(db,"contacts",b.dataset.uid))}catch(_){}   /* phone and contact e-mail go with the person */
-      await F.deleteDoc(F.doc(db,"members",b.dataset.uid));showMsg(L("Entfernt."),3000)}}
+      showMsg(L("Entfernt."),3000)}}
     else if(a==="rmadmin"&&isAdmin()&&!ADMINS.includes(b.dataset.em)){if(confirmSafe(L("{e} die Admin-Rechte entziehen?").replace("{e}",b.dataset.em))){await F.deleteDoc(F.doc(db,"admins",b.dataset.em));showMsg(L("Admin-Rechte entzogen."),3000)}}
-    else if(a==="uninvite"){await F.deleteDoc(F.doc(db,"invites",b.dataset.em));await F.deleteDoc(F.doc(db,"userroles",lc(b.dataset.em))).catch(()=>{});   /* a new invitation later starts with «Crew» again */showMsg(L("Einladung gelöscht."),3000)}
+    else if(a==="uninvite"){await F.deleteDoc(F.doc(db,"invites",b.dataset.em));await F.deleteDoc(F.doc(db,"userroles",lc(b.dataset.em))).catch(()=>{});
+      /* an invited admin or owner: those rights go too (else the person could still sign up with them) */
+      if((ADM.adm||[]).includes(lc(b.dataset.em)))await F.deleteDoc(F.doc(db,"admins",lc(b.dataset.em))).catch(()=>{});if(isOwner())await F.deleteDoc(F.doc(db,"owners",lc(b.dataset.em))).catch(()=>{});   /* a new invitation later starts with «Crew» again */showMsg(L("Einladung gelöscht."),3000)}
     await admLoad();
   }catch(err){console.error(err);showMsg(L("Fehler:")+" "+(err.message||err),6000)}
   ADM.busy=false;

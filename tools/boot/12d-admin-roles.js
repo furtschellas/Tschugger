@@ -100,6 +100,8 @@ document.addEventListener("change",async e=>{const sl=e.target.closest("select[d
 async function setUserRole(em,v,sl){if(!canRoleAssign()||!canRole(em)||(v==="owner"&&!isOwner())||(v==="admin"&&!isAdmin())){render();return}
   /* applied right away in the list (no full reload); written in the background, undone on error. Owners are managed by owners only */
   const prev={ur:ADM.ur[em],adm:ADM.adm.includes(em),own:ADMINS.includes(em)};
+  /* an owner or admin loses those rights: only after a question (one tap in a list must not take them away) */
+  if((prev.own&&v!=="owner")||(prev.adm&&v!=="admin")){if(!confirmSafe(L("{e} verliert damit die Rechte als {r}. Fortfahren?").replace("{e}",em).replace("{r}",prev.own?L("Owner"):L("Admin")))){render();return}}
   const setLocal=(own,adm,ur)=>{const k=ADMINS.indexOf(em);if(own&&k<0)ADMINS.push(em);if(!own&&k>=0)ADMINS.splice(k,1);ADM.own=(ADM.own||[]).filter(x=>x!==em);if(own)ADM.own.push(em);ADM.adm=ADM.adm.filter(x=>x!==em);if(adm)ADM.adm.push(em);if(ur)ADM.ur[em]=ur;else delete ADM.ur[em]};
   setLocal(v==="owner",v==="admin",v&&v!=="owner"&&v!=="admin"?v:"");
   try{sl&&sl.blur()}catch(_){}admIndex&&admIndex();render();

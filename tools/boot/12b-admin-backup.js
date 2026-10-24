@@ -25,7 +25,9 @@ async function bkCollect(){
   /* dates of Firestore as {__ts}: walked BEFORE JSON (a Timestamp turns itself into {seconds,nanoseconds} in JSON.stringify, so the old
      replacer never saw it – a restored «rev» then locked the person out) */
   const plain=v=>v&&typeof v==="object"?(typeof v.toDate==="function"?{__ts:v.toDate().toISOString()}:Array.isArray(v)?v.map(plain):Object.fromEntries(Object.entries(v).map(([k,x])=>[k,plain(x)]))):v;
-  return plain({app:"tschugger-crew",version:1,createdAt:new Date().toISOString(),by:ME&&ME.email,config:cfg.exists()?cfg.data():null,members,invites,admins,bdays,roles,userroles,owners,contacts});
+  /* the links (map, motive list, assistant, scene sheet, Google map) and the Google calendar link belong in the backup too */
+  let prv=null,gcal=null;try{const x=await F.getDoc(F.doc(db,"config","private"));if(x.exists())prv=x.data()}catch(_){}try{const x=await F.getDoc(F.doc(db,"secret","gcal"));if(x.exists())gcal=x.data()}catch(_){}
+  return plain({app:"tschugger-crew",version:1,createdAt:new Date().toISOString(),by:ME&&ME.email,config:cfg.exists()?cfg.data():null,configPrivate:prv,gcal,members,invites,admins,bdays,roles,userroles,owners,contacts});
 }
 async function bkDownload(){
   const data=await bkCollect();const t=new Date();
@@ -50,6 +52,8 @@ async function bkRestore(file){
   const back2=gone&&confirmSafe(L("{n} Personen oder Rechte aus dem Backup gibt es heute nicht mehr (seither entfernt). Auch diese zurückholen?").replace("{n}",gone));
   const own=lc(ME&&ME.email),ok=/^[^/]{1,200}$/;const ops=[];
   if(d.config&&typeof d.config==="object")ops.push(["config","app",d.config]);
+  if(d.configPrivate&&typeof d.configPrivate==="object")ops.push(["config","private",d.configPrivate]);
+  if(d.gcal&&typeof d.gcal==="object")ops.push(["secret","gcal",d.gcal]);
   /* entries the rules never allow are left out (own invitation and own role, the main owner's entries) */
   const root=ROOT_OWNERS.includes(own);
   for(const [n,list] of [["roles",d.roles],["admins",d.admins],["invites",d.invites],["members",d.members],["bdays",d.bdays],["userroles",d.userroles],["owners",d.owners],["contacts",d.contacts]])
