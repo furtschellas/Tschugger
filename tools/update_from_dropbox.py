@@ -48,10 +48,23 @@ MODEL_SMALL = os.environ.get("CLAUDE_MODEL_SMALL") or "claude-haiku-5-5"   # tra
 # API credit: estimated spend per day (USD, list prices per million tokens in/out); over the limit only callsheets are read, then nothing
 AI_DAY_USD = float(os.environ.get("AI_DAY_USD") or 10)
 AI_PRICE = {"haiku": (1.0, 5.0), "sonnet": (3.0, 15.0), "opus": (5.0, 25.0)}
-AI = {"m": {}, "warned": False}
+AI = {"m": {}, "warned": False, "langs": None, "run": {}}
 
 
 class Budget(Exception): pass
+
+
+ALL_LANGS = ["de", "fr", "it", "en", "hi"]
+LANG_NAMES = {"de": "Deutsch", "fr": "Französisch", "it": "Italienisch", "en": "Englisch", "hi": "Hindi"}
+
+
+def lang_rule():
+    """only the languages of the app are translated (fields of other languages are left out: less to write, less credit)"""
+    act = AI.get("langs") or ALL_LANGS
+    if set(act) >= set(ALL_LANGS): return ""
+    off = [l for l in ALL_LANGS if l not in act]
+    return ("\n\nSPRACHEN: Übersetzungsfelder nur für %s. Felder für %s weglassen (z. B. kein \"_%s\")."
+            % (", ".join(LANG_NAMES[l] for l in act), ", ".join(LANG_NAMES[l] for l in off), off[0]))
 
 
 def ai_spent():
@@ -59,8 +72,9 @@ def ai_spent():
     return float(d.get("usd") or 0) if d.get("day") == NOW[:10] else 0.0
 
 
-def ai_add(model, tin, tout):
+def ai_add(model, tin, tout, kind=""):
     pin, pout = next((v for k, v in AI_PRICE.items() if k in model), AI_PRICE["sonnet"])
+    AI["run"][kind or "andere"] = round(AI["run"].get(kind or "andere", 0) + tin / 1e6 * pin + tout / 1e6 * pout, 4)
     d = AI["m"].get("ai") or {}
     if d.get("day") != NOW[:10]: d = {"day": NOW[:10], "usd": 0.0, "n": 0}
     d["usd"] = round(float(d.get("usd") or 0) + tin / 1e6 * pin + tout / 1e6 * pout, 4); d["n"] = int(d.get("n") or 0) + 1
@@ -1178,7 +1192,7 @@ def claude(parts, task, max_tokens=32000, kind="", model=None):
     if not ai_allowed(kind): raise Budget("KI-Tageslimit")
     model = model or MODEL
     body = {"model": model, "max_tokens": max_tokens, "stream": True,
-            "system": "Du wandelst Produktionsunterlagen eines Filmdrehs in JSON-Daten für eine Crew-App um. Antworte ausschliesslich mit einem einzigen JSON-Wert, ohne Erklärungen und ohne Markdown.\n\n" + spec(),
+            "system": "Du wandelst Produktionsunterlagen eines Filmdrehs in JSON-Daten für eine Crew-App um. Antworte ausschliesslich mit einem einzigen JSON-Wert, ohne Erklärungen und ohne Markdown.\n\n" + spec() + lang_rule(),
             "messages": [{"role": "user", "content": parts + [{"type": "text", "text": task}]}]}
     h = {"x-api-key": os.environ["ANTHROPIC_API_KEY"].strip(), "anthropic-version": "2023-06-01", "content-type": "application/json"}
     for attempt in range(3):
@@ -1202,7 +1216,7 @@ def claude(parts, task, max_tokens=32000, kind="", model=None):
                         print("::warning::Claude-API Fehler %s" % ((ev.get("error") or {}).get("type") or ""), flush=True)
                         raise RuntimeError("Claude-API Fehler: %s" % ev.get("error"))
                     if ev.get("type") == "message_delta" and (ev.get("delta") or {}).get("stop_reason") == "max_tokens": stop = "max_tokens"
-            ai_add(model, tin, tout)
+            ai_add(model, tin, tout, kind if kind != "dispo" or model == MODEL else "Übersetzung" if "Übersetze" in task else kind) if kind else ai_add(model, tin, tout, next((k for w, k in (("2ND-UNIT", "2nd Unit"), ("MOTIVLISTE", "Motivliste"), ("Drehplan", "Drehplan"), ("Planung", "Prep"), ("Crew", "Crewliste")) if w in task or any(w in str(p.get("text", ""))[:200] for p in parts if isinstance(p, dict))), "andere"))
             if stop == "max_tokens": raise Truncated("Antwort abgeschnitten (zu lang)")
             t = "".join(text).strip()
             t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
@@ -1540,6 +1554,7 @@ def rotating():
     except Exception: return False
 
 def main():
+    global FORCE
     WANT.clear()
     if len(KEY) != 32:   # without the right crew key nothing may be published (the app could not open it)
         status("error", "Crew-Schlüssel nicht lesbar – diesmal nichts veröffentlicht"); print("::error::Crew-Schlüssel nicht lesbar – Lauf abgebrochen", flush=True); sys.exit(1)
@@ -1564,6 +1579,18 @@ def main():
     u2_also_strip(data.get("days"))
     meta = data.setdefault("meta", {})
     AI["m"] = meta   # the AI spend of the day is kept with the data (encrypted)
+    # translations only into the languages switched on in the app (App-Einstellungen → Anzeige → Sprachen); German always.
+    # A language switched on later: everything is read once more (with that language), as with «force»
+    try:
+        lg = cfg.get("langs")
+        if isinstance(lg, dict): lg = [x.get("stringValue") for x in (lg.get("values") or []) if isinstance(x, dict)]
+        lg = [x for x in (lg or []) if x in ALL_LANGS]
+    except Exception: lg = []
+    AI["langs"] = sorted(set(lg or ALL_LANGS) | {"de"}, key=ALL_LANGS.index)
+    newl = set(AI["langs"]) - set(meta.get("trLangs") or ALL_LANGS)
+    if newl and not FORCE:
+        FORCE = True; log("Neue Sprache eingeschaltet – alles wird einmal neu eingelesen:", ",".join(sorted(newl)))
+        print("::notice::Neue Sprache (%s): alle Dokumente werden einmal neu übersetzt" % ",".join(sorted(newl)), flush=True)
     base = lambda n: (n or "").rsplit("/", 1)[-1]
     old = {(s.get("kind"), base(s.get("name"))): s.get("modified") for s in meta.get("sources", [])}
     oldkind = {}
@@ -1893,10 +1920,10 @@ def main():
                 src = [x for x in cs_texts(cs) if x]
                 if src:
                     tr = claude([{"type": "text", "text": json.dumps(src, ensure_ascii=False)}],
-                        "Übersetze jeden Text dieser JSON-Liste nach de, fr, it, en und hi. Namen, Orte, Strassen, Motiv- und Szenentitel, Zeiten und Links unverändert lassen. "
-                        "Antworte kompakt mit {\"de\": [...], \"fr\": [...], \"it\": [...], \"en\": [...], \"hi\": [...]} – gleiche Anzahl und Reihenfolge wie die Liste.", 32000, kind="dispo", model=MODEL_SMALL)
+                        "Übersetze jeden Text dieser JSON-Liste nach %s. Namen, Orte, Strassen, Motiv- und Szenentitel, Zeiten und Links unverändert lassen. "
+                        "Antworte kompakt mit {%s} – gleiche Anzahl und Reihenfolge wie die Liste." % (", ".join(AI["langs"] or ALL_LANGS), ", ".join('\"%s\": [...]' % l for l in AI["langs"] or ALL_LANGS)), 32000, kind="dispo", model=MODEL_SMALL)
                     if isinstance(tr, dict):
-                        cs["tr"] = {lg: {o: t for o, t in zip(src, tr.get(lg) or []) if isinstance(t, str) and t and t != o} for lg in ("de", "fr", "it", "en", "hi")}
+                        cs["tr"] = {lg: {o: t for o, t in zip(src, tr.get(lg) or []) if isinstance(t, str) and t and t != o} for lg in AI["langs"] or ALL_LANGS}
             except Exception as e: log("Callsheet-Übersetzung:", type(e).__name__)
             d = cs_to_dispo(cs, date, f)
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
@@ -2377,6 +2404,9 @@ def main():
         try: subprocess.run(["git", "checkout", "--", "."], cwd=R, check=False); subprocess.run(["git", "clean", "-fdq", "blk"], cwd=R, check=False)
         except Exception: pass
         log("Schlüsselwechsel hat begonnen – nichts veröffentlicht"); print("::notice::Schlüsselwechsel begonnen – nichts veröffentlicht"); return
+    # AI spend of this run by kind (estimate, visible in the run summary) and the languages now translated
+    if AI["run"]: print("::notice title=KI-Kosten::Dieser Lauf ca. %.2f USD (%s) · heute ca. %.2f von %.0f USD" % (sum(AI["run"].values()), ", ".join("%s %.2f" % kv for kv in sorted(AI["run"].items(), key=lambda kv: -kv[1])), ai_spent(), AI_DAY_USD), flush=True)
+    if AI.get("langs") and not AI["warned"]: meta["trLangs"] = AI["langs"]
     # the picture list of the galleries (large) is a file of its own: the app starts with data.enc.json and loads it afterwards
     bm = meta.pop("bm", None)
     if bm is not None:

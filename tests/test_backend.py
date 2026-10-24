@@ -342,6 +342,12 @@ check("KI-Tageslimit: über 1.5× auch kein Callsheet mehr", not U.ai_allowed("d
 U.AI["m"]["ai"]["day"] = "2000-01-01"
 check("KI-Tageslimit: neuer Tag beginnt bei null", U.ai_spent() == 0 and U.ai_allowed("schedule"))
 U.AI["m"] = {}; U.AI["warned"] = False
+# Übersetzungen nur in die eingeschalteten Sprachen (Deutsch immer); alle eingeschaltet = keine Einschränkung
+U.AI["langs"] = ["de", "fr", "en"]; _lr = U.lang_rule()
+check("Sprachen: nur eingeschaltete werden übersetzt", "Italienisch" in _lr and "Hindi" in _lr and "nur für Deutsch, Französisch, Englisch" in _lr, _lr)
+U.AI["langs"] = list(U.ALL_LANGS)
+check("Sprachen: alle eingeschaltet – keine Einschränkung", U.lang_rule() == "")
+U.AI["langs"] = None; U.AI["run"] = {}
 
 check("Szenen-Details: Szene direkt nach einem Seitenumbruch (27 auf D8) wird gefunden", (_pb2.get(8, {}).get("27") or {}).get("c") == [["Props", ["Flight Tickets", "Handcuffs"]], ["Story Date", ["20.10.2032"]]], _pb2)
 check("Szenen-Details: «Special: Elec: …» bleibt wie im PDF zusammen", (U.parse_breakdown("Day #1\n186 pt2 1 2/8 pgs E/Ev X 1\n17:30\n\nParty.\nLoc: Tannen\n\nCrew: Drone, Special: Elec: enhance beamer light, Set Dec: Film projection\n").get(1, {}).get("186pt2") or {}).get("c") == [["Crew", ["Drone"]], ["Special: Elec", ["enhance beamer light"]], ["Set Dec", ["Film projection"]]])
