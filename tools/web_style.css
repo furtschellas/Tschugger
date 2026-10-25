@@ -1122,3 +1122,23 @@ html body .navback.loading::after{content:"";position:absolute;inset:-4px;border
 @keyframes nbspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){html body .navback.loading::after{animation-duration:2.5s}}
 html body .navback.loading[disabled]{opacity:1}html body .navback.loading[disabled] svg{opacity:.35}
+/* ---------- light version: plain – black and grey for the surfaces, buttons and markings; pink only for links ---------- */
+html[data-theme="light"]{--paper:#f5f5f7;--sheet:#ffffff;--ink:#141417;--muted:#5d5d66;--rule:#e2e2e7;--accent:#18181b;--accent-ink:#ffffff;--accent-soft:rgba(24,24,27,.07);--violet:#18181b;--link:#c4126a}
+html[data-theme="light"] body::before{background:none!important}
+html[data-theme="light"] body{background-image:none!important}
+html[data-theme="light"] a,html[data-theme="light"] a:visited{color:var(--link)}
+html[data-theme="light"] .hbtns>.refresh{box-shadow:0 2px 6px rgba(0,0,0,.18)}
+html[data-theme="light"] header.top::after{background:linear-gradient(90deg,#18181b,transparent 70%)}
+html[data-theme="light"] body #view .csjump.csjump,html[data-theme="light"] body #view .stripwrap.stripwrap,html[data-theme="light"] body #view .stripwrap .strip{background-color:var(--paper)!important;background-image:none!important}
+html[data-theme="light"],html[data-theme="light"] body{background:var(--paper)!important}
+html[data-theme="light"] #view a:not(.pillbtn):not([class*="btn"]):not(.chip):not(.ttile),html[data-theme="light"] #view a:not(.pillbtn):not([class*="btn"]):not(.chip):not(.ttile) *{color:var(--link)!important;text-decoration-color:color-mix(in srgb,var(--link) 45%,transparent)}
+/* ---------- icons in buttons a bit larger (easier to recognise) ---------- */
+html body .hbtns>.refresh svg{width:calc(24px*var(--bs,1));height:calc(24px*var(--bs,1))}
+html body .hbtns>#admBtn svg{width:calc(22px*var(--bs,1));height:calc(22px*var(--bs,1))}
+html[data-theme="light"] body .hbtns>.refresh svg,html[data-theme="light"] body .hbtns svg{width:20px;height:20px}
+html body #view .csjb button .csi{width:21px;height:21px}
+html body .pvbtn svg,html body .svb .pvbtn svg{width:82%!important;height:82%!important}
+html body .calbtn svg{width:19px;height:19px}
+html body nav.tabs svg{width:24px;height:24px}
+html body .scack svg{transform:scale(1.15)}
+html body .navback svg{width:20px;height:20px}
