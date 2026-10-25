@@ -217,6 +217,8 @@ export function camFold(items){const l=arr(items),txt=i=>String((typeof TX==="fu
     if(to<0)return;const line=(i.t?i.t+" ":"")+txt(i);if(before){if(!pre.has(to))pre.set(to,[]);pre.get(to).push(line)}else out[to].camx.push(line);out[k]=null});
   for(const [j,ls] of pre)out[j].camx=ls.concat(out[j].camx);
   return out.filter(Boolean)}
+/* a function of a part loaded later (31-dayedit: deGone, deMark, deNote): not ready yet in the first drawing from the cache – then nothing */
+export const lateFn=(n,...a)=>{try{const f=window[n];return typeof f==="function"?f(...a):null}catch(_){return null}};
 export function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
@@ -238,8 +240,8 @@ export function itemHTML(it){
   /* Drehplan of today: the scene being shot now gets the pink frame (as in the callsheet) */
   let nowSc=false;try{const c0=window.__mctx;if(c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=csNowScene();nowSc=!!ns&&norm(ns.sc)===norm(it.sc)}}catch(_){}
   const done=window.__mctx&&window.__mctx.date&&typeof scState==="function"&&scState(window.__mctx.date,it.sc)===2;
-  const dg=window.deGone&&window.deGone(it);   /* changed on set (31-dayedit.js): struck or moved away – shown struck, without quittance */
-  return '<li class="row'+(cg?' chg':'')+(nowSc?' scnow':'')+(done?' scdone':'')+(dg?' degone':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(it._de&&window.deMark?window.deMark(it):'')+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
+  const dg=lateFn("deGone",it);   /* changed on set (31-dayedit.js): struck or moved away – shown struck, without quittance */
+  return '<li class="row'+(cg?' chg':'')+(nowSc?' scnow':'')+(done?' scdone':'')+(dg?' degone':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(it._de?lateFn("deMark",it)||'':'')+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span>'+(!dg&&window.__mctx&&window.__mctx.date&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,it.sc,window.__mctx.u||"1"):'')+'</div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
     /* the camera setups of the planning before the summary of the script */

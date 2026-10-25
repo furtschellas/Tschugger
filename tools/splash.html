@@ -13,7 +13,7 @@
 #splash .spp{stroke:#ff2e8a;stroke-linecap:round;stroke-dasharray:465;stroke-dashoffset:465;transition:stroke-dashoffset .25s}
 @media (prefers-color-scheme:light){html:not([data-theme="dark"]) #splash{background:#f6f2ea}html:not([data-theme="dark"]) #splash .spv,html:not([data-theme="dark"]) #splash .splog,html:not([data-theme="dark"]) #splash .spc{color:rgba(0,0,0,.55)}}</style>
 <script>/* the app is never shown inside another page (clickjacking): framed, it hides itself and opens on its own */
-try{if(window.top!==window.self){document.documentElement.style.display="none";try{window.top.location.replace(window.self.location.href)}catch(e){}}}catch(e){document.documentElement.style.display="none"}</script>
+try{if(window.top!==window.self&&!(/[?&]sbx=/.test(location.search)&&window.top.location.origin===location.origin)){document.documentElement.style.display="none";try{window.top.location.replace(window.self.location.href)}catch(e){}}}catch(e){document.documentElement.style.display="none"}</script>
 <script>/* stability: errors are collected (reported to the owners without any data), the last version that started without
    errors is kept on the device, and if this version does not start, the page switches to that one (once per session) */
 window.__ERRS=[];window.APPVER="__APP_VER__";window.WORKERVER="__WORKER_VER__";window.addEventListener("error",function(e){try{__ERRS.push({m:String(e.message||"").slice(0,200),f:String(e.filename||"").split("/").pop().slice(0,40),l:e.lineno||0,t:Date.now(),c:window.__errCtx?String(window.__errCtx()):""})}catch(_){}});

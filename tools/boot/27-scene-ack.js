@@ -109,7 +109,7 @@ async function scaKeep(date,sc){if(!SCA_KINDS.some(([k])=>scaOn(k))||scaZ(date,s
 function scaRows(day,u){const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items),ks=scRowKeys(its,x=>x.n);let ref=0,scene=false;
   /* the time of a setup in the callsheet (its shooting order), else the one of the Drehplan */
   let cr=[],ck=[];try{const dp=u==="1"&&arr(S.dispos).find(x=>x&&x.date===day.date&&x.cs);if(dp){cr=arr((dp.cs.order||{}).rows);ck=scRowKeys(cr,r=>r.text||r.syn)}}catch(_){}
-  return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k||(window.deGone&&window.deGone(x)))return null;const b=scBase(k),setup=/^setup\d*$/.test(b),first=setup&&!scene;if(x.sc)scene=true;
+  return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k||(()=>{try{return window.deGone&&window.deGone(x)}catch(_){return false}})())return null;const b=scBase(k),setup=/^setup\d*$/.test(b),first=setup&&!scene;if(x.sc)scene=true;
     const kind=b==="lunch"?"l":b==="wrap"?"w":first?"a":"s";let h=hm(x.t);if(first){const j=ck.indexOf(b);if(j>=0&&hm(cr[j].t))h=hm(cr[j].t)}if(!h)return null;
     const t=dayMs(day.date,h,ref);if(!t)return null;if(!ref)ref=t;
     return {k:(x.sc||u==="1")?k:k+"_u"+u,kind,t}}).filter(Boolean)}

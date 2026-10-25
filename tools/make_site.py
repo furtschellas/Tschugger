@@ -82,6 +82,11 @@ boot="\n</script>\n<script>"+_mainjs+"\n</script>\n<script>window.__APPOK=1</scr
 body=src[:_si]+boot+src[j+len("</script>"):]
 body=body.replace("</style>",(T/"web_style.css").read_text()+"\n</style>\n</head>\n<body>\n"+(T/"splash.html").read_text(),1)   # start screen first
 assert "claude.use" not in body.split("<script>",2)[-1].split("/* ---------- web boot")[1]
+# side boxes (32-sideboxes.js) show parts of the app outside #view: every «#view» rule counts for «.sbview» too (same weight)
+def _sbview(css):
+  css=css.replace(":is(#view,",":is(#view,.sbview,")
+  return re.sub(r"(?<![\w(,.#-])#view(?=[\s>\[:+~])",":is(#view,.sbview)",css)
+body=re.sub(r"(<style>)([\s\S]*?)(</style>)",lambda m:m.group(1)+_sbview(m.group(2))+m.group(3),body)
 out=(T/"web_head.html").read_text()+body.replace('<meta name="claude:viewport-fit-sides" content="cover">\n',"")+"\n</body>\n</html>\n"
 # optional: minify inline scripts/styles with esbuild (whitespace + syntax only, global names stay intact)
 import shutil,subprocess,os

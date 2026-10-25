@@ -78,7 +78,7 @@ function lunchAt(d){const dt=dayTimes(d);const it=arr(d.items).concat(arr((d.uni
   if(it){const [h,mi]=String(it.t).split(":"),t=pad2(+h)+":"+mi.slice(0,2);let x=zurichUTC(d.date,t).getTime();if(dt&&x<dt.st)x=zurichUTC(isoAdd(d.date,1),t).getTime();return x}return dt?dt.st+(dt.en-dt.st)/2:null}
 /* the shooting day shown in «Today»: the running one until 1 h after wrap (also over midnight), else the next shooting day;
    on a free or travel day always the next shooting day (with a short note about today above it) */
-function todayDay(){const t=todayISO(),now=Date.now();const ds=(S.days||[]).filter(d=>d.date);
+export function todayDay(){const t=todayISO(),now=Date.now();const ds=(S.days||[]).filter(d=>d.date);
   const run=ds.find(d=>d.kind==="shoot"&&d.date<=t&&(()=>{const x=dayTimes(d);return x&&now<x.en+3600e3&&(d.date===t||now<x.en+3600e3&&x.en>zurichUTC(t,"00:00").getTime())})());
   if(run)return run;
   const td=ds.find(d=>d.date===t);
@@ -141,14 +141,21 @@ VIEWS.today=function(){
     /* a day with a 2nd Unit: its times as tiles of their own below (Crew Call, RTS, Lunch, Wrap of the 2nd Unit), both labelled */
     let t2="";try{const c2=dcs.cs.u2&&typeof window.cqU2==="function"?window.cqU2(Object.assign({},dcs.cs,{_date:d.date})):null,tm=(c2&&c2.times)||{};
       if(c2&&(tm.crewCall||tm.rts||tm.lunch||tm.wrap))t2='<div class="tuh">2nd Unit</div><div class="dtiles cstiles">'+csTile("Crew Call",tm.crewCall,true)+csTile("RTS",tm.rts)+csTile("Lunch",tm.lunch)+csTile("Wrap",tm.wrap)+'</div>'}catch(_){}
-    h+='<div class="tcs">'+(t2?'<div class="tuh">1st Unit</div>':'')+csTilesHTML(dcs,d,dcs.cs,me3).replace(' id="cs-zeiten"','')+t2+'</div>'}
+    /* only the unit I am in (both when I am in both or it is not clear) */
+    const mu=t2&&typeof window.csMyUnits==="function"?window.csMyUnits(dcs.cs,me3):null;
+    if(mu&&mu.length===1&&mu[0]==="2")h+='<div class="tcs">'+t2.replace('<div class="tuh">2nd Unit</div>','<div class="tuh">2nd Unit</div>')+'</div>';
+    else if(mu&&mu.length===1)h+='<div class="tcs">'+csTilesHTML(dcs,d,dcs.cs,me3).replace(' id="cs-zeiten"','')+'</div>';
+    else h+='<div class="tcs">'+(t2?'<div class="tuh">1st Unit</div>':'')+csTilesHTML(dcs,d,dcs.cs,me3).replace(' id="cs-zeiten"','')+t2+'</div>'}
   else h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k,cl])=>'<div class="ttile'+(cl?' '+cl:'')+'">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
   /* from noon (or lunch, if earlier) on: the tiles of the next shooting day (times, drive, weather) – shown below the scenes */
   let nextH="";
   try{const la=d.kind==="shoot"&&lunchAt(d),noon=zurichUTC(d.date,"12:00").getTime(),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
     if(nd){const ndt=new Date(nd.date+"T12:00:00"),nt=[];
       const nu2=nd.unit2&&typeof nd.unit2==="object"&&nd.unit2.hours?String(nd.unit2.hours):"";
-      if(nd.hours)nt.push(['<b>'+esc(nd.hours)+'</b>',L("Drehzeit")+(nu2?" · 1st Unit":"")]);if(nu2)nt.push(['<b>'+esc(nu2)+'</b>',L("Drehzeit")+" · 2nd Unit"]);if(nd.sr&&nd.ss)nt.push(['<b>'+esc(nd.sr+"–"+nd.ss)+'</b>',L("Sonnenzeit")]);
+      /* only the unit I am in on that day (its callsheet tells it; both when I am in both or it is not clear yet) */
+      let nmu=null;try{const ndp=(S.dispos||[]).find(x=>x&&x.date===nd.date&&x.cs);if(ndp&&typeof window.csMyUnits==="function")nmu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
+      const sh1=!nu2||!nmu||nmu.includes("1"),sh2=!!nu2&&(!nmu||nmu.includes("2"));
+      if(nd.hours&&sh1)nt.push(['<b>'+esc(nd.hours)+'</b>',L("Drehzeit")+(nu2?" · 1st Unit":"")]);if(sh2)nt.push(['<b>'+esc(nu2)+'</b>',L("Drehzeit")+" · 2nd Unit"]);if(nd.sr&&nd.ss)nt.push(['<b>'+esc(nd.sr+"–"+nd.ss)+'</b>',L("Sonnenzeit")]);
       let ndrv="";if(nd.drive&&nd.drive.min){const fi=arr(nd.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=nd.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
         const gm=mapsDir,hotel=nd.drive.from||"Hotel";
         ndrv='<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(nd.drive.min)+"′")+(nd.drive.km?'<small class="tkm"> · '+Math.round(nd.drive.km)+' km</small>':'')+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'}

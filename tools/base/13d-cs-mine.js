@@ -27,6 +27,10 @@ export function csCastOpen(c,me){try{if(typeof MYROLE!=="undefined"&&/1ad/i.test
   return ["ad","regie","location","locations","aufnahmeleitung","al","transport","fahrer","driver","runner","makeup","maske","costume","kostum","wardrobe"].some(x=>w.has(x))}catch(_){return false}}
 export function csMyDept(c,me,dept){if(!me)return false;const mine=csMyWords(c,me);
   const w=csDWords(dept);for(const x of w)if(x.length>2&&mine.has(x)||x==="ad"&&mine.has("ad"))return true;return false}
+/* in which unit(s) I am on this callsheet: ["1"], ["2"], ["1","2"] – null: not to tell (not on the callsheet, or no 2nd Unit) */
+export function csMyUnits(c,me){try{if(!c||!me||!c.u2)return null;const cl=csA(c.calls).find(r=>me.hit(r.name)),a1=csA(c.cast).find(r=>me.hit(r.actor)),a2=csA(c.u2.cast).find(r=>me.hit(r.actor));
+  const in1=!!(a1||(cl&&String(cl.t||"").trim())),in2=!!(a2||(cl&&String(cl.t2||"").trim()));return in1&&in2?["1","2"]:in1?["1"]:in2?["2"]:null}catch(_){return null}}
+window.csMyUnits=csMyUnits;
 const CSMINEMEMO=new WeakMap();export function csMine(c,me){if(!c||!me)return[];let m=CSMINEMEMO.get(c);if(!m)CSMINEMEMO.set(c,m=new Map());const k=me.name+"|"+me.dep+"|"+(typeof LANG!=="undefined"?LANG:"")+"|"+vok("phone")+"|"+(window.REDVER||0)+"|"+arr(S.locs).length;if(!m.has(k)){m.clear();m.set(k,csMine0(c,me))}return m.get(k).slice()}   /* only the latest (else every ride change added one) */
 /* the destination of a ride as a map link (the place of the callsheet, else a map search) */
 function csToLink(c,to){const t0=String(to||"").trim();if(!t0)return"";const um=t0.match(/https?:\/\/\S+/);const t=t0.replace(/https?:\/\/\S+/g,"").trim()||L("Karte");
