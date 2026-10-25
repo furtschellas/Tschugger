@@ -1078,3 +1078,6 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
 .tdcfg{display:grid;gap:6px;margin:6px 0 10px}
 .tdcfgr{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .tdcfgr select{max-width:55%}
+
+/* App-Verwaltung → Quittieren: automatic quittances, one row per step (switch, Zugabe) */
+.aqg{display:grid;gap:4px;margin:4px 0 10px}.aqr{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}.aqr .ck{flex:1 1 140px}.aqm{display:inline-flex;align-items:center;gap:6px;font-size:.92em}.aqm input{width:4.5em}

@@ -8,9 +8,10 @@ const helpers=`const pad2=n=>String(n).padStart(2,"0");function hm(t){const m=St
 const fold=t=>String(t||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase();const arr=x=>Array.isArray(x)?x:[];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));const L=x=>x;const S={tab:""};const ME=null;const csAfter=()=>{};const todayISO=()=>"2031-03-02";
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
+const zurichUTC=(d,h)=>new Date(d+"T"+h+":00+01:00");const isoAdd=(d,n)=>{const x=new Date(d+"T12:00:00Z");x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};
 var MYROLE="";let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=>{PERMS=p};`;
 const H=[];const C={console,document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
-vm.runInContext(helpers+unmod(fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8"))+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep,xf:xqField,xa:xqAll}",C);
+vm.runInContext(helpers+unmod(fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8"))+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep,xf:xqField,xa:xqAll,aRow:cqaRow}",C);
 const T=C.T,D="2031-03-02";
 /* the data layer (03-core-firebase dbWrite): here straight to the fake database of each test */
 C.dbWrite=async(op,path,data)=>{const {F,db}=await C.fb();const ref=F.doc(db,...path.split("/"));if(op==="delete")await F.deleteDoc(ref);else await F.setDoc(ref,data);return "ok"};
@@ -129,4 +130,24 @@ await (async()=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:asyn
   vm.runInContext("MYROLE='komparsen'",C);
   const xe=vm.runInContext("xqEvents('2031-01-01').map(e=>e.n+' '+e.t+'-'+e.end).join(' | ')",C);
   out.push({n:"Meine Termine: Rolle Komparsen sieht pro Gruppe Call bis On set",ok:xe==="Komparsen: 5 Passanten 08:00-09:00 | Komparsen: 3 Polizei 08:30-09:30",got:xe,want:"Komparsen: 5 Passanten 08:00-09:00 | Komparsen: 3 Polizei 08:30-09:30"})}
+/* Cast automatisch quittieren: per step (P/UP und Call, Maske, Kostüm, Base, On set) at the time of the callsheet + Zugabe, only forward,
+   not what was set back by hand (marker z…) – what one run writes */
+await (async()=>{const at=hm=>new Date(D+"T"+hm+":00+01:00").getTime(),on=(min,ks)=>Object.fromEntries(["c","m","w","b","o"].map(k=>[k,{on:!ks||ks.includes(k),min:min[k]||0}]));
+  const run=async(n,perms,ack,cfg,hm,want)=>{const W2=[];C.fb=async()=>({db:0,F:{doc:(db,c,i)=>i,setDoc:async(i,v)=>{W2.push(i+"="+v.s)},deleteDoc:async i=>{W2.push(i+"=0")}}});
+    set(perms,ack);C.CASTAUTO=cfg;try{await T.aRow(Object.assign({},cs),R1,at(hm))}catch(e){W2.push("error "+e.message)}
+    const got=W2.sort().join(" "),w=want.slice().sort().join(" ");out.push({n:"Cast automatisch: "+n,ok:got===w,got,want:w})};
+  const c=id(R1,"c","07:00"),w=id(R1,"w","07:05"),m=id(R1,"m","07:20"),b=id(R1,"b","07:45"),o=id(R1,"o","08:00");
+  await run("Call-Zeit vorbei → Call angekommen, Pick-up-Fahrt abgeschlossen",W,{},on({}),"07:01",[c+"=1",pr+"=2","v"+pr+"=0"]);
+  await run("Pick-up-Zeit vorbei (mit Fahrrecht) → Fahrzeug unterwegs",W.concat(D2),{},on({}),"06:41",[pr+"=1","v"+pr+"=1"]);
+  await run("Kostüm-Zeit vorbei → Kostüm läuft",W,{[c]:1},on({}),"07:06",[w+"=1"]);
+  await run("Kostüm-Ende vorbei, Maske-Beginn vorbei → Kostüm erledigt, Maske läuft",W,{[c]:1,[w]:1},on({}),"07:21",[w+"=2",m+"=1"]);
+  await run("On-set-Zeit vorbei → On set erledigt, Fahrt zum Set abgeschlossen",W,{},on({}),"08:01",[o+"=2",sr+"=2","v"+sr+"=0"]);
+  await run("Zugabe 30 Min. bei On set → noch nicht, aber Base erledigt (Kostüm/Maske fertig, Fahrt zum Set unterwegs)",W,{},on({o:30}),"08:01",[b+"=2",w+"=2",m+"=2",sr+"=1","v"+sr+"=1"]);
+  await run("On set von Hand zurückgesetzt (Marker) → Automatik lässt On set in Ruhe",W,{["z"+o]:1},on({}),"08:01",[b+"=2",w+"=2",m+"=2",sr+"=1","v"+sr+"=1"]);
+  await run("nur «P/UP und Call» eingeschaltet → Kostüm bleibt offen",W,{[c]:1},on({},["c"]),"07:10",[]);
+  await run("Schritt ausgeschaltet → nichts",W,{},on({},[]),"08:01",[]);
+  await run("ohne Recht zum Quittieren → nichts",[],{},on({}),"08:01",[]);
+  await run("schon weiter (On set erledigt) → nichts",W,{[o]:2},on({}),"08:30",[]);
+  await run("Zeit noch nicht erreicht → nichts",W,{},on({}),"06:30",[]);
+})();
 for(const x of out)console.log(JSON.stringify(x));

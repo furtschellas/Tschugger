@@ -1,4 +1,5 @@
-import {esc,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
+import {esc,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
+import {zurichUTC} from "../base/11-schedule-prep.js";
 import {hm,myIdentity,rideId} from "../base/12-mycal.js";
 import {csAfter,csMe} from "../base/13a-callsheet.js";
 import {CSCUR,csNowLoc,csNowScene} from "../base/13b-cs-now.js";
@@ -56,7 +57,7 @@ async function flowPut(id,date,s,n){if(!id)return;const old=window.RIDEACK[id];
 export let RIDEAT=0,RIDEBUSY=false,ACKSUB=null,ACKFROM="";
 const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
 function ackApply(m,t0,live){if(!live)for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}
-  const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}
+  const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;window.RIDEACKLOADED=true;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}
 /* «Ich übernehme» (Kostüm of the cast without a name in the callsheet): who took which Kostüm – live, the name encrypted (cmassign/{tick id}) */
 window.CMASSIGN=window.CMASSIGN||{};let CMASUB=null,CMAFROM="",CMASEQ=0;
 async function cmaLoad(from){if(CMASUB&&CMAFROM===from)return;try{const {F,db}=await fb();if(typeof F.onSnapshot!=="function")return;if(typeof CMASUB==="function")CMASUB();CMAFROM=from;CMASUB="…";
@@ -305,19 +306,51 @@ window.cmBtn=(id,date,label,k,oth)=>{const st=cmSt(id),cls="cmk"+(st===2?" cmok"
   const tip=CQTIP3()[st];
   return '<button type="button" class="'+cls+'" data-cmack="'+esc(id)+'" data-cmd="'+esc(date)+'" data-cmk="'+esc(k||"")+'"'+(oth&&oth.length?' data-cmoth="'+esc(oth.join(","))+'"':'')+' aria-label="'+esc((label?label+" – ":"")+tip)+'" title="'+esc(tip)+'">'+ico+'</button>'};
 
+/* ---------- 5b. Cast automatisch quittieren (App-Verwaltung → Einstellungen → Quittieren) ----------
+   Per step its own switch and Zugabe (minutes after the time of the callsheet): CASTAUTO {c, m, w, b, o: {on, min}} – in this order:
+   c P/UP and Call (P/UP on the way at its time, Call arrived at its time) · m Maske · w Kostüm (running at the start, done at the end) ·
+   b Base (done) · o On set (done).
+   Every device with the right to tick that step does it, as if tapped (the rides in parallel). Only forward, only today and yesterday
+   (night shoots), only times of the last 12 h. Reset by hand (back to open) the automatic leaves that step alone: marker rideack/z{id}
+   (s 1 – old app versions do not know these ids and ignore them). */
+export const CQA_STEPS=[["c","P/UP und Call"],["m","Maske"],["w","Kostüm"],["b","Base"],["o","On set"]];
+const cqaOn=k=>{const A=window.CASTAUTO;return !!(A&&A[k]&&A[k].on)};
+const cqaZ=id=>!!(id&&window.RIDEACK["z"+id]);
+async function cqaKeep(id,date){if(id&&date&&CQA_STEPS.some(([k])=>cqaOn(k))&&!cqaZ(id))try{await flowPut("z"+id,date,1)}catch(_){}}
+/* a time of the row in ms (time zone of the block): after midnight when more than 12 h before the first time of the row */
+function cqaAt(date,t,ref){const h=cqHm(t);if(!h)return 0;try{let v=zurichUTC(date,h).getTime();if(ref&&ref-v>12*3600e3)v=zurichUTC(isoAdd(date,1),h).getTime();return v}catch(_){return 0}}
+async function cqaRow(c,r,now){const m=cqModel(c,r),d=m.d;if(m.onDone)return;
+  const ref=cqaAt(d,r.pickup)||cqaAt(d,r.call)||cqaAt(d,r.base);
+  const due=(k,t)=>{if(!cqaOn(k))return false;const v=cqaAt(d,t,ref),lim=now-(+window.CASTAUTO[k].min||0)*60e3;return !!v&&v<=lim&&lim-v<12*3600e3};
+  const put=async(k,id,s)=>{if(id&&!cqaZ(id)&&cqCan(k)&&cmSt(id)<s){await flowPut(id,d,s);return true}return false};
+  const ride=async(k,id,n)=>{if(id&&!cqaZ(id)&&cqCan(k)&&rideStep(id)<n)await rideSet(id,d,n)};
+  if(cqHm(r.onset)&&due("o",r.onset)&&await put("o",m.oid,2)){await ride("o",m.bid,3);return}
+  const bid=cqHm(r.base)?cmId(d,"b",r,cqHm(r.base)):"";
+  if(bid&&!m.baseDone&&due("b",r.base)&&await put("b",bid,2)){for(const o of m.wmIds)if(cmSt(o)!==2&&!cqaZ(o))await flowPut(o,d,2);await ride("b",m.bid,2);return}
+  for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c)){const id=cmId(d,k,r,p.t);if(due(k,p.end))await put(k,id,2);else if(due(k,p.t))await put(k,id,1)}
+  if(!m.callAct&&due("c",r.call)&&await put("c",cmId(d,"c",r,cqHm(r.call)),1)){await ride("c",m.rid,3);return}
+  if(m.pu<2&&!m.callAct&&!m.arrived&&due("c",r.pickup)){if(m.rid)await ride("u",m.rid,2);else await put("u",cmId(d,"u",r,cqHm(r.pickup)),2)}}
+let CQABUSY=false;
+async function cqAuto(){if(CQABUSY||window.RIDEACKON===false||!window.RIDEACKLOADED||(window.simOn&&window.simOn())||!CQA_STEPS.some(([k])=>cqaOn(k)&&(cqCan(k)||k==="c"&&cqCan("u"))))return;CQABUSY=true;
+  try{const now=Date.now(),t=todayISO(),days=[t,isoAdd(t,-1)];
+    for(const dp of arr(S.dispos)){if(!dp||!dp.cs||!days.includes(dp.date))continue;const c=Object.assign({},dp.cs,{_date:dp.date});
+      for(const r of arr(c.cast))try{CQMEMO=new WeakMap();await cqaRow(c,r,now)}catch(err){if(err&&err.code==="simulation")return;console.warn("cast auto",err&&err.code||err)}}}
+  finally{CQABUSY=false}}
+setInterval(cqAuto,30e3);
+
 /* ---------- 6. taps (one handler for rides, cast and Meine Termine), counters, redraw ---------- */
 async function flowTap(b){
   if(b.dataset.rideack!=null){const id=b.dataset.rideack;if(!cqCanRide()&&!b.dataset.rdrv)return;   /* the driver confirms own rides */
-    await rideSet(id,b.dataset.rided,(rideStep(id)+1)%4);return}   /* open → driver on site → on the way → done → open */
-  if(b.dataset.cmack!=null){if(!cmCan(b.dataset.cmk))return;const id=b.dataset.cmack,nx=(cmSt(id)+1)%3;await flowPut(id,b.dataset.cmd,nx);
+    const nx=(rideStep(id)+1)%4;await rideSet(id,b.dataset.rided,nx);if(!nx)await cqaKeep(id,b.dataset.rided);return}   /* open → driver on site → on the way → done → open */
+  if(b.dataset.cmack!=null){if(!cmCan(b.dataset.cmk))return;const id=b.dataset.cmack,nx=(cmSt(id)+1)%3;await flowPut(id,b.dataset.cmd,nx);if(!nx)await cqaKeep(id,b.dataset.cmd);
     if(nx===1)for(const o of String(b.dataset.cmoth||"").split(",")){if(o&&o!==id&&cmSt(o)===1)await flowPut(o,b.dataset.cmd,2)}   /* the other one still running is done now */
     return}
   const k=b.dataset.cqk,id=b.dataset.cqid,date=b.dataset.cqd;if(!cqCan(k))return;
-  const nx=b.dataset.cqnx!=null?+b.dataset.cqnx:(cmSt(id)+1)%3;if(nx>=0)await flowPut(id,date,nx);
+  const nx=b.dataset.cqnx!=null?+b.dataset.cqnx:(cmSt(id)+1)%3;if(nx>=0)await flowPut(id,date,nx);if(!nx)await cqaKeep(id,date);
   for(const o of String(b.dataset.wmfin||"").split(","))if(o&&cmSt(o)!==2)await flowPut(o,date,2);   /* Base tapped early: Kostüm and Maske done */
   /* Kostüm or Maske starts: a Kostüm / Maske of the same actor still running is done now */
   if((k==="w"||k==="m")&&nx===1){const row=b.closest("tr,.cs-card");if(row)for(const o of row.querySelectorAll(".cq1[data-cqwm]")){const oid=o.dataset.cqwm;if(oid&&oid!==id&&cmSt(oid)===1)await flowPut(oid,date,2)}}
-  if(b.dataset.cqlk&&b.dataset.cqls!=null)await rideSet(b.dataset.cqlk,date,+b.dataset.cqls)}   /* the ride in «Fahrten» in parallel */
+  if(b.dataset.cqlk&&b.dataset.cqls!=null){await rideSet(b.dataset.cqlk,date,+b.dataset.cqls);if(!+b.dataset.cqls)await cqaKeep(b.dataset.cqlk,date)}}   /* the ride in «Fahrten» in parallel */
 const flowClick=async(e,sel,stop)=>{const b=e.target.closest&&e.target.closest(sel);if(!b)return;e.preventDefault();if(stop)e.stopPropagation();b.disabled=true;
   try{await flowTap(b);cqKeep(b)}catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:L("Speichern nicht möglich."),4000)}};
 /* cast and Meine Termine first (capture); rides after the Fahrten Manager pop-up (25-ride-edit) had its chance */

@@ -1,5 +1,5 @@
 import {ariaTip,esc,I18N,isoAdd,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
-import {UNAME} from "../base/11-schedule-prep.js";
+import {UNAME,zurichUTC} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
@@ -84,6 +84,37 @@ async function scLunchAuto(){if(SCLBUSY||typeof canPerm!=="function"||!canPerm("
       try{await scWrite(x.d,k,x.u,{s:2,b:+x.b||+x.at,e})}catch(_){}}}
   finally{SCLBUSY=false}}
 setInterval(scLunchAuto,30e3);
+/* ---------- automatic quittances of the Drehplan (App-Verwaltung → Einstellungen → Quittieren): SCENEAUTO {s, l, w: {on, min}} ----------
+   s scenes and setups begin · l lunch begins (its end as before after the lunch duration) · w wrap – once the time of the Drehplan plus the
+   Zugabe has passed. The scene running in that unit is finished then (one scene runs at a time). Times: planned time + Zugabe.
+   Only the latest due row of a unit and only when nothing after it is quittiert yet (rows skipped in reality stay open); only today and
+   yesterday (night shoots), only times of the last 12 h; every device with «Szenen quittieren». Set back by hand: marker rideack/z… (s 1,
+   like the cast in 24-flow.js) – the automatic leaves that row alone. */
+const SCA_KINDS=[["s","Szenen und Setup"],["l","Lunch Beginn"],["w","Drehschluss"]];
+const scaOn=k=>{const A=window.SCENEAUTO;return !!(A&&A[k]&&A[k].on)};
+const scaMark=(date,sc)=>{const s=date+"|"+scAckId(date,sc);let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "zs"+(h>>>0).toString(36)};
+const scaZ=(date,sc)=>!!(window.RIDEACK||{})[scaMark(date,sc)];
+async function scaKeep(date,sc){if(!SCA_KINDS.some(([k])=>scaOn(k))||scaZ(date,sc))return;const id=scaMark(date,sc),v={d:date,at:Date.now(),s:1};
+  try{await dbWrite("set","rideack/"+id,v);if(window.RIDEACK)window.RIDEACK[id]=v}catch(_){}}
+/* the rows of a unit that can be quittiert: key (scene number or lunch / wrap / setup…, «_u2» in the 2nd unit), kind, planned time (ms) */
+function scaRows(day,u){const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items),ks=scRowKeys(its,x=>x.n);let ref=0;
+  return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k)return null;const b=scBase(k),kind=b==="lunch"?"l":b==="wrap"?"w":"s",h=hm(x.t);if(!h)return null;
+    let t=0;try{t=zurichUTC(day.date,h).getTime();if(ref&&ref-t>12*3600e3)t=zurichUTC(isoAdd(day.date,1),h).getTime()}catch(_){return null}if(!ref)ref=t;
+    return {k:(x.sc||u==="1")?k:k+"_u"+u,kind,t}}).filter(Boolean)}
+let SCABUSY=false;
+async function scAuto(){if(SCABUSY||window.SCACKON===false||!window.SCACKLOADED||!window.RIDEACKLOADED||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn())||!SCA_KINDS.some(([k])=>scaOn(k)))return;SCABUSY=true;
+  try{const now=Date.now(),t=todayISO(),days=[t,isoAdd(t,-1)];
+    for(const day of arr(S.days)){if(!day||day.kind!=="shoot"||!days.includes(day.date))continue;
+      for(const u of ["1","2","3"]){const rows=scaRows(day,u);let j=-1;
+        rows.forEach((r,i)=>{if(!scaOn(r.kind))return;const due=r.t+(+window.SCENEAUTO[r.kind].min||0)*60e3;if(due<=now&&now-due<12*3600e3)j=i});
+        if(j<0)continue;const r=rows[j],T=r.t+(+window.SCENEAUTO[r.kind].min||0)*60e3;
+        if(rows.slice(j).some(x=>scState(day.date,x.k)>0)||scaZ(day.date,r.k))continue;   /* already quittiert (or later ones) / set back by hand */
+        const run=scRunning(day.date,u,scAckId(day.date,r.k));
+        if(run){const x=window.SCACK[scAckId(day.date,run)]||{},b=+x.b||+x.at||T;await scWrite(day.date,run,u,{s:2,b,e:Math.max(T,b+60e3)},true)}
+        await scWrite(day.date,r.k,u,r.kind==="w"?{s:2,b:T,e:T}:{s:1,b:T},true)}}}
+  catch(err){if(!(err&&err.code==="simulation"))console.warn("scene auto",err&&err.code||err)}
+  finally{SCABUSY=false}}
+setInterval(scAuto,30e3);
 /* the scene running in a unit on that day (other than this one): its scene number, else "" */
 function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCACK))if(x&&x.d===date&&x.s===1&&String(x.u||"1")===String(u||"1")&&id!==except)return x.sc||id.split("-").slice(1).join("-");return""}
 /* a time typed for a scene: on the shooting day – or the next calendar day when it lies more than 12 h before the reference
@@ -91,7 +122,8 @@ function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCAC
 const scMsNear=(date,t,ref)=>{const v=scMs(date,t);if(!v||!ref)return v;if(ref-v>12*3600e3){const n=scMs(isoAdd(date,1),t);return n||v}return v};
 const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;
   const d=new Date(date+"T00:00:00");d.setHours(+m[1],+m[2],0,0);return d.getTime()};
-async function scWrite(date,sc,u,v){const id=scAckId(date,sc),old=window.SCACK[id],undo=()=>{if(old)window.SCACK[id]=old;else delete window.SCACK[id];scRender()};
+async function scWrite(date,sc,u,v,auto){const id=scAckId(date,sc),old=window.SCACK[id],undo=()=>{if(old)window.SCACK[id]=old;else delete window.SCACK[id];scRender()};
+  if(!auto&&old&&(!v||v.s<(old.s===1?1:2)))await scaKeep(date,sc);   /* set back by hand: the automatic leaves it alone */
   /* through the data layer: offline the scene state shows at once and is sent later */
   if(!v){await dbWrite("delete","sceneack/"+id,null,{undo});delete window.SCACK[id]}else{v=Object.assign({d:date,at:Date.now(),u:String(u||"1"),sc:String(sc).slice(0,24)},v);for(const k of ["b","e"])if(v[k]==null)delete v[k];await dbWrite("set","sceneack/"+id,v,{undo});window.SCACK[id]=v}if(typeof SCLOG!=="undefined"&&SCLOG.list){const i=SCLOG.list.findIndex(x=>x.id===id);if(i>=0)SCLOG.list.splice(i,1);if(v)SCLOG.list.push(Object.assign({id},v))}scRender()}
 /* tap: open → running (only when no other scene runs in this unit) → done; a done scene opens the popup to change state and times */
