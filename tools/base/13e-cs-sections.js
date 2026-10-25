@@ -8,6 +8,7 @@ import {csBadgeIn,csCallPlace,csCodeHref,csKindCode,csLocAddr,csLocFp,csLocGroup
 import {csCastOpen,csCmFirst,csExOpen,csJumpBar,csMine,csMyDept,csShort,csSums,csTeamSec,csTilesHTML,csTransOpen} from "./13d-cs-mine.js";
 import {csCastMode,csCols} from "./13f-cs-events.js";
 import {vok} from "./14-render.js";
+import {csU2HTML} from "./13g-cs-unit2.js";
 import {fold} from "./15-script-tab.js";
 import {RIDE_ICO} from "../boot/24-flow.js";
 /* ---------- Callsheet (5/6): the sections (locations, map, travel, calls) and renderCS ---------- */
@@ -90,7 +91,7 @@ function csTravelSec(c,x,me,SU,t){let h="";
    h+=csSec(L("Anreise Cast"),rows,false,"","travel",SU.travel)}
   return h}
 function csCallsSec(c,x,me,SU,t){let h="";
-  {const g=new Map();for(const r of csA(c.calls)){const k=r.dept||"";if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
+  {const g=new Map();for(const r of csA(c.calls).filter(r=>!(c.u2&&!String(r.t||"").trim()&&String(r.t2||"").trim()))){const k=r.dept||"";   /* only «2nd IN»: in the part of the 2nd Unit */if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
    h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>{const who={hit:t=>{const a=nmk(String(t||"")),b=nmk(String(r.name||""));return !!b&&(" "+a).includes(" "+b)}};   /* at the start of a word: «Anna Muster» is not in «Johanna Muster» */let pl=null;try{pl=csCallPlace(c,who,r)}catch(_){}
      const sc=pl?csShort(pl):"";const tag=sc?csPlaceA(sc,pl.map||csCodeHref(sc),pl.name):'';
      const tm=String(r.t||"").match(/^(\d{1,2}:\d{2})\s*(.*)$/);
@@ -176,6 +177,8 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   /* anything else of the document */
   for(const sec of csA(x.sections).concat(csA(c.sections)).filter(s0=>!WX.includes(s0))){const rows=csA(sec&&sec.rows).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(cc=>String(cc==null?"":cc).trim()));if(!rows.length)continue;
     h+=csSec(String(sec.title||""),rows.map(r=>'<p>'+r.map(cc=>csTx(cc)).join(" · ")+'</p>').join(""),false)}
+  /* the 2nd Unit (read apart): its own part below the 1st Unit */
+  try{h+=csU2HTML(x,c,day)}catch(_){}
   /* on the shooting day: once per visit straight to the running row */
   if(x.date===csShootDay()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
   return JB+'<div class="csview">'+h+'</div>'}

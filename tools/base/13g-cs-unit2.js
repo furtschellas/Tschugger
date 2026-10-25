@@ -1,0 +1,39 @@
+/* the 2nd Unit of a callsheet (cs.u2, read apart from the 1st Unit): its own part below the callsheet of the 1st Unit –
+   times, contact on set, sets, shooting order, cast, extras, vehicles, calls «2nd IN», department infos (the prevision is kept in the data, shown neither for the 1st Unit) */
+import {L,esc,fmtDate,norm,safeUrl} from "./10-core.js";
+import {schedIndex} from "./17-scene-reader.js";
+import {csA,csL,csSec,csTable,csTx} from "./13a-callsheet.js";
+import {csLocs,csOrderRows} from "./13c-cs-places.js";
+import {vok} from "./14-render.js";
+
+const u2tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(String(v))+'</div></div>':'';
+/* a set of the 2nd Unit: code, name, scenes, map; its lines (parking, base …) below */
+function u2Loc(l){if(!l||typeof l!=="object")return"";
+  const a=(href,txt)=>href?'<a href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer">'+txt+'</a>':txt;
+  return '<div class="csu2-l"><div class="csu2-lh">'+a(l.map,'<b>'+esc([l.no,l.name].filter(Boolean).join(" · "))+'</b>')+(l.scenes?' <small>'+esc(String(l.scenes))+'</small>':'')+'</div>'+
+    csA(l.items).filter(i=>i&&(i.label||i.text)).map(i=>'<div class="csu2-li">'+(i.label?'<span>'+esc(csL(String(i.label)))+'</span> ':'')+(i.text?a(i.map,csTx(csL(String(i.text)))):i.map?a(i.map,esc(L("Karte"))):'')+'</div>').join("")+
+    csA(l.notes).map(n=>'<div class="csu2-li"><small>'+csTx(csL(String(n)))+'</small></div>').join("")+'</div>'}
+/* the shooting order of the 2nd Unit from its Google Sheet (day.unit2, more exact than the callsheet): rows like those of the callsheet */
+/* a scene of the sheet completed with the Drehplan (synopsis, cast, pages, I/E, set …, as in the 2nd Unit of the Drehplan): the sheet's own values win –
+   first the same scene on this day with a synopsis (another unit), else its first scheduling with one */
+const u2Full=(i,date)=>{let l=[];try{l=csA(schedIndex()[norm(i.sc)])}catch(_){}const ok=y=>y&&y.it&&y.it!==i&&y.it.d;
+  const b=(l.find(y=>ok(y)&&y.d&&y.d.date===date)||l.find(ok)||{}).it;if(!b)return i;const o=Object.assign({},b);
+  for(const k in i){const v=i[k];if(v!=null&&v!==""&&!(Array.isArray(v)&&!v.length))o[k]=v}return o};
+const u2Rows=day=>csA(day&&day.unit2&&day.unit2.items).filter(i=>i&&typeof i==="object").map(i=>i.sc?u2Full(i,day.date):i).map(i=>i.sc?{t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",syn:i.d||"",pgs:i.pg||"",dur:i.dur||"",dir:i.dir||"",cast:Array.isArray(i.cast)?i.cast.join(", "):(i.cast||""),notes:i.notes||""}:{t:i.t||"",text:i.n||i.text||""}).filter(r=>r.sc||r.text);
+export function csU2HTML(x,c,day){const u0=c&&c.u2,sh=u2Rows(day);if((!u0||typeof u0!=="object")&&!sh.length)return"";
+  const u=u0&&typeof u0==="object"?u0:{},t=u.times||{},o=u.order||{},LS=csLocs({locations:csA(u.locations)});let h="";
+  h+='<div class="csu2-head" id="cs-u2"><h2>2nd Unit</h2><span>'+(x.date?fmtDate(x.date):'')+(u.ad?' · 1st AD '+esc(String(u.ad)):'')+'</span></div>';
+  if(u.crewCall||t.rts||t.lunch||t.wrap)h+='<div class="dtiles cstiles">'+u2tile("Crew Call",u.crewCall,true)+u2tile("RTS",t.rts)+u2tile("Lunch",t.lunch)+u2tile("Wrap",t.wrap)+'</div>';
+  const ct=u.contact;if(ct&&(ct.name||ct.phone)){const tel=String(ct.phone||"").replace(/[^\d+]/g,"");
+    h+='<div class="cscontact"><span class="csct-in"><b>'+esc(L("Kontakt am Set"))+':</b> '+(tel&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'">'+esc(ct.name||ct.phone)+'</a>':esc(ct.name||""))+(ct.role?' <small>· '+esc(ct.role)+'</small>':'')+'</span></div>'}
+  if(vok("loc")&&csA(u.locations).length)h+=csSec("Locations · 2nd Unit",csA(u.locations).map(u2Loc).join(""),false,"","u2loc");
+  /* the order: from the 2nd-Unit sheet; without it the one of the callsheet */
+  h+=csSec(L("Drehfolge")+" · 2nd Unit"+(!sh.length&&o.pages?' · '+o.pages+' pgs':''),(sh.length?'<p class="ghint">'+esc(L("Aus dem 2nd-Unit-Sheet"))+'</p>'+csOrderRows(sh,x.date,LS,true,"2"):(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,LS,true,"2")),true,"","u2order");
+  h+=csSec("Cast · 2nd Unit",csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(u.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3,true),false,"","u2cast");
+  h+=csSec(L("Komparsen")+" · 2nd Unit",csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(u.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset]),2,true),false,"","u2extras");
+  h+=csSec(L("Fahrzeuge")+" · 2nd Unit",csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(u.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","u2veh");
+  /* calls on set: the column «2nd IN» */
+  {const g=new Map();for(const r of csA(c.calls).filter(r=>r&&String(r.t2||"").trim())){const k=r.dept||"";if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
+   h+=csSec("Calls on Set · 2nd Unit",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>'<div class="cscall-r"><span class="t">'+esc(String(r.t2))+'</span><span class="cp"></span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>').join("")+'</div>').join(""),false,"","u2calls")}
+  h+=csSec(L("Infos nach Abteilung")+" · 2nd Unit",csA(c.depts).filter(r=>String(r.text2||"").trim()).map(r=>'<div class="csdep"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text2)+'</div></div>').join(""),false,"","u2dept");
+  return '<section class="csu2">'+h+'</section>'}

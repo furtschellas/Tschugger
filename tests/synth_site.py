@@ -31,7 +31,7 @@ def data(today=None):
         return out
     days = [{"date": iso(day(-1)), "id": "d0", "kind": "shoot", "label": "Day #1", "short": "D01", "hours": "07:00–18:00", "sr": "07:50", "ss": "18:20", "items": items(1)},
             {"date": iso(day(0)), "id": "d1", "kind": "shoot", "label": "Day #2", "short": "D02", "hours": "07:00–18:00", "sr": "07:51", "ss": "18:18", "items": items(2),
-             "unit2": {"items": [{"sc": "90", "t": "09:00", "set": "STRASSE", "ie": "E"}], "hours": "09:00–12:00"}},
+             "unit2": {"items": [{"sc": "90", "t": "09:00", "set": "STRASSE", "ie": "E"}, {"sc": "11", "t": "10:30"}], "hours": "09:00–12:00"}},
             {"date": iso(day(1)), "id": "o1", "kind": "off", "label": "Day Off"},
             {"date": iso(day(2)), "id": "d2", "kind": "shoot", "label": "Day #3", "short": "D03", "hours": "07:00–18:00", "sr": "07:53", "ss": "18:15", "items": items(3)},
             {"date": iso(day(3)), "id": "d3", "kind": "shoot", "label": "Day #4", "short": "D04", "hours": "07:00–18:00", "sr": "07:54", "ss": "18:13", "items": items(4)}]
@@ -58,6 +58,15 @@ def data(today=None):
                        "extras": [{"count": "5", "part": "Passanten", "call": "08:00", "wardrobe": "08:10", "makeup": "08:20", "onset": "09:00"}],
                        "vehicles": [{"name": "Polizeiauto", "via": "Requisite", "call": "08:00", "rts": "08:30"}]}}
     dispos = [cs(1, day(-1)), cs(2, day(0)), cs(3, day(2))]
+    # the callsheet of today also with a 2nd Unit (read apart, «u2»): shown below the 1st Unit, its order from the 2nd-unit sheet (day «unit2»)
+    c2 = dispos[1]["cs"]
+    c2["u2"] = {"crewCall": "06:45", "contact": {"role": "Set AL", "name": "Sam Zweit", "phone": "+41 79 000 00 09"}, "ad": "Robin Zweit",
+                "times": {"rts": "07:30", "lunch": "11:45", "wrap": "16:45"},
+                "locations": [{"no": "B.1", "name": "STRASSE", "scenes": "90", "map": "https://maps.example/b1", "items": [{"label": "Tech Parking 2", "text": "Dorfplatz, 3930 Visp"}]}],
+                "order": {"title": "2ND UNIT SHOOTING ORDER", "rows": [{"t": "09:00", "sc": "90", "ie": "E", "set": "STRASSE"}]},
+                "cast": [{"no": "1", "role": "BEN", "actor": "Max Muster", "pickup": "06:30", "call": "06:45", "onset": "07:30"}]}
+    c2["calls"].append({"dept": "Kamera", "role": "B-Cam", "name": "Tom Zweit", "t2": "06:45"})
+    c2["depts"].append({"dept": "Grip", "text": "Kran", "text2": "Car Rig ab 06:30"})
     crew = [{"dept": "Regie", "people": [{"name": "Alex Beispiel", "role": "1st AD", "phone": "+41 79 000 00 01", "email": "alex@example.ch"}]},
             {"dept": "Kamera", "people": [{"name": "Kim Muster", "role": "DoP", "phone": "+41 79 000 00 02", "email": "kim@example.ch"}]},
             {"dept": "Maske", "people": [{"name": "Mara Test", "role": "Make-up", "phone": "+41 79 000 00 03"}]},

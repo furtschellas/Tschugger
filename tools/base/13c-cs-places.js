@@ -61,15 +61,15 @@ export function csLocFp(c,l,date,icon){if(l.kinds||typeof fpFor!=="function"||!v
   /* in the head of the location: one round icon per floorplan (the name in the tooltip) */
   if(icon)return [...out.values()].map(f=>'<a class="cshn csfpi" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer" title="'+esc("Floorplan · "+f.name)+'" aria-label="'+esc("Floorplan · "+f.name)+'">'+CSI.fp+'</a>').join("");
   return '<div class="csfp">'+[...out.values()].map(f=>'<a class="pillbtn" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+CSI.doc+' Floorplan · '+esc(f.name)+'</a>').join("")+'</div>'}
-export function csOrderRows(rows,date,locs,one){rows=csA(rows);const ONE=(()=>{const s0=csA(locs).filter(l=>!l.kinds&&l.no);return s0.length===1?s0[0]:null})();if(!rows.length)return"";const ni=date?csNowIdx(rows,date):-1,RK=date?csKeys(rows):[];return '<ol class="tl csorder">'+rows.map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
-    if(!r.sc){const ek=RK[i]||"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(date,ek,"1"):"";
+export function csOrderRows(rows,date,locs,one,u){u=u||"1";rows=csA(rows);const ONE=(()=>{const s0=csA(locs).filter(l=>!l.kinds&&l.no);return s0.length===1?s0[0]:null})();if(!rows.length)return"";const ni=date?csNowIdx(rows,date):-1,RK=date?csKeys(rows):[];return '<ol class="tl csorder">'+rows.map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
+    if(!r.sc){const ek=RK[i]?RK[i]+(u!=="1"?"_u"+u:""):"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(date,ek,u):"";   /* 2nd Unit: its own lunch, wrap and setups («lunch_u2») */
       return '<li class="row ev'+nw+(eb?' evack':'')+'"><div class="t">'+esc(r.t||"")+nb+'</div><div class="what">'+csTx(r.text||r.syn||"")+eb+'</div></li>'}
     /* scenes look like in the schedule (same row, details, cast, buttons): the scheduled row of that day with the callsheet time */
     const sx=(()=>{try{const l=(schedIndex()[norm(r.sc)]||[]);const o=l.find(y=>y.d&&y.d.date===date)||l[0];return o?o.it:null}catch(_){return null}})();
     const fromCs={sc:String(r.sc),ie:r.ie||"",set:r.set||"",d:r.syn||"",pg:r.pgs||"",dur:r.dur||"",dir:r.dir||"",cast:String(r.cast||"").split(/[,\s]+/).filter(Boolean)};
     const it=Object.assign({},fromCs);if(sx)for(const kk in sx){const v=sx[kk];if(v!=null&&v!==""&&!(Array.isArray(v)&&!v.length))it[kk]=v}it.t=r.t||(sx&&sx.t)||"";
     const bd0=date&&typeof bdFor==="function"?bdFor(date,r.sc):null;   /* the details of the scene from the breakdown are already shown: the callsheet notes only without them */
-    /* the notes of the callsheet are part of «Details» (below) */const keep=window.__mctx;window.__mctx={date:date||"",u:"1",cs:true};let li="";try{li=itemHTML(it)}catch(_){li=""}window.__mctx=keep;
+    /* the notes of the callsheet are part of «Details» (below) */const keep=window.__mctx;window.__mctx={date:date||"",u,cs:true};let li="";try{li=itemHTML(it)}catch(_){li=""}window.__mctx=keep;
     /* extras of the callsheet (when the breakdown has none): with the cast, shown and hidden with it */
     const extra=(r.extras&&!(bd0&&bd0.h&&bd0.h.XX)?'<div class="bdx"><u>XX:</u> '+csTx(csS(r.extras))+'</div>':'');
     /* folded: the first line (scene, I/E, set, pages) is the summary, everything else opens with a tap */

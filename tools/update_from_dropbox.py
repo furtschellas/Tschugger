@@ -953,16 +953,23 @@ CS_A = (
     'bei "wardrobe" und "makeup" jede belegte Spalte als «Name Zeit Dauer», Name = Personenname aus dem Spaltenkopf (Kopf «Make Up - Marina» → «Marina 07:55 - 08:10 15’»), '
     'mehrere Spalten mit "; " getrennt, ohne Kommentare wie «auch dabei»; ohne Namen im Kopf nur «Zeit Dauer»), '
     '"extras": [{"count", "part", "scenes", "call", "wardrobe", "makeup", "onset"}], '
-    '"vehicles": [{"name", "scenes", "via", "call", "rts"}]}'
+    '"vehicles": [{"name", "scenes", "via", "call", "rts"}], '
+    '"u2": nur wenn das Callsheet auch eine 2nd Unit (B Unit) hat: {"crewCall": CREW CALL B UNIT, "contact": {"role", "name", "phone"} (B UNIT CONTACT on Set), '
+    '"ad": 1st AD der B Unit, "times": {"rts", "lunch", "wrap"} (die Zeiten der B Unit), "locations": [wie oben, die Sets der B Unit, z. B. «B.1»], '
+    '"order": {wie oben: «2ND UNIT SHOOTING ORDER»}}}. '
+    'TRENNUNG DER UNITS: "times", "contact", "locations" und "order" oben nur mit der 1st Unit (A Unit); alles der 2nd Unit (B Unit) nur in "u2". '
+    'In "cast", "extras" und "vehicles" jede Zeile, deren Szenen (x) in der 2nd-Unit-Drehfolge stehen, mit "u": "2"; die anderen ohne "u". '
+    'Gibt es keine 2nd Unit, kein "u2".'
 )
 CS_B = (
     '{"drivers": Kopfzeile TRANSPORT with DRIVER, '
     '"transport": [{"vehicle", "driver", "passengers", "from", "t1", "to", "t2"}] (jede Fahrt eine Zeile; Fahrzeug und Fahrer wiederholen), '
     '"travel": [{"how", "name", "from", "t1", "to", "t2", "note", "date": Datum YYYY-MM-DD aus der Überschrift des Abschnitts («TRAVEL CAST - Thursday, October 22nd» = der 22.)}] (TRAVEL CAST, alle Abschnitte, auch die anderer Tage), '
-    '"depts": [{"dept": Abteilung, "text": Text}] (INDIVIDUAL INFORMATION BY DEPARTEMENT und die Abteilungszeilen nach PREVISION, z. B. Drone, Grip, Sound, Light, Costume, Make-Up/Hair, Armourer/SFX, Stunt), '
+    '"depts": [{"dept": Abteilung, "text": Text (bei zwei Spalten «1st UNIT» / «2nd UNIT»: die Spalte der 1st Unit), "text2": Text der Spalte «2nd UNIT» (nur wenn es sie gibt)}] (INDIVIDUAL INFORMATION BY DEPARTEMENT und die Abteilungszeilen nach PREVISION, z. B. Drone, Grip, Sound, Light, Costume, Make-Up/Hair, Armourer/SFX, Stunt), '
     '"crewTransport": [{"vehicle", "people", "from", "t1", "to", "t2"}] (TRANSPORT CREW), '
     '"prevision": {"title": Kopfzeile PREVISION, "rows": wie bei SHOOTING ORDER: Szene = {"t","dur","dir","sc","pgs","time","ie","set","syn","cast","extras","notes"}, sonst {"t","text"}}, '
-    '"calls": [{"dept": Abteilung, "role", "name", "t": Zeit oder Text wie «i.e.d.»}] (CALLS ON SET, beide Spalten), '
+    '"calls": [{"dept": Abteilung, "role", "name", "t": Zeit oder Text wie «i.e.d.» der 1st Unit (Spalte «1st IN»), "t2": Zeit der 2nd Unit (Spalte «2nd IN», nur wenn es sie gibt)}] (CALLS ON SET, beide Spaltenblöcke), '
+    '"prevision2": wie "prevision", für die PREVISION der 2nd Unit (nur wenn es sie gibt), '
     '"total": TOTAL-Zeile, "notes": [Notes], "radio": Funkkanäle, '
     '"sections": [{"title", "rows": [[Zelle, …], …]}] (nur was sonst nirgends passt)}'
 )
@@ -972,7 +979,7 @@ CS_RULES = ("Antworte mit genau diesem JSON-Objekt, kompakt (ohne Einrückung), 
 def cs_texts(cs):
     """texts of the callsheet that are translated: production information, location notes and the labels/texts of their items"""
     out = [str(x) for x in cs.get("info") or [] if x]
-    for l in cs.get("locations") or []:
+    for l in (cs.get("locations") or []) + ((cs.get("u2") or {}).get("locations") or [] if isinstance(cs.get("u2"), dict) else []):
         if not isinstance(l, dict): continue
         out += [str(x) for x in l.get("notes") or [] if x]
         for i in l.get("items") or []:
@@ -1154,7 +1161,7 @@ CS_BASE = ("\nBASE: Pro Base-Adresse genau EINE Base – steht im Dokument nur e
 def cs_fill_places(cs, data):
     """map links that the callsheet leaves out: from the Motivliste or an earlier callsheet with the same place name (never overwritten)"""
     k = known_places(data); n = 0
-    for l in cs.get("locations") or []:
+    for l in (cs.get("locations") or []) + ((cs.get("u2") or {}).get("locations") or [] if isinstance(cs.get("u2"), dict) else []):
         if not isinstance(l, dict): continue
         hit = k.get(_lk(l.get("name")))
         if hit and hit.get("map") and not l.get("map"): l["map"] = hit["map"]; n += 1
@@ -1163,6 +1170,33 @@ def cs_fill_places(cs, data):
                 h2 = k.get(_lk(i["label"]))
                 if h2 and h2.get("map") and _lk(i.get("text"))[:12] and _lk(h2.get("address"))[:12] == _lk(i.get("text"))[:12]: i["map"] = h2["map"]; n += 1
     return n
+
+def _sck(x): return re.sub(r"\s+", "", str(x or "")).lower()
+
+
+def cs_split_u2(cs):
+    """the 2nd Unit of a callsheet on its own («u2»): its cast, extras and vehicles out of the lists of the 1st Unit,
+    its prevision into u2 – a row without the mark «u» goes to the 2nd Unit when all its scenes are in the 2nd-unit shooting order"""
+    u2 = cs.get("u2")
+    p2 = cs.pop("prevision2", None)
+    if not isinstance(u2, dict) or not u2:
+        cs.pop("u2", None); return cs
+    if isinstance(p2, dict) and p2.get("rows"): u2["prevision"] = p2
+    sc2 = {_sck(r.get("sc")) for r in ((u2.get("order") or {}).get("rows") or []) if isinstance(r, dict) and r.get("sc")}
+    sc1 = {_sck(r.get("sc")) for r in ((cs.get("order") or {}).get("rows") or []) if isinstance(r, dict) and r.get("sc")}
+    for k in ("cast", "extras", "vehicles"):
+        a, b = [], []
+        for r in cs.get(k) or []:
+            if not isinstance(r, dict): continue
+            u = str(r.pop("u", "") or "")
+            if not u:
+                scs = r.get("scenes"); scs = scs if isinstance(scs, list) else re.split(r"[,;]\s*", str(scs or ""))
+                scs = {_sck(x) for x in scs if _sck(x)}
+                u = "2" if scs and scs <= sc2 and not scs & sc1 else ""
+            (b if u == "2" else a).append(r)
+        if b: cs[k] = a; u2[k] = b
+    return cs
+
 
 def cs_to_dispo(cs, date, f):
     """the fields the rest of the app uses (Today, Meine Termine, push) taken from the structure «cs»"""
@@ -2018,7 +2052,7 @@ def main():
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 5 for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
+        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 6 for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
@@ -2027,7 +2061,8 @@ def main():
             a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A + CS_BASE + cs_known_hint(data), 32000, kind="dispo")
             b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000, kind="dispo")
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
-            cs["v"] = 5   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date; 4: places learnt (names, base rooms, map links); 5: one base with its rooms
+            cs_split_u2(cs)
+            cs["v"] = 6   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date; 4: places learnt (names, base rooms, map links); 5: one base with its rooms; 6: 2nd Unit separate («u2»)
             nf = cs_fill_places(cs, data)
             if nf: log("Callsheet: Kartenlinks ergänzt:", nf)
             md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])

@@ -293,7 +293,7 @@ export function renderDispo(){
     return h+'<div class="dayhead csnoday"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+(day.date?fmtDate(day.date):'')+'</span>'+UNITBAR+'</div></div>'+
       (typeof planFactsHTML==="function"?planFactsHTML(day,typeof planPdfBtn==="function"?planPdfBtn(day):""):"")+'</div>'+
       '<div class="csfollow">'+(window.CSI?CSI.doc:'')+'<div><b>'+L('Callsheet folgt')+'</b> <span>'+L('Das Callsheet erscheint hier automatisch, sobald es im Callsheet-Ordner der Dropbox liegt, meist am Vorabend.')+'</span></div></div>'+
-      (typeof csOrderRows==="function"?ul.map(([u,l])=>'<section class="dsec csview csplan"><h3 class="dh">'+esc(L("Laut Drehplan"))+(ul.length>1||u!=="1"?' · '+esc(UNAME[u]+" Unit"):'')+' · '+l.length+' '+esc(L("Szenen"))+'</h3>'+csOrderRows(l,day.date)+'<button class="lnk" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+' ›</button></section>').join(""):'')+
+      (typeof csOrderRows==="function"?ul.map(([u,l])=>'<section class="dsec csview csplan"><h3 class="dh">'+esc(L("Laut Drehplan"))+(ul.length>1||u!=="1"?' · '+esc(UNAME[u]+" Unit"):'')+' · '+l.length+' '+esc(L("Szenen"))+'</h3>'+csOrderRows(l,day.date,null,false,u)+'<button class="lnk" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+' ›</button></section>').join(""):'')+
       setfpHTML(day.date)+sidesHTML(day.date)+raHTML(day.date);
   }
   /* read in structure (as the document): the new view; older callsheets keep the view below */
