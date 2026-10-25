@@ -37,9 +37,9 @@ export async function admLoad(){
 }
 export function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
-export const SECS={};try{for(const k of ["cater","bcal","set-up","set-langs","set-areas","set-misc","set-push","set-src","set-bk"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.catcard=localStorage.getItem("sec:catcard")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
+export const SECS={};try{for(const k of ["cater","bcal"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.catcard=localStorage.getItem("sec:catcard")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
 const secOpen=(k,title,body)=>'<details class="asec '+k+'" data-sec="'+k+'"'+(SECS[k]!==false?' open':'')+'><summary>'+esc(title)+'</summary><div class="asb">'+body+'</div></details>';
-document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;if(/^(set-blocks|blk-|blkp-)/.test(d.dataset.sec))return;   /* Drehblöcke: always closed when the page is opened again (not remembered) */try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;if(/^(set-|blk-|blkp-)/.test(d.dataset.sec))return;   /* App-Einstellungen and Drehblöcke: always closed when the page is opened again (not remembered) */try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
 /* departments that are not fed on set: left out of the catering count */
 const NO_CATER=/^(catering|postprod|verleih)/i;
 export function crewDeptOf(m){
