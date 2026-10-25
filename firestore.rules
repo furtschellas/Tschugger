@@ -60,7 +60,10 @@ service cloud.firestore {
     function profile() { return ['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'testAck', 'testVer', 'func']; }
     // Text eines Profilfelds höchstens 1000 Zeichen (nur wenn es Text ist)
     function txt(f) { return !(f in request.resource.data) || !(request.resource.data[f] is string) || request.resource.data[f].size() <= 1000; }
-    function profileOk() { return txt('name') && txt('firstName') && txt('lastName') && txt('phone') && txt('contactEmail') && txt('diet') && txt('intol') && txt('allergies') && txt('func'); }
+    // Telefon und Kontakt-E-Mail gehören nach contacts/{uid}: in members nur noch unverändert stehen lassen oder löschen (nie neu schreiben)
+    function keptOrGone(f) { return !(f in request.resource.data) || (resource != null && f in resource.data && request.resource.data[f] == resource.data[f]); }
+    function profileOk() { return txt('name') && txt('firstName') && txt('lastName') && txt('phone') && txt('contactEmail') && txt('diet') && txt('intol') && txt('allergies') && txt('func')
+      && keptOrGone('phone') && keptOrGone('contactEmail'); }
     // Menütext höchstens 300 Zeichen
     function short(f) { return request.resource.data.get(f, '').size() <= 300; }
     // Datum als Text JJJJ-MM-TT

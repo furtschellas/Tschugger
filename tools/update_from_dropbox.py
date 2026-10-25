@@ -21,6 +21,8 @@ def status(state, msg, **extra):
     try: old = json.loads(p.read_text())
     except Exception: old = {}
     new = {"state": state, "msg": msg, **extra}
+    for k in ("fails", "alarmAt"):   # the failure counter and the last alarm of fail_alarm.py stay (a new message must not reset them)
+        if k in old and k not in new: new[k] = old[k]
     same = all(old.get(k) == v for k, v in new.items())
     try: age = (now - datetime.datetime.fromisoformat(old.get("at", "").replace("Z", "+00:00"))).total_seconds()
     except Exception: age = 1e9
@@ -53,6 +55,9 @@ AI = {"m": {}, "warned": False, "langs": None, "run": {}}
 
 
 class Budget(Exception): pass
+
+
+GEO_DEADLINE = time.time() + 12 * 60
 
 
 ALL_LANGS = ["de", "fr", "it", "en", "hi"]
@@ -1083,6 +1088,8 @@ def geocode(addr, cache):
     if not addr: return None
     cc = geo_codes(); key = addr if cc == "ch" else addr + "|" + cc   # with more countries: asked again (before only Switzerland was searched)
     if key in cache: return cache[key]
+    if cc != "ch" and cache.get(addr): return cache[addr]   # found before in Switzerland: stays (no new search for every old address)
+    if time.time() > GEO_DEADLINE: return None   # at most 12 minutes of address search per run – the rest in the next run (else the run timed out)
     try:
         time.sleep(1.1)
         r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": addr, "format": "json", "limit": 1, "countrycodes": cc},
@@ -1581,6 +1588,7 @@ def add_drive_times(data):
     H = {"User-Agent": "TschuggerCrewApp/1.0 (furtschellas@gmail.com)"}
     def gc(addr, name=""):
         if geo.get(addr): return geo[addr]
+        if time.time() > GEO_DEADLINE: return None   # time for the address search used up: next run
         parts = [x.strip() for x in addr.split(",") if x.strip()]
         cands = [addr] + [", ".join(parts[i:]) for i in range(1, len(parts) - 1)] + ([name + ", " + parts[-1]] if name and parts else [])
         for q in cands:
@@ -2083,7 +2091,7 @@ def main():
             if not isinstance(l, dict): continue
             if l.get("map"): labs.setdefault(l["map"], "L%d" % (li + 1))
             for i in l.get("items") or []:
-                if isinstance(i, dict) and i.get("map"): labs.setdefault(i["map"], "L%d·%s" % (li + 1, re.sub(r"[^A-Za-z/ ]", "", str(i.get("label") or "Punkt"))[:18].strip()))
+                if isinstance(i, dict) and i.get("map"): labs.setdefault(i["map"], "L%d·%s" % (li + 1, next((k for k, rx in (("Base", r"\bbase\b"), ("WHM", r"w\s*/\s*h\s*/\s*m"), ("Lunch", r"lunch|mittag"), ("Park", r"park"), ("WC", r"\bwc\b"), ("Prod", r"\bprod|\bdit\b")) if re.search(rx, str(i.get("label") or ""), re.I)), "Punkt")))   # public log: only the kind, never a name
             # the Motivliste: a set with one of the scenes (also only the number: «186» for «186pt1A»), else a set with the same name
             keys = [x.lstrip("0") for x in cs_scene_list(l.get("scenes"))]
             keys += [re.sub(r"(pt|sl)\d+[a-z]?$", "", k) for k in keys] + [re.sub(r"[a-z]$", "", k) for k in keys]

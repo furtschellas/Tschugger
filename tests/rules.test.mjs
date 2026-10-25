@@ -3,7 +3,7 @@
 // Mit TESTS_OUT=<datei> werden die Resultate (nur Namen, ✓/✗) für das Log in der App geschrieben.
 import fs from "node:fs";
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, serverTimestamp, deleteField } from "firebase/firestore";
 
 const RES = [], FAILS = [];
 async function check(name, p) {
@@ -302,6 +302,11 @@ await check("Kontakt: Catering (crew.food) liest Profile, aber keine Nummern", a
 await check("Kontakt: Admin liest alle", assertSucceeds(getDocs(collection(as("admin"), "contacts"))));
 await check("Kontakt: Owner ändert die Nummer einer Person", assertSucceeds(setDoc(doc(as("owner"), "contacts/uPower"), { phone: "+41 00 000 00 02" })));
 await check("Kontakt: nicht eingeladene Person nicht", assertFails(setDoc(doc(as("stranger"), "contacts/uStr"), { phone: "1" })));
+
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "members/uCrew"), { active: true, email: "crew@test.ch", name: "crew", phone: "+41 00 000 00 09" }) });
+await check("Profil: Telefon nicht mehr in members schreiben (gehört nach contacts)", assertFails(updateDoc(doc(as("crew"), "members/uCrew"), { phone: "+41 00 000 00 08" })));
+await check("Profil: altes Telefon in members löschen geht", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { phone: deleteField() })));
+await check("Profil: übrige Felder weiter speichern", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { firstName: "Crew" })));
 
 await check("Unbekannte Sammlung: alles gesperrt", assertFails(setDoc(doc(as("owner"), "irgendwas/x"), { a: 1 })));
 
