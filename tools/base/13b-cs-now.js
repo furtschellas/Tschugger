@@ -18,7 +18,8 @@ window.csShootDay=csShootDay;
 const csNowFor=date=>{const n=csHM();return date!==todayISO()&&n<"12:00"?String(24+ +n.slice(0,2))+n.slice(2):n};
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null; lunch or a setup running: that row with ev = its key */
 export function csNowScene(x){const sd=csShootDay();x=x||(S.dispos||[]).find(y=>y&&y.date===sd);const c=x&&x.cs;if(!c||x.date!==sd)return null;const rows=csRows(c);let i=csNowIdx(rows,x.date);
-  if(i>=0&&!rows[i].sc&&csAck(x.date)){const k=csKeys(rows)[i];if(k)return Object.assign({},rows[i],{ev:k,lunch:k==="lunch"&&scState(x.date,k)===1})}   /* setup, lunch or wrap is the step now (running or next) */
+  if(i>=0&&!rows[i].sc){const k=csKeys(rows)[i];   /* setup, lunch or wrap is the step now (running or next) – a setup also by the clock (building up before the first scene) */
+    if(k&&(csAck(x.date)||/^setup\d*$/.test(k)))return Object.assign({},rows[i],{ev:k,lunch:k==="lunch"&&scState(x.date,k)===1})}
   for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(csIsWrap(r))return null}return null}
 /* the row running now: with quittances the running one, else the next open step (scene, setup, lunch, wrap) after the last done one (wrap quittiert: none);
    without quittances by the clock: the last row that has started (after the wrap: none) */

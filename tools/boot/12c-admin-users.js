@@ -99,7 +99,7 @@ function reqSec(){
 /* user list: one compact card per person, filter chips with counts, actions folded away */
 /* automatic quittances (App-Verwaltung → Einstellungen → Quittieren): per step a switch and the Zugabe in minutes – config/app castAuto, sceneAuto {k: {on, min}}
    (the steps as in 24-flow.js CQA_STEPS and 27-scene-ack.js SCA_KINDS) */
-const AUTOQ={cast:[["c","P/UP und Call"],["m","Maske"],["w","Kostüm"],["b","Base"],["o","On set"]],scene:[["s","Szenen und Setup"],["l","Lunch Beginn"],["w","Drehschluss"]]};
+const AUTOQ={cast:[["c","P/UP und Call"],["m","Maske"],["w","Kostüm"],["b","Base"],["o","On set"]],scene:[["a","Setup vor Drehbeginn"],["s","Szenen und Setup"],["l","Lunch Beginn"],["w","Drehschluss"]]};
 const autoRows=(g,cfg)=>'<div class="aqg">'+AUTOQ[g].map(([k,t])=>{const x=(cfg||{})[k]||{};return '<div class="aqr"><label class="ck"><input form="setform" type="checkbox" name="aq'+g+k+'"'+(x.on?' checked':'')+'> '+esc(L(t))+'</label>'+
   '<label class="aqm">'+esc(L("Zugabe"))+' <input form="setform" type="number" name="aqm'+g+k+'" min="0" max="180" step="1" inputmode="numeric" value="'+(+x.min||0)+'" aria-label="'+esc(L(t)+" – "+L("Zugabe"))+'"> '+esc(L("Min."))+'</label></div>'}).join("")+'</div>';
 const autoRead=(fl,g)=>Object.fromEntries(AUTOQ[g].map(([k])=>[k,{on:!!(fl.elements['aq'+g+k]||{}).checked,min:Math.max(0,Math.min(180,parseInt((fl.elements['aqm'+g+k]||{}).value,10)||0))}]));

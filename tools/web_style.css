@@ -1088,7 +1088,11 @@ html body #view .tnow .tnowcm{display:flex;flex-wrap:wrap;align-items:center;gap
 html body #view .tnow .tnc+.tnk{margin-left:6px}
 html body #view .tnow .tnk{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 html body #view .tnow .tnc{display:inline-flex;flex-wrap:wrap;gap:4px}
-html body #view .tnow .tnc span{white-space:nowrap}
+html body #view .tnow .tnc span{white-space:nowrap;font-size:12px;border:1px solid var(--rule);border-radius:99px;padding:1px 8px;background:var(--paper)}
+/* the same colours as the cast chips in the shooting order (.cast span.cqlk1–3) */
+html body #view .tnow .tnc span.tnl1{background:var(--accent);border-color:var(--accent);color:#fff}
+html body #view .tnow .tnc span.tnl2{background:var(--accent);border-color:#fff;color:#fff}
+html body #view .tnow .tnc span.tnl3{background:transparent;border-color:var(--accent);color:var(--accent)}
 html body #view .tnow .tnc i{font-style:normal;font-weight:700}
 html body #view .tnow .tnc em{font-style:normal;margin-left:5px}
 html body #view .tnow .tnowx{display:none;margin-top:8px}
@@ -1105,6 +1109,7 @@ html body #view .tcard.tnow .tch,html body #view .today .tcard.tnow .tch{flex:no
   html body #view .tcard.tnow:not(.tnowo) .tnowcm{flex-wrap:nowrap;overflow:hidden;margin-top:3px}
   html body #view .tcard.tnow:not(.tnowo) .tnowcm .tnc{flex-wrap:nowrap}
   html body #view .tcard.tnow:not(.tnowo) .tnc em{display:none}
+  html body #view .tcard.tnow .tnowx .tnc span.tnon{display:none}
   html body #view .tcard.tnow.tnowo .tnowb{-webkit-line-clamp:unset;line-clamp:none;display:block}
 }
 /* day strip (Drehplan, Callsheet …): a clear line with the name of the block between two shooting blocks */

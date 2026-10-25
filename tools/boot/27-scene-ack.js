@@ -85,20 +85,24 @@ async function scLunchAuto(){if(SCLBUSY||typeof canPerm!=="function"||!canPerm("
   finally{SCLBUSY=false}}
 setInterval(scLunchAuto,30e3);
 /* ---------- automatic quittances of the Drehplan (App-Verwaltung → Einstellungen → Quittieren): SCENEAUTO {s, l, w: {on, min}} ----------
-   s scenes and setups begin · l lunch begins (its end as before after the lunch duration) · w wrap – once the time of the Drehplan plus the
+   a the setup before the first scene begins at the time of the callsheet (else of the Drehplan) – on unless switched off ·
+   s scenes and later setups begin · l lunch begins (its end as before after the lunch duration) · w wrap – once the time of the Drehplan plus the
    Zugabe has passed. The scene running in that unit is finished then (one scene runs at a time). Times: planned time + Zugabe.
    Only the latest due row of a unit and only when nothing after it is quittiert yet (rows skipped in reality stay open); only today and
    yesterday (night shoots), only times of the last 12 h; every device with «Szenen quittieren». Set back by hand: marker rideack/z… (s 1,
    like the cast in 24-flow.js) – the automatic leaves that row alone. */
-const SCA_KINDS=[["s","Szenen und Setup"],["l","Lunch Beginn"],["w","Drehschluss"]];
+const SCA_KINDS=[["a","Setup vor Drehbeginn"],["s","Szenen und Setup"],["l","Lunch Beginn"],["w","Drehschluss"]];
 const scaOn=k=>{const A=window.SCENEAUTO;return !!(A&&A[k]&&A[k].on)};
 const scaMark=(date,sc)=>{const s=date+"|"+scAckId(date,sc);let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "zs"+(h>>>0).toString(36)};
 const scaZ=(date,sc)=>!!(window.RIDEACK||{})[scaMark(date,sc)];
 async function scaKeep(date,sc){if(!SCA_KINDS.some(([k])=>scaOn(k))||scaZ(date,sc))return;const id=scaMark(date,sc),v={d:date,at:Date.now(),s:1};
   try{await dbWrite("set","rideack/"+id,v);if(window.RIDEACK)window.RIDEACK[id]=v}catch(_){}}
 /* the rows of a unit that can be quittiert: key (scene number or lunch / wrap / setup…, «_u2» in the 2nd unit), kind, planned time (ms) */
-function scaRows(day,u){const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items),ks=scRowKeys(its,x=>x.n);let ref=0;
-  return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k)return null;const b=scBase(k),kind=b==="lunch"?"l":b==="wrap"?"w":"s",h=hm(x.t);if(!h)return null;
+function scaRows(day,u){const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items),ks=scRowKeys(its,x=>x.n);let ref=0,scene=false;
+  /* the time of a setup in the callsheet (its shooting order), else the one of the Drehplan */
+  let cr=[],ck=[];try{const dp=u==="1"&&arr(S.dispos).find(x=>x&&x.date===day.date&&x.cs);if(dp){cr=arr((dp.cs.order||{}).rows);ck=scRowKeys(cr,r=>r.text||r.syn)}}catch(_){}
+  return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k)return null;const b=scBase(k),setup=/^setup\d*$/.test(b),first=setup&&!scene;if(x.sc)scene=true;
+    const kind=b==="lunch"?"l":b==="wrap"?"w":first?"a":"s";let h=hm(x.t);if(first){const j=ck.indexOf(b);if(j>=0&&hm(cr[j].t))h=hm(cr[j].t)}if(!h)return null;
     let t=0;try{t=zurichUTC(day.date,h).getTime();if(ref&&ref-t>12*3600e3)t=zurichUTC(isoAdd(day.date,1),h).getTime()}catch(_){return null}if(!ref)ref=t;
     return {k:(x.sc||u==="1")?k:k+"_u"+u,kind,t}}).filter(Boolean)}
 let SCABUSY=false;
@@ -133,6 +137,8 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   if(st===0){const run=scRunning(date,u,id);
     /* the next scene starts during lunch: the lunch ends now (at the latest at its planned end) – not awaited, WhatsApp «direkt» must open in this tap */
     if(run&&scBase(run)==="lunch"){const lx=window.SCACK[scAckId(date,run)]||{},lb=+lx.b||+lx.at||Date.now();scWrite(date,run,u,{s:2,b:lb,e:Math.max(lb,Math.min(scLunchEnd(lx),Date.now()))}).catch(()=>{})}
+    /* a setup still running (also one started automatically): it is finished now */
+    else if(run&&/^setup\d*$/.test(scBase(run))){const sx=window.SCACK[scAckId(date,run)]||{},sb=+sx.b||+sx.at||Date.now();scWrite(date,run,u,{s:2,b:sb,e:Math.max(sb,Date.now())}).catch(()=>{})}
     else if(run){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}}
   /* WhatsApp per kind of quittance (Mein Konto → App): «direkt» opens WhatsApp right in this tap (a phone allows it only here, not after saving) */
   const wv=st===0&&scBase(sc)==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};

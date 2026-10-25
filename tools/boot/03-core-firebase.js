@@ -64,8 +64,9 @@ export async function loadLangs(){
     /* scenes and rides quittiert (App-Verwaltung → Einstellungen; on unless switched off) */
     {const c=d.exists()?d.data():{};if(cfgPut("SCACKON",c.sceneAck!==false,"appscack",false)|cfgPut("RIDEACKON",c.rideAck!==false,"apprideack",false))render()}   /* map in the callsheet (App-Verwaltung → Einstellungen) */
     /* automatic quittances per step (App-Verwaltung → Einstellungen → Quittieren): {k: {on, min}} */
-    {const n=(a,ks)=>Object.fromEntries(ks.map(k=>{const x=(a&&a[k])||{};return [k,{on:x.on===true,min:Math.max(0,Math.min(180,parseInt(x.min,10)||0))}]}));const c=d.exists()?d.data():{};
-      cfgPut("CASTAUTO",n(c.castAuto,["c","m","w","b","o"]),"appcastauto",false);cfgPut("SCENEAUTO",n(c.sceneAuto,["s","l","w"]),"appsceneauto",false)}
+    /* the setup before the first scene («a») is on unless switched off, everything else off unless switched on */
+    {const n=(a,ks,dflt)=>Object.fromEntries(ks.map(k=>{const x=(a&&a[k])||{};return [k,{on:(dflt||[]).includes(k)?x.on!==false:x.on===true,min:Math.max(0,Math.min(180,parseInt(x.min,10)||0))}]}));const c=d.exists()?d.data():{};
+      cfgPut("CASTAUTO",n(c.castAuto,["c","m","w","b","o"]),"appcastauto",false);cfgPut("SCENEAUTO",n(c.sceneAuto,["a","s","l","w"],["a"]),"appsceneauto",false)}
     window.GCALON=d.exists()&&!!d.data().gcal;
     window.AIDAYUSD=d.exists()&&+d.data().aiDayUsd>0?+d.data().aiDayUsd:10;
     cfgPut("AUTOUPD",!(d.exists()&&d.data().autoUpdate===false),"appauto",false);
