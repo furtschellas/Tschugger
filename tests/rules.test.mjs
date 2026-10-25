@@ -103,7 +103,7 @@ await check("Rollen: Admin hat danach nur die Rechte der Admin-Rolle", assertFai
 await check("Rollen: Admin-Rolle wieder entfernen (Owner)", assertSucceeds(deleteDoc(doc(as("owner"), "roles/admin"))));
 await check("Rollen: ohne Admin-Rolle hat der Admin wieder alles ausser «Einstellungen»", assertSucceeds(getDocs(collection(as("admin"), "requests"))));
 await check("Mitglied: Crew kann sich nicht selbst sperren/entsperren (active)", assertFails(updateDoc(doc(as("crew"), "members/uCrew"), { active: false })));
-await check("Mitglied: eigenes Profil ändern geht", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { phone: "+41 79 000 00 00" })));
+await check("Mitglied: eigenes Profil ändern geht", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { diet: "vegi" })));
 await check("Mitglied: zuletzt online und App/Browser speichern", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { lastSeen: 1, app: "app-ios" })));
 await check("Mitglied: App-Angabe nicht beliebig lang", assertFails(updateDoc(doc(as("crew"), "members/uCrew"), { app: "x".repeat(40) })));
 await check("Mitglied: fremdes Profil nicht", assertFails(updateDoc(doc(as("crew"), "members/uOther"), { phone: "1" })));
