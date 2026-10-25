@@ -1,16 +1,17 @@
-import {ddmm,driveMin,esc,isoAdd,L,LANG,localISO,mapsDir,pad2,S,todayISO,TX} from "../base/10-core.js";
+import {ddmm,driveMin,esc,isoAdd,L,LANG,localISO,mapsDir,mkDialog,pad2,S,saveBtn,todayISO,TX,xBtn} from "../base/10-core.js";
 import {UNAME,hasU,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,evRecent,hm,myEvents,myIdentity,telLinks} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
-import {csMe} from "../base/13a-callsheet.js";
-import {csHM,csNowBits,csNowScene} from "../base/13b-cs-now.js";
+import {csKeys,csMe,csRows} from "../base/13a-callsheet.js";
+import {csHM,csNowBits,csNowScene,csShootDay} from "../base/13b-cs-now.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
-import {arr} from "../base/20-data-start.js";
+import {arr,showMsg} from "../base/20-data-start.js";
 import {fmtT} from "./01-config.js";
-import {ME} from "./03-core-firebase.js";
+import {ME,can,fb,ownDec,ownEnc} from "./03-core-firebase.js";
+import {getDataKey} from "./04-data.js";
 import {savePrefsSoon} from "./06-prefs-docs.js";
 import {OFF,chgList,chgSeen,chgSeenGone,dmy,offState,unitItems} from "./14-today-changes-offline.js";
 import {wxTile} from "./15-weather.js";
@@ -187,12 +188,76 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-tscript]")||!v
 /* «Jetzt»: the scene being shot now (quittiert, else by the callsheet times) with its place and how long it runs – Today and the callsheet of today */
 /* the card: one line «Jetzt · scene, place, set (since)» and – while someone is in Maske / Kostüm – one line with their cast numbers
    (on the phone only the numbers, on wider screens with the role); a tap opens it: description and cast of the scene, roles written out */
+/* ---------- Prognosen im «Jetzt» (Recht «Prognosen im Jetzt erfassen»: now.forecast) ----------
+   nowcast/{JJJJMMTT} {c: verschlüsselt [{k, t, n, bis}], at}: k = «start» Drehbeginn · «lunch» · «wrap» Drehschluss · eine Szene · «x» Anderes (Text n);
+   t = erwartete Zeit, bis = optional: ab dann nicht mehr angezeigt. Eine Prognose erlischt, sobald ihr Schritt quittiert ist
+   (Drehbeginn: eine Szene läuft · Lunch: begonnen · Szene: begonnen · Drehschluss: quittiert). Auf dem Gerät für einen schnellen Start gemerkt. */
+window.NOWCAST=window.NOWCAST||{};
+try{const c=JSON.parse(localStorage.getItem("nowcast:v1")||"null");if(c&&c.d&&Array.isArray(c.items))window.NOWCAST[c.d]=c.items}catch(_){}
+const ncDay=()=>{try{return csShootDay()}catch(_){return todayISO()}};
+const ncDocId=d=>String(d||"").replace(/-/g,"");
+let NCSUB=null,NCD="";
+async function ncSub(){const d=ncDay();if(typeof ME==="undefined"||!ME)return;if(NCSUB&&NCD===d)return;try{if(typeof NCSUB==="function")NCSUB()}catch(_){}NCSUB="…";NCD=d;
+  /* the whole (small) collection – one document per shooting day; only the day of «Jetzt» is used */
+  try{const {F,db}=await fb();NCSUB=F.onSnapshot(F.collection(db,"nowcast"),async q=>{let items=[];try{const x=(q.docs||[]).find(y=>y.id===ncDocId(d));if(x&&x.data().c){const o=await ownDec(await getDataKey(),x.data().c);items=arr(o&&o.items)}}catch(err){console.warn("nowcast",err&&err.message||err);return}
+      const was=JSON.stringify(window.NOWCAST[d]||[]);window.NOWCAST[d]=items;try{localStorage.setItem("nowcast:v1",JSON.stringify({d,items}))}catch(_){}
+      if(was!==JSON.stringify(items)&&(S.tab==="today"||S.tab==="dispo"))render()},()=>{NCSUB=null})}catch(_){NCSUB=null}}
+setTimeout(ncSub,1500);setInterval(()=>{if(!NCSUB||NCD!==ncDay())ncSub()},20e3);
+const ncCan=()=>{try{return can("now.forecast")&&!(window.simOn&&window.simOn())}catch(_){return false}};
+/* the label of one forecast */
+const ncLabel=it=>it.k==="start"?L("Drehbeginn"):it.k==="lunch"?"Lunch":it.k==="wrap"?L("Drehschluss"):it.k==="x"?String(it.n||L("Anderes")):L("Szene")+" "+it.k;
+/* still shown: its step not quittiert yet and its «bis» not passed */
+function ncActive(d){const now=Date.now(),st=k=>typeof scState==="function"?scState(d,k):0;
+  return arr(window.NOWCAST[d]).filter(it=>{if(!it||!it.t)return false;
+    if(it.bis){try{if(zurichUTC(d,it.bis).getTime()<=now)return false}catch(_){}}
+    if(it.k==="x")return true;if(it.k==="wrap")return st("wrap")!==2;if(it.k==="lunch")return st("lunch")===0;
+    if(it.k==="start"){const rows=arr((((arr(S.dispos).find(y=>y&&y.date===d)||{}).cs||{}).order||{}).rows);return !rows.some(r=>r&&r.sc&&st(String(r.sc))>0)}
+    return st(it.k)===0})}
+const ncLine=d=>ncActive(d).map(it=>'<span class="tnfc"><b>'+esc(ncLabel(it))+'</b> ~'+esc(it.t)+(it.n&&it.k!=="x"?' <small>'+esc(it.n)+'</small>':'')+'</span>').join("");
+/* the text for WhatsApp: «Prognose 25.10.: Lunch ~13:15 · Drehschluss ~19:30» */
+const ncText=d=>{const l=ncActive(d);return l.length?L("Prognose")+" "+d.split("-").reverse().slice(0,2).join(".")+".: "+l.map(it=>ncLabel(it)+" ~"+it.t+(it.n&&it.k!=="x"?" ("+it.n+")":"")).join(" · "):""};
+window.ncText=ncText;
+/* the dialog: one row per forecast – what, expected time, shown until (optional), note */
+function ncDialog(){const d=ncDay(),dp=arr(S.dispos).find(y=>y&&y.date===d),rows=csRows(dp&&dp.cs),keys=csKeys(rows);
+  const opts=[["start",L("Drehbeginn")],["lunch","Lunch"],["wrap",L("Drehschluss")]].concat(rows.map((r,i)=>r.sc?[String(r.sc),L("Szene")+" "+r.sc]:null).filter(Boolean)).concat([["x",L("Anderes")]]);
+  void keys;let items=arr(window.NOWCAST[d]).map(x=>Object.assign({},x));if(!items.length)items=[{k:"lunch",t:""}];
+  const row=(it,i)=>'<div class="ncrow" data-nci="'+i+'"><select data-ncf="k" aria-label="'+esc(L("Was"))+'">'+opts.map(([v,t])=>'<option value="'+esc(v)+'"'+(it.k===v?' selected':'')+'>'+esc(t)+'</option>').join("")+'</select>'+
+    '<label>'+esc(L("ca."))+' <input type="time" data-ncf="t" value="'+esc(it.t||"")+'"></label><label>'+esc(L("anzeigen bis"))+' <input type="time" data-ncf="bis" value="'+esc(it.bis||"")+'"></label>'+
+    '<input type="text" data-ncf="n" maxlength="80" placeholder="'+esc(L("Notiz (bei «Anderes»: Text)"))+'" value="'+esc(it.n||"")+'"><button type="button" class="lnk" data-ncdel="'+i+'" aria-label="'+esc(L("Entfernen"))+'" title="'+esc(L("Entfernen"))+'">×</button></div>';
+  const dl=mkDialog("ncdlg",null,{replace:true});
+  const draw=()=>{dl.innerHTML='<div class="a2box ncbox">'+xBtn("data-ncx")+'<h3>'+esc(L("Prognose"))+' · '+esc(d.split("-").reverse().slice(0,2).join(".")+".")+'</h3><p class="ghint">'+esc(L("Erscheint im «Jetzt» bei allen und erlischt von selbst, sobald der Schritt quittiert ist (oder ab «anzeigen bis»)."))+'</p>'+
+    '<form data-ncform novalidate>'+items.map(row).join("")+'<button type="button" class="pillbtn" data-ncadd>+ '+esc(L("Prognose"))+'</button><div class="arb">'+saveBtn()+'</div></form></div>'};
+  const read=()=>{items=[...dl.querySelectorAll(".ncrow")].map(r=>{const g=f=>String((r.querySelector('[data-ncf="'+f+'"]')||{}).value||"").trim();return {k:g("k"),t:g("t"),bis:g("bis"),n:g("n").slice(0,80)}})};
+  draw();document.body.appendChild(dl);
+  dl.addEventListener("click",e=>{if(e.target===dl||e.target.closest("[data-ncx]")){dl.remove();return}
+    if(e.target.closest("[data-ncadd]")){read();items.push({k:"wrap",t:""});draw();return}
+    const x=e.target.closest("[data-ncdel]");if(x){read();items.splice(+x.dataset.ncdel,1);draw()}});
+  dl.addEventListener("submit",async e=>{e.preventDefault();read();const ok=items.filter(it=>it.k&&/^\d\d:\d\d$/.test(it.t)&&(it.k!=="x"||it.n)).map(it=>{const o={k:it.k,t:it.t};if(it.bis)o.bis=it.bis;if(it.n)o.n=it.n;return o});
+    try{const {F,db}=await fb(),ref=F.doc(db,"nowcast",ncDocId(d));
+      if(ok.length)await F.setDoc(ref,{c:await ownEnc({items:ok}),at:F.serverTimestamp()});else await F.deleteDoc(ref);
+      window.NOWCAST[d]=ok;try{localStorage.setItem("nowcast:v1",JSON.stringify({d,items:ok}))}catch(_){}dl.remove();render();
+      /* WhatsApp (Mein Konto → App, «Prognose»): «Direkt» opens it, «Fragen» offers a button */
+      const txt=ncText(d),m=typeof window.scWaMode==="function"?window.scWaMode("p"):"n";
+      if(txt&&m==="a"&&typeof window.scWaOpen==="function")window.scWaOpen(txt,"p");
+      else if(txt&&m==="f"&&typeof window.scWaOpen==="function"){showMsg(L("Prognose gespeichert."),2500);ncWaBar(txt)}
+      else showMsg(L("Prognose gespeichert."),2500)}
+    catch(err){showMsg(/permission/.test(err&&err.code||"")?L("Keine Berechtigung."):L("Fehler:")+" "+(err.message||err),5000)}});}
+/* «Fragen»: a small bar with «Per WhatsApp senden» for a few seconds */
+function ncWaBar(txt){let b=document.getElementById("ncbar");if(b)b.remove();b=document.createElement("div");b.id="ncbar";b.className="ncbar";
+  b.innerHTML='<span>'+esc(L("Prognose gespeichert."))+'</span><button type="button" class="pillbtn" data-ncwa>'+esc(L("Per WhatsApp senden"))+'</button>';document.body.appendChild(b);
+  b.querySelector("[data-ncwa]").addEventListener("click",()=>{b.remove();window.scWaOpen(txt,"p")});setTimeout(()=>{if(b.isConnected)b.remove()},12000)}
+document.addEventListener("click",e=>{if(!e.target.closest||!e.target.closest("[data-ncedit]"))return;e.preventDefault();e.stopPropagation();if(ncCan())ncDialog()},true);
+const NCICO='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>';
 window.TNOWOPEN=window.TNOWOPEN||false;
 /* late: more than 5 minutes behind the callsheet – «+12′» right after the cast number */
 const tnChip=(no,role,lk,on,late)=>'<span'+(lk?' class="tnl'+lk+(on?' tnon':'')+'"':'')+'><i>'+esc(no)+'</i>'+(late?'<b class="tnlate" title="'+esc(L("Verspätung"))+'">+'+late+'′</b>':'')+(role?'<em>'+esc(role)+'</em>':'')+'</span>';
 export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return "";
     /* the quittances not read yet (first seconds after opening): no «Jetzt» – it would show the first scene of a day that is long done */
-    if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";const ns=csNowScene();if(!ns||ns.ev==="wrap")return "";const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
+    if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";const ns=csNowScene();
+    const fc=ncLine(t),ed=ncCan()?'<button type="button" class="tnced" data-ncedit '+'aria-label="'+esc(L("Prognose erfassen"))+'" title="'+esc(L("Prognose erfassen"))+'">'+NCICO+'</button>':'';
+    /* no scene now (before the setup, after the wrap): only the forecasts – with the right to enter them also the card with its icon on a shooting day */
+    if(!ns||ns.ev==="wrap"){const sd=arr(S.days).some(x=>x&&x.date===t&&x.kind==="shoot");if(!fc&&!(ed&&sd))return "";
+      return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm"><div class="tnowcm">'+(fc||'<span class="tnk">'+esc(L("Prognose erfassen"))+'</span>')+'</div></div>'+ed+'</div>'}const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
     const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
     const nb=csNowBits(ns,c0,t);
     /* scenes in parallel: the further scenes running now, in the same line («+ 23 L3 SEEUFER») */
@@ -208,9 +273,10 @@ export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return 
     let det="";if(!ns.ev){const nos=String(ns.cast||"").split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean),names=(S.meta&&S.meta.cast)||{};
       const ch=nos.map(n=>{const r=rows.find(x=>no(x)===n);let lk=0;try{lk=r&&typeof cqLook==="function"?cqLook(cc,r):0}catch(_){}return tnChip(n,r?role(r):names[n]||"",lk,lk===3&&r&&typeof cqAll==="function"&&cqAll(cc,r),r&&typeof cqLate==="function"?cqLate(cc,r):0)}).join("");
       det=(ns.syn?'<div class="tnsyn">'+esc(ns.syn)+'</div>':'')+(ch?'<div class="tnc">'+ch+'</div>':'')}
+    if(fc)cm=fc+cm;   /* the forecasts first in the second line */
     const open=!!window.TNOWOPEN,more=!!(cm||det);
     return '<div class="tcard tnow'+(cls?" "+cls:"")+(open&&more?" tnowo":"")+'"'+(more?' data-tnow tabindex="0" aria-expanded="'+(open?"true":"false")+'"':'')+'><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm"><div class="tnowb">'+(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+par+'</div>'+
-      (cm?'<div class="tnowcm">'+cm+'</div>':'')+(det?'<div class="tnowx">'+det+'</div>':'')+'</div></div>'}catch(_){return ""}}
+      (cm?'<div class="tnowcm">'+cm+'</div>':'')+(det?'<div class="tnowx">'+det+'</div>':'')+'</div>'+ed+'</div>'}catch(_){return ""}}
 /* tap (or Enter) on «Jetzt»: open / close – links in it (location) work as before; the choice stays while the page is redrawn */
 function tnowToggle(c){window.TNOWOPEN=!c.classList.contains("tnowo");document.querySelectorAll("[data-tnow]").forEach(x=>{x.classList.toggle("tnowo",window.TNOWOPEN);x.setAttribute("aria-expanded",String(window.TNOWOPEN))})}
 document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest("[data-tnow]");if(!c||e.target.closest("a,button"))return;tnowToggle(c)});

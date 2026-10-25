@@ -294,6 +294,15 @@ await check("Cast quittieren: mit «Kostüm quittieren» geht", assertSucceeds(s
 await check("Cast quittieren: zurücksetzen ohne Recht nicht", assertFails(deleteDoc(doc(as("crew"), "rideack/m1old"))));
 await check("Szenen-Marker der Automatik ohne «Szenen quittieren» nicht", assertFails(setDoc(doc(as("viewer"), "rideack/zs1abcd"), { d: "2026-10-21", at: NOW, s: 1 })));
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view"] }) });
+// ---------- forecasts in «Jetzt» (nowcast) ----------
+await check("Prognose: ohne Recht nicht", assertFails(setDoc(doc(as("crew"), "nowcast/20261025"), { c: "x", at: serverTimestamp() })));
+await check("Prognose: Crew kann lesen", assertSucceeds(getDoc(doc(as("crew"), "nowcast/20261025"))));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "now.forecast"] }) });
+await check("Prognose: mit Recht speichern geht", assertSucceeds(setDoc(doc(as("viewer"), "nowcast/20261025"), { c: "x", at: serverTimestamp() })));
+await check("Prognose: nur Inhalt und Zeit", assertFails(setDoc(doc(as("viewer"), "nowcast/20261025"), { c: "x", at: serverTimestamp(), by: "y" })));
+await check("Prognose: ID nur das Datum", assertFails(setDoc(doc(as("viewer"), "nowcast/abc"), { c: "x", at: serverTimestamp() })));
+await check("Prognose: mit Recht löschen geht", assertSucceeds(deleteDoc(doc(as("viewer"), "nowcast/20261025"))));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view"] }) });
 // ---------- «Quittieren einstellen»: only the switches of the quittances in config/app ----------
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.settings"] }); await setDoc(doc(c.firestore(), "config/app"), { langs: ["de"] }, { merge: true }) });
 await check("Quittieren einstellen: Automatik speichern geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { castAuto: { c: { on: true, min: 0 } }, sceneAck: true }, { merge: true })));

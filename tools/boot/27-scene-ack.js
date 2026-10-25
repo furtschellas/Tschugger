@@ -165,10 +165,10 @@ function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((typeof UNAME!=="u
   return v.s===1?scLabel(sc)+" "+L("läuft seit")+" "+scHM(v.b)+dd:scLabel(sc)+" "+L("abgeschlossen")+" "+scHM(v.b)+"–"+scHM(v.e)+" ("+scDur((v.e||0)-(v.b||0))+")"+dd}
 /* ---------- WhatsApp per kind of quittance: Drehstart (first scene of the day), Szene Beginn, Szene Abschluss, Lunch Beginn, Lunch Ende, Drehschluss.
    Per person (Mein Konto → App, synced with the account): «n» aus, «f» fragen (after saving), «a» WhatsApp direkt öffnen; recipient: choose in WhatsApp or a fixed number */
-const SCWA_KINDS=[["d","Drehstart","erste Szene des Tages","f"],["b","Szene Beginn","","n"],["e","Szene Abschluss","","f"],["l","Lunch Beginn","","n"],["m","Lunch Ende","","f"],["w","Drehschluss","Wrap","f"]];
+const SCWA_KINDS=[["d","Drehstart","erste Szene des Tages","f"],["b","Szene Beginn","","n"],["e","Szene Abschluss","","f"],["l","Lunch Beginn","","n"],["m","Lunch Ende","","f"],["w","Drehschluss","Wrap","f"],["p","Prognose","im «Jetzt»","f"]];
 function scWaModes(){let s="";try{s=localStorage.getItem("scwa")||"";if(!s&&localStorage.getItem("scwa:no")==="1")s="nnnnnn"}catch(_){}   /* «nicht mehr fragen» of before: all off */
   return Object.fromEntries(SCWA_KINDS.map(([k,,,d0],i)=>[k,/^[nfa]$/.test(s[i]||"")?s[i]:d0]))}
-const scWaMode=k=>k?scWaModes()[k]:"n";
+const scWaMode=k=>k?scWaModes()[k]:"n";window.scWaMode=scWaMode;
 function scWaKind(date,sc,u,v){const bs=scBase(sc);if(bs==="wrap")return "w";if(bs==="lunch")return v.s===1?"l":"m";
   if(v.s===2)return "e";
   const first=!/^(setup\d*)$/.test(bs)&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!/^(lunch|wrap|setup\d*)$/.test(scBase(rx.sc||rid.split("-").slice(1).join("-"))));
@@ -181,8 +181,9 @@ function scWaParse(v){v=String(v||"").trim();const g=v.match(/chat\.whatsapp\.co
 const scWaTarget=k=>scWaParse(k&&scWaGet("scwt"+k))||scWaParse(scWaGet("scwan"));
 const scWaUrl=(txt,k)=>{const t=scWaTarget(k);return /^g:/.test(t)?"https://chat.whatsapp.com/"+t.slice(2):"https://wa.me/"+t+"?text="+encodeURIComponent(txt)};
 const scWaIsGroup=k=>/^g:/.test(scWaTarget(k));
+window.scWaOpen=(txt,k)=>scWaOpen(txt,k);
 function scWaOpen(txt,k){try{if(scWaIsGroup(k)){try{navigator.clipboard.writeText(txt)}catch(_){}showMsg(L("Text kopiert – in der WhatsApp-Gruppe einfügen und senden."),6000)}window.open(scWaUrl(txt,k),"_blank","noopener")}catch(_){}}
-function scWaSec(){if(typeof canPerm!=="function"||!canPerm("scenes.ack"))return "";const m=scWaModes(),n=(()=>{try{return localStorage.getItem("scwan")||""}catch(_){return ""}})();
+function scWaSec(){if(typeof canPerm!=="function"||!(canPerm("scenes.ack")||canPerm("now.forecast")))return "";const m=scWaModes(),n=(()=>{try{return localStorage.getItem("scwan")||""}catch(_){return ""}})();
   return '<section class="psec"><h4>'+esc(L("WhatsApp beim Quittieren"))+'</h4><p class="ghint">'+esc(L("Nach dem Quittieren einer Szene eine kurze Info per WhatsApp – pro Art einstellbar. «Fragen»: nach dem Speichern erscheint ein Knopf. «Direkt»: WhatsApp öffnet sich sofort mit dem fertigen Text; senden tippst du selbst."))+'</p>'+
     '<div class="scwag">'+SCWA_KINDS.map(([k,t,sub])=>'<div class="scwar"><span>'+esc(L(t))+(sub?' <small class="ghint">'+esc(L(sub))+'</small>':'')+'</span><select data-scwam="'+k+'" aria-label="'+esc(L(t))+'">'+[["n","Aus"],["f","Fragen"],["a","Direkt"]].map(([v,x])=>'<option value="'+v+'"'+(m[k]===v?' selected':'')+'>'+esc(L(x))+'</option>').join("")+'</select></div>'+'<input class="scwan scwt" data-scwt="'+k+'" maxlength="80" autocomplete="off" spellcheck="false" value="'+esc(scWaGet("scwt"+k))+'" placeholder="'+esc(L("Empfänger: Nummer oder Gruppenlink (leer = wie unten)"))+'" aria-label="'+esc(L(t)+" – "+L("Empfänger"))+'"'+(m[k]==="n"?' hidden':'')+'>').join("")+'</div>'+
     '<p class="ghint"><b>'+esc(L("Empfänger"))+'</b> – '+esc(L("Pro Art oder hier für alle: eine Nummer (öffnet diesen Chat mit dem Text) oder der Einladungslink einer WhatsApp-Gruppe (WhatsApp → Gruppe → Einladen per Link). Bei einer Gruppe wird der Text kopiert und die Gruppe geöffnet – einfügen und senden. Leer: du wählst den Chat jedes Mal in WhatsApp."))+'</p>'+
