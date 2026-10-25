@@ -1,5 +1,5 @@
 import {L,LANG,S,esc,hmAny,safeUrl} from "./10-core.js";
-import {nmk} from "./11-schedule-prep.js";
+import {nameHit} from "./11-schedule-prep.js";
 import {myIdentity,rideId,rideMap} from "./12-mycal.js";
 import {CSCUR,csSceneLoc} from "./13b-cs-now.js";
 import {csDWords} from "./13d-cs-mine.js";
@@ -139,11 +139,8 @@ export function csTable(head,rows,tc,keep){rows=rows.map(r=>r.map(c=>c&&typeof c
   return tbl+cards}
 /* who am I on this callsheet: name and department (crew list / app profile) */
 export function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.name)return null;
-  const k=nmk(me.name),parts=k.split(" ").filter(w=>w.length>1),dep=fold(me.src||"").split(/[\s/]/)[0];
-  /* a name part only counts at the start of a word: «Anna Muster» is not in «Johanna Muster» (a shortened «Zeis» still finds «Zeiss») */
-  const ws=(n,w)=>(" "+n).includes(" "+w);
-  const hit=t=>{const n=nmk(String(t||""));if(!n)return false;if(ws(n,k))return true;const f=parts[0],l=parts[parts.length-1];return parts.length>1&&ws(n,f)&&ws(n,l)};
-  return {name:me.name,dep,hit}}
+  const dep=fold(me.src||"").split(/[\s/]/)[0];
+  return {name:me.name,dep,hit:nameHit(me.name)}}
 /* «jetzt» on the shooting day, in one place: the rows of the shooting order, their quittance keys (setup, lunch, wrap …), the wrap row */
 /* me on this callsheet: my call, my rides (passenger or driver, crew transport), do I drive, the words of my department */
 export const csMyCall=(c,me)=>me?csA(c.calls).find(r=>me.hit(r.name)):undefined;

@@ -1,5 +1,5 @@
 import {esc,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
-import {dayMs} from "../base/11-schedule-prep.js";
+import {dayMs,nameHit} from "../base/11-schedule-prep.js";
 import {hm,myIdentity,rideId} from "../base/12-mycal.js";
 import {csAfter,csMe} from "../base/13a-callsheet.js";
 import {CSCUR,csNowLoc,csNowScene} from "../base/13b-cs-now.js";
@@ -167,7 +167,7 @@ const cqDone=(t,tip,x)=>cqSpan(2,t,tip,x);
 window.cqLink=(kind,id,date,t)=>{const st=cmSt(id),wm=' data-cqwm="'+esc(id)+'"';
   return cqCan(kind)?cqBtn(st,kind,id,date,t,CQTIP3()[st],{a:wm}):cqSpan(st,t,CQST()[st]).replace('<span ','<span'+wm+' ')};
 /* the rides of the callsheet for the actor (passenger): the pickup (at the pickup time if there are several) and the one from the Base */
-const cqWho=r=>{const k=fold(String(r&&r.actor||"")).replace(/[^a-z ]/g,"").trim();return v=>!!k&&(fold(String(v||"")).includes(k)||k.split(" ").filter(w=>w.length>2).every(w=>fold(String(v||"")).includes(w)))};
+const cqWho=r=>nameHit(String(r&&r.actor||""));   /* the same rule as everywhere (11-schedule-prep nameHit) */
 const cqRides=(c,r)=>{if(!r||!r.actor||!c)return [];const has=cqWho(r);return arr(c.transport).filter(x=>has(x.passengers)).concat(arr(c.crewTransport).filter(x=>has(x.people)))};
 const cqFromBase=x=>/base/i.test(String(x.from||""));
 function cqRide(c,r){const rs=cqRides(c,r).filter(x=>!cqFromBase(x));if(!rs.length)return null;const t=cqHm(r.pickup);return rs.find(x=>cqHm(x.t1)===t)||rs[0]}

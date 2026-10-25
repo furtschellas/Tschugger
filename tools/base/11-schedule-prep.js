@@ -126,6 +126,13 @@ export function makeICS(date,i){
 }
 /* e-mail distribution list for one PREP appointment: names → addresses from the crew list and the app users */
 export const nmk=t=>fold(t).replace(/[^a-z]+/g," ").trim();
+/* does a text (a name, a list of passengers, a cell) name this person? One rule for the whole app (Meine Termine, callsheet, cast rides):
+   the whole name, or first and last name – each only at the start of a word («Anna Muster» is not in «Johanna Muster»; a shortened
+   «Zeis» still finds «Zeiss») */
+export function nameHit(name){const k=nmk(name),parts=k.split(" ").filter(w=>w.length>1);if(!k)return ()=>false;
+  const ws=(n,w)=>(" "+n).includes(" "+w);
+  return t=>{const n=nmk(String(t||""));if(!n)return false;if(ws(n,k))return true;const f=parts[0],l=parts[parts.length-1];return parts.length>1&&ws(n,f)&&ws(n,l)}}
+window.nameHit=nameHit;
 function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;const m=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=m[0];m[0]=i;for(let j=1;j<=b.length;j++){const t=m[j];m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return m[b.length]}
 export function mailPeople(){
   const out=[],seen=new Set(),add=(name,email,role,src,phone)=>{email=String(email||"").trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){if(name)out.push({name,email:"",phone:phone||"",role:role||"",src,k:nmk(name)});return}const k=nmk(name)+"|"+email;if(seen.has(k))return;seen.add(k);out.push({name,email,phone:phone||"",role:role||"",src,k:nmk(name)})};

@@ -53,6 +53,18 @@ def cm_id(date, k, r, t):
     return "m" + jshash("|".join([date, k, str((r or {}).get("no") or (r or {}).get("role") or "").strip(), t]).lower())
 def ride_id(date, x):
     return "r" + jshash("|".join([date, hm(x.get("t1")), hm(x.get("t2")), str(x.get("from") or "").strip(), str(x.get("to") or "").strip(), str(x.get("vehicle") or "").strip()]).lower())
+def nmk(t): return re.sub(r"[^a-z]+", " ", fold(t)).strip()
+def name_hit(name):
+    """like nameHit in 11-schedule-prep.js: the whole name, or first and last name – each only at the start of a word"""
+    k = nmk(name); parts = [w for w in k.split(" ") if len(w) > 1]
+    if not k: return None
+    ws = lambda n, w: (" " + w) in (" " + n)
+    def hit(t):
+        n = nmk(t)
+        if not n: return False
+        if ws(n, k): return True
+        return len(parts) > 1 and ws(n, parts[0]) and ws(n, parts[-1])
+    return hit
 def cm_parse(v):
     out = []
     for seg in re.split(r"\s*;\s*", str("" if v is None else v)):
@@ -71,9 +83,8 @@ class Model:
         s = self.st(i)
         return 0 if not s else 3 if s == 2 else (2 if self.a.get("v" + i) else 1)
     def rides(self):
-        r = self.r; k = re.sub(r"[^a-z ]", "", fold(r.get("actor"))).strip()
-        if not k: return []
-        has = lambda v: k in fold(v) or all(w in fold(v) for w in k.split() if len(w) > 2)
+        has = name_hit(self.r.get("actor"))
+        if not has: return []
         return [x for x in (self.c.get("transport") or []) if isinstance(x, dict) and has(x.get("passengers"))] + \
                [x for x in (self.c.get("crewTransport") or []) if isinstance(x, dict) and has(x.get("people"))]
 
