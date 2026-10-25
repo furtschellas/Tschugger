@@ -268,7 +268,10 @@ export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return 
     /* scenes in parallel: the further scenes running now, in the same line («+ 23 L3 SEEUFER») */
     let par="";try{if(!ns.ev&&typeof scAckId==="function"){const me=scAckId(t,ns.sc),rows=arr((c0.order||{}).rows).filter(r=>r&&r.sc);
       for(const [id,x] of Object.entries(window.SCACK||{})){if(!x||x.d!==t||x.s!==1||id===me)continue;const k=x.sc||id.split("-").slice(1).join("-");if(/^(lunch|wrap|setup\d*)(_u\d)?$/.test(k))continue;
-        const r=rows.find(y=>scAckId(t,y.sc)===id)||{sc:k};const b=csNowBits(r,c0,t);par+=' <span class="tnpar">+ <b class="tnsc">'+b.sc+'</b>'+b.place+' <span class="tnset">'+b.set+'</span></span>'}}}catch(_){}
+        const r=rows.find(y=>scAckId(t,y.sc)===id)||{sc:k};const b=csNowBits(r,c0,t);par+=' <span class="tnpar">+ <b class="tnsc">'+b.sc+'</b>'+b.place+' <span class="tnset">'+b.set+'</span></span>'}
+      /* in parallel: also the next scene still open after the running ones («→ 23») */
+      if(par){const st=y=>typeof scState==="function"?scState(t,String(y.sc)):0;let last=-1;rows.forEach((y,i)=>{if(st(y)>0)last=i});const nx=rows.slice(last+1).find(y=>st(y)===0);
+        if(nx)par+=' <span class="tnnext">→ <b class="tnsc">'+esc(String(nx.sc))+'</b></span>'}}}catch(_){}
     const since=b0?' <small>· '+esc(L("seit"))+' '+esc(csHM(new Date(b0)))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
     const cc=Object.assign({},c0,{_date:t}),rows=arr(c0.cast),no=r=>String(r.no||"").trim()||"?",role=r=>String(r.role||"").trim();
     /* Maske / Kostüm now: the same pink chips as the cast in the shooting order (pink with white frame = Call, Kostüm, Maske) */

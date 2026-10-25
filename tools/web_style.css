@@ -1185,3 +1185,13 @@ html body #view .tcard.tnow.tnowo .tnowfc{white-space:normal}
 .ncbox .ncrow .ncdelb{position:absolute;top:10px;right:0;width:auto;height:auto;border-radius:99px;padding:3px 10px;font-size:12px;border:1px solid var(--rule);background:transparent;color:var(--muted)}
 .ncbox .ncrow{padding-right:76px}.ncbox .ncacts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 html body #view .tnow .tnowfc{cursor:pointer}
+/* «Jetzt» closed with scenes in parallel: both in the title line, short – number and place only («21 L1 + 22 L2»); set and «seit» when opened */
+html body #view .tcard.tnow:not(.tnowo):has(.tnpar) .tnowb .tnset,html body #view .tcard.tnow:not(.tnowo):has(.tnpar) .tnowb>small{display:none}
+html body #view .tcard.tnow:not(.tnowo):has(.tnpar) .tnowb{white-space:nowrap}
+html body #view .tnow .tnpar{margin-left:8px}
+html body #view .tnow .tnnext{margin-left:8px;color:var(--muted)}html body #view .tnow .tnnext .tnsc{color:var(--muted)}
+/* phone, closed, scenes in parallel: only the scene numbers («21 + 22 → 23»), then the forecast and the cast; opened: everything */
+@media (max-width:600px){
+  html body #view .tcard.tnow:not(.tnowo):has(.tnpar) .tnowb>:not(.tnsc):not(.tnpar):not(.tnnext),
+  html body #view .tcard.tnow:not(.tnowo):has(.tnpar) .tnowb .tnpar>:not(.tnsc){display:none}
+}
