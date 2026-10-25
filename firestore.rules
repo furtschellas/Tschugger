@@ -103,11 +103,11 @@ service cloud.firestore {
       allow write: if can('settings') && (doc == 'app' || doc == 'private');
       // «Quittieren einstellen»: nur die Schalter des Quittierens in «app» (an/aus, Zeiten, Automatik) – sonst nichts
       // (first the fields, then the right: the right reads documents, the fields not – a request may read only a few documents)
-      allow update: if doc == 'app' && changesOnly(['sceneAck', 'rideAck', 'ackTimes', 'castAuto', 'sceneAuto', 'sceneParallel'])
+      allow update: if doc == 'app' && changesOnly(['sceneAck', 'rideAck', 'ackTimes', 'castAuto', 'castAuto2', 'sceneAuto', 'sceneAuto2', 'sceneParallel'])
         && request.resource.data.diff(resource.data).affectedKeys().size() > 0 && can('ack.settings');
-      // «Cast automatisch quittieren einstellen» / «Szenen automatisch quittieren einstellen»: nur der eigene Teil
-      allow update: if doc == 'app' && changesOnly(['castAuto']) && request.resource.data.diff(resource.data).affectedKeys().size() > 0 && can('ack.cast.auto');
-      allow update: if doc == 'app' && changesOnly(['sceneAuto', 'sceneParallel']) && request.resource.data.diff(resource.data).affectedKeys().size() > 0 && can('ack.scene.auto');
+      // «Cast automatisch quittieren einstellen» / «Szenen automatisch quittieren einstellen»: nur der eigene Teil (je 1st und 2nd Unit)
+      allow update: if doc == 'app' && changesOnly(['castAuto', 'castAuto2']) && request.resource.data.diff(resource.data).affectedKeys().size() > 0 && can('ack.cast.auto');
+      allow update: if doc == 'app' && changesOnly(['sceneAuto', 'sceneAuto2', 'sceneParallel']) && request.resource.data.diff(resource.data).affectedKeys().size() > 0 && can('ack.scene.auto');
     }
 
     // ---------- Personen und Rechte ----------

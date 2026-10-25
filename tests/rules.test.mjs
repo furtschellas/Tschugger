@@ -317,9 +317,12 @@ await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(),
 // ---------- «Cast / Szenen automatisch quittieren einstellen»: only their own part ----------
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.cast.auto"] }) });
 await check("Cast-Automatik einstellen: Cast-Teil geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { castAuto: { o: { on: true, min: 5 } } }, { merge: true })));
+await check("Cast-Automatik einstellen: 1st und 2nd Unit zusammen geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { castAuto: { o: { on: true, min: 5 } }, castAuto2: { c: { on: true, min: 3 } } }, { merge: true })));
 await check("Cast-Automatik einstellen: Szenen-Teil nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { sceneAuto: { s: { on: true, min: 0 } } }, { merge: true })));
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.scene.auto"] }) });
 await check("Szenen-Automatik einstellen: Szenen-Teil und parallel geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { sceneAuto: { s: { on: true, min: 2 } }, sceneParallel: true }, { merge: true })));
+await check("Szenen-Automatik einstellen: 2nd Unit geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { sceneAuto2: { s: { on: true, min: 4 } } }, { merge: true })));
+await check("Szenen-Automatik einstellen: Cast 2nd Unit nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { castAuto2: { o: { on: false, min: 0 } } }, { merge: true })));
 await check("Szenen-Automatik einstellen: Cast-Teil nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { castAuto: { o: { on: false, min: 0 } } }, { merge: true })));
 await check("Szenen-Automatik einstellen: andere Einstellungen nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { sceneAck: false }, { merge: true })));
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view"] }) });
