@@ -136,6 +136,17 @@ async function scWrite(date,sc,u,v,auto){const id=scAckId(date,sc),old=window.SC
   /* through the data layer: offline the scene state shows at once and is sent later */
   if(!v){await dbWrite("delete","sceneack/"+id,null,{undo});delete window.SCACK[id]}else{v=Object.assign({d:date,at:Date.now(),u:String(u||"1"),sc:String(sc).slice(0,24)},v);for(const k of ["b","e"])if(v[k]==null)delete v[k];await dbWrite("set","sceneack/"+id,v,{undo});window.SCACK[id]=v}if(typeof SCLOG!=="undefined"&&SCLOG.list){const i=SCLOG.list.findIndex(x=>x.id===id);if(i>=0)SCLOG.list.splice(i,1);if(v)SCLOG.list.push(Object.assign({id},v))}scRender()}
 /* tap: open → running (only when no other scene runs in this unit) → done; a done scene opens the popup to change state and times */
+/* the answer of the question «läuft noch» for the next tap of the same button (set only by scParAsk, used once) */
+let PARASK="";
+function scParAsk(date,sc,u,run,b){const d=mkDialog("scpar",null,{replace:true});
+  d.innerHTML='<div class="a2box"><h3>'+esc(scLabel(run)+" "+L("läuft noch"))+'</h3><p>'+esc(L("Was soll mit {s} geschehen?").replace("{s}",scLabel(sc)))+'</p>'+
+    '<div class="a2b scparb"><button type="button" class="pri" data-scpar="par">'+esc(L("Parallel laufen lassen"))+'</button>'+
+    '<button type="button" data-scpar="finish">'+esc(L("{r} abschliessen, {s} starten").replace("{r}",scLabel(run)).replace("{s}",scLabel(sc)))+'</button>'+
+    '<button type="button" class="lnk" data-scpar="no">'+esc(L("Abbrechen"))+'</button></div></div>';
+  d.addEventListener("click",e=>{const x=e.target.closest("[data-scpar]");if(!x&&e.target!==d)return;const v=x?x.dataset.scpar:"no";d.remove();if(v==="no")return;
+    /* the same tap again with the answer – also WhatsApp «direkt» opens in this tap */
+    PARASK=v;try{b.click()}finally{PARASK=""}});
+  document.body.appendChild(d)}
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("button[data-scack]");if(!b)return;e.preventDefault();e.stopPropagation();if(typeof canPerm!=="function"||!canPerm("scenes.ack"))return;
   const [date,sc,u]=b.dataset.scack.split("|");const id=scAckId(date,sc),st=scState(date,sc),x=window.SCACK[id]||{};
   if(st===2){scAckDialog(date,sc,u);return}
@@ -145,7 +156,9 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
     /* a setup still running (also one started automatically): it is finished now */
     else if(run&&/^setup\d*$/.test(scBase(run))){const sx=window.SCACK[scAckId(date,run)]||{},sb=+sx.b||+sx.at||Date.now();scWrite(date,run,u,{s:2,b:sb,e:Math.max(sb,Date.now())}).catch(()=>{})}
     /* scenes in parallel (App-Verwaltung → Quittieren): a further scene may start while one runs – both show in «Jetzt» */
-    else if(run&&!window.SCPAR){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}
+    /* another scene runs: ask – run both in parallel (both show in «Jetzt»), or finish the running one and start this one; «Szenen parallel» on: no question */
+    else if(run&&!window.SCPAR&&!PARASK){scParAsk(date,sc,u,run,b);return}
+    else if(run&&PARASK==="finish"){const rx=window.SCACK[scAckId(date,run)]||{},rb=+rx.b||+rx.at||Date.now();scWrite(date,run,u,{s:2,b:rb,e:Math.max(rb,Date.now())}).catch(()=>{})}
     /* the first scene of the day starts and the setup before it was never quittiert: the setup is done now (from its planned time) */
     else if(!/^(lunch|wrap|setup\d*)$/.test(scBase(sc)))try{const day=arr(S.days).find(d=>d&&d.date===date&&d.kind==="shoot");
       for(const r of day?scaRows(day,String(u||"1")):[])if(r.kind==="a"&&scState(date,r.k)===0){const now=Date.now();scWrite(date,r.k,u,{s:2,b:Math.min(r.t,now),e:now}).catch(()=>{})}}catch(_){}}
@@ -224,7 +237,7 @@ function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{}
     if(ev.target===d||ev.target.closest("[data-scx]"))d.remove()});
   f.e.disabled=cur!==2;f.b.disabled=cur===0;
   f.addEventListener("submit",async ev=>{ev.preventDefault();if(ev.submitter&&ev.submitter.dataset.scwasub)f.dataset.wa="1";else delete f.dataset.wa;const bm=scMsNear(date,f.b.value,+x.b||+x.at||Date.now()),em=scMsNear(date,f.e.value,bm||+x.b||+x.at||Date.now());
-    if(cur===1&&!window.SCPAR){const run=scRunning(date,u,id);if(run){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
+    if(cur===1&&!window.SCPAR){const run=scRunning(date,u,id);if(run&&!/^(lunch|setup\d*)$/.test(scBase(run))&&!(typeof confirmSafe==="function"?confirmSafe:window.confirm.bind(window))(L("{s} läuft noch. Parallel laufen lassen?").replace("{s}",scLabel(run)))){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
     if(cur===2&&bm&&em&&em<bm){msg.textContent=L("Das Ende liegt vor dem Beginn.");return}
     f.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=true);
     try{const nv=cur===0?null:{s:cur,b:bm||x.b||Date.now(),e:cur===2?(em||x.e||Date.now()):null};await scWrite(date,sc,u,nv);d.remove();if(nv&&f.dataset.wa)scShareAsk(date,sc,u,nv,true);else if(typeof savedPop==="function")savedPop(true)}
