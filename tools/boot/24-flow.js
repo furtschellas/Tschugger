@@ -150,7 +150,8 @@ function cmParse(v,c){const out=[];for(const seg of String(v==null?"":v).split(/
 /* id of one cast tick: day, kind (w m u c b o), role of the cast row, time (no names in the id) */
 /* a time from the callsheet: «07:50» or «07.50» (some callsheets write dots) */
 const cqHm=v=>hm(String(v==null?"":v).replace(/(^|[^\d])(\d{1,2})\.(\d{2})(?!\d)/,"$1$2:$3"));
-const cmId=(date,k,r,t)=>{t=cqHm(t)||t;const s=[date,k,String(r&&(r.no||r.role)||"").trim(),t].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "m"+(h>>>0).toString(36)};
+/* a row of the 2nd Unit (u:"2", see cqU2) has its own ids: the same actor can be in both units on one day */
+const cmId=(date,k,r,t)=>{t=cqHm(t)||t;const s=[date,k,(r&&r.u==="2"?"u2:":"")+String(r&&(r.no||r.role)||"").trim(),t].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "m"+(h>>>0).toString(36)};
 const cmSt=flowSt;
 window.cmSt=cmSt;window.cmId=cmId;window.cmParse=cmParse;
 /* texts of the three states */
@@ -255,7 +256,7 @@ const xqCan=()=>flowCan("extras.ack");
 const xqN=r=>{const n=parseInt(String(r&&r.count||"").trim(),10);return n>1&&n<1000?n:0};   /* 0 = no count: Call is a simple tick */
 /* key of a group: its role and its place among the groups with that role («Passanten» 1st, 2nd …) – not the count: a new callsheet version
    with 6 instead of 5 kept no tick before, and two equal groups shared one */
-const xqKey=(c,r)=>{const p=String(r.part||"").trim();return "x|"+p+"|"+Math.max(0,arr(c.extras).filter(x=>String(x.part||"").trim()===p).indexOf(r))};
+const xqKey=(c,r)=>{const p=String(r.part||"").trim();return (r.u==="2"?"u2:":"")+"x|"+p+"|"+Math.max(0,arr(c.extras).filter(x=>String(x.part||"").trim()===p).indexOf(r))};
 const xqId=(c,f,r,t)=>cmId(c._date,"x"+f,{no:xqKey(c,r)},t);
 function xqModel(c,r){const t={c:cqHm(r.call),w:cqHm(r.wardrobe),m:cqHm(r.makeup),o:cqHm(r.onset)||(String(r.onset||"").trim()?"set":"")},id={};
   for(const f in t)if(t[f])id[f]=xqId(c,f,r,t[f]);return {t,id,on:!!id.o&&flowSt(id.o)===2}}
@@ -328,6 +329,14 @@ window.cmBtn=(id,date,label,k,oth)=>{const st=cmSt(id),cls="cmk"+(st===2?" cmok"
    Every device with the right to tick that step does it, as if tapped (the rides in parallel). Only forward, only today and yesterday
    (night shoots), only times of the last 12 h. Reset by hand (back to open) the automatic leaves that step alone: marker rideack/z{id}
    (s 1 – old app versions do not know these ids and ignore them). */
+/* the callsheet of the 2nd Unit as its own callsheet (cs.u2, read apart): its cast, extras, sets, times and shooting order,
+   everything else (transport, calls, travel …) shared – the same object for the same callsheet (the drawing memo needs it) */
+const CQU2=new WeakMap();
+export function cqU2(c){const u=c&&c.u2;if(!u||typeof u!=="object")return null;const hit=CQU2.get(c);if(hit&&hit.u===u&&hit.d===c._date)return hit.x;
+  const mk=l=>arr(l).filter(r=>r&&typeof r==="object").map(r=>r.u==="2"?r:Object.assign(r,{u:"2"}));   /* marked once (also callsheets read before the mark) */
+  const x=Object.assign({},c,{cast:mk(u.cast),extras:mk(u.extras),vehicles:arr(u.vehicles),locations:arr(u.locations),times:u.times||{},contact:u.contact||null,order:u.order||{},_u:"2"});
+  CQU2.set(c,{u,d:c._date,x});return x}
+window.cqU2=cqU2;
 export const CQA_STEPS=[["c","P/UP und Call"],["m","Maske"],["w","Kostüm"],["b","Base"],["o","On set"]];
 const cqaOn=k=>{const A=window.CASTAUTO;return !!(A&&A[k]&&A[k].on)};
 const cqaZ=id=>!!(id&&window.RIDEACK["z"+id]);
@@ -348,8 +357,8 @@ async function cqaRow(c,r,now){const m=cqModel(c,r),d=m.d;if(m.onDone)return;
 let CQABUSY=false;
 async function cqAuto(){if(CQABUSY||window.RIDEACKON===false||!window.RIDEACKLOADED||(window.simOn&&window.simOn())||!CQA_STEPS.some(([k])=>cqaOn(k)&&(cqCan(k)||k==="c"&&cqCan("u"))))return;CQABUSY=true;
   try{const now=Date.now(),t=todayISO(),days=[t,isoAdd(t,-1)];
-    for(const dp of arr(S.dispos)){if(!dp||!dp.cs||!days.includes(dp.date))continue;const c=Object.assign({},dp.cs,{_date:dp.date});
-      for(const r of arr(c.cast))try{CQMEMO=new WeakMap();await cqaRow(c,r,now)}catch(err){if(err&&err.code==="simulation")return;console.warn("cast auto",err&&err.code||err)}}}
+    for(const dp of arr(S.dispos)){if(!dp||!dp.cs||!days.includes(dp.date))continue;const c1=Object.assign({},dp.cs,{_date:dp.date});
+      for(const c of [c1,cqU2(c1)].filter(Boolean))for(const r of arr(c.cast))try{   /* 1st and 2nd Unit */CQMEMO=new WeakMap();await cqaRow(c,r,now)}catch(err){if(err&&err.code==="simulation")return;console.warn("cast auto",err&&err.code||err)}}}
   finally{CQABUSY=false}}
 setInterval(cqAuto,30e3);
 

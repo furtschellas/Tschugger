@@ -11,7 +11,7 @@ function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(
 const zurichUTC=(d,h)=>new Date(d+"T"+h+":00+01:00");const isoAdd=(d,n)=>{const x=new Date(d+"T12:00:00Z");x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};const nmk=t=>fold(t).replace(/[^a-z]+/g," ").trim();function nameHit(name){const k=nmk(name),parts=k.split(" ").filter(w=>w.length>1);if(!k)return ()=>false;const ws=(n,w)=>(" "+n).includes(" "+w);return t=>{const n=nmk(String(t||""));if(!n)return false;if(ws(n,k))return true;const f=parts[0],l=parts[parts.length-1];return parts.length>1&&ws(n,f)&&ws(n,l)}};const dayMs=(d,h,ref)=>{if(!d||!/^\\d{1,2}:\\d{2}$/.test(String(h||"")))return 0;let v=zurichUTC(d,h).getTime();if(ref&&ref-v>12*3600e3)v=zurichUTC(isoAdd(d,1),h).getTime();return v};
 var MYROLE="";let PERMS=[];const canPerm=p=>PERMS.includes(p);globalThis.setP=p=>{PERMS=p};`;
 const H=[];const C={console,document:{addEventListener(t,f){if(t==="click")H.push(f)},querySelectorAll:()=>[]},scrollTo(){},scrollY:0,render(){},showMsg(){},MEMO:{clear(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},Date};C.window=C;C.RIDEACK={};vm.createContext(C);
-vm.runInContext(helpers+unmod(fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8"))+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep,xf:xqField,xa:xqAll,aRow:cqaRow}",C);
+vm.runInContext(helpers+unmod(fs.readFileSync(path.join(ROOT,"tools/boot/24-flow.js"),"utf8"))+";globalThis.T={look:cqLook,stage:cqStage,cmb:cmBtn,p:cqPickup,c:cqCall,b:cqBase,o:cqOnset,rd:cqRowDone,all:cqAll,cmId,rideId,rideStep,xf:xqField,xa:xqAll,aRow:cqaRow,u2:cqU2}",C);
 const T=C.T,D="2031-03-02";
 /* the data layer (03-core-firebase dbWrite): here straight to the fake database of each test */
 C.dbWrite=async(op,path,data)=>{const {F,db}=await C.fb();const ref=F.doc(db,...path.split("/"));if(op==="delete")await F.deleteDoc(ref);else await F.setDoc(ref,data);return "ok"};
@@ -154,4 +154,8 @@ await (async()=>{const at=hm=>new Date(D+"T"+hm+":00+01:00").getTime(),on=(min,k
 {const at=hm=>new Date(D+"T"+hm+":00+01:00").getTime(),g=(ack,hm)=>{set(W,ack);return C.cqLate(Object.assign({},cs),R1,at(hm))};
   const got=[g({},"07:03"),g({},"07:20"),g({[id(R1,"c","07:00")]:1},"07:20"),g({[id(R1,"c","07:00")]:1},"07:31"),g({[id(R1,"o","08:00")]:2},"09:00")].join(",");
   out.push({n:"Jetzt: Verspätung nach 5 Min. (Call, Ende Kostüm, On set erledigt = 0)",ok:got==="0,20,0,11,0",got,want:"0,20,0,11,0"})}
+/* 2nd Unit (callsheet read apart, cs.u2): the same actor in both units has its own ticks; its context has its cast */
+{const c1=Object.assign({},cs,{cast:[R1],u2:{cast:[Object.assign({},R1,{call:"06:15"})],times:{rts:"07:30"}}}),c2=T.u2(c1),r2=c2.cast[0];
+  set(W,{[id(R1,"c","07:00")]:1});const got=[c2.cast.length,r2.u,T.cmId(D,"c",r2,"06:15")!==id(R1,"c","06:15"),row(R1).split(" ")[1],st(T.c(c2,r2)),c2.times.rts,T.u2(c1)===c2].join(",");
+  out.push({n:"2nd Unit: eigene Quittierungen (Call 1st Unit quittiert, 2nd Unit offen), eigener Cast",ok:got==="1,2,true,cq1+tap,cq0+tap,07:30,true",got,want:"1,2,true,cq1+tap,cq0+tap,07:30,true"})}
 for(const x of out)console.log(JSON.stringify(x));

@@ -1099,6 +1099,10 @@ html body #view .tnow .tnc .tnlate{margin-left:4px;font-weight:800;font-size:11p
 html body #view .tnow .tnowx{display:none;margin-top:8px}
 html body #view .tnow.tnowo .tnowx{display:block}
 html body #view .tnow .tnsyn{font-size:13px;color:var(--muted);margin:0 0 6px}
+/* «Jetzt», 2nd Unit: its own line (scene there, its Maske / Kostüm); collapsed on phones one line */
+html body #view .tnow .tnowu2{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-top:5px;font-size:14px}
+html body #view .tnow .tnowu2 .tnu{margin-right:2px}
+@media (max-width:600px){html body #view .tcard.tnow:not(.tnowo) .tnowu2{flex-wrap:nowrap;overflow:hidden;white-space:nowrap;margin-top:3px}html body #view .tcard.tnow:not(.tnowo) .tnowu2 .tnc{flex-wrap:nowrap}}
 /* «Jetzt» (Today and the callsheet of today): compact – the label in the same line; on phones at most 2 lines (scene · Maske/Kostüm with
    numbers only); a tap opens it with the roles written out */
 html body #view .tcard.tnow,html body #view .today .tcard.tnow{display:flex;align-items:baseline;gap:10px;padding:10px 14px;margin:14px 0 12px;border-radius:12px}

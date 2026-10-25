@@ -90,6 +90,13 @@ function csTravelSec(c,x,me,SU,t){let h="";
      return '<div class="cstrv'+(other(r)?' trvother':'')+'">'+(other(r)?'<span class="trvd">'+esc(dlab(r))+'</span>':'')+'<b>'+esc(r.name||"")+'</b>'+(r.how?'<small>'+esc(r.how)+'</small>':'')+'<span class="r">'+esc(csRoute(clean(r.from),r.t1,clean(r.to),r.t2))+'</span>'+badge(r.to,urls[0])+(clean(r.note)?'<small class="n">'+csTx(clean(r.note))+'</small>':'')+'</div>'}).join("");
    h+=csSec(L("Anreise Cast"),rows,false,"","travel",SU.travel)}
   return h}
+/* the cast of a callsheet (1st Unit, or the 2nd Unit with its own context cqU2): the ticks of each step */
+export function csCastSec(c,me,title,id,su){const CC=csCols();return csSec(title,(csA(c.cast).length?'<span class="cscols">'+[["role",L("Rolle")],["actor",L("Darsteller")]].map(([k,t])=>'<button type="button" class="cscol" data-cscol="'+k+'" aria-pressed="'+!CC.has(k)+'">'+esc(t)+'</button>').join("")+'</span>':'')+(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Kacheln":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>{const all=window.cqAll&&window.cqAll(c,r),pk=v=>all&&v?{h:'<span class="cqall" title="'+esc(L("Alle Schritte abgeschlossen"))+'">'+esc(v)+'</span>'}:v;   /* On set: number, role and name pink */
+    return [pk(r.no),pk(r.role),pk(r.actor),window.cqPickup?window.cqPickup(c,r)||r.pickup:r.pickup,window.cqCall?window.cqCall(c,r)||r.call:r.call,csMk(r.wardrobe,c,"w",r)||csDurT(r.wardrobe),csMk(r.makeup,c,"m",r)||csDurT(r.makeup),window.cqBase?window.cqBase(c,r)||r.base:r.base,window.cqOnset?window.cqOnset(c,r)||r.onset:r.onset]}),3,true),csCastOpen(c,me),(csCastMode()?"cs-astbl":"")+(CC.has("role")?" hide-role":"")+(CC.has("actor")?" hide-actor":""),id,su)}
+/* the extras with their ticks (Call, Kostüm, Maske, On set), 1st or 2nd Unit */
+export function csExtrasSec(c,title,id,su){const xq=(f,c_,r,v)=>(window.xqField&&window.xqField(f,c_,r))||v;
+   return csSec(title,csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>{const all=window.xqAll&&window.xqAll(c,r),pk=v=>all&&v?{h:'<span class="cqall" title="'+esc(L("Alle Schritte abgeschlossen"))+'">'+esc(v)+'</span>'}:v;
+     return [pk(r.count),pk(r.part),xq("c",c,r,r.call),xq("w",c,r,r.wardrobe),xq("m",c,r,r.makeup),xq("o",c,r,r.onset)]}),2,true),csExOpen(),"",id,su)}
 function csCallsSec(c,x,me,SU,t){let h="";
   {const g=new Map();for(const r of csA(c.calls).filter(r=>!(c.u2&&!String(r.t||"").trim()&&String(r.t2||"").trim()))){const k=r.dept||"";   /* only «2nd IN»: in the part of the 2nd Unit */if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
    h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>{const who={hit:t=>{const a=nmk(String(t||"")),b=nmk(String(r.name||""));return !!b&&(" "+a).includes(" "+b)}};   /* at the start of a word: «Anna Muster» is not in «Johanna Muster» */let pl=null;try{pl=csCallPlace(c,who,r)}catch(_){}
@@ -143,15 +150,12 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   /* cast, extras, vehicles */
   const CC=csCols();
   if(c&&x&&x.date)c._date=x.date;   /* the day for the cast ticks */
-  {const castH=csSec("Cast",(csA(c.cast).length?'<span class="cscols">'+[["role",L("Rolle")],["actor",L("Darsteller")]].map(([k,t])=>'<button type="button" class="cscol" data-cscol="'+k+'" aria-pressed="'+!CC.has(k)+'">'+esc(t)+'</button>').join("")+'</span>':'')+(csA(c.cast).length?'<button type="button" class="lnk cstview" data-cstview>'+(csCastMode()?CSI.cards:CSI.table)+'<span>'+esc(L(csCastMode()?"Als Kacheln":"Als Tabelle"))+'</span></button>':'')+csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(c.cast).map(r=>{const all=window.cqAll&&window.cqAll(c,r),pk=v=>all&&v?{h:'<span class="cqall" title="'+esc(L("Alle Schritte abgeschlossen"))+'">'+esc(v)+'</span>'}:v;   /* On set: number, role and name pink */
-    return [pk(r.no),pk(r.role),pk(r.actor),window.cqPickup?window.cqPickup(c,r)||r.pickup:r.pickup,window.cqCall?window.cqCall(c,r)||r.call:r.call,csMk(r.wardrobe,c,"w",r)||csDurT(r.wardrobe),csMk(r.makeup,c,"m",r)||csDurT(r.makeup),window.cqBase?window.cqBase(c,r)||r.base:r.base,window.cqOnset?window.cqOnset(c,r)||r.onset:r.onset]}),3,true),csCastOpen(c,me),(csCastMode()?"cs-astbl":"")+(CC.has("role")?" hide-role":"")+(CC.has("actor")?" hide-actor":""),"cast",SU.cast);if(csCmFirst(c,me)&&h.includes('<!--CASTPOS-->'))h=h.replace('<!--CASTPOS-->',castH);else h+=castH}
+  {const castH=csCastSec(c,me,"Cast","cast",SU.cast);if(csCmFirst(c,me)&&h.includes('<!--CASTPOS-->'))h=h.replace('<!--CASTPOS-->',castH);else h+=castH}
   h=h.replace('<!--CASTPOS-->','');
   /* travel of the cast: one line per person (name · how · from → to · note), the place as short code (L1, Base …) with the map */
    h+=csTravelSec(c,x,me,SU,t);
   /* extras: Call (how many are there), Kostüm, Maske, On set to tick like the cast (24-flow); On set = the group grey, count and role pink */
-  {const xq=(f,c_,r,v)=>(window.xqField&&window.xqField(f,c_,r))||v;
-   h+=csSec(L("Komparsen"),csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>{const all=window.xqAll&&window.xqAll(c,r),pk=v=>all&&v?{h:'<span class="cqall" title="'+esc(L("Alle Schritte abgeschlossen"))+'">'+esc(v)+'</span>'}:v;
-     return [pk(r.count),pk(r.part),xq("c",c,r,r.call),xq("w",c,r,r.wardrobe),xq("m",c,r,r.makeup),xq("o",c,r,r.onset)]}),2,true),csExOpen(),"","extras",SU.extras)}
+  h+=csExtrasSec(c,L("Komparsen"),"extras",SU.extras);
   h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","",SU.veh);
   /* transport and travel */
   /* Fahrten Manager: all rides of the day as done in one go */
@@ -178,7 +182,7 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   for(const sec of csA(x.sections).concat(csA(c.sections)).filter(s0=>!WX.includes(s0))){const rows=csA(sec&&sec.rows).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(cc=>String(cc==null?"":cc).trim()));if(!rows.length)continue;
     h+=csSec(String(sec.title||""),rows.map(r=>'<p>'+r.map(cc=>csTx(cc)).join(" · ")+'</p>').join(""),false)}
   /* the 2nd Unit (read apart): its own part below the 1st Unit */
-  try{h+=csU2HTML(x,c,day)}catch(_){}
+  try{h+=csU2HTML(x,c,day,me,{cast:csCastSec,extras:csExtrasSec})}catch(_){}
   /* on the shooting day: once per visit straight to the running row */
   if(x.date===csShootDay()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
   return JB+'<div class="csview">'+h+'</div>'}

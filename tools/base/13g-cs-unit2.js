@@ -20,7 +20,7 @@ const u2Full=(i,date)=>{let l=[];try{l=csA(schedIndex()[norm(i.sc)])}catch(_){}c
   const b=(l.find(y=>ok(y)&&y.d&&y.d.date===date)||l.find(ok)||{}).it;if(!b)return i;const o=Object.assign({},b);
   for(const k in i){const v=i[k];if(v!=null&&v!==""&&!(Array.isArray(v)&&!v.length))o[k]=v}return o};
 const u2Rows=day=>csA(day&&day.unit2&&day.unit2.items).filter(i=>i&&typeof i==="object").map(i=>i.sc?u2Full(i,day.date):i).map(i=>i.sc?{t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",syn:i.d||"",pgs:i.pg||"",dur:i.dur||"",dir:i.dir||"",cast:Array.isArray(i.cast)?i.cast.join(", "):(i.cast||""),notes:i.notes||""}:{t:i.t||"",text:i.n||i.text||""}).filter(r=>r.sc||r.text);
-export function csU2HTML(x,c,day){const u0=c&&c.u2,sh=u2Rows(day);if((!u0||typeof u0!=="object")&&!sh.length)return"";
+export function csU2HTML(x,c,day,me,F){F=F||{};const u0=c&&c.u2,sh=u2Rows(day);if((!u0||typeof u0!=="object")&&!sh.length)return"";
   const u=u0&&typeof u0==="object"?u0:{},t=u.times||{},o=u.order||{},LS=csLocs({locations:csA(u.locations)});let h="";
   h+='<div class="csu2-head" id="cs-u2"><h2>2nd Unit</h2><span>'+(x.date?fmtDate(x.date):'')+(u.ad?' · 1st AD '+esc(String(u.ad)):'')+'</span></div>';
   if(u.crewCall||t.rts||t.lunch||t.wrap)h+='<div class="dtiles cstiles">'+u2tile("Crew Call",u.crewCall,true)+u2tile("RTS",t.rts)+u2tile("Lunch",t.lunch)+u2tile("Wrap",t.wrap)+'</div>';
@@ -29,8 +29,12 @@ export function csU2HTML(x,c,day){const u0=c&&c.u2,sh=u2Rows(day);if((!u0||typeo
   if(vok("loc")&&csA(u.locations).length)h+=csSec("Locations · 2nd Unit",csA(u.locations).map(u2Loc).join(""),false,"","u2loc");
   /* the order: from the 2nd-Unit sheet; without it the one of the callsheet */
   h+=csSec(L("Drehfolge")+" · 2nd Unit"+(!sh.length&&o.pages?' · '+o.pages+' pgs':''),(sh.length?'<p class="ghint">'+esc(L("Aus dem 2nd-Unit-Sheet"))+'</p>'+csOrderRows(sh,x.date,LS,true,"2"):(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,LS,true,"2")),true,"","u2order");
-  h+=csSec("Cast · 2nd Unit",csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(u.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3,true),false,"","u2cast");
-  h+=csSec(L("Komparsen")+" · 2nd Unit",csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(u.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset]),2,true),false,"","u2extras");
+  /* cast and extras with their ticks, as in the 1st Unit: in the context of the 2nd Unit (own ids, cqU2 in 24-flow) */
+  const c2=typeof window.cqU2==="function"&&c&&c.u2?window.cqU2(c):null;
+  if(c2&&F.cast)h+=F.cast(c2,me,"Cast · 2nd Unit","u2cast","");
+  else h+=csSec("Cast · 2nd Unit",csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(u.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3,true),false,"","u2cast");
+  if(c2&&F.extras)h+=F.extras(c2,L("Komparsen")+" · 2nd Unit","u2extras","");
+  else h+=csSec(L("Komparsen")+" · 2nd Unit",csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(u.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset]),2,true),false,"","u2extras");
   h+=csSec(L("Fahrzeuge")+" · 2nd Unit",csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(u.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","u2veh");
   /* calls on set: the column «2nd IN» */
   {const g=new Map();for(const r of csA(c.calls).filter(r=>r&&String(r.t2||"").trim())){const k=r.dept||"";if(!g.has(k))g.set(k,[]);g.get(k).push(r)}

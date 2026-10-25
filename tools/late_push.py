@@ -50,7 +50,8 @@ def hm(t):
 def cq_hm(v): return hm(re.sub(r"(^|[^\d])(\d{1,2})\.(\d{2})(?!\d)", r"\1\2:\3", str("" if v is None else v), count=1))
 def cm_id(date, k, r, t):
     t = cq_hm(t) or t
-    return "m" + jshash("|".join([date, k, str((r or {}).get("no") or (r or {}).get("role") or "").strip(), t]).lower())
+    u2 = "u2:" if (r or {}).get("u") == "2" else ""   # a row of the 2nd Unit: its own ids (like cmId in 24-flow.js)
+    return "m" + jshash("|".join([date, k, u2 + str((r or {}).get("no") or (r or {}).get("role") or "").strip(), t]).lower())
 def ride_id(date, x):
     return "r" + jshash("|".join([date, hm(x.get("t1")), hm(x.get("t2")), str(x.get("from") or "").strip(), str(x.get("to") or "").strip(), str(x.get("vehicle") or "").strip()]).lower())
 def nmk(t): return re.sub(r"[^a-z]+", " ", fold(t)).strip()
@@ -160,7 +161,8 @@ def today_acks(date):
 
 def message(r, k, m):
     no = str(r.get("no") or "").strip() or "?"; role = str(r.get("role") or "").strip()
-    i18n = {l: {"title": TITLE[l] + " " + no + (" " + role if role else ""), "body": STEP[k][i] + " +" + str(m) + "′"} for i, l in enumerate(LANGS)}
+    un = " · 2nd Unit" if r.get("u") == "2" else ""
+    i18n = {l: {"title": TITLE[l] + " " + no + (" " + role if role else "") + un, "body": STEP[k][i] + " +" + str(m) + "′"} for i, l in enumerate(LANGS)}
     return i18n
 
 
@@ -174,6 +176,8 @@ def main():
     dp = next((x for x in data.get("dispos") or [] if isinstance(x, dict) and x.get("date") == today), None)
     c = dict((dp or {}).get("cs") or {}, _date=today)
     cast = [r for r in c.get("cast") or [] if isinstance(r, dict)]
+    u2 = c.get("u2") if isinstance(c.get("u2"), dict) else {}
+    cast += [dict(r, u="2") for r in u2.get("cast") or [] if isinstance(r, dict)]   # the 2nd Unit (read apart): marked for its own ids
     if not cast: print("• Verspätung: heute kein Cast im Callsheet"); return
     now = int(time.time() * 1000)
     try: old = json.load(open(STATE))
@@ -192,7 +196,7 @@ def main():
         b = {"title": "", "body": "", "i18n": message(r, k, m), "roles": roles, "push": True, "kind": "late", "by": "Automatisch",
              "at": now, "ch": {"push": True}, "url": "./#go=dispo:" + today}
         b["title"], b["body"] = b["i18n"]["de"]["title"], b["i18n"]["de"]["body"]
-        did = "late-" + today.replace("-", "") + "-" + hashlib.sha256((str(r.get("no") or r.get("role") or "") + "|" + k).encode()).hexdigest()[:10]
+        did = "late-" + today.replace("-", "") + "-" + hashlib.sha256((("u2:" if r.get("u") == "2" else "") + str(r.get("no") or r.get("role") or "") + "|" + k).encode()).hexdigest()[:10]
         if fsadmin.new_broadcast(key, b, doc_id=did): made += 1
     print(f"• Verspätung: {len(cast)} Cast-Zeilen, {n} verspätet, {made} neue Nachricht(en)" + (" · Quittierungen gelesen" if read else ""))
     if made: print(f"::notice::Verspätung: {made} Nachricht(en) angelegt")

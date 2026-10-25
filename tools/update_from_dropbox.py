@@ -1193,6 +1193,7 @@ def cs_split_u2(cs):
                 scs = r.get("scenes"); scs = scs if isinstance(scs, list) else re.split(r"[,;]\s*", str(scs or ""))
                 scs = {_sck(x) for x in scs if _sck(x)}
                 u = "2" if scs and scs <= sc2 and not scs & sc1 else ""
+            if u == "2": r["u"] = "2"   # the app gives the rows of the 2nd Unit their own quittance ids (cmId)
             (b if u == "2" else a).append(r)
         if b: cs[k] = a; u2[k] = b
     return cs
