@@ -77,7 +77,9 @@ function frame(k,pg){const f=document.createElement("div");f.className="sbframe"
 /* always the phone view: every frame 390 px wide, scaled to the box; the phone 844 px high, a page 70 % of the window */
 function fit(){for(const f of document.querySelectorAll(".sbbox .sbframe")){const w=f.clientWidth||320,s=Math.min(1,w/390),i=f.querySelector("iframe");if(!i)continue;
   const vis=f.classList.contains("sbphone")?Math.round(844*s):Math.round(window.innerHeight*0.7);i.style.transform="scale("+s+")";i.style.height=Math.round(vis/s)+"px";f.style.height=vis+"px"}}
-function draw(){if(INFRAME)return;const wide=window.innerWidth>=SBWIDE&&!!ME;const x=sbxGet();
+/* who may use the side boxes: Owner, Admins and the roles with «Seitenmenüs nutzen» (App-Verwaltung → Access) */
+const sbUse=()=>{try{return isAdmin()||can("sidebox.use")}catch(_){return false}};
+function draw(){if(INFRAME)return;const wide=window.innerWidth>=SBWIDE&&!!ME&&sbUse();const x=sbxGet();
   for(const side of ["l","r"]){const keys=wide?x[side].filter(sbCan):[];let a=document.getElementById("sb"+side);
     if(!wide){if(a)a.hidden=true;continue}
     if(!a){a=document.createElement("aside");a.id="sb"+side;a.className="sbbox";a.innerHTML='<div class="sbview"><div class="today"></div><div class="sbadd"></div></div>';document.body.appendChild(a)}
@@ -100,7 +102,7 @@ let SBQ=0;const soon=()=>{if(SBQ)return;SBQ=setTimeout(()=>{SBQ=0;try{draw()}cat
 if(!INFRAME){onRendered(soon);addEventListener("resize",()=>{soon();fit()});setInterval(soon,30e3)}
 
 /* ---------- «Mein Konto → App»: Seitenbox links / rechts – topics ticked, order with ▲ ▼ ---------- */
-export function sbxSec(){if(INFRAME)return"";const x=sbxGet(),avail=SBT.filter(t=>sbCan(t[0]));
+export function sbxSec(){if(INFRAME||!sbUse())return"";const x=sbxGet(),avail=SBT.filter(t=>sbCan(t[0]));
   const side=(s,title)=>{const on=x[s],rest=avail.filter(t=>!on.includes(t[0]));
     const row=(t,i,isOn)=>'<div class="tbrow"><label class="ck"><input type="checkbox" data-sbx="'+s+'|'+t[0]+'"'+(isOn?' checked':'')+'> '+esc(L(t[1]))+'</label>'+
       (isOn?'<span class="tbmv"><button type="button" data-sbxmv="'+s+'|'+t[0]+'|up"'+(i?'':' disabled')+' aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-sbxmv="'+s+'|'+t[0]+'|down"'+(i<on.length-1?'':' disabled')+' aria-label="'+esc(L("Nach unten"))+'">▼</button></span>':'')+'</div>';
