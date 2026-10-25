@@ -98,7 +98,9 @@ setInterval(scLunchAuto,30e3);
    yesterday (night shoots), only times of the last 12 h; every device with «Szenen quittieren». Set back by hand: marker rideack/z… (s 1,
    like the cast in 24-flow.js) – the automatic leaves that row alone. */
 const SCA_KINDS=[["a","Setup vor Drehbeginn"],["s","Szenen und Setup"],["l","Lunch Beginn"],["w","Drehschluss"]];
-const scaOn=k=>{const A=window.SCENEAUTO;return !!(A&&A[k]&&A[k].on)};
+/* the settings of the unit (2nd Unit: SCENEAUTO2, 3rd as the 1st); without a unit: on in one of them */
+const scaA=u=>u==="2"?window.SCENEAUTO2||window.SCENEAUTO:window.SCENEAUTO;
+const scaOn=(k,u)=>{if(u===undefined)return scaOn(k,"1")||scaOn(k,"2");const A=scaA(u);return !!(A&&A[k]&&A[k].on)};
 const scaMark=(date,sc)=>{const s=date+"|"+scAckId(date,sc);let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "zs"+(h>>>0).toString(36)};
 const scaZ=(date,sc)=>!!(window.RIDEACK||{})[scaMark(date,sc)];
 async function scaKeep(date,sc){if(!SCA_KINDS.some(([k])=>scaOn(k))||scaZ(date,sc))return;const id=scaMark(date,sc),v={d:date,at:Date.now(),s:1};
@@ -116,8 +118,8 @@ async function scAuto(){if(SCABUSY||window.SCACKON===false||!window.SCACKLIVE||!
   try{const now=Date.now(),t=todayISO(),days=[t,isoAdd(t,-1)];
     for(const day of arr(S.days)){if(!day||day.kind!=="shoot"||!days.includes(day.date))continue;
       for(const u of ["1","2","3"]){const rows=scaRows(day,u);let j=-1;
-        rows.forEach((r,i)=>{if(!scaOn(r.kind))return;const due=r.t+(+window.SCENEAUTO[r.kind].min||0)*60e3;if(due<=now&&now-due<12*3600e3)j=i});
-        if(j<0)continue;const r=rows[j],T=r.t+(+window.SCENEAUTO[r.kind].min||0)*60e3;
+        const A=scaA(u);rows.forEach((r,i)=>{if(!scaOn(r.kind,u))return;const due=r.t+(+A[r.kind].min||0)*60e3;if(due<=now&&now-due<12*3600e3)j=i});
+        if(j<0)continue;const r=rows[j],T=r.t+(+A[r.kind].min||0)*60e3;
         if(rows.slice(j).some(x=>scState(day.date,x.k)>0)||scaZ(day.date,r.k))continue;   /* already quittiert (or later ones) / set back by hand */
         /* everything still running in this unit is finished (also scenes running in parallel) */
         for(const run of scRunAll(day.date,u,scAckId(day.date,r.k))){const x=window.SCACK[scAckId(day.date,run)]||{},b=+x.b||+x.at||T;await scWrite(day.date,run,u,{s:2,b,e:Math.max(T,b+60e3)},true)}

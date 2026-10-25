@@ -338,14 +338,17 @@ export function cqU2(c){const u=c&&c.u2;if(!u||typeof u!=="object")return null;c
   CQU2.set(c,{u,d:c._date,x});return x}
 window.cqU2=cqU2;
 export const CQA_STEPS=[["c","P/UP und Call"],["m","Maske"],["w","Kostüm"],["b","Base"],["o","On set"]];
-const cqaOn=k=>{const A=window.CASTAUTO;return !!(A&&A[k]&&A[k].on)};
+/* the settings of the unit (2nd Unit: CASTAUTO2); without a unit: on in one of them */
+const cqaA=u=>u==="2"?window.CASTAUTO2||window.CASTAUTO:window.CASTAUTO;
+const cqaOn=(k,u)=>{if(u===undefined)return cqaOn(k,"1")||cqaOn(k,"2");const A=cqaA(u);return !!(A&&A[k]&&A[k].on)};
 const cqaZ=id=>!!(id&&window.RIDEACK["z"+id]);
 async function cqaKeep(id,date){if(id&&date&&CQA_STEPS.some(([k])=>cqaOn(k))&&!cqaZ(id))try{await flowPut("z"+id,date,1)}catch(_){}}
 /* a time of the row in ms (time zone of the block): after midnight when more than 12 h before the first time of the row */
 const cqaAt=(date,t,ref)=>dayMs(date,cqHm(t),ref);
 async function cqaRow(c,r,now){const m=cqModel(c,r),d=m.d;if(m.onDone)return;
   const ref=cqaAt(d,r.pickup)||cqaAt(d,r.call)||cqaAt(d,r.base);
-  const due=(k,t)=>{if(!cqaOn(k))return false;const v=cqaAt(d,t,ref),lim=now-(+window.CASTAUTO[k].min||0)*60e3;return !!v&&v<=lim&&lim-v<12*3600e3};
+  const u=r.u==="2"?"2":"1",A=cqaA(u);
+  const due=(k,t)=>{if(!cqaOn(k,u))return false;const v=cqaAt(d,t,ref),lim=now-(+A[k].min||0)*60e3;return !!v&&v<=lim&&lim-v<12*3600e3};
   const put=async(k,id,s)=>{if(id&&!cqaZ(id)&&cqCan(k)&&cmSt(id)<s){await flowPut(id,d,s);return true}return false};
   const ride=async(k,id,n)=>{if(id&&!cqaZ(id)&&cqCan(k)&&rideStep(id)<n)await rideSet(id,d,n)};
   if(cqHm(r.onset)&&due("o",r.onset)&&await put("o",m.oid,2)){await ride("o",m.bid,3);return}
@@ -396,8 +399,8 @@ document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.targ
 /* cast tiles (phone): a tile whose cast is On set is folded to one line – a tap opens it again; the choice stays while the page is redrawn */
 window.CASTOPEN=window.CASTOPEN||new Set();
 const castKey=c=>{const t=c.querySelector(".cs-ct"),sec=c.closest("[id]");return (typeof CSCUR!=="undefined"&&CSCUR.date||"")+"|"+(sec?sec.id:"")+"|"+(t?t.textContent.trim():"")};
-document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest(":is(#cs-cast,#cs-extras) .cs-card");if(!c||!c.querySelector(".cqall")||e.target.closest("a,button,input,select"))return;
+document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest(":is(#cs-cast,#cs-u2cast,#cs-extras,#cs-u2extras) .cs-card");if(!c||!c.querySelector(".cqall")||e.target.closest("a,button,input,select"))return;
   const k=castKey(c),on=!c.classList.contains("csopen");c.classList.toggle("csopen",on);if(on)CASTOPEN.add(k);else CASTOPEN.delete(k)});
-csAfter(()=>{if(!CASTOPEN.size)return;document.querySelectorAll(":is(#cs-cast,#cs-extras) .cs-card").forEach(c=>{if(c.querySelector(".cqall")&&CASTOPEN.has(castKey(c)))c.classList.add("csopen")})});
+csAfter(()=>{if(!CASTOPEN.size)return;document.querySelectorAll(":is(#cs-cast,#cs-u2cast,#cs-extras,#cs-u2extras) .cs-card").forEach(c=>{if(c.querySelector(".cqall")&&CASTOPEN.has(castKey(c)))c.classList.add("csopen")})});
 export function setACKFROM(v){return ACKFROM=v}   /* other parts change ACKFROM only through this */
 export function setACKSUB(v){return ACKSUB=v}   /* other parts change ACKSUB only through this */

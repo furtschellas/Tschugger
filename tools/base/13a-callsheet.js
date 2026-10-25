@@ -80,7 +80,8 @@ function csTv(){try{return JSON.parse(localStorage.getItem("cstv:v1")||"{}")||{}
 export const csTvCls=k=>csTv()[k]==="cards"?"":"cs-tblmode";
 export const csTvBtn=k=>{const tbl=csTv()[k]!=="cards";return '<button type="button" class="lnk cstview cstv" data-cstv="'+k+'" title="'+esc(L(tbl?"Als Kacheln":"Als Tabelle"))+'">'+(tbl?CSI.cards:CSI.table)+'<span>'+esc(L(tbl?"Als Kacheln":"Als Tabelle"))+'</span></button>'};
 csOn("click",e=>{const b=e.target.closest("[data-cstv]");if(!b)return;e.preventDefault();const k=b.dataset.cstv,m=csTv();m[k]=m[k]==="cards"?"table":"cards";try{localStorage.setItem("cstv:v1",JSON.stringify(m))}catch(_){}
-  const d=document.getElementById("cs-"+k);if(d){d.classList.toggle("cs-tblmode",m[k]!=="cards");b.outerHTML=csTvBtn(k)}});
+  /* the same kind of list in both units (cs-trans, cs-transu2 …): all of them switch, each with its own button */
+  for(const d of document.querySelectorAll('[id="cs-'+k+'"],[id="cs-'+k+'u2"]')){d.classList.toggle("cs-tblmode",m[k]!=="cards");const bb=d.querySelector('[data-cstv="'+k+'"]');if(bb)bb.outerHTML=csTvBtn(k)}});
 export function csSec(title,body,open,cls,id,sumx){if(!body)return"";return '<details class="dsec cssec'+(cls?" "+cls:"")+'"'+(id?' id="cs-'+id+'"':'')+(open?' open':'')+'><summary><h3 class="dh">'+(Array.isArray(title)?'<span class="lg">'+esc(title[0])+'</span><span class="sh">'+esc(title[1])+'</span>':esc(title))+'</h3>'+(sumx||'')+CSEXP+'</summary>'+body+'</details>'}
 /* a table of the callsheet: on the computer a table, on the phone one card per row (title = first columns, the rest as «label value») */
 /* «07:40 - 07:55 15'» → «07:40 · 15′» (start and duration, no end time) */
