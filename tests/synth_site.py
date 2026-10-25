@@ -31,7 +31,7 @@ def data(today=None):
         return out
     days = [{"date": iso(day(-1)), "id": "d0", "kind": "shoot", "label": "Day #1", "short": "D01", "hours": "07:00–18:00", "sr": "07:50", "ss": "18:20", "items": items(1)},
             {"date": iso(day(0)), "id": "d1", "kind": "shoot", "label": "Day #2", "short": "D02", "hours": "07:00–18:00", "sr": "07:51", "ss": "18:18", "items": items(2),
-             "unit2": {"items": [{"sc": "90", "t": "09:00", "set": "STRASSE", "ie": "E"}, {"sc": "11", "t": "10:30"}], "hours": "09:00–12:00"}},
+             "unit2": {"items": [{"n": "A-1: MCU Testfigur, Fix Haube", "t": "09:00"}, {"sc": "90", "t": "09:00", "set": "STRASSE", "ie": "E"}, {"n": "B-1: CU Testfigur, Fix Aussenrig", "t": "09:20"}, {"sc": "11", "t": "10:30"}], "hours": "09:00–12:00"}},
             {"date": iso(day(1)), "id": "o1", "kind": "off", "label": "Day Off"},
             {"date": iso(day(2)), "id": "d2", "kind": "shoot", "label": "Day #3", "short": "D03", "hours": "07:00–18:00", "sr": "07:53", "ss": "18:15", "items": items(3)},
             {"date": iso(day(3)), "id": "d3", "kind": "shoot", "label": "Day #4", "short": "D04", "hours": "07:00–18:00", "sr": "07:54", "ss": "18:13", "items": items(4)}]

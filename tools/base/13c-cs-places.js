@@ -66,7 +66,7 @@ export function csOrderRows(rows,date,locs,one,u){u=u||"1";rows=csA(rows);const 
       return '<li class="row ev'+nw+(eb?' evack':'')+'"><div class="t">'+esc(r.t||"")+nb+'</div><div class="what">'+csTx(r.text||r.syn||"")+eb+'</div></li>'}
     /* scenes look like in the schedule (same row, details, cast, buttons): the scheduled row of that day with the callsheet time */
     const sx=(()=>{try{const l=(schedIndex()[norm(r.sc)]||[]);const o=l.find(y=>y.d&&y.d.date===date)||l[0];return o?o.it:null}catch(_){return null}})();
-    const fromCs={sc:String(r.sc),ie:r.ie||"",set:r.set||"",d:r.syn||"",pg:r.pgs||"",dur:r.dur||"",dir:r.dir||"",cast:String(r.cast||"").split(/[,\s]+/).filter(Boolean)};
+    const fromCs={sc:String(r.sc),ie:r.ie||"",set:r.set||"",d:r.syn||"",pg:r.pgs||"",dur:r.dur||"",dir:r.dir||"",cast:String(r.cast||"").split(/[,\s]+/).filter(Boolean),camx:arr(r.camx)};
     const it=Object.assign({},fromCs);if(sx)for(const kk in sx){const v=sx[kk];if(v!=null&&v!==""&&!(Array.isArray(v)&&!v.length))it[kk]=v}it.t=r.t||(sx&&sx.t)||"";
     const bd0=date&&typeof bdFor==="function"?bdFor(date,r.sc):null;   /* the details of the scene from the breakdown are already shown: the callsheet notes only without them */
     /* the notes of the callsheet are part of «Details» (below) */const keep=window.__mctx;window.__mctx={date:date||"",u,cs:true};let li="";try{li=itemHTML(it)}catch(_){li=""}window.__mctx=keep;

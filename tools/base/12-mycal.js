@@ -1,4 +1,4 @@
-import {ariaTip,blockTag,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,mapsDir,mapsQ,mName,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
+import {ariaTip,blockTag,camFold,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,mapsDir,mapsQ,mName,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";
@@ -249,7 +249,7 @@ export function renderPlan(){
   const heads=shown.length>1;
   for(const u of sel){
     window.__mctx={date:d.date,u:u};
-    if(u==="1"){if(heads)h+='<h3 class="uh">1st Unit</h3>';h+='<ol class="tl">'+(d.items||[]).map(itemHTML).join("")+'</ol>';continue}
+    if(u==="1"){if(heads)h+='<h3 class="uh">1st Unit</h3>';h+='<ol class="tl">'+camFold(d.items||[]).map(itemHTML).join("")+'</ol>';continue}
     if(hasU(d,u)){
       let x=d["unit"+u];
       /* 2nd unit planning: all rows (scenes, rigging, setup, move …); a note that names a scene («Ton für Sc185») is shown at
@@ -259,10 +259,8 @@ export function renderPlan(){
         const refs=n=>{const out=new Set(),t=String(n).toLowerCase().replace(/(\d)\s+(pt|sl)/g,"$1$2");for(const m of t.matchAll(/(?:^|[^a-z])(?:sc(?:ene|ène|ena)?\.?\s*|szene\s*|#)0*(\d+(?:(?:pt|sl)\d+|[a-z]\b)?)/g))out.add(m[1]);return out};
         for(const n of TXA(x,"notes")){const r=refs(n);if(!r.size)continue;for(const i of its){if(!i.sc)continue;const k=key(i.sc),b=k.replace(/pt\d+[a-z]?$/,"")/* «5pt3» also hears notes on 5, «25sl2» (slideshow) not those on 25 */;if(r.has(k)||r.has(b))i.xn.push(n)}}
         x=Object.assign({},x,{items:its,notes:[],notes_fr:[],notes_en:[],notes_it:[],notes_hi:[]})}
-      /* camera setups of the 2nd unit (rows «A-1 …», «B-2 …» after a scene) go into that scene, under the cast */
-      {const out=[];let cur=null;for(const i of x.items||[]){if(!i)continue;if(i.sc){cur=Object.assign({},i,{camx:[]});out.push(cur);continue}
-        const n=String(TX(i,"n")||i.n||"");if(cur&&/^\s*[A-Z]{1,2}\s?-?\s?\d+[a-z]?\b/.test(n)){cur.camx.push((i.t?i.t+" ":"")+n.trim());continue}cur=null;out.push(i)}
-       if(out.some(i=>i.camx&&i.camx.length))x=Object.assign({},x,{items:out})}
+      /* camera setups of the 2nd unit (rows «A-1 …», «B-2 …» before or after a scene) go into that scene, before its summary (camFold) */
+      {const out=camFold(x.items);if(out!==x.items)x=Object.assign({},x,{items:out})}
       if(heads)h+='<h3 class="uh u'+u+'">'+UNAME[u]+' Unit</h3>';
       h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" Extras"].filter(Boolean).map(esc).join(" · ")+
         (x.src==="2nd"?' <span class="u2src">'+esc(L("genaue Reihenfolge laut 2nd-Unit-Planung"))+'</span>':'')+'</div>';

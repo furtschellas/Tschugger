@@ -1,6 +1,6 @@
 /* the 2nd Unit of a callsheet (cs.u2, read apart from the 1st Unit): its own part below the callsheet of the 1st Unit –
    times, contact on set, sets, shooting order, cast, extras, vehicles, calls «2nd IN», department infos (the prevision is kept in the data, shown neither for the 1st Unit) */
-import {L,esc,fmtDate,norm,safeUrl} from "./10-core.js";
+import {L,camFold,esc,fmtDate,norm,safeUrl} from "./10-core.js";
 import {nameHit} from "./11-schedule-prep.js";
 import {schedIndex} from "./17-scene-reader.js";
 import {csA,csL,csSec,csTable,csTx} from "./13a-callsheet.js";
@@ -40,7 +40,7 @@ window.csRidesFor=csRidesFor;window.csRideUnit=csRideUnit;
 const u2Full=(i,date)=>{let l=[];try{l=csA(schedIndex()[norm(i.sc)])}catch(_){}const ok=y=>y&&y.it&&y.it!==i&&y.it.d;
   const b=(l.find(y=>ok(y)&&y.d&&y.d.date===date)||l.find(ok)||{}).it;if(!b)return i;const o=Object.assign({},b);
   for(const k in i){const v=i[k];if(v!=null&&v!==""&&!(Array.isArray(v)&&!v.length))o[k]=v}return o};
-const u2Rows=day=>csA(day&&day.unit2&&day.unit2.items).filter(i=>i&&typeof i==="object").map(i=>i.sc?u2Full(i,day.date):i).map(i=>i.sc?{t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",syn:i.d||"",pgs:i.pg||"",dur:i.dur||"",dir:i.dir||"",cast:Array.isArray(i.cast)?i.cast.join(", "):(i.cast||""),notes:i.notes||""}:{t:i.t||"",text:i.n||i.text||""}).filter(r=>r.sc||r.text);
+const u2Rows=day=>camFold(csA(day&&day.unit2&&day.unit2.items).filter(i=>i&&typeof i==="object")).map(i=>i.sc?u2Full(i,day.date):i).map(i=>i.sc?{t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",syn:i.d||"",pgs:i.pg||"",dur:i.dur||"",dir:i.dir||"",cast:Array.isArray(i.cast)?i.cast.join(", "):(i.cast||""),notes:i.notes||"",camx:csA(i.camx)}:{t:i.t||"",text:i.n||i.text||""}).filter(r=>r.sc||r.text);
 export function csU2HTML(x,c,day,me,F){F=F||{};const u0=c&&c.u2,sh=u2Rows(day);if((!u0||typeof u0!=="object")&&!sh.length)return"";
   const u=u0&&typeof u0==="object"?u0:{},t=u.times||{},o=u.order||{},LS=csLocs({locations:csA(u.locations)});let h="";
   h+='<div class="csu2-head" id="cs-u2"><h2>2nd Unit</h2><span>'+(x.date?fmtDate(x.date):'')+(u.ad?' · 1st AD '+esc(String(u.ad)):'')+'</span></div>';

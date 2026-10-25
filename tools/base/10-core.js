@@ -205,6 +205,18 @@ export function bdXX(date,sc){if(!date)return "";const b=bdFor(date,sc);const x=
 export function bdHTML(date,sc){if(!date)return "";const b=bdFor(date,sc);if(!b)return "";
   const h=b.h||{},its=[];if(h.FX)its.push(["FX",[h.FX]]);arr(b.c).forEach(c=>its.push(c));
   return its.length?'<p class="bdt">'+its.map(([t,v])=>'<span class="bdi"><u>'+esc(t)+':</u> '+esc(arr(v).join(t==="Notes"?" / ":", "))+'</span>').join("")+'</p>':""}
+/* camera setups of a planning («A-1: MCU …», «B-1: CU …») go into their scene (camx), in their order: a setup with the same time as the
+   next scene belongs to it (it stands before the box), else to the scene before it (after the box), else to the next scene */
+const CAMRX=/^\s*[A-Z]{1,2}\s?-?\s?\d+[a-z]?\b/;
+export function camFold(items){const l=arr(items),txt=i=>String((typeof TX==="function"?TX(i,"n"):"")||i.n||i.text||"").trim(),tm=i=>{const m=String(i&&i.t||"").match(/(\d{1,2}):(\d{2})/);return m?String(+m[1]).padStart(2,"0")+":"+m[2]:""};
+  if(!l.some(i=>i&&!i.sc&&CAMRX.test(txt(i))))return l;
+  const out=l.map(i=>i&&i.sc?Object.assign({},i,{camx:arr(i.camx).slice()}):i),sc=out.map((i,k)=>i&&i.sc?k:-1).filter(k=>k>=0);
+  const pre=new Map();
+  out.forEach((i,k)=>{if(!i||i.sc||!CAMRX.test(txt(i)))return;const nx=sc.find(j=>j>k),pv=[...sc].reverse().find(j=>j<k);
+    let to=-1,before=false;if(nx!==undefined&&tm(i)&&tm(i)===tm(out[nx])){to=nx;before=true}else if(pv!==undefined)to=pv;else if(nx!==undefined){to=nx;before=true}
+    if(to<0)return;const line=(i.t?i.t+" ":"")+txt(i);if(before){if(!pre.has(to))pre.set(to,[]);pre.get(to).push(line)}else out[to].camx.push(line);out[k]=null});
+  for(const [j,ls] of pre)out[j].camx=ls.concat(out[j].camx);
+  return out.filter(Boolean)}
 export function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
@@ -230,8 +242,10 @@ export function itemHTML(it){
   return '<li class="row'+(cg?' chg':'')+(nowSc?' scnow':'')+(done?' scdone':'')+(dg?' degone':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(it._de&&window.deMark?window.deMark(it):'')+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span>'+(!dg&&window.__mctx&&window.__mctx.date&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,it.sc,window.__mctx.u||"1"):'')+'</div>'+
     (meta.length?'<div class="meta">'+meta.join("")+'</div>':'')+
+    /* the camera setups of the planning before the summary of the script */
+    (arr(it.camx).length?'<div class="camx"><b>'+esc(L("Kamera"))+'</b>'+arr(it.camx).map(c=>'<div class="cx">'+esc(c)+'</div>').join("")+'</div>':'')+
     (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
-    castChips(it.cast)+bdXX(window.__mctx&&window.__mctx.date,it.sc)+(()=>{const det=(arr(it.camx).length?'<div class="camx"><b>'+esc(L("Kamera"))+'</b>'+arr(it.camx).map(c=>'<div class="cx">'+esc(c)+'</div>').join("")+'</div>':'')+
+    castChips(it.cast)+bdXX(window.__mctx&&window.__mctx.date,it.sc)+(()=>{const det=
     bdHTML(window.__mctx&&window.__mctx.date,it.sc)+(it.csnH?'<div class="csn">'+it.csnH+'</div>':'');
       /* callsheet: the details of a scene (camera, breakdown, notes of the callsheet) fold, open at first */
       return det&&window.__mctx&&window.__mctx.cs?'<details class="scdet" open><summary>'+esc(L("Details"))+'</summary>'+det+'</details>':det})()+(it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
