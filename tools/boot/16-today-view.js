@@ -2,7 +2,7 @@ import {castRow,ddmm,driveMin,esc,isoAdd,L,LANG,localISO,mapsDir,mkDialog,norm,p
 import {UNAME,dayMs,hasU,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,evRecent,hm,myEvents,myIdentity,telLinks} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
-import {csKeys,csMe,csRows} from "../base/13a-callsheet.js";
+import {csKeys,csMe,csRows,csTile} from "../base/13a-callsheet.js";
 import {csHM,csNowBits,csNowScene,csShootDay} from "../base/13b-cs-now.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
@@ -137,7 +137,11 @@ VIEWS.today=function(){
     if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein"))+' '+esc(dpm.label||d.label||L("Drehtag"))+' <span class="beta">BETA</span>'+(toCs?'<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button>':'')+'</div>'+mn.join("")+'</div>'}}catch(_){}
   /* a day with a callsheet: the same tiles as in the callsheet (Crew Call … Wrap, sun, weather, drive) */
   const dcs=(S.dispos||[]).find(x=>x&&x.date===d.date&&x.cs);
-  if(dcs&&shT&&typeof csTilesHTML==="function"){let me3=null;try{me3=csMe()}catch(_){}h+='<div class="tcs">'+csTilesHTML(dcs,d,dcs.cs,me3).replace(' id="cs-zeiten"','')+'</div>'}
+  if(dcs&&shT&&typeof csTilesHTML==="function"){let me3=null;try{me3=csMe()}catch(_){}
+    /* a day with a 2nd Unit: its times as tiles of their own below (Crew Call, RTS, Lunch, Wrap of the 2nd Unit), both labelled */
+    let t2="";try{const c2=dcs.cs.u2&&typeof window.cqU2==="function"?window.cqU2(Object.assign({},dcs.cs,{_date:d.date})):null,tm=(c2&&c2.times)||{};
+      if(c2&&(tm.crewCall||tm.rts||tm.lunch||tm.wrap))t2='<div class="tuh">2nd Unit</div><div class="dtiles cstiles">'+csTile("Crew Call",tm.crewCall,true)+csTile("RTS",tm.rts)+csTile("Lunch",tm.lunch)+csTile("Wrap",tm.wrap)+'</div>'}catch(_){}
+    h+='<div class="tcs">'+(t2?'<div class="tuh">1st Unit</div>':'')+csTilesHTML(dcs,d,dcs.cs,me3).replace(' id="cs-zeiten"','')+t2+'</div>'}
   else h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k,cl])=>'<div class="ttile'+(cl?' '+cl:'')+'">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
   /* from noon (or lunch, if earlier) on: the tiles of the next shooting day (times, drive, weather) – shown below the scenes */
   let nextH="";
