@@ -1080,7 +1080,10 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
 .tdcfgr select{max-width:55%}
 
 /* App-Verwaltung → Quittieren: automatic quittances, one row per step (switch, Zugabe) */
-.aqh{margin:8px 0 2px;font-size:.92em}.aqg{display:grid;gap:4px;margin:4px 0 10px}.aqr{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}.aqr .ck{flex:1 1 140px}.aqm{display:inline-flex;align-items:center;gap:6px;font-size:.92em}.aqm input{width:4.5em}
+.aqh{margin:8px 0 2px;font-size:.92em}
+/* automatic quittances, both units: four columns (1st Unit step + Zugabe, 2nd Unit switch + Zugabe) */
+.aq4{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:6px 10px;margin:4px 0 10px}.aq4h{font-size:.82em;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.aq4 .ck{min-width:0}.aq4 .aq4c{justify-self:center}.aq4 .aqm{font-size:.92em}.aq4 .aqm input{width:3.8em;padding:4px 6px;text-align:center}
+@media (max-width:420px){.aq4{gap:6px 6px}.aq4 .aqm input{width:3.4em}.aq4h{font-size:.74em}}.aqg{display:grid;gap:4px;margin:4px 0 10px}.aqr{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}.aqr .ck{flex:1 1 140px}.aqm{display:inline-flex;align-items:center;gap:6px;font-size:.92em}.aqm input{width:4.5em}
 /* «Jetzt»: Maske / Kostüm now (cast chips as in the shooting order), opened: description and cast of the scene */
 html body #view .tcard.tnow[data-tnow]{cursor:pointer}
 html body #view .tnow .tnowm{flex:1;min-width:0}

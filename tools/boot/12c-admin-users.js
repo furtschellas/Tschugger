@@ -106,7 +106,13 @@ const autoRows=(g,cfg,u)=>{u=u||"";return '<div class="aqg">'+AUTOQ[g].map(([k,t
 const autoRead=(fl,g,u)=>{u=u||"";return Object.fromEntries(AUTOQ[g].map(([k])=>[k,{on:!!(fl.elements['aq'+g+u+k]||{}).checked,min:Math.max(0,Math.min(180,parseInt((fl.elements['aqm'+g+u+k]||{}).value,10)||0))}]))};
 /* both units: two blocks (with the 2nd Unit switched on in the app) */
 const AQU2=()=>window.UNIT2!==false;
-const autoUnits=(g,c1,c2)=>AQU2()?'<p class="aqh"><b>1st Unit</b></p>'+autoRows(g,c1)+'<p class="aqh"><b>2nd Unit</b></p>'+autoRows(g,c2,"2"):autoRows(g,c1);
+/* four columns: 1–2 the 1st Unit (step with its switch, Zugabe), 3–4 the 2nd Unit (switch, Zugabe) – one row per step */
+const autoUnits=(g,c1,c2)=>{if(!AQU2())return autoRows(g,c1);
+  const sw=(u,k,x,lbl)=>'<label class="ck"><input form="setform" type="checkbox" name="aq'+g+u+k+'"'+(x.on?' checked':'')+'> '+esc(lbl)+'</label>';
+  const mn=(u,k,x,t)=>'<label class="aqm"><input form="setform" type="number" name="aqm'+g+u+k+'" min="0" max="180" step="1" inputmode="numeric" value="'+(+x.min||0)+'" aria-label="'+esc(t+" – "+L("Zugabe"))+'"></label>';
+  return '<div class="aq4"><div class="aq4h"><b>1st Unit</b></div><div class="aq4h">'+esc(L("Zugabe"))+' ('+esc(L("Min."))+')</div><div class="aq4h"><b>2nd Unit</b></div><div class="aq4h">'+esc(L("Zugabe"))+' ('+esc(L("Min."))+')</div>'+
+    AUTOQ[g].map(([k,t])=>{const a=(c1||{})[k]||{},b=(c2||{})[k]||{},tt=L(t);
+      return sw("",k,a,tt)+mn("",k,a,tt+" · 1st Unit")+'<label class="ck aq4c"><input form="setform" type="checkbox" name="aq'+g+'2'+k+'"'+(b.on?' checked':'')+' aria-label="'+esc(tt+" · 2nd Unit")+'"></label>'+mn("2",k,b,tt+" · 2nd Unit")}).join("")+'</div>'};
 function userList(rows,vis,o){
   const F=[["all","Alle"],["online","Online"],["act","Aktiv"],["inv","Eingeladen"],["off","Gesperrt"],["adm","Mit Rolle"],["app","App installiert"],["web","Ohne App"]];
   const chips='<div class="ufil" role="group">'+F.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>'<button type="button" data-auf="'+k+'" aria-pressed="'+(ADM.uf===k)+'">'+L(t)+' <span>'+ADM.cnt[k]+'</span></button>').join("")+'</div>';
