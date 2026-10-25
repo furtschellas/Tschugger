@@ -321,6 +321,7 @@ await check("Cast-Automatik einstellen: 1st und 2nd Unit zusammen geht", assertS
 await check("Cast-Automatik einstellen: Szenen-Teil nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { sceneAuto: { s: { on: true, min: 0 } } }, { merge: true })));
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.scene.auto"] }) });
 await check("Szenen-Automatik einstellen: Szenen-Teil und parallel geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { sceneAuto: { s: { on: true, min: 2 } }, sceneParallel: true }, { merge: true })));
+await check("Szenen-Automatik einstellen: parallel 2nd Unit geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { sceneParallel2: true }, { merge: true })));
 await check("Szenen-Automatik einstellen: 2nd Unit geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { sceneAuto2: { s: { on: true, min: 4 } } }, { merge: true })));
 await check("Szenen-Automatik einstellen: Cast 2nd Unit nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { castAuto2: { o: { on: false, min: 0 } } }, { merge: true })));
 await check("Szenen-Automatik einstellen: Cast-Teil nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { castAuto: { o: { on: false, min: 0 } } }, { merge: true })));
@@ -329,6 +330,7 @@ await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(),
 // ---------- «Quittieren einstellen»: only the switches of the quittances in config/app ----------
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.settings"] }); await setDoc(doc(c.firestore(), "config/app"), { langs: ["de"] }, { merge: true }) });
 await check("Quittieren einstellen: Automatik speichern geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { castAuto: { c: { on: true, min: 0 } }, sceneAck: true }, { merge: true })));
+await check("Quittieren einstellen: 2nd Unit (an/aus, parallel) geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { sceneAck2: false, sceneParallel2: true }, { merge: true })));
 await check("Quittieren einstellen: andere Einstellungen nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { langs: ["de", "fr"] }, { merge: true })));
 await check("Quittieren einstellen: nicht die Links (private)", assertFails(setDoc(doc(as("viewer"), "config/private"), { sceneSheet: "x" }, { merge: true })));
 await check("Quittieren einstellen: ohne Recht nicht", assertFails(setDoc(doc(as("crew"), "config/app"), { castAuto: { c: { on: true, min: 0 } } }, { merge: true })));

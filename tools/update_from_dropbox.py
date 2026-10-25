@@ -1751,7 +1751,11 @@ def main():
         keep_old(kind, f); log(kind, "übersprungen nach 3 Fehlversuchen", _h(f["name"])); print("::warning::%s übersprungen nach 3 Fehlversuchen" % kind); return False
     def failed(kind, f, why):
         k = fkey(kind, f); seen.add(k)
-        if isinstance(why, (Budget, NoRetry)): keep_old(kind, f); return   # day limit or API refused (credit, key): tried again later, not counted as a failed attempt of this file
+        if isinstance(why, (Budget, NoRetry)):   # day limit or API refused (credit, key): tried again later, not counted as a failed attempt of this file
+            keep_old(kind, f)
+            if kind not in AI.setdefault("told", set()):   # visible once per run and kind (before: silent – callsheets simply stayed old)
+                AI["told"].add(kind); print("::warning::%s nicht gelesen: %s" % (kind, str(why)[:120]))
+            return
         fails[k] = fails.get(k, 0) + 1
         keep_old(kind, f); log(kind, "nicht übernommen (Versuch %d/3):" % fails[k], (why if isinstance(why, str) else type(why).__name__)[:120])   # public log: no exception text
         print("::warning::%s nicht übernommen (Versuch %d/3): %s" % (kind, fails[k], why if isinstance(why, str) else type(why).__name__))
@@ -2051,6 +2055,8 @@ def main():
     notcs = {f["name"] for f in files if _cs(f) and (_is_sides(f) or _is_ra(f) or _is_fp(f) or not re.search(r"dispo|call.?sheet|tagesdispo", _base(f)))}
     dispos = {k: v for k, v in dispos.items() if str(v.get("file") or "") not in notcs and "_sides_" not in str(v.get("file") or "").lower()}
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
+    _todo = [f["name"] for f in pick_dispos(files) if not any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and (v["cs"].get("v") or 0) >= 6 for v in dispos.values())]
+    if _todo: print("::notice::Callsheets im alten Format, werden neu gelesen: %d" % len(_todo))
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
         have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 6 for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again

@@ -51,7 +51,11 @@ const SC_ICO={1:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" str
   lunch:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5v6a2 2 0 0 0 2 2 2 2 0 0 0 2-2v-6M9 3.5v17"/><path d="M17 20.5v-17c-2 1.2-3 3.6-3 7v2h3"/></svg>'};
 /* running: a film camera; done: a tick; wrap: two ticks; lunch running: knife and fork */
 /* the round status button of a scene (visible for all, a button only with the permission) */
-window.scAckBtn=(date,sc,u)=>{if(!date||!sc||window.SCACKON===false)return"";   /* switched off in App-Verwaltung → Einstellungen */
+/* switched on per unit (2nd Unit: SCACKON2) */
+const scOnU=u=>window.SCACKON!==false&&(String(u||"1")!=="2"||window.SCACKON2!==false);
+const scParU=u=>String(u||"1")==="2"?(window.SCPAR2===undefined?!!window.SCPAR:!!window.SCPAR2):!!window.SCPAR;
+window.scOnU=scOnU;
+window.scAckBtn=(date,sc,u)=>{if(!date||!sc||!scOnU(u))return"";   /* switched off in App-Verwaltung → Einstellungen */
   u=String(u||"1");const st=scState(date,sc),can=typeof canPerm==="function"&&canPerm("scenes.ack");
   /* the state symbol only with «Quittierungen sehen» (or the right to quittieren) */
   if(!can&&!(typeof canPerm==="function"&&canPerm("scenes.see")))return"";
@@ -117,7 +121,7 @@ let SCABUSY=false;
 async function scAuto(){if(SCABUSY||window.SCACKON===false||!window.SCACKLIVE||!window.RIDEACKLOADED||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn())||!SCA_KINDS.some(([k])=>scaOn(k)))return;SCABUSY=true;
   try{const now=Date.now(),t=todayISO(),days=[t,isoAdd(t,-1)];
     for(const day of arr(S.days)){if(!day||day.kind!=="shoot"||!days.includes(day.date))continue;
-      for(const u of ["1","2","3"]){const rows=scaRows(day,u);let j=-1;
+      for(const u of ["1","2","3"]){if(!scOnU(u))continue;const rows=scaRows(day,u);let j=-1;
         const A=scaA(u);rows.forEach((r,i)=>{if(!scaOn(r.kind,u))return;const due=r.t+(+A[r.kind].min||0)*60e3;if(due<=now&&now-due<12*3600e3)j=i});
         if(j<0)continue;const r=rows[j],T=r.t+(+A[r.kind].min||0)*60e3;
         if(rows.slice(j).some(x=>scState(day.date,x.k)>0)||scaZ(day.date,r.k))continue;   /* already quittiert (or later ones) / set back by hand */
@@ -167,7 +171,7 @@ async function scTap(b,date,sc,u,choice){const id=scAckId(date,sc),st=scState(da
     /* lunch starts: the scenes running end (no question – nobody shoots through lunch); wrap: everything ends further down */
     if(bs==="lunch")for(const k of scs)fin(k);
     /* another scene runs: ask – both in parallel (both show in «Jetzt»), or finish the running one and start this one; «Szenen parallel» on: no question */
-    else if(!scIsEv(sc)&&scs.length&&!window.SCPAR&&!choice){scParAsk(date,sc,u,scs[0],b);return}
+    else if(!scIsEv(sc)&&scs.length&&!scParU(u)&&!choice){scParAsk(date,sc,u,scs[0],b);return}
     else if(!scIsEv(sc)&&choice==="finish")for(const k of scs)fin(k);
     /* the first scene of the day starts and the setup before it was never quittiert (nor set back by hand): the setup is done now (from its planned time) */
     const first=!scIsEv(sc)&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!scIsEv(scKeyOf(rid,rx)));
@@ -249,7 +253,7 @@ function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{}
   f.e.disabled=cur!==2;f.b.disabled=cur===0;
   f.addEventListener("submit",async ev=>{ev.preventDefault();if(ev.submitter&&ev.submitter.dataset.scwasub)f.dataset.wa="1";else delete f.dataset.wa;/* reference for a time after midnight: the entry itself, else midday of its day (not «now»: a day in the past would move to the next day) */
     const ref=+x.b||+x.at||scMs(date,"12:00")||Date.now(),bm=scMsNear(date,f.b.value,ref),em=scMsNear(date,f.e.value,bm||ref);
-    if(cur===1&&!window.SCPAR){const run=scRunning(date,u,id);if(run&&!/^(lunch|setup\d*)$/.test(scBase(run))&&!(typeof confirmSafe==="function"?confirmSafe:window.confirm.bind(window))(L("{s} läuft noch. Parallel laufen lassen?").replace("{s}",scLabel(run)))){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
+    if(cur===1&&!scParU(u)){const run=scRunning(date,u,id);if(run&&!/^(lunch|setup\d*)$/.test(scBase(run))&&!(typeof confirmSafe==="function"?confirmSafe:window.confirm.bind(window))(L("{s} läuft noch. Parallel laufen lassen?").replace("{s}",scLabel(run)))){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
     if(cur===2&&bm&&em&&em<bm){msg.textContent=L("Das Ende liegt vor dem Beginn.");return}
     /* a day in the past without an end time: «now» would make it days long */
     if(cur===2&&!em&&!x.e&&date<todayISO()&&typeof isoAdd==="function"&&date<isoAdd(todayISO(),-1)){msg.textContent=L("Bitte das Ende eingeben.");return}
