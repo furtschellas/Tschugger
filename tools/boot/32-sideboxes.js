@@ -75,8 +75,11 @@ let BOX={};
 function frame(k,pg){const f=document.createElement("div");f.className="sbframe"+(pg==="phone"?" sbphone":"");
   const i=document.createElement("iframe");i.src=location.pathname+"?sbx="+encodeURIComponent(k);i.title=k;i.loading="lazy";f.appendChild(i);return f}
 /* always the phone view: every frame 390 px wide, scaled to the box; the phone 844 px high, a page 70 % of the window */
-function fit(){for(const f of document.querySelectorAll(".sbbox .sbframe")){const w=f.clientWidth||320,s=Math.min(1,w/390),i=f.querySelector("iframe");if(!i)continue;
-  const vis=f.classList.contains("sbphone")?Math.round(844*s):Math.round(window.innerHeight*0.7);i.style.transform="scale("+s+")";i.style.height=Math.round(vis/s)+"px";f.style.height=vis+"px"}}
+/* several topics in one box: the frames share its height (each at least 260 px), so all of them are seen at once */
+function fit(){for(const f of document.querySelectorAll(".sbbox .sbframe")){const box=f.closest(".sbbox"),n=Math.max(1,box?box.querySelectorAll(".today>[data-sbt]").length:1),avail=Math.max(260,Math.round((window.innerHeight-130)/n-46));
+  const ph=f.classList.contains("sbphone"),w0=Math.max(120,((f.parentElement&&f.parentElement.clientWidth)||320)-(ph?14:2)),i=f.querySelector("iframe");   /* the width of its box (not of the frame itself: that changes here) */if(!i)continue;let s=Math.min(1,w0/390);
+  if(f.classList.contains("sbphone")&&844*s>avail)s=avail/844;   /* the phone smaller (and centred) when the box is shared */
+  const vis=f.classList.contains("sbphone")?Math.round(844*s):avail;f.style.width=f.classList.contains("sbphone")?Math.round(390*s)+"px":"";i.style.transform="scale("+s+")";i.style.height=Math.round(vis/s)+"px";f.style.height=vis+"px"}}
 /* who may use the side boxes: Owner, Admins and the roles with «Seitenmenüs nutzen» (App-Verwaltung → Access) */
 const sbUse=()=>{try{return isAdmin()||can("sidebox.use")}catch(_){return false}};
 function draw(){if(INFRAME)return;const wide=window.innerWidth>=SBWIDE&&!!ME&&sbUse();const x=sbxGet();

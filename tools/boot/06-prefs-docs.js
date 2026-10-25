@@ -14,22 +14,24 @@ export function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1
 /* a change made just before closing or reloading is saved right away (before, the older copy online won on the next start) */
 const prefsFlush=()=>{if(PREFT){clearTimeout(PREFT);PREFT=null;savePrefs()}};
 addEventListener("pagehide",prefsFlush);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")prefsFlush()});
+/* a side box (32-sideboxes: the app in a frame) neither saves nor applies the settings – it would put an older copy over the page's own */
+const INSBX=/[?&]sbx=/.test(location.search);
 export async function savePrefs(){
-  if(!ME||!ME.uid)return;const p={};
+  if(!ME||!ME.uid||INSBX)return;const p={};
   /* at most 400 characters per setting – but JSON is never cut (broken JSON would reset the setting elsewhere): the push settings drop their
      oldest switched-off reminders, anything else too long stays on this device only */
   const fit=(k,v)=>{v=String(v);if(v.length<=400)return v;if(k==="push"){try{const c=JSON.parse(v),o=c&&c.off&&typeof c.off==="object"?c.off:null;
       if(o){const ks=Object.keys(o).sort((a,b)=>String(o[a]).localeCompare(String(o[b])));while(ks.length&&JSON.stringify(c).length>400)delete o[ks.shift()];const t=JSON.stringify(c);if(t.length<=400)return t}}catch(_){}}return null};
   try{for(const k of PREFKEYS){const v=localStorage.getItem(k);if(v!==null){const f=fit(k,v);if(f!==null)p[k]=f}}}catch(_){return}
   /* notices already seen (role change, callsheet beta …) share ONE field «x»: the rules allow 16 fields = 14 settings + lt + x (before, they were dropped when all settings were set) */
-  try{const x={};for(const k of PREFX){const v=localStorage.getItem(k);if(v!==null)x[k]=v.slice(0,60)}if(Object.keys(x).length)p.x=JSON.stringify(x)}catch(_){}
+  try{const x={};for(const k of PREFX){const v=localStorage.getItem(k);if(v!==null)x[k]=v.slice(0,k==="sbx"?300:60)}if(Object.keys(x).length)p.x=JSON.stringify(x)}catch(_){}
   let lt=0;try{lt=+localStorage.getItem("prefsLocalAt")||0}catch(_){}PREFT=null;
   /* before the copy online was read, nothing is written (it would replace settings made on another device); a change is kept by prefsLocalAt and saved after loading */
   if(!PREFOK)return;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"prefs",ME.uid),Object.assign(p,{lt}))}catch(err){console.warn("prefs",err&&err.code||err)}
 }
 function applyPrefs(p){
-  if(!p||typeof p!=="object")return;PREFAPPLY=true;
+  if(!p||typeof p!=="object"||INSBX)return;PREFAPPLY=true;
   try{
     for(const k of PREFKEYS)if(typeof p[k]==="string")try{localStorage.setItem(k,p[k])}catch(_){}
     {const x=prefX(p);for(const k of PREFX)if(typeof x[k]==="string")try{localStorage.setItem(k,x[k])}catch(_){}}

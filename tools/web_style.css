@@ -1241,3 +1241,4 @@ html.sbxf header.top,html.sbxf nav.tabs,html.sbxf #view .asub{display:none}
 html body #view .csscd>summary:has(>.camx){flex-wrap:wrap}
 html body #view .csscd>summary>.l1{flex:1 1 0;min-width:0}
 html body #view .csscd>summary>.camx{flex:1 0 100%;order:9;margin-top:4px}
+.sbbox .sbframe.sbphone{margin:0 auto}
