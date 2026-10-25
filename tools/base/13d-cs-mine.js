@@ -49,6 +49,12 @@ function csMine0(c,me){const mine=[];
   for(const r of csA((c._rides||c).crewTransport).filter(r=>csRideReal(r)&&me.hit(r.people)&&r!==pu).sort((x,y)=>(csHm(x.t1)||"99").localeCompare(csHm(y.t1)||"99")))mine.push('<div class="csme-r"><span class="k">'+esc(L("Fahrt"))+'</span>'+esc([r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+' <small>'+esc(r.vehicle||"")+'</small></div>');
   for(const r of csA(c.travel).filter(r=>me.hit(r.name)&&(!r.date||!c._date||r.date===c._date)))mine.push('<div class="csme-r"><span class="k">'+esc(L("Anreise"))+'</span>'+esc([r.how,r.from,r.t1].filter(Boolean).join(" "))+' → '+csToLink(c,r.to)+(r.t2?" "+esc(r.t2):"")+'</div>');
   {let first=true;for(const r of csA(c.depts).filter(r=>csMyDept(c,me,r.dept)&&String(r.text||"").trim())){const lab=first?esc(L("Abteilung")):"";first=false;mine.push('<div class="csme-r"><span class="k">'+lab+'</span><b>'+esc(r.dept||"")+'</b> '+csTx(r.text)+'</div>');}}
+  /* in both units today (cast of both, or a call «1st IN» and «2nd IN»): one line on top, in the order of the day («2nd Unit 06:45 → 1st Unit 12:15») */
+  try{const o=c._orig||c,cl=csA(o.calls).find(r=>me.hit(r.name)),a1=csA(o.cast).find(r=>me.hit(r.actor)),a2=csA(o.u2&&o.u2.cast).find(r=>me.hit(r.actor));
+    const t1=csHm(cl&&cl.t)||(a1&&(csHm(a1.call)||csHm(a1.pickup)))||"",t2=csHm(cl&&cl.t2)||(a2&&(csHm(a2.call)||csHm(a2.pickup)))||"";
+    const in1=!!(a1||(cl&&String(cl.t||"").trim())),in2=!!(a2||(cl&&String(cl.t2||"").trim()));
+    if(in1&&in2){const u=[["1st Unit",t1],["2nd Unit",t2]].sort((x,y)=>(x[1]||"99").localeCompare(y[1]||"99"));
+      mine.unshift('<div class="csme-r csme-units"><span class="k">'+esc(L("Beide Units"))+'</span>'+u.map(([n,t])=>'<b>'+n+'</b>'+(t?' '+esc(t):'')).join(' → ')+'</div>')}}catch(_){}
   /* value in its own span (label | value side by side on the phone) */
   return mine.map(x=>x.replace(/<div class="csme-r"><span class="k">([\s\S]*?)<\/span>([\s\S]*?)<\/div>/g,'<div class="csme-r"><span class="k">$1</span><span class="v">$2</span></div>'))}
 /* the time tiles of a callsheet day (Crew Call … Wrap, sun, weather, drive to my call place) – callsheet and Today */
