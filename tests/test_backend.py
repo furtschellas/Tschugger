@@ -553,6 +553,23 @@ check("Drehschluss-Push: nur der fällige, pro Tag und Unit einmal", [x[0] for x
 W.fsadmin.sa, W.fsadmin.query_since_ms, W.fsadmin.crew_key, W.fsadmin.new_broadcast, W.fsadmin.dec_ivct = _wsave
 W.cd_touched = _wcd
 
+# ====================================================================== Verspätung des Casts (erfundene Daten, wie tests/cast_rules.mjs)
+common.GROUP = 'Verspätung-Push'
+import late_push as LP  # noqa: E402
+_D = "2031-03-02"
+_cs = {"_date": _D, "cast": [], "crewTransport": [], "transport": [{"vehicle": "Van", "passengers": "Max Muster", "from": "Hotel", "t1": "06:40", "to": "Base", "t2": "06:55"},
+       {"vehicle": "Van", "passengers": "Max Muster", "from": "Base", "t1": "07:50", "to": "Set", "t2": "07:58"}]}
+_R1 = {"no": "1", "actor": "Max Muster", "pickup": "06:40", "call": "07:00", "wardrobe": "Anna 07:05 - 07:20 15’", "makeup": "Mara 07:20 - 07:45 25’", "base": "07:45", "onset": "08:00"}
+_ms = lambda hm: int(datetime.datetime.fromisoformat(_D + "T" + hm + "+01:00").timestamp() * 1000)
+_lt = lambda acks, hm: (LP.late(acks, _cs, _R1, _ms(hm)) or (0, ""))[0]
+_cid = LP.cm_id(_D, "c", _R1, "07:00"); _oid = LP.cm_id(_D, "o", _R1, "08:00")
+check("Verspätung: gleiche Prüfsumme wie die App (Call)", _cid.startswith("m") and len(_cid) > 3, _cid)
+_got = ",".join(str(x) for x in [_lt({}, "07:03"), _lt({}, "07:20"), _lt({_cid: {"s": 1}}, "07:20"), _lt({_cid: {"s": 1}}, "07:31"), _lt({_oid: {"s": 2}}, "09:00")])
+check("Verspätung: wie in der App (0,20,0,11,0)", _got == "0,20,0,11,0", _got)
+_sr = LP.ride_id(_D, _cs["transport"][1])
+check("Verspätung: Fahrt zum Set abgeschlossen = On set", _lt({_sr: {"s": 2}}, "09:00") == 0)
+check("Verspätung: Nachricht mit Nummer, Rolle, Schritt und Minuten", LP.message(dict(_R1, role="BEN"), "w", 12)["de"] == {"title": "Verspätung 1 BEN", "body": "Kostüm +12′"}, LP.message(dict(_R1, role="BEN"), "w", 12)["de"])
+
 # ====================================================================== Cast quittieren (Regeln, erfundene Daten)
 common.GROUP = 'Cast quittieren'
 try:

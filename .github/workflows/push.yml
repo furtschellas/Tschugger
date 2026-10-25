@@ -51,6 +51,27 @@ jobs:
           restore-keys: push-devs-
       - run: pip install -q cryptography==43.0.3 requests==2.32.3 pywebpush==2.0.1 icalendar==6.1.0 recurring-ical-events==3.3.3
         if: steps.gate.outputs.skip != 'true'
+      # Verspätung des Casts (mehr als 5 Min.) → Push an die Rollen mit «Verspätung des Casts»
+      - name: Verspätung-Stand holen
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: late.json
+          key: late-${{ github.run_id }}
+          restore-keys: late-
+      - name: Verspätung des Casts
+        if: steps.gate.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          CREW_KEY: ${{ secrets.CREW_KEY }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: python tools/late_push.py
+      - name: Verspätung-Stand merken
+        if: always() && steps.gate.outputs.skip != 'true' && hashFiles('late.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: late.json
+          key: late-${{ github.run_id }}
       # Drehschluss quittiert → Dankeschön an die Crew (eine «Nachricht an alle», gleich danach von push_send.py verschickt)
       - name: Drehschluss-Push
         if: steps.gate.outputs.skip != 'true'

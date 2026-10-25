@@ -7,7 +7,7 @@ import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {fmtDT} from "./01-config.js";
-import {fb,isAdmin,isOwner,lc,ME,MYROLE,ownEnc,withTimeout,wkPost,wkUrl} from "./03-core-firebase.js";
+import {can,fb,isAdmin,isOwner,lc,ME,MYROLE,ownEnc,withTimeout,wkPost,wkUrl} from "./03-core-firebase.js";
 import {SECS} from "./12a-admin-core.js";
 import {scriptChg,tShow,todayOn} from "./16-today-view.js";
 import {showScriptNews} from "./20-script-news.js";
@@ -21,7 +21,7 @@ export const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std.
 export const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
 export function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
   const nd=c.on===false?false:true;  /* reminders were switched off: change pushes start off too */
-  return {hint:c.hint||0,news:Object.assign({plan:nd,cs:nd,prep:nd,script:nd,wrap:nd},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,leadRide:PUSH_LEADS_RIDE.some(x=>x[0]===c.leadRide)?c.leadRide:(PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60),types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
+  return {hint:c.hint||0,news:Object.assign({plan:nd,cs:nd,prep:nd,script:nd,wrap:nd,late:nd},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,leadRide:PUSH_LEADS_RIDE.some(x=>x[0]===c.leadRide)?c.leadRide:(PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60),types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
 export function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
 export const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 export const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
@@ -134,7 +134,7 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-pstat]")){PST.d
 window.pushBell=function(e){const c=pushCfg();if(!c.on||!c.types.my||!pushOK())return "";const id=pushId(e.date+"|"+hmOf(e.t)+"|"+(e.n||""));const off=!!c.off[id];
   return '<button type="button" class="pbell'+(off?' off':'')+'" data-pushev="'+id+'" data-pushdate="'+esc(e.date)+'" aria-pressed="'+(!off)+'" aria-label="'+esc(L(off?"Push-Nachricht einschalten":"Push-Nachricht ausschalten"))+'" title="'+esc(L(off?"Push-Nachricht aus":"Push-Nachricht an"))+'"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'+(off?'<path d="M3 3l18 18"/>':'')+'</svg></button>'};
 /* push on changes (sent automatically after the Dropbox update): only what the person may see, each can be turned off */
-export const PUSH_NEWS=[["plan","Änderungen am Drehplan","plan"],["cs","Neue und geänderte Callsheets","dispo"],["prep","Änderungen der Prep-Planung","prep"],["script","Neue Drehbuch-Versionen","script"],["wrap","Nachricht bei Drehschluss","plan"]];
+export const PUSH_NEWS=[["plan","Änderungen am Drehplan","plan"],["cs","Neue und geänderte Callsheets","dispo"],["prep","Änderungen der Prep-Planung","prep"],["script","Neue Drehbuch-Versionen","script"],["wrap","Nachricht bei Drehschluss","plan"],["late","Verspätung des Casts","dispo"]];
 function newsFor(c){const o={};for(const [k,,v] of PUSH_NEWS)o[k]=!!c.news[k]&&vok(v);return o}
 function newsAny(c){return PUSH_NEWS.some(([k,,v])=>c.news[k]&&vok(v))}
 export function pushSec(){
@@ -145,11 +145,14 @@ export function pushSec(){
   else dev='<p class="ghint pok">✓ '+L("Auf diesem Gerät aktiv")+' <button type="button" class="pillbtn" data-pushtest>'+L("Test-Nachricht")+'</button></p>';
   const types=PUSH_TYPES.filter(x=>vok(x[2]));
   const ev=c.on?pushEvents(c).filter(e=>pushStart(e)>Date.now()).slice(0,40):[];
-  const nw=PUSH_NEWS.filter(x=>vok(x[2])&&x[0]!=="wrap"),wr=PUSH_NEWS.filter(x=>vok(x[2])&&x[0]==="wrap");   /* Drehschluss (thanks to the crew, how it goes on) is no change: own heading */
+  /* Drehschluss (thanks to the crew, how it goes on) and Verspätung (only with the right «Verspätung des Casts») are no changes: own headings */
+  const lateOk=()=>{try{return typeof can==="function"&&can("cast.late")}catch(_){return false}};
+  const nw=PUSH_NEWS.filter(x=>vok(x[2])&&x[0]!=="wrap"&&x[0]!=="late"),wr=PUSH_NEWS.filter(x=>vok(x[2])&&x[0]==="wrap"),lt=PUSH_NEWS.filter(x=>x[0]==="late"&&vok(x[2])&&lateOk());
   const nck=([k,t])=>'<label class="ck"><input type="checkbox" data-pushnews="'+k+'"'+(c.news[k]?' checked':'')+'> '+L(t)+'</label>';
   return '<section class="psec pushsec"><h4>'+L("Push-Nachrichten")+'</h4>'+
     (nw.length?'<p class="ahint"><b>'+L("Bei Änderungen benachrichtigen")+'</b></p>'+nw.map(nck).join(""):'')+
     (wr.length?'<p class="ahint"><b>'+L("Drehschluss")+'</b></p>'+wr.map(nck).join("")+'<p class="ghint">'+L("Ein Dankeschön an die Crew, sobald der Drehschluss quittiert ist – mit dem Hinweis, ob es am nächsten Tag weitergeht.")+'</p>':'')+
+    (lt.length?'<p class="ahint"><b>'+L("Verspätung")+'</b></p>'+lt.map(nck).join("")+'<p class="ghint">'+L("Liegt jemand vom Cast mehr als 5 Minuten hinter dem Callsheet (Call, Kostüm, Maske, Base, On set), kommt eine Nachricht mit Cast-Nummer, Rolle und Minuten.")+'</p>':'')+
     (!c.on&&newsAny(c)?dev:'')+
     '<p class="ahint"><b>'+L("Erinnerungen")+'</b></p>'+
     '<label class="ck"><input type="checkbox" data-pushmaster'+(c.on?' checked':'')+'> '+L("Erinnerungen an kommende Termine erhalten")+'</label>'+
