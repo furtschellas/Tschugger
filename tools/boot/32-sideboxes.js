@@ -26,7 +26,7 @@ const sbCan=k=>{try{const t=SBT.find(x=>x[0]===k),pg=t&&t[2]||"";
     if(/^a:(users)/.test(pg))return isAdmin()||can("users.view")||can("users.edit")||can("users.invite");if(/^a:roles/.test(pg))return isAdmin()||can("roles.view")||can("roles.edit")||can("roles.assign");if(pg==="a:set")return isAdmin()||can("settings");
     if(k==="my")return vok("mycal");if(k==="bcast")return can("push.send");if(k==="reports")return typeof VIEWS==="undefined"||!!VIEWS.reports;if(k==="acct")return true;
     if(pg.startsWith("t:")){const tb=pg.slice(2);return (typeof tabsOn!=="function"||tabsOn().includes(tb))&&vok(tb==="dispo"?"dispo":tb)}}catch(_){return false}return true};
-export const SBWIDE=1400;
+export const SBWIDE=1300;
 const INFRAME=(()=>{try{return window.self!==window.top}catch(_){return true}})();
 const FRAMEPG=(()=>{try{return new URLSearchParams(location.search).get("sbx")||""}catch(_){return ""}})();
 /* the setting: two lists of topic keys */
@@ -77,7 +77,7 @@ function frame(k,pg){const f=document.createElement("div");f.className="sbframe"
 /* always the phone view: every frame 390 px wide, scaled to the box; the phone 844 px high, a page 70 % of the window */
 /* several topics in one box: the frames share its height (each at least 260 px), so all of them are seen at once */
 function fit(){for(const f of document.querySelectorAll(".sbbox .sbframe")){const box=f.closest(".sbbox"),n=Math.max(1,box?box.querySelectorAll(".today>[data-sbt]").length:1),avail=Math.max(260,Math.round((window.innerHeight-130)/n-46));
-  const ph=f.classList.contains("sbphone"),w0=Math.max(120,((f.parentElement&&f.parentElement.clientWidth)||320)-(ph?14:2)),i=f.querySelector("iframe");   /* the width of its box (not of the frame itself: that changes here) */if(!i)continue;let s=Math.min(1,w0/390);
+  const ph=f.classList.contains("sbphone"),w0=Math.max(120,((f.parentElement&&f.parentElement.clientWidth)||320)-(ph?14:2)),i=f.querySelector("iframe");   /* the width of its box (not of the frame itself: that changes here) */if(!i)continue;let s=Math.min(1.6,w0/390);   /* the phone view (390 px) scaled to the width of the box – smaller or larger */
   if(f.classList.contains("sbphone")&&844*s>avail)s=avail/844;   /* the phone smaller (and centred) when the box is shared */
   const vis=f.classList.contains("sbphone")?Math.round(844*s):avail;f.style.width=f.classList.contains("sbphone")?Math.round(390*s)+"px":"";i.style.transform="scale("+s+")";i.style.height=Math.round(vis/s)+"px";f.style.height=vis+"px"}}
 /* who may use the side boxes: Owner, Admins and the roles with «Seitenmenüs nutzen» (App-Verwaltung → Access) */
@@ -109,7 +109,7 @@ export function sbxSec(){if(INFRAME||!sbUse())return"";const x=sbxGet(),avail=SB
   const side=(s,title)=>{const on=x[s],rest=avail.filter(t=>!on.includes(t[0]));
     const row=(t,i,isOn)=>'<div class="tbrow"><label class="ck"><input type="checkbox" data-sbx="'+s+'|'+t[0]+'"'+(isOn?' checked':'')+'> '+esc(L(t[1]))+'</label>'+
       (isOn?'<span class="tbmv"><button type="button" data-sbxmv="'+s+'|'+t[0]+'|up"'+(i?'':' disabled')+' aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-sbxmv="'+s+'|'+t[0]+'|down"'+(i<on.length-1?'':' disabled')+' aria-label="'+esc(L("Nach unten"))+'">▼</button></span>':'')+'</div>';
-    return '<section class="psec sbxsec"><h4>'+esc(L(title))+'</h4><p class="ghint">'+esc(L("Nur auf breiten Bildschirmen (ab 1400 Pixel), neben der Seite. Themen ankreuzen, Reihenfolge mit ▲ ▼. Ein Thema steht auf einer Seite."))+'</p><div class="tbord">'+
+    return '<section class="psec sbxsec"><h4>'+esc(L(title))+'</h4><p class="ghint">'+esc(L("Nur auf breiten Bildschirmen (ab 1300 Pixel), neben der Seite. Themen ankreuzen, Reihenfolge mit ▲ ▼. Ein Thema steht auf einer Seite."))+'</p><div class="tbord">'+
       on.map(k=>avail.find(t=>t[0]===k)).filter(Boolean).map((t,i)=>row(t,i,true)).join("")+rest.map(t=>row(t,0,false)).join("")+'</div></section>'};
   return side("l","Seitenbox links")+side("r","Seitenbox rechts")}
 document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest("[data-sbx]");if(!c)return;const [s,k]=c.dataset.sbx.split("|"),o=s==="l"?"r":"l",x=sbxGet();

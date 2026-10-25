@@ -1211,7 +1211,8 @@ html body #view .today .tcs .tuh:first-child{margin-top:0}
 
 /* side boxes (32-sideboxes.js): from 1400 px left and right of the page; a frame of a side box shows its page only */
 .sbbox{display:none}
-@media (min-width:1400px){.sbbox:not([hidden]){display:block;position:fixed;top:14px;bottom:90px;width:min(380px,calc((100vw - 760px)/2 - 44px));overflow:auto;z-index:5;padding:2px 4px 8px;scrollbar-width:thin}
+/* the side boxes fill the space beside the page (760 px) – narrower or wider with the window */
+@media (min-width:1300px){.sbbox:not([hidden]){display:block;position:fixed;top:14px;bottom:90px;width:calc((100vw - 760px)/2 - 34px);overflow:auto;z-index:5;padding:2px 4px 8px;scrollbar-width:thin}
   #sbl{left:18px}#sbr{right:18px}}
 .sbbox .sbsec{margin:0 0 16px}.sbbox .sbh{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 6px}
 .sbbox .tuh{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 0 3px}
@@ -1232,7 +1233,7 @@ html.sbxf header.top,html.sbxf nav.tabs,html.sbxf #view .asub{display:none}
 /* «Quittieren», both units: three columns (what · 1st Unit · 2nd Unit) */
 .aq3{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px 18px;margin:4px 0 8px}.aq3 .aq3t{min-width:0}.aq3 .aq4c{justify-self:center}
 /* no topic in a box: only the small «+» right beside the page */
-@media (min-width:1400px){#sbl.sbempty{left:calc(50% - 380px - 52px);width:auto;top:140px;bottom:auto;overflow:visible}#sbr.sbempty{right:calc(50% - 380px - 52px);width:auto;top:140px;bottom:auto;overflow:visible}}
+@media (min-width:1300px){#sbl.sbempty{left:calc(50% - 380px - 52px);width:auto;top:140px;bottom:auto;overflow:visible}#sbr.sbempty{right:calc(50% - 380px - 52px);width:auto;top:140px;bottom:auto;overflow:visible}}
 .sbbox.sbempty .sbadd{flex-direction:column;align-items:flex-start}.sbbox.sbempty .sbadd select{min-width:200px}#sbr.sbempty .sbadd{align-items:flex-end}
 .arwa{margin:10px 0}.arwa>summary{cursor:pointer;font-weight:700}
 .arwag{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--wcols,2),minmax(90px,150px));gap:6px 10px;align-items:center;margin-top:8px}.arwag select,.arwag input{min-width:0;width:100%;min-height:34px}

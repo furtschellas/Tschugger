@@ -734,7 +734,7 @@ Object.assign(I18N,{
  "Smartphone-Vorschau":{fr:"Aperçu smartphone",it:"Anteprima smartphone",en:"Smartphone preview"},
  "Access / Rollen":{fr:"Accès / rôles",it:"Accesso / ruoli",en:"Access / roles"},
  "Erste Szene":{fr:"Première scène",it:"Prima scena",en:"First scene"},
- "Nur auf breiten Bildschirmen (ab 1400 Pixel), neben der Seite. Themen ankreuzen, Reihenfolge mit ▲ ▼. Ein Thema steht auf einer Seite.":{fr:"Uniquement sur les grands écrans (dès 1400 pixels), à côté de la page. Cochez les thèmes, ordre avec ▲ ▼. Un thème figure d'un seul côté.",it:"Solo su schermi larghi (da 1400 pixel), accanto alla pagina. Spunta i temi, ordine con ▲ ▼. Un tema sta su un solo lato.",en:"Only on wide screens (from 1400 pixels), beside the page. Tick the topics, order with ▲ ▼. A topic is on one side only."},
+ "Nur auf breiten Bildschirmen (ab 1300 Pixel), neben der Seite. Themen ankreuzen, Reihenfolge mit ▲ ▼. Ein Thema steht auf einer Seite.":{fr:"Uniquement sur les grands écrans (dès 1300 pixels), à côté de la page. Cochez les thèmes, ordre avec ▲ ▼. Un thème figure d'un seul côté.",it:"Solo su schermi larghi (da 1300 pixel), accanto alla pagina. Spunta i temi, ordine con ▲ ▼. Un tema sta su un solo lato.",en:"Only on wide screens (from 1300 pixels), beside the page. Tick the topics, order with ▲ ▼. A topic is on one side only."},
  "Nach unten":{fr:"Vers le bas",it:"Verso il basso",en:"Move down"},
  "Wetter":{fr:"Météo",it:"Meteo",en:"Weather"},
  "Beide Units":{fr:"Deux unités",it:"Entrambe le unità",en:"Both units",hi:"दोनों यूनिट"},
