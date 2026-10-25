@@ -314,6 +314,15 @@ await check("Prognose: nur Inhalt und Zeit", assertFails(setDoc(doc(as("viewer")
 await check("Prognose: ID nur das Datum", assertFails(setDoc(doc(as("viewer"), "nowcast/abc"), { c: "x", at: serverTimestamp() })));
 await check("Prognose: mit Recht löschen geht", assertSucceeds(deleteDoc(doc(as("viewer"), "nowcast/20261025"))));
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view"] }) });
+// ---------- «Cast / Szenen automatisch quittieren einstellen»: only their own part ----------
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.cast.auto"] }) });
+await check("Cast-Automatik einstellen: Cast-Teil geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { castAuto: { o: { on: true, min: 5 } } }, { merge: true })));
+await check("Cast-Automatik einstellen: Szenen-Teil nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { sceneAuto: { s: { on: true, min: 0 } } }, { merge: true })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.scene.auto"] }) });
+await check("Szenen-Automatik einstellen: Szenen-Teil und parallel geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { sceneAuto: { s: { on: true, min: 2 } }, sceneParallel: true }, { merge: true })));
+await check("Szenen-Automatik einstellen: Cast-Teil nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { castAuto: { o: { on: false, min: 0 } } }, { merge: true })));
+await check("Szenen-Automatik einstellen: andere Einstellungen nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { sceneAck: false }, { merge: true })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view"] }) });
 // ---------- «Quittieren einstellen»: only the switches of the quittances in config/app ----------
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.settings"] }); await setDoc(doc(c.firestore(), "config/app"), { langs: ["de"] }, { merge: true }) });
 await check("Quittieren einstellen: Automatik speichern geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { castAuto: { c: { on: true, min: 0 } }, sceneAck: true }, { merge: true })));
