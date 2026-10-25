@@ -182,7 +182,7 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   for(const sec of csA(x.sections).concat(csA(c.sections)).filter(s0=>!WX.includes(s0))){const rows=csA(sec&&sec.rows).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(cc=>String(cc==null?"":cc).trim()));if(!rows.length)continue;
     h+=csSec(String(sec.title||""),rows.map(r=>'<p>'+r.map(cc=>csTx(cc)).join(" · ")+'</p>').join(""),false)}
   /* the 2nd Unit (read apart): its own part below the 1st Unit */
-  try{h+=csU2HTML(x,c,day,me,{cast:csCastSec,extras:csExtrasSec})}catch(_){}
+  try{h+=csU2HTML(x,c,day,me,{cast:csCastSec,extras:csExtrasSec,tiles:csTilesHTML,loc:(c2,x2,me2,SU2,t2)=>{const k=window.CSNOWK;try{return csLocSec(c2,x2,me2,SU2,t2)}finally{window.CSNOWK=k}}})}catch(_){}
   /* on the shooting day: once per visit straight to the running row */
   if(x.date===csShootDay()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
   return JB+'<div class="csview">'+h+'</div>'}

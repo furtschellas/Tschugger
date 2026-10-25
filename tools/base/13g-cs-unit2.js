@@ -23,14 +23,18 @@ const u2Rows=day=>csA(day&&day.unit2&&day.unit2.items).filter(i=>i&&typeof i==="
 export function csU2HTML(x,c,day,me,F){F=F||{};const u0=c&&c.u2,sh=u2Rows(day);if((!u0||typeof u0!=="object")&&!sh.length)return"";
   const u=u0&&typeof u0==="object"?u0:{},t=u.times||{},o=u.order||{},LS=csLocs({locations:csA(u.locations)});let h="";
   h+='<div class="csu2-head" id="cs-u2"><h2>2nd Unit</h2><span>'+(x.date?fmtDate(x.date):'')+(u.ad?' · 1st AD '+esc(String(u.ad)):'')+'</span></div>';
-  if(u.crewCall||t.rts||t.lunch||t.wrap)h+='<div class="dtiles cstiles">'+u2tile("Crew Call",u.crewCall,true)+u2tile("RTS",t.rts)+u2tile("Lunch",t.lunch)+u2tile("Wrap",t.wrap)+'</div>';
+  const c2=typeof window.cqU2==="function"&&c&&c.u2?window.cqU2(c):null;
+  /* the tiles as in the 1st Unit (times of the 2nd Unit, sun, weather) */
+  if(c2&&F.tiles)h+=F.tiles({date:x.date,sr:x.sr,ss:x.ss},day,c2,me).replace('id="cs-zeiten"','id="cs-u2zeiten"');
+  else if(u.crewCall||t.rts||t.lunch||t.wrap)h+='<div class="dtiles cstiles">'+u2tile("Crew Call",u.crewCall,true)+u2tile("RTS",t.rts)+u2tile("Lunch",t.lunch)+u2tile("Wrap",t.wrap)+'</div>';
   const ct=u.contact;if(ct&&(ct.name||ct.phone)){const tel=String(ct.phone||"").replace(/[^\d+]/g,"");
     h+='<div class="cscontact"><span class="csct-in"><b>'+esc(L("Kontakt am Set"))+':</b> '+(tel&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'">'+esc(ct.name||ct.phone)+'</a>':esc(ct.name||""))+(ct.role?' <small>· '+esc(ct.role)+'</small>':'')+'</span></div>'}
-  if(vok("loc")&&csA(u.locations).length)h+=csSec("Locations · 2nd Unit",csA(u.locations).map(u2Loc).join(""),false,"","u2loc");
+  /* the locations as in the 1st Unit (sets with their places, maps, «Jetzt hier») */
+  if(c2&&F.loc&&csA(u.locations).length)h+=F.loc(c2,x,me,{},{}).replace('id="cs-loc"','id="cs-u2loc"').replace('<h3 class="dh">Locations</h3>','<h3 class="dh">Locations · 2nd Unit</h3>');
+  else if(vok("loc")&&csA(u.locations).length)h+=csSec("Locations · 2nd Unit",csA(u.locations).map(u2Loc).join(""),false,"","u2loc");
   /* the order: from the 2nd-Unit sheet; without it the one of the callsheet */
   h+=csSec(L("Drehfolge")+" · 2nd Unit"+(!sh.length&&o.pages?' · '+o.pages+' pgs':''),(sh.length?'<p class="ghint">'+esc(L("Aus dem 2nd-Unit-Sheet"))+'</p>'+csOrderRows(sh,x.date,LS,true,"2"):(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,LS,true,"2")),true,"","u2order");
   /* cast and extras with their ticks, as in the 1st Unit: in the context of the 2nd Unit (own ids, cqU2 in 24-flow) */
-  const c2=typeof window.cqU2==="function"&&c&&c.u2?window.cqU2(c):null;
   if(c2&&F.cast)h+=F.cast(c2,me,"Cast · 2nd Unit","u2cast","");
   else h+=csSec("Cast · 2nd Unit",csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(u.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3,true),false,"","u2cast");
   if(c2&&F.extras)h+=F.extras(c2,L("Komparsen")+" · 2nd Unit","u2extras","");

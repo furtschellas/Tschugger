@@ -334,7 +334,7 @@ window.cmBtn=(id,date,label,k,oth)=>{const st=cmSt(id),cls="cmk"+(st===2?" cmok"
 const CQU2=new WeakMap();
 export function cqU2(c){const u=c&&c.u2;if(!u||typeof u!=="object")return null;const hit=CQU2.get(c);if(hit&&hit.u===u&&hit.d===c._date)return hit.x;
   const mk=l=>arr(l).filter(r=>r&&typeof r==="object").map(r=>r.u==="2"?r:Object.assign(r,{u:"2"}));   /* marked once (also callsheets read before the mark) */
-  const x=Object.assign({},c,{cast:mk(u.cast),extras:mk(u.extras),vehicles:arr(u.vehicles),locations:arr(u.locations),times:u.times||{},contact:u.contact||null,order:u.order||{},_u:"2"});
+  const x=Object.assign({},c,{cast:mk(u.cast),extras:mk(u.extras),vehicles:arr(u.vehicles),locations:arr(u.locations),times:Object.assign({},u.times||{},u.crewCall&&!(u.times||{}).crewCall?{crewCall:u.crewCall}:{}),contact:u.contact||null,order:u.order||{},_u:"2"});
   CQU2.set(c,{u,d:c._date,x});return x}
 window.cqU2=cqU2;
 export const CQA_STEPS=[["c","P/UP und Call"],["m","Maske"],["w","Kostüm"],["b","Base"],["o","On set"]];
