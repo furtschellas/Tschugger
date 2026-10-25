@@ -1081,9 +1081,29 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
 
 /* App-Verwaltung → Quittieren: automatic quittances, one row per step (switch, Zugabe) */
 .aqg{display:grid;gap:4px;margin:4px 0 10px}.aqr{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}.aqr .ck{flex:1 1 140px}.aqm{display:inline-flex;align-items:center;gap:6px;font-size:.92em}.aqm input{width:4.5em}
-/* «Jetzt» (Today and the callsheet of today) on phones: compact – the label in the same line, at most 2 lines */
+/* «Jetzt»: Maske / Kostüm now (cast chips as in the shooting order), opened: description and cast of the scene */
+html body #view .tcard.tnow[data-tnow]{cursor:pointer}
+html body #view .tnow .tnowm{flex:1;min-width:0}
+html body #view .tnow .tnowcm{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-top:6px}
+html body #view .tnow .tnc+.tnk{margin-left:6px}
+html body #view .tnow .tnk{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+html body #view .tnow .tnc{display:inline-flex;flex-wrap:wrap;gap:4px}
+html body #view .tnow .tnc span{white-space:nowrap}
+html body #view .tnow .tnc i{font-style:normal;font-weight:700}
+html body #view .tnow .tnc em{font-style:normal;margin-left:5px}
+html body #view .tnow .tnowx{display:none;margin-top:8px}
+html body #view .tnow.tnowo .tnowx{display:block}
+html body #view .tnow .tnsyn{font-size:13px;color:var(--muted);margin:0 0 6px}
+/* «Jetzt» (Today and the callsheet of today): compact – the label in the same line; on phones at most 2 lines (scene · Maske/Kostüm with
+   numbers only); a tap opens it with the roles written out */
+html body #view .tcard.tnow,html body #view .today .tcard.tnow{display:flex;align-items:baseline;gap:10px;padding:10px 14px;margin:0 0 12px;border-radius:12px}
+html body #view .tcard.tnow .tch,html body #view .today .tcard.tnow .tch{flex:none;margin:0;min-height:0;font-size:11px}
 @media (max-width:600px){
-  html body #view .tcard.tnow,html body #view .today .tcard.tnow{display:flex;align-items:baseline;gap:10px;padding:8px 12px;margin:0 0 10px;border-radius:12px}
-  html body #view .tcard.tnow .tch,html body #view .today .tcard.tnow .tch{flex:none;margin:0;min-height:0;font-size:11px}
-  html body #view .tcard.tnow .tnowb{flex:1;min-width:0;line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+  html body #view .tcard.tnow,html body #view .today .tcard.tnow{padding:8px 12px;margin:0 0 10px}
+  html body #view .tcard.tnow .tnowb{line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+  html body #view .tcard.tnow:not(.tnowo):has(.tnowcm) .tnowb{-webkit-line-clamp:1;line-clamp:1}
+  html body #view .tcard.tnow:not(.tnowo) .tnowcm{flex-wrap:nowrap;overflow:hidden;margin-top:3px}
+  html body #view .tcard.tnow:not(.tnowo) .tnowcm .tnc{flex-wrap:nowrap}
+  html body #view .tcard.tnow:not(.tnowo) .tnc em{display:none}
+  html body #view .tcard.tnow.tnowo .tnowb{-webkit-line-clamp:unset;line-clamp:none;display:block}
 }

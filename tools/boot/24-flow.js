@@ -229,6 +229,9 @@ window.cqStage=(c,r)=>{if(!cqRowOk(c,r))return 0;const m=cqModel(c,r);return m.o
 /* for the cast chips of the shooting order and the schedule (display only):
    0 nothing yet · 1 P/UP (driver on site / on the way) · 2 Call, Kostüm or Maske ticked or running · 3 Base done or On set */
 window.cqLook=(c,r)=>{if(!cqRowOk(c,r))return 0;const m=cqModel(c,r);return m.onDone||m.baseDone?3:m.callAct||m.arrived||m.wmDone?2:m.pu>0?1:0};
+/* «Jetzt» (Today, callsheet of today): the cast rows now in Maske / Kostüm (running) – {m: [rows], w: [rows]} */
+window.cqWmNow=c=>{const out={m:[],w:[]};if(!cqRowOk(c,{}))return out;
+  for(const r of arr(c.cast))for(const k of ["m","w"])if(cmParse(k==="w"?r.wardrobe:r.makeup,c).some(p=>cmSt(cmId(c._date,k,r,p.t))===1))out[k].push(r);return out};
 /* every step done (On set done): the cast number is pink */
 window.cqAll=(c,r)=>cqRowOk(c,r)&&cqModel(c,r).onDone;
 /* Kostüm / Maske running: the duration counts down from the start (back to open = the original duration again) */
