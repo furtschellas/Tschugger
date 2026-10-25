@@ -81,11 +81,13 @@ export function csOrderRows(rows,date,locs,one,u){u=u||"1";rows=csA(rows);const 
     if(det)body+='<details class="scdet cs3"><summary>'+esc(L("Details"))+'</summary>'+det+'</details>';
     if(extra)body=/<div class="cast">/.test(body)?body.replace(/(<div class="cast">[\s\S]*?<\/div>)/,m0=>m0+extra):body.replace(/(<div class="l1">[\s\S]*?<\/div>)/,m0=>m0+extra);
     const mm=body.match(/<div class="meta">[\s\S]*?<\/div>/),meta=mm?mm[0]:"";if(mm)body=body.replace(mm[0],"");
+    /* the camera setups of the planning (A-1 …): right below pages · duration · direction, visible also folded */
+    const cxm=body.match(/<div class="camx"><b>[\s\S]*?<\/b>(?:<div class="cx">[\s\S]*?<\/div>)*<\/div>/),camx=cxm?cxm[0]:"";if(cxm)body=body.replace(cxm[0],"");
     const m=body.match(/<div class="l1">[\s\S]*?<\/div>/);const l1=m?m[0]:'<div class="l1"><span class="scn">'+esc(r.sc)+'</span></div>';if(m)body=body.replace(m[0],"");
     const lo=csSceneLoc(locs,r)||(one&&ONE)||null;const pb=lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'';
     const du=pb;   /* the duration only in the details (not in the top line) */const l1d=du&&/<span class="set">/.test(l1)?l1.replace('<span class="set">',du+'<span class="set">'):l1+du;
     const dn=typeof scState==="function"&&date&&scState(date,r.sc)===2?' scdone':'';
-    return '<li class="row csfold'+nw+dn+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+(meta?l1d.replace(/<\/div>$/,meta+'</div>'):l1d)+CSEXPSM+'</summary>'+body+'</details></div></li>'}).join("")+'</ol>'}
+    return '<li class="row csfold'+nw+dn+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+(meta?l1d.replace(/<\/div>$/,meta+'</div>'):l1d)+camx+CSEXPSM+'</summary>'+body+'</details></div></li>'}).join("")+'</ol>'}
 /* what concerns me on this callsheet: call, cast times, rides, travel, my department */
 /* a place named on the callsheet («Base», «Loc.2», «Parking loc. 1», «Holiday Inn») → name and map link from the Locations */
 /* parking places of the callsheet in the language of the app: «Tech parking» → «Tech Parkplatz», «Crew parking» → «Crew Parkplatz» */

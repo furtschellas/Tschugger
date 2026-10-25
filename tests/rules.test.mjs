@@ -80,6 +80,8 @@ await check("Rollen zuweisen: Rolle mit Rechten, die man nicht hat, nicht", asse
 await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "userroles/other@test.ch"), { role: "crew" }); });
 await check("Rolle bearbeiten: fremde vorhandene Rechte bleiben erhalten", assertSucceeds(setDoc(doc(as("power"), "roles/minimal"), { name: "Minimal 2", perms: ["view.plan"] })));
 await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), "roles/withscript"), { name: "S", perms: ["view.plan", "view.script"] }); });
+await check("Rolle bearbeiten: WhatsApp pro Unit speichern geht", assertSucceeds(setDoc(doc(as("power"), "roles/minimal"), { name: "Minimal 2", perms: ["view.plan"], wa: { "1": { m: "pfppppnp", n: "" }, "2": { m: "ppaapppp", n: "+41790000000" } } })));
+await check("Rolle bearbeiten: WhatsApp nur Unit 1 und 2", assertFails(setDoc(doc(as("power"), "roles/minimal"), { name: "Minimal 2", perms: ["view.plan"], wa: { "3": { m: "p" } } })));
 await check("Rolle bearbeiten: Rolle mit fremdem Recht umbenennen geht (Recht bleibt)", assertSucceeds(setDoc(doc(as("power"), "roles/withscript"), { name: "S2", perms: ["view.plan", "view.script"] })));
 await check("Rolle bearbeiten: neues fremdes Recht hinzufügen nicht", assertFails(setDoc(doc(as("power"), "roles/withscript"), { name: "S2", perms: ["view.plan", "view.script", "settings"] })));
 

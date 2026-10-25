@@ -180,7 +180,7 @@ async function scTap(b,date,sc,u,choice){const id=scAckId(date,sc),st=scState(da
   /* the new state: wrap is done at once, an open entry runs, a running one is done */
   const v=st===0&&bs==="wrap"?{s:2,b:now0,e:now0}:st===0?{s:1,b:now0}:{s:2,b:x.b||x.at||now0,e:now0};
   /* WhatsApp per kind of quittance (Mein Konto → App): «direkt» opens WhatsApp right in this tap (a phone allows it only here, not after saving) */
-  const wk=scWaKind(date,sc,u,v),wm=scWaMode(wk);if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},v):v),wk);
+  const wk=scWaKind(date,sc,u,v),wm=scWaMode(wk,u);if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},v):v),wk,u);
   b.disabled=true;
   if(st===0&&bs==="wrap")for(const k of scRunAll(date,u,id)){const rx=window.SCACK[scAckId(date,k)]||{};try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now0,e:scBase(k)==="lunch"?Math.max(+rx.b||+rx.at||now0,Math.min(scLunchEnd(rx),now0)):now0})}catch(_){}}
   try{await scWrite(date,sc,u,v);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null,wk)}   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
@@ -196,21 +196,24 @@ function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((typeof UNAME!=="u
 const SCWA_KINDS=[["d","Drehstart","erste Szene des Tages","f"],["b","Szene Beginn","","n"],["e","Szene Abschluss","","f"],["l","Lunch Beginn","","n"],["m","Lunch Ende","","f"],["w","Drehschluss","Wrap","f"],["p","Prognose","im «Jetzt»","f"],["t","Drehtag vor Ort geändert","","f"]];
 function scWaModes(){let s="";try{s=localStorage.getItem("scwa")||"";if(!s&&localStorage.getItem("scwa:no")==="1")s="nnnnnn"}catch(_){}   /* «nicht mehr fragen» of before: all off */
   return Object.fromEntries(SCWA_KINDS.map(([k,,,d0],i)=>[k,/^[nfa]$/.test(s[i]||"")?s[i]:d0]))}
-const scWaMode=k=>k?scWaModes()[k]:"n";window.scWaMode=scWaMode;
+/* the role can set WhatsApp per unit (App-Verwaltung → Access → Rolle: wa {"1": {m, n}, "2": {m, n}} – m one letter per kind n/f/a, «p» = as the person set it);
+   without a setting of the role: the person's own (Mein Konto → App) */
+const scWaRole=u=>{const w=window.MYROLEWA;return w&&typeof w==="object"?w[String(u||"1")==="2"?"2":"1"]||null:null};
+const scWaMode=(k,u)=>{if(!k)return "n";const r=scWaRole(u),i=SCWA_KINDS.findIndex(x=>x[0]===k),c=r&&typeof r.m==="string"?r.m[i]:"";return /^[nfa]$/.test(c||"")?c:scWaModes()[k]};window.scWaMode=scWaMode;window.SCWA_KINDS=SCWA_KINDS;
 function scWaKind(date,sc,u,v){const bs=scBase(sc);if(bs==="wrap")return "w";if(bs==="lunch")return v.s===1?"l":"m";
   if(v.s===2)return "e";
   const first=!/^(setup\d*)$/.test(bs)&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!/^(lunch|wrap|setup\d*)$/.test(scBase(scKeyOf(rid,rx))));
-  return first&&scWaMode("d")!=="n"?"d":"b"}
+  return first&&scWaMode("d",u)!=="n"?"d":"b"}
 /* recipient: per kind (scwt<kind>) a number or a WhatsApp group (its invite link), else the general number (scwan), else choose in WhatsApp.
    A group cannot be opened with the text in it (WhatsApp does not allow that): the text is copied, the group opens, paste and send */
 const scWaGet=k=>{try{return localStorage.getItem(k)||""}catch(_){return ""}};
 function scWaParse(v){v=String(v||"").trim();const g=v.match(/chat\.whatsapp\.com\/(?:invite\/)?([A-Za-z0-9]{10,40})/);if(g)return "g:"+g[1];if(/^g:[A-Za-z0-9]{10,40}$/.test(v))return v;
   const n=v.replace(/[^\d+]/g,"").replace(/^\+/,"").replace(/^00/,"");return n.length>=8?n:""}
-const scWaTarget=k=>scWaParse(k&&scWaGet("scwt"+k))||scWaParse(scWaGet("scwan"));
-const scWaUrl=(txt,k)=>{const t=scWaTarget(k);return /^g:/.test(t)?"https://chat.whatsapp.com/"+t.slice(2):"https://wa.me/"+t+"?text="+encodeURIComponent(txt)};
-const scWaIsGroup=k=>/^g:/.test(scWaTarget(k));
-window.scWaOpen=(txt,k)=>scWaOpen(txt,k);
-function scWaOpen(txt,k){try{if(scWaIsGroup(k)){try{navigator.clipboard.writeText(txt)}catch(_){}showMsg(L("Text kopiert – in der WhatsApp-Gruppe einfügen und senden."),6000)}window.open(scWaUrl(txt,k),"_blank","noopener")}catch(_){}}
+const scWaTarget=(k,u)=>{const r=scWaRole(u);return scWaParse(r&&r.n)||scWaParse(k&&scWaGet("scwt"+k))||scWaParse(scWaGet("scwan"))};
+const scWaUrl=(txt,k,u)=>{const t=scWaTarget(k,u);return /^g:/.test(t)?"https://chat.whatsapp.com/"+t.slice(2):"https://wa.me/"+t+"?text="+encodeURIComponent(txt)};
+const scWaIsGroup=(k,u)=>/^g:/.test(scWaTarget(k,u));
+window.scWaOpen=(txt,k,u)=>scWaOpen(txt,k,u);
+function scWaOpen(txt,k,u){try{if(scWaIsGroup(k,u)){try{navigator.clipboard.writeText(txt)}catch(_){}showMsg(L("Text kopiert – in der WhatsApp-Gruppe einfügen und senden."),6000)}window.open(scWaUrl(txt,k,u),"_blank","noopener")}catch(_){}}
 function scWaSec(){if(typeof canPerm!=="function"||!(canPerm("scenes.ack")||canPerm("now.forecast")||canPerm("day.edit")))return "";const m=scWaModes(),n=(()=>{try{return localStorage.getItem("scwan")||""}catch(_){return ""}})();
   return '<section class="psec"><h4>'+esc(L("WhatsApp beim Quittieren"))+'</h4><p class="ghint">'+esc(L("Nach dem Quittieren einer Szene eine kurze Info per WhatsApp – pro Art einstellbar. «Fragen»: nach dem Speichern erscheint ein Knopf. «Direkt»: WhatsApp öffnet sich sofort mit dem fertigen Text; senden tippst du selbst."))+'</p>'+
     '<div class="scwag">'+SCWA_KINDS.map(([k,t,sub])=>'<div class="scwar"><span>'+esc(L(t))+(sub?' <small class="ghint">'+esc(L(sub))+'</small>':'')+'</span><select data-scwam="'+k+'" aria-label="'+esc(L(t))+'">'+[["n","Aus"],["f","Fragen"],["a","Direkt"]].map(([v,x])=>'<option value="'+v+'"'+(m[k]===v?' selected':'')+'>'+esc(L(x))+'</option>').join("")+'</select></div>'+'<input class="scwan scwt" data-scwt="'+k+'" maxlength="80" autocomplete="off" spellcheck="false" value="'+esc(scWaGet("scwt"+k))+'" placeholder="'+esc(L("Empfänger: Nummer oder Gruppenlink (leer = wie unten)"))+'" aria-label="'+esc(L(t)+" – "+L("Empfänger"))+'"'+(m[k]==="n"?' hidden':'')+'>').join("")+'</div>'+
@@ -229,7 +232,7 @@ function scBar(date,sc,u,v,wa,wk){let b=document.getElementById("scbar");if(b)b.
   b.innerHTML='<span class="scbt">'+esc(what)+'</span><button type="button" class="pillbtn" data-scbared>'+esc(L("Zeit ändern"))+'</button>'+(wa?'<button type="button" class="pillbtn scwa" data-scbarwa>WhatsApp</button>':'')+
     '<button type="button" class="scbx" data-scbarx '+ariaTip(L("Schliessen"))+'>×</button>';
   const close=()=>{clearTimeout(SCBART);b.remove()};
-  b.addEventListener("click",e=>{if(e.target.closest("[data-scbared]")){close();scAckDialog(date,sc,u);return}if(e.target.closest("[data-scbarwa]")){scWaOpen(scShareText(date,sc,u,wa),wk);setTimeout(close,50);return}if(e.target.closest("[data-scbarx]"))close()});
+  b.addEventListener("click",e=>{if(e.target.closest("[data-scbared]")){close();scAckDialog(date,sc,u);return}if(e.target.closest("[data-scbarwa]")){scWaOpen(scShareText(date,sc,u,wa),wk,u);setTimeout(close,50);return}if(e.target.closest("[data-scbarx]"))close()});
   document.body.appendChild(b);SCBART=setTimeout(close,wa?12000:8000)}
 window.scBar=scBar;
 function scShareAsk(date,sc,u,v,force){
@@ -237,7 +240,7 @@ function scShareAsk(date,sc,u,v,force){
   d.innerHTML='<div class="a2box scbox"><h3>'+esc(L("Info per WhatsApp senden?"))+'</h3><p class="scwat">'+esc(txt)+'</p>'+
     '<div class="arb"><button type="button" class="scwa" data-scwago>WhatsApp</button><button type="button" class="lnk" data-scwax>'+esc(L("Nein"))+'</button></div>'+
     '<p class="ghint scwano">'+esc(L("Einstellen pro Art: Mein Konto → App → WhatsApp beim Quittieren."))+'</p></div>';
-  d.addEventListener("click",e=>{if(e.target.closest("[data-scwago]"))scWaOpen(txt,scWaKind(date,sc,u,v));if(e.target===d||e.target.closest("[data-scwax]")||e.target.closest("[data-scwago]"))setTimeout(()=>d.remove(),50)});
+  d.addEventListener("click",e=>{if(e.target.closest("[data-scwago]"))scWaOpen(txt,scWaKind(date,sc,u,v),u);if(e.target===d||e.target.closest("[data-scwax]")||e.target.closest("[data-scwago]"))setTimeout(()=>d.remove(),50)});
   document.body.appendChild(d)}
 /* popup of a quittiert scene: state, begin and end time; «offen» takes the quittance away */
 function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{},st=scState(date,sc);

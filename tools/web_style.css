@@ -1234,3 +1234,10 @@ html.sbxf header.top,html.sbxf nav.tabs,html.sbxf #view .asub{display:none}
 /* no topic in a box: only the small «+» right beside the page */
 @media (min-width:1400px){#sbl.sbempty{left:calc(50% - 380px - 52px);width:auto;top:140px;bottom:auto;overflow:visible}#sbr.sbempty{right:calc(50% - 380px - 52px);width:auto;top:140px;bottom:auto;overflow:visible}}
 .sbbox.sbempty .sbadd{flex-direction:column;align-items:flex-start}.sbbox.sbempty .sbadd select{min-width:200px}#sbr.sbempty .sbadd{align-items:flex-end}
+.arwa{margin:10px 0}.arwa>summary{cursor:pointer;font-weight:700}
+.arwag{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--wcols,2),minmax(90px,150px));gap:6px 10px;align-items:center;margin-top:8px}.arwag select,.arwag input{min-width:0;width:100%;min-height:34px}
+@media (max-width:480px){.arwag{grid-template-columns:minmax(0,1fr) repeat(var(--wcols,2),minmax(76px,1fr))}}
+/* the camera setups of a scene (A-1 …) in the folded row of the shooting order: a line of its own below pages · duration · direction */
+html body #view .csscd>summary:has(>.camx){flex-wrap:wrap}
+html body #view .csscd>summary>.l1{flex:1 1 0;min-width:0}
+html body #view .csscd>summary>.camx{flex:1 0 100%;order:9;margin-top:4px}
