@@ -259,7 +259,9 @@ window.TNOWOPEN=window.TNOWOPEN||false;
 const tnChip=(no,role,lk,on,late)=>'<span'+(lk?' class="tnl'+lk+(on?' tnon':'')+'"':'')+'><i>'+esc(no)+'</i>'+(late?'<b class="tnlate" title="'+esc(L("Verspätung"))+'">+'+late+'′</b>':'')+(role?'<em>'+esc(role)+'</em>':'')+'</span>';
 export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return "";
     /* the quittances not read yet (first seconds after opening): no «Jetzt» – it would show the first scene of a day that is long done */
-    if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";const ns=csNowScene();
+    if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";
+    /* the scene of the callsheet of THIS day (after midnight Today and the callsheet may mean different days: then no scene here) */
+    const xd=(S.dispos||[]).find(y=>y&&y.date===t),ns=xd?csNowScene(xd):null;
     const fc=ncLine(t),ed=ncCan()?'<button type="button" class="tnced" data-ncedit '+'aria-label="'+esc(L("Prognose erfassen"))+'" title="'+esc(L("Prognose erfassen"))+'">'+NCICO+'</button>':'';
     /* no scene now (before the setup, after the wrap): only the forecasts – with the right to enter them also the card with its icon on a shooting day */
     if(!ns||ns.ev==="wrap"){const sd=arr(S.days).some(x=>x&&x.date===t&&x.kind==="shoot");if(!fc&&!(ed&&sd))return "";
@@ -268,7 +270,7 @@ export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return 
     const nb=csNowBits(ns,c0,t);
     /* scenes in parallel: the further scenes running now, in the same line («+ 23 L3 SEEUFER») */
     let par="";try{if(!ns.ev&&typeof scAckId==="function"){const me=scAckId(t,ns.sc),rows=arr((c0.order||{}).rows).filter(r=>r&&r.sc);
-      for(const [id,x] of Object.entries(window.SCACK||{})){if(!x||x.d!==t||x.s!==1||id===me)continue;const k=x.sc||id.split("-").slice(1).join("-");if(/^(lunch|wrap|setup\d*)(_u\d)?$/.test(k))continue;
+      for(const [id,x] of Object.entries(window.SCACK||{})){if(!x||x.d!==t||x.s!==1||id===me||String(x.u||"1")!=="1")continue;   /* the 1st unit (as the callsheet) */const k=x.sc||id.split("-").slice(1).join("-");if(/^(lunch|wrap|setup\d*)(_u\d)?$/.test(k))continue;
         const r=rows.find(y=>scAckId(t,y.sc)===id)||{sc:k};const b=csNowBits(r,c0,t);par+=' <span class="tnpar">+ <b class="tnsc">'+b.sc+'</b>'+b.place+' <span class="tnset">'+b.set+'</span></span>'}
       /* in parallel: also the next scene still open after the running ones («→ 23») */
       if(par){const st=y=>typeof scState==="function"?scState(t,String(y.sc)):0;let last=-1;rows.forEach((y,i)=>{if(st(y)>0)last=i});const nx=rows.slice(last+1).find(y=>st(y)===0);

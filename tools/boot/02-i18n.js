@@ -1058,6 +1058,7 @@ Object.assign(I18N,{
  "Änderungen dieser Unit verwerfen?":{fr:"Abandonner les modifications de cette unité ?",it:"Annullare le modifiche di questa unità?",en:"Discard the changes of this unit?",hi:"इस यूनिट के बदलाव छोड़ दें?"},
  "Cast automatisch quittieren einstellen":{fr:"Régler la confirmation automatique du cast",it:"Impostare la conferma automatica del cast",en:"Set automatic cast confirmation",hi:"कास्ट स्वचालित पुष्टि सेट करें"},
  "Szenen automatisch quittieren einstellen (und parallel)":{fr:"Régler la confirmation automatique des scènes (et en parallèle)",it:"Impostare la conferma automatica delle scene (e in parallelo)",en:"Set automatic scene confirmation (and parallel)",hi:"सीन स्वचालित पुष्टि सेट करें (और एक साथ)"},
+ "Bitte das Ende eingeben.":{fr:"Merci d'indiquer la fin.",it:"Inserire la fine.",en:"Please enter the end.",hi:"कृपया समाप्ति दर्ज करें।"},
  "Bei Änderungen benachrichtigen":{fr:"Me prévenir en cas de changement",it:"Avvisami in caso di modifiche",en:"Notify me about changes",hi:"बदलाव होने पर सूचित करें"},
  "Änderungen am Drehplan":{fr:"Changements du plan de tournage",it:"Modifiche al piano di lavorazione",en:"Changes to the shooting schedule",hi:"Schedule में बदलाव"},
  "Neue und geänderte Callsheets":{fr:"Callsheets nouvelles ou modifiées",it:"Callsheet nuovi o modificati",en:"New and updated callsheets",hi:"नई और बदली हुई Callsheets"},
