@@ -26,6 +26,10 @@ export async function admLoad(){
   if(isOwner()){const xr=ADM.roles.filter(r=>/kompars|extras/i.test(String(r.name||"")+" "+r.id)&&!(r.perms||[]).includes("extras.ack"));
     if(xr.length)try{const c=await F.getDoc(F.doc(db,"config","app"));if(!(c.exists()&&c.data().xAckAuto)){for(const r of xr){const np=(r.perms||[]).concat(["extras.ack"]);await F.updateDoc(F.doc(db,"roles",r.id),{perms:np});r.perms=np}
       await F.setDoc(F.doc(db,"config","app"),{xAckAuto:true},{merge:true})}}catch(err){console.warn("extras role",err&&err.code||err)}}
+  /* once: the roles «Set Manager» and «Set AL» may set the quittances (switches, automatic, times) */
+  if(isOwner()){const sr=ADM.roles.filter(r=>/\bset[\s._-]*(manager|al\b|aufnahmeleit)/i.test(String(r.name||"")+" "+r.id)&&!(r.perms||[]).includes("ack.settings"));
+    if(sr.length)try{const c=await F.getDoc(F.doc(db,"config","app"));if(!(c.exists()&&c.data().ackSetAuto)){for(const r of sr){const np=(r.perms||[]).concat(["ack.settings"]);await F.updateDoc(F.doc(db,"roles",r.id),{perms:np});r.perms=np}
+      await F.setDoc(F.doc(db,"config","app"),{ackSetAuto:true},{merge:true})}}catch(err){console.warn("set roles",err&&err.code||err)}}
   if(isOwner()&&!ADM.roles.some(x=>x.id==="crew")){const cp=VIEWPERMS.filter(p=>p!=="view.mycal");try{await F.setDoc(F.doc(db,"roles","crew"),{name:"Crew",perms:cp,at:F.serverTimestamp()});ADM.roles.push({id:"crew",name:"Crew",perms:cp})}catch(err){console.warn("crew role",err&&err.code||err)}}if(isOwner()&&!ADM.roles.some(x=>x.id==="gast")){   /* «Gast»: the rights the app gave people without a role (everything but Drehplan, Drehbuch, Blocking; phone, e-mail, Meine Termine as set under Sichtbarkeit) */
     const pv=window.PUBV||{},gp=VIEWPERMS.filter(p=>!["view.plan","view.script","view.blocking","view.phone","view.email","view.mycal"].includes(p)||(p==="view.phone"&&pv.phone===true)||(p==="view.email"&&pv.email===true)||(p==="view.mycal"&&pv.mycal===true));
     try{await F.setDoc(F.doc(db,"roles","gast"),{name:"Gast",perms:gp,at:F.serverTimestamp()});ADM.roles.push({id:"gast",name:"Gast",perms:gp})}catch(err){console.warn("gast role",err&&err.code||err)}}

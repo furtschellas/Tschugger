@@ -285,6 +285,13 @@ await check("Abmelden überall: rev mit fester Zahl nicht", assertFails(updateDo
 await check("Abmelden überall: rev als Serverzeit geht", assertSucceeds(updateDoc(doc(as("other"), "members/uOther"), { rev: serverTimestamp() })));
 await check("Abmelden überall: ältere Anmeldung liest danach keine Crew-Daten mehr", assertFails(getDoc(doc(env.authenticatedContext(U.other[0], { email: U.other[1], email_verified: true, auth_time: Math.floor(Date.now() / 1000) - 3600 }).firestore(), "secret/key"))));
 await check("Abmelden überall: neue Anmeldung liest wieder", assertSucceeds(getDoc(doc(env.authenticatedContext(U.other[0], { email: U.other[1], email_verified: true, auth_time: Math.floor(Date.now() / 1000) + 60 }).firestore(), "secret/key"))));
+// ---------- «Quittieren einstellen»: only the switches of the quittances in config/app ----------
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.settings"] }); await setDoc(doc(c.firestore(), "config/app"), { langs: ["de"] }, { merge: true }) });
+await check("Quittieren einstellen: Automatik speichern geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { castAuto: { c: { on: true, min: 0 } }, sceneAck: true }, { merge: true })));
+await check("Quittieren einstellen: andere Einstellungen nicht", assertFails(setDoc(doc(as("viewer"), "config/app"), { langs: ["de", "fr"] }, { merge: true })));
+await check("Quittieren einstellen: nicht die Links (private)", assertFails(setDoc(doc(as("viewer"), "config/private"), { sceneSheet: "x" }, { merge: true })));
+await check("Quittieren einstellen: ohne Recht nicht", assertFails(setDoc(doc(as("crew"), "config/app"), { castAuto: { c: { on: true, min: 0 } } }, { merge: true })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view"] }) });
 // ---------- contacts (phone, contact e-mail of the profile): separate from members ----------
 await env.withSecurityRulesDisabled(async c => {
   const db = c.firestore();
