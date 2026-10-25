@@ -643,11 +643,11 @@ async def owner_tests(p, port):
         check("Einstellungen: Szenen und Fahrten quittieren lassen sich ausschalten (keine Knöpfe, «jetzt» nach der Uhr)", sw in (None, {"on": True, "off": True, "roff": True}), sw)
         sl = await E("""(()=>{if(typeof sceneLogSec!=='function'||typeof scExpRows!=='function')return null;const k={l:SCLOG.list,e:SCLOG.exp,c:window.canSceneLog,cp:window.canPerm};const d='2030-05-06',t=h=>new Date(d+'T'+h).getTime();
           SCLOG.list=[{id:'20300506-12',d,s:2,u:'1',sc:'12',b:t('09:00'),e:t('10:00')},{id:'20300506-lunch',d,s:2,u:'1',sc:'lunch',b:t('12:00'),e:t('13:00')},{id:'20300506-55',d,s:1,u:'2',sc:'55',b:t('09:30')},{id:'20300506-wrapu2',d,s:2,u:'2',sc:'wrap_u2',b:t('18:00'),e:t('18:00')}];
-          window.canSceneLog=()=>true;window.canPerm=p=>p==='scenes.ack';const h=sceneLogSec();const box=document.createElement('div');box.innerHTML=h;const days=box.querySelectorAll('details.tstsu').length;
+          window.canSceneLog=()=>true;window.canPerm=p=>p==='scenes.ack';const kd=S.days;S.days=[];const h=sceneLogSec();S.days=kd;   /* without the days: today (a shooting day) is not counted along */const box=document.createElement('div');box.innerHTML=h;const days=box.querySelectorAll('details.tstsu').length;
           const fixed=[...box.querySelectorAll('details.tstsu')].every(x=>['Setup','Lunch','Wrap'].every(n=>x.innerText.includes(n)));const pens=box.querySelectorAll('[data-scled]').length;
           const per=!!box.querySelector('[data-sclx="pdf||1"]')&&!!box.querySelector('[data-sclx="csv||2"]')&&!!box.querySelector('[data-sclx="pdf|'+d+'|2"]')&&!box.querySelector('[data-sclx="pdf"]');
           const r2=scExpRows(d,'2');const only2=r2.length>0&&r2.every(r=>/2/.test(r.unit));const dur=(scExpRows(d,'1').find(r=>/12/.test(r.name))||{}).min;
-          window.canPerm=()=>false;const nopen=(()=>{const b=document.createElement('div');b.innerHTML=sceneLogSec();return b.querySelectorAll('[data-scled]').length})();
+          window.canPerm=()=>false;const nopen=(()=>{const kd2=S.days;S.days=[];const b=document.createElement('div');b.innerHTML=sceneLogSec();S.days=kd2;return b.querySelectorAll('[data-scled]').length})();
           SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;window.canPerm=k.cp;return {days,fixed,pens:pens>0,nopen,per,only2,dur}})()""")
         check("Szenen-Protokoll: pro Unit ein Tagesprotokoll mit Setup/Drehstart/Lunch/Wrap, Stift nur mit Recht, Export pro Tag und Unit", sl in (None, {"days": 2, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}, {"days": 3, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}), sl, public=True)
         # the Google-Sheets copy of the scene log (tools/scene_sheet.py) builds the same rows as the export of the app
@@ -749,7 +749,7 @@ async def owner_tests(p, port):
         check("Callsheet: Call-Ort für Fahrer = Abfahrtsort, für Mitfahrende = Ziel", cpl in (None, {"driver": True, "passenger": True}), cpl, public=True)
         ctv = await E("""(()=>{if(typeof renderCS!=='function')return null;const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;localStorage.removeItem('cscast:v1');
           const x={date:d.date,cs:{cast:[{no:'1',role:'BAX',actor:'X'}]}};const w=document.createElement('div');w.id='view';const old=document.getElementById('view');old.id='view0';document.body.appendChild(w);w.innerHTML=renderCS(x,d);
-          const a=w.querySelector('#cs-cast').classList.contains('cs-astbl');w.querySelector('[data-cstview]').click();const b=w.querySelector('#cs-cast').classList.contains('cs-astbl');
+          const a=w.querySelector('#cs-cast').classList.contains('cs-astbl');w.querySelector('[data-cstview]').click();const b=w.querySelector('#cs-cast').classList.contains('cs-astbl');if(b)w.querySelector('[data-cstview]').click();
           const ic=w.querySelectorAll('.csjb button svg').length>0&&w.querySelectorAll('.cssec>summary .csexp').length>0;w.remove();old.id='view';localStorage.removeItem('cscast:v1');return !a&&b&&ic})()""")
         check("Callsheet: Cast als Karten oder Tabelle, Symbol-Leiste, Auf-/Zuklapp-Symbol", ctv in (None, True), ctv, public=True)
         cj = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d||typeof renderCS!=='function')return null;
