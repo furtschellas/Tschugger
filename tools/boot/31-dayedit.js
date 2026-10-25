@@ -1,5 +1,5 @@
 import {L,S,esc,mkDialog,saveBtn,xBtn} from "../base/10-core.js";
-import {myIdentity} from "../base/12-mycal.js";
+import {hm,myIdentity} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {ME,can,fb,isAdmin,ownDec,ownEnc} from "./03-core-firebase.js";
@@ -58,7 +58,7 @@ window.deNote=d=>{if(!d)return "";if(window.DESTALE[d.date]&&deCan())return '<p 
 window.deMark=it=>{const e=it&&it._de;if(!e)return "";const dd=x=>{const d=arr(S.days).find(y=>y.date===x);return d?(d.short||d.label||x):x};
   return '<span class="demk">'+esc(e.x?L("heute gestrichen"):e.to?L("verschoben auf")+" "+dd(e.to):e.from?L("verschoben von")+" "+dd(e.from):e.add?L("neu dazu"):e.nt?L("Zeit vor Ort geändert"):"")+'</span>'};
 /* ---------- the dialog ---------- */
-const deHm=t=>{const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?("0"+m[1]).slice(-2)+":"+m[2]:""};
+const deHm=hm;   /* «7:05» → «07:05» – the same helper as everywhere (12-mycal hm) */
 const deMins=v=>{const m=String(v||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′m]?/);return m?(m[3]!=null?+m[3]:+m[1]*60+ +m[2]):0};
 const deAddMin=(t,n)=>{const m=deHm(t).match(/(\d\d):(\d\d)/);if(!m)return t;const x=(+m[1]*60+ +m[2]+n+1440)%1440;return ("0"+Math.floor(x/60)).slice(-2)+":"+("0"+x%60).slice(-2)};
 /* the original rows of a day (Drehplan after the Coverday, before any change on set) */

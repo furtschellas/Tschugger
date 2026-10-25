@@ -1195,3 +1195,4 @@ html body #view .tnow .tnnext{margin-left:8px;color:var(--muted)}html body #view
   html body #view .tcard.tnow:not(.tnowo):has(.tnpar) .tnowb>:not(.tnsc):not(.tnpar):not(.tnnext),
   html body #view .tcard.tnow:not(.tnowo):has(.tnpar) .tnowb .tnpar>:not(.tnsc){display:none}
 }
+.ncbox .ncrow .ncsh{grid-column:1/3;font-size:12px;color:var(--muted);flex-direction:row}.ncbox .ncwa{margin-top:12px;display:flex;gap:6px;align-items:flex-start}

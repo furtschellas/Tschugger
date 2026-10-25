@@ -95,6 +95,11 @@ export function ppContact(v){
 }
 export function ppItems(list,date,grp){return '<div class="pplist">'+list.map((it,k)=>ppItem(it,date,grp,k)).join("")+'</div>'}
 /* calendar entry for one PREP appointment: an .ics file the phone opens straight in its calendar app */
+/* a time («07:30») of a shooting day in ms, in the time zone of its block; with a reference (ms): the next calendar day when the time lies more
+   than 12 h before it (night shoot: 00:40 after 23:30). One helper for Cast-Automatik, Szenen-Automatik, Verspätung and «Jetzt»; 0 = no time */
+export function dayMs(date,hm,ref){if(!date||!/^\d{1,2}:\d{2}$/.test(String(hm||"")))return 0;try{let v=zurichUTC(date,hm).getTime();
+  if(ref&&ref-v>12*3600e3)v=zurichUTC(isoAdd(date,1),hm).getTime();return v}catch(_){return 0}}
+window.dayMs=dayMs;
 export function zurichUTC(date,hm){
   const [y,mo,d]=date.split("-").map(Number),[h,mi]=hm.split(":").map(Number);
   let ts=Date.UTC(y,mo-1,d,h,mi)-2*3600e3;

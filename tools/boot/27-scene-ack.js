@@ -1,5 +1,5 @@
 import {ariaTip,esc,I18N,isoAdd,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
-import {UNAME,zurichUTC} from "../base/11-schedule-prep.js";
+import {UNAME,dayMs} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
@@ -108,7 +108,7 @@ function scaRows(day,u){const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day
   let cr=[],ck=[];try{const dp=u==="1"&&arr(S.dispos).find(x=>x&&x.date===day.date&&x.cs);if(dp){cr=arr((dp.cs.order||{}).rows);ck=scRowKeys(cr,r=>r.text||r.syn)}}catch(_){}
   return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k||(window.deGone&&window.deGone(x)))return null;const b=scBase(k),setup=/^setup\d*$/.test(b),first=setup&&!scene;if(x.sc)scene=true;
     const kind=b==="lunch"?"l":b==="wrap"?"w":first?"a":"s";let h=hm(x.t);if(first){const j=ck.indexOf(b);if(j>=0&&hm(cr[j].t))h=hm(cr[j].t)}if(!h)return null;
-    let t=0;try{t=zurichUTC(day.date,h).getTime();if(ref&&ref-t>12*3600e3)t=zurichUTC(isoAdd(day.date,1),h).getTime()}catch(_){return null}if(!ref)ref=t;
+    const t=dayMs(day.date,h,ref);if(!t)return null;if(!ref)ref=t;
     return {k:(x.sc||u==="1")?k:k+"_u"+u,kind,t}}).filter(Boolean)}
 let SCABUSY=false;
 async function scAuto(){if(SCABUSY||window.SCACKON===false||!window.SCACKLOADED||!window.RIDEACKLOADED||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn())||!SCA_KINDS.some(([k])=>scaOn(k)))return;SCABUSY=true;

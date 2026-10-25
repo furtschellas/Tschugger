@@ -147,12 +147,15 @@ try{const t=localStorage.getItem("tab");if(t)S.tab=({map:"loc",music:"plan"})[t]
 window.startTab=()=>{if(!window.APPVER)return "plan";/* Claude-app version: no «Today» */try{const v=localStorage.getItem("today")||"";return (v==="0"||v.startsWith("0|"))?"plan":"today"}catch(_){return "today"}};
 if(!location.hash&&!window.__REL)S.tab=startTab();
 
+/* the row of a cast number in a callsheet («3» → {no:"3", role, actor …}) – one place for Drehfolge, «Jetzt» and the cast tiles */
+export const castRow=(c,no)=>{const n=String(no==null?"":no).trim();return n&&arr(c&&c.cast).find(x=>String(x.no||"").trim()===n)||null};
+window.castRow=castRow;
 export function castChips(ids){
   const m=(S.meta&&S.meta.cast)||{};
   if(!ids||!ids.length)return"";
   /* on a shooting day: where each actor is (display only) – P/UP running, Call/Kostüm/Maske, Base done / On set */
   let lk=()=>0;try{const d=window.__mctx&&window.__mctx.date,dp=d&&window.cqLook&&arr(S.dispos).find(x=>x&&x.date===d&&x.cs),c=dp&&dp.cs;
-    if(c){if(!c._date)c._date=d;const rows=arr(c.cast);lk=i=>{const r=rows.find(x=>String(x.no||"").trim()===String(i).trim());return r?window.cqLook(c,r):0}}}catch(_){}
+    if(c){if(!c._date)c._date=d;lk=i=>{const r=castRow(c,i);return r?window.cqLook(c,r):0}}}catch(_){}
   return '<div class="cast">'+ids.map(i=>{const s=lk(i);return '<span'+(s?' class="cqlk'+s+'"':'')+'><i>'+esc(i)+'</i>'+esc(m[i]||"")+'</span>'}).join("")+'</div>';
 }
 /* schedule view options (scene description, address, cast) – all on by default, remembered per device */

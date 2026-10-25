@@ -1,5 +1,5 @@
 import {esc,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
-import {zurichUTC} from "../base/11-schedule-prep.js";
+import {dayMs} from "../base/11-schedule-prep.js";
 import {hm,myIdentity,rideId} from "../base/12-mycal.js";
 import {csAfter,csMe} from "../base/13a-callsheet.js";
 import {CSCUR,csNowLoc,csNowScene} from "../base/13b-cs-now.js";
@@ -333,7 +333,7 @@ const cqaOn=k=>{const A=window.CASTAUTO;return !!(A&&A[k]&&A[k].on)};
 const cqaZ=id=>!!(id&&window.RIDEACK["z"+id]);
 async function cqaKeep(id,date){if(id&&date&&CQA_STEPS.some(([k])=>cqaOn(k))&&!cqaZ(id))try{await flowPut("z"+id,date,1)}catch(_){}}
 /* a time of the row in ms (time zone of the block): after midnight when more than 12 h before the first time of the row */
-function cqaAt(date,t,ref){const h=cqHm(t);if(!h)return 0;try{let v=zurichUTC(date,h).getTime();if(ref&&ref-v>12*3600e3)v=zurichUTC(isoAdd(date,1),h).getTime();return v}catch(_){return 0}}
+const cqaAt=(date,t,ref)=>dayMs(date,cqHm(t),ref);
 async function cqaRow(c,r,now){const m=cqModel(c,r),d=m.d;if(m.onDone)return;
   const ref=cqaAt(d,r.pickup)||cqaAt(d,r.call)||cqaAt(d,r.base);
   const due=(k,t)=>{if(!cqaOn(k))return false;const v=cqaAt(d,t,ref),lim=now-(+window.CASTAUTO[k].min||0)*60e3;return !!v&&v<=lim&&lim-v<12*3600e3};
