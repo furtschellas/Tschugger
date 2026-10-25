@@ -34,10 +34,7 @@ export async function admLoad(){
   if(isOwner()){const fr=ADM.roles.filter(r=>/\bset[\s._-]*al\b|\b(1st|first|1\.?|erste[rn]?)[\s._-]*ad\b/i.test(String(r.name||"")+" "+r.id)&&!(r.perms||[]).includes("now.forecast"));
     if(fr.length)try{const c=await F.getDoc(F.doc(db,"config","app"));if(!(c.exists()&&c.data().fcAuto)){for(const r of fr){const np=(r.perms||[]).concat(["now.forecast"]);await F.updateDoc(F.doc(db,"roles",r.id),{perms:np});r.perms=np}
       await F.setDoc(F.doc(db,"config","app"),{fcAuto:true},{merge:true})}}catch(err){console.warn("forecast roles",err&&err.code||err)}}
-  /* once: Set AL, Set Manager, 1st AD and Regie may change a shooting day on set */
-  if(isOwner()){const dr=ADM.roles.filter(r=>/\bset[\s._-]*(al|manager)\b|\b(1st|first|1\.?|erste[rn]?)[\s._-]*ad\b|\bregie\b|\bdirector\b/i.test(String(r.name||"")+" "+r.id)&&!(r.perms||[]).includes("day.edit"));
-    if(dr.length)try{const c=await F.getDoc(F.doc(db,"config","app"));if(!(c.exists()&&c.data().deAuto)){for(const r of dr){const np=(r.perms||[]).concat(["day.edit"]);await F.updateDoc(F.doc(db,"roles",r.id),{perms:np});r.perms=np}
-      await F.setDoc(F.doc(db,"config","app"),{deAuto:true},{merge:true})}}catch(err){console.warn("dayedit roles",err&&err.code||err)}}
+  /* «Drehtag vor Ort ändern»: for now only Owner and Admins – not given to roles automatically */
   if(isOwner()&&!ADM.roles.some(x=>x.id==="crew")){const cp=VIEWPERMS.filter(p=>p!=="view.mycal");try{await F.setDoc(F.doc(db,"roles","crew"),{name:"Crew",perms:cp,at:F.serverTimestamp()});ADM.roles.push({id:"crew",name:"Crew",perms:cp})}catch(err){console.warn("crew role",err&&err.code||err)}}if(isOwner()&&!ADM.roles.some(x=>x.id==="gast")){   /* «Gast»: the rights the app gave people without a role (everything but Drehplan, Drehbuch, Blocking; phone, e-mail, Meine Termine as set under Sichtbarkeit) */
     const pv=window.PUBV||{},gp=VIEWPERMS.filter(p=>!["view.plan","view.script","view.blocking","view.phone","view.email","view.mycal"].includes(p)||(p==="view.phone"&&pv.phone===true)||(p==="view.email"&&pv.email===true)||(p==="view.mycal"&&pv.mycal===true));
     try{await F.setDoc(F.doc(db,"roles","gast"),{name:"Gast",perms:gp,at:F.serverTimestamp()});ADM.roles.push({id:"gast",name:"Gast",perms:gp})}catch(err){console.warn("gast role",err&&err.code||err)}}

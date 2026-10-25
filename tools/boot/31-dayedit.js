@@ -2,7 +2,7 @@ import {L,S,esc,mkDialog,saveBtn,xBtn} from "../base/10-core.js";
 import {myIdentity} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
-import {ME,can,fb,ownDec,ownEnc} from "./03-core-firebase.js";
+import {ME,can,fb,isAdmin,ownDec,ownEnc} from "./03-core-firebase.js";
 import {getDataKey} from "./04-data.js";
 /* =====================================================================
    DREHTAG VOR ORT ÄNDERN (Recht «Drehtag vor Ort ändern»: day.edit) – innerhalb eines Drehtags der 1st Unit:
@@ -17,7 +17,8 @@ window.DAYEDIT=window.DAYEDIT||{};window.DESTALE={};
 try{const c=JSON.parse(localStorage.getItem("dayedit:v1")||"null");if(c&&typeof c==="object")window.DAYEDIT=c}catch(_){}
 const deId=d=>String(d||"").replace(/-/g,"");
 const deDate=id=>id.slice(0,4)+"-"+id.slice(4,6)+"-"+id.slice(6,8);
-export const deCan=()=>{try{return can("day.edit")&&!(window.simOn&&window.simOn())}catch(_){return false}};
+/* for now only Owner and Admins (with the right «Drehtag vor Ort ändern», which Admins have unless switched off) */
+export const deCan=()=>{try{return isAdmin()&&can("day.edit")&&!(window.simOn&&window.simOn())}catch(_){return false}};
 /* check sum of the 1st unit of a day in the Drehplan (scene / text and time of every row): a new Drehplan → another sum */
 function deSig(items){const s=arr(items).map(x=>(x.sc?"s"+x.sc:"e"+String(x.n||""))+"@"+String(x.t||"")).join("|");let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
 const deGone=x=>!!(x&&x._de&&(x._de.x||x._de.to));
