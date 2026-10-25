@@ -977,6 +977,13 @@ async def owner_tests(p, port):
         jn = await E("""(()=>{const t=todayISO();if(typeof nowCardHTML!=='function'||!(S.dispos||[]).some(x=>x&&x.date===t&&x.cs))return null;const want=!!nowCardHTML(t);const k=[S.tab,S.dday];S.tab='dispo';S.dday=t;render();
           const v=document.getElementById('view'),n=v.querySelector('.tcard.csnowc'),tl=v.querySelector('.cstiles');const r={same:!!n===want,above:!n||!!(tl&&(n.compareDocumentPosition(tl)&Node.DOCUMENT_POSITION_FOLLOWING))};S.tab=k[0];S.dday=k[1];render();return r})()""")
         check("Callsheet von heute: «Jetzt» wie in Today, oberhalb der Kacheln", jn in (None, {"same": True, "above": True}), jn, public=True)
+        # «Mein Tag» for a person on the callsheet (first actor, 1st and 2nd Unit): every callsheet still drawn (no «konnte nicht angezeigt werden»)
+        bad = await E("""(()=>{const keep=[window.PICKON,window.MYPICK],out=[];try{for(const d of (S.dispos||[]).filter(x=>x&&x.cs)){
+            const ns=[...(d.cs.cast||[]),...(d.cs.calls||[]).map(r=>({actor:r&&r.name})).slice(0,1),...((d.cs.u2&&d.cs.u2.cast)||[])].map(r=>r&&r.actor).filter(Boolean).slice(0,3);
+            for(const n of ns){window.PICKON=true;window.MYPICK=n;S.tab='dispo';S.dday=d.date;render();
+              if(/konnte nicht angezeigt werden/.test(document.querySelector('#view').innerText))out.push(d.date)}}}
+            finally{window.PICKON=keep[0];window.MYPICK=keep[1];render()}return out.join(',')})()""")
+        check("Callsheet: «Mein Tag» als Person auf dem Callsheet wird angezeigt", not bad, bad)
         sy = await E("""(()=>{const keep=[S.days,S.locs];S.locs=JSON.parse(JSON.stringify(S.locs));S.locs.forEach(l=>(l.sets||[]).forEach(st=>st.scenes=[]));return 1})()""")
         await E("dckRun()"); await pg.wait_for_timeout(5000)
         sd2 = await E(r"""(async()=>{const sl=await scriptData();const ok=i=>i.sc&&/^\d+[A-Z]?$/.test(i.sc)&&/^I\/(?!E)/.test(i.ie||'');
