@@ -1042,6 +1042,7 @@ Object.assign(I18N,{
  "Parallel laufen lassen":{fr:"Faire tourner en parallèle",it:"Far girare in parallelo",en:"Run in parallel",hi:"एक साथ चलाएँ"},
  "{r} abschliessen, {s} starten":{fr:"Terminer {r}, démarrer {s}",it:"Chiudere {r}, avviare {s}",en:"Finish {r}, start {s}",hi:"{r} समाप्त करें, {s} शुरू करें"},
  "{s} läuft noch. Parallel laufen lassen?":{fr:"{s} tourne encore. Faire tourner en parallèle ?",it:"{s} è ancora in corso. Far girare in parallelo?",en:"{s} is still running. Run in parallel?",hi:"{s} अभी चल रहा है। एक साथ चलाएँ?"},
+ "verschieben auf":{fr:"déplacer au",it:"spostare a",en:"move to",hi:"स्थानांतरित करें"},
  "Bei Änderungen benachrichtigen":{fr:"Me prévenir en cas de changement",it:"Avvisami in caso di modifiche",en:"Notify me about changes",hi:"बदलाव होने पर सूचित करें"},
  "Änderungen am Drehplan":{fr:"Changements du plan de tournage",it:"Modifiche al piano di lavorazione",en:"Changes to the shooting schedule",hi:"Schedule में बदलाव"},
  "Neue und geänderte Callsheets":{fr:"Callsheets nouvelles ou modifiées",it:"Callsheet nuovi o modificati",en:"New and updated callsheets",hi:"नई और बदली हुई Callsheets"},
