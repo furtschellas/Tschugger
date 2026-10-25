@@ -990,6 +990,12 @@ async def owner_tests(p, port):
             S.pu={'1':true,'2':false,'3':false};render();if(/konnte nicht angezeigt werden/.test(v.innerText)||v.querySelector('.csu2'))out.push('1:'+d.date)}}
             finally{S.pu=keep;render()}return out.join(',')})()""")
         check("Callsheet: Unit-Knöpfe – nur 2nd zeigt die 2nd Unit allein, nur 1st ohne 2nd-Teil", not u2v, u2v)
+        # rides of a day with two units: each unit its own («2nd UNIT» in the place, or people only in one unit); the same ride never in only the wrong one
+        rv = await E("""(()=>{if(typeof csRidesFor!=='function')return 'fehlt';const out=[];for(const d of (S.dispos||[]).filter(x=>x&&x.cs&&x.cs.u2)){const c=d.cs;
+            const a=csRidesFor(c,'1').transport,b=csRidesFor(c,'2').transport;for(const r of (c.transport||[])){if(!a.includes(r)&&!b.includes(r))out.push('weg:'+d.date);
+              const tx=[r.from,r.to].join(' ');if(/2nd\\s*unit/i.test(tx)&&a.includes(r))out.push('2nd bei 1st:'+d.date);if(/1st\\s*unit/i.test(tx)&&b.includes(r))out.push('1st bei 2nd:'+d.date)}}
+            return out.join(',')})()""")
+        check("Callsheet: Fahrten pro Unit (keine verloren, «2nd UNIT» nur bei der 2nd)", not rv, rv)
         sy = await E("""(()=>{const keep=[S.days,S.locs];S.locs=JSON.parse(JSON.stringify(S.locs));S.locs.forEach(l=>(l.sets||[]).forEach(st=>st.scenes=[]));return 1})()""")
         await E("dckRun()"); await pg.wait_for_timeout(5000)
         sd2 = await E(r"""(async()=>{const sl=await scriptData();const ok=i=>i.sc&&/^\d+[A-Z]?$/.test(i.sc)&&/^I\/(?!E)/.test(i.ie||'');

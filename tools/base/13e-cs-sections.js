@@ -8,7 +8,7 @@ import {csBadgeIn,csCallPlace,csCodeHref,csKindCode,csLocAddr,csLocFp,csLocGroup
 import {csCastOpen,csCmFirst,csExOpen,csJumpBar,csMine,csMyDept,csShort,csSums,csTeamSec,csTilesHTML,csTransOpen} from "./13d-cs-mine.js";
 import {csCastMode,csCols} from "./13f-cs-events.js";
 import {vok} from "./14-render.js";
-import {csU2HTML} from "./13g-cs-unit2.js";
+import {csRideUnit,csRidesFor,csU2HTML} from "./13g-cs-unit2.js";
 import {fold} from "./15-script-tab.js";
 import {RIDE_ICO} from "../boot/24-flow.js";
 /* ---------- Callsheet (5/6): the sections (locations, map, travel, calls) and renderCS ---------- */
@@ -97,6 +97,26 @@ export function csCastSec(c,me,title,id,su){const CC=csCols();return csSec(title
 export function csExtrasSec(c,title,id,su){const xq=(f,c_,r,v)=>(window.xqField&&window.xqField(f,c_,r))||v;
    return csSec(title,csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(c.extras).map(r=>{const all=window.xqAll&&window.xqAll(c,r),pk=v=>all&&v?{h:'<span class="cqall" title="'+esc(L("Alle Schritte abgeschlossen"))+'">'+esc(v)+'</span>'}:v;
      return [pk(r.count),pk(r.part),xq("c",c,r,r.call),xq("w",c,r,r.wardrobe),xq("m",c,r,r.makeup),xq("o",c,r,r.onset)]}),2,true),csExOpen(),"",id,su)}
+/* transport with driver and crew transport (1st Unit, or the 2nd Unit: «sfx» for the ids, «un» after the title) */
+export function csTransHTML(c,x,me,SU,sfx,un){let h="";
+  const allDone=csA(c.transport).length&&window.RIDEACKON!==false&&typeof canPerm==="function"&&canPerm("rides.alldone")?'<button type="button" class="pillbtn csrideall" data-rideall="'+esc(x.date||"")+'">'+(window.RIDE_ICO&&RIDE_ICO[2]||"")+' '+esc(L("Alle Fahrten als erledigt"))+'</button>':'';
+  if(csA(c.transport).length||!sfx)h+=csSec(L("Transport mit Fahrer")+(un||""),allDone+csTvBtn("trans")+(c.drivers?'<div class="csdrvl">'+String(c.drivers).replace(/o\.\s*p\.\s*D\.?\s*=\s*on personal decision/i,"").split(/\s*[|\n;]\s*/).filter(x=>x.trim()).map(x=>{const m=x.match(CSPH);let nm=m?x.replace(m[0],"").trim():x.trim();
+      /* a number without a name (forgotten on the callsheet): the name from other callsheets or the crew list with that number */
+      if(!nm&&m)nm=csDriverByPhone(m[0]);
+     return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRideCell(x.date,r),r.vehicle,r.driver,r.passengers]),1),csTransOpen(c,me),csTvCls("trans"),"trans"+(sfx||""),SU.trans);
+  if(csA(c.crewTransport).length||!sfx)h+=csSec(L("Transport Crew")+(un||""),csTvBtn("ctrans")+csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,{h:csRouteH(x.date,r)},r.people])   /* crew transport: no confirmation */,1),csTransOpen(c,me),csTvCls("ctrans"),"ctrans"+(sfx||""),SU.ctrans);
+  return h}
+/* the shooting order: folded one short line (Call · RTS · scenes · Lunch · Wrap and a line per scene), open the rows (1st Unit, or the 2nd Unit) */
+export function csOrderSec(c,x,t,sfx,un){
+  const o=c.order||{};let h="";
+  {const sc=csA(o.rows).filter(r=>r.sc).map(r=>String(r.sc)),ch=(k,v)=>v?'<span class="csoc"><i>'+esc(k)+'</i>'+esc(v)+'</span>':'';
+   /* folded: Call · Probe · RTS · scenes · Lunch · Wrap in one short line */
+   const sumx='<span class="csosum">'+ch("Call",t.crewCall||x.crewCall)+ch(L("Probe"),t.rehearsal)+ch("RTS",t.rts||x.shootCall)+(sc.length?ch(sc.length+" "+L("Szenen"),sc.length>1?sc[0]+"–"+sc[sc.length-1]:sc[0]):"")+ch("Lunch",t.lunch)+ch("Wrap",t.wrap||x.wrap)+'</span>'+
+     (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c),OR=csA(o.rows),NR=OR[csNowIdx(OR,x.date)]||null;return OR.filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
+       /* one line per scene: time · scene · I/E · set code · set · duration; the scene of now framed */
+       return '<span class="cso1'+(r===NR?' now':'')+'"><i>'+esc(csHm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
+   h+=csSec(L("Drehfolge")+(un||"")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c),true,c._u||"1"),false,"","order"+(sfx||""),sumx)}
+  return h}
 function csCallsSec(c,x,me,SU,t){let h="";
   {const g=new Map();for(const r of csA(c.calls).filter(r=>!(c.u2&&!String(r.t||"").trim()&&String(r.t2||"").trim()))){const k=r.dept||"";   /* only «2nd IN»: in the part of the 2nd Unit */if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
    h+=csSec("Calls on Set",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>{const who={hit:t=>{const a=nmk(String(t||"")),b=nmk(String(r.name||""));return !!b&&(" "+a).includes(" "+b)}};   /* at the start of a word: «Anna Muster» is not in «Johanna Muster» */let pl=null;try{pl=csCallPlace(c,who,r)}catch(_){}
@@ -104,7 +124,9 @@ function csCallsSec(c,x,me,SU,t){let h="";
      const tm=String(r.t||"").match(/^(\d{1,2}:\d{2})\s*(.*)$/);
      return '<div class="cscall-r'+(me&&me.hit(r.name)?' mine':'')+'"><span class="t">'+esc(tm?tm[1]:(r.t||""))+(tm&&tm[2]?'<i>'+esc(tm[2])+'</i>':'')+'</span><span class="cp">'+tag+'</span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>'}).join("")+'</div>').join(""),false,"","calls",SU.calls)}
   return h}
-export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="";if(x.date)c._date=x.date;   /* the day first: «Mein Tag» (travel of this day only) and the cast ticks need it */setCSTR(c.tr||null);setCSCUR({c,date:x.date||"",me,addr:new Map()});
+export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
+  /* a day with a 2nd Unit: the 1st Unit shows only its rides (and those of both); the 2nd Unit gets its own in csU2Dispo */
+  const c=c0._u!=="2"&&typeof csRidesFor==="function"&&(c0.u2||csA(day&&day.unit2&&day.unit2.items).length)?Object.assign({},c0,csRidesFor(c0,"1")):c0,t=c.times||{},me=csMe();let h="";if(x.date)c._date=x.date;   /* the day first: «Mein Tag» (travel of this day only) and the cast ticks need it */setCSTR(c.tr||null);setCSCUR({c,date:x.date||"",me,addr:new Map()});
   let JB="";
   /* jump bar (sticky) and search over the whole callsheet */
    JB=csJumpBar(c,x,me,null,t);
@@ -139,14 +161,7 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   /* production information */
   if(vok("info"))h+=csSec(L("Produktionsinfos"),csA(c.info).map(p=>'<p>'+csTx(csL(p))+'</p>').join(""),true,"csinfo");
   /* shooting order */
-  const o=c.order||{};
-  {const sc=csA(o.rows).filter(r=>r.sc).map(r=>String(r.sc)),ch=(k,v)=>v?'<span class="csoc"><i>'+esc(k)+'</i>'+esc(v)+'</span>':'';
-   /* folded: Call · Probe · RTS · scenes · Lunch · Wrap in one short line */
-   const sumx='<span class="csosum">'+ch("Call",t.crewCall||x.crewCall)+ch(L("Probe"),t.rehearsal)+ch("RTS",t.rts||x.shootCall)+(sc.length?ch(sc.length+" "+L("Szenen"),sc.length>1?sc[0]+"–"+sc[sc.length-1]:sc[0]):"")+ch("Lunch",t.lunch)+ch("Wrap",t.wrap||x.wrap)+'</span>'+
-     (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c),OR=csA(o.rows),NR=OR[csNowIdx(OR,x.date)]||null;return OR.filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
-       /* one line per scene: time · scene · I/E · set code · set · duration; the scene of now framed */
-       return '<span class="cso1'+(r===NR?' now':'')+'"><i>'+esc(csHm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
-   h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c),true,c._u||"1"),false,"","order",sumx)}
+  h+=csOrderSec(c,x,t);
   /* cast, extras, vehicles */
   const CC=csCols();
   if(c&&x&&x.date)c._date=x.date;   /* the day for the cast ticks */
@@ -159,13 +174,8 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   h+=csSec(L("Fahrzeuge"),csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(c.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","",SU.veh);
   /* transport and travel */
   /* Fahrten Manager: all rides of the day as done in one go */
-  const allDone=csA(c.transport).length&&window.RIDEACKON!==false&&typeof canPerm==="function"&&canPerm("rides.alldone")?'<button type="button" class="pillbtn csrideall" data-rideall="'+esc(x.date||"")+'">'+(window.RIDE_ICO&&RIDE_ICO[2]||"")+' '+esc(L("Alle Fahrten als erledigt"))+'</button>':'';
-  h+=csSec(L("Transport mit Fahrer"),allDone+csTvBtn("trans")+(c.drivers?'<div class="csdrvl">'+String(c.drivers).replace(/o\.\s*p\.\s*D\.?\s*=\s*on personal decision/i,"").split(/\s*[|\n;]\s*/).filter(x=>x.trim()).map(x=>{const m=x.match(CSPH);let nm=m?x.replace(m[0],"").trim():x.trim();
-      /* a number without a name (forgotten on the callsheet): the name from other callsheets or the crew list with that number */
-      if(!nm&&m)nm=csDriverByPhone(m[0]);
-     return '<div class="csdrv-r"><span>'+esc(nm)+'</span>'+(m?csTx(m[0]):'')+'</div>'}).join("")+'</div>':'')+csTable([L("Fahrt"),L("Fahrzeug"),L("Fahrer"),L("Mitfahrende")],csA(c.transport).map(r=>[csRideCell(x.date,r),r.vehicle,r.driver,r.passengers]),1),csTransOpen(c,me),csTvCls("trans"),"trans",SU.trans);
+  h+=csTransHTML(c,x,me,SU);
   /* information by department */
-  h+=csSec(L("Transport Crew"),csTvBtn("ctrans")+csTable([L("Fahrzeug"),L("Fahrt"),L("Personen")],csA(c.crewTransport).map(r=>[r.vehicle,{h:csRouteH(x.date,r)},r.people])   /* crew transport: no confirmation */,1),csTransOpen(c,me),csTvCls("ctrans"),"ctrans",SU.ctrans);
   h+=csSec([L("Infos nach Abteilung"),L("Infos nach Dept.")],csA(c.depts).filter(r=>String(r.text||"").trim()).map(r=>'<div class="csdep'+(csMyDept(c,me,r.dept)?' mine':'')+'"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text)+'</div></div>').join(""),false,"","dept",SU.dept);
   /* calls on set */
   /* calls on set: by department, one short line per person (time · name · job) */
@@ -182,7 +192,8 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   for(const sec of csA(x.sections).concat(csA(c.sections)).filter(s0=>!WX.includes(s0))){const rows=csA(sec&&sec.rows).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(cc=>String(cc==null?"":cc).trim()));if(!rows.length)continue;
     h+=csSec(String(sec.title||""),rows.map(r=>'<p>'+r.map(cc=>csTx(cc)).join(" · ")+'</p>').join(""),false)}
   /* the 2nd Unit (read apart): its own part below the 1st Unit */
-  if(c._u!=="2"&&S.pu["2"])try{h+=csU2HTML(x,c,day,me,{cast:csCastSec,extras:csExtrasSec,tiles:csTilesHTML,loc:(c2,x2,me2,SU2,t2)=>{const k=window.CSNOWK;try{return csLocSec(c2,x2,me2,SU2,t2)}finally{window.CSNOWK=k}}})}catch(_){}
+  if(c._u!=="2"&&S.pu["2"])try{h+=csU2HTML(x,c0,day,me,{order:(c2,o2)=>csOrderSec(Object.assign({},c2,{order:o2}),{date:x.date},c2.times||{},"u2"," · 2nd Unit"),trans:(c2,x2,me2,SU2)=>{const only=r=>csRideUnit(c0,r)==="2",tr=csA(c0.transport).filter(only),ct=csA(c0.crewTransport).filter(only);   /* both units shown: below only the rides of the 2nd Unit alone (the shared ones are above) */
+    return tr.length||ct.length?csTransHTML(Object.assign({},c2,{transport:tr,crewTransport:ct}),x2,me2,SU2,"u2"," · 2nd Unit"):""},cast:csCastSec,extras:csExtrasSec,tiles:csTilesHTML,loc:(c2,x2,me2,SU2,t2)=>{const k=window.CSNOWK;try{return csLocSec(c2,x2,me2,SU2,t2)}finally{window.CSNOWK=k}}})}catch(_){}
   /* on the shooting day: once per visit straight to the running row */
   if(x.date===csShootDay()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
   return JB+'<div class="csview">'+h+'</div>'}

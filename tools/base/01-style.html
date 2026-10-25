@@ -845,8 +845,8 @@ html body #view .cstiles>.dt.cswx{padding:0;border:0;background:none}
 .csscd>summary::-webkit-details-marker{display:none}
 .csscd>summary .l1{flex:1;min-width:0}
 /* computer: no sideways scrolling – the tables of the callsheet as a grid of cards, the parts side by side */
-@media (min-width:761px){html body #view .csview .cs-tbl{display:none}html body #view .csview .cs-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}html body #view .csview .cs-card{margin:0}.csview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 22px;align-items:start}.csview>.dsp-head,.csview>.dtiles,.csview>.cscontact,.csview>.csme,.csview>#cs-order,.csview>#cs-cast,.csview>#cs-trans,.csview>#cs-calls{grid-column:1/-1}.csview #cs-calls>.cscall{display:inline-block;vertical-align:top;width:calc(50% - 14px);margin-right:14px}}
-@media (min-width:1200px){.csview #cs-order .csorder{columns:2 480px;column-gap:22px}}
+@media (min-width:761px){html body #view .csview .cs-tbl{display:none}html body #view .csview .cs-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}html body #view .csview .cs-card{margin:0}.csview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 22px;align-items:start}.csview>.dsp-head,.csview>.dtiles,.csview>.cscontact,.csview>.csme,.csview>#cs-order,.csview>#cs-orderu2,.csview>#cs-cast,.csview>#cs-trans,.csview>#cs-calls{grid-column:1/-1}.csview #cs-calls>.cscall{display:inline-block;vertical-align:top;width:calc(50% - 14px);margin-right:14px}}
+@media (min-width:1200px){.csview :is(#cs-order,#cs-orderu2) .csorder{columns:2 480px;column-gap:22px}}
 .csplace{font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:0 4px;text-decoration:none;text-align:center}
 /* phone cards compact: the values side by side («P/UP 07:15 · Call 07:35 …»), long texts on their own line */
 @media (max-width:760px){html body #view .cs-card .cs-kv{display:inline-flex;gap:4px;margin-right:10px;padding:0;font-size:13px;max-width:100%;flex-wrap:wrap}html body #view .cs-card .cs-kv .k{min-width:0;font-size:11.5px}html body #view .cs-card .cs-kv .v{flex:0 1 auto}}
@@ -939,8 +939,8 @@ html body #view details.csloc>summary .csloc-i svg{width:14px;height:14px}
 /* shooting order folded: one very short line */
 .csosum{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:12.5px;font-family:var(--f-mono,monospace);color:var(--ink);flex:1 1 100%;order:3;margin-top:2px}
 .csoc i{font-style:normal;color:var(--muted);font-family:var(--f-body,inherit);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
-html body #view .cssec#cs-order>summary{flex-wrap:wrap}
-html body #view .cssec#cs-order[open] .csosum{display:none}
+html body #view .cssec:is(#cs-order,#cs-orderu2)>summary{flex-wrap:wrap}
+html body #view .cssec:is(#cs-order,#cs-orderu2)[open] .csosum{display:none}
 html body #view .csscd>summary .csplace{font-size:11px;padding:0 5px;line-height:1.5}
 /* desktop: every part on its own full row; cast always as a table */
 @media (min-width:761px){html body #view .csview{display:block}html body #view .csview #cs-cast .cs-tbl{display:block!important}html body #view .csview #cs-cast .cs-cards{display:none!important}html body #view .csview #cs-cast .cstview{display:none}}
@@ -964,7 +964,7 @@ html body #view .csview .csme-r{display:grid;grid-template-columns:110px minmax(
 /* shooting order folded: scenes with their start times */
 .csoscn{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:12px;font-family:var(--f-mono,monospace);flex:1 1 100%;order:4;margin-top:3px;color:var(--ink)}
 .csoscn i{font-style:normal;color:var(--muted);margin-right:5px}
-html body #view .cssec#cs-order[open] .csoscn{display:none}
+html body #view .cssec:is(#cs-order,#cs-orderu2)[open] .csoscn{display:none}
 /* no callsheet yet */
 .csfollow{display:flex;gap:10px;align-items:flex-start;border:1px dashed color-mix(in srgb,var(--accent) 60%,transparent);border-radius:10px;padding:8px 12px;margin:10px 0;font-size:13.5px}
 .csfollow .csi{flex:0 0 auto;margin-top:2px;color:var(--accent)}
@@ -1048,7 +1048,7 @@ html body #view .today .ttiles.ttiles>.ttile.big>b{font-weight:700}
 html body #view .today .ttiles.ttiles>.twx b,html body #view .today .ttiles.ttiles>button b{font-size:clamp(15px,1.5vw,20px)}
 @media (max-width:600px){html body #view .today .ttiles.ttiles>*{min-width:0}html body #view .today .ttiles.ttiles{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:5px}html body #view .today .ttiles.ttiles>.ttile{padding:3px 6px}html body #view .today .ttiles.ttiles>.ttile>span{font-size:8px;letter-spacing:.03em}html body #view .today .ttiles.ttiles>.ttile>b{font-size:13px}html body #view .today .ttiles.ttiles>.ttile.big>b{font-size:16px}}
 .tstl li.twarn{color:#f5b400}
-html body #view .cssec#cs-loc:not([data-all="1"])>summary .csexp{background:none}
+html body #view .cssec:is(#cs-loc,#cs-u2loc):not([data-all="1"])>summary .csexp{background:none}
 /* cast: role numbers wrap, hidden when the part is open */
 html body #view .cssec#cs-cast[open]>summary .csnos{display:none}
 /* the round symbols stay right below the day bar on the whole page */
@@ -1263,10 +1263,10 @@ html body #view .cssec.csdropped>summary .csdrop{display:none}
 html body #view .csview h4.cswx{margin:10px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
 /* folded parts: title and counts on one line (title not wrapped, counts cut with … only as the last resort) */
 html body #view .cssec>summary{justify-content:space-between;gap:10px;flex-wrap:nowrap!important}
-html body #view .cssec:not(#cs-order)>summary .dh{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;max-width:calc(100% - 48px);min-width:0;display:block}
+html body #view .cssec:not(#cs-order,#cs-orderu2)>summary .dh{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;max-width:calc(100% - 48px);min-width:0;display:block}
 html body #view .cssec>summary .cscount:not(.csnos){flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html body #view .cssec>summary .csnos{white-space:normal;overflow:visible;display:flex;flex-wrap:wrap;gap:3px 0;flex:1 1 0;min-width:0}
-html body #view #cs-order>summary{flex-wrap:wrap!important}
+html body #view :is(#cs-order,#cs-orderu2)>summary{flex-wrap:wrap!important}
 /* jump bar: no own box – the page shows through (blurred) so it sits in the document, phone and desktop */
 html body #view .csjump{padding:2px 0;margin:4px 0;margin-top:0;position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--striph,0px));z-index:5;background:color-mix(in srgb,var(--paper) 55%,transparent)!important;-webkit-backdrop-filter:blur(12px) saturate(1.2);backdrop-filter:blur(12px) saturate(1.2);border-bottom:0!important;box-shadow:none}
 html body #view .csjb button{background:color-mix(in srgb,var(--paper) 35%,transparent)}
