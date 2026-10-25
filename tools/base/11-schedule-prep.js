@@ -136,9 +136,9 @@ export function near1(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1
    differently than the crew list: one of the two exact, the other one letter off (same first letter, at least 3 letters) */
 export function nameHit(name){const k=nmk(name),parts=k.split(" ").filter(w=>w.length>1);if(!k)return ()=>false;
   const ws=(n,w)=>(" "+n).includes(" "+w),f=parts[0],l=parts[parts.length-1];
-  const ex=(t,p)=>t.startsWith(p),fz=(t,p)=>p.length>=3&&t.length>=3&&t[0]===p[0]&&near1(t,p);
+  const ex=(t,p)=>t.startsWith(p),fz=(t,p)=>p.length>=3&&t.length>=3&&t[0]===p[0]&&near1(t,p)&&(p.length>=4||t.length!==p.length);   /* short names (Leo/Lea, Tim/Tom): only a letter more or less (Nik/Nick) */
   return t=>{const n=nmk(String(t||""));if(!n)return false;if(ws(n,k))return true;if(parts.length<2)return false;if(ws(n,f)&&ws(n,l))return true;
-    const w=n.split(" ");for(let i=0;i<w.length;i++)for(let j=0;j<w.length;j++){if(i===j)continue;if((ex(w[i],f)&&fz(w[j],l))||(fz(w[i],f)&&ex(w[j],l)))return true}return false}}
+    const w=n.split(" ");for(let i=0;i+1<w.length;i++){const a=w[i],b=w[i+1];if((ex(a,f)&&fz(b,l))||(fz(a,f)&&ex(b,l)))return true}return false}}   /* one letter off: only first and last name side by side (never words of two people) */
 window.nameHit=nameHit;
 function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;const m=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=m[0];m[0]=i;for(let j=1;j<=b.length;j++){const t=m[j];m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return m[b.length]}
 export function mailPeople(){

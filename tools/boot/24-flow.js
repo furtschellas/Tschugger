@@ -169,7 +169,11 @@ window.cqLink=(kind,id,date,t)=>{const st=cmSt(id),wm=' data-cqwm="'+esc(id)+'"'
   return cqCan(kind)?cqBtn(st,kind,id,date,t,CQTIP3()[st],{a:wm}):cqSpan(st,t,CQST()[st]).replace('<span ','<span'+wm+' ')};
 /* the rides of the callsheet for the actor (passenger): the pickup (at the pickup time if there are several) and the one from the Base */
 const cqWho=r=>nameHit(String(r&&r.actor||""));   /* the same rule as everywhere (11-schedule-prep nameHit) */
-const cqRides=(c,r)=>{if(!r||!r.actor||!c)return [];const has=cqWho(r);return arr(c.transport).filter(x=>has(x.passengers)).concat(arr(c.crewTransport).filter(x=>has(x.people)))};
+/* the rides of a cast row: all of the day (c._rides: the callsheet shows only those of a unit), of its unit or of both (csRideUnit) –
+   the same everywhere (callsheet, automatic, «Jetzt», late push in late_push.py) */
+const cqRides=(c,r)=>{if(!r||!r.actor||!c)return [];const has=cqWho(r),a=c._rides||c,o=c._orig||c,u=r.u==="2"?"2":"1";
+  const ok=x=>{if(!o.u2||typeof window.csRideUnit!=="function")return true;const v=window.csRideUnit(o,x);return !v||v===u};
+  return arr(a.transport).filter(x=>has(x.passengers)&&ok(x)).concat(arr(a.crewTransport).filter(x=>has(x.people)&&ok(x)))};
 const cqFromBase=x=>/base/i.test(String(x.from||""));
 function cqRide(c,r){const rs=cqRides(c,r).filter(x=>!cqFromBase(x));if(!rs.length)return null;const t=cqHm(r.pickup);return rs.find(x=>cqHm(x.t1)===t)||rs[0]}
 const cqBaseRide=(c,r)=>cqRides(c,r).find(cqFromBase)||null;
@@ -334,7 +338,7 @@ window.cmBtn=(id,date,label,k,oth)=>{const st=cmSt(id),cls="cmk"+(st===2?" cmok"
 const CQU2=new WeakMap();
 export function cqU2(c){const u=c&&c.u2;if(!u||typeof u!=="object")return null;const hit=CQU2.get(c);if(hit&&hit.u===u&&hit.d===c._date)return hit.x;
   const mk=l=>arr(l).filter(r=>r&&typeof r==="object").map(r=>r.u==="2"?r:Object.assign(r,{u:"2"}));   /* marked once (also callsheets read before the mark) */
-  const x=Object.assign({},c,{cast:mk(u.cast),extras:mk(u.extras),vehicles:arr(u.vehicles),locations:arr(u.locations),times:Object.assign({},u.times||{},u.crewCall&&!(u.times||{}).crewCall?{crewCall:u.crewCall}:{}),contact:u.contact||null,order:u.order||{},_u:"2"});
+  const x=Object.assign({},c,{_orig:c._orig||c,cast:mk(u.cast),extras:mk(u.extras),vehicles:arr(u.vehicles),locations:arr(u.locations),times:Object.assign({},u.times||{},u.crewCall&&!(u.times||{}).crewCall?{crewCall:u.crewCall}:{}),contact:u.contact||null,order:u.order||{},_u:"2"});
   CQU2.set(c,{u,d:c._date,x});return x}
 window.cqU2=cqU2;
 export const CQA_STEPS=[["c","P/UP und Call"],["m","Maske"],["w","Kostüm"],["b","Base"],["o","On set"]];
@@ -358,7 +362,7 @@ async function cqaRow(c,r,now){const m=cqModel(c,r),d=m.d;if(m.onDone)return;
   if(!m.callAct&&due("c",r.call)&&await put("c",cmId(d,"c",r,cqHm(r.call)),1)){await ride("c",m.rid,3);return}
   if(m.pu<2&&!m.callAct&&!m.arrived&&due("c",r.pickup)){if(m.rid)await ride("u",m.rid,2);else await put("u",cmId(d,"u",r,cqHm(r.pickup)),2)}}
 let CQABUSY=false;
-async function cqAuto(){if(CQABUSY||window.RIDEACKON===false||!window.RIDEACKLOADED||(window.simOn&&window.simOn())||!CQA_STEPS.some(([k])=>cqaOn(k)&&(cqCan(k)||k==="c"&&cqCan("u"))))return;CQABUSY=true;
+async function cqAuto(){if(CQABUSY||/[?&]sbx=/.test(location.search)||window.RIDEACKON===false||!window.RIDEACKLOADED||(window.simOn&&window.simOn())||!CQA_STEPS.some(([k])=>cqaOn(k)&&(cqCan(k)||k==="c"&&cqCan("u"))))return;CQABUSY=true;
   try{const now=Date.now(),t=todayISO(),days=[t,isoAdd(t,-1)];
     for(const dp of arr(S.dispos)){if(!dp||!dp.cs||!days.includes(dp.date))continue;const c1=Object.assign({},dp.cs,{_date:dp.date});
       for(const c of [c1,cqU2(c1)].filter(Boolean))for(const r of arr(c.cast))try{   /* 1st and 2nd Unit */CQMEMO=new WeakMap();await cqaRow(c,r,now)}catch(err){if(err&&err.code==="simulation")return;console.warn("cast auto",err&&err.code||err)}}}

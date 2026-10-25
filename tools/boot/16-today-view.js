@@ -270,7 +270,8 @@ window.TNOWOPEN=window.TNOWOPEN||false;
 const tnChip=(no,role,lk,on,late)=>'<span'+(lk?' class="tnl'+lk+(on?' tnon':'')+'"':'')+'><i>'+esc(no)+'</i>'+(late?'<b class="tnlate" title="'+esc(L("Verspätung"))+'">+'+late+'′</b>':'')+(role?'<em>'+esc(role)+'</em>':'')+'</span>';
 /* «Jetzt», 2nd Unit: its own line – the scene running there (or the next one of its sheet), and its cast now in Maske / Kostüm;
    none after its wrap. The 2nd Unit often starts hours before the 1st: then the line stands alone */
-function u2NowHTML(t,c0){try{const day=arr(S.days).find(d=>d&&d.date===t),its=arr(day&&day.unit2&&day.unit2.items);
+function u2NowHTML(t,c0){try{if(typeof window.scOnU==="function"&&!window.scOnU("2"))return "";   /* 2nd Unit not quittiert: no line (it would show its first scene all day) */
+    const day=arr(S.days).find(d=>d&&d.date===t),its=arr(day&&day.unit2&&day.unit2.items);
     const cu=c0&&c0.u2&&typeof window.cqU2==="function"?window.cqU2(Object.assign({},c0,{_date:t})):null;if(!its.length&&!cu)return"";
     const A=Object.values(window.SCACK||{}).filter(x=>x&&x.d===t&&String(x.u||"1")==="2");
     if(A.some(x=>x.s===2&&/^wrap/.test(String(x.sc||""))))return"";
@@ -285,7 +286,7 @@ function u2NowHTML(t,c0){try{const day=arr(S.days).find(d=>d&&d.date===t),its=ar
     return '<div class="tnowu2"><span class="tnk tnu">2nd Unit</span> '+what+(cm?' '+cm:'')+'</div>'}catch(_){return ""}}
 export function nowCardHTML(t,cls,unit){try{if(typeof csNowScene!=="function")return "";
     /* the callsheet of the 2nd Unit alone: only its line (and the forecasts) */
-    if(unit==="2"){const xd2=(S.dispos||[]).find(y=>y&&y.date===t),u2=u2NowHTML(t,xd2&&xd2.cs),fc2=ncLine(t);if(!u2&&!fc2)return "";
+    if(unit==="2"){if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";const xd2=(S.dispos||[]).find(y=>y&&y.date===t),u2=u2NowHTML(t,xd2&&xd2.cs),fc2=ncLine(t);if(!u2&&!fc2)return "";
       return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+u2+fc2+'</div></div>'}
     /* the quittances not read yet (first seconds after opening): no «Jetzt» – it would show the first scene of a day that is long done */
     if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";

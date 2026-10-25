@@ -128,6 +128,9 @@ service cloud.firestore {
         && only(['addedAt']);
     }
     // Rollen: Admins, oder «Rollen bearbeiten» (nicht Admin-Rolle, nicht die eigene, nur eigene Rechte); Admin-Rolle nur der Owner
+    // WhatsApp beim Quittieren einer Rolle, pro Unit: {"1": {m, n}, "2": {m, n}} – m die Art (je ein Buchstabe), n der Empfänger
+    function waU(x) { return x is map && x.keys().hasOnly(['m', 'n']) && (!('m' in x) || (x.m is string && x.m.size() <= 12)) && (!('n' in x) || (x.n is string && x.n.size() <= 80)); }
+    function waOk(w) { return w is map && w.keys().hasOnly(['1', '2']) && (!('1' in w) || waU(w['1'])) && (!('2' in w) || waU(w['2'])); }
     match /roles/{id} {
       // lesen: die Crew; die eigene Rolle auch beim ersten Anmelden (bevor das Mitglied angelegt ist)
       allow read: if crew() || (verified() && hasRole() && myRole() == id);
@@ -143,7 +146,7 @@ service cloud.firestore {
             && request.resource.data.name is string && request.resource.data.name.size() <= 40
             && request.resource.data.perms is list && request.resource.data.perms.size() <= 80
             // WhatsApp beim Quittieren pro Unit: {"1": {m, n}, "2": {m, n}}
-            && (!('wa' in request.resource.data) || (request.resource.data.wa is map && request.resource.data.wa.keys().hasOnly(['1', '2'])))));
+            && (!('wa' in request.resource.data) || waOk(request.resource.data.wa))));
     }
     // Rollen zuweisen: Admins, «Rollen pflegen» (nicht an Owner/Admins, nicht sich selbst), Einladende geben «Crew»
     match /userroles/{email} {

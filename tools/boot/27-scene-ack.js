@@ -88,7 +88,7 @@ function scLunchMin(date,u){try{const day=(S.days||[]).find(d=>d.date===date&&d.
 const scLunchEnd=x=>(+x.b||+x.at||0)+scLunchMin(x.d,String(x.u||"1"))*60000;
 /* every open app with the right «Szenen quittieren» closes a lunch whose time is up – with the planned end, not the moment of writing */
 let SCLBUSY=false;
-async function scLunchAuto(){if(SCLBUSY||!window.SCACKLIVE||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn()))return;   /* only on the live state – never on an old copy of the device */SCLBUSY=true;
+async function scLunchAuto(){if(SCLBUSY||/[?&]sbx=/.test(location.search)||!window.SCACKLIVE||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn()))return;   /* only on the live state – never on an old copy of the device */SCLBUSY=true;
   try{const now=Date.now();for(const [id,x] of Object.entries(window.SCACK)){const k=x&&(scKeyOf(id,x));
       if(!x||x.s!==1||scBase(k)!=="lunch"||!(+x.b||+x.at))continue;const e=scLunchEnd(x);if(now<e)continue;
       try{await scWrite(x.d,k,x.u,{s:2,b:+x.b||+x.at,e})}catch(_){}}}
@@ -118,7 +118,7 @@ function scaRows(day,u){const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day
     const t=dayMs(day.date,h,ref);if(!t)return null;if(!ref)ref=t;
     return {k:(x.sc||u==="1")?k:k+"_u"+u,kind,t}}).filter(Boolean)}
 let SCABUSY=false;
-async function scAuto(){if(SCABUSY||window.SCACKON===false||!window.SCACKLIVE||!window.RIDEACKLOADED||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn())||!SCA_KINDS.some(([k])=>scaOn(k)))return;SCABUSY=true;
+async function scAuto(){if(SCABUSY||/[?&]sbx=/.test(location.search)||window.SCACKON===false||!window.SCACKLIVE||!window.RIDEACKLOADED||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn())||!SCA_KINDS.some(([k])=>scaOn(k)))return;SCABUSY=true;
   try{const now=Date.now(),t=todayISO(),days=[t,isoAdd(t,-1)];
     for(const day of arr(S.days)){if(!day||day.kind!=="shoot"||!days.includes(day.date))continue;
       for(const u of ["1","2","3"]){if(!scOnU(u))continue;const rows=scaRows(day,u);let j=-1;

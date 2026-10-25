@@ -1176,11 +1176,16 @@ def _sck(x): return re.sub(r"\s+", "", str(x or "")).lower()
 
 def cs_split_u2(cs):
     """the 2nd Unit of a callsheet on its own («u2»): its cast, extras and vehicles out of the lists of the 1st Unit,
-    its prevision into u2 – a row without the mark «u» goes to the 2nd Unit when all its scenes are in the 2nd-unit shooting order"""
+    its prevision into u2 – a row goes to the 2nd Unit when all its scenes are in the 2nd-unit shooting order (or the reading marked it «u»: "2"
+    and none of its scenes is in the order of the 1st Unit); a callsheet without 2nd Unit: no marks left"""
     u2 = cs.get("u2")
     p2 = cs.pop("prevision2", None)
     if not isinstance(u2, dict) or not u2:
-        cs.pop("u2", None); return cs
+        cs.pop("u2", None)
+        for k in ("cast", "extras", "vehicles"):
+            for r in cs.get(k) or []:
+                if isinstance(r, dict): r.pop("u", None)
+        return cs
     if isinstance(p2, dict) and p2.get("rows"): u2["prevision"] = p2
     sc2 = {_sck(r.get("sc")) for r in ((u2.get("order") or {}).get("rows") or []) if isinstance(r, dict) and r.get("sc")}
     sc1 = {_sck(r.get("sc")) for r in ((cs.get("order") or {}).get("rows") or []) if isinstance(r, dict) and r.get("sc")}
@@ -1189,13 +1194,17 @@ def cs_split_u2(cs):
         for r in cs.get(k) or []:
             if not isinstance(r, dict): continue
             u = str(r.pop("u", "") or "")
-            if not u:
-                scs = r.get("scenes"); scs = scs if isinstance(scs, list) else re.split(r"[,;]\s*", str(scs or ""))
-                scs = {_sck(x) for x in scs if _sck(x)}
-                u = "2" if scs and scs <= sc2 and not scs & sc1 else ""
+            scs = r.get("scenes"); scs = scs if isinstance(scs, list) else re.split(r"[,;]\s*", str(scs or ""))
+            scs = {_sck(x) for x in scs if _sck(x)}
+            if u == "2" and scs & sc1: u = ""   # a scene of the 1st Unit in it: it stays there
+            if not u: u = "2" if scs and scs <= sc2 and not scs & sc1 else ""
             if u == "2": r["u"] = "2"   # the app gives the rows of the 2nd Unit their own quittance ids (cmId)
             (b if u == "2" else a).append(r)
-        if b: cs[k] = a; u2[k] = b
+        if b:
+            cs[k] = a
+            have = [r for r in (u2.get(k) or []) if isinstance(r, dict)]
+            for r in have: r["u"] = "2"
+            u2[k] = have + b   # rows the reading put into u2 itself stay
     return cs
 
 

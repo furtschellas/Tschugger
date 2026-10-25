@@ -38,7 +38,7 @@ window.csRidesFor=csRidesFor;window.csRideUnit=csRideUnit;
 /* a scene of the sheet completed with the Drehplan (synopsis, cast, pages, I/E, set …, as in the 2nd Unit of the Drehplan): the sheet's own values win –
    first the same scene on this day with a synopsis (another unit), else its first scheduling with one */
 const u2Full=(i,date)=>{let l=[];try{l=csA(schedIndex()[norm(i.sc)])}catch(_){}const ok=y=>y&&y.it&&y.it!==i&&y.it.d;
-  const b=(l.find(y=>ok(y)&&y.d&&y.d.date===date)||l.find(ok)||{}).it;if(!b)return i;const o=Object.assign({},b);
+  const b=(l.find(y=>ok(y)&&y.d&&y.d.date===date)||l.find(ok)||{}).it;if(!b)return i;const o={};for(const k of ["d","cast","pg","ie","set","loc","d_fr","d_it","d_en","d_hi"])if(b[k]!=null)o[k]=b[k];   /* only the facts of the scene – not its time, duration or camera setups */
   for(const k in i){const v=i[k];if(v!=null&&v!==""&&!(Array.isArray(v)&&!v.length))o[k]=v}return o};
 const u2Rows=day=>camFold(csA(day&&day.unit2&&day.unit2.items).filter(i=>i&&typeof i==="object")).map(i=>i.sc?u2Full(i,day.date):i).map(i=>i.sc?{t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",syn:i.d||"",pgs:i.pg||"",dur:i.dur||"",dir:i.dir||"",cast:Array.isArray(i.cast)?i.cast.join(", "):(i.cast||""),notes:i.notes||"",camx:csA(i.camx)}:{t:i.t||"",text:i.n||i.text||""}).filter(r=>r.sc||r.text);
 export function csU2HTML(x,c,day,me,F){F=F||{};const u0=c&&c.u2,sh=u2Rows(day);if((!u0||typeof u0!=="object")&&!sh.length)return"";

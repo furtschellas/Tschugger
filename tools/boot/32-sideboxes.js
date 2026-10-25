@@ -38,7 +38,7 @@ function sbxSet(x){try{localStorage.setItem("sbx",x.l.join(".")+"|"+x.r.join("."
 if(INFRAME&&FRAMEPG&&FRAMEPG!=="phone"){document.documentElement.classList.add("sbxf");
   /* the page of the topic; set again a moment later (the start may open its own page); with a part only: everything else of the page hidden */
   const t=SBT.find(x=>x[0]===FRAMEPG),pg=(t&&t[2])||"",[kind,sub,...rest]=pg.split(":"),only=rest.join(":");let n=0;
-  const go=()=>{if(!ME){setTimeout(go,500);return}if(kind==="a"){ADM.sub=sub;S.tab="admin"}else if(kind==="t")S.tab=sub;render();if(++n<3)setTimeout(go,1500)};setTimeout(go,300);
+  let w=0;const go=()=>{if(!ME){if(++w<120)setTimeout(go,500);return}if(kind==="a"){ADM.sub=sub;S.tab="admin"}else if(kind==="t")S.tab=sub;render();if(++n<3)setTimeout(go,1500)};setTimeout(go,300);
   if(only)onRendered(()=>{try{const el=document.querySelector("#view "+only);if(!el)return;for(let a=el;a&&a.id!=="view";a=a.parentElement)for(const sib of a.parentElement.children)if(sib!==a)sib.style.display="none"}catch(_){}})}
 
 /* ---------- the topics drawn here ---------- */

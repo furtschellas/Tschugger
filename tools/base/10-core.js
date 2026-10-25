@@ -207,7 +207,7 @@ export function bdHTML(date,sc){if(!date)return "";const b=bdFor(date,sc);if(!b)
   return its.length?'<p class="bdt">'+its.map(([t,v])=>'<span class="bdi"><u>'+esc(t)+':</u> '+esc(arr(v).join(t==="Notes"?" / ":", "))+'</span>').join("")+'</p>':""}
 /* camera setups of a planning («A-1: MCU …», «B-1: CU …») go into their scene (camx), in their order: a setup with the same time as the
    next scene belongs to it (it stands before the box), else to the scene before it (after the box), else to the next scene */
-const CAMRX=/^\s*[A-Z]{1,2}\s?-?\s?\d+[a-z]?\b/;
+const CAMRX=/^\s*[A-Z]{1,2}\s?-\s?\d{1,2}[a-z]?\s*:/;   /* «A-1: …», «B-12: …» – not «L1 SEEUFER» or «DP 2 Pause» */
 export function camFold(items){const l=arr(items),txt=i=>String((typeof TX==="function"?TX(i,"n"):"")||i.n||i.text||"").trim(),tm=i=>{const m=String(i&&i.t||"").match(/(\d{1,2}):(\d{2})/);return m?String(+m[1]).padStart(2,"0")+":"+m[2]:""};
   if(!l.some(i=>i&&!i.sc&&CAMRX.test(txt(i))))return l;
   const out=l.map(i=>i&&i.sc?Object.assign({},i,{camx:arr(i.camx).slice()}):i),sc=out.map((i,k)=>i&&i.sc?k:-1).filter(k=>k>=0);

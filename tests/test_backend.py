@@ -570,8 +570,8 @@ _sr = LP.ride_id(_D, _cs["transport"][1])
 check("Verspätung: Fahrt zum Set abgeschlossen = On set", _lt({_sr: {"s": 2}}, "09:00") == 0)
 _nh = lambda a, b: bool(LP.name_hit(a)(b))
 _got = [_nh("Nik Muster", "Lea Probe, Nick Muster, Ben Test"), _nh("Ben Gerberich", "Ben Gerbreich"), _nh("Lara Fontanelle", "Lara Fontanella, Tim Probe"),
-        _nh("Paul Hartmann", "Paul Hartman"), _nh("Leo Muster", "Nick Muster"), _nh("Max Probe", "Eva Probe"), _nh("Lino Brand", "Linda Sommer"), _nh("Anna Muster", "Johanna Muster"), _nh("Marco Weber", "Mara Weber")]
-check("Namen: eine Schreibweise mit einem Buchstaben Unterschied wird erkannt, andere Personen nicht", _got == [True, True, True, True, False, False, False, False, False], _got)
+        _nh("Paul Hartmann", "Paul Hartman"), _nh("Leo Muster", "Nick Muster"), _nh("Max Probe", "Eva Probe"), _nh("Lino Brand", "Linda Sommer"), _nh("Anna Muster", "Johanna Muster"), _nh("Marco Weber", "Mara Weber"), _nh("Paul Frey", "Max Frei, Pauline Gerber"), _nh("Leo Muster", "Lea Muster"), _nh("Nik Muster", "Max Muster, Nick Probe")]
+check("Namen: eine Schreibweise mit einem Buchstaben Unterschied wird erkannt, andere Personen nicht", _got == [True, True, True, True, False, False, False, False, False, False, False, False], _got)
 check("Verspätung: 2nd Unit mit eigener Prüfsumme (wie cmId in der App)", LP.cm_id(_D, "c", dict(_R1, u="2"), "07:00") != _cid and LP.cm_id(_D, "c", dict(_R1, u="2"), "07:00").startswith("m"))
 check("Verspätung: 2nd Unit im Titel", LP.message(dict(_R1, role="BEN", u="2"), "c", 9)["de"]["title"] == "Verspätung 1 BEN · 2nd Unit", LP.message(dict(_R1, role="BEN", u="2"), "c", 9)["de"])
 check("Verspätung: Nachricht mit Nummer, Rolle, Schritt und Minuten", LP.message(dict(_R1, role="BEN"), "w", 12)["de"] == {"title": "Verspätung 1 BEN", "body": "Kostüm +12′"}, LP.message(dict(_R1, role="BEN"), "w", 12)["de"])

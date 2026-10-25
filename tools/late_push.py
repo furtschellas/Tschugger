@@ -69,7 +69,7 @@ def name_hit(name):
     if not k: return None
     ws = lambda n, w: (" " + w) in (" " + n)
     ex = lambda t, p: t.startswith(p)
-    fz = lambda t, p: len(p) >= 3 and len(t) >= 3 and t[0] == p[0] and near1(t, p)
+    fz = lambda t, p: len(p) >= 3 and len(t) >= 3 and t[0] == p[0] and near1(t, p) and (len(p) >= 4 or len(t) != len(p))
     def hit(t):
         n = nmk(t)
         if not n: return False
@@ -78,7 +78,7 @@ def name_hit(name):
         f, l = parts[0], parts[-1]
         if ws(n, f) and ws(n, l): return True
         w = n.split(" ")
-        return any(i != j and ((ex(w[i], f) and fz(w[j], l)) or (fz(w[i], f) and ex(w[j], l))) for i in range(len(w)) for j in range(len(w)))
+        return any((ex(w[i], f) and fz(w[i + 1], l)) or (fz(w[i], f) and ex(w[i + 1], l)) for i in range(len(w) - 1))   # side by side only
     return hit
 def cm_parse(v):
     out = []
@@ -86,6 +86,44 @@ def cm_parse(v):
         m = re.match(r"^\s*(?:([^\W\d_][\w.'’ -]*?)\s+)?(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})", seg)
         if m: out.append({"t": pad2(m.group(2)) + ":" + m.group(3), "end": pad2(m.group(4)) + ":" + m.group(5)})
     return out
+
+
+# the unit of a ride on a day with a 2nd Unit – like csRideUnit in 13g-cs-unit2.js: «1», «2» or "" (both / not sure)
+RX2 = re.compile(r"\b(2nd|2n?d|b)[\s-]*unit\b|\bunit[\s-]*(2|b)\b", re.I)
+RX1 = re.compile(r"\b(1st|1n?d|a)[\s-]*unit\b|\bunit[\s-]*(1|a)\b", re.I)
+def unit_people(c):
+    if "_up" in c: return c["_up"]
+    m = {}
+    def add(n, u):
+        n = str(n or "").strip()
+        if len(n) >= 3: m.setdefault(n, set()).add(u)
+    u2 = c.get("u2") if isinstance(c.get("u2"), dict) else {}
+    for r in c.get("cast") or []:
+        if isinstance(r, dict) and r.get("u") != "2": add(r.get("actor"), "1")
+    for r in u2.get("cast") or []:
+        if isinstance(r, dict): add(r.get("actor"), "2")
+    for r in c.get("calls") or []:
+        if not isinstance(r, dict): continue
+        if str(r.get("t") or "").strip(): add(r.get("name"), "1")
+        if str(r.get("t2") or "").strip(): add(r.get("name"), "2")
+    c["_up"] = [(name_hit(n), next(iter(us))) for n, us in m.items() if len(us) == 1 and name_hit(n)]
+    return c["_up"]
+def ride_unit(c, r):
+    if not isinstance(c.get("u2"), dict) or not isinstance(r, dict): return ""
+    if r.get("u") in ("1", "2"): return r["u"]
+    tx = " ".join(str(r.get(k) or "") for k in ("from", "to"))
+    p2, p1 = bool(RX2.search(tx)), bool(RX1.search(tx))
+    if p1 and p2: return ""
+    if p2: return "2"
+    if p1: return "1"
+    who = str(r.get("passengers") or r.get("people") or "")
+    if not who.strip(): return ""
+    a = b = 0
+    for hit, u in unit_people(c):
+        if hit(who):
+            if u == "1": a += 1
+            else: b += 1
+    return "2" if b and not a else "1" if a and not b else ""
 
 
 class Model:
@@ -100,8 +138,10 @@ class Model:
     def rides(self):
         has = name_hit(self.r.get("actor"))
         if not has: return []
-        return [x for x in (self.c.get("transport") or []) if isinstance(x, dict) and has(x.get("passengers"))] + \
-               [x for x in (self.c.get("crewTransport") or []) if isinstance(x, dict) and has(x.get("people"))]
+        u = "2" if self.r.get("u") == "2" else "1"
+        ok = lambda x: (lambda v: not v or v == u)(ride_unit(self.c, x))   # its unit or both – like cqRides in 24-flow.js
+        return [x for x in (self.c.get("transport") or []) if isinstance(x, dict) and has(x.get("passengers")) and ok(x)] + \
+               [x for x in (self.c.get("crewTransport") or []) if isinstance(x, dict) and has(x.get("people")) and ok(x)]
 
 
 def late(acks, c, r, now_ms, days=None):
