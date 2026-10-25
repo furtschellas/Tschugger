@@ -55,16 +55,30 @@ def cm_id(date, k, r, t):
 def ride_id(date, x):
     return "r" + jshash("|".join([date, hm(x.get("t1")), hm(x.get("t2")), str(x.get("from") or "").strip(), str(x.get("to") or "").strip(), str(x.get("vehicle") or "").strip()]).lower())
 def nmk(t): return re.sub(r"[^a-z]+", " ", fold(t)).strip()
+def near1(a, b):
+    """one letter off (wrong, missing, extra or two swapped) – like near1 in 11-schedule-prep.js"""
+    if a == b: return True
+    if abs(len(a) - len(b)) > 1: return False
+    i = 0
+    while i < len(a) and i < len(b) and a[i] == b[i]: i += 1
+    return a[i + 1:] == b[i + 1:] or a[i + 1:] == b[i:] or a[i:] == b[i + 1:] or (i + 1 < len(a) and i + 1 < len(b) and a[i] == b[i + 1] and a[i + 1] == b[i] and a[i + 2:] == b[i + 2:])
 def name_hit(name):
-    """like nameHit in 11-schedule-prep.js: the whole name, or first and last name – each only at the start of a word"""
+    """like nameHit in 11-schedule-prep.js: the whole name, or first and last name – each only at the start of a word;
+    one of the two exact, the other one letter off (same first letter, at least 3 letters)"""
     k = nmk(name); parts = [w for w in k.split(" ") if len(w) > 1]
     if not k: return None
     ws = lambda n, w: (" " + w) in (" " + n)
+    ex = lambda t, p: t.startswith(p)
+    fz = lambda t, p: len(p) >= 3 and len(t) >= 3 and t[0] == p[0] and near1(t, p)
     def hit(t):
         n = nmk(t)
         if not n: return False
         if ws(n, k): return True
-        return len(parts) > 1 and ws(n, parts[0]) and ws(n, parts[-1])
+        if len(parts) < 2: return False
+        f, l = parts[0], parts[-1]
+        if ws(n, f) and ws(n, l): return True
+        w = n.split(" ")
+        return any(i != j and ((ex(w[i], f) and fz(w[j], l)) or (fz(w[i], f) and ex(w[j], l))) for i in range(len(w)) for j in range(len(w)))
     return hit
 def cm_parse(v):
     out = []

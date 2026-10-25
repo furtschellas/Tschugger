@@ -25,8 +25,9 @@ function csUnitPeople(c){if(UPEOPLE.has(c))return UPEOPLE.get(c);const m=new Map
   const out=[...m].filter(([,u])=>u.size===1).map(([n,u])=>({hit:nameHit(n),u:[...u][0]}));UPEOPLE.set(c,out);return out}
 export function csRideUnit(c,r){if(!r)return "";if(r.u==="1"||r.u==="2")return r.u;
   const tx=[r.from,r.to].map(v=>String(v||"")).join(" ");
-  if(/\b(2nd|2n?d|b)[\s-]*unit\b|\bunit[\s-]*(2|b)\b/i.test(tx))return "2";
-  if(/\b(1st|1n?d|a)[\s-]*unit\b|\bunit[\s-]*(1|a)\b/i.test(tx))return "1";
+  const p2=/\b(2nd|2n?d|b)[\s-]*unit\b|\bunit[\s-]*(2|b)\b/i.test(tx),p1=/\b(1st|1n?d|a)[\s-]*unit\b|\bunit[\s-]*(1|a)\b/i.test(tx);
+  if(p1&&p2)return "";   /* from the 2nd Unit to the 1st (a truck moving over): both */
+  if(p2)return "2";if(p1)return "1";
   const who=String(r.passengers||r.people||"");if(!who.trim())return "";let a=0,b=0;
   for(const p of csUnitPeople(c))if(p.hit(who)){if(p.u==="1")a++;else b++}
   return b&&!a?"2":a&&!b?"1":""}

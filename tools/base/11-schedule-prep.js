@@ -129,9 +129,16 @@ export const nmk=t=>fold(t).replace(/[^a-z]+/g," ").trim();
 /* does a text (a name, a list of passengers, a cell) name this person? One rule for the whole app (Meine Termine, callsheet, cast rides):
    the whole name, or first and last name – each only at the start of a word («Anna Muster» is not in «Johanna Muster»; a shortened
    «Zeis» still finds «Zeiss») */
+/* one letter off (wrong, missing, extra or two swapped): «Nik»/«Nick», «Gerberich»/«Gerbreich», «Fontanelle»/«Fontanella» */
+export function near1(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1)return false;let i=0;while(i<a.length&&a[i]===b[i])i++;
+  return a.slice(i+1)===b.slice(i+1)||a.slice(i+1)===b.slice(i)||a.slice(i)===b.slice(i+1)||(a[i]===b[i+1]&&a[i+1]===b[i]&&a.slice(i+2)===b.slice(i+2))}
+/* is this person meant in a text: the whole name, or first and last name – each at the start of a word; callsheets write names a little
+   differently than the crew list: one of the two exact, the other one letter off (same first letter, at least 3 letters) */
 export function nameHit(name){const k=nmk(name),parts=k.split(" ").filter(w=>w.length>1);if(!k)return ()=>false;
-  const ws=(n,w)=>(" "+n).includes(" "+w);
-  return t=>{const n=nmk(String(t||""));if(!n)return false;if(ws(n,k))return true;const f=parts[0],l=parts[parts.length-1];return parts.length>1&&ws(n,f)&&ws(n,l)}}
+  const ws=(n,w)=>(" "+n).includes(" "+w),f=parts[0],l=parts[parts.length-1];
+  const ex=(t,p)=>t.startsWith(p),fz=(t,p)=>p.length>=3&&t.length>=3&&t[0]===p[0]&&near1(t,p);
+  return t=>{const n=nmk(String(t||""));if(!n)return false;if(ws(n,k))return true;if(parts.length<2)return false;if(ws(n,f)&&ws(n,l))return true;
+    const w=n.split(" ");for(let i=0;i<w.length;i++)for(let j=0;j<w.length;j++){if(i===j)continue;if((ex(w[i],f)&&fz(w[j],l))||(fz(w[i],f)&&ex(w[j],l)))return true}return false}}
 window.nameHit=nameHit;
 function lev(a,b){if(Math.abs(a.length-b.length)>2)return 9;const m=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=m[0];m[0]=i;for(let j=1;j<=b.length;j++){const t=m[j];m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return m[b.length]}
 export function mailPeople(){
