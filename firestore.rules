@@ -280,12 +280,19 @@ service cloud.firestore {
 
     // ---------- Fahrten aus dem Callsheet ----------
     // Quittieren (Stand s: 1 = Fahrt beginnt, 2 = ausgeführt): alle Mitglieder – die App zeigt den Knopf nur Fahrer:in, «Fahrten quittieren» und «Fahrten Manager»
+    // Cast und Komparsen (IDs m…, Automatik-Marker zm…) nur mit einem Quittier-Recht, Szenen-Marker (zs…) nur mit «Szenen quittieren»;
+    // Fahrten (r…, vr…) weiterhin die ganze Crew – Fahrerinnen und Fahrer quittieren ihre eigenen Fahrten ohne besonderes Recht
+    function ackRight(id) {
+      return (!id.matches('z?m.*') || canAny(['wardrobe.ack', 'makeup.ack', 'cast.manual', 'extras.ack', 'rides.confirm', 'rides.manage']))
+        && (!id.matches('zs.*') || can('scenes.ack'));
+    }
     match /rideack/{id} {
       allow read: if crew();
       // n = wie viele einer Komparsen-Gruppe schon da sind (z. B. 3 von 5), nur eine ganze Zahl 0–999
       allow create, update: if crew() && rideOk(id, ['d', 'at', 's', 'n']) && request.resource.data.get('s', 2) in [1, 2]
-        && (!('n' in request.resource.data) || (request.resource.data.n is int && request.resource.data.n >= 0 && request.resource.data.n <= 999));
-      allow delete: if crew();
+        && (!('n' in request.resource.data) || (request.resource.data.n is int && request.resource.data.n >= 0 && request.resource.data.n <= 999))
+        && ackRight(id);
+      allow delete: if crew() && ackRight(id);
     }
     // Ändern (Zeiten, Strecke, Fahrer, Mitfahrende; Inhalt c verschlüsselt): nur «Fahrten Manager»
     match /rideedit/{id} {

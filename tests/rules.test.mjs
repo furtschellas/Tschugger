@@ -285,6 +285,15 @@ await check("Abmelden überall: rev mit fester Zahl nicht", assertFails(updateDo
 await check("Abmelden überall: rev als Serverzeit geht", assertSucceeds(updateDoc(doc(as("other"), "members/uOther"), { rev: serverTimestamp() })));
 await check("Abmelden überall: ältere Anmeldung liest danach keine Crew-Daten mehr", assertFails(getDoc(doc(env.authenticatedContext(U.other[0], { email: U.other[1], email_verified: true, auth_time: Math.floor(Date.now() / 1000) - 3600 }).firestore(), "secret/key"))));
 await check("Abmelden überall: neue Anmeldung liest wieder", assertSucceeds(getDoc(doc(env.authenticatedContext(U.other[0], { email: U.other[1], email_verified: true, auth_time: Math.floor(Date.now() / 1000) + 60 }).firestore(), "secret/key"))));
+// ---------- cast / extras ticks (m…) only with a right to quittieren, rides (r…) the whole crew ----------
+await check("Cast quittieren: Crew ohne Recht nicht", assertFails(setDoc(doc(as("crew"), "rideack/m1abcd"), { d: "2026-10-21", at: NOW, s: 2 })));
+await check("Cast quittieren: Marker der Automatik ohne Recht nicht", assertFails(setDoc(doc(as("crew"), "rideack/zm1abcd"), { d: "2026-10-21", at: NOW, s: 1 })));
+await check("Fahrt quittieren: Fahrer ohne Recht geht weiterhin", assertSucceeds(setDoc(doc(as("crew"), "rideack/r1abcd"), { d: "2026-10-21", at: NOW, s: 1 })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "wardrobe.ack"] }); await setDoc(doc(c.firestore(), "rideack/m1old"), { d: "2026-10-21", at: NOW, s: 1 }) });
+await check("Cast quittieren: mit «Kostüm quittieren» geht", assertSucceeds(setDoc(doc(as("viewer"), "rideack/m1abcd"), { d: "2026-10-21", at: NOW, s: 2 })));
+await check("Cast quittieren: zurücksetzen ohne Recht nicht", assertFails(deleteDoc(doc(as("crew"), "rideack/m1old"))));
+await check("Szenen-Marker der Automatik ohne «Szenen quittieren» nicht", assertFails(setDoc(doc(as("viewer"), "rideack/zs1abcd"), { d: "2026-10-21", at: NOW, s: 1 })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view"] }) });
 // ---------- «Quittieren einstellen»: only the switches of the quittances in config/app ----------
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "ack.settings"] }); await setDoc(doc(c.firestore(), "config/app"), { langs: ["de"] }, { merge: true }) });
 await check("Quittieren einstellen: Automatik speichern geht", assertSucceeds(setDoc(doc(as("viewer"), "config/app"), { castAuto: { c: { on: true, min: 0 } }, sceneAck: true }, { merge: true })));
