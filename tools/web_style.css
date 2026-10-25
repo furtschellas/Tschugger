@@ -1182,3 +1182,6 @@ html body #view .tnow .tnowfc small{color:var(--muted)}
 html body #view .tnow .tnowfc .tnsep{font-style:normal;color:var(--muted);margin:0 6px}
 html body #view .tnow .tnowfc+.tnowcm{margin-top:4px}
 html body #view .tcard.tnow.tnowo .tnowfc{white-space:normal}
+.ncbox .ncrow .ncdelb{position:absolute;top:10px;right:0;width:auto;height:auto;border-radius:99px;padding:3px 10px;font-size:12px;border:1px solid var(--rule);background:transparent;color:var(--muted)}
+.ncbox .ncrow{padding-right:76px}.ncbox .ncacts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+html body #view .tnow .tnowfc{cursor:pointer}

@@ -224,16 +224,19 @@ function ncDialog(){const d=ncDay(),dp=arr(S.dispos).find(y=>y&&y.date===d),rows
   void keys;let items=arr(window.NOWCAST[d]).map(x=>Object.assign({},x));if(!items.length)items=[{k:"lunch",t:""}];
   const row=(it,i)=>'<div class="ncrow" data-nci="'+i+'"><select data-ncf="k" aria-label="'+esc(L("Was"))+'">'+opts.map(([v,t])=>'<option value="'+esc(v)+'"'+(it.k===v?' selected':'')+'>'+esc(t)+'</option>').join("")+'</select>'+
     '<label>'+esc(L("ca."))+' <input type="time" data-ncf="t" value="'+esc(it.t||"")+'"></label><label>'+esc(L("anzeigen bis"))+' <input type="time" data-ncf="bis" value="'+esc(it.bis||"")+'"></label>'+
-    '<input type="text" data-ncf="n" maxlength="80" placeholder="'+esc(L("Notiz (bei «Anderes»: Text)"))+'" value="'+esc(it.n||"")+'"><button type="button" class="lnk" data-ncdel="'+i+'" aria-label="'+esc(L("Entfernen"))+'" title="'+esc(L("Entfernen"))+'">×</button></div>';
+    '<input type="text" data-ncf="n" maxlength="80" placeholder="'+esc(L("Notiz (bei «Anderes»: Text)"))+'" value="'+esc(it.n||"")+'"><button type="button" class="lnk ncdelb" data-ncdel="'+i+'">'+esc(L("Löschen"))+'</button></div>';
   const dl=mkDialog("ncdlg",null,{replace:true});
   const draw=()=>{dl.innerHTML='<div class="a2box ncbox">'+xBtn("data-ncx")+'<h3>'+esc(L("Prognose"))+' · '+esc(d.split("-").reverse().slice(0,2).join(".")+".")+'</h3><p class="ghint">'+esc(L("Erscheint im «Jetzt» bei allen und erlischt von selbst, sobald der Schritt quittiert ist (oder ab «anzeigen bis»)."))+'</p>'+
-    '<form data-ncform novalidate>'+items.map(row).join("")+'<button type="button" class="pillbtn" data-ncadd>+ '+esc(L("Prognose"))+'</button><div class="arb">'+saveBtn()+'</div></form></div>'};
+    '<form data-ncform novalidate>'+items.map(row).join("")+'<div class="ncacts"><button type="button" class="pillbtn" data-ncadd>+ '+esc(L("Prognose"))+'</button>'+(arr(window.NOWCAST[d]).length?'<button type="button" class="pillbtn" data-ncall>'+esc(L("Alle löschen"))+'</button>':'')+'</div><div class="arb">'+saveBtn()+'</div></form></div>'};
   const read=()=>{items=[...dl.querySelectorAll(".ncrow")].map(r=>{const g=f=>String((r.querySelector('[data-ncf="'+f+'"]')||{}).value||"").trim();return {k:g("k"),t:g("t"),bis:g("bis"),n:g("n").slice(0,80)}})};
   draw();document.body.appendChild(dl);
   dl.addEventListener("click",e=>{if(e.target===dl||e.target.closest("[data-ncx]")){dl.remove();return}
     if(e.target.closest("[data-ncadd]")){read();items.push({k:"wrap",t:""});draw();return}
-    const x=e.target.closest("[data-ncdel]");if(x){read();items.splice(+x.dataset.ncdel,1);draw()}});
-  dl.addEventListener("submit",async e=>{e.preventDefault();read();const ok=items.filter(it=>it.k&&/^\d\d:\d\d$/.test(it.t)&&(it.k!=="x"||it.n)).map(it=>{const o={k:it.k,t:it.t};if(it.bis)o.bis=it.bis;if(it.n)o.n=it.n;return o});
+    const x=e.target.closest("[data-ncdel]");if(x){read();items.splice(+x.dataset.ncdel,1);draw();return}
+    /* all forecasts of the day away at once (saved right away) */
+    if(e.target.closest("[data-ncall]")){NCALL=true;items=[];const f=dl.querySelector("form");if(f)f.dispatchEvent(new Event("submit",{cancelable:true,bubbles:true}))}});
+  let NCALL=false;
+  dl.addEventListener("submit",async e=>{e.preventDefault();if(NCALL)items=[];else read();const ok=items.filter(it=>it.k&&/^\d\d:\d\d$/.test(it.t)&&(it.k!=="x"||it.n)).map(it=>{const o={k:it.k,t:it.t};if(it.bis)o.bis=it.bis;if(it.n)o.n=it.n;return o});
     try{const {F,db}=await fb(),ref=F.doc(db,"nowcast",ncDocId(d));
       if(ok.length)await F.setDoc(ref,{c:await ownEnc({items:ok}),at:F.serverTimestamp()});else await F.deleteDoc(ref);
       window.NOWCAST[d]=ok;try{localStorage.setItem("nowcast:v1",JSON.stringify({d,items:ok}))}catch(_){}dl.remove();render();
@@ -247,7 +250,8 @@ function ncDialog(){const d=ncDay(),dp=arr(S.dispos).find(y=>y&&y.date===d),rows
 function ncWaBar(txt){let b=document.getElementById("ncbar");if(b)b.remove();b=document.createElement("div");b.id="ncbar";b.className="ncbar";
   b.innerHTML='<span>'+esc(L("Prognose gespeichert."))+'</span><button type="button" class="pillbtn" data-ncwa>'+esc(L("Per WhatsApp senden"))+'</button>';document.body.appendChild(b);
   b.querySelector("[data-ncwa]").addEventListener("click",()=>{b.remove();window.scWaOpen(txt,"p")});setTimeout(()=>{if(b.isConnected)b.remove()},12000)}
-document.addEventListener("click",e=>{if(!e.target.closest||!e.target.closest("[data-ncedit]"))return;e.preventDefault();e.stopPropagation();if(ncCan())ncDialog()},true);
+/* the icon, and for the people with the right also the forecast line itself: open the forecasts to change or delete them */
+document.addEventListener("click",e=>{if(!e.target.closest||!(e.target.closest("[data-ncedit]")||(e.target.closest(".tnow .tnowfc")&&ncCan())))return;e.preventDefault();e.stopPropagation();if(ncCan())ncDialog()},true);
 const NCICO='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>';
 window.TNOWOPEN=window.TNOWOPEN||false;
 /* late: more than 5 minutes behind the callsheet – «+12′» right after the cast number */
