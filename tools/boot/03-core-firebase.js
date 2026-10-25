@@ -66,7 +66,7 @@ export async function loadLangs(){
     /* automatic quittances per step (App-Verwaltung → Einstellungen → Quittieren): {k: {on, min}} */
     /* the setup before the first scene («a») is on unless switched off, everything else off unless switched on */
     {const n=(a,ks,dflt)=>Object.fromEntries(ks.map(k=>{const x=(a&&a[k])||{};return [k,{on:(dflt||[]).includes(k)?x.on!==false:x.on===true,min:Math.max(0,Math.min(180,parseInt(x.min,10)||0))}]}));const c=d.exists()?d.data():{};
-      cfgPut("CASTAUTO",n(c.castAuto,["c","m","w","b","o"]),"appcastauto",false);cfgPut("SCENEAUTO",n(c.sceneAuto,["a","s","l","w"],["a"]),"appsceneauto",false)}
+      cfgPut("CASTAUTO",n(c.castAuto,["c","m","w","b","o"]),"appcastauto",false);cfgPut("SCENEAUTO",n(c.sceneAuto,["a","s","l","w"],["a"]),"appsceneauto",false);window.SCPAR=c.sceneParallel===true}
     window.GCALON=d.exists()&&!!d.data().gcal;
     window.AIDAYUSD=d.exists()&&+d.data().aiDayUsd>0?+d.data().aiDayUsd:10;
     cfgPut("AUTOUPD",!(d.exists()&&d.data().autoUpdate===false),"appauto",false);

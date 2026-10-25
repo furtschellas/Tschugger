@@ -195,6 +195,10 @@ export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return 
     if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";const ns=csNowScene();if(!ns||ns.ev==="wrap")return "";const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
     const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
     const nb=csNowBits(ns,c0,t);
+    /* scenes in parallel: the further scenes running now, in the same line («+ 23 L3 SEEUFER») */
+    let par="";try{if(!ns.ev&&typeof scAckId==="function"){const me=scAckId(t,ns.sc),rows=arr((c0.order||{}).rows).filter(r=>r&&r.sc);
+      for(const [id,x] of Object.entries(window.SCACK||{})){if(!x||x.d!==t||x.s!==1||id===me)continue;const k=x.sc||id.split("-").slice(1).join("-");if(/^(lunch|wrap|setup\d*)(_u\d)?$/.test(k))continue;
+        const r=rows.find(y=>scAckId(t,y.sc)===id)||{sc:k};const b=csNowBits(r,c0,t);par+=' <span class="tnpar">+ <b class="tnsc">'+b.sc+'</b>'+b.place+' <span class="tnset">'+b.set+'</span></span>'}}}catch(_){}
     const since=b0?' <small>· '+esc(L("seit"))+' '+esc(csHM(new Date(b0)))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
     const cc=Object.assign({},c0,{_date:t}),rows=arr(c0.cast),no=r=>String(r.no||"").trim()||"?",role=r=>String(r.role||"").trim();
     /* Maske / Kostüm now: the same pink chips as the cast in the shooting order (pink with white frame = Call, Kostüm, Maske) */
@@ -205,7 +209,7 @@ export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return 
       const ch=nos.map(n=>{const r=rows.find(x=>no(x)===n);let lk=0;try{lk=r&&typeof cqLook==="function"?cqLook(cc,r):0}catch(_){}return tnChip(n,r?role(r):names[n]||"",lk,lk===3&&r&&typeof cqAll==="function"&&cqAll(cc,r),r&&typeof cqLate==="function"?cqLate(cc,r):0)}).join("");
       det=(ns.syn?'<div class="tnsyn">'+esc(ns.syn)+'</div>':'')+(ch?'<div class="tnc">'+ch+'</div>':'')}
     const open=!!window.TNOWOPEN,more=!!(cm||det);
-    return '<div class="tcard tnow'+(cls?" "+cls:"")+(open&&more?" tnowo":"")+'"'+(more?' data-tnow tabindex="0" aria-expanded="'+(open?"true":"false")+'"':'')+'><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm"><div class="tnowb">'+(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+'</div>'+
+    return '<div class="tcard tnow'+(cls?" "+cls:"")+(open&&more?" tnowo":"")+'"'+(more?' data-tnow tabindex="0" aria-expanded="'+(open?"true":"false")+'"':'')+'><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm"><div class="tnowb">'+(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+par+'</div>'+
       (cm?'<div class="tnowcm">'+cm+'</div>':'')+(det?'<div class="tnowx">'+det+'</div>':'')+'</div></div>'}catch(_){return ""}}
 /* tap (or Enter) on «Jetzt»: open / close – links in it (location) work as before; the choice stays while the page is redrawn */
 function tnowToggle(c){window.TNOWOPEN=!c.classList.contains("tnowo");document.querySelectorAll("[data-tnow]").forEach(x=>{x.classList.toggle("tnowo",window.TNOWOPEN);x.setAttribute("aria-expanded",String(window.TNOWOPEN))})}

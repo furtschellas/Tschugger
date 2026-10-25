@@ -144,7 +144,8 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
     if(run&&scBase(run)==="lunch"){const lx=window.SCACK[scAckId(date,run)]||{},lb=+lx.b||+lx.at||Date.now();scWrite(date,run,u,{s:2,b:lb,e:Math.max(lb,Math.min(scLunchEnd(lx),Date.now()))}).catch(()=>{})}
     /* a setup still running (also one started automatically): it is finished now */
     else if(run&&/^setup\d*$/.test(scBase(run))){const sx=window.SCACK[scAckId(date,run)]||{},sb=+sx.b||+sx.at||Date.now();scWrite(date,run,u,{s:2,b:sb,e:Math.max(sb,Date.now())}).catch(()=>{})}
-    else if(run){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}
+    /* scenes in parallel (App-Verwaltung → Quittieren): a further scene may start while one runs – both show in «Jetzt» */
+    else if(run&&!window.SCPAR){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}
     /* the first scene of the day starts and the setup before it was never quittiert: the setup is done now (from its planned time) */
     else if(!/^(lunch|wrap|setup\d*)$/.test(scBase(sc)))try{const day=arr(S.days).find(d=>d&&d.date===date&&d.kind==="shoot");
       for(const r of day?scaRows(day,String(u||"1")):[])if(r.kind==="a"&&scState(date,r.k)===0){const now=Date.now();scWrite(date,r.k,u,{s:2,b:Math.min(r.t,now),e:now}).catch(()=>{})}}catch(_){}}
@@ -222,7 +223,7 @@ function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{}
     if(ev.target===d||ev.target.closest("[data-scx]"))d.remove()});
   f.e.disabled=cur!==2;f.b.disabled=cur===0;
   f.addEventListener("submit",async ev=>{ev.preventDefault();if(ev.submitter&&ev.submitter.dataset.scwasub)f.dataset.wa="1";else delete f.dataset.wa;const bm=scMsNear(date,f.b.value,+x.b||+x.at||Date.now()),em=scMsNear(date,f.e.value,bm||+x.b||+x.at||Date.now());
-    if(cur===1){const run=scRunning(date,u,id);if(run){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
+    if(cur===1&&!window.SCPAR){const run=scRunning(date,u,id);if(run){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
     if(cur===2&&bm&&em&&em<bm){msg.textContent=L("Das Ende liegt vor dem Beginn.");return}
     f.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=true);
     try{const nv=cur===0?null:{s:cur,b:bm||x.b||Date.now(),e:cur===2?(em||x.e||Date.now()):null};await scWrite(date,sc,u,nv);d.remove();if(nv&&f.dataset.wa)scShareAsk(date,sc,u,nv,true);else if(typeof savedPop==="function")savedPop(true)}
