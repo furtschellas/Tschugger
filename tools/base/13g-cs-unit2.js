@@ -83,3 +83,4 @@ export function csU2Dispo(x,day){const c=x&&x.cs;if(!c||typeof c!=="object")retu
   const t=cs.times||{};
   return Object.assign({},x,{cs,crewCall:t.crewCall||"",shootCall:t.rts||"",wrap:t.wrap||"",label:(x.label||(day&&day.label)||"Callsheet")+" · 2nd Unit"})}
 window.csU2Dispo=csU2Dispo;
+window.u2RowsOf=u2Rows;

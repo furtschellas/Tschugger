@@ -289,11 +289,13 @@ export function renderDispo(){
     /* no callsheet yet: the day from the schedule (facts and a short list of the scenes), with the note that the callsheet follows */
     /* every chosen unit of this day its own list (1st, 2nd, 3rd) – the 2nd unit was missing here */
     const scl=l=>arr(l).filter(i=>i&&i.sc).map(i=>({t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",dur:i.dur||"",pgs:i.pg||""}));
-    const ul=unitLists(day).filter(([u,l])=>S.pu[u]&&scl(l).length).map(([u,l])=>[u,scl(l)]),scn=ul.length?ul[0][1]:[];
+    /* the 2nd Unit with its own planning (sheet): its whole detailed order (setups, camera setups in their scene, lunch, wrap), completed with the Drehplan */
+    const u2s=u=>u==="2"&&day.unit2&&day.unit2.src==="2nd"&&typeof window.u2RowsOf==="function"?window.u2RowsOf(day):null;
+    const ul=unitLists(day).filter(([u,l])=>S.pu[u]&&scl(l).length).map(([u,l])=>[u,u2s(u)||scl(l),!!u2s(u)]),scn=ul.length?ul[0][1]:[];
     return h+'<div class="dayhead csnoday"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+(day.date?fmtDate(day.date):'')+'</span>'+UNITBAR+'</div></div>'+
       (typeof planFactsHTML==="function"?planFactsHTML(day,typeof planPdfBtn==="function"?planPdfBtn(day):""):"")+'</div>'+
       '<div class="csfollow">'+(window.CSI?CSI.doc:'')+'<div><b>'+L('Callsheet folgt')+'</b> <span>'+L('Das Callsheet erscheint hier automatisch, sobald es im Callsheet-Ordner der Dropbox liegt, meist am Vorabend.')+'</span></div></div>'+
-      (typeof csOrderRows==="function"?ul.map(([u,l])=>'<section class="dsec csview csplan"><h3 class="dh">'+esc(L("Laut Drehplan"))+(ul.length>1||u!=="1"?' · '+esc(UNAME[u]+" Unit"):'')+' · '+l.length+' '+esc(L("Szenen"))+'</h3>'+csOrderRows(l,day.date,null,false,u)+'<button class="lnk" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+' ›</button></section>').join(""):'')+
+      (typeof csOrderRows==="function"?ul.map(([u,l,sh])=>'<section class="dsec csview csplan"><h3 class="dh">'+esc(L(sh?"Laut 2nd-Unit-Planung":"Laut Drehplan"))+(ul.length>1||u!=="1"?' · '+esc(UNAME[u]+" Unit"):'')+' · '+l.filter(r=>r.sc).length+' '+esc(L("Szenen"))+'</h3>'+csOrderRows(l,day.date,null,false,u)+'<button class="lnk" data-goto="'+esc(day.id||"")+'">'+L('Planung ansehen')+' ›</button></section>').join(""):'')+
       setfpHTML(day.date)+sidesHTML(day.date)+raHTML(day.date);
   }
   /* read in structure (as the document): the new view; older callsheets keep the view below */

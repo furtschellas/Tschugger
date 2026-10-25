@@ -34,7 +34,8 @@ def data(today=None):
              "unit2": {"items": [{"n": "A-1: MCU Testfigur, Fix Haube", "t": "09:00"}, {"sc": "90", "t": "09:00", "set": "STRASSE", "ie": "E"}, {"n": "B-1: CU Testfigur, Fix Aussenrig", "t": "09:20"}, {"sc": "11", "t": "10:30"}], "hours": "09:00–12:00"}},
             {"date": iso(day(1)), "id": "o1", "kind": "off", "label": "Day Off"},
             {"date": iso(day(2)), "id": "d2", "kind": "shoot", "label": "Day #3", "short": "D03", "hours": "07:00–18:00", "sr": "07:53", "ss": "18:15", "items": items(3)},
-            {"date": iso(day(3)), "id": "d3", "kind": "shoot", "label": "Day #4", "short": "D04", "hours": "07:00–18:00", "sr": "07:54", "ss": "18:13", "items": items(4)}]
+            {"date": iso(day(3)), "id": "d3", "kind": "shoot", "label": "Day #4", "short": "D04", "hours": "07:00–18:00", "sr": "07:54", "ss": "18:13", "items": items(4),
+             "unit2": {"src": "2nd", "hours": "06:45–16:45", "items": [{"n": "Set Up", "t": "06:45"}, {"n": "A-1: MCU Testfigur", "t": "07:30"}, {"sc": "41", "t": "07:30"}, {"n": "B-1: CU Testfigur", "t": "08:10"}, {"n": "Lunch", "t": "12:00"}, {"n": "Wrap", "t": "16:45"}]}}]
     def cs(n, d):
         return {"date": iso(d), "label": "Drehtag %d" % n, "file": "CS%d.pdf" % n, "crewCall": "07:00", "shootCall": "08:00", "wrap": "18:00", "sr": "07:50", "ss": "18:20",
                 "scenes": [{"sc": str(10 * n + i + 1)} for i in range(4)],
