@@ -86,11 +86,12 @@ def alarm_broadcast(key, i18n, roles, url):
     return new_broadcast(key, b)
 
 
-def new_broadcast(key, b):
-    """automatic «message to everybody»: encrypted, with the server time as «at» (only the last 24 h are sent)"""
+def new_broadcast(key, b, doc_id=None):
+    """automatic «message to everybody»: encrypted, with the server time as «at» (only the last 24 h are sent);
+    doc_id: a fixed id – the message is made only once (None when it exists already)"""
     import datetime
     ts = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
-    return create_doc("broadcasts", {"c": enc_json(key, b)}, raw={"at": {"timestampValue": ts}})
+    return create_doc("broadcasts", {"c": enc_json(key, b)}, raw={"at": {"timestampValue": ts}}, **({"doc_id": doc_id} if doc_id else {}))
 
 
 def log(*a): print("•", *a, flush=True)
@@ -149,6 +150,18 @@ def query_since(col, field, iso):
         if d: yield d["name"].rsplit("/", 1)[1], {k: val(v) for k, v in (d.get("fields") or {}).items()}, d.get("updateTime")
 
 
+def query_since_ms(col, field, ms):
+    """like query_since, for a number field in ms (e.g. «at» of sceneack)"""
+    h, q = _auth()
+    body = {"structuredQuery": {"from": [{"collectionId": col}],
+                                "where": {"fieldFilter": {"field": {"fieldPath": field}, "op": "GREATER_THAN_OR_EQUAL", "value": {"integerValue": str(int(ms))}}}}}
+    r = _RS.post(BASE + ":runQuery", headers=h, params=q, json=body, timeout=30)
+    r.raise_for_status()
+    for x in r.json():
+        d = x.get("document")
+        if d: yield d["name"].rsplit("/", 1)[1], {k: val(v) for k, v in (d.get("fields") or {}).items()}, d.get("updateTime")
+
+
 def get_doc(path):
     h, q = _auth()
     r = _RS.get(BASE + "/" + path, headers=h, params=q, timeout=30)
@@ -177,12 +190,13 @@ def delete_fields(path, names, update_time=None):
     return r.status_code == 200
 
 
-def create_doc(col, fields, raw=None):
-    """new document with a random id (needs FIREBASE_SA); raw: already encoded Firestore values (e.g. timestamps)"""
+def create_doc(col, fields, raw=None, doc_id=None):
+    """new document with a random id (needs FIREBASE_SA); raw: already encoded Firestore values (e.g. timestamps);
+    doc_id: this id instead – None when such a document exists already (409)"""
     h, _ = _auth()
     if not h: return None
     body = {"fields": {**{k: enc(v) for k, v in fields.items()}, **(raw or {})}}
-    r = requests.post(BASE + "/" + col, headers=h, json=body, timeout=30)
+    r = requests.post(BASE + "/" + col, headers=h, json=body, params={"documentId": doc_id} if doc_id else None, timeout=30)
     return r.json().get("name", "").rsplit("/", 1)[-1] if r.status_code == 200 else None
 
 

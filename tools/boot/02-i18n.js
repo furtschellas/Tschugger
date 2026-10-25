@@ -965,6 +965,8 @@ Object.assign(I18N,{
  "Neu für dich":{fr:"Nouveau pour toi",it:"Nuovo per te",en:"New for you",hi:"आपके लिए नया"},
  "Nicht mehr":{fr:"Plus disponible",it:"Non più",en:"No longer",hi:"अब नहीं"},
  "Tour ansehen":{fr:"Voir la visite",it:"Guarda il tour",en:"Take the tour",hi:"टूर देखें"},
+ "Nachricht bei Drehschluss":{fr:"Message à la fin de tournage",it:"Messaggio a fine riprese",en:"Message at wrap",hi:"शूटिंग समाप्त होने पर संदेश"},
+ "Ein Dankeschön an die Crew, sobald der Drehschluss quittiert ist – mit dem Hinweis, ob es am nächsten Tag weitergeht.":{fr:"Un merci à l'équipe dès que la fin de tournage est confirmée – avec l'info si le tournage continue le lendemain.",it:"Un grazie alla troupe appena la fine riprese è confermata – con l'indicazione se il giorno dopo si continua.",en:"A thank-you to the crew as soon as the wrap is confirmed – with a note whether shooting continues the next day.",hi:"शूटिंग समाप्त की पुष्टि होते ही क्रू को धन्यवाद – साथ में यह जानकारी कि अगले दिन शूटिंग जारी है या नहीं।"},
  "Bei Änderungen benachrichtigen":{fr:"Me prévenir en cas de changement",it:"Avvisami in caso di modifiche",en:"Notify me about changes",hi:"बदलाव होने पर सूचित करें"},
  "Änderungen am Drehplan":{fr:"Changements du plan de tournage",it:"Modifiche al piano di lavorazione",en:"Changes to the shooting schedule",hi:"Schedule में बदलाव"},
  "Neue und geänderte Callsheets":{fr:"Callsheets nouvelles ou modifiées",it:"Callsheet nuovi o modificati",en:"New and updated callsheets",hi:"नई और बदली हुई Callsheets"},

@@ -288,7 +288,7 @@ function maybePushHint(){
   const ios=!pushOK()&&isIOS()&&!pushStandalone();if(!pushOK()&&!ios)return;
   if(pushOK()&&Notification.permission!=="default"){hintMark();return}
   const d=mkDialog("pushhint");
-  const types=PUSH_TYPES.filter(x=>vok(x[2])),nws=PUSH_NEWS.filter(x=>vok(x[2]));
+  const types=PUSH_TYPES.filter(x=>vok(x[2])),nws=PUSH_NEWS.filter(x=>vok(x[2])&&x[0]!=="wrap");
   d.innerHTML='<div class="a2box phbox"><span class="wlbeta">'+L("Neu")+'</span><h3>'+L("Push-Nachrichten")+'</h3><p>'+L("Die App erinnert dich auf Wunsch vor deinen Terminen und meldet neue Drehpläne, Callsheets und Drehbuch-Versionen – auch wenn sie geschlossen ist.")+'</p>'+
     (ios?'<p class="ghint">'+L("Auf dem iPhone/iPad: zuerst die App über «Teilen → Zum Home-Bildschirm» hinzufügen und von dort öffnen – dann kannst du Push-Nachrichten einschalten.")+'</p><div class="a2b">'+dlgBtn("pri",'data-ph="ok"',"OK")+'</div>':
     '<label class="phl">'+L("Erinnern")+'<select data-phlead>'+PUSH_LEADS.map(([v,t])=>'<option value="'+v+'"'+(v===c.lead?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>'+

@@ -517,6 +517,42 @@ check("Google Sheet: Plan-Spalten nach Szenen-Nummer (Coverday getauscht) – Pl
 _rows0 = SS.build([dict(_acks[0], sc="1", id="x-1")], {"days": _days, "dispos": _cs})["1"]
 check("Google Sheet: ohne Coverday unverändert (eigener Tag, eigenes Callsheet)", next(r for r in _rows0 if r[0] == "Szene 1")[8] == "08:00" and next(r for r in _rows0 if r[0] == "Drehstart")[1] == "DT 1")
 
+# ====================================================================== Drehschluss-Push (erfundene Daten)
+common.GROUP = 'Drehschluss-Push'
+import wrap_push as W  # noqa: E402
+_wcd = W.cd_touched
+W.cd_touched = lambda key, day: day == "2026-01-09"
+_wd = [{"date": "2026-01-05", "kind": "shoot"}, {"date": "2026-01-06", "kind": "shoot", "unit2": {"items": [{"sc": "1"}]}}, {"date": "2026-01-07", "kind": "off"},
+       {"date": "2026-01-08", "kind": "shoot"}, {"date": "2026-01-09", "kind": "shoot"}, {"date": "2026-01-10", "kind": "shoot"}]
+_ms = lambda iso: int(datetime.datetime.fromisoformat(iso + "+01:00").timestamp() * 1000)
+check("Drehschluss: morgen Drehtag", W.outlook("2026-01-05", "1", _wd, b"", _ms("2026-01-05T19:00")) == "go")
+check("Drehschluss: morgen drehfrei", W.outlook("2026-01-06", "1", _wd, b"", _ms("2026-01-06T19:00")) == "free")
+check("Drehschluss nach Mitternacht: heute", W.outlook("2026-01-05", "1", _wd, b"", _ms("2026-01-06T01:30")) == "go0")
+check("Drehschluss: Coverday am nächsten Tag → neutral", W.outlook("2026-01-08", "1", _wd, b"", _ms("2026-01-08T19:00")) == "ask")
+check("Drehschluss: Drehplan endet → neutral", W.outlook("2026-01-10", "1", _wd, b"", _ms("2026-01-10T19:00")) == "ask")
+check("Drehschluss 2nd Unit: morgen eigene Szenen", W.outlook("2026-01-05", "2", _wd, b"", _ms("2026-01-05T19:00")) == "go")
+check("Drehschluss 2nd Unit: morgen keine eigenen Szenen → neutral", W.outlook("2026-01-07", "2", _wd, b"", _ms("2026-01-07T19:00")) == "ask")
+_mi, _mu = W.message("2026-01-05", "2", _wd, b"", _ms("2026-01-05T19:00"))
+check("Drehschluss: Titel mit Unit und Dank", _mi["de"]["title"] == "Drehschluss 2nd Unit 🎬" and _mi["de"]["body"].startswith("Danke") and _mu == "./#go=dispo:2026-01-06", (_mi["de"], _mu))
+check("Drehschluss: alle Sprachen", set(_mi) == {"de", "fr", "it", "en", "hi"} and all(x["body"] for x in _mi.values()))
+check("Drehschluss: kein Eszett", "ß" not in json.dumps(W.TXT, ensure_ascii=False))
+_wnow = int(time.time() * 1000)
+_wacks = [{"sc": "wrap", "s": 2, "d": "2026-01-05", "u": "1", "at": _wnow - 5 * 60000, "b": _wnow - 5 * 60000, "e": _wnow - 5 * 60000},    # due
+          {"sc": "wrap_u2", "s": 2, "d": "2026-01-05", "u": "2", "at": _wnow - 60000, "b": _wnow - 60000, "e": _wnow - 60000},      # just now: wait
+          {"sc": "wrap", "s": 2, "d": "2026-01-04", "u": "1", "at": _wnow - 5 * 60000, "b": _wnow - 5 * 3600000, "e": _wnow - 5 * 3600000},   # entered afterwards
+          {"sc": "12A", "s": 2, "d": "2026-01-05", "u": "1", "at": _wnow - 5 * 60000, "e": _wnow - 5 * 60000}]
+_wmade = []
+_wsave = (W.fsadmin.sa, W.fsadmin.query_since_ms, W.fsadmin.crew_key, W.fsadmin.new_broadcast, W.fsadmin.dec_ivct)
+W.fsadmin.sa = lambda: {"client_email": "x"}
+W.fsadmin.query_since_ms = lambda col, f, ms: iter([("x%d" % i, a, "") for i, a in enumerate(_wacks)])
+W.fsadmin.crew_key = lambda: b""
+W.fsadmin.dec_ivct = lambda k, e: json.dumps({"days": _wd})
+W.fsadmin.new_broadcast = lambda k, b, doc_id=None: _wmade.append((doc_id, b)) or (None if len(_wmade) > 1 else "ok")
+W.main(); W.main()
+check("Drehschluss-Push: nur der fällige, pro Tag und Unit einmal", [x[0] for x in _wmade] == ["wrap-20260105-1", "wrap-20260105-1"] and _wmade[0][1]["kind"] == "wrap", [x[0] for x in _wmade])
+W.fsadmin.sa, W.fsadmin.query_since_ms, W.fsadmin.crew_key, W.fsadmin.new_broadcast, W.fsadmin.dec_ivct = _wsave
+W.cd_touched = _wcd
+
 # ====================================================================== Cast quittieren (Regeln, erfundene Daten)
 common.GROUP = 'Cast quittieren'
 try:
