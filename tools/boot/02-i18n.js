@@ -1055,6 +1055,7 @@ Object.assign(I18N,{
  "Nach dem Speichern per WhatsApp teilen (die angehakten Prognosen)":{fr:"Après l'enregistrement, partager par WhatsApp (les prévisions cochées)",it:"Dopo il salvataggio condividere via WhatsApp (le previsioni spuntate)",en:"Share via WhatsApp after saving (the ticked forecasts)",hi:"सहेजने के बाद WhatsApp से साझा करें (चुने गए अनुमान)"},
  "Prognosen gelöscht.":{fr:"Prévisions supprimées.",it:"Previsioni eliminate.",en:"Forecasts deleted.",hi:"अनुमान हटाए गए।"},
  "Prognose gelöscht.":{fr:"Prévision supprimée.",it:"Previsione eliminata.",en:"Forecast deleted.",hi:"अनुमान हटाया गया।"},
+ "Änderungen dieser Unit verwerfen?":{fr:"Abandonner les modifications de cette unité ?",it:"Annullare le modifiche di questa unità?",en:"Discard the changes of this unit?",hi:"इस यूनिट के बदलाव छोड़ दें?"},
  "Bei Änderungen benachrichtigen":{fr:"Me prévenir en cas de changement",it:"Avvisami in caso di modifiche",en:"Notify me about changes",hi:"बदलाव होने पर सूचित करें"},
  "Änderungen am Drehplan":{fr:"Changements du plan de tournage",it:"Modifiche al piano di lavorazione",en:"Changes to the shooting schedule",hi:"Schedule में बदलाव"},
  "Neue und geänderte Callsheets":{fr:"Callsheets nouvelles ou modifiées",it:"Callsheet nuovi o modificati",en:"New and updated callsheets",hi:"नई और बदली हुई Callsheets"},

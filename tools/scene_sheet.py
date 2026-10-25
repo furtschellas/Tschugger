@@ -60,11 +60,50 @@ def label(k):
     k = base(k); m = re.match(r"^setup(\d*)$", k)
     return "Lunch" if k == "lunch" else "Wrap" if k == "wrap" else ("Setup" + (" " + m.group(1) if m.group(1) else "")) if m else "Szene " + k
 def is_ev(k): k = base(k); return k in ("lunch", "wrap") or bool(re.match(r"^setup\d*$", k))
+def gone(i): d = i.get("_de") or {}; return bool(isinstance(d, dict) and (d.get("x") or d.get("to")))   # changed on set: struck / moved away
 def items(day, u):
     if u == "2": x = (day.get("unit2") or {}).get("items")
     elif u == "3": x = (day.get("unit3") or {}).get("items")
     else: x = day.get("items")
-    return [i for i in (x if isinstance(x, list) else []) if isinstance(i, dict)]
+    return [i for i in (x if isinstance(x, list) else []) if isinstance(i, dict) and not gone(i)]
+
+
+# ---------- changes on set within a shooting day (31-dayedit.js deApply): the same check sum, the same rule ----------
+def _jshash(s):
+    h = 5381
+    for ch in s:
+        o = ord(ch)
+        for u in ([o] if o < 0x10000 else [0xD800 + ((o - 0x10000) >> 10), 0xDC00 + ((o - 0x10000) & 0x3FF)]): h = ((h << 5) + h + u) & 0xFFFFFFFF
+    n, out = h, ""
+    while True:
+        n, r = divmod(n, 36); out = "0123456789abcdefghijklmnopqrstuvwxyz"[r] + out
+        if not n: return out
+def de_sig(its): return _jshash("|".join(("s" + str(x["sc"]) if x.get("sc") else "e" + str(x.get("n") or "")) + "@" + str(x.get("t") or "") for x in its if isinstance(x, dict)))
+def de_apply(data, edits):
+    """the days with the changes on set (per unit, only while the Drehplan of that unit is still the same)"""
+    out = []
+    for d in data.get("days") or []:
+        e = isinstance(d, dict) and d.get("kind") == "shoot" and edits.get(d.get("date"))
+        if not e: out.append(d); continue
+        d = dict(d)
+        for u in ("1", "2", "3"):
+            ent = {"sig": e.get("sig"), "items": e.get("items")} if u == "1" else (e.get("u" + u) or {})
+            if not isinstance(ent.get("items"), list): continue
+            raw = d.get("items") if u == "1" else (d.get("unit" + u) or {}).get("items")
+            if ent.get("sig") != de_sig(raw if isinstance(raw, list) else []): continue
+            if u == "1": d["items"] = ent["items"]
+            else: d["unit" + u] = dict(d.get("unit" + u) or {}, items=ent["items"])
+        out.append(d)
+    return dict(data, days=out)
+def de_read(key):
+    """dayedit/{JJJJMMTT} → {date: change} (content encrypted with the crew key), and a signature of their versions"""
+    m, sig = {}, []
+    for i, f, ut in fsadmin.list_docs("dayedit"):
+        if not re.match(r"^\d{8}$", i): continue
+        sig.append(i + "@" + str(ut))
+        try: m[i[:4] + "-" + i[4:6] + "-" + i[6:]] = fsadmin.dec_json(key, f.get("c") or "")
+        except Exception: pass
+    return m, ",".join(sorted(sig))
 def _tz(z): return TZ if z == fsadmin.TZ0 else ZoneInfo(z)   # Swiss time: the module's TZ (the tests set it to the browser's)
 def clock(msv): return datetime.datetime.fromtimestamp(msv / 1000, _tz(fsadmin.tz_at(msv))).strftime("%H:%M") if msv else ""   # in the time zone of the shooting block
 def num(v):
@@ -326,14 +365,16 @@ def main():
     try: asig = ack_signature()
     except Exception as e:   # the aggregation is only a saving: without it the whole collection is read
         note("Signatur nicht lesbar (" + type(e).__name__ + " " + str(getattr(getattr(e, "response", None), "status_code", "")) + ") – lese alle Quittierungen"); asig = str(time.time() // 1800)
-    sig = hashlib.sha256(("v6|" + asig + "|" + stamp + "|" + sid + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
+    key = fsadmin.crew_key()
+    try: edits, esig = de_read(key)
+    except Exception as e: edits, esig = {}, "err"; note("Änderungen vor Ort nicht lesbar (" + type(e).__name__ + ")")
+    sig = hashlib.sha256(("v7|" + asig + "|" + stamp + "|" + sid + "|" + esig + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
     try: old = json.load(open(STATE))
     except Exception: old = {}
     if old.get("sig") == sig and (old.get("ok") or time.time() - old.get("t", 0) < 1800):   # after an error: again after 30 min (or when something changed)
         log("Szenen-Sheet: unverändert" if old.get("ok") else "Szenen-Sheet: letzter Fehler " + str(old.get("err"))); json.dump(old, open(STATE, "w")); return
     STAGE[0] = "daten"
-    key = fsadmin.crew_key()
-    data = json.loads(fsadmin.dec_ivct(key, json.load(open(os.path.join(ROOT, "data.enc.json")))))
+    data = de_apply(json.loads(fsadmin.dec_ivct(key, json.load(open(os.path.join(ROOT, "data.enc.json"))))), edits)
     acks = [dict(f, id=i) for i, f, _ in fsadmin.list_docs("sceneack")]
     STAGE[0] = "aufbau"
     out = build(acks, data)

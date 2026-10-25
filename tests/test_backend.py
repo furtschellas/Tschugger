@@ -570,6 +570,14 @@ _sr = LP.ride_id(_D, _cs["transport"][1])
 check("Verspätung: Fahrt zum Set abgeschlossen = On set", _lt({_sr: {"s": 2}}, "09:00") == 0)
 check("Verspätung: Nachricht mit Nummer, Rolle, Schritt und Minuten", LP.message(dict(_R1, role="BEN"), "w", 12)["de"] == {"title": "Verspätung 1 BEN", "body": "Kostüm +12′"}, LP.message(dict(_R1, role="BEN"), "w", 12)["de"])
 
+import scene_sheet as _SS2  # noqa: E402
+_dd = {"days": [{"date": "2031-03-02", "kind": "shoot", "items": [{"t": "08:00", "sc": "21"}, {"t": "09:00", "sc": "22"}], "unit2": {"items": [{"t": "10:00", "sc": "90"}]}}]}
+_ed = {"2031-03-02": {"sig": _SS2.de_sig(_dd["days"][0]["items"]), "items": [{"t": "08:00", "sc": "22", "_de": {"nt": 1}}, {"t": "09:00", "sc": "21", "_de": {"x": 1}}],
+       "u2": {"sig": "falsch", "items": []}}}
+_da = _SS2.de_apply(_dd, _ed)["days"][0]
+check("Szenen-Sheet: Änderung vor Ort übernommen, gestrichene Szene weg", [i["sc"] for i in _SS2.items(_da, "1")] == ["22"], _SS2.items(_da, "1"))
+check("Szenen-Sheet: Änderung bei neuem Drehplan (andere Prüfsumme) nicht übernommen", [i["sc"] for i in _SS2.items(_da, "2")] == ["90"])
+
 # ====================================================================== Cast quittieren (Regeln, erfundene Daten)
 common.GROUP = 'Cast quittieren'
 try:
