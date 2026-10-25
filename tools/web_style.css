@@ -1081,3 +1081,9 @@ html body #view .mci .cma .cmam{color:var(--accent);font-weight:600}
 
 /* App-Verwaltung → Quittieren: automatic quittances, one row per step (switch, Zugabe) */
 .aqg{display:grid;gap:4px;margin:4px 0 10px}.aqr{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}.aqr .ck{flex:1 1 140px}.aqm{display:inline-flex;align-items:center;gap:6px;font-size:.92em}.aqm input{width:4.5em}
+/* «Jetzt» (Today and the callsheet of today) on phones: compact – the label in the same line, at most 2 lines */
+@media (max-width:600px){
+  html body #view .tcard.tnow,html body #view .today .tcard.tnow{display:flex;align-items:baseline;gap:10px;padding:8px 12px;margin:0 0 10px;border-radius:12px}
+  html body #view .tcard.tnow .tch,html body #view .today .tcard.tnow .tch{flex:none;margin:0;min-height:0;font-size:11px}
+  html body #view .tcard.tnow .tnowb{flex:1;min-width:0;line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+}
