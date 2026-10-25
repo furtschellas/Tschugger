@@ -213,7 +213,8 @@ function ncActive(d){const now=Date.now(),st=k=>typeof scState==="function"?scSt
     if(it.k==="x")return true;if(it.k==="wrap")return st("wrap")!==2;if(it.k==="lunch")return st("lunch")===0;
     if(it.k==="start"){const rows=arr((((arr(S.dispos).find(y=>y&&y.date===d)||{}).cs||{}).order||{}).rows);return !rows.some(r=>r&&r.sc&&st(String(r.sc))>0)}
     return st(it.k)===0})}
-const ncLine=d=>ncActive(d).map(it=>'<span class="tnfc"><b>'+esc(ncLabel(it))+'</b> ~'+esc(it.t)+(it.n&&it.k!=="x"?' <small>'+esc(it.n)+'</small>':'')+'</span>').join("");
+/* the forecasts in one compact line above the cast: «Prognose Lunch 13:15 · Drehschluss 19:30» */
+const ncLine=d=>{const l=ncActive(d);return l.length?'<div class="tnowfc"><span class="tnk">'+esc(L("Prognose"))+'</span> '+l.map(it=>'<span class="tnfc">'+esc(ncLabel(it))+' <b>'+esc(it.t)+'</b>'+(it.n&&it.k!=="x"?' <small>'+esc(it.n)+'</small>':'')+'</span>').join('<i class="tnsep">·</i>')+'</div>':""};
 /* the text for WhatsApp: «Prognose 25.10.: Lunch ~13:15 · Drehschluss ~19:30» */
 const ncText=d=>{const l=ncActive(d);return l.length?L("Prognose")+" "+d.split("-").reverse().slice(0,2).join(".")+".: "+l.map(it=>ncLabel(it)+" ~"+it.t+(it.n&&it.k!=="x"?" ("+it.n+")":"")).join(" · "):""};
 window.ncText=ncText;
@@ -257,7 +258,7 @@ export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return 
     const fc=ncLine(t),ed=ncCan()?'<button type="button" class="tnced" data-ncedit '+'aria-label="'+esc(L("Prognose erfassen"))+'" title="'+esc(L("Prognose erfassen"))+'">'+NCICO+'</button>':'';
     /* no scene now (before the setup, after the wrap): only the forecasts – with the right to enter them also the card with its icon on a shooting day */
     if(!ns||ns.ev==="wrap"){const sd=arr(S.days).some(x=>x&&x.date===t&&x.kind==="shoot");if(!fc&&!(ed&&sd))return "";
-      return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm"><div class="tnowcm">'+(fc||'<span class="tnk">'+esc(L("Prognose erfassen"))+'</span>')+'</div></div>'+ed+'</div>'}const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
+      return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+(fc||'<div class="tnowfc"><span class="tnk">'+esc(L("Prognose erfassen"))+'</span></div>')+'</div>'+ed+'</div>'}const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
     const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
     const nb=csNowBits(ns,c0,t);
     /* scenes in parallel: the further scenes running now, in the same line («+ 23 L3 SEEUFER») */
@@ -273,10 +274,9 @@ export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return 
     let det="";if(!ns.ev){const nos=String(ns.cast||"").split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean),names=(S.meta&&S.meta.cast)||{};
       const ch=nos.map(n=>{const r=rows.find(x=>no(x)===n);let lk=0;try{lk=r&&typeof cqLook==="function"?cqLook(cc,r):0}catch(_){}return tnChip(n,r?role(r):names[n]||"",lk,lk===3&&r&&typeof cqAll==="function"&&cqAll(cc,r),r&&typeof cqLate==="function"?cqLate(cc,r):0)}).join("");
       det=(ns.syn?'<div class="tnsyn">'+esc(ns.syn)+'</div>':'')+(ch?'<div class="tnc">'+ch+'</div>':'')}
-    if(fc)cm=fc+cm;   /* the forecasts first in the second line */
     const open=!!window.TNOWOPEN,more=!!(cm||det);
     return '<div class="tcard tnow'+(cls?" "+cls:"")+(open&&more?" tnowo":"")+'"'+(more?' data-tnow tabindex="0" aria-expanded="'+(open?"true":"false")+'"':'')+'><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm"><div class="tnowb">'+(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+par+'</div>'+
-      (cm?'<div class="tnowcm">'+cm+'</div>':'')+(det?'<div class="tnowx">'+det+'</div>':'')+'</div>'+ed+'</div>'}catch(_){return ""}}
+      fc+(cm?'<div class="tnowcm">'+cm+'</div>':'')+(det?'<div class="tnowx">'+det+'</div>':'')+'</div>'+ed+'</div>'}catch(_){return ""}}
 /* tap (or Enter) on «Jetzt»: open / close – links in it (location) work as before; the choice stays while the page is redrawn */
 function tnowToggle(c){window.TNOWOPEN=!c.classList.contains("tnowo");document.querySelectorAll("[data-tnow]").forEach(x=>{x.classList.toggle("tnowo",window.TNOWOPEN);x.setAttribute("aria-expanded",String(window.TNOWOPEN))})}
 document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest("[data-tnow]");if(!c||e.target.closest("a,button"))return;tnowToggle(c)});
