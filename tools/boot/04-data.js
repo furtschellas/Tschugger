@@ -106,7 +106,9 @@ window.loadScriptData=async function(){
 let LOADP=null;
 export function load(force){
   if(LOADP)return LOADP;
-  LOADP=loadOnce(force).finally(()=>{LOADP=null});
+  /* while loading (also in the background): a turning ring around the round back button at the top left */
+  const nb=()=>document.getElementById("navback");try{const b=nb();if(b)b.classList.add("loading")}catch(_){}
+  LOADP=loadOnce(force).finally(()=>{LOADP=null;try{const b=nb();if(b)b.classList.remove("loading")}catch(_){}});
   return LOADP;
 }
 /* stamp.json (a few bytes): stamp of the data file and the last Dropbox check – the 0.8 MB data file is only loaded when it changed */

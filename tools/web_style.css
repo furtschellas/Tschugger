@@ -1101,10 +1101,10 @@ html body #view .tnow.tnowo .tnowx{display:block}
 html body #view .tnow .tnsyn{font-size:13px;color:var(--muted);margin:0 0 6px}
 /* «Jetzt» (Today and the callsheet of today): compact – the label in the same line; on phones at most 2 lines (scene · Maske/Kostüm with
    numbers only); a tap opens it with the roles written out */
-html body #view .tcard.tnow,html body #view .today .tcard.tnow{display:flex;align-items:baseline;gap:10px;padding:10px 14px;margin:0 0 12px;border-radius:12px}
+html body #view .tcard.tnow,html body #view .today .tcard.tnow{display:flex;align-items:baseline;gap:10px;padding:10px 14px;margin:14px 0 12px;border-radius:12px}
 html body #view .tcard.tnow .tch,html body #view .today .tcard.tnow .tch{flex:none;margin:0;min-height:0;font-size:11px}
 @media (max-width:600px){
-  html body #view .tcard.tnow,html body #view .today .tcard.tnow{padding:8px 12px;margin:0 0 10px}
+  html body #view .tcard.tnow,html body #view .today .tcard.tnow{padding:8px 12px;margin:12px 0 10px}
   html body #view .tcard.tnow .tnowb{line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
   html body #view .tcard.tnow:not(.tnowo):has(.tnowcm) .tnowb{-webkit-line-clamp:1;line-clamp:1}
   html body #view .tcard.tnow:not(.tnowo) .tnowcm{flex-wrap:nowrap;overflow:hidden;margin-top:3px}
@@ -1116,3 +1116,9 @@ html body #view .tcard.tnow .tch,html body #view .today .tcard.tnow .tch{flex:no
 /* day strip (Drehplan, Callsheet …): a clear line with the name of the block between two shooting blocks */
 html body .strip .blkdiv{flex:none;align-self:stretch;display:flex;align-items:center;justify-content:center;margin:0 3px 0 5px;padding:0 3px 0 4px;border-left:3px solid var(--accent);overflow:hidden}
 html body .strip .blkdiv span{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);white-space:nowrap;line-height:1;max-height:100%;overflow:hidden;text-overflow:ellipsis}
+/* loading in the background: a turning pink ring around the round back button */
+html body .navback{position:relative}
+html body .navback.loading::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent);animation:nbspin .9s linear infinite;pointer-events:none}
+@keyframes nbspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){html body .navback.loading::after{animation-duration:2.5s}}
+html body .navback.loading[disabled]{opacity:1}html body .navback.loading[disabled] svg{opacity:.35}

@@ -64,10 +64,15 @@ window.scAckBtn=(date,sc,u)=>{if(!date||!sc||window.SCACKON===false)return"";   
   const ico=st===1&&scBase(sc)==="lunch"?SC_ICO.lunch:st===2&&scBase(sc)==="wrap"?SC_ICO.wrap:(SC_ICO[st]||"");
   return '<span class="scackw">'+lab0+(can?'<button type="button" class="scack sk'+st+'" data-scack="'+esc(date)+'|'+esc(String(sc))+'|'+esc(u)+'" aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+ico+'</button>'
     :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+ico+'</span>')+'</span>'};
+/* the quittances of the last two days are kept on the device: «Jetzt» shows at once on opening (from this copy), the live state
+   follows within seconds (no names in them, only dates, scene numbers, states and times) */
+const SCKEEP="scack:v1";
+try{const c=JSON.parse(localStorage.getItem(SCKEEP)||"null");if(c&&c.m&&Date.now()-(+c.at||0)<12*3600e3&&!Object.keys(window.SCACK).length){window.SCACK=c.m;window.SCACKCACHE=true}}catch(_){}
+function scKeep(m){try{const lim=isoAdd(todayISO(),-1);const k={};for(const [id,x] of Object.entries(m))if(x&&x.d>=lim)k[id]=x;localStorage.setItem(SCKEEP,JSON.stringify({at:Date.now(),m:k}))}catch(_){}}
 /* live for everybody: all quittances (also past shooting days keep their ticks in the Drehplan and callsheet) */
 async function scAckSub(){if(SCSUB||typeof ME==="undefined"||!ME)return;try{const {F,db}=await fb();
-  SCSUB=F.onSnapshot(F.collection(db,"sceneack"),q=>{const first=!window.SCACKLOADED;window.SCACKLOADED=true;if(first)setTimeout(scRender,0);const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;scRender();setTimeout(scLunchAuto,500)}},()=>{SCSUB=null;window.SCACKLOADED=true})}catch(_){SCSUB=null;window.SCACKLOADED=true}}
-setTimeout(scAckSub,3000);setInterval(()=>{if(!SCSUB)scAckSub()},60e3);
+  SCSUB=F.onSnapshot(F.collection(db,"sceneack"),q=>{const first=!window.SCACKLOADED;window.SCACKLOADED=true;if(first)setTimeout(scRender,0);const m={};(q.docs||[]).forEach(d=>{m[d.id]=d.data()});scKeep(m);if(JSON.stringify(m)!==JSON.stringify(window.SCACK)){window.SCACK=m;scRender();setTimeout(scLunchAuto,500)}},()=>{SCSUB=null;window.SCACKLOADED=true})}catch(_){SCSUB=null;window.SCACKLOADED=true}}
+let SCTRY=0;setTimeout(scAckSub,300);setInterval(()=>{if(SCSUB)return;if(window.SCACKLOADED&&Date.now()-SCTRY<60e3)return;SCTRY=Date.now();scAckSub()},5e3);   /* as soon as signed in (every few seconds until the first answer), after a lost connection every minute */
 /* lunch ends by itself: its begin (manual quittance) + the planned lunch of that unit – each unit has its own lunch row in the Drehplan
    (the duration of the row, else until the next row; 60 min when the Drehplan has none) */
 function scLunchMin(date,u){try{const day=(S.days||[]).find(d=>d.date===date&&d.kind==="shoot");if(!day)return 60;
@@ -139,7 +144,10 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
     if(run&&scBase(run)==="lunch"){const lx=window.SCACK[scAckId(date,run)]||{},lb=+lx.b||+lx.at||Date.now();scWrite(date,run,u,{s:2,b:lb,e:Math.max(lb,Math.min(scLunchEnd(lx),Date.now()))}).catch(()=>{})}
     /* a setup still running (also one started automatically): it is finished now */
     else if(run&&/^setup\d*$/.test(scBase(run))){const sx=window.SCACK[scAckId(date,run)]||{},sb=+sx.b||+sx.at||Date.now();scWrite(date,run,u,{s:2,b:sb,e:Math.max(sb,Date.now())}).catch(()=>{})}
-    else if(run){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}}
+    else if(run){showMsg(L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run)),4000);return}
+    /* the first scene of the day starts and the setup before it was never quittiert: the setup is done now (from its planned time) */
+    else if(!/^(lunch|wrap|setup\d*)$/.test(scBase(sc)))try{const day=arr(S.days).find(d=>d&&d.date===date&&d.kind==="shoot");
+      for(const r of day?scaRows(day,String(u||"1")):[])if(r.kind==="a"&&scState(date,r.k)===0){const now=Date.now();scWrite(date,r.k,u,{s:2,b:Math.min(r.t,now),e:now}).catch(()=>{})}}catch(_){}}
   /* WhatsApp per kind of quittance (Mein Konto → App): «direkt» opens WhatsApp right in this tap (a phone allows it only here, not after saving) */
   const wv=st===0&&scBase(sc)==="wrap"?{s:2,b:Date.now(),e:Date.now()}:st===0?{s:1,b:Date.now()}:{s:2,b:x.b||x.at||Date.now(),e:Date.now()};
   const wk=scWaKind(date,sc,u,wv),wm=scWaMode(wk);if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},wv):wv),wk);

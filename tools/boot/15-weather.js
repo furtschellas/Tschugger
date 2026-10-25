@@ -29,6 +29,9 @@ function wxPlace(d){
   return {ll,town:town.trim(),name:(it.set||"").replace(/^VALAIS\s*–\s*/i,"")||it.loc,loc:it.loc,addr:ad,sc:it.sc,t:it.t||""};
 }
 try{const lim=localISO(Date.now()-2*864e5);for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.startsWith("wx:")&&k.slice(3,13)<lim)localStorage.removeItem(k)}}catch(_){}
+/* one day out of a forecast of several days (same form as a forecast of that day alone) */
+function wxSplit(all,date){const h=all.hourly||{},dl=all.daily||{},di=arr(dl.time).indexOf(date);if(di<0)return null;const hi=[];arr(h.time).forEach((t,i)=>{if(String(t).startsWith(date))hi.push(i)});
+  const pick=(o,ix)=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,Array.isArray(v)?ix.map(i=>v[i]):v]));return Object.assign({},all,{hourly:pick(h,hi),daily:pick(dl,[di])})}
 async function wxLoad(d){
   const p=wxPlace(d);if(!p)return null;const key=d.date+"|"+p.town;
   {const t0=localISO(Date.now()-864e5),t1=localISO(Date.now()+15*864e5);if(d.date<t0||d.date>t1)return null}
@@ -36,14 +39,19 @@ async function wxLoad(d){
   let cached=null;try{cached=JSON.parse(localStorage.getItem("wx:"+key)||"null")}catch(_){}
   WX[key]=Object.assign({},cached||{},{busy:true,at:Date.now(),p}); /* «at» = this try: after an error the next try waits an hour (no endless reload without reception) */
   try{
-    let ll=p.ll;
-    if(!ll){const g=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=de&country=CH&name="+encodeURIComponent(p.town)).then(r=>r.json());const x=g&&g.results&&g.results[0];if(x)ll=[x.latitude,x.longitude]}
+    /* the place of a town is kept on the device (one request less every time) */
+    let ll=p.ll;if(!ll)try{const c=JSON.parse(localStorage.getItem("wxll:"+p.town)||"null");if(Array.isArray(c)&&c.length===2)ll=c}catch(_){}
+    if(!ll){const g=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=de&country=CH&name="+encodeURIComponent(p.town)).then(r=>r.json());const x=g&&g.results&&g.results[0];if(x){ll=[x.latitude,x.longitude];try{localStorage.setItem("wxll:"+p.town,JSON.stringify(ll))}catch(_){}}}
     if(!ll)throw new Error("no place");
-    const u="https://api.open-meteo.com/v1/forecast?latitude="+ll[0]+"&longitude="+ll[1]+"&timezone=Europe%2FZurich&start_date="+d.date+"&end_date="+d.date+
+    /* one request for this day and the next two weeks at this place: every day there is then ready at once (kept per day) */
+    const t0=d.date<localISO(Date.now())?d.date:localISO(Date.now()),t1=localISO(Date.now()+15*864e5);
+    const u="https://api.open-meteo.com/v1/forecast?latitude="+ll[0]+"&longitude="+ll[1]+"&timezone=Europe%2FZurich&start_date="+t0+"&end_date="+(t1<d.date?d.date:t1)+
       "&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,cloud_cover"+
       "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunrise,sunset,uv_index_max";
-    const j=await fetch(u).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()});
-    WX[key]={at:Date.now(),p,ll,j,busy:false};try{localStorage.setItem("wx:"+key,JSON.stringify({at:Date.now(),ll,j}))}catch(_){}
+    const all=await fetch(u).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()});
+    const now=Date.now();for(const dt of (all.daily&&all.daily.time)||[]){const j=wxSplit(all,dt);if(!j)continue;const k=dt+"|"+p.town;
+      if(k!==key&&WX[k]&&WX[k].busy)continue;WX[k]=Object.assign({},WX[k]||{},{at:now,p:k===key?p:(WX[k]&&WX[k].p)||p,ll,j,busy:false});try{localStorage.setItem("wx:"+k,JSON.stringify({at:now,ll,j}))}catch(_){}}
+    if(!WX[key].j)throw new Error("no data");
   }catch(err){WX[key]=Object.assign({},WX[key],{busy:false,err:String(err&&err.message||err)})}
   if(S.tab==="today"||S.tab==="plan")render();if(document.getElementById("wxpop")&&window.WXPOPD===d.date)wxPopup(d.date);
   return WX[key];
@@ -77,3 +85,6 @@ function wxPopup(date){window.WXPOPD=date;
     '<p class="wxplace">'+ICS('<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',15,"lpin")+' <b>'+esc(w.p.town)+'</b> · '+esc(w.p.name)+(w.p.sc?' · '+esc(L("Szene"))+' '+esc(w.p.sc)+(w.p.t?' '+esc(w.p.t):''):'')+'</p>'+body+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-wx]");if(b)wxPopup(b.dataset.wx)});
+/* the weather of today and the next days is loaded right after the start (not only when Today is drawn): it is there when needed */
+function wxPrefetch(){try{const t0=localISO(Date.now()),t1=localISO(Date.now()+3*864e5);for(const d of arr(S.days))if(d&&d.date>=t0&&d.date<=t1&&d.kind==="shoot")wxGet(d)}catch(_){}}
+setTimeout(wxPrefetch,800);setInterval(wxPrefetch,10*60e3);

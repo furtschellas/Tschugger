@@ -56,8 +56,12 @@ async function flowPut(id,date,s,n){if(!id)return;const old=window.RIDEACK[id];
    shows own writes itself; keeping them would hide a newer tap of another device: found by tests/flow_multi.mjs). */
 export let RIDEAT=0,RIDEBUSY=false,ACKSUB=null,ACKFROM="";
 const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
+/* the ticks of the last two days are kept on the device: «Jetzt» (Maske / Kostüm, delays) shows at once on opening, live follows */
+const ACKKEEP="rideack:v1";
+try{const c=JSON.parse(localStorage.getItem(ACKKEEP)||"null");if(c&&c.m&&Date.now()-(+c.at||0)<12*3600e3&&!Object.keys(window.RIDEACK).length)window.RIDEACK=c.m}catch(_){}
+function ackKeep(m){try{const lim=isoAdd(todayISO(),-1),k={};for(const [id,x] of Object.entries(m))if(x&&x.d>=lim)k[id]=x;localStorage.setItem(ACKKEEP,JSON.stringify({at:Date.now(),m:k}))}catch(_){}}
 function ackApply(m,t0,live){if(!live)for(const [id,w] of FLOWMINE){if(w.t>=t0-2000){if(w.v)m[id]=w.v;else delete m[id]}else FLOWMINE.delete(id)}
-  const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;window.RIDEACKLOADED=true;if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}
+  const ch=JSON.stringify(m)!==JSON.stringify(window.RIDEACK);window.RIDEACK=m;window.RIDEACKLOADED=true;ackKeep(m);if(ch&&(S.tab==="my"||S.tab==="today"||S.tab==="dispo"))flowRedraw()}
 /* «Ich übernehme» (Kostüm of the cast without a name in the callsheet): who took which Kostüm – live, the name encrypted (cmassign/{tick id}) */
 window.CMASSIGN=window.CMASSIGN||{};let CMASUB=null,CMAFROM="",CMASEQ=0;
 async function cmaLoad(from){if(CMASUB&&CMAFROM===from)return;try{const {F,db}=await fb();if(typeof F.onSnapshot!=="function")return;if(typeof CMASUB==="function")CMASUB();CMAFROM=from;CMASUB="…";
@@ -371,7 +375,7 @@ document.addEventListener("click",e=>flowClick(e,"[data-rideack]",false));
 setInterval(()=>{for(const s of document.querySelectorAll(".cqcd[data-cqat]")){const v=(s.dataset.cqup?Math.max(0,Math.floor((Date.now()-s.dataset.cqat)/60000)):cqLeft(+s.dataset.cqat,+s.dataset.cqmin))+"′";if(s.textContent!==v)s.textContent=v}},20000);
 /* load when «Meine Termine», Today or the callsheet is shown (at most every 2 minutes) */
 document.addEventListener("click",e=>{if(e.target.closest('[data-tab="my"],[data-tab="today"],[data-tab="dispo"],[data-tomy]'))setTimeout(()=>rideAckLoad(false),50)});
-setTimeout(()=>rideAckLoad(true),4000);setInterval(()=>{if(ACKSUB||S.tab==="my"||S.tab==="today"||S.tab==="dispo")rideAckLoad(false)},30e3);   /* live: only checks the start day / a lost subscription */
+setTimeout(()=>rideAckLoad(true),500);setInterval(()=>{if(ACKSUB||S.tab==="my"||S.tab==="today"||S.tab==="dispo")rideAckLoad(false)},30e3);   /* live: only checks the start day / a lost subscription */
 document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))return;e.preventDefault();window.SHOWDONE=!window.SHOWDONE;render()});
 /* the callsheet greys a ride 20 minutes after it was done – and follows «jetzt hier» and «Jetzt» in my day: draw again when one changes */
 {let OLDN=-1;setInterval(()=>{if(S.tab!=="dispo")return;const n=Object.values(window.RIDEACK||{}).filter(x=>x&&x.s!==1&&Date.now()-(+x.at||0)>20*60e3).length;let nk=null;try{const C=typeof CSCUR!=="undefined"&&CSCUR.c;if(C&&window.CSNOWK!=null){const l=csNowLoc(C,CSCUR.date,csLocs(C));nk=l?l.no+'|'+l.name:''}}catch(_){}
