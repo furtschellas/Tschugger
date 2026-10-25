@@ -1107,3 +1107,6 @@ html body #view .tcard.tnow .tch,html body #view .today .tcard.tnow .tch{flex:no
   html body #view .tcard.tnow:not(.tnowo) .tnc em{display:none}
   html body #view .tcard.tnow.tnowo .tnowb{-webkit-line-clamp:unset;line-clamp:none;display:block}
 }
+/* day strip (Drehplan, Callsheet …): a clear line with the name of the block between two shooting blocks */
+html body .strip .blkdiv{flex:none;align-self:stretch;display:flex;align-items:center;justify-content:center;margin:0 3px 0 5px;padding:0 3px 0 4px;border-left:3px solid var(--accent);overflow:hidden}
+html body .strip .blkdiv span{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);white-space:nowrap;line-height:1;max-height:100%;overflow:hidden;text-overflow:ellipsis}

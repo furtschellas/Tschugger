@@ -1,4 +1,4 @@
-import {ariaTip,ddmm,dlgBtn,esc,fullName,isoAdd,L,mapsQ,mkDialog,pad2,padD,S,safeUrl,telNum,todayISO,TX,tzFor,WD} from "./10-core.js";
+import {ariaTip,blockList,ddmm,dlgBtn,esc,fullName,isoAdd,L,mapsQ,mkDialog,pad2,padD,S,safeUrl,telNum,todayISO,TX,tzFor,WD} from "./10-core.js";
 import {WDL} from "./12-mycal.js";
 import {addrForItem} from "./13-crew-views.js";
 import {CSI} from "./13a-callsheet.js";
@@ -48,7 +48,10 @@ export function dayNav(PD,isSel,attr,key,extra,pre){
   /* desktop: buttons to scroll the days to the left and right */
   const nav=dir=>'<button type="button" class="stripnav" data-stripnav="'+dir+'" aria-label="'+esc(L(dir<0?"Frühere Tage":"Spätere Tage"))+'" title="'+esc(L(dir<0?"Frühere Tage":"Spätere Tage"))+'"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+(dir<0?'M15 5l-7 7 7 7':'M9 5l7 7-7 7')+'"/></svg></button>';
   let h='<div class="stripwrap">'+ubar+nav(-1)+'<div class="strip in" role="tablist" aria-label="'+esc(L("Tage"))+'">'+(pre||"");
+  /* several shooting blocks: a clear line with the name of the block between two blocks (none before the first one) */
+  const bl=blockList(),bOf=d=>bl.length>1&&typeof window.blockOf==="function"?window.blockOf(d.date):null;let pb=null;
   for(const d of PD){
+    const b=bOf(d);if(b&&pb&&b.id!==pb.id)h+='<div class="blkdiv" role="separator" aria-label="'+esc(L("Drehblock")+" "+(b.name||b.country||b.id))+'"><span>'+esc(b.name||b.country||b.id)+'</span></div>';if(b)pb=b;
     const dt=new Date(d.date+"T12:00:00");
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
     const lbh=d.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':esc(padD(lb));   /* phone: short label */
