@@ -294,6 +294,15 @@ await check("Cast quittieren: mit «Kostüm quittieren» geht", assertSucceeds(s
 await check("Cast quittieren: zurücksetzen ohne Recht nicht", assertFails(deleteDoc(doc(as("crew"), "rideack/m1old"))));
 await check("Szenen-Marker der Automatik ohne «Szenen quittieren» nicht", assertFails(setDoc(doc(as("viewer"), "rideack/zs1abcd"), { d: "2026-10-21", at: NOW, s: 1 })));
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view"] }) });
+// ---------- changes on set within a shooting day (dayedit) ----------
+await check("Drehtag ändern: ohne Recht nicht", assertFails(setDoc(doc(as("crew"), "dayedit/20261025"), { c: "x", at: serverTimestamp() })));
+await check("Drehtag ändern: Crew kann lesen", assertSucceeds(getDoc(doc(as("crew"), "dayedit/20261025"))));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view", "day.edit"] }) });
+await check("Drehtag ändern: mit Recht speichern geht", assertSucceeds(setDoc(doc(as("viewer"), "dayedit/20261025"), { c: "x", at: serverTimestamp() })));
+await check("Drehtag ändern: nur Inhalt und Zeit", assertFails(setDoc(doc(as("viewer"), "dayedit/20261025"), { c: "x", at: serverTimestamp(), by: "y" })));
+await check("Drehtag ändern: ID nur das Datum", assertFails(setDoc(doc(as("viewer"), "dayedit/heute"), { c: "x", at: serverTimestamp() })));
+await check("Drehtag ändern: mit Recht aufheben geht", assertSucceeds(deleteDoc(doc(as("viewer"), "dayedit/20261025"))));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/viewer"), { name: "Viewer", perms: ["roles.view"] }) });
 // ---------- forecasts in «Jetzt» (nowcast) ----------
 await check("Prognose: ohne Recht nicht", assertFails(setDoc(doc(as("crew"), "nowcast/20261025"), { c: "x", at: serverTimestamp() })));
 await check("Prognose: Crew kann lesen", assertSucceeds(getDoc(doc(as("crew"), "nowcast/20261025"))));

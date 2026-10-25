@@ -332,6 +332,14 @@ service cloud.firestore {
       allow delete: if can('now.forecast');
     }
 
+    // Drehtag vor Ort ändern (umordnen, streichen, verschieben, Szenen dazu): ein Dokument pro Drehtag dayedit/JJJJMMTT, Inhalt c verschlüsselt;
+    // lesen die Crew, ändern nur mit «Drehtag vor Ort ändern» (day.edit)
+    match /dayedit/{id} {
+      allow read: if crew();
+      allow create, update: if can('day.edit') && id.matches('[0-9]{8}') && only(['c', 'at']) && cOk(80000);
+      allow delete: if can('day.edit');
+    }
+
     // ---------- Coverday (ganze Drehtage tauschen/verschieben/nachrücken) ----------
     // ein Dokument coverday/state, Inhalt c verschlüsselt; lesen die Crew, ändern nur mit «Coverday verwalten»
     match /coverday/{doc} {

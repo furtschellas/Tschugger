@@ -1156,3 +1156,20 @@ html body #view .tnow .tnfc b{font-weight:700}
 .ncbox .ncrow label input{width:100%;min-width:0}
 .ncbox .ncrow [data-ncdel]{position:absolute;top:10px;right:0;width:28px;height:28px;padding:0;border:1px solid var(--rule);border-radius:50%;background:transparent;color:var(--muted);font-size:17px;line-height:1}
 .ncbar{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;display:flex;gap:10px;align-items:center;background:var(--sheet);border:1.5px solid var(--accent);border-radius:14px;padding:8px 12px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+/* Drehtag vor Ort ändern: struck / moved rows, marks, note, dialog */
+html body #view li.row.degone .sc{opacity:.5}html body #view li.row.degone .l1,html body #view li.row.degone .t{text-decoration:line-through}
+html body #view .demk{display:inline-block;margin:0 0 4px;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent);text-decoration:none}
+html body #view .denote{margin:6px 0 0;font-size:12.5px;color:var(--accent);font-weight:600}html body #view .denote.destale{color:var(--warn,#c60)}
+html body #view .debtn.on{border-color:var(--accent);color:var(--accent)}
+.debox .delist{display:flex;flex-direction:column;gap:2px;margin:8px 0}
+.debox .derow{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--rule)}
+.debox .derow.degone .dewhat b{text-decoration:line-through;opacity:.6}
+.debox .dert input{width:6.5em}.debox .dewhat{min-width:0}.debox .dewhat small{color:var(--muted)}
+.debox .debtns{grid-column:1/3;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.debox .debtns .lnk{border:1px solid var(--rule);border-radius:99px;padding:3px 10px;background:transparent;color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.debox .debtns .lnk[disabled]{opacity:.35}.debox .debtns select{max-width:12em}
+.debox .deadd{display:flex;flex-direction:column;gap:8px;margin:10px 0}.debox .denew{display:flex;gap:6px;flex-wrap:wrap}.debox .denew input{flex:1 1 7em;min-width:0}
+.debox .demk{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+html body .debtn{flex:none;width:var(--circ);height:var(--circ);min-width:var(--circ);padding:0;margin-left:6px;border-radius:50%;border:1px solid var(--rule);background:var(--sheet);color:var(--muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;vertical-align:middle}
+html body .debtn svg{width:72%;height:72%}
+html[data-theme="light"] body .debtn{background:var(--accent);color:#fff;border-color:var(--accent)}

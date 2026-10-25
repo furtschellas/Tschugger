@@ -32,6 +32,7 @@ const cdShootDates=(days,u,from)=>days.filter(d=>d.date>=from&&(u==="2"?arr((d.u
 /* the next date for «Nachrücken»: after the last shooting day, not on a weekend */
 function cdNextSlot(after){const x=new Date(after+"T12:00:00");do{x.setDate(x.getDate()+1)}while(x.getDay()===0||x.getDay()===6);return x.toISOString().slice(0,10)}
 /* the Drehplan with the changes laid over it (the original stays in S.days0) */
+window.cdDaysT=d=>cdTransform(d);
 function cdTransform(days0){const ops=cdActive();if(!ops.length)return cdChrono(days0);
   const days=days0.map(d=>Object.assign({},d,d.kind==="shoot"?{cdSrc:d.date}:{})),get=dt=>{let d=days.find(x=>x.date===dt);if(!d){d={date:dt,id:dt,kind:"off",label:"Day Off"};days.push(d)}return d};
   const note=(d,t)=>{d.notes=[t].concat(arr(d.notes));for(const l of ["en","fr","it"])if(d["notes_"+l])d["notes_"+l]=[t].concat(arr(d["notes_"+l]))};
@@ -68,6 +69,8 @@ window.cdApplyAll=()=>{if(!S.days0)return;S.days=cdTransform(S.days0);
      shows the change stays that way; the number in the title follows the shooting day; no matching day: «Callsheet folgt» */
   if(S.dispos0)S.dispos=cdDispos(S.dispos0,S.days);
   try{if(myBlocks()){S.dispos=S.dispos.filter(c=>!c||!c.date||dayBlockOK(c.date))}}catch(_){}
+  /* changes on set within a shooting day (31-dayedit.js): after the Coverday, on the days and their callsheets */
+  try{if(typeof window.deApply==="function"){S.days=window.deApply(S.days);if(S.dispos)S.dispos=window.deDispos(S.dispos)}}catch(err){console.warn("dayedit",err)}
   try{MEMO.clear()}catch(_){}};
 const cdKey=x=>norm(String(x||"")).replace(/pt.*$/,"");
 const cdDayKeys=d=>new Set([].concat(arr(d&&d.items),arr(d&&d.unit2&&d.unit2.items),arr(d&&d.unit3&&d.unit3.items)).filter(i=>i&&i.sc).map(i=>cdKey(i.sc)));

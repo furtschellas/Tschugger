@@ -233,8 +233,9 @@ export function renderPlan(){
   const d=S.days.find(x=>x.id===S.day)||PD[0];if(!d)return h+'<div class="empty">'+L('Noch keine Drehtage.')+'</div>';
   /* round button: the original schedule PDF, opened at the page of this shooting day */
   const spBtn=planPdfBtn(d);
-  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+blockTag(d.date)+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
+  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR)+(window.deBtn?window.deBtn(d):''):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+blockTag(d.date)+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
   if(d.kind==="shoot")h+=planFactsHTML(d,spBtn);
+  if(d.kind==="shoot"&&window.deNote)h+=window.deNote(d);   /* changed on set (31-dayedit.js) */
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
   h+='</div>';
   try{if(window.ownDayHTML)h+=window.ownDayHTML(d.date)}catch(_){} /* own and Google Calendar appointments of this day */
