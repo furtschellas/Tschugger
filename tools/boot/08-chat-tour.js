@@ -211,7 +211,8 @@ const NEWS_TXT={de:{t:"Neu in der Crew-App",f:"Die Tour zeigt dir alles, was du 
  it:{t:"Novità nell’app",f:"Il tour ti mostra tutto ciò che puoi usare con i tuoi diritti.",tour:"Guarda il tour",ok:"Si parte"},
  en:{t:"New in the crew app",f:"The tour shows you everything you can use with your rights.",tour:"Take the tour",ok:"Let’s go"},
  hi:{t:"क्रू ऐप में नया",f:"टूर आपको वह सब दिखाता है जो आप अपने अधिकारों के साथ इस्तेमाल कर सकते हैं।",tour:"टूर देखें",ok:"चलिए शुरू करें"}};
-function newsDue(){let v="";try{v=localStorage.getItem("nv")||""}catch(_){}return v!==NEWS_VER&&!document.getElementById("news")}
+function newsDue(){if(document.documentElement.classList.contains("sbxf"))return false;   /* a side box (32-sideboxes) shows its page only */
+  let v="";try{v=localStorage.getItem("nv")||""}catch(_){}return v!==NEWS_VER&&!document.getElementById("news")}
 function showNews(){
   const T=Object.assign({},NEWS_TXT[LANG]||NEWS_TXT.en,{p:NEWS_ITEMS.filter(([ok])=>{try{return ok()}catch(_){return false}}).map(([,tx,f])=>({t:tx[LANG]||tx.en,w:f==="warn"}))}),d=mkDialog("news");   /* «warn» items in their own colour (the flag got lost before) */
   d.innerHTML='<div class="a2box wlbox"><div class="nwlogo" aria-hidden="true"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></div><h3>'+esc(T.t)+'</h3>'+T.p.map(x=>'<p'+(x.w?' class="nwwarn"':'')+'>'+x.t+'</p>').join("")+'<p class="ghint">'+T.f+'</p><div class="a2b"><button type="button" data-nwtour>'+esc(T.tour)+'</button><button type="button" class="pri" data-nwok>'+esc(T.ok)+'</button></div></div>';

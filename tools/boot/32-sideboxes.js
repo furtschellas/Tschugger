@@ -6,7 +6,7 @@
 import {L,S,esc,todayISO} from "../base/10-core.js";
 import {csHm,csMe,csMyRides,csRideReal,csTile} from "../base/13a-callsheet.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
-import {vok} from "../base/14-render.js";
+import {VIEWS,tabsOn,vok} from "../base/14-render.js";
 import {onRendered,render} from "../base/15-script-tab.js";
 import {arr} from "../base/20-data-start.js";
 import {ME,can,isAdmin} from "./03-core-firebase.js";
@@ -16,9 +16,16 @@ import {wxTile} from "./15-weather.js";
 import {nowCardHTML,todayDay} from "./16-today-view.js";
 
 /* [key, title, frame page (whole app in a frame) or "", may this person see it] */
+/* frame pages: «t:tab» a page of the app, «a:sub» a part of the App-Verwaltung, «…:selector» only that part of the page; always the phone view (390 px, scaled) */
 const SBT=[["now","Jetzt"],["mine","Mein Tag"],["tiles","Kacheln des Tages"],["order","Drehfolge heute"],["rides","Meine Fahrten"],["next","Nächster Drehtag"],["wx","Wetter"],
-  ["phone","Smartphone-Vorschau","phone"],["users","User","users"],["roles","Access / Rollen","roles"],["set","App-Einstellungen","set"],["crew","Crewliste","crew"],["script","Drehbuch","script"]];
-const sbCan=k=>{try{if(k==="users")return isAdmin()||can("users.view")||can("users.edit")||can("users.invite");if(k==="roles")return isAdmin()||can("roles.view")||can("roles.edit")||can("roles.assign");if(k==="set")return isAdmin()||can("settings");if(k==="crew")return vok("crew");if(k==="script")return vok("script")&&window.SCRIPTON!==false}catch(_){return false}return true};
+  ["phone","Smartphone-Vorschau","phone"],
+  ["today","Today","t:today"],["plan","Drehplan","t:plan"],["dispo","Callsheet","t:dispo"],["loc","Locations","t:loc"],["crew","Crewliste","t:crew"],["script","Drehbuch","t:script"],["info","Info","t:info"],
+  ["my","Meine Termine","t:my"],["bcast","Nachrichten","t:bcast"],["reports","Reports","t:reports"],["acct","Mein Konto","t:acct"],
+  ["set","App-Einstellungen","a:set"],["users","Alle Benutzer","a:users"],["active","Gerade aktiv","a:users:.uact"],["roles","Rollen","a:roles:.admins:not(.pacc)"],["access","Wer hat welchen Zugriff?","a:roles:.pacc"]];
+const sbCan=k=>{try{const t=SBT.find(x=>x[0]===k),pg=t&&t[2]||"";
+    if(/^a:(users)/.test(pg))return isAdmin()||can("users.view")||can("users.edit")||can("users.invite");if(/^a:roles/.test(pg))return isAdmin()||can("roles.view")||can("roles.edit")||can("roles.assign");if(pg==="a:set")return isAdmin()||can("settings");
+    if(k==="my")return vok("mycal");if(k==="bcast")return can("push.send");if(k==="reports")return typeof VIEWS==="undefined"||!!VIEWS.reports;if(k==="acct")return true;
+    if(pg.startsWith("t:")){const tb=pg.slice(2);return (typeof tabsOn!=="function"||tabsOn().includes(tb))&&vok(tb==="dispo"?"dispo":tb)}}catch(_){return false}return true};
 export const SBWIDE=1400;
 const INFRAME=(()=>{try{return window.self!==window.top}catch(_){return true}})();
 const FRAMEPG=(()=>{try{return new URLSearchParams(location.search).get("sbx")||""}catch(_){return ""}})();
@@ -28,10 +35,11 @@ export function sbxGet(){let v="";try{v=localStorage.getItem("sbx")||""}catch(_)
 function sbxSet(x){try{localStorage.setItem("sbx",x.l.join(".")+"|"+x.r.join("."))}catch(_){}savePrefsSoon()}
 
 /* ---------- inside a frame of a side box: the chosen page only (no head, no navigation) ---------- */
-if(INFRAME&&FRAMEPG){document.documentElement.classList.add("sbxf");
-  /* a page of the App-Verwaltung (User, Access, App) or of the app itself (Crewliste); set again a moment later (the start may open its own page) */
-  if(FRAMEPG!=="phone"){const adm=["users","roles","set"].includes(FRAMEPG);let n=0;const go=()=>{if(!ME){setTimeout(go,500);return}if(adm){ADM.sub=FRAMEPG;S.tab="admin"}else S.tab=FRAMEPG;render();if(++n<3)setTimeout(go,1500)};setTimeout(go,300)}
-  else document.documentElement.classList.remove("sbxf")}
+if(INFRAME&&FRAMEPG&&FRAMEPG!=="phone"){document.documentElement.classList.add("sbxf");
+  /* the page of the topic; set again a moment later (the start may open its own page); with a part only: everything else of the page hidden */
+  const t=SBT.find(x=>x[0]===FRAMEPG),pg=(t&&t[2])||"",[kind,sub,...rest]=pg.split(":"),only=rest.join(":");let n=0;
+  const go=()=>{if(!ME){setTimeout(go,500);return}if(kind==="a"){ADM.sub=sub;S.tab="admin"}else if(kind==="t")S.tab=sub;render();if(++n<3)setTimeout(go,1500)};setTimeout(go,300);
+  if(only)onRendered(()=>{try{const el=document.querySelector("#view "+only);if(!el)return;for(let a=el;a&&a.id!=="view";a=a.parentElement)for(const sib of a.parentElement.children)if(sib!==a)sib.style.display="none"}catch(_){}})}
 
 /* ---------- the topics drawn here ---------- */
 /* the head of a topic: its title and «−» (takes it out of this box) */
@@ -64,18 +72,20 @@ const TOP={
 
 /* ---------- the two boxes ---------- */
 let BOX={};
-function frame(pg){const f=document.createElement("div");f.className="sbframe"+(pg==="phone"?" sbphone":"");
-  const i=document.createElement("iframe");i.src=location.pathname+"?sbx="+encodeURIComponent(pg);i.title=pg;i.loading="lazy";f.appendChild(i);return f}
-function fit(){for(const f of document.querySelectorAll(".sbframe.sbphone")){const w=f.clientWidth||320,s=Math.min(1,w/390);const i=f.querySelector("iframe");if(i){i.style.transform="scale("+s+")";f.style.height=Math.round(844*s)+"px"}}}
+function frame(k,pg){const f=document.createElement("div");f.className="sbframe"+(pg==="phone"?" sbphone":"");
+  const i=document.createElement("iframe");i.src=location.pathname+"?sbx="+encodeURIComponent(k);i.title=k;i.loading="lazy";f.appendChild(i);return f}
+/* always the phone view: every frame 390 px wide, scaled to the box; the phone 844 px high, a page 70 % of the window */
+function fit(){for(const f of document.querySelectorAll(".sbbox .sbframe")){const w=f.clientWidth||320,s=Math.min(1,w/390),i=f.querySelector("iframe");if(!i)continue;
+  const vis=f.classList.contains("sbphone")?Math.round(844*s):Math.round(window.innerHeight*0.7);i.style.transform="scale("+s+")";i.style.height=Math.round(vis/s)+"px";f.style.height=vis+"px"}}
 function draw(){if(INFRAME)return;const wide=window.innerWidth>=SBWIDE&&!!ME;const x=sbxGet();
   for(const side of ["l","r"]){const keys=wide?x[side].filter(sbCan):[];let a=document.getElementById("sb"+side);
     if(!wide){if(a)a.hidden=true;continue}
     if(!a){a=document.createElement("aside");a.id="sb"+side;a.className="sbbox";a.innerHTML='<div class="sbview"><div class="today"></div><div class="sbadd"></div></div>';document.body.appendChild(a)}
-    a.hidden=false;const root=a.querySelector(".today");
+    a.hidden=false;a.classList.toggle("sbempty",!keys.length);const root=a.querySelector(".today");
     /* one part per topic (kept: a frame is never loaded twice), in the chosen order */
     for(const el of [...root.children])if(!keys.includes(el.dataset.sbt))el.remove();
     keys.forEach((k,i)=>{const t=SBT.find(y=>y[0]===k);let el=root.querySelector(':scope>[data-sbt="'+k+'"]');
-      if(!el){el=document.createElement("div");el.dataset.sbt=k;if(t[2]){el.innerHTML='<section class="sbsec">'+head(k,t[1])+'</section>';el.firstChild.appendChild(frame(t[2]))}}
+      if(!el){el=document.createElement("div");el.dataset.sbt=k;if(t[2]){el.innerHTML='<section class="sbsec">'+head(k,t[1])+'</section>';el.firstChild.appendChild(frame(k,t[2]))}}
       if(root.children[i]!==el)root.insertBefore(el,root.children[i]||null);
       if(!t[2]){let h="";try{h=sec(k,t[1],TOP[k]())}catch(err){h=sec(k,t[1],"")}if(el.__h!==h){el.__h=h;el.innerHTML=h}}});
     /* below: «+» – a pull-down with the topics not shown yet (in neither box) */

@@ -1219,9 +1219,10 @@ html body #view .today .tcs .tuh:first-child{margin-top:0}
 .sbbox .sbo.done{opacity:.5}.sbbox .sbo.run b{color:var(--accent)}.sbbox .sbo .sbev{color:var(--muted)}
 .sbbox .sbr{font-size:13px;padding:5px 0;border-bottom:1px solid var(--rule)}.sbbox .sbr .sbrv{display:block;color:var(--muted);font-size:12px}
 .sbbox .sbnx{font-size:13.5px;padding:2px 0}
-.sbbox .sbframe iframe{display:block;border:0;width:100%;height:72vh;background:var(--paper);border-radius:12px}
+.sbbox .sbframe{position:relative;overflow:hidden;border-radius:12px;border:1px solid var(--rule);background:var(--paper)}
+.sbbox .sbframe iframe{position:absolute;left:0;top:0;display:block;border:0;width:390px;transform-origin:0 0;background:var(--paper)}
 .sbbox .sbframe.sbphone{position:relative;overflow:hidden;border:7px solid #1b1b1f;border-radius:30px;background:#000}
-.sbbox .sbframe.sbphone iframe{position:absolute;left:0;top:0;width:390px;height:844px;transform-origin:0 0;border-radius:0}
+.sbbox .sbframe.sbphone iframe{height:844px;border-radius:0}
 html.sbxf header.top,html.sbxf nav.tabs,html.sbxf #view .asub{display:none}
 .sbbox .sbh{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .sbbox .sbdel,.sbbox .sbplus{width:28px;height:28px;border-radius:50%;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);font-size:17px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
@@ -1230,3 +1231,6 @@ html.sbxf header.top,html.sbxf nav.tabs,html.sbxf #view .asub{display:none}
 .sbbox .sbnone{font-size:12.5px;color:var(--muted);margin:0}
 /* «Quittieren», both units: three columns (what · 1st Unit · 2nd Unit) */
 .aq3{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px 18px;margin:4px 0 8px}.aq3 .aq3t{min-width:0}.aq3 .aq4c{justify-self:center}
+/* no topic in a box: only the small «+» right beside the page */
+@media (min-width:1400px){#sbl.sbempty{left:calc(50% - 380px - 52px);width:auto;top:140px;bottom:auto;overflow:visible}#sbr.sbempty{right:calc(50% - 380px - 52px);width:auto;top:140px;bottom:auto;overflow:visible}}
+.sbbox.sbempty .sbadd{flex-direction:column;align-items:flex-start}.sbbox.sbempty .sbadd select{min-width:200px}#sbr.sbempty .sbadd{align-items:flex-end}
