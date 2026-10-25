@@ -107,7 +107,7 @@ export function csPlace(c,txt){const t=fold(String(txt||""));if(!t)return null;c
 /* where my call is: the end of my first ride (if it arrives around my call), else the set shooting at that time, else set 1 */
 export function csCallPlace(c,me,call){const ct=csHm(call.t);
   /* I drive: my call is where my first ride starts (pickup place), not where it goes */
-  {const dr=csA(c.transport).concat(csA(c.crewTransport)).filter(r=>me.hit(r.driver)&&csHm(r.t1)).sort((a,b)=>csHm(a.t1).localeCompare(csHm(b.t1)));
+  {const dr=csA((c._rides||c).transport).concat(csA((c._rides||c).crewTransport)).filter(r=>me.hit(r.driver)&&csHm(r.t1)).sort((a,b)=>csHm(a.t1).localeCompare(csHm(b.t1)));
    const r=dr.find(r=>!ct||csHm(r.t1)>=ct)||dr[0];
    if(r&&r.from){const p=Object.assign({},csPlace(c,r.from));if(!p.map)p.map=csMapQ(r.from);
      return Object.assign({},p,{how:L("Fahrer")+" "+[r.vehicle,r.t1&&(L("ab")+" "+csHm(r.t1)),r.to&&("→ "+r.to)].filter(Boolean).join(" ")})}}const rides=csMyRides(c,me);

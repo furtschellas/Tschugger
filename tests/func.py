@@ -996,6 +996,12 @@ async def owner_tests(p, port):
               const tx=[r.from,r.to].join(' ');if(/2nd\\s*unit/i.test(tx)&&a.includes(r))out.push('2nd bei 1st:'+d.date);if(/1st\\s*unit/i.test(tx)&&b.includes(r))out.push('1st bei 2nd:'+d.date)}}
             return out.join(',')})()""")
         check("Callsheet: Fahrten pro Unit (keine verloren, «2nd UNIT» nur bei der 2nd)", not rv, rv)
+        # «Mein Tag» shows all own rides of the day, also those of the other unit (someone in both units, e.g. a director who also plays)
+        mr = await E("""(()=>{const keep=[window.PICKON,window.MYPICK,S.pu],out=[];try{for(const d of (S.dispos||[]).filter(x=>x&&x.cs&&x.cs.u2)){const c=d.cs;
+            const both=(c.cast||[]).map(r=>r.actor).filter(n=>n&&((c.u2.cast||[]).some(y=>y.actor===n)));for(const n of both.slice(0,2)){const h=nameHit(n);
+              const mine=(c.transport||[]).filter(r=>h(r.passengers)).length;if(!mine)continue;window.PICKON=true;window.MYPICK=n;S.pu={'1':true,'2':false,'3':false};S.tab='dispo';S.dday=d.date;render();
+              const shown=document.querySelectorAll('#view .csme .csme-r').length;if(!shown)out.push(d.date)}}}finally{window.PICKON=keep[0];window.MYPICK=keep[1];S.pu=keep[2];render()}return out.join(',')})()""")
+        check("Callsheet: «Mein Tag» mit den eigenen Fahrten beider Units", not mr, mr)
         sy = await E("""(()=>{const keep=[S.days,S.locs];S.locs=JSON.parse(JSON.stringify(S.locs));S.locs.forEach(l=>(l.sets||[]).forEach(st=>st.scenes=[]));return 1})()""")
         await E("dckRun()"); await pg.wait_for_timeout(5000)
         sd2 = await E(r"""(async()=>{const sl=await scriptData();const ok=i=>i.sc&&/^\d+[A-Z]?$/.test(i.sc)&&/^I\/(?!E)/.test(i.ie||'');

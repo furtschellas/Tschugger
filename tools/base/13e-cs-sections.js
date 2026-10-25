@@ -126,7 +126,7 @@ function csCallsSec(c,x,me,SU,t){let h="";
   return h}
 export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
   /* a day with a 2nd Unit: the 1st Unit shows only its rides (and those of both); the 2nd Unit gets its own in csU2Dispo */
-  const c=c0._u!=="2"&&typeof csRidesFor==="function"&&(c0.u2||csA(day&&day.unit2&&day.unit2.items).length)?Object.assign({},c0,csRidesFor(c0,"1")):c0,t=c.times||{},me=csMe();let h="";if(x.date)c._date=x.date;   /* the day first: «Mein Tag» (travel of this day only) and the cast ticks need it */setCSTR(c.tr||null);setCSCUR({c,date:x.date||"",me,addr:new Map()});
+  const c=c0._u!=="2"&&typeof csRidesFor==="function"&&(c0.u2||csA(day&&day.unit2&&day.unit2.items).length)?Object.assign({},c0,csRidesFor(c0,"1"),{_rides:{transport:c0.transport,crewTransport:c0.crewTransport}}):c0,t=c.times||{},me=csMe();let h="";if(x.date)c._date=x.date;   /* the day first: «Mein Tag» (travel of this day only) and the cast ticks need it */setCSTR(c.tr||null);setCSCUR({c,date:x.date||"",me,addr:new Map()});
   let JB="";
   /* jump bar (sticky) and search over the whole callsheet */
    JB=csJumpBar(c,x,me,null,t);

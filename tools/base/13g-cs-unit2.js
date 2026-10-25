@@ -75,7 +75,7 @@ export function csU2Dispo(x,day){const c=x&&x.cs;if(!c||typeof c!=="object")retu
   const sh=u2Rows(day),c2=typeof window.cqU2==="function"&&c.u2?window.cqU2(c):null;if(!c2&&!sh.length)return null;
   const u=c.u2&&typeof c.u2==="object"?c.u2:{};
   const base=c2||Object.assign({},c,{cast:[],extras:[],vehicles:[],locations:[],times:{},contact:null,order:{},_u:"2"});
-  const cs=Object.assign({},base,csRidesFor(c,"2"),{u2:null,_u:"2",_date:x.date,prevision:u.prevision||{},
+  const cs=Object.assign({},base,csRidesFor(c,"2"),{_rides:{transport:c.transport,crewTransport:c.crewTransport},u2:null,_u:"2",_date:x.date,prevision:u.prevision||{},
     order:sh.length?{title:"",pages:(u.order||{}).pages||"",rows:sh}:(u.order||{}),
     calls:csA(c.calls).filter(r=>r&&String(r.t2||"").trim()).map(r=>Object.assign({},r,{t:r.t2,t2:""})),
     depts:csA(c.depts).filter(r=>r&&String(r.text2||"").trim()).map(r=>Object.assign({},r,{text:r.text2,text2:""}))});

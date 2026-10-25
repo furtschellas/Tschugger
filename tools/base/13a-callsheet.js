@@ -144,7 +144,8 @@ export function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.nam
 /* «jetzt» on the shooting day, in one place: the rows of the shooting order, their quittance keys (setup, lunch, wrap …), the wrap row */
 /* me on this callsheet: my call, my rides (passenger or driver, crew transport), do I drive, the words of my department */
 export const csMyCall=(c,me)=>me?csA(c.calls).find(r=>me.hit(r.name)):undefined;
-export const csMyRides=(c,me)=>csA(c.transport).filter(r=>me.hit(r.passengers)||me.hit(r.driver)).concat(csA(c.crewTransport).filter(r=>me.hit(r.people)));
+/* my rides: always all of the day – with two units the lists of the callsheet are split (c._rides keeps all of them) */
+export const csMyRides=(c,me)=>{const a=c._rides||c;return csA(a.transport).filter(r=>me.hit(r.passengers)||me.hit(r.driver)).concat(csA(a.crewTransport).filter(r=>me.hit(r.people)))};
 export const csIDrive=(c,me)=>!!me&&csA(c.transport).some(r=>me.hit(r.driver));
 export const csMyWords=(c,me,withRole)=>{const call=csMyCall(c,me);return new Set([...csDWords(call&&call.dept),...(withRole?csDWords(call&&call.role):[]),...csDWords(me&&me.dep)])};
 export const csRows=c=>csA(((c||{}).order||{}).rows);
