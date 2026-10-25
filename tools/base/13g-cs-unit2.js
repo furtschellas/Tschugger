@@ -45,3 +45,17 @@ export function csU2HTML(x,c,day,me,F){F=F||{};const u0=c&&c.u2,sh=u2Rows(day);i
    h+=csSec("Calls on Set · 2nd Unit",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>'<div class="cscall-r"><span class="t">'+esc(String(r.t2))+'</span><span class="cp"></span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>').join("")+'</div>').join(""),false,"","u2calls")}
   h+=csSec(L("Infos nach Abteilung")+" · 2nd Unit",csA(c.depts).filter(r=>String(r.text2||"").trim()).map(r=>'<div class="csdep"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text2)+'</div></div>').join(""),false,"","u2dept");
   return '<section class="csu2">'+h+'</section>'}
+/* only the 2nd Unit chosen (unit buttons): the callsheet of the 2nd Unit on its own, drawn by the same view as the 1st Unit (renderCS) –
+   its times, contact, sets, cast and extras (cqU2), its shooting order (sheet, else callsheet), the calls «2nd IN» and the department infos
+   of the 2nd Unit; transport, travel, production infos and notes as on the callsheet. null: no 2nd Unit that day */
+export function csU2Dispo(x,day){const c=x&&x.cs;if(!c||typeof c!=="object")return null;c._date=x.date;
+  const sh=u2Rows(day),c2=typeof window.cqU2==="function"&&c.u2?window.cqU2(c):null;if(!c2&&!sh.length)return null;
+  const u=c.u2&&typeof c.u2==="object"?c.u2:{};
+  const base=c2||Object.assign({},c,{cast:[],extras:[],vehicles:[],locations:[],times:{},contact:null,order:{},_u:"2"});
+  const cs=Object.assign({},base,{u2:null,_u:"2",_date:x.date,prevision:u.prevision||{},
+    order:sh.length?{title:"",pages:(u.order||{}).pages||"",rows:sh}:(u.order||{}),
+    calls:csA(c.calls).filter(r=>r&&String(r.t2||"").trim()).map(r=>Object.assign({},r,{t:r.t2,t2:""})),
+    depts:csA(c.depts).filter(r=>r&&String(r.text2||"").trim()).map(r=>Object.assign({},r,{text:r.text2,text2:""}))});
+  const t=cs.times||{};
+  return Object.assign({},x,{cs,crewCall:t.crewCall||"",shootCall:t.rts||"",wrap:t.wrap||"",label:(x.label||(day&&day.label)||"Callsheet")+" · 2nd Unit"})}
+window.csU2Dispo=csU2Dispo;

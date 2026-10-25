@@ -272,7 +272,10 @@ function u2NowHTML(t,c0){try{const day=arr(S.days).find(d=>d&&d.date===t),its=ar
       cm=[["m","Maske"],["w","Kostüm"]].filter(([k])=>w[k].length).map(([k,l])=>'<span class="tnk">'+esc(L(l))+'</span><span class="tnc">'+w[k].map(r=>tnChip(no(r),String(r.role||"").trim(),2,false,typeof cqLate==="function"?cqLate(cu,r):0)).join("")+'</span>').join("")}
     if(!what&&!cm)return"";
     return '<div class="tnowu2"><span class="tnk tnu">2nd Unit</span> '+what+(cm?' '+cm:'')+'</div>'}catch(_){return ""}}
-export function nowCardHTML(t,cls){try{if(typeof csNowScene!=="function")return "";
+export function nowCardHTML(t,cls,unit){try{if(typeof csNowScene!=="function")return "";
+    /* the callsheet of the 2nd Unit alone: only its line (and the forecasts) */
+    if(unit==="2"){const xd2=(S.dispos||[]).find(y=>y&&y.date===t),u2=u2NowHTML(t,xd2&&xd2.cs),fc2=ncLine(t);if(!u2&&!fc2)return "";
+      return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+u2+fc2+'</div></div>'}
     /* the quittances not read yet (first seconds after opening): no «Jetzt» – it would show the first scene of a day that is long done */
     if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";
     /* the scene of the callsheet of THIS day (after midnight Today and the callsheet may mean different days: then no scene here) */

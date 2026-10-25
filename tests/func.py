@@ -984,6 +984,12 @@ async def owner_tests(p, port):
               if(/konnte nicht angezeigt werden/.test(document.querySelector('#view').innerText))out.push(d.date)}}}
             finally{window.PICKON=keep[0];window.MYPICK=keep[1];render()}return out.join(',')})()""")
         check("Callsheet: «Mein Tag» als Person auf dem Callsheet wird angezeigt", not bad, bad)
+        # only the 2nd Unit chosen: its callsheet alone (no part «2nd Unit» below, no error); only the 1st: no 2nd part
+        u2v = await E("""(()=>{const keep=S.pu,out=[];try{for(const d of (S.dispos||[]).filter(x=>x&&x.cs)){S.tab='dispo';S.dday=d.date;
+            S.pu={'1':false,'2':true,'3':false};render();const v=document.querySelector('#view');if(/konnte nicht angezeigt werden/.test(v.innerText)||v.querySelector('.csu2'))out.push('2:'+d.date);
+            S.pu={'1':true,'2':false,'3':false};render();if(/konnte nicht angezeigt werden/.test(v.innerText)||v.querySelector('.csu2'))out.push('1:'+d.date)}}
+            finally{S.pu=keep;render()}return out.join(',')})()""")
+        check("Callsheet: Unit-Knöpfe – nur 2nd zeigt die 2nd Unit allein, nur 1st ohne 2nd-Teil", not u2v, u2v)
         sy = await E("""(()=>{const keep=[S.days,S.locs];S.locs=JSON.parse(JSON.stringify(S.locs));S.locs.forEach(l=>(l.sets||[]).forEach(st=>st.scenes=[]));return 1})()""")
         await E("dckRun()"); await pg.wait_for_timeout(5000)
         sd2 = await E(r"""(async()=>{const sl=await scriptData();const ok=i=>i.sc&&/^\d+[A-Z]?$/.test(i.sc)&&/^I\/(?!E)/.test(i.ie||'');

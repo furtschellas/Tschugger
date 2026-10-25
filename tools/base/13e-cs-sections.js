@@ -113,7 +113,7 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   const mineN=me?csMine(c,me).length:0;const dtitle=(mineN?esc(L("Mein"))+' ':'')+esc(x.label||day.label||"Callsheet");
   if(!mineN)h+='<div class="dsp-head"><div><h2>'+dtitle+'</h2><div class="date drow"><span>'+fmtDate(x.date)+'</span>'+UNITBAR+'</div></div></div>';
   else if(UNITBAR)h+='<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>';
-  if(x.date===csShootDay())h+=nowCardHTML(x.date,"csnowc");   /* the callsheet of today: «Jetzt» above the tiles, as in Today */
+  if(x.date===csShootDay())h+=nowCardHTML(x.date,"csnowc",c._u);   /* the callsheet of today: «Jetzt» above the tiles, as in Today */
   h+=csTilesHTML(x,day,c,me);
   /* contact on set: the name itself is the call link (only with the phone right) */
   if(c.contact&&(c.contact.name||c.contact.phone)){const ct=c.contact,tel=String(ct.phone||"").replace(/[^\d+]/g,""),nm=ct.name?esc(ct.name):(tel&&vok("phone")?esc(ct.phone):csTx(ct.phone));   /* only the number: plain inside the call link (a link in a link broke the line) */
@@ -146,7 +146,7 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
      (sc.length?'<span class="csoscn">'+(()=>{const LS=csLocs(c),OR=csA(o.rows),NR=OR[csNowIdx(OR,x.date)]||null;return OR.filter(r=>r.sc).map(r=>{const lo=csSceneLoc(LS,r);
        /* one line per scene: time · scene · I/E · set code · set · duration; the scene of now framed */
        return '<span class="cso1'+(r===NR?' now':'')+'"><i>'+esc(csHm(r.t)||"")+'</i><b>'+esc(String(r.sc))+'</b>'+(r.ie?'<span class="ie '+(typeof ieClass==="function"?ieClass(r.ie):"")+'">'+esc(r.ie)+'</span>':'')+(lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'')+'<span class="st">'+esc(r.set||"")+'</span>'+(r.dur?'<span class="du">'+esc(r.dur)+'</span>':'')+'</span>'}).join("")})()+'</span>':'');
-   h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c),true),false,"","order",sumx)}
+   h+=csSec(L("Drehfolge")+(o.pages?' · '+o.pages+' pgs':''),(o.title?'<p class="ghint">'+esc(o.title)+'</p>':'')+csOrderRows(o.rows,x.date,csLocs(c),true,c._u||"1"),false,"","order",sumx)}
   /* cast, extras, vehicles */
   const CC=csCols();
   if(c&&x&&x.date)c._date=x.date;   /* the day for the cast ticks */
@@ -182,7 +182,7 @@ export function renderCS(x,day){const c=x.cs||{},t=c.times||{},me=csMe();let h="
   for(const sec of csA(x.sections).concat(csA(c.sections)).filter(s0=>!WX.includes(s0))){const rows=csA(sec&&sec.rows).map(r=>Array.isArray(r)?r:[r]).filter(r=>r.some(cc=>String(cc==null?"":cc).trim()));if(!rows.length)continue;
     h+=csSec(String(sec.title||""),rows.map(r=>'<p>'+r.map(cc=>csTx(cc)).join(" · ")+'</p>').join(""),false)}
   /* the 2nd Unit (read apart): its own part below the 1st Unit */
-  try{h+=csU2HTML(x,c,day,me,{cast:csCastSec,extras:csExtrasSec,tiles:csTilesHTML,loc:(c2,x2,me2,SU2,t2)=>{const k=window.CSNOWK;try{return csLocSec(c2,x2,me2,SU2,t2)}finally{window.CSNOWK=k}}})}catch(_){}
+  if(c._u!=="2"&&S.pu["2"])try{h+=csU2HTML(x,c,day,me,{cast:csCastSec,extras:csExtrasSec,tiles:csTilesHTML,loc:(c2,x2,me2,SU2,t2)=>{const k=window.CSNOWK;try{return csLocSec(c2,x2,me2,SU2,t2)}finally{window.CSNOWK=k}}})}catch(_){}
   /* on the shooting day: once per visit straight to the running row */
   if(x.date===csShootDay()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
   return JB+'<div class="csview">'+h+'</div>'}
