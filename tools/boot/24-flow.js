@@ -232,6 +232,14 @@ window.cqLook=(c,r)=>{if(!cqRowOk(c,r))return 0;const m=cqModel(c,r);return m.on
 /* «Jetzt» (Today, callsheet of today): the cast rows now in Maske / Kostüm (running) – {m: [rows], w: [rows]} */
 window.cqWmNow=c=>{const out={m:[],w:[]};if(!cqRowOk(c,{}))return out;
   for(const r of arr(c.cast))for(const k of ["m","w"])if(cmParse(k==="w"?r.wardrobe:r.makeup,c).some(p=>cmSt(cmId(c._date,k,r,p.t))===1))out[k].push(r);return out};
+/* «Jetzt»: how many minutes a cast row is behind the callsheet – the first step not done yet whose time is more than 5 minutes ago
+   (Call · end of Kostüm / Maske · Base · On set); 0 = on time or On set */
+window.cqLate=(c,r,now)=>{try{if(!cqRowOk(c,r))return 0;const m=cqModel(c,r),d=m.d;if(m.onDone)return 0;now=now||Date.now();
+  const ref=cqaAt(d,r.pickup)||cqaAt(d,r.call)||cqaAt(d,r.base),due=[];
+  if(!m.callAct&&!m.arrived&&!m.wmDone&&!m.baseDone)due.push(cqaAt(d,r.call,ref));
+  if(!m.baseDone)for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c))if(cmSt(cmId(d,k,r,p.t))!==2)due.push(cqaAt(d,p.end,ref));
+  if(!m.baseDone)due.push(cqaAt(d,r.base,ref));due.push(cqaAt(d,r.onset,ref));
+  const t=due.filter(Boolean).sort((a,b)=>a-b)[0];const min=t?Math.floor((now-t)/60000):0;return min>5?min:0}catch(_){return 0}};
 /* every step done (On set done): the cast number is pink */
 window.cqAll=(c,r)=>cqRowOk(c,r)&&cqModel(c,r).onDone;
 /* Kostüm / Maske running: the duration counts down from the start (back to open = the original duration again) */

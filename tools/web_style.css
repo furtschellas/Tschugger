@@ -1095,6 +1095,7 @@ html body #view .tnow .tnc span.tnl2{background:var(--accent);border-color:#fff;
 html body #view .tnow .tnc span.tnl3{background:transparent;border-color:var(--accent);color:var(--accent)}
 html body #view .tnow .tnc i{font-style:normal;font-weight:700}
 html body #view .tnow .tnc em{font-style:normal;margin-left:5px}
+html body #view .tnow .tnc .tnlate{margin-left:4px;font-weight:800;font-size:11px}
 html body #view .tnow .tnowx{display:none;margin-top:8px}
 html body #view .tnow.tnowo .tnowx{display:block}
 html body #view .tnow .tnsyn{font-size:13px;color:var(--muted);margin:0 0 6px}

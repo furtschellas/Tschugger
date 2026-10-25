@@ -15,13 +15,18 @@ async function checkVersion(){
     if(!v||v===APP_VER)return;
     let done="";try{done=sessionStorage.getItem("reloadedFor")||""}catch(_){}
     if(done===v)return;
+    /* no reload while the app is being used (it would cost the loading time): the new version is loaded the next time the app goes
+       to the background – opened again, it shows the same page (and place) with the new version; at the start (first seconds) at once */
+    if(document.visibilityState==="visible"&&performance.now()>4000){NEWVER=v;return}
     /* someone is typing (a form, a chat or a note): later, at the next check – not now and not «never» */
     const f=document.activeElement;if(f&&(/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)||f.isContentEditable))return;
     try{sessionStorage.setItem("reloadedFor",v)}catch(_){}
     location.reload();
   }catch(_){}
 }
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkVersion()});
+let NEWVER="";
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkVersion();
+  else if(NEWVER){let done="";try{done=sessionStorage.getItem("reloadedFor")||""}catch(_){}if(done!==NEWVER){try{sessionStorage.setItem("reloadedFor",NEWVER);localStorage.setItem("lastVis",String(Date.now()))}catch(_){}setTimeout(()=>location.reload(),50)}}});
 setTimeout(checkVersion,1500);
 /* ---------- safety net: errors never leave a blank screen ---------- */
 window.addEventListener("unhandledrejection",e=>{console.warn("unhandled",e.reason)});
@@ -30,6 +35,8 @@ window.addEventListener("error",e=>{console.warn("error",e.message);try{if(!docu
 applyStatic();
 window.CACHEOK=loadCache();
 render();
+/* back within 20 minutes: also the same place on the page (the copy on the device is shown, current data follows in the background) */
+if(window.__VSY&&window.CACHEOK)requestAnimationFrame(()=>{try{window.scrollTo(0,window.__VSY)}catch(_){}});
 (async()=>{
   const b=$("#refresh");b.hidden=false;
   b.addEventListener("click",async()=>{

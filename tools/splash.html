@@ -46,6 +46,9 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   /* a reload shows the logo and the loading status too (only the versions are left out) – before, the logo was hidden
      completely when the app had been used in the last 30 minutes, so most starts showed no logo and no loading status */
   window.__REL=rel;/* the app uses this too: a reload keeps the page, a start opens the start page */
+  /* opened again within 20 minutes (also by someone else on this device, also after the phone closed the app): the page as it was,
+     from the copy on the device – at once, without waiting for the network; the current data is loaded in the background */
+  var fresh=false;try{fresh=!!lv&&Date.now()-lv<20*60000}catch(e){}window.__FRESH=fresh;
   if(hard){var tv0=document.getElementById("spv");if(tv0)tv0.style.display="none"}   /* reload: logo, loading status and copyright (no versions) */
   function seen(){try{localStorage.setItem("lastVis",String(Date.now()))}catch(e){}}
   setInterval(function(){if(document.visibilityState==="visible")seen()},15000);
@@ -77,6 +80,7 @@ window.addEventListener("load",function(){setTimeout(function(){var ok=typeof re
   function step(){try{txt()}catch(e){}var s2=steps();logSteps(s2);var k=s2.filter(Boolean).length;
     try{var g=document.getElementById("gate");if(g&&!g.hidden&&g.getClientRects().length&&getComputedStyle(g).display!=="none"&&Date.now()-t0>300)return true}   /* sign-in screen (fixed: offsetParent is always null) */catch(e){}
     if(k===s2.length||window.__LOADFAIL)return true;   /* loading failed: the message must be visible */
+    if(fresh&&chk(function(){return window.CACHEOK&&S.days.length&&document.getElementById("view").children.length}))return true;   /* back within 20 min: the copy on the device is shown */
     set(Math.max(10+k*16,Math.min(10+(k+1)*16-2,cur+0.5)));return false}
   /* the loop can never die on an error: at the latest after 20 s the start screen is gone */
   function st(){if(done)return;var fin=false;try{fin=step()}catch(e){}if(fin||Date.now()-t0>20000)return end();setTimeout(st,80)}

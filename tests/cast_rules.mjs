@@ -150,4 +150,8 @@ await (async()=>{const at=hm=>new Date(D+"T"+hm+":00+01:00").getTime(),on=(min,k
   await run("schon weiter (On set erledigt) → nichts",W,{[o]:2},on({}),"08:30",[]);
   await run("Zeit noch nicht erreicht → nichts",W,{},on({}),"06:30",[]);
 })();
+/* «Jetzt»: delay of a cast row (more than 5 minutes behind the first step not done) */
+{const at=hm=>new Date(D+"T"+hm+":00+01:00").getTime(),g=(ack,hm)=>{set(W,ack);return C.cqLate(Object.assign({},cs),R1,at(hm))};
+  const got=[g({},"07:03"),g({},"07:20"),g({[id(R1,"c","07:00")]:1},"07:20"),g({[id(R1,"c","07:00")]:1},"07:31"),g({[id(R1,"o","08:00")]:2},"09:00")].join(",");
+  out.push({n:"Jetzt: Verspätung nach 5 Min. (Call, Ende Kostüm, On set erledigt = 0)",ok:got==="0,20,0,11,0",got,want:"0,20,0,11,0"})}
 for(const x of out)console.log(JSON.stringify(x));
