@@ -62,6 +62,7 @@ GEO_DEADLINE = time.time() + 12 * 60
 
 ALL_LANGS = ["de", "fr", "it", "en", "hi"]
 U2_MAX = int(os.environ.get("U2_MAX") or 3); U2N = [0]   # 2nd-unit sheets read per run
+U2PV = 2   # version of the instruction for the 2nd-unit sheets (2: camera setups «A-4: …» as own entries)
 LANG_NAMES = {"de": "Deutsch", "fr": "Französisch", "it": "Italienisch", "en": "Englisch", "hi": "Hindi"}
 
 
@@ -1979,11 +1980,12 @@ def main():
                 if len(txt) < 40: log("2nd Unit Tag %d: Blatt leer (%d Zeichen)" % (no, len(txt))); continue
                 h = hashlib.sha256(txt.encode()).hexdigest()[:16]
                 old2 = cache.get(gid) or {}
-                if old2.get("h") == h and old2.get("u2") and not FORCE: newc[gid] = old2; continue
+                pv_old = old2.get("pv") != U2PV and old2.get("h") == h and str(day.get("date") or "") >= TODAY   # read with an older instruction: once more (today and later)
+                if old2.get("h") == h and old2.get("u2") and not FORCE and not pv_old: newc[gid] = old2; continue
                 # cost guards (the sheet is edited very often – every reading costs API credit):
                 # a finished shooting day is not read again; a changed sheet only once it stayed the same for 25 minutes;
                 # at most U2_MAX sheets per run; a sheet that cannot be read keeps its last good reading
-                if old2.get("u2") and not FORCE:
+                if old2.get("u2") and not FORCE and not pv_old:
                     if str(day.get("date") or "") < TODAY: newc[gid] = old2; continue
                     if old2.get("ph") != h: newc[gid] = dict(old2, ph=h, pt=int(time.time())); log("2nd Unit Tag %d: geändert – wird gelesen, wenn es 25 Min. gleich bleibt" % no); continue
                     if time.time() - float(old2.get("pt") or 0) < 25 * 60: newc[gid] = old2; continue
@@ -1998,11 +2000,15 @@ def main():
                     u2 = claude([{"type": "text", "text": "2ND-UNIT SHOOTING ORDER «%s» (Tabelle, Zellen mit | getrennt):\n%s" % (name, txt[:60000])}],
                         "Erzeuge aus dieser genauen Drehreihenfolge der 2nd Unit für Drehtag %d (%s) ein JSON-Objekt für das Feld \"unit2\" eines Tages gemäss Collection \"days\": "
                         "Arbeitszeit, und \"items\" in der Reihenfolge der Tabelle mit Uhrzeit, Szene, Innen/Aussen und Tageszeit, Seiten, Motiv/Adresse, Cast/Komparsen und Bemerkungen "
-                        "(Setups wie A-1/B-2, Rigging, Umbau, Move, Lunch und Wrap als Einträge ohne Szene). Fahrzeuge, Blocker, Grip, Ton und weitere Logistik als \"notes\". "
+                        "(Rigging, Umbau, Setup/Move, Lunch und Wrap als Einträge ohne Szene). "
+                        "KAMERA-SETUPS: jede Einstellung (Spalte SH/Setup wie «A-4», «B-2», dazu die Kamera-/Storyboard-Beschreibung) als eigener Eintrag ohne Szene mit ihrer Uhrzeit, "
+                        "Text immer «Setup: Beschreibung», z. B. {\"t\": \"07:15\", \"n\": \"A-4: Detail Bonbon, Fahrzeug stehend\"} – direkt nach dem Szenen-Eintrag, zu dem sie gehört; "
+                        "folgen mehrere Einstellungen derselben Szene aufeinander, nur EIN Szenen-Eintrag (Zeit der ersten Einstellung) und danach alle ihre Setups. "
+                        "Fahrzeuge, Blocker, Grip, Ton und weitere Logistik als \"notes\". "
                         "Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisheriger 2nd-Unit-Teil dieses Tages aus dem Drehplan (Cast-Nummern und Schreibweisen übernehmen): %s"
                         % (no, day.get("date"), json.dumps(day.get("unit2") or {}, ensure_ascii=False)[:20000]), 32000)
                     if isinstance(u2, dict) and isinstance(u2.get("items"), list) and u2["items"]:
-                        u2["src"] = "2nd"; newc[gid] = {"h": h, "no": no, "u2": u2}; log("2nd Unit: Blatt", no, "gelesen,", len(u2["items"]), "Einträge")
+                        u2["src"] = "2nd"; newc[gid] = {"h": h, "no": no, "u2": u2, "pv": U2PV}; log("2nd Unit: Blatt", no, "gelesen,", len(u2["items"]), "Einträge")
                     else:
                         failed("unit2", {"name": "2nd-unit-" + name, "modified": h}, "leer")
                         if old2.get("u2"): newc[gid] = old2
