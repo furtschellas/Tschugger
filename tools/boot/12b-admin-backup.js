@@ -47,8 +47,8 @@ async function bkRestore(file){
   const back=v=>JSON.parse(JSON.stringify(v),(k,x)=>{const t=ts(x);return t&&F.Timestamp&&F.Timestamp.fromDate?F.Timestamp.fromDate(t):x});
   /* what was taken away since the backup stays taken away: a blocked person stays blocked («active»), «Auf allen Geräten abmelden» stays («rev»);
      people, admins and owners removed since then come back only when wished */
-  const now={};for(const n of ["members","admins","owners"]){try{now[n]=new Set((await F.getDocs(F.collection(db,n))).docs.map(x=>x.id))}catch(_){now[n]=new Set()}}
-  const gone=[["members",d.members],["admins",d.admins],["owners",d.owners]].reduce((a,[n,l])=>a+(Array.isArray(l)?l.filter(r=>r&&!now[n].has(String(r.id))).length:0),0);
+  const now={};for(const n of ["members","admins","owners","invites","userroles"]){try{now[n]=new Set((await F.getDocs(F.collection(db,n))).docs.map(x=>x.id))}catch(_){now[n]=new Set()}}
+  const gone=[["members",d.members],["admins",d.admins],["owners",d.owners],["invites",d.invites],["userroles",d.userroles]].reduce((a,[n,l])=>a+(Array.isArray(l)?l.filter(r=>r&&!now[n].has(String(r.id))).length:0),0);
   const back2=gone&&confirmSafe(L("{n} Personen oder Rechte aus dem Backup gibt es heute nicht mehr (seither entfernt). Auch diese zurückholen?").replace("{n}",gone));
   const own=lc(ME&&ME.email),ok=/^[^/]{1,200}$/;const ops=[];
   if(d.config&&typeof d.config==="object")ops.push(["config","app",d.config]);

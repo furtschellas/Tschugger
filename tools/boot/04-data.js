@@ -116,7 +116,7 @@ let CHECKED="";
 async function fetchStamp(){try{const r=await withTimeout(fetch("stamp.json?t="+Date.now(),{cache:"no-store"}),8000,"stamp");if(!r.ok)return null;const j=await r.json();
   if(j&&j.c){CHECKED=j.c;if(S.meta)S.meta.checkedAt=j.c}return j&&j.s?j:null}catch(_){return null}}
 async function loadOnce(force){
-  if(!MEMBER&&!isAdmin())return false;
+  if(!MEMBER&&!isAdmin())return false;const gen=window.cacheGen?window.cacheGen():0,stale=()=>window.cacheGen&&window.cacheGen()!==gen;   /* signed out meanwhile: nothing applied */
   if(!force&&LASTSTAMP&&(S.loaded||window.CACHEOK)){const st=await fetchStamp();if(st&&st.s===LASTSTAMP){try{localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}if(!S.loaded){S.loaded=true;scheduleRender()}return true}}
   const enc=await fetchEnc();
   if(!force&&enc.stamp&&enc.stamp===LASTSTAMP&&S.loaded)return true;
@@ -127,6 +127,7 @@ async function loadOnce(force){
   let pt;try{pt=await dec(await getDataKey())}catch(err){let old="";try{old=localStorage.getItem("dk:v1")||"";localStorage.removeItem("dk:v1")}catch(_){}setDATAKEY(null);
     /* a fresh key could not be read (offline, quota): the old one stays on the device (the offline files still need it) */
     try{pt=await dec(await getDataKey())}catch(e2){try{if(old&&!localStorage.getItem("dk:v1"))localStorage.setItem("dk:v1",old)}catch(_){}throw e2}}
+  if(stale())return false;
   const data=JSON.parse(new TextDecoder().decode(pt));
   if(!data||!Array.isArray(data.days))throw new Error("data format");
   setLASTSTAMP(enc.stamp||null);window.__DSTAMP=LASTSTAMP;try{localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}   /* the stamp is kept only together with the data (saveCache) */applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
