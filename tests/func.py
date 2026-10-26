@@ -964,6 +964,22 @@ async def owner_tests(p, port):
         bpl = await E("""(()=>{if(typeof blkPeople!=='function'||!ADM.loaded)return null;const keep=window.BLOCKS;window.BLOCKS=[{id:'b1',name:'A',tz:'Europe/Zurich'},{id:'b2',name:'B',tz:'Europe/Zurich'}];
           const box=document.createElement('div');box.innerHTML=blkPeople(window.BLOCKS[1]);window.BLOCKS=keep;return {list:box.querySelectorAll('[data-blkp^="b2|"]').length>0,search:!!box.querySelector('[data-blkq]')}})()""")
         check("Drehblöcke: pro Block Personen zuteilen (Liste mit Suche)", bpl in (None, {"list": True, "search": True}), bpl, public=True)
+        # 2nd Unit im Callsheet von heute (echte Daten): eine Szene der 2nd Unit antippen → läuft, nochmals → abgeschlossen (nur Zahlen und Codes im Protokoll)
+        await E("S.pu={'1':true,'2':true,'3':false};S.uf={'1':true,'2':true,'3':false};pushGo('./#go=dispo:'+todayISO())"); await pg.wait_for_timeout(1500)
+        u2c = await E("""(()=>{const bs=[...document.querySelectorAll('#view button[data-scack]')];const u2=bs.filter(b=>b.dataset.scack.endsWith('|2'));
+          const sc=u2.filter(b=>!/\|(lunch|wrap|setup\d*)(_u\d)?\|/.test(b.dataset.scack)&&b.classList.contains('sk0'));
+          return {all:bs.length,u2:u2.length,open:sc.length,key:sc.length?sc[0].dataset.scack:'',has:!!(S.dispos||[]).find(x=>x&&x.date===todayISO()&&x.cs&&x.cs.u2)}})()""")
+        if u2c and u2c.get("key"):
+            k = json.dumps(u2c["key"])
+            async def _tap():
+                await E("(()=>{const b=[...document.querySelectorAll('#view button[data-scack]')].find(b=>b.dataset.scack===%s);if(b){b.scrollIntoView();b.click()}})()" % k); await pg.wait_for_timeout(1500)
+                if await E("!!document.querySelector('.scparb')"):
+                    await E("document.querySelector('.scparb [data-scpar=par]').click()"); await pg.wait_for_timeout(1500)
+                return await E("(()=>{const [d,sc,u]=%s.split('|');return scState(d,scK(sc,u))})()" % k)
+            s1 = await _tap(); s2 = await _tap()
+            u2c.update(s1=s1, s2=s2)
+        u2c.pop("key", None)
+        check("2nd Unit: im Callsheet eine Szene antippen → läuft, nochmals → abgeschlossen", not u2c or not u2c.get("has") or (u2c.get("u2", 0) > 0 and (u2c.get("open", 0) == 0 or (u2c.get("s1") == 1 and u2c.get("s2") == 2))), u2c, public=True)
 
     async def _p7():   # App-Verwaltung (Access, Tour, Dokumente, Log/Tests)
         # Access: roles per permission on top, pencil switches them right there, people to open
