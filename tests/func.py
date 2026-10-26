@@ -650,6 +650,12 @@ async def owner_tests(p, port):
           window.canPerm=()=>false;const nopen=(()=>{const kd2=S.days;S.days=[];const b=document.createElement('div');b.innerHTML=sceneLogSec();S.days=kd2;return b.querySelectorAll('[data-scled]').length})();
           SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;window.canPerm=k.cp;return {days,fixed,pens:pens>0,nopen,per,only2,dur}})()""")
         check("Szenen-Protokoll: pro Unit ein Tagesprotokoll mit Setup/Drehstart/Lunch/Wrap, Stift nur mit Recht, Export pro Tag und Unit", sl in (None, {"days": 2, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}, {"days": 3, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}), sl, public=True)
+        # 2nd Unit: the same scene number in both units is quittiert apart (own id «…u2»); older 2nd-unit entries (id without unit) still count
+        u2a = await E("""(()=>{if(typeof scK!=='function'||typeof scGet!=='function')return null;const k=window.SCACK,t='2030-05-06';
+          window.SCACK={[scAckId(t,'21')]:{d:t,s:2,u:'1',sc:'21',at:1},[scAckId(t,'55')]:{d:t,s:1,u:'2',sc:'55',at:2}};
+          const r={id:scAckId(t,scK('21','2')),sep:scState(t,'21')===2&&scState(t,scK('21','2'))===0,legacy:scState(t,'55_u2')===1&&scState(t,'55')===0,ev:scAckId(t,'lunch_u2'),cont:scAckId(t,scK('21 CONT','2'))};
+          window.SCACK=k;return r})()""")
+        check("2nd Unit: eigene Quittierung pro Szene (gleiche Szenen-Nummer wie die 1st Unit), ältere Einträge zählen weiter", u2a in (None, {"id": "20300506-21u2", "sep": True, "legacy": True, "ev": "20300506-lunchu2", "cont": "20300506-21u2"}), u2a, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();
@@ -669,6 +675,7 @@ async def owner_tests(p, port):
           const k={l:SCLOG.list,e:SCLOG.exp,c:window.canSceneLog,g:LANG},d=day.date,t=h=>new Date(d+'T'+h).getTime(),sc=day.items.filter(i=>i.sc);
           const acks=[{id:scAckId(d,sc[0].sc),d,s:2,u:'1',sc:scAckId(d,sc[0].sc).split('-')[1],b:t('09:05'),e:t('10:10'),at:1},{id:scAckId(d,sc[1].sc),d,s:1,u:'1',sc:scAckId(d,sc[1].sc).split('-')[1],b:t('10:30'),at:2},
             {id:d.replace(/-/g,'')+'-lunch',d,s:2,u:'1',sc:'lunch',b:t('12:30'),e:t('13:15'),at:3},{id:d.replace(/-/g,'')+'-lunch_u2',d,s:2,u:'2',sc:'lunch_u2',b:t('12:00'),e:t('12:40'),at:4}];
+          const u2s=((day.unit2||{}).items||[]).find(i=>i&&i.sc);if(u2s&&window.scK)acks.push({id:scAckId(d,scK(u2s.sc,'2')),d,s:2,u:'2',sc:scK(u2s.sc,'2'),b:t('09:10'),e:t('09:50'),at:5});   /* a 2nd-unit scene with its own id */
           LANG='de';window.canSceneLog=()=>true;SCLOG.list=acks;sceneLogSec();const rows=['1','2','3'].map(u=>scExpRows('',u).map(r=>[r.name,r.dt,r.date,r.unit,r.state,r.ie,r.pg,r.set,r.plan,r.pmin,r.b,r.e,r.min,r.diff,r.desc]));
           SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;LANG=k.g;return {today:todayISO(),acks,rows,days:S.days,dispos:S.dispos,tz:Intl.DateTimeFormat().resolvedOptions().timeZone}})()""")
         if sp:

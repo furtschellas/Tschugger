@@ -153,7 +153,7 @@ export const csIDrive=(c,me)=>!!me&&csA(c.transport).some(r=>me.hit(r.driver));
 export const csMyWords=(c,me,withRole)=>{const call=csMyCall(c,me);return new Set([...csDWords(call&&call.dept),...(withRole?csDWords(call&&call.role):[]),...csDWords(me&&me.dep)])};
 export const csRows=c=>csA(((c||{}).order||{}).rows);
 export const csKeys=rows=>typeof scRowKeys==="function"?scRowKeys(csA(rows),r=>r.text||r.syn):[];
-export const csAck=date=>typeof scHas==="function"&&scHas(date);
+export const csAck=(date,u)=>typeof scHas==="function"&&scHas(date,u);
 /* the scenes of the shooting order shot at one location */
 export const csLocRows=(c,l)=>csRows(c).filter(r=>r.sc&&csSceneLoc([l],r)===l);
 export function setCSTR(v){return CSTR=v}   /* other parts change CSTR only through this */

@@ -19,7 +19,18 @@ const scDur=ms=>{const m=Math.max(0,Math.floor(ms/60000));return m<60?m+"′":Ma
 /* the counters of running scenes count on without drawing the page again */
 setInterval(()=>document.querySelectorAll("[data-scrun]").forEach(el=>{el.textContent=scDur(Date.now()-(+el.dataset.scrun))}),20e3);
 /* one id per scene and day for Drehplan and callsheet alike: «186 pt1A», «186pt1A», «Sc. 186 PT1A», «DJ 186pt1a» → 186pt1a; «21 CONT» = 21 */
-export function scAckId(date,sc){return String(date||"").replace(/-/g,"")+"-"+fold(String(sc||"")).replace(/[^a-z0-9]/g,"").replace(/^(dj|d|j|sc|sz|seq|scene|szene)(?=\d)/,"").replace(/(cont|continued|forts|fortsetzung)$/,"").slice(0,24)}
+/* 2nd/3rd Unit: every entry has its own id – the key ends in «_u2» («lunch_u2», «90_u2» → …-lunchu2, …-90u2), so the same scene number in both units
+   is quittiert apart (before, a 2nd-unit scene that the 1st Unit also shoots showed the 1st Unit's tick and could not be started) */
+export function scAckId(date,sc){sc=String(sc??"");const m=sc.match(/_u([23])$/);if(m)sc=sc.slice(0,-3);
+  return String(date||"").replace(/-/g,"")+"-"+fold(sc).replace(/[^a-z0-9]/g,"").replace(/^(dj|d|j|sc|sz|seq|scene|szene)(?=\d)/,"").replace(/(cont|continued|forts|fortsetzung)$/,"").slice(0,m?21:24)+(m?"u"+m[1]:"")}
+/* the key of an entry in a unit: the 1st Unit as it is, the 2nd/3rd with «_u2» / «_u3» (lunch, wrap, setups had it already) */
+export const scK=(sc,u)=>{u=String(u||"1");sc=String(sc??"");return u!=="1"&&sc&&!/_u[23]$/.test(sc)?sc+"_u"+u:sc};
+window.scK=scK;
+const scUOf=k=>(String(k||"").match(/_u([23])$/)||[])[1]||"1";
+/* the entry of a key – a 2nd/3rd-unit scene quittiert before the own ids (id without unit, u "2") is still found */
+function scGet(date,sc){const x=window.SCACK[scAckId(date,sc)];if(x)return /_u[23]$/.test(String(sc||""))||String(x.u||"1")==="1"||/^(lunch|wrap|setup\d*)$/.test(String(sc||""))?x:null;   /* an older 2nd-unit entry is not the 1st Unit's */const m=String(sc||"").match(/^(.*)_u([23])$/);if(!m||/^(lunch|wrap|setup\d*)$/.test(m[1]))return null;
+  const o=window.SCACK[scAckId(date,m[1])];return o&&String(o.u||"1")===m[2]?o:null}
+window.scGet=scGet;
 window.scAckId=scAckId;
 /* lunch and wrap rows of the schedule / shooting order are quittiert too: their key «lunch» / «wrap», else "" */
 window.scEvKey=t=>{t=String(t||"");return /\b(lunch|mittag|pranzo|d[ée]jeuner)\b/i.test(t)?"lunch":/\b(wrap|drehschluss)\b/i.test(t)?"wrap":""};
@@ -32,7 +43,7 @@ window.scBase=k=>String(k||"").replace(/_u[23]$/,"");
 /* the name of a quittiert entry: Lunch, Wrap, Setup 2, else «Szene 186» */
 window.scLabel=k=>{k=scBase(k);const m=k.match(/^setup(\d*)$/);return k==="lunch"?"Lunch":k==="wrap"?"Wrap":m?("Setup"+(m[1]?" "+m[1]:"")):L("Szene")+" "+k};
 /* state of a scene: 0 open, 1 running, 2 done */
-window.scState=(date,sc)=>{if(window.SCACKON===false)return 0;const x=window.SCACK[scAckId(date,sc)];return x?(x.s===1?1:2):0};
+window.scState=(date,sc)=>{if(!scOnU(scUOf(sc)))return 0;const x=scGet(date,sc);return x?(x.s===1?1:2):0};
 /* any scene of that day quittiert (then «jetzt» follows the quittances instead of the clock) */
 /* draw again but keep what is open (callsheet parts, scene details, locations) and the scroll position */
 export function scRender(){const v=document.getElementById("view");if(!v){render();return}
@@ -42,7 +53,8 @@ export function scRender(){const v=document.getElementById("view");if(!v){render
   for(const id of secs){const d=document.getElementById(id);if(d)d.open=true}for(const [id,a] of all){const d=document.getElementById(id);if(d)d.dataset.all=a}
   for(const sc of scs){const li=v.querySelector('li[data-sc="'+CSS.escape(sc)+'"]');const d=li&&li.querySelector("details.csscd");if(d)d.open=true}
   scrollTo(0,y)}
-window.scHas=date=>{if(window.SCACKON===false)return false;const p=String(date||"").replace(/-/g,"")+"-";return Object.keys(window.SCACK).some(k=>k.startsWith(p))};
+/* u: only that unit; without: any unit that is quittiert (each unit can be switched off on its own) */
+window.scHas=(date,u)=>{const p=String(date||"").replace(/-/g,"")+"-";return Object.entries(window.SCACK).some(([k,x])=>{if(!k.startsWith(p))return false;const xu=String(x&&x.u||"1");return (!u||xu===String(u))&&scOnU(xu)})};
 const SC_ICO={1:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="13" height="10" rx="2"/><path d="M15.5 10.5l5.5-3v9l-5.5-3z"/><circle cx="6.5" cy="10.5" r="1"/></svg>',
   2:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   /* wrap done: two ticks (the shooting day is finished) */
@@ -52,17 +64,17 @@ const SC_ICO={1:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" str
 /* running: a film camera; done: a tick; wrap: two ticks; lunch running: knife and fork */
 /* the round status button of a scene (visible for all, a button only with the permission) */
 /* switched on per unit (2nd Unit: SCACKON2) */
-const scOnU=u=>window.SCACKON!==false&&(String(u||"1")!=="2"||window.SCACKON2!==false);
+const scOnU=u=>String(u||"1")==="2"?window.SCACKON2!==false:window.SCACKON!==false;   /* each unit on its own (before, the 2nd Unit was off whenever the 1st was) */
 const scParU=u=>String(u||"1")==="2"?(window.SCPAR2===undefined?!!window.SCPAR:!!window.SCPAR2):!!window.SCPAR;
 window.scOnU=scOnU;
 window.scAckBtn=(date,sc,u)=>{if(!date||!sc||!scOnU(u))return"";   /* switched off in App-Verwaltung → Einstellungen */
-  u=String(u||"1");const st=scState(date,sc),can=typeof canPerm==="function"&&canPerm("scenes.ack");
+  u=String(u||"1");sc=scK(sc,u);const st=scState(date,sc),can=typeof canPerm==="function"&&canPerm("scenes.ack");
   /* the state symbol only with «Quittierungen sehen» (or the right to quittieren) */
   if(!can&&!(typeof canPerm==="function"&&canPerm("scenes.see")))return"";
   const tip=[L("Szene offen – antippen = Szene beginnt"),L("Szene läuft – antippen = abgeschlossen"),L("Szene abgeschlossen – antippen = ändern")][st];
   const lab=[L("Szene offen"),L("Szene läuft"),L("Szene abgeschlossen")][st];
   /* left of the icon: begin–end, while running begin and a counter how long it runs */
-  const x=window.SCACK[scAckId(date,sc)]||{},b0=+x.b||+x.at||0,tm=st===2?scHM(b0)+(x.e?"–"+scHM(x.e):""):st===1?scHM(b0)+' · <span data-scrun="'+b0+'">'+scDur(Date.now()-b0)+'</span>':"";
+  const x=scGet(date,sc)||{},b0=+x.b||+x.at||0,tm=st===2?scHM(b0)+(x.e?"–"+scHM(x.e):""):st===1?scHM(b0)+' · <span data-scrun="'+b0+'">'+scDur(Date.now()-b0)+'</span>':"";
   /* sctp = Drehplan, sctc = Callsheet: App-Verwaltung can hide the times there on phones and on computers (classes on <html>) */
   const lab0=tm&&scTimesOk()?'<span class="scackt '+(S.tab==="dispo"?"sctc":"sctp")+'">'+tm+'</span>':'';
   const ico=st===1&&scBase(sc)==="lunch"?SC_ICO.lunch:st===2&&scBase(sc)==="wrap"?SC_ICO.wrap:(SC_ICO[st]||"");
@@ -116,9 +128,9 @@ function scaRows(day,u){const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day
   return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k||(()=>{try{return window.deGone&&window.deGone(x)}catch(_){return false}})())return null;const b=scBase(k),setup=/^setup\d*$/.test(b),first=setup&&!scene;if(x.sc)scene=true;
     const kind=b==="lunch"?"l":b==="wrap"?"w":first?"a":"s";let h=hm(x.t);if(first){const j=ck.indexOf(b);if(j>=0&&hm(cr[j].t))h=hm(cr[j].t)}if(!h)return null;
     const t=dayMs(day.date,h,ref);if(!t)return null;if(!ref)ref=t;
-    return {k:(x.sc||u==="1")?k:k+"_u"+u,kind,t}}).filter(Boolean)}
+    return {k:scK(k,u),kind,t}}).filter(Boolean)}
 let SCABUSY=false;
-async function scAuto(){if(SCABUSY||/[?&]sbx=/.test(location.search)||window.SCACKON===false||!window.SCACKLIVE||!window.RIDEACKLOADED||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn())||!SCA_KINDS.some(([k])=>scaOn(k)))return;SCABUSY=true;
+async function scAuto(){if(SCABUSY||/[?&]sbx=/.test(location.search)||!window.SCACKLIVE||!window.RIDEACKLOADED||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn())||!SCA_KINDS.some(([k])=>scaOn(k)))return;SCABUSY=true;
   try{const now=Date.now(),t=todayISO(),days=[t,isoAdd(t,-1)];
     for(const day of arr(S.days)){if(!day||day.kind!=="shoot"||!days.includes(day.date))continue;
       for(const u of ["1","2","3"]){if(!scOnU(u))continue;const rows=scaRows(day,u);let j=-1;
@@ -126,13 +138,13 @@ async function scAuto(){if(SCABUSY||/[?&]sbx=/.test(location.search)||window.SCA
         if(j<0)continue;const r=rows[j],T=r.t+(+A[r.kind].min||0)*60e3;
         if(rows.slice(j).some(x=>scState(day.date,x.k)>0)||scaZ(day.date,r.k))continue;   /* already quittiert (or later ones) / set back by hand */
         /* everything still running in this unit is finished (also scenes running in parallel) */
-        for(const run of scRunAll(day.date,u,scAckId(day.date,r.k))){const x=window.SCACK[scAckId(day.date,run)]||{},b=+x.b||+x.at||T;await scWrite(day.date,run,u,{s:2,b,e:Math.max(T,b+60e3)},true)}
+        for(const run of scRunAll(day.date,u,scAckId(day.date,r.k))){const x=scGet(day.date,run)||{},b=+x.b||+x.at||T;await scWrite(day.date,run,u,{s:2,b,e:Math.max(T,b+60e3)},true)}
         await scWrite(day.date,r.k,u,r.kind==="w"?{s:2,b:T,e:T}:{s:1,b:T},true)}}}
   catch(err){if(!(err&&err.code==="simulation"))console.warn("scene auto",err&&err.code||err)}
   finally{SCABUSY=false}}
 setInterval(scAuto,30e3);
 /* the key of a quittance: its «sc» field – for old entries without it the part of the id after the date */
-const scKeyOf=(id,x)=>(x&&x.sc)||id.split("-").slice(1).join("-");
+const scKeyOf=(id,x)=>scK((x&&x.sc)||id.split("-").slice(1).join("-"),x&&x.u);   /* an older 2nd-unit entry: its key with «_u2» */
 /* all entries running in a unit on that day (other than this one): their keys */
 function scRunAll(date,u,except){const out=[];for(const [id,x] of Object.entries(window.SCACK))if(x&&x.d===date&&x.s===1&&String(x.u||"1")===String(u||"1")&&id!==except)out.push(scKeyOf(id,x));return out}
 /* the scene running in a unit on that day (other than this one): its scene number, else "" */
@@ -142,7 +154,10 @@ function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCAC
 const scMsNear=(date,t,ref)=>{const v=scMs(date,t);if(!v||!ref)return v;if(ref-v>12*3600e3){const n=scMs(isoAdd(date,1),t);return n||v}return v};
 const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;
   const d=new Date(date+"T00:00:00");d.setHours(+m[1],+m[2],0,0);return d.getTime()};
-async function scWrite(date,sc,u,v,auto){const id=scAckId(date,sc),old=window.SCACK[id],undo=()=>{if(old)window.SCACK[id]=old;else delete window.SCACK[id];scRender()};
+async function scWrite(date,sc,u,v,auto){sc=scK(sc,u);const id=scAckId(date,sc),old=scGet(date,sc),undo=()=>{if(old)window.SCACK[id]=old;else delete window.SCACK[id];scRender()};
+  /* an older entry of this 2nd-unit scene (id without unit): replaced by the own id */
+  const lid=old&&!window.SCACK[id]?Object.keys(window.SCACK).find(k=>window.SCACK[k]===old):null;
+  if(lid){try{await dbWrite("delete","sceneack/"+lid,null,{undo:()=>{window.SCACK[lid]=old}})}catch(_){}delete window.SCACK[lid];if(typeof SCLOG!=="undefined"&&SCLOG.list){const i=SCLOG.list.findIndex(x=>x.id===lid);if(i>=0)SCLOG.list.splice(i,1)}}
   if(!auto&&old&&(!v||v.s<(old.s===1?1:2)))await scaKeep(date,sc);   /* set back by hand: the automatic leaves it alone */
   /* through the data layer: offline the scene state shows at once and is sent later */
   if(!v){await dbWrite("delete","sceneack/"+id,null,{undo});delete window.SCACK[id]}else{v=Object.assign({d:date,at:Date.now(),u:String(u||"1"),sc:String(sc).slice(0,24)},v);for(const k of ["b","e"])if(v[k]==null)delete v[k];await dbWrite("set","sceneack/"+id,v,{undo});window.SCACK[id]=v}if(typeof SCLOG!=="undefined"&&SCLOG.list){const i=SCLOG.list.findIndex(x=>x.id===id);if(i>=0)SCLOG.list.splice(i,1);if(v)SCLOG.list.push(Object.assign({id},v))}scRender()}
@@ -160,9 +175,9 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   const [date,sc,u]=b.dataset.scack.split("|");scTap(b,date,sc,u,"")},true);
 const scIsEv=k=>/^(lunch|wrap|setup\d*)$/.test(scBase(k));
 /* one tap on the round button of an entry (choice: the answer of the parallel question – «par» or «finish» – when it was asked) */
-async function scTap(b,date,sc,u,choice){const id=scAckId(date,sc),st=scState(date,sc),x=window.SCACK[id]||{},bs=scBase(sc),now0=Date.now();
+async function scTap(b,date,sc,u,choice){sc=scK(sc,u);const id=scAckId(date,sc),st=scState(date,sc),x=scGet(date,sc)||{},bs=scBase(sc),now0=Date.now();
   if(st===2){scAckDialog(date,sc,u);return}
-  if(st===0){const runs=scRunAll(date,u,id),fin=k=>{const rx=window.SCACK[scAckId(date,k)]||{},rb=+rx.b||+rx.at||now0;
+  if(st===0){const runs=scRunAll(date,u,id),fin=k=>{const rx=scGet(date,k)||{},rb=+rx.b||+rx.at||now0;
       return scWrite(date,k,u,{s:2,b:rb,e:scBase(k)==="lunch"?Math.max(rb,Math.min(scLunchEnd(rx),now0)):Math.max(rb,now0)}).catch(()=>{})};
     /* lunch and setups still running end when the next entry starts (lunch at the latest at its planned end) – not awaited: WhatsApp «direkt»
        must open in this tap */
@@ -182,7 +197,7 @@ async function scTap(b,date,sc,u,choice){const id=scAckId(date,sc),st=scState(da
   /* WhatsApp per kind of quittance (Mein Konto → App): «direkt» opens WhatsApp right in this tap (a phone allows it only here, not after saving) */
   const wk=scWaKind(date,sc,u,v),wm=scWaMode(wk,u);if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},v):v),wk,u);
   b.disabled=true;
-  if(st===0&&bs==="wrap")for(const k of scRunAll(date,u,id)){const rx=window.SCACK[scAckId(date,k)]||{};try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now0,e:scBase(k)==="lunch"?Math.max(+rx.b||+rx.at||now0,Math.min(scLunchEnd(rx),now0)):now0})}catch(_){}}
+  if(st===0&&bs==="wrap")for(const k of scRunAll(date,u,id)){const rx=scGet(date,k)||{};try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now0,e:scBase(k)==="lunch"?Math.max(+rx.b||+rx.at||now0,Math.min(scLunchEnd(rx),now0)):now0})}catch(_){}}
   try{await scWrite(date,sc,u,v);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null,wk)}   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
   catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:saveErr(err),4000)}}
 /* after a scene (lunch, wrap) was finished: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
@@ -243,7 +258,7 @@ function scShareAsk(date,sc,u,v,force){
   d.addEventListener("click",e=>{if(e.target.closest("[data-scwago]"))scWaOpen(txt,scWaKind(date,sc,u,v),u);if(e.target===d||e.target.closest("[data-scwax]")||e.target.closest("[data-scwago]"))setTimeout(()=>d.remove(),50)});
   document.body.appendChild(d)}
 /* popup of a quittiert scene: state, begin and end time; «offen» takes the quittance away */
-function scAckDialog(date,sc,u){const id=scAckId(date,sc),x=window.SCACK[id]||{},st=scState(date,sc);
+function scAckDialog(date,sc,u){sc=scK(sc,u);const id=scAckId(date,sc),x=scGet(date,sc)||{},st=scState(date,sc);
   const d=mkDialog("scackdlg",null,{replace:true});let cur=st;
   d.innerHTML='<div class="a2box scbox"><h3>'+esc(scLabel(sc))+'</h3><p class="ghint">'+esc(date.split("-").reverse().join("."))+(u&&u!=="1"?' · '+esc((typeof UNAME!=="undefined"&&UNAME[u])||u)+' Unit':'')+'</p>'+
     '<div class="redst scst" role="group" aria-label="'+esc(L("Status"))+'">'+(scBase(sc)==="wrap"?[[0,"offen"],[2,"Drehschluss"]]:[[0,"offen"],[1,scBase(sc)==="lunch"?"Lunch läuft":"läuft"],[2,"abgeschlossen"]]).map(([v,t])=>'<button type="button" class="scstb" data-scst="'+v+'" aria-pressed="'+(st===v)+'"><span class="scack sk'+v+'">'+((v===1&&scBase(sc)==="lunch"?SC_ICO.lunch:v===2&&scBase(sc)==="wrap"?SC_ICO.wrap:SC_ICO[v])||"")+'</span><span class="scstl">'+esc(L(t))+'</span></button>').join("")+'</div>'+

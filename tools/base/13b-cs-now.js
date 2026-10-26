@@ -17,15 +17,15 @@ window.csShootDay=csShootDay;
 /* «now» for a day: on the night after a shooting day the hours go on (00:30 → 24:30), so they compare with the rows after midnight */
 const csNowFor=date=>{const n=csHM();return date!==todayISO()&&n<"12:00"?String(24+ +n.slice(0,2))+n.slice(2):n};
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null; lunch or a setup running: that row with ev = its key */
-export function csNowScene(x){const sd=csShootDay();x=x||(S.dispos||[]).find(y=>y&&y.date===sd);const c=x&&x.cs;if(!c||x.date!==sd)return null;const rows=csRows(c);let i=csNowIdx(rows,x.date);
+export function csNowScene(x){const sd=csShootDay();x=x||(S.dispos||[]).find(y=>y&&y.date===sd);const c=x&&x.cs;if(!c||x.date!==sd)return null;const rows=csRows(c),un=String(c._u||"1");let i=csNowIdx(rows,x.date,un);   /* the 2nd Unit alone (csU2Dispo): its own entries */
   if(i>=0&&!rows[i].sc){const k=csKeys(rows)[i];   /* setup, lunch or wrap is the step now (running or next) – a setup also by the clock (building up before the first scene) */
-    if(k&&(csAck(x.date)||/^setup\d*$/.test(k)))return Object.assign({},rows[i],{ev:k,lunch:k==="lunch"&&scState(x.date,k)===1})}
+    const ek=k&&un!=="1"?k+"_u"+un:k;if(k&&(csAck(x.date,un)||/^setup\d*$/.test(k)))return Object.assign({},rows[i],{ev:ek,lunch:k==="lunch"&&scState(x.date,ek)===1})}
   for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(csIsWrap(r))return null}return null}
 /* the row running now: with quittances the running one, else the next open step (scene, setup, lunch, wrap) after the last done one (wrap quittiert: none);
    without quittances by the clock: the last row that has started (after the wrap: none) */
 export function csNowIdx(rows,date,u){if(date!==csShootDay())return -1;rows=csA(rows);u=String(u||"1");
   /* the 2nd Unit: its own lunch, wrap and setups («lunch_u2») */
-  if(csAck(date)){const RK=csKeys(rows),key=(r,i)=>r.sc||(RK[i]?RK[i]+(u!=="1"?"_u"+u:""):"");
+  if(csAck(date,u)){const RK=csKeys(rows),key=(r,i)=>r.sc?(window.scK?window.scK(r.sc,u):r.sc):(RK[i]?RK[i]+(u!=="1"?"_u"+u:""):"");
     const st=rows.map((r,i)=>key(r,i)?scState(date,key(r,i)):-1);if(st.some((v,i)=>v===2&&key(rows[i],i)===(u!=="1"?"wrap_u"+u:"wrap")))return -1;
     const run=st.indexOf(1);if(run>=0)return run;
     for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0)return i;return -1}   /* the next step: a scene, setup, lunch or the wrap */

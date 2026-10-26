@@ -278,9 +278,9 @@ function u2NowHTML(t,c0){try{if(typeof window.scOnU==="function"&&!window.scOnU(
     const A=Object.values(window.SCACK||{}).filter(x=>x&&x.d===t&&String(x.u||"1")==="2");
     if(A.some(x=>x.s===2&&/^wrap/.test(String(x.sc||""))))return"";
     const setOf=sc=>{const i=its.find(y=>y&&y.sc&&norm(y.sc)===norm(sc));return i?String(i.set||""):""};
-    const run=A.filter(x=>x.s===1);let what=run.map(x=>{const k=String(x.sc||""),ev=k.match(/^(lunch|setup\d*)(_u\d)?$/);
+    const run=A.filter(x=>x.s===1);let what=run.map(x=>{const k=String(x.sc||"").replace(/_u[23]$/,""),ev=k.match(/^(lunch|setup\d*)(_u\d)?$/);
       return ev?'<b class="tnsc">'+esc(ev[1]==="lunch"?"Lunch":"Setup")+'</b>':'<b class="tnsc">'+esc(k)+'</b> <span class="tnset">'+esc(setOf(k))+'</span>'}).join(" + ");
-    if(!run.length){const done=new Set(A.filter(x=>x.s===2).map(x=>norm(String(x.sc||""))));const nx=its.find(y=>y&&y.sc&&!done.has(norm(y.sc)));
+    if(!run.length){const done=new Set(A.filter(x=>x.s===2).map(x=>norm(String(x.sc||"").replace(/_u[23]$/,""))));const nx=its.find(y=>y&&y.sc&&!done.has(norm(y.sc)));
       if(nx)what='→ <b class="tnsc">'+esc(String(nx.sc))+'</b> <span class="tnset">'+esc(String(nx.set||""))+'</span>'}
     let cm="";if(cu&&typeof cqWmNow==="function"){const w=cqWmNow(cu),no=r=>String(r.no||"").trim()||"?";
       cm=[["m","Maske"],["w","Kostüm"]].filter(([k])=>w[k].length).map(([k,l])=>'<span class="tnk">'+esc(L(l))+'</span><span class="tnc">'+w[k].map(r=>tnChip(no(r),String(r.role||"").trim(),2,false,typeof cqLate==="function"?cqLate(cu,r):0)).join("")+'</span>').join("")}
