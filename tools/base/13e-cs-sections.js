@@ -39,10 +39,11 @@ function csLocBody(l,LAD,HN,near){
 function csLocBox(c,l,date,NOW,NEAR){const mem=l._m||[l];const {DN,LAD}=csLocHead(c,l,date),code=csLocCode(l),isNow=mem.includes(NOW);const HN=csA(l.notes).map(String).filter(n=>CSHN_RE.test(n.trim()));
   const badge=code&&!l._m?csPlaceH(csBadgeIn(l,l._codes),csLocHref(l,c,date),l.kinds?l.no:code+' · Set','csloc-c '+(l.kinds?'csbase':'csmot')):'';
   const title=l._m?'<span class="dn csmset">'+l._m.map(m=>'<span><b class="csplace csmot">L'+esc(String(m.no||"").trim())+'</b> '+esc(m.name||"")+'</span>').join("")+'</span>':'<span class="dn">'+esc(DN)+'</span>';
-  const icons='<span class="csloc-i">'+[...new Set(mem.map(m=>csLocFp(c,m,date,true)))].join("")+(LAD?'':csMap(l.map))+CSEXPSM+'</span>';
+  const bases=l._bases?'<span class="csbases">'+l._bases.map(b=>b.map?'<a href="'+esc(safeUrl(b.map))+'" target="_blank" rel="noopener noreferrer" title="Base '+esc(b.n)+'">'+esc(b.n)+'</a>':'<span>'+esc(b.n)+'</span>').join("")+'</span>':'';   /* several bases: their numbers, each its map */
+  const icons='<span class="csloc-i">'+[...new Set(mem.map(m=>csLocFp(c,m,date,true)))].join("")+(LAD||l._bases?'':csMap(l.map))+CSEXPSM+'</span>';
   const addr=LAD?'<a class="csaddr" href="'+esc(safeUrl(l.map||csMapQ(LAD)))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" data-nobub="1">'+esc(LAD)+'</a>':'';
   const near=[].concat(...mem.map(m=>NEAR.get(m)||[])).filter((p,i,a)=>a.findIndex(y=>y.code===p.code&&y.u===p.u)===i).sort((a,b)=>a.d-b.d);
-  return '<details class="dbox csloc'+(isNow?' csnowloc':'')+'"><summary><div class="csl1">'+badge+title+icons+'</div>'+addr+csLocScenes(c,l)+'</summary>'+csLocBody(l,LAD,HN,near)+'</details>'}
+  return '<details class="dbox csloc'+(isNow?' csnowloc':'')+'"><summary><div class="csl1">'+badge+title+bases+icons+'</div>'+(l._bases?'':addr)+csLocScenes(c,l)+'</summary>'+csLocBody(l,LAD,HN,near)+'</details>'}
 function csLocSec(c,x,me,SU,t){if(!vok("loc"))return"";   /* «Locations sehen» */const ls=csLocs(c),NOW=csNowLoc(c,x.date,ls),NEAR=csNear(c,ls,x.date);window.CSNOWK=NOW?NOW.no+'|'+NOW.name:'';
   const LG=csLocGroups(c,ls,x.date);
   return csSec("Locations",LG.length?LG.map(l=>csLocBox(c,l,x.date,NOW,NEAR)).join(""):"",true,"","loc","")}

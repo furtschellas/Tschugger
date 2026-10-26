@@ -149,6 +149,8 @@ function csLocs0(c){const sets=[],extra=[];
         for(const [re,k] of KIND)if(k!=="Base"&&re.test(uses)&&!kinds.includes(k))kinds.push(k)}
       let e=place(name,i.map);
       if(!e){e={no:"",kinds:[],name:name||"",map:i.map||"",notes:[],items:[]};extra.push(e)}
+      /* numbered bases («Base 2», «Parking: Base 4-5»): the number stays, several of them are shown together (below) */
+      {const bn=(lab+" "+txt).match(/\bbase\s*(\d+(?:\s*[-–]\s*\d+)?)\b/i);if(bn&&(!e._bn||/[-–]/.test(e._bn)))e._bn=bn[1].replace(/\s+/g,"")}   /* «Base 4» before «Base 4-5» (same place) */
       const who=uses&&/cast/i.test(uses)&&/extra/i.test(uses)?"":(whoOf(lab+" "+head)||whoOf(txt));
       for(const k0 of kinds){const k=k0==="W / H / M"&&who?k0+" "+who:k0;if(!e.kinds.includes(k))e.kinds.push(k)}
       const isAdr=csIsAdr;
@@ -171,4 +173,12 @@ function csLocs0(c){const sets=[],extra=[];
   /* DIT / production office at the place of a set: a line of that set, not a location of its own (only somewhere else it is one) */
   for(const e of extra.slice())if(e.kinds.every(k=>k==="DIT"||k==="Prod")){const st=sets.find(l=>(e.map&&l.map===e.map)||(e.name&&fold(String(l.name||""))===fold(e.name)));
     if(st){st._kx=[...new Set((st._kx||[]).concat(e.kinds))];st.items=(st.items||[]).concat([{label:e.kinds.join(" / "),text:[e.name].concat(e.notes).filter(Boolean).join(", "),map:e.map||""}]);extra.splice(extra.indexOf(e),1)}}
+  /* many places that are only a Base (2nd Unit: «Base 1» … «Base 6», each a link): one Base with its numbers as links, not six «BASE» boxes */
+  {const pb=extra.filter(e=>e.kinds.length===1&&e.kinds[0]==="Base");
+   if(pb.length>=3){const nm=e=>{const n=String(e.name||"").trim();return n&&!/^base(\s*\d+(\s*[-–]\s*\d+)?)?$/i.test(n)?n:""};
+     const m={no:"",kinds:["Base"],name:"",map:"",notes:[],items:[],_bases:[]};let k=0;
+     for(const e of pb){const n=e._bn||String(++k);m._bases.push({n,map:e.map||""});
+       m.items.push({label:"Base "+n,text:[nm(e)].concat(csA(e.notes).map(String)).filter(Boolean).join(" · ")||(e.map?L("Karte"):"–"),map:e.map||""})}
+     m._bases.sort((a,b)=>parseInt(a.n,10)-parseInt(b.n,10));m.items.sort((a,b)=>parseInt(a.label.slice(5),10)-parseInt(b.label.slice(5),10));
+     m.map=(m._bases[0]||{}).map||"";extra.splice(extra.indexOf(pb[0]),1,m);for(const e of pb.slice(1))extra.splice(extra.indexOf(e),1)}}
   return sets.concat(extra.map(e=>{e.kinds.sort((a,b)=>ORDER.indexOf(a.replace(/ (Cast|Extras)$/,""))-ORDER.indexOf(b.replace(/ (Cast|Extras)$/,"")));if(!e.name)e.name=e.kinds.join(" · ");return Object.assign(e,{no:e.kinds.join(" · ")})}))}

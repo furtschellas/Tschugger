@@ -656,6 +656,12 @@ async def owner_tests(p, port):
           const r={id:scAckId(t,scK('21','2')),sep:scState(t,'21')===2&&scState(t,scK('21','2'))===0,legacy:scState(t,'55_u2')===1&&scState(t,'55')===0,ev:scAckId(t,'lunch_u2'),cont:scAckId(t,scK('21 CONT','2'))};
           window.SCACK=k;return r})()""")
         check("2nd Unit: eigene Quittierung pro Szene (gleiche Szenen-Nummer wie die 1st Unit), ältere Einträge zählen weiter", u2a in (None, {"id": "20300506-21u2", "sep": True, "legacy": True, "ev": "20300506-lunchu2", "cont": "20300506-21u2"}), u2a, public=True)
+        # 2nd Unit: viele Basen («Base 1» … «Base 6», je ein Link) als eine Base mit ihren Nummern, nicht sechs Kästen «BASE»
+        bz = await E("""(()=>{if(typeof csLocs!=='function')return null;const it=(l,t,m)=>({label:l,text:t,map:m});
+          const ls=csLocs({locations:[{no:'2.1',name:'ROAD',map:'https://maps.app.goo.gl/A',items:[it('Base 1','Meeting point','https://maps.app.goo.gl/A'),it('Parking','Base 4-5','https://maps.app.goo.gl/B4'),
+            it('Lunch','Restaurant X, Dorf 3, 1922 Salvan','https://maps.app.goo.gl/L'),it('Base 2','','https://maps.app.goo.gl/B2'),it('Base 3','','https://maps.app.goo.gl/B3'),it('Base 4','','https://maps.app.goo.gl/B4'),it('Base 5','','https://maps.app.goo.gl/B5')]}]});
+          const b=ls.filter(l=>l.kinds&&l.kinds.includes('Base'));return {bases:b.length,nos:b[0]&&b[0]._bases?b[0]._bases.map(x=>x.n).join(','):'',lunch:ls.some(l=>l.kinds&&l.kinds.includes('Lunch'))}})()""")
+        check("Callsheet: viele Basen als eine Base mit Nummern (je ein Link), Lunch bleibt eigener Ort", bz in (None, {"bases": 1, "nos": "1,2,3,4,5", "lunch": True}), bz, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();
