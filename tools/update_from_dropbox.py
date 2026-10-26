@@ -1555,6 +1555,22 @@ def compose_prep(plans, cache):
 def norm_sc(x): return re.sub(r"\s+", " ", str(x or "")).strip().lower()
 
 
+def u2_pickups(data):
+    """2nd-Unit cast without a P/UP time on the callsheet: the time of its pickup ride (the first ride of that actor, not from the Base, of the
+    2nd Unit or both – the same rides as cqRides in 24-flow.js), so P/UP shows and can be quittiert as in the 1st Unit; returns the number set"""
+    import late_push as LP
+    n = 0
+    for x in data.get("dispos") or []:
+        cs = x.get("cs") if isinstance(x, dict) else None
+        u2 = cs.get("u2") if isinstance(cs, dict) else None
+        if not isinstance(u2, dict): continue
+        c = dict(cs, _date=x.get("date") or "")
+        for r in u2.get("cast") or []:
+            if not isinstance(r, dict) or LP.cq_hm(r.get("pickup")): continue
+            rs = [y for y in LP.Model({}, c, dict(r, u="2")).rides() if not re.search("base", str(y.get("from") or ""), re.I) and LP.cq_hm(y.get("t1"))]
+            if rs: r["pickup"] = min(LP.cq_hm(y.get("t1")) for y in rs); n += 1
+    return n
+
 def apply_place_fixes(data):
     """Info page: addresses missing in the «Good to know» PDF, extra entries (e.g. the cast hotel) and hidden phone numbers –
     kept in tools/places_extra.enc.json (encrypted: the repository is public). Only fills gaps, never overrides the PDF."""
@@ -2589,6 +2605,10 @@ def main():
     if not data["days"] or not data["crew"]: sys.exit("Keine Drehtage oder Crew – nichts veröffentlicht")
     try: u2_also_add(data["days"], meta.get("unit2Sheet"))
     except Exception as e: log("2nd Unit zusätzlich nicht ergänzt:", type(e).__name__)
+    try:
+        n = u2_pickups(data)
+        if n: log("2nd Unit: P/UP aus den Fahrten ergänzt:", n)
+    except Exception as e: log("2nd Unit P/UP nicht ergänzt:", type(e).__name__)
     try: apply_place_fixes(data)
     except Exception as e: log("Info-Ergänzungen nicht angewendet:", type(e).__name__)
     try:   # the shared Google map (link «Karte»): its points for the callsheet map (App-Verwaltung: «Punkte der Google-Karte …»)

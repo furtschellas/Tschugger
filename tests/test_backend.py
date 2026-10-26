@@ -630,4 +630,13 @@ check("Coverday (Server): Nachrücken ab Donnerstag – Freitag bekommt D03, der
 _r = CD.apply({"days": _cdd, "dispos": [], "meta": {"sources": [{"kind": "schedule", "modified": "2026-01-02T10:00:00Z"}]}}, [{"op": "swap", "u": "all", "a": "2026-01-05", "b": "2026-01-06", "at": 1, "raw": {"a": "x", "b": "y"}}, {"op": "swap", "u": "all", "a": "2026-01-08", "b": "2026-01-09", "st": "off", "at": 5}])
 check("Coverday (Server): ein neuerer Drehplan mit anderen Szenen und ausgeschaltete Änderungen gelten nicht", [i["sc"] for i in _r["days"][0]["items"]] == ["1", "2"] and [i["sc"] for i in _r["days"][3]["items"]] == ["4", "5"])
 
+# 2nd Unit: P/UP of a cast row without a time on the callsheet – from its pickup ride (not the one from the Base)
+_u2d = {"dispos": [{"date": "2026-01-05", "cs": {"cast": [{"no": "2", "role": "LIA", "actor": "Eva Probe", "pickup": "07:00"}],
+        "transport": [{"vehicle": "Van 3", "passengers": "Max Muster, Tom Zweit", "from": "Moxy", "t1": "06:15", "to": "Location 2nd UNIT", "t2": "06:40"},
+                      {"vehicle": "Van 4", "passengers": "Max Muster", "from": "Base 2", "t1": "07:10", "to": "Set B", "t2": "07:20"}],
+        "u2": {"order": {"rows": [{"sc": "90"}]}, "cast": [{"no": "1", "role": "BEN", "actor": "Max Muster", "call": "06:45"}, {"no": "3", "role": "KAI", "actor": "Kai Ohne", "call": "07:00"}]}}}]}
+check("2nd Unit: P/UP aus der Abholfahrt, wenn das Callsheet keine Zeit hat (nicht die Fahrt ab Base, keine erfundene Zeit)",
+      U.u2_pickups(_u2d) == 1 and [r.get("pickup") for r in _u2d["dispos"][0]["cs"]["u2"]["cast"]] == ["06:15", None] and _u2d["dispos"][0]["cs"]["cast"][0]["pickup"] == "07:00",
+      [r.get("pickup") for r in _u2d["dispos"][0]["cs"]["u2"]["cast"]])
+
 sys.exit(done("Hintergrund"))
