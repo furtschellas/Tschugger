@@ -639,4 +639,16 @@ check("2nd Unit: P/UP aus der Abholfahrt, wenn das Callsheet keine Zeit hat (nic
       U.u2_pickups(_u2d) == 1 and [r.get("pickup") for r in _u2d["dispos"][0]["cs"]["u2"]["cast"]] == ["06:15", None] and _u2d["dispos"][0]["cs"]["cast"][0]["pickup"] == "07:00",
       [r.get("pickup") for r in _u2d["dispos"][0]["cs"]["u2"]["cast"]])
 
+# 2nd Unit: the order of the day in a block called «PREVISION» (DT6) – it is the order when its scenes are the 2nd-unit scenes of the Drehplan; a real preview stays
+_cs6 = {"u2": {"order": {"rows": [{"t": "06:45", "text": "Setup"}]}}, "prevision2": {"title": "PREVISION - D6", "rows": [{"t": "07:15", "sc": "3A"}, {"sc": "4A"}, {"sc": "4"}, {"t": "16:30", "sc": "128"}]}, "cast": []}
+U.cs_split_u2(_cs6, ["3A", "4A", "4", "3", "128"])
+_cs7 = {"u2": {"order": {"rows": [{"sc": "185"}]}}, "prevision2": {"title": "PREVISION - D6", "rows": [{"sc": "3A"}]}, "cast": []}
+U.cs_split_u2(_cs7, ["185"])
+_cs8 = {"u2": {"order": {"rows": []}}, "prevision2": {"rows": [{"sc": "19A"}, {"sc": "10A"}]}, "cast": []}
+U.cs_split_u2(_cs8, ["3A", "4A"])
+check("2nd Unit: Ablauf des Tages im Block «PREVISION» wird die Drehfolge, eine echte Vorschau bleibt Vorschau",
+      [r.get("sc") for r in _cs6["u2"]["order"]["rows"]] == ["3A", "4A", "4", "128"] and "prevision" not in _cs6["u2"]
+      and [r.get("sc") for r in _cs7["u2"]["order"]["rows"]] == ["185"] and _cs7["u2"]["prevision"]["rows"][0]["sc"] == "3A"
+      and _cs8["u2"]["order"]["rows"] == [] and _cs8["u2"]["prevision"]["rows"][0]["sc"] == "19A", (_cs6["u2"], _cs8["u2"]))
+
 sys.exit(done("Hintergrund"))

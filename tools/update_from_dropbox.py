@@ -974,7 +974,8 @@ CS_A = (
     '"vehicles": [{"name", "scenes", "via", "call", "rts"}], '
     '"u2": nur wenn das Callsheet auch eine 2nd Unit (B Unit) hat: {"crewCall": CREW CALL B UNIT, "contact": {"role", "name", "phone"} (B UNIT CONTACT on Set), '
     '"ad": 1st AD der B Unit, "times": {"rts", "lunch", "wrap"} (die Zeiten der B Unit), "locations": [wie oben, die Sets der B Unit, z. B. «B.1»], '
-    '"order": {wie oben: «2ND UNIT SHOOTING ORDER»}}}. '
+    '"order": {wie oben: «2ND UNIT SHOOTING ORDER» – der Ablauf der 2nd Unit an DIESEM Drehtag: der 2nd-Unit-Block nach Cast, Extras und Fahrzeugen der 1st Unit, '
+    'vor TRANSPORT, auch wenn er «PREVISION» heisst oder im Titel ein falsches Datum steht}}}. '
     'TRENNUNG DER UNITS: "times", "contact", "locations" und "order" oben nur mit der 1st Unit (A Unit); alles der 2nd Unit (B Unit) nur in "u2". '
     'In "cast", "extras" und "vehicles" jede Zeile, deren Szenen (x) in der 2nd-Unit-Drehfolge stehen, mit "u": "2"; die anderen ohne "u". '
     'Gibt es keine 2nd Unit, kein "u2".'
@@ -987,7 +988,8 @@ CS_B = (
     '"crewTransport": [{"vehicle", "people", "from", "t1", "to", "t2"}] (TRANSPORT CREW), '
     '"prevision": {"title": Kopfzeile PREVISION, "rows": wie bei SHOOTING ORDER: Szene = {"t","dur","dir","sc","pgs","time","ie","set","syn","cast","extras","notes"}, sonst {"t","text"}}, '
     '"calls": [{"dept": Abteilung, "role", "name", "t": Zeit oder Text wie «i.e.d.» der 1st Unit (Spalte «1st IN»), "t2": Zeit der 2nd Unit (Spalte «2nd IN», nur wenn es sie gibt)}] (CALLS ON SET, beide Spaltenblöcke), '
-    '"prevision2": wie "prevision", für die PREVISION der 2nd Unit (nur wenn es sie gibt), '
+    '"prevision2": wie "prevision", für die PREVISION der 2nd Unit für einen SPÄTEREN Drehtag (steht nach der PREVISION der 1st Unit; nur wenn es sie gibt) – '
+    'nie der 2nd-Unit-Ablauf dieses Tages (der Block vor TRANSPORT, auch wenn er «PREVISION» heisst), '
     '"total": TOTAL-Zeile, "notes": [Notes], "radio": Funkkanäle, '
     '"sections": [{"title", "rows": [[Zelle, …], …]}] (nur was sonst nirgends passt)}'
 )
@@ -1192,7 +1194,7 @@ def cs_fill_places(cs, data):
 def _sck(x): return re.sub(r"\s+", "", str(x or "")).lower()
 
 
-def cs_split_u2(cs):
+def cs_split_u2(cs, sc_day=None):
     """the 2nd Unit of a callsheet on its own («u2»): its cast, extras and vehicles out of the lists of the 1st Unit,
     its prevision into u2 – a row goes to the 2nd Unit when all its scenes are in the 2nd-unit shooting order (or the reading marked it «u»: "2"
     and none of its scenes is in the order of the 1st Unit); a callsheet without 2nd Unit: no marks left"""
@@ -1204,6 +1206,12 @@ def cs_split_u2(cs):
             for r in cs.get(k) or []:
                 if isinstance(r, dict): r.pop("u", None)
         return cs
+    # the 2nd-unit order of the day read as «prevision2» (its block is called PREVISION on some callsheets): it is the order when
+    # the order has no scene and most of its scenes are the 2nd-unit scenes of this day in the Drehplan (sc_day)
+    o2 = [r for r in ((u2.get("order") or {}).get("rows") or []) if isinstance(r, dict) and r.get("sc")] if isinstance(u2.get("order"), dict) else []
+    p2s = {_sck(r.get("sc")) for r in ((p2 or {}).get("rows") or []) if isinstance(r, dict) and r.get("sc")} if isinstance(p2, dict) else set()
+    if not o2 and p2s and sc_day and len(p2s & {_sck(x) for x in sc_day}) * 2 >= len(p2s):
+        u2["order"] = p2; p2 = None
     if isinstance(p2, dict) and p2.get("rows"): u2["prevision"] = p2
     sc2 = {_sck(r.get("sc")) for r in ((u2.get("order") or {}).get("rows") or []) if isinstance(r, dict) and r.get("sc")}
     sc1 = {_sck(r.get("sc")) for r in ((cs.get("order") or {}).get("rows") or []) if isinstance(r, dict) and r.get("sc")}
@@ -2101,11 +2109,13 @@ def main():
     notcs = {f["name"] for f in files if _cs(f) and (_is_sides(f) or _is_ra(f) or _is_fp(f) or not re.search(r"dispo|call.?sheet|tagesdispo", _base(f)))}
     dispos = {k: v for k, v in dispos.items() if str(v.get("file") or "") not in notcs and "_sides_" not in str(v.get("file") or "").lower()}
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
-    _todo = [f["name"] for f in pick_dispos(files) if not any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and (v["cs"].get("v") or 0) >= 6 for v in dispos.values())]
+    def CSV_OF(f):   # 7: the 2nd-unit order also from a block called PREVISION – read again only for callsheets of today and later (credit)
+        m = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"]); return 7 if m and "%s-%s-%s" % m.groups() >= TODAY else 6
+    _todo = [f["name"] for f in pick_dispos(files) if not any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())]
     if _todo: print("::notice::Callsheets im alten Format, werden neu gelesen: %d" % len(_todo))
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= 6 for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
+        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         log("Callsheet: neu, wird ausgelesen")
         try:
@@ -2114,8 +2124,10 @@ def main():
             a = claude([blk], CS_RULES + "Teil 1 des Callsheets (Tagesdispo): " + CS_A + CS_BASE + cs_known_hint(data), 32000, kind="dispo")
             b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000, kind="dispo")
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
-            cs_split_u2(cs)
-            cs["v"] = 6   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date; 4: places learnt (names, base rooms, map links); 5: one base with its rooms; 6: 2nd Unit separate («u2»)
+            md0 = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"]); dt0 = md0 and "%s-%s-%s" % md0.groups()
+            day0 = next((x for x in data.get("days") or [] if isinstance(x, dict) and x.get("date") == (str(cs.get("date") or "") or dt0)), None) or {}
+            cs_split_u2(cs, [i.get("sc") for i in ((day0.get("unit2") or {}).get("items") or []) if isinstance(i, dict) and i.get("sc")])
+            cs["v"] = CSV_OF(f)   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date; 4: places learnt (names, base rooms, map links); 5: one base with its rooms; 6: 2nd Unit separate («u2»)
             nf = cs_fill_places(cs, data)
             if nf: log("Callsheet: Kartenlinks ergänzt:", nf)
             md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
