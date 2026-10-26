@@ -610,4 +610,24 @@ check("Ablauf mit zwei Geräten: Test läuft", len(_fm) >= 8, len(_fm))
 for _x in _fm:
     check(_x["n"], _x["ok"], (_x["got"], _x["want"]))
 
+# Coverday on the server (tools/coverday.py, same as 29-coverday.js): swap, «Nachrücken» over a weekend, a change waiting for a decision, callsheets move along
+import coverday as CD  # noqa: E402
+_cdd = [{"date": "2026-01-05", "kind": "shoot", "label": "D01", "items": [{"sc": "1"}, {"sc": "2"}]},
+        {"date": "2026-01-06", "kind": "shoot", "label": "D02", "items": [{"sc": "3"}]},
+        {"date": "2026-01-07", "kind": "off", "label": "Day Off"},
+        {"date": "2026-01-08", "kind": "shoot", "label": "D03", "items": [{"sc": "4"}, {"sc": "5"}]},
+        {"date": "2026-01-09", "kind": "shoot", "label": "D04", "items": [{"sc": "6"}]}]
+_cdc = [{"date": "2026-01-05", "label": "Callsheet D01", "scenes": [{"sc": "1"}, {"sc": "2"}]}, {"date": "2026-01-08", "label": "Callsheet D03", "scenes": [{"sc": "4"}, {"sc": "5"}]}]
+_r = CD.apply({"days": _cdd, "dispos": _cdc, "meta": {}}, [{"op": "swap", "u": "all", "a": "2026-01-05", "b": "2026-01-08", "at": 5}])
+_dy = {d["date"]: d for d in _r["days"]}
+check("Coverday (Server): Tausch – Szenen und Nummern folgen dem Datum, Callsheets wandern mit",
+      [i["sc"] for i in _dy["2026-01-05"]["items"]] == ["4", "5"] and _dy["2026-01-05"]["label"] == "D01" and _dy["2026-01-08"]["label"] == "D03"
+      and [(c["date"], c.get("cdFrom"), c["label"]) for c in _r["dispos"]] == [("2026-01-05", "2026-01-08", "Callsheet D01"), ("2026-01-08", "2026-01-05", "Callsheet D03")], (_r["dispos"], _dy["2026-01-05"]))
+_r = CD.apply({"days": _cdd, "dispos": [], "meta": {}}, [{"op": "shift", "u": "all", "a": "2026-01-08", "at": 5}])
+_dy = {d["date"]: d for d in _r["days"]}
+check("Coverday (Server): Nachrücken ab Donnerstag – Freitag bekommt D03, der neue Tag ist der Montag (kein Wochenende)",
+      _dy["2026-01-08"]["kind"] == "off" and [i["sc"] for i in _dy["2026-01-09"]["items"]] == ["4", "5"] and [i["sc"] for i in _dy["2026-01-12"]["items"]] == ["6"] and "2026-01-10" not in _dy, sorted(_dy))
+_r = CD.apply({"days": _cdd, "dispos": [], "meta": {"sources": [{"kind": "schedule", "modified": "2026-01-02T10:00:00Z"}]}}, [{"op": "swap", "u": "all", "a": "2026-01-05", "b": "2026-01-06", "at": 1, "raw": {"a": "x", "b": "y"}}, {"op": "swap", "u": "all", "a": "2026-01-08", "b": "2026-01-09", "st": "off", "at": 5}])
+check("Coverday (Server): ein neuerer Drehplan mit anderen Szenen und ausgeschaltete Änderungen gelten nicht", [i["sc"] for i in _r["days"][0]["items"]] == ["1", "2"] and [i["sc"] for i in _r["days"][3]["items"]] == ["4", "5"])
+
 sys.exit(done("Hintergrund"))

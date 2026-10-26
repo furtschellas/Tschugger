@@ -16,6 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import fsadmin  # noqa: E402
+import coverday  # noqa: E402
 
 TZ = ZoneInfo("Europe/Zurich")
 STATE = os.path.join(ROOT, "sheet.json")   # signature of the last write (actions cache)
@@ -368,13 +369,18 @@ def main():
     key = fsadmin.crew_key()
     try: edits, esig = de_read(key)
     except Exception as e: edits, esig = {}, "err"; note("Änderungen vor Ort nicht lesbar (" + type(e).__name__ + ")")
-    sig = hashlib.sha256(("v7|" + asig + "|" + stamp + "|" + sid + "|" + esig + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
+    try: cops, csig = coverday.read_ops(key)   # Coverday: the days as the crew sees them (swapped, moved, «nachgerückt»)
+    except Exception as e: cops, csig = [], "err"; note("Coverday nicht lesbar (" + type(e).__name__ + ")")
+    sig = hashlib.sha256(("v8|" + asig + "|" + stamp + "|" + sid + "|" + esig + "|" + csig + "|" + datetime.datetime.now(TZ).date().isoformat()).encode()).hexdigest()[:16]
     try: old = json.load(open(STATE))
     except Exception: old = {}
     if old.get("sig") == sig and (old.get("ok") or time.time() - old.get("t", 0) < 1800):   # after an error: again after 30 min (or when something changed)
         log("Szenen-Sheet: unverändert" if old.get("ok") else "Szenen-Sheet: letzter Fehler " + str(old.get("err"))); json.dump(old, open(STATE, "w")); return
     STAGE[0] = "daten"
-    data = de_apply(json.loads(fsadmin.dec_ivct(key, json.load(open(os.path.join(ROOT, "data.enc.json"))))), edits)
+    data = json.loads(fsadmin.dec_ivct(key, json.load(open(os.path.join(ROOT, "data.enc.json")))))
+    try: data = coverday.apply(data, cops)   # first the Coverday, then the changes on set (as cdApplyAll in the app)
+    except Exception as e: note("Coverday nicht angewendet (" + type(e).__name__ + ")")
+    data = de_apply(data, edits)
     acks = [dict(f, id=i) for i, f, _ in fsadmin.list_docs("sceneack")]
     STAGE[0] = "aufbau"
     out = build(acks, data)

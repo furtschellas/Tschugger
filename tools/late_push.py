@@ -18,6 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import fsadmin  # noqa: E402
+import coverday  # noqa: E402
 
 STATE = os.path.join(ROOT, "late.json")
 LATE_MIN = 5
@@ -152,7 +153,8 @@ def late(acks, c, r, now_ms, days=None):
     pu = [x for x in rides if not frm_base(x)]; t_pu = cq_hm(r.get("pickup"))
     ride = next((x for x in pu if cq_hm(x.get("t1")) == t_pu), pu[0] if pu else None)
     br = next((x for x in rides if frm_base(x)), None)
-    rs = M.ride_step(ride_id(d, ride)) if ride else 0; bs = M.ride_step(ride_id(d, br)) if br else 0
+    rd = c.get("_rfrom") or d   # ride ids keep the date of the callsheet as read (cdFrom after a Coverday move, like rideEditApply in 25-ride-edit.js)
+    rs = M.ride_step(ride_id(rd, ride)) if ride else 0; bs = M.ride_step(ride_id(rd, br)) if br else 0
     ok = cq_hm(r.get("onset")) or ("set" if str(r.get("onset") or "").strip() else "")
     wm, arrived, alldone, n = [], False, True, 0
     for k in ("w", "m"):
@@ -230,9 +232,14 @@ def main():
     days = [x for x in data.get("days") or [] if isinstance(x, dict)]
     today = datetime.datetime.now(ZoneInfo(fsadmin.TZ0)).date().isoformat()
     today = datetime.datetime.now(ZoneInfo(fsadmin.tz_for(today, days))).date().isoformat()   # the date in the time zone of the block
-    if fsadmin.cd_touched(key, today): print("• Verspätung: Coverday-Änderung an diesem Tag – keine automatische Meldung"); return   # the callsheet may belong to another day now (cdDispos in the app)
+    try:   # Coverday: the days and callsheets as the crew sees them in the app (a callsheet may belong to another day now)
+        ops, _ = coverday.read_ops(key); data = coverday.apply(data, ops)
+        days = [x for x in data.get("days") or [] if isinstance(x, dict)]
+    except Exception as e:
+        print("• Verspätung: Coverday nicht lesbar (" + type(e).__name__ + ")")
+        if fsadmin.cd_touched(key, today): print("• Verspätung: Coverday-Änderung an diesem Tag – keine automatische Meldung"); return
     dp = next((x for x in data.get("dispos") or [] if isinstance(x, dict) and x.get("date") == today), None)
-    c = dict((dp or {}).get("cs") or {}, _date=today)
+    c = dict((dp or {}).get("cs") or {}, _date=today, _rfrom=(dp or {}).get("cdFrom") or today)
     cast = [r for r in c.get("cast") or [] if isinstance(r, dict)]
     u2 = c.get("u2") if isinstance(c.get("u2"), dict) else {}
     cast += [dict(r, u="2") for r in u2.get("cast") or [] if isinstance(r, dict)]   # the 2nd Unit (read apart): marked for its own ids

@@ -650,6 +650,20 @@ async def owner_tests(p, port):
           window.canPerm=()=>false;const nopen=(()=>{const kd2=S.days;S.days=[];const b=document.createElement('div');b.innerHTML=sceneLogSec();S.days=kd2;return b.querySelectorAll('[data-scled]').length})();
           SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;window.canPerm=k.cp;return {days,fixed,pens:pens>0,nopen,per,only2,dur}})()""")
         check("Szenen-Protokoll: pro Unit ein Tagesprotokoll mit Setup/Drehstart/Lunch/Wrap, Stift nur mit Recht, Export pro Tag und Unit", sl in (None, {"days": 2, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}, {"days": 3, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}), sl, public=True)
+        # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
+        cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
+          const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();
+          const sets=[[{op:'swap',u:'all',a:s[0],b:s[2],at:T}],[{op:'move',u:'all',a:s[1],b:free,at:T}],[{op:'shift',u:'all',a:s[1],at:T}],
+            [{op:'swap',u:'all',a:s[0],b:s[3],at:T},{op:'shift',u:'all',a:s[2],at:T+1}],[{op:'swap',u:'all',a:s[0],b:s[1],at:T,st:'off'}],[{op:'swap',u:'all',a:s[0],b:s[1],at:1,raw:{a:'x',b:'y'}}]];
+          if(u2.length>1)sets.push([{op:'swap',u:'2',a:u2[0],b:u2[1],at:T}],[{op:'shift',u:'2',a:u2[0],at:T}],[{op:'move',u:'2',a:u2[0],b:s.find(x=>!u2.includes(x))||free,at:T}]);
+          const P=(days,ds)=>({days:days.map(d=>[d.date,d.kind||'',d.label||'',d.short||'',d.cdSrc||'',(d.items||[]).filter(i=>i&&i.sc).map(i=>String(i.sc)),((d.unit2||{}).items||[]).filter(i=>i&&i.sc).map(i=>String(i.sc))]),ds:ds.map(x=>[x.date,x.cdFrom||'',x.label||''])});
+          const k=window.CDOPS,out=sets.map(ops=>{window.CDOPS=ops;const days=window.cdDaysT(d0);return P(days,window.cdDisposT(S.dispos0||[],days))});window.CDOPS=k;
+          return {sets,out,days:d0,dispos:S.dispos0||[],meta:S.meta||null}})()""")
+        if cdp:
+            sys.path.insert(0, str(HERE.parent / "tools")); import coverday  # noqa: E402
+            def _cdP(x): return {"days": [[d.get("date"), d.get("kind") or "", d.get("label") or "", d.get("short") or "", d.get("cdSrc") or "", [str(i["sc"]) for i in (d.get("items") or []) if isinstance(i, dict) and coverday.truthy(i.get("sc"))], [str(i["sc"]) for i in ((d.get("unit2") or {}).get("items") or []) if isinstance(i, dict) and coverday.truthy(i.get("sc"))]] for d in x["days"]], "ds": [[c.get("date"), c.get("cdFrom") or "", c.get("label") or ""] for c in x["dispos"]]}
+            bad = [i for i, ops in enumerate(cdp["sets"]) if _cdP(coverday.apply({"days": cdp["days"], "dispos": cdp["dispos"], "meta": cdp["meta"]}, ops)) != cdp["out"][i]]
+            check("Coverday: Server (Verspätungs-Push, Szenen-Sheet) tauscht, verschiebt und rückt nach wie die App, Callsheets wandern gleich mit", not bad, f"{len(bad)} von {len(cdp['sets'])} Fällen verschieden {bad}", public=True)
         # the Google-Sheets copy of the scene log (tools/scene_sheet.py) builds the same rows as the export of the app
         sp = await E("""(()=>{if(typeof sceneLogSec!=='function'||typeof scExpRows!=='function')return null;const day=(S.days||[]).find(d=>d.kind==='shoot'&&(d.items||[]).filter(i=>i.sc).length>1);if(!day)return null;
           const k={l:SCLOG.list,e:SCLOG.exp,c:window.canSceneLog,g:LANG},d=day.date,t=h=>new Date(d+'T'+h).getTime(),sc=day.items.filter(i=>i.sc);
