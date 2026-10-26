@@ -290,11 +290,23 @@ class BlkStore:
     def files(self):
         loc = {"blk/" + f for f in os.listdir("blk") if f.endswith(".bin")} if os.path.isdir("blk") else set()
         return loc | self.keys
+    PEND = "state/gone.json"   # R2: unused pictures and since when (outside blk/, so never listed as a picture)
+    GRACE = 12 * 3600          # deleted only when unused for 12 h: the published data (and phones on the old data) never point to a deleted picture
     def remove(self, fn):
-        if os.path.exists(fn): os.remove(fn)
-        if fn in self.keys: self.gone.append(fn); self.keys.discard(fn)
+        """True: the data changed (a local file went, or a picture is unused for the first time)"""
+        ch = False
+        if os.path.exists(fn): os.remove(fn); ch = True
+        if fn in self.keys and fn not in self.gone: self.gone.append(fn); ch = ch or fn not in self._pend()
+        return ch
+    def _pend(self):
+        if getattr(self, "_p", None) is None:
+            self._p = {}
+            if self.r2:
+                try: self._p = {k: float(v) for k, v in json.loads(self.r2.get_object(Bucket=self.bucket, Key=self.PEND)["Body"].read()).items() if str(k).startswith("blk/")}
+                except Exception: self._p = {}
+        return self._p
     def sync(self):
-        """R2: upload what is only local, delete what is no longer used"""
+        """R2: upload what is only local; delete what has been unused for GRACE (still unused now)"""
         if not self.r2: return
         from concurrent.futures import ThreadPoolExecutor
         up = [fn for fn in self.files() if fn not in self.keys and os.path.exists(fn)]
@@ -302,9 +314,15 @@ class BlkStore:
             self.r2.upload_file(fn, self.bucket, fn, ExtraArgs={"ContentType": "application/octet-stream", "CacheControl": "public, max-age=31536000, immutable"})
         with ThreadPoolExecutor(16) as ex: list(ex.map(put, up))
         self.keys.update(up)
-        for i in range(0, len(self.gone), 1000):
-            self.r2.delete_objects(Bucket=self.bucket, Delete={"Objects": [{"Key": k} for k in self.gone[i:i + 1000]], "Quiet": True})
-        log("R2: hochgeladen", len(up), "· gelöscht", len(self.gone)); self.gone = []
+        now, old = time.time(), self._pend()
+        pend = {k: old.get(k, now) for k in self.gone if k not in up}   # a picture used again (not in gone this run) leaves the list
+        due = [k for k, t in pend.items() if now - t >= self.GRACE]
+        for i in range(0, len(due), 1000):
+            self.r2.delete_objects(Bucket=self.bucket, Delete={"Objects": [{"Key": k} for k in due[i:i + 1000]], "Quiet": True})
+        for k in due: pend.pop(k, None); self.keys.discard(k)
+        try: self.r2.put_object(Bucket=self.bucket, Key=self.PEND, Body=json.dumps(pend).encode(), ContentType="application/json")
+        except Exception as e: log("R2: Liste ungenutzter Bilder nicht gespeichert:", type(e).__name__)
+        log("R2: hochgeladen", len(up), "· gelöscht", len(due), "· wartet", len(pend)); self.gone = []; self._p = pend
 
 BLKS = None
 def blk_have(fn): return BLKS.have(fn) if BLKS else os.path.exists(fn)
@@ -1261,6 +1279,7 @@ def spec():
 
 class Truncated(RuntimeError): pass
 class NoRetry(RuntimeError): pass
+class BadRequest(RuntimeError): pass   # refused for this request only (too long, too many pages): counted as a failed attempt of the file, AI stays on
 
 def cs_translate(cs, langs=None):
     """the texts of a callsheet into the app languages that are missing (small model); True when done or nothing to do"""
@@ -1318,8 +1337,8 @@ def claude(parts, task, max_tokens=32000, kind="", model=None):
             try:
                 with requests.post("https://api.anthropic.com/v1/messages", headers=h, json=body, stream=True, timeout=(30, 600)) as r:
                     if r.status_code != 200:
-                        et = ""
-                        try: et = ((r.json() or {}).get("error") or {}).get("type") or ""
+                        et = em = ""
+                        try: er = (r.json() or {}).get("error") or {}; et = er.get("type") or ""; em = str(er.get("message") or "").lower()
                         except Exception: pass
                         # visible in the run summary: status and error type of the API only (never content)
                         print("::warning::Claude-API HTTP %s %s (Modell %s)" % (r.status_code, et, model), flush=True)
@@ -1328,6 +1347,8 @@ def claude(parts, task, max_tokens=32000, kind="", model=None):
                             parts[:] = [{k: v for k, v in p.items() if k != "cache_control"} if isinstance(p, dict) else p for p in parts]
                             body["messages"][0]["content"] = parts + [{"type": "text", "text": task}]
                             raise RuntimeError("ohne Cache nochmals")
+                        acct = r.status_code in (401, 403, 404) or any(w in em for w in ("credit", "billing", "balance", "quota"))   # key, credit, model: the whole run
+                        if 400 <= r.status_code < 500 and r.status_code != 429 and not acct: raise BadRequest("Claude-API HTTP %s %s" % (r.status_code, et))   # this file only (e.g. too long)
                         if 400 <= r.status_code < 500 and r.status_code != 429: AI["down"] = "HTTP %s %s" % (r.status_code, et); raise NoRetry("Claude-API HTTP %s %s" % (r.status_code, et))   # credit, key, request: trying again does not help
                         raise RuntimeError("Claude-API HTTP %s: %s" % (r.status_code, r.text[:200]))
                     for line in r.iter_lines(decode_unicode=True):
@@ -1351,7 +1372,7 @@ def claude(parts, task, max_tokens=32000, kind="", model=None):
             # accept {"crew": [...]} style wrappers where a plain array was asked for
             if isinstance(v, dict) and "Array" in task and len(v) == 1 and isinstance(next(iter(v.values())), list): v = next(iter(v.values()))
             return v
-        except (Truncated, NoRetry): raise
+        except (Truncated, NoRetry, BadRequest): raise
         except Exception as e:
             log("Claude-Versuch", attempt + 1, "fehlgeschlagen:", type(e).__name__, getattr(getattr(e, "response", None), "status_code", ""))
             time.sleep(10 * (attempt + 1))
@@ -1833,10 +1854,10 @@ def main():
           log("Drehplan: neu, wird ausgelesen")
           try:
             raw_sched = raw_sched or dbx.download(f["id"])
-            res = claude([pdf_block(raw_sched)],
+            res = read_schedule(pdf_block(raw_sched),   # too long for one answer: read in parts (as the block schedules)
                 "WICHTIG: \"unit2\" nur für Tage, an denen der Drehplan eine eigene Zeile «2nd unit: …» hat. «B-Cam», «A+B-Cam», «Shoot B-Cam only» oder «Move B-Cam» sind eine zweite Kamera der 1st Unit und gehören zu den normalen items des Tages, nie in unit2. "
                 "Erzeuge aus diesem Drehplan ein JSON-Objekt {\"scheduleVersion\": \"Sched …\" (aus dem Dateinamen: %s), \"subtitle\": \"Dreh Wallis · TT.MM.–TT.MM.JJJJ\", \"cast\": {Rollennummer: Rollenname}, \"days\": [ein Objekt pro Kalendertag gemäss Collection \"days\", jeweils mit Feld \"id\" = Datum]}. Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisherige Übersetzungen zum Wiederverwenden (gleicher Text = gleiche Übersetzung): %s"
-                % (f["name"].rsplit("/", 1)[-1], json.dumps(strip_ids(data.get("days"))[:40], ensure_ascii=False)[:60000]), 64000)
+                % (f["name"].rsplit("/", 1)[-1], json.dumps(strip_ids(data.get("days"))[:40], ensure_ascii=False)[:60000]))
             days = (res.get("days") if isinstance(res, dict) else None) or []
             fix_units(days, None, UD)
             if len(days) >= max(3, len(data.get("days") or []) // 2):
@@ -1856,14 +1877,14 @@ def main():
     for b in BLOCKS:
         fb = pick_schedule(files, blk_words(b))
         if not fb:
-            log("Drehblock", b.get("name") or b["id"], ": kein eigener Drehplan gefunden")
-            print("::notice title=Drehblöcke::%s: kein eigener Drehplan (Wörter: %s)" % (b.get("name") or b["id"], ", ".join(blk_words(b)) or "keine"), flush=True); continue
-        print("::notice title=Drehblöcke::%s: Drehplan %s" % (b.get("name") or b["id"], fb["name"].rsplit("/", 1)[-1]), flush=True)
+            log("Drehblock", b["id"], ": kein eigener Drehplan gefunden")
+            print("::notice title=Drehblöcke::%s: kein eigener Drehplan (%d Suchwörter)" % (b["id"], len(blk_words(b))), flush=True); continue
+        print("::notice title=Drehblöcke::%s: Drehplan gefunden (%s)" % (b["id"], _h(fb["name"])), flush=True)
         kind = "schedule:" + b["id"]
         sources.append({"kind": kind, "name": fb["name"], "modified": fb["modified"]})
         bold = [d for d in xdays if d.get("blk") == b["id"]]
         if (is_new(kind, fb) or not bold) and may_try(kind, fb):
-            log("Drehplan Drehblock", b.get("name") or b["id"], ": neu, wird ausgelesen")
+            log("Drehplan Drehblock", b["id"], ": neu, wird ausgelesen")
             try:
                 pdfb = pdf_block(dbx.download(fb["id"]))
                 task = ("WICHTIG: \"unit2\" nur für Tage, an denen der Drehplan eine eigene Zeile «2nd unit: …» hat. «B-Cam» u.ä. gehören zu den normalen items des Tages, nie in unit2. "
@@ -1878,7 +1899,7 @@ def main():
                     xdays = [d for d in xdays if d.get("blk") != b["id"]] + days
                     meta.setdefault("blockSched", {})[b["id"]] = res.get("scheduleVersion") or ""
                     for k, v in (res.get("cast") or {}).items(): meta.setdefault("cast", {}).setdefault(str(k), v)
-                    changed = True; log("Drehplan Drehblock", b.get("name") or b["id"], ":", len(days), "Tage")
+                    changed = True; log("Drehplan Drehblock", b["id"], ":", len(days), "Tage")
                 else: failed(kind, fb, "Ergebnis unvollständig – bisherige Daten bleiben")
             except Exception as e: failed(kind, fb, e)
     # back together: a date the main schedule and a block both have → the block's day (its own schedule is the newer plan for it)
@@ -2363,7 +2384,7 @@ def main():
                             od[0]["id"] = today; od[0]["older"] = oe["name"]; days.append(od[0]); have.add(today)
                             log("Prep-Planung: heutiger Tag aus älterer Version", _h(oe["name"])); break
                 except Exception as ex3:
-                    log("Ältere Planung nicht lesbar:", str(ex3)[:120])
+                    log("Ältere Planung nicht lesbar:", type(ex3).__name__)
             newp = sorted(days, key=lambda d: d.get("date", ""))
             pm = dict((cache.get(used[0]) or {}).get("meta") or {}) if used else dict(meta.get("prepro") or {})
             if len(used) > 1: pm["sources"] = used
@@ -2453,7 +2474,7 @@ def main():
                             if len(vbytes) > 45e6: raise RuntimeError("zu gross")
                             _enc_write(vf, vbytes); changed = True
                         except Exception as ex:
-                            log("Film nicht umgewandelt:", _h(e["name"]), str(ex)[:60]); want_files.discard(vf); vf = None
+                            log("Film nicht umgewandelt:", _h(e["name"]), type(ex).__name__); want_files.discard(vf); vf = None
                 _, subs, part = blk_top(e)
                 items.append({"n": e["name"], "t": "vid" if vid else "img", "f": fn, **({"v": vf} if vf else {}), **({"p": part} if part else {}),
                               "u": _web(os.path.dirname(e["path"]), e["name"]) if subs else folder.replace("&dl=0", "&preview=" + requests.utils.quote(e["name"].replace(" ", "+"), safe="+") + "&dl=0") if "/Scene_" in folder else folder})
@@ -2490,7 +2511,8 @@ def main():
             if len(gone) > max(200, len(want_files)):   # safety net: never wipe most of the pictures in one run
                 log("Aufräumen ausgelassen – zu viele Dateien wären gelöscht worden:", len(gone))
             else:
-                for fn in gone: BLKS.remove(fn); changed = True
+                for fn in gone:
+                    if BLKS.remove(fn): changed = True
         for b in blk:  # every scene PDF as its own button (preview inside the shared scene folder)
             ents = sorted(bpdf.get(b["name"], []), key=lambda e: e["name"].lower())
             if not ents: continue

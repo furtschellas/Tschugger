@@ -48,19 +48,7 @@ def next_day(d):
     return (datetime.date.fromisoformat(d) + datetime.timedelta(days=1)).isoformat()
 
 
-def cd_touched(key, day):
-    """True: a Coverday change touches this day (swapped, moved or a «Nachrücken» from this day on) – the Drehplan alone may be wrong"""
-    try:
-        f = fsadmin.get_doc("coverday/state") or {}
-        if not f.get("c"): return False
-        ops = (fsadmin.dec_json(key, f["c"]) or {}).get("ops") or []
-    except Exception:
-        return True   # not readable: better the neutral text
-    for o in ops:
-        if not isinstance(o, dict) or o.get("st") == "off": continue   # turned off (like cdActive in 29-coverday.js)
-        if day in {str(o.get(k)) for k in ("a", "b") if o.get(k)}: return True
-        if o.get("op") == "shift" and o.get("a") and str(o["a"]) <= day: return True
-    return False
+cd_touched = fsadmin.cd_touched   # shared with late_push.py
 
 
 def outlook(d, u, days, key, now_ms):

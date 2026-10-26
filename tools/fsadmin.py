@@ -276,3 +276,17 @@ def tz_at(ms, days=None):
     import datetime, zoneinfo
     return tz_for(datetime.datetime.fromtimestamp(ms / 1000, zoneinfo.ZoneInfo(TZ0)).date().isoformat(), days)
 
+
+def cd_touched(key, day):
+    """True: a Coverday change touches this day (swapped, moved or a «Nachrücken» from this day on) – the Drehplan alone may be wrong"""
+    try:
+        f = get_doc("coverday/state") or {}
+        if not f.get("c"): return False
+        ops = (dec_json(key, f["c"]) or {}).get("ops") or []
+    except Exception:
+        return True   # not readable: better the neutral text
+    for o in ops:
+        if not isinstance(o, dict) or o.get("st") == "off": continue   # turned off (like cdActive in 29-coverday.js)
+        if day in {str(o.get(k)) for k in ("a", "b") if o.get(k)}: return True
+        if o.get("op") == "shift" and o.get("a") and str(o["a"]) <= day: return True
+    return False

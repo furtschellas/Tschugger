@@ -142,18 +142,21 @@ function viewMorph(v,html){
   if(MORPHOFF){v.innerHTML=html;return}
   const t=document.createElement("template");t.innerHTML=html;const nw=t.content;
   const same=(a,b)=>a.nodeType===b.nodeType&&(a.nodeType!==1||(a.tagName===b.tagName&&(a.id||"")===(b.id||"")&&(a.getAttribute("data-k")||"")===(b.getAttribute("data-k")||"")));
+  /* which section a <details> is (another section in the same place – other day, other page – takes the state of the new page) */
+  const dkey=el=>{let sm=null;for(const c of el.children)if(c.tagName==="SUMMARY"){sm=c;break}return (el.id||"")+"|"+(el.getAttribute("data-k")||"")+"|"+(el.getAttribute("data-sec")||"")+"|"+(sm?sm.textContent.slice(0,80):"")};
   const kept=el=>el.nodeType===1&&(el.__map||el.classList.contains("leaflet-container"));   /* a running map: kept as long as its points are the same */
   function node(a,b){
     if(a.nodeType!==1){if(a.nodeValue!==b.nodeValue)a.nodeValue=b.nodeValue;return a}
     if(kept(a)){if(a.getAttribute("data-csmap")!==b.getAttribute("data-csmap")){a.replaceWith(b);return b}return a}
-    for(const at of [...a.attributes])if(!b.hasAttribute(at.name))a.removeAttribute(at.name);
-    for(const at of [...b.attributes])if(a.getAttribute(at.name)!==at.value)a.setAttribute(at.name,at.value);
-    const tg=a.tagName,act=a===document.activeElement;
+    const tg=a.tagName,act=a===document.activeElement,dt=tg==="DETAILS";
+    for(const at of [...a.attributes])if(!b.hasAttribute(at.name)&&!(dt&&at.name==="open"))a.removeAttribute(at.name);
+    for(const at of [...b.attributes])if(a.getAttribute(at.name)!==at.value&&!(dt&&at.name==="open"))a.setAttribute(at.name,at.value);
     if(tg==="TEXTAREA"){if(!act&&a.value!==b.value)a.value=b.value;return a}
     kids(a,b);
     if(tg==="INPUT"&&!act){const v0=b.getAttribute("value");if(a.type==="checkbox"||a.type==="radio")a.checked=b.hasAttribute("checked");else if(a.type!=="file"&&a.value!==(v0==null?"":v0))a.value=v0==null?"":v0}
     if(tg==="SELECT"&&!act){const i=[...b.options].findIndex(o=>o.hasAttribute("selected"));a.selectedIndex=i>=0?i:(a.options.length?0:-1)}
-    if(tg==="DETAILS")a.open=b.hasAttribute("open");
+    /* a section opened or closed by hand stays so on a new drawing; only a change of the page itself (open in the new HTML, not in the last) applies */
+    if(dt){const want=b.hasAttribute("open"),k=dkey(b);if(a.__op===undefined||a.__op!==want||a.__ok!==k)a.open=want;a.__op=want;a.__ok=k}
     return a}
   function kids(a,b){let ac=a.firstChild,bc=b.firstChild;
     while(bc){const nb=bc.nextSibling;
@@ -163,6 +166,7 @@ function viewMorph(v,html){
       bc=nb}
     while(ac){const n=ac.nextSibling;a.removeChild(ac);ac=n}}
   try{kids(v,nw)}catch(err){console.warn("morph",err);v.innerHTML=html;return}
+  for(const d of v.querySelectorAll("details"))if(d.__op===undefined){d.__op=d.open;d.__ok=dkey(d)}   /* new sections: as drawn */
   /* the page itself may be unchanged at the top: tell the watchers of #view (filters, «jetzt», jump bar …) that it was drawn */
   const c=document.createComment("");v.appendChild(c);v.removeChild(c)}
 window.viewMorph=viewMorph;

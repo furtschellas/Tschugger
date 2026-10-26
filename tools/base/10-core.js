@@ -148,7 +148,7 @@ window.startTab=()=>{if(!window.APPVER)return "plan";/* Claude-app version: no �
 if(!location.hash&&!window.__REL)S.tab=startTab();
 
 /* the row of a cast number in a callsheet («3» → {no:"3", role, actor …}) – one place for Drehfolge, «Jetzt» and the cast tiles */
-export const castRow=(c,no)=>{const n=String(no==null?"":no).trim();return n&&arr(c&&c.cast).find(x=>String(x.no||"").trim()===n)||null};
+export const castRow=(c,no)=>{const n=String(no==null?"":no).trim();return n&&arr(c&&c.cast).find(x=>x&&String(x.no||"").trim()===n)||null};
 window.castRow=castRow;
 export function castChips(ids){
   const m=(S.meta&&S.meta.cast)||{};
@@ -156,7 +156,7 @@ export function castChips(ids){
   /* on a shooting day: where each actor is (display only) – P/UP running, Call/Kostüm/Maske, Base done / On set */
   let lk=()=>0;try{const d=window.__mctx&&window.__mctx.date,dp=d&&window.cqLook&&arr(S.dispos).find(x=>x&&x.date===d&&x.cs),c=dp&&dp.cs;
     if(c){if(!c._date)c._date=d;const cu=window.__mctx.u==='2'&&window.cqU2?window.cqU2(c):null,cx=cu||c;   /* the 2nd Unit: its own cast rows */
-      lk=i=>{const r=castRow(cx,i);return r?window.cqLook(cx,r):0}}}catch(_){}
+      lk=i=>{try{const r=castRow(cx,i);return r?window.cqLook(cx,r):0}catch(_){return 0}}}}catch(_){}
   return '<div class="cast">'+ids.map(i=>{const s=lk(i);return '<span'+(s?' class="cqlk'+s+'"':'')+'><i>'+esc(i)+'</i>'+esc(m[i]||"")+'</span>'}).join("")+'</div>';
 }
 /* schedule view options (scene description, address, cast) – all on by default, remembered per device */
@@ -248,7 +248,7 @@ export function itemHTML(it){
     (arr(it.camx).length?'<div class="camx"><b>'+esc(L("Kamera"))+'</b>'+arr(it.camx).map(c=>'<div class="cx">'+esc(c)+'</div>').join("")+'</div>':'')+
     (it.d?'<div class="desc">'+esc(TX(it,"d"))+'</div>':'')+(arr(it.xn).length?'<div class="xnotes">'+arr(it.xn).map(n=>'<div class="xn">'+esc(n)+'</div>').join("")+'</div>':'')+
     castChips(it.cast)+bdXX(window.__mctx&&window.__mctx.date,it.sc)+(()=>{const det=
-    bdHTML(window.__mctx&&window.__mctx.date,it.sc)+(it.csnH?'<div class="csn">'+it.csnH+'</div>':'');
+    bdHTML(window.__mctx&&window.__mctx.date,it.sc);
       /* callsheet: the details of a scene (camera, breakdown, notes of the callsheet) fold, open at first */
       return det&&window.__mctx&&window.__mctx.cs?'<details class="scdet" open><summary>'+esc(L("Details"))+'</summary>'+det+'</details>':det})()+(it.loc?(()=>{const ad=addrForItem(it);return '<div class="loc">'+(/^tba$/i.test(ad)?L('Ort: TBA'):'<a href="'+maps(ad)+'" target="_blank" rel="noopener noreferrer">'+esc(ad)+'</a>')+'</div>'})():'')+itemFp(it,'<button class="scbtn" data-scene="'+esc(it.sc)+'">Script</button>')+
     '</div></li>';

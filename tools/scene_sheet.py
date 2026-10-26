@@ -119,7 +119,7 @@ def unit_rows(d, u, l, day, cs):
     def ms(hhmm):
         v = re.match(r"^(\d{1,2}):(\d{2})$", str(hhmm or ""))
         if not v: return 0
-        x = datetime.datetime.fromisoformat(d).replace(hour=int(v.group(1)), minute=int(v.group(2)), tzinfo=_tz(fsadmin.tz_for(d, [day])))
+        x = (datetime.datetime.fromisoformat(d) + datetime.timedelta(hours=int(v.group(1)), minutes=int(v.group(2)))).replace(tzinfo=_tz(fsadmin.tz_for(d, [day])))   # «24:30» = next day
         return int(x.timestamp() * 1000)
     def p_ix(k):
         b = base(k)

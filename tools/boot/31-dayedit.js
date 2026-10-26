@@ -54,6 +54,8 @@ async function deSub(){if(DESUB||typeof ME==="undefined"||!ME)return;DESUB="…"
       const ch=JSON.stringify(m)!==JSON.stringify(window.DAYEDIT);window.DAYEDIT=m;try{localStorage.setItem("dayedit:v1",JSON.stringify(m))}catch(_){}
       if(ch&&typeof window.cdApplyAll==="function"){window.cdApplyAll();render()}},()=>{DESUB=null})}catch(_){DESUB=null}}
 setTimeout(deSub,1200);setInterval(()=>{if(!DESUB)deSub()},20e3);
+/* sign-out (clearLocal): stop listening and forget the copy of this person */
+window.deStop=()=>{try{if(typeof DESUB==="function")DESUB()}catch(_){}DESUB=null;window.DAYEDIT={}};
 /* ---------- the pencil in the head of a shooting day (Drehplan) ---------- */
 const DEPEN='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
 window.deBtn=d=>{if(!d||d.kind!=="shoot"||!deCan())return "";const on=!!(window.DAYEDIT||{})[d.date];
@@ -121,13 +123,17 @@ function deDialog(date,u){u=u||"1";const others=arr(S.days).filter(x=>x.kind==="
     if(s.dataset.depool!=null&&s.value!==""){const p=pool()[+s.value];if(!p)return;const src=arr(S.days).find(x=>x.date===p.d),it=uIts(src,u).find(y=>y.sc===p.sc);if(!it)return;
       deInsert(items,Object.assign({},it,{_de:{from:p.d}}));(moves["-"+p.d]=moves["-"+p.d]||[]).push(p.sc);draw()}})}
 /* store the rows of one unit of a day (null: that unit back to the Drehplan) – the other units of the day stay as they are; nothing left: deleted */
+/* in a transaction on the newest document: two people changing different units of the same day at the same moment keep both changes */
 async function deStore(d,u,list){const {F,db}=await fb();let me={};try{me=myIdentity()||{}}catch(_){}const nm=String(me.name||"");
-  const cur=Object.assign({},(window.DAYEDIT||{})[d]||{}),sig=deSig(uIts(deOrig(d),u));
-  if(u==="1"){if(list){cur.sig=sig;cur.items=list}else{delete cur.sig;delete cur.items}}else{if(list)cur["u"+u]={sig,items:list};else delete cur["u"+u]}
-  const ref=F.doc(db,"dayedit",deId(d));
-  if(!UNITS.some(x=>uEnt(cur,x))){await F.deleteDoc(ref);delete window.DAYEDIT[d];return}
-  cur.at=Date.now();cur.byName=/@/.test(nm)?"":nm.slice(0,60);
-  await F.setDoc(ref,{c:await ownEnc(cur),at:F.serverTimestamp()});window.DAYEDIT[d]=cur}
+  const sig=deSig(uIts(deOrig(d),u)),ref=F.doc(db,"dayedit",deId(d));let out=null;
+  await F.runTransaction(db,async tx=>{const snap=await tx.get(ref);let cur=Object.assign({},(window.DAYEDIT||{})[d]||{});
+    if(snap.exists()&&snap.data().c){try{const o=await ownDec(await getDataKey(),snap.data().c);if(o&&typeof o==="object")cur=Object.assign({},o)}catch(_){}}   /* not readable (key change): the copy of this device */
+    else if(!snap.exists())cur={};
+    if(u==="1"){if(list){cur.sig=sig;cur.items=list}else{delete cur.sig;delete cur.items}}else{if(list)cur["u"+u]={sig,items:list};else delete cur["u"+u]}
+    if(!UNITS.some(x=>uEnt(cur,x))){tx.delete(ref);out=null;return}
+    cur.at=Date.now();cur.byName=/@/.test(nm)?"":nm.slice(0,60);
+    tx.set(ref,{c:await ownEnc(cur),at:F.serverTimestamp()});out=cur});
+  if(out)window.DAYEDIT[d]=out;else delete window.DAYEDIT[d]}
 /* save: this unit of this day, plus the days a scene went to (added before their wrap) or came from (marked «verschoben auf») – same unit */
 async function deSave(date,u,items,moves){
   await deStore(date,u,items);

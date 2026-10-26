@@ -204,7 +204,9 @@ await check("Sicherheit: Protokolleinträge nicht änderbar", assertFails(update
 const NOW = Date.now();
 await check("Fahrt quittieren: Crew mit Datum und aktueller Zeit geht", assertSucceeds(setDoc(doc(as("crew"), "rideack/abcd1234"), { d: "2026-10-21", at: NOW, s: 1 })));
 await check("Fahrt quittieren: falsches Datum nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1235"), { d: "21.10.2026", at: NOW, s: 1 })));
-await check("Fahrt quittieren: alte Zeit (2 Stunden) nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1236"), { d: "2026-10-21", at: NOW - 2 * 3600e3, s: 2 })));
+await check("Fahrt quittieren: offline gespeichert (2 Stunden alt) geht", assertSucceeds(setDoc(doc(as("crew"), "rideack/abcd1236"), { d: "2026-10-21", at: NOW - 2 * 3600e3, s: 2 })));
+await check("Fahrt quittieren: sehr alte Zeit (3 Tage) nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1237"), { d: "2026-10-21", at: NOW - 72 * 3600e3, s: 2 })));
+await check("Fahrt quittieren: Zeit in der Zukunft (2 Stunden) nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1238"), { d: "2026-10-21", at: NOW + 2 * 3600e3, s: 2 })));
 await check("Fahrt quittieren: fremde Felder nicht", assertFails(setDoc(doc(as("crew"), "rideack/abcd1237"), { d: "2026-10-21", at: NOW, s: 1, name: "x" })));
 await check("Fahrt quittieren: Stand nur 1 oder 2", assertFails(setDoc(doc(as("crew"), "rideack/abcd1238"), { d: "2026-10-21", at: NOW, s: 3 })));
 await check("Komparsen: Anzahl da (n = 3) geht", assertSucceeds(setDoc(doc(as("crew"), "rideack/abcd1239"), { d: "2026-10-21", at: NOW, s: 1, n: 3 })));

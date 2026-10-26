@@ -60,7 +60,7 @@ csOn("click",e=>{const sm=e.target.closest("#cs-order>summary,#cs-orderu2>summar
 csOn("click",e=>{const sm=e.target.closest("#cs-loc>summary,#cs-u2loc>summary");if(!sm||e.target.closest("a"))return;e.preventDefault();const d=sm.parentElement;d.open=true;
   const ls=[...d.querySelectorAll("details.csloc")],all=ls.length&&ls.every(x=>x.open);ls.forEach(x=>x.open=!all);d.dataset.all=all?"0":"1"});
 csOn("click",e=>{const b=e.target.closest("[data-cssc]");if(!b)return;e.preventDefault();e.stopPropagation();const sc=b.dataset.cssc;
-  const od=document.getElementById("cs-order");if(!od)return;od.open=true;const li=[...od.querySelectorAll("li[data-sc]")].find(l=>l.dataset.sc===sc);if(!li)return;
+  const od=(b.closest("#cs-u2loc,.csu2")&&document.getElementById("cs-orderu2"))||document.getElementById("cs-order");if(!od)return;   /* the 2nd Unit: its own Drehfolge */od.open=true;const li=[...od.querySelectorAll("li[data-sc]")].find(l=>l.dataset.sc===sc);if(!li)return;
   const d=li.querySelector("details.csscd");if(d)d.open=true;li.scrollIntoView({block:"center",behavior:"smooth"});li.classList.add("csflash");setTimeout(()=>li.classList.remove("csflash"),1600)},true);
 
 /* the interactive map (Leaflet, loaded only when the map is opened; tiles from OpenStreetMap) */

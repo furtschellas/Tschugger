@@ -665,7 +665,7 @@ async def owner_tests(p, port):
             class _DT(scene_sheet.datetime.datetime):
                 @classmethod
                 def now(cls, tz=None): return scene_sheet.datetime.datetime.fromisoformat(sp["today"] + "T12:00:00").replace(tzinfo=tz)
-            _real = scene_sheet.datetime; scene_sheet.datetime = _ty.SimpleNamespace(datetime=_DT)
+            _real = scene_sheet.datetime; scene_sheet.datetime = _ty.SimpleNamespace(datetime=_DT, timedelta=_real.timedelta, date=_real.date)
             try: py = scene_sheet.build(sp["acks"], {"days": sp["days"], "dispos": sp["dispos"]})
             finally: scene_sheet.datetime = _real
             diff = sum(1 for i, u in enumerate("123") for x, y in zip(sp["rows"][i], py.get(u, [])) if [str(v) for v in x] != [str(v) for v in y]) + sum(abs(len(sp["rows"][i]) - len(py.get(u, []))) for i, u in enumerate("123"))

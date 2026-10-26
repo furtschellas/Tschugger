@@ -354,10 +354,10 @@ U.AI["langs"] = None; U.AI["run"] = {}
 # Caching abgelehnt → dieselbe Anfrage ohne Cache (ein Callsheet geht nie wegen einer Sparmassnahme verloren); Kosten auch bei Abbruch gezählt
 import json as _j
 class _CR:
-    def __init__(s, code, lines): s.status_code = code; s.lines = lines; s.text = "err"
+    def __init__(s, code, lines, msg=""): s.status_code = code; s.lines = lines; s.text = "err"; s.msg = msg
     def __enter__(s): return s
     def __exit__(s, *a): pass
-    def json(s): return {"error": {"type": "invalid_request_error"}}
+    def json(s): return {"error": {"type": "invalid_request_error", "message": s.msg}}
     def iter_lines(s, decode_unicode=True): return iter(s.lines)
 _ev = lambda o: "data: " + _j.dumps(o)
 _ok = [_ev({"type": "message_start", "message": {"usage": {"input_tokens": 1000}}}), _ev({"type": "content_block_delta", "delta": {"type": "text_delta", "text": "{\"a\": 1}"}}), _ev({"type": "message_delta", "delta": {"stop_reason": "end_turn"}, "usage": {"output_tokens": 10}})]
@@ -370,7 +370,14 @@ def _p1(*a, **k):
 U.requests.post = _p1; U.AI["m"] = {}; U.AI.pop("down", None)
 check("Claude-API: Cache abgelehnt → gleiche Anfrage ohne Cache", U.claude([{"type": "document", "cache_control": {"type": "ephemeral"}}], "x", kind="dispo") == {"a": 1} and _seen == [True, False] and not U.AI.get("down"), _seen)
 _n = [0]
-def _p2(*a, **k): _n[0] += 1; return _CR(400, [])
+def _p3(*a, **k): _n[0] += 1; return _CR(400, [], "prompt is too long")
+U.requests.post = _p3
+try: U.claude([], "x"); _r = "ok"
+except U.NoRetry: _r = "noretry"
+except U.BadRequest: _r = "bad"
+check("Claude-API: eine zu lange Anfrage → nur diese Datei (Fehlversuch), KI bleibt an, kein zweiter Versuch", _r == "bad" and _n[0] == 1 and not U.AI.get("down"), (_r, _n[0]))
+_n = [0]
+def _p2(*a, **k): _n[0] += 1; return _CR(400, [], "Your credit balance is too low")
 U.requests.post = _p2
 try: U.claude([], "x"); _r = "ok"
 except U.NoRetry: _r = "noretry"

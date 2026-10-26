@@ -77,8 +77,9 @@ export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_
     const loc=arr(dp.locations).map(l=>l.name||l.address).filter(Boolean).join(", ")||(d.kind?dayPlaces(d).join(", "):"");
     out.push({date:dp.date,t:st,end:en,n:(d.short||dp.label||d.label||"")+" · "+L("Drehtag")+(call&&call.dept?" ("+call.dept+")":""),where:loc,map:(arr(dp.locations)[0]||{}).map||"",src:"Callsheet"+(dp.version?" "+dp.version:""),go:d.id||dp.date})}
   /* my rides from the callsheets (driver, passenger, crew transport, travel) */
-  try{const cm=typeof csMe==="function"?csMe():null,seen=new Set();if(cm)for(const dp of S.dispos){if(!dp||dp.date<t||!dp.cs)continue;const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};
-    const rides=[...arr(c.transport).filter(r=>cm.hit(r.driver)||cm.hit(r.passengers)).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>cm.hit(r.people)).map(r=>({r,crew:true})),...arr(c.travel).filter(r=>cm.hit(r.name)).map(r=>({r,how:r.how}))];
+  try{const cm=typeof csMe==="function"?csMe():null,seen=new Set();if(cm)for(const dp of S.dispos){try{if(!dp||dp.date<t||!dp.cs)continue;   /* one odd callsheet never hides the rides of the others */
+    const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};
+    const rides=[...arr(c.transport).filter(r=>r&&(cm.hit(r.driver)||cm.hit(r.passengers))).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>r&&cm.hit(r.people)).map(r=>({r,crew:true})),...arr(c.travel).filter(r=>r&&cm.hit(r.name)).map(r=>({r,how:r.how}))];
     for(const {r,drv,how,crew} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();
       /* a confirmed ride disappears one hour after its arrival */
       const rid=rideId(dp.date,r);if(window.rideState&&rideState(rid)===2){const end=hm(r.t2)||st;if(end&&Date.now()>zurichUTC(dp.date,end).getTime()+3600e3){window.RIDEHID=(window.RIDEHID||0)+1;if(!window.SHOWDONE)continue}}
@@ -88,7 +89,7 @@ export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_
       /* a travel section stands on the callsheets of several days: once only; its date only when it is a real date */
       const rdate=how&&/^\d{4}-\d\d-\d\d$/.test(String(r.date||""))?r.date:dp.date;if(how){const k=[rdate,st,hm(r.t2),clean(r.from),clean(r.to),fold(String(r.name||""))].join("|");if(seen.has(k))continue;seen.add(k)}
       out.push({date:rdate,t:st,end:hm(r.t2),n:(drv?L("Fahrer"):how||L("Fahrt"))+": "+[clean(r.from),clean(r.to)].filter(Boolean).join(" → ")+(r.vehicle?" ("+r.vehicle+")":""),where:clean(r.from),map:rideMap(r.from,dp),to:clean(r.to),toMap:rideMap(r.to,dp,true),src:"Callsheet",go:d.id||dp.date,ride:true,rid,noack:!!crew||!!how,drv:!!drv,
-        driver:dn?dn+(dph?" "+dph:""):"",pax:pax&&!(how&&!r.passengers&&!r.people)?pax:"",note:clean(r.note||"")})}}}catch(_){}
+        driver:dn?dn+(dph?" "+dph:""):"",pax:pax&&!(how&&!r.passengers&&!r.people)?pax:"",note:clean(r.note||"")})}}catch(_){}}}catch(_){}
   /* Kostüm & Maske from the callsheets (tools/boot/24-flow.js) */
   try{if(window.cmEvents)out.push(...window.cmEvents(me,t))}catch(_){}
   /* extras for the role «Komparsen» (tools/boot/24-flow.js) */

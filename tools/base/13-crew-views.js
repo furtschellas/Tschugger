@@ -221,7 +221,7 @@ export function locResults(gs){
   return (()=>{
       if(!gs.length)return '<div class="empty">'+(S.uf["1"]||S.uf["2"]||S.uf["3"]?L('Keine Locations für diese Unit.'):L('Bitte mindestens eine Unit wählen.'))+'</div>';
       const terms=String(S.lq||"").toLowerCase().split(/\s+/).filter(Boolean);
-      const cards=gs.map(locCard).filter(h=>{if(!terms.length)return true;const t=h.replace(/<[^>]+>/g," ").replace(/&amp;/g,"&").toLowerCase();return terms.every(x=>t.includes(x))});
+      const cards=gs.map(locCard).filter(h=>{if(!terms.length)return true;const t=h.replace(/<[^>]+>/g," ").replace(/&(amp|quot|#39|lt|gt);/g,(m,k)=>({amp:"&",quot:'"',"#39":"'",lt:"<",gt:">"})[k]).toLowerCase();return terms.every(x=>t.includes(x))});
       return cards.length?cards.join(""):'<div class="empty">'+esc(L("Nichts gefunden für"))+' «'+esc(S.lq)+'»</div>';
     })();
 }

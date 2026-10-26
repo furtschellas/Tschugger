@@ -165,12 +165,15 @@ def late(acks, c, r, now_ms, days=None):
     base_done = st("b", r.get("base")) == 2; wm_done = n > 0 and alldone
     call_act = st("c", r.get("call")) > 0 or rs == 3
     tz = ZoneInfo(fsadmin.tz_for(d, days))
+    def wall(h, plus=0):   # «24:30» = 00:30 of the next day (as zurichUTC in the app)
+        hh, mm = (int(x) for x in h.split(":")[:2])
+        w = datetime.datetime.fromisoformat(d) + datetime.timedelta(days=plus, hours=hh, minutes=mm)
+        return int(w.replace(tzinfo=tz).timestamp() * 1000)
     def at(t, ref=0):
         h = cq_hm(t)
         if not h: return 0
-        v = int(datetime.datetime.fromisoformat(d + "T" + h).replace(tzinfo=tz).timestamp() * 1000)
-        if ref and ref - v > 12 * 3600e3:
-            v = int((datetime.datetime.fromisoformat(d + "T" + h) + datetime.timedelta(days=1)).replace(tzinfo=tz).timestamp() * 1000)
+        v = wall(h)
+        if ref and ref - v > 12 * 3600e3: v = wall(h, 1)
         return v
     ref = at(r.get("pickup")) or at(r.get("call")) or at(r.get("base"))
     due = []
@@ -227,6 +230,7 @@ def main():
     days = [x for x in data.get("days") or [] if isinstance(x, dict)]
     today = datetime.datetime.now(ZoneInfo(fsadmin.TZ0)).date().isoformat()
     today = datetime.datetime.now(ZoneInfo(fsadmin.tz_for(today, days))).date().isoformat()   # the date in the time zone of the block
+    if fsadmin.cd_touched(key, today): print("• Verspätung: Coverday-Änderung an diesem Tag – keine automatische Meldung"); return   # the callsheet may belong to another day now (cdDispos in the app)
     dp = next((x for x in data.get("dispos") or [] if isinstance(x, dict) and x.get("date") == today), None)
     c = dict((dp or {}).get("cs") or {}, _date=today)
     cast = [r for r in c.get("cast") or [] if isinstance(r, dict)]
@@ -243,7 +247,8 @@ def main():
     roles = ["owner", "admin"] + sorted(rid for rid, f, _ in fsadmin.list_docs("roles") if "cast.late" in (f.get("perms") or []) and rid != "admin")
     n = made = 0
     for r in cast:
-        x = late(acks, c, r, now, days)
+        try: x = late(acks, c, r, now, days)
+        except Exception as e: print("late: Zeile übersprungen", type(e).__name__); continue   # one odd row never stops the others
         if not x: continue
         n += 1; m, k = x
         if m > 180: continue   # a whole day behind: the row was simply not quittiert, no alarm

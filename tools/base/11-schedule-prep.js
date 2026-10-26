@@ -100,12 +100,17 @@ export function ppItems(list,date,grp){return '<div class="pplist">'+list.map((i
 export function dayMs(date,hm,ref){if(!date||!/^\d{1,2}:\d{2}$/.test(String(hm||"")))return 0;try{let v=zurichUTC(date,hm).getTime();
   if(ref&&ref-v>12*3600e3)v=zurichUTC(isoAdd(date,1),hm).getTime();return v}catch(_){return 0}}
 window.dayMs=dayMs;
+/* one formatter per time zone and the last results (called often: cast steps every 30 s, every render of Meine Termine) */
+const ZUF={},ZUM=new Map();
+const zuf=tz=>ZUF[tz]||(ZUF[tz]=new Intl.DateTimeFormat("en-GB",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}));
 export function zurichUTC(date,hm){
+  const tz=tzFor(date),mk=tz+"|"+date+"|"+hm,hit=ZUM.get(mk);if(hit!=null)return new Date(hit);
   const [y,mo,d]=date.split("-").map(Number),[h,mi]=hm.split(":").map(Number);
   let ts=Date.UTC(y,mo-1,d,h,mi)-2*3600e3;
   const want=Date.UTC(y,mo-1,d,h,mi);
-  for(let n=0;n<2;n++){const p=new Intl.DateTimeFormat("en-GB",{timeZone:tzFor(date),year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(ts));
+  for(let n=0;n<2;n++){const p=zuf(tz).formatToParts(new Date(ts));
     const g=t=>+(p.find(x=>x.type===t)||{}).value;ts+=want-Date.UTC(g("year"),g("month")-1,g("day"),g("hour"),g("minute"))}   /* whole date compared: also right on the 1st of a month */
+  if(ZUM.size>2000)ZUM.clear();if(isFinite(ts))ZUM.set(mk,ts);
   return new Date(ts);
 }
 function icsDate(dt){return dt.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"")}

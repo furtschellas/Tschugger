@@ -391,7 +391,7 @@ document.addEventListener("click",e=>flowClick(e,"[data-rideack]",false));
 setInterval(()=>{for(const s of document.querySelectorAll(".cqcd[data-cqat]")){const v=(s.dataset.cqup?Math.max(0,Math.floor((Date.now()-s.dataset.cqat)/60000)):cqLeft(+s.dataset.cqat,+s.dataset.cqmin))+"′";if(s.textContent!==v)s.textContent=v}},20000);
 /* load when «Meine Termine», Today or the callsheet is shown (at most every 2 minutes) */
 document.addEventListener("click",e=>{if(e.target.closest('[data-tab="my"],[data-tab="today"],[data-tab="dispo"],[data-tomy]'))setTimeout(()=>rideAckLoad(false),50)});
-setTimeout(()=>rideAckLoad(true),500);setInterval(()=>{if(ACKSUB||S.tab==="my"||S.tab==="today"||S.tab==="dispo")rideAckLoad(false)},30e3);   /* live: only checks the start day / a lost subscription */
+setTimeout(()=>rideAckLoad(true),500);setInterval(()=>{if(ACKSUB||!window.RIDEACKLOADED||S.tab==="my"||S.tab==="today"||S.tab==="dispo")rideAckLoad(false)},30e3);   /* live: only checks the start day / a lost subscription; once on every tab (the automatic quittances need it, also on the Drehplan) */
 document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))return;e.preventDefault();window.SHOWDONE=!window.SHOWDONE;render()});
 /* the callsheet greys a ride 20 minutes after it was done – and follows «jetzt hier» and «Jetzt» in my day: draw again when one changes */
 {let OLDN=-1;setInterval(()=>{if(S.tab!=="dispo")return;const n=Object.values(window.RIDEACK||{}).filter(x=>x&&x.s!==1&&Date.now()-(+x.at||0)>20*60e3).length;let nk=null;try{const C=typeof CSCUR!=="undefined"&&CSCUR.c;if(C&&window.CSNOWK!=null){const l=csNowLoc(C,CSCUR.date,csLocs(C));nk=l?l.no+'|'+l.name:''}}catch(_){}

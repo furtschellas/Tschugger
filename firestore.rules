@@ -58,18 +58,23 @@ service cloud.firestore {
     function changesOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
     // Profilfelder der Mitglieder (an mehreren Stellen gleich; testAck/testVer = Willkommen Test-User bestätigt)
     function profile() { return ['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'testAck', 'testVer', 'func']; }
-    // Text eines Profilfelds höchstens 1000 Zeichen (nur wenn es Text ist)
-    function txt(f) { return !(f in request.resource.data) || !(request.resource.data[f] is string) || request.resource.data[f].size() <= 1000; }
+    // Profilfeld klein halten: Text höchstens 1000 Zeichen, Liste oder Objekt höchstens 40 Einträge (Zahlen, Ja/Nein, Zeiten frei)
+    function txt(f) { return !(f in request.resource.data)
+      || (request.resource.data[f] is string && request.resource.data[f].size() <= 1000)
+      || ((request.resource.data[f] is list || request.resource.data[f] is map) && request.resource.data[f].size() <= 40)
+      || !(request.resource.data[f] is string || request.resource.data[f] is list || request.resource.data[f] is map); }
     // Telefon und Kontakt-E-Mail gehören nach contacts/{uid}: in members nur noch unverändert stehen lassen oder löschen (nie neu schreiben)
     function keptOrGone(f) { return !(f in request.resource.data) || (resource != null && f in resource.data && request.resource.data[f] == resource.data[f]); }
     function profileOk() { return txt('name') && txt('firstName') && txt('lastName') && txt('phone') && txt('contactEmail') && txt('diet') && txt('intol') && txt('allergies') && txt('func')
+      && txt('lang') && txt('birthday') && txt('gender') && txt('welcomeAck') && txt('welcomeVer') && txt('testAck') && txt('testVer') && txt('tour') && txt('tourAt') && txt('lastSeen')
       && keptOrGone('phone') && keptOrGone('contactEmail'); }
     // Menütext höchstens 300 Zeichen
     function short(f) { return request.resource.data.get(f, '').size() <= 300; }
     // Datum als Text JJJJ-MM-TT
     function isDate(v) { return v is string && v.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'); }
-    // Zeitpunkt in Millisekunden, höchstens 1 Stunde neben der Serverzeit (Handys mit falsch gehender Uhr gehen noch)
-    function nearNow(v) { return v is int && v > request.time.toMillis() - 3600000 && v < request.time.toMillis() + 3600000; }
+    // Zeitpunkt in Millisekunden: nicht mehr als 1 Stunde in der Zukunft (falsch gehende Uhr); bis 48 Stunden alt, weil ein Handy
+    // ohne Empfang (Tal, Tunnel) seine Quittierungen erst später sendet – mit der Zeit des Antippens
+    function nearNow(v) { return v is int && v > request.time.toMillis() - 172800000 && v < request.time.toMillis() + 3600000; }
     // Fahrt-Dokumente (rideack, rideedit): ID = Prüfsumme der Fahrt (keine Namen), nur diese Felder, Datum d, Zeitpunkt at
     function rideOk(id, keys) { return id.matches('[a-z0-9]{4,16}') && only(keys) && isDate(request.resource.data.d) && nearNow(request.resource.data.at); }
 
@@ -175,7 +180,9 @@ service cloud.firestore {
       allow create: if canAny(['users.invite', 'users.requests', 'users.edit']) && only(['name', 'role', 'addedAt']) && email != myEmail()   // niemand lädt sich selbst ein
         && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 120
         && request.resource.data.get('role', '') is string && request.resource.data.get('role', '').size() <= 80;
-      allow update: if canAny(['users.invite', 'users.edit']) && only(['name', 'role', 'addedAt']);
+      allow update: if canAny(['users.invite', 'users.edit']) && only(['name', 'role', 'addedAt'])
+        && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 120
+        && request.resource.data.get('role', '') is string && request.resource.data.get('role', '').size() <= 80;
       allow get: if verified() && myEmail() == email;
     }
     // Zugangsanfragen: mit der eigenen bestätigten Adresse; erledigt mit «Anfragen»
@@ -284,7 +291,8 @@ service cloud.firestore {
       allow read: if crew();
       allow write: if can('menus.edit') && isDate(date)
         && (request.resource == null || (only(['u1', 'u2', 'u3', 'u1a', 'u1b', 'u2a', 'u2b', 'u3a', 'u3b', 'tog', 'zw', 'by', 'at'])
-          && short('zw') && short('u1a') && short('u1b') && short('u2a') && short('u2b') && short('u3a') && short('u3b')));
+          && short('zw') && short('u1a') && short('u1b') && short('u2a') && short('u2b') && short('u3a') && short('u3b')
+          && short('u1') && short('u2') && short('u3') && short('by') && request.resource.data.get('tog', false) is bool));
     }
 
     // ---------- Fahrten aus dem Callsheet ----------

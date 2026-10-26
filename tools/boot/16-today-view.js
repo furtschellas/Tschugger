@@ -214,6 +214,8 @@ async function ncSub(){const d=ncDay();if(typeof ME==="undefined"||!ME)return;if
       const was=JSON.stringify(window.NOWCAST[d]||[]);window.NOWCAST[d]=items;try{localStorage.setItem("nowcast:v1",JSON.stringify({d,items}))}catch(_){}
       if(was!==JSON.stringify(items)&&(S.tab==="today"||S.tab==="dispo"))render()},()=>{NCSUB=null})}catch(_){NCSUB=null}}
 setTimeout(ncSub,1500);setInterval(()=>{if(!NCSUB||NCD!==ncDay())ncSub()},20e3);
+/* sign-out (clearLocal): stop listening and forget the copy of this person */
+window.ncStop=()=>{try{if(typeof NCSUB==="function")NCSUB()}catch(_){}NCSUB=null;NCD="";window.NOWCAST={}};
 const ncCan=()=>{try{return can("now.forecast")&&!(window.simOn&&window.simOn())}catch(_){return false}};
 /* the label of one forecast */
 const ncLabel=it=>it.k==="start"?L("Drehbeginn"):it.k==="lunch"?"Lunch":it.k==="wrap"?L("Drehschluss"):it.k==="x"?String(it.n||L("Anderes")):L("Szene")+" "+it.k;
