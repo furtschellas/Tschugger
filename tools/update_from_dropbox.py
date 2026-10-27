@@ -2118,7 +2118,7 @@ def main():
     def _fdate(name):
         m = re.search(r"(20\d\d)(\d\d)(\d\d)", str(name or "")); return "%s-%s-%s" % m.groups() if m else ""
     for k in [k for k, v in dispos.items() if _fdate(v.get("file")) and _fdate(v.get("file")) != k]:
-        log("Callsheet unter falschem Datum entfernt (wird neu gelesen)"); dispos.pop(k); changed = True
+        print("::warning::Callsheet unter falschem Datum entfernt: %s statt %s" % (k, _fdate(dispos[k].get("file")))); dispos.pop(k); changed = True
     def CSV_OF(f):   # 7: the 2nd-unit order also from a block called PREVISION – read again only for callsheets of today and later (credit)
         m = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
         return 7 if m and "%s-%s-%s" % m.groups() >= TODAY else 6
@@ -2132,7 +2132,7 @@ def main():
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
         have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
-        tk = "%s|%d" % (f["modified"], CSV_OF(f)); tried = meta.setdefault("csTry", {})
+        tk = "%s|%d|b" % (f["modified"], CSV_OF(f)); tried = meta.setdefault("csTry", {})
         if not is_new("dispo", f) and tried.get(f["name"]) == tk: continue   # read again once per file version: a reading that is not kept never repeats every run (credit)
         tried[f["name"]] = tk
         for k in [k for k in tried if k not in {x["name"] for x in pick_dispos(files)}]: tried.pop(k)
@@ -2158,7 +2158,9 @@ def main():
             d = cs_to_dispo(cs, date, f)
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
                 prev = dispos.get(d["date"])
-                if not prev or prev.get("file") == f["name"] or _fdate(prev.get("file")) != d["date"] or (prev.get("_mod") or "") <= (f["modified"] or ""):
+                keep = not prev or prev.get("file") == f["name"] or _fdate(prev.get("file")) != d["date"] or (prev.get("_mod") or "") <= (f["modified"] or "")
+                if not is_new("dispo", f): print("::warning::Callsheet %s neu gelesen: %s (v%s)" % (d["date"], "übernommen" if keep else "nicht übernommen – neuere Datei am selben Tag", cs.get("v")))
+                if keep:
                     d["id"] = d["date"]; d["_mod"] = f["modified"]; dispos[d["date"]] = d; changed = True
                     cs = d.get("cs") if isinstance(d.get("cs"), dict) else {}
                     n = lambda k: len(cs.get(k) or []) if isinstance(cs.get(k), list) else 0
@@ -2171,8 +2173,8 @@ def main():
                     print("::notice::Callsheet %s eingelesen: Locations %d · Drehfolge %d · Cast %d · Komparsen %d · Transport %d · Abteilungen %d · Calls %d · Vorschau %d"
                           % (d["date"], n("locations"), len((cs.get("order") or {}).get("rows") or []), n("cast"), n("extras"), n("transport"), n("depts"), n("calls"), len((cs.get("prevision") or {}).get("rows") or [])))
                     if d["date"] >= TODAY and (not prev or cs_sig(prev) != cs_sig(d)): NEWS.append({"kind": "cs", "dates": [d["date"]], "upd": bool(prev)})
-            else: failed("dispo", f, "kein Drehtag erkannt")
-        except Exception as e: failed("dispo", f, e)
+            else: print("::warning::Callsheet %s: kein Datum" % (_fdate(f["name"]) or "?")); failed("dispo", f, "kein Drehtag erkannt")
+        except Exception as e: print("::warning::Callsheet %s: %s" % (_fdate(f["name"]) or "?", type(e).__name__)); failed("dispo", f, e)
     # missing translations (a language switched on later, or a translation that failed): only callsheets from yesterday on,
     # at most 2 per run, at most 3 tries each – the callsheet itself is not read again
     yday = (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=1)).isoformat(); nfill = 0
