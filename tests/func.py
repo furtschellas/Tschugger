@@ -664,8 +664,8 @@ async def owner_tests(p, port):
         check("Callsheet: viele Basen als eine Base mit Nummern (je ein Link), Lunch bleibt eigener Ort", bz in (None, {"bases": 1, "nos": "1,2,3,4,5", "lunch": True}), bz, public=True)
         # Szenen automatisch quittieren: von Hand quittiert (nach der fälligen Zeit) gewinnt – die Automatik startet die geplante Szene dann nicht
         sa_ = await E("""(async()=>{if(typeof window.scAutoRun!=='function')return null;const t=todayISO(),day=(S.days||[]).find(d=>d.date===t&&d.kind==='shoot');if(!day)return null;
-          const K={a:window.SCENEAUTO,k:window.SCACK,it:day.items,l:window.SCACKLIVE,r:window.RIDEACKLOADED,u2:day.unit2};const hm=ms=>{const z=new Date(ms);return String(z.getHours()).padStart(2,'0')+':'+String(z.getMinutes()).padStart(2,'0')};
-          const now=Date.now();if(new Date(now-70*60e3).getDate()!==new Date(now).getDate())return null;   /* just after midnight: no times in the past today */
+          const K={a:window.SCENEAUTO,k:window.SCACK,it:day.items,l:window.SCACKLIVE,r:window.RIDEACKLOADED,u2:day.unit2};const hm=ms=>csHM(new Date(ms));   /* the clock of the shoot (Zurich), not the one of the test browser */
+          const now=Date.now();if(hm(now)<'01:15')return null;   /* just after midnight: no times in the past today */
           day.items=[{sc:'901',t:hm(now-60*60e3)},{sc:'902',t:hm(now-30*60e3)}];delete day.unit2;window.SCENEAUTO={a:{on:false},s:{on:true,min:0},l:{on:false},w:{on:false}};window.SCACKLIVE=true;window.RIDEACKLOADED=true;
           const run=async a=>{window.SCACK={[scAckId(t,'901')]:{d:t,s:1,u:'1',sc:'901',b:a,at:a}};await window.scAutoRun();return scState(t,'902')};
           const hand=await run(now-10*60e3),auto=await run(now-50*60e3);
