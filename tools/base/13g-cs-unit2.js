@@ -14,6 +14,7 @@ function u2Loc(l){if(!l||typeof l!=="object")return"";
   return '<div class="csu2-l"><div class="csu2-lh">'+a(l.map,'<b>'+esc([l.no,l.name].filter(Boolean).join(" · "))+'</b>')+(l.scenes?' <small>'+esc(String(l.scenes))+'</small>':'')+'</div>'+
     csA(l.items).filter(i=>i&&(i.label||i.text)).map(i=>'<div class="csu2-li">'+(i.label?'<span>'+esc(csL(String(i.label)))+'</span> ':'')+(i.text?a(i.map,csTx(csL(String(i.text)))):i.map?a(i.map,esc(L("Karte"))):'')+'</div>').join("")+
     csA(l.notes).map(n=>'<div class="csu2-li"><small>'+csTx(csL(String(n)))+'</small></div>').join("")+'</div>'}
+const u2hm=v=>{const m=String(v||"").match(/(\d{1,2})[:.](\d{2})/);return m?String(+m[1]).padStart(2,"0")+":"+m[2]:""};
 /* rides of a day with two units: which unit a ride belongs to – «1», «2», or "" (both / not sure: shown with both)
    1. its place: «… 2nd UNIT», «B UNIT» / «… 1st UNIT», «A UNIT» in from or to (or the mark «u» of the reading)
    2. else its people: someone only in one unit (cast of that unit, a call only «1st IN» or only «2nd IN») decides – people of both units: both */
@@ -28,7 +29,14 @@ export function csRideUnit(c,r){if(!r)return "";if(r.u==="1"||r.u==="2")return r
   const p2=/\b(2nd|2n?d|b)[\s-]*unit\b|\bunit[\s-]*(2|b)\b/i.test(tx),p1=/\b(1st|1n?d|a)[\s-]*unit\b|\bunit[\s-]*(1|a)\b/i.test(tx);
   if(p1&&p2)return "";   /* from the 2nd Unit to the 1st (a truck moving over): both */
   if(p2)return "2";if(p1)return "1";
-  const who=String(r.passengers||r.people||"");if(!who.trim())return "";let a=0,b=0;
+  const who=String(r.passengers||r.people||"");if(!who.trim())return "";
+  /* 2. the pickup of a cast row: the ride of that actor at its P/UP time belongs to the unit of that row (also for people in both units) */
+  {const t1=u2hm(r.t1),us=new Set();if(t1){for(const [l,u] of [[csA(c.cast).filter(x=>x&&x.u!=="2"),"1"],[csA(c.u2&&c.u2.cast),"2"]])for(const x of l)if(x&&x.actor&&u2hm(x.pickup)===t1&&nameHit(String(x.actor))(who))us.add(u)}
+   if(us.size===1)return [...us][0]}
+  /* 3. long before the crew call of the later unit (90 min) and the other unit has started: the earlier unit (morning rides of the 2nd Unit) */
+  {const c1=u2hm((c.times||{}).crewCall),c2=u2hm(c.u2&&(c.u2.crewCall||(c.u2.times||{}).crewCall)),t1=u2hm(r.t1),m=v=>+v.slice(0,2)*60+ +v.slice(3);
+   if(c1&&c2&&t1&&c1!==c2){const [e,l,eu]=m(c2)<m(c1)?[c2,c1,"2"]:[c1,c2,"1"];if(m(t1)>=m(e)-120&&m(t1)<m(l)-90)return eu}}
+  let a=0,b=0;
   for(const p of csUnitPeople(c))if(p.hit(who)){if(p.u==="1")a++;else b++}
   return b&&!a?"2":a&&!b?"1":""}
 /* the rides of unit u (and those of both) */

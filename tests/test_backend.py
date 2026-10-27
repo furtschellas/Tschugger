@@ -651,4 +651,15 @@ check("2nd Unit: Ablauf des Tages im Block «PREVISION» wird die Drehfolge, ein
       and [r.get("sc") for r in _cs7["u2"]["order"]["rows"]] == ["185"] and _cs7["u2"]["prevision"]["rows"][0]["sc"] == "3A"
       and _cs8["u2"]["order"]["rows"] == [] and _cs8["u2"]["prevision"]["rows"][0]["sc"] == "19A", (_cs6["u2"], _cs8["u2"]))
 
+# rides of a day with two units (DT6): the morning pickups of the 2nd Unit even when its people are in both units and a call is in the wrong column
+_rc = {"times": {"crewCall": "09:30"}, "cast": [{"no": "1", "actor": "Max Muster", "pickup": "15:45"}, {"no": "8", "actor": "Eva Probe", "pickup": "08:40"}],
+       "calls": [{"name": "Tom Ton", "t": "06:45"}],
+       "u2": {"crewCall": "06:45", "cast": [{"no": "1", "actor": "Max Muster", "pickup": "06:00"}, {"no": "2", "actor": "Kai Zwei", "pickup": "06:05"}]}}
+_rides = [{"passengers": "Max Muster, Tom Ton", "from": "Moxy", "t1": "06:00", "to": "Holiday Inn", "t2": "06:05"},
+          {"passengers": "Kai Zwei, Max Muster", "from": "Holiday Inn", "t1": "06:05", "to": "Studio 13", "t2": "06:10"},
+          {"passengers": "Eva Probe", "from": "Holiday Inn", "t1": "08:40", "to": "BASE CHURCH", "t2": "09:05"},
+          {"passengers": "Max Muster, Kai Zwei", "from": "Location 2nd UNIT", "t1": "after Sc. 4A", "to": "BASE CHURCH", "t2": "16:45"}]
+check("Fahrten 2nd Unit: Abholung am Morgen (P/UP der 2nd Unit, vor dem Crew Call der 1st Unit) bei der 2nd Unit, Cast der 1st Unit bei der 1st",
+      [LP.ride_unit(_rc, x) for x in _rides] == ["2", "2", "1", "2"], [LP.ride_unit(_rc, x) for x in _rides])
+
 sys.exit(done("Hintergrund"))

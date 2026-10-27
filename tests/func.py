@@ -671,6 +671,12 @@ async def owner_tests(p, port):
           const hand=await run(now-10*60e3),auto=await run(now-50*60e3);
           window.SCENEAUTO=K.a;window.SCACK=K.k;day.items=K.it;if(K.u2)day.unit2=K.u2;window.SCACKLIVE=K.l;window.RIDEACKLOADED=K.r;return {hand,auto}})()""")
         check("Szenen automatisch: eine von Hand gestartete Szene bleibt (keine Automatik danach), ohne Eingriff startet die geplante", sa_ in (None, {"hand": 0, "auto": 1}), sa_, public=True)
+        # Fahrten 2nd Unit (wie late_push.ride_unit): Abholung am Morgen bei der 2nd Unit, auch für Leute beider Units
+        ru = await E("""(()=>{if(typeof window.csRideUnit!=='function')return null;const c={times:{crewCall:'09:30'},cast:[{no:'1',actor:'Max Muster',pickup:'15:45'},{no:'8',actor:'Eva Probe',pickup:'08:40'}],
+          calls:[{name:'Tom Ton',t:'06:45'}],u2:{crewCall:'06:45',cast:[{no:'1',actor:'Max Muster',pickup:'06:00'},{no:'2',actor:'Kai Zwei',pickup:'06:05'}]}};
+          return [{passengers:'Max Muster, Tom Ton',from:'Moxy',t1:'06:00',to:'Holiday Inn'},{passengers:'Kai Zwei, Max Muster',from:'Holiday Inn',t1:'06:05',to:'Studio 13'},
+            {passengers:'Eva Probe',from:'Holiday Inn',t1:'08:40',to:'BASE CHURCH'},{passengers:'Max Muster, Kai Zwei',from:'Location 2nd UNIT',t1:'after Sc. 4A',to:'BASE CHURCH'}].map(r=>window.csRideUnit(c,r)).join(',')})()""")
+        check("Fahrten 2nd Unit: Abholung am Morgen bei der 2nd Unit (gleich wie der Server)", ru in (None, "2,2,1,2"), ru, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

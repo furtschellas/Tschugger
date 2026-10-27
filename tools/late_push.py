@@ -119,6 +119,22 @@ def ride_unit(c, r):
     if p1: return "1"
     who = str(r.get("passengers") or r.get("people") or "")
     if not who.strip(): return ""
+    # 2. the pickup of a cast row: the ride of that actor at its P/UP time belongs to the unit of that row
+    t1 = cq_hm(r.get("t1")); us = set()
+    if t1:
+        u2c = (c.get("u2") or {}).get("cast") or []
+        for lst, u in (([x for x in c.get("cast") or [] if isinstance(x, dict) and x.get("u") != "2"], "1"), ([x for x in u2c if isinstance(x, dict)], "2")):
+            for x in lst:
+                h = name_hit(x.get("actor")) if x.get("actor") else None
+                if h and cq_hm(x.get("pickup")) == t1 and h(who): us.add(u)
+    if len(us) == 1: return next(iter(us))
+    # 3. long before the crew call of the later unit (90 min), the earlier unit has started: the earlier unit
+    u2 = c.get("u2") or {}
+    c1, c2 = cq_hm((c.get("times") or {}).get("crewCall")), cq_hm(u2.get("crewCall") or (u2.get("times") or {}).get("crewCall"))
+    mm = lambda v: int(v[:2]) * 60 + int(v[3:])
+    if c1 and c2 and t1 and c1 != c2:
+        e, l, eu = (c2, c1, "2") if mm(c2) < mm(c1) else (c1, c2, "1")
+        if mm(e) - 120 <= mm(t1) < mm(l) - 90: return eu
     a = b = 0
     for hit, u in unit_people(c):
         if hit(who):
