@@ -2123,7 +2123,11 @@ def main():
         m = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
         return 7 if m and "%s-%s-%s" % m.groups() >= TODAY else 6
     _todo = [f["name"] for f in pick_dispos(files) if not any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())]
-    if _todo: print("::notice::Callsheets im alten Format, werden neu gelesen: %d" % len(_todo))
+    if _todo:   # with the reason per file (codes only: date of the file, version found, version wanted, tried already)
+        def _why(name):
+            f0 = next(x for x in pick_dispos(files) if x["name"] == name); vs = [str((v.get("cs") or {}).get("v")) + "@" + str(k) for k, v in dispos.items() if v.get("file") == name]
+            return "%s: %s→v%d%s" % (_fdate(name) or "?", ",".join(vs) or "fehlt", CSV_OF(f0), " (schon versucht)" if (meta.get("csTry") or {}).get(name) == "%s|%d" % (f0["modified"], CSV_OF(f0)) else "")
+        print("::notice::Callsheets im alten Format, werden neu gelesen: %d (%s)" % (len(_todo), "; ".join(_why(x) for x in _todo)))
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
         have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
