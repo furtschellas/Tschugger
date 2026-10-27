@@ -151,7 +151,7 @@ export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
   /* my day */
   /* my day: on the shooting day first the scene being shot now (with its place) */
   const NS=csNowScene(x);window.CSNOWSC=NS?(NS.ev||String(NS.sc)):"";
-  const nowRow=NS?(()=>{const b=csNowBits(NS,c,x.date);return '<div class="csme-r csme-now"><span class="k">'+esc(L("Jetzt"))+'</span><span class="v">'+(b.ev||'<b>'+b.sc+'</b>'+b.place+' <small>'+b.set+'</small>')+'</span></div>'})():'';
+  const nowRow=NS&&window.nowSee&&window.nowSee()?(()=>{const b=csNowBits(NS,c,x.date);return '<div class="csme-r csme-now"><span class="k">'+esc(L("Jetzt"))+'</span><span class="v">'+(b.ev||'<b>'+b.sc+'</b>'+b.place+' <small>'+b.set+'</small>')+'</span></div>'})():'';
   if(me){const mine=csMine(c,me);if(mine.length)h+='<section class="dsec csme" id="cs-mein" aria-label="'+esc(L("Mein Tag")+" · "+me.name)+'"><h2 class="csme-h">'+dtitle+' <span>'+fmtDate(x.date)+'</span></h2>'+nowRow+mine.join("")+'</section>'}
   h+='<!--CASTPOS-->';   /* Maske / Kostüm: the cast right below «Mein Drehtag» */
   /* key people of the day */

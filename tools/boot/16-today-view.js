@@ -21,7 +21,7 @@ import {scAckId} from "./27-scene-ack.js";
 export function todayOn(){try{const v=localStorage.getItem("today")||"";return !(v==="0"||v.startsWith("0|"))}catch(_){return true}}
 window.todayOn=todayOn;   /* the tab bar (base/14-render) asks through window: «Today» switched off in the profile */
 /* which parts Today shows (profile → App): stored with the on/off value, «1|menu,off» = on, without lunch and offline */
-const TODAY_PARTS=[["now","Jetzt gedreht",()=>true],["my","Meine nächsten Termine",()=>vok("mycal")],["mine","Mein Drehtag",()=>true],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
+const TODAY_PARTS=[["now","Jetzt gedreht",()=>!!(window.nowSee&&window.nowSee())],["my","Meine nächsten Termine",()=>vok("mycal")],["mine","Mein Drehtag",()=>true],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
   ["loc","Erste Location",()=>vok("plan")],["menu","Mittagessen",()=>true],["scs","Szenen",()=>vok("plan")],["chg","Änderungen",()=>vok("plan")||vok("script")],["off","Offline am Set",()=>vok("blocking")||vok("plan")]];
 /* the person's choice, stored with the on/off value: «menu» = switched off, «+wx» = switched on although the App-Verwaltung offers it «aus» */
 function todayPrefs(){let v="";try{v=localStorage.getItem("today")||""}catch(_){}const i=v.indexOf("|");return new Set(i<0?[]:v.slice(i+1).split(",").filter(Boolean))}
@@ -286,7 +286,7 @@ function u2NowHTML(t,c0){try{if(typeof window.scOnU==="function"&&!window.scOnU(
       cm=[["m","Maske"],["w","Kostüm"]].filter(([k])=>w[k].length).map(([k,l])=>'<span class="tnk">'+esc(L(l))+'</span><span class="tnc">'+w[k].map(r=>tnChip(no(r),String(r.role||"").trim(),2,false,typeof cqLate==="function"?cqLate(cu,r):0)).join("")+'</span>').join("")}
     if(!what&&!cm)return"";
     return '<div class="tnowu2"><span class="tnk tnu">2nd Unit</span> '+what+(cm?' '+cm:'')+'</div>'}catch(_){return ""}}
-export function nowCardHTML(t,cls,unit){try{if(typeof csNowScene!=="function")return "";
+export function nowCardHTML(t,cls,unit){try{if(typeof csNowScene!=="function"||!(window.nowSee&&window.nowSee()))return "";   /* only with «Jetzt» sehen (admins always) */
     /* the callsheet of the 2nd Unit alone: only its line (and the forecasts) */
     if(unit==="2"){if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";const xd2=(S.dispos||[]).find(y=>y&&y.date===t),u2=u2NowHTML(t,xd2&&xd2.cs),fc2=ncLine(t);if(!u2&&!fc2)return "";
       return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+u2+fc2+'</div></div>'}

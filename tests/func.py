@@ -677,6 +677,8 @@ async def owner_tests(p, port):
           return [{passengers:'Max Muster, Tom Ton',from:'Moxy',t1:'06:00',to:'Holiday Inn'},{passengers:'Kai Zwei, Max Muster',from:'Holiday Inn',t1:'06:05',to:'Studio 13'},
             {passengers:'Eva Probe',from:'Holiday Inn',t1:'08:40',to:'BASE CHURCH'},{passengers:'Max Muster, Kai Zwei',from:'Location 2nd UNIT',t1:'after Sc. 4A',to:'BASE CHURCH'}].map(r=>window.csRideUnit(c,r)).join(',')})()""")
         check("Fahrten 2nd Unit: Abholung am Morgen bei der 2nd Unit (gleich wie der Server)", ru in (None, "2,2,1,2"), ru, public=True)
+        nw_ = await E("(()=>{if(typeof window.nowSee!=='function')return null;const k=window.MYPERMS;return {owner:window.nowSee(),perm:PERMS.some(p=>p[0]==='now.see')}})()")
+        check("«Jetzt» sehen: eigenes Recht in den Rollen, Admins sehen es immer", nw_ in (None, {"owner": True, "perm": True}), nw_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

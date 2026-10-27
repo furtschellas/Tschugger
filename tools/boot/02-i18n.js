@@ -1019,6 +1019,7 @@ Object.assign(I18N,{
  "Quittieren einstellen (Automatik, Anzeige, Zeiten)":{fr:"Régler les confirmations (automatique, affichage, heures)",it:"Impostare le conferme (automatico, visualizzazione, orari)",en:"Set confirmations (automatic, display, times)",hi:"पुष्टि सेट करें (स्वचालित, प्रदर्शन, समय)"},
  "Szenen parallel laufen lassen":{fr:"Laisser tourner des scènes en parallèle",it:"Far girare scene in parallelo",en:"Allow scenes in parallel",hi:"सीन एक साथ चलने दें"},
  "Eingeschaltet kann eine weitere Szene beginnen, während eine läuft – «Jetzt» zeigt alle laufenden Szenen.":{fr:"Activé, une autre scène peut commencer pendant qu'une tourne – « Maintenant » montre toutes les scènes en cours.",it:"Attivo, un'altra scena può iniziare mentre una è in corso – «Adesso» mostra tutte le scene in corso.",en:"When on, another scene can start while one is running – “Now” shows all running scenes.",hi:"चालू होने पर एक सीन चलते समय दूसरा शुरू हो सकता है – «अभी» सभी चल रहे सीन दिखाता है।"},
+ "«Jetzt» sehen":{fr:"Voir « Maintenant »",it:"Vedere «Adesso»",en:"See “Now”",hi:"«अभी» देखें"},
  "Prognosen im Jetzt erfassen":{fr:"Saisir des prévisions dans « Maintenant »",it:"Inserire previsioni in «Adesso»",en:"Enter forecasts in “Now”",hi:"«अभी» में अनुमान दर्ज करें"},
  "Prognose":{fr:"Prévision",it:"Previsione",en:"Forecast",hi:"अनुमान"},
  "Prognose erfassen":{fr:"Saisir une prévision",it:"Inserire una previsione",en:"Enter forecast",hi:"अनुमान दर्ज करें"},

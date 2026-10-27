@@ -24,7 +24,7 @@ const SBT=[["now","Jetzt"],["mine","Mein Tag"],["tiles","Kacheln des Tages"],["o
   ["set","App-Einstellungen","a:set"],["users","Alle Benutzer","a:users"],["active","Gerade aktiv","a:users:.uact"],["roles","Rollen","a:roles:.admins:not(.pacc)"],["access","Wer hat welchen Zugriff?","a:roles:.pacc"]];
 const sbCan=k=>{try{const t=SBT.find(x=>x[0]===k),pg=t&&t[2]||"";
     if(/^a:(users)/.test(pg))return isAdmin()||can("users.view")||can("users.edit")||can("users.invite");if(/^a:roles/.test(pg))return isAdmin()||can("roles.view")||can("roles.edit")||can("roles.assign");if(pg==="a:set")return isAdmin()||can("settings");
-    if(k==="my")return vok("mycal");if(k==="bcast")return can("push.send");if(k==="reports")return typeof VIEWS==="undefined"||!!VIEWS.reports;if(k==="acct")return true;
+    if(k==="now")return !!(window.nowSee&&window.nowSee());if(k==="my")return vok("mycal");if(k==="bcast")return can("push.send");if(k==="reports")return typeof VIEWS==="undefined"||!!VIEWS.reports;if(k==="acct")return true;
     if(pg.startsWith("t:")){const tb=pg.slice(2);return (typeof tabsOn!=="function"||tabsOn().includes(tb))&&vok(tb==="dispo"?"dispo":tb)}}catch(_){return false}return true};
 export const SBWIDE=1300;
 const INFRAME=(()=>{try{return window.self!==window.top}catch(_){return true}})();
