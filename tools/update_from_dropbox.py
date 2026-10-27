@@ -949,8 +949,12 @@ def _is_fp(f): return re.search(r"floorplan|grundriss|lageplan|access.?map", _ba
 
 def pick_dispos(files):
     """callsheets («TBO_Dispo_DT01_20261020.pdf», «…Callsheet…») – not the Sides, floorplans or risk assessments of a day folder"""
-    return [f for f in files if _cs(f) and not _is_sides(f) and not _is_ra(f) and not _is_fp(f)
-            and re.search(r"dispo|call.?sheet|tagesdispo", _base(f))]
+    out = {}
+    for f in files:
+        if not (_cs(f) and not _is_sides(f) and not _is_ra(f) and not _is_fp(f) and re.search(r"dispo|call.?sheet|tagesdispo", _base(f))): continue
+        k = f["name"].rsplit("/", 1)[-1].lower()   # the same callsheet in two folders (DT6 and DT6/Cast): one file, the newest copy
+        if k not in out or (f.get("modified") or "") > (out[k].get("modified") or ""): out[k] = f
+    return list(out.values())
 
 def pick_sides(files):
     return [f for f in files if _cs(f) and _is_sides(f) and not _is_ra(f)]
@@ -2134,6 +2138,7 @@ def main():
         v = dispos.pop(k); t = _fdate(v.get("file")); changed = True
         if t not in dispos: dispos[t] = dict(v, date=t, id=t); print("::warning::Callsheet von %s auf %s verschoben (Tag laut Datei)" % (k, t))
         else: print("::warning::Callsheet unter %s entfernt (gehört auf %s)" % (k, t))
+    print("::notice::Drehtag-Nummern im Drehplan: %s" % "; ".join("%d=%s" % (k, ",".join(v)) for k, v in sorted(_sn.items()) if k <= 8))
     print("::notice::Callsheet-Tage: %s" % "; ".join("%s=%s" % (re.sub(r"(?i)^.*?(DT\d+).*$", r"\1", _bn(v.get("file"))), k) for k, v in sorted(dispos.items()) if k >= "2026-10-19"))
     def CSV_OF(f):   # 7: the 2nd-unit order also from a block called PREVISION – read again only for callsheets of today and later (credit)
         return 7 if (_fdate(f["name"]) or "") >= TODAY else 6
