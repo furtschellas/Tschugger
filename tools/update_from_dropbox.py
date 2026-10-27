@@ -2126,7 +2126,7 @@ def main():
         mm = re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")) if isinstance(x, dict) and x.get("kind") == "shoot" and not x.get("blk") else None
         if mm: _sn.setdefault(int(mm.group(1)), []).append(x.get("date"))
     def _fdate(name):
-        b = str(name or "").rsplit("/", 1)[-1]; mn = re.search(r"(?i)\bDT\s*0*(\d+)", b)
+        b = str(name or "").rsplit("/", 1)[-1]; mn = re.search(r"(?i)(?<![a-z])DT\s*0*(\d+)", b)   # «…_DT02_…» (\b does not see a start after «_»)
         m = re.search(r"(20\d\d)(\d\d)(\d\d)", b); fd = "%s-%s-%s" % m.groups() if m else ""
         sd = _sn[int(mn.group(1))][0] if mn and len(_sn.get(int(mn.group(1))) or []) == 1 else ""
         try:   # the day number only when it is close to the date in the name (a numbering of another block or a typo far away: the name)
@@ -2146,13 +2146,13 @@ def main():
     if _todo:   # with the reason per file (codes only: date of the file, version found, version wanted, tried already)
         def _why(name):
             f0 = next(x for x in pick_dispos(files) if x["name"] == name); vs = [str((v.get("cs") or {}).get("v")) + "@" + str(k) for k, v in dispos.items() if v.get("file") == name]
-            return "%s: %s→v%d%s" % (_fdate(name) or "?", ",".join(vs) or "fehlt", CSV_OF(f0), " (schon versucht)" if (meta.get("csTry") or {}).get(name) == "%s|%d|c" % (f0["modified"], CSV_OF(f0)) else "")
+            return "%s: %s→v%d%s" % (_fdate(name) or "?", ",".join(vs) or "fehlt", CSV_OF(f0), " (schon versucht)" if (meta.get("csTry") or {}).get(name) == "%s|%d|d" % (f0["modified"], CSV_OF(f0)) else "")
         print("::notice::Callsheets im alten Format, werden neu gelesen: %d (%s)" % (len(_todo), "; ".join(_why(x) for x in _todo)))
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
         have = any(_bn(v.get("file")) == _bn(f["name"]) and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
-        tk = "%s|%d|c" % (f["modified"], CSV_OF(f)); tried = meta.setdefault("csTry", {})
+        tk = "%s|%d|d" % (f["modified"], CSV_OF(f)); tried = meta.setdefault("csTry", {})
         if not is_new("dispo", f) and tried.get(f["name"]) == tk: continue   # read again once per file version: a reading that is not kept never repeats every run (credit)
         tried[f["name"]] = tk
         for k in [k for k in tried if k not in {x["name"] for x in pick_dispos(files)}]: tried.pop(k)
