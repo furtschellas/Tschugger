@@ -137,12 +137,15 @@ async function scAuto(){if(SCABUSY||/[?&]sbx=/.test(location.search)||!window.SC
         const A=scaA(u);rows.forEach((r,i)=>{if(!scaOn(r.kind,u))return;const due=r.t+(+A[r.kind].min||0)*60e3;if(due<=now&&now-due<12*3600e3)j=i});
         if(j<0)continue;const r=rows[j],T=r.t+(+A[r.kind].min||0)*60e3;
         if(rows.slice(j).some(x=>scState(day.date,x.k)>0)||scaZ(day.date,r.k))continue;   /* already quittiert (or later ones) / set back by hand */
+        /* quittiert by hand in this unit since this row was due (another scene started, one finished …): the hand wins – the automatic
+           never undoes a tap (before, a scene started by hand was finished again within 30 s and the planned one started) */
+        if(Object.values(window.SCACK).some(x=>x&&x.d===day.date&&String(x.u||"1")===u&&(+x.at||0)>=T))continue;
         /* everything still running in this unit is finished (also scenes running in parallel) */
         for(const run of scRunAll(day.date,u,scAckId(day.date,r.k))){const x=scGet(day.date,run)||{},b=+x.b||+x.at||T;await scWrite(day.date,run,u,{s:2,b,e:Math.max(T,b+60e3)},true)}
         await scWrite(day.date,r.k,u,r.kind==="w"?{s:2,b:T,e:T}:{s:1,b:T},true)}}}
   catch(err){if(!(err&&err.code==="simulation"))console.warn("scene auto",err&&err.code||err)}
   finally{SCABUSY=false}}
-setInterval(scAuto,30e3);
+setInterval(scAuto,30e3);window.scAutoRun=scAuto;   /* tests */
 /* the key of a quittance: its «sc» field – for old entries without it the part of the id after the date */
 const scKeyOf=(id,x)=>scK((x&&x.sc)||id.split("-").slice(1).join("-"),x&&x.u);   /* an older 2nd-unit entry: its key with «_u2» */
 /* all entries running in a unit on that day (other than this one): their keys */

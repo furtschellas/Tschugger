@@ -662,6 +662,15 @@ async def owner_tests(p, port):
             it('Lunch','Restaurant X, Dorf 3, 1922 Salvan','https://maps.app.goo.gl/L'),it('Base 2','','https://maps.app.goo.gl/B2'),it('Base 3','','https://maps.app.goo.gl/B3'),it('Base 4','','https://maps.app.goo.gl/B4'),it('Base 5','','https://maps.app.goo.gl/B5')]}]});
           const b=ls.filter(l=>l.kinds&&l.kinds.includes('Base'));return {bases:b.length,nos:b[0]&&b[0]._bases?b[0]._bases.map(x=>x.n).join(','):'',lunch:ls.some(l=>l.kinds&&l.kinds.includes('Lunch'))}})()""")
         check("Callsheet: viele Basen als eine Base mit Nummern (je ein Link), Lunch bleibt eigener Ort", bz in (None, {"bases": 1, "nos": "1,2,3,4,5", "lunch": True}), bz, public=True)
+        # Szenen automatisch quittieren: von Hand quittiert (nach der fälligen Zeit) gewinnt – die Automatik startet die geplante Szene dann nicht
+        sa_ = await E("""(async()=>{if(typeof window.scAutoRun!=='function')return null;const t=todayISO(),day=(S.days||[]).find(d=>d.date===t&&d.kind==='shoot');if(!day)return null;
+          const K={a:window.SCENEAUTO,k:window.SCACK,it:day.items,l:window.SCACKLIVE,r:window.RIDEACKLOADED,u2:day.unit2};const hm=ms=>{const z=new Date(ms);return String(z.getHours()).padStart(2,'0')+':'+String(z.getMinutes()).padStart(2,'0')};
+          const now=Date.now();if(new Date(now-70*60e3).getDate()!==new Date(now).getDate())return null;   /* just after midnight: no times in the past today */
+          day.items=[{sc:'901',t:hm(now-60*60e3)},{sc:'902',t:hm(now-30*60e3)}];delete day.unit2;window.SCENEAUTO={a:{on:false},s:{on:true,min:0},l:{on:false},w:{on:false}};window.SCACKLIVE=true;window.RIDEACKLOADED=true;
+          const run=async a=>{window.SCACK={[scAckId(t,'901')]:{d:t,s:1,u:'1',sc:'901',b:a,at:a}};await window.scAutoRun();return scState(t,'902')};
+          const hand=await run(now-10*60e3),auto=await run(now-50*60e3);
+          window.SCENEAUTO=K.a;window.SCACK=K.k;day.items=K.it;if(K.u2)day.unit2=K.u2;window.SCACKLIVE=K.l;window.RIDEACKLOADED=K.r;return {hand,auto}})()""")
+        check("Szenen automatisch: eine von Hand gestartete Szene bleibt (keine Automatik danach), ohne Eingriff startet die geplante", sa_ in (None, {"hand": 0, "auto": 1}), sa_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();
