@@ -232,6 +232,17 @@ def main():
     days = [x for x in data.get("days") or [] if isinstance(x, dict)]
     today = datetime.datetime.now(ZoneInfo(fsadmin.TZ0)).date().isoformat()
     today = datetime.datetime.now(ZoneInfo(fsadmin.tz_for(today, days))).date().isoformat()   # the date in the time zone of the block
+    try:   # diagnosis (codes only): quittieren per unit on/off, today's scene quittances per unit
+        cf = fsadmin.get_doc("config/app") or {}
+        h, q = fsadmin._auth()
+        rr = requests.post(fsadmin.BASE + ":runQuery", headers=h, params=q, timeout=30, json={"structuredQuery": {
+            "from": [{"collectionId": "sceneack"}], "where": {"fieldFilter": {"field": {"fieldPath": "d"}, "op": "EQUAL", "value": {"stringValue": today}}}}})
+        sa = [{k: fsadmin.val(v) for k, v in (x["document"].get("fields") or {}).items()} for x in rr.json() if x.get("document")]
+        u2 = [x for x in sa if str(x.get("u") or "1") == "2"]
+        print("::notice title=Quittieren::Szenen quittieren 1st %s · 2nd %s · heute Einträge 1st %d · 2nd %d (davon mit eigener ID %d)" % (
+            "aus" if cf.get("sceneAck") is False else "an", "aus" if cf.get("sceneAck2") is False else ("an" if cf.get("sceneAck2") is True else "wie 1st"),
+            len(sa) - len(u2), len(u2), sum(1 for x in u2 if str(x.get("sc") or "").endswith("_u2"))))
+    except Exception as e: print("• Diagnose Quittieren:", type(e).__name__)
     try:   # Coverday: the days and callsheets as the crew sees them in the app (a callsheet may belong to another day now)
         ops, _ = coverday.read_ops(key); data = coverday.apply(data, ops)
         days = [x for x in data.get("days") or [] if isinstance(x, dict)]

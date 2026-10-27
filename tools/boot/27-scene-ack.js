@@ -172,7 +172,9 @@ function scParAsk(date,sc,u,run,b){const d=mkDialog("scpar",null,{replace:true})
     scTap(b,date,sc,u,v)});   /* directly – the button may have been redrawn meanwhile */
   document.body.appendChild(d)}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button[data-scack]");if(!b)return;e.preventDefault();e.stopPropagation();if(typeof canPerm!=="function"||!canPerm("scenes.ack"))return;
-  const [date,sc,u]=b.dataset.scack.split("|");scTap(b,date,sc,u,"")},true);
+  const [date,sc,u]=b.dataset.scack.split("|");
+  /* never silent: an error while quittieren shows (before, the tap seemed to do nothing) */
+  Promise.resolve().then(()=>scTap(b,date,sc,u,"")).catch(err=>{try{b.disabled=false}catch(_){}console.warn("scene ack",err);showMsg(L("Fehler:")+" "+String(err&&(err.code||err.message)||err).slice(0,120),6000)})},true);
 const scIsEv=k=>/^(lunch|wrap|setup\d*)$/.test(scBase(k));
 /* one tap on the round button of an entry (choice: the answer of the parallel question – «par» or «finish» – when it was asked) */
 async function scTap(b,date,sc,u,choice){sc=scK(sc,u);const id=scAckId(date,sc),st=scState(date,sc),x=scGet(date,sc)||{},bs=scBase(sc),now0=Date.now();
