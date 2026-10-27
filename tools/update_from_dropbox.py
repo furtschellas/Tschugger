@@ -2134,6 +2134,7 @@ def main():
         v = dispos.pop(k); t = _fdate(v.get("file")); changed = True
         if t not in dispos: dispos[t] = dict(v, date=t, id=t); print("::warning::Callsheet von %s auf %s verschoben (Tag laut Datei)" % (k, t))
         else: print("::warning::Callsheet unter %s entfernt (gehört auf %s)" % (k, t))
+    print("::notice::Callsheet-Tage: %s" % "; ".join("%s=%s" % (re.sub(r"(?i)^.*?(DT\d+).*$", r"\1", _bn(v.get("file"))), k) for k, v in sorted(dispos.items()) if k >= "2026-10-19"))
     def CSV_OF(f):   # 7: the 2nd-unit order also from a block called PREVISION – read again only for callsheets of today and later (credit)
         return 7 if (_fdate(f["name"]) or "") >= TODAY else 6
     _todo = [f["name"] for f in pick_dispos(files) if not any(_bn(v.get("file")) == _bn(f["name"]) and isinstance(v.get("cs"), dict) and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())]
@@ -2173,7 +2174,7 @@ def main():
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
                 prev = dispos.get(d["date"])
                 keep = not prev or _bn(prev.get("file")) == _bn(f["name"]) or _fdate(prev.get("file")) != d["date"] or (prev.get("_mod") or "") <= (f["modified"] or "")
-                if not is_new("dispo", f): print("::warning::Callsheet %s neu gelesen: %s (v%s)" % (d["date"], "übernommen" if keep else "nicht übernommen – neuere Datei am selben Tag", cs.get("v")))
+                if not is_new("dispo", f): print("::warning::Callsheet %s neu gelesen: %s (v%s)" % (d["date"], "übernommen" if keep else "nicht übernommen – am selben Tag schon %s (Tag %s, %s)" % (_bn(prev.get("file")), _fdate(prev.get("file")), prev.get("_mod")), cs.get("v")))
                 if keep:
                     d["id"] = d["date"]; d["_mod"] = f["modified"]; dispos[d["date"]] = d; changed = True
                     cs = d.get("cs") if isinstance(d.get("cs"), dict) else {}
