@@ -2115,24 +2115,38 @@ def main():
     notcs = {f["name"] for f in files if _cs(f) and (_is_sides(f) or _is_ra(f) or _is_fp(f) or not re.search(r"dispo|call.?sheet|tagesdispo", _base(f)))}
     dispos = {k: v for k, v in dispos.items() if str(v.get("file") or "") not in notcs and "_sides_" not in str(v.get("file") or "").lower()}
     if len(dispos) != len(data.get("dispos") or []): changed = True   # Sides were read as callsheets before: removed
+    # the day of a callsheet file: its shooting day number («DT02») in the Drehplan, else the date in its name («…_20261026»);
+    # neither the date in the name (DT2 is called «…_20261026») nor the one the reading finds (a title «October 26th» on DT6) is always right
+    _sn = {}
+    for x in data.get("days") or []:
+        mm = re.search(r"(\d+)", str(x.get("short") or x.get("label") or "")) if isinstance(x, dict) and x.get("kind") == "shoot" and not x.get("blk") else None
+        if mm: _sn.setdefault(int(mm.group(1)), []).append(x.get("date"))
     def _fdate(name):
-        m = re.search(r"(20\d\d)(\d\d)(\d\d)", str(name or "")); return "%s-%s-%s" % m.groups() if m else ""
-    for k in [k for k, v in dispos.items() if _fdate(v.get("file")) and _fdate(v.get("file")) != k]:
-        print("::warning::Callsheet unter falschem Datum entfernt: %s statt %s" % (k, _fdate(dispos[k].get("file")))); dispos.pop(k); changed = True
+        b = str(name or "").rsplit("/", 1)[-1]; mn = re.search(r"(?i)\bDT\s*0*(\d+)", b)
+        m = re.search(r"(20\d\d)(\d\d)(\d\d)", b); fd = "%s-%s-%s" % m.groups() if m else ""
+        sd = _sn[int(mn.group(1))][0] if mn and len(_sn.get(int(mn.group(1))) or []) == 1 else ""
+        try:   # the day number only when it is close to the date in the name (a numbering of another block or a typo far away: the name)
+            if sd and fd and abs((datetime.date.fromisoformat(sd) - datetime.date.fromisoformat(fd)).days) > 7: sd = ""
+        except Exception: sd = ""
+        return sd or fd
+    _bn = lambda name: str(name or "").rsplit("/", 1)[-1].lower()   # the same file in two folders (DT6 and DT6/Cast) is one callsheet
+    for k in [k for k, v in dispos.items() if _fdate(v.get("file")) and _fdate(v.get("file")) != k]:   # on another day than its file: moved there (or dropped when that day has one)
+        v = dispos.pop(k); t = _fdate(v.get("file")); changed = True
+        if t not in dispos: dispos[t] = dict(v, date=t, id=t); print("::warning::Callsheet von %s auf %s verschoben (Tag laut Datei)" % (k, t))
+        else: print("::warning::Callsheet unter %s entfernt (gehört auf %s)" % (k, t))
     def CSV_OF(f):   # 7: the 2nd-unit order also from a block called PREVISION – read again only for callsheets of today and later (credit)
-        m = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
-        return 7 if m and "%s-%s-%s" % m.groups() >= TODAY else 6
-    _todo = [f["name"] for f in pick_dispos(files) if not any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())]
+        return 7 if (_fdate(f["name"]) or "") >= TODAY else 6
+    _todo = [f["name"] for f in pick_dispos(files) if not any(_bn(v.get("file")) == _bn(f["name"]) and isinstance(v.get("cs"), dict) and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())]
     if _todo:   # with the reason per file (codes only: date of the file, version found, version wanted, tried already)
         def _why(name):
             f0 = next(x for x in pick_dispos(files) if x["name"] == name); vs = [str((v.get("cs") or {}).get("v")) + "@" + str(k) for k, v in dispos.items() if v.get("file") == name]
-            return "%s: %s→v%d%s" % (_fdate(name) or "?", ",".join(vs) or "fehlt", CSV_OF(f0), " (schon versucht)" if (meta.get("csTry") or {}).get(name) == "%s|%d" % (f0["modified"], CSV_OF(f0)) else "")
+            return "%s: %s→v%d%s" % (_fdate(name) or "?", ",".join(vs) or "fehlt", CSV_OF(f0), " (schon versucht)" if (meta.get("csTry") or {}).get(name) == "%s|%d|c" % (f0["modified"], CSV_OF(f0)) else "")
         print("::notice::Callsheets im alten Format, werden neu gelesen: %d (%s)" % (len(_todo), "; ".join(_why(x) for x in _todo)))
     for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
-        have = any(v.get("file") == f["name"] and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
+        have = any(_bn(v.get("file")) == _bn(f["name"]) and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
-        tk = "%s|%d|b" % (f["modified"], CSV_OF(f)); tried = meta.setdefault("csTry", {})
+        tk = "%s|%d|c" % (f["modified"], CSV_OF(f)); tried = meta.setdefault("csTry", {})
         if not is_new("dispo", f) and tried.get(f["name"]) == tk: continue   # read again once per file version: a reading that is not kept never repeats every run (credit)
         tried[f["name"]] = tk
         for k in [k for k in tried if k not in {x["name"] for x in pick_dispos(files)}]: tried.pop(k)
@@ -2144,21 +2158,21 @@ def main():
             b = claude([blk], CS_RULES + "Teil 2 des Callsheets (Tagesdispo): " + CS_B, 32000, kind="dispo")
             cs = dict(a if isinstance(a, dict) else {}); cs.update(b if isinstance(b, dict) else {})
             md0 = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"]); dt0 = md0 and "%s-%s-%s" % md0.groups()
-            day0 = next((x for x in data.get("days") or [] if isinstance(x, dict) and x.get("date") == (dt0 or str(cs.get("date") or ""))), None) or {}
+            day0 = next((x for x in data.get("days") or [] if isinstance(x, dict) and x.get("date") == (_fdate(f["name"]) or dt0 or str(cs.get("date") or ""))), None) or {}
             cs_split_u2(cs, [i.get("sc") for i in ((day0.get("unit2") or {}).get("items") or []) if isinstance(i, dict) and i.get("sc")])
             cs["v"] = CSV_OF(f)   # version 2: wardrobe/make-up with the person of the column; 3: travel with its date; 4: places learnt (names, base rooms, map links); 5: one base with its rooms; 6: 2nd Unit separate («u2»)
             nf = cs_fill_places(cs, data)
             if nf: log("Callsheet: Kartenlinks ergänzt:", nf)
             md = re.search(r"(20\d\d)(\d\d)(\d\d)", f["name"])
             dcs = str(cs.pop("date", "") or "")
-            date = (md and "%s-%s-%s" % md.groups()) or dcs or ""   # the file name first: the reading took a wrong date from a title before
+            date = _fdate(f["name"]) or dcs or ""   # the day of the file first: the reading took a wrong date from a title before
             # locations and production information in the languages of the app (names, places and streets stay as they are);
             # a failed translation does not make the callsheet be read again (only the translation is tried later, see cs_tr_fill)
             cs["tr"] = {}; cs_translate(cs)
             d = cs_to_dispo(cs, date, f)
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
                 prev = dispos.get(d["date"])
-                keep = not prev or prev.get("file") == f["name"] or _fdate(prev.get("file")) != d["date"] or (prev.get("_mod") or "") <= (f["modified"] or "")
+                keep = not prev or _bn(prev.get("file")) == _bn(f["name"]) or _fdate(prev.get("file")) != d["date"] or (prev.get("_mod") or "") <= (f["modified"] or "")
                 if not is_new("dispo", f): print("::warning::Callsheet %s neu gelesen: %s (v%s)" % (d["date"], "übernommen" if keep else "nicht übernommen – neuere Datei am selben Tag", cs.get("v")))
                 if keep:
                     d["id"] = d["date"]; d["_mod"] = f["modified"]; dispos[d["date"]] = d; changed = True
