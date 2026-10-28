@@ -143,6 +143,8 @@ function viewMorph(v,html){
   const t=document.createElement("template");t.innerHTML=html;const nw=t.content;
   const same=(a,b)=>a.nodeType===b.nodeType&&(a.nodeType!==1||(a.tagName===b.tagName&&(a.id||"")===(b.id||"")&&(a.getAttribute("data-k")||"")===(b.getAttribute("data-k")||"")));
   /* which section a <details> is (another section in the same place – other day, other page – takes the state of the new page) */
+  /* which field an input is (another field in the same place takes the state of the new page) */
+  const ikey=el=>[el.getAttribute("name"),el.getAttribute("value"),el.id,el.getAttribute("data-pacc"),el.getAttribute("data-perm"),el.getAttribute("data-k")].join("|");
   const dkey=el=>{let sm=null;for(const c of el.children)if(c.tagName==="SUMMARY"){sm=c;break}return (el.id||"")+"|"+(el.getAttribute("data-k")||"")+"|"+(el.getAttribute("data-sec")||"")+"|"+(sm?sm.textContent.slice(0,80):"")};
   const kept=el=>el.nodeType===1&&(el.__map||el.classList.contains("leaflet-container"));   /* a running map: kept as long as its points are the same */
   function node(a,b){
@@ -153,8 +155,10 @@ function viewMorph(v,html){
     for(const at of [...b.attributes])if(a.getAttribute(at.name)!==at.value&&!(dt&&at.name==="open"))a.setAttribute(at.name,at.value);
     if(tg==="TEXTAREA"){if(!act&&a.value!==b.value)a.value=b.value;return a}
     kids(a,b);
-    if(tg==="INPUT"&&!act){const v0=b.getAttribute("value");if(a.type==="checkbox"||a.type==="radio")a.checked=b.hasAttribute("checked");else if(a.type!=="file"&&a.value!==(v0==null?"":v0))a.value=v0==null?"":v0}
-    if(tg==="SELECT"&&!act){const i=[...b.options].findIndex(o=>o.hasAttribute("selected"));a.selectedIndex=i>=0?i:(a.options.length?0:-1)}
+    /* a tick or a choice made by hand stays on a new drawing while the page itself still draws it as before (an unsaved form –
+       before, every drawing of the page reset the ticks: «the ticks jump around»); a change of the page itself (saved, other item) applies */
+    if(tg==="INPUT"&&!act){const v0=b.getAttribute("value");if(a.type==="checkbox"||a.type==="radio"){const want=b.hasAttribute("checked"),k=ikey(b);if(a.__ck===undefined||a.__ckk!==k||a.__ck!==want||a.checked===a.__ck)a.checked=want;a.__ck=want;a.__ckk=k}else if(a.type!=="file"&&a.value!==(v0==null?"":v0))a.value=v0==null?"":v0}
+    if(tg==="SELECT"&&!act){const i=[...b.options].findIndex(o=>o.hasAttribute("selected")),want=i>=0?i:(a.options.length?0:-1),k=ikey(b);if(a.__si===undefined||a.__sik!==k||a.__si!==want||a.selectedIndex===a.__si)a.selectedIndex=want;a.__si=want;a.__sik=k}
     /* a section opened or closed by hand stays so on a new drawing; only a change of the page itself (open in the new HTML, not in the last) applies */
     if(dt){const want=b.hasAttribute("open"),k=dkey(b);if(a.__op===undefined||a.__op!==want||a.__ok!==k)a.open=want;a.__op=want;a.__ok=k}
     return a}
@@ -167,6 +171,8 @@ function viewMorph(v,html){
     while(ac){const n=ac.nextSibling;a.removeChild(ac);ac=n}}
   try{kids(v,nw)}catch(err){console.warn("morph",err);v.innerHTML=html;return}
   for(const d of v.querySelectorAll("details"))if(d.__op===undefined){d.__op=d.open;d.__ok=dkey(d)}   /* new sections: as drawn */
+  for(const i of v.querySelectorAll('input[type=checkbox],input[type=radio]'))if(i.__ck===undefined){i.__ck=i.hasAttribute("checked");i.__ckk=ikey(i)}
+  for(const sl of v.querySelectorAll("select"))if(sl.__si===undefined){const j=[...sl.options].findIndex(o=>o.hasAttribute("selected"));sl.__si=j>=0?j:(sl.options.length?0:-1);sl.__sik=ikey(sl)}
   /* the page itself may be unchanged at the top: tell the watchers of #view (filters, «jetzt», jump bar …) that it was drawn */
   const c=document.createComment("");v.appendChild(c);v.removeChild(c)}
 window.viewMorph=viewMorph;

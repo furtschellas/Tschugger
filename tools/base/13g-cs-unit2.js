@@ -23,6 +23,9 @@ function csUnitPeople(c){if(UPEOPLE.has(c))return UPEOPLE.get(c);const m=new Map
   for(const r of csA(c.cast))add(r&&r.actor,"1");
   for(const r of csA(c.u2&&c.u2.cast))add(r&&r.actor,"2");
   for(const r of csA(c.calls)){if(!r)continue;if(String(r.t||"").trim())add(r.name,"1");if(String(r.t2||"").trim())add(r.name,"2")}
+  /* the infos by department: a person named in the column «1st UNIT» / «2nd UNIT» (also extra staff from the lists of the callsheet) */
+  {const names=[...new Set(csA(c.calls).map(r=>r&&r.name).concat(...csA(c.lists).map(l=>String(Array.isArray(l&&l.names)?l.names.join(","):(l&&l.names)||"").split(/\s*[,;]\s*/))).map(n=>String(n||"").trim()).filter(n=>n.length>=5&&/\s/.test(n)))];
+   for(const d of csA(c.depts)){if(!d)continue;const t1=String(d.text||""),t2=String(d.text2||"");if(!t1.trim()&&!t2.trim())continue;for(const n of names){const h=nameHit(n);if(t1&&h(t1))add(n,"1");if(t2&&h(t2))add(n,"2")}}}
   const out=[...m].filter(([,u])=>u.size===1).map(([n,u])=>({hit:nameHit(n),u:[...u][0]}));UPEOPLE.set(c,out);return out}
 export function csRideUnit(c,r){if(!r)return "";if(r.u==="1"||r.u==="2")return r.u;
   const tx=[r.from,r.to].map(v=>String(v||"")).join(" ");

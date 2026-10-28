@@ -679,6 +679,16 @@ async def owner_tests(p, port):
         check("Fahrten 2nd Unit: Abholung am Morgen bei der 2nd Unit (gleich wie der Server)", ru in (None, "2,2,1,2"), ru, public=True)
         nw_ = await E("(()=>{if(typeof window.nowSee!=='function')return null;const k=window.MYPERMS;return {owner:window.nowSee(),perm:PERMS.some(p=>p[0]==='now.see')}})()")
         check("«Jetzt» sehen: eigenes Recht in den Rollen, Admins sehen es immer", nw_ in (None, {"owner": True, "perm": True}), nw_, public=True)
+        # a tick set by hand in an unsaved form stays when the page is drawn again (role form: «the ticks jump around»)
+        tk_ = await E("""(async()=>{const v=document.getElementById('view');if(!v||typeof viewMorph!=='function')return null;
+          const h='<form class="tkt"><label><input type="checkbox" name="rp" value="a"> A</label><label><input type="checkbox" name="rp" value="b" checked> B</label></form>';
+          viewMorph(v,h);const [a,b]=[...v.querySelectorAll('.tkt input')];a.checked=true;b.checked=false;viewMorph(v,h);const kept=a.checked&&!b.checked;
+          viewMorph(v,h.replace('value="a">','value="a" checked>'));const saved=a.checked;viewMorph(v,h.replace(' checked>','>'));const page=!b.checked&&!a.checked;render();return {kept,saved,page}})()""")
+        check("Formular: von Hand gesetzte Haken bleiben beim Neuzeichnen, gespeicherte Änderungen der Seite gelten", tk_ in (None, {"kept": True, "saved": True, "page": True}), tk_, public=True)
+        uu_ = await E("""(()=>{if(typeof window.csRideUnit!=='function')return null;const c={u2:{crewCall:'06:45'},calls:[{name:'Tom Ton',t:'',t2:'06:45'},{name:'Lia Licht',t:'09:15'}],lists:[{title:'Extra Crew',names:'Oli Strom, Ida Grip'}],
+          depts:[{dept:'Light',text:'Lia Licht 09:15',text2:'Extra Electrician: Oli Strom call 06:45@meeting point'}]};
+          return [{passengers:'Oli Strom',from:'Moxy',t1:'06:15',to:'Loc 1'},{passengers:'Tom Ton',from:'Moxy',t1:'06:10',to:'Loc'},{passengers:'Lia Licht',from:'Moxy',t1:'08:50',to:'Tech'}].map(r=>window.csRideUnit(c,r)).join(',')})()""")
+        check("Unit der Personen: Calls-Spalte und Abteilungs-Spalte 2nd UNIT (gleich wie der Server)", uu_ in (None, "2,2,1"), uu_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

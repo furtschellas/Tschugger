@@ -662,4 +662,11 @@ _rides = [{"passengers": "Max Muster, Tom Ton", "from": "Moxy", "t1": "06:00", "
 check("Fahrten 2nd Unit: Abholung am Morgen (P/UP der 2nd Unit, vor dem Crew Call der 1st Unit) bei der 2nd Unit, Cast der 1st Unit bei der 1st",
       [LP.ride_unit(_rc, x) for x in _rides] == ["2", "2", "1", "2"], [LP.ride_unit(_rc, x) for x in _rides])
 
+# unit of people: a call only in the column «2nd IN», or named only in the department column «2nd UNIT» (also extra staff from the lists)
+_uc = {"u2": {"crewCall": "06:45"}, "calls": [{"name": "Tom Ton", "t": "", "t2": "06:45"}, {"name": "Lia Licht", "t": "09:15"}],
+       "lists": [{"title": "Extra Crew", "names": "Oli Strom, Ida Grip"}],
+       "depts": [{"dept": "Light", "text": "Lia Licht 09:15", "text2": "Extra Electrician: Oli Strom call 06:45@meeting point"}]}
+_ur = [{"passengers": "Oli Strom", "from": "Moxy", "t1": "06:15", "to": "Loc 1"}, {"passengers": "Tom Ton", "from": "Moxy", "t1": "06:10", "to": "Loc"}, {"passengers": "Lia Licht", "from": "Moxy", "t1": "08:50", "to": "Tech"}]
+check("Unit der Personen: Spalte «2nd IN» der Calls und Spalte «2nd UNIT» der Abteilungen (auch Zusatzpersonal)", [LP.ride_unit(dict(_uc), x) for x in _ur] == ["2", "2", "1"], [LP.ride_unit(dict(_uc), x) for x in _ur])
+
 sys.exit(done("Hintergrund"))

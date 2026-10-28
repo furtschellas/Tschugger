@@ -76,13 +76,13 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-paccall]")
   const ds=[...document.querySelectorAll(".pacc details.paccd")],open=ds.some(d=>!d.open);ds.forEach(d=>{d.open=open});b.outerHTML=paccAllBtn(open)});
 /* «Wer hat welchen Zugriff?»: a permission switched on/off for a role directly (same rules as «Bearbeiten»: no self-promotion) */
 document.addEventListener("change",async e=>{const c=e.target.closest("input[data-pacc]");if(!c)return;const id=c.dataset.pacc,k=c.dataset.perm,on=c.checked;
-  if(!id||id==="owner"||roleLocked(id)||(k==="settings"&&!isOwner())||(id!=="admin"&&!canRoleEdit())||(!isAdmin()&&(id===MYROLE||!MYPERMS.includes(k)))){render();return}
-  const ro=id==="admin"?{name:"Admin",perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:Object.assign({},(ADM.roles||[]).find(x=>x.id===id)||{});if(id!=="admin"&&!ro.name&&!ro.perms){render();return}
+  if(!id||id==="owner"||roleLocked(id)||(k==="settings"&&!isOwner())||(id!=="admin"&&!canRoleEdit())||(!isAdmin()&&(id===MYROLE||!MYPERMS.includes(k)))){c.checked=!on;render();return}
+  const ro=id==="admin"?{name:"Admin",perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:Object.assign({},(ADM.roles||[]).find(x=>x.id===id)||{});if(id!=="admin"&&!ro.name&&!ro.perms){c.checked=!on;render();return}
   const before=arr(ro.perms).slice(),perms=[...new Set(on?before.concat([k]):before.filter(p=>p!==k))].filter(p=>permKnown(p)||before.includes(p));
   const apply=ps=>{if(id==="admin")ADM.adminPerms=ps;else{const r=(ADM.roles||[]).find(x=>x.id===id);if(r)r.perms=ps}};
   apply(perms);render();
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),Object.assign({name:ro.name||id,perms,at:F.serverTimestamp()},ro.wa&&id!=="admin"?{wa:ro.wa}:{}));showMsg(L("Rolle gespeichert."),2000)}
-  catch(err){apply(before);render();showMsg(admErr(err),6000)}});
+  catch(err){apply(before);c.checked=!on;render();showMsg(admErr(err),6000)}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&canRoleEdit()&&!roleLocked(b.dataset.redit)){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
   if(e.target.closest("[data-rreset]")&&isOwner()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form.arolef");if(!f)return;e.preventDefault();if(!canRoleEdit()||(f.dataset.role&&roleLocked(f.dataset.role)))return;

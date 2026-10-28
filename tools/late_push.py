@@ -107,6 +107,19 @@ def unit_people(c):
         if not isinstance(r, dict): continue
         if str(r.get("t") or "").strip(): add(r.get("name"), "1")
         if str(r.get("t2") or "").strip(): add(r.get("name"), "2")
+    # the infos by department: a person named in the column «1st UNIT» / «2nd UNIT» (also extra staff from the lists) – like csUnitPeople
+    names = [str(r.get("name") or "") for r in c.get("calls") or [] if isinstance(r, dict)]
+    for l in c.get("lists") or []:
+        if isinstance(l, dict): names += re.split(r"\s*[,;]\s*", ",".join(l["names"]) if isinstance(l.get("names"), list) else str(l.get("names") or ""))
+    names = list(dict.fromkeys(n.strip() for n in names if len(n.strip()) >= 5 and re.search(r"\s", n.strip())))
+    for d in c.get("depts") or []:
+        if not isinstance(d, dict): continue
+        t1, t2 = str(d.get("text") or ""), str(d.get("text2") or "")
+        if not t1.strip() and not t2.strip(): continue
+        for n in names:
+            h = name_hit(n)
+            if h and t1 and h(t1): add(n, "1")
+            if h and t2 and h(t2): add(n, "2")
     c["_up"] = [(name_hit(n), next(iter(us))) for n, us in m.items() if len(us) == 1 and name_hit(n)]
     return c["_up"]
 def ride_unit(c, r):
