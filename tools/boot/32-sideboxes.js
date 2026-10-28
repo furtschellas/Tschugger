@@ -76,10 +76,27 @@ function frame(k,pg){const f=document.createElement("div");f.className="sbframe"
   const i=document.createElement("iframe");i.src=location.pathname+"?sbx="+encodeURIComponent(k);i.title=k;i.loading="lazy";f.appendChild(i);return f}
 /* always the phone view: every frame 390 px wide, scaled to the box; the phone 844 px high, a page 70 % of the window */
 /* several topics in one box: the frames share its height (each at least 260 px), so all of them are seen at once */
-function fit(){for(const f of document.querySelectorAll(".sbbox .sbframe")){const box=f.closest(".sbbox"),n=Math.max(1,box?box.querySelectorAll(".today>[data-sbt]").length:1),avail=Math.max(260,Math.round((window.innerHeight-130)/n-46));
-  const ph=f.classList.contains("sbphone"),w0=Math.max(120,((f.parentElement&&f.parentElement.clientWidth)||320)-(ph?14:2)),i=f.querySelector("iframe");   /* the width of its box (not of the frame itself: that changes here) */if(!i)continue;let s=Math.min(1.6,w0/390);   /* the phone view (390 px) scaled to the width of the box – smaller or larger */
-  if(f.classList.contains("sbphone")&&844*s>avail)s=avail/844;   /* the phone smaller (and centred) when the box is shared */
-  const vis=f.classList.contains("sbphone")?Math.round(844*s):avail;f.style.width=f.classList.contains("sbphone")?Math.round(390*s)+"px":"";i.style.transform="scale("+s+")";i.style.height=Math.round(vis/s)+"px";f.style.height=vis+"px"}}
+function fit(){
+  /* each box in the free space beside the page (measured, not assumed): never over the page, never past the edge of the window */
+  const wr=(document.querySelector(".wrap")||document.getElementById("view")||document.body).getBoundingClientRect(),G=16;
+  for(const a of document.querySelectorAll("aside.sbbox")){if(a.hidden)continue;const side=a.id==="sbl"?"l":"r";
+    const free=Math.floor(side==="l"?wr.left-2*G:window.innerWidth-wr.right-2*G);
+    if(a.classList.contains("sbempty")){a.style.width="";continue}
+    if(free<160){a.style.visibility="hidden";continue}a.style.visibility="";
+    a.style.width=free+"px";if(side==="l"){a.style.left=G+"px";a.style.right=""}else{a.style.right=G+"px";a.style.left=""}
+    const v=a.querySelector(".sbview");if(!v)continue;v.style.zoom="";
+    /* narrow box: everything a little smaller (the parts are made for about 280 px) */
+    const zw=Math.min(1,free/280);if(zw<1)v.style.zoom=zw;
+    const fr=[...a.querySelectorAll(".sbframe")],H=a.clientHeight;
+    /* the frames share the height that the other parts leave free (each at least 150 px) */
+    for(const f of fr){f.style.height="0px"}
+    const other=v.scrollHeight*zw,n=fr.length,per=n?Math.max(150,Math.floor((H-other-6)/n/zw)):0;
+    for(const f of fr){const i=f.querySelector("iframe");if(!i)continue;const ph=f.classList.contains("sbphone");
+      const w0=Math.max(120,((f.parentElement&&f.parentElement.clientWidth)||free/zw)-(ph?14:2));let s=Math.min(1.6,w0/390);
+      if(ph&&844*s>per)s=per/844;
+      const vis=ph?Math.round(844*s):per;f.style.width=ph?Math.round(390*s)+"px":"";i.style.transform="scale("+s+")";i.style.height=Math.round(vis/s)+"px";f.style.height=vis+"px"}
+    /* still too high (many parts): everything smaller until it fits – nothing hidden, no scrolling inside the box */
+    const need=v.scrollHeight*zw;if(need>H){const z=Math.max(.5,zw*(H-8)/need);v.style.zoom=z;if(a.scrollHeight>H+1)v.style.zoom=Math.max(.5,z*(H-8)/a.scrollHeight)}}}
 /* who may use the side boxes: Owner, Admins and the roles with «Seitenmenüs nutzen» (App-Verwaltung → Access) */
 const sbUse=()=>{try{return isAdmin()||can("sidebox.use")}catch(_){return false}};
 function draw(){if(INFRAME)return;const wide=window.innerWidth>=SBWIDE&&!!ME&&sbUse();const x=sbxGet();

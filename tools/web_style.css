@@ -1214,6 +1214,8 @@ html body #view .today .tcs .tuh:first-child{margin-top:0}
 /* the side boxes fill the space beside the page (760 px) – narrower or wider with the window */
 @media (min-width:1300px){.sbbox:not([hidden]){display:block;position:fixed;top:14px;bottom:90px;width:calc((100vw - 760px)/2 - 34px);overflow:auto;z-index:5;padding:2px 4px 8px;scrollbar-width:thin}
   #sbl{left:18px}#sbr{right:18px}}
+.sbbox{overflow-wrap:anywhere;word-break:normal}.sbbox .sbview :not(iframe){max-width:100%;min-width:0;box-sizing:border-box}.sbbox .sbframe iframe{max-width:none}.sbbox table{table-layout:fixed;width:100%}.sbbox img{height:auto}
+html body :is(#sbl,#sbr) .sbview .dtiles.dtiles{display:flex!important;flex-wrap:wrap!important;gap:6px!important;overflow:visible!important}html body :is(#sbl,#sbr) .sbview .dtiles.dtiles>.dt{flex:1 1 64px!important;min-width:60px!important;max-width:none!important}
 .sbbox .sbsec{margin:0 0 16px}.sbbox .sbh{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 6px}
 .sbbox .tuh{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 0 3px}
 .sbbox .sbo{display:flex;gap:8px;align-items:baseline;font-size:13px;padding:2px 0}.sbbox .sbo i{font-style:normal;color:var(--muted);min-width:44px;font-family:var(--f-mono);font-size:12px}
