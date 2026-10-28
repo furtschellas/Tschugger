@@ -180,8 +180,12 @@ document.addEventListener("click",e=>{const s=e.target.closest&&e.target.closest
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button[data-scack]");if(!b)return;e.preventDefault();e.stopPropagation();if(typeof canPerm!=="function"||!canPerm("scenes.ack")){showMsg(L("Zum Quittieren fehlt dir das Recht «Szenen quittieren»."),5000);return}
   const [date,sc,u]=b.dataset.scack.split("|");
   /* never silent: an error while quittieren shows (before, the tap seemed to do nothing) */
-  Promise.resolve().then(()=>scTap(b,date,sc,u,"")).catch(err=>{try{b.disabled=false}catch(_){}console.warn("scene ack",err);showMsg(L("Fehler:")+" "+String(err&&(err.code||err.message)||err).slice(0,120),6000)})},true);
+  scDiag(date,sc,u,"tap v="+(window.APPVER||"")+" st="+scState(date,scK(sc,u))+" on="+scOnU(u)+" ack="+canPerm("scenes.ack")+" par="+scParU(u)+" run="+scRunAll(date,u,"").join(","));
+  Promise.resolve().then(()=>scTap(b,date,sc,u,"")).catch(err=>{scDiag(date,sc,u,"error "+String(err&&(err.code||err.message)||err).slice(0,120));try{b.disabled=false}catch(_){}console.warn("scene ack",err);showMsg(L("Fehler:")+" "+String(err&&(err.code||err.message)||err).slice(0,120),6000)})},true);
 const scIsEv=k=>/^(lunch|wrap|setup\d*)$/.test(scBase(k));
+/* diagnosis of a tap (until the quittance works again everywhere): each step into the protocol, codes only (no names) */
+async function scDiag(date,sc,u,step){try{if(!ME||!ME.email)return;const {F,db}=await fb();await F.addDoc(F.collection(db,"audit"),{by:String(ME.email).toLowerCase(),at:F.serverTimestamp(),op:"error",col:"sceneack",id:String(date+"|"+sc+"|"+u).slice(0,120),sum:("diag "+step).slice(0,280)})}catch(_){}}
+window.scDiag=scDiag;
 /* one tap on the round button of an entry (choice: the answer of the parallel question – «par» or «finish» – when it was asked) */
 async function scTap(b,date,sc,u,choice){sc=scK(sc,u);const id=scAckId(date,sc),st=scState(date,sc),x=scGet(date,sc)||{},bs=scBase(sc),now0=Date.now();
   if(st===2){scAckDialog(date,sc,u);return}
@@ -209,8 +213,9 @@ async function scTap(b,date,sc,u,choice){sc=scK(sc,u);const id=scAckId(date,sc),
   const wp=isWrap?null:scWrite(date,sc,u,v);if(wp)wp.catch(()=>{});
   if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},v):v),wk,u);
   if(isWrap)for(const k of scRunAll(date,u,id)){const rx=scGet(date,k)||{};try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now0,e:scBase(k)==="lunch"?Math.max(+rx.b||+rx.at||now0,Math.min(scLunchEnd(rx),now0)):now0})}catch(_){}}
-  try{await (wp||scWrite(date,sc,u,v));if(wm!=="f")showMsg(scLabel(sc)+" "+(v.s===1?L("läuft"):L("abgeschlossen"))+(u!=="1"?" · "+u+(u==="2"?"nd":"rd")+" Unit":""),1800);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null,wk)}   /* a short confirmation: the tap was saved */   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
-  catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:saveErr(err),4000)}}
+  scDiag(date,sc,u,"write s="+v.s+" wa="+wm);
+  try{await (wp||scWrite(date,sc,u,v));scDiag(date,sc,u,"saved");if(wm!=="f")showMsg(scLabel(sc)+" "+(v.s===1?L("läuft"):L("abgeschlossen"))+(u!=="1"?" · "+u+(u==="2"?"nd":"rd")+" Unit":""),1800);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null,wk)}   /* a short confirmation: the tap was saved */   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
+  catch(err){b.disabled=false;scDiag(date,sc,u,"fail "+String(err&&(err.code||err.message)||err).slice(0,120));showMsg(err&&err.code==="simulation"?err.message:saveErr(err),4000)}}
 /* after a scene (lunch, wrap) was finished: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
 function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((typeof UNAME!=="undefined"&&UNAME[u])||u)+" Unit":"",dd=" ("+date.split("-").reverse().slice(0,2).join(".")+"."+un+")";
   if(v.start)return L("Drehstart")+" "+scHM(v.b)+" – "+scLabel(sc)+dd;

@@ -279,6 +279,9 @@ def main():
         cnt = {}
         for x in au:
             k = "%s/%s" % (x.get("col"), x.get("op")); cnt[k] = cnt.get(k, 0) + 1
+        dg = [x for x in au if x.get("op") == "error" and x.get("col") == "sceneack"]
+        dg.sort(key=lambda x: str(x.get("at") or ""))
+        if dg: print("::notice title=Quittieren Ablauf::%s" % " | ".join("%s %s" % (str(x.get("id") or "").replace("2026-", ""), re.sub(r"[^\w=.,:| -]", "", str(x.get("sum") or ""))[:110]) for x in dg[-14:]))
         errs = {}
         for x in au:
             if x.get("op") == "error":
