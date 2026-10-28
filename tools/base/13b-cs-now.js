@@ -29,6 +29,8 @@ export function csNowIdx(rows,date,u){if(date!==csShootDay())return -1;rows=csA(
     const st=rows.map((r,i)=>key(r,i)?scState(date,key(r,i)):-1);if(st.some((v,i)=>v===2&&key(rows[i],i)===(u!=="1"?"wrap_u"+u:"wrap")))return -1;
     const run=st.indexOf(1);if(run>=0)return run;
     for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0)return i;return -1}   /* the next step: a scene, setup, lunch or the wrap */
+  /* quittieren switched on but nothing quittiert yet in this unit: not shooting yet – no «Jetzt» (before, the clock showed a scene before the start) */
+  if(typeof window.scOnU==="function"&&window.scOnU(u))return -1;
   /* times after midnight (night shoot: 23:00 … 00:30) count as 24:00 … 24:30 – not «now» in the evening, but after midnight */
   const now=csNowFor(date);let k=-1,prev="",late=false;rows.forEach((r,i)=>{const t=csHm(r.t);if(!t)return;if(prev&&t<prev&&prev>="12:00")late=true;prev=t;const tt=late?String(24+ +t.slice(0,2))+t.slice(2):t;if(tt<=now)k=i});
   return k>=0&&csIsWrap(rows[k])?-1:k}

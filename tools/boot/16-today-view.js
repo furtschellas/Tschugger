@@ -275,7 +275,7 @@ const tnChip=(no,role,lk,on,late)=>'<span'+(lk?' class="tnl'+lk+(on?' tnon':'')+
 function u2NowHTML(t,c0){try{if(typeof window.scOnU==="function"&&!window.scOnU("2"))return "";   /* 2nd Unit not quittiert: no line (it would show its first scene all day) */
     const day=arr(S.days).find(d=>d&&d.date===t),its=arr(day&&day.unit2&&day.unit2.items);
     const cu=c0&&c0.u2&&typeof window.cqU2==="function"?window.cqU2(Object.assign({},c0,{_date:t})):null;if(!its.length&&!cu)return"";
-    const A=Object.values(window.SCACK||{}).filter(x=>x&&x.d===t&&String(x.u||"1")==="2");
+    const A=Object.values(window.SCACK||{}).filter(x=>x&&x.d===t&&String(x.u||"1")==="2");if(!A.length)return"";   /* nothing quittiert yet: the 2nd Unit is not shooting yet */
     if(A.some(x=>x.s===2&&/^wrap/.test(String(x.sc||""))))return"";
     const setOf=sc=>{const i=its.find(y=>y&&y.sc&&norm(y.sc)===norm(sc));return i?String(i.set||""):""};
     const run=A.filter(x=>x.s===1);let what=run.map(x=>{const k=String(x.sc||"").replace(/_u[23]$/,""),ev=k.match(/^(lunch|setup\d*)(_u\d)?$/);
@@ -298,7 +298,7 @@ export function nowCardHTML(t,cls,unit){try{if(typeof csNowScene!=="function"||!
     /* no scene now (before the setup, after the wrap): only the forecasts – with the right to enter them also the card with its icon on a shooting day */
     const u2=u2NowHTML(t,xd&&xd.cs);
     /* both units: the 1st Unit with its label too; before it starts (2nd Unit already running) its first scene («→ 157 WINE CELLAR 11:00») */
-    const u1=u2?(()=>{if(ns)return "";const rows=arr(((xd&&xd.cs)||{}).order&&xd.cs.order.rows).filter(r=>r&&r.sc);const st=y=>typeof scState==="function"?scState(t,String(y.sc)):0;
+    const u1=u2&&false?(()=>{if(ns)return "";   /* the next scene of a unit that has not started: no more (only what is shot now) */const rows=arr(((xd&&xd.cs)||{}).order&&xd.cs.order.rows).filter(r=>r&&r.sc);const st=y=>typeof scState==="function"?scState(t,String(y.sc)):0;
       if(!rows.length||rows.some(y=>st(y)>0)||(typeof scState==="function"&&scState(t,"wrap")===2))return "";const r=rows[0];
       return '<div class="tnowu2"><span class="tnk tnu">1st Unit</span> → <b class="tnsc">'+esc(String(r.sc))+'</b> <span class="tnset">'+esc(String(r.set||""))+'</span>'+(r.t?' <small>'+esc(String(r.t))+'</small>':'')+'</div>'})():"";
     if(!ns||ns.ev==="wrap"){const sd=arr(S.days).some(x=>x&&x.date===t&&x.kind==="shoot");if(!fc&&!u2&&!(ed&&sd))return "";
