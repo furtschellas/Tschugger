@@ -280,6 +280,8 @@ function u2NowHTML(t,c0){try{if(typeof window.scOnU==="function"&&!window.scOnU(
     const setOf=sc=>{const i=its.find(y=>y&&y.sc&&norm(y.sc)===norm(sc));return i?String(i.set||""):""};
     const run=A.filter(x=>x.s===1);let what=run.map(x=>{const k=String(x.sc||"").replace(/_u[23]$/,""),ev=k.match(/^(lunch|setup\d*)(_u\d)?$/);
       return ev?'<b class="tnsc">'+esc(ev[1]==="lunch"?"Lunch":"Setup")+'</b>':'<b class="tnsc">'+esc(k)+'</b> <span class="tnset">'+esc(setOf(k))+'</span>'}).join(" + ");
+    /* nothing running: the next scene only from 1 h before the first row of the 2nd Unit (at night: nothing) */
+    if(!run.length){const t0=its.map(y=>{const m=String(y&&y.t||"").match(/(\d{1,2}):(\d{2})/);return m?+m[1]*60+ +m[2]:null}).find(v=>v!=null),hm_=typeof csHM==="function"?csHM():"",nm=hm_?+hm_.slice(0,2)*60+ +hm_.slice(3):0;if(t0==null||nm<t0-60)return""}
     if(!run.length){const done=new Set(A.filter(x=>x.s===2).map(x=>norm(String(x.sc||"").replace(/_u[23]$/,""))));const nx=its.find(y=>y&&y.sc&&!done.has(norm(y.sc)));
       if(nx)what='→ <b class="tnsc">'+esc(String(nx.sc))+'</b> <span class="tnset">'+esc(String(nx.set||""))+'</span>'}
     let cm="";if(cu&&typeof cqWmNow==="function"){const w=cqWmNow(cu),no=r=>String(r.no||"").trim()||"?";

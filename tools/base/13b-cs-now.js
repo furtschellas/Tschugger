@@ -28,6 +28,9 @@ export function csNowIdx(rows,date,u){if(date!==csShootDay())return -1;rows=csA(
   if(csAck(date,u)){const RK=csKeys(rows),key=(r,i)=>r.sc?(window.scK?window.scK(r.sc,u):r.sc):(RK[i]?RK[i]+(u!=="1"?"_u"+u:""):"");
     const st=rows.map((r,i)=>key(r,i)?scState(date,key(r,i)):-1);if(st.some((v,i)=>v===2&&key(rows[i],i)===(u!=="1"?"wrap_u"+u:"wrap")))return -1;
     const run=st.indexOf(1);if(run>=0)return run;
+    /* nothing running: the next step only during the shooting day (from 1 h before its first row) – at night, before the start, nothing
+       (a quittance made the evening before, e.g. a test, must not show a scene) */
+    {const t0=rows.map(r=>csHm(r.t)).find(Boolean);if(!t0)return -1;const m=v=>+v.slice(0,2)*60+ +v.slice(3),n=csNowFor(date);if(m(n)<m(t0)-60)return -1}
     for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0)return i;return -1}   /* the next step: a scene, setup, lunch or the wrap */
   /* quittieren switched on but nothing quittiert yet in this unit: not shooting yet – no «Jetzt» (before, the clock showed a scene before the start) */
   if(typeof window.scOnU==="function"&&window.scOnU(u))return -1;
