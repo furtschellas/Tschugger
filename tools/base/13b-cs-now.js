@@ -30,7 +30,8 @@ export function csNowIdx(rows,date,u){if(date!==csShootDay())return -1;rows=csA(
     const run=st.indexOf(1);if(run>=0)return run;
     /* nothing running: the next step only during the shooting day (from 1 h before its first row) – at night, before the start, nothing
        (a quittance made the evening before, e.g. a test, must not show a scene) */
-    {const t0=rows.map(r=>csHm(r.t)).find(Boolean);if(!t0)return -1;const m=v=>+v.slice(0,2)*60+ +v.slice(3),n=csNowFor(date);if(m(n)<m(t0)-60)return -1}
+    {const i0=rows.findIndex(r=>csHm(r.t)),t0=i0>=0?csHm(rows[i0].t):"";if(!t0)return -1;const m=v=>+v.slice(0,2)*60+ +v.slice(3),n=csNowFor(date);
+     if(m(n)<m(t0)-(RK[i0]&&/^setup/.test(RK[i0])?0:60))return -1}   /* the setup (crew call) is the start itself */
     for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0)return i;return -1}   /* the next step: a scene, setup, lunch or the wrap */
   /* quittieren switched on but nothing quittiert yet in this unit: not shooting yet – no «Jetzt» (before, the clock showed a scene before the start) */
   if(typeof window.scOnU==="function"&&window.scOnU(u))return -1;

@@ -6,6 +6,7 @@ import {schedIndex} from "./17-scene-reader.js";
 import {csA,csL,csSec,csTable,csTx} from "./13a-callsheet.js";
 import {csLocs,csOrderRows} from "./13c-cs-places.js";
 import {vok} from "./14-render.js";
+import {csSetupFirst} from "./20-data-start.js";
 
 const u2tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(String(v))+'</div></div>':'';
 /* a set of the 2nd Unit: code, name, scenes, map; its lines (parking, base …) below */
@@ -51,8 +52,13 @@ window.csRidesFor=csRidesFor;window.csRideUnit=csRideUnit;
 const u2Full=(i,date)=>{let l=[];try{l=csA(schedIndex()[norm(i.sc)])}catch(_){}const ok=y=>y&&y.it&&y.it!==i&&y.it.d;
   const b=(l.find(y=>ok(y)&&y.d&&y.d.date===date)||l.find(ok)||{}).it;if(!b)return i;const o={};for(const k of ["d","cast","pg","ie","set","loc","d_fr","d_it","d_en","d_hi"])if(b[k]!=null)o[k]=b[k];   /* only the facts of the scene – not its time, duration or camera setups */
   for(const k in i){const v=i[k];if(v!=null&&v!==""&&!(Array.isArray(v)&&!v.length))o[k]=v}return o};
-const u2Rows=day=>camFold(csA(day&&day.unit2&&day.unit2.items).filter(i=>i&&typeof i==="object")).map(i=>i.sc?u2Full(i,day.date):i).map(i=>i.sc?{t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",syn:i.d||"",pgs:i.pg||"",dur:i.dur||"",dir:i.dir||"",cast:Array.isArray(i.cast)?i.cast.join(", "):(i.cast||""),notes:i.notes||"",camx:csA(i.camx)}:{t:i.t||"",text:i.n||i.text||""}).filter(r=>r.sc||r.text);
-export function csU2HTML(x,c,day,me,F){F=F||{};const u0=c&&c.u2,sh=u2Rows(day);if((!u0||typeof u0!=="object")&&!sh.length)return"";
+const u2Rows0=day=>camFold(csA(day&&day.unit2&&day.unit2.items).filter(i=>i&&typeof i==="object")).map(i=>i.sc?u2Full(i,day.date):i).map(i=>i.sc?{t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",syn:i.d||"",pgs:i.pg||"",dur:i.dur||"",dir:i.dir||"",cast:Array.isArray(i.cast)?i.cast.join(", "):(i.cast||""),notes:i.notes||"",camx:csA(i.camx)}:{t:i.t||"",text:i.n||i.text||""}).filter(r=>r.sc||r.text);
+/* the calls («2nd IN») and department infos («2nd UNIT») of the 2nd Unit, as rows of their own (the same parts draw them as in the 1st Unit) */
+const csU2Calls=c=>csA(c&&c.calls).filter(r=>r&&String(r.t2||"").trim()).map(r=>Object.assign({},r,{t:r.t2,t2:""}));
+const csU2Depts=c=>csA(c&&c.depts).filter(r=>r&&String(r.text2||"").trim()).map(r=>Object.assign({},r,{text:r.text2,text2:""}));
+/* the rows of the 2nd-Unit sheet, with the setup as a step of its own (crew call of the 2nd Unit → first scene, as in the 1st Unit) */
+const u2Rows=(day,c)=>{const u=c&&c.u2&&typeof c.u2==="object"?c.u2:{};return csSetupFirst(u2Rows0(day),u.crewCall||(u.times||{}).crewCall,day&&day.date)};
+export function csU2HTML(x,c,day,me,F){F=F||{};const u0=c&&c.u2,sh=u2Rows(day,c);if((!u0||typeof u0!=="object")&&!sh.length)return"";
   const u=u0&&typeof u0==="object"?u0:{},t=u.times||{},o=u.order||{},LS=csLocs({locations:csA(u.locations)});let h="";
   h+='<div class="csu2-head" id="cs-u2"><h2>2nd Unit</h2><span>'+(x.date?fmtDate(x.date):'')+(u.ad?' · 1st AD '+esc(String(u.ad)):'')+'</span></div>';
   const c2=typeof window.cqU2==="function"&&c&&c.u2?window.cqU2(c):null;
@@ -72,25 +78,24 @@ export function csU2HTML(x,c,day,me,F){F=F||{};const u0=c&&c.u2,sh=u2Rows(day);i
   else h+=csSec("Cast · 2nd Unit",csTable(["#",L("Rolle"),L("Darsteller"),"P/UP","Call",L("Kostüm"),L("Maske"),"Base","On set"],csA(u.cast).map(r=>[r.no,r.role,r.actor,r.pickup,r.call,r.wardrobe,r.makeup,r.base,r.onset]),3,true),false,"","u2cast");
   if(c2&&F.extras)h+=F.extras(c2,L("Komparsen")+" · 2nd Unit","u2extras","");
   else h+=csSec(L("Komparsen")+" · 2nd Unit",csTable(["#",L("Rolle"),"Call",L("Kostüm"),L("Maske"),"On set"],csA(u.extras).map(r=>[r.count,r.part,r.call,r.wardrobe,r.makeup,r.onset]),2,true),false,"","u2extras");
-  h+=csSec(L("Fahrzeuge")+" · 2nd Unit",csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(u.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","u2veh");
-  /* its rides (transport with driver, crew transport) as in the 1st Unit */
+  /* vehicles, rides, information by department and calls on set: the same parts as the 1st Unit (columns «2nd IN» / «2nd UNIT») */
+  const c2x=c2?Object.assign({},c2,{calls:csU2Calls(c),depts:csU2Depts(c)}):null;
+  if(c2x&&F.veh)h+=F.veh(c2x);else h+=csSec(L("Fahrzeuge")+" · 2nd Unit",csTable([L("Fahrzeug"),"Via","Call","RTS"],csA(u.vehicles).map(r=>[r.name,r.via,r.call,r.rts])),false,"","u2veh");
   if(c2&&F.trans)h+=F.trans(c2,x,me,{});
-  /* calls on set: the column «2nd IN» */
-  {const g=new Map();for(const r of csA(c.calls).filter(r=>r&&String(r.t2||"").trim())){const k=r.dept||"";if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
-   h+=csSec("Calls on Set · 2nd Unit",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>'<div class="cscall-r"><span class="t">'+esc(String(r.t2))+'</span><span class="cp"></span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>').join("")+'</div>').join(""),false,"","u2calls")}
-  h+=csSec(L("Infos nach Abteilung")+" · 2nd Unit",csA(c.depts).filter(r=>String(r.text2||"").trim()).map(r=>'<div class="csdep"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text2)+'</div></div>').join(""),false,"","u2dept");
+  if(c2x&&F.dept)h+=F.dept(c2x);else h+=csSec(L("Infos nach Abteilung")+" · 2nd Unit",csU2Depts(c).map(r=>'<div class="csdep"><div class="csdep-h">'+esc(r.dept||"")+'</div><div class="csdep-t">'+csTx(r.text)+'</div></div>').join(""),false,"","u2dept");
+  if(c2x&&F.calls)h+=F.calls(c2x);else{const g=new Map();for(const r of csU2Calls(c)){const k=r.dept||"";if(!g.has(k))g.set(k,[]);g.get(k).push(r)}
+   h+=csSec("Calls on Set · 2nd Unit",[...g].map(([dp,l])=>'<div class="cscall"><div class="cscall-d">'+esc(dp)+'</div>'+l.map(r=>'<div class="cscall-r"><span class="t">'+esc(String(r.t))+'</span><span class="cp"></span><span class="ccw"><b>'+esc(r.name||"")+'</b> <small>'+esc(r.role||"")+'</small></span></div>').join("")+'</div>').join(""),false,"","u2calls")}
   return '<section class="csu2">'+h+'</section>'}
 /* only the 2nd Unit chosen (unit buttons): the callsheet of the 2nd Unit on its own, drawn by the same view as the 1st Unit (renderCS) –
    its times, contact, sets, cast and extras (cqU2), its shooting order (sheet, else callsheet), the calls «2nd IN» and the department infos
    of the 2nd Unit; transport, travel, production infos and notes as on the callsheet. null: no 2nd Unit that day */
 export function csU2Dispo(x,day){const c=x&&x.cs;if(!c||typeof c!=="object")return null;c._date=x.date;
-  const sh=u2Rows(day),c2=typeof window.cqU2==="function"&&c.u2?window.cqU2(c):null;if(!c2&&!sh.length)return null;
+  const sh=u2Rows(day,c),c2=typeof window.cqU2==="function"&&c.u2?window.cqU2(c):null;if(!c2&&!sh.length)return null;
   const u=c.u2&&typeof c.u2==="object"?c.u2:{};
   const base=c2||Object.assign({},c,{cast:[],extras:[],vehicles:[],locations:[],times:{},contact:null,order:{},_u:"2"});
   const cs=Object.assign({},base,csRidesFor(c,"2"),{_orig:c,_rides:{transport:c.transport,crewTransport:c.crewTransport},u2:null,_u:"2",_date:x.date,prevision:u.prevision||{},
     order:sh.length?{title:"",pages:(u.order||{}).pages||"",rows:sh}:(u.order||{}),
-    calls:csA(c.calls).filter(r=>r&&String(r.t2||"").trim()).map(r=>Object.assign({},r,{t:r.t2,t2:""})),
-    depts:csA(c.depts).filter(r=>r&&String(r.text2||"").trim()).map(r=>Object.assign({},r,{text:r.text2,text2:""}))});
+    calls:csU2Calls(c),depts:csU2Depts(c)});
   const t=cs.times||{};
   return Object.assign({},x,{cs,crewCall:t.crewCall||"",shootCall:t.rts||"",wrap:t.wrap||"",label:(x.label||(day&&day.label)||"Callsheet")+" · 2nd Unit"})}
 window.csU2Dispo=csU2Dispo;

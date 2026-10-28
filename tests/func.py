@@ -702,6 +702,11 @@ async def owner_tests(p, port):
         mu_ = await E("""(()=>{if(typeof mapUrl!=='function')return null;const k=S.dispos;try{S.dispos=[{date:'2099-01-01',cs:{geo:{'https://maps.app.goo.gl/A':[46.2271,7.3586],'https://maps.app.goo.gl/R':[46.1,7.1]},geoSrc:{'https://maps.app.goo.gl/A':'link','https://maps.app.goo.gl/R':'rough'}}}];
           return [mapUrl('https://maps.app.goo.gl/A'),mapUrl('https://maps.app.goo.gl/R'),mapUrl('https://maps.app.goo.gl/X'),mapUrl('javascript:alert(1)')].join(' ')}finally{S.dispos=k}})()""")
         check("Kartenlinks: genaue Position als GPS-Koordinaten, sonst der Link des Callsheets", mu_ in (None, "https://www.google.com/maps/search/?api=1&query=46.227100%2C7.358600 https://maps.app.goo.gl/R https://maps.app.goo.gl/X #"), mu_, public=True)
+        # the setup is a step of its own in the shooting order (1st and 2nd Unit): crew call → first scene, not twice
+        su_ = await E("""(()=>{if(typeof csSetupFirst!=='function')return null;const r=a=>a.map(x=>(x.t||'')+'='+(x.sc||x.text)).join(',');
+          return [r(csSetupFirst([{t:'11:30',sc:'6'},{t:'15:45',text:'Lunch'}],'10:45','2026-10-29')),r(csSetupFirst([{t:'09:30',text:'Setup - 0h30m'},{t:'10:00',sc:'19A'}],'09:30','2026-10-29')),
+            r(csSetupFirst([{t:'07:00',sc:'1'}],'06:00','2026-10-20')),r(csSetupFirst([{t:'07:00',sc:'1'}],'07:00','2026-11-02'))].join(' | ')})()""")
+        check("Drehfolge: Setup als eigener Schritt (Crew Call bis erste Szene), 1st und 2nd Unit gleich", su_ in (None, "10:45=Setup - 0h45m,11:30=6,15:45=Lunch | 09:30=Setup - 0h30m,10:00=19A | 07:00=1 | 07:00=1"), su_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

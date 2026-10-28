@@ -290,7 +290,7 @@ export function renderDispo(){
     /* every chosen unit of this day its own list (1st, 2nd, 3rd) – the 2nd unit was missing here */
     const scl=l=>arr(l).filter(i=>i&&i.sc).map(i=>({t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",dur:i.dur||"",pgs:i.pg||""}));
     /* the 2nd Unit with its own planning (sheet): its whole detailed order (setups, camera setups in their scene, lunch, wrap), completed with the Drehplan */
-    const u2s=u=>u==="2"&&day.unit2&&day.unit2.src==="2nd"&&typeof window.u2RowsOf==="function"?window.u2RowsOf(day):null;
+    const u2s=u=>u==="2"&&day.unit2&&day.unit2.src==="2nd"&&typeof window.u2RowsOf==="function"?window.u2RowsOf(day,((S.dispos||[]).find(x=>x&&x.date===day.date)||{}).cs):null;
     const ul=unitLists(day).filter(([u,l])=>S.pu[u]&&scl(l).length).map(([u,l])=>[u,u2s(u)||scl(l),!!u2s(u)]),scn=ul.length?ul[0][1]:[];
     return h+'<div class="dayhead csnoday"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+(day.date?fmtDate(day.date):'')+'</span>'+UNITBAR+'</div></div>'+
       (typeof planFactsHTML==="function"?planFactsHTML(day,typeof planPdfBtn==="function"?planPdfBtn(day):""):"")+'</div>'+
