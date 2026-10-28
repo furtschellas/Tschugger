@@ -79,7 +79,7 @@ window.scAckBtn=(date,sc,u)=>{if(!date||!sc||!scOnU(u))return"";   /* switched o
   const lab0=tm&&scTimesOk()?'<span class="scackt '+(S.tab==="dispo"?"sctc":"sctp")+'">'+tm+'</span>':'';
   const ico=st===1&&scBase(sc)==="lunch"?SC_ICO.lunch:st===2&&scBase(sc)==="wrap"?SC_ICO.wrap:(SC_ICO[st]||"");
   return '<span class="scackw">'+lab0+(can?'<button type="button" class="scack sk'+st+'" data-scack="'+esc(date)+'|'+esc(String(sc))+'|'+esc(u)+'" aria-label="'+esc(tip)+'" title="'+esc(tip)+'">'+ico+'</button>'
-    :'<span class="scack sk'+st+'" role="img" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+ico+'</span>')+'</span>'};
+    :'<span class="scack sk'+st+'" role="img" data-scnoperm="1" aria-label="'+esc(lab)+'" title="'+esc(lab)+'">'+ico+'</span>')+'</span>'};
 /* the quittances of the last two days are kept on the device: «Jetzt» shows at once on opening (from this copy), the live state
    follows within seconds (no names in them, only dates, scene numbers, states and times) */
 const SCKEEP="scack:v1";
@@ -174,7 +174,10 @@ function scParAsk(date,sc,u,run,b){const d=mkDialog("scpar",null,{replace:true})
     /* the same tap again with the answer – also WhatsApp «direkt» opens in this tap */
     scTap(b,date,sc,u,v)});   /* directly – the button may have been redrawn meanwhile */
   document.body.appendChild(d)}
-document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button[data-scack]");if(!b)return;e.preventDefault();e.stopPropagation();if(typeof canPerm!=="function"||!canPerm("scenes.ack"))return;
+/* the symbol without the right to quittieren: tapping it says why nothing happens (before: silent) */
+document.addEventListener("click",e=>{const s=e.target.closest&&e.target.closest("[data-scnoperm]");if(!s)return;e.preventDefault();e.stopPropagation();
+  showMsg(L("Zum Quittieren fehlt dir das Recht «Szenen quittieren».")+(typeof MYROLE!=="undefined"&&window.MYROLENAME?" ("+L("Rolle")+": "+window.MYROLENAME+")":""),5000)},true);
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button[data-scack]");if(!b)return;e.preventDefault();e.stopPropagation();if(typeof canPerm!=="function"||!canPerm("scenes.ack")){showMsg(L("Zum Quittieren fehlt dir das Recht «Szenen quittieren»."),5000);return}
   const [date,sc,u]=b.dataset.scack.split("|");
   /* never silent: an error while quittieren shows (before, the tap seemed to do nothing) */
   Promise.resolve().then(()=>scTap(b,date,sc,u,"")).catch(err=>{try{b.disabled=false}catch(_){}console.warn("scene ack",err);showMsg(L("Fehler:")+" "+String(err&&(err.code||err.message)||err).slice(0,120),6000)})},true);

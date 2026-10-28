@@ -307,7 +307,7 @@ Object.assign(I18N,{
  "Anrufen":{fr:"Appeler",it:"Chiamare",en:"Call",hi:"कॉल करें"},
  "Suchen: Name, Szene, Fahrzeug …":{fr:"Rechercher : nom, scène, véhicule …",it:"Cerca: nome, scena, veicolo …",en:"Search: name, scene, vehicle …",hi:"खोजें: नाम, सीन, वाहन …"},
  "Call-Ort":{fr:"Lieu du call",it:"Luogo del call",en:"Call location",hi:"Call की जगह"},
- "mit":{fr:"avec",it:"con",en:"with"},"Beide":{fr:"Les deux",it:"Entrambe",en:"Both"},"ab":{fr:"de",it:"da",en:"from"},
+ "mit":{fr:"avec",it:"con",en:"with"},"Zum Quittieren fehlt dir das Recht «Szenen quittieren».":{fr:"Il te manque le droit « Valider les scènes ».",it:"Ti manca il diritto «Confermare le scene».",en:"You need the right “Confirm scenes” to do this."},"Beide":{fr:"Les deux",it:"Entrambe",en:"Both"},"ab":{fr:"de",it:"da",en:"from"},
  "Das eigene Callsheet folgt.":{fr:"La callsheet propre à ce jour suivra.",it:"Il callsheet di questo giorno seguirà.",en:"This day’s own callsheet will follow.",hi:"इस दिन की अपनी Callsheet बाद में आएगी।"},
  "Beginn":{fr:"Début",it:"Inizio",en:"Start",hi:"शुरुआत"},
  "Als Tabelle":{fr:"En tableau",it:"Come tabella",en:"As table",hi:"तालिका के रूप में"},

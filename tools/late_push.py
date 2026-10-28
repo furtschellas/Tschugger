@@ -271,6 +271,19 @@ def main():
         print("::notice title=Quittieren::Szenen quittieren 1st %s · 2nd %s · heute Einträge 1st %d · 2nd %d (davon mit eigener ID %d)" % (
             "aus" if cf.get("sceneAck") is False else "an", "aus" if cf.get("sceneAck2") is False else ("an" if cf.get("sceneAck2") is True else "wie 1st"),
             len(sa) - len(u2), len(u2), sum(1 for x in u2 if str(x.get("sc") or "").endswith("_u2"))))
+        # the protocol of the app today: how many changes per kind (sceneack), errors by their type only
+        t0 = datetime.datetime.fromisoformat(today).replace(tzinfo=ZoneInfo(fsadmin.TZ0)).astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        ra = requests.post(fsadmin.BASE + ":runQuery", headers=h, params=q, timeout=30, json={"structuredQuery": {
+            "from": [{"collectionId": "audit"}], "where": {"fieldFilter": {"field": {"fieldPath": "at"}, "op": "GREATER_THAN_OR_EQUAL", "value": {"timestampValue": t0}}}}})
+        au = [{k: fsadmin.val(v) for k, v in (x["document"].get("fields") or {}).items()} for x in ra.json() if x.get("document")]
+        cnt = {}
+        for x in au:
+            k = "%s/%s" % (x.get("col"), x.get("op")); cnt[k] = cnt.get(k, 0) + 1
+        errs = {}
+        for x in au:
+            if x.get("op") == "error":
+                k = re.sub(r"[^A-Za-z]", "", str(x.get("sum") or "").split(":")[0])[:24] or "?"; errs[k] = errs.get(k, 0) + 1
+        print("::notice title=Protokoll heute::%s · Fehler: %s" % (", ".join("%s %d" % kv for kv in sorted(cnt.items())) or "nichts", ", ".join("%s %d" % kv for kv in sorted(errs.items())) or "keine"))
     except Exception as e: print("• Diagnose Quittieren:", type(e).__name__)
     try:   # Coverday: the days and callsheets as the crew sees them in the app (a callsheet may belong to another day now)
         ops, _ = coverday.read_ops(key); data = coverday.apply(data, ops)
