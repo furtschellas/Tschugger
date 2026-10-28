@@ -689,6 +689,15 @@ async def owner_tests(p, port):
           depts:[{dept:'Light',text:'Lia Licht 09:15',text2:'Extra Electrician: Oli Strom call 06:45@meeting point'}]};
           return [{passengers:'Oli Strom',from:'Moxy',t1:'06:15',to:'Loc 1'},{passengers:'Tom Ton',from:'Moxy',t1:'06:10',to:'Loc'},{passengers:'Lia Licht',from:'Moxy',t1:'08:50',to:'Tech'}].map(r=>window.csRideUnit(c,r)).join(',')})()""")
         check("Unit der Personen: Calls-Spalte und Abteilungs-Spalte 2nd UNIT (gleich wie der Server)", uu_ in (None, "2,2,1"), uu_, public=True)
+        # places without their own link that say where they are (DT7: «2nd AD & DIT: Loge Thelma @ Tech Parking 1.1», «Lobby Room @ Moxy»)
+        rf_ = await E("""(()=>{if(typeof csLocs!=='function')return null;const it=(l,t,m)=>({label:l,text:t,map:m||''});
+          const ls=csLocs({locations:[{no:'1.1',name:'UNDER BRIDGE',map:'https://maps.app.goo.gl/BR',items:[it('LOC.','Pont de l Uto - 1958 Sion','https://maps.app.goo.gl/BR'),it('TECH & CREW PARKING','','https://maps.app.goo.gl/TP'),
+            it('W/H/M Cast','BASE MOXY','https://maps.app.goo.gl/MX'),it('W/H/M Extras','Lobby Room @ Moxy'),it('LUNCH','TENNIS CLUB','https://maps.app.goo.gl/TC'),it('2nd AD & DIT','Loge Thelma @ Tech Parking 1.1')]},
+            {no:'1.2',name:'POLICE STATION',map:'https://maps.app.goo.gl/PS',items:[it('LOC','Avenue du Grand-Champsec 22 - 1958 Sion','https://maps.app.goo.gl/PS')]}]});
+          const dit=ls.find(l=>l.kinds&&l.kinds.includes('DIT'))||null,dItem=ls.flatMap(l=>csA(l.items)).find(i=>/dit/i.test(i.label||''));
+          const ex=ls.find(l=>l.kinds&&l.kinds.some(k=>/Extras/.test(k)));
+          return {dit:(dit&&dit.map)||(dItem&&dItem.map)||'',ex:ex?ex.map:''}})()""")
+        check("Locations: DIT, 2nd AD und Komparsen «@ Tech Parking 1.1 / @ Moxy» bekommen den Kartenlink dieses Orts", rf_ in (None, {"dit": "https://maps.app.goo.gl/TP", "ex": "https://maps.app.goo.gl/MX"}), rf_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

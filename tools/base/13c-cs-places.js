@@ -169,10 +169,27 @@ function csLocs0(c){const sets=[],extra=[];
    if(adr.length===1&&sets.length>1){const a=adr[0];sets.splice(sets.indexOf(a),1);for(const l of sets)if(!l.map&&!csA(l.notes).some(n=>isA(n))){l.notes=[a.name].concat(csA(l.notes));if(a.map)l.map=a.map}
      for(const i of csA(a.items))if(!sets.some(l=>csA(l.items).some(j=>j.map&&j.map===i.map)))sets[0].items=csA(sets[0].items).concat([i])}}
   /* a set without a number on the callsheet («ER SET», read wrongly) gets its position: 1, 2, 3 … (as «Loc. 3» elsewhere in the document) */
-  sets.forEach((l,i)=>{if(!/^\d+[a-z]?$/i.test(String(l.no||"").trim()))l.no=String(i+1);l._ix=i+1;l._nos=[String(l.no).trim()]});
+  sets.forEach((l,i)=>{l._no0=String(l.no||"").trim();if(!/^\d+[a-z]?$/i.test(String(l.no||"").trim()))l.no=String(i+1);l._ix=i+1;l._nos=[String(l.no).trim()]});
   /* DIT / production office at the place of a set: a line of that set, not a location of its own (only somewhere else it is one) */
   for(const e of extra.slice())if(e.kinds.every(k=>k==="DIT"||k==="Prod")){const st=sets.find(l=>(e.map&&l.map===e.map)||(e.name&&fold(String(l.name||""))===fold(e.name)));
     if(st){st._kx=[...new Set((st._kx||[]).concat(e.kinds))];st.items=(st.items||[]).concat([{label:e.kinds.join(" / "),text:[e.name].concat(e.notes).filter(Boolean).join(", "),map:e.map||""}]);extra.splice(extra.indexOf(e),1)}}
+  /* a place without its own map link that says where it is («Loge Thelma @ Tech Parking 1.1», «Room @ Loc. 1.2», «Lobby Room @ Moxy»,
+     «on loc»): the map link of that place of the callsheet – DIT, 2nd AD, greenroom … open the right spot instead of nothing */
+  {const F=t=>fold(String(t||"")).replace(/\s+/g," ").trim();
+   const setNo=n=>sets.find(l=>String(l.no||"").trim()===n||String(l._no0||"").trim()===n)||(/^\d+\.\d+$/.test(n)?sets[+n.split(".")[1]-1]:null);   /* «1.1» also when the set was numbered 1, 2 … */
+   const itemMap=(l,re)=>{const i=csA(l&&l.items).find(i=>i&&i.map&&re.test(F(i.label)+" "+F(i.text)));return i?i.map:""};
+   const refMap=(txt,own)=>{const t=F(txt);let m=t.match(/@\s*([^;|]+)/)||t.match(/\b(?:at|on|in)\s+((?:the\s+)?(?:loc(?:ation)?|tech|base|set)[^;|]*)/);if(!m&&/\bon\s+loc\b/.test(t)&&own)return own.map||"";if(!m)return "";
+     const r=m[1].trim(),n=(r.match(/(\d+(?:\.\d+)?)/)||[])[1]||"",l=n?setNo(n):null;
+     const TP=/tech[^;|]{0,12}park/,CP=/crew[^;|]{0,12}park/;   /* «Tech Parking», «Tech & Crew Parking» */
+     if(TP.test(r)){const mm=itemMap(l,TP)||(!n?sets.map(x=>itemMap(x,TP)).find(Boolean):"");if(mm)return mm}
+     if(CP.test(r)){const mm=itemMap(l,CP)||(!n?sets.map(x=>itemMap(x,CP)).find(Boolean):"");if(mm)return mm}
+     if(l&&/\bloc|\bset/.test(r))return l.map||itemMap(l,/\bloc|addr/)||"";
+     const w=r.split(/\s+/).filter(x=>x.length>=4&&!/^(room|loge|lobby|tech|crew|parking|base|location)$/.test(x));
+     for(const x of extra)if(x.map&&w.some(k=>F(x.name).includes(k)||csA(x.notes).some(nn=>F(nn).includes(k))))return x.map;
+     for(const l2 of sets){const mm=itemMap(l2,new RegExp(w.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")||"^$"));if(mm)return mm}
+     return ""};
+   for(const e of extra)if(!e.map){const u=refMap([e.name].concat(csA(e.notes)).join(" ; "),null);if(u){e.map=u;e._refmap=1}}
+   for(const l of sets)for(const i of csA(l.items))if(i&&!i.map&&String(i.text||"").trim()){const u=refMap(i.label+": "+i.text,l);if(u){i.map=u;i._refmap=1}}}
   /* many places that are only a Base (2nd Unit: «Base 1» … «Base 6», each a link): one Base with its numbers as links, not six «BASE» boxes */
   {const pb=extra.filter(e=>e.kinds.length===1&&e.kinds[0]==="Base");
    if(pb.length>=3){const nm=e=>{const n=String(e.name||"").trim();return n&&!/^base(\s*\d+(\s*[-–]\s*\d+)?)?$/i.test(n)?n:""};
