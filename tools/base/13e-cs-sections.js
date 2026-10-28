@@ -1,10 +1,10 @@
-import {L,S,esc,fmtDate,ieClass,maps,safeUrl} from "./10-core.js";
+import {esc,fmtDate,ieClass,L,maps,mapUrl,S,safeUrl} from "./10-core.js";
 import {nowCardHTML} from "../boot/16-today-view.js";
 import {UNITBAR,nmk} from "./11-schedule-prep.js";
 import {WDL} from "./12-mycal.js";
 import {CSEXP,CSEXPSM,CSI,CSPH,csA,csAdr,csDriverByPhone,csDurT,csHm,csL,csMap,csMe,csMk,csRideCell,csRoute,csRouteH,csRows,csS,csSec,csTable,csTvBtn,csTvCls,csTx,setCSTR} from "./13a-callsheet.js";
 import {CSHN_RE,csNear,csNearHTML,csNowBits,csNowIdx,csNowLoc,csNowScene,csSceneLoc,csShootDay,setCSCUR} from "./13b-cs-now.js";
-import {csBadgeIn,csCallPlace,csCodeHref,csKindCode,csLocAddr,csLocFp,csLocGroups,csLocHref,csLocs,csMapQ,csOrderRows,csPlace,csPlaceA,csPlaceH,csRadioHTML,csSetGeo} from "./13c-cs-places.js";
+import {csBadgeIn,csCallPlace,csCodeHref,csGeoAdr,csKindCode,csLocAddr,csLocFp,csLocGroups,csLocHref,csLocs,csMapQ,csOrderRows,csPlace,csPlaceA,csPlaceH,csRadioHTML,csSetGeo} from "./13c-cs-places.js";
 import {csCastOpen,csCmFirst,csExOpen,csJumpBar,csMine,csMyDept,csShort,csSums,csTeamSec,csTilesHTML,csTransOpen} from "./13d-cs-mine.js";
 import {csCastMode,csCols} from "./13f-cs-events.js";
 import {vok} from "./14-render.js";
@@ -27,23 +27,36 @@ function csLocHead(c,l,date){let LAD=csLocAddr(c,l,date),DN=l.name||"";const w=t
 function csLocScenes(c,l){const mem=l._m||[l];const uniq=[...new Set(csRows(c).filter(r=>r.sc&&mem.some(m=>csSceneLoc([m],r)===m)).map(r=>String(r.sc)))];
   return uniq.length?'<span class="csloc-s">'+uniq.map(x=>'<button type="button" class="cssc" data-cssc="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</span>':(l.scenes?'<small class="csloc-s">'+esc(csS(l.scenes))+'</small>':'')}
 /* the open part: hints (To set, WC), side places with distance, notes and lines – the address of the head only once */
-function csLocBody(l,LAD,HN,near){
+function csLocBody(c,l,LAD,HN,near){
   const hints=HN.map(n=>'<div class="ds cshnl">'+(/^wc\b/i.test(n.trim())?'<b>WC</b>':CSI.walk)+'<span>'+csAdr(csL(n).replace(/^wc\s*:\s*/i,""),"")+'</span></div>').join("");
   /* lines that only repeat the address (also written differently) are left out, a place there shows «same address» */
   const an=t=>fold(String(t||"")).replace(/https?:\/\/\S+/g,"").replace(/[^a-z0-9]/g,""),km=fold(String(LAD||"")).match(/[^\d,]*?[a-z.]{3,}\s*\d+[a-z]?\b/i),K=km?an(km[0]):"";   /* folded: «Rue de la Côte 5» too */
   const same=t=>!!K&&K.length>5&&an(t).includes(K),only=t=>same(t)&&an(t).length<=an(LAD).length+4;
   const notes=csA(l.notes).filter(n=>!HN.includes(String(n))).filter(n=>!LAD||(!fold(LAD).includes(fold(csL(n)))&&!only(csL(n)))).map(n=>'<div class="ds">'+csAdr(csL(n),"")+'</div>').join("");
-  const items=csA(l.items).filter(i=>String(i.text||"").trim()||i.map).filter(i=>!LAD||fold(String(i.text||"")).trim()!==fold(LAD).trim()).map(i=>'<div class="ds"><b>'+esc(csL(i.label||""))+'</b> '+(only(csL(i.text||""))?(i.map?'<a href="'+esc(safeUrl(i.map))+'" target="_blank" rel="noopener noreferrer">'+esc(L("gleiche Adresse"))+'</a>':esc(L("gleiche Adresse"))):csAdr(csL(i.text||""),i.map,csL(i.label||"")))+'</div>').join("");
+  const items=csSamePlace(csA(l.items).filter(i=>String(i.text||"").trim()||i.map).filter(i=>!LAD||fold(String(i.text||"")).trim()!==fold(LAD).trim())).map(i=>{
+    const lab=i._labs?i._labs.map(csL).join(" · "):csL(i.label||""),txt=i._txts?i._txts.map(csL).join("; "):csL(i.text||"");
+    const body=only(txt)?(i.map?'<a href="'+esc(mapUrl(i.map))+'" target="_blank" rel="noopener noreferrer">'+esc(L("gleiche Adresse"))+'</a>':esc(L("gleiche Adresse"))):csAdr(txt,i.map,lab);
+    return '<div class="ds"><b>'+esc(lab)+'</b> '+body+csItemAdr(c,i,LAD)+'</div>'}).join("");
   return hints+(l.kinds?'':csNearHTML(near))+notes+items}
+/* lines at the same place (the same map link: «Tech & Crew Parking» and «2nd AD & DIT: Loge Thelma @ Tech Parking») become one line
+   with both labels – only the same spot, never only a similar name */
+function csSamePlace(items){const out=[],by=new Map();
+  for(const i of items){const k=i.map||"";const e=k&&by.get(k);
+    if(!e){const n=Object.assign({},i);out.push(n);if(k)by.set(k,n);continue}
+    e._labs=(e._labs||[e.label||""]).concat([i.label||""]).filter((x,j,a)=>x&&a.indexOf(x)===j);
+    e._txts=(e._txts||[e.text||""]).concat([i.text||""]).filter((x,j,a)=>String(x).trim()&&a.indexOf(x)===j)}
+  return out}
+/* the street address of a line with only a map link or a name («Tech Parking», «Loge Thelma @ Tech Parking 1.1»): from its position */
+function csItemAdr(c,i,LAD){const a=csGeoAdr(c,i.map);if(!a||/\b\d{4}\b/.test(String(i.text||""))||(LAD&&fold(a)===fold(LAD)))return"";return '<small class="csgadr">'+esc(a)+'</small>'}
 /* one location: head (code, title, floorplans, map, open button), address, scenes; the rest when opened; pink frame where the shooting is now */
 function csLocBox(c,l,date,NOW,NEAR){const mem=l._m||[l];const {DN,LAD}=csLocHead(c,l,date),code=csLocCode(l),isNow=mem.includes(NOW);const HN=csA(l.notes).map(String).filter(n=>CSHN_RE.test(n.trim()));
   const badge=code&&!l._m?csPlaceH(csBadgeIn(l,l._codes),csLocHref(l,c,date),l.kinds?l.no:code+' · Set','csloc-c '+(l.kinds?'csbase':'csmot')):'';
   const title=l._m?'<span class="dn csmset">'+l._m.map(m=>'<span><b class="csplace csmot">L'+esc(String(m.no||"").trim())+'</b> '+esc(m.name||"")+'</span>').join("")+'</span>':'<span class="dn">'+esc(DN)+'</span>';
-  const bases=l._bases?'<span class="csbases">'+l._bases.map(b=>b.map?'<a href="'+esc(safeUrl(b.map))+'" target="_blank" rel="noopener noreferrer" title="Base '+esc(b.n)+'">'+esc(b.n)+'</a>':'<span>'+esc(b.n)+'</span>').join("")+'</span>':'';   /* several bases: their numbers, each its map */
+  const bases=l._bases?'<span class="csbases">'+l._bases.map(b=>b.map?'<a href="'+esc(mapUrl(b.map))+'" target="_blank" rel="noopener noreferrer" title="Base '+esc(b.n)+'">'+esc(b.n)+'</a>':'<span>'+esc(b.n)+'</span>').join("")+'</span>':'';   /* several bases: their numbers, each its map */
   const icons='<span class="csloc-i">'+[...new Set(mem.map(m=>csLocFp(c,m,date,true)))].join("")+(LAD||l._bases?'':csMap(l.map))+CSEXPSM+'</span>';
-  const addr=LAD?'<a class="csaddr" href="'+esc(safeUrl(l.map||csMapQ(LAD)))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" data-nobub="1">'+esc(LAD)+'</a>':'';
+  const addr=LAD?'<a class="csaddr" href="'+esc(mapUrl(l.map||csMapQ(LAD)))+'" title="'+esc(LAD)+'" target="_blank" rel="noopener noreferrer" data-nobub="1">'+esc(LAD)+'</a>':'';
   const near=[].concat(...mem.map(m=>NEAR.get(m)||[])).filter((p,i,a)=>a.findIndex(y=>y.code===p.code&&y.u===p.u)===i).sort((a,b)=>a.d-b.d);
-  return '<details class="dbox csloc'+(isNow?' csnowloc':'')+'"><summary><div class="csl1">'+badge+title+bases+icons+'</div>'+(l._bases?'':addr)+csLocScenes(c,l)+'</summary>'+csLocBody(l,LAD,HN,near)+'</details>'}
+  return '<details class="dbox csloc'+(isNow?' csnowloc':'')+'"><summary><div class="csl1">'+badge+title+bases+icons+'</div>'+(l._bases?'':addr)+csLocScenes(c,l)+'</summary>'+csLocBody(c,l,LAD,HN,near)+'</details>'}
 function csLocSec(c,x,me,SU,t){if(!vok("loc"))return"";   /* «Locations sehen» */const ls=csLocs(c),NOW=csNowLoc(c,x.date,ls),NEAR=csNear(c,ls,x.date);window.CSNOWK=NOW?NOW.no+'|'+NOW.name:'';
   const LG=csLocGroups(c,ls,x.date);
   return csSec("Locations",LG.length?LG.map(l=>csLocBox(c,l,x.date,NOW,NEAR)).join(""):"",true,"","loc","")}
@@ -78,13 +91,13 @@ function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false||!vok("csmap"))return""
    const main=pts.filter(p=>!p.m);
    if(pts.length)h+=csSec(L("Karte"),'<div class="csmapw"><button type="button" class="csmapbig" data-csmapbig aria-label="'+esc(L("Karte vergrössern"))+'" title="'+esc(L("Karte vergrössern"))+'">'+CSEXP+'</button><div class="csmap0" data-csmap="'+esc(JSON.stringify(pts))+'"'+(()=>{const G=window.GMAPSET||{};if(!G.on)return"";const f=csGmFeat(pts,G);return f.length?' data-csgm="'+esc(JSON.stringify(f))+'"':""})()+'></div>'+
      '<div class="csmapl">'+main.map(p=>'<button type="button" class="csmapgo" data-csmapgo="'+pts.indexOf(p)+'">'+(BH.has(p.c)?'<span class="csplace csbadge '+(/^L/.test(p.c)?'csmot':'csbase')+'">'+BH.get(p.c)+'</span>':'<span class="csplace">'+esc(p.c)+'</span>')+' '+esc(p.n)+(p.r?' <small class="csmapr">'+esc(L("ungefähr"))+'</small>':'')+'</button>').join("")+
-     miss.map(p=>'<a class="csmapgo nopos" href="'+esc(safeUrl(p.u))+'" target="_blank" rel="noopener noreferrer"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+' <small class="csmapr">'+esc(L("ohne Position – Google Maps"))+'</small></a>').join("")+'</div></div>',
+     miss.map(p=>'<a class="csmapgo nopos" href="'+esc(mapUrl(p.u))+'" target="_blank" rel="noopener noreferrer"><span class="csplace">'+esc(p.c)+'</span> '+esc(p.n)+' <small class="csmapr">'+esc(L("ohne Position – Google Maps"))+'</small></a>').join("")+'</div></div>',
      false,"","karte","")}
   return h}
 function csTravelSec(c,x,me,SU,t){let h="";
   {const U=/(https?:\/\/[^\s<]+)/g;const clean=v=>String(v||"").replace(U,"").replace(/\s{2,}/g," ").trim();
    const badge=(txt,url)=>{let pl=null;try{pl=csPlace(c,clean(txt))}catch(_){}const code=pl?csShort(pl):"";const u=url||(pl&&pl.map)||"";if(!u)return code?csPlaceA(code,csCodeHref(code),pl&&pl.name):'';
-     return '<a class="csplace" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer" title="'+esc(pl&&pl.name||clean(txt)||L("Karte"))+'">'+esc(code||L("Karte"))+'</a>'};
+     return '<a class="csplace" href="'+esc(mapUrl(u))+'" target="_blank" rel="noopener noreferrer" title="'+esc(pl&&pl.name||clean(txt)||L("Karte"))+'">'+esc(code||L("Karte"))+'</a>'};
    /* travel of another day (a second TRAVEL CAST part of the document): after the others, with its date */
    const other=r=>r.date&&x.date&&r.date!==x.date;const dlab=r=>{try{const d=new Date(r.date+"T12:00:00");return (typeof WDL==="function"?WDL(d)+" ":"")+r.date.slice(8,10)+"."+r.date.slice(5,7)+"."}catch(_){return r.date}};
    const rows=csA(c.travel).slice().sort((a,b)=>(other(a)?1:0)-(other(b)?1:0)).map(r=>{const urls=[r.from,r.to,r.note].join(" ").match(U)||[];

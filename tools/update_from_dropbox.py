@@ -1133,6 +1133,25 @@ def geocode(addr, cache):
     return cache[key]
 
 
+def rev_geocode(p, cache):
+    """position → short address «Strasse Nr, PLZ Ort» (OpenStreetMap Nominatim), cached; None when not found or no time left"""
+    if not p: return None
+    key = "%.5f,%.5f" % (p[0], p[1])
+    if key in cache: return cache[key]
+    if time.time() > GEO_DEADLINE: return None
+    try:
+        time.sleep(1.1)
+        r = requests.get("https://nominatim.openstreetmap.org/reverse", params={"lat": p[0], "lon": p[1], "format": "json", "zoom": 18, "addressdetails": 1},
+                         headers={"User-Agent": "TschuggerCrewApp/1.0 (furtschellas@gmail.com)", "Accept-Language": "de-CH,de,fr"}, timeout=20)
+        if not r.ok: return None
+        a = (r.json() or {}).get("address") or {}
+        street = " ".join(x for x in (a.get("road") or a.get("pedestrian") or a.get("footway") or a.get("path") or "", a.get("house_number") or "") if x)
+        town = " ".join(x for x in (a.get("postcode") or "", a.get("village") or a.get("town") or a.get("city") or a.get("municipality") or "") if x)
+        cache[key] = ", ".join(x for x in (street, town) if x) or None
+    except Exception: return None
+    return cache[key]
+
+
 def cs_scene_list(txt):
     """«186 PT1B/C/PT2» → 186pt1b, 186pt1c, 186pt2 (as in the app)"""
     out = []
@@ -2293,6 +2312,16 @@ def main():
                        "✗ %s%s" % ("kein Kartenlink" if u.startswith("loc:") else "Link ohne Position (%s)" % (v.get("diag") or "?").split(" · ")[0], ", keine Adresse" if not ad else ", Adresse nicht gefunden")))
         print("::notice::Karte %s: %s" % (d.get("date"), " | ".join(rep)[:900]))
         if g != (cs.get("geo") or {}) or src != (cs.get("geoSrc") or {}): cs["geo"] = g; cs["geoSrc"] = src; changed = True
+        # the street address of every exact position (parkings, base, lunch … often only have a map link on the callsheet):
+        # shown under the place in the app; only for today and later (time of the address search)
+        if (d.get("date") or "") >= TODAY:
+            ga = dict(cs.get("geoAdr") or {}); rc = meta.setdefault("rgeo", {})
+            for u in g:
+                if u.startswith("http") and src.get(u) in ("link", "addr") and u not in ga:
+                    a = rev_geocode(g[u], rc)
+                    if a: ga[u] = a
+            ga = {u: a for u, a in ga.items() if u in g}
+            if ga != (cs.get("geoAdr") or {}): cs["geoAdr"] = ga; changed = True
     diags = {}
     for v in mg.values():
         if isinstance(v, dict) and not v.get("p"): k = (v.get("diag") or "?") + (" · Ortsname" if v.get("name") else ""); diags[k] = diags.get(k, 0) + 1

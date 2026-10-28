@@ -1,6 +1,6 @@
 /* the 2nd Unit of a callsheet (cs.u2, read apart from the 1st Unit): its own part below the callsheet of the 1st Unit –
    times, contact on set, sets, shooting order, cast, extras, vehicles, calls «2nd IN», department infos (the prevision is kept in the data, shown neither for the 1st Unit) */
-import {L,camFold,esc,fmtDate,norm,safeUrl} from "./10-core.js";
+import {camFold,esc,fmtDate,L,mapUrl,norm,safeUrl} from "./10-core.js";
 import {nameHit} from "./11-schedule-prep.js";
 import {schedIndex} from "./17-scene-reader.js";
 import {csA,csL,csSec,csTable,csTx} from "./13a-callsheet.js";
@@ -10,7 +10,7 @@ import {vok} from "./14-render.js";
 const u2tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(String(v))+'</div></div>':'';
 /* a set of the 2nd Unit: code, name, scenes, map; its lines (parking, base …) below */
 function u2Loc(l){if(!l||typeof l!=="object")return"";
-  const a=(href,txt)=>href?'<a href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer">'+txt+'</a>':txt;
+  const a=(href,txt)=>href?'<a href="'+esc(mapUrl(href))+'" target="_blank" rel="noopener noreferrer">'+txt+'</a>':txt;
   return '<div class="csu2-l"><div class="csu2-lh">'+a(l.map,'<b>'+esc([l.no,l.name].filter(Boolean).join(" · "))+'</b>')+(l.scenes?' <small>'+esc(String(l.scenes))+'</small>':'')+'</div>'+
     csA(l.items).filter(i=>i&&(i.label||i.text)).map(i=>'<div class="csu2-li">'+(i.label?'<span>'+esc(csL(String(i.label)))+'</span> ':'')+(i.text?a(i.map,csTx(csL(String(i.text)))):i.map?a(i.map,esc(L("Karte"))):'')+'</div>').join("")+
     csA(l.notes).map(n=>'<div class="csu2-li"><small>'+csTx(csL(String(n)))+'</small></div>').join("")+'</div>'}

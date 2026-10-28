@@ -1,4 +1,4 @@
-import {bdFor,esc,itemHTML,L,mapsQ,norm,S,safeUrl} from "./10-core.js";
+import {bdFor,esc,itemHTML,L,mapsQ,mapUrl,norm,S,safeUrl} from "./10-core.js";
 import {addrForItem} from "./13-crew-views.js";
 import {CSEXPSM,CSI,csA,csHm,csKeys,csLocRows,csMyRides,csS,csTx} from "./13a-callsheet.js";
 import {CSCUR,CSHN_RE,csIsAdr,csNowIdx,csSceneLoc} from "./13b-cs-now.js";
@@ -17,7 +17,7 @@ export function csBadgeIn(l,codes){if(!l.kinds)return '<span>'+esc((codes||["L"+
   /* side place: the icons, with the group (Cast / Extras) and a kind without icon as text */
   return l.kinds.map(csKindB).join("")}
 export function csPlaceH(inner,href,title,cls){const t=title?' title="'+esc(title)+'" aria-label="'+esc(title)+'"':'',k='csplace csbadge'+(cls?' '+cls:'');
-  return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+inner+'</a>':'<span class="'+k+'"'+t+'>'+inner+'</span>'}
+  return href?'<a class="'+k+'" href="'+esc(mapUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+inner+'</a>':'<span class="'+k+'"'+t+'>'+inner+'</span>'}
 /* the locations of the day: every set has its code L1, L2 … (its scenes carry it); sets at the same place (same map link or address,
    a set without either at the only place there is) are shown as one location with their codes «L1·L2» */
 /* not kept between drawings: the addresses can come later with the app's location list */
@@ -40,7 +40,7 @@ export function csCodeHref(code){const m=String(code||"").match(/^L(\w+)$/);if(!
 export function csPlaceA(code,href,title,cls){const t=title?' title="'+esc(title)+'"':' title="'+esc(code)+'"';
   /* a base (Base, WHM, Lunch, Prod, DIT …): its own icon and the gold colour; sets (L1 …) stay text */
   const ic=/^L\d/i.test(String(code))?"":csKindIco(String(code).replace(/^WHM\b/i,"W / H / M").replace(/^Prod\b.*/i,"Prod")),k='csplace'+(ic?' csbadge csbase':'')+(cls?' '+cls:''),in_=ic?ic+'<span class="vh">'+esc(code)+'</span>':esc(code);
-  return href?'<a class="'+k+'" href="'+esc(safeUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+in_+'</a>':'<span class="'+k+'"'+t+'>'+in_+'</span>'}
+  return href?'<a class="'+k+'" href="'+esc(mapUrl(href))+'" target="_blank" rel="noopener noreferrer"'+t+' data-nobub="1">'+in_+'</a>':'<span class="'+k+'"'+t+'>'+in_+'</span>'}
 /* the address of a place is asked for many times per drawing (scene rows, short line, map, tiles …): worked out once per drawing */
 export function csLocAddr(c,l,date){const M=typeof CSCUR!=="undefined"&&CSCUR.c===c&&CSCUR.addr;if(!M||!l||typeof l!=="object")return csLocAddr0(c,l,date);
   const k=String(date||"");let e=M.get(l);if(!e)M.set(l,e={});if(!(k in e))e[k]=csLocAddr0(c,l,date);return e[k]}
@@ -52,7 +52,10 @@ function csLocAddr0(c,l,date){let ad="";
     if(hit)ad=[hit.venue,hit.address].filter(Boolean).join(", ")}catch(_){}
   if(!ad)try{for(const r of csLocRows(c,l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it){ad=addrForItem(it)||"";if(ad)break}}}catch(_){}
   if(!ad||/^tba$/i.test(ad)){const n=csA(l.notes).map(String).concat(csA(l.items).map(i=>String(i.text||""))).find(t=>/\b\d{4}\b/.test(t)&&/[A-Za-zÀ-ÿ]{3,}/.test(t));ad=n?n.replace(/https?:\/\/\S+/g,"").split(/\.\s|\n|\s*;\s*|\s\/\/\s/).find(p=>/\b\d{4}\b/.test(p))||"":"";ad=ad.trim()}
+  /* 4. the street address of the position of its map link (the updater looks it up: parkings, bases … often have only a link) */
+  if(!ad||/^tba$/i.test(ad))ad=csGeoAdr(c,l.map)||(l._m?l._m.map(m=>csGeoAdr(c,m.map)).find(Boolean):"")||"";
   return /^tba$/i.test(ad)?"":ad}
+export function csGeoAdr(c,u){return u&&c&&c.geoAdr&&String(c.geoAdr[u]||"")||""}
 /* floorplans of a location (3D folder, matched like in the schedule: set and place of its scenes) – only with the right for blocking */
 export function csLocFp(c,l,date,icon){if(l.kinds||typeof fpFor!=="function"||!vok("blocking"))return"";const out=new Map();
   try{for(const r of csLocRows(c,l)){const it=((schedIndex()[norm(r.sc)]||[]).find(y=>y.d&&y.d.date===date)||{}).it;if(it)for(const f of fpFor(it.set,it.loc))out.set(f.file||f.name,f)}
@@ -190,6 +193,15 @@ function csLocs0(c){const sets=[],extra=[];
      return ""};
    for(const e of extra)if(!e.map){const u=refMap([e.name].concat(csA(e.notes)).join(" ; "),null);if(u){e.map=u;e._refmap=1}}
    for(const l of sets)for(const i of csA(l.items))if(i&&!i.map&&String(i.text||"").trim()){const u=refMap(i.label+": "+i.text,l);if(u){i.map=u;i._refmap=1}}}
+  /* places at the same spot (the same map link, also one found above) are one location: «W/H/M Extras – Lobby Room @ Moxy» goes to
+     «Base Moxy», «DIT – Loge Thelma @ Tech Parking 1.1» to the Tech Parking line of set 1.1 – never only because of a similar name */
+  for(const e of extra.slice()){if(!e.map||!extra.includes(e))continue;
+    const twin=extra.find(x=>x!==e&&x.map===e.map&&extra.indexOf(x)<extra.indexOf(e));
+    if(twin){for(const k of e.kinds)if(!twin.kinds.includes(k))twin.kinds.push(k);
+      const n=[e.kinds.join(" / "),e.name].filter(Boolean).join(": ");if(n&&!twin.notes.includes(n))twin.notes.push(n);for(const x of csA(e.notes))if(!twin.notes.includes(x))twin.notes.push(x);
+      extra.splice(extra.indexOf(e),1);continue}
+    if(e.kinds.every(k=>k==="DIT"||k==="Prod")){const st=sets.find(l=>l.map===e.map||csA(l.items).some(i=>i&&i.map===e.map));
+      if(st){st._kx=[...new Set((st._kx||[]).concat(e.kinds))];st.items=csA(st.items).concat([{label:e.kinds.join(" / "),text:[e.name].concat(e.notes).filter(Boolean).join(", "),map:e.map}]);extra.splice(extra.indexOf(e),1)}}}
   /* many places that are only a Base (2nd Unit: «Base 1» … «Base 6», each a link): one Base with its numbers as links, not six «BASE» boxes */
   {const pb=extra.filter(e=>e.kinds.length===1&&e.kinds[0]==="Base");
    if(pb.length>=3){const nm=e=>{const n=String(e.name||"").trim();return n&&!/^base(\s*\d+(\s*[-–]\s*\d+)?)?$/i.test(n)?n:""};

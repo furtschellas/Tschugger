@@ -1,4 +1,4 @@
-import {L,LANG,S,esc,hmAny,safeUrl} from "./10-core.js";
+import {esc,hmAny,L,LANG,mapUrl,S,safeUrl} from "./10-core.js";
 import {nameHit} from "./11-schedule-prep.js";
 import {myIdentity,rideId,rideMap} from "./12-mycal.js";
 import {CSCUR,csSceneLoc} from "./13b-cs-now.js";
@@ -60,11 +60,11 @@ export function csTx(s){s=String(s==null?"":s);if(!s)return"";const ok=vok("phon
 /* an address or place with a map link: the text itself is the link (instead of the round map button) */
 export function csAdr(txt,map,fallback){const U=/(https?:\/\/[^\s<]+)/g;const s0=String(txt||"");const urls=s0.match(U)||[];const isMap=u=>/maps\.app\.goo\.gl|google\.[a-z.]+\/maps|goo\.gl\/maps/.test(u);
   const u=map||urls.find(isMap)||"";const t=s0.replace(U,m=>isMap(m)?"":m).replace(/\s{2,}/g," ").replace(/[\s,:;–-]+$/,"").trim();if(!u)return csTx(s0);
-  return '<a class="csadl" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer"><span>'+csNoA(csTx(t||fallback||L("Karte")))+'</span></a>'}
+  return '<a class="csadl" href="'+esc(mapUrl(u))+'" target="_blank" rel="noopener noreferrer"><span>'+csNoA(csTx(t||fallback||L("Karte")))+'</span></a>'}
 /* text inside a link: its own links removed (a link in a link breaks the page), the hidden phone numbers stay hidden */
 const csNoA=h=>String(h).replace(/<a\b[^>]*>/g,"").replace(/<\/a>/g,"");
 /* map: a round button with a pin (like the other round buttons of the app) */
-export const csMap=u=>u?'<a class="csmap" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(L("Karte"))+'" title="'+esc(L("Karte"))+'">'+CSI.pin+'</a>':'';
+export const csMap=u=>u?'<a class="csmap" href="'+esc(mapUrl(u))+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(L("Karte"))+'" title="'+esc(L("Karte"))+'">'+CSI.pin+'</a>':'';
 /* translated text (locations, production information) in the language of the app; the original when none */
 let CSTR=null;export const csL=t=>{const s2=String(t==null?"":t);return (CSTR&&CSTR[LANG]&&CSTR[LANG][s2])||s2};
 /* a small tile (key and value) of the callsheet head */

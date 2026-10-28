@@ -696,8 +696,12 @@ async def owner_tests(p, port):
             {no:'1.2',name:'POLICE STATION',map:'https://maps.app.goo.gl/PS',items:[it('LOC','Avenue du Grand-Champsec 22 - 1958 Sion','https://maps.app.goo.gl/PS')]}]});
           const dit=ls.find(l=>l.kinds&&l.kinds.includes('DIT'))||null,dItem=ls.flatMap(l=>csA(l.items)).find(i=>/dit/i.test(i.label||''));
           const ex=ls.find(l=>l.kinds&&l.kinds.some(k=>/Extras/.test(k)));
-          return {dit:(dit&&dit.map)||(dItem&&dItem.map)||'',ex:ex?ex.map:''}})()""")
-        check("Locations: DIT, 2nd AD und Komparsen «@ Tech Parking 1.1 / @ Moxy» bekommen den Kartenlink dieses Orts", rf_ in (None, {"dit": "https://maps.app.goo.gl/TP", "ex": "https://maps.app.goo.gl/MX"}), rf_, public=True)
+          return {dit:(dit&&dit.map)||(dItem&&dItem.map)||'',ex:ex?ex.map:'',boxes:ls.filter(l=>l.kinds).map(l=>l.no).join('|')}})()""")
+        check("Locations: DIT, 2nd AD und Komparsen «@ Tech Parking 1.1 / @ Moxy» bekommen den Kartenlink dieses Orts und stehen beim selben Ort (eine Box pro Ort)", rf_ in (None, {"dit": "https://maps.app.goo.gl/TP", "ex": "https://maps.app.goo.gl/MX", "boxes": "Base · W / H / M Cast · W / H / M Extras|Lunch"}), rf_, public=True)
+        # map links open the GPS position the updater found (exact ones only); without a position the link of the callsheet stays
+        mu_ = await E("""(()=>{if(typeof mapUrl!=='function')return null;const k=S.dispos;try{S.dispos=[{date:'2099-01-01',cs:{geo:{'https://maps.app.goo.gl/A':[46.2271,7.3586],'https://maps.app.goo.gl/R':[46.1,7.1]},geoSrc:{'https://maps.app.goo.gl/A':'link','https://maps.app.goo.gl/R':'rough'}}}];
+          return [mapUrl('https://maps.app.goo.gl/A'),mapUrl('https://maps.app.goo.gl/R'),mapUrl('https://maps.app.goo.gl/X'),mapUrl('javascript:alert(1)')].join(' ')}finally{S.dispos=k}})()""")
+        check("Kartenlinks: genaue Position als GPS-Koordinaten, sonst der Link des Callsheets", mu_ in (None, "https://www.google.com/maps/search/?api=1&query=46.227100%2C7.358600 https://maps.app.goo.gl/R https://maps.app.goo.gl/X #"), mu_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

@@ -1,4 +1,4 @@
-import {L,S,clockHM,esc,isoAdd,localISO,prodTZ,safeUrl,todayISO} from "./10-core.js";
+import {clockHM,esc,isoAdd,L,localISO,mapUrl,prodTZ,S,safeUrl,todayISO} from "./10-core.js";
 import {CSI,csA,csAck,csHm,csKeys,csL,csRows,csS} from "./13a-callsheet.js";
 import {csBadgeIn,csKindCode,csLocHref,csLocs,csPlaceA,csSetGeo} from "./13c-cs-places.js";
 import {fold} from "./15-script-tab.js";
@@ -76,5 +76,5 @@ export function csNear(c,ls,date){const geo=c.geo||{},out=new Map(),sets=[];
     if(l.kinds)for(const i of csA(l.items))if(i.map)add(String(i.label||"").trim()||"P",[i.label,i.text].filter(Boolean).join(" · "),i.map,geo[i.map])}
   for(const a of out.values())a.sort((x,y)=>x.d-y.d);return out}
 const csDist=d=>d<0.05?L("vor Ort"):d<1?Math.round(d*1000/10)*10+" m":(Math.round(d*10)/10).toFixed(1).replace(/\.0$/,"")+" km";
-export function csNearHTML(a){return a&&a.length?'<div class="csnear">'+a.map(p=>'<a class="csnearc" href="'+esc(safeUrl(p.u||""))+'" target="_blank" rel="noopener noreferrer" title="'+esc(csL(p.name))+'">'+(p.h?'<span class="csplace csbadge csbase">'+p.h+'</span>':'<span class="csplace">'+(/park/i.test(p.code)?CSI.park:'')+esc(csL(p.code))+'</span>')+'<small>'+esc(csDist(p.d))+'</small></a>').join("")+'</div>':''}
+export function csNearHTML(a){return a&&a.length?'<div class="csnear">'+a.map(p=>'<a class="csnearc" href="'+esc(mapUrl(p.u||""))+'" target="_blank" rel="noopener noreferrer" title="'+esc(csL(p.name))+'">'+(p.h?'<span class="csplace csbadge csbase">'+p.h+'</span>':'<span class="csplace">'+(/park/i.test(p.code)?CSI.park:'')+esc(csL(p.code))+'</span>')+'<small>'+esc(csDist(p.d))+'</small></a>').join("")+'</div>':''}
 export function setCSCUR(v){return CSCUR=v}   /* other parts change CSCUR only through this */

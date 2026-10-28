@@ -127,6 +127,11 @@ export const maps=q=>{const u=locMapIndex().get(norm(q));return u?safeUrl(u):map
 export const locHref=(l,ad)=>(l&&/^https:\/\//.test(l.map||""))?l.map:maps(ad);
 /* Google Maps links: a search (address or place) and a route by car (without «from»: from where the phone is) */
 export const mapsQ=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
+/* a map link of a callsheet opens the exact position the updater found for it (from the link itself or the address of the place) as
+   GPS coordinates: a short link («maps.app.goo.gl/…») copied wrong from the PDF or one that needs a forwarding page still opens the right spot */
+export const mapGeo=u=>{u=String(u||"");if(!/^https?:/.test(u))return null;for(const x of arr(S.dispos)){const c=x&&x.cs,p=c&&c.geo&&c.geo[u],s=c&&c.geoSrc&&c.geoSrc[u];
+  if(Array.isArray(p)&&p.length===2&&isFinite(p[0])&&isFinite(p[1])&&(s==="link"||s==="addr"))return p}return null};
+export const mapUrl=u=>{const p=mapGeo(u);return safeUrl(p?mapsQ((+p[0]).toFixed(6)+","+(+p[1]).toFixed(6)):u)};
 export const mapsDir=(o,de)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+encodeURIComponent(o):"")+"&destination="+encodeURIComponent(de);
 const mapsSearch=q=>mapsQ(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
 export const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};

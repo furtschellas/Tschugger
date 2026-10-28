@@ -1,4 +1,4 @@
-import {esc,L,LANG,mapsDir,S,safeUrl} from "./10-core.js";
+import {esc,L,LANG,mapsDir,mapUrl,S,safeUrl} from "./10-core.js";
 import {nmk} from "./11-schedule-prep.js";
 import {CSI,csA,csDurT,csHm,csIDrive,csMyCall,csMyRides,csMyWords,csRideReal,csRows,csS,csSec,csTile,csTx} from "./13a-callsheet.js";
 import {csCallPlace,csLocAddr,csLocs,csMapQ,csPlace,plDe} from "./13c-cs-places.js";
@@ -36,8 +36,8 @@ window.csMyUnits=csMyUnits;
 const CSMINEMEMO=new WeakMap();export function csMine(c,me){if(!c||!me)return[];let m=CSMINEMEMO.get(c);if(!m)CSMINEMEMO.set(c,m=new Map());const k=me.name+"|"+me.dep+"|"+(typeof LANG!=="undefined"?LANG:"")+"|"+vok("phone")+"|"+(window.REDVER||0)+"|"+arr(S.locs).length;if(!m.has(k)){m.clear();m.set(k,csMine0(c,me))}return m.get(k).slice()}   /* only the latest (else every ride change added one) */
 /* the destination of a ride as a map link (the place of the callsheet, else a map search) */
 function csToLink(c,to){const t0=String(to||"").trim();if(!t0)return"";const um=t0.match(/https?:\/\/\S+/);const t=t0.replace(/https?:\/\/\S+/g,"").trim()||L("Karte");
-  if(um&&t===L("Karte"))return '<a class="csadl" href="'+esc(safeUrl(um[0]))+'" target="_blank" rel="noopener noreferrer"><span>'+esc(t)+'</span></a>';let pl=null;try{pl=csPlace(c,t)}catch(_){}
-  const u=(pl&&pl.map)||csMapQ((pl&&pl.addr)||t);return '<a class="csadl" href="'+esc(safeUrl(u))+'" target="_blank" rel="noopener noreferrer"><span>'+esc(plDe(t))+'</span></a>'}
+  if(um&&t===L("Karte"))return '<a class="csadl" href="'+esc(mapUrl(um[0]))+'" target="_blank" rel="noopener noreferrer"><span>'+esc(t)+'</span></a>';let pl=null;try{pl=csPlace(c,t)}catch(_){}
+  const u=(pl&&pl.map)||csMapQ((pl&&pl.addr)||t);return '<a class="csadl" href="'+esc(mapUrl(u))+'" target="_blank" rel="noopener noreferrer"><span>'+esc(plDe(t))+'</span></a>'}
 /* in both units today: «Mein Tag» per unit in the order of the day – a head per unit with its start, below it its call / cast row and its rides;
    what belongs to both (rides of both units, travel, departments) after them under «Beide» */
 function csMineBoth(c,me,o,pax,ride){const a1=csA(o.cast).find(r=>me.hit(r.actor)),a2=csA(o.u2&&o.u2.cast).find(r=>me.hit(r.actor)),cl=csA(o.calls).find(r=>me.hit(r.name));
@@ -64,7 +64,7 @@ function csMine0(c,me){const mine=[];
     return mine.map(x=>x.replace(/<div class="csme-r"><span class="k">([\s\S]*?)<\/span>([\s\S]*?)<\/div>/g,'<div class="csme-r"><span class="k">$1</span><span class="v">$2</span></div>'))}}
   const call=csMyCall(c,me);if(call){const pl=csCallPlace(c,me,call);
     mine.push('<div class="csme-r"><span class="k">'+esc(L("Mein Call"))+'</span><b>'+esc(call.t||"")+'</b>'+(call.t2?(call.t?' · ':'')+'<b>'+esc(call.t2)+'</b> <small>2nd Unit</small>':'')+' <small>'+esc([call.role,call.dept].filter(Boolean).join(" · "))+'</small></div>'+
-      (pl?'<div class="csme-r"><span class="k">'+esc(L("Call-Ort"))+'</span>'+(pl.map?'<a class="cscallpl" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><b>'+esc(plDe(pl.name))+'</b></a>':'<b>'+esc(plDe(pl.name))+'</b>')+(pl.how?' <small>'+esc(pl.how)+'</small>':'')+'</div>':''))}
+      (pl?'<div class="csme-r"><span class="k">'+esc(L("Call-Ort"))+'</span>'+(pl.map?'<a class="cscallpl" href="'+esc(mapUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><b>'+esc(plDe(pl.name))+'</b></a>':'<b>'+esc(plDe(pl.name))+'</b>')+(pl.how?' <small>'+esc(pl.how)+'</small>':'')+'</div>':''))}
   const cast=csA(c.cast).find(r=>me.hit(r.actor))||csA(c.u2&&c.u2.cast).find(r=>me.hit(r.actor));   /* my cast row (1st Unit first) – the pickup below needs it */
   for(const [cr,u2] of [[csA(c.cast).find(r=>me.hit(r.actor)),""],[csA(c.u2&&c.u2.cast).find(r=>me.hit(r.actor))," · 2nd Unit"]])if(cr)mine.push('<div class="csme-r"><span class="k">Cast'+u2+'</span>'+esc([cr.role,cr.pickup&&"P/UP "+cr.pickup,cr.call&&"Call "+cr.call,cr.onset&&"Set "+cr.onset].filter(Boolean).map(csDurT).join(" · "))+'</div>');
   /* pickup: the first ride of the day – shown first, before «Mein Call» */
@@ -99,7 +99,7 @@ export function csTilesHTML(x,day,c,me){const t=c.times||{};
           pl=Object.assign({},pl,{name:ad||nm||pl.name,map:hit.map||"",disp:nm||(ad?ad.split(",")[0]:"")})}}catch(_){}}
       const to=(pl.addr||String(pl.name||"").replace(/^[^:]*:\s*/,"").replace(/^Set\s*\w+\s*·\s*/,"")).trim();if(!to&&!pl.map)return"";
       /* only a name without address but a map link (e.g. «Tech Parking»): the map link, not a Google search for the name */
-      if(pl.map&&!pl.addr&&!/\d{4}\s+\p{L}/u.test(to)&&pl.disp)return '<a class="dt csdrv" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc(plDe(pl.disp).slice(0,18))+' ›</div></a>';if(!to)return '<a class="dt csdrv" href="'+esc(safeUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc(L("Karte"))+' ›</div></a>';
+      if(pl.map&&!pl.addr&&!/\d{4}\s+\p{L}/u.test(to)&&pl.disp)return '<a class="dt csdrv" href="'+esc(mapUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc(plDe(pl.disp).slice(0,18))+' ›</div></a>';if(!to)return '<a class="dt csdrv" href="'+esc(mapUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc(L("Karte"))+' ›</div></a>';
       const from=(day&&day.drive&&day.drive.from)||"Hotel",url=mapsDir(from,to),here=mapsDir("",to);
       return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc((()=>{if(pl.fbk)return pl.fbn.slice(0,18)||L("Route");if(pl.disp)return plDe(pl.disp).slice(0,18);const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})())+' ›</div></button>'})()+'</div>';}
 /* parts of the callsheet (each one a folded section; c = callsheet, x = day of the dispo, me = me, SU = sums of the folded parts, t = times) */
