@@ -283,6 +283,11 @@ def main():
         for x in au:
             if x.get("op") == "error":
                 k = re.sub(r"[^A-Za-z]", "", str(x.get("sum") or "").split(":")[0])[:24] or "?"; errs[k] = errs.get(k, 0) + 1
+        ms0 = int(datetime.datetime.fromisoformat(today).replace(tzinfo=ZoneInfo(fsadmin.TZ0)).timestamp() * 1000)
+        rs = requests.post(fsadmin.BASE + ":runQuery", headers=h, params=q, timeout=30, json={"structuredQuery": {
+            "from": [{"collectionId": "sceneack"}], "where": {"fieldFilter": {"field": {"fieldPath": "at"}, "op": "GREATER_THAN_OR_EQUAL", "value": {"integerValue": str(ms0)}}}}})
+        sx = [{k: fsadmin.val(v) for k, v in (x["document"].get("fields") or {}).items()} for x in rs.json() if x.get("document")]
+        print("::notice title=Quittierungen seit heute 00:00::%d · %s" % (len(sx), "; ".join("%s u%s s%s %s" % (x.get("d"), x.get("u"), x.get("s"), x.get("sc")) for x in sx[:12])))
         print("::notice title=Protokoll heute::%s · Fehler: %s" % (", ".join("%s %d" % kv for kv in sorted(cnt.items())) or "nichts", ", ".join("%s %d" % kv for kv in sorted(errs.items())) or "keine"))
     except Exception as e: print("• Diagnose Quittieren:", type(e).__name__)
     try:   # Coverday: the days and callsheets as the crew sees them in the app (a callsheet may belong to another day now)
