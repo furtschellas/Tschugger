@@ -203,10 +203,13 @@ async function scTap(b,date,sc,u,choice){sc=scK(sc,u);const id=scAckId(date,sc),
   /* the new state: wrap is done at once, an open entry runs, a running one is done */
   const v=st===0&&bs==="wrap"?{s:2,b:now0,e:now0}:st===0?{s:1,b:now0}:{s:2,b:x.b||x.at||now0,e:now0};
   /* WhatsApp per kind of quittance (Mein Konto → App): «direkt» opens WhatsApp right in this tap (a phone allows it only here, not after saving) */
-  const wk=scWaKind(date,sc,u,v),wm=scWaMode(wk,u);if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},v):v),wk,u);
+  const wk=scWaKind(date,sc,u,v),wm=scWaMode(wk,u),isWrap=st===0&&bs==="wrap";
   b.disabled=true;
-  if(st===0&&bs==="wrap")for(const k of scRunAll(date,u,id)){const rx=scGet(date,k)||{};try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now0,e:scBase(k)==="lunch"?Math.max(+rx.b||+rx.at||now0,Math.min(scLunchEnd(rx),now0)):now0})}catch(_){}}
-  try{await scWrite(date,sc,u,v);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null,wk)}   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
+  /* the quittance is sent BEFORE WhatsApp opens: the phone may put the app to sleep at once (before, the scene was then never saved) */
+  const wp=isWrap?null:scWrite(date,sc,u,v);if(wp)wp.catch(()=>{});
+  if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},v):v),wk,u);
+  if(isWrap)for(const k of scRunAll(date,u,id)){const rx=scGet(date,k)||{};try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now0,e:scBase(k)==="lunch"?Math.max(+rx.b||+rx.at||now0,Math.min(scLunchEnd(rx),now0)):now0})}catch(_){}}
+  try{await (wp||scWrite(date,sc,u,v));if(wm!=="f")showMsg(scLabel(sc)+" "+(v.s===1?L("läuft"):L("abgeschlossen"))+(u!=="1"?" · "+u+(u==="2"?"nd":"rd")+" Unit":""),1800);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null,wk)}   /* a short confirmation: the tap was saved */   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
   catch(err){b.disabled=false;showMsg(err&&err.code==="simulation"?err.message:saveErr(err),4000)}}
 /* after a scene (lunch, wrap) was finished: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
 function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((typeof UNAME!=="undefined"&&UNAME[u])||u)+" Unit":"",dd=" ("+date.split("-").reverse().slice(0,2).join(".")+"."+un+")";

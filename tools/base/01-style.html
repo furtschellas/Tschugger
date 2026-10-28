@@ -1316,6 +1316,7 @@ html body #view .tl li.scnow>.sc{outline:2px solid var(--accent);outline-offset:
 /* scenes quittiert: round status (open / running / done), done scenes greyed */
 html body #view .scack{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin-left:auto;flex:0 0 auto;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--accent) 60%,transparent);background:transparent;color:var(--accent);padding:0;cursor:pointer}
 html body #view span.scack{cursor:default;border-color:var(--rule);color:var(--muted)}
+html body #view button.scack{position:relative;z-index:3;touch-action:manipulation;pointer-events:auto}   /* nothing in the row (summary, links, labels) may catch the tap */
 html body #view .scack.sk1{background:var(--accent);border-color:var(--accent);color:#fff}
 html body #view .scack.sk2{border-color:color-mix(in srgb,var(--ok,#4caf7d) 70%,transparent);color:var(--ok,#4caf7d)}
 /* Drehplan: the scene status top right of the scene */
