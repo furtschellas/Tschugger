@@ -1,4 +1,4 @@
-import {castRow,ddmm,driveMin,esc,isoAdd,L,LANG,localISO,mapsDir,mkDialog,norm,pad2,S,saveBtn,todayISO,TX,xBtn} from "../base/10-core.js";
+import {castRow,dayItems,ddmm,driveMin,esc,isoAdd,L,LANG,localISO,mapsDir,mkDialog,norm,pad2,S,saveBtn,todayISO,TX,unitKey,xBtn} from "../base/10-core.js";
 import {UNAME,dayMs,hasU,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,evRecent,hm,myEvents,myIdentity,telLinks} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
@@ -276,7 +276,7 @@ const tnChip=(no,role,lk,on,late)=>'<span'+(lk?' class="tnl'+lk+(on?' tnon':'')+
 function nowUnit(t,u){const x1=(S.dispos||[]).find(y=>y&&y.date===t);if(!x1||!x1.cs)return null;
   let x=x1;if(u==="2"){const day=arr(S.days).find(d=>d&&d.date===t);x=typeof window.csU2Dispo==="function"?window.csU2Dispo(x1,day):null;if(!x)return null}
   const c0=x.cs||{},ns=csNowScene(x);if(!ns||/^wrap(_u\d)?$/.test(String(ns.ev||"")))return null;
-  const K=sc=>u!=="1"&&typeof window.scK==="function"?window.scK(sc,u):sc;
+  const K=sc=>unitKey(sc,u);
   const key=ns.ev||K(ns.sc),ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
   const nb=csNowBits(ns,c0,t);
   /* scenes in parallel in this unit: the further ones running now («+ 23 L3 SEEUFER») and the next one still open («→ 24») */
@@ -299,7 +299,7 @@ function nowUnit(t,u){const x1=(S.dispos||[]).find(y=>y&&y.date===t);if(!x1||!x1
 export function nowCardHTML(t,cls,unit){try{if(typeof csNowScene!=="function"||!(window.nowSee&&window.nowSee()))return "";   /* only with «Jetzt» sehen (admins always) */
     /* the quittances not read yet (first seconds after opening): no «Jetzt» – it would show the first scene of a day that is long done */
     if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";
-    const day=arr(S.days).find(d=>d&&d.date===t),hasU2=!!(day&&day.unit2&&arr(day.unit2.items).length)||!!(((S.dispos||[]).find(y=>y&&y.date===t)||{}).cs||{}).u2;
+    const day=arr(S.days).find(d=>d&&d.date===t),hasU2=!!dayItems(day,"2").length||!!(((S.dispos||[]).find(y=>y&&y.date===t)||{}).cs||{}).u2;
     const units=unit==="2"?["2"]:hasU2?["1","2"]:["1"];
     const B=units.map(u=>{let r=null;try{r=nowUnit(t,u)}catch(err){console.warn("now",u,err)}return r?Object.assign(r,{u}):null}).filter(Boolean);
     const fc=ncLine(t),ed=unit!=="2"&&ncCan()?'<button type="button" class="tnced" data-ncedit '+'aria-label="'+esc(L("Prognose erfassen"))+'" title="'+esc(L("Prognose erfassen"))+'">'+NCICO+'</button>':'';

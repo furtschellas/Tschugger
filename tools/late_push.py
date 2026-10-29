@@ -92,8 +92,9 @@ def cm_parse(v):
 # the unit of a ride on a day with a 2nd Unit – like csRideUnit in 13g-cs-unit2.js: «1», «2» or "" (both / not sure)
 RX2 = re.compile(r"\b(2nd|2n?d|b)[\s-]*unit\b|\bunit[\s-]*(2|b)\b", re.I)
 RX1 = re.compile(r"\b(1st|1n?d|a)[\s-]*unit\b|\bunit[\s-]*(1|a)\b", re.I)
+_UP = {}   # unit_people per callsheet (by object id) – never stored in the data itself
 def unit_people(c):
-    if "_up" in c: return c["_up"]
+    if id(c) in _UP and _UP[id(c)][0] is c: return _UP[id(c)][1]
     m = {}
     def add(n, u):
         n = str(n or "").strip()
@@ -120,8 +121,9 @@ def unit_people(c):
             h = name_hit(n)
             if h and t1 and h(t1): add(n, "1")
             if h and t2 and h(t2): add(n, "2")
-    c["_up"] = [(name_hit(n), next(iter(us))) for n, us in m.items() if len(us) == 1 and name_hit(n)]
-    return c["_up"]
+    out = [(name_hit(n), next(iter(us))) for n, us in m.items() if len(us) == 1 and name_hit(n)]
+    _UP[id(c)] = (c, out)
+    return out
 def ride_unit(c, r):
     if not isinstance(c.get("u2"), dict) or not isinstance(r, dict): return ""
     if r.get("u") in ("1", "2"): return r["u"]

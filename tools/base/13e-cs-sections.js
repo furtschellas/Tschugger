@@ -1,4 +1,4 @@
-import {esc,fmtDate,ieClass,L,maps,mapUrl,S,safeUrl} from "./10-core.js";
+import {dayItems,esc,fmtDate,ieClass,L,maps,mapUrl,S,safeUrl} from "./10-core.js";
 import {nowCardHTML} from "../boot/16-today-view.js";
 import {UNITBAR,nmk} from "./11-schedule-prep.js";
 import {WDL} from "./12-mycal.js";
@@ -147,7 +147,7 @@ function cs1Of(c0){const h=CS1.get(c0);if(h&&h.tr===c0.transport&&h.ct===c0.crew
   const c=Object.assign({},c0,csRidesFor(c0,"1"),{_orig:c0,_rides:{transport:c0.transport,crewTransport:c0.crewTransport}});CS1.set(c0,{tr:c0.transport,ct:c0.crewTransport,c});return c}
 export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
   /* a day with a 2nd Unit: the 1st Unit shows only its rides (and those of both); the 2nd Unit gets its own in csU2Dispo */
-  const c=c0._u!=="2"&&typeof csRidesFor==="function"&&(c0.u2||csA(day&&day.unit2&&day.unit2.items).length)?cs1Of(c0):c0,t=c.times||{},me=csMe();let h="";if(x.date)c._date=x.date;   /* the day first: «Mein Tag» (travel of this day only) and the cast ticks need it */setCSTR(c.tr||null);setCSCUR({c,date:x.date||"",me,addr:new Map()});
+  const c=c0._u!=="2"&&typeof csRidesFor==="function"&&(c0.u2||dayItems(day,"2").length)?cs1Of(c0):c0,t=c.times||{},me=csMe();let h="";if(x.date)c._date=x.date;   /* the day first: «Mein Tag» (travel of this day only) and the cast ticks need it */setCSTR(c.tr||null);setCSCUR({c,date:x.date||"",me,addr:new Map()});
   let JB="";
   /* jump bar (sticky) and search over the whole callsheet */
    JB=csJumpBar(c,x,me,null,t);
@@ -157,7 +157,7 @@ export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
   if(!mineN)h+='<div class="dsp-head"><div><h2>'+dtitle+'</h2><div class="date drow"><span>'+fmtDate(x.date)+'</span>'+UNITBAR+'</div></div></div>';
   else if(UNITBAR)h+='<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>';
   /* both units shown: the 1st Unit gets the same head as the 2nd Unit below (the two parts look alike) */
-  if(c._u!=="2"&&S.pu["2"]&&(c0.u2||csA(day&&day.unit2&&day.unit2.items).length))h+='<div class="csu2-head csu1-head" id="cs-u1"><h2>1st Unit</h2><span>'+(x.date?fmtDate(x.date):'')+'</span></div>';
+  if(c._u!=="2"&&S.pu["2"]&&(c0.u2||dayItems(day,"2").length))h+='<div class="csu2-head csu1-head" id="cs-u1"><h2>1st Unit</h2><span>'+(x.date?fmtDate(x.date):'')+'</span></div>';
   if(x.date===csShootDay())h+=nowCardHTML(x.date,"csnowc",c._u);   /* the callsheet of today: «Jetzt» above the tiles, as in Today */
   h+=csTilesHTML(x,day,c,me);
   /* contact on set: the name itself is the call link (only with the phone right) */

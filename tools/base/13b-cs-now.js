@@ -1,4 +1,4 @@
-import {clockHM,esc,isoAdd,L,localISO,mapUrl,prodTZ,S,safeUrl,todayISO} from "./10-core.js";
+import {clockHM,esc,isoAdd,L,localISO,mapUrl,prodTZ,S,safeUrl,todayISO,unitKey} from "./10-core.js";
 import {CSI,csA,csAck,csHm,csKeys,csL,csRows,csS} from "./13a-callsheet.js";
 import {csBadgeIn,csKindCode,csLocHref,csLocs,csPlaceA,csSetGeo} from "./13c-cs-places.js";
 import {fold} from "./15-script-tab.js";
@@ -19,13 +19,13 @@ const csNowFor=date=>{const n=csHM();return date!==todayISO()&&n<"12:00"?String(
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null; lunch or a setup running: that row with ev = its key */
 export function csNowScene(x){const sd=csShootDay();x=x||(S.dispos||[]).find(y=>y&&y.date===sd);const c=x&&x.cs;if(!c||x.date!==sd)return null;const rows=csRows(c),un=String(c._u||"1");let i=csNowIdx(rows,x.date,un);   /* the 2nd Unit alone (csU2Dispo): its own entries */
   if(i>=0&&!rows[i].sc){const k=csKeys(rows)[i];   /* setup, lunch or wrap is the step now (running or next) – a setup also by the clock (building up before the first scene) */
-    const ek=k&&un!=="1"?k+"_u"+un:k;if(k&&(csAck(x.date,un)||/^setup\d*$/.test(k)))return Object.assign({},rows[i],{ev:ek,lunch:k==="lunch"&&scState(x.date,ek)===1})}
+    const ek=k?unitKey(k,un):k;if(k&&(csAck(x.date,un)||/^setup\d*$/.test(k)))return Object.assign({},rows[i],{ev:ek,lunch:k==="lunch"&&scState(x.date,ek)===1})}
   for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(csIsWrap(r))return null}return null}
 /* the row running now: with quittances the running one, else the next open step (scene, setup, lunch, wrap) after the last done one (wrap quittiert: none);
    without quittances by the clock: the last row that has started (after the wrap: none) */
 export function csNowIdx(rows,date,u){if(date!==csShootDay())return -1;rows=csA(rows);u=String(u||"1");
   /* the 2nd Unit: its own lunch, wrap and setups («lunch_u2») */
-  if(csAck(date,u)){const RK=csKeys(rows),key=(r,i)=>r.sc?(window.scK?window.scK(r.sc,u):r.sc):(RK[i]?RK[i]+(u!=="1"?"_u"+u:""):"");
+  if(csAck(date,u)){const RK=csKeys(rows),key=(r,i)=>r.sc?unitKey(r.sc,u):(RK[i]?unitKey(RK[i],u):"");
     const st=rows.map((r,i)=>key(r,i)?scState(date,key(r,i)):-1);if(st.some((v,i)=>v===2&&key(rows[i],i)===(u!=="1"?"wrap_u"+u:"wrap")))return -1;
     const run=st.indexOf(1);if(run>=0)return run;
     /* nothing running: the next step only during the shooting day (from 1 h before its first row) – at night, before the start, nothing

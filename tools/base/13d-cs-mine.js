@@ -28,7 +28,7 @@ export function csCastOpen(c,me){try{if(typeof MYROLE!=="undefined"&&/1ad/i.test
 export function csMyDept(c,me,dept){if(!me)return false;const mine=csMyWords(c,me);
   const w=csDWords(dept);for(const x of w)if(x.length>2&&mine.has(x)||x==="ad"&&mine.has("ad"))return true;return false}
 /* in which unit(s) I am on this callsheet: ["1"], ["2"], ["1","2"] – null: not to tell (not on the callsheet, or no 2nd Unit) */
-export function csMyUnits(c,me){try{if(!c||!me||!c.u2)return null;const cl=csA(c.calls).find(r=>me.hit(r.name)),a1=csA(c.cast).find(r=>me.hit(r.actor)),a2=csA(c.u2.cast).find(r=>me.hit(r.actor));
+export function csMyUnits(c,me){try{if(!c||!me||!c.u2)return null;const cl=csA(c.calls).find(r=>me.hit(r.name)),a1=csA(c.cast).find(r=>r&&r.u!=="2"&&me.hit(r.actor)),a2=csA(c.u2.cast).find(r=>me.hit(r.actor));
   /* named in the infos of a department (column 1st UNIT / 2nd UNIT) – also extra staff without a call */
   const d1=csA(c.depts).some(d=>d&&d.text&&me.hit(String(d.text))),d2=csA(c.depts).some(d=>d&&d.text2&&me.hit(String(d.text2)));
   const in1=!!(a1||(cl&&String(cl.t||"").trim())||d1),in2=!!(a2||(cl&&String(cl.t2||"").trim())||d2);return in1&&in2?["1","2"]:in1?["1"]:in2?["2"]:null}catch(_){return null}}

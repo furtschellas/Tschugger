@@ -1,4 +1,4 @@
-import {ariaTip,esc,I18N,isoAdd,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
+import {ariaTip,dayItems,esc,I18N,isoAdd,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
 import {UNAME,dayMs} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
@@ -24,11 +24,11 @@ setInterval(()=>document.querySelectorAll("[data-scrun]").forEach(el=>{el.textCo
 export function scAckId(date,sc){sc=String(sc??"");const m=sc.match(/_u([23])$/);if(m)sc=sc.slice(0,-3);
   return String(date||"").replace(/-/g,"")+"-"+fold(sc).replace(/[^a-z0-9]/g,"").replace(/^(dj|d|j|sc|sz|seq|scene|szene)(?=\d)/,"").replace(/(cont|continued|forts|fortsetzung)$/,"").slice(0,m?21:24)+(m?"u"+m[1]:"")}
 /* the key of an entry in a unit: the 1st Unit as it is, the 2nd/3rd with «_u2» / «_u3» (lunch, wrap, setups had it already) */
-export const scK=(sc,u)=>{u=String(u||"1");sc=String(sc??"");return u!=="1"&&sc&&!/_u[23]$/.test(sc)?sc+"_u"+u:sc};
+export const scK=unitKey;   /* one routine for all unit keys (10-core) */
 window.scK=scK;
 const scUOf=k=>(String(k||"").match(/_u([23])$/)||[])[1]||"1";
 /* the entry of a key – a 2nd/3rd-unit scene quittiert before the own ids (id without unit, u "2") is still found */
-function scGet(date,sc){const x=window.SCACK[scAckId(date,sc)];if(x)return /_u[23]$/.test(String(sc||""))||String(x.u||"1")==="1"||/^(lunch|wrap|setup\d*)$/.test(String(sc||""))?x:null;   /* an older 2nd-unit entry is not the 1st Unit's */const m=String(sc||"").match(/^(.*)_u([23])$/);if(!m||/^(lunch|wrap|setup\d*)$/.test(m[1]))return null;
+function scGet(date,sc){const x=window.SCACK[scAckId(date,sc)];if(x)return /_u[23]$/.test(String(sc||""))||String(x.u||"1")==="1"||scIsEv(sc)?x:null;   /* an older 2nd-unit entry is not the 1st Unit's */const m=String(sc||"").match(/^(.*)_u([23])$/);if(!m||/^(lunch|wrap|setup\d*)$/.test(m[1]))return null;
   const o=window.SCACK[scAckId(date,m[1])];return o&&String(o.u||"1")===m[2]?o:null}
 window.scGet=scGet;
 window.scAckId=scAckId;
@@ -42,6 +42,8 @@ const scIsSetup=t=>/^\s*set[\s-]?up\b/i.test(String(t||""));
 window.scRowKeys=(rows,txt)=>{let n=0;return (rows||[]).map(r=>{if(!r||r.sc)return"";const t=txt(r);if(scIsSetup(t)){if(r._auto)return "setup0";n++;return n>1?"setup"+n:"setup"}return scEvKey(t)})};
 /* lunch, wrap and setups of the 2nd/3rd unit have their own entries («lunch_u2»): scBase gives the plain key */
 window.scBase=k=>String(k||"").replace(/_u[23]$/,"");
+/* lunch, wrap or a setup (not a scene) – also with its unit («lunch_u2») */
+const scIsEv=k=>/^(lunch|wrap|setup\d*)$/.test(scBase(k));
 /* the name of a quittiert entry: Lunch, Wrap, Setup 2, else «Szene 186» */
 window.scLabel=k=>{k=scBase(k);const m=k.match(/^setup(\d*)$/);return k==="lunch"?"Lunch":k==="wrap"?"Wrap":m?("Setup"+(m[1]&&m[1]!=="0"?" "+m[1]:"")):L("Szene")+" "+k};
 /* state of a scene: 0 open, 1 running, 2 done */
@@ -95,7 +97,7 @@ let SCTRY=0,SCERR=0;setTimeout(scAckSub,1500);setInterval(()=>{if(SCSUB)return;i
 /* lunch ends by itself: its begin (manual quittance) + the planned lunch of that unit – each unit has its own lunch row in the Drehplan
    (the duration of the row, else until the next row; 60 min when the Drehplan has none) */
 function scLunchMin(date,u){try{const day=(S.days||[]).find(d=>d.date===date&&d.kind==="shoot");if(!day)return 60;
-    const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items),i=its.findIndex(x=>!x.sc&&window.scEvKey(x.n)==="lunch");if(i<0)return 60;
+    const its=dayItems(day,u),i=its.findIndex(x=>!x.sc&&window.scEvKey(x.n)==="lunch");if(i<0)return 60;
     const it=its[i],m=String(it.dur||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′’m]/);if(m){const v=m[3]?+m[3]:(+m[1])*60+(+m[2]);if(v>0)return v}
     const t0=scMs(date,hm(it.t));if(t0)for(let j=i+1;j<its.length;j++){const t1=scMs(date,hm(its[j].t));if(t1>t0)return Math.round((t1-t0)/60000)}}catch(_){}
   return 60}
@@ -124,7 +126,7 @@ const scaZ=(date,sc)=>!!(window.RIDEACK||{})[scaMark(date,sc)];
 async function scaKeep(date,sc){if(!SCA_KINDS.some(([k])=>scaOn(k))||scaZ(date,sc))return;const id=scaMark(date,sc),v={d:date,at:Date.now(),s:1};
   try{await dbWrite("set","rideack/"+id,v);if(window.RIDEACK)window.RIDEACK[id]=v}catch(_){}}
 /* the rows of a unit that can be quittiert: key (scene number or lunch / wrap / setup…, «_u2» in the 2nd unit), kind, planned time (ms) */
-function scaRows(day,u){const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items),ks=scRowKeys(its,x=>x.n);let ref=0,scene=false;
+function scaRows(day,u){const its=dayItems(day,u),ks=scRowKeys(its,x=>x.n);let ref=0,scene=false;
   /* the time of a setup in the callsheet (its shooting order), else the one of the Drehplan */
   let cr=[],ck=[];try{const dp=u==="1"&&arr(S.dispos).find(x=>x&&x.date===day.date&&x.cs);if(dp){cr=arr((dp.cs.order||{}).rows);ck=scRowKeys(cr,r=>r.text||r.syn)}}catch(_){}
   return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k||(()=>{try{return window.deGone&&window.deGone(x)}catch(_){return false}})())return null;const b=scBase(k),setup=/^setup\d*$/.test(b),first=setup&&!scene;if(x.sc)scene=true;
@@ -187,7 +189,6 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   /* never silent: an error while quittieren shows (before, the tap seemed to do nothing) */
   scDiag(date,sc,u,"tap v="+(window.APPVER||"")+" st="+scState(date,scK(sc,u))+" on="+scOnU(u)+" ack="+canPerm("scenes.ack")+" par="+scParU(u)+" run="+scRunAll(date,u,"").join(","));
   Promise.resolve().then(()=>scTap(b,date,sc,u,"")).catch(err=>{scDiag(date,sc,u,"error "+String(err&&(err.code||err.message)||err).slice(0,120));try{b.disabled=false}catch(_){}console.warn("scene ack",err);showMsg(L("Fehler:")+" "+String(err&&(err.code||err.message)||err).slice(0,120),6000)})},true);
-const scIsEv=k=>/^(lunch|wrap|setup\d*)$/.test(scBase(k));
 /* diagnosis of a tap (until the quittance works again everywhere): each step into the protocol, codes only (no names) */
 async function scDiag(date,sc,u,step){try{if(!ME||!ME.email)return;const {F,db}=await fb();await F.addDoc(F.collection(db,"audit"),{by:String(ME.email).toLowerCase(),at:F.serverTimestamp(),op:"error",col:"sceneack",id:String(date+"|"+sc+"|"+u).slice(0,120),sum:("diag "+step).slice(0,280)})}catch(_){}}
 window.scDiag=scDiag;
@@ -238,7 +239,7 @@ const scWaRole=u=>{const w=window.MYROLEWA;return w&&typeof w==="object"?w[Strin
 const scWaMode=(k,u)=>{if(!k)return "n";const r=scWaRole(u),i=SCWA_KINDS.findIndex(x=>x[0]===k),c=r&&typeof r.m==="string"?r.m[i]:"";return /^[nfa]$/.test(c||"")?c:scWaModes()[k]};window.scWaMode=scWaMode;window.SCWA_KINDS=SCWA_KINDS;
 function scWaKind(date,sc,u,v){const bs=scBase(sc);if(bs==="wrap")return "w";if(bs==="lunch")return v.s===1?"l":"m";
   if(v.s===2)return "e";
-  const first=!/^(setup\d*)$/.test(bs)&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!/^(lunch|wrap|setup\d*)$/.test(scBase(scKeyOf(rid,rx))));
+  const first=!/^(setup\d*)$/.test(bs)&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!scIsEv(scKeyOf(rid,rx)));
   return first&&scWaMode("d",u)!=="n"?"d":"b"}
 /* recipient: per kind (scwt<kind>) a number or a WhatsApp group (its invite link), else the general number (scwan), else choose in WhatsApp.
    A group cannot be opened with the text in it (WhatsApp does not allow that): the text is copied, the group opens, paste and send */
@@ -320,7 +321,7 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
   const row=(name,st,plan,b,e,run,ed,pdm)=>'<li class="scl'+(st===0?' sclo':'')+'"><div class="audh"><b>'+name+'</b>'+(ED&&ed?'<button type="button" class="scled" data-scled="'+esc(ed.join("|"))+'" title="'+esc(L("Ändern"))+'" aria-label="'+esc(L("Ändern"))+'">'+PEN+'</button>':'')+(plan||pdm?' <span class="audt">'+esc(L("Plan"))+' '+esc(plan||'–')+(pdm?' · '+esc(dur(pdm*60000)):'')+'</span>':'')+'<span class="audw">'+(st===2?'✓':'')+'</span></div>'+
     '<div class="audb sclt"><span>'+esc(L("Beginn"))+' <b>'+(b?esc(scHM(b)):'–')+'</b></span><span>'+esc(L("Ende"))+' <b>'+(e?esc(scHM(e)):'–')+'</b></span><span>'+esc(L("Dauer"))+' <b>'+(b&&e?esc(dur(e-b)):b&&run?'<span data-scrun="'+b+'">'+esc(dur(Date.now()-b))+'</span>':'–')+'</b></span></div></li>';
   /* one unit of one day: fixed rows setup (planned begin until the first scene), Drehstart (until the wrap), lunch, wrap – plus the further setups and the scenes, by time */
-  const unitRows=(d,u,l,day,cs)=>{const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items);
+  const unitRows=(d,u,l,day,cs)=>{const its=dayItems(day,u);
     const tx=i=>String(i.n||""),ks=scRowKeys(its,tx);
     /* the plan of an entry in the Drehplan: its time and its planned duration (the duration of the row, else until the next row) */
     const pIx=k=>{const b=scBase(k);let i=ks.indexOf(b);if(i<0)i=its.findIndex(x=>x.sc&&scAckId(d,x.sc)===scAckId(d,b));return i};
@@ -328,7 +329,7 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
       const t0=ms(hm(it.t));if(!t0)return 0;for(let j=i+1;j<its.length;j++){const t1=ms(hm(its[j].t));if(t1>t0)return Math.round((t1-t0)/60000)}return 0};
     const pl=k=>{const i=pIx(k);return i>=0?hm(its[i].t)||"":""},pd=k=>pDur(pIx(k));
     const setup=its.find(i=>!i.sc&&/^\s*set[\s-]?up\b/i.test(tx(i))),firstSc=its.find(i=>i.sc);
-    const uk=k=>u==="1"?k:k+"_u"+u,get=k=>l.find(x=>scBase(key(x))===k),scs=l.filter(x=>!["lunch","wrap","setup"].includes(scBase(key(x))));
+    const uk=k=>unitKey(k,u),get=k=>l.find(x=>scBase(key(x))===k),scs=l.filter(x=>!["lunch","wrap","setup"].includes(scBase(key(x))));
     const real=scs.filter(x=>!isEv(key(x))),start=real.length?Math.min(...real.map(p0).filter(Boolean)):0,lu=get("lunch"),wr=get("wrap");
     const ms=hhmm=>{const v=String(hhmm||"").match(/^(\d{1,2}):(\d{2})$/);if(!v)return 0;const x=new Date(d+"T00:00:00");x.setHours(+v[1],+v[2],0,0);return x.getTime()};
     const plSetup=setup?hm(setup.t)||"":"",plStart=(u==="1"?hm(cs.shootCall||""):"")||(firstSc?hm(firstSc.t)||"":"");
@@ -375,7 +376,7 @@ function scExpRows(d,u){const un=s=>{const x=document.createElement("textarea");
 /* more about a scene for the export: I/E, set, pages, cast and the description from the Drehplan of that day (and unit) */
 function scInfo(r){const k=scBase(r.k||""),E={ie:"",set:"",pg:"",cast:"",desc:""};
   /* setup and Drehstart: the I/E of the scene that follows (setup: the next scene after its row, Drehstart: the first scene of the day) */
-  if(/^setup\d*$/.test(k)||r.drehstart){const day=(S.days||[]).find(y=>y.date===r.d)||{},its=arr(r.u==="2"?(day.unit2||{}).items:r.u==="3"?(day.unit3||{}).items:day.items);
+  if(/^setup\d*$/.test(k)||r.drehstart){const day=(S.days||[]).find(y=>y.date===r.d)||{},its=dayItems(day,r.u);
     let i=0;if(!r.drehstart){i=scRowKeys(its,x=>String(x.n||"")).indexOf(k);if(i<0)i=0}const nx=its.slice(i).find(x=>x.sc);return Object.assign(E,{ie:nx&&nx.ie||""})}
   if(!k||/^(lunch|wrap)$/.test(k)||typeof schedIndex!=="function")return E;
   let o=null;try{const l=schedIndex()[norm(k)]||[];o=l.find(y=>y.d&&y.d.date===r.d&&String(y.u||"1")===String(r.u||"1"))||l.find(y=>y.d&&y.d.date===r.d)||null}catch(_){}

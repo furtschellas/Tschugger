@@ -1,4 +1,4 @@
-import {ariaTip,blockList,ddmm,dlgBtn,esc,fullName,isoAdd,L,mapsQ,mkDialog,pad2,padD,S,safeUrl,telNum,todayISO,TX,tzFor,WD} from "./10-core.js";
+import {ariaTip,blockList,dayItems,ddmm,dlgBtn,esc,fullName,isoAdd,L,mapsQ,mkDialog,pad2,padD,S,safeUrl,telNum,todayISO,TX,tzFor,WD} from "./10-core.js";
 import {WDL} from "./12-mycal.js";
 import {addrForItem} from "./13-crew-views.js";
 import {CSI} from "./13a-callsheet.js";
@@ -12,7 +12,7 @@ import {ADM} from "../boot/12a-admin-core.js";
 /* units: "1" = main schedule (d.items), "2" = d.unit2, "3" = d.unit3 (same structure as unit2) */
 export const UNAME={"1":"1st","2":"2nd","3":"3rd"};
 export const hasU=(d,u)=>{const x=d["unit"+u];return !!(x&&x.items&&x.items.length)};
-export const unitLists=d=>[["1",d.items||[]],["2",(d.unit2&&d.unit2.items)||[]],["3",(d.unit3&&d.unit3.items)||[]]];
+export const unitLists=d=>["1","2","3"].map(u=>[u,dayItems(d,u)]);   /* [unit, its rows] of a Drehplan day */
 /* units offered: 2nd unless the main admin switched it off; 3rd when switched on (website) or, in the Claude app, when the schedule has one */
 export function unitsOn(){const u=["1"];if(window.UNIT2!==false)u.push("2");if(window.UNIT3===true||(window.UNIT3===undefined&&S.days.some(d=>hasU(d,"3"))))u.push("3");return u}
 /* only the 2nd (or 3rd) unit chosen: still all shooting days and days off are listed – the unit's days have a pink frame */

@@ -129,6 +129,11 @@ export const locHref=(l,ad)=>(l&&/^https:\/\//.test(l.map||""))?l.map:maps(ad);
 export const mapsQ=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
 /* a map link of a callsheet opens the exact position the updater found for it (from the link itself or the address of the place) as
    GPS coordinates: a short link («maps.app.goo.gl/…») copied wrong from the PDF or one that needs a forwarding page still opens the right spot */
+/* ---------- units (1st, 2nd, 3rd): one place for what belongs to a unit ---------- */
+/* the rows of a unit of a Drehplan day: 1st the day's items, 2nd/3rd their own lists */
+export const dayItems=(day,u)=>{u=String(u||"1");const l=day?(u==="2"?(day.unit2||{}).items:u==="3"?(day.unit3||{}).items:day.items):null;return Array.isArray(l)?l:[]};
+/* the key of a quittance in its unit: «90» → «90_u2», «lunch» → «lunch_u2» (1st Unit unchanged; a key with its unit stays as it is) */
+export const unitKey=(k,u)=>{u=String(u||"1");k=String(k??"");return u!=="1"&&k&&!/_u[23]$/.test(k)?k+"_u"+u:k};
 export const mapGeo=u=>{u=String(u||"");if(!/^https?:/.test(u))return null;for(const x of arr(S.dispos)){const c=x&&x.cs,p=c&&c.geo&&c.geo[u],s=c&&c.geoSrc&&c.geoSrc[u];
   if(Array.isArray(p)&&p.length===2&&isFinite(p[0])&&isFinite(p[1])&&(s==="link"||s==="addr"))return p}return null};
 export const mapUrl=u=>{const p=mapGeo(u);return safeUrl(p?mapsQ((+p[0]).toFixed(6)+","+(+p[1]).toFixed(6)):u)};
@@ -229,7 +234,7 @@ export function itemHTML(it){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
     /* lunch and wrap: quittiert like the scenes (status right) */
     const ek=typeof scRowKeys==="function"&&window.__mctx&&window.__mctx.date?(()=>{const c=window.__mctx,dy=(S.days||[]).find(x=>x.date===c.date);if(!dy)return scEvKey(it.n);
-      const l=arr(c.u==="2"?(dy.unit2||{}).items:c.u==="3"?(dy.unit3||{}).items:dy.items);let i=l.indexOf(it);if(i<0)i=l.findIndex(x=>!x.sc&&x.t===it.t&&x.n===it.n);const k0=i<0?scEvKey(it.n):scRowKeys(l,x=>x.n)[i];return k0&&c.u&&c.u!=="1"?k0+"_u"+c.u:k0})():"",   /* 2nd/3rd unit: own lunch, wrap and setups */eb=ek&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,ek,window.__mctx.u||"1"):"";
+      const l=dayItems(dy,c.u);let i=l.indexOf(it);if(i<0)i=l.findIndex(x=>!x.sc&&x.t===it.t&&x.n===it.n);const k0=i<0?scEvKey(it.n):scRowKeys(l,x=>x.n)[i];return k0&&c.u&&c.u!=="1"?k0+"_u"+c.u:k0})():"",   /* 2nd/3rd unit: own lunch, wrap and setups */eb=ek&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,ek,window.__mctx.u||"1"):"";
     /* the pink frame of «jetzt» also on setup, lunch and wrap when that is the step now */
     let evNow=false;try{const c0=window.__mctx;if(ek&&c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=csNowScene();evNow=!!ns&&ns.ev===ek}}catch(_){}
     return '<li class="row ev'+(mn?' lunch':'')+(eb?' evack':'')+(evNow?' now':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+eb+mn+'</div></li>';
@@ -244,7 +249,7 @@ export function itemHTML(it){
   const cg=window.chgFor&&window.__mctx?window.chgFor(window.__mctx.date,window.__mctx.u,it.sc):"";
   /* Drehplan of today: the scene being shot now gets the pink frame (as in the callsheet) */
   let nowSc=false;try{const c0=window.__mctx;if(c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=csNowScene();nowSc=!!ns&&norm(ns.sc)===norm(it.sc)}}catch(_){}
-  const done=window.__mctx&&window.__mctx.date&&typeof scState==="function"&&scState(window.__mctx.date,(window.scK?window.scK(it.sc,window.__mctx.u):it.sc))===2;
+  const done=window.__mctx&&window.__mctx.date&&typeof scState==="function"&&scState(window.__mctx.date,unitKey(it.sc,window.__mctx.u))===2;
   const dg=lateFn("deGone",it);   /* changed on set (31-dayedit.js): struck or moved away – shown struck, without quittance */
   return '<li class="row'+(cg?' chg':'')+(nowSc?' scnow':'')+(done?' scdone':'')+(dg?' degone':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(it._de?lateFn("deMark",it)||'':'')+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+
     '<div class="l1"><span class="scn">'+esc(it.sc)+'</span><span class="ie '+ieClass(it.ie)+'">'+esc(it.ie||"")+'</span><span class="set">'+esc(it.set||"")+'</span>'+(!dg&&window.__mctx&&window.__mctx.date&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,it.sc,window.__mctx.u||"1"):'')+'</div>'+

@@ -21,7 +21,7 @@ const u2hm=v=>{const m=String(v||"").match(/(\d{1,2})[:.](\d{2})/);return m?Stri
    2. else its people: someone only in one unit (cast of that unit, a call only «1st IN» or only «2nd IN») decides – people of both units: both */
 const UPEOPLE=new WeakMap();
 function csUnitPeople(c){if(UPEOPLE.has(c))return UPEOPLE.get(c);const m=new Map(),add=(n,u)=>{n=String(n||"").trim();if(n.length<3)return;if(!m.has(n))m.set(n,new Set());m.get(n).add(u)};
-  for(const r of csA(c.cast))add(r&&r.actor,"1");
+  for(const r of csA(c.cast))if(r&&r.u!=="2")add(r.actor,"1");   /* a row marked for the 2nd Unit is not the 1st (as the server) */
   for(const r of csA(c.u2&&c.u2.cast))add(r&&r.actor,"2");
   for(const r of csA(c.calls)){if(!r)continue;if(String(r.t||"").trim())add(r.name,"1");if(String(r.t2||"").trim())add(r.name,"2")}
   /* the infos by department: a person named in the column «1st UNIT» / «2nd UNIT» (also extra staff from the lists of the callsheet) */

@@ -1,4 +1,4 @@
-import {bdFor,esc,itemHTML,L,mapsQ,mapUrl,norm,S,safeUrl} from "./10-core.js";
+import {bdFor,esc,itemHTML,L,mapsQ,mapUrl,norm,S,safeUrl,unitKey} from "./10-core.js";
 import {addrForItem} from "./13-crew-views.js";
 import {CSEXPSM,CSI,csA,csHm,csKeys,csLocRows,csMyRides,csS,csTx} from "./13a-callsheet.js";
 import {CSCUR,CSHN_RE,csIsAdr,csNowIdx,csSceneLoc} from "./13b-cs-now.js";
@@ -68,7 +68,7 @@ export function csLocFp(c,l,date,icon){if(l.kinds||typeof fpFor!=="function"||!v
   if(icon)return [...out.values()].map(f=>'<a class="cshn csfpi" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer" title="'+esc("Floorplan · "+f.name)+'" aria-label="'+esc("Floorplan · "+f.name)+'">'+CSI.fp+'</a>').join("");
   return '<div class="csfp">'+[...out.values()].map(f=>'<a class="pillbtn" href="'+esc(safeUrl(f.url))+'"'+(csA(f.pg).length?' data-fpg="'+esc(f.file||f.name)+'"':'')+' target="_blank" rel="noopener noreferrer">'+CSI.doc+' Floorplan · '+esc(f.name)+'</a>').join("")+'</div>'}
 export function csOrderRows(rows,date,locs,one,u){u=u||"1";rows=csA(rows);const ONE=(()=>{const s0=csA(locs).filter(l=>!l.kinds&&l.no);return s0.length===1?s0[0]:null})();if(!rows.length)return"";const ni=date?csNowIdx(rows,date,u):-1,RK=date?csKeys(rows):[];return '<ol class="tl csorder">'+rows.map((r,i)=>{const nw=i===ni?' now':'',nb=i===ni?'<span class="csnow">'+esc(L("Jetzt"))+'</span>':'';
-    if(!r.sc){const ek=RK[i]?RK[i]+(u!=="1"?"_u"+u:""):"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(date,ek,u):"";   /* 2nd Unit: its own lunch, wrap and setups («lunch_u2») */
+    if(!r.sc){const ek=RK[i]?unitKey(RK[i],u):"",eb=ek&&typeof scAckBtn==="function"?scAckBtn(date,ek,u):"";   /* 2nd Unit: its own lunch, wrap and setups («lunch_u2») */
       return '<li class="row ev'+nw+(eb?' evack':'')+'"><div class="t">'+esc(r.t||"")+nb+'</div><div class="what">'+csTx(r.text||r.syn||"")+eb+'</div></li>'}
     /* scenes look like in the schedule (same row, details, cast, buttons): the scheduled row of that day with the callsheet time */
     const sx=(()=>{try{const l=(schedIndex()[norm(r.sc)]||[]);const o=l.find(y=>y.d&&y.d.date===date)||l[0];return o?o.it:null}catch(_){return null}})();
@@ -92,7 +92,7 @@ export function csOrderRows(rows,date,locs,one,u){u=u||"1";rows=csA(rows);const 
     const m=body.match(/<div class="l1">[\s\S]*?<\/div>/);const l1=m?m[0]:'<div class="l1"><span class="scn">'+esc(r.sc)+'</span></div>';if(m)body=body.replace(m[0],"");
     const lo=csSceneLoc(locs,r)||(one&&ONE)||null;const pb=lo?csPlaceA('L'+String(lo.no).trim(),csLocHref(lo),lo.name||""):'';
     const du=pb;   /* the duration only in the details (not in the top line) */const l1d=du&&/<span class="set">/.test(l1)?l1.replace('<span class="set">',du+'<span class="set">'):l1+du;
-    const dn=typeof scState==="function"&&date&&scState(date,(window.scK?window.scK(r.sc,u):r.sc))===2?' scdone':'';
+    const dn=typeof scState==="function"&&date&&scState(date,unitKey(r.sc,u))===2?' scdone':'';
     return '<li class="row csfold'+nw+dn+'" data-sc="'+esc(String(r.sc))+'"><div class="t">'+esc(it.t||"")+nb+'</div><div class="sc"><details class="csscd"><summary>'+(meta?l1d.replace(/<\/div>$/,meta+'</div>'):l1d)+camx+CSEXPSM+'</summary>'+body+'</details></div></li>'}).join("")+'</ol>'}
 /* what concerns me on this callsheet: call, cast times, rides, travel, my department */
 /* a place named on the callsheet («Base», «Loc.2», «Parking loc. 1», «Holiday Inn») → name and map link from the Locations */

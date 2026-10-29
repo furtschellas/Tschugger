@@ -1,4 +1,5 @@
 import {L,S,ddmm,esc,mkDialog,todayISO,xBtn} from "../base/10-core.js";
+import {unitLists} from "../base/11-schedule-prep.js";
 import {WDL,openMyCal} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -12,7 +13,7 @@ import {getDataKey} from "./04-data.js";
    ===================================================================== */
 export const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+", "+ddmm(dt)};
 const scKey=x=>String(x||"").toLowerCase().replace(/\s+/g,"");
-export const unitItems=d=>[["1",arr(d.items)],["2",arr((d.unit2||{}).items)],["3",arr((d.unit3||{}).items)]];
+export const unitItems=d=>unitLists(d);   /* the same as the Drehplan (11-schedule-prep) */
 
 /* ---------- 2) changes since the last visit on this device ---------- */
 /* a snapshot of the schedule (scenes with date, unit, time, place) and the callsheet times is kept on the device;
