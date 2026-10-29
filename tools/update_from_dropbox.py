@@ -2283,6 +2283,14 @@ def main():
                     m = ADDR_RE.search(str(i.get("text") or ""))
                     cand.append((i["map"], m.group(1).strip() if m else ""))
                     if l.get("map"): parent[i["map"]] = l["map"]
+        # the places of the 2nd Unit (its own locations): their map links get a position and an address too (same keys: the link)
+        for l in ((cs.get("u2") or {}).get("locations") or []) if isinstance(cs.get("u2"), dict) else []:
+            if not isinstance(l, dict): continue
+            m0 = next((ADDR_RE.search(str(n)) for n in (l.get("notes") or []) if ADDR_RE.search(str(n))), None)
+            if l.get("map") and not any(u == l["map"] for u, _ in cand): cand.append((l["map"], m0.group(1).strip() if m0 else "")); labs.setdefault(l["map"], "U2")
+            for i in l.get("items") or []:
+                if isinstance(i, dict) and i.get("map") and not any(u == i["map"] for u, _ in cand):
+                    m = ADDR_RE.search(str(i.get("text") or "")); cand.append((i["map"], m.group(1).strip() if m else "")); labs.setdefault(i["map"], "U2·Punkt")
         g, src, pos = {}, {}, {}
         for u, ad in cand:
             if u.startswith("loc:"): mg.setdefault(u, {"p": None, "q": "", "diag": "kein Kartenlink"})
