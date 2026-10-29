@@ -3,7 +3,7 @@ import {fmtStamp,lastCheck,render} from "../base/15-script-tab.js";
 import {setSCRIPT} from "../base/17-scene-reader.js";
 import {loadCache,showMsg} from "../base/20-data-start.js";
 import {POLL_MS} from "./01-config.js";
-import {FB,FBP,ME,applyLangs,fb,loadLangs,setME,setMYPERMS} from "./03-core-firebase.js";
+import {FB,FBP,ME,SBXFRAME,applyLangs,fb,loadLangs,setME,setMYPERMS} from "./03-core-firebase.js";
 import {isOffline,load,loadErr} from "./04-data.js";
 import {AUTHMODE,checkMember,clearLocal,errText,hideGate,showGate} from "./05-membership-signin.js";
 import {START,afterSignIn,setWELCOME_OPEN} from "./10-menus-welcome-presence.js";
@@ -65,7 +65,7 @@ if(window.__VSY&&window.CACHEOK)requestAnimationFrame(()=>{try{window.scrollTo(0
     A.onAuthStateChanged(auth,u=>{
       if(u){try{localStorage.setItem("wasin","1")}catch(_){}}
       if(!u&&!waitedIn&&Date.now()-T0<8000){let was=false;try{was=localStorage.getItem("wasin")==="1"}catch(_){}
-        if(was){waitedIn=true;if(!S.days.length)showGate("wait");setTimeout(()=>{if(!auth.currentUser){try{localStorage.removeItem("wasin")}catch(_){}signedOut()}},6000);return}}
+        if(was){waitedIn=true;if(!S.days.length)showGate("wait");setTimeout(()=>{if(!auth.currentUser){try{if(!SBXFRAME)localStorage.removeItem("wasin")}catch(_){}signedOut()}},6000);return}}
       if(!u){signedOut();return}
       afterSignIn(u);
     });
@@ -80,7 +80,7 @@ if(window.__VSY&&window.CACHEOK)requestAnimationFrame(()=>{try{window.scrollTo(0
     if(e&&e.type==="visibilitychange"&&Date.now()-lastTick<180e3)return;lastTick=Date.now();
     /* «Ansicht als …»: the check would put back the admin's own rights in the middle of the simulation – only the data */
     if((typeof SIMUSER!=="undefined"&&SIMUSER)||(typeof SIMROLE!=="undefined"&&SIMROLE)){load(false).catch(()=>{});return}
-    try{const st=await checkMember();if(st==="stale")return;if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}}catch(_){return}
+    try{const st=await checkMember();if(st==="stale"||(SBXFRAME&&st!=="ok"))return;if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}}catch(_){return}
     load(false).catch(()=>{});
   };
   setInterval(tick,POLL_MS);
@@ -90,6 +90,8 @@ if(window.__VSY&&window.CACHEOK)requestAnimationFrame(()=>{try{window.scrollTo(0
 /* Hindi (हिन्दी): texts of the app; missing ones fall back to English. Main topics and titles are translated only in Hindi */
 /* signed out (also: no stored sign-in any more at the start, e.g. account blocked or deleted): everything of the person leaves this device */
 function signedOut(){
+  /* a side-box frame: the page itself decides about signing out – the frame only waits for the sign-in of the page (never clears the device) */
+  if(SBXFRAME){setME(null);if(!signedOut.w){signedOut.w=setTimeout(()=>{signedOut.w=0;location.reload()},15000)}return}
   /* the session ended from outside (password changed elsewhere, revoked): its push reminders leave this device too */
   if(ME&&window.pushSignOut)try{Promise.resolve(window.pushSignOut()).catch(()=>{})}catch(_){}
   setME(null);setMYPERMS([]);{const w=document.getElementById("welcome");if(w)w.remove();setWELCOME_OPEN(false)}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();if(S.tab==="admin"||S.tab==="acct")S.tab="plan";render();

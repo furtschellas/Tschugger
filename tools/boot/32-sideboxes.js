@@ -9,7 +9,8 @@ import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
 import {onRendered,render} from "../base/15-script-tab.js";
 import {arr} from "../base/20-data-start.js";
-import {ME,can,isAdmin} from "./03-core-firebase.js";
+import {ME,can,fb,isAdmin} from "./03-core-firebase.js";
+import {seenMs} from "./10-menus-welcome-presence.js";
 import {savePrefsSoon} from "./06-prefs-docs.js";
 import {ADM} from "./12a-admin-core.js";
 import {wxTile} from "./15-weather.js";
@@ -21,10 +22,11 @@ const SBT=[["now","Jetzt"],["mine","Mein Tag"],["tiles","Kacheln des Tages"],["o
   ["phone","Smartphone-Vorschau","phone"],
   ["today","Today","t:today"],["plan","Drehplan","t:plan"],["dispo","Callsheet","t:dispo"],["loc","Locations","t:loc"],["crew","Crewliste","t:crew"],["script","Drehbuch","t:script"],["info","Info","t:info"],
   ["my","Meine Termine","t:my"],["bcast","Nachrichten","t:bcast"],["reports","Reports","t:reports"],["acct","Mein Konto","t:acct"],
-  ["set","App-Einstellungen","a:set"],["users","Alle Benutzer","a:users"],["active","Gerade aktiv","a:users:.uact"],["roles","Rollen","a:roles:.admins:not(.pacc)"],["access","Wer hat welchen Zugriff?","a:roles:.pacc"]];
+  ["set","App-Einstellungen","a:set"],["users","Alle Benutzer","a:users"],["active","Gerade aktiv"],["roles","Rollen","a:roles:.admins:not(.pacc)"],["access","Wer hat welchen Zugriff?","a:roles:.pacc"]];
 const sbCan=k=>{try{const t=SBT.find(x=>x[0]===k),pg=t&&t[2]||"";
     if(/^a:(users)/.test(pg))return isAdmin()||can("users.view")||can("users.edit")||can("users.invite");if(/^a:roles/.test(pg))return isAdmin()||can("roles.view")||can("roles.edit")||can("roles.assign");if(pg==="a:set")return isAdmin()||can("settings");
     if(k==="now")return !!(window.nowSee&&window.nowSee());if(k==="my")return vok("mycal");if(k==="bcast")return can("push.send");if(k==="reports")return typeof VIEWS==="undefined"||!!VIEWS.reports;if(k==="acct")return true;
+    if(k==="active")return isAdmin()||can("users.view")||can("users.edit");
     if(pg.startsWith("t:")){const tb=pg.slice(2);return (typeof tabsOn!=="function"||tabsOn().includes(tb))&&vok(tb==="dispo"?"dispo":tb)}}catch(_){return false}return true};
 export const SBWIDE=1300;
 const INFRAME=(()=>{try{return window.self!==window.top}catch(_){return true}})();
@@ -48,7 +50,20 @@ const head=(k,t)=>'<h3 class="sbh"><span>'+esc(L(t))+'</span><button type="butto
 const sec=(k,t,h)=>'<section class="sbsec'+(h?'':' sbempty')+'">'+head(k,t)+(h||'<p class="sbnone">'+esc(L("Zurzeit nichts"))+'</p>')+'</section>';
 const dayNow=()=>{try{return todayDay()}catch(_){return null}};
 const dpOf=d=>d?arr(S.dispos).find(x=>x&&x.date===d.date&&x.cs)||null:null;
+/* «Gerade aktiv»: drawn here from the «last seen» marks (no second copy of the app in a frame); read again at most every 90 s */
+const ACT={at:0,list:null,err:"",busy:false};
+async function actLoad(){if(ACT.busy)return;ACT.busy=true;
+  try{const {F,db}=await fb(),since=new Date(Date.now()-4*60e3);
+    const s=await F.getDocs(F.query(F.collection(db,"members"),F.where("lastSeen",">=",since)));
+    ACT.list=s.docs.map(d=>d.data()).filter(m=>m&&m.active===true&&Date.now()-seenMs(m)<4*60e3)
+      .map(m=>({n:String(m.name||[m.firstName,m.lastName].filter(Boolean).join(" ")||m.email||"?"),d:/^app-/.test(m.app||"")?"App":/desktop/.test(m.app||"")?"Web · Computer":"Web · Handy",t:seenMs(m)}))
+      .sort((a,b)=>a.n.localeCompare(b.n));ACT.err=""}
+  catch(err){ACT.err=String(err&&err.code||"x")}finally{ACT.at=Date.now();ACT.busy=false;soon()}}
+const ago=t=>{const m=Math.round((Date.now()-t)/60e3);return m<1?L("gerade eben"):L("vor")+" "+m+" Min."};
 const TOP={
+  active:()=>{if(Date.now()-ACT.at>90e3)setTimeout(actLoad,0);if(!ACT.list)return ACT.err?'<p class="sbnone">'+esc(L("Zurzeit nicht lesbar"))+'</p>':"";
+    if(!ACT.list.length)return '<p class="sbnone">'+esc(L("Gerade ist niemand aktiv."))+'</p>';
+    return '<div class="sbact"><div class="sbacn">'+ACT.list.length+' '+esc(L("online"))+'</div>'+ACT.list.map(p=>'<div class="sbap"><span class="sbdot" aria-hidden="true"></span><b>'+esc(p.n)+'</b><small>'+esc(p.d)+' · '+esc(ago(p.t))+'</small></div>').join("")+'</div>'},
   now:()=>{const h=nowCardHTML(todayISO());return h?'<div class="sbnow">'+h+'</div>':""},
   mine:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}const mn=me?csMine(dp.cs,me):[];return mn.length?'<div class="tcard tmine">'+mn.join("")+'</div>':""},
   tiles:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}let h=csTilesHTML(dp,d,dp.cs,me).replace(' id="cs-zeiten"','');

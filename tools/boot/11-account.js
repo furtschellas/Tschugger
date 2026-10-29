@@ -5,7 +5,7 @@ import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {showMsg} from "../base/20-data-start.js";
 import {fmtD} from "./01-config.js";
-import {APPLANGS,FB,ME,MEMBER,MYROLE,can,canAdm,clean,crewPerson,dietSel,fb,intolBoxes,isAdmin,isOwner,langSel,lc,normDiet,readBoxes,setME,setMEMBER,setMYPERMS} from "./03-core-firebase.js";
+import {APPLANGS,FB,ME,MEMBER,MYROLE,SBXFRAME,can,canAdm,clean,crewPerson,dietSel,fb,intolBoxes,isAdmin,isOwner,langSel,lc,normDiet,readBoxes,setME,setMEMBER,setMYPERMS} from "./03-core-firebase.js";
 import {checkRequests,clearLocal,errText,sendMailSafe,showGate} from "./05-membership-signin.js";
 import {PREFOK,savePrefsSoon} from "./06-prefs-docs.js";
 import {pushSec} from "./07-push.js";
@@ -189,7 +189,7 @@ async function onAcctSubmit(e){
 
 /* «App deinstallieren»: how to remove the installed app on this device (the browser does not let a web app remove itself) */
 /* sign out on this device (also after «Auf allen Geräten abmelden»): straight to the sign-in screen */
-window.acctSignOut=async quiet=>{S.tab="plan";store("tab","plan");
+window.acctSignOut=async quiet=>{if(SBXFRAME)return;S.tab="plan";store("tab","plan");
   try{const {A,auth}=await fb();if(window.pushSignOut)await window.pushSignOut();await A.signOut(auth)}catch(err){console.error(err)}try{localStorage.setItem("fsclear","1");localStorage.removeItem("wasin")}catch(_){}
   setME(null);setMYPERMS([]);{const w=document.getElementById("welcome");if(w)w.remove();setWELCOME_OPEN(false);if(TOUR.el){TOUR.el.remove();TOUR.el=null}}acctButton(false);clearLocal();if(window.resetViewState)window.resetViewState();render();showGate("login");
   if(quiet)showMsg(L("Auf allen Geräten abgemeldet – bitte neu anmelden."),6000)};

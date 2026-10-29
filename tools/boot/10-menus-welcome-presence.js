@@ -6,7 +6,7 @@ import {vok} from "../base/14-render.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {arr,showMsg} from "../base/20-data-start.js";
-import {DIETS,FB,INTOL,ME,MEMBER,MYROLE,SIMROLE,clean,crewPerson,fb,isAdmin,lc,loadLangs,setME,splitName,withTimeout} from "./03-core-firebase.js";
+import {DIETS,FB,INTOL,ME,MEMBER,MYROLE,SBXFRAME,SIMROLE,clean,crewPerson,fb,isAdmin,lc,loadLangs,setME,splitName,withTimeout} from "./03-core-firebase.js";
 import {isOffline,load,loadErr} from "./04-data.js";
 import {autoVerify,checkMember,clearLocal,hideGate,showGate} from "./05-membership-signin.js";
 import {docGet,docRaw,loadPrefs,prefX,savePrefs} from "./06-prefs-docs.js";
@@ -164,7 +164,7 @@ let SEENT=null,SEENAT=0;
 export const appKind=()=>{const ua=navigator.userAgent||"",inst=typeof isStandalone==="function"&&isStandalone();
   const dev=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)?"ios":/Android/i.test(ua)?"android":"desktop";return (inst?"app-":"web-")+dev};
 async function markSeen(){
-  if(!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
+  if(SBXFRAME||!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
   /* every device of the person once in «devs» (kind|last use) – the user list shows how many devices are in use; devices unused for 30 days drop out */
   let id="";try{id=localStorage.getItem("devid")||"";if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem("devid",id)}}catch(_){}
   /* at most 10 devices are kept (this one + the 9 used last; unused for 30 days drop out): the rules refuse more than 12, and the whole mark –
@@ -201,6 +201,7 @@ export async function afterSignIn(u){
     if(S.days.length&&!/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){hideGate();acctButton(true);render();window.__OFFSTART=true;showMsg(L(isOffline(err)?"Offline – du siehst den zuletzt geladenen Stand.":"Server gerade nicht erreichbar – du siehst den zuletzt geladenen Stand."),6000);return}
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(ME!==u)return;
+  if(st!=="ok"&&SBXFRAME){setTimeout(()=>location.reload(),20000);return}   /* a side-box frame: never clears the device – it tries again */
   if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}
   hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();pushSyncSoon();menusLoad(true);
   const prof=MEMBER||{};

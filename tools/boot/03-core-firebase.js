@@ -172,11 +172,15 @@ export async function dbWrite(op,path,data,o){o=o||{};const {F,db}=await fb();co
     if(navigator.onLine===false||late)showMsg(L("Gespeichert auf diesem Gerät – wird gesendet, sobald eine Verbindung da ist."),3500)}
   return r}
 window.dbWrite=dbWrite;
+/* the app inside a frame of a side box («?sbx=…»): a second copy of the app in the same browser – it shows a page, nothing else.
+   It never signs out, clears this device's data or writes presence: that is the job of the page itself (before, the frame signed the
+   person out and left the box on the sign-in screen) */
+export const SBXFRAME=(()=>{try{return window.self!==window.top&&new URLSearchParams(location.search).has("sbx")}catch(_){return false}})();
 async function fbInit(){
   const base="https://www.gstatic.com/firebasejs/"+FB_V+"/";
   const [app,auth,fs]=await withTimeout(Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]),20000,"firebase");
   /* signed out on this device: the local Firebase copy (names, lists) is removed before Firebase opens it again */
-  try{if(localStorage.getItem("fsclear")){await new Promise(r=>{const q=indexedDB.deleteDatabase("firestore/[DEFAULT]/"+FB_CONFIG.projectId+"/main");q.onsuccess=q.onerror=q.onblocked=()=>r();setTimeout(r,1500)});localStorage.removeItem("fsclear")}}catch(_){}
+  try{if(!SBXFRAME&&localStorage.getItem("fsclear")){await new Promise(r=>{const q=indexedDB.deleteDatabase("firestore/[DEFAULT]/"+FB_CONFIG.projectId+"/main");q.onsuccess=q.onerror=q.onblocked=()=>r();setTimeout(r,1500)});localStorage.removeItem("fsclear")}}catch(_){}
   const a=app.initializeApp(FB_CONFIG);
   /* App Check (App-Verwaltung → Einstellungen): Firebase can then accept only requests of this app – before any other Firebase use */
   try{const ak=localStorage.getItem("appcheck")||"";window.APPCHECKKEY=window.APPCHECKKEY||ak;if(/^[\w-]{20,80}$/.test(ak)){const ac=await withTimeout(import(base+"firebase-app-check.js"),8000,"appcheck");ac.initializeAppCheck(a,{provider:new ac.ReCaptchaV3Provider(ak),isTokenAutoRefreshEnabled:true})}}catch(err){console.warn("appcheck",err&&err.message||err)}

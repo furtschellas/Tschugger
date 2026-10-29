@@ -7,7 +7,7 @@ import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {fmtDT} from "./01-config.js";
-import {can,fb,isAdmin,isOwner,lc,ME,MYROLE,ownEnc,withTimeout,wkPost,wkUrl} from "./03-core-firebase.js";
+import {can,fb,isAdmin,isOwner,lc,ME,MYROLE,SBXFRAME,ownEnc,withTimeout,wkPost,wkUrl} from "./03-core-firebase.js";
 import {SECS} from "./12a-admin-core.js";
 import {scriptChg,tShow,todayOn} from "./16-today-view.js";
 import {showScriptNews} from "./20-script-news.js";
@@ -46,7 +46,7 @@ function pushItems(c){c=c||pushCfg();const now=Date.now(),lim=now+15*864e5;
       /* a ride: the tap opens the route to its destination in Google Maps (only https links) */
       url:e.go&&/^https:\/\/[^\s"'<>]+$/.test(e.go)?e.go.slice(0,400):"./#my"}}).filter(x=>x.start>now&&x.start<lim).slice(0,80)}
 let PUSHT=null,PUSHBUSY=false,PUSHDIRTY=false;
-export function pushSyncSoon(){clearTimeout(PUSHT);PUSHT=setTimeout(()=>{try{pushLocalSchedule()}catch(_){}pushSync().catch(err=>console.warn("push",err&&err.code||err))},2500)}
+export function pushSyncSoon(){if(SBXFRAME)return;   /* reminders only from the page itself, not from a side-box frame */clearTimeout(PUSHT);PUSHT=setTimeout(()=>{try{pushLocalSchedule()}catch(_){}pushSync().catch(err=>console.warn("push",err&&err.code||err))},2500)}
 async function pushReg(){return navigator.serviceWorker.getRegistration?((await navigator.serviceWorker.getRegistration())||(await navigator.serviceWorker.ready)):navigator.serviceWorker.ready}
 const u8=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");s+="===".slice((s.length+3)%4);return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
 /* public push key: the one the Cloudflare Worker reports (after a key change), else the built-in one */
@@ -91,7 +91,7 @@ async function pushTest(){
 /* while the app is open (or in the background), reminders also come from the device itself – a backup when the server is late */
 let LOCALT=[];
 /* signing out: this device gets no more reminders of this person (server entry, timers on the device, settings) */
-window.pushSignOut=async function(){
+window.pushSignOut=async function(){if(SBXFRAME)return;
   try{LOCALT.forEach(clearTimeout);LOCALT=[];clearTimeout(PUSHT)}catch(_){}
   try{if(ME&&ME.uid){const {F,db}=await fb();await withTimeout(F.deleteDoc(F.doc(db,"push",ME.uid+"_"+pushDev())),5000,"push").catch(()=>{})}}catch(_){}
   try{for(const k of Object.keys(localStorage))if(k==="push"||k==="pushlast"||k.startsWith("pushlocal:"))localStorage.removeItem(k)}catch(_){}
