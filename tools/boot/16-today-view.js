@@ -270,62 +270,46 @@ const NCICO='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke=
 window.TNOWOPEN=window.TNOWOPEN||false;
 /* late: more than 5 minutes behind the callsheet – «+12′» right after the cast number */
 const tnChip=(no,role,lk,on,late)=>'<span'+(lk?' class="tnl'+lk+(on?' tnon':'')+'"':'')+'><i>'+esc(no)+'</i>'+(late?'<b class="tnlate" title="'+esc(L("Verspätung"))+'">+'+late+'′</b>':'')+(role?'<em>'+esc(role)+'</em>':'')+'</span>';
-/* «Jetzt», 2nd Unit: its own line – the scene running there (or the next one of its sheet), and its cast now in Maske / Kostüm;
-   none after its wrap. The 2nd Unit often starts hours before the 1st: then the line stands alone */
-function u2NowHTML(t,c0){try{if(typeof window.scOnU==="function"&&!window.scOnU("2"))return "";   /* 2nd Unit not quittiert: no line (it would show its first scene all day) */
-    const day=arr(S.days).find(d=>d&&d.date===t),its=arr(day&&day.unit2&&day.unit2.items);
-    const cu=c0&&c0.u2&&typeof window.cqU2==="function"?window.cqU2(Object.assign({},c0,{_date:t})):null;if(!its.length&&!cu)return"";
-    const A=Object.values(window.SCACK||{}).filter(x=>x&&x.d===t&&String(x.u||"1")==="2");if(!A.length)return"";   /* nothing quittiert yet: the 2nd Unit is not shooting yet */
-    if(A.some(x=>x.s===2&&/^wrap/.test(String(x.sc||""))))return"";
-    const setOf=sc=>{const i=its.find(y=>y&&y.sc&&norm(y.sc)===norm(sc));return i?String(i.set||""):""};
-    const run=A.filter(x=>x.s===1);let what=run.map(x=>{const k=String(x.sc||"").replace(/_u[23]$/,""),ev=k.match(/^(lunch|setup\d*)(_u\d)?$/);
-      return ev?'<b class="tnsc">'+esc(ev[1]==="lunch"?"Lunch":"Setup")+'</b>':'<b class="tnsc">'+esc(k)+'</b> <span class="tnset">'+esc(setOf(k))+'</span>'}).join(" + ");
-    /* nothing running: the next scene only from 1 h before the first row of the 2nd Unit (at night: nothing) */
-    if(!run.length){const t0=its.map(y=>{const m=String(y&&y.t||"").match(/(\d{1,2}):(\d{2})/);return m?+m[1]*60+ +m[2]:null}).find(v=>v!=null),hm_=typeof csHM==="function"?csHM():"",nm=hm_?+hm_.slice(0,2)*60+ +hm_.slice(3):0;if(t0==null||nm<t0-60)return""}
-    if(!run.length){const done=new Set(A.filter(x=>x.s===2).map(x=>norm(String(x.sc||"").replace(/_u[23]$/,""))));const nx=its.find(y=>y&&y.sc&&!done.has(norm(y.sc)));
-      if(nx)what='→ <b class="tnsc">'+esc(String(nx.sc))+'</b> <span class="tnset">'+esc(String(nx.set||""))+'</span>'}
-    let cm="";if(cu&&typeof cqWmNow==="function"){const w=cqWmNow(cu),no=r=>String(r.no||"").trim()||"?";
-      cm=[["m","Maske"],["w","Kostüm"]].filter(([k])=>w[k].length).map(([k,l])=>'<span class="tnk">'+esc(L(l))+'</span><span class="tnc">'+w[k].map(r=>tnChip(no(r),String(r.role||"").trim(),2,false,typeof cqLate==="function"?cqLate(cu,r):0)).join("")+'</span>').join("")}
-    if(!what&&!cm)return"";
-    return '<div class="tnowu2"><span class="tnk tnu">2nd Unit</span> '+what+(cm?' '+cm:'')+'</div>'}catch(_){return ""}}
+/* «Jetzt» of one unit – the same for the 1st and the 2nd Unit (Today, callsheet, side box): the step running now (scene with place and set,
+   since when, scenes in parallel and the next one; or Setup / Lunch), Maske / Kostüm now, opened the description and the cast.
+   null: this unit is not shooting now (before its start, after its wrap, at night). The 2nd Unit: its own callsheet part (csU2Dispo) */
+function nowUnit(t,u){const x1=(S.dispos||[]).find(y=>y&&y.date===t);if(!x1||!x1.cs)return null;
+  let x=x1;if(u==="2"){const day=arr(S.days).find(d=>d&&d.date===t);x=typeof window.csU2Dispo==="function"?window.csU2Dispo(x1,day):null;if(!x)return null}
+  const c0=x.cs||{},ns=csNowScene(x);if(!ns||/^wrap(_u\d)?$/.test(String(ns.ev||"")))return null;
+  const K=sc=>u!=="1"&&typeof window.scK==="function"?window.scK(sc,u):sc;
+  const key=ns.ev||K(ns.sc),ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
+  const nb=csNowBits(ns,c0,t);
+  /* scenes in parallel in this unit: the further ones running now («+ 23 L3 SEEUFER») and the next one still open («→ 24») */
+  let par="";try{if(!ns.ev&&typeof scAckId==="function"){const me=scAckId(t,K(ns.sc)),rows=arr((c0.order||{}).rows).filter(r=>r&&r.sc);
+    for(const [id,y] of Object.entries(window.SCACK||{})){if(!y||y.d!==t||y.s!==1||id===me||String(y.u||"1")!==u)continue;const k=String(y.sc||id.split("-").slice(1).join("-")).replace(/_u\d$/,"");if(/^(lunch|wrap|setup\d*)$/.test(k))continue;
+      const r=rows.find(z=>scAckId(t,K(z.sc))===id)||{sc:k};const bb=csNowBits(r,c0,t);par+=' <span class="tnpar">+ <b class="tnsc">'+bb.sc+'</b>'+bb.place+' <span class="tnset">'+bb.set+'</span></span>'}
+    if(par){const st=z=>typeof scState==="function"?scState(t,String(K(z.sc))):0;let last=-1;rows.forEach((z,i)=>{if(st(z)>0)last=i});const nx=rows.slice(last+1).find(z=>st(z)===0);
+      if(nx)par+=' <span class="tnnext">→ <b class="tnsc">'+esc(String(nx.sc))+'</b></span>'}}}catch(_){}
+  const since=b0?' <small>· '+esc(L("seit"))+' '+esc(csHM(new Date(b0)))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
+  const cc=Object.assign({},c0,{_date:t}),no=r=>String(r.no||"").trim()||"?",role=r=>String(r.role||"").trim();
+  /* Maske / Kostüm now: the same pink chips as the cast in the shooting order */
+  let cm="";try{if(typeof cqWmNow==="function"&&arr(c0.cast).length){const w=cqWmNow(cc);
+    cm=[["m","Maske"],["w","Kostüm"]].filter(([k])=>w[k].length).map(([k,l])=>'<span class="tnk">'+esc(L(l))+'</span><span class="tnc">'+w[k].map(r=>tnChip(no(r),role(r),2,false,typeof cqLate==="function"?cqLate(cc,r):0)).join("")+'</span>').join("")}}catch(_){}
+  /* opened: description and cast of the scene (where each actor is, roles written out) */
+  let det="";if(!ns.ev){const nos=String(ns.cast||"").split(/[,;\s]+/).map(v=>v.trim()).filter(Boolean),names=(S.meta&&S.meta.cast)||{};
+    const ch=nos.map(n=>{const r=castRow(c0,n);let lk=0;try{lk=r&&typeof cqLook==="function"?cqLook(cc,r):0}catch(_){}return tnChip(n,r?role(r):names[n]||"",lk,lk===3&&r&&typeof cqAll==="function"&&cqAll(cc,r),r&&typeof cqLate==="function"?cqLate(cc,r):0)}).join("");
+    det=(ns.syn?'<div class="tnsyn">'+esc(ns.syn)+'</div>':'')+(ch?'<div class="tnc">'+ch+'</div>':'')}
+  return {line:(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+par,cm,det}}
+/* «Jetzt»: one block per unit shooting now, each built the same way; with both units each with its label. unit «1» / «2»: only that unit */
 export function nowCardHTML(t,cls,unit){try{if(typeof csNowScene!=="function"||!(window.nowSee&&window.nowSee()))return "";   /* only with «Jetzt» sehen (admins always) */
-    /* the callsheet of the 2nd Unit alone: only its line (and the forecasts) */
-    if(unit==="2"){if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";const xd2=(S.dispos||[]).find(y=>y&&y.date===t),u2=u2NowHTML(t,xd2&&xd2.cs),fc2=ncLine(t);if(!u2&&!fc2)return "";
-      return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+u2+fc2+'</div></div>'}
     /* the quittances not read yet (first seconds after opening): no «Jetzt» – it would show the first scene of a day that is long done */
     if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";
-    /* the scene of the callsheet of THIS day (after midnight Today and the callsheet may mean different days: then no scene here) */
-    const xd=(S.dispos||[]).find(y=>y&&y.date===t),ns=xd?csNowScene(xd):null;
-    const fc=ncLine(t),ed=ncCan()?'<button type="button" class="tnced" data-ncedit '+'aria-label="'+esc(L("Prognose erfassen"))+'" title="'+esc(L("Prognose erfassen"))+'">'+NCICO+'</button>':'';
-    /* no scene now (before the setup, after the wrap): only the forecasts – with the right to enter them also the card with its icon on a shooting day */
-    const u2=u2NowHTML(t,xd&&xd.cs);
-    /* both units: the 1st Unit with its label too; before it starts (2nd Unit already running) its first scene («→ 157 WINE CELLAR 11:00») */
-    const u1=u2&&false?(()=>{if(ns)return "";   /* the next scene of a unit that has not started: no more (only what is shot now) */const rows=arr(((xd&&xd.cs)||{}).order&&xd.cs.order.rows).filter(r=>r&&r.sc);const st=y=>typeof scState==="function"?scState(t,String(y.sc)):0;
-      if(!rows.length||rows.some(y=>st(y)>0)||(typeof scState==="function"&&scState(t,"wrap")===2))return "";const r=rows[0];
-      return '<div class="tnowu2"><span class="tnk tnu">1st Unit</span> → <b class="tnsc">'+esc(String(r.sc))+'</b> <span class="tnset">'+esc(String(r.set||""))+'</span>'+(r.t?' <small>'+esc(String(r.t))+'</small>':'')+'</div>'})():"";
-    if(!ns||ns.ev==="wrap"){const sd=arr(S.days).some(x=>x&&x.date===t&&x.kind==="shoot");if(!fc&&!u2&&!(ed&&sd))return "";
-      return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+u1+u2+(fc||(u2?'':'<div class="tnowfc"><span class="tnk">'+esc(L("Prognose erfassen"))+'</span></div>'))+'</div>'+ed+'</div>'}const x0=(S.dispos||[]).find(y=>y&&y.date===t);const c0=x0&&x0.cs||{};
-    const key=ns.ev||ns.sc,ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
-    const nb=csNowBits(ns,c0,t);
-    /* scenes in parallel: the further scenes running now, in the same line («+ 23 L3 SEEUFER») */
-    let par="";try{if(!ns.ev&&typeof scAckId==="function"){const me=scAckId(t,ns.sc),rows=arr((c0.order||{}).rows).filter(r=>r&&r.sc);
-      for(const [id,x] of Object.entries(window.SCACK||{})){if(!x||x.d!==t||x.s!==1||id===me||String(x.u||"1")!=="1")continue;   /* the 1st unit (as the callsheet) */const k=x.sc||id.split("-").slice(1).join("-");if(/^(lunch|wrap|setup\d*)(_u\d)?$/.test(k))continue;
-        const r=rows.find(y=>scAckId(t,y.sc)===id)||{sc:k};const b=csNowBits(r,c0,t);par+=' <span class="tnpar">+ <b class="tnsc">'+b.sc+'</b>'+b.place+' <span class="tnset">'+b.set+'</span></span>'}
-      /* in parallel: also the next scene still open after the running ones («→ 23») */
-      if(par){const st=y=>typeof scState==="function"?scState(t,String(y.sc)):0;let last=-1;rows.forEach((y,i)=>{if(st(y)>0)last=i});const nx=rows.slice(last+1).find(y=>st(y)===0);
-        if(nx)par+=' <span class="tnnext">→ <b class="tnsc">'+esc(String(nx.sc))+'</b></span>'}}}catch(_){}
-    const since=b0?' <small>· '+esc(L("seit"))+' '+esc(csHM(new Date(b0)))+' (<span data-scrun="'+b0+'">'+Math.max(0,Math.floor((Date.now()-b0)/60000))+'′</span>)</small>':'';
-    const cc=Object.assign({},c0,{_date:t}),rows=arr(c0.cast),no=r=>String(r.no||"").trim()||"?",role=r=>String(r.role||"").trim();
-    /* Maske / Kostüm now: the same pink chips as the cast in the shooting order (pink with white frame = Call, Kostüm, Maske) */
-    let cm="";try{if(typeof cqWmNow==="function"&&rows.length){const w=cqWmNow(cc);
-      cm=[["m","Maske"],["w","Kostüm"]].filter(([k])=>w[k].length).map(([k,l])=>'<span class="tnk">'+esc(L(l))+'</span><span class="tnc">'+w[k].map(r=>tnChip(no(r),role(r),2,false,typeof cqLate==="function"?cqLate(cc,r):0)).join("")+'</span>').join("")}}catch(_){}
-    /* opened: description and cast of the scene (where each actor is, roles written out; on the phone only who is not On set yet) */
-    let det="";if(!ns.ev){const nos=String(ns.cast||"").split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean),names=(S.meta&&S.meta.cast)||{};
-      const ch=nos.map(n=>{const r=castRow(c0,n);let lk=0;try{lk=r&&typeof cqLook==="function"?cqLook(cc,r):0}catch(_){}return tnChip(n,r?role(r):names[n]||"",lk,lk===3&&r&&typeof cqAll==="function"&&cqAll(cc,r),r&&typeof cqLate==="function"?cqLate(cc,r):0)}).join("");
-      det=(ns.syn?'<div class="tnsyn">'+esc(ns.syn)+'</div>':'')+(ch?'<div class="tnc">'+ch+'</div>':'')}
-    const open=!!window.TNOWOPEN,more=!!(cm||det);
-    return '<div class="tcard tnow'+(cls?" "+cls:"")+(open&&more?" tnowo":"")+'"'+(more?' data-tnow tabindex="0" aria-expanded="'+(open?"true":"false")+'"':'')+'><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm"><div class="tnowb">'+(u2?'<span class="tnk tnu">1st Unit</span> ':'')+(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+par+'</div>'+u2+
-      fc+(cm?'<div class="tnowcm">'+cm+'</div>':'')+(det?'<div class="tnowx">'+det+'</div>':'')+'</div>'+ed+'</div>'}catch(_){return ""}}
+    const day=arr(S.days).find(d=>d&&d.date===t),hasU2=!!(day&&day.unit2&&arr(day.unit2.items).length)||!!(((S.dispos||[]).find(y=>y&&y.date===t)||{}).cs||{}).u2;
+    const units=unit==="2"?["2"]:hasU2?["1","2"]:["1"];
+    const B=units.map(u=>{let r=null;try{r=nowUnit(t,u)}catch(err){console.warn("now",u,err)}return r?Object.assign(r,{u}):null}).filter(Boolean);
+    const fc=ncLine(t),ed=unit!=="2"&&ncCan()?'<button type="button" class="tnced" data-ncedit '+'aria-label="'+esc(L("Prognose erfassen"))+'" title="'+esc(L("Prognose erfassen"))+'">'+NCICO+'</button>':'';
+    /* no unit shooting now (before the setup, after the wrap): only the forecasts – with the right to enter them also the card with its icon on a shooting day */
+    if(!B.length){const sd=!!(day&&day.kind==="shoot");if(!fc&&!(ed&&sd))return "";
+      return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+(fc||'<div class="tnowfc"><span class="tnk">'+esc(L("Prognose erfassen"))+'</span></div>')+'</div>'+ed+'</div>'}
+    const lab=units.length>1;
+    const body=B.map(b=>'<div class="tnowun"><div class="tnowb">'+(lab?'<span class="tnk tnu">'+(b.u==="2"?"2nd":"1st")+' Unit</span> ':'')+b.line+'</div>'+(b.cm?'<div class="tnowcm">'+b.cm+'</div>':'')+(b.det?'<div class="tnowx">'+b.det+'</div>':'')+'</div>').join("");
+    const open=!!window.TNOWOPEN,more=B.some(b=>b.cm||b.det);
+    return '<div class="tcard tnow'+(cls?" "+cls:"")+(open&&more?" tnowo":"")+'"'+(more?' data-tnow tabindex="0" aria-expanded="'+(open?"true":"false")+'"':'')+'><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+body+fc+'</div>'+ed+'</div>'}catch(_){return ""}}
 /* tap (or Enter) on «Jetzt»: open / close – links in it (location) work as before; the choice stays while the page is redrawn */
 function tnowToggle(c){window.TNOWOPEN=!c.classList.contains("tnowo");document.querySelectorAll("[data-tnow]").forEach(x=>{x.classList.toggle("tnowo",window.TNOWOPEN);x.setAttribute("aria-expanded",String(window.TNOWOPEN))})}
 document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest("[data-tnow]");if(!c||e.target.closest("a,button"))return;tnowToggle(c)});

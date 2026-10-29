@@ -12,6 +12,9 @@ export const csKindCode=k=>String(k).replace(/^W\s*\/\s*H\s*\/\s*M/i,"WHM").repl
 /* the code of a place as a badge: an icon per kind of place (set, Base, W/H/M, Lunch, Dinner, Prod, DIT, Parking) and the short text */
 const CSKICO={"Base":"base","W / H / M":"whm","Lunch":"lunch","Dinner":"dinner","Prod":"prod","DIT":"dit"};
 function csKindIco(k){const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],b=String(k).replace(/ (Cast|Extras)$/,"");if(b==="W / H / M"&&q)return q==="Cast"?CSI.whmc:CSI.whme;return CSI[CSKICO[b]]||(/park/i.test(b)?CSI.park:"")}
+const CSKIND=[[/\bbase\b/i,"Base"],[/w\s*\/\s*h\s*\/\s*m/i,"W / H / M"],[/lunch|mittag/i,"Lunch"],[/dinner|diner|abendessen/i,"Dinner"],[/\bprod\b|production office|produktionsb/i,"Prod"],[/\bdit\b/i,"DIT"]];
+/* the icons of the kinds named in a line of a location («2nd AD & DIT», «Tech Parking»): DIT, Prod, Base … at the place where they are */
+export function csLabIcons(lab){const t=String(lab||"");const ks=CSKIND.filter(([re])=>re.test(t)).map(([,k])=>k);if(/park/i.test(t)&&!ks.length)ks.push("Parking");return ks.map(k=>csKindB(k)).join("")}
 const csKindB=k=>{const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],t=csKindCode(k).replace(/ (Cast|Extras)$/,q?" "+L(q):"");const ic=csKindIco(k);return '<b class="csk" title="'+esc(t)+'" aria-label="'+esc(t)+'">'+(ic||'<span>'+esc(t)+'</span>')+'</b>'};
 export function csBadgeIn(l,codes){if(!l.kinds)return '<span>'+esc((codes||["L"+String(l.no||"").trim()]).join("·"))+'</span>'+(l._kx||[]).map(csKindB).join("");   /* a set with DIT / Prod at its place: their icon too */
   /* side place: the icons, with the group (Cast / Extras) and a kind without icon as text */
@@ -125,7 +128,7 @@ export function csCallPlace(c,me,call){const ct=csHm(call.t);
 const CSLOCMEMO=new WeakMap();export function csLocs(c){if(!c||typeof c!=="object")return[];if(!CSLOCMEMO.has(c))CSLOCMEMO.set(c,csLocs0(c));return CSLOCMEMO.get(c)}
 function csLocs0(c){const sets=[],extra=[];
   /* Base, W / H / M, Lunch, Dinner and the production office (DIT/Prod): from the label, the words before «:» or «(Base)» in the text */
-  const KIND=[[/\bbase\b/i,"Base"],[/w\s*\/\s*h\s*\/\s*m/i,"W / H / M"],[/lunch|mittag/i,"Lunch"],[/dinner|diner|abendessen/i,"Dinner"],[/\bprod\b|production office|produktionsb/i,"Prod"],[/\bdit\b/i,"DIT"]];   /* DIT at another place than the others: a location of its own */
+  const KIND=CSKIND;   /* DIT at another place than the others: a location of its own */
   const ORDER=KIND.map(k=>k[1]);
   /* one place = one location, also when several kinds are there (same map link or same name) */
   const place=(name,map)=>extra.find(e=>(map&&e.map===map)||(name&&fold(e.name)===fold(name)));
