@@ -719,6 +719,9 @@ async def owner_tests(p, port):
         # the setup added by the app has its own key «setup0»: the setups of the Drehplan keep their numbers (setup, setup2 …)
         sk_ = await E("""(()=>{if(typeof csSetupFirst!=='function'||typeof scRowKeys!=='function')return null;return scRowKeys(csSetupFirst([{t:'11:30',sc:'6'},{t:'15:00',text:'Setup - 0h30m'},{t:'16:00',text:'Lunch'}],'10:45','2026-10-29'),r=>r.text||r.syn).join(',')})()""")
         check("Drehfolge: Setup der App hat den Key setup0, die Setups des Drehplans behalten ihre Nummern", sk_ in (None, "setup0,,setup,lunch"), sk_, public=True)
+        # times of a night shoot: one routine – after midnight the rows count on past 24:00
+        nm_ = await E("(()=>typeof csRowMins==='function'?csRowMins([{t:'22:00'},{text:'x'},{t:'23:30'},{t:'00:15'},{t:'01.40'}]).join(','):null)()")
+        check("Nachtdreh: Zeiten nach Mitternacht zählen weiter (eine Routine)", nm_ in (None, "1320,,1410,1455,1540"), nm_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

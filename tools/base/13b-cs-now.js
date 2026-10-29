@@ -8,14 +8,19 @@ const csIsWrap=r=>!!r&&!r.sc&&/\b(wrap|drehschluss)\b/i.test(String(r.text||r.sy
 const CSZHMS={};   /* the clock of the shoot: in the time zone of the running block (Swiss time without blocks) */
 function cszhm(tz){if(!(tz in CSZHMS)){try{CSZHMS[tz]=new Intl.DateTimeFormat("de-CH",{timeZone:tz,hour:"2-digit",minute:"2-digit",hourCycle:"h23"})}catch(_){CSZHMS[tz]=null}}return CSZHMS[tz]}
 export function csHM(d){d=d||new Date();const f=cszhm(prodTZ());if(f)try{const x=f.format(d);if(/^\d\d:\d\d$/.test(x))return x}catch(_){}return clockHM(d)}
+/* ---------- times of a shooting day: one routine for the night after midnight ----------
+   minutes of each row since 00:00 of the shooting day; after a jump back past midnight (23:30 → 00:15) the rows count on (24:15 = 1455).
+   null: a row without a time */
+export const csMin=t=>{const h=csHm(t);return h?+h.slice(0,2)*60+ +h.slice(3):null};
+export function csRowMins(rows){let prev=null,late=false;return csA(rows).map(r=>{const m=csMin(r&&r.t);if(m==null)return null;if(prev!=null&&m<prev&&prev>=720)late=true;prev=m;return late?m+1440:m})}
 /* the shooting day running now: after midnight a night shoot of yesterday stays «today» until its wrap (at the latest 06:00) –
    before, everything about «now» (running row, place, cast frame) disappeared at midnight */
 export function csShootDay(){const t=todayISO();if(csHM()>="06:00"||typeof isoAdd!=="function")return t;const y=isoAdd(t,-1),dp=(S.dispos||[]).find(z=>z&&z.date===y);if(!dp||!dp.cs)return t;
-  let prev="",late=false;for(const r of csRows(dp.cs)){const x=csHm(r.t);if(!x)continue;if(prev&&x<prev&&prev>="12:00"){late=true;break}prev=x}
+  const late=csRowMins(csRows(dp.cs)).some(m=>m!=null&&m>=1440);
   const tm=dp.cs.times||{},w=csHm(tm.wrap||""),cc=csHm(tm.crewCall||""),wn=w&&cc&&w<cc;if(!late&&!wn)return t;return wn&&csHM()>=w?t:y}
 window.csShootDay=csShootDay;
 /* «now» for a day: on the night after a shooting day the hours go on (00:30 → 24:30), so they compare with the rows after midnight */
-const csNowFor=date=>{const n=csHM();return date!==todayISO()&&n<"12:00"?String(24+ +n.slice(0,2))+n.slice(2):n};
+const csNowMin=date=>{const m=csMin(csHM());return date!==todayISO()&&m<720?m+1440:m};   /* minutes, 00:30 of the next day = 1470 */
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null; lunch or a setup running: that row with ev = its key */
 export function csNowScene(x){const sd=csShootDay();x=x||(S.dispos||[]).find(y=>y&&y.date===sd);const c=x&&x.cs;if(!c||x.date!==sd)return null;const rows=csRows(c),un=String(c._u||"1");let i=csNowIdx(rows,x.date,un);   /* the 2nd Unit alone (csU2Dispo): its own entries */
   if(i>=0&&!rows[i].sc){const k=csKeys(rows)[i];   /* setup, lunch or wrap is the step now (running or next) – a setup also by the clock (building up before the first scene) */
@@ -30,13 +35,13 @@ export function csNowIdx(rows,date,u){if(date!==csShootDay())return -1;rows=csA(
     const run=st.indexOf(1);if(run>=0)return run;
     /* nothing running: the next step only during the shooting day (from 1 h before its first row) – at night, before the start, nothing
        (a quittance made the evening before, e.g. a test, must not show a scene) */
-    {const i0=rows.findIndex(r=>csHm(r.t)),t0=i0>=0?csHm(rows[i0].t):"";if(!t0)return -1;const m=v=>+v.slice(0,2)*60+ +v.slice(3),n=csNowFor(date);
-     if(m(n)<m(t0)-(RK[i0]&&/^setup/.test(RK[i0])?0:60))return -1}   /* the setup (crew call) is the start itself */
+    {const M=csRowMins(rows),i0=M.findIndex(v=>v!=null);if(i0<0)return -1;
+     if(csNowMin(date)<M[i0]-(RK[i0]&&/^setup/.test(RK[i0])?0:60))return -1}   /* the setup (crew call) is the start itself */
     for(let i=st.lastIndexOf(2)+1;i<st.length;i++)if(st[i]===0)return i;return -1}   /* the next step: a scene, setup, lunch or the wrap */
   /* quittieren switched on but nothing quittiert yet in this unit: not shooting yet – no «Jetzt» (before, the clock showed a scene before the start) */
   if(typeof window.scOnU==="function"&&window.scOnU(u))return -1;
   /* times after midnight (night shoot: 23:00 … 00:30) count as 24:00 … 24:30 – not «now» in the evening, but after midnight */
-  const now=csNowFor(date);let k=-1,prev="",late=false;rows.forEach((r,i)=>{const t=csHm(r.t);if(!t)return;if(prev&&t<prev&&prev>="12:00")late=true;prev=t;const tt=late?String(24+ +t.slice(0,2))+t.slice(2):t;if(tt<=now)k=i});
+  const now=csNowMin(date);let k=-1;csRowMins(rows).forEach((m,i)=>{if(m!=null&&m<=now)k=i});
   return k>=0&&csIsWrap(rows[k])?-1:k}
 /* the parts of «Jetzt» (callsheet «Mein Tag» and Today): lunch/setup with its name, else scene number, its place (L-code) and I/E · set */
 export function csNowBits(ns,c,date){if(ns.ev)return {ev:(ns.lunch?CSI.lunch+' ':'')+'<b>'+esc(scLabel(ns.ev))+'</b>'};let lo=null;try{lo=csSceneLoc(csLocs(c),ns)}catch(_){}
@@ -63,8 +68,8 @@ export const csIsAdr=t=>/\d{4}\s+\p{L}/u.test(String(t||""))||/^\p{L}[\p{L}.\s-]
 export function csNowLoc(c,date,ls,now){if(!now&&csAck(date)){const r=csNowScene({date,cs:c});return r?csSceneLoc(ls,r):null}const live=!now;now=now||new Date();
   /* the night after the shooting day counts on (minutes past 24:00); rows after midnight too – before, a wrap at 00:30 ended the place at 23:45 */
   const night=live?date===csShootDay()&&date!==localISO(now):false;if(date!==localISO(now)&&!night)return null;
-  const m=t=>{const h=csHm(t);return h?+h.slice(0,2)*60+ +h.slice(3):null};const cur=m(csHM(now))+(night?1440:0);let hit=null,started=false,prev=null,late=false;
-  for(const r of csRows(c)){let t=m(r.t);if(t==null)continue;if(prev!=null&&t<prev&&prev>=720)late=true;prev=t;if(late)t+=1440;if(t>cur)break;if(r.sc){started=true;hit=csSceneLoc(ls,r)||hit}else if(csIsWrap(r))return null}
+  const cur=csMin(csHM(now))+(night?1440:0),rows=csRows(c),M=csRowMins(rows);let hit=null,started=false;
+  for(let i=0;i<rows.length;i++){const r=rows[i],t=M[i];if(t==null)continue;if(t>cur)break;if(r.sc){started=true;hit=csSceneLoc(ls,r)||hit}else if(csIsWrap(r))return null}
   return started?hit:null}
 /* side places (Base, W/H/M, Lunch, Parking, DIT …) with the set they are nearest to and the distance (positions of the updater in c.geo) */
 export function csNear(c,ls,date){const geo=c.geo||{},out=new Map(),sets=[];
