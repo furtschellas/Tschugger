@@ -1121,16 +1121,23 @@ def geocode(addr, cache):
     cc = geo_codes(); key = addr if cc == "ch" else addr + "|" + cc   # with more countries: asked again (before only Switzerland was searched)
     if key in cache: return cache[key]
     if cc != "ch" and cache.get(addr): return cache[addr]   # found before in Switzerland: stays (no new search for every old address)
-    if time.time() > GEO_DEADLINE: return None   # at most 12 minutes of address search per run – the rest in the next run (else the run timed out)
-    try:
-        time.sleep(1.1)
-        r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": addr, "format": "json", "limit": 1, "countrycodes": cc},
-                         headers={"User-Agent": "TschuggerCrewApp/1.0 (furtschellas@gmail.com)"}, timeout=20)
-        if not r.ok: return None   # busy (429) or down: not remembered as «not found», the next run asks again
-        j = r.json()
-        cache[key] = [round(float(j[0]["lat"]), 6), round(float(j[0]["lon"]), 6)] if j else None
+    # at most 12 minutes of address search per run (the rest in the next run); busy or down: not remembered as «not found»
+    j = _nominatim("search", {"q": addr, "limit": 1, "countrycodes": cc})
+    if j is None: return None
+    try: cache[key] = [round(float(j[0]["lat"]), 6), round(float(j[0]["lon"]), 6)] if j else None
     except Exception: return None
     return cache[key]
+
+
+def _nominatim(path, params):
+    """one request to OpenStreetMap Nominatim (search / reverse): polite pause, no answer when busy, out of time or down"""
+    if time.time() > GEO_DEADLINE: return None
+    try:
+        time.sleep(1.1)
+        r = requests.get("https://nominatim.openstreetmap.org/" + path, params=dict(params, format="json"),
+                         headers={"User-Agent": "TschuggerCrewApp/1.0 (" + (os.environ.get("GEO_CONTACT") or "furtschellas@gmail.com") + ")", "Accept-Language": "de-CH,de,fr"}, timeout=20)
+        return r.json() if r.ok else None
+    except Exception: return None
 
 
 def rev_geocode(p, cache):
@@ -1138,13 +1145,10 @@ def rev_geocode(p, cache):
     if not p: return None
     key = "%.5f,%.5f" % (p[0], p[1])
     if key in cache: return cache[key]
-    if time.time() > GEO_DEADLINE: return None
+    j = _nominatim("reverse", {"lat": p[0], "lon": p[1], "zoom": 18, "addressdetails": 1})
+    if j is None: return None
     try:
-        time.sleep(1.1)
-        r = requests.get("https://nominatim.openstreetmap.org/reverse", params={"lat": p[0], "lon": p[1], "format": "json", "zoom": 18, "addressdetails": 1},
-                         headers={"User-Agent": "TschuggerCrewApp/1.0 (furtschellas@gmail.com)", "Accept-Language": "de-CH,de,fr"}, timeout=20)
-        if not r.ok: return None
-        a = (r.json() or {}).get("address") or {}
+        a = (j or {}).get("address") or {}
         street = " ".join(x for x in (a.get("road") or a.get("pedestrian") or a.get("footway") or a.get("path") or "", a.get("house_number") or "") if x)
         town = " ".join(x for x in (a.get("postcode") or "", a.get("village") or a.get("town") or a.get("city") or a.get("municipality") or "") if x)
         cache[key] = ", ".join(x for x in (street, town) if x) or None
@@ -1705,12 +1709,8 @@ def add_drive_times(data):
         parts = [x.strip() for x in addr.split(",") if x.strip()]
         cands = [addr] + [", ".join(parts[i:]) for i in range(1, len(parts) - 1)] + ([name + ", " + parts[-1]] if name and parts else [])
         for q in cands:
-            try:
-                time.sleep(1.1)
-                r = requests.get("https://nominatim.openstreetmap.org/search", params={"q": q, "format": "json", "limit": 1, "countrycodes": geo_codes()}, headers=H, timeout=20)
-                j = r.json() if r.ok else []
-            except Exception as e:
-                log("Geocoding fehlgeschlagen:", type(e).__name__); return None
+            j = _nominatim("search", {"q": q, "limit": 1, "countrycodes": geo_codes()})
+            if j is None: log("Geocoding fehlgeschlagen"); return None
             if j:
                 geo[addr] = [float(j[0]["lat"]), float(j[0]["lon"])]; return geo[addr]
         geo[addr] = None; log("Adresse nicht gefunden:", _h(addr))
@@ -2161,20 +2161,21 @@ def main():
     print("::notice::Callsheet-Tage: %s" % "; ".join("%s=%s" % (re.sub(r"(?i)^.*?(DT\d+).*$", r"\1", _bn(v.get("file"))), k) for k, v in sorted(dispos.items()) if k >= "2026-10-19"))
     def CSV_OF(f):   # 7: the 2nd-unit order also from a block called PREVISION – read again only for callsheets of today and later (credit)
         return 7 if (_fdate(f["name"]) or "") >= TODAY else 6
-    _todo = [f["name"] for f in pick_dispos(files) if not any(_bn(v.get("file")) == _bn(f["name"]) and isinstance(v.get("cs"), dict) and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())]
+    PD = pick_dispos(files); PDN = {x["name"] for x in PD}   # the callsheets to read: worked out once
+    _todo = [f["name"] for f in PD if not any(_bn(v.get("file")) == _bn(f["name"]) and isinstance(v.get("cs"), dict) and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())]
     if _todo:   # with the reason per file (codes only: date of the file, version found, version wanted, tried already)
         def _why(name):
-            f0 = next(x for x in pick_dispos(files) if x["name"] == name); vs = [str((v.get("cs") or {}).get("v")) + "@" + str(k) for k, v in dispos.items() if v.get("file") == name]
+            f0 = next(x for x in PD if x["name"] == name); vs = [str((v.get("cs") or {}).get("v")) + "@" + str(k) for k, v in dispos.items() if v.get("file") == name]
             return "%s: %s→v%d%s" % (_fdate(name) or "?", ",".join(vs) or "fehlt", CSV_OF(f0), " (schon versucht)" if (meta.get("csTry") or {}).get(name) == "%s|%d|d" % (f0["modified"], CSV_OF(f0)) else "")
         print("::notice::Callsheets im alten Format, werden neu gelesen: %d (%s)" % (len(_todo), "; ".join(_why(x) for x in _todo)))
-    for f in sorted(pick_dispos(files), key=lambda f: f["modified"] or ""):
+    for f in sorted(PD, key=lambda f: f["modified"] or ""):
         sources.append({"kind": "dispo", "name": f["name"], "modified": f["modified"]})
         have = any(_bn(v.get("file")) == _bn(f["name"]) and isinstance(v.get("cs"), dict) and "tr" in v["cs"] and (v["cs"].get("v") or 0) >= CSV_OF(f) for v in dispos.values())   # read before the full structure / translation / travel dates / learnt places: again
         if (not is_new("dispo", f) and have) or not may_try("dispo", f): continue
         tk = "%s|%d|d" % (f["modified"], CSV_OF(f)); tried = meta.setdefault("csTry", {})
         if not is_new("dispo", f) and tried.get(f["name"]) == tk: continue   # read again once per file version: a reading that is not kept never repeats every run (credit)
         tried[f["name"]] = tk
-        for k in [k for k in tried if k not in {x["name"] for x in pick_dispos(files)}]: tried.pop(k)
+        for k in [k for k in tried if k not in PDN]: tried.pop(k)
         log("Callsheet: neu, wird ausgelesen")
         try:
             # the callsheet in two parts (one answer was too long): A = head … vehicles, B = transport … calls
