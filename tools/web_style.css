@@ -1249,3 +1249,19 @@ html body #view .csscd>summary>.camx{flex:1 0 100%;order:9;margin-top:4px}
 .sbact{display:flex;flex-direction:column;gap:4px}.sbact .sbacn{font-size:.8em;opacity:.7}.sbact .sbap{display:grid;grid-template-columns:10px 1fr;column-gap:8px;align-items:center;min-width:0}.sbact .sbap small{grid-column:2;opacity:.65;font-size:.8em}.sbact .sbdot{width:8px;height:8px;border-radius:50%;background:#3ecf6e}.sbact b{overflow-wrap:anywhere;font-weight:600}
 html body #view .tcard.tnow .tnowun+.tnowun{margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,currentColor 18%,transparent)}
 #view .csloc .ds .csdsic{display:inline-flex;gap:3px;vertical-align:middle;margin-right:5px}#view .csloc .ds .csdsic .csk svg{width:16px;height:16px}
+/* callsheet / Today tiles on the phone: times in the first row, Sonne · Wetter · Anfahrt always in the second row; each tile its share of the width */
+@media (max-width:759px){
+  html body #view .dtiles.cstiles.cstiles{display:flex!important;flex-wrap:wrap!important;gap:calc(6px*var(--csf,1)) 4px!important;grid-template-columns:none!important}
+  html body #view .dtiles.cstiles.cstiles>.dt{flex:1 1 0!important;min-width:0!important;width:auto!important;max-width:none!important;order:1;grid-column:auto!important;padding:calc(5px*var(--csf,1)) calc(6px*var(--csf,1))!important;box-sizing:border-box}
+  html body #view .dtiles.cstiles.cstiles::after{content:"";order:2;flex:0 0 100%;height:0}
+  html body #view .dtiles.cstiles.cstiles>.dt:is(.cssunt,.cswx,.csdrv,.wide){order:3;flex:1 1 0!important}
+  html body #view .dtiles.cstiles.cstiles>.dt .k{font-size:max(7.5px,calc(10px*var(--csf,1)))!important;white-space:nowrap}
+  html body #view .dtiles.cstiles.cstiles>.dt .v{font-size:calc(18px*var(--csf,1))!important;white-space:nowrap!important}
+  html body #view .dtiles.cstiles.cstiles>.dt.big .v{font-size:calc(20px*var(--csf,1))!important}
+  html body #view .dtiles.cstiles.cstiles>.dt.cssunt .v{font-size:calc(14px*var(--csf,1))!important}
+  html body #view .dtiles.cstiles.cstiles>.dt.cssunt br{display:none}
+  html body #view .dtiles.cstiles.cstiles>.dt.cssunt .sd{display:inline}
+  html body #view .dtiles.cstiles.cstiles>.dt.csdrv .v{font-size:calc(13px*var(--csf,1))!important;white-space:normal!important;overflow-wrap:anywhere;line-height:1.15}
+  html body #view .dtiles.cstiles.cstiles>.dt.cswx .ttile{padding:calc(5px*var(--csf,1)) calc(6px*var(--csf,1))!important}
+  html body #view .dtiles.cstiles.cstiles>.dt.cswx .ttile b{font-size:calc(16px*var(--csf,1))!important}
+}

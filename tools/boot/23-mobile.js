@@ -35,7 +35,13 @@ addEventListener("resize",stickyH);setTimeout(stickyH,800);
    const n=ch[i+(dx<0?1:-1)];if(!n)return;n.click();n.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});
    const v=document.getElementById("view");if(v){v.classList.remove("swl","swr");void v.offsetWidth;v.classList.add(dx<0?"swl":"swr");setTimeout(()=>v.classList.remove("swl","swr"),260)}},{passive:true})}
 /* time tiles: shrink the font of a tile row until it fits on one line (texts are never cut); below 55 % a second row instead */
-function csFitTiles(){if(innerWidth<480)return;document.querySelectorAll("#view .dtiles.cstiles").forEach(r=>{if(!r.offsetParent)return;
+/* on the phone (below 760 px): times in the first row, Sonne / Wetter / Anfahrt always in the second (CSS); every tile as wide as its share –
+   the font shrinks until the longest text of a tile fits (never cut, at least 50 %) */
+const CSMOB=760;
+function csFitTilesMob(r){r.classList.remove("cswrap");let f=1;r.style.setProperty("--csf","1");
+  const over=()=>[...r.children].some(t=>t.classList&&t.classList.contains("dt")&&!t.classList.contains("csdrv")&&[...t.querySelectorAll(".v,.k,b,span")].some(e=>e.scrollWidth>t.clientWidth+1)||t.scrollWidth>t.clientWidth+1);
+  for(let i=0;i<10&&over();i++){f=Math.max(.5,f*.92);r.style.setProperty("--csf",f.toFixed(3));if(f<=.5)break}}
+function csFitTiles(){const mob=innerWidth<CSMOB;document.querySelectorAll("#view .dtiles.cstiles").forEach(r=>{if(!r.offsetParent)return;if(mob){csFitTilesMob(r);return}
   r.classList.remove("cswrap");let f=1;r.style.setProperty("--csf","1");
   for(let i=0;i<6;i++){const need=r.scrollWidth,have=r.clientWidth;if(need<=have+1)break;f=Math.max(.55,f*have/need*.98);r.style.setProperty("--csf",f.toFixed(3));if(f<=.55)break}
   if(r.scrollWidth>r.clientWidth+1){r.style.setProperty("--csf",".7");r.classList.add("cswrap")}})}
