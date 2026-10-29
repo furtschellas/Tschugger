@@ -67,6 +67,10 @@ if _esl and _sp.run([_esl, "--version"], capture_output=True, text=True).stdout.
 _sf = lambda n, m="2026-10-01": {"name": n, "modified": m}
 _fs = [_sf("01_Script/261017_Tschugger_Tigerblood_v13 CLEAN.pdf"), _sf("01_Script/261017_Tschugger_Tigerblood_v13.pdf"), _sf("01_Script/Tschugger Script Changelog v13 261017.pdf"),
        _sf("01_Script/250901_Tschugger_Tigerblood_v12 CLEAN.pdf"), _sf("01_Script/English translation v12/Tschugger_v12 EN.pdf"), _sf("01_Script/Tschugger_v14 SPP.pdf")]
+# the app's code: «window.X=(…)=>X(…)» replaces X by itself in the build (names on window are getters/setters of the shared scope) – endless loop
+import re as _re  # noqa: E402
+_selfwrap = [f"{p.name}:{m.group(1)}" for p in sorted((pathlib.Path(__file__).resolve().parent.parent / "tools").rglob("*.js")) for m in _re.finditer(r"window\.([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>\s*\1\s*\(", p.read_text(errors="ignore"))]
+check("App-Code: keine Funktion ersetzt sich auf window durch sich selbst (Endlosschleife)", not _selfwrap, ", ".join(_selfwrap))
 check("Drehbuch: neueste Version, CLEAN bevorzugt", (U.pick_script(_fs) or {}).get("name", "").endswith("v13 CLEAN.pdf"))
 check("Drehbuch: immer CLEAN – neue Version ohne CLEAN wird nicht genommen", (U.pick_script(_fs + [_sf("01_Script/261101_Tschugger_Tigerblood_v14.pdf")]) or {}).get("name", "").endswith("v13 CLEAN.pdf"))
 check("Drehbuch: sobald die CLEAN-Fassung da ist, wird sie genommen", (U.pick_script(_fs + [_sf("01_Script/261101_Tschugger_Tigerblood_v14.pdf"), _sf("01_Script/261101_Tschugger_Tigerblood_v14 CLEAN.pdf")]) or {}).get("name", "").endswith("v14 CLEAN.pdf"))

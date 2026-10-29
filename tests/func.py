@@ -722,6 +722,9 @@ async def owner_tests(p, port):
         # times of a night shoot: one routine – after midnight the rows count on past 24:00
         nm_ = await E("(()=>typeof csRowMins==='function'?csRowMins([{t:'22:00'},{text:'x'},{t:'23:30'},{t:'00:15'},{t:'01.40'}]).join(','):null)()")
         check("Nachtdreh: Zeiten nach Mitternacht zählen weiter (eine Routine)", nm_ in (None, "1320,,1410,1455,1540"), nm_, public=True)
+        # WhatsApp «direkt» when quittieren: opening it must not end in an endless loop (window.scWaOpen replaced itself – every such tap failed)
+        wa_ = await E("(()=>{if(typeof window.scWaOpen!=='function')return null;const o=window.open;let n=0;window.open=()=>{n++;return null};try{window.scWaOpen('Test','w','2');return n}catch(e){return String(e&&e.message||e).slice(0,40)}finally{window.open=o}})()")
+        check("Quittieren mit WhatsApp «direkt»: öffnet WhatsApp ohne Endlosschleife", wa_ in (None, 1), wa_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

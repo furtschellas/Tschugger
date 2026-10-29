@@ -249,7 +249,7 @@ function scWaParse(v){v=String(v||"").trim();const g=v.match(/chat\.whatsapp\.co
 const scWaTarget=(k,u)=>{const r=scWaRole(u);return scWaParse(r&&r.n)||scWaParse(k&&scWaGet("scwt"+k))||scWaParse(scWaGet("scwan"))};
 const scWaUrl=(txt,k,u)=>{const t=scWaTarget(k,u);return /^g:/.test(t)?"https://chat.whatsapp.com/"+t.slice(2):"https://wa.me/"+t+"?text="+encodeURIComponent(txt)};
 const scWaIsGroup=(k,u)=>/^g:/.test(scWaTarget(k,u));
-window.scWaOpen=(txt,k,u)=>scWaOpen(txt,k,u);
+/* window.scWaOpen: through the bridge of the build (an arrow wrapper on window with the same name replaced the function by itself – endless loop, every quittance with WhatsApp «direkt» failed) */
 function scWaOpen(txt,k,u){try{if(scWaIsGroup(k,u)){try{navigator.clipboard.writeText(txt)}catch(_){}showMsg(L("Text kopiert – in der WhatsApp-Gruppe einfügen und senden."),6000)}window.open(scWaUrl(txt,k,u),"_blank","noopener")}catch(_){}}
 function scWaSec(){if(typeof canPerm!=="function"||!(canPerm("scenes.ack")||canPerm("now.forecast")||canPerm("day.edit")))return "";const m=scWaModes(),n=(()=>{try{return localStorage.getItem("scwan")||""}catch(_){return ""}})();
   return '<section class="psec"><h4>'+esc(L("WhatsApp beim Quittieren"))+'</h4><p class="ghint">'+esc(L("Nach dem Quittieren einer Szene eine kurze Info per WhatsApp – pro Art einstellbar. «Fragen»: nach dem Speichern erscheint ein Knopf. «Direkt»: WhatsApp öffnet sich sofort mit dem fertigen Text; senden tippst du selbst."))+'</p>'+
