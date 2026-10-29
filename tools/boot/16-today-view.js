@@ -266,12 +266,11 @@ window.TNOWOPEN=window.TNOWOPEN||false;
 const tnChip=(no,role,lk,on,late)=>'<span'+(lk?' class="tnl'+lk+(on?' tnon':'')+'"':'')+'><i>'+esc(no)+'</i>'+(late?'<b class="tnlate" title="'+esc(L("Verspätung"))+'">+'+late+'′</b>':'')+(role?'<em>'+esc(role)+'</em>':'')+'</span>';
 /* the tiles of a shooting day (times, sun, weather, drive) – the 2nd Unit with the same tiles as the 1st; only the unit I am in
    (both, each with its head, when I am in both or it is not clear). Today, side box */
-export function unitTilesHTML(dcs,d,me){const c=dcs.cs||{},t1=csTilesHTML(dcs,d,c,me).replace(' id="cs-zeiten"','');let t2="";
-  try{const c2=c.u2&&typeof window.cqU2==="function"?window.cqU2(Object.assign({},c,{_date:d.date})):null,tm=(c2&&c2.times)||{};
-    if(c2&&(tm.crewCall||tm.rts||tm.lunch||tm.wrap))t2=csTilesHTML({date:d.date,sr:dcs.sr,ss:dcs.ss},d,c2,me).replace(' id="cs-zeiten"','')}catch(err){console.warn("tiles 2nd Unit",err)}
-  if(!t2)return t1;const mu=typeof window.csMyUnits==="function"?window.csMyUnits(c,me):null;
-  if(mu&&mu.length===1)return mu[0]==="2"?t2:t1;
-  return '<div class="tuh">1st Unit</div>'+t1+'<div class="tuh">2nd Unit</div>'+t2}
+export function unitTilesHTML(dcs,d,me){const has2=!!((dcs.cs||{}).u2||dayItems(d,"2").length);
+  /* the units chosen with the unit buttons (as the callsheet): 1st, 2nd or both */
+  const units=has2?["1","2"].filter(u=>S.pu[u]!==false&&(u!=="2"||S.pu["2"])):["1"],U=units.length?units:["1"];
+  const tl=U.map(u=>{let h="";try{h=csUnitTiles(dcs,d,u,me).replace(' id="cs-zeiten"','')}catch(err){console.warn("tiles",u,err)}return h?{u,h}:null}).filter(Boolean);
+  return tl.length>1?tl.map(t=>'<div class="tuh">'+(t.u==="2"?"2nd":"1st")+' Unit</div>'+t.h).join(""):(tl[0]?tl[0].h:"")}
 /* «Jetzt» of one unit – the same for the 1st and the 2nd Unit (Today, callsheet, side box): the step running now (scene with place and set,
    since when, scenes in parallel and the next one; or Setup / Lunch), Maske / Kostüm now, opened the description and the cast.
    null: this unit is not shooting now (before its start, after its wrap, at night). The 2nd Unit: its own callsheet part (csU2Dispo) */

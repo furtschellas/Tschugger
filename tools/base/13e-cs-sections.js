@@ -145,6 +145,12 @@ function csVehSec(c,SU,sfx,un){return csSec(L("Fahrzeuge")+(un||""),csTable([L("
 const CS1=new WeakMap();
 function cs1Of(c0){const h=CS1.get(c0);if(h&&h.tr===c0.transport&&h.ct===c0.crewTransport)return h.c;
   const c=Object.assign({},c0,csRidesFor(c0,"1"),{_orig:c0,_rides:{transport:c0.transport,crewTransport:c0.crewTransport}});CS1.set(c0,{tr:c0.transport,ct:c0.crewTransport,c});return c}
+/* the tiles of one unit exactly as its callsheet shows them (Today, side box, callsheet with both units): the 1st Unit with its own rides,
+   the 2nd Unit as its own callsheet (csU2Dispo: its times, places and rides) */
+export function csUnitTiles(x,day,u,me){const c0=x&&x.cs;if(!c0)return "";if(x.date)c0._date=x.date;
+  if(u==="2"){const x2=typeof window.csU2Dispo==="function"?window.csU2Dispo(x,day):null;return x2?csTilesHTML(x2,day,x2.cs,me):""}
+  return csTilesHTML(x,day,(c0.u2||dayItems(day,"2").length)&&typeof csRidesFor==="function"?cs1Of(c0):c0,me)}
+window.csUnitTiles=csUnitTiles;
 export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
   /* a day with a 2nd Unit: the 1st Unit shows only its rides (and those of both); the 2nd Unit gets its own in csU2Dispo */
   const c=c0._u!=="2"&&typeof csRidesFor==="function"&&(c0.u2||dayItems(day,"2").length)?cs1Of(c0):c0,t=c.times||{},me=csMe();let h="";if(x.date)c._date=x.date;   /* the day first: «Mein Tag» (travel of this day only) and the cast ticks need it */setCSTR(c.tr||null);setCSCUR({c,date:x.date||"",me,addr:new Map()});
@@ -216,7 +222,7 @@ export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
     h+=csSec(String(sec.title||""),rows.map(r=>'<p>'+r.map(cc=>csTx(cc)).join(" · ")+'</p>').join(""),false)}
   /* the 2nd Unit (read apart): its own part below the 1st Unit */
   if(c._u!=="2"&&S.pu["2"])try{h+=csU2HTML(x,c0,day,me,{order:(c2,o2)=>csOrderSec(Object.assign({},c2,{order:o2}),{date:x.date},c2.times||{},"u2"," · 2nd Unit"),trans:(c2,x2,me2,SU2)=>{const only=r=>csRideUnit(c0,r)==="2",tr=csA(c0.transport).filter(only),ct=csA(c0.crewTransport).filter(only);   /* both units shown: below only the rides of the 2nd Unit alone (the shared ones are above) */
-    return tr.length||ct.length?csTransHTML(Object.assign({},c2,{transport:tr,crewTransport:ct}),x2,me2,SU2,"u2"," · 2nd Unit"):""},cast:csCastSec,extras:csExtrasSec,tiles:csTilesHTML,veh:c2=>csVehSec(c2,{},"u2"," · 2nd Unit"),dept:c2=>csDeptSec(c2,me,{},"u2"," · 2nd Unit"),calls:c2=>csCallsSec(c2,x,me,{},c2.times||{},"u2"," · 2nd Unit"),loc:(c2,x2,me2,SU2,t2)=>{const k=window.CSNOWK;try{return csLocSec(c2,x2,me2,SU2,t2)}finally{window.CSNOWK=k}}})}catch(err){console.warn("2nd Unit",err);h+='<section class="csu2"><div class="csu2-head"><h2>2nd Unit</h2></div><p class="ghint">'+esc(L("Zurzeit nicht lesbar"))+'</p></section>'}   /* an error is shown, never the 2nd Unit silently missing */
+    return tr.length||ct.length?csTransHTML(Object.assign({},c2,{transport:tr,crewTransport:ct}),x2,me2,SU2,"u2"," · 2nd Unit"):""},cast:csCastSec,extras:csExtrasSec,tiles:()=>csUnitTiles(x,day,"2",me),veh:c2=>csVehSec(c2,{},"u2"," · 2nd Unit"),dept:c2=>csDeptSec(c2,me,{},"u2"," · 2nd Unit"),calls:c2=>csCallsSec(c2,x,me,{},c2.times||{},"u2"," · 2nd Unit"),loc:(c2,x2,me2,SU2,t2)=>{const k=window.CSNOWK;try{return csLocSec(c2,x2,me2,SU2,t2)}finally{window.CSNOWK=k}}})}catch(err){console.warn("2nd Unit",err);h+='<section class="csu2"><div class="csu2-head"><h2>2nd Unit</h2></div><p class="ghint">'+esc(L("Zurzeit nicht lesbar"))+'</p></section>'}   /* an error is shown, never the 2nd Unit silently missing */
   /* on the shooting day: once per visit straight to the running row */
   if(x.date===csShootDay()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
   return JB+'<div class="csview">'+h+'</div>'}
