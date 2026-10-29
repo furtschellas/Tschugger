@@ -151,7 +151,7 @@ function csLocs0(c){const sets=[],extra=[];
       const cm=txt.match(/^([^:,]{1,40}):\s*(.+)$/),head=cm?cm[1]:"",body=cm?cm[2]:txt,par=(body.match(/\(([^)]{1,30})\)/)||[])[1]||"";
       const kinds=KIND.filter(([re,k])=>re.test(lab)||re.test(head)||re.test(par)||(k==="Base"&&re.test(body.split(",")[0]))).map(([,k])=>k);   /* «Base Church, Dorfplatz 5» is the Base too */
       /* «Extras @base: Schulhausplatz 4 …»: the place of the extras (their W / H / M) */
-      if(kinds.length&&/\b(extras?|komparsen|statist\w*)\b/i.test(lab)&&!kinds.some(k=>/^W \/ H \/ M/.test(k)))kinds.push("W / H / M Extras");
+      if(kinds.length&&/^\s*(extras?|komparsen|statist\w*)\b/i.test(lab)&&!kinds.some(k=>/^W \/ H \/ M/.test(k)))kinds.push("W / H / M Extras");
       if(!kinds.length||(!txt&&!i.map)){items.push(i);last=null;continue}
       let clean=body.replace(/\s*\([^)]{1,30}\)\s*/g," ").trim(),name=clean.split(",")[0].trim(),rest=clean.split(",").slice(1).join(",").trim(),uses="";
       /* «BASE LAKE» as label and the uses first in the text (W / H / M, Lunch …): the base is called by its label, the uses are a line of it */
