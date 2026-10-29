@@ -139,13 +139,7 @@ VIEWS.today=function(){
   const dcs=(S.dispos||[]).find(x=>x&&x.date===d.date&&x.cs);
   if(dcs&&shT&&typeof csTilesHTML==="function"){let me3=null;try{me3=csMe()}catch(_){}
     /* a day with a 2nd Unit: its times as tiles of their own below (Crew Call, RTS, Lunch, Wrap of the 2nd Unit), both labelled */
-    let t2="";try{const c2=dcs.cs.u2&&typeof window.cqU2==="function"?window.cqU2(Object.assign({},dcs.cs,{_date:d.date})):null,tm=(c2&&c2.times)||{};
-      if(c2&&(tm.crewCall||tm.rts||tm.lunch||tm.wrap))t2='<div class="tuh">2nd Unit</div><div class="dtiles cstiles">'+csTile("Crew Call",tm.crewCall,true)+csTile("RTS",tm.rts)+csTile("Lunch",tm.lunch)+csTile("Wrap",tm.wrap)+'</div>'}catch(_){}
-    /* only the unit I am in (both when I am in both or it is not clear) */
-    const mu=t2&&typeof window.csMyUnits==="function"?window.csMyUnits(dcs.cs,me3):null;
-    if(mu&&mu.length===1&&mu[0]==="2")h+='<div class="tcs">'+t2.replace('<div class="tuh">2nd Unit</div>','<div class="tuh">2nd Unit</div>')+'</div>';
-    else if(mu&&mu.length===1)h+='<div class="tcs">'+csTilesHTML(dcs,d,dcs.cs,me3).replace(' id="cs-zeiten"','')+'</div>';
-    else h+='<div class="tcs">'+(t2?'<div class="tuh">1st Unit</div>':'')+csTilesHTML(dcs,d,dcs.cs,me3).replace(' id="cs-zeiten"','')+t2+'</div>'}
+    h+='<div class="tcs">'+unitTilesHTML(dcs,d,me3)+'</div>'}
   else h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k,cl])=>'<div class="ttile'+(cl?' '+cl:'')+'">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
   /* from noon (or lunch, if earlier) on: the tiles of the next shooting day (times, drive, weather) – shown below the scenes */
   let nextH="";
@@ -270,6 +264,14 @@ const NCICO='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke=
 window.TNOWOPEN=window.TNOWOPEN||false;
 /* late: more than 5 minutes behind the callsheet – «+12′» right after the cast number */
 const tnChip=(no,role,lk,on,late)=>'<span'+(lk?' class="tnl'+lk+(on?' tnon':'')+'"':'')+'><i>'+esc(no)+'</i>'+(late?'<b class="tnlate" title="'+esc(L("Verspätung"))+'">+'+late+'′</b>':'')+(role?'<em>'+esc(role)+'</em>':'')+'</span>';
+/* the tiles of a shooting day (times, sun, weather, drive) – the 2nd Unit with the same tiles as the 1st; only the unit I am in
+   (both, each with its head, when I am in both or it is not clear). Today, side box */
+export function unitTilesHTML(dcs,d,me){const c=dcs.cs||{},t1=csTilesHTML(dcs,d,c,me).replace(' id="cs-zeiten"','');let t2="";
+  try{const c2=c.u2&&typeof window.cqU2==="function"?window.cqU2(Object.assign({},c,{_date:d.date})):null,tm=(c2&&c2.times)||{};
+    if(c2&&(tm.crewCall||tm.rts||tm.lunch||tm.wrap))t2=csTilesHTML({date:d.date,sr:dcs.sr,ss:dcs.ss},d,c2,me).replace(' id="cs-zeiten"','')}catch(err){console.warn("tiles 2nd Unit",err)}
+  if(!t2)return t1;const mu=typeof window.csMyUnits==="function"?window.csMyUnits(c,me):null;
+  if(mu&&mu.length===1)return mu[0]==="2"?t2:t1;
+  return '<div class="tuh">1st Unit</div>'+t1+'<div class="tuh">2nd Unit</div>'+t2}
 /* «Jetzt» of one unit – the same for the 1st and the 2nd Unit (Today, callsheet, side box): the step running now (scene with place and set,
    since when, scenes in parallel and the next one; or Setup / Lunch), Maske / Kostüm now, opened the description and the cast.
    null: this unit is not shooting now (before its start, after its wrap, at night). The 2nd Unit: its own callsheet part (csU2Dispo) */

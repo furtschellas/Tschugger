@@ -14,7 +14,7 @@ import {seenMs} from "./10-menus-welcome-presence.js";
 import {savePrefsSoon} from "./06-prefs-docs.js";
 import {ADM} from "./12a-admin-core.js";
 import {wxTile} from "./15-weather.js";
-import {nowCardHTML,todayDay} from "./16-today-view.js";
+import {nowCardHTML,todayDay,unitTilesHTML} from "./16-today-view.js";
 
 /* [key, title, frame page (whole app in a frame) or "", may this person see it] */
 /* frame pages: «t:tab» a page of the app, «a:sub» a part of the App-Verwaltung, «…:selector» only that part of the page; always the phone view (390 px, scaled) */
@@ -66,11 +66,7 @@ const TOP={
     return '<div class="sbact"><div class="sbacn">'+ACT.list.length+' '+esc(L("online"))+'</div>'+ACT.list.map(p=>'<div class="sbap"><span class="sbdot" aria-hidden="true"></span><b>'+esc(p.n)+'</b><small>'+esc(p.d)+' · '+esc(ago(p.t))+'</small></div>').join("")+'</div>'},
   now:()=>{const h=nowCardHTML(todayISO());return h?'<div class="sbnow">'+h+'</div>':""},
   mine:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}const mn=me?csMine(dp.cs,me):[];return mn.length?'<div class="tcard tmine">'+mn.join("")+'</div>':""},
-  tiles:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}let h=csTilesHTML(dp,d,dp.cs,me).replace(' id="cs-zeiten"','');
-    try{const c2=dp.cs.u2&&window.cqU2?window.cqU2(Object.assign({},dp.cs,{_date:d.date})):null,tm=(c2&&c2.times)||{};
-      if(c2&&(tm.crewCall||tm.rts||tm.lunch||tm.wrap)){const t2='<div class="tuh">2nd Unit</div><div class="dtiles cstiles">'+csTile("Crew Call",tm.crewCall,true)+csTile("RTS",tm.rts)+csTile("Lunch",tm.lunch)+csTile("Wrap",tm.wrap)+'</div>';
-        const mu=window.csMyUnits(dp.cs,me);h=mu&&mu.length===1?(mu[0]==="2"?t2:h):'<div class="tuh">1st Unit</div>'+h+t2}}catch(_){}
-    return '<div class="tcs">'+h+'</div>'},
+  tiles:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}return '<div class="tcs">'+unitTilesHTML(dp,d,me)+'</div>'},   /* the same tiles as Today */
   order:()=>{const d=dayNow();if(!d||d.kind!=="shoot")return"";const st=(sc,u)=>typeof scState==="function"?scState(d.date,unitKey(sc,u)):0;   /* the state of the unit of the row (2nd Unit: «90_u2») */
     const list=(its,u)=>arr(its).filter(i=>i&&(i.sc||i.n)).map(i=>'<div class="sbo'+(i.sc&&st(i.sc,u)===2?' done':i.sc&&st(i.sc,u)===1?' run':'')+'"><i>'+esc(i.t||"")+'</i>'+(i.sc?'<b>'+esc(String(i.sc))+'</b> <span>'+esc(i.set||"")+'</span>':'<span class="sbev">'+esc(i.n||"")+'</span>')+'</div>').join("");
     const u2=dayItems(d,"2");return (u2.length?'<div class="tuh">1st Unit</div>':'')+list(d.items,"1")+(u2.length?'<div class="tuh">2nd Unit</div>'+list(u2,"2"):'')},
