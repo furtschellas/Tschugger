@@ -707,6 +707,15 @@ async def owner_tests(p, port):
           return [r(csSetupFirst([{t:'11:30',sc:'6'},{t:'15:45',text:'Lunch'}],'10:45','2026-10-29')),r(csSetupFirst([{t:'09:30',text:'Setup - 0h30m'},{t:'10:00',sc:'19A'}],'09:30','2026-10-29')),
             r(csSetupFirst([{t:'07:00',sc:'1'}],'06:00','2026-10-20')),r(csSetupFirst([{t:'07:00',sc:'1'}],'07:00','2026-11-02'))].join(' | ')})()""")
         check("Drehfolge: Setup als eigener Schritt (Crew Call bis erste Szene), 1st und 2nd Unit gleich", su_ in (None, "10:45=Setup - 0h45m,11:30=6,15:45=Lunch | 09:30=Setup - 0h30m,10:00=19A | 07:00=1 | 07:00=1"), su_, public=True)
+        # diagnosis (public log, counts only): the location links of today's callsheet – with GPS position, with address, without link, DIT
+        try:
+            lk_ = await E("""(()=>{if(typeof csLocs!=='function'||typeof mapGeo!=='function')return null;const t=todayISO(),x=(S.dispos||[]).find(y=>y&&y.date===t&&y.cs);if(!x)return null;
+              const out=[];for(const [u,c] of [['1',x.cs],['2',x.cs.u2&&window.cqU2?window.cqU2(Object.assign({},x.cs,{_date:t})):null]]){if(!c)continue;const ls=csLocs(c);let n=0,gps=0,adr=0,no=0,dit='-';
+                for(const l of ls){for(const it of [l].concat(csA(l.items))){if(!it)continue;n++;if(!it.map){if(it!==l)no++;continue}if(mapGeo(it.map))gps++;if(c.geoAdr&&c.geoAdr[it.map])adr++}
+                  if((l.kinds||[]).includes('DIT')||(l._kx||[]).includes('DIT'))dit=(l.map||csA(l.items).some(i=>/dit/i.test(i.label||'')&&i.map))?'Link':'ohne'}
+                out.push(u+'U: Orte '+n+' · GPS '+gps+' · Adresse '+adr+' · ohne Link '+no+' · DIT '+dit)}return out.join(' | ')})()""")
+            if lk_: print("::notice::Location-Links heute: " + lk_)
+        except Exception: pass
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();
