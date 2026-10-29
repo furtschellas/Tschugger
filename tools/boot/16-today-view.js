@@ -100,7 +100,8 @@ VIEWS.today=function(){
   let h='<section class="today">';
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   /* for everybody, first of all and only while shooting: the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
-  if(isToday&&tShow("now"))h+=nowCardHTML(d.date);
+  /* «Jetzt» in Today: whenever something is shot now (as in the callsheet) – only the person can hide it (Mein Konto), not a default; nothing when no unit shoots */
+  if(todayCfg("now")!=="no"&&!todayPrefs().has("now"))h+=nowCardHTML(sd,"",undefined,true);   /* the shooting day running now – also when Today already shows the next day (shooting longer than planned) */
   /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
   try{if(me&&vok("mycal")&&tShow("my")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
     h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'<button type="button" class="tmyall" data-tomy>'+esc(L("Alle"))+' ›</button></div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· '+esc(L("Fahrer:in"))+': '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+'</div>'}}catch(_){}
@@ -297,7 +298,7 @@ function nowUnit(t,u){const x1=(S.dispos||[]).find(y=>y&&y.date===t);if(!x1||!x1
     det=(ns.syn?'<div class="tnsyn">'+esc(ns.syn)+'</div>':'')+(ch?'<div class="tnc">'+ch+'</div>':'')}
   return {line:(nb.ev||'<b class="tnsc">'+nb.sc+'</b>'+nb.place+' <span class="tnset">'+nb.set+'</span>')+since+par,cm,det}}
 /* «Jetzt»: one block per unit shooting now, each built the same way; with both units each with its label. unit «1» / «2»: only that unit */
-export function nowCardHTML(t,cls,unit){try{if(typeof csNowScene!=="function"||!(window.nowSee&&window.nowSee()))return "";   /* only with «Jetzt» sehen (admins always) */
+export function nowCardHTML(t,cls,unit,onlyShooting){try{if(typeof csNowScene!=="function"||!(window.nowSee&&window.nowSee()))return "";   /* only with «Jetzt» sehen (admins always) */
     /* the quittances not read yet (first seconds after opening): no «Jetzt» – it would show the first scene of a day that is long done */
     if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";
     const day=arr(S.days).find(d=>d&&d.date===t),hasU2=!!dayItems(day,"2").length||!!(((S.dispos||[]).find(y=>y&&y.date===t)||{}).cs||{}).u2;
@@ -305,7 +306,7 @@ export function nowCardHTML(t,cls,unit){try{if(typeof csNowScene!=="function"||!
     const B=units.map(u=>{let r=null;try{r=nowUnit(t,u)}catch(err){console.warn("now",u,err)}return r?Object.assign(r,{u}):null}).filter(Boolean);
     const fc=ncLine(t),ed=unit!=="2"&&ncCan()?'<button type="button" class="tnced" data-ncedit '+'aria-label="'+esc(L("Prognose erfassen"))+'" title="'+esc(L("Prognose erfassen"))+'">'+NCICO+'</button>':'';
     /* no unit shooting now (before the setup, after the wrap): only the forecasts – with the right to enter them also the card with its icon on a shooting day */
-    if(!B.length){const sd=!!(day&&day.kind==="shoot");if(!fc&&!(ed&&sd))return "";
+    if(!B.length){if(onlyShooting)return "";   /* Today: only while a unit shoots */const sd=!!(day&&day.kind==="shoot");if(!fc&&!(ed&&sd))return "";
       return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+(fc||'<div class="tnowfc"><span class="tnk">'+esc(L("Prognose erfassen"))+'</span></div>')+'</div>'+ed+'</div>'}
     const lab=units.length>1;
     const body=B.map(b=>'<div class="tnowun"><div class="tnowb">'+(lab?'<span class="tnk tnu">'+(b.u==="2"?"2nd":"1st")+' Unit</span> ':'')+b.line+'</div>'+(b.cm?'<div class="tnowcm">'+b.cm+'</div>':'')+(b.det?'<div class="tnowx">'+b.det+'</div>':'')+'</div>').join("");
