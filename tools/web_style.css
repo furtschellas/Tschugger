@@ -1265,3 +1265,4 @@ html body #view .tcard.tnow .tnowun+.tnowun{margin-top:6px;padding-top:6px;borde
   html body #view .dtiles.cstiles.cstiles>.dt.cswx .ttile{padding:calc(5px*var(--csf,1)) calc(6px*var(--csf,1))!important}
   html body #view .dtiles.cstiles.cstiles>.dt.cswx .ttile b{font-size:calc(16px*var(--csf,1))!important}
 }
+html body #view .dtiles.cstiles>a.dt.cslunch{color:inherit;text-decoration:none;cursor:pointer;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}html body #view .dtiles.cstiles>a.dt.cslunch .k::after{content:" ›";color:var(--accent)}

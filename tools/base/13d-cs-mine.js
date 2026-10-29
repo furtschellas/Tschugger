@@ -84,9 +84,16 @@ function csMine0(c,me){const mine=[];
   /* value in its own span (label | value side by side on the phone) */
   return mine.map(x=>x.replace(/<div class="csme-r"><span class="k">([\s\S]*?)<\/span>([\s\S]*?)<\/div>/g,'<div class="csme-r"><span class="k">$1</span><span class="v">$2</span></div>'))}
 /* the time tiles of a callsheet day (Crew Call … Wrap, sun, weather, drive to my call place) – callsheet and Today */
+/* the place of the lunch of a unit: the Lunch of its Locations, else the one of the callsheet (the 2nd Unit often eats with the 1st) */
+export function csLunchPlace(c){const find=cc=>{try{const l=csLocs(cc).find(z=>z.kinds&&z.kinds.includes("Lunch"));if(l&&(l.map||l.name))return {map:l.map||"",name:String(l.name||"Lunch")};
+    for(const z of csLocs(cc))for(const i of csA(z.items))if(i&&i.map&&/lunch|mittag/i.test(String(i.label||"")))return {map:i.map,name:String(i.text||i.label)}}catch(_){}return null};
+  return find(c)||(c&&c._orig&&c._orig!==c?find(c._orig):null)}
 export function csTilesHTML(x,day,c,me){const t=c.times||{};
   const tile=csTile;
-  return '<div class="dtiles cstiles" id="cs-zeiten">'+tile("Crew Call",t.crewCall||x.crewCall,true)+tile("Rehearsal",t.rehearsal)+tile("RTS",t.rts||x.shootCall)+tile("Lunch",t.lunch)+tile("Wrap",t.wrap||x.wrap)+
+  /* Lunch: a link to the lunch place (its map) */
+  const lunch=(()=>{const v=t.lunch;if(!v)return"";const p=csLunchPlace(c),u=p&&(p.map||(p.name?csMapQ(p.name):""));
+    return u?'<a class="dt cslunch" href="'+esc(mapUrl(u))+'" target="_blank" rel="noopener noreferrer" title="'+esc("Lunch · "+(p.name||""))+'"><div class="k">Lunch</div><div class="v">'+esc(v)+'</div></a>':tile("Lunch",v)})();
+  return '<div class="dtiles cstiles" id="cs-zeiten">'+tile("Crew Call",t.crewCall||x.crewCall,true)+tile("Rehearsal",t.rehearsal)+tile("RTS",t.rts||x.shootCall)+lunch+tile("Wrap",t.wrap||x.wrap)+
     (()=>{const a=c.sunrise||x.sr,b=c.sunset||x.ss;return a&&b?'<div class="dt cssunt"><div class="k">'+esc(L("Sonne"))+'</div><div class="v">'+esc(a)+'<span class="sd">–</span><br>'+esc(b)+'</div></div>':''})()+((wx=>wx?'<div class="dt cswx">'+wx+'</div>':tile(L("Wetter"),[c.weather,c.temp].filter(Boolean).join(" · ")).replace('class="dt"','class="dt wide"'))(typeof wxTile==="function"&&day&&day.date?wxTile(day):""))
     /* drive to my call place: route from the hotel or from where I am */
     +(()=>{if(!me)return"";const call=csMyCall(c,me);let pl=null;try{pl=call?csCallPlace(c,me,call):null}catch(_){}/* no sure call place (no call or no ride): the way to the Base of the day, else to location 1 – marked as such */

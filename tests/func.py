@@ -715,6 +715,10 @@ async def owner_tests(p, port):
                   if((l.kinds||[]).includes('DIT')||(l._kx||[]).includes('DIT'))dit=(l.map||csA(l.items).some(i=>/dit/i.test(i.label||'')&&i.map))?'Link':'ohne'}
                 out.push(u+'U: Orte '+n+' · GPS '+gps+' · Adresse '+adr+' · ohne Link '+no+' · DIT '+dit)}return out.join(' | ')})()""")
             if lk_: print("::notice::Location-Links heute: " + lk_)
+            lu_ = await E("""(()=>{if(typeof csLunchPlace!=='function')return null;const t=todayISO(),x=(S.dispos||[]).find(y=>y&&y.date===t&&y.cs);if(!x)return null;
+              const a=csLunchPlace(x.cs),x2=window.csU2Dispo?window.csU2Dispo(x,(S.days||[]).find(d=>d.date===t)):null,b=x2?csLunchPlace(x2.cs):null;
+              return '1st '+(a?(a.map?'Link':'Name'):'keine')+' · 2nd '+(x2?(b?(b.map?'Link':'Name'):'keine'):'–')+(a&&b?' · '+((a.map||a.name)===(b.map||b.name)?'gleich':'verschieden'):'')})()""")
+            if lu_: print("::notice::Lunch-Ort heute: " + lu_)
         except Exception: pass
         # the setup added by the app has its own key «setup0»: the setups of the Drehplan keep their numbers (setup, setup2 …)
         sk_ = await E("""(()=>{if(typeof csSetupFirst!=='function'||typeof scRowKeys!=='function')return null;return scRowKeys(csSetupFirst([{t:'11:30',sc:'6'},{t:'15:00',text:'Setup - 0h30m'},{t:'16:00',text:'Lunch'}],'10:45','2026-10-29'),r=>r.text||r.syn).join(',')})()""")
@@ -725,6 +729,10 @@ async def owner_tests(p, port):
         # WhatsApp «direkt» when quittieren: opening it must not end in an endless loop (window.scWaOpen replaced itself – every such tap failed)
         wa_ = await E("(()=>{if(typeof window.scWaOpen!=='function')return null;const o=window.open;let n=0;window.open=()=>{n++;return null};try{window.scWaOpen('Test','w','2');return n}catch(e){return String(e&&e.message||e).slice(0,40)}finally{window.open=o}})()")
         check("Quittieren mit WhatsApp «direkt»: öffnet WhatsApp ohne Endlosschleife", wa_ in (None, 1), wa_, public=True)
+        # the Lunch tile links to the lunch place of the Locations; the 2nd Unit without its own lunch place: the one of the 1st Unit
+        lt_ = await E("""(()=>{if(typeof csLunchPlace!=='function')return null;const L1={locations:[{no:'1',name:'SET',map:'https://m/1',items:[{label:'LUNCH',text:'TENNIS CLUB',map:'https://m/TC'}]}]};const c2={locations:[{no:'1',name:'U2',map:'https://m/2'}],_orig:L1};
+          const t=csTilesHTML({date:'2026-10-29'},null,Object.assign({times:{lunch:'12:00'}},c2),null);return [(csLunchPlace(L1)||{}).map,(csLunchPlace(c2)||{}).map,/class="dt cslunch" href="https:\/\/m\/TC"/.test(t)].join(' ')})()""")
+        check("Kachel Lunch: Link zum Lunch-Ort der Locations (2nd Unit: der der 1st Unit, wenn sie keinen eigenen hat)", lt_ in (None, "https://m/TC https://m/TC true"), lt_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();
