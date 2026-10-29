@@ -68,7 +68,7 @@ export async function loadLangs(){
     {const n=(a,ks,dflt)=>Object.fromEntries(ks.map(k=>{const x=(a&&a[k])||{};return [k,{on:(dflt||[]).includes(k)?x.on!==false:x.on===true,min:Math.max(0,Math.min(180,parseInt(x.min,10)||0))}]}));const c=d.exists()?d.data():{};
       cfgPut("CASTAUTO",n(c.castAuto,["c","m","w","b","o"]),"appcastauto",false);cfgPut("SCENEAUTO",n(c.sceneAuto,["a","s","l","w"],["a"]),"appsceneauto",false);
       /* the 2nd Unit its own settings – not set yet: as the 1st Unit (as before) */
-      cfgPut("CASTAUTO2",n(c.castAuto2||c.castAuto,["c","m","w","b","o"]),"appcastauto2",false);cfgPut("SCENEAUTO2",n(c.sceneAuto2||c.sceneAuto,["a","s","l","w"],["a"]),"appsceneauto2",false);window.SCPAR=c.sceneParallel===true;
+      cfgPut("CASTAUTO2",n(c.castAuto2||c.castAuto,["c","m","w","b","o"]),"appcastauto2",false);cfgPut("SCENEAUTO2",n(c.sceneAuto2,["a","s","l","w"],c.sceneAuto2?["a"]:[]),"appsceneauto2",false);   /* scenes of the 2nd Unit: only its own setting – not set: no automatic (never the one of the 1st Unit) */window.SCPAR=c.sceneParallel===true;
       /* 2nd Unit: quittieren and «parallel» of its own (not set: as the 1st Unit) */
       window.SCACKON2=c.sceneAck2===undefined?c.sceneAck!==false:c.sceneAck2!==false;window.SCPAR2=c.sceneParallel2===undefined?c.sceneParallel===true:c.sceneParallel2===true}
     window.GCALON=d.exists()&&!!d.data().gcal;

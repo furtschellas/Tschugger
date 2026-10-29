@@ -668,9 +668,9 @@ async def owner_tests(p, port):
           const now=Date.now();if(hm(now)<'01:15')return null;   /* just after midnight: no times in the past today */
           day.items=[{sc:'901',t:hm(now-60*60e3)},{sc:'902',t:hm(now-30*60e3)}];delete day.unit2;window.SCENEAUTO={a:{on:false},s:{on:true,min:0},l:{on:false},w:{on:false}};window.SCACKLIVE=true;window.RIDEACKLOADED=true;
           const run=async a=>{window.SCACK={[scAckId(t,'901')]:{d:t,s:1,u:'1',sc:'901',b:a,at:a}};await window.scAutoRun();return scState(t,'902')};
-          const hand=await run(now-10*60e3),auto=await run(now-50*60e3);
-          window.SCENEAUTO=K.a;window.SCACK=K.k;day.items=K.it;if(K.u2)day.unit2=K.u2;window.SCACKLIVE=K.l;window.RIDEACKLOADED=K.r;return {hand,auto}})()""")
-        check("Szenen automatisch: eine von Hand gestartete Szene bleibt (keine Automatik danach), ohne Eingriff startet die geplante", sa_ in (None, {"hand": 0, "auto": 1}), sa_, public=True)
+          const hand=await run(now-10*60e3),behind=await run(now-40*60e3),auto=await run(dayMs(t,hm(now-60*60e3)));
+          window.SCENEAUTO=K.a;window.SCACK=K.k;day.items=K.it;if(K.u2)day.unit2=K.u2;window.SCACKLIVE=K.l;window.RIDEACKLOADED=K.r;return {hand,behind,auto}})()""")
+        check("Szenen automatisch: eine von Hand gestartete Szene bleibt bis zum Abschluss (auch hinter dem Plan), ohne Eingriff startet die geplante", sa_ in (None, {"hand": 0, "behind": 0, "auto": 1}), sa_, public=True)
         # Fahrten 2nd Unit (wie late_push.ride_unit): Abholung am Morgen bei der 2nd Unit, auch für Leute beider Units
         ru = await E("""(()=>{if(typeof window.csRideUnit!=='function')return null;const c={times:{crewCall:'09:30'},cast:[{no:'1',actor:'Max Muster',pickup:'15:45'},{no:'8',actor:'Eva Probe',pickup:'08:40'}],
           calls:[{name:'Tom Ton',t:'06:45'}],u2:{crewCall:'06:45',cast:[{no:'1',actor:'Max Muster',pickup:'06:00'},{no:'2',actor:'Kai Zwei',pickup:'06:05'}]}};

@@ -116,8 +116,8 @@ setInterval(scLunchAuto,30e3);
    yesterday (night shoots), only times of the last 12 h; every device with «Szenen quittieren». Set back by hand: marker rideack/z… (s 1,
    like the cast in 24-flow.js) – the automatic leaves that row alone. */
 const SCA_KINDS=[["a","Setup vor Drehbeginn"],["s","Szenen und Setup"],["l","Lunch Beginn"],["w","Drehschluss"]];
-/* the settings of the unit (2nd Unit: SCENEAUTO2, 3rd as the 1st); without a unit: on in one of them */
-const scaA=u=>u==="2"?window.SCENEAUTO2||window.SCENEAUTO:window.SCENEAUTO;
+/* the settings of the unit (2nd Unit: SCENEAUTO2 only, 3rd as the 1st); without a unit: on in one of them */
+const scaA=u=>u==="2"?window.SCENEAUTO2:window.SCENEAUTO;   /* the 2nd Unit only its own setting */
 const scaOn=(k,u)=>{if(u===undefined)return scaOn(k,"1")||scaOn(k,"2");const A=scaA(u);return !!(A&&A[k]&&A[k].on)};
 const scaMark=(date,sc)=>{const s=date+"|"+scAckId(date,sc);let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "zs"+(h>>>0).toString(36)};
 const scaZ=(date,sc)=>!!(window.RIDEACK||{})[scaMark(date,sc)];
@@ -142,6 +142,9 @@ async function scAuto(){if(SCABUSY||/[?&]sbx=/.test(location.search)||!window.SC
         /* quittiert by hand in this unit since this row was due (another scene started, one finished …): the hand wins – the automatic
            never undoes a tap (before, a scene started by hand was finished again within 30 s and the planned one started) */
         if(Object.values(window.SCACK).some(x=>x&&x.d===day.date&&String(x.u||"1")===u&&(+x.at||0)>=T))continue;
+        /* a scene started by hand still running in this unit (behind the plan): the automatic waits until it is done – the hand wins
+           (an automatic start has b = its planned time; a tap b = the moment of the tap) */
+        if(Object.values(window.SCACK).some(x=>x&&x.d===day.date&&String(x.u||"1")===u&&x.s===1&&!scIsEv(x.sc||"")&&!rows.some(r0=>scBase(r0.k)===scBase(String(x.sc||""))&&Math.abs((+x.b||0)-(r0.t+(+((A[r0.kind]||{}).min)||0)*60e3))<2000)))continue;
         /* everything still running in this unit is finished (also scenes running in parallel) */
         for(const run of scRunAll(day.date,u,scAckId(day.date,r.k))){const x=scGet(day.date,run)||{},b=+x.b||+x.at||T;await scWrite(day.date,run,u,{s:2,b,e:Math.max(T,b+60e3)},true)}
         await scWrite(day.date,r.k,u,r.kind==="w"?{s:2,b:T,e:T}:{s:1,b:T},true)}}}
