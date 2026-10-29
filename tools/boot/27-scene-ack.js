@@ -250,7 +250,15 @@ const scWaTarget=(k,u)=>{const r=scWaRole(u);return scWaParse(r&&r.n)||scWaParse
 const scWaUrl=(txt,k,u)=>{const t=scWaTarget(k,u);return /^g:/.test(t)?"https://chat.whatsapp.com/"+t.slice(2):"https://wa.me/"+t+"?text="+encodeURIComponent(txt)};
 const scWaIsGroup=(k,u)=>/^g:/.test(scWaTarget(k,u));
 /* window.scWaOpen: through the bridge of the build (an arrow wrapper on window with the same name replaced the function by itself – endless loop, every quittance with WhatsApp «direkt» failed) */
-function scWaOpen(txt,k,u){try{if(scWaIsGroup(k,u)){try{navigator.clipboard.writeText(txt)}catch(_){}showMsg(L("Text kopiert – in der WhatsApp-Gruppe einfügen und senden."),6000)}window.open(scWaUrl(txt,k,u),"_blank","noopener")}catch(_){}}
+/* WhatsApp with the text: a link opened in this tap (a phone opens WhatsApp only right in the tap). Through a link element, not window.open:
+   in the installed app (iPhone) window.open is often refused or opens an empty window; every try is written to the log (no crew data) */
+function scWaOpen(txt,k,u){let how="";
+  try{const url=scWaUrl(txt,k,u);
+    if(scWaIsGroup(k,u)){try{navigator.clipboard.writeText(txt)}catch(_){}showMsg(L("Text kopiert – in der WhatsApp-Gruppe einfügen und senden."),6000)}
+    try{const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.dataset.nobub="1";a.style.display="none";document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),0);how="link"}
+    catch(e1){window.open(url,"_blank","noopener");how="open"}}
+  catch(err){how="fehler "+String(err&&err.message||err).slice(0,60);showMsg(L("WhatsApp liess sich nicht öffnen."),4000)}
+  try{scDiag(todayISO(),"whatsapp",String(u||"1"),"wa "+(k||"?")+" "+how)}catch(_){}}
 function scWaSec(){if(typeof canPerm!=="function"||!(canPerm("scenes.ack")||canPerm("now.forecast")||canPerm("day.edit")))return "";const m=scWaModes(),n=(()=>{try{return localStorage.getItem("scwan")||""}catch(_){return ""}})();
   return '<section class="psec"><h4>'+esc(L("WhatsApp beim Quittieren"))+'</h4><p class="ghint">'+esc(L("Nach dem Quittieren einer Szene eine kurze Info per WhatsApp – pro Art einstellbar. «Fragen»: nach dem Speichern erscheint ein Knopf. «Direkt»: WhatsApp öffnet sich sofort mit dem fertigen Text; senden tippst du selbst."))+'</p>'+
     '<div class="scwag">'+SCWA_KINDS.map(([k,t,sub])=>'<div class="scwar"><span>'+esc(L(t))+(sub?' <small class="ghint">'+esc(L(sub))+'</small>':'')+'</span><select data-scwam="'+k+'" aria-label="'+esc(L(t))+'">'+[["n","Aus"],["f","Fragen"],["a","Direkt"]].map(([v,x])=>'<option value="'+v+'"'+(m[k]===v?' selected':'')+'>'+esc(L(x))+'</option>').join("")+'</select></div>'+'<input class="scwan scwt" data-scwt="'+k+'" maxlength="80" autocomplete="off" spellcheck="false" value="'+esc(scWaGet("scwt"+k))+'" placeholder="'+esc(L("Empfänger: Nummer oder Gruppenlink (leer = wie unten)"))+'" aria-label="'+esc(L(t)+" – "+L("Empfänger"))+'"'+(m[k]==="n"?' hidden':'')+'>').join("")+'</div>'+

@@ -727,7 +727,7 @@ async def owner_tests(p, port):
         nm_ = await E("(()=>typeof csRowMins==='function'?csRowMins([{t:'22:00'},{text:'x'},{t:'23:30'},{t:'00:15'},{t:'01.40'}]).join(','):null)()")
         check("Nachtdreh: Zeiten nach Mitternacht zählen weiter (eine Routine)", nm_ in (None, "1320,,1410,1455,1540"), nm_, public=True)
         # WhatsApp «direkt» when quittieren: opening it must not end in an endless loop (window.scWaOpen replaced itself – every such tap failed)
-        wa_ = await E("(()=>{if(typeof window.scWaOpen!=='function')return null;const o=window.open;let n=0;window.open=()=>{n++;return null};try{window.scWaOpen('Test','w','2');return n}catch(e){return String(e&&e.message||e).slice(0,40)}finally{window.open=o}})()")
+        wa_ = await E("(()=>{if(typeof window.scWaOpen!=='function')return null;const o=window.open,c=HTMLAnchorElement.prototype.click;let n=0,h='';window.open=()=>{n++;return null};HTMLAnchorElement.prototype.click=function(){n++;h=this.href};try{window.scWaOpen('Test','w','2');return n===1&&/^https:\\/\\/wa\\.me\\//.test(h)?1:'n='+n}catch(e){return String(e&&e.message||e).slice(0,40)}finally{window.open=o;HTMLAnchorElement.prototype.click=c}})()")
         check("Quittieren mit WhatsApp «direkt»: öffnet WhatsApp ohne Endlosschleife", wa_ in (None, 1), wa_, public=True)
         # the Lunch tile links to the lunch place of the Locations; the 2nd Unit without its own lunch place: the one of the 1st Unit
         lt_ = await E("""(()=>{if(typeof csLunchPlace!=='function')return null;const L1={locations:[{no:'1',name:'SET',map:'https://m/1',items:[{label:'LUNCH',text:'TENNIS CLUB',map:'https://m/TC'}]}]};const c2={locations:[{no:'1',name:'U2',map:'https://m/2'}],_orig:L1};

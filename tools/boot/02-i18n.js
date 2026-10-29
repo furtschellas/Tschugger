@@ -726,6 +726,7 @@ Object.assign(I18N,{
  "Thema hinzufügen":{fr:"Ajouter un thème",it:"Aggiungi tema",en:"Add topic"},
  "Thema wählen …":{fr:"Choisir un thème …",it:"Scegli un tema …",en:"Choose a topic …"},
  "Zurzeit nichts":{fr:"Rien pour le moment",it:"Al momento niente",en:"Nothing right now"},
+ "WhatsApp liess sich nicht öffnen.":{fr:"Impossible d'ouvrir WhatsApp.",it:"Impossibile aprire WhatsApp.",en:"Could not open WhatsApp."},
  "Zurzeit nicht lesbar":{fr:"Illisible pour le moment",it:"Al momento non leggibile",en:"Not readable right now"},
  "gerade eben":{fr:"à l'instant",it:"proprio ora",en:"just now"},
  "vor {n} Min.":{fr:"il y a {n} min",it:"{n} min fa",en:"{n} min ago"},
