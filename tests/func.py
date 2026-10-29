@@ -716,6 +716,9 @@ async def owner_tests(p, port):
                 out.push(u+'U: Orte '+n+' · GPS '+gps+' · Adresse '+adr+' · ohne Link '+no+' · DIT '+dit)}return out.join(' | ')})()""")
             if lk_: print("::notice::Location-Links heute: " + lk_)
         except Exception: pass
+        # the setup added by the app has its own key «setup0»: the setups of the Drehplan keep their numbers (setup, setup2 …)
+        sk_ = await E("""(()=>{if(typeof csSetupFirst!=='function'||typeof scRowKeys!=='function')return null;return scRowKeys(csSetupFirst([{t:'11:30',sc:'6'},{t:'15:00',text:'Setup - 0h30m'},{t:'16:00',text:'Lunch'}],'10:45','2026-10-29'),r=>r.text||r.syn).join(',')})()""")
+        check("Drehfolge: Setup der App hat den Key setup0, die Setups des Drehplans behalten ihre Nummern", sk_ in (None, "setup0,,setup,lunch"), sk_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

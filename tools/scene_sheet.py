@@ -146,14 +146,14 @@ def unit_rows(d, u, l, day, cs):
     first_sc = next((i for i in its if i.get("sc")), None)
     uk = lambda k: k if u == "1" else k + "_u" + u
     get = lambda k: next((x for x in l if base(key(x)) == k), None)
-    scs = [x for x in l if base(key(x)) not in ("lunch", "wrap", "setup")]
+    scs = [x for x in l if base(key(x)) not in ("lunch", "wrap", "setup", "setup0")]
     real = [x for x in scs if not is_ev(key(x))]
     st0 = [p0(x) for x in real if p0(x)]; start = min(st0) if st0 else 0
     lu, wr = get("lunch"), get("wrap")
     pl_setup = hm(setup.get("t")) if setup else ""
     pl_start = (hm(cs.get("shootCall") or "") if u == "1" else "") or (hm(first_sc.get("t")) if first_sc else "")
     wr_e = (num(wr.get("e")) or p0(wr)) if wr else 0
-    su = get("setup"); ent = []
+    su = get("setup") or get("setup0"); ent = []   # setup0: the setup the app adds before the first scene
     def add(x, name, st, plan, b, e, k="", drehstart=False, pdm=0):
         ent.append((x, {"name": name, "st": st, "plan": plan, "pdm": pdm or 0, "b": b or 0, "e": e or 0, "k": k, "drehstart": drehstart}))
     if su: add(p0(su), "Setup", 1 if su.get("s") == 1 else 2, pl_setup, p0(su), 0 if su.get("s") == 1 else num(su.get("e")), uk("setup"), pdm=pd("setup"))

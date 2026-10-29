@@ -37,11 +37,13 @@ window.scEvKey=t=>{t=String(t||"");return /\b(lunch|mittag|pranzo|d[ée]jeuner)\
 /* setup rows are quittiert like lunch and wrap: the first «setup», the further ones «setup2», «setup3» … */
 const scIsSetup=t=>/^\s*set[\s-]?up\b/i.test(String(t||""));
 /* the keys of all rows of a day (Drehplan items or callsheet rows): lunch, wrap, setup, setup2 … ; scenes "" */
-window.scRowKeys=(rows,txt)=>{let n=0;return (rows||[]).map(r=>{if(!r||r.sc)return"";const t=txt(r);if(scIsSetup(t)){n++;return n>1?"setup"+n:"setup"}return scEvKey(t)})};
+/* the setup added by the app before the first scene (callsheet without one, csSetupFirst): key «setup0» – it never shifts the numbers of the
+   setups of the Drehplan (setup, setup2 … stay the same rows in the Drehplan and in the callsheet) */
+window.scRowKeys=(rows,txt)=>{let n=0;return (rows||[]).map(r=>{if(!r||r.sc)return"";const t=txt(r);if(scIsSetup(t)){if(r._auto)return "setup0";n++;return n>1?"setup"+n:"setup"}return scEvKey(t)})};
 /* lunch, wrap and setups of the 2nd/3rd unit have their own entries («lunch_u2»): scBase gives the plain key */
 window.scBase=k=>String(k||"").replace(/_u[23]$/,"");
 /* the name of a quittiert entry: Lunch, Wrap, Setup 2, else «Szene 186» */
-window.scLabel=k=>{k=scBase(k);const m=k.match(/^setup(\d*)$/);return k==="lunch"?"Lunch":k==="wrap"?"Wrap":m?("Setup"+(m[1]?" "+m[1]:"")):L("Szene")+" "+k};
+window.scLabel=k=>{k=scBase(k);const m=k.match(/^setup(\d*)$/);return k==="lunch"?"Lunch":k==="wrap"?"Wrap":m?("Setup"+(m[1]&&m[1]!=="0"?" "+m[1]:"")):L("Szene")+" "+k};
 /* state of a scene: 0 open, 1 running, 2 done */
 window.scState=(date,sc)=>{if(!scOnU(scUOf(sc)))return 0;const x=scGet(date,sc);return x?(x.s===1?1:2):0};
 /* any scene of that day quittiert (then «jetzt» follows the quittances instead of the clock) */
@@ -126,7 +128,7 @@ function scaRows(day,u){const its=arr(u==="2"?(day.unit2||{}).items:u==="3"?(day
   /* the time of a setup in the callsheet (its shooting order), else the one of the Drehplan */
   let cr=[],ck=[];try{const dp=u==="1"&&arr(S.dispos).find(x=>x&&x.date===day.date&&x.cs);if(dp){cr=arr((dp.cs.order||{}).rows);ck=scRowKeys(cr,r=>r.text||r.syn)}}catch(_){}
   return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k||(()=>{try{return window.deGone&&window.deGone(x)}catch(_){return false}})())return null;const b=scBase(k),setup=/^setup\d*$/.test(b),first=setup&&!scene;if(x.sc)scene=true;
-    const kind=b==="lunch"?"l":b==="wrap"?"w":first?"a":"s";let h=hm(x.t);if(first){const j=ck.indexOf(b);if(j>=0&&hm(cr[j].t))h=hm(cr[j].t)}if(!h)return null;
+    const kind=b==="lunch"?"l":b==="wrap"?"w":first?"a":"s";let h=hm(x.t);if(first){let j=ck.indexOf(b);if(j<0&&b==="setup")j=ck.indexOf("setup0");if(j>=0&&hm(cr[j].t))h=hm(cr[j].t)}if(!h)return null;
     const t=dayMs(day.date,h,ref);if(!t)return null;if(!ref)ref=t;
     return {k:scK(k,u),kind,t}}).filter(Boolean)}
 let SCABUSY=false;

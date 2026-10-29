@@ -71,9 +71,9 @@ const TOP={
       if(c2&&(tm.crewCall||tm.rts||tm.lunch||tm.wrap)){const t2='<div class="tuh">2nd Unit</div><div class="dtiles cstiles">'+csTile("Crew Call",tm.crewCall,true)+csTile("RTS",tm.rts)+csTile("Lunch",tm.lunch)+csTile("Wrap",tm.wrap)+'</div>';
         const mu=window.csMyUnits(dp.cs,me);h=mu&&mu.length===1?(mu[0]==="2"?t2:h):'<div class="tuh">1st Unit</div>'+h+t2}}catch(_){}
     return '<div class="tcs">'+h+'</div>'},
-  order:()=>{const d=dayNow();if(!d||d.kind!=="shoot")return"";const st=sc=>typeof scState==="function"?scState(d.date,String(sc)):0;
-    const list=(its)=>arr(its).filter(i=>i&&(i.sc||i.n)).map(i=>'<div class="sbo'+(i.sc&&st(i.sc)===2?' done':i.sc&&st(i.sc)===1?' run':'')+'"><i>'+esc(i.t||"")+'</i>'+(i.sc?'<b>'+esc(String(i.sc))+'</b> <span>'+esc(i.set||"")+'</span>':'<span class="sbev">'+esc(i.n||"")+'</span>')+'</div>').join("");
-    const u2=arr(d.unit2&&d.unit2.items);return (u2.length?'<div class="tuh">1st Unit</div>':'')+list(d.items)+(u2.length?'<div class="tuh">2nd Unit</div>'+list(u2):'')},
+  order:()=>{const d=dayNow();if(!d||d.kind!=="shoot")return"";const st=(sc,u)=>typeof scState==="function"?scState(d.date,u!=="1"&&window.scK?window.scK(String(sc),u):String(sc)):0;   /* the state of the unit of the row (2nd Unit: «90_u2») */
+    const list=(its,u)=>arr(its).filter(i=>i&&(i.sc||i.n)).map(i=>'<div class="sbo'+(i.sc&&st(i.sc,u)===2?' done':i.sc&&st(i.sc,u)===1?' run':'')+'"><i>'+esc(i.t||"")+'</i>'+(i.sc?'<b>'+esc(String(i.sc))+'</b> <span>'+esc(i.set||"")+'</span>':'<span class="sbev">'+esc(i.n||"")+'</span>')+'</div>').join("");
+    const u2=arr(d.unit2&&d.unit2.items);return (u2.length?'<div class="tuh">1st Unit</div>':'')+list(d.items,"1")+(u2.length?'<div class="tuh">2nd Unit</div>'+list(u2,"2"):'')},
   rides:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}if(!me)return"";
     const rs=csMyRides(dp.cs,me).filter(csRideReal).sort((a,b)=>(csHm(a.t1)||"99").localeCompare(csHm(b.t1)||"99"));
     return rs.map(r=>'<div class="sbr"><b>'+esc(csHm(r.t1)||r.t1||"")+'</b> '+esc(r.from||"")+' → '+esc(r.to||"")+(r.t2?' <small>'+esc(r.t2)+'</small>':'')+'<small class="sbrv">'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small></div>').join("")},
