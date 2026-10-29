@@ -12,6 +12,8 @@ export const csKindCode=k=>String(k).replace(/^W\s*\/\s*H\s*\/\s*M/i,"WHM").repl
 /* the code of a place as a badge: an icon per kind of place (set, Base, W/H/M, Lunch, Dinner, Prod, DIT, Parking) and the short text */
 const CSKICO={"Base":"base","W / H / M":"whm","Lunch":"lunch","Dinner":"dinner","Prod":"prod","DIT":"dit"};
 function csKindIco(k){const q=(String(k).match(/ (Cast|Extras)$/)||[])[1],b=String(k).replace(/ (Cast|Extras)$/,"");if(b==="W / H / M"&&q)return q==="Cast"?CSI.whmc:CSI.whme;return CSI[CSKICO[b]]||(/park/i.test(b)?CSI.park:"")}
+/* the key of an address: street and number, folded («Schulhausplatz 4, 3970 Salgesch» → schulhausplatz4); "" without a number */
+export const csAdrKey=t=>{const m=fold(String(t||"")).match(/([a-z][a-z.' -]{2,40}?)\s*(\d+[a-z]?)\b(?!\s*['’]|\s*min)/);return m?m[1].replace(/[^a-z]/g,"")+m[2]:""};
 const CSKIND=[[/\bbase\b/i,"Base"],[/w\s*\/\s*h\s*\/\s*m/i,"W / H / M"],[/lunch|mittag/i,"Lunch"],[/dinner|diner|abendessen/i,"Dinner"],[/\bprod\b|production office|produktionsb/i,"Prod"],[/\bdit\b/i,"DIT"]];
 /* the icons of the kinds named in a line of a location («2nd AD & DIT», «Tech Parking»): DIT, Prod, Base … at the place where they are */
 export function csLabIcons(lab){const t=String(lab||"");const ks=CSKIND.filter(([re])=>re.test(t)).map(([,k])=>k);if(/park/i.test(t)&&!ks.length)ks.push("Parking");return ks.map(k=>csKindB(k)).join("")}
@@ -148,6 +150,8 @@ function csLocs0(c){const sets=[],extra=[];
       if(last&&CSHN_RE.test((lab+" "+txt).trim())&&!i.map){const n=[lab,txt].filter(Boolean).join(": ").replace(/:\s*:/,":");if(!last.notes.includes(n))last.notes.push(n);continue}
       const cm=txt.match(/^([^:,]{1,40}):\s*(.+)$/),head=cm?cm[1]:"",body=cm?cm[2]:txt,par=(body.match(/\(([^)]{1,30})\)/)||[])[1]||"";
       const kinds=KIND.filter(([re,k])=>re.test(lab)||re.test(head)||re.test(par)||(k==="Base"&&re.test(body.split(",")[0]))).map(([,k])=>k);   /* «Base Church, Dorfplatz 5» is the Base too */
+      /* «Extras @base: Schulhausplatz 4 …»: the place of the extras (their W / H / M) */
+      if(kinds.length&&/\b(extras?|komparsen|statist\w*)\b/i.test(lab)&&!kinds.some(k=>/^W \/ H \/ M/.test(k)))kinds.push("W / H / M Extras");
       if(!kinds.length||(!txt&&!i.map)){items.push(i);last=null;continue}
       let clean=body.replace(/\s*\([^)]{1,30}\)\s*/g," ").trim(),name=clean.split(",")[0].trim(),rest=clean.split(",").slice(1).join(",").trim(),uses="";
       /* «BASE LAKE» as label and the uses first in the text (W / H / M, Lunch …): the base is called by its label, the uses are a line of it */
@@ -198,13 +202,25 @@ function csLocs0(c){const sets=[],extra=[];
    for(const l of sets)for(const i of csA(l.items))if(i&&!i.map&&String(i.text||"").trim()){const u=refMap(i.label+": "+i.text,l);if(u){i.map=u;i._refmap=1}}}
   /* places at the same spot (the same map link, also one found above) are one location: «W/H/M Extras – Lobby Room @ Moxy» goes to
      «Base Moxy», «DIT – Loge Thelma @ Tech Parking 1.1» to the Tech Parking line of set 1.1 – never only because of a similar name */
-  for(const e of extra.slice()){if(!e.map||!extra.includes(e))continue;
-    const twin=extra.find(x=>x!==e&&x.map===e.map&&extra.indexOf(x)<extra.indexOf(e));
+  const xKeys=x=>[x.name].concat(csA(x.notes)).map(csAdrKey).filter(Boolean);
+  for(const e of extra.slice()){if(!extra.includes(e))continue;const ek=xKeys(e);if(!e.map&&!ek.length)continue;
+    const twin=extra.find(x=>x!==e&&extra.indexOf(x)<extra.indexOf(e)&&((e.map&&x.map===e.map)||(!(e.map&&x.map&&x.map!==e.map)&&ek.some(k=>xKeys(x).includes(k)))));   /* same link, or the same street and number (without two different links) */
     if(twin){for(const k of e.kinds)if(!twin.kinds.includes(k))twin.kinds.push(k);
-      const n=[e.kinds.join(" / "),e.name].filter(Boolean).join(": ");if(n&&!twin.notes.includes(n))twin.notes.push(n);for(const x of csA(e.notes))if(!twin.notes.includes(x))twin.notes.push(x);
-      extra.splice(extra.indexOf(e),1);continue}
+      const n=/^\s*base\s*$/i.test(String(e.name||""))?"":[e.kinds.join(" / "),e.name].filter(Boolean).join(": ");if(n&&!twin.notes.includes(n))twin.notes.push(n);for(const x of csA(e.notes))if(!twin.notes.includes(x))twin.notes.push(x);
+      if(!twin.map&&e.map)twin.map=e.map;extra.splice(extra.indexOf(e),1);continue}
     if(e.kinds.every(k=>k==="DIT"||k==="Prod")){const st=sets.find(l=>l.map===e.map||csA(l.items).some(i=>i&&i.map===e.map));
       if(st){st._kx=[...new Set((st._kx||[]).concat(e.kinds))];st.items=csA(st.items).concat([{label:e.kinds.join(" / "),text:[e.name].concat(e.notes).filter(Boolean).join(", "),map:e.map}]);extra.splice(extra.indexOf(e),1)}}}
+  /* lines of a set at the address of a side place (DT8: «Extras: Schulhausplatz 4 … Groundfloor» and «PROD & DIT: Schulhausplatz 4 … 1st floor»):
+     one place with both – the street and number decide (never only a similar name); the extras there make it their W / H / M */
+  {const AK=csAdrKey,keysOf=xKeys;
+   for(const l of sets){const keep=[];for(const i of csA(l.items)){const k=i&&AK(i.text||"");const e=k&&!(i.map&&i.map===l.map)&&extra.find(x=>(i.map&&x.map===i.map)||(!i.map&&keysOf(x).includes(k)));
+      if(!e){keep.push(i);continue}
+      if(/extra|komparsen|statist|figur/i.test(String(i.label||""))&&!e.kinds.some(x=>/^W \/ H \/ M/.test(x)))e.kinds.push("W / H / M Extras");
+      const rest=String(i.text||"").replace(/^[^,]*?\d+[a-z]?\b[\s,–-]*(\d{4}\s+[\p{L}-]+)?[\s,–-]*/u,"").trim(),n=[String(i.label||"").trim(),rest].filter(Boolean).join(": ");
+      if(n&&!e.notes.includes(n))e.notes.push(n);if(!e.map&&i.map)e.map=i.map}
+     l.items=keep}}
+  /* a place only called «Base» (from «… @base») with its address in the notes: called by its street («Base Schulhausplatz 4») */
+  for(const e of extra)if(/^\s*base\s*$/i.test(String(e.name||""))){const a=csA(e.notes).map(String).find(n=>csAdrKey(n));const m=a&&a.match(/^(.*?\d+[a-z]?)\b/i);if(m)e.name="Base "+m[1].trim()}
   /* many places that are only a Base (2nd Unit: «Base 1» … «Base 6», each a link): one Base with its numbers as links, not six «BASE» boxes */
   {const pb=extra.filter(e=>e.kinds.length===1&&e.kinds[0]==="Base");
    if(pb.length>=3){const nm=e=>{const n=String(e.name||"").trim();return n&&!/^base(\s*\d+(\s*[-–]\s*\d+)?)?$/i.test(n)?n:""};
