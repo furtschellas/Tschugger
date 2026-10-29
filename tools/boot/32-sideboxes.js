@@ -59,7 +59,7 @@ async function actLoad(){if(ACT.busy)return;ACT.busy=true;
       .map(m=>({n:String(m.name||[m.firstName,m.lastName].filter(Boolean).join(" ")||m.email||"?"),d:/^app-/.test(m.app||"")?"App":/desktop/.test(m.app||"")?"Web · Computer":"Web · Handy",t:seenMs(m)}))
       .sort((a,b)=>a.n.localeCompare(b.n));ACT.err=""}
   catch(err){ACT.err=String(err&&err.code||"x")}finally{ACT.at=Date.now();ACT.busy=false;soon()}}
-const ago=t=>{const m=Math.round((Date.now()-t)/60e3);return m<1?L("gerade eben"):L("vor")+" "+m+" Min."};
+const ago=t=>{const m=Math.round((Date.now()-t)/60e3);return m<1?L("gerade eben"):L("vor {n} Min.").replace("{n}",m)};
 const TOP={
   active:()=>{if(Date.now()-ACT.at>90e3)setTimeout(actLoad,0);if(!ACT.list)return ACT.err?'<p class="sbnone">'+esc(L("Zurzeit nicht lesbar"))+'</p>':"";
     if(!ACT.list.length)return '<p class="sbnone">'+esc(L("Gerade ist niemand aktiv."))+'</p>';
