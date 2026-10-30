@@ -107,7 +107,7 @@ let SCLBUSY=false;
 async function scLunchAuto(){if(SCLBUSY||/[?&]sbx=/.test(location.search)||!window.SCACKLIVE||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn()))return;   /* only on the live state – never on an old copy of the device */SCLBUSY=true;
   try{const now=Date.now();for(const [id,x] of Object.entries(window.SCACK)){const k=x&&(scKeyOf(id,x));
       if(!x||x.s!==1||scBase(k)!=="lunch"||!(+x.b||+x.at))continue;const e=scLunchEnd(x);if(now<e)continue;
-      try{await scWrite(x.d,k,x.u,{s:2,b:+x.b||+x.at,e})}catch(_){}}}
+      try{await scWrite(x.d,k,x.u,{s:2,b:+x.b||+x.at,e})}catch(err){scErr(x.d,k,x.u,"lunch auto",err)}}}
   finally{SCLBUSY=false}}
 setInterval(scLunchAuto,30e3);
 /* ---------- automatic quittances of the Drehplan (App-Verwaltung → Einstellungen → Quittieren): SCENEAUTO {s, l, w: {on, min}} ----------
@@ -124,7 +124,7 @@ const scaOn=(k,u)=>{if(u===undefined)return scaOn(k,"1")||scaOn(k,"2");const A=s
 const scaMark=(date,sc)=>{const s=date+"|"+scAckId(date,sc);let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "zs"+(h>>>0).toString(36)};
 const scaZ=(date,sc)=>!!(window.RIDEACK||{})[scaMark(date,sc)];
 async function scaKeep(date,sc){if(!SCA_KINDS.some(([k])=>scaOn(k))||scaZ(date,sc))return;const id=scaMark(date,sc),v={d:date,at:Date.now(),s:1};
-  try{await dbWrite("set","rideack/"+id,v);if(window.RIDEACK)window.RIDEACK[id]=v}catch(_){}}
+  try{await dbWrite("set","rideack/"+id,v);if(window.RIDEACK)window.RIDEACK[id]=v}catch(err){scErr(date,sc,"","keep",err)}}
 /* the rows of a unit that can be quittiert: key (scene number or lunch / wrap / setup…, «_u2» in the 2nd unit), kind, planned time (ms) */
 function scaRows(day,u){const its=dayItems(day,u),ks=scRowKeys(its,x=>x.n);let ref=0,scene=false;
   /* the time of a setup in the callsheet (its shooting order), else the one of the Drehplan */
@@ -158,7 +158,7 @@ const scKeyOf=(id,x)=>scK((x&&x.sc)||id.split("-").slice(1).join("-"),x&&x.u);  
 /* all entries running in a unit on that day (other than this one): their keys */
 function scRunAll(date,u,except){const out=[];for(const [id,x] of Object.entries(window.SCACK))if(x&&x.d===date&&x.s===1&&String(x.u||"1")===String(u||"1")&&id!==except)out.push(scKeyOf(id,x));return out}
 /* the scene running in a unit on that day (other than this one): its scene number, else "" */
-function scRunning(date,u,except){for(const [id,x] of Object.entries(window.SCACK))if(x&&x.d===date&&x.s===1&&String(x.u||"1")===String(u||"1")&&id!==except)return scKeyOf(id,x);return""}
+function scRunning(date,u,except){return scRunAll(date,u,except)[0]||""}
 /* a time typed for a scene: on the shooting day – or the next calendar day when it lies more than 12 h before the reference
    (night shoot: 00:40 after 23:30 belongs to the next day; DST-safe through the calendar date) */
 const scMsNear=(date,t,ref)=>{const v=scMs(date,t);if(!v||!ref)return v;if(ref-v>12*3600e3){const n=scMs(isoAdd(date,1),t);return n||v}return v};
@@ -167,7 +167,7 @@ const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)r
 async function scWrite(date,sc,u,v,auto){sc=scK(sc,u);const id=scAckId(date,sc),old=scGet(date,sc),undo=()=>{if(old)window.SCACK[id]=old;else delete window.SCACK[id];scRender()};
   /* an older entry of this 2nd-unit scene (id without unit): replaced by the own id */
   const lid=old&&!window.SCACK[id]?Object.keys(window.SCACK).find(k=>window.SCACK[k]===old):null;
-  if(lid){try{await dbWrite("delete","sceneack/"+lid,null,{undo:()=>{window.SCACK[lid]=old}})}catch(_){}delete window.SCACK[lid];if(typeof SCLOG!=="undefined"&&SCLOG.list){const i=SCLOG.list.findIndex(x=>x.id===lid);if(i>=0)SCLOG.list.splice(i,1)}}
+  if(lid){try{await dbWrite("delete","sceneack/"+lid,null,{undo:()=>{window.SCACK[lid]=old}})}catch(err){scErr(date,sc,u,"legacy",err)}delete window.SCACK[lid];if(typeof SCLOG!=="undefined"&&SCLOG.list){const i=SCLOG.list.findIndex(x=>x.id===lid);if(i>=0)SCLOG.list.splice(i,1)}}
   if(!auto&&old&&(!v||v.s<(old.s===1?1:2)))await scaKeep(date,sc);   /* set back by hand: the automatic leaves it alone */
   /* through the data layer: offline the scene state shows at once and is sent later */
   if(!v){await dbWrite("delete","sceneack/"+id,null,{undo});delete window.SCACK[id]}else{v=Object.assign({d:date,at:Date.now(),u:String(u||"1"),sc:String(sc).slice(0,24)},v);for(const k of ["b","e"])if(v[k]==null)delete v[k];await dbWrite("set","sceneack/"+id,v,{undo});window.SCACK[id]=v}if(typeof SCLOG!=="undefined"&&SCLOG.list){const i=SCLOG.list.findIndex(x=>x.id===id);if(i>=0)SCLOG.list.splice(i,1);if(v)SCLOG.list.push(Object.assign({id},v))}scRender()}
@@ -190,13 +190,16 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   scDiag(date,sc,u,"tap v="+(window.APPVER||"")+" st="+scState(date,scK(sc,u))+" on="+scOnU(u)+" ack="+canPerm("scenes.ack")+" par="+scParU(u)+" run="+scRunAll(date,u,"").join(","));
   Promise.resolve().then(()=>scTap(b,date,sc,u,"")).catch(err=>{scDiag(date,sc,u,"error "+String(err&&(err.code||err.message)||err).slice(0,120));try{b.disabled=false}catch(_){}console.warn("scene ack",err);showMsg(L("Fehler:")+" "+String(err&&(err.code||err.message)||err).slice(0,120),6000)})},true);
 /* diagnosis of a tap (until the quittance works again everywhere): each step into the protocol, codes only (no names) */
+/* a side write of the quittance that failed (lunch closed, setup done, older entry removed …): in the console and the log, never silent */
+function scErr(date,k,u,what,err){try{console.warn("quittance "+what,err)}catch(_){}scDiag(date,k,u,what+" "+String(err&&(err.code||err.message)||err).slice(0,80))}
 async function scDiag(date,sc,u,step){try{if(!ME||!ME.email)return;const {F,db}=await fb();await F.addDoc(F.collection(db,"audit"),{by:String(ME.email).toLowerCase(),at:F.serverTimestamp(),op:"error",col:"sceneack",id:String(date+"|"+sc+"|"+u).slice(0,120),sum:("diag "+step).slice(0,280)})}catch(_){}}
 window.scDiag=scDiag;
 /* one tap on the round button of an entry (choice: the answer of the parallel question – «par» or «finish» – when it was asked) */
+/* a running entry ends now: lunch at the latest at its planned end, never before its start (one routine for tap, wrap and start of the next) */
+function scFinish(date,k,u,now0){const rx=scGet(date,k)||{},rb=+rx.b||+rx.at||now0;return scWrite(date,k,u,{s:2,b:rb,e:scBase(k)==="lunch"?Math.max(rb,Math.min(scLunchEnd(rx),now0)):Math.max(rb,now0)})}
 async function scTap(b,date,sc,u,choice){sc=scK(sc,u);const id=scAckId(date,sc),st=scState(date,sc),x=scGet(date,sc)||{},bs=scBase(sc),now0=Date.now();
   if(st===2){scAckDialog(date,sc,u);return}
-  if(st===0){const runs=scRunAll(date,u,id),fin=k=>{const rx=scGet(date,k)||{},rb=+rx.b||+rx.at||now0;
-      return scWrite(date,k,u,{s:2,b:rb,e:scBase(k)==="lunch"?Math.max(rb,Math.min(scLunchEnd(rx),now0)):Math.max(rb,now0)}).catch(()=>{})};
+  if(st===0){const runs=scRunAll(date,u,id),fin=k=>scFinish(date,k,u,now0).catch(err=>scDiag(date,k,u,"fin "+String(err&&(err.code||err.message)||err).slice(0,80)));
     /* lunch and setups still running end when the next entry starts (lunch at the latest at its planned end) – not awaited: WhatsApp «direkt»
        must open in this tap */
     for(const k of runs)if(/^(lunch|setup\d*)$/.test(scBase(k)))fin(k);
@@ -209,7 +212,7 @@ async function scTap(b,date,sc,u,choice){sc=scK(sc,u);const id=scAckId(date,sc),
     /* the first scene of the day starts and the setup before it was never quittiert (nor set back by hand): the setup is done now (from its planned time) */
     const first=!scIsEv(sc)&&!Object.entries(window.SCACK).some(([rid,rx])=>rx&&rx.d===date&&String(rx.u||"1")===String(u||"1")&&!scIsEv(scKeyOf(rid,rx)));
     if(first)try{const day=arr(S.days).find(d=>d&&d.date===date&&d.kind==="shoot");
-      for(const r of day?scaRows(day,String(u||"1")):[])if(r.kind==="a"&&scState(date,r.k)===0&&!scaZ(date,r.k))scWrite(date,r.k,u,{s:2,b:Math.min(r.t,now0),e:now0},true).catch(()=>{})}catch(_){}}
+      for(const r of day?scaRows(day,String(u||"1")):[])if(r.kind==="a"&&scState(date,r.k)===0&&!scaZ(date,r.k))scWrite(date,r.k,u,{s:2,b:Math.min(r.t,now0),e:now0},true).catch(err=>scErr(date,r.k,u,"setup",err))}catch(_){}}
   /* the new state: wrap is done at once, an open entry runs, a running one is done */
   const v=st===0&&bs==="wrap"?{s:2,b:now0,e:now0}:st===0?{s:1,b:now0}:{s:2,b:x.b||x.at||now0,e:now0};
   /* WhatsApp per kind of quittance (Mein Konto → App): «direkt» opens WhatsApp right in this tap (a phone allows it only here, not after saving) */
@@ -218,7 +221,7 @@ async function scTap(b,date,sc,u,choice){sc=scK(sc,u);const id=scAckId(date,sc),
   /* the quittance is sent BEFORE WhatsApp opens: the phone may put the app to sleep at once (before, the scene was then never saved) */
   const wp=isWrap?null:scWrite(date,sc,u,v);if(wp)wp.catch(()=>{});
   if(wm==="a")scWaOpen(scShareText(date,sc,u,wk==="d"?Object.assign({start:1},v):v),wk,u);
-  if(isWrap)for(const k of scRunAll(date,u,id)){const rx=scGet(date,k)||{};try{await scWrite(date,k,u,{s:2,b:rx.b||rx.at||now0,e:scBase(k)==="lunch"?Math.max(+rx.b||+rx.at||now0,Math.min(scLunchEnd(rx),now0)):now0})}catch(_){}}
+  if(isWrap)for(const k of scRunAll(date,u,id)){try{await scFinish(date,k,u,now0)}catch(err){scDiag(date,k,u,"fin "+String(err&&(err.code||err.message)||err).slice(0,80))}}
   scDiag(date,sc,u,"write s="+v.s+" wa="+wm);
   try{await (wp||scWrite(date,sc,u,v));scDiag(date,sc,u,"saved");if(wm!=="f")showMsg(scLabel(sc)+" "+(v.s===1?L("läuft"):L("abgeschlossen"))+(u!=="1"?" · "+u+(u==="2"?"nd":"rd")+" Unit":""),1800);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null,wk)}   /* a short confirmation: the tap was saved */   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
   catch(err){b.disabled=false;scDiag(date,sc,u,"fail "+String(err&&(err.code||err.message)||err).slice(0,120));showMsg(err&&err.code==="simulation"?err.message:saveErr(err),4000)}}
