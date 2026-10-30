@@ -140,7 +140,9 @@ async function scAuto(){if(SCABUSY||/[?&]sbx=/.test(location.search)||!window.SC
       for(const u of ["1","2","3"]){if(!scOnU(u))continue;const rows=scaRows(day,u);let j=-1;
         const A=scaA(u);rows.forEach((r,i)=>{if(!scaOn(r.kind,u))return;const due=r.t+(+A[r.kind].min||0)*60e3;if(due<=now&&now-due<12*3600e3)j=i});
         if(j<0)continue;const r=rows[j],T=r.t+(+A[r.kind].min||0)*60e3;
-        if(rows.slice(j).some(x=>scState(day.date,x.k)>0)||scaZ(day.date,r.k))continue;   /* already quittiert (or later ones) / set back by hand */
+        /* already quittiert (or later ones) / set back by hand – a later row of a scene that came before («21 CONT» after lunch) shares its
+           quittance and does not count as «later», else the automatic stopped for the rest of the day */
+        {const before=new Set(rows.slice(0,j).map(x=>x.k));if(rows.slice(j).some((x,i)=>(i===0||!before.has(x.k))&&scState(day.date,x.k)>0)||scaZ(day.date,r.k))continue}
         /* quittiert by hand in this unit since this row was due (another scene started, one finished …): the hand wins – the automatic
            never undoes a tap (before, a scene started by hand was finished again within 30 s and the planned one started) */
         if(Object.values(window.SCACK).some(x=>x&&x.d===day.date&&String(x.u||"1")===u&&(+x.at||0)>=T))continue;

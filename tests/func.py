@@ -674,6 +674,13 @@ async def owner_tests(p, port):
           const hand=await run(now-10*60e3),behind=await run(now-40*60e3),auto=await run(dayMs(t,hm(now-60*60e3)));
           window.SCENEAUTO=K.a;window.SCACK=K.k;day.items=K.it;if(K.u2)day.unit2=K.u2;window.SCACKLIVE=K.l;window.RIDEACKLOADED=K.r;return {hand,behind,auto}})()""")
         check("Szenen automatisch: eine von Hand gestartete Szene bleibt bis zum Abschluss (auch hinter dem Plan), ohne Eingriff startet die geplante", sa_ in (None, {"hand": 0, "behind": 0, "auto": 1}), sa_, public=True)
+        # a scene in two rows («21 CONT» after lunch): its later row does not stop the automatic (it shares the quittance of the first row)
+        dup_ = await E("""(async()=>{if(typeof window.scAutoRun!=='function')return null;const t=todayISO(),day=(S.days||[]).find(d=>d.date===t&&d.kind==='shoot');if(!day)return null;
+          const K={a:window.SCENEAUTO,k:window.SCACK,it:day.items,l:window.SCACKLIVE,r:window.RIDEACKLOADED,u2:day.unit2};const hm=ms=>csHM(new Date(ms));const now=Date.now();if(hm(now)<'01:15'||hm(now)>'22:30')return null;
+          day.items=[{sc:'901',t:hm(now-60*60e3)},{sc:'902',t:hm(now-30*60e3)},{sc:'901',t:hm(now+30*60e3),n:'CONT'}];delete day.unit2;window.SCENEAUTO={a:{on:false},s:{on:true,min:0},l:{on:false},w:{on:false}};window.SCACKLIVE=true;window.RIDEACKLOADED=true;
+          window.SCACK={[scAckId(t,'901')]:{d:t,s:2,u:'1',sc:'901',b:now-60*60e3,e:now-35*60e3,at:now-35*60e3}};await window.scAutoRun();const r=scState(t,'902');
+          window.SCENEAUTO=K.a;window.SCACK=K.k;day.items=K.it;if(K.u2)day.unit2=K.u2;window.SCACKLIVE=K.l;window.RIDEACKLOADED=K.r;return r})()""")
+        check("Szenen automatisch: eine Szene in zwei Zeilen (CONT) hält die Automatik nicht auf", dup_ in (None, 1), dup_, public=True)
         # Fahrten 2nd Unit (wie late_push.ride_unit): Abholung am Morgen bei der 2nd Unit, auch für Leute beider Units
         ru = await E("""(()=>{if(typeof window.csRideUnit!=='function')return null;const c={times:{crewCall:'09:30'},cast:[{no:'1',actor:'Max Muster',pickup:'15:45'},{no:'8',actor:'Eva Probe',pickup:'08:40'}],
           calls:[{name:'Tom Ton',t:'06:45'}],u2:{crewCall:'06:45',cast:[{no:'1',actor:'Max Muster',pickup:'06:00'},{no:'2',actor:'Kai Zwei',pickup:'06:05'}]}};
