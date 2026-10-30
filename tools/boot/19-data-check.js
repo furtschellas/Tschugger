@@ -13,6 +13,7 @@ import {ACSUB,acctButton} from "./11-account.js";
 import {ADM} from "./12a-admin-core.js";
 import {dmy} from "./14-today-changes-offline.js";
 import {TST_RUN,logHead,logSu,logWhen,tstIco} from "./17-audit-misc.js";
+import {simRefreshChrome} from "./22-simulate.js";
 /* ---------- Dokumente prüfen: vergleicht die Dokumente aus der Dropbox untereinander und mit der App ----------
    Drehplan ↔ Locations ↔ Drehbuch ↔ Cast-Liste, Prep Weekly ↔ Daily, Callsheets ↔ Drehplan, Callsheets ↔ Crewliste, Namen ↔ Crewliste,
    dazu ein kurzer Selbsttest der App. Alles läuft im Browser mit den Daten, die die Person sehen darf – nichts geht weg.
@@ -200,7 +201,7 @@ export async function roleTestRun(auto){
         if(/konnte nicht angezeigt/.test(v.innerText))issues.push(L("Seite mit Fehler")+": "+(RTN[t]||t));
         if(!vok("phone")&&v.querySelector('a[href^="tel:"]')&&t==="crew")issues.push(L("Telefonnummern sichtbar ohne Recht"));
         if(!vok("email")&&v.querySelector('a[href^="mailto:"]')&&t==="crew")issues.push(L("E-Mail-Adressen sichtbar ohne Recht"))}catch(err){issues.push((RTN[t]||t)+": "+(err&&err.message||err))}}
-    try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}
+    simRefreshChrome()
     const vis=id=>{const b=document.getElementById(id);return !!b&&getComputedStyle(b).display!=="none"};
     if(vis("myCalBtn")!==!!vok("mycal"))issues.push(L("Kalender-Symbol stimmt nicht mit dem Recht überein"));
     if(vis("bcBtn")!==!!(can("push.send")&&window.PUSHEN!==false))issues.push(L("Couvert-Symbol stimmt nicht mit dem Recht überein"));
@@ -214,12 +215,12 @@ export async function roleTestRun(auto){
       can("scenes.ack")&&L("Szenen quittieren"),(typeof canSceneLog==="function"&&canSceneLog())&&L("Szenen-Protokoll"),(can("rides.confirm")||can("rides.manage"))&&L("Fahrten quittieren"),can("rides.manage")&&L("Fahrten Manager")].filter(Boolean);
     out.push({name:ro.name,tabs:tabs.map(t=>RTN[t]||t),extra,issues});
     /* back to the real rights for a moment and show the progress (the role's pages were drawn without being shown) */
-    setSIMROLE(null);setMYPERMS(keep.p);setMYROLE(keep.r);setADMINPERMS(keep.ap);S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}
+    setSIMROLE(null);setMYPERMS(keep.p);setMYROLE(keep.r);setADMINPERMS(keep.ap);S.tab=here.tab;ADM.sub=here.sub;mid=false;RTS.prog=Math.round(k/roles.length*100);simRefreshChrome()
     if(S.tab==="admin"&&ADM.sub==="log")render();   /* only the progress on Log/Tests; the visible page is never touched by the test */
     await new Promise(r=>setTimeout(r,180))}}
   catch(err){out.push({name:L("Fehler"),tabs:[],extra:[],issues:[String(err&&err.message||err)]})}
   finally{setSIMROLE(null);setMYPERMS(keep.p);setMYROLE(keep.r);try{const ad=await (async()=>ADM.adminPerms)();setADMINPERMS(isOwner()?ADMIN_DEFAULT.slice():(ad||ADMINPERMS))}catch(_){}
-    if(mid){S.tab=here.tab;ADM.sub=here.sub}try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}}
+    if(mid){S.tab=here.tab;ADM.sub=here.sub}simRefreshChrome()}
   {const w=500-(Date.now()-t0);if(w>0)await new Promise(r=>setTimeout(r,w))}
   RTS.res=out;RTS.at=Date.now();RTS.busy=false;RTS.prog=null;if(!auto)RTS.open=true;try{localStorage.setItem("rt:last",JSON.stringify({res:out,at:RTS.at}))}catch(_){}render()}
 window.roleTestSec=function(){if(!isAdmin()||SIMROLE)return "";const r=RTS.res||[],bad=r.filter(x=>x.issues.length).length;

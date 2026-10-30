@@ -20,7 +20,7 @@ function simBar(){let b=document.getElementById("simbar");
   if(!b){b=document.createElement("div");b.id="simbar";b.setAttribute("role","status");document.body.appendChild(b)}
   document.body.classList.add("simming");
   b.innerHTML='<span>'+esc(L("Ansicht als"))+' <b>'+esc(SIMUSER.name)+'</b> · '+esc(SIMUSER.rname)+' · '+esc(L("nur ansehen"))+'</span><button type="button" data-simend>'+esc(L("Beenden"))+'</button>'}
-function simRefreshChrome(){try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}}
+export function simRefreshChrome(){try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}}
 /* the simulation stays when the page is reloaded (this tab only: closing the tab or «Beenden» ends it) */
 const simKeep=v=>{try{if(v)sessionStorage.setItem("sim",JSON.stringify(v));else sessionStorage.removeItem("sim")}catch(_){}};
 function simStart(em,re){em=lc(em);if(!simCan(em))return;

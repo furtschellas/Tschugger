@@ -6,6 +6,8 @@ import {ADMIN_DEFAULT,ME,MYPERMS,MYROLE,PERMS,VIEWPERMS,can,crewPerson,fb,isAdmi
 import {ADM,SECS,admErr,admIndex,admLoad,confirmSafe} from "./12a-admin-core.js";
 import {canRole,roleGivable,roleLocked,rolePermsOf} from "./12c-admin-users.js";
 import {auditSum} from "./17-audit-misc.js";
+/* the name of a person of the App-Verwaltung by e-mail: member, invitation, crew list – one routine */
+const admNameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&(mName(m)))||(i&&i.name)||cp.name||e};
 /* ---------- App-Verwaltung (Rollen und Rechte) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
 const permBoxes=sel=>'<div class="perms">'+[...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp"><h5>'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const lock=(!isAdmin()&&!MYPERMS.includes(k))||(k==="settings"&&!isOwner()); /* role editors can only give permissions they have themselves */
     return '<label class="ck'+(lock?' plock':'')+'"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+(lock?' disabled':'')+'> '+esc(permLbl(k,t))+'</label>'}).join("")+'</div>').join("")+'</div>';
@@ -19,13 +21,13 @@ export function rolesSec(){
   const roles=rolesSorted();
   const pplLbl=id=>cnt(id)+' '+L(cnt(id)===1?"Person":"Personen");
   /* who has this role: folded list, a person added right here (select) or taken out (×) */
-  const nameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&(mName(m)))||(i&&i.name)||cp.name||e};
+  
   const everyone=[...new Set(ADM.mem.map(m=>m.email).concat(ADM.inv.map(i=>i.id)))].filter(e=>e&&!ADMINS.includes(e));
-  const ppl=id=>(id==="admin"?ADM.adm.slice():Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e))).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),LANG));
-  const pplSec=id=>{const l=ppl(id),can_=canRoleAssign()&&(id==="admin"?isAdmin():roleGivable((ADM.roles||[]).find(x=>x.id===id))),cand=can_?everyone.filter(e=>!l.includes(e)&&canRole(e)).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),LANG)):[];
+  const ppl=id=>(id==="admin"?ADM.adm.slice():Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e))).sort((a,b)=>admNameOf(a).localeCompare(admNameOf(b),LANG));
+  const pplSec=id=>{const l=ppl(id),can_=canRoleAssign()&&(id==="admin"?isAdmin():roleGivable((ADM.roles||[]).find(x=>x.id===id))),cand=can_?everyone.filter(e=>!l.includes(e)&&canRole(e)).sort((a,b)=>admNameOf(a).localeCompare(admNameOf(b),LANG)):[];
     return '<details class="arppl" data-sec="rppl-'+esc(id)+'"'+(SECS["rppl-"+id]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+l.length+')</summary>'+
-      (l.length?'<ul class="paccl">'+l.map(e=>'<li><span>'+esc(nameOf(e))+'</span>'+(can_&&canRole(e)?'<button type="button" class="lnk arpx" data-rpout="'+esc(e)+'" '+ariaTip(L("Aus der Rolle nehmen"))+'>×</button>':'')+'</li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+
-      (cand.length?'<label class="arl arpadd">'+L("Person hinzufügen")+'<select data-rpadd="'+esc(id)+'"><option value="">'+esc(L("Person wählen …"))+'</option>'+cand.map(e=>'<option value="'+esc(e)+'">'+esc(nameOf(e))+(nameOf(e)!==e?' · '+esc(e):'')+'</option>').join("")+'</select></label>':'')+'</details>'};
+      (l.length?'<ul class="paccl">'+l.map(e=>'<li><span>'+esc(admNameOf(e))+'</span>'+(can_&&canRole(e)?'<button type="button" class="lnk arpx" data-rpout="'+esc(e)+'" '+ariaTip(L("Aus der Rolle nehmen"))+'>×</button>':'')+'</li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+
+      (cand.length?'<label class="arl arpadd">'+L("Person hinzufügen")+'<select data-rpadd="'+esc(id)+'"><option value="">'+esc(L("Person wählen …"))+'</option>'+cand.map(e=>'<option value="'+esc(e)+'">'+esc(admNameOf(e))+(admNameOf(e)!==e?' · '+esc(e):'')+'</option>').join("")+'</select></label>':'')+'</details>'};
   /* WhatsApp beim Quittieren for this role, per unit: per kind «wie die Person» (her own setting) / aus / fragen / direkt, and a recipient (number or group link) */
   const waBox=id=>{const K=window.SCWA_KINDS||[];if(!K.length||id==="admin")return"";const w=((ADM.roles||[]).find(x=>x.id===id)||{}).wa||{},us=window.UNIT2!==false?["1","2"]:["1"];
     const sel=(u,k,i)=>{const c=String(((w[u]||{}).m||"")[i]||"p");return '<select name="wam'+u+'_'+k+'" aria-label="'+esc(L(K[i][1])+" · "+u+(u==="1"?"st":"nd")+" Unit")+'">'+[["p","Wie die Person"],["n","Aus"],["f","Fragen"],["a","Direkt"]].map(([v,t])=>'<option value="'+v+'"'+(c===v?' selected':'')+'>'+esc(L(t))+'</option>').join("")+'</select>'};
@@ -46,13 +48,13 @@ export function rolesSec(){
 }
 /* who has which permission: every option can be opened and lists the people (owners, admins, roles; people without a role where allowed) */
 function permAccessSec(){
-  const nameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&(mName(m)))||(i&&i.name)||cp.name||e};
+  
   const everyone=[...new Set(ADM.mem.map(m=>m.email).concat(ADM.inv.map(i=>i.id)).concat(ADMINS))].filter(Boolean);
   const rp=id=>{const r=(ADM.roles||[]).find(x=>x.id===id);return r?arr(r.perms):[]};const aperm=ADM.adminPerms||ADMIN_DEFAULT;
   const noRoleOK=k=>({"view.phone":"phone","view.email":"email","view.mycal":"mycal"})[k];
   const who=k=>everyone.map(e=>{if(ADMINS.includes(e))return [e,L("Owner")];if(ADM.adm.includes(e))return aperm.includes(k)?[e,L("Admin")]:null;const id=ADM.ur[e];
       if(id)return rp(id).includes(k)?[e,((ADM.roles||[]).find(x=>x.id===id)||{}).name||id]:null;const pk=noRoleOK(k);return pk&&window.PUBV&&window.PUBV[pk]?[e,L("Keine Rolle")]:null}).filter(Boolean)
-    .sort((a,b)=>nameOf(a[0]).localeCompare(nameOf(b[0]),LANG));
+    .sort((a,b)=>admNameOf(a[0]).localeCompare(admNameOf(b[0]),LANG));
   const allOpen=PERMS.every(([k])=>SECS["pacc-"+k]);
   return '<div class="admins pacc"><h3>'+L("Wer hat welchen Zugriff?")+'</h3><p class="ahint">'+L("Tippe auf eine Berechtigung, um zu sehen, wer sie hat – und über welche Rolle.")+'</p>'+
     '<div class="ubar">'+paccAllBtn(allOpen)+'</div>'+
@@ -67,7 +69,7 @@ function permAccessSec(){
         (edit?'<div class="paccr">'+rl.map(([id,n,on,ed])=>'<label class="ck paccrole'+(ed?'':' plock')+'"><input type="checkbox" data-pacc="'+esc(id)+'" data-perm="'+k+'"'+(on?' checked':'')+(ed?'':' disabled')+'> '+esc(n)+'</label>').join("")+'</div>'
           :'<div class="paccr">'+(rl.filter(x=>x[2]).map(x=>'<span class="ust role">'+esc(x[1])+'</span>').join("")||'<span class="ghint">'+esc(L("Keine Rolle"))+'</span>')+'</div>')+
         '<details class="paccp" data-sec="paccp-'+k+'"'+(SECS["paccp-"+k]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+w.length+')</summary>'+
-        (w.length?'<ul class="paccl">'+w.map(([e,r])=>'<li><span>'+esc(nameOf(e))+'</span><span class="ust role">'+esc(r)+'</span></li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+'</details></details>'}).join("")+'</div>').join("")+'</div>';
+        (w.length?'<ul class="paccl">'+w.map(([e,r])=>'<li><span>'+esc(admNameOf(e))+'</span><span class="ust role">'+esc(r)+'</span></li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+'</details></details>'}).join("")+'</div>').join("")+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-paccedit]");if(!b)return;e.preventDefault();e.stopPropagation();const k=b.dataset.paccedit;ADM.paccEdit=ADM.paccEdit===k?"":k;if(ADM.paccEdit)SECS["pacc-"+k]=true;render()},true);
 /* «Wer hat welchen Zugriff?»: one round button opens or closes all permissions (like the user list) */

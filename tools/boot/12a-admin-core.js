@@ -9,6 +9,8 @@ import {ADMIN_DEFAULT,DIETS,INTOL,ME,VIEWPERMS,can,crewPerson,dietText,fb,isAdmi
 import {getDataKey} from "./04-data.js";
 import {mailto} from "./06-prefs-docs.js";
 import {menuSec} from "./10-menus-welcome-presence.js";
+/* the shown name of a member: profile name, else the crew list, else the e-mail (or the given fallback) – one routine */
+export const memName=(m,fb)=>mName(m)||(crewPerson(m.email)||{}).name||(fb===undefined?m.email:fb);
 /* global editForm */   // from the App-Verwaltung (admin.js, loaded on demand)
 /* ---------- App-Verwaltung (Kern: Daten, Crew-Liste, Catering, Geburtstage, Bilder) – part of the former 12-admin.js; loaded with the app ---------- */
 /* ---- admin: invitations and members (German only; visible to admins) ---- */
@@ -63,7 +65,7 @@ export function caterData(){
   const v=caterData0();CATM={t:Date.now(),n:ADM.mem.length,l:LANG,v};return v}
 function caterData0(){
   const act=ADM.mem.filter(m=>m.active===true&&!NO_CATER.test(crewDeptOf(m))).map(normDiet);
-  const nm=m=>mName(m)||(crewPerson(m.email)||{}).name||m.email;
+  const nm=memName;
   const alg=m=>String(m.allergies||"").trim();
   const special=act.filter(m=>(m.diet&&m.diet!=="none")||m.intol.length||alg(m));
   const groups=DIETS.filter(d=>d[0]!=="none").map(d=>[L(d[1]),special.filter(m=>m.diet===d[0])]).concat(INTOL.map(i=>[L(i[1]),special.filter(m=>m.intol.includes(i[0]))])).filter(g=>g[1].length);
@@ -135,7 +137,7 @@ function memberFor(p){
 }
 const bdShort=iso=>{const m=/^\d{4}-(\d\d)-(\d\d)$/.exec(iso||"");return m?m[2]+"."+m[1]+".":""};
 function bdayEntries(){
-  const name=m=>mName(m)||(crewPerson(m.email)||{}).name||m.email;
+  const name=memName;
   if(isAdmin()&&ADM.loaded)return ADM.mem.filter(m=>m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||"")).map(m=>({name:name(m),md:m.birthday.slice(5)}));
   /* without admin rights (e.g. «Geburtstage sehen» only) the list comes from «bdays» – it was never loaded on this path and always showed «Keine Geburtstage» */
   if(!PUBB.loaded&&ME)loadPubBdays();
@@ -168,7 +170,7 @@ let BSYNC=0;
 export async function syncBdays(force){
   if(!isOwner()||!ADM.loaded||(!force&&Date.now()-BSYNC<10*60*1000))return;BSYNC=Date.now();
   try{const {F,db}=await fb();const cur=await F.getDocs(F.collection(db,"bdays"));const have={};cur.docs.forEach(d=>have[d.id]=d.data());
-    const name=m=>mName(m)||(crewPerson(m.email)||{}).name||"";
+    const name=m=>memName(m,"");
     const want={};ADM.mem.forEach(m=>{if(m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||""))want[m.uid]={name:name(m),md:m.birthday.slice(5)}});
     const ops=[];for(const id in want)if(!have[id]||have[id].name!==want[id].name||have[id].md!==want[id].md)ops.push(["set",id,want[id]]);
     for(const id in have)if(!want[id])ops.push(["del",id]);
