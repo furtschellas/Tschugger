@@ -73,9 +73,16 @@ export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_
     const named=arr(dp.contacts).concat(arr(dp.cast).map(c=>({name:c.actor}))).some(c=>c&&c.name&&iAmIn([c.name],me,people));
     const onSet=src&&!NOSET.test(fold(src));
     if(!call&&!named&&!onSet)continue;
-    const st=hm(call&&call.t)||hm(dp.crewCall)||hm(dp.generalCall)||"",en=hm(dp.wrap);
-    const loc=arr(dp.locations).map(l=>l.name||l.address).filter(Boolean).join(", ")||(d.kind?dayPlaces(d).join(", "):"");
-    out.push({date:dp.date,t:st,end:en,n:(d.short||dp.label||d.label||"")+" · "+L("Drehtag")+(call&&call.dept?" ("+call.dept+")":""),where:loc,map:(arr(dp.locations)[0]||{}).map||"",src:"Callsheet"+(dp.version?" "+dp.version:""),go:d.id||dp.date})}
+    /* a day with a 2nd Unit: the unit(s) I am in (my call column, my department column, the cast) – only the 2nd: its call, wrap and places;
+       both: from the earlier start to the later wrap */
+    let U=null,c2=null;try{const cm=typeof csMe==="function"?csMe():null;if(dp.cs&&dp.cs.u2&&cm){if(typeof window.csMyUnits==="function")U=window.csMyUnits(dp.cs,cm);c2=arr(dp.cs.calls).find(z=>z&&cm.hit(z.name))||null}}catch(_){}
+    const u2=(dp.cs&&dp.cs.u2)||{},t2=u2.times||{};
+    const s1=hm(call&&call.t)||hm(dp.crewCall)||hm(dp.generalCall)||"",e1=hm(dp.wrap),s2=hm(c2&&c2.t2)||hm(call&&call.t2)||hm(u2.crewCall)||hm(t2.crewCall)||"",e2=hm(t2.wrap);
+    const only2=!!U&&U.length===1&&U[0]==="2",both=!!U&&U.length===2;
+    const st=only2?(s2||s1):both?[s1,s2].filter(Boolean).sort()[0]||"":s1,en=only2?(e2||e1):both?[e1,e2].filter(Boolean).sort().slice(-1)[0]||"":e1;
+    const L2=only2?arr(u2.locations):arr(dp.locations);
+    const loc=L2.map(l=>l.name||l.address).filter(Boolean).join(", ")||(d.kind?dayPlaces(d).join(", "):"");
+    out.push({date:dp.date,t:st,end:en,n:(d.short||dp.label||d.label||"")+" · "+L("Drehtag")+(only2?" · 2nd Unit":both?" · 1st + 2nd Unit":"")+(call&&call.dept?" ("+call.dept+")":""),where:loc,map:(L2[0]||{}).map||"",src:"Callsheet"+(dp.version?" "+dp.version:""),go:d.id||dp.date})}
   /* my rides from the callsheets (driver, passenger, crew transport, travel) */
   try{const cm=typeof csMe==="function"?csMe():null,seen=new Set();if(cm)for(const dp of S.dispos){try{if(!dp||dp.date<t||!dp.cs)continue;   /* one odd callsheet never hides the rides of the others */
     const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};

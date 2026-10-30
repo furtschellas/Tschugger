@@ -740,6 +740,11 @@ async def owner_tests(p, port):
         sh_ = await E("""(()=>{if(typeof csLocs!=='function')return null;const it=(l,t,m)=>({label:l,text:t,map:m||''});const r=csLocs({locations:[{no:'1.1',name:'VILLA',items:[it('LOC','Bahnhofstrasse 40, 3970 Salgesch'),it('CREW PARKING','Kirchplatz 5, 3970 Salgesch','https://m/CP'),it('BASE KIRCHE','W / H / M Cast / LUNCH, Kirchplatz 5 - 3970 Salgesch','https://m/BK'),it('Extras @base','Schulhausplatz 4 3970 Salgesch Groundfloor'),it('PROD & DIT @base','Schulhausplatz 4 3970 Salgesch - 1st floor')]}]});
           return r.filter(l=>l.kinds).map(l=>l.name+'='+l.kinds.join('/')).join(' | ')})()""")
         check("Locations: Orte an derselben Adresse sind ein Ort (Base Schulhausplatz mit Komparsen, Prod und DIT)", sh_ in (None, "BASE KIRCHE=Base/W / H / M Cast/Lunch | Base Schulhausplatz 4=Base/W / H / M Extras/Prod/DIT"), sh_, public=True)
+        # «Meine Termine»: someone only in the 2nd Unit gets the shooting day of the 2nd Unit (its call and wrap), not the one of the 1st
+        me2 = await E("""(()=>{if(typeof myEvents!=='function'||typeof csMe!=='function')return null;const t=todayISO(),x=(S.dispos||[]).find(y=>y&&y.date===t&&y.cs&&y.cs.u2);if(!x)return null;const k=window.csMe,keep=JSON.stringify(x.cs.calls||[]);
+          x.cs.calls=(x.cs.calls||[]).concat([{name:'Zora Zweitunit',dept:'Camera',t:'',t2:'05:55'}]);window.csMe=()=>({name:'Zora Zweitunit',dep:'camera',hit:n=>/zora zweitunit/i.test(String(n||''))});
+          try{const ev=myEvents({name:'Zora Zweitunit',src:'Camera'}).filter(e=>/Drehtag/.test(e.n)&&e.date===t);return ev.map(e=>e.t+'|'+/2nd Unit/.test(e.n)).join(',')}finally{window.csMe=k;x.cs.calls=JSON.parse(keep)}})()""")
+        check("Meine Termine: nur in der 2nd Unit → Drehtag der 2nd Unit (ihr Call)", me2 in (None, "05:55|true"), me2, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();
