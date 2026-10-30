@@ -19,8 +19,8 @@ export function scriptData(){
 }
 /* "186pt1A" → 186, "6 SL4" → 6SL, "184CA" → 184CA */
 export function findScene(list,sc){
-  const by=new Map(list.map(x=>[String(x.sc).toLowerCase().replace(/\s+/g,""),x]));
-  const n=String(sc||"").toLowerCase().replace(/\s+/g,"");
+  const by=new Map(list.map(x=>[norm(x.sc),x]));
+  const n=norm(sc);
   const a=n.replace(/pt\d+[a-z]*$/,"");
   const tries=[n,a,a.replace(/^(\d+[a-z]+)\d+$/,"$1"),(n.match(/^\d+/)||[""])[0]];
   for(const t of tries)if(t&&by.has(t))return by.get(t);
@@ -66,14 +66,14 @@ function endTime(t,dur){
 }
 export function schedIndex(){return memo("scsched",()=>{const m={};for(const d of S.days)for(const [u,its] of unitLists(d))for(const it of its){if(!it.sc)continue;const k=norm(it.sc);(m[k]=m[k]||[]).push({d,u,it})}return m})}
 export function sceneFacts(reqSc,x,list){
-  const want=String(reqSc||"").toLowerCase().replace(/\s+/g,"");
+  const want=norm(reqSc);
   const ex=schedIndex()[want];if(ex&&ex.length)return factsHTML(ex); /* fast path: exact scene number */
   const hits=[];
   for(const d of S.days)for(const [u,its] of unitLists(d))for(const it of its){
-    if(!it.sc)continue;const n=String(it.sc).toLowerCase().replace(/\s+/g,"");
+    if(!it.sc)continue;const n=norm(it.sc);
     if(n===want||(x&&findScene(list,it.sc)===x))hits.push({d,u,it});
   }
-  const exact=hits.filter(h=>String(h.it.sc).toLowerCase().replace(/\s+/g,"")===want);
+  const exact=hits.filter(h=>norm(h.it.sc)===want);
   return factsHTML(exact.length?exact:hits);
 }
 /* floorplans (PDF) and blocking photos from the 3D folder, matched to sets, places and scene numbers */
@@ -85,7 +85,7 @@ export function bmed(b){if(!b)return[];const bm=arr(S.meta&&S.meta.bm);const all
   /* recce photos only when the scene has no other pictures – never mixed */
   const other=all.filter(m=>m.g!=="recce");return other.length?other:all}
 /* scene key → {b: base scene, k: "pt"|"sl"|"", n: part number}: «186pt1A» → 186/pt/1, «25 SL2» → 25/sl/2 (slideshow – its own scene, not part of 25), «184C» → 184c */
-function scParts(s){const t=String(s||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,""),m=t.match(/^(\d+[a-z]{0,2}?)(?:(pt|sl)(\d*)[a-z]?)?$/);return m?{b:m[1],k:m[2]||"",n:m[3]||"",t}:{b:t,k:"",n:"",t}}
+function scParts(s){const t=norm(s).replace(/^0+(?=\d)/,""),m=t.match(/^(\d+[a-z]{0,2}?)(?:(pt|sl)(\d*)[a-z]?)?$/);return m?{b:m[1],k:m[2]||"",n:m[3]||"",t}:{b:t,k:"",n:"",t}}
 /* blocking for a scene: its own entry; a part «186pt1A» also gets the part «186pt1» and the general pictures of 186 – never those of another part (186pt2);
    a slideshow picture «25SL2» only «25SL»/«25SL2», never scene 25 */
 /* the gallery opens exactly the pictures the button belongs to (for «186pt1A» only part 1 and the general ones – never the whole folder) */

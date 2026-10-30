@@ -1,4 +1,4 @@
-import {L,S,ddmm,esc,mkDialog,todayISO,xBtn} from "../base/10-core.js";
+import {ddmm,esc,L,mkDialog,norm,S,todayISO,xBtn} from "../base/10-core.js";
 import {unitLists} from "../base/11-schedule-prep.js";
 import {WDL,openMyCal} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -12,7 +12,7 @@ import {getDataKey} from "./04-data.js";
    HEUTE · ÄNDERUNGEN · OFFLINE · PROTOKOLL
    ===================================================================== */
 export const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+", "+ddmm(dt)};
-const scKey=x=>String(x||"").toLowerCase().replace(/\s+/g,"");
+const scKey=x=>norm(x);
 export const unitItems=d=>unitLists(d);   /* the same as the Drehplan (11-schedule-prep) */
 
 /* ---------- 2) changes since the last visit on this device ---------- */

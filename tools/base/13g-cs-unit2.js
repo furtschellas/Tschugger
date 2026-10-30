@@ -1,6 +1,6 @@
 /* the 2nd Unit of a callsheet (cs.u2, read apart from the 1st Unit): its own part below the callsheet of the 1st Unit –
    times, contact on set, sets, shooting order, cast, extras, vehicles, calls «2nd IN», department infos (the prevision is kept in the data, shown neither for the 1st Unit) */
-import {camFold,esc,fmtDate,L,mapUrl,norm,safeUrl} from "./10-core.js";
+import {camFold,esc,fmtDate,L,mapUrl,norm,safeUrl,telNum} from "./10-core.js";
 import {nameHit} from "./11-schedule-prep.js";
 import {schedIndex} from "./17-scene-reader.js";
 import {csA,csL,csSec,csTable,csTx} from "./13a-callsheet.js";
@@ -57,7 +57,7 @@ export function csU2HTML(x,c,day,me,F){F=F||{};const x2=csU2Dispo(x,day);if(!x2)
   const part=(k,...a)=>{if(typeof F[k]!=="function")return"";try{return F[k](...a)||""}catch(err){console.warn("2nd Unit "+k,err);return ""}};   /* one part failing never hides the others */
   let h='<div class="csu2-head" id="cs-u2"><h2>2nd Unit</h2><span>'+(x.date?fmtDate(x.date):'')+(u.ad?' · 1st AD '+esc(String(u.ad)):'')+'</span></div>';
   h+=part("tiles").replace('id="cs-zeiten"','id="cs-u2zeiten"');
-  const ct=c2.contact;if(ct&&(ct.name||ct.phone)){const tel=String(ct.phone||"").replace(/[^\d+]/g,"");
+  const ct=c2.contact;if(ct&&(ct.name||ct.phone)){const tel=telNum(ct.phone);
     h+='<div class="cscontact"><span class="csct-in"><b>'+esc(L("Kontakt am Set"))+':</b> '+(tel&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'">'+esc(ct.name||ct.phone)+'</a>':esc(ct.name||""))+(ct.role?' <small>· '+esc(ct.role)+'</small>':'')+'</span></div>'}
   if(csA(c2.locations).length)h+=part("loc",c2,x,me,{},{}).replace('id="cs-loc"','id="cs-u2loc"').replace('<h3 class="dh">Locations</h3>','<h3 class="dh">Locations · 2nd Unit</h3>');
   h+=part("order",c2,c2.order||{});

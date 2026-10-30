@@ -1,4 +1,4 @@
-import {L,S,esc,mkDialog,saveBtn,xBtn} from "../base/10-core.js";
+import {esc,isoId,L,mkDialog,norm,S,saveBtn,xBtn} from "../base/10-core.js";
 import {hm,myIdentity} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
@@ -15,7 +15,7 @@ import {getDataKey} from "./04-data.js";
    add: neu dazu}. ===================================================================== */
 window.DAYEDIT=window.DAYEDIT||{};window.DESTALE={};
 try{const c=JSON.parse(localStorage.getItem("dayedit:v1")||"null");if(c&&typeof c==="object")window.DAYEDIT=c}catch(_){}
-const deId=d=>String(d||"").replace(/-/g,"");
+const deId=isoId;
 const deDate=id=>id.slice(0,4)+"-"+id.slice(4,6)+"-"+id.slice(6,8);
 /* for now only Owner and Admins (with the right «Drehtag vor Ort ändern», which Admins have unless switched off) */
 export const deCan=()=>{try{return isAdmin()&&can("day.edit")&&!(window.simOn&&window.simOn())}catch(_){return false}};
@@ -40,7 +40,7 @@ window.deApply=days=>{window.DESTALE={};const E=window.DAYEDIT||{};if(!Object.ke
 /* the callsheet of a changed day: the scene rows in the new order and times, struck / moved away left out, new ones added */
 window.deDispos=dispos=>{const E=window.DAYEDIT||{};if(!Object.keys(E).length)return dispos;
   return dispos.map(c=>{const e=c&&c.cs&&E[c.date];if(!e||deStale(c.date,"1")||!Array.isArray(e.items))return c;const o=c.cs.order||{},rows0=arr(o.rows);if(!rows0.length)return c;
-    const norm=v=>String(v||"").toLowerCase().replace(/\s+/g,"");
+    
     const scs=e.items.filter(x=>x.sc&&!deGone(x)).map(x=>{const r=rows0.find(y=>y.sc&&norm(y.sc)===norm(x.sc));
       return Object.assign({},r||{sc:x.sc,ie:x.ie||"",set:x.set||"",syn:x.d||"",cast:arr(x.cast).join(", ")},{t:x.t||(r&&r.t)||""},x._de?{_de:x._de}:{})});
     const rows=[];let i=0;for(const r of rows0){if(r.sc){if(i<scs.length)rows.push(scs[i++])}else{if(/wrap|drehschluss/i.test(String(r.text||"")))while(i<scs.length)rows.push(scs[i++]);rows.push(r)}}

@@ -111,6 +111,11 @@ export const clockHM=d=>pad2(d.getHours())+":"+pad2(d.getMinutes());   /* «07:0
 export const msHM=ms=>ms?clockHM(new Date(+ms)):"";   /* «07:05» of a time in milliseconds, "" without */
 /* message when saving failed: no permission, else not possible */
 export const saveErr=e=>/permission/.test((e&&e.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.");
+/* a date «2026-10-29» as «29.10» and as the key of a document «20261029» – one routine each */
+export const isoDM=d=>String(d||"").split("-").reverse().slice(0,2).join(".");
+export const isoId=d=>String(d||"").replace(/-/g,"");
+/* the first day whose acks/changes are read: the oldest callsheet of the last 60 days (else today) */
+export const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
 export const telNum=s=>String(s||"").replace(/[^\d+]/g,"");   /* phone number for tel:/sms:/vCard: only digits and + */
 export const ddmm=d=>pad2(d.getDate())+"."+pad2(d.getMonth()+1)+".";   /* «17.10.» */
 export const fmtDate=iso=>{const d=new Date(iso+"T12:00:00");return WD[d.getDay()]+" "+ddmm(d)+d.getFullYear()};
@@ -140,7 +145,8 @@ export const mapUrl=u=>{const p=mapGeo(u);return safeUrl(p?mapsQ((+p[0]).toFixed
 export const mapsDir=(o,de)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving"+(o?"&origin="+encodeURIComponent(o):"")+"&destination="+encodeURIComponent(de);
 const mapsSearch=q=>mapsQ(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
 export const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};
-export const norm=s=>String(s).toLowerCase().replace(/\s+/g,"");
+/* the key of a scene number or name: lower case, without spaces («186 PT1» → «186pt1»); one routine for the whole app */
+export const norm=s=>String(s??"").toLowerCase().replace(/\s+/g,"");
 /* search hits marked in a text: ranges found in the raw text, then escaped piece by piece (marking inside escaped HTML broke «&#39;» and earlier marks) */
 export function markTerms(text,terms,min){text=String(text||"");const r=[];
   for(const q of terms||[]){if(!q||q.length<(min||1))continue;const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"gi");let m;while((m=re.exec(text))){if(!m[0].length){re.lastIndex++;continue}r.push([m.index,m.index+m[0].length])}}
@@ -206,7 +212,7 @@ export function pvButtons(pre,post){return '<span class="pvb">'+(pre||'')+PVKEYS
 export function driveMin(m){m=+m||0;return m>20?Math.ceil(m*1.15):m+3}
 /* scene details from the schedule: meta.bd["date|scene"], shown at the end of each scene as running text («Topic:» underlined, as in the PDF),
    in three groups that the round buttons switch on and off: Art-Department, HMU, Info (everything else) */
-const bdKey=sc=>String(sc||"").toLowerCase().replace(/\s+/g,"").replace(/^0+(?=\d)/,"");
+const bdKey=sc=>norm(sc).replace(/^0+(?=\d)/,"");
 export function bdFor(date,sc){const m=(S.meta&&S.meta.bd)||{},k=bdKey(sc);if(!k)return null;if(m[date+"|"+k])return m[date+"|"+k];
   /* the scene is shot on another day too (e.g. details of 5 pt2 again in the 2nd unit): its details from that day */
   for(const x in m)if(x.slice(x.indexOf("|")+1)===k)return m[x];return null}

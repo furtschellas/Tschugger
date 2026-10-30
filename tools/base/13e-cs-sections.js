@@ -1,4 +1,4 @@
-import {dayItems,esc,fmtDate,ieClass,L,maps,mapUrl,S,safeUrl} from "./10-core.js";
+import {dayItems,esc,fmtDate,ieClass,L,maps,mapUrl,S,safeUrl,telNum} from "./10-core.js";
 import {nowCardHTML} from "../boot/16-today-view.js";
 import {UNITBAR,nmk} from "./11-schedule-prep.js";
 import {WDL} from "./12-mycal.js";
@@ -167,7 +167,7 @@ export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
   if(x.date===csShootDay())h+=nowCardHTML(x.date,"csnowc",c._u);   /* the callsheet of today: «Jetzt» above the tiles, as in Today */
   h+=csTilesHTML(x,day,c,me);
   /* contact on set: the name itself is the call link (only with the phone right) */
-  if(c.contact&&(c.contact.name||c.contact.phone)){const ct=c.contact,tel=String(ct.phone||"").replace(/[^\d+]/g,""),nm=ct.name?esc(ct.name):(tel&&vok("phone")?esc(ct.phone):csTx(ct.phone));   /* only the number: plain inside the call link (a link in a link broke the line) */
+  if(c.contact&&(c.contact.name||c.contact.phone)){const ct=c.contact,tel=telNum(ct.phone),nm=ct.name?esc(ct.name):(tel&&vok("phone")?esc(ct.phone):csTx(ct.phone));   /* only the number: plain inside the call link (a link in a link broke the line) */
     /* one line, the size fitted to the width (csFitContact) */
     h+='<div class="cscontact"><span class="csct-in"><b>'+esc(L("Kontakt am Set"))+':</b> '+(tel&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'" title="'+esc(L("Anrufen"))+'">'+CSI.phone+nm+'</a>':nm)+(ct.role?' <small>· '+esc(ct.role)+'</small>':'')+'</span></div>'}
   /* radio channels below the contact: one chip per channel («1 AD / AL», «2 Chat» …) */

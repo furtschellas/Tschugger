@@ -1,4 +1,4 @@
-import {esc,hmAny,L,LANG,mapUrl,S,safeUrl} from "./10-core.js";
+import {esc,hmAny,L,LANG,mapUrl,S,safeUrl,telNum} from "./10-core.js";
 import {nameHit} from "./11-schedule-prep.js";
 import {myIdentity,rideId,rideMap} from "./12-mycal.js";
 import {CSCUR,csSceneLoc} from "./13b-cs-now.js";
@@ -54,7 +54,7 @@ const csIsTel=x=>/^(\+|0)/.test(x)&&x.replace(/\D/g,"").length>=9&&!/\b\d{1,2}\.
   &&!/^\d{1,2}[.:]\d{2}(\s*[-–\/]\s*\d{1,2}[.:]\d{2})+$/.test(x.trim());   /* nor times («06.30 - 07.15 / 07.45» was hidden behind a lock as a phone number) */
 /* text with phone numbers: callable with the right, else left out */
 export function csTx(s){s=String(s==null?"":s);if(!s)return"";const ok=vok("phone");let out="",p=0;
-  for(const m of s.matchAll(CSPH)){if(!csIsTel(m[1]))continue;out+=esc(s.slice(p,m.index));out+=ok?'<a href="tel:'+esc(m[1].replace(/[^\d+]/g,""))+'">'+esc(m[1])+'</a>':'<span class="cshid" title="'+esc(L("Nur mit dem Recht «Telefon sehen»"))+'">'+CSI.lock+'</span>';p=m.index+m[0].length}
+  for(const m of s.matchAll(CSPH)){if(!csIsTel(m[1]))continue;out+=esc(s.slice(p,m.index));out+=ok?'<a href="tel:'+esc(telNum(m[1]))+'">'+esc(m[1])+'</a>':'<span class="cshid" title="'+esc(L("Nur mit dem Recht «Telefon sehen»"))+'">'+CSI.lock+'</span>';p=m.index+m[0].length}
   /* a link ends before a closing bracket, a full stop or comma at its end and before an escaped quote */
   return (out+esc(s.slice(p))).replace(/https?:\/\/[^\s<]+/g,m=>{const t=m.match(/(?:&quot;|&#39;|[).,;:!?'"])+$/),u=t?m.slice(0,-t[0].length):m;return '<a href="'+esc(safeUrl(u.replace(/&amp;/g,"&")))+'" target="_blank" rel="noopener noreferrer">'+u+'</a>'+(t?t[0]:"")}).replace(/<a href="([^"]+)" target="_blank" rel="noopener noreferrer">(https?:\/\/(?:maps\.app\.goo\.gl|[^"<]*google\.[a-z.]+\/maps)[^<]*)<\/a>/g,(m0,h)=>csMap(h.replace(/&amp;/g,"&")))}
 /* an address or place with a map link: the text itself is the link (instead of the round map button) */

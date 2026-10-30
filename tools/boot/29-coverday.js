@@ -1,4 +1,4 @@
-import {L,MEMO,S,dayBlockOK,esc,mkDialog,myBlocks,norm,saveBtn,saveErr,todayISO} from "../base/10-core.js";
+import {dayBlockOK,esc,isoDM,L,MEMO,mkDialog,myBlocks,norm,S,saveBtn,saveErr,todayISO} from "../base/10-core.js";
 import {WDL} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
@@ -15,7 +15,7 @@ window.CDOPS=window.CDOPS||[];let CDSUB=null;const CD={form:{op:"swap",u:"all",a
 const cdCan=()=>{try{return can("coverday.manage")}catch(_){return false}};   /* as in the rules: also for admins only with this right in the Admin role */
 /* fields that stay with the date (sun, order) – everything else is the content of the day and moves */
 const CDKEEP=new Set(["date","id","sr","ss","order"]);
-const cdDD=d=>String(d||"").split("-").reverse().slice(0,2).join(".")+".";
+const cdDD=d=>isoDM(d)+".";
 const cdSched=()=>{let m="";for(const s of arr(S.meta&&S.meta.sources))if(s&&s.kind==="schedule"&&String(s.modified||"")>m)m=String(s.modified||"");return m?Date.parse(m)||0:0};
 /* a change made before the newest Drehplan was read: the Drehplan has priority, the change waits for a decision */
 /* the scenes of the days of a change in the Drehplan as read (to see later whether a new Drehplan changed exactly these days) */

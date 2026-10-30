@@ -1,4 +1,4 @@
-import {ariaTip,blockTag,camFold,ddmm,lateFn,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,mapsDir,mapsQ,mName,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
+import {ariaTip,blockTag,camFold,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";
@@ -263,7 +263,7 @@ export function renderPlan(){
       /* 2nd unit planning: all rows (scenes, rigging, setup, move …); a note that names a scene («Ton für Sc185») is shown at
          that scene, notes without a scene not */
       if(x.src==="2nd"){const its=x.items.filter(i=>i).map(i=>Object.assign({},i,{xn:[]}));
-        const key=sc=>String(sc).toLowerCase().replace(/\s+/g,"").replace(/^0+/,"");
+        const key=sc=>norm(sc).replace(/^0+/,"");
         const refs=n=>{const out=new Set(),t=String(n).toLowerCase().replace(/(\d)\s+(pt|sl)/g,"$1$2");for(const m of t.matchAll(/(?:^|[^a-z])(?:sc(?:ene|ène|ena)?\.?\s*|szene\s*|#)0*(\d+(?:(?:pt|sl)\d+|[a-z]\b)?)/g))out.add(m[1]);return out};
         for(const n of TXA(x,"notes")){const r=refs(n);if(!r.size)continue;for(const i of its){if(!i.sc)continue;const k=key(i.sc),b=k.replace(/pt\d+[a-z]?$/,"")/* «5pt3» also hears notes on 5, «25sl2» (slideshow) not those on 25 */;if(r.has(k)||r.has(b))i.xn.push(n)}}
         x=Object.assign({},x,{items:its,notes:[],notes_fr:[],notes_en:[],notes_it:[],notes_hi:[]})}

@@ -1,4 +1,4 @@
-import {L,MEMO,S,TX,dlgBtn,esc,mkDialog,saveBtn,saveErr,todayISO} from "../base/10-core.js";
+import {ackFrom,dlgBtn,esc,L,MEMO,mkDialog,S,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
 import {hm,rideId} from "../base/12-mycal.js";
 import {csAfter,csRoute} from "../base/13a-callsheet.js";
 import {csLocs} from "../base/13c-cs-places.js";
@@ -17,7 +17,7 @@ window.RIDEEDIT=window.RIDEEDIT||{};window.REDVER=0;export let REDSUB=null;
    like the ticks: from the first callsheet of the last 60 days on (changed rides of past days stayed hidden) */
 let REDSEQ=0,REDFROM="";
 /* from which date on: the first callsheet of the last 60 days (computed again when the callsheets arrive after the start) */
-const redFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
+const redFrom=ackFrom;
 async function rideEditLoad(){if(REDSUB||typeof ME==="undefined"||!ME)return;REDSUB="…";
   try{const {F,db}=await fb();
     const from=redFrom();REDFROM=from;

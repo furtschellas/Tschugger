@@ -23,7 +23,7 @@ document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.dataset&&/^rep-/
 const REP_GAL='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8.5 8.5"/></svg>';
 const REP_DBX='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M7 3.5l5 3.2-5 3.2-5-3.2zM17 3.5l5 3.2-5 3.2-5-3.2zM2 13.1l5-3.2 5 3.2-5 3.2zM12 13.1l5-3.2 5 3.2-5 3.2zM7 17.4l5-3.2 5 3.2-5 3.2z"/></svg>';
 const REP_PDF='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 16.5v-4h1.6a1.3 1.3 0 0 1 0 2.6H9.5"/><path d="M14 12.5v4"/></svg>';
-const repIco=(attr,ic,t)=>typeof tstIco==="function"?tstIco(attr,ic,t):'<button type="button" class="pillbtn" '+attr+'>'+esc(t)+'</button>';
+const repIco=(attr,ic,t)=>tstIco(attr,ic,t);   /* the round icon buttons of the log and the reports: one routine (17-audit-misc) */
 /* the shooting day of a report: «SD01_…» → DT 1, else the date in the name (261020, 2026_10_20, 20.10.2026), else the day it was saved */
 function repDay(r){const n=String(r.n||""),shd=(S.days||[]).filter(d=>d.kind==="shoot"&&arr(d.items).some(i=>i.sc)).map(d=>d.date).sort();
   let m=n.match(/(?:^|[^a-z])(?:sd|dt|day|tag)[\s_-]*0*(\d{1,3})(?![0-9])/i);if(m&&shd[+m[1]-1])return {dt:+m[1],date:shd[+m[1]-1]};

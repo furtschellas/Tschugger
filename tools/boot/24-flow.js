@@ -1,4 +1,4 @@
-import {esc,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
+import {ackFrom,esc,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
 import {dayMs,nameHit} from "../base/11-schedule-prep.js";
 import {hm,myIdentity,rideId} from "../base/12-mycal.js";
 import {csAfter,csMe} from "../base/13a-callsheet.js";
@@ -55,7 +55,6 @@ async function flowPut(id,date,s,n){if(!id)return;const old=window.RIDEACK[id];
    browser) every 2 minutes as before – there own taps win for a moment over an answer that was already on its way (live, Firestore
    shows own writes itself; keeping them would hide a newer tap of another device: found by tests/flow_multi.mjs). */
 export let RIDEAT=0,RIDEBUSY=false,ACKSUB=null,ACKFROM="";
-const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
 /* the ticks of the last two days are kept on the device: «Jetzt» (Maske / Kostüm, delays) shows at once on opening, live follows */
 const ACKKEEP="rideack:v1";
 try{const c=JSON.parse(localStorage.getItem(ACKKEEP)||"null");if(c&&c.m&&Date.now()-(+c.at||0)<12*3600e3&&!Object.keys(window.RIDEACK).length)window.RIDEACK=c.m}catch(_){}

@@ -1,4 +1,4 @@
-import {castRow,dayItems,ddmm,driveMin,esc,isoAdd,L,LANG,localISO,mapsDir,mkDialog,norm,pad2,S,saveBtn,todayISO,TX,unitKey,xBtn} from "../base/10-core.js";
+import {castRow,dayItems,ddmm,driveMin,esc,isoAdd,isoDM,isoId,L,LANG,localISO,mapsDir,mkDialog,norm,pad2,S,saveBtn,todayISO,TX,unitKey,xBtn} from "../base/10-core.js";
 import {UNAME,dayMs,hasU,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,evRecent,hm,myEvents,myIdentity,telLinks} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
@@ -201,7 +201,7 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-tscript]")||!v
 window.NOWCAST=window.NOWCAST||{};
 try{const c=JSON.parse(localStorage.getItem("nowcast:v1")||"null");if(c&&c.d&&Array.isArray(c.items))window.NOWCAST[c.d]=c.items}catch(_){}
 const ncDay=()=>{try{return csShootDay()}catch(_){return todayISO()}};
-const ncDocId=d=>String(d||"").replace(/-/g,"");
+const ncDocId=isoId;
 let NCSUB=null,NCD="";
 async function ncSub(){const d=ncDay();if(typeof ME==="undefined"||!ME)return;if(NCSUB&&NCD===d)return;try{if(typeof NCSUB==="function")NCSUB()}catch(_){}NCSUB="…";NCD=d;
   /* the whole (small) collection – one document per shooting day; only the day of «Jetzt» is used */
@@ -224,7 +224,7 @@ function ncActive(d){const now=Date.now(),st=k=>typeof scState==="function"?scSt
 /* the forecasts in one compact line above the cast: «Prognose Lunch 13:15 · Drehschluss 19:30» */
 const ncLine=d=>{const l=ncActive(d);return l.length?'<div class="tnowfc"><span class="tnk">'+esc(L("Prognose"))+'</span> '+l.map(it=>'<span class="tnfc">'+esc(ncLabel(it))+' <b>'+esc(it.t)+'</b>'+(it.n&&it.k!=="x"?' <small>'+esc(it.n)+'</small>':'')+'</span>').join('<i class="tnsep">·</i>')+'</div>':""};
 /* the text for WhatsApp: «Prognose 25.10.: Lunch ~13:15 · Drehschluss ~19:30» */
-const ncText=d=>{const l=ncActive(d);return l.length?L("Prognose")+" "+d.split("-").reverse().slice(0,2).join(".")+".: "+l.map(it=>ncLabel(it)+" ~"+it.t+(it.n&&it.k!=="x"?" ("+it.n+")":"")).join(" · "):""};
+const ncText=d=>{const l=ncActive(d);return l.length?L("Prognose")+" "+isoDM(d)+".: "+l.map(it=>ncLabel(it)+" ~"+it.t+(it.n&&it.k!=="x"?" ("+it.n+")":"")).join(" · "):""};
 window.ncText=ncText;
 /* the dialog: one row per forecast – what, expected time, shown until (optional), note */
 /* save the forecasts of a day (none: the document is deleted) */
@@ -240,7 +240,7 @@ function ncDialog(){const d=ncDay(),dp=arr(S.dispos).find(y=>y&&y.date===d),rows
   /* WhatsApp: chosen right here – on unless switched off for «Prognose» in Mein Konto → App */
   let WA=(typeof window.scWaMode==="function"?window.scWaMode("p"):"f")!=="n";
   const dl=mkDialog("ncdlg",null,{replace:true});
-  const draw=()=>{dl.innerHTML='<div class="a2box ncbox">'+xBtn("data-ncx")+'<h3>'+esc(L("Prognose"))+' · '+esc(d.split("-").reverse().slice(0,2).join(".")+".")+'</h3><p class="ghint">'+esc(L("Erscheint im «Jetzt» bei allen und erlischt von selbst, sobald der Schritt quittiert ist (oder ab «anzeigen bis»)."))+'</p>'+
+  const draw=()=>{dl.innerHTML='<div class="a2box ncbox">'+xBtn("data-ncx")+'<h3>'+esc(L("Prognose"))+' · '+esc(isoDM(d)+".")+'</h3><p class="ghint">'+esc(L("Erscheint im «Jetzt» bei allen und erlischt von selbst, sobald der Schritt quittiert ist (oder ab «anzeigen bis»)."))+'</p>'+
     '<form data-ncform novalidate>'+items.map(row).join("")+'<div class="ncacts"><button type="button" class="pillbtn" data-ncadd>+ '+esc(L("Prognose"))+'</button>'+(arr(window.NOWCAST[d]).length?'<button type="button" class="pillbtn" data-ncall>'+esc(L("Alle löschen"))+'</button>':'')+'</div><label class="ck ncwa"><input type="checkbox" data-ncwa'+(WA?' checked':'')+'> '+esc(L("Nach dem Speichern per WhatsApp teilen (die angehakten Prognosen)"))+'</label><div class="arb">'+saveBtn()+'</div></form></div>'};
   const read=()=>{const w=dl.querySelector("[data-ncwa]");if(w)WA=w.checked;items=[...dl.querySelectorAll(".ncrow")].map(r=>{const g=f=>String((r.querySelector('[data-ncf="'+f+'"]')||{}).value||"").trim(),sh=r.querySelector('[data-ncf="sh"]');return {k:g("k"),t:g("t"),bis:g("bis"),n:g("n").slice(0,80),sh:!sh||sh.checked}})};
   draw();document.body.appendChild(dl);
@@ -255,7 +255,7 @@ function ncDialog(){const d=ncDay(),dp=arr(S.dispos).find(y=>y&&y.date===d),rows
   dl.addEventListener("submit",async e=>{e.preventDefault();if(NCALL)items=[];else read();const valid=items.filter(it=>it.k&&/^\d\d:\d\d$/.test(it.t)&&(it.k!=="x"||it.n)),ok=valid.map(it=>{const o={k:it.k,t:it.t};if(it.bis)o.bis=it.bis;if(it.n)o.n=it.n;return o});
     /* WhatsApp first, still in the tap (a phone opens it only there): the forecasts ticked «in WhatsApp» */
     const sh=valid.filter(it=>it.sh!==false);
-    if(WA&&!NCALL&&sh.length&&typeof window.scWaOpen==="function")try{window.scWaOpen(L("Prognose")+" "+d.split("-").reverse().slice(0,2).join(".")+".: "+sh.map(it=>ncLabel(it)+" ~"+it.t+(it.n&&it.k!=="x"?" ("+it.n+")":"")).join(" · "),"p")}catch(_){}
+    if(WA&&!NCALL&&sh.length&&typeof window.scWaOpen==="function")try{window.scWaOpen(L("Prognose")+" "+isoDM(d)+".: "+sh.map(it=>ncLabel(it)+" ~"+it.t+(it.n&&it.k!=="x"?" ("+it.n+")":"")).join(" · "),"p")}catch(_){}
     try{await ncStore(d,ok);dl.remove();render();
       showMsg(L(ok.length?"Prognose gespeichert.":"Prognosen gelöscht."),2500)}
     catch(err){showMsg(/permission/.test(err&&err.code||"")?L("Keine Berechtigung."):L("Fehler:")+" "+(err.message||err),5000)}});}

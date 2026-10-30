@@ -3,7 +3,7 @@
    every «#view» rule to «.sbview» too). Topics that are whole pages (Smartphone-Vorschau, User, Access, App-Einstellungen) are the app itself in a
    frame: fully usable, looking the same – each frame is a second copy of the app (its own live data), so only chosen ones are loaded.
    Setting: localStorage «sbx» = «now.mine|phone» (left|right, the order of the topics), kept with the other notices of the profile (prefs x). */
-import {dayItems,esc,L,S,todayISO,unitKey} from "../base/10-core.js";
+import {dayItems,esc,isoDM,L,S,todayISO,unitKey} from "../base/10-core.js";
 import {csHm,csMe,csMyRides,csRideReal,csTile} from "../base/13a-callsheet.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
@@ -77,7 +77,7 @@ const TOP={
     const u20=nd.unit2&&nd.unit2.hours?String(nd.unit2.hours):"";const fi=arr(nd.items).find(i=>i&&i.sc);
     let mu=null;try{const ndp=arr(S.dispos).find(x=>x&&x.date===nd.date&&x.cs);if(ndp)mu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
     const u2=u20&&(!mu||mu.includes("2"))?u20:"",h1=!u20||!mu||mu.includes("1");
-    return '<div class="sbnx"><b>'+esc(nd.short||nd.label||"")+'</b> '+esc(nd.date.split("-").reverse().slice(0,2).join("."))+'</div>'+(nd.hours&&h1?'<div class="sbnx">'+esc(L("Drehzeit"))+(u20?' 1st Unit':'')+': '+esc(nd.hours)+'</div>':'')+(u2?'<div class="sbnx">'+esc(L("Drehzeit"))+' 2nd Unit: '+esc(u2)+'</div>':'')+(fi?'<div class="sbnx">'+esc(L("Erste Szene"))+': <b>'+esc(String(fi.sc))+'</b> '+esc(fi.set||"")+'</div>':'')},
+    return '<div class="sbnx"><b>'+esc(nd.short||nd.label||"")+'</b> '+esc(isoDM(nd.date))+'</div>'+(nd.hours&&h1?'<div class="sbnx">'+esc(L("Drehzeit"))+(u20?' 1st Unit':'')+': '+esc(nd.hours)+'</div>':'')+(u2?'<div class="sbnx">'+esc(L("Drehzeit"))+' 2nd Unit: '+esc(u2)+'</div>':'')+(fi?'<div class="sbnx">'+esc(L("Erste Szene"))+': <b>'+esc(String(fi.sc))+'</b> '+esc(fi.set||"")+'</div>':'')},
   wx:()=>{const d=dayNow();if(!d)return"";let h="";try{h=wxTile(d)}catch(_){}return h?'<div class="ttiles">'+h+'</div>':""}
 };
 

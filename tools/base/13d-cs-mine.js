@@ -1,4 +1,4 @@
-import {esc,L,LANG,mapsDir,mapUrl,S,safeUrl} from "./10-core.js";
+import {esc,L,LANG,mapsDir,mapUrl,S,safeUrl,telNum} from "./10-core.js";
 import {nmk} from "./11-schedule-prep.js";
 import {CSI,csA,csDurT,csHm,csIDrive,csMyCall,csMyRides,csMyWords,csRideReal,csRows,csS,csSec,csTile,csTx} from "./13a-callsheet.js";
 import {csCallPlace,csLocAddr,csLocs,csMapQ,csPlace,plDe} from "./13c-cs-places.js";
@@ -153,7 +153,7 @@ function csCountLine(c,x,me,SU,t){  let csCnt="";{const nCast=csA(c.cast).length
    const pp=parts.filter(x=>x[1]);csCnt=pp.length?'<div class="cscount">'+pp.map(([k,v])=>'<span'+(k===L("Komparsen")||k===L("Zusatz")?' class="csdrop"':'')+'><b>'+(typeof v==="string"&&/</.test(v)?v:esc(String(v)))+'</b> '+esc(k)+'</span>').join("")+'</div>':''}
   return csCnt}
 export function csTeamSec(c,x,me,SU,t){const csCnt=csCountLine(c,x,me,SU,t);let h="";
-  h+=csSec(L("Team des Tages"),csA(c.key).length||c.office||csCnt?'<div class="cskey">'+(c.office?'<div><span class="k">'+esc(L("Produktionsbüro"))+'</span>'+csTx(c.office)+'</div>':'')+csA(c.key).map(k=>{const tel=String(k.phone||"").replace(/[^\d+]/g,"");
+  h+=csSec(L("Team des Tages"),csA(c.key).length||c.office||csCnt?'<div class="cskey">'+(c.office?'<div><span class="k">'+esc(L("Produktionsbüro"))+'</span>'+csTx(c.office)+'</div>':'')+csA(c.key).map(k=>{const tel=telNum(k.phone);
       /* the name is the call link (with the phone right) */
       return '<div><span class="k">'+esc(k.role||"")+'</span>'+(tel.length>6&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'" title="'+esc(k.phone)+'">'+CSI.phone+esc(k.name||k.phone)+'</a>':'<span>'+esc(k.name||"")+(tel&&!vok("phone")?' '+csTx(k.phone):'')+'</span>')+'</div>'}).join("")+'</div>'+
     csA(c.lists).map(l=>'<p class="cslist"><b>'+esc(l.title||"")+'</b> '+esc(csS(l.names))+'</p>').join(""):"",false,"","team",csCnt);

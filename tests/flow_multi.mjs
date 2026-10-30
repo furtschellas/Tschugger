@@ -23,6 +23,7 @@ function device(perms){
 const fold=t=>String(t||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase();const arr=x=>Array.isArray(x)?x:[];const nmk=t=>fold(t).replace(/[^a-z]+/g," ").trim();function nameHit(name){const k=nmk(name),parts=k.split(" ").filter(w=>w.length>1);if(!k)return ()=>false;const ws=(n,w)=>(" "+n).includes(" "+w);return t=>{const n=nmk(String(t||""));if(!n)return false;if(ws(n,k))return true;const f=parts[0],l=parts[parts.length-1];return parts.length>1&&ws(n,f)&&ws(n,l)}};const dayMs=()=>0;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));const L=x=>x;
 const S={tab:"dispo",dispos:[{date:"${D}",cs:{}}]};const ME={uid:"u"};const csAfter=()=>{};const todayISO=()=>"${D}";
+const ackFrom=()=>{const t=todayISO(),lim=new Date(Date.now()-60*864e5).toISOString().slice(0,10);let from=t;for(const dp of (S.dispos||[]))if(dp&&dp.date&&dp.date<from&&dp.date>=lim)from=dp.date;return from};
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
 const PERMS=${JSON.stringify(perms)};const canPerm=p=>PERMS.includes(p);const fb=async()=>({F:globalThis.__F,db:0});
 const dbWrite=async(op,path,data)=>{const {F,db}=await fb();const ref=F.doc(db,...path.split("/"));if(op==="delete")await F.deleteDoc(ref);else await F.setDoc(ref,data);return "ok"};`;

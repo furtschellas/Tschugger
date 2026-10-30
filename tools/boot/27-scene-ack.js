@@ -1,4 +1,4 @@
-import {ariaTip,dayItems,esc,I18N,isoAdd,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
+import {ariaTip,dayItems,esc,I18N,isoAdd,isoDM,isoId,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
 import {UNAME,dayMs} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
@@ -7,7 +7,7 @@ import {schedIndex} from "../base/17-scene-reader.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {ME,MEMBER,can,dbWrite,fb,isAdmin} from "./03-core-firebase.js";
 import {savePrefsSoon} from "./06-prefs-docs.js";
-import {TST_RUN,logHead,savedPop,tstIco} from "./17-audit-misc.js";
+import {logHead,savedPop,TST_RUN,tstIco} from "./17-audit-misc.js";
 /* ---------- scenes of the shooting day «quittiert» in the Drehplan: open → running (tap) → done (tap); sceneack/{date-scene}, no names.
    Everybody sees the state live; tapping only with the permission «Szenen quittieren». «Jetzt» follows: the running scene, else the next open one after the last done ---------- */
 window.SCACK=window.SCACK||{};export let SCSUB=null;
@@ -22,7 +22,7 @@ setInterval(()=>document.querySelectorAll("[data-scrun]").forEach(el=>{el.textCo
 /* 2nd/3rd Unit: every entry has its own id – the key ends in «_u2» («lunch_u2», «90_u2» → …-lunchu2, …-90u2), so the same scene number in both units
    is quittiert apart (before, a 2nd-unit scene that the 1st Unit also shoots showed the 1st Unit's tick and could not be started) */
 export function scAckId(date,sc){sc=String(sc??"");const m=sc.match(/_u([23])$/);if(m)sc=sc.slice(0,-3);
-  return String(date||"").replace(/-/g,"")+"-"+fold(sc).replace(/[^a-z0-9]/g,"").replace(/^(dj|d|j|sc|sz|seq|scene|szene)(?=\d)/,"").replace(/(cont|continued|forts|fortsetzung)$/,"").slice(0,m?21:24)+(m?"u"+m[1]:"")}
+  return isoId(date)+"-"+fold(sc).replace(/[^a-z0-9]/g,"").replace(/^(dj|d|j|sc|sz|seq|scene|szene)(?=\d)/,"").replace(/(cont|continued|forts|fortsetzung)$/,"").slice(0,m?21:24)+(m?"u"+m[1]:"")}
 /* the key of an entry in a unit: the 1st Unit as it is, the 2nd/3rd with «_u2» / «_u3» (lunch, wrap, setups had it already) */
 export const scK=unitKey;   /* one routine for all unit keys (10-core) */
 window.scK=scK;
@@ -58,7 +58,7 @@ export function scRender(){const v=document.getElementById("view");if(!v){render
   for(const sc of scs){const li=v.querySelector('li[data-sc="'+CSS.escape(sc)+'"]');const d=li&&li.querySelector("details.csscd");if(d)d.open=true}
   scrollTo(0,y)}
 /* u: only that unit; without: any unit that is quittiert (each unit can be switched off on its own) */
-window.scHas=(date,u)=>{const p=String(date||"").replace(/-/g,"")+"-";return Object.entries(window.SCACK).some(([k,x])=>{if(!k.startsWith(p))return false;const xu=String(x&&x.u||"1");return (!u||xu===String(u))&&scOnU(xu)})};
+window.scHas=(date,u)=>{const p=isoId(date)+"-";return Object.entries(window.SCACK).some(([k,x])=>{if(!k.startsWith(p))return false;const xu=String(x&&x.u||"1");return (!u||xu===String(u))&&scOnU(xu)})};
 const SC_ICO={1:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="13" height="10" rx="2"/><path d="M15.5 10.5l5.5-3v9l-5.5-3z"/><circle cx="6.5" cy="10.5" r="1"/></svg>',
   2:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   /* wrap done: two ticks (the shooting day is finished) */
@@ -228,7 +228,7 @@ async function scTap(b,date,sc,u,choice){sc=scK(sc,u);const id=scAckId(date,sc),
   try{await (wp||scWrite(date,sc,u,v));scDiag(date,sc,u,"saved");if(wm!=="f")showMsg(scLabel(sc)+" "+(v.s===1?L("läuft"):L("abgeschlossen"))+(u!=="1"?" · "+u+(u==="2"?"nd":"rd")+" Unit":""),1800);scBar(date,sc,u,v,wm==="f"?(wk==="d"?Object.assign({start:1},v):v):null,wk)}   /* a short confirmation: the tap was saved */   /* after every quittance: change the time right away; WhatsApp «Fragen» as a button there */
   catch(err){b.disabled=false;scDiag(date,sc,u,"fail "+String(err&&(err.code||err.message)||err).slice(0,120));showMsg(err&&err.code==="simulation"?err.message:saveErr(err),4000)}}
 /* after a scene (lunch, wrap) was finished: offer a short info message by WhatsApp (the person chooses the chat there); «nicht mehr fragen» on this device */
-function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((typeof UNAME!=="undefined"&&UNAME[u])||u)+" Unit":"",dd=" ("+date.split("-").reverse().slice(0,2).join(".")+"."+un+")";
+function scShareText(date,sc,u,v){const un=u&&u!=="1"?" · "+((typeof UNAME!=="undefined"&&UNAME[u])||u)+" Unit":"",dd=" ("+isoDM(date)+"."+un+")";
   if(v.start)return L("Drehstart")+" "+scHM(v.b)+" – "+scLabel(sc)+dd;
   if(scBase(sc)==="wrap")return "Wrap "+scHM(v.e||v.b)+" – "+L("Drehtag abgeschlossen")+dd;
   if(scBase(sc)==="lunch")return v.s===1?"Lunch "+L("ab")+" "+scHM(v.b)+dd:L("Lunch vorbei, es geht weiter")+" "+scHM(v.e)+dd;
@@ -377,7 +377,7 @@ const SCX_CSV='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true
 const SCX_SHEET='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M8.6 3.5h6.8l6.1 10.6-3.4 5.9H5.9l-3.4-5.9z"/><path d="M8.6 3.5l6.1 10.6h6.8M15.4 3.5L9.3 14.1 5.9 20M2.5 14.1h12.2"/></svg>';
 /* next to every download: open the Google Sheet (when one is set in the App-Verwaltung) */
 const scShBtn=()=>/^https:\/\/docs\.google\.com\/spreadsheets\//.test(window.SCENESHEET||"")?scIco("data-sclsh",SCX_SHEET,L("Szenen-Protokoll in Google Sheets öffnen")):"";
-const scIco=(attr,ic,t)=>typeof tstIco==="function"?tstIco(attr,ic,t):'<button type="button" class="pillbtn" '+attr+'>'+esc(t)+'</button>';
+const scIco=(attr,ic,t)=>tstIco(attr,ic,t);   /* the round icon buttons of the log and the reports: one routine (17-audit-misc) */
 /* export of the scene log: as a table (CSV for Excel, Numbers, Google Sheets) or as PDF (print view → «Als PDF sichern»); oldest day first */
 /* one table per day – and per unit when the export holds all units */
 const scDK=uu=>r=>r.dt+" · "+r.date+(uu?"":" · "+r.unit);

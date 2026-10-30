@@ -1,4 +1,4 @@
-import {$,L,LANG,MEMO,S,SPT,applyStatic,esc,getTheme,lvClasses,mkDialog,pvApply,safeUrl,setLANG,setSPT,setTheme,spTheme,svApply,svButtons,svClasses,todayISO} from "./10-core.js";
+import {$,applyStatic,esc,getTheme,L,LANG,lvClasses,MEMO,mkDialog,norm,pvApply,S,safeUrl,setLANG,setSPT,setTheme,SPT,spTheme,svApply,svButtons,svClasses,todayISO} from "./10-core.js";
 import {nextUnitDay,onlyU,ppContact,ppMail} from "./11-schedule-prep.js";
 import {MCNAMES,addToCalendar,myClick} from "./12-mycal.js";
 import {addrForItem,groupLocs,locResults,saveVCard,sceneTexts,ufOn} from "./13-crew-views.js";
@@ -86,7 +86,7 @@ export function openGallery(b,start,pdf){
 }
 /* blocking of a script scene that is not (yet) in the schedule */
 /* the scene in the shooting schedule (for the floorplan of its location) */
-function scItem(sc){const k=String(sc||"").toLowerCase().replace(/\s+/g,"");if(!k)return null;for(const d of S.days||[])for(const it of arr(d.items).concat(arr((d.unit2||{}).items),arr((d.unit3||{}).items)))if(String(it.sc||"").toLowerCase().replace(/\s+/g,"")===k)return it;return null}
+function scItem(sc){const k=norm(sc);if(!k)return null;for(const d of S.days||[])for(const it of arr(d.items).concat(arr((d.unit2||{}).items),arr((d.unit3||{}).items)))if(norm(it.sc)===k)return it;return null}
 export function blkRow(sc){const it=scItem(sc);const h=fpLinks(it?fpFor(it.set,(it.loc||"")+" "+(it.loc?addrForItem(it):"")):[],blkFor(sc));return h?'<div class="spblk">'+h+'</div>':''}
 function spPage(x,ctx,list,reqSc){const f=sceneFacts(reqSc||x.sc,x,list);return '<div class="sp-scene">'+(f||blkRow(x.sc))+'<article lang="de" class="sp-page'+(ctx?' sp-ctx':'')+'">'+(ctx?'<p class="sp-ctxl">'+esc(L(ctx))+'</p>':'')+'<h3 class="sp-head"><span class="spn">'+esc(x.sc)+'</span><span class="sps">'+spTitle(x)+'</span><span class="spr">'+spTod(x)+'</span></h3>'+scriptHTML(x.text)+'</article></div>'}
 function spMore(dir,list,j){
