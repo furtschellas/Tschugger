@@ -46,7 +46,7 @@ if(INFRAME&&FRAMEPG&&FRAMEPG!=="phone"){document.documentElement.classList.add("
 
 /* ---------- the topics drawn here ---------- */
 /* the head of a topic: its title and «−» (takes it out of this box) */
-const head=(k,t)=>'<h3 class="sbh"><span>'+esc(L(t))+'</span><button type="button" class="sbdel" data-sbdel="'+k+'" aria-label="'+esc(L("Entfernen")+": "+L(t))+'" title="'+esc(L("Entfernen"))+'">−</button></h3>';
+const head=(k,t)=>'<h3 class="sbh" title="'+esc(L("Zum Verschieben ziehen"))+'"><span>'+esc(L(t))+'</span><button type="button" class="sbdel" data-sbdel="'+k+'" aria-label="'+esc(L("Entfernen")+": "+L(t))+'" title="'+esc(L("Entfernen"))+'">−</button></h3>';
 /* a topic without content now (no callsheet yet …): only its head, so it can still be taken out */
 const sec=(k,t,h)=>'<section class="sbsec'+(h?'':' sbempty')+'">'+head(k,t)+(h||'<p class="sbnone">'+esc(L("Zurzeit nichts"))+'</p>')+'</section>';
 const dayNow=()=>{try{return todayDay()}catch(_){return null}};
@@ -73,7 +73,7 @@ const TOP={
   tiles:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}return '<div class="tcs">'+unitTilesHTML(dp,d,me)+'</div>'},   /* the same tiles as Today */
   order:()=>{const d=dayNow();if(!d||d.kind!=="shoot")return"";const st=(sc,u)=>typeof scState==="function"?scState(d.date,unitKey(sc,u)):0;   /* the state of the unit of the row (2nd Unit: «90_u2») */
     const list=(its,u)=>arr(its).filter(i=>i&&(i.sc||i.n)).map(i=>'<div class="sbo'+(i.sc&&st(i.sc,u)===2?' done':i.sc&&st(i.sc,u)===1?' run':'')+'"><i>'+esc(i.t||"")+'</i>'+(i.sc?'<b>'+esc(String(i.sc))+'</b> <span>'+esc(i.set||"")+'</span>':'<span class="sbev">'+esc(i.n||"")+'</span>')+'</div>').join("");
-    const u2=dayItems(d,"2");return (u2.length?'<div class="tuh">1st Unit</div>':'')+list(d.items,"1")+(u2.length?'<div class="tuh">2nd Unit</div>'+list(u2,"2"):'')},
+    const u2=dayItems(d,"2");return (u2.length?'<div class="tuh u1">1st Unit</div>':'')+list(d.items,"1")+(u2.length?'<div class="tuh u2">2nd Unit</div>'+list(u2,"2"):'')},
   rides:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}if(!me)return"";
     const rs=csMyRides(dp.cs,me).filter(csRideReal).sort((a,b)=>(csHm(a.t1)||"99").localeCompare(csHm(b.t1)||"99"));
     return rs.map(r=>'<div class="sbr"><b>'+esc(csHm(r.t1)||r.t1||"")+'</b> '+esc(r.from||"")+' → '+esc(r.to||"")+(r.t2?' <small>'+esc(r.t2)+'</small>':'')+'<small class="sbrv">'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small></div>').join("")},
@@ -167,7 +167,7 @@ export function sbxSec(){if(INFRAME||!sbUse())return"";const x=sbxGet(),avail=SB
   const side=(s,title)=>{const on=x[s],rest=avail.filter(t=>!on.includes(t[0]));
     const row=(t,i,isOn)=>'<div class="tbrow"><label class="ck"><input type="checkbox" data-sbx="'+s+'|'+t[0]+'"'+(isOn?' checked':'')+'> '+esc(L(t[1]))+'</label>'+
       (isOn?'<span class="tbmv"><button type="button" data-sbxmv="'+s+'|'+t[0]+'|up"'+(i?'':' disabled')+' aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-sbxmv="'+s+'|'+t[0]+'|down"'+(i<on.length-1?'':' disabled')+' aria-label="'+esc(L("Nach unten"))+'">▼</button></span>':'')+'</div>';
-    return '<section class="psec sbxsec"><h4>'+esc(L(title))+'</h4><p class="ghint">'+esc(L("Nur auf breiten Bildschirmen (ab 1300 Pixel), neben der Seite. Themen ankreuzen, Reihenfolge mit ▲ ▼. Ein Thema steht auf einer Seite."))+'</p><div class="tbord">'+
+    return '<section class="psec sbxsec"><h4>'+esc(L(title))+'</h4><p class="ghint">'+esc(L("Nur auf breiten Bildschirmen (ab 1300 Pixel), neben der Seite. Themen ankreuzen, Reihenfolge mit ▲ ▼ oder in der Seitenbox am Titel ziehen. Ein Thema steht auf einer Seite."))+'</p><div class="tbord">'+
       on.map(k=>avail.find(t=>t[0]===k)).filter(Boolean).map((t,i)=>row(t,i,true)).join("")+rest.map(t=>row(t,0,false)).join("")+'</div></section>'};
   return side("l","Seitenbox links")+side("r","Seitenbox rechts")}
 document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest("[data-sbx]");if(!c)return;const [s,k]=c.dataset.sbx.split("|"),o=s==="l"?"r":"l",x=sbxGet();
@@ -180,3 +180,28 @@ document.addEventListener("click",e=>{const p=e.target.closest&&e.target.closest
   const d=e.target.closest&&e.target.closest("[data-sbdel]");if(d){const k=d.dataset.sbdel,x=sbxGet();x.l=x.l.filter(y=>y!==k);x.r=x.r.filter(y=>y!==k);sbxSet(x);draw();if(S.tab==="acct")render()}});
 document.addEventListener("change",e=>{const sl=e.target.closest&&e.target.closest("[data-sbaddsel]");if(!sl||!sl.value)return;const s=sl.dataset.sbaddsel,k=sl.value,x=sbxGet();
   x.l=x.l.filter(y=>y!==k);x.r=x.r.filter(y=>y!==k);x[s].push(k);sbxSet(x);const ad=sl.closest(".sbadd");if(ad)ad.dataset.open="0";draw();if(S.tab==="acct")render()});
+/* ---------- order by dragging the title of a topic (mouse, pen or finger): up or down in its box, or over into the other box.
+   A line shows where it lands; on letting go the new order is kept like the order from «Mein Konto → App». Escape stops. ---------- */
+let SBDR=null;
+const sbDropAt=(x,y)=>{   /* the box under the pointer (or the nearer one) and the place in it: before the topic whose middle is below the pointer */
+  const bs=["l","r"].map(s=>document.getElementById("sb"+s)).filter(a=>a&&!a.hidden&&a.style.visibility!=="hidden");if(!bs.length)return null;
+  const a=bs.find(b=>{const r=b.getBoundingClientRect();return x>=r.left&&x<=r.right})||bs.reduce((p,b)=>{const r=b.getBoundingClientRect(),d=Math.min(Math.abs(x-r.left),Math.abs(x-r.right));return !p||d<p.d?{a:b,d}:p},null).a;
+  const its=[...a.querySelectorAll(".today>[data-sbt]")].filter(el=>!SBDR||el!==SBDR.el);let i=its.findIndex(el=>{const r=el.getBoundingClientRect();return y<r.top+r.height/2});if(i<0)i=its.length;
+  const ar=a.getBoundingClientRect(),ref=its[i],prev=its[i-1];const ly=ref?ref.getBoundingClientRect().top-3:prev?prev.getBoundingClientRect().bottom+3:ar.top+8;
+  return {side:a.id==="sbl"?"l":"r",i,keys:its.map(el=>el.dataset.sbt),ly,lx:ar.left,lw:ar.width}};
+function sbDragEnd(ok){const d=SBDR;SBDR=null;if(!d)return;document.documentElement.classList.remove("sbdragging");d.el.classList.remove("sbdrag");if(d.line)d.line.remove();
+  try{d.h.releasePointerCapture(d.pid)}catch(_){}
+  if(!ok||!d.moved||!d.at)return;const x=sbxGet(),k=d.el.dataset.sbt;
+  /* the order as it stands now (visible topics) with the moved one at its new place; topics not shown (no right) stay where they were, at the end */
+  const visible=d.at.keys.slice();visible.splice(d.at.i,0,k);const o=d.at.side==="l"?"r":"l";
+  const hiddenRest=x[d.at.side].filter(y=>y!==k&&!visible.includes(y));x[d.at.side]=visible.concat(hiddenRest);x[o]=x[o].filter(y=>y!==k);
+  sbxSet(x);draw();if(S.tab==="acct")render()}
+document.addEventListener("pointerdown",e=>{if(INFRAME||e.button>0)return;const h=e.target.closest&&e.target.closest("aside.sbbox h3.sbh");if(!h||e.target.closest("button,select,input,a"))return;
+  const el=h.closest(".today>[data-sbt]");if(!el)return;SBDR={el,h,pid:e.pointerId,x0:e.clientX,y0:e.clientY,moved:false,at:null,line:null};try{h.setPointerCapture(e.pointerId)}catch(_){}});
+document.addEventListener("pointermove",e=>{const d=SBDR;if(!d||e.pointerId!==d.pid)return;
+  if(!d.moved){if(Math.abs(e.clientX-d.x0)+Math.abs(e.clientY-d.y0)<6)return;d.moved=true;d.el.classList.add("sbdrag");document.documentElement.classList.add("sbdragging");   /* the frames do not catch the pointer while dragging */
+    d.line=document.createElement("div");d.line.className="sbdrop";document.body.appendChild(d.line)}
+  e.preventDefault();d.at=sbDropAt(e.clientX,e.clientY);if(d.at)Object.assign(d.line.style,{top:Math.round(d.at.ly)+"px",left:Math.round(d.at.lx+8)+"px",width:Math.round(d.at.lw-16)+"px"})});
+document.addEventListener("pointerup",e=>{if(SBDR&&e.pointerId===SBDR.pid)sbDragEnd(true)});
+document.addEventListener("pointercancel",e=>{if(SBDR&&e.pointerId===SBDR.pid)sbDragEnd(false)});
+document.addEventListener("keydown",e=>{if(SBDR&&e.key==="Escape")sbDragEnd(false)});

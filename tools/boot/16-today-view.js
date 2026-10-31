@@ -271,7 +271,7 @@ export function unitTilesHTML(dcs,d,me){const has2=!!((dcs.cs||{}).u2||dayItems(
   /* the units chosen with the unit buttons (as the callsheet): 1st, 2nd or both */
   const units=has2?["1","2"].filter(u=>S.pu[u]!==false&&(u!=="2"||S.pu["2"])):["1"],U=units.length?units:["1"];
   const tl=U.map(u=>{let h="";try{h=csUnitTiles(dcs,d,u,me).replace(' id="cs-zeiten"','')}catch(err){console.warn("tiles",u,err)}return h?{u,h}:null}).filter(Boolean);
-  return tl.length>1?tl.map(t=>'<div class="tuh">'+(t.u==="2"?"2nd":"1st")+' Unit</div>'+t.h).join(""):(tl[0]?tl[0].h:"")}
+  return tl.length>1?tl.map(t=>'<div class="tuh u'+t.u+'">'+(t.u==="2"?"2nd":"1st")+' Unit</div>'+t.h).join(""):(tl[0]?tl[0].h:"")}
 /* «Jetzt» of one unit – the same for the 1st and the 2nd Unit (Today, callsheet, side box): the step running now (scene with place and set,
    since when, scenes in parallel and the next one; or Setup / Lunch), Maske / Kostüm now, opened the description and the cast.
    null: this unit is not shooting now (before its start, after its wrap, at night). The 2nd Unit: its own callsheet part (csU2Dispo) */
@@ -309,7 +309,7 @@ export function nowCardHTML(t,cls,unit,onlyShooting){try{if(typeof csNowScene!==
     if(!B.length){if(onlyShooting)return "";   /* Today: only while a unit shoots */const sd=!!(day&&day.kind==="shoot");if(!fc&&!(ed&&sd))return "";
       return '<div class="tcard tnow'+(cls?" "+cls:"")+'"><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+(fc||'<div class="tnowfc"><span class="tnk">'+esc(L("Prognose erfassen"))+'</span></div>')+'</div>'+ed+'</div>'}
     const lab=units.length>1;
-    const body=B.map(b=>'<div class="tnowun"><div class="tnowb">'+(lab?'<span class="tnk tnu">'+(b.u==="2"?"2nd":"1st")+' Unit</span> ':'')+b.line+'</div>'+(b.cm?'<div class="tnowcm">'+b.cm+'</div>':'')+(b.det?'<div class="tnowx">'+b.det+'</div>':'')+'</div>').join("");
+    const body=B.map(b=>'<div class="tnowun u'+b.u+'"><div class="tnowb">'+(lab?'<span class="tnk tnu u'+b.u+'">'+(b.u==="2"?"2nd":"1st")+' Unit</span> ':'')+b.line+'</div>'+(b.cm?'<div class="tnowcm">'+b.cm+'</div>':'')+(b.det?'<div class="tnowx">'+b.det+'</div>':'')+'</div>').join("");
     const open=!!window.TNOWOPEN,more=B.some(b=>b.cm||b.det);
     return '<div class="tcard tnow'+(cls?" "+cls:"")+(open&&more?" tnowo":"")+'"'+(more?' data-tnow tabindex="0" aria-expanded="'+(open?"true":"false")+'"':'')+'><div class="tch">'+esc(L("Jetzt"))+'</div><div class="tnowm">'+body+fc+'</div>'+ed+'</div>'}catch(_){return ""}}
 /* tap (or Enter) on «Jetzt»: open / close – links in it (location) work as before; the choice stays while the page is redrawn */

@@ -174,10 +174,23 @@ async function markSeen(){
   /* the device's last start time (ms) after kind and last use: Log shows how fast the app starts on the crew's devices */
   if(id){dv[id]=appKind()+"|"+Date.now()+(window.__STARTMS?"|"+window.__STARTMS:(String(dv[id]||"").split("|")[2]?"|"+String(dv[id]).split("|")[2]:""));up["devs."+id]=dv[id];
     Object.keys(dv).filter(k=>k!==id).sort((a,b)=>tm(b)-tm(a)).forEach((k,i)=>{if(i>=9||Date.now()-tm(k)>30*864e5){up["devs."+k]=F.deleteField();delete dv[k]}})}
-  try{await F.updateDoc(F.doc(db,"members",ME.uid),up);if(MEMBER&&id)MEMBER.devs=dv}
+  try{await F.updateDoc(F.doc(db,"members",ME.uid),up);if(MEMBER&&id)MEMBER.devs=dv;
+    /* the own line in the user list follows at once (it was read up to 15 minutes ago) */
+    const mine=ADM.loaded&&(ADM.mem||[]).find(m=>m&&m.uid===ME.uid);if(mine){mine.lastSeen={seconds:Math.floor(Date.now()/1000)};mine.app=base.app}}
   catch(err){console.warn("seen",err&&err.code||err);if(id&&/permission/.test(err&&err.code||""))try{await F.updateDoc(F.doc(db,"members",ME.uid),base)}catch(_){}}
 }
-setInterval(()=>{if(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading&&Date.now()-(ADM.at||0)>=900e3){   /* the user list is read again at most every 15 minutes (Firebase quota) */ADM.at=Date.now();ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}},60e3);
+/* the user list: «zuletzt online» and the green marks stay current – every minute only the members seen in the last minutes are read
+   (few documents: Firebase quota) and their mark is taken over; the whole list is read again at most every 15 minutes */
+let SEENQ=0;
+async function seenRefresh(){if(SEENQ)return;SEENQ=1;try{const {F,db}=await fb(),since=new Date(Date.now()-6*60e3);
+    const s=await withTimeout(F.getDocs(F.query(F.collection(db,"members"),F.where("lastSeen",">=",since))),15000,"seen");let ch=0;
+    for(const d of s.docs){const m=(ADM.mem||[]).find(x=>x&&x.uid===d.id),v=d.data()||{};if(!m)continue;
+      if(seenMs(v)!==seenMs(m)||v.app!==m.app){m.lastSeen=v.lastSeen;m.app=v.app;if(v.devs)m.devs=v.devs;ch++}}
+    const a=document.activeElement;if(!(a&&a.closest&&a.closest("#view")&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)))render()}   /* also without news: «vor n Min.» and the marks follow the clock */
+  catch(err){console.warn("seen list",err&&err.code||err)}finally{SEENQ=0}}
+setInterval(()=>{if(SBXFRAME||!(S.tab==="admin"&&ADM.sub==="users"&&document.visibilityState==="visible"&&ADM.loaded&&!ADM.loading))return;
+  if(Date.now()-(ADM.at||0)>=900e3){ADM.at=Date.now();ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false});return}
+  seenRefresh()},60e3);
 function startSeen(){clearInterval(SEENT);SEENAT=0;markSeen();SEENT=setInterval(markSeen,120e3)}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")markSeen()});
 export const seenMs=m=>{const j=m&&m.lastSeen;return j?(j.seconds?j.seconds*1000:(j.toMillis?j.toMillis():Date.parse(j)||0)):0};

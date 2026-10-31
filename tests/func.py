@@ -337,12 +337,13 @@ async def owner_tests(p, port):
         # stability: errors are reported without data (once), the worker version is checked, unchanged data is not loaded again
         pre = await E("(window.__ERRS||[]).map(e=>String(e.f||'').replace(/^.*\\//,'')+':'+(e.l||0)+':'+String(e.m||'').replace(/[^A-Za-z ]/g,'').slice(0,40))")
         # only the reports of errReport count (col «app»): diagnosis entries of the quittance (col «sceneack») are written by earlier steps
-        er = await E("""(async()=>{const app=()=>Object.values(window.__db).filter(d=>d&&d.op==='error'&&d.col==='app');const n0=app().length;ERRN=0;ERRSENT.clear();localStorage.removeItem('errsent:v1');__ERRS.push({m:'boom at x@y.ch +41 79 123 45 67',f:'12-admin.js',l:7,t:Date.now()});
+        er = await E("""(async()=>{const app=()=>Object.values(window.__db).filter(d=>d&&d.op==='error'&&d.col==='app'&&/boom/.test(String(d.sum||'')));   /* only the test's own error: a real error of an earlier step may be sent along */const n0=app().length;ERRN=0;ERRSENT.clear();localStorage.removeItem('errsent:v1');__ERRS.push({m:'boom at x@y.ch +41 79 123 45 67',f:'12-admin.js',l:7,t:Date.now()});
           await errReport();const a=app().slice(n0);const one=a.length;__ERRS.push({m:'boom at x@y.ch +41 79 123 45 67',f:'12-admin.js',l:7});await errReport();
           const other=Object.values(window.__db).filter(d=>d&&d.op==='error'&&d.col!=='app').map(d=>String(d.col||'?')+':'+String(d.sum||'').split(' ').slice(0,2).join(' ').replace(/[^a-z ]/gi,'')).slice(0,4);
-          const s=(a[0]||{}).sum||'';return {one,again:app().length-n0,clean:!/@|\\d{3} \\d{2}/.test(s),file:s.includes('12-admin.js'),other}})()""")
+          const s=(a[0]||{}).sum||'';const otherApp=Object.values(window.__db).filter(d=>d&&d.op==='error'&&d.col==='app'&&!/boom/.test(String(d.sum||''))).map(d=>(String(d.sum||'').match(/\\(([\\w.-]+\\.js(?::\\d+)?)\\)/)||[,'?'])[1]).slice(0,3)   /* only file and line: the text could hold data */;return {otherApp,one,again:app().length-n0,clean:!/@|\\d{3} \\d{2}/.test(s),file:s.includes('12-admin.js'),other}})()""")
         check("Stabilität: Fehler werden ohne Daten einmal an die Owner gemeldet (Log)", {k: er[k] for k in ("one", "again", "clean", "file")} == {"one": 1, "again": 1, "clean": True, "file": True}, dict(er, pre=pre[:3]), public=True)
         if er.get("other"): print("::notice::Diagnose-Einträge vor dem Stabilitätstest: " + ", ".join(er["other"]))
+        if er.get("otherApp"): print("::notice::Weitere App-Fehler während der Tests: " + " · ".join(er["otherApp"]))
         ww = await E("(()=>{WK.v='2000-01-01';WK.at=Date.now();S.tab='admin';ADM.sub='log';render();const w=!!document.querySelector('#view .wkwarn');WK.v=window.WORKERVER;render();const n=!document.querySelector('#view .wkwarn');return {warn:w,ok:n}})()")
         check("Stabilität: veralteter Worker wird in Log/Tests gemeldet, aktueller nicht", ww == {"warn": True, "ok": True}, ww, public=True)
         sk = await E("""(async()=>{const st=LASTSTAMP;let enc=0;const oF=fetchEnc,oS=fetchStamp;fetchEnc=async()=>{enc++;return oF()};fetchStamp=async()=>({s:'x1'});LASTSTAMP='x1';window.CACHEOK=true;
@@ -652,7 +653,8 @@ async def owner_tests(p, port):
           const r2=scExpRows(d,'2');const only2=r2.length>0&&r2.every(r=>/2/.test(r.unit));const dur=(scExpRows(d,'1').find(r=>/12/.test(r.name))||{}).min;
           window.canPerm=()=>false;const nopen=(()=>{const kd2=S.days;S.days=[];const b=document.createElement('div');b.innerHTML=sceneLogSec();S.days=kd2;return b.querySelectorAll('[data-scled]').length})();
           SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;window.canPerm=k.cp;return {days,fixed,pens:pens>0,nopen,per,only2,dur}})()""")
-        check("Szenen-Protokoll: pro Unit ein Tagesprotokoll mit Setup/Drehstart/Lunch/Wrap, Stift nur mit Recht, Export pro Tag und Unit", sl in (None, {"days": 2, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}, {"days": 3, "fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}), sl, public=True)
+        # «days» ≥ 2: the test day per unit, plus days with live quittances of the project (they come along, the number varies)
+        check("Szenen-Protokoll: pro Unit ein Tagesprotokoll mit Setup/Drehstart/Lunch/Wrap, Stift nur mit Recht, Export pro Tag und Unit", sl is None or (sl.get("days", 0) >= 2 and {k: v for k, v in sl.items() if k != "days"} == {"fixed": True, "pens": True, "nopen": 0, "per": True, "only2": True, "dur": "60"}), sl, public=True)
         # 2nd Unit: the same scene number in both units is quittiert apart (own id «…u2»); older 2nd-unit entries (id without unit) still count
         u2a = await E("""(()=>{if(typeof scK!=='function'||typeof scGet!=='function')return null;const k=window.SCACK,t='2030-05-06';
           window.SCACK={[scAckId(t,'21')]:{d:t,s:2,u:'1',sc:'21',at:1},[scAckId(t,'55')]:{d:t,s:1,u:'2',sc:'55',at:2}};
@@ -668,7 +670,7 @@ async def owner_tests(p, port):
         # Szenen automatisch quittieren: von Hand quittiert (nach der fälligen Zeit) gewinnt – die Automatik startet die geplante Szene dann nicht
         sa_ = await E("""(async()=>{if(typeof window.scAutoRun!=='function')return null;const t=todayISO(),day=(S.days||[]).find(d=>d.date===t&&d.kind==='shoot');if(!day)return null;
           const K={a:window.SCENEAUTO,k:window.SCACK,it:day.items,l:window.SCACKLIVE,r:window.RIDEACKLOADED,u2:day.unit2};const hm=ms=>csHM(new Date(ms));   /* the clock of the shoot (Zurich), not the one of the test browser */
-          const now=Date.now();if(hm(now)<'01:15')return null;   /* just after midnight: no times in the past today */
+          const now=Date.now();if(hm(now)<'01:15'||(typeof csShootDay==='function'&&csShootDay()!==t))return null;   /* in the night the shooting day is still yesterday (until its wrap): the automatic runs there */   /* just after midnight: no times in the past today */
           day.items=[{sc:'901',t:hm(now-60*60e3)},{sc:'902',t:hm(now-30*60e3)}];delete day.unit2;window.SCENEAUTO={a:{on:false},s:{on:true,min:0},l:{on:false},w:{on:false}};window.SCACKLIVE=true;window.RIDEACKLOADED=true;
           const run=async a=>{window.SCACK={[scAckId(t,'901')]:{d:t,s:1,u:'1',sc:'901',b:a,at:a}};await window.scAutoRun();return scState(t,'902')};
           const hand=await run(now-10*60e3),behind=await run(now-40*60e3),auto=await run(dayMs(t,hm(now-60*60e3)));
@@ -676,7 +678,7 @@ async def owner_tests(p, port):
         check("Szenen automatisch: eine von Hand gestartete Szene bleibt bis zum Abschluss (auch hinter dem Plan), ohne Eingriff startet die geplante", sa_ in (None, {"hand": 0, "behind": 0, "auto": 1}), sa_, public=True)
         # a scene in two rows («21 CONT» after lunch): its later row does not stop the automatic (it shares the quittance of the first row)
         dup_ = await E("""(async()=>{if(typeof window.scAutoRun!=='function')return null;const t=todayISO(),day=(S.days||[]).find(d=>d.date===t&&d.kind==='shoot');if(!day)return null;
-          const K={a:window.SCENEAUTO,k:window.SCACK,it:day.items,l:window.SCACKLIVE,r:window.RIDEACKLOADED,u2:day.unit2};const hm=ms=>csHM(new Date(ms));const now=Date.now();if(hm(now)<'01:15'||hm(now)>'22:30')return null;
+          const K={a:window.SCENEAUTO,k:window.SCACK,it:day.items,l:window.SCACKLIVE,r:window.RIDEACKLOADED,u2:day.unit2};const hm=ms=>csHM(new Date(ms));const now=Date.now();if(hm(now)<'01:15'||hm(now)>'22:30'||(typeof csShootDay==='function'&&csShootDay()!==t))return null;
           day.items=[{sc:'901',t:hm(now-60*60e3)},{sc:'902',t:hm(now-30*60e3)},{sc:'901',t:hm(now+30*60e3),n:'CONT'}];delete day.unit2;window.SCENEAUTO={a:{on:false},s:{on:true,min:0},l:{on:false},w:{on:false}};window.SCACKLIVE=true;window.RIDEACKLOADED=true;
           window.SCACK={[scAckId(t,'901')]:{d:t,s:2,u:'1',sc:'901',b:now-60*60e3,e:now-35*60e3,at:now-35*60e3}};await window.scAutoRun();const r=scState(t,'902');
           window.SCENEAUTO=K.a;window.SCACK=K.k;day.items=K.it;if(K.u2)day.unit2=K.u2;window.SCACKLIVE=K.l;window.RIDEACKLOADED=K.r;return r})()""")
@@ -741,7 +743,7 @@ async def owner_tests(p, port):
         check("Quittieren mit WhatsApp «direkt»: öffnet WhatsApp ohne Endlosschleife", wa_ in (None, 1), wa_, public=True)
         # the Lunch tile links to the lunch place of the Locations; the 2nd Unit without its own lunch place: the one of the 1st Unit
         lt_ = await E("""(()=>{if(typeof csLunchPlace!=='function')return null;const L1={locations:[{no:'1',name:'SET',map:'https://m/1',items:[{label:'LUNCH',text:'TENNIS CLUB',map:'https://m/TC'}]}]};const c2={locations:[{no:'1',name:'U2',map:'https://m/2'}],_orig:L1};
-          const t=csTilesHTML({date:'2026-10-29'},null,Object.assign({times:{lunch:'12:00'}},c2),null);return [(csLunchPlace(L1)||{}).map,(csLunchPlace(c2)||{}).map,/class="dt cslunch" href="https:\/\/m\/TC"/.test(t)].join(' ')})()""")
+          const t=csTilesHTML({date:'2026-10-29'},null,Object.assign({times:{lunch:'12:00'}},c2),null);return [(csLunchPlace(L1)||{}).map,(csLunchPlace(c2)||{}).map,/class="dt cslunch" href="https:\\/\\/m\\/TC"/.test(t)].join(' ')})()""")
         check("Kachel Lunch: Link zum Lunch-Ort der Locations (2nd Unit: der der 1st Unit, wenn sie keinen eigenen hat)", lt_ in (None, "https://m/TC https://m/TC true"), lt_, public=True)
         # places at the same street address are one place (DT8: «Extras @base» and «PROD & DIT @base» both at Schulhausplatz 4) – a parking with its own link stays
         sh_ = await E("""(()=>{if(typeof csLocs!=='function')return null;const it=(l,t,m)=>({label:l,text:t,map:m||''});const r=csLocs({locations:[{no:'1.1',name:'VILLA',items:[it('LOC','Bahnhofstrasse 40, 3970 Salgesch'),it('CREW PARKING','Kirchplatz 5, 3970 Salgesch','https://m/CP'),it('BASE KIRCHE','W / H / M Cast / LUNCH, Kirchplatz 5 - 3970 Salgesch','https://m/BK'),it('Extras @base','Schulhausplatz 4 3970 Salgesch Groundfloor'),it('PROD & DIT @base','Schulhausplatz 4 3970 Salgesch - 1st floor')]}]});
@@ -790,7 +792,10 @@ async def owner_tests(p, port):
             try: py = scene_sheet.build(sp["acks"], {"days": sp["days"], "dispos": sp["dispos"]})
             finally: scene_sheet.datetime = _real
             diff = sum(1 for i, u in enumerate("123") for x, y in zip(sp["rows"][i], py.get(u, [])) if [str(v) for v in x] != [str(v) for v in y]) + sum(abs(len(sp["rows"][i]) - len(py.get(u, []))) for i, u in enumerate("123"))
-            check("Szenen-Protokoll: Google-Sheets-Abgleich baut dieselben Zeilen wie der Export der App", diff == 0, f"{diff} Zeilen verschieden", public=True)
+            # where they differ (numbers only, public): unit, row, the test day (1) or another day (0), the columns that differ
+            where = [[int(u), j, int(all(str(int(v)) in re.findall(r"\d+", str(x[2])) or v in str(x[2]) for v in sp["acks"][0]["d"].split("-")[1:])), [c for c in range(max(len(x), len(y))) if str(x[c] if c < len(x) else "") != str(y[c] if c < len(y) else "")]]
+                     for i, u in enumerate("123") for j, (x, y) in enumerate(zip(sp["rows"][i], py.get(u, []))) if [str(v) for v in x] != [str(v) for v in y]][:4]
+            check("Szenen-Protokoll: Google-Sheets-Abgleich baut dieselben Zeilen wie der Export der App", diff == 0, f"{diff} Zeilen verschieden {where} Längen {[len(r) for r in sp['rows']]}/{[len(py.get(u, [])) for u in '123']}", public=True)
         vp = await E("""(()=>{if(typeof tabsOn!=='function')return null;const k={s:SIMROLE,r:MYROLE,p:MYPERMS.slice()};SIMROLE={adm:false};MYROLE='t';
           MYPERMS=['view.plan','view.dispo'];const a={loc:vok('loc'),info:vok('info'),tabs:tabsOn().filter(x=>x==='loc'||x==='info').length};
           MYPERMS=['view.plan','view.dispo','view.loc','view.info'];const b={loc:vok('loc'),info:vok('info')};SIMROLE=k.s;MYROLE=k.r;MYPERMS=k.p;
@@ -798,7 +803,7 @@ async def owner_tests(p, port):
         check("Rollen: «Locations sehen» und «Infos sehen» steuern die Bereiche; neue Rechte in der Rollenauswahl", vp in (None, {"without": True, "with": True, "perms": True}), vp, public=True)
         br = await E("""(()=>{if(typeof csLocs!=='function')return null;const c={locations:[{no:'1',name:'LAKE - SHORE',scenes:'62',map:'https://maps.app.goo.gl/AAA',items:[{label:'TECH PARKING',text:'Etang du Test, Route du Test - 1000 Testdorf',map:'https://maps.app.goo.gl/AAA'},
           {label:'BASE LAKE',text:'W / H / M Cast / Extras / Lunch, Route du Test 20 - 1000 Testdorf',map:'https://maps.app.goo.gl/BBB'},{label:'Greenroom Cast@base',text:'Loge Muster'},{label:'WC',text:'2x on set / 2x@base'},{label:'Prod +DIT',text:'Room at base'}]}]};
-          const ls=csLocs(c),b=ls.filter(l=>l.kinds&&l.kinds.includes('Base'));return {bases:b.length,name:b[0]&&b[0].name,rooms:b[0]?b[0].notes.filter(n=>/Greenroom|Prod \+ DIT|WC/.test(n)).length:0,sets:ls.filter(l=>!l.kinds).length}})()""")
+          const ls=csLocs(c),b=ls.filter(l=>l.kinds&&l.kinds.includes('Base'));return {bases:b.length,name:b[0]&&b[0].name,rooms:b[0]?b[0].notes.filter(n=>/Greenroom|Prod \\+ DIT|WC/.test(n)).length:0,sets:ls.filter(l=>!l.kinds).length}})()""")
         check("Callsheet-Locations: eine Base mit Räumen (Greenroom, Prod + DIT, WC @base), keine eigenen Orte dafür", br in (None, {"bases": 1, "name": "BASE LAKE", "rooms": 3, "sets": 1}), br, public=True)
         # WhatsApp per kind of scene quittance (Mein Konto → App): defaults, old «nicht mehr fragen», kind of a tap, fixed number, the settings
         wa = await E("""(()=>{if(typeof scWaModes!=='function')return null;const K=['scwa','scwan','scwa:no','scwtl'],keep=K.map(k=>localStorage.getItem(k)),cp=window.canPerm,ack=window.SCACK;K.forEach(k=>localStorage.removeItem(k));
@@ -870,9 +875,11 @@ async def owner_tests(p, port):
         check("Callsheet: Call-Ort für Fahrer = Abfahrtsort, für Mitfahrende = Ziel", cpl in (None, {"driver": True, "passenger": True}), cpl, public=True)
         ctv = await E("""(()=>{if(typeof renderCS!=='function')return null;const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;localStorage.removeItem('cscast:v1');
           const x={date:d.date,cs:{cast:[{no:'1',role:'BAX',actor:'X'}]}};const w=document.createElement('div');w.id='view';const old=document.getElementById('view');old.id='view0';document.body.appendChild(w);w.innerHTML=renderCS(x,d);
+          /* an earlier step may have left the table switched on (it lasts until the cast is closed): back to cards first */
+          if(w.querySelector('#cs-cast').classList.contains('cs-astbl'))w.querySelector('[data-cstview]').click();
           const a=w.querySelector('#cs-cast').classList.contains('cs-astbl');w.querySelector('[data-cstview]').click();const b=w.querySelector('#cs-cast').classList.contains('cs-astbl');if(b)w.querySelector('[data-cstview]').click();
-          const ic=w.querySelectorAll('.csjb button svg').length>0&&w.querySelectorAll('.cssec>summary .csexp').length>0;w.remove();old.id='view';localStorage.removeItem('cscast:v1');return !a&&b&&ic})()""")
-        check("Callsheet: Cast als Karten oder Tabelle, Symbol-Leiste, Auf-/Zuklapp-Symbol", ctv in (None, True), ctv, public=True)
+          const ic=w.querySelectorAll('.csjb button svg').length>0&&w.querySelectorAll('.cssec>summary .csexp').length>0;w.remove();old.id='view';localStorage.removeItem('cscast:v1');return {cards:!a,table:b,icons:ic}})()""")
+        check("Callsheet: Cast als Karten oder Tabelle, Symbol-Leiste, Auf-/Zuklapp-Symbol", ctv in (None, {"cards": True, "table": True, "icons": True}), ctv, public=True)
         cj = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d||typeof renderCS!=='function')return null;
           const x={date:d.date,cs:{times:{crewCall:'08:00'},order:{rows:[{t:'09:00',sc:'2',set:'A'}]},cast:[{no:'1',role:'BAX',actor:'X'}],calls:[{dept:'Camera',name:'Filip Z',t:'08:10'},{dept:'Sound',name:'Pat S',t:'08:00'}]}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,d);document.body.appendChild(w);const jb=[...w.querySelectorAll('[data-csj]')].map(b=>b.dataset.csj);
@@ -977,8 +984,11 @@ async def owner_tests(p, port):
           ton:[...document.querySelectorAll('#view .xn')].map(x=>x.textContent)};if(keep)d.unit2=keep;else delete d.unit2;S.pu=ku;render();return r})()""")
         if u2 is not None:
             check("2nd Unit: alle Zeilen (auch Rigging), Hinweise nur bei der genannten Szene", u2 == {"rig": True, "grip": False, "ton": ["Ton für Sc185: 1 Person", "Szene 5 pt13: Rollator"]}, u2, public=True)
-        ex = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));let n=0;while(!(history.state&&history.state.base)&&n++<60){history.back();await w(120)}
-          const base=!!(history.state&&history.state.base);const msg=(document.getElementById('refmsg')||{}).textContent||'';await w(2800);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base)}})()""")
+        # one step back at a time: each «back» waits for its popstate (a second back before it would jump over the first page); then the hint is awaited
+        ex = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));const back=()=>new Promise(r=>{let done=false;const f=()=>{if(done)return;done=true;removeEventListener('popstate',f);setTimeout(r,30)};addEventListener('popstate',f);history.back();setTimeout(f,1500)});
+          let n=0;while(!(history.state&&history.state.base)&&n++<60)await back();
+          const base=!!(history.state&&history.state.base);let msg='';for(let k=0;k<20&&!/zurück/i.test(msg);k++){msg=(document.getElementById('refmsg')||{}).textContent||'';if(!/zurück/i.test(msg))await w(100)}
+          for(let k=0;k<40&&history.state&&history.state.base;k++)await w(100);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base)}})()""")
         check("Zurück-Knopf auf der ersten Seite: Hinweis, erst zweimal zurück verlässt die App", ex["base"] and ex["hint"] and ex["guard"], ex, public=True)
         # script search with a long role badge: the scene title stays on one line (not one letter per line)
         sl = await E("""(()=>{const b=document.createElement('div');b.id='view2';b.style.width='380px';b.innerHTML='<ul class=sclist><li class=scard><button class=scli><span class=sclin>2</span><span class=sclih>INT. KAPELLE - EVENING</span><span class=sctag>ABEND</span><span class=rbadges><span class="rbadge warn"><b>Bax</b> ⚠ spricht im Drehbuch, fehlt im Drehplan</span></span></button></li></ul>';
@@ -1067,7 +1077,7 @@ async def owner_tests(p, port):
         # 2nd Unit im Callsheet von heute (echte Daten): eine Szene der 2nd Unit antippen → läuft, nochmals → abgeschlossen (nur Zahlen und Codes im Protokoll)
         await E("S.pu={'1':true,'2':true,'3':false};S.uf={'1':true,'2':true,'3':false};pushGo('./#go=dispo:'+todayISO())"); await pg.wait_for_timeout(1500)
         u2c = await E("""(()=>{const bs=[...document.querySelectorAll('#view button[data-scack]')];const u2=bs.filter(b=>b.dataset.scack.endsWith('|2'));
-          const sc=u2.filter(b=>!/\|(lunch|wrap|setup\d*)(_u\d)?\|/.test(b.dataset.scack)&&b.classList.contains('sk0'));
+          const sc=u2.filter(b=>!/\\|(lunch|wrap|setup\\d*)(_u\\d)?\\|/.test(b.dataset.scack)&&b.classList.contains('sk0'));
           return {all:bs.length,u2:u2.length,open:sc.length,key:sc.length?sc[0].dataset.scack:'',has:!!(S.dispos||[]).find(x=>x&&x.date===todayISO()&&x.cs&&x.cs.u2)}})()""")
         if u2c and u2c.get("key"):
             k = json.dumps(u2c["key"])
@@ -1083,7 +1093,12 @@ async def owner_tests(p, port):
 
     async def _p7():   # App-Verwaltung (Access, Tour, Dokumente, Log/Tests)
         # Access: roles per permission on top, pencil switches them right there, people to open
-        await E("ADM.paccEdit='';S.tab='admin';ADM.sub='roles';render()"); await pg.wait_for_timeout(1500)   # a first try that stopped half-way may have left the pencil on
+        await E("ADM.paccEdit='';S.tab='admin';ADM.sub='roles';render()"); await pg.wait_for_timeout(500)   # a first try that stopped half-way may have left the pencil on
+        # the roles come with the admin data (read once): wait until they are drawn instead of a fixed pause (slow runner)
+        for _ in range(40):
+            if await E("(()=>{const d=document.querySelector('#view details[data-sec=\"pacc-view.plan\"]');return !!d&&d.querySelectorAll('.paccr .ust').length>=2&&!!d.querySelector('[data-paccedit]')})()"): break
+            await pg.wait_for_timeout(250)
+            if _ % 8 == 7: await E("render()")
         ac = await E("(()=>{const d=document.querySelector('#view details[data-sec=\"pacc-view.plan\"]');return d?{roles:d.querySelectorAll('.paccr .ust').length,people:!!d.querySelector('details.paccp'),pen:!!d.querySelector('[data-paccedit]'),lab:d.querySelectorAll('.paccrole').length,gh:d.querySelectorAll('.paccr .ghint').length,pr:d.querySelectorAll('.paccr').length,ed:!!ADM.paccEdit,gen:(()=>{const t=document.createElement('template');t.innerHTML=VIEWS.admin();const g=t.content.querySelector('details[data-sec=\"pacc-view.plan\"]');return g?g.querySelectorAll('.paccr .ust').length:-1})(),nd:document.querySelectorAll('#view details[data-sec=\"pacc-view.plan\"]').length,nr:Object.keys(window.__db||{}).filter(k=>k.startsWith('roles/')).length}:null})()")
         check("Access: Rollen zuoberst, Personen zum Aufklappen, Stift", bool(ac) and ac["roles"] >= 2 and ac["people"] and ac["pen"], ac)
         await E("document.querySelector('[data-paccedit=\"view.plan\"]').click()"); await pg.wait_for_timeout(300)
