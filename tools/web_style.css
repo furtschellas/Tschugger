@@ -1299,3 +1299,12 @@ html[data-theme="light"] :is(input,select,textarea){border-color:var(--rule-stro
 html[data-theme="light"] body .hbtns>button:not(.refresh){background:transparent;color:var(--ink);box-shadow:none}
 html[data-theme="light"] body #view .csmap,html[data-theme="light"] body #view .csmap svg{color:var(--ink)}
 html[data-theme="light"] body #view .dtiles.cstiles>a.dt.cslunch,html[data-theme="light"] body #view .dtiles.cstiles>.dt.csdrv{border-color:var(--rule-strong)}
+/* ---------- one page title for every page (Heute, Drehtag 2, Locations, Crewliste, Info, Mein Konto …) ---------- */
+html body #view :is(h2.pgt,.dayhead h2,.dsp-head h2,.myhead h2,.adm>h2.dh){font-family:var(--f-display);font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1.05;margin:0}
+@media (max-width:400px){html body #view :is(h2.pgt,.dayhead h2,.dsp-head h2,.myhead h2,.adm>h2.dh){font-size:24px}}
+html body #view h2.pgtop{margin:4px 0 12px}
+html body #view .today .thead .pgt{font-size:inherit}
+html body #view .today .thead h2.pgt{font-size:26px}
+@media (max-width:400px){html body #view .today .thead h2.pgt{font-size:24px}}
+/* the day title and its buttons: the title keeps its line, the buttons go below when there is no room (they covered the title) */
+html body #view .dtitle{flex-wrap:wrap;row-gap:6px}html body #view .dtitle h2{white-space:nowrap}

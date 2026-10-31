@@ -112,6 +112,8 @@ export const msHM=ms=>ms?clockHM(new Date(+ms)):"";   /* «07:05» of a time in 
 /* message when saving failed: no permission, else not possible */
 export const saveErr=e=>/permission/.test((e&&e.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.");
 /* a date «2026-10-29» as «29.10» and as the key of a document «20261029» – one routine each */
+/* the title of a day: «Drehtag 2» for a shooting day (one wording in the Drehplan and the callsheet), else its label */
+export const dayTitle=d=>{if(!d)return "";if(d.kind!=="shoot")return String(d.label||"");const m=String(d.short||d.label||"").match(/\d+/);return m?L("Drehtag")+" "+(+m[0]):String(d.label||"")};
 export const isoDM=d=>String(d||"").split("-").reverse().slice(0,2).join(".");
 export const isoId=d=>String(d||"").replace(/-/g,"");
 /* the first day whose acks/changes are read: the oldest callsheet of the last 60 days (else today) */

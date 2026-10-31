@@ -1,9 +1,11 @@
-import {blockTopicOn} from "./10-core.js";
+import {blockTopicOn,esc,L} from "./10-core.js";
 import {renderMy,renderPlan} from "./12-mycal.js";
 import {renderCrew,renderDispo,renderInfo,renderLoc} from "./13-crew-views.js";
 import {renderScript} from "./15-script-tab.js";
 /* ---------- render ---------- */
-export const VIEWS={my:()=>renderMy(),plan:()=>renderPlan(),dispo:()=>renderDispo(),loc:()=>renderLoc(),crew:()=>renderCrew(),script:()=>renderScript(),info:()=>renderInfo()};
+/* every page starts with the same title (Today, Drehplan and Callsheet have theirs with the day) */
+const PGT=t=>'<h2 class="pgt pgtop">'+esc(L(t))+'</h2>';
+export const VIEWS={my:()=>renderMy(),plan:()=>renderPlan(),dispo:()=>renderDispo(),loc:()=>PGT("Locations")+renderLoc(),crew:()=>PGT("Crewliste")+renderCrew(),script:()=>renderScript(),info:()=>PGT("Info")+renderInfo()};
 /* main topics the main admin has switched on (website: window.TABSON); the script tab also needs the script function */
 export const ALLTABS=["today","dispo","plan","loc","crew","script","info"];
 export function tabOrder0(){const o=Array.isArray(window.TABORDER)?window.TABORDER.filter(x=>ALLTABS.includes(x)):[];return o.concat(ALLTABS.filter(x=>!o.includes(x)))}

@@ -1,4 +1,4 @@
-import {ariaTip,blockTag,camFold,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
+import {ariaTip,blockTag,camFold,dayTitle,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";
@@ -244,7 +244,7 @@ export function renderPlan(){
   const d=S.days.find(x=>x.id===S.day)||PD[0];if(!d)return h+'<div class="empty">'+L('Noch keine Drehtage.')+'</div>';
   /* round button: the original schedule PDF, opened at the page of this shooting day */
   const spBtn=planPdfBtn(d);
-  h+='<div class="dayhead"><div><div class="dtitle"><h2>'+esc(d.label)+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR)+(window.deBtn?window.deBtn(d):''):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+blockTag(d.date)+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
+  h+='<div class="dayhead"><div><div class="dtitle"><h2 class="pgt">'+esc(dayTitle(d))+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR)+(window.deBtn?window.deBtn(d):''):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+blockTag(d.date)+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
   if(d.kind==="shoot")h+=planFactsHTML(d,spBtn);
   if(d.kind==="shoot")h+=lateFn("deNote",d)||"";   /* changed on set (31-dayedit.js) */
   if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';

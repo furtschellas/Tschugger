@@ -1,4 +1,4 @@
-import {dayItems,esc,fmtDate,ieClass,L,maps,mapUrl,S,safeUrl,telNum} from "./10-core.js";
+import {dayItems,dayTitle,esc,fmtDate,ieClass,L,maps,mapUrl,S,safeUrl,telNum} from "./10-core.js";
 import {nowCardHTML} from "../boot/16-today-view.js";
 import {UNITBAR,nmk} from "./11-schedule-prep.js";
 import {WDL} from "./12-mycal.js";
@@ -159,7 +159,7 @@ export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
    JB=csJumpBar(c,x,me,null,t);
   /* head: as the top of the callsheet */
   /* with «my day»: its red box carries the title (Mein Drehtag 1 · date), no head line on top */
-  const mineN=me?csMine(c,me).length:0;const dtitle=(mineN?esc(L("Mein"))+' ':'')+esc(x.label||(day&&day.label)||"Callsheet");
+  const mineN=me?csMine(c,me).length:0;const dtitle=(mineN?esc(L("Mein"))+' ':'')+esc((day&&day.kind==="shoot"&&!/2nd Unit/.test(String(x.label||""))?dayTitle(day):"")||x.label||(day&&day.label)||"Callsheet");   /* «Drehtag 2» – the same wording as the Drehplan */
   if(!mineN)h+='<div class="dsp-head"><div><h2>'+dtitle+'</h2><div class="date drow"><span>'+fmtDate(x.date)+'</span>'+UNITBAR+'</div></div></div>';
   else if(UNITBAR)h+='<div class="date drow dsp-units"><span></span>'+UNITBAR+'</div>';
   /* both units shown: the 1st Unit gets the same head as the 2nd Unit below (the two parts look alike) */
