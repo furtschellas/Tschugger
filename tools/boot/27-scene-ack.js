@@ -1,4 +1,5 @@
-import {ariaTip,dayItems,esc,I18N,isoAdd,isoDM,isoId,L,LANG,mkDialog,mName,msHM,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
+import {ariaTip,dayItems,esc,I18N,isoAdd,isoDM,isoId,L,LANG,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
+import {csHM} from "../base/13b-cs-now.js";
 import {UNAME,dayMs} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
@@ -13,7 +14,7 @@ import {logHead,savedPop,TST_RUN,tstIco} from "./17-audit-misc.js";
 window.SCACK=window.SCACK||{};export let SCSUB=null;
 /* the times of the quittances (begin–end, running since) only with the permission «Quittierungszeiten sehen» */
 window.scTimesOk=()=>typeof canPerm==="function"&&canPerm("scenes.times");
-const scHM=msHM;
+const scHM=ms=>ms?csHM(new Date(+ms)):"";   /* the clock of the shoot (time zone of the block), as the planned times – not of the device (abroad / another setting: the setup was 2 h off) */
 /* running time: 7′, 1h05 */
 const scDur=ms=>{const m=Math.max(0,Math.floor(ms/60000));return m<60?m+"′":Math.floor(m/60)+"h"+pad2(m%60)};
 /* the counters of running scenes count on without drawing the page again */

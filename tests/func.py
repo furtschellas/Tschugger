@@ -782,7 +782,7 @@ async def owner_tests(p, port):
           SCLOG.list=k.l;SCLOG.exp=k.e;window.canSceneLog=k.c;LANG=k.g;return {today:todayISO(),acks,rows,days:S.days,dispos:S.dispos,tz:Intl.DateTimeFormat().resolvedOptions().timeZone}})()""")
         if sp:
             sys.path.insert(0, str(HERE.parent / "tools")); import scene_sheet  # noqa: E402
-            from zoneinfo import ZoneInfo; scene_sheet.TZ = ZoneInfo(sp["tz"])
+            # Swiss time on both sides: the app shows the times of the shoot (not of the test browser, which may run in UTC)
             # the same «today» as the app (Zurich): around midnight the test browser's time zone is already / still another day
             import types as _ty
             class _DT(scene_sheet.datetime.datetime):
@@ -992,9 +992,11 @@ async def owner_tests(p, port):
             check("2nd Unit: alle Zeilen (auch Rigging), Hinweise nur bei der genannten Szene", u2 == {"rig": True, "grip": False, "ton": ["Ton für Sc185: 1 Person", "Szene 5 pt13: Rollator"]}, u2, public=True)
         # one step back at a time: each «back» waits for its popstate (a second back before it would jump over the first page); then the hint is awaited
         ex = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));const back=()=>new Promise(r=>{let done=false;const f=()=>{if(done)return;done=true;removeEventListener('popstate',f);setTimeout(r,30)};addEventListener('popstate',f);history.back();setTimeout(f,1500)});
-          let n=0;while(!(history.state&&history.state.base)&&n++<400)await back();   /* the earlier steps opened many pages: each one is a step back */
+          let n=0;while(!(history.state&&history.state.base)&&n++<60)await back();
+          /* the browser keeps only 50 steps: after the many pages of the earlier test steps the first page may be gone – then that first page is set up here (same handler) */
+          let sim=false;if(!(history.state&&history.state.base)){sim=true;history.replaceState({t:S.tab,base:1},'');dispatchEvent(new PopStateEvent('popstate',{state:{t:S.tab,base:1}}))}
           const base=!!(history.state&&history.state.base);let msg='';for(let k=0;k<20&&!/zurück/i.test(msg);k++){msg=(document.getElementById('refmsg')||{}).textContent||'';if(!/zurück/i.test(msg))await w(100)}
-          for(let k=0;k<40&&history.state&&history.state.base;k++)await w(100);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base),steps:n,len:history.length}})()""")
+          for(let k=0;k<40&&history.state&&history.state.base;k++)await w(100);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base),steps:n,len:history.length,sim}})()""")
         check("Zurück-Knopf auf der ersten Seite: Hinweis, erst zweimal zurück verlässt die App", ex["base"] and ex["hint"] and ex["guard"], ex, public=True)
         # script search with a long role badge: the scene title stays on one line (not one letter per line)
         sl = await E("""(()=>{const b=document.createElement('div');b.id='view2';b.style.width='380px';b.innerHTML='<ul class=sclist><li class=scard><button class=scli><span class=sclin>2</span><span class=sclih>INT. KAPELLE - EVENING</span><span class=sctag>ABEND</span><span class=rbadges><span class="rbadge warn"><b>Bax</b> ⚠ spricht im Drehbuch, fehlt im Drehplan</span></span></button></li></ul>';
