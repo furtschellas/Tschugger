@@ -633,7 +633,7 @@ async def owner_tests(p, port):
         check("Reports: PDF öffnet im eigenen PDF-Viewer (Seite gezeichnet, schliessbar)", pv in (None, {"page": True, "closed": True}), pv)
         # --- scene quittance: setup/lunch/wrap keys, own entries per unit, labels, WhatsApp texts without symbols ---
         sk = await E("""(()=>{if(typeof scRowKeys!=='function'||typeof scShareText!=='function')return null;const keys=scRowKeys([{n:'Setup'},{sc:'1'},{n:'Lunch'},{n:'Set up B'},{n:'Wrap'}],x=>x.n).join(',');
-          const lab=[scLabel('setup'),scLabel('setup2'),scLabel('lunch_u2'),scBase('wrap_u3')].join(',');const t=new Date('2030-05-06T09:00').getTime(),dd='2030-05-06';
+          const lab=[scLabel('setup'),scLabel('setup2'),scLabel('lunch_u2'),scBase('wrap_u3')].join(',');const t=dayMs('2030-05-06','09:00'),dd='2030-05-06';   /* 09:00 on the clock of the shoot (the test browser may run in UTC) */
           const tx=[scShareText(dd,'12','1',{s:2,b:t,e:t+3600e3}),scShareText(dd,'12','1',{s:1,b:t,start:1}),scShareText(dd,'lunch','1',{s:2,b:t,e:t+1800e3}),scShareText(dd,'wrap_u2','2',{s:2,b:t,e:t})];
           return {keys,lab,noIcon:tx.every(x=>!/[\\u2600-\\u27BF\\uD83C-\\uDBFF]/.test(x)),times:/09:00.10:00/.test(tx[0])&&/09:00/.test(tx[1])&&/09:30/.test(tx[2]),unit:/Unit/.test(tx[3])}})()""")
         check("Quittieren: Setup, Lunch, Wrap und weitere Setups mit eigenem Schlüssel, 2nd/3rd Unit getrennt, WhatsApp-Text ohne Symbole", sk in (None, {"keys": "setup,,lunch,setup2,wrap", "lab": "Setup,Setup 2,Lunch,wrap", "noIcon": True, "times": True, "unit": True}), sk, public=True)

@@ -132,7 +132,7 @@ async def session(p, port, who, width=390, extra=""):
 SHARED = set("""lgl cqlk1 cqlk2 cqlk3 cqpu cqpu cqnbase cqnon cqnwait cmrun cqon cqall cqcar cql cq0 cq1 cq2 cqro cqf mkd mkt cqcd sml err wlwarn wlbox acsub tbord tbrow tbmv audh audt audw audb audlist tstsec tsth redst redrow lsum lsh lss lst tstsu tstl tstbtns ghint pillbtn a2hs a2box ck ahint amsg lnk a2b empty arb pgt chk role mypage admins ok psec off pri refresh efood
 xclose gbtn lang glink hasreq smodes pok pushsec amap wlbox sec wlbeta cath3 catchip reg catchips myhead asub n acbox warn cico
 em search src dh on ico spin ttile fact v ust bcchk calbtn mcd uh tstsec tsth
-dtiles cstiles today tcard tmine tuh tcs ttiles""".split())   # the tiles and cards of Today / the callsheet: also in the side boxes (32-sideboxes)
+dtiles cstiles today tcard tmine tuh tu1 tu2 tcs ttiles""".split())   # the tiles and cards of Today / the callsheet: also in the side boxes (32-sideboxes)
 
 def class_collisions():
     """class names that two different modules (tools/boot/*.js, app.html) use – except the shared building blocks"""
