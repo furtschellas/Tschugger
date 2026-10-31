@@ -793,7 +793,7 @@ async def owner_tests(p, port):
             finally: scene_sheet.datetime = _real
             diff = sum(1 for i, u in enumerate("123") for x, y in zip(sp["rows"][i], py.get(u, [])) if [str(v) for v in x] != [str(v) for v in y]) + sum(abs(len(sp["rows"][i]) - len(py.get(u, []))) for i, u in enumerate("123"))
             # where they differ (numbers only, public): unit, row, the test day (1) or another day (0), the columns that differ
-            where = [[int(u), j, int(all(str(int(v)) in re.findall(r"\d+", str(x[2])) or v in str(x[2]) for v in sp["acks"][0]["d"].split("-")[1:])), [c for c in range(max(len(x), len(y))) if str(x[c] if c < len(x) else "") != str(y[c] if c < len(y) else "")]]
+            where = [[int(u), j, int(all(str(int(v)) in re.findall(r"\d+", str(x[2])) or v in str(x[2]) for v in sp["acks"][0]["d"].split("-")[1:])), [[c, str(x[c] if c < len(x) else "")[:8], str(y[c] if c < len(y) else "")[:8]] for c in range(max(len(x), len(y))) if c >= 8 and c != 14 and str(x[c] if c < len(x) else "") != str(y[c] if c < len(y) else "")] + [c for c in range(min(8, len(x))) if str(x[c]) != str(y[c] if c < len(y) else "")], str(x[0])[:9] if re.match(r"^(Setup|Drehstart|Lunch|Wrap)", str(x[0])) else "Szene"]
                      for i, u in enumerate("123") for j, (x, y) in enumerate(zip(sp["rows"][i], py.get(u, []))) if [str(v) for v in x] != [str(v) for v in y]][:4]
             check("Szenen-Protokoll: Google-Sheets-Abgleich baut dieselben Zeilen wie der Export der App", diff == 0, f"{diff} Zeilen verschieden {where} Längen {[len(r) for r in sp['rows']]}/{[len(py.get(u, [])) for u in '123']}", public=True)
         vp = await E("""(()=>{if(typeof tabsOn!=='function')return null;const k={s:SIMROLE,r:MYROLE,p:MYPERMS.slice()};SIMROLE={adm:false};MYROLE='t';
@@ -986,9 +986,9 @@ async def owner_tests(p, port):
             check("2nd Unit: alle Zeilen (auch Rigging), Hinweise nur bei der genannten Szene", u2 == {"rig": True, "grip": False, "ton": ["Ton für Sc185: 1 Person", "Szene 5 pt13: Rollator"]}, u2, public=True)
         # one step back at a time: each «back» waits for its popstate (a second back before it would jump over the first page); then the hint is awaited
         ex = await E("""(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));const back=()=>new Promise(r=>{let done=false;const f=()=>{if(done)return;done=true;removeEventListener('popstate',f);setTimeout(r,30)};addEventListener('popstate',f);history.back();setTimeout(f,1500)});
-          let n=0;while(!(history.state&&history.state.base)&&n++<60)await back();
+          let n=0;while(!(history.state&&history.state.base)&&n++<400)await back();   /* the earlier steps opened many pages: each one is a step back */
           const base=!!(history.state&&history.state.base);let msg='';for(let k=0;k<20&&!/zurück/i.test(msg);k++){msg=(document.getElementById('refmsg')||{}).textContent||'';if(!/zurück/i.test(msg))await w(100)}
-          for(let k=0;k<40&&history.state&&history.state.base;k++)await w(100);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base)}})()""")
+          for(let k=0;k<40&&history.state&&history.state.base;k++)await w(100);return {base,hint:/zurück/i.test(msg),guard:!(history.state&&history.state.base),steps:n,len:history.length}})()""")
         check("Zurück-Knopf auf der ersten Seite: Hinweis, erst zweimal zurück verlässt die App", ex["base"] and ex["hint"] and ex["guard"], ex, public=True)
         # script search with a long role badge: the scene title stays on one line (not one letter per line)
         sl = await E("""(()=>{const b=document.createElement('div');b.id='view2';b.style.width='380px';b.innerHTML='<ul class=sclist><li class=scard><button class=scli><span class=sclin>2</span><span class=sclih>INT. KAPELLE - EVENING</span><span class=sctag>ABEND</span><span class=rbadges><span class="rbadge warn"><b>Bax</b> ⚠ spricht im Drehbuch, fehlt im Drehplan</span></span></button></li></ul>';

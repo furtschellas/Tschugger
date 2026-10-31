@@ -1310,15 +1310,15 @@ html body #view .today .thead h2.pgt{font-size:26px}
 html body #view .dtitle{flex-wrap:wrap;row-gap:6px}html body #view .dtitle h2{white-space:nowrap}
 /* ---------- 1st and 2nd Unit clearly apart, the same everywhere: 1st = gold, 2nd = the accent (pink / black in the light version);
    a unit label as a small pill, a part of a unit with a stripe in its colour ---------- */
-html body :is(#view,.sbbox) .tuh.u1,html body :is(#view,.sbbox) .tuh.u2,html body #view .tnu.u1,html body #view .tnu.u2{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;line-height:1.5}
-html body :is(#view,.sbbox) .tuh.u1,html body #view .tnu.u1{background:var(--gold);color:#1a1206}
-html body :is(#view,.sbbox) .tuh.u2,html body #view .tnu.u2{background:var(--accent);color:var(--accent-ink)}
-html body #view .tnowun.u2,html body #view .tnowun.u1{padding-left:9px;border-left:3px solid var(--gold)}html body #view .tnowun.u2{border-left-color:var(--accent)}
+html body :is(#view,.sbbox) .tuh.tu1,html body :is(#view,.sbbox) .tuh.tu2,html body #view .tnu.tu1,html body #view .tnu.tu2{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;line-height:1.5}
+html body :is(#view,.sbbox) .tuh.tu1,html body #view .tnu.tu1{background:var(--gold);color:#1a1206}
+html body :is(#view,.sbbox) .tuh.tu2,html body #view .tnu.tu2{background:var(--accent);color:var(--accent-ink)}
+html body #view .tnowun.tu2,html body #view .tnowun.tu1{padding-left:9px;border-left:3px solid var(--gold)}html body #view .tnowun.tu2{border-left-color:var(--accent)}
 html body #view .csu1-head,html body #view .csu2-head{padding:6px 0 6px 12px;border-left:5px solid var(--gold);margin:14px 0 10px}
 html body #view .csu2-head{border-left-color:var(--accent)}
 html body #view .csu1-head h2,html body #view .csu2-head h2{font-size:20px}
 html body #view .csu2{border-top:3px solid var(--accent);margin-top:28px;padding-top:6px}
-html[data-theme="light"] body :is(#view,.sbbox) .tuh.u1,html[data-theme="light"] body #view .tnu.u1{background:#f2b33d;color:#1a1206}
+html[data-theme="light"] body :is(#view,.sbbox) .tuh.tu1,html[data-theme="light"] body #view .tnu.tu1{background:#f2b33d;color:#1a1206}
 /* side boxes: a topic is moved by dragging its title */
 aside.sbbox h3.sbh{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 aside.sbbox h3.sbh .sbdel{cursor:pointer}
