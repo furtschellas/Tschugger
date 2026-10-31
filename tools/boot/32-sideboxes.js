@@ -9,8 +9,8 @@ import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
 import {onRendered,render} from "../base/15-script-tab.js";
 import {arr} from "../base/20-data-start.js";
-import {ME,can,fb,isAdmin} from "./03-core-firebase.js";
-import {seenMs} from "./10-menus-welcome-presence.js";
+import {ME,MEMBER,can,fb,isAdmin} from "./03-core-firebase.js";
+import {appKind,seenMs} from "./10-menus-welcome-presence.js";
 import {savePrefsSoon} from "./06-prefs-docs.js";
 import {ADM,ensureAdm} from "./12a-admin-core.js";
 import {wxTile} from "./15-weather.js";
@@ -58,7 +58,12 @@ async function actLoad(){if(ACT.busy)return;ACT.busy=true;
     const s=await F.getDocs(F.query(F.collection(db,"members"),F.where("lastSeen",">=",since)));
     ACT.list=s.docs.map(d=>d.data()).filter(m=>m&&m.active===true&&Date.now()-seenMs(m)<4*60e3)
       .map(m=>({n:String(m.name||[m.firstName,m.lastName].filter(Boolean).join(" ")||m.email||"?"),d:/^app-/.test(m.app||"")?"App":/desktop/.test(m.app||"")?"Web · Computer":"Web · Handy",t:seenMs(m)}))
-      .sort((a,b)=>a.n.localeCompare(b.n));ACT.err=""}
+      .sort((a,b)=>a.n.localeCompare(b.n));
+    /* you yourself: always in the list while this page is open (owners and admins without an active member entry leave no «last seen» mark) */
+    const selfIn=!!ME&&s.docs.some(d=>{const m=d.data()||{};return d.id===ME.uid&&m.active===true&&Date.now()-seenMs(m)<4*60e3});
+    if(ME&&!selfIn){const k=appKind(),nm=(MEMBER&&(MEMBER.name||[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")))||ME.displayName||ME.email||"?";
+      ACT.list.unshift({n:String(nm)+" ("+L("du")+")",d:/^app-/.test(k)?"App":/desktop/.test(k)?"Web · Computer":"Web · Handy",t:Date.now()})}
+    ACT.err=""}
   catch(err){ACT.err=String(err&&err.code||"x")}finally{ACT.at=Date.now();ACT.busy=false;soon()}}
 const ago=t=>{const m=Math.round((Date.now()-t)/60e3);return m<1?L("gerade eben"):L("vor {n} Min.").replace("{n}",m)};
 const TOP={

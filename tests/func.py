@@ -880,6 +880,12 @@ async def owner_tests(p, port):
           const a=w.querySelector('#cs-cast').classList.contains('cs-astbl');w.querySelector('[data-cstview]').click();const b=w.querySelector('#cs-cast').classList.contains('cs-astbl');if(b)w.querySelector('[data-cstview]').click();
           const ic=w.querySelectorAll('.csjb button svg').length>0&&w.querySelectorAll('.cssec>summary .csexp').length>0;w.remove();old.id='view';localStorage.removeItem('cscast:v1');return {cards:!a,table:b,icons:ic}})()""")
         check("Callsheet: Cast als Karten oder Tabelle, Symbol-Leiste, Auf-/Zuklapp-Symbol", ctv in (None, {"cards": True, "table": True, "icons": True}), ctv, public=True)
+        # Today with both units: the 2nd Unit folded for people only in the 1st Unit, open for people in the 2nd Unit
+        tu2 = await E("""(()=>{if(typeof unitTilesHTML!=='function')return null;const d=S.days.find(x=>x.kind==='shoot');if(!d)return null;const ku=S.pu;S.pu={"1":true,"2":true};
+          const mk=(dt,calls)=>({date:dt,cs:{times:{crewCall:'07:00'},u2:{times:{crewCall:'07:00'},calls:[],cast:[]},calls}});const op=h=>{const m=/<details class="tu2d"[^>]*>/.exec(h);return m?m[0].includes(' open'):null};
+          const a=op(unitTilesHTML(mk('2099-01-01',[{name:'Max Muster',t:'07:00',t2:''}]),d,{hit:t=>String(t||'').includes('Max Muster')}));
+          const b=op(unitTilesHTML(mk('2099-01-02',[{name:'Zora X',t:'',t2:'08:00'}]),d,{hit:t=>String(t||'').includes('Zora')}));S.pu=ku;return {only1:a,in2:b}})()""")
+        check("Heute: 2nd Unit zugeklappt für Leute nur in der 1st Unit, offen für die 2nd Unit", tu2 in (None, {"only1": False, "in2": True}), tu2, public=True)
         cj = await E("""(()=>{const d=S.days.find(x=>x.kind==='shoot'&&arr(x.items).some(i=>i.sc));if(!d||typeof renderCS!=='function')return null;
           const x={date:d.date,cs:{times:{crewCall:'08:00'},order:{rows:[{t:'09:00',sc:'2',set:'A'}]},cast:[{no:'1',role:'BAX',actor:'X'}],calls:[{dept:'Camera',name:'Filip Z',t:'08:10'},{dept:'Sound',name:'Pat S',t:'08:00'}]}};
           const w=document.createElement('div');w.innerHTML=renderCS(x,d);document.body.appendChild(w);const jb=[...w.querySelectorAll('[data-csj]')].map(b=>b.dataset.csj);

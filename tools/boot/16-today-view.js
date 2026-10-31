@@ -271,7 +271,15 @@ export function unitTilesHTML(dcs,d,me){const has2=!!((dcs.cs||{}).u2||dayItems(
   /* the units chosen with the unit buttons (as the callsheet): 1st, 2nd or both */
   const units=has2?["1","2"].filter(u=>S.pu[u]!==false&&(u!=="2"||S.pu["2"])):["1"],U=units.length?units:["1"];
   const tl=U.map(u=>{let h="";try{h=csUnitTiles(dcs,d,u,me).replace(' id="cs-zeiten"','')}catch(err){console.warn("tiles",u,err)}return h?{u,h}:null}).filter(Boolean);
-  return tl.length>1?tl.map(t=>'<div class="tuh '+(t.u==="2"?"tu2":"tu1")+'">'+(t.u==="2"?"2nd":"1st")+' Unit</div>'+t.h).join(""):(tl[0]?tl[0].h:"")}
+  if(tl.length<2)return tl[0]?tl[0].h:"";
+  /* both units: the 2nd Unit can be folded – closed for everybody who is not in the 2nd Unit (open for the 2nd Unit and when it is not known);
+     a fold or unfold by hand stays for that day */
+  let mine=null;try{mine=typeof window.csMyUnits==="function"&&me?window.csMyUnits(dcs.cs,me):null}catch(_){}
+  const key=String(dcs.date||d&&d.date||""),open=key in TU2OPEN?TU2OPEN[key]:!(mine&&!mine.includes("2"));
+  return tl.map(t=>t.u!=="2"?'<div class="tuh tu1">1st Unit</div>'+t.h:
+    '<details class="tu2d" data-tu2d="'+esc(key)+'"'+(open?' open':'')+'><summary><span class="tuh tu2">2nd Unit</span></summary>'+t.h+'</details>').join("")}
+const TU2OPEN={};
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.matches("details[data-tu2d]"))TU2OPEN[d.dataset.tu2d]=d.open},true);
 /* «Jetzt» of one unit – the same for the 1st and the 2nd Unit (Today, callsheet, side box): the step running now (scene with place and set,
    since when, scenes in parallel and the next one; or Setup / Lunch), Maske / Kostüm now, opened the description and the cast.
    null: this unit is not shooting now (before its start, after its wrap, at night). The 2nd Unit: its own callsheet part (csU2Dispo) */

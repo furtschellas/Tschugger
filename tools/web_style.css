@@ -1327,3 +1327,10 @@ html.sbdragging iframe{pointer-events:none}
 aside.sbbox .sbdrag{opacity:.45}
 .sbdrop{position:fixed;height:3px;border-radius:2px;background:var(--accent);z-index:9999;pointer-events:none;box-shadow:0 0 0 2px var(--bg)}
 html body #view .csu2-head.csu1-head{border-left-color:var(--gold)}
+/* Today / side box: the 2nd Unit folded (closed for people not in the 2nd Unit) */
+html body :is(#view,.sbbox) details.tu2d{margin-top:10px}
+html body :is(#view,.sbbox) details.tu2d>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:4px 0}
+html body :is(#view,.sbbox) details.tu2d>summary::-webkit-details-marker{display:none}
+html body :is(#view,.sbbox) details.tu2d>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;margin-left:2px}
+html body :is(#view,.sbbox) details.tu2d[open]>summary::after{transform:rotate(45deg)}
+html body :is(#view,.sbbox) details.tu2d>summary .tuh{margin:0}
