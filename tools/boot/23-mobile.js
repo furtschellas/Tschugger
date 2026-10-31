@@ -41,7 +41,7 @@ const CSMOB=760;
 function csFitTilesMob(r){r.classList.remove("cswrap");let f=1;r.style.setProperty("--csf","1");
   const over=()=>[...r.children].some(t=>t.classList&&t.classList.contains("dt")&&!t.classList.contains("csdrv")&&[...t.querySelectorAll(".v,.k,b,span")].some(e=>e.scrollWidth>t.clientWidth+1)||t.scrollWidth>t.clientWidth+1);
   for(let i=0;i<10&&over();i++){f=Math.max(.5,f*.92);r.style.setProperty("--csf",f.toFixed(3));if(f<=.5)break}}
-function csFitTiles(){const mob=innerWidth<CSMOB;document.querySelectorAll("#view .dtiles.cstiles").forEach(r=>{if(!r.offsetParent)return;if(mob){csFitTilesMob(r);return}
+function csFitTiles(){const mob=innerWidth<CSMOB;document.querySelectorAll("#view .dtiles.cstiles, aside.sbbox .dtiles.cstiles").forEach(r=>{if(!r.offsetParent)return;if(mob||r.closest("aside.sbbox")){csFitTilesMob(r);return}   /* the side boxes: always like the phone (times, then Sonne · Wetter · Anfahrt), the font fitted to the box */
   r.classList.remove("cswrap");let f=1;r.style.setProperty("--csf","1");
   for(let i=0;i<6;i++){const need=r.scrollWidth,have=r.clientWidth;if(need<=have+1)break;f=Math.max(.55,f*have/need*.98);r.style.setProperty("--csf",f.toFixed(3));if(f<=.55)break}
   if(r.scrollWidth>r.clientWidth+1){r.style.setProperty("--csf",".7");r.classList.add("cswrap")}})}

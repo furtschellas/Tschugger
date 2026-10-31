@@ -1266,3 +1266,20 @@ html body #view .tcard.tnow .tnowun+.tnowun{margin-top:6px;padding-top:6px;borde
   html body #view .dtiles.cstiles.cstiles>.dt.cswx .ttile b{font-size:calc(16px*var(--csf,1))!important}
 }
 html body #view .dtiles.cstiles>a.dt.cslunch{color:inherit;text-decoration:none;cursor:pointer;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}html body #view .dtiles.cstiles>a.dt.cslunch .k::after{content:" ›";color:var(--accent)}
+/* the same in the side boxes, at every window width (the box is narrow): readable, nothing cut */
+
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles{display:flex!important;flex-wrap:wrap!important;gap:calc(6px*var(--csf,1)) 4px!important;grid-template-columns:none!important}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt{flex:1 1 0!important;min-width:0!important;width:auto!important;max-width:none!important;order:1;grid-column:auto!important;padding:calc(5px*var(--csf,1)) calc(6px*var(--csf,1))!important;box-sizing:border-box}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles::after{content:"";order:2;flex:0 0 100%;height:0}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt:is(.cssunt,.cswx,.csdrv,.wide){order:3;flex:1 1 0!important}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt .k{font-size:max(7.5px,calc(10px*var(--csf,1)))!important;white-space:nowrap}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt .v{font-size:calc(18px*var(--csf,1))!important;white-space:nowrap!important}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt.big .v{font-size:calc(20px*var(--csf,1))!important}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt.cssunt .v{font-size:calc(14px*var(--csf,1))!important}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt.cssunt br{display:none}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt.cssunt .sd{display:inline}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt.csdrv .v{font-size:calc(13px*var(--csf,1))!important;white-space:normal!important;overflow-wrap:anywhere;line-height:1.15}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt.cswx .ttile{padding:calc(5px*var(--csf,1)) calc(6px*var(--csf,1))!important}
+  html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt.cswx .ttile b{font-size:calc(16px*var(--csf,1))!important}
+
+.sbbox .sbphc{display:flex;flex-direction:column;gap:6px;margin:0 0 8px;font-size:13px}.sbbox .sbphc select{width:100%;min-height:34px;font-size:13px}.sbbox .sbphc .simpick label{display:flex;flex-direction:column;gap:4px;font-size:12px;opacity:.8}

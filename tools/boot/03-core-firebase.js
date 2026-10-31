@@ -1,4 +1,4 @@
-import {L,LANG,S,applyStatic,esc,setLANG} from "../base/10-core.js";
+import {applyStatic,esc,L,LANG,S,SBXF,setLANG} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {CACHE_KEY,showMsg} from "../base/20-data-start.js";
@@ -175,7 +175,7 @@ window.dbWrite=dbWrite;
 /* the app inside a frame of a side box («?sbx=…»): a second copy of the app in the same browser – it shows a page, nothing else.
    It never signs out, clears this device's data or writes presence: that is the job of the page itself (before, the frame signed the
    person out and left the box on the sign-in screen) */
-export const SBXFRAME=(()=>{try{return window.self!==window.top&&new URLSearchParams(location.search).has("sbx")}catch(_){return false}})();
+export const SBXFRAME=SBXF;
 async function fbInit(){
   const base="https://www.gstatic.com/firebasejs/"+FB_V+"/";
   const [app,auth,fs]=await withTimeout(Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]),20000,"firebase");

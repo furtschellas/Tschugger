@@ -67,6 +67,9 @@ if(window.__VSY&&window.CACHEOK)requestAnimationFrame(()=>{try{window.scrollTo(0
       if(!u&&!waitedIn&&Date.now()-T0<8000){let was=false;try{was=localStorage.getItem("wasin")==="1"}catch(_){}
         if(was){waitedIn=true;if(!S.days.length)showGate("wait");setTimeout(()=>{if(!auth.currentUser){try{if(!SBXFRAME)localStorage.removeItem("wasin")}catch(_){}signedOut()}},6000);return}}
       if(!u){signedOut();return}
+      /* the same person again (another copy of the app in this browser – a side box, another tab – refreshed the sign-in): no new start,
+         only the account object is updated (before, the whole app started again: loading screen, data, page) */
+      if(ME&&ME.uid===u.uid&&window.__STARTED===u.uid){setME(u);return}
       afterSignIn(u);
     });
   }catch(err){console.error(err);if(!S.days.length)showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);else{hideGate();showMsg(L("Offline – du siehst den zuletzt geladenen Stand."),6000)}}
@@ -89,7 +92,7 @@ if(window.__VSY&&window.CACHEOK)requestAnimationFrame(()=>{try{window.scrollTo(0
 
 /* Hindi (हिन्दी): texts of the app; missing ones fall back to English. Main topics and titles are translated only in Hindi */
 /* signed out (also: no stored sign-in any more at the start, e.g. account blocked or deleted): everything of the person leaves this device */
-function signedOut(){
+function signedOut(){window.__STARTED=null;
   /* a side-box frame: the page itself decides about signing out – the frame only waits for the sign-in of the page (never clears the device) */
   if(SBXFRAME){setME(null);if(!signedOut.w){signedOut.w=setTimeout(()=>{signedOut.w=0;location.reload()},15000)}return}
   /* the session ended from outside (password changed elsewhere, revoked): its push reminders leave this device too */

@@ -12,7 +12,7 @@ import {arr} from "../base/20-data-start.js";
 import {ME,can,fb,isAdmin} from "./03-core-firebase.js";
 import {seenMs} from "./10-menus-welcome-presence.js";
 import {savePrefsSoon} from "./06-prefs-docs.js";
-import {ADM} from "./12a-admin-core.js";
+import {ADM,ensureAdm} from "./12a-admin-core.js";
 import {wxTile} from "./15-weather.js";
 import {nowCardHTML,todayDay,unitTilesHTML} from "./16-today-view.js";
 
@@ -22,11 +22,12 @@ const SBT=[["now","Jetzt"],["mine","Mein Tag"],["tiles","Kacheln des Tages"],["o
   ["phone","Smartphone-Vorschau","phone"],
   ["today","Today","t:today"],["plan","Drehplan","t:plan"],["dispo","Callsheet","t:dispo"],["loc","Locations","t:loc"],["crew","Crewliste","t:crew"],["script","Drehbuch","t:script"],["info","Info","t:info"],
   ["my","Meine Termine","t:my"],["bcast","Nachrichten","t:bcast"],["reports","Reports","t:reports"],["acct","Mein Konto","t:acct"],
-  ["set","App-Einstellungen","a:set"],["users","Alle Benutzer","a:users"],["active","Gerade aktiv"],["roles","Rollen","a:roles:.admins:not(.pacc)"],["access","Wer hat welchen Zugriff?","a:roles:.pacc"]];
+  ["set","App-Einstellungen","a:set"],["users","Alle Benutzer","a:users"],["active","Gerade aktiv"],["sim","Ansicht simulieren"],["roles","Rollen","a:roles:.admins:not(.pacc)"],["access","Wer hat welchen Zugriff?","a:roles:.pacc"]];
 const sbCan=k=>{try{const t=SBT.find(x=>x[0]===k),pg=t&&t[2]||"";
     if(/^a:(users)/.test(pg))return isAdmin()||can("users.view")||can("users.edit")||can("users.invite");if(/^a:roles/.test(pg))return isAdmin()||can("roles.view")||can("roles.edit")||can("roles.assign");if(pg==="a:set")return isAdmin()||can("settings");
     if(k==="now")return !!(window.nowSee&&window.nowSee());if(k==="my")return vok("mycal");if(k==="bcast")return can("push.send");if(k==="reports")return typeof VIEWS==="undefined"||!!VIEWS.reports;if(k==="acct")return true;
     if(k==="active")return isAdmin()||can("users.view")||can("users.edit");
+    if(k==="sim")return isAdmin();
     if(pg.startsWith("t:")){const tb=pg.slice(2);return (typeof tabsOn!=="function"||tabsOn().includes(tb))&&vok(tb==="dispo"?"dispo":tb)}}catch(_){return false}return true};
 export const SBWIDE=1300;
 const INFRAME=(()=>{try{return window.self!==window.top}catch(_){return true}})();
@@ -61,6 +62,9 @@ async function actLoad(){if(ACT.busy)return;ACT.busy=true;
   catch(err){ACT.err=String(err&&err.code||"x")}finally{ACT.at=Date.now();ACT.busy=false;soon()}}
 const ago=t=>{const m=Math.round((Date.now()-t)/60e3);return m<1?L("gerade eben"):L("vor {n} Min.").replace("{n}",m)};
 const TOP={
+  /* «Ansicht simulieren»: the quick picker of the App-Verwaltung (roles and people) – the view as that role or person opens in the page itself */
+  sim:()=>{if(!ADM.loaded){try{ensureAdm()}catch(_){}setTimeout(soon,1500);return '<p class="sbnone">'+esc(L("Wird geladen …"))+'</p>'}
+    const h=typeof window.simPicker==="function"?window.simPicker():"";return h||'<p class="sbnone">'+esc(L("Ansicht als"))+' …</p>'},
   active:()=>{if(Date.now()-ACT.at>90e3)setTimeout(actLoad,0);if(!ACT.list)return ACT.err?'<p class="sbnone">'+esc(L("Zurzeit nicht lesbar"))+'</p>':"";
     if(!ACT.list.length)return '<p class="sbnone">'+esc(L("Gerade ist niemand aktiv."))+'</p>';
     return '<div class="sbact"><div class="sbacn">'+ACT.list.length+' '+esc(L("online"))+'</div>'+ACT.list.map(p=>'<div class="sbap"><span class="sbdot" aria-hidden="true"></span><b>'+esc(p.n)+'</b><small>'+esc(p.d)+' · '+esc(ago(p.t))+'</small></div>').join("")+'</div>'},
@@ -84,10 +88,33 @@ const TOP={
 /* ---------- the two boxes ---------- */
 let BOX={};
 function frame(k,pg){const f=document.createElement("div");f.className="sbframe"+(pg==="phone"?" sbphone":"");
-  const i=document.createElement("iframe");i.src=location.pathname+"?sbx="+encodeURIComponent(k);i.title=k;i.loading="lazy";f.appendChild(i);return f}
+  const i=document.createElement("iframe");i.src=location.pathname+"?sbx="+encodeURIComponent(k);i.title=k;i.loading="lazy";f.appendChild(i);
+  if(pg==="phone")i.addEventListener("load",()=>setTimeout(()=>phPost(true),1200));return f}
+/* ---------- the phone preview: «wie die Hauptseite» (the same page as the page in the middle) and «Ansicht als …» (a role or a person, only in the phone) ---------- */
+const PHK="sbxph";
+const phGet=()=>{try{return Object.assign({follow:true,sim:""},JSON.parse(localStorage.getItem(PHK)||"{}"))}catch(_){return {follow:true,sim:""}}};
+const phSet=v=>{try{localStorage.setItem(PHK,JSON.stringify(v))}catch(_){}};
+function phPost(all){const v=phGet();for(const i of document.querySelectorAll("aside.sbbox .sbphone iframe"))try{
+    const m={sbx:"phone"};if(v.follow)Object.assign(m,{tab:S.tab,day:S.day||null,sub:(S.tab==="admin"&&ADM.sub)||""});if(all)m.sim=v.sim||"";i.contentWindow.postMessage(m,location.origin)}catch(_){}}
+/* the controls above the phone: «wie Hauptseite» and the picker of roles and people (the same list as «Ansicht simulieren») */
+function phBar(){const v=phGet();let pick="";try{if(isAdmin()){if(!ADM.loaded)ensureAdm();pick=typeof window.simPicker==="function"?window.simPicker().replace("data-simpick","data-sbphsim"):""}}catch(_){}
+  if(pick&&v.sim)pick=pick.replace('<option value="'+esc(v.sim)+'">','<option value="'+esc(v.sim)+'" selected>');
+  return '<div class="sbphc"><label class="ck"><input type="checkbox" data-sbphf'+(v.follow?' checked':'')+'> '+esc(L("wie Hauptseite"))+'</label>'+(pick?pick.replace('<option value="">','<option value="">'+esc(L("eigene Ansicht"))+'</option><option value="" disabled>'):'')+'</div>'}
+document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest("[data-sbphf]");if(c){const v=phGet();v.follow=c.checked;phSet(v);phPost(false);return}
+  const sl=e.target.closest&&e.target.closest("[data-sbphsim]");if(sl){const v=phGet();v.sim=sl.value||"";phSet(v);phPost(true)}});
+if(!INFRAME)onRendered(()=>{if(phGet().follow)phPost(false)});
+/* inside the phone frame: follow the page, simulate a role or a person (only in this frame – the page itself stays as it is) */
+if(INFRAME&&FRAMEPG==="phone"){let simV=null;
+  const simGo=async v=>{if(v===simV)return;simV=v;try{if(typeof simEnd==="function")simEnd()}catch(_){}if(!v)return;
+    try{if(window.loadAdminUI)await window.loadAdminUI()}catch(_){}for(let n=0;n<40&&!ADM.loaded;n++){try{ensureAdm()}catch(_){}await new Promise(r=>setTimeout(r,250))}
+    try{if(v.startsWith("role:"))simStartRole(v.slice(5),{back:S.tab});else simStart(v,{back:S.tab})}catch(err){console.warn("phone sim",err)}};
+  addEventListener("message",e=>{if(e.origin!==location.origin||!e.data||e.data.sbx!=="phone")return;const d=e.data;
+    if(d.sim!==undefined)simGo(d.sim);
+    if(d.tab&&(d.tab!==S.tab||(d.day&&d.day!==S.day))){S.tab=d.tab;if(d.day!==undefined&&d.day!==null)S.day=d.day;if(d.tab==="admin"&&d.sub)ADM.sub=d.sub;render()}})}
 /* always the phone view: every frame 390 px wide, scaled to the box; the phone 844 px high, a page 70 % of the window */
 /* several topics in one box: the frames share its height (each at least 260 px), so all of them are seen at once */
-function fit(){
+function fit(){try{if(typeof csFitTiles==="function")requestAnimationFrame(csFitTiles)}catch(_){}   /* the tiles in the boxes: font fitted to the box */
+
   /* each box in the free space beside the page (measured, not assumed): never over the page, never past the edge of the window */
   const wr=(document.querySelector(".wrap")||document.getElementById("view")||document.body).getBoundingClientRect(),G=16;
   for(const a of document.querySelectorAll("aside.sbbox")){if(a.hidden)continue;const side=a.id==="sbl"?"l":"r";
@@ -104,8 +131,8 @@ function fit(){
     const other=v.scrollHeight*zw,n=fr.length,per=n?Math.max(150,Math.floor((H-other-6)/n/zw)):0;
     for(const f of fr){const i=f.querySelector("iframe");if(!i)continue;const ph=f.classList.contains("sbphone");
       const w0=Math.max(120,((f.parentElement&&f.parentElement.clientWidth)||free/zw)-(ph?14:2));let s=Math.min(1.6,w0/390);
-      if(ph&&844*s>per)s=per/844;
-      const vis=ph?Math.round(844*s):per;f.style.width=ph?Math.round(390*s)+"px":"";i.style.transform="scale("+s+")";i.style.height=Math.round(vis/s)+"px";f.style.height=vis+"px"}
+      if(ph&&844*s+14>per)s=(per-14)/844;
+      const vis=ph?Math.round(844*s)+14:per;f.style.width=ph?Math.round(390*s)+14+"px":"";i.style.transform="scale("+s+")";i.style.height=Math.round((vis-(ph?14:0))/s)+"px";f.style.height=vis+"px"}   /* the phone: its frame (2 × 7 px) around the whole screen – the menu at the bottom stays visible */
     /* still too high (many parts): everything smaller until it fits – nothing hidden, no scrolling inside the box */
     const need=v.scrollHeight*zw;if(need>H){const z=Math.max(.5,zw*(H-8)/need);v.style.zoom=z;if(a.scrollHeight>H+1)v.style.zoom=Math.max(.5,z*(H-8)/a.scrollHeight)}}}
 /* who may use the side boxes: Owner, Admins and the roles with «Seitenmenüs nutzen» (App-Verwaltung → Access) */
@@ -119,6 +146,9 @@ function draw(){if(INFRAME)return;const wide=window.innerWidth>=SBWIDE&&!!ME&&sb
     for(const el of [...root.children])if(!keys.includes(el.dataset.sbt))el.remove();
     keys.forEach((k,i)=>{const t=SBT.find(y=>y[0]===k);let el=root.querySelector(':scope>[data-sbt="'+k+'"]');
       if(!el){el=document.createElement("div");el.dataset.sbt=k;if(t[2]){el.innerHTML='<section class="sbsec">'+head(k,t[1])+'</section>';el.firstChild.appendChild(frame(k,t[2]))}}
+      /* the phone: its controls above it (kept while a choice is open) */
+      if(k==="phone"){let c=el.querySelector(".sbphcw");if(!c){c=document.createElement("div");c.className="sbphcw";const fr=el.querySelector(".sbframe");fr.parentNode.insertBefore(c,fr)}
+        if(!c.contains(document.activeElement)){const h=phBar();if(c.__h!==h){c.__h=h;c.innerHTML=h}}}
       if(root.children[i]!==el)root.insertBefore(el,root.children[i]||null);
       if(!t[2]){let h="";try{h=sec(k,t[1],TOP[k]())}catch(err){h=sec(k,t[1],"")}if(el.__h!==h){el.__h=h;el.innerHTML=h}}});
     /* below: «+» – a pull-down with the topics not shown yet (in neither box) */

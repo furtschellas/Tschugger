@@ -1,4 +1,4 @@
-import {L,S} from "../base/10-core.js";
+import {L,S,SBXF} from "../base/10-core.js";
 import {onRendered,render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {closeScene} from "../base/17-scene-reader.js";
@@ -20,11 +20,11 @@ export function navDialogs(){const l=[];
 function navClose(d){if(!d)return;if(d.id==="scn"&&typeof closeScene==="function")closeScene();else if(d.id==="search"&&typeof closeSearch==="function")closeSearch();
   else{const x=d.querySelector("[data-bcvx],[data-rcok],[data-rtx],.xclose,[data-scrn='ok'],[data-a2unok]");if(x&&x.closest("#"+(d.id||"_"))===d&&!x.closest("form"))x.click();if(d.isConnected)d.remove()}}
 /* a new page of the app gets its own step back */
-onRendered(()=>{try{
+onRendered(()=>{if(SBXF)return;try{
     if(NAV.last===null){history.replaceState({t:S.tab,base:1},"");history.pushState({t:S.tab},"");NAV.last=S.tab}
     else if(S.tab!==NAV.last){if(!NAV.pop){history.pushState({t:S.tab},"");NAV.depth++}NAV.last=S.tab}}catch(_){}NAV.pop=false;navBtn()});
 /* a window that opens gets a step back too; closed with its own button, that step is taken away again */
-new MutationObserver(()=>{const n=navDialogs().length;
+new MutationObserver(()=>{if(SBXF)return;const n=navDialogs().length;
   if(n>NAV.open){for(let i=NAV.open;i<n;i++)try{history.pushState({t:S.tab,d:1},"")}catch(_){}}
   else if(n<NAV.open&&!NAV.closing){const k=NAV.open-n;for(let i=0;i<k;i++){NAV.skip++;try{history.back()}catch(_){NAV.skip--}}}
   NAV.open=n;navBtn()}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});

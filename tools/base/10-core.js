@@ -146,6 +146,8 @@ export const mapsDir=(o,de)=>"https://www.google.com/maps/dir/?api=1&travelmode=
 const mapsSearch=q=>mapsQ(String(q).replace(/\bRte\b\.?/g,"Route").replace(/\bAv\.(?=\s)/g,"Avenue"));
 export const ieClass=ie=>{const x=(ie||"").split("/")[1]||"";return /^N/i.test(x)?"n":/^Ev/i.test(x)?"ev":/^Mo/i.test(x)?"mo":""};
 /* the key of a scene number or name: lower case, without spaces («186 PT1» → «186pt1»); one routine for the whole app */
+/* the app inside a frame of a side box («?sbx=…»): it only shows a page – it never writes this device's settings, history or tab */
+export const SBXF=(()=>{try{return window.self!==window.top&&new URLSearchParams(location.search).has("sbx")}catch(_){return false}})();
 export const norm=s=>String(s??"").toLowerCase().replace(/\s+/g,"");
 /* search hits marked in a text: ranges found in the raw text, then escaped piece by piece (marking inside escaped HTML broke «&#39;» and earlier marks) */
 export function markTerms(text,terms,min){text=String(text||"");const r=[];

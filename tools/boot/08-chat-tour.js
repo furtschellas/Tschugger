@@ -1,5 +1,5 @@
 import {a2hsAuto,a2hsDue,isIOS,showA2hs} from "../a2hs.js";
-import {L,LANG,S,applyStatic,dlgBtn,esc,getTheme,localISO,mkDialog,setLANG,setTheme,todayISO} from "../base/10-core.js";
+import {applyStatic,dlgBtn,esc,getTheme,L,LANG,localISO,mkDialog,S,SBXF,setLANG,setTheme,todayISO} from "../base/10-core.js";
 import {myEvents,myIdentity} from "../base/12-mycal.js";
 import {tabsOn,vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -222,7 +222,7 @@ function showNews(){
   /* closed in any way (also ✕): seen */
   const ob=new MutationObserver(()=>{if(!d.isConnected||d.hidden){ob.disconnect();store("nv",NEWS_VER);savePrefs()}});ob.observe(document.body,{childList:true});ob.observe(d,{attributes:true,attributeFilter:["hidden"]});
 }
-export async function maybeTour(){
+export async function maybeTour(){if(SBXF)return;   /* never in a side-box frame */
   if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||TOUR.pending)return;
   if(typeof a2hsDue==="function"&&a2hsDue()&&!TOUR.a2asked&&typeof a2hsAuto==="function"&&a2hsAuto()){TOUR.a2asked=true} /* install dialog comes by itself with the next tap */
   if(typeof a2hsDue==="function"&&a2hsDue()&&!TOUR.a2asked){TOUR.a2asked=true;showA2hs();const s=document.getElementById("a2hs");if(s){const ob=new MutationObserver(()=>{if(s.hidden||!s.isConnected){ob.disconnect();setTimeout(maybeTour,400)}});ob.observe(s,{attributes:true,attributeFilter:["hidden"]})}return}

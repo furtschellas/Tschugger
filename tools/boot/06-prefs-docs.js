@@ -1,4 +1,4 @@
-import {L,LANG,S,deG,esc,saveBtn,setSPT,setTheme} from "../base/10-core.js";
+import {deG,esc,L,LANG,S,saveBtn,SBXF,setSPT,setTheme} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {onStore} from "../base/16-interaction.js";
 import {showMsg} from "../base/20-data-start.js";
@@ -10,13 +10,13 @@ export const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push
 /* the notices of p.x (or the older single fields) */
 export const prefX=p=>{let x={};try{x=JSON.parse(p&&p.x||"{}")||{}}catch(_){}for(const k of PREFX)if(typeof(p&&p[k])==="string"&&x[k]==null)x[k]=p[k];return x};
 onStore(k=>{if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}});
-export function savePrefsSoon(){clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
+export function savePrefsSoon(){if(SBXF)return;clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 /* a change made just before closing or reloading is saved right away (before, the older copy online won on the next start) */
 const prefsFlush=()=>{if(PREFT){clearTimeout(PREFT);PREFT=null;savePrefs()}};
 addEventListener("pagehide",prefsFlush);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")prefsFlush()});
 /* a side box (32-sideboxes: the app in a frame) neither saves nor applies the settings – it would put an older copy over the page's own */
 const INSBX=/[?&]sbx=/.test(location.search);
-export async function savePrefs(){
+export async function savePrefs(){if(SBXF)return;
   if(!ME||!ME.uid||INSBX)return;const p={};
   /* at most 400 characters per setting – but JSON is never cut (broken JSON would reset the setting elsewhere): the push settings drop their
      oldest switched-off reminders, anything else too long stays on this device only */
@@ -45,7 +45,7 @@ function applyPrefs(p){
   render();
 }
 export async function loadPrefs(){
-  if(!ME||!ME.uid)return;
+  if(!ME||!ME.uid||SBXF)return;   /* a side-box frame uses the settings of the page (same device) – it never writes them */
   const u=ME;
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",u.uid)),10000,"prefs");
     if(ME!==u)return;   /* signed out meanwhile: these settings belong to nobody on this device now */

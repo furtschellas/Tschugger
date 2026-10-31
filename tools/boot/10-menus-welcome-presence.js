@@ -1,5 +1,5 @@
 import {isStandalone} from "../a2hs.js";
-import {applyStatic,ddmm,esc,fullName,L,LANG,localISO,mkDialog,S,saveBtn,setLANG,todayISO,WDS} from "../base/10-core.js";
+import {applyStatic,ddmm,esc,fullName,L,LANG,localISO,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
 import {UNAME,hasU,unitsOn} from "../base/11-schedule-prep.js";
 import {WDL} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -97,7 +97,7 @@ async function welcomeDone(){
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().welcomeAck;if(w&&String(w).split("|")[1]===WELCOME_VER){try{localStorage.setItem("welcomeAck",w)}catch(_){}return true}}catch(_){}
   return false;
 }
-export async function maybeWelcome(){
+export async function maybeWelcome(){if(SBXF)return;   /* never in a side-box frame (the phone preview showed the welcome note over the app) */
   if(!ME||WELCOME_OPEN||ONBOARD)return;
   /* locked BEFORE the check: two sign-in paths at the same moment showed the note twice */
   WELCOME_OPEN=true;if(await welcomeDone()){WELCOME_OPEN=false;maybeTestWelcome();return}
@@ -188,6 +188,7 @@ export function seenText(m){const t=seenMs(m);if(!t)return m&&m.active===true?L(
   return L("zuletzt online")+" "+(dd===0?L("heute")+" "+hm:dd===1?L("gestern")+" "+hm:dt.toLocaleDateString("de-CH")+" "+hm)}
 export let START=null;
 export async function afterSignIn(u){
+  window.__STARTED=u&&u.uid;   /* started for this person (13-start: the same person again is no new start) */
   setME(u);if(!window.PRIVOK)setTimeout(()=>{try{loadLangs().then(()=>{if(S.tab==="admin")render()})}catch(_){}},1500); /* links (motive list, map, chat) can only be read once signed in */
   /* account created by the owner with a start password: counts as confirmed, but a new password must be set first */
   START=null;if(!u.emailVerified||window.__checkStart){try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"starts",lc(u.email))),10000,"start");if(d.exists())START=d.data()}catch(_){
