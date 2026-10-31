@@ -85,6 +85,8 @@ export function clearLocal(){if(SBXFRAME)return;   /* a side-box frame never cle
      and a newer «prefsLocalAt» made the device overwrite the next person's settings online (the colour theme stays: it belongs to the device) */
   try{if(typeof PREFKEYS!=="undefined"){clearTimeout(PREFT);setPREFT(null);setPREFOK(false);for(const k of PREFKEYS.concat(PREFX))if(k!=="theme")localStorage.removeItem(k)}for(const k of ["prefsLocalAt","testAck"])localStorage.removeItem(k)}catch(_){}try{if(window.simReset)window.simReset()}catch(_){}try{if(window.startNotesReset)window.startNotesReset()}catch(_){}
   /* the Firebase offline copy (also secret/key) is deleted at the next start; crew-only links and the local reminder marks go now */
+  /* decrypted copies of the crew data on this device (changes on set, forecasts, own appointments, quittances): gone with the person */
+  try{for(const k of ["dayedit:v1","nowcast:v1","ownev:v1","rideack:v1","scack:v1"])localStorage.removeItem(k);OWN.list=null;OWN.roles=null;OWN.at=0}catch(_){}
   try{localStorage.setItem("fsclear","1");for(const k of Object.keys(localStorage))if(k.startsWith("pushlocal:"))localStorage.removeItem(k);localStorage.removeItem("appmap");window.PRIVOK=false}catch(_){}
   S.days=[];S.days0=null;S.dispos0=null;S.crew=[];S.locs=[];S.places=[];S.dispos=[];S.prepro=[];S.meta=null;S.loaded=false;MEMO.clear();setDATAKEY(null);setMEMBER(null);setLASTSTAMP(null);setSCRIPT(null);setCOADMIN(false);ADM.loaded=false;ADM.mem=[];ADM.inv=[];ADM.adm=[]}
 /* ---- sign-in screen ---- */

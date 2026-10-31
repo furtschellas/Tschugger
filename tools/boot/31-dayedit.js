@@ -108,8 +108,13 @@ function deDialog(date,u){u=u||"1";const others=arr(S.days).filter(x=>x.kind==="
       if(deHm(ti)&&deHm(tj)){items[i].t=ti;items[j].t=tj;for(const k of [i,j])if(items[k].sc)items[k]._de=Object.assign({},items[k]._de,{nt:1})}draw()};
     if(b.dataset.deup!=null){sw(+b.dataset.deup,+b.dataset.deup-1);return}
     if(b.dataset.dedn!=null){sw(+b.dataset.dedn,+b.dataset.dedn+1);return}
-    if(b.dataset.dex!=null){const it=items[+b.dataset.dex],x=it._de||{};
-      if(x.to){delete moves[x.to];const m=moves;void m;delete x.to}else if(x.x)delete x.x;else x.x=1;it._de=Object.keys(x).length?x:undefined;if(!it._de)delete it._de;draw();return}
+    if(b.dataset.dex!=null){const i=+b.dataset.dex,it=items[i],x=it._de||{};
+      /* a scene taken over from another day just now: back means it stays there (not struck on both days) */
+      if(x.from&&!x.x&&moves["-"+x.from]){moves["-"+x.from]=moves["-"+x.from].filter(sc=>sc!==it.sc);if(!moves["-"+x.from].length)delete moves["-"+x.from];items.splice(i,1);draw();return}
+      /* moved to another day: back takes only this scene back (the other moves to that day stay); a move saved before is undone there too */
+      if(x.to){const had=(moves[x.to]||[]).some(y=>y.sc===it.sc);
+        if(had){const l=moves[x.to].filter(y=>y.sc!==it.sc);if(l.length)moves[x.to]=l;else delete moves[x.to]}else(moves["+"+x.to]=moves["+"+x.to]||[]).push(it.sc);delete x.to}
+      else if(x.x)delete x.x;else x.x=1;it._de=Object.keys(x).length?x:undefined;if(!it._de)delete it._de;draw();return}
     if(b.dataset.derecalc!=null){/* from the first time on: every row after the one before plus its duration (struck rows left out) */
       let cur="";for(const it of items){if(deGone(it))continue;if(!cur){cur=deHm(it.t);if(cur)cur=deAddMin(cur,deMins(it.dur)||0);continue}
         if(deHm(it.t)!==cur){it.t=cur;it._de=Object.assign({},it._de,{nt:1})}cur=deAddMin(cur,deMins(it.dur)||(it.sc?30:0))}draw();return}
@@ -138,6 +143,8 @@ async function deStore(d,u,list){const {F,db}=await fb();let me={};try{me=myIden
 async function deSave(date,u,items,moves){
   await deStore(date,u,items);
   for(const [k,v] of Object.entries(moves)){
+    /* a move taken back: the scene leaves the day it had been added to */
+    if(k[0]==="+"){const t=k.slice(1),list=deLoad(t,u).filter(y=>!(v.includes(y.sc)&&y._de&&y._de.from===date));await deStore(t,u,list);continue}
     if(k[0]==="-"){const src=k.slice(1),list=deLoad(src,u);for(const sc of v){const it=list.find(y=>y.sc===sc&&!deGone(y));if(it)it._de=Object.assign({},it._de,{to:date})}await deStore(src,u,list)}
     else{const list=deLoad(k,u);for(const it of v)if(!list.some(y=>y.sc===it.sc&&!deGone(y)))deInsert(list,it);await deStore(k,u,list)}}
   if(typeof window.cdApplyAll==="function")window.cdApplyAll();render()}

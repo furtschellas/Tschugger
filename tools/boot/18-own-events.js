@@ -99,6 +99,8 @@ async function ownDialog(id,pre){
     const o={title,date,t:f.t1.value||"",end:f.t2.value||"",where:String(f.wh.value||"").trim(),note:String(f.no.value||"").trim(),
       roles:st.sel&&st.roles.length?st.roles:null,depts:st.sel&&st.depts.length?st.depts:null,people:st.sel&&st.people.length?st.people:null,
       byEmail:!isNew?ev.byEmail:lc(ME.email),byName:!isNew?ev.byName:((me&&me.name)||ME.email),upd:Date.now()};
+    /* an appointment from the Google calendar changed here: the changed fields stay (the sync took them back from the calendar before) */
+    if(!isNew&&ev&&ev.gc)for(const k of ["title","date","t","end","where"])if(ev["fix_"+k]||String(o[k]||"")!==String(ev[k]||""))o["fix_"+k]=1;
     f.querySelector("button[type=submit]").disabled=true;
     try{const {F,db}=await fb();const c=await ownEnc(o);
       if(!isNew)await F.updateDoc(F.doc(db,"events",ev.id),{c});else await F.addDoc(F.collection(db,"events"),Object.assign({c,at:F.serverTimestamp(),by:ME.uid},ev&&ev.gcNew?{gc:ev.gcNew}:{}));
