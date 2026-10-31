@@ -176,6 +176,21 @@ class Model:
                [x for x in (self.c.get("crewTransport") or []) if isinstance(x, dict) and has(x.get("people")) and ok(x)]
 
 
+def is_night(cs):
+    """a shooting day that goes past midnight: rows earlier than the one before them (after 12:00) or a wrap earlier than the crew call – 1st or 2nd Unit"""
+    def one(c):
+        if not isinstance(c, dict): return False
+        prev = ""
+        for r in ((c.get("order") or {}).get("rows") or []):
+            h = cq_hm((r or {}).get("t")) if isinstance(r, dict) else ""
+            if not h: continue
+            if prev and h < prev and prev >= "12:00": return True
+            prev = h
+        tm = c.get("times") or {}; w, cc = cq_hm(tm.get("wrap")), cq_hm(tm.get("crewCall") or c.get("crewCall"))
+        return bool(w and cc and w < cc)
+    return one(cs) or one(cs.get("u2"))
+
+
 def late(acks, c, r, now_ms, days=None):
     """minutes a cast row is behind the callsheet (more than 5), else 0 – like window.cqLate"""
     M = Model(acks, c, r); d = M.d
@@ -208,7 +223,10 @@ def late(acks, c, r, now_ms, days=None):
         v = wall(h)
         if ref and ref - v > 12 * 3600e3: v = wall(h, 1)
         return v
-    ref = at(r.get("pickup")) or at(r.get("call")) or at(r.get("base"))
+    # the reference: the crew call of the row's unit (a night shoot: a P/UP 00:15 is after midnight) – as cqaRef in the app
+    u2 = c.get("u2") if isinstance(c.get("u2"), dict) else {}
+    cc = (u2.get("crewCall") or (u2.get("times") or {}).get("crewCall")) if str(r.get("u") or "1") == "2" else (c.get("times") or {}).get("crewCall")
+    ref = at(cc) or at(r.get("pickup")) or at(r.get("call")) or at(r.get("base"))
     due = []
     if not call_act and not arrived and not wm_done and not base_done: due.append(("c", at(r.get("call"), ref)))
     if not base_done:
@@ -303,6 +321,13 @@ def main():
     except Exception as e:
         print("• Verspätung: Coverday nicht lesbar (" + type(e).__name__ + ")")
         if fsadmin.cd_touched(key, today): print("• Verspätung: Coverday-Änderung an diesem Tag – keine automatische Meldung"); return
+    # the night after a shooting day (before 06:00): the cast of that night is still checked (as csShootDay in the app)
+    try:
+        if datetime.datetime.now(ZoneInfo(fsadmin.TZ0)).strftime("%H:%M") < "06:00":
+            y = (datetime.date.fromisoformat(today) - datetime.timedelta(days=1)).isoformat()
+            dy = next((x for x in data.get("dispos") or [] if isinstance(x, dict) and x.get("date") == y), None)
+            if dy and is_night(dy.get("cs") or {}): today = y; print("• Verspätung: Nacht des Drehtags", y)
+    except Exception as e: print("• Verspätung: Nacht nicht prüfbar (" + type(e).__name__ + ")")
     dp = next((x for x in data.get("dispos") or [] if isinstance(x, dict) and x.get("date") == today), None)
     c = dict((dp or {}).get("cs") or {}, _date=today, _rfrom=(dp or {}).get("cdFrom") or today)
     cast = [r for r in c.get("cast") or [] if isinstance(r, dict)]

@@ -1,4 +1,4 @@
-import {L,S,esc,safeUrl,saveErr,todayISO} from "./10-core.js";
+import {esc,L,S,safeUrl,saveErr,todayISO,unitKey} from "./10-core.js";
 import {rideId} from "./12-mycal.js";
 import {CSI,csA,csAfter,csHm,csOn,csRows} from "./13a-callsheet.js";
 import {CSCUR,csHM,csShootDay} from "./13b-cs-now.js";
@@ -104,11 +104,14 @@ csOn("click",e=>{const b=e.target.closest("[data-cscol]");if(!b)return;e.prevent
 /* cast of today: a pink frame around the time that is running now (P/UP, call, costume, make-up, base, on set) – in the table and in the cards */
 function csCastNow(){for(const sec of document.querySelectorAll("#cs-cast,#cs-u2cast"))csCastNow1(sec)}
 function csCastNow1(sec){sec.querySelectorAll(".csnowt").forEach(e=>e.classList.remove("csnowt"));
-  if(!CSCUR||!CSCUR.date||typeof todayISO!=="function"||CSCUR.date!==csShootDay())return;const tm=(CSCUR.c&&CSCUR.c.times)||{},w0=csHm(tm.wrap||"");
+  if(!CSCUR||!CSCUR.date||typeof todayISO!=="function"||CSCUR.date!==csShootDay())return;
+  /* the cast of the 2nd Unit: its own crew call, wrap and «wrap_u2» (before: the times of the 1st Unit) */
+  const u=sec.id==="cs-u2cast"||(CSCUR.c&&CSCUR.c._u==="2")?"2":"1";let cu=CSCUR.c;if(u==="2"&&CSCUR.c&&CSCUR.c._u!=="2"){try{cu=window.cqU2?window.cqU2(Object.assign({},CSCUR.c._orig||CSCUR.c,{_date:CSCUR.date}))||cu:cu}catch(_){}}
+  const tm=(cu&&cu.times)||{},w0=csHm(tm.wrap||"");
   /* the night after the shooting day: hours go on past 24:00 (a wrap after midnight, earlier than the crew call, too) */
   const night=CSCUR.date!==todayISO(),cc=csHm(tm.crewCall||""),n24=t=>t?String(24+ +t.slice(0,2))+t.slice(2):t,w=w0&&cc&&w0<cc?n24(w0):w0;
-  const now=night?n24(csHM()):csHM();if(w&&now>w)return;   /* a wrap after midnight (earlier than the crew call) is tomorrow */if(typeof scState==="function"&&scState(CSCUR.date,"wrap")===2)return;   /* after the wrap: no frame */
-  const span=el=>{const t=String(el.textContent||"").replace(/(\d{1,2})[.:](\d{2})/g,"$1:$2"),ms=(t.match(/(?:^|\D)\d{1,2}:\d{2}(?!\d)/g)||[]).map(x=>x.replace(/^\D/,""));if(!ms.length)return null;   /* no look-behind: older iPhones (iOS < 16.4) can not read it – the whole app would not start */const A=x=>night&&x&&cc&&x<cc?n24(x):x,a=A(csHm(ms[0])),b=/[-–]/.test(t)&&ms.length>1?A(csHm(ms[ms.length-1])):"";return {a,b}};
+  const now=night?n24(csHM()):csHM();if(w&&now>w)return;   /* a wrap after midnight (earlier than the crew call) is tomorrow */if(typeof scState==="function"&&scState(CSCUR.date,unitKey("wrap",u))===2)return;   /* after the wrap: no frame */
+  const span=el=>{const t=String(el.textContent||"").replace(/(\d{1,2})[.:](\d{2})/g,"$1:$2"),ms=(t.match(/(?:^|\D)\d{1,2}:\d{2}(?!\d)/g)||[]).map(x=>x.replace(/^\D/,""));if(!ms.length)return null;   /* no look-behind: older iPhones (iOS < 16.4) can not read it – the whole app would not start */const A=x=>night&&x&&cc&&x<cc&&x<"12:00"?n24(x):x,a=A(csHm(ms[0])),b=/[-–]/.test(t)&&ms.length>1?A(csHm(ms[ms.length-1])):"";return {a,b}};
   const mark=cells=>{let best=null;for(const el of cells){const s=span(el);if(!s||!s.a||s.a>now)continue;if(s.b&&s.a<=now&&now<s.b){best=el;break}if(!best||s.a>=span(best).a)best=el}if(best)best.classList.add("csnowt")};
   sec.querySelectorAll(".cs-tbl tbody tr").forEach(tr=>mark([...tr.children].slice(3)));
   sec.querySelectorAll(".cs-card").forEach(cd=>mark([...cd.querySelectorAll(".cs-kv")]))}

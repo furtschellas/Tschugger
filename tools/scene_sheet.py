@@ -117,10 +117,13 @@ def num(v):
 def unit_rows(d, u, l, day, cs):
     """one unit of one day – like unitRows in 27-scene-ack.js"""
     its = items(day, u); ks = row_keys(its)
+    fh = next((hm(i.get("t")) for i in its if isinstance(i, dict) and hm(i.get("t"))), "")   # the first time of the day: a night shoot starts after 12:00
     def ms(hhmm):
         v = re.match(r"^(\d{1,2}):(\d{2})$", str(hhmm or ""))
         if not v: return 0
-        x = (datetime.datetime.fromisoformat(d) + datetime.timedelta(hours=int(v.group(1)), minutes=int(v.group(2)))).replace(tzinfo=_tz(fsadmin.tz_for(d, [day])))   # «24:30» = next day
+        h = int(v.group(1)); hh = "%02d:%s" % (h, v.group(2))
+        if fh and fh >= "12:00" and hh < fh and h < 24: h += 24   # the night: 02:15 after a start at 17:00 is the next day
+        x = (datetime.datetime.fromisoformat(d) + datetime.timedelta(hours=h, minutes=int(v.group(2)))).replace(tzinfo=_tz(fsadmin.tz_for(d, [day])))   # «24:30» = next day
         return int(x.timestamp() * 1000)
     def p_ix(k):
         b = base(k)
@@ -130,7 +133,7 @@ def unit_rows(d, u, l, day, cs):
         return -1
     def p_dur(i):
         if i < 0: return 0
-        it = its[i]; m = re.match(r"^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′m]", str(it.get("dur") or "").strip())
+        it = its[i]; m = re.match(r"^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′’m]", str(it.get("dur") or "").strip())
         if m: return int(m.group(3)) if m.group(3) else int(m.group(1)) * 60 + int(m.group(2))
         t0 = ms(hm(it.get("t")))
         if not t0: return 0

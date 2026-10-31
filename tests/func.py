@@ -752,6 +752,10 @@ async def owner_tests(p, port):
           x.cs.calls=(x.cs.calls||[]).concat([{name:'Zora Zweitunit',dept:'Camera',t:'',t2:'05:55'}]);window.csMe=()=>({name:'Zora Zweitunit',dep:'camera',hit:n=>/zora zweitunit/i.test(String(n||''))});
           try{const ev=myEvents({name:'Zora Zweitunit',src:'Camera'}).filter(e=>/Drehtag/.test(e.n)&&e.date===t);return ev.map(e=>e.t+'|'+/2nd Unit/.test(e.n)).join(',')}finally{window.csMe=k;x.cs.calls=JSON.parse(keep)}})()""")
         check("Meine Termine: nur in der 2nd Unit → Drehtag der 2nd Unit (ihr Call)", me2 in (None, "05:55|true"), me2, public=True)
+        # night shoot: a row after midnight is the next day for the automatic quittance (also when the day starts only 12 h before)
+        ng_ = await E("""(()=>{if(typeof scaRows!=='function')return null;const r=scaRows({date:'2026-11-01',items:[{t:'13:00',sc:'1'},{t:'22:00',n:'Lunch'},{t:'01:00',n:'Wrap'}]},'1');
+          return r.map(x=>x.k+'@'+new Date(x.t).toISOString().slice(5,16)).join(',')})()""")
+        check("Nachtdreh: Zeilen nach Mitternacht gehören zum nächsten Kalendertag (automatisch quittieren)", ng_ in (None, "1@11-01T12:00,lunch@11-01T21:00,wrap@11-02T00:00"), ng_, public=True)
         # Coverday on the server (tools/coverday.py) lays the same changes over the Drehplan and moves the same callsheets as the app
         cdp = await E("""(()=>{if(typeof window.cdDaysT!=='function'||typeof window.cdDisposT!=='function'||!S.days0)return null;const d0=S.days0,s=d0.filter(d=>d.kind==='shoot').map(d=>d.date);if(s.length<4)return null;
           const u2=d0.filter(d=>d.unit2&&(d.unit2.items||[]).some(i=>i&&i.sc)).map(d=>d.date),last=d0.map(d=>d.date).sort().slice(-1)[0],free=isoAdd(last,3),T=Date.now();

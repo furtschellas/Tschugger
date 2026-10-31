@@ -16,8 +16,14 @@ export function csRowMins(rows){let prev=null,late=false;return csA(rows).map(r=
 /* the shooting day running now: after midnight a night shoot of yesterday stays «today» until its wrap (at the latest 06:00) –
    before, everything about «now» (running row, place, cast frame) disappeared at midnight */
 export function csShootDay(){const t=todayISO();if(csHM()>="06:00"||typeof isoAdd!=="function")return t;const y=isoAdd(t,-1),dp=(S.dispos||[]).find(z=>z&&z.date===y);if(!dp||!dp.cs)return t;
-  const late=csRowMins(csRows(dp.cs)).some(m=>m!=null&&m>=1440);
-  const tm=dp.cs.times||{},w=csHm(tm.wrap||""),cc=csHm(tm.crewCall||""),wn=w&&cc&&w<cc;if(!late&&!wn)return t;return wn&&csHM()>=w?t:y}
+  /* a night of the 1st or the 2nd Unit (rows past midnight or a wrap earlier than the crew call): yesterday until its wrap –
+     the wrap quittiert ends it, an open wrap (shooting longer than planned) keeps it, else the planned wrap time */
+  const night=c=>{if(!c)return null;const late=csRowMins(csRows(c)).some(m=>m!=null&&m>=1440),tm=c.times||{},w=csHm(tm.wrap||""),cc=csHm(tm.crewCall||"");return late||(w&&cc&&w<cc)?{w:w&&cc&&w<cc?w:""}:null};
+  let c2=null;try{c2=dp.cs.u2&&typeof window.cqU2==="function"?window.cqU2(Object.assign({},dp.cs,{_date:y})):null}catch(_){}
+  for(const [u,c] of [["1",dp.cs],["2",c2]]){const n=night(c);if(!n)continue;
+    const st=typeof scState==="function"&&csAck(y,u)?scState(y,unitKey("wrap",u)):-1;
+    if(st===2)continue;if(st>=0)return y;if(!n.w||csHM()<n.w)return y}
+  return t}
 window.csShootDay=csShootDay;
 /* «now» for a day: on the night after a shooting day the hours go on (00:30 → 24:30), so they compare with the rows after midnight */
 const csNowMin=date=>{const m=csMin(csHM());return date!==todayISO()&&m<720?m+1440:m};   /* minutes, 00:30 of the next day = 1470 */

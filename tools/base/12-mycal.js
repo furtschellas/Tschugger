@@ -67,7 +67,9 @@ export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_
     for(const [grp,list] of [["i",d.items],["p",arr(d.parallel)]])list.forEach((i,k)=>{if(/^(rest|ruhetag|frei|off|day off)$/i.test(String(i.n||"").trim()))return;if(iAmIn(ppNames(i.crew).concat(ppNames(i.cast)),me,people))out.push({date:d.date,t:hm(i.t)||i.t||"",end:hm(i.end),n:i.n,where:i.where,map:i.map,src:"Weekly Schedule",go:shootOn(d.date)?d.date:"prep:"+d.date,cal:d.date+"|"+grp+"|"+k})});
     const tr=d.transport;if(tr)arr(tr.rows).forEach(r=>{if(iAmIn(ppNames(r.name),me,people))out.push({date:d.date,t:hm(r.at)||r.at||"",n:"Transport → "+(r.to||""),where:r.from,map:r.fromMap,src:"Transport",go:shootOn(d.date)?d.date:"prep:"+d.date,driver:r.driver})})}
   /* shooting days only from the callsheets: the day counts when its callsheet calls my department, lists me by name, or (general crew call) I work on set */
-  for(const dp of S.dispos){if(!dp||dp.date<t)continue;const d=S.days.find(x=>x.date===dp.date)||{};
+  /* the night after a shooting day: its callsheet still counts (csShootDay – the running night of yesterday until its wrap) */
+  const t0=(()=>{try{return typeof csShootDay==="function"?csShootDay():t}catch(_){return t}})(),tf=t0<t?t0:t;
+  for(const dp of S.dispos){if(!dp||dp.date<tf)continue;const d=S.days.find(x=>x.date===dp.date)||{};
     const src=me.src&&me.src!=="user"?me.src:"",myDep=fold(src).split(/[\s/]/)[0];   /* an app account alone is no department */
     const call=myDep?arr(dp.calls).find(z=>fold(z.dept||"").split(/[^a-z0-9]+/).includes(myDep)):null;   /* whole words: «art» is not in «Camera Department» */
     const named=arr(dp.contacts).concat(arr(dp.cast).map(c=>({name:c.actor}))).some(c=>c&&c.name&&iAmIn([c.name],me,people));
@@ -79,12 +81,13 @@ export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_
     const u2=(dp.cs&&dp.cs.u2)||{},t2=u2.times||{};
     const s1=hm(call&&call.t)||hm(dp.crewCall)||hm(dp.generalCall)||"",e1=hm(dp.wrap),s2=hm(c2&&c2.t2)||hm(call&&call.t2)||hm(u2.crewCall)||hm(t2.crewCall)||"",e2=hm(t2.wrap);
     const only2=!!U&&U.length===1&&U[0]==="2",both=!!U&&U.length===2;
-    const st=only2?(s2||s1):both?[s1,s2].filter(Boolean).sort()[0]||"":s1,en=only2?(e2||e1):both?[e1,e2].filter(Boolean).sort().slice(-1)[0]||"":e1;
+    const nm=(x,ref)=>x&&ref&&x<ref?"~"+x:x;   /* a wrap after midnight (earlier than the start) sorts after the evening */
+    const st=only2?(s2||s1):both?[s1,s2].filter(Boolean).sort()[0]||"":s1,en=only2?(e2||e1):both?([e1,e2].filter(Boolean).map(x=>nm(x,st)).sort().slice(-1)[0]||"").replace("~",""):e1;
     const L2=only2?arr(u2.locations):arr(dp.locations);
     const loc=L2.map(l=>l.name||l.address).filter(Boolean).join(", ")||(d.kind?dayPlaces(d).join(", "):"");
     out.push({date:dp.date,t:st,end:en,n:(d.short||dp.label||d.label||"")+" · "+L("Drehtag")+(only2?" · 2nd Unit":both?" · 1st + 2nd Unit":"")+(call&&call.dept?" ("+call.dept+")":""),where:loc,map:(L2[0]||{}).map||"",src:"Callsheet"+(dp.version?" "+dp.version:""),go:d.id||dp.date})}
   /* my rides from the callsheets (driver, passenger, crew transport, travel) */
-  try{const cm=typeof csMe==="function"?csMe():null,seen=new Set();if(cm)for(const dp of S.dispos){try{if(!dp||dp.date<t||!dp.cs)continue;   /* one odd callsheet never hides the rides of the others */
+  try{const cm=typeof csMe==="function"?csMe():null,seen=new Set();if(cm)for(const dp of S.dispos){try{if(!dp||dp.date<tf||!dp.cs)continue;   /* one odd callsheet never hides the rides of the others */
     const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};
     const rides=[...arr(c.transport).filter(r=>r&&(cm.hit(r.driver)||cm.hit(r.passengers))).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>r&&cm.hit(r.people)).map(r=>({r,crew:true})),...arr(c.travel).filter(r=>r&&cm.hit(r.name)).map(r=>({r,how:r.how}))];
     for(const {r,drv,how,crew} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();

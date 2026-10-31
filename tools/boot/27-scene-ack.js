@@ -126,12 +126,13 @@ const scaZ=(date,sc)=>!!(window.RIDEACK||{})[scaMark(date,sc)];
 async function scaKeep(date,sc){if(!SCA_KINDS.some(([k])=>scaOn(k))||scaZ(date,sc))return;const id=scaMark(date,sc),v={d:date,at:Date.now(),s:1};
   try{await dbWrite("set","rideack/"+id,v);if(window.RIDEACK)window.RIDEACK[id]=v}catch(err){scErr(date,sc,"","keep",err)}}
 /* the rows of a unit that can be quittiert: key (scene number or lunch / wrap / setup…, «_u2» in the 2nd unit), kind, planned time (ms) */
-function scaRows(day,u){const its=dayItems(day,u),ks=scRowKeys(its,x=>x.n);let ref=0,scene=false;
+function scaRows(day,u){const its=dayItems(day,u),ks=scRowKeys(its,x=>x.n);let ref=0,prevH="",late=false,scene=false;
   /* the time of a setup in the callsheet (its shooting order), else the one of the Drehplan */
   let cr=[],ck=[];try{const dp=u==="1"&&arr(S.dispos).find(x=>x&&x.date===day.date&&x.cs);if(dp){cr=arr((dp.cs.order||{}).rows);ck=scRowKeys(cr,r=>r.text||r.syn)}}catch(_){}
   return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k||(()=>{try{return window.deGone&&window.deGone(x)}catch(_){return false}})())return null;const b=scBase(k),setup=/^setup\d*$/.test(b),first=setup&&!scene;if(x.sc)scene=true;
     const kind=b==="lunch"?"l":b==="wrap"?"w":first?"a":"s";let h=hm(x.t);if(first){let j=ck.indexOf(b);if(j<0&&b==="setup")j=ck.indexOf("setup0");if(j>=0&&hm(cr[j].t))h=hm(cr[j].t)}if(!h)return null;
-    const t=dayMs(day.date,h,ref);if(!t)return null;if(!ref)ref=t;
+    /* the night: a row earlier than the one before it (after 12:00) is after midnight – as csRowMins (before: only more than 12 h before the first row) */
+    if(prevH&&h<prevH&&prevH>="12:00")late=true;prevH=h;let t=late?dayMs(isoAdd(day.date,1),h):dayMs(day.date,h,ref);if(!t)return null;if(!ref)ref=t;
     return {k:scK(k,u),kind,t}}).filter(Boolean)}
 let SCABUSY=false;
 async function scAuto(){if(SCABUSY||/[?&]sbx=/.test(location.search)||!window.SCACKLIVE||!window.RIDEACKLOADED||typeof canPerm!=="function"||!canPerm("scenes.ack")||(window.simOn&&window.simOn())||!SCA_KINDS.some(([k])=>scaOn(k)))return;SCABUSY=true;
@@ -259,7 +260,7 @@ const scWaIsGroup=(k,u)=>/^g:/.test(scWaTarget(k,u));
    in the installed app (iPhone) window.open is often refused or opens an empty window; every try is written to the log (no crew data) */
 function scWaOpen(txt,k,u){let how="";
   try{const url=scWaUrl(txt,k,u);
-    if(scWaIsGroup(k,u)){try{navigator.clipboard.writeText(txt)}catch(_){}showMsg(L("Text kopiert – in der WhatsApp-Gruppe einfügen und senden."),6000)}
+    if(scWaIsGroup(k,u)){try{navigator.clipboard.writeText(txt).then(()=>showMsg(L("Text kopiert – in der WhatsApp-Gruppe einfügen und senden."),6000),()=>{})}catch(_){}}   /* the note only when the text was really copied */
     try{const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.dataset.nobub="1";a.style.display="none";document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),0);how="link"}
     catch(e1){window.open(url,"_blank","noopener");how="open"}}
   catch(err){how="fehler "+String(err&&err.message||err).slice(0,60);showMsg(L("WhatsApp liess sich nicht öffnen."),4000)}
@@ -338,13 +339,14 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
     const tx=i=>String(i.n||""),ks=scRowKeys(its,tx);
     /* the plan of an entry in the Drehplan: its time and its planned duration (the duration of the row, else until the next row) */
     const pIx=k=>{const b=scBase(k);let i=ks.indexOf(b);if(i<0)i=its.findIndex(x=>x.sc&&scAckId(d,x.sc)===scAckId(d,b));return i};
-    const pDur=i=>{if(i<0)return 0;const it=its[i],m=String(it.dur||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′m]/);if(m)return m[3]?+m[3]:(+m[1])*60+(+m[2]);
+    const pDur=i=>{if(i<0)return 0;const it=its[i],m=String(it.dur||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′’m]/);if(m)return m[3]?+m[3]:(+m[1])*60+(+m[2]);
       const t0=ms(hm(it.t));if(!t0)return 0;for(let j=i+1;j<its.length;j++){const t1=ms(hm(its[j].t));if(t1>t0)return Math.round((t1-t0)/60000)}return 0};
     const pl=k=>{const i=pIx(k);return i>=0?hm(its[i].t)||"":""},pd=k=>pDur(pIx(k));
     const setup=its.find(i=>!i.sc&&/^\s*set[\s-]?up\b/i.test(tx(i))),firstSc=its.find(i=>i.sc);
     const uk=k=>unitKey(k,u),get=k=>l.find(x=>scBase(key(x))===k),scs=l.filter(x=>!["lunch","wrap","setup"].includes(scBase(key(x))));
     const real=scs.filter(x=>!isEv(key(x))),start=real.length?Math.min(...real.map(p0).filter(Boolean)):0,lu=get("lunch"),wr=get("wrap");
-    const ms=hhmm=>{const v=String(hhmm||"").match(/^(\d{1,2}):(\d{2})$/);if(!v)return 0;const x=new Date(d+"T00:00:00");x.setHours(+v[1],+v[2],0,0);return x.getTime()};
+    const fh=(its.map(x=>hm(x.t)).find(Boolean))||"";   /* the first time of the day: a night shoot starts after 12:00 (as the scene sheet) */
+    const ms=hhmm=>{const v=String(hhmm||"").match(/^(\d{1,2}):(\d{2})$/);if(!v)return 0;let h=+v[1];if(fh&&fh>="12:00"&&pad2(h)+":"+v[2]<fh&&h<24)h+=24;return dayMs(d,pad2(h%24)+":"+v[2])+(h>=24?864e5:0)};
     const plSetup=setup?hm(setup.t)||"":"",plStart=(u==="1"?hm(cs.shootCall||""):"")||(firstSc?hm(firstSc.t)||"":"");
     const wrE=wr?(+wr.e||p0(wr)):0,su=get("setup"),fs=real.slice().sort((a,b)=>p0(a)-p0(b))[0],ent=[],add=(x,name,st,plan,b,e,run,ed,pdm)=>ent.push([x,row(name,st,plan,b,e,run,ed,pdm),{name,st,plan,pdm:pdm||0,b,e,k:ed&&name!==esc(L("Drehstart"))?ed[1]:"",drehstart:name===esc(L("Drehstart"))}]);
     /* setup: its own quittance, else planned begin until the first scene */

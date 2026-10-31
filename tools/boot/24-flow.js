@@ -243,7 +243,7 @@ window.cqWmNow=c=>{const out={m:[],w:[]};if(!cqRowOk(c,{}))return out;
 /* «Jetzt»: how many minutes a cast row is behind the callsheet – the first step not done yet whose time is more than 5 minutes ago
    (Call · end of Kostüm / Maske · Base · On set); 0 = on time or On set */
 window.cqLate=(c,r,now)=>{try{if(!cqRowOk(c,r))return 0;const m=cqModel(c,r),d=m.d;if(m.onDone)return 0;now=now||Date.now();
-  const ref=cqaAt(d,r.pickup)||cqaAt(d,r.call)||cqaAt(d,r.base),due=[];
+  const ref=cqaRef(c,d,r),due=[];
   if(!m.callAct&&!m.arrived&&!m.wmDone&&!m.baseDone)due.push(cqaAt(d,r.call,ref));
   if(!m.baseDone)for(const k of ["w","m"])for(const p of cmParse(k==="w"?r.wardrobe:r.makeup,c))if(cmSt(cmId(d,k,r,p.t))!==2)due.push(cqaAt(d,p.end,ref));
   if(!m.baseDone)due.push(cqaAt(d,r.base,ref));due.push(cqaAt(d,r.onset,ref));
@@ -348,8 +348,10 @@ const cqaZ=id=>!!(id&&window.RIDEACK["z"+id]);
 async function cqaKeep(id,date){if(id&&date&&CQA_STEPS.some(([k])=>cqaOn(k))&&!cqaZ(id))try{await flowPut("z"+id,date,1)}catch(_){}}
 /* a time of the row in ms (time zone of the block): after midnight when more than 12 h before the first time of the row */
 const cqaAt=(date,t,ref)=>dayMs(date,cqHm(t),ref);
+/* the reference of a cast row: the crew call of its unit (a night shoot: a P/UP 00:15 is after midnight), else its own first time */
+const cqaRef=(c,d,r)=>cqaAt(d,((c&&c.times)||{}).crewCall||(c&&c.crewCall))||cqaAt(d,r.pickup)||cqaAt(d,r.call)||cqaAt(d,r.base);
 async function cqaRow(c,r,now){const m=cqModel(c,r),d=m.d;if(m.onDone)return;
-  const ref=cqaAt(d,r.pickup)||cqaAt(d,r.call)||cqaAt(d,r.base);
+  const ref=cqaRef(c,d,r);
   const u=r.u==="2"?"2":"1",A=cqaA(u);
   const due=(k,t)=>{if(!cqaOn(k,u))return false;const v=cqaAt(d,t,ref),lim=now-(+A[k].min||0)*60e3;return !!v&&v<=lim&&lim-v<12*3600e3};
   const put=async(k,id,s)=>{if(id&&!cqaZ(id)&&cqCan(k)&&cmSt(id)<s){await flowPut(id,d,s);return true}return false};
