@@ -1283,3 +1283,19 @@ html body #view .dtiles.cstiles>a.dt.cslunch{color:inherit;text-decoration:none;
   html body :is(#sbl,#sbr) .dtiles.cstiles.cstiles.cstiles>.dt.cswx .ttile b{font-size:calc(16px*var(--csf,1))!important}
 
 .sbbox .sbphc{display:flex;flex-direction:column;gap:6px;margin:0 0 8px;font-size:13px}.sbbox .sbphc select{width:100%;min-height:34px;font-size:13px}.sbbox .sbphc .simpick label{display:flex;flex-direction:column;gap:4px;font-size:12px;opacity:.8}
+/* ---------- light version, tidied (31.10.): calm black and white, pink only as the signal (Crew Call, «Jetzt», links);
+   cards stand out from the page (stronger border, one soft shadow for all cards), no pink or gold leftovers ---------- */
+html[data-theme="light"]{--paper:#f3f3f5;--sheet:#ffffff;--ink:#141417;--muted:#5b5b64;--rule:#d9d9df;--rule-strong:#b8b8c1;--accent:#18181b;--accent-ink:#ffffff;--accent-soft:rgba(24,24,27,.08);--link:#c4126a;--hl:#c4126a;--hl-ink:#ffffff;
+  --shadow-card:0 1px 2px rgba(20,20,23,.05),0 4px 14px -10px rgba(20,20,23,.18)}
+html[data-theme="light"] body #view :is(.tcard,.psec,.dsec,.sc,.lc,.people,.ucard,.dbox,.fact,.dt,.chip){border-color:var(--rule);box-shadow:var(--shadow-card)}
+html[data-theme="light"] body #view .dbox{background:var(--sheet)}
+html[data-theme="light"] body #view .dt.big,html[data-theme="light"] body #view .dtiles.cstiles>.dt.big{background:var(--hl)!important;color:var(--hl-ink)!important;border-color:var(--hl)!important;box-shadow:none!important}
+html[data-theme="light"] body #view .dt.big :is(.k,.v){color:var(--hl-ink)!important}
+html[data-theme="light"] body #view .tcard.tnow{border-color:var(--hl);box-shadow:0 0 0 1px var(--hl),var(--shadow-card)}
+html[data-theme="light"] body #view .tcard.tnow .tch{color:var(--hl)}
+html[data-theme="light"] body .chip[aria-selected="true"]{box-shadow:none}
+html[data-theme="light"] h1 span{text-shadow:none!important;color:var(--hl)!important}
+html[data-theme="light"] :is(input,select,textarea){border-color:var(--rule-strong);box-shadow:none}
+html[data-theme="light"] body .hbtns>button:not(.refresh){background:transparent;color:var(--ink);box-shadow:none}
+html[data-theme="light"] body #view .csmap,html[data-theme="light"] body #view .csmap svg{color:var(--ink)}
+html[data-theme="light"] body #view .dtiles.cstiles>a.dt.cslunch,html[data-theme="light"] body #view .dtiles.cstiles>.dt.csdrv{border-color:var(--rule-strong)}
