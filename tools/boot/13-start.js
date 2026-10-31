@@ -76,9 +76,15 @@ if(window.__VSY&&window.CACHEOK)requestAnimationFrame(()=>{try{window.scrollTo(0
   /* back online after starting without connection: start sign-in again */
   /* back online: after an offline start (or the sign-in screen shown for lack of network) the whole start again – settings, check, data */
   window.addEventListener("online",()=>{if(!FB&&!FBP)location.reload();else if(ME){const g=document.getElementById("gate");if(window.__OFFSTART||(g&&!g.hidden)){window.__OFFSTART=false;afterSignIn(ME)}else tick()}});
-  let lastTick=0;
+  let lastTick=0,OFFT=0;
+  /* after a half-way start: try again every minute (not only every 5 minutes or when coming back to the app) */
+  setInterval(()=>{if(window.__OFFSTART)tick()},60e3);
   const tick=async(e)=>{
-    if(document.visibilityState!=="visible"||!ME||!(ME.emailVerified||START))return;
+    if(document.visibilityState!=="visible"||!ME)return;
+    /* the start stopped half-way (server not reachable, weak network on set – the phone was never «offline», so no «online» event comes):
+       the whole start again – membership, settings, push and the «last seen» mark (before, such an app stayed without them until it was closed) */
+    if(window.__OFFSTART&&!SBXFRAME&&!(OFFT&&Date.now()-OFFT<60e3)){OFFT=Date.now();window.__OFFSTART=false;afterSignIn(ME);return}
+    if(!(ME.emailVerified||START))return;
     /* back to the app: at most every 3 minutes (switching apps all day used up the free Firebase quota) */
     if(e&&e.type==="visibilitychange"&&Date.now()-lastTick<180e3)return;lastTick=Date.now();
     /* «Ansicht als …»: the check would put back the admin's own rights in the middle of the simulation – only the data */

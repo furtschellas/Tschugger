@@ -213,6 +213,7 @@ export async function afterSignIn(u){
   let st;try{st=await checkMember()}catch(err){console.error(err);
     /* not reachable, quota used up or a server error – with data on this device: show it (only a refusal of the rules means «no access») */
     if(S.days.length&&!/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){hideGate();acctButton(true);render();window.__OFFSTART=true;showMsg(L(isOffline(err)?"Offline – du siehst den zuletzt geladenen Stand.":"Server gerade nicht erreichbar – du siehst den zuletzt geladenen Stand."),6000);return}
+    window.__OFFSTART=true;   /* tried again every minute (13-start) – also when the phone never reports «offline» */
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(ME!==u)return;
   if(st!=="ok"&&SBXFRAME){setTimeout(()=>location.reload(),20000);return}   /* a side-box frame: never clears the device – it tries again */
