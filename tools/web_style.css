@@ -1334,3 +1334,8 @@ html body :is(#view,.sbbox) details.tu2d>summary::-webkit-details-marker{display
 html body :is(#view,.sbbox) details.tu2d>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;margin-left:2px}
 html body :is(#view,.sbbox) details.tu2d[open]>summary::after{transform:rotate(45deg)}
 html body :is(#view,.sbbox) details.tu2d>summary .tuh{margin:0}
+/* «Jetzt»: «Maske» / «Kostüm» never squeezed letter by letter – the label keeps its width, the chips behind it share the rest */
+html body :is(#view,.sbbox) .tnow .tnowcm>.tnk{flex:none;white-space:nowrap;word-break:normal;overflow-wrap:normal}
+html body :is(#view,.sbbox) .tnow .tnowcm>.tnc{flex:none}
+/* the unit label in «Jetzt»: small, on the line of the scene */
+html body :is(#view,.sbbox) .tnow .tnu.tu1,html body :is(#view,.sbbox) .tnow .tnu.tu2{font-size:10px;padding:0 7px;line-height:1.7;vertical-align:2px;letter-spacing:.05em}
