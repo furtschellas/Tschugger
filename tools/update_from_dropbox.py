@@ -2058,6 +2058,13 @@ def main():
                 mu = mainU2.get(day["date"]) or {}
                 u2 = dict(c["u2"])
                 for k in ("notes", "notes_en", "notes_fr", "notes_it"): u2.pop(k, None)   # the notes of the sheet are not used
+                # each camera setup is its own scene (U2PV 5): its setup in the camera box of the card («KAMERA · 08:45 A-2: CU Bax, Slider»), like the scenes before
+                its2 = []
+                for it in u2.get("items") or []:
+                    if isinstance(it, dict) and it.get("sc") and it.get("cam") and not it.get("camx"):
+                        it = dict(it); it["camx"] = [((str(it.get("t") or "") + " ") if it.get("t") else "") + str(it.pop("cam"))]
+                    its2.append(it)
+                u2["items"] = its2
                 for k in ("hours", "length", "pages", "extras"):
                     if mu.get(k): u2[k] = mu[k]
                     else: u2.pop(k, None)
