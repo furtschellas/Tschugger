@@ -1339,3 +1339,19 @@ html body :is(#view,.sbbox) .tnow .tnowcm>.tnk{flex:none;white-space:nowrap;word
 html body :is(#view,.sbbox) .tnow .tnowcm>.tnc{flex:none}
 /* the unit label in «Jetzt»: small, on the line of the scene */
 html body :is(#view,.sbbox) .tnow .tnu.tu1,html body :is(#view,.sbbox) .tnow .tnu.tu2{font-size:10px;padding:0 7px;line-height:1.7;vertical-align:2px;letter-spacing:.05em}
+/* automatic quittance (1st / 2nd Unit): one row per step – name left, per unit switch + Zugabe right; on the phone the name on its own line */
+html body #view .aq4{display:block;margin:4px 0 10px}
+html body #view .aq4 .aq4r{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px 16px;padding:8px 0;border-top:1px solid var(--rule)}
+html body #view .aq4 .aq4r.aq4hr{border-top:0;padding:0 0 2px}
+html body #view .aq4 .aq4t{min-width:0;font-weight:600;line-height:1.3;overflow-wrap:normal;word-break:normal;hyphens:auto}
+html body #view .aq4 .aq4u{display:inline-flex;align-items:center;justify-content:flex-end;gap:10px;min-width:9.5em}
+html body #view .aq4 .aq4h{font-size:.74em;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;text-align:right;min-width:9.5em;line-height:1.25}
+html body #view .aq4 .aq4c{margin:0;padding:0;min-width:0}
+html body #view .aq4 .aqm{margin:0}
+html body #view .aq4 .aqm input{width:4.2em;min-width:0;max-width:4.2em;text-align:center;padding:6px 4px}
+@media (max-width:560px){
+  html body #view .aq4 .aq4r{grid-template-columns:1fr 1fr;gap:4px 10px}
+  html body #view .aq4 .aq4t{grid-column:1/-1}
+  html body #view .aq4 .aq4r.aq4hr>span:first-child{display:none}
+  html body #view .aq4 .aq4u,html body #view .aq4 .aq4h{min-width:0;justify-content:flex-end}
+}

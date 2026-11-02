@@ -62,7 +62,7 @@ GEO_DEADLINE = time.time() + 12 * 60
 
 ALL_LANGS = ["de", "fr", "it", "en", "hi"]
 U2_MAX = int(os.environ.get("U2_MAX") or 3); U2N = [0]   # 2nd-unit sheets read per run
-U2PV = 2   # version of the instruction for the 2nd-unit sheets (2: camera setups «A-4: …» as own entries)
+U2PV = 3   # version of the instruction for the 2nd-unit sheets (2: camera setups «A-4: …» as own entries; 3: back to the reading of before – every row with a scene is a scene, setups only as remarks)
 LANG_NAMES = {"de": "Deutsch", "fr": "Französisch", "it": "Italienisch", "en": "Englisch", "hi": "Hindi"}
 
 
@@ -2023,10 +2023,9 @@ def main():
                     u2 = claude([{"type": "text", "text": "2ND-UNIT SHOOTING ORDER «%s» (Tabelle, Zellen mit | getrennt):\n%s" % (name, txt[:60000])}],
                         "Erzeuge aus dieser genauen Drehreihenfolge der 2nd Unit für Drehtag %d (%s) ein JSON-Objekt für das Feld \"unit2\" eines Tages gemäss Collection \"days\": "
                         "Arbeitszeit, und \"items\" in der Reihenfolge der Tabelle mit Uhrzeit, Szene, Innen/Aussen und Tageszeit, Seiten, Motiv/Adresse, Cast/Komparsen und Bemerkungen "
-                        "(Rigging, Umbau, Setup/Move, Lunch und Wrap als Einträge ohne Szene). "
-                        "KAMERA-SETUPS: jede Einstellung (Spalte SH/Setup wie «A-4», «B-2», dazu die Kamera-/Storyboard-Beschreibung) als eigener Eintrag ohne Szene mit ihrer Uhrzeit, "
-                        "Text immer «Setup: Beschreibung», z. B. {\"t\": \"07:15\", \"n\": \"A-4: Detail Bonbon, Fahrzeug stehend\"} – direkt nach dem Szenen-Eintrag, zu dem sie gehört; "
-                        "folgen mehrere Einstellungen derselben Szene aufeinander, nur EIN Szenen-Eintrag (Zeit der ersten Einstellung) und danach alle ihre Setups. "
+                        "(Setups wie A-1/B-2, Rigging, Umbau, Move, Lunch und Wrap als Einträge ohne Szene). "
+                        "JEDE Zeile der Tabelle mit einer Szenennummer ist ein Szenen-Eintrag (\"sc\") mit ihrer Uhrzeit – nie als Setup oder Bemerkung; "
+                        "jede Uhrzeit nur einmal (keine zusätzliche Zeile mit derselben Zeit für dieselbe Szene). "
                         "Fahrzeuge, Blocker, Grip, Ton und weitere Logistik als \"notes\". "
                         "Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisheriger 2nd-Unit-Teil dieses Tages aus dem Drehplan (Cast-Nummern und Schreibweisen übernehmen): %s"
                         % (no, day.get("date"), json.dumps(day.get("unit2") or {}, ensure_ascii=False)[:20000]), 32000)

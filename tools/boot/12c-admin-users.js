@@ -108,11 +108,12 @@ const autoRead=(fl,g,u)=>{u=u||"";return Object.fromEntries(AUTOQ[g].map(([k])=>
 const AQU2=()=>window.UNIT2!==false;
 /* four columns: 1–2 the 1st Unit (step with its switch, Zugabe), 3–4 the 2nd Unit (switch, Zugabe) – one row per step */
 const autoUnits=(g,c1,c2)=>{if(!AQU2())return autoRows(g,c1);
-  const sw=(u,k,x,lbl)=>'<label class="ck"><input form="setform" type="checkbox" name="aq'+g+u+k+'"'+(x.on?' checked':'')+'> '+esc(lbl)+'</label>';
-  const mn=(u,k,x,t)=>'<label class="aqm"><input form="setform" type="number" name="aqm'+g+u+k+'" min="0" max="180" step="1" inputmode="numeric" value="'+(+x.min||0)+'" aria-label="'+esc(t+" – "+L("Zugabe"))+'"></label>';
-  return '<div class="aq4"><div class="aq4h"><b>1st Unit</b></div><div class="aq4h">'+esc(L("Zugabe"))+' ('+esc(L("Min."))+')</div><div class="aq4h"><b>2nd Unit</b></div><div class="aq4h">'+esc(L("Zugabe"))+' ('+esc(L("Min."))+')</div>'+
+  /* one row per step: the name on the left (on the phone on its own line), on the right per unit the switch and the Zugabe – the switches right, never over the text */
+  const unit=(u,k,x,t,un)=>'<span class="aq4u"><label class="ck aq4c"><input form="setform" type="checkbox" name="aq'+g+u+k+'"'+(x.on?' checked':'')+' aria-label="'+esc(t+" · "+un)+'"></label>'+
+    '<label class="aqm"><input form="setform" type="number" name="aqm'+g+u+k+'" min="0" max="180" step="1" inputmode="numeric" value="'+(+x.min||0)+'" aria-label="'+esc(t+" · "+un+" – "+L("Zugabe"))+'"></label></span>';
+  return '<div class="aq4"><div class="aq4r aq4hr"><span></span><span class="aq4h"><b>1st Unit</b> · '+esc(L("Zugabe"))+' ('+esc(L("Min."))+')</span><span class="aq4h"><b>2nd Unit</b> · '+esc(L("Zugabe"))+' ('+esc(L("Min."))+')</span></div>'+
     AUTOQ[g].map(([k,t])=>{const a=(c1||{})[k]||{},b=(c2||{})[k]||{},tt=L(t);
-      return sw("",k,a,tt)+mn("",k,a,tt+" · 1st Unit")+'<label class="ck aq4c"><input form="setform" type="checkbox" name="aq'+g+'2'+k+'"'+(b.on?' checked':'')+' aria-label="'+esc(tt+" · 2nd Unit")+'"></label>'+mn("2",k,b,tt+" · 2nd Unit")}).join("")+'</div>'};
+      return '<div class="aq4r"><span class="aq4t">'+esc(tt)+'</span>'+unit("",k,a,tt,"1st Unit")+unit("2",k,b,tt,"2nd Unit")+'</div>'}).join("")+'</div>'};
 function userList(rows,vis,o){
   const F=[["all","Alle"],["online","Online"],["act","Aktiv"],["inv","Eingeladen"],["off","Gesperrt"],["adm","Mit Rolle"],["app","App installiert"],["web","Ohne App"]];
   const chips='<div class="ufil" role="group">'+F.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>'<button type="button" data-auf="'+k+'" aria-pressed="'+(ADM.uf===k)+'">'+L(t)+' <span>'+ADM.cnt[k]+'</span></button>').join("")+'</div>';
