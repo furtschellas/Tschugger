@@ -881,7 +881,7 @@ async def owner_tests(p, port):
           const ic=w.querySelectorAll('.csjb button svg').length>0&&w.querySelectorAll('.cssec>summary .csexp').length>0;w.remove();old.id='view';localStorage.removeItem('cscast:v1');return {cards:!a,table:b,icons:ic}})()""")
         check("Callsheet: Cast als Karten oder Tabelle, Symbol-Leiste, Auf-/Zuklapp-Symbol", ctv in (None, {"cards": True, "table": True, "icons": True}), ctv, public=True)
         # 2nd-Unit sheet: «Setup» rows between the camera setups of a scene go into its camera box; the move to the next scene stays a row
-        cf = await E("""(()=>{if(typeof camFold!=='function')return null;const r=camFold([{t:'08:00',sc:'142'},{t:'08:00',n:'A-1: WIDE'},{t:'08:30',n:'Setup',dur:'0h10'},{t:'08:40',n:'A-2: MCU'},{t:'09:05',n:'A-3: CU'},{t:'09:20',n:'Setup',dur:'0h40'},{t:'10:00',sc:'145'},{t:'10:00',n:'A-1: MCU'}]);
+        cf = await E("""(()=>{if(typeof camFold!=='function')return null;const r=camFold([{t:'08:00',sc:'142'},{t:'08:00',n:'A-1: WIDE'},{t:'08:30',n:'Setup',dur:'0h10'},{t:'08:40',n:'A-2: MCU'},{t:'09:05',n:'A-3 (1): ovsh CU'},{t:'09:20',n:'Setup',dur:'0h40'},{t:'10:00',sc:'145'},{t:'10:00',n:'A-1: MCU'}]);
           return r.map(x=>x.sc?x.sc+':'+x.camx.length:x.n).join(',')})()""")
         check("2nd Unit: Setups zwischen den Kamera-Einstellungen einer Szene stehen in ihrer Kamera-Box", cf in (None, "142:4,Setup,145:1"), cf, public=True)
         # Today with both units: the 2nd Unit folded for people only in the 1st Unit, open for people in the 2nd Unit
