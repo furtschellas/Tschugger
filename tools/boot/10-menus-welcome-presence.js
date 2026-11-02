@@ -159,12 +159,15 @@ async function maybeCsBeta(){
   startNote("csbeta",w,async()=>{store("csb",new Date().toISOString().slice(0,16));savePrefs();CSB_OPEN=false;maybeTour()});
 }
 /* ---- presence: signed-in members leave a «last seen» mark every 2 minutes while the app is open (shown to admins) ---- */
-let SEENT=null,SEENAT=0;
+let SEENT=null,SEENAT=0,SEENERR=0;
+/* the mark also without a finished start (the start may stop half-way on a weak network): every 2 minutes while the app is visible */
+setInterval(()=>{try{markSeen()}catch(_){}},120e3);
 /* «app-ios», «web-android» …: installed app or browser, and the kind of device (shown to admins in the user list) */
 export const appKind=()=>{const ua=navigator.userAgent||"",inst=typeof isStandalone==="function"&&isStandalone();
   const dev=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)?"ios":/Android/i.test(ua)?"android":"desktop";return (inst?"app-":"web-")+dev};
 async function markSeen(){
-  if(SBXFRAME||!ME||!MEMBER||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();
+  if(SBXFRAME||!ME||(!MEMBER&&isAdmin())||document.visibilityState!=="visible"||Date.now()-SEENAT<100e3)return;SEENAT=Date.now();   /* admins without a member entry: nothing to mark */
+  /* also before the start is complete (MEMBER not read yet: slow network on set): then only «last seen» and the kind of app, no device list */
   /* every device of the person once in «devs» (kind|last use) – the user list shows how many devices are in use; devices unused for 30 days drop out */
   let id="";try{id=localStorage.getItem("devid")||"";if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem("devid",id)}}catch(_){}
   /* at most 10 devices are kept (this one + the 9 used last; unused for 30 days drop out): the rules refuse more than 12, and the whole mark –
@@ -172,12 +175,15 @@ async function markSeen(){
   let F,db;try{({F,db}=await fb())}catch(_){return}
   const base={lastSeen:F.serverTimestamp(),app:appKind()},up=Object.assign({},base),dv=Object.assign({},(MEMBER&&MEMBER.devs)||{}),tm=k=>+String(dv[k]).split("|")[1]||0;
   /* the device's last start time (ms) after kind and last use: Log shows how fast the app starts on the crew's devices */
-  if(id){dv[id]=appKind()+"|"+Date.now()+(window.__STARTMS?"|"+window.__STARTMS:(String(dv[id]||"").split("|")[2]?"|"+String(dv[id]).split("|")[2]:""));up["devs."+id]=dv[id];
+  if(id&&MEMBER){dv[id]=appKind()+"|"+Date.now()+(window.__STARTMS?"|"+window.__STARTMS:(String(dv[id]||"").split("|")[2]?"|"+String(dv[id]).split("|")[2]:""));up["devs."+id]=dv[id];
     Object.keys(dv).filter(k=>k!==id).sort((a,b)=>tm(b)-tm(a)).forEach((k,i)=>{if(i>=9||Date.now()-tm(k)>30*864e5){up["devs."+k]=F.deleteField();delete dv[k]}})}
   try{await F.updateDoc(F.doc(db,"members",ME.uid),up);if(MEMBER&&id)MEMBER.devs=dv;
     /* the own line in the user list follows at once (it was read up to 15 minutes ago) */
     const mine=ADM.loaded&&(ADM.mem||[]).find(m=>m&&m.uid===ME.uid);if(mine){mine.lastSeen={seconds:Math.floor(Date.now()/1000)};mine.app=base.app}}
-  catch(err){console.warn("seen",err&&err.code||err);if(id&&/permission/.test(err&&err.code||""))try{await F.updateDoc(F.doc(db,"members",ME.uid),base)}catch(_){}}
+  catch(err){const code=String(err&&err.code||err&&err.message||err).slice(0,60);console.warn("seen",code);let ok=false;
+    if(/permission/.test(code))try{await F.updateDoc(F.doc(db,"members",ME.uid),base);ok=true}catch(_){}
+    /* reported once per session (Log, without data): «last seen» not written – the code says why */
+    if(!ok&&!SEENERR){SEENERR=1;try{window.__ERRS.push({m:"seen not written: "+code+(MEMBER?"":" (no member)"),f:"presence",l:0,t:Date.now(),c:window.__errCtx?String(window.__errCtx()):""})}catch(_){}}}
 }
 /* the user list: «zuletzt online» and the green marks stay current – every minute only the members seen in the last minutes are read
    (few documents: Firebase quota) and their mark is taken over; the whole list is read again at most every 15 minutes */
@@ -201,6 +207,9 @@ export function seenText(m){const t=seenMs(m);if(!t)return m&&m.active===true?L(
   return L("zuletzt online")+" "+(dd===0?L("heute")+" "+hm:dd===1?L("gestern")+" "+hm:dt.toLocaleDateString("de-CH")+" "+hm)}
 export let START=null;
 export async function afterSignIn(u){
+  window.__STAGE="start";const T0=Date.now();clearTimeout(window.__STAGET);
+  /* a start that has not reached its end after 90 s: reported once (Log, without data) with the step it stopped at */
+  window.__STAGET=setTimeout(()=>{try{if(window.__STAGE!=="done"&&ME===u&&!SBXFRAME)window.__ERRS.push({m:"start not finished: "+window.__STAGE+" ("+Math.round((Date.now()-T0)/1000)+" s)",f:"start",l:0,t:Date.now(),c:window.__errCtx?String(window.__errCtx()):""})}catch(_){}},90e3);
   window.__STARTED=u&&u.uid;   /* started for this person (13-start: the same person again is no new start) */
   setME(u);if(!window.PRIVOK)setTimeout(()=>{try{loadLangs().then(()=>{if(S.tab==="admin")render()})}catch(_){}},1500); /* links (motive list, map, chat) can only be read once signed in */
   /* account created by the owner with a start password: counts as confirmed, but a new password must be set first */
@@ -209,16 +218,17 @@ export async function afterSignIn(u){
     try{const c=JSON.parse(localStorage.getItem("mc:v1:"+u.uid)||"null");if(c&&c.m)START={cached:true}}catch(_){}}}
   if(ME!==u)return;   /* signed out or another account meanwhile: that start goes on, not this one */
   if(START&&START.mustChange){showGate("newpw");return}
-  if(!u.emailVerified&&!START){showGate("verify");autoVerify(u);return}
-  let st;try{st=await checkMember()}catch(err){console.error(err);
+  if(!u.emailVerified&&!START){window.__STAGE="verify";showGate("verify");autoVerify(u);return}
+  window.__STAGE="member";let st;try{st=await checkMember()}catch(err){console.error(err);window.__STAGE="member-error "+String(err&&err.code||err&&err.message||err).slice(0,50);
     /* not reachable, quota used up or a server error – with data on this device: show it (only a refusal of the rules means «no access») */
     if(S.days.length&&!/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){hideGate();acctButton(true);render();window.__OFFSTART=true;showMsg(L(isOffline(err)?"Offline – du siehst den zuletzt geladenen Stand.":"Server gerade nicht erreichbar – du siehst den zuletzt geladenen Stand."),6000);return}
     window.__OFFSTART=true;   /* tried again every minute (13-start) – also when the phone never reports «offline» */
     showGate("login",L("Anmeldung nicht erreichbar. Bitte Internetverbindung prüfen."),true);return}
   if(ME!==u)return;
   if(st!=="ok"&&SBXFRAME){setTimeout(()=>location.reload(),20000);return}   /* a side-box frame: never clears the device – it tries again */
-  if(st!=="ok"){clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}
-  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();startSeen();pushSyncSoon();menusLoad(true);
+  if(st!=="ok"){window.__STAGE="member "+st;clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}
+  window.__STAGE="done";startSeen();
+  hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();pushSyncSoon();menusLoad(true);
   const prof=MEMBER||{};
   let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}
   if(prof.lang&&prof.lang!==LANG&&(window.__justSignedIn||!hasLocal)&&WDS[prof.lang]){setLANG(prof.lang);store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
