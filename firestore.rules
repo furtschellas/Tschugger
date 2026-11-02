@@ -59,10 +59,10 @@ service cloud.firestore {
     // Profilfelder der Mitglieder (an mehreren Stellen gleich; testAck/testVer = Willkommen Test-User bestätigt)
     function profile() { return ['name', 'firstName', 'lastName', 'lang', 'birthday', 'gender', 'phone', 'contactEmail', 'diet', 'intol', 'allergies', 'welcomeAck', 'welcomeVer', 'testAck', 'testVer', 'func']; }
     // Profilfeld klein halten: Text höchstens 1000 Zeichen, Liste oder Objekt höchstens 40 Einträge (Zahlen, Ja/Nein, Zeiten frei)
-    function txt(f) { return !(f in request.resource.data)
-      || (request.resource.data[f] is string && request.resource.data[f].size() <= 1000)
-      || ((request.resource.data[f] is list || request.resource.data[f] is map) && request.resource.data[f].size() <= 40)
-      || !(request.resource.data[f] is string || request.resource.data[f] is list || request.resource.data[f] is map); }
+    // (das Feld wird nur einmal gelesen: Firestore wertet pro Anfrage höchstens 1000 Ausdrücke aus – mit ganzen Profilen war die Grenze
+    //  überschritten und jedes eigene Ändern, auch «zuletzt online», wurde seit dem 26.10. abgelehnt)
+    function txt(f) { let v = request.resource.data.get(f, null);
+      return v == null || (v is string && v.size() <= 1000) || ((v is list || v is map) && v.size() <= 40) || !(v is string || v is list || v is map); }
     // Telefon und Kontakt-E-Mail gehören nach contacts/{uid}: in members nur noch unverändert stehen lassen oder löschen (nie neu schreiben)
     function keptOrGone(f) { return !(f in request.resource.data) || (resource != null && f in resource.data && request.resource.data[f] == resource.data[f]); }
     function profileOk() { return txt('name') && txt('firstName') && txt('lastName') && txt('phone') && txt('contactEmail') && txt('diet') && txt('intol') && txt('allergies') && txt('func')
@@ -207,6 +207,12 @@ service cloud.firestore {
     // Mitglieder: Eingeladene treten selbst bei; sperren/entfernen nur der Owner; Profil ändern sie selbst oder «Benutzende bearbeiten»
     match /members/{uid} {
       allow read: if canAny(['users.view', 'users.edit', 'crew.food', 'crew.bday', 'contacts.extra']);
+      // «zuletzt online» (lastSeen, app, devs): eigene Markierung, schlank geprüft – zuerst, damit sie nie an der Ausdrucks-Grenze scheitert
+      allow update: if signedIn() && request.auth.uid == uid && resource.data.active == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen', 'app', 'devs'])
+        && (!('lastSeen' in request.resource.data) || request.resource.data.lastSeen == request.time || request.resource.data.lastSeen == resource.data.get('lastSeen', null))
+        && request.resource.data.get('app', '') is string && request.resource.data.get('app', '').size() <= 20
+        && (!('devs' in request.resource.data) || (request.resource.data.devs is map && request.resource.data.devs.size() <= 12));
       // der Haupt-Admin selbst kann nicht gesperrt oder gelöscht werden
       allow update, delete: if isOwner() && !isRoot(resource.data.email);
       // alle Admins dürfen die Profildaten der Benutzenden ändern (nicht sperren, nicht die E-Mail, nicht das Konto des Besitzers)
