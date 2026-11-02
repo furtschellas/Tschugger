@@ -231,10 +231,17 @@ const CAMRX=/^\s*[A-Z]{1,2}\s?-\s?\d{1,2}[a-z]?\s*:/;   /* «A-1: …», «B-12:
 export function camFold(items){const l=arr(items),txt=i=>String((typeof TX==="function"?TX(i,"n"):"")||i.n||i.text||"").trim(),tm=i=>{const m=String(i&&i.t||"").match(/(\d{1,2}):(\d{2})/);return m?String(+m[1]).padStart(2,"0")+":"+m[2]:""};
   if(!l.some(i=>i&&!i.sc&&CAMRX.test(txt(i))))return l;
   const out=l.map(i=>i&&i.sc?Object.assign({},i,{camx:arr(i.camx).slice()}):i),sc=out.map((i,k)=>i&&i.sc?k:-1).filter(k=>k>=0);
+  /* where each camera setup goes: [scene index, before the box] */
+  const tg=out.map((i,k)=>{if(!i||i.sc||!CAMRX.test(txt(i)))return null;const nx=sc.find(j=>j>k),pv=[...sc].reverse().find(j=>j<k);
+    if(nx!==undefined&&tm(i)&&tm(i)===tm(out[nx]))return [nx,true];if(pv!==undefined)return [pv,false];if(nx!==undefined)return [nx,true];return null});
+  /* a setup / move row between two camera setups of the same scene («08:30 Setup 0h10» between A-1 and A-2) belongs to that scene too –
+     before, it stood alone after the scene, several «Setup» rows in a row without telling what for */
+  const SETRX=/^\s*(set[\s-]?up|move|umbau|reset)\b/i;
+  out.forEach((i,k)=>{if(!i||i.sc||tg[k]||!SETRX.test(txt(i)))return;const pv=[...sc].reverse().find(j=>j<k);if(pv===undefined)return;
+    for(let m=k+1;m<out.length&&!(out[m]&&out[m].sc);m++){if(tg[m]){if(tg[m][0]===pv&&!tg[m][1])tg[k]=[pv,false];break}}});
   const pre=new Map();
-  out.forEach((i,k)=>{if(!i||i.sc||!CAMRX.test(txt(i)))return;const nx=sc.find(j=>j>k),pv=[...sc].reverse().find(j=>j<k);
-    let to=-1,before=false;if(nx!==undefined&&tm(i)&&tm(i)===tm(out[nx])){to=nx;before=true}else if(pv!==undefined)to=pv;else if(nx!==undefined){to=nx;before=true}
-    if(to<0)return;const line=(i.t?i.t+" ":"")+txt(i);if(before){if(!pre.has(to))pre.set(to,[]);pre.get(to).push(line)}else out[to].camx.push(line);out[k]=null});
+  out.forEach((i,k)=>{const t=tg[k];if(!t)return;const [to,before]=t;const line=(i.t?i.t+" ":"")+txt(i)+(i.dur&&!String(txt(i)).includes(String(i.dur))?" · "+i.dur:"");
+    if(before){if(!pre.has(to))pre.set(to,[]);pre.get(to).push(line)}else out[to].camx.push(line);out[k]=null});
   for(const [j,ls] of pre)out[j].camx=ls.concat(out[j].camx);
   return out.filter(Boolean)}
 /* a function of a part loaded later (31-dayedit: deGone, deMark, deNote): not ready yet in the first drawing from the cache – then nothing */
