@@ -63,7 +63,7 @@ GEO_DEADLINE = time.time() + 12 * 60
 ALL_LANGS = ["de", "fr", "it", "en", "hi"]
 U2_MAX = int(os.environ.get("U2_MAX") or 3); U2N = [0]   # 2nd-unit sheets read per run
 U2_DAY = {int(x) for x in re.findall(r"\d+", os.environ.get("U2_DAY") or "")}   # «Run workflow» → only the 2nd-unit sheet of these shooting days read anew
-U2PV = 4   # 4: one scene entry at the time of its BEGIN, its setups after it (3 put a scene at its end time) – version of the instruction for the 2nd-unit sheets (2: camera setups «A-4: …» as own entries; 3: back to the reading of before – every row with a scene is a scene, setups only as remarks)
+U2PV = 5   # 5: every camera setup («Wide, Slider», «CU Bax») its own scene entry, as in the sheet; 4: one scene entry at the time of its BEGIN, its setups after it (3 put a scene at its end time) – version of the instruction for the 2nd-unit sheets (2: camera setups «A-4: …» as own entries; 3: back to the reading of before – every row with a scene is a scene, setups only as remarks)
 LANG_NAMES = {"de": "Deutsch", "fr": "Französisch", "it": "Italienisch", "en": "Englisch", "hi": "Hindi"}
 
 
@@ -2026,11 +2026,10 @@ def main():
                         "Erzeuge aus dieser genauen Drehreihenfolge der 2nd Unit für Drehtag %d (%s) ein JSON-Objekt für das Feld \"unit2\" eines Tages gemäss Collection \"days\": "
                         "Arbeitszeit, und \"items\" in der Reihenfolge der Tabelle mit Uhrzeit, Szene, Innen/Aussen und Tageszeit, Seiten, Motiv/Adresse, Cast/Komparsen und Bemerkungen "
                         "(Rigging, Umbau, Setup/Move, Lunch und Wrap als Einträge ohne Szene, mit Uhrzeit und Dauer in \"dur\"). "
-                        "SZENEN: jede Szene (Szenennummer der Tabelle) ist genau EIN Szenen-Eintrag (\"sc\") mit der Uhrzeit ihres BEGINNS – der frühesten Zeile dieser Szene, "
-                        "nie ihre Endzeit; keine Szene wird zu einem Setup oder einer Bemerkung. Der Szenen-Eintrag steht VOR ihren Kamera-Einstellungen. "
-                        "KAMERA-EINSTELLUNGEN: Zeilen mit einem Setup wie «A-3» oder «A-3 (1)» (Spalte SH/Setup, dazu die Beschreibung) direkt nach ihrer Szene als Einträge ohne Szene, "
-                        "Text «Setup: Beschreibung», z. B. {\"t\": \"11:05\", \"n\": \"A-3 (1): ovsh …\", \"dur\": \"0h20\"}; die Setup-/Move-Zeilen dazwischen in ihrer Reihenfolge. "
-                        "Jede Uhrzeit nur einmal (die erste Einstellung einer Szene hat dieselbe Zeit wie die Szene – dann nur der Szenen-Eintrag mit dieser Zeit). "
+                        "SZENEN WIE IM SHEET: JEDE Zeile mit einer Einstellung (Kamera-Setup wie «A-1»/«A-3 (1)» oder Beschreibung wie «Wide, Slider (TBA)», «CU Bax») "
+                        "ist ein eigener Szenen-Eintrag mit der Szenennummer dieser Zeile bzw. des Blocks (\"sc\"), ihrer Uhrzeit (\"t\"), Dauer (\"dur\") und der Einstellung in \"cam\" "
+                        "(z. B. {\"t\": \"08:45\", \"sc\": \"90B\", \"cam\": \"A-2 CU Bax, Slider (TBA)\", \"dur\": \"0h20\"}) – dieselbe Szene also mehrmals, einmal pro Einstellung, in der Reihenfolge der Tabelle. "
+                        "Setup/Move/Umbau-Zeilen dazwischen als Einträge ohne Szene mit Uhrzeit und Dauer. Keine Zeile doppelt. "
                         "Fahrzeuge, Blocker, Grip, Ton und weitere Logistik als \"notes\". "
                         "Alle Übersetzungsfelder gemäss Abschnitt ÜBERSETZUNGEN. Bisheriger 2nd-Unit-Teil dieses Tages aus dem Drehplan (Cast-Nummern und Schreibweisen übernehmen): %s"
                         % (no, day.get("date"), json.dumps(day.get("unit2") or {}, ensure_ascii=False)[:20000]), 32000)
