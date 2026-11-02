@@ -9,7 +9,7 @@ const RES = [], FAILS = [];
 async function check(name, p) {
   let ok = false, info = "";
   try { await p; ok = true } catch (e) { info = String(e && e.message || e).slice(0, 160) }
-  RES.push({ n: name, ok }); if (!ok) FAILS.push(name);
+  RES.push(ok ? { n: name, ok } : { n: name, ok, e: info.replace(/\S+@\S+/g, "…").slice(0, 160) }); if (!ok) FAILS.push(name);   // synthetic test people only: the rule message (which line refused) helps
   console.log((ok ? "✓ " : "✗ ") + name + (ok ? "" : "  – " + info));
 }
 
@@ -111,8 +111,17 @@ await check("Mitglied: eigenes Profil ändern geht", assertSucceeds(updateDoc(do
 await check("Mitglied: zuletzt online und App/Browser speichern", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { lastSeen: 1, app: "app-ios" })));
 // exactly as the app writes it (markSeen): server time, kind of app, this device in «devs» (dotted path), an old device removed – on a full profile
 await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "members/uCrew"), { firstName: "A", lastName: "B", diet: "alles", intol: ["gluten"], allergies: "", func: "Grip", lang: "de", birthday: "01.01", gender: "m", welcomeAck: "1|x", welcomeVer: "x", tour: "done", tourAt: "2026-10-01", devs: { aaaa1111: "web-android|1761400000000|900", bbbb2222: "app-ios|1761300000000" } }) });
+// which profile field stops the own update: one field at a time on an otherwise plain member (diagnosis)
+{ const F0 = { firstName: "A", lastName: "B", diet: "alles", intol: ["gluten"], allergies: "", func: "Grip", lang: "de", birthday: "01.01", gender: "m", welcomeAck: "1|x", welcomeVer: "x", tour: "done", tourAt: "2026-10-01", devs: { aaaa1111: "web-android|1761400000000|900" } };
+  for (const [f, v] of Object.entries(F0)) {
+    await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "members/uOther"), { active: true, email: "other@test.ch", name: "other", [f]: v }) });
+    await check("Diagnose «zuletzt online» mit Feld " + f, assertSucceeds(updateDoc(doc(as("other"), "members/uOther"), { lastSeen: serverTimestamp(), app: "web-android" })));
+  }
+  await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "members/uOther"), { active: true, email: "other@test.ch", name: "other" }) });
+}
 await check("Mitglied: «zuletzt online» wie die App (Serverzeit, Gerät, altes Gerät weg)", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { lastSeen: serverTimestamp(), app: "web-android", "devs.cccc3333": "web-android|" + Date.now() + "|800", "devs.bbbb2222": deleteField() })));
 await check("Mitglied: «zuletzt online» ohne Geräteliste (Start noch nicht fertig)", assertSucceeds(updateDoc(doc(as("crew"), "members/uCrew"), { lastSeen: serverTimestamp(), app: "app-ios" })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "members/uCrew"), { active: true, email: "crew@test.ch", name: "crew" }) });   // as before for the checks that follow
 await check("Mitglied: App-Angabe nicht beliebig lang", assertFails(updateDoc(doc(as("crew"), "members/uCrew"), { app: "x".repeat(40) })));
 await check("Mitglied: fremdes Profil nicht", assertFails(updateDoc(doc(as("crew"), "members/uOther"), { phone: "1" })));
 
