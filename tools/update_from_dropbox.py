@@ -62,6 +62,7 @@ GEO_DEADLINE = time.time() + 12 * 60
 
 ALL_LANGS = ["de", "fr", "it", "en", "hi"]
 U2_MAX = int(os.environ.get("U2_MAX") or 3); U2N = [0]   # 2nd-unit sheets read per run
+U2_DAY = {int(x) for x in re.findall(r"\d+", os.environ.get("U2_DAY") or "")}   # «Run workflow» → only the 2nd-unit sheet of these shooting days read anew
 U2PV = 4   # 4: one scene entry at the time of its BEGIN, its setups after it (3 put a scene at its end time) – version of the instruction for the 2nd-unit sheets (2: camera setups «A-4: …» as own entries; 3: back to the reading of before – every row with a scene is a scene, setups only as remarks)
 LANG_NAMES = {"de": "Deutsch", "fr": "Französisch", "it": "Italienisch", "en": "Englisch", "hi": "Hindi"}
 
@@ -2004,6 +2005,7 @@ def main():
                 h = hashlib.sha256(txt.encode()).hexdigest()[:16]
                 old2 = cache.get(gid) or {}
                 pv_old = old2.get("pv") != U2PV and old2.get("h") == h and str(day.get("date") or "") >= TODAY   # read with an older instruction: once more (today and later)
+                if no in U2_DAY: pv_old = True; log("2nd Unit Tag %d: von Hand neu einlesen" % no)   # read anew, whatever the cache says
                 if old2.get("h") == h and old2.get("u2") and not FORCE and not pv_old: newc[gid] = old2; continue
                 # cost guards (the sheet is edited very often – every reading costs API credit):
                 # a finished shooting day is not read again; a changed sheet only once it stayed the same for 25 minutes;

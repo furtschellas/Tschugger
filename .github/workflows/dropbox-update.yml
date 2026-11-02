@@ -9,6 +9,9 @@ on:
       force:
         description: "Alles neu einlesen (ja/nein)"
         default: "nein"
+      u2day:
+        description: "2nd-Unit-Sheet nur dieses Drehtags neu einlesen (Nummer, z. B. 11; leer = keines)"
+        default: ""
       trigger:
         description: "cron = vom Worker-Zeitplan gestartet (leer lassen)"
         default: ""
@@ -71,6 +74,7 @@ jobs:
           CLAUDE_MODEL_SMALL: ${{ vars.CLAUDE_MODEL_SMALL }}
           AI_DAY_USD: ${{ vars.AI_DAY_USD }}
           FORCE: ${{ github.event.inputs.force }}
+          U2_DAY: ${{ github.event.inputs.u2day }}
         run: python tools/update_from_dropbox.py
       # erfolgreich: Daten, Bilder und Status; fehlgeschlagen: nur der Status (nie halbe Daten oder gelöschte Bilder)
       - name: Veröffentlichen
