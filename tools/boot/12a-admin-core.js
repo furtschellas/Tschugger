@@ -17,10 +17,13 @@ export const memName=(m,fb)=>mName(m)||(crewPerson(m.email)||{}).name||(fb===und
 /* error text of the App-Verwaltung: without permission a hint to publish the Firestore rules, else the error itself */
 /* the buttons follow the rules now – a refusal means this change is not allowed for this person (not «rules missing», which misled before) */
 export const admErr=err=>/permission/.test((err&&err.code)||"")?L("Keine Berechtigung für diese Änderung."):L("Fehler:")+" "+(err.message||err);
+/* writes per batch: Firestore checks every write of a batch with the rules and allows 20 document lookups per batch – the fixed owner needs
+   none (all), co-owners and admins about 4–5 per write: small batches, else a batch of an admin was refused as a whole */
+export const batchN=()=>ME&&ROOT_OWNERS.includes(lc(ME.email))?400:3;
 export const ADM={inv:[],mem:[],adm:[],q:"",loaded:false,busy:false,open:new Set()};
 export async function admLoad(){
   const {F,db}=await fb();
-  const none=()=>({docs:[]}),opt=(ok,pr)=>ok?pr:pr.catch(none);
+  const none=()=>({docs:[]}),opt=(ok,pr)=>ok?pr.catch(e=>{if(/permission/i.test(String(e&&e.code||e)))return none();throw e}):pr.catch(none);   /* an admin whose role lacks a right (users.view …): that list empty, the rest of the App-Verwaltung stays */
   const [i,m,a,ro,ur,ct]=await Promise.all([opt(isAdmin(),F.getDocs(F.collection(db,"invites"))),opt(isAdmin(),F.getDocs(F.collection(db,"members"))),F.getDocs(F.collection(db,"admins")).catch(none),F.getDocs(F.collection(db,"roles")).catch(none),F.getDocs(F.collection(db,"userroles")).then(x=>{ADM.urOk=true;return x}).catch(()=>{ADM.urOk=false;return none()}),F.getDocs(F.collection(db,"contacts")).then(x=>{ADM.ctOk=true;return x}).catch(()=>{ADM.ctOk=false;return none()})]);
   try{const ow=await F.getDocs(F.collection(db,"owners"));ADM.own=ow.docs.map(d=>d.id);for(const e of ADM.own)if(!ADMINS.includes(e))ADMINS.push(e);for(let k=ADMINS.length-1;k>=0;k--)if(!ROOT_OWNERS.includes(ADMINS[k])&&!ADM.own.includes(ADMINS[k])&&!(ME&&lc(ME.email)===ADMINS[k]))ADMINS.splice(k,1)}catch(_){ADM.own=ADM.own||[]}
   ADM.roles=ro.docs.filter(d=>d.id!=="admin").map(d=>Object.assign({id:d.id},d.data()));
@@ -174,7 +177,7 @@ export async function syncBdays(force){
     const want={};ADM.mem.forEach(m=>{if(m.active===true&&/^\d{4}-\d\d-\d\d$/.test(m.birthday||""))want[m.uid]={name:name(m),md:m.birthday.slice(5)}});
     const ops=[];for(const id in want)if(!have[id]||have[id].name!==want[id].name||have[id].md!==want[id].md)ops.push(["set",id,want[id]]);
     for(const id in have)if(!want[id])ops.push(["del",id]);
-    for(let i=0;i<ops.length;i+=400){const b=F.writeBatch(db);ops.slice(i,i+400).forEach(o=>o[0]==="set"?b.set(F.doc(db,"bdays",o[1]),o[2]):b.delete(F.doc(db,"bdays",o[1])));await b.commit()}
+    const BN=batchN();for(let i=0;i<ops.length;i+=BN){const b=F.writeBatch(db);ops.slice(i,i+BN).forEach(o=>o[0]==="set"?b.set(F.doc(db,"bdays",o[1]),o[2]):b.delete(F.doc(db,"bdays",o[1])));await b.commit()}
   }catch(err){console.warn("bday sync",err)}
 }
 const ICO={acct:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6 1.6 0 3 .5 4.1 1.3M15.5 17.5l2 2 4-4.5"/>',bcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13.5c-.7-.7-.7-1.6 0-2.3.7.7.7 1.6 0 2.3zM12 14v3"/>',food:'<path d="M7 2v8M4 2v5a3 3 0 0 0 6 0V2M7 10v12M17 2c-2 1.5-3 4-3 7h3v13"/>',bday:'<path d="M4 21h16M5 21v-8h14v8M12 13V9M12 6.5c-1-1-1-2.5 0-3.5 1 1 1 2.5 0 3.5zM5 16c2.3 1.5 4.7 1.5 7 0s4.7-1.5 7 0"/>'};

@@ -52,7 +52,7 @@ async function checkMember0(){
   setCOADMIN(co);setADMINPERMS(ap);setMYROLE(role);window.MYROLENAME=rname;setMYPERMS(perms);
   const ref=F.doc(db,"members",u.uid);let s=await withTimeout(F.getDoc(ref),20000,"member");
   if(!s.exists()){
-    let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(_){}
+    let inv=null;try{inv=await F.getDoc(F.doc(db,"invites",lc(u.email)))}catch(e){notPerm(e)}   /* a network error is no «not invited» (it stops the check; the caller keeps the last known state) */
     if(!inv||!inv.exists()){if(isAdmin()){setMEMBER(null);return "ok"}return "none"}
     let pf={};try{const x=JSON.parse(localStorage.getItem(PENDING_KEY)||"null");if(x&&x.email===lc(u.email))pf=x}catch(_){}
     const doc={active:true,email:lc(u.email),name:fullName(pf)||inv.data().name||"",joinedAt:F.serverTimestamp()};

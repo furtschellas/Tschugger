@@ -1,4 +1,4 @@
-import {esc,fullName,L,LANG,MEMO,S} from "../base/10-core.js";
+import {esc,fullName,L,LANG,MEMO,S,SBXF} from "../base/10-core.js";
 import {toast} from "../base/11-schedule-prep.js";
 import {vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -22,7 +22,7 @@ function simBar(){let b=document.getElementById("simbar");
   b.innerHTML='<span>'+esc(L("Ansicht als"))+' <b>'+esc(SIMUSER.name)+'</b> · '+esc(SIMUSER.rname)+' · '+esc(L("nur ansehen"))+'</span><button type="button" data-simend>'+esc(L("Beenden"))+'</button>'}
 export function simRefreshChrome(){try{acctButton(true);if(typeof bcButton==="function")bcButton();const mb=document.getElementById("myCalBtn");if(mb)mb.hidden=!vok("mycal")}catch(_){}}
 /* the simulation stays when the page is reloaded (this tab only: closing the tab or «Beenden» ends it) */
-const simKeep=v=>{try{if(v)sessionStorage.setItem("sim",JSON.stringify(v));else sessionStorage.removeItem("sim")}catch(_){}};
+const simKeep=v=>{if(SBXF)return;   /* the phone preview (a frame of the same tab shares sessionStorage): its simulation must not move into the page */try{if(v)sessionStorage.setItem("sim",JSON.stringify(v));else sessionStorage.removeItem("sim")}catch(_){}};
 function simStart(em,re){em=lc(em);if(!simCan(em))return;
   const r=roleOf(em),ro=r==="admin"?{id:"admin",name:L("Admin"),perms:(ADM.adminPerms||ADMIN_DEFAULT).slice()}:r==="owner"?{id:"owner",name:L("Owner"),perms:PERMS.map(x=>x[0])}:((ADM.roles||[]).find(x=>x.id===r)||{id:"",name:L("Keine Rolle"),perms:[]});
   const mem=(ADM.mem||[]).find(x=>lc(x.email||"")===em)||null,inv=(ADM.inv||[]).find(x=>x.id===em)||{};

@@ -92,7 +92,15 @@ await check("Rollen: Crew kann sich nicht selbst Admin machen", assertFails(setD
 await check("Rollen: Crew kann sich keine andere Rolle geben", assertFails(setDoc(doc(as("crew"), "userroles/crew@test.ch"), { role: "power" })));
 await check("Rollen: «Rollen bearbeiten» darf die eigene Rolle nicht ändern", assertFails(setDoc(doc(as("power"), "roles/power"), { name: "Power", perms: ["view.plan", "settings"] })));
 await check("Rollen: «Rollen bearbeiten» vergibt nur Rechte, die man selbst hat", assertFails(setDoc(doc(as("power"), "roles/crew"), { name: "Crew", perms: ["settings"] })));
-await check("Rollen: «Rollen bearbeiten» darf andere Rolle mit eigenen Rechten ändern", assertSucceeds(setDoc(doc(as("power"), "roles/crew"), { name: "Crew", perms: ["view.plan"] })));
+await check("Rollen: «Rollen bearbeiten» darf andere Rolle mit eigenen Rechten ändern", assertSucceeds(setDoc(doc(as("power"), "roles/crew"), { name: "Crew", perms: ["view.plan", "view.crew", "events.add"] })));
+await check("Rollen: «Rollen bearbeiten» entfernt keine fremden Rechte (die man selbst nicht hat)", assertFails(setDoc(doc(as("power"), "roles/crew"), { name: "Crew", perms: ["view.plan"] })));
+await check("Rollen: «Rollen bearbeiten» löscht keine Rolle mit fremden Rechten", assertFails(deleteDoc(doc(as("power"), "roles/crew"))));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/owned"), { name: "O", perms: ["view.plan"] }) });
+await check("Rollen: «Rollen bearbeiten» löscht eine Rolle nur mit eigenen Rechten", assertSucceeds(deleteDoc(doc(as("power"), "roles/owned"))));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/strong"), { name: "Strong", perms: ["view.plan", "settings"] }) });
+await check("Rollen: Admin ändert keine Rolle mit «Einstellungen»", assertFails(setDoc(doc(as("admin"), "roles/strong"), { name: "Strong", perms: ["view.plan"] })));
+await check("Rollen: Admin löscht keine Rolle mit «Einstellungen»", assertFails(deleteDoc(doc(as("admin"), "roles/strong"))));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "roles/crew"), { name: "Crew", perms: ["view.plan", "view.crew"] }) });
 await check("Coverday: Crew liest", assertSucceeds(getDoc(doc(as("crew"), "coverday/state"))));
 await check("Coverday: ohne Recht nicht ändern", assertFails(setDoc(doc(as("crew"), "coverday/state"), { c: "x", at: 1 })));
 await check("Coverday: Admin ändert (nur c und at)", assertSucceeds(setDoc(doc(as("admin"), "coverday/state"), { c: "x", at: 1 })));

@@ -143,10 +143,15 @@ service cloud.firestore {
       // nicht die eigene Rolle und nur Berechtigungen, die man selbst hat (keine Selbst-Beförderung)
       // die Admin-Rolle (Rechte der Admins) passt nur der Owner an – sonst könnte sich ein Admin selbst «Einstellungen» geben
       // Admins (nicht der Owner) legen keine Rolle mit «Einstellungen» an – sonst könnten sie es über eine Rolle weitergeben
-      allow write: if ((isAdmin() && (isOwner() || (id != 'admin' && (request.resource == null || !request.resource.data.get('perms', []).hasAny(['settings']))))) || (can('roles.edit') && id != 'admin'
+      // Admins ändern oder löschen auch keine Rolle, die «Einstellungen» schon hat (die App sperrt sie ebenso: roleLocked)
+      // «Rollen bearbeiten»: fremde Rechte einer Rolle (die man selbst nicht hat) bleiben – weder entfernen noch die Rolle löschen
+      allow write: if ((isAdmin() && (isOwner() || (id != 'admin' && (request.resource == null || !request.resource.data.get('perms', []).hasAny(['settings']))
+              && (resource == null || !resource.data.get('perms', []).hasAny(['settings']))))) || (can('roles.edit') && id != 'admin'
           && !(hasRole() && myRole() == id)
-          && (request.resource == null || request.resource.data.perms.hasOnly(rolePerms())
-              || (resource != null && request.resource.data.perms.hasOnly(rolePerms().concat(resource.data.perms))))))   // vorhandene fremde Rechte bleiben
+          && (request.resource == null
+              ? (resource == null || resource.data.get('perms', []).hasOnly(rolePerms()))
+              : (request.resource.data.perms.hasOnly(rolePerms().concat(resource != null ? resource.data.get('perms', []) : []))
+                 && (resource == null || request.resource.data.perms.hasAll(resource.data.get('perms', []).removeAll(rolePerms())))))))
         && (request.resource == null || (only(['name', 'perms', 'at', 'wa'])
             && request.resource.data.name is string && request.resource.data.name.size() <= 40
             && request.resource.data.perms is list && request.resource.data.perms.size() <= 80

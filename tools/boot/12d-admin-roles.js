@@ -83,7 +83,11 @@ document.addEventListener("change",async e=>{const c=e.target.closest("input[dat
   const before=arr(ro.perms).slice(),perms=[...new Set(on?before.concat([k]):before.filter(p=>p!==k))].filter(p=>permKnown(p)||before.includes(p));
   const apply=ps=>{if(id==="admin")ADM.adminPerms=ps;else{const r=(ADM.roles||[]).find(x=>x.id===id);if(r)r.perms=ps}};
   apply(perms);render();
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"roles",id),Object.assign({name:ro.name||id,perms,at:F.serverTimestamp()},ro.wa&&id!=="admin"?{wa:ro.wa}:{}));showMsg(L("Rolle gespeichert."),2000)}
+  /* only this one right changes (arrayUnion / arrayRemove): a change another admin made to the same role in the meantime stays –
+     before, the whole role was written from this page's copy (up to 15 minutes old) and such a change was lost */
+  try{const {F,db}=await fb(),ref=F.doc(db,"roles",id);let done=false;
+    if(typeof F.arrayUnion==="function")try{await F.updateDoc(ref,{perms:on?F.arrayUnion(k):F.arrayRemove(k),at:F.serverTimestamp()});done=true}catch(e){if(!/not-found/i.test(String(e&&e.code||e)))throw e}
+    if(!done)await F.setDoc(ref,Object.assign({name:ro.name||id,perms,at:F.serverTimestamp()},ro.wa&&id!=="admin"?{wa:ro.wa}:{}));showMsg(L("Rolle gespeichert."),2000)}
   catch(err){apply(before);c.checked=!on;render();showMsg(admErr(err),6000)}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-redit]");if(b&&canRoleEdit()&&!roleLocked(b.dataset.redit)){ADM.redit=ADM.redit===b.dataset.redit?"":b.dataset.redit;render();return}
   if(e.target.closest("[data-rreset]")&&isOwner()){const f=e.target.closest("form");f.querySelectorAll('input[name=rp]').forEach(x=>{x.checked=ADMIN_DEFAULT.includes(x.value)})}});
@@ -105,7 +109,7 @@ document.addEventListener("submit",async e=>{const f=e.target.closest("form.arol
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-rdel]");if(!b||!canRoleEdit()||!canRoleAssign()||roleLocked(b.dataset.rdel))return;const id=b.dataset.rdel,ro=(ADM.roles||[]).find(x=>x.id===id)||{};
   if(!confirmSafe(L("Rolle «{r}» löschen? Personen mit dieser Rolle verlieren ihre Berechtigungen.").replace("{r}",ro.name||id)))return;
   /* all in one step: before, a refused person in the middle left some people without role and the role still there */
-  try{const {F,db}=await fb();const bt=F.writeBatch(db);for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)bt.delete(F.doc(db,"userroles",em));bt.delete(F.doc(db,"roles",id));await bt.commit();
+  try{const {F,db}=await fb();/* the people of the role first (one by one – a batch of an admin hit the limit of lookups), then the role */for(const em of Object.keys(ADM.ur||{}))if(ADM.ur[em]===id)await F.deleteDoc(F.doc(db,"userroles",em));await F.deleteDoc(F.doc(db,"roles",id));
     /* a batch is not in the change log by itself: one entry for the role */
     F.addDoc(F.collection(db,"audit"),{by:lc(ME.email),at:F.serverTimestamp(),op:"delete",col:"roles",id:String(id).slice(0,120),sum:auditSum("roles",null,"delete")}).catch(()=>{});showMsg(L("Rolle gelöscht."),2500);await admLoad()}
   catch(err){showMsg(admErr(err),6000)}});

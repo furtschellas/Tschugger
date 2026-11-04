@@ -207,6 +207,9 @@ export function seenText(m){const t=seenMs(m);if(!t)return m&&m.active===true?L(
   return L("zuletzt online")+" "+(dd===0?L("heute")+" "+hm:dd===1?L("gestern")+" "+hm:dt.toLocaleDateString("de-CH")+" "+hm)}
 export let START=null;
 export async function afterSignIn(u){
+  /* a start again (weak network, «online») while viewing as another role or person: end that view first – the check would put back
+     the own rights and profile in the middle of it (and the view would mix both) */
+  try{if(typeof window.simReset==="function"&&((typeof SIMROLE!=="undefined"&&SIMROLE)||(window.simOn&&window.simOn())))window.simReset()}catch(_){}
   window.__STAGE="start";const T0=Date.now();clearTimeout(window.__STAGET);
   /* a start that has not reached its end after 90 s: reported once (Log, without data) with the step it stopped at */
   window.__STAGET=setTimeout(()=>{try{if(window.__STAGE!=="done"&&ME===u&&!SBXFRAME)window.__ERRS.push({m:"start not finished: "+window.__STAGE+" ("+Math.round((Date.now()-T0)/1000)+" s)",f:"start",l:0,t:Date.now(),c:window.__errCtx?String(window.__errCtx()):""})}catch(_){}},90e3);

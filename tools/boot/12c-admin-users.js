@@ -12,7 +12,7 @@ import {pushStatusSec} from "./07-push.js";
 import {chatSetSec,tourInfo} from "./08-chat-tour.js";
 import {isOnline,seenMs,seenText} from "./10-menus-welcome-presence.js";
 import {GENDERS,contactFields,genderSel} from "./11-account.js";
-import {ADM,SECS,admErr,admIndex,admLoad,assignCrew,confirmSafe,crewEmails,initials,syncBdays} from "./12a-admin-core.js";
+import {ADM,SECS,admErr,admIndex,admLoad,assignCrew,batchN,confirmSafe,crewEmails,initials,syncBdays} from "./12a-admin-core.js";
 import {bkSec,upSec} from "./12b-admin-backup.js";
 import {rolesSec,rolesSorted} from "./12d-admin-roles.js";
 import {auditSec,testsSec} from "./17-audit-misc.js";
@@ -376,7 +376,7 @@ document.addEventListener("click",async e=>{
     /* not the person clicking, owners and admins (the rules refuse an entry for oneself – the whole batch of 200 failed) */
     if(a==="crew"){const me=lc(ME&&ME.email);const list=crewEmails().filter(c=>!ADM.inv.some(i=>i.id===c.email)&&!ADM.mem.some(m=>m.email===c.email)&&c.email!==me&&!ADMINS.includes(c.email)&&!(ADM.adm||[]).includes(c.email));
       if(confirmSafe(L("{n} Adressen aus der Crewliste einladen?").replace("{n}",list.length))){
-        for(let i=0;i<list.length;i+=200){const batch=F.writeBatch(db);list.slice(i,i+200).forEach(c=>{batch.set(F.doc(db,"invites",c.email),{name:String(c.name||"").slice(0,120),role:String(c.role||"").slice(0,80),addedAt:F.serverTimestamp()});
+        const BN=batchN();for(let i=0;i<list.length;i+=BN){const batch=F.writeBatch(db);list.slice(i,i+BN).forEach(c=>{batch.set(F.doc(db,"invites",c.email),{name:String(c.name||"").slice(0,120),role:String(c.role||"").slice(0,80),addedAt:F.serverTimestamp()});
           /* a role only where surely none exists yet (without the right to read the roles the list is empty and the batch – up to 200 invitations – failed) */
           if(ADM.urOk&&!ADM.ur[c.email]&&!ADM.adm.includes(c.email)&&!ADMINS.includes(c.email))batch.set(F.doc(db,"userroles",c.email),{role:"crew",at:F.serverTimestamp()})});await batch.commit()}
         /* without the right to read the roles: «Crew» one by one (a new entry is allowed) – else they would all become «Gast» */
