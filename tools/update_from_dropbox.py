@@ -823,7 +823,10 @@ def u2_also_add(days, sheets=None):
     def cam2(items):   # 2nd unit: the camera setups of the sheet (rows like «A-1», «B-2» after a scene) shown with the scene
         cur = None
         for i in items:
-            if i.get("sc"): cur = i; cur["cam"] = "2nd Unit"; continue
+            if i.get("sc"):
+                cur = i
+                if i.get("cam") and i["cam"] != "2nd Unit" and not i.get("camx"): i["camx"] = [((str(i.get("t") or "") + " ") if i.get("t") else "") + str(i["cam"])]   # a camera setup as its own scene (sheet U2PV 5): kept in the camera box
+                cur["cam"] = "2nd Unit"; continue
             m = re.match(r"\s*([A-Z]{1,2}\s?-?\s?\d+[a-z]?)\b", str(i.get("n") or ""))
             if cur is not None and m:
                 cur["cam"] = (cur["cam"] + " · " if cur["cam"] != "2nd Unit" else "2nd Unit · Setups ") + m.group(1).replace(" ", "")
@@ -1980,6 +1983,8 @@ def main():
             newc = {}
             # only GREEN and ORANGE tabs count (also hidden ones); without readable colours: the shown tabs, as before
             tabs = sheet_tabs(url); byday = {}; GREEN.clear()
+            if not tabs:   # the list of tabs not readable (Google busy): the last good reading stays – an empty list would wipe the cache and re-read everything
+                print("::warning::2nd Unit: Blätter nicht lesbar – bisherige 2nd-Unit-Planung bleibt"); raise RuntimeError("Blätter")
             try: cols = sheet_colors(url)
             except Exception as e: cols = {}; print("::notice::2nd Unit: Blattfarben nicht lesbar (%s)" % type(e).__name__)
             def dn(n):
@@ -2000,8 +2005,12 @@ def main():
                 gid, name = "+".join(g for g, _ in v), " + ".join(n for _, n in v)
                 day = next((d for d in shoot if dayno(d) == no), None)
                 if not day: continue
-                txt = "\n\n".join("BLATT %s:\n%s" % (n, sheet_csv(url, g) or read_sheet(url.split("#")[0].split("?")[0] + "?gid=" + g) or "") for g, n in v)
-                if len(txt) < 40: log("2nd Unit Tag %d: Blatt leer (%d Zeichen)" % (no, len(txt))); continue
+                parts = [(n, sheet_csv(url, g) or read_sheet(url.split("#")[0].split("?")[0] + "?gid=" + g) or "") for g, n in v]
+                txt = "\n\n".join("BLATT %s:\n%s" % (n, c) for n, c in parts)
+                if sum(len(c.strip()) for _, c in parts) < 40:   # the content itself (not the «BLATT …» heads): empty or not readable now – the last reading stays
+                    log("2nd Unit Tag %d: Blatt leer oder nicht lesbar" % no)
+                    if (cache.get(gid) or {}).get("u2"): newc[gid] = cache[gid]
+                    continue
                 h = hashlib.sha256(txt.encode()).hexdigest()[:16]
                 old2 = cache.get(gid) or {}
                 pv_old = old2.get("pv") != U2PV and old2.get("h") == h and str(day.get("date") or "") >= TODAY   # read with an older instruction: once more (today and later)
@@ -2051,7 +2060,8 @@ def main():
                 want = scs(c["u2"]); best, bn = None, 0
                 for d in shoot:
                     n = len(want & scs(mainU2.get(d["date"])))
-                    if n > bn: best, bn = d, n
+                    if d["date"] in used: continue   # a day already given to another sheet
+                    if n > bn or (n and n == bn and dayno(d) == c["no"]): best, bn = d, n   # a tie: the day of the tab number
                 # without a 2nd unit in the main schedule the day gets none (the tab number alone is not enough)
                 day = best or next((d for d in shoot if dayno(d) == c["no"] and d["date"] in mainU2), None)
                 if not day: continue
@@ -2168,7 +2178,7 @@ def main():
         if t not in dispos: dispos[t] = dict(v, date=t, id=t); print("::warning::Callsheet von %s auf %s verschoben (Tag laut Datei)" % (k, t))
         else: print("::warning::Callsheet unter %s entfernt (gehört auf %s)" % (k, t))
     print("::notice::Drehtag-Nummern im Drehplan: %s" % "; ".join("%d=%s" % (k, ",".join(v)) for k, v in sorted(_sn.items()) if k <= 8))
-    print("::notice::Callsheet-Tage: %s" % "; ".join("%s=%s" % (re.sub(r"(?i)^.*?(DT\d+).*$", r"\1", _bn(v.get("file"))), k) for k, v in sorted(dispos.items()) if k >= "2026-10-19"))
+    print("::notice::Callsheet-Tage: %s" % "; ".join("%s=%s" % ((re.search(r"(?i)DT\d+", _bn(v.get("file")) or "") or [None])[0] or "?", k) for k, v in sorted(dispos.items()) if k >= "2026-10-19"))
     def CSV_OF(f):   # 7: the 2nd-unit order also from a block called PREVISION – read again only for callsheets of today and later (credit)
         return 7 if (_fdate(f["name"]) or "") >= TODAY else 6
     PD = pick_dispos(files); PDN = {x["name"] for x in PD}   # the callsheets to read: worked out once
@@ -2209,7 +2219,7 @@ def main():
             if isinstance(d, dict) and re.match(r"^\d{4}-\d{2}-\d{2}$", d.get("date", "")):
                 prev = dispos.get(d["date"])
                 keep = not prev or _bn(prev.get("file")) == _bn(f["name"]) or _fdate(prev.get("file")) != d["date"] or (prev.get("_mod") or "") <= (f["modified"] or "")
-                if not is_new("dispo", f): print("::warning::Callsheet %s neu gelesen: %s (v%s)" % (d["date"], "übernommen" if keep else "nicht übernommen – am selben Tag schon %s (Tag %s, %s)" % (_bn(prev.get("file")), _fdate(prev.get("file")), prev.get("_mod")), cs.get("v")))
+                if not is_new("dispo", f): print("::warning::Callsheet %s neu gelesen: %s (v%s)" % (d["date"], "übernommen" if keep else "nicht übernommen – am selben Tag schon %s (Tag %s, %s)" % (_h(_bn(prev.get("file"))), _fdate(prev.get("file")), prev.get("_mod")), cs.get("v")))
                 if keep:
                     d["id"] = d["date"]; d["_mod"] = f["modified"]; dispos[d["date"]] = d; changed = True
                     cs = d.get("cs") if isinstance(d.get("cs"), dict) else {}
@@ -2336,7 +2346,7 @@ def main():
         if (d.get("date") or "") >= TODAY:
             ga = dict(cs.get("geoAdr") or {}); rc = meta.setdefault("rgeo", {})
             for u in g:
-                if u.startswith("http") and src.get(u) in ("link", "addr") and u not in ga:
+                if u.startswith("http") and src.get(u) in ("link", "addr"):   # also when the place moved (cached by position: only a new position costs a request)
                     a = rev_geocode(g[u], rc)
                     if a: ga[u] = a
             ga = {u: a for u, a in ga.items() if u in g}

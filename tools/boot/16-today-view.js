@@ -217,7 +217,8 @@ const ncLabel=it=>it.k==="start"?L("Drehbeginn"):it.k==="lunch"?"Lunch":it.k==="
 /* still shown: its step not quittiert yet and its «bis» not passed */
 function ncActive(d){const now=Date.now(),st=k=>typeof scState==="function"?scState(d,k):0;
   return arr(window.NOWCAST[d]).filter(it=>{if(!it||!it.t)return false;
-    if(it.bis){const b=dayMs(d,it.bis,it.t?dayMs(d,it.t):0);   /* «bis 01:00» after a forecast at 23:00 is the next day */if(b&&b<=now)return false}
+    if(it.bis){const day=arr(S.days).find(y=>y&&y.date===d),fh=(dayItems(day,"1").map(i=>String(i.t||"").slice(0,5)).find(z=>/^\d\d:\d\d$/.test(z)))||"",
+        t0=it.t?dayMs(d,it.t,fh>="12:00"?dayMs(d,fh):0):0,b=dayMs(d,it.bis,t0);   /* a night shoot: «00:30» is after midnight (as the rows of the day); «bis 01:00» after a forecast at 23:00 is the next day */   /* «bis 01:00» after a forecast at 23:00 is the next day */if(b&&b<=now)return false}
     if(it.k==="x")return true;if(it.k==="wrap")return st("wrap")!==2;if(it.k==="lunch")return st("lunch")===0;
     if(it.k==="start"){const rows=arr((((arr(S.dispos).find(y=>y&&y.date===d)||{}).cs||{}).order||{}).rows);return !rows.some(r=>r&&r.sc&&st(String(r.sc))>0)}
     return st(it.k)===0})}

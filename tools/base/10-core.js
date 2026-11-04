@@ -246,6 +246,9 @@ export function camFold(items){const l=arr(items),txt=i=>String((typeof TX==="fu
   return out.filter(Boolean)}
 /* a function of a part loaded later (31-dayedit: deGone, deMark, deNote): not ready yet in the first drawing from the cache – then nothing */
 export const lateFn=(n,...a)=>{try{const f=window[n];return typeof f==="function"?f(...a):null}catch(_){return null}};
+/* «now» of the unit of the rows drawn (the 2nd Unit: its own callsheet part – before, its rows got the frame of the 1st Unit's scene) */
+function nowOfUnit(c0){const u=String(c0&&c0.u||"1");if(u==="1")return csNowScene();if(u!=="2"||typeof window.csU2Dispo!=="function")return null;
+  const dp=arr(S.dispos).find(x=>x&&x.date===c0.date&&x.cs),day=arr(S.days).find(d=>d&&d.date===c0.date);const x=dp&&window.csU2Dispo(dp,day);return x?csNowScene(x):null}
 export function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
@@ -253,7 +256,7 @@ export function itemHTML(it){
     const ek=typeof scRowKeys==="function"&&window.__mctx&&window.__mctx.date?(()=>{const c=window.__mctx,dy=(S.days||[]).find(x=>x.date===c.date);if(!dy)return scEvKey(it.n);
       const l=dayItems(dy,c.u);let i=l.indexOf(it);if(i<0)i=l.findIndex(x=>!x.sc&&x.t===it.t&&x.n===it.n);const k0=i<0?scEvKey(it.n):scRowKeys(l,x=>x.n)[i];return k0&&c.u&&c.u!=="1"?k0+"_u"+c.u:k0})():"",   /* 2nd/3rd unit: own lunch, wrap and setups */eb=ek&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,ek,window.__mctx.u||"1"):"";
     /* the pink frame of «jetzt» also on setup, lunch and wrap when that is the step now */
-    let evNow=false;try{const c0=window.__mctx;if(ek&&c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=csNowScene();evNow=!!ns&&ns.ev===ek}}catch(_){}
+    let evNow=false;try{const c0=window.__mctx;if(ek&&c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=nowOfUnit(c0);evNow=!!ns&&!!ns.ev&&String(ns.ev).replace(/_u\d$/,"")===String(ek).replace(/_u\d$/,"")}}catch(_){}
     return '<li class="row ev'+(mn?' lunch':'')+(eb?' evack':'')+(evNow?' now':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="what">'+esc(TX(it,"n"))+(it.dur?' · <b>'+esc(it.dur)+'</b>':'')+eb+mn+'</div></li>';
   }
   const meta=[];
@@ -265,7 +268,7 @@ export function itemHTML(it){
   if(it.xx)meta.push('<span>'+esc(it.xx)+' Extras'+'</span>');
   const cg=window.chgFor&&window.__mctx?window.chgFor(window.__mctx.date,window.__mctx.u,it.sc):"";
   /* Drehplan of today: the scene being shot now gets the pink frame (as in the callsheet) */
-  let nowSc=false;try{const c0=window.__mctx;if(c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=csNowScene();nowSc=!!ns&&norm(ns.sc)===norm(it.sc)}}catch(_){}
+  let nowSc=false;try{const c0=window.__mctx;if(c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=nowOfUnit(c0);nowSc=!!ns&&norm(ns.sc)===norm(it.sc)}}catch(_){}
   const done=window.__mctx&&window.__mctx.date&&typeof scState==="function"&&scState(window.__mctx.date,unitKey(it.sc,window.__mctx.u))===2;
   const dg=lateFn("deGone",it);   /* changed on set (31-dayedit.js): struck or moved away – shown struck, without quittance */
   return '<li class="row'+(cg?' chg':'')+(nowSc?' scnow':'')+(done?' scdone':'')+(dg?' degone':'')+'"><div class="t">'+esc(it.t||"")+'</div><div class="sc">'+(it._de?lateFn("deMark",it)||'':'')+(cg?'<div class="chgtxt" title="'+esc(cg)+'">'+esc(L("geändert"))+': '+esc(cg)+'</div>':'')+

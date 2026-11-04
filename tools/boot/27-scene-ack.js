@@ -1,4 +1,4 @@
-import {ariaTip,dayItems,esc,I18N,isoAdd,isoDM,isoId,L,LANG,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
+import {ariaTip,camFold,dayItems,esc,I18N,isoAdd,isoDM,isoId,L,LANG,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
 import {csHM} from "../base/13b-cs-now.js";
 import {UNAME,dayMs} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
@@ -40,7 +40,9 @@ const scIsSetup=t=>/^\s*set[\s-]?up\b/i.test(String(t||""));
 /* the keys of all rows of a day (Drehplan items or callsheet rows): lunch, wrap, setup, setup2 … ; scenes "" */
 /* the setup added by the app before the first scene (callsheet without one, csSetupFirst): key «setup0» – it never shifts the numbers of the
    setups of the Drehplan (setup, setup2 … stay the same rows in the Drehplan and in the callsheet) */
-window.scRowKeys=(rows,txt)=>{let n=0;return (rows||[]).map(r=>{if(!r||r.sc)return"";const t=txt(r);if(scIsSetup(t)){if(r._auto)return "setup0";n++;return n>1?"setup"+n:"setup"}return scEvKey(t)})};
+/* a setup row that camFold puts into the camera box of its scene (between two camera setups) gets no key and no number – the same in
+   the Drehplan, the callsheet and the automatic (before, the hidden row took «setup2» and the visible ones shifted, and it was started) */
+window.scRowKeys=(rows,txt)=>{let n=0;const kept=new Set(camFold(rows||[]).filter(r=>r&&!r.sc));return (rows||[]).map(r=>{if(!r||r.sc||!kept.has(r))return"";const t=txt(r);if(scIsSetup(t)){if(r._auto)return "setup0";n++;return n>1?"setup"+n:"setup"}return scEvKey(t)})};
 /* lunch, wrap and setups of the 2nd/3rd unit have their own entries («lunch_u2»): scBase gives the plain key */
 window.scBase=k=>String(k||"").replace(/_u[23]$/,"");
 /* lunch, wrap or a setup (not a scene) – also with its unit («lunch_u2») */
@@ -100,7 +102,7 @@ let SCTRY=0,SCERR=0;setTimeout(scAckSub,1500);setInterval(()=>{if(SCSUB)return;i
 function scLunchMin(date,u){try{const day=(S.days||[]).find(d=>d.date===date&&d.kind==="shoot");if(!day)return 60;
     const its=dayItems(day,u),i=its.findIndex(x=>!x.sc&&window.scEvKey(x.n)==="lunch");if(i<0)return 60;
     const it=its[i],m=String(it.dur||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′’m]/);if(m){const v=m[3]?+m[3]:(+m[1])*60+(+m[2]);if(v>0)return v}
-    const t0=scMs(date,hm(it.t));if(t0)for(let j=i+1;j<its.length;j++){const t1=scMs(date,hm(its[j].t));if(t1>t0)return Math.round((t1-t0)/60000)}}catch(_){}
+    const t0=scMs(date,hm(it.t));if(t0)for(let j=i+1;j<its.length;j++){let t1=scMs(date,hm(its[j].t));if(t1&&t1<=t0&&t0-t1>12*3600e3)t1=scMs(isoAdd(date,1),hm(its[j].t));   /* the next row after midnight */if(t1>t0)return Math.round((t1-t0)/60000)}}catch(_){}
   return 60}
 const scLunchEnd=x=>(+x.b||+x.at||0)+scLunchMin(x.d,String(x.u||"1"))*60000;
 /* every open app with the right «Szenen quittieren» closes a lunch whose time is up – with the planned end, not the moment of writing */
@@ -147,7 +149,8 @@ async function scAuto(){if(SCABUSY||/[?&]sbx=/.test(location.search)||!window.SC
         {const before=new Set(rows.slice(0,j).map(x=>x.k));if(rows.slice(j).some((x,i)=>(i===0||!before.has(x.k))&&scState(day.date,x.k)>0)||scaZ(day.date,r.k))continue}
         /* quittiert by hand in this unit since this row was due (another scene started, one finished …): the hand wins – the automatic
            never undoes a tap (before, a scene started by hand was finished again within 30 s and the planned one started) */
-        if(Object.values(window.SCACK).some(x=>x&&x.d===day.date&&String(x.u||"1")===u&&(+x.at||0)>=T))continue;
+        /* (the lunch closed by the automatic at its planned end is no tap: it ends exactly when the next row is due) */
+        if(Object.values(window.SCACK).some(x=>x&&x.d===day.date&&String(x.u||"1")===u&&(+x.at||0)>=T&&!(x.s===2&&scBase(String(x.sc||""))==="lunch"&&Math.abs((+x.e||0)-scLunchEnd(x))<2000)))continue;
         /* a scene started by hand still running in this unit (behind the plan): the automatic waits until it is done – the hand wins
            (an automatic start has b = its planned time; a tap b = the moment of the tap) */
         if(Object.values(window.SCACK).some(x=>x&&x.d===day.date&&String(x.u||"1")===u&&x.s===1&&!scIsEv(x.sc||"")&&!rows.some(r0=>scBase(r0.k)===scBase(String(x.sc||""))&&Math.abs((+x.b||0)-(r0.t+(+((A[r0.kind]||{}).min)||0)*60e3))<2000)))continue;
@@ -166,8 +169,8 @@ function scRunning(date,u,except){return scRunAll(date,u,except)[0]||""}
 /* a time typed for a scene: on the shooting day – or the next calendar day when it lies more than 12 h before the reference
    (night shoot: 00:40 after 23:30 belongs to the next day; DST-safe through the calendar date) */
 const scMsNear=(date,t,ref)=>{const v=scMs(date,t);if(!v||!ref)return v;if(ref-v>12*3600e3){const n=scMs(isoAdd(date,1),t);return n||v}return v};
-const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;
-  const d=new Date(date+"T00:00:00");d.setHours(+m[1],+m[2],0,0);return d.getTime()};
+/* a time of the shoot (time zone of the block, as shown by scHM) – not of the device: else a time saved unchanged moved by the difference */
+const scMs=(date,t)=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);if(!m)return null;return (typeof dayMs==="function"&&dayMs(date,String(+m[1]).padStart(2,"0")+":"+m[2]))||null};
 async function scWrite(date,sc,u,v,auto){sc=scK(sc,u);const id=scAckId(date,sc),old=scGet(date,sc),undo=()=>{if(old)window.SCACK[id]=old;else delete window.SCACK[id];scRender()};
   /* an older entry of this 2nd-unit scene (id without unit): replaced by the own id */
   const lid=old&&!window.SCACK[id]?Object.keys(window.SCACK).find(k=>window.SCACK[k]===old):null;
@@ -307,13 +310,15 @@ function scAckDialog(date,sc,u){sc=scK(sc,u);const id=scAckId(date,sc),x=scGet(d
     if(ev.target===d||ev.target.closest("[data-scx]"))d.remove()});
   f.e.disabled=cur!==2;f.b.disabled=cur===0;
   f.addEventListener("submit",async ev=>{ev.preventDefault();if(ev.submitter&&ev.submitter.dataset.scwasub)f.dataset.wa="1";else delete f.dataset.wa;/* reference for a time after midnight: the entry itself, else midday of its day (not «now»: a day in the past would move to the next day) */
-    const ref=+x.b||+x.at||scMs(date,"12:00")||Date.now(),bm=scMsNear(date,f.b.value,ref),em=scMsNear(date,f.e.value,bm||ref);
+    let fh="";try{const dy=(S.days||[]).find(y=>y.date===date);fh=(dayItems(dy,u).map(i=>hm(i.t)).find(Boolean))||""}catch(_){}
+    /* a night shoot (its first row after 12:00): an entry without times takes the late evening as reference – 05:00 is then the next morning */
+    const ref=+x.b||+x.at||scMs(date,fh>="12:00"?"23:59":"12:00")||Date.now(),bm=scMsNear(date,f.b.value,ref),em=scMsNear(date,f.e.value,bm||ref);
     if(cur===1&&!scParU(u)){const run=scRunning(date,u,id);if(run&&!/^(lunch|setup\d*)$/.test(scBase(run))&&!(typeof confirmSafe==="function"?confirmSafe:window.confirm.bind(window))(L("{s} läuft noch. Parallel laufen lassen?").replace("{s}",scLabel(run)))){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
     if(cur===2&&bm&&em&&em<bm){msg.textContent=L("Das Ende liegt vor dem Beginn.");return}
     /* a day in the past without an end time: «now» would make it days long */
     if(cur===2&&!em&&!x.e&&date<todayISO()&&typeof isoAdd==="function"&&date<isoAdd(todayISO(),-1)){msg.textContent=L("Bitte das Ende eingeben.");return}
     f.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=true);
-    try{const nv=cur===0?null:{s:cur,b:bm||x.b||Date.now(),e:cur===2?(em||x.e||Date.now()):null};await scWrite(date,sc,u,nv);d.remove();if(nv&&f.dataset.wa)scShareAsk(date,sc,u,nv,true);else if(typeof savedPop==="function")savedPop(true)}
+    try{const nv=cur===0?null:{s:cur,b:bm||x.b||(cur===2&&em)||Date.now(),e:cur===2?(em||x.e||Date.now()):null};await scWrite(date,sc,u,nv);d.remove();if(nv&&f.dataset.wa)scShareAsk(date,sc,u,nv,true);else if(typeof savedPop==="function")savedPop(true)}
     catch(err){f.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=false);msg.textContent=saveErr(err)}});
   document.body.appendChild(d)}
 window.scAckDialog=scAckDialog;
@@ -344,12 +349,12 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
       const t0=ms(hm(it.t));if(!t0)return 0;for(let j=i+1;j<its.length;j++){const t1=ms(hm(its[j].t));if(t1>t0)return Math.round((t1-t0)/60000)}return 0};
     const pl=k=>{const i=pIx(k);return i>=0?hm(its[i].t)||"":""},pd=k=>pDur(pIx(k));
     const setup=its.find(i=>!i.sc&&/^\s*set[\s-]?up\b/i.test(tx(i))),firstSc=its.find(i=>i.sc);
-    const uk=k=>unitKey(k,u),get=k=>l.find(x=>scBase(key(x))===k),scs=l.filter(x=>!["lunch","wrap","setup"].includes(scBase(key(x))));
+    const uk=k=>unitKey(k,u),get=k=>l.find(x=>scBase(key(x))===k),scs=l.filter(x=>!["lunch","wrap","setup","setup0"].includes(scBase(key(x))));
     const real=scs.filter(x=>!isEv(key(x))),start=real.length?Math.min(...real.map(p0).filter(Boolean)):0,lu=get("lunch"),wr=get("wrap");
     const fh=(its.map(x=>hm(x.t)).find(Boolean))||"";   /* the first time of the day: a night shoot starts after 12:00 (as the scene sheet) */
     const ms=hhmm=>{const v=String(hhmm||"").match(/^(\d{1,2}):(\d{2})$/);if(!v)return 0;let h=+v[1];if(fh&&fh>="12:00"&&pad2(h)+":"+v[2]<fh&&h<24)h+=24;return dayMs(d,pad2(h%24)+":"+v[2])+(h>=24?864e5:0)};
     const plSetup=setup?hm(setup.t)||"":"",plStart=(u==="1"?hm(cs.shootCall||""):"")||(firstSc?hm(firstSc.t)||"":"");
-    const wrE=wr?(+wr.e||p0(wr)):0,su=get("setup"),fs=real.slice().sort((a,b)=>p0(a)-p0(b))[0],ent=[],add=(x,name,st,plan,b,e,run,ed,pdm)=>ent.push([x,row(name,st,plan,b,e,run,ed,pdm),{name,st,plan,pdm:pdm||0,b,e,k:ed&&name!==esc(L("Drehstart"))?ed[1]:"",drehstart:name===esc(L("Drehstart"))}]);
+    const wrE=wr?(+wr.e||p0(wr)):0,su=get("setup")||get("setup0")/* the setup the app adds before the first scene: the Setup row (as the scene sheet) */,fs=real.slice().sort((a,b)=>p0(a)-p0(b))[0],ent=[],add=(x,name,st,plan,b,e,run,ed,pdm)=>ent.push([x,row(name,st,plan,b,e,run,ed,pdm),{name,st,plan,pdm:pdm||0,b,e,k:ed&&name!==esc(L("Drehstart"))?ed[1]:"",drehstart:name===esc(L("Drehstart"))}]);
     /* setup: its own quittance, else planned begin until the first scene */
     if(su)add(p0(su),"Setup",su.s===1?1:2,plSetup,p0(su),su.s===1?0:+su.e||0,su.s===1&&d===t,[d,uk("setup"),u],pd("setup"));else add(ms(plSetup)||1,"Setup",start?2:0,plSetup,ms(plSetup),start,false,[d,uk("setup"),u],pd("setup"));
     /* Drehstart = begin of the first scene: the pencil opens that scene */

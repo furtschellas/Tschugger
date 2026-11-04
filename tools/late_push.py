@@ -323,7 +323,7 @@ def main():
         if fsadmin.cd_touched(key, today): print("• Verspätung: Coverday-Änderung an diesem Tag – keine automatische Meldung"); return
     # the night after a shooting day (before 06:00): the cast of that night is still checked (as csShootDay in the app)
     try:
-        if datetime.datetime.now(ZoneInfo(fsadmin.TZ0)).strftime("%H:%M") < "06:00":
+        if datetime.datetime.now(ZoneInfo(fsadmin.tz_for(today, days) or fsadmin.TZ0)).strftime("%H:%M") < "06:00":   # the clock of the shooting block (abroad too)
             y = (datetime.date.fromisoformat(today) - datetime.timedelta(days=1)).isoformat()
             dy = next((x for x in data.get("dispos") or [] if isinstance(x, dict) and x.get("date") == y), None)
             if dy and is_night(dy.get("cs") or {}): today = y; print("• Verspätung: Nacht des Drehtags", y)
