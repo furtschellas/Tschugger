@@ -1,4 +1,4 @@
-import {clockHM,esc,isoAdd,L,localISO,mapUrl,prodTZ,S,safeUrl,todayISO,unitKey} from "./10-core.js";
+import {clockHM,dispoOf,esc,isoAdd,L,localISO,mapUrl,prodTZ,S,safeUrl,todayISO,unitKey} from "./10-core.js";
 import {CSI,csA,csAck,csHm,csKeys,csL,csRows,csS} from "./13a-callsheet.js";
 import {csBadgeIn,csKindCode,csLocHref,csLocs,csPlaceA,csSetGeo} from "./13c-cs-places.js";
 import {fold} from "./15-script-tab.js";
@@ -15,7 +15,7 @@ export const csMin=t=>{const h=csHm(t);return h?+h.slice(0,2)*60+ +h.slice(3):nu
 export function csRowMins(rows){let prev=null,late=false;return csA(rows).map(r=>{const m=csMin(r&&r.t);if(m==null)return null;if(prev!=null&&m<prev&&prev>=720)late=true;prev=m;return late?m+1440:m})}
 /* the shooting day running now: after midnight a night shoot of yesterday stays «today» until its wrap (at the latest 06:00) –
    before, everything about «now» (running row, place, cast frame) disappeared at midnight */
-export function csShootDay(){const t=todayISO();if(csHM()>="06:00"||typeof isoAdd!=="function")return t;const y=isoAdd(t,-1),dp=(S.dispos||[]).find(z=>z&&z.date===y);if(!dp||!dp.cs)return t;
+export function csShootDay(){const t=todayISO();if(csHM()>="06:00"||typeof isoAdd!=="function")return t;const y=isoAdd(t,-1),dp=dispoOf(y);if(!dp||!dp.cs)return t;
   /* a night of the 1st or the 2nd Unit (rows past midnight or a wrap earlier than the crew call): yesterday until its wrap –
      the wrap quittiert ends it, an open wrap (shooting longer than planned) keeps it, else the planned wrap time */
   const night=c=>{if(!c)return null;const late=csRowMins(csRows(c)).some(m=>m!=null&&m>=1440),tm=c.times||{},w=csHm(tm.wrap||""),cc=csHm(tm.crewCall||"");return late||(w&&cc&&w<cc)?{w:w&&cc&&w<cc?w:""}:null};
@@ -28,7 +28,7 @@ window.csShootDay=csShootDay;
 /* «now» for a day: on the night after a shooting day the hours go on (00:30 → 24:30), so they compare with the rows after midnight */
 const csNowMin=date=>{const m=csMin(csHM());return date!==todayISO()&&m<720?m+1440:m};   /* minutes, 00:30 of the next day = 1470 */
 /* the scene being shot now (callsheet of today, after the start of its row, before the wrap): its row, or null; lunch or a setup running: that row with ev = its key */
-export function csNowScene(x){const sd=csShootDay();x=x||(S.dispos||[]).find(y=>y&&y.date===sd);const c=x&&x.cs;if(!c||x.date!==sd)return null;const rows=csRows(c),un=String(c._u||"1");let i=csNowIdx(rows,x.date,un);   /* the 2nd Unit alone (csU2Dispo): its own entries */
+export function csNowScene(x){const sd=csShootDay();x=x||dispoOf(sd);const c=x&&x.cs;if(!c||x.date!==sd)return null;const rows=csRows(c),un=String(c._u||"1");let i=csNowIdx(rows,x.date,un);   /* the 2nd Unit alone (csU2Dispo): its own entries */
   if(i>=0&&!rows[i].sc){const k=csKeys(rows)[i];   /* setup, lunch or wrap is the step now (running or next) – a setup also by the clock (building up before the first scene) */
     const ek=k?unitKey(k,un):k;if(k&&(csAck(x.date,un)||/^setup\d*$/.test(k)))return Object.assign({},rows[i],{ev:ek,lunch:k==="lunch"&&scState(x.date,ek)===1})}
   for(;i>=0;i--){const r=rows[i];if(r.sc)return r;if(csIsWrap(r))return null}return null}

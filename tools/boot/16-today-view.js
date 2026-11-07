@@ -1,4 +1,4 @@
-import {castRow,dayItems,ddmm,driveMin,esc,isoAdd,isoDM,isoId,L,LANG,localISO,mapsDir,mkDialog,norm,pad2,S,saveBtn,todayISO,TX,unitKey,xBtn} from "../base/10-core.js";
+import {castRow,dayItems,dayOf,ddmm,dispoOf,driveMin,esc,isoAdd,isoDM,isoId,L,LANG,localISO,mapsDir,mkDialog,norm,pad2,S,saveBtn,todayISO,TX,unitKey,xBtn} from "../base/10-core.js";
 import {UNAME,dayMs,hasU,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,evRecent,hm,myEvents,myIdentity,telLinks} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
@@ -94,7 +94,7 @@ VIEWS.today=function(){
   const sd=typeof csShootDay==="function"?csShootDay():t,isToday=d.date<=t||d.date===sd,   /* the day that was shot until after midnight is still «Heute» until Today moves on */dt=new Date(d.date+"T12:00:00");
   /* only what the person may see: schedule parts need «Drehplan sehen», callsheet parts «Callsheet sehen» */
   const canPlan=vok("plan"),canDispo=vok("dispo");
-  const dp=canDispo?((S.dispos||[]).find(x=>x&&x.date===d.date)||null):null;
+  const dp=canDispo?(dispoOf(d.date)||null):null;
   const card=(cls,title,body)=>body?'<div class="tcard '+cls+'"><div class="tch">'+title+'</div>'+body+'</div>':'';
   const thead='<div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+ddmm(dt))+'</span></div>';
   let h='<section class="today">';
@@ -134,10 +134,10 @@ VIEWS.today=function(){
     return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify(r))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′")+(d.drive.km?'<small class="tkm"> · '+Math.round(d.drive.km)+' km</small>':'')+'</b><span>'+esc(L(back?"Rückfahrt":"Anfahrt"))+' ›</span></button>'})():'';
   /* my day from the callsheet (call, ride, my department) right below the tiles */
   /* «my day» from the callsheet: always (my own call, rides and department), also without the callsheet page; the link to it only with access */
-  let mineCard="";try{const dpm=(S.dispos||[]).find(x=>x&&x.date===d.date);if(tShow("mine")&&dpm&&dpm.cs&&typeof csMine==="function"){const me2=csMe();const mn=csMine(dpm.cs,me2);const toCs=canDispo&&typeof tabsOn==="function"&&tabsOn().includes("dispo");
+  let mineCard="";try{const dpm=dispoOf(d.date);if(tShow("mine")&&dpm&&dpm.cs&&typeof csMine==="function"){const me2=csMe();const mn=csMine(dpm.cs,me2);const toCs=canDispo&&typeof tabsOn==="function"&&tabsOn().includes("dispo");
     if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein"))+' '+esc(dpm.label||d.label||L("Drehtag"))+' <span class="beta">BETA</span>'+(toCs?'<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button>':'')+'</div>'+mn.join("")+'</div>'}}catch(_){}
   /* a day with a callsheet: the same tiles as in the callsheet (Crew Call … Wrap, sun, weather, drive) */
-  const dcs=(S.dispos||[]).find(x=>x&&x.date===d.date&&x.cs);
+  const dcs=dispoOf(d.date,1);
   if(dcs&&shT&&typeof csTilesHTML==="function"){let me3=null;try{me3=csMe()}catch(_){}
     /* a day with a 2nd Unit: its times as tiles of their own below (Crew Call, RTS, Lunch, Wrap of the 2nd Unit), both labelled */
     h+='<div class="tcs">'+unitTilesHTML(dcs,d,me3)+'</div>'}
@@ -148,7 +148,7 @@ VIEWS.today=function(){
     if(nd){const ndt=new Date(nd.date+"T12:00:00"),nt=[];
       const nu2=nd.unit2&&typeof nd.unit2==="object"&&nd.unit2.hours?String(nd.unit2.hours):"";
       /* only the unit I am in on that day (its callsheet tells it; both when I am in both or it is not clear yet) */
-      let nmu=null;try{const ndp=(S.dispos||[]).find(x=>x&&x.date===nd.date&&x.cs);if(ndp&&typeof window.csMyUnits==="function")nmu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
+      let nmu=null;try{const ndp=dispoOf(nd.date,1);if(ndp&&typeof window.csMyUnits==="function")nmu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
       const sh1=!nu2||!nmu||nmu.includes("1"),sh2=!!nu2&&(!nmu||nmu.includes("2"));
       if(nd.hours&&sh1)nt.push(['<b>'+esc(nd.hours)+'</b>',L("Drehzeit")+(nu2?" · 1st Unit":"")]);if(sh2)nt.push(['<b>'+esc(nu2)+'</b>',L("Drehzeit")+" · 2nd Unit"]);if(nd.sr&&nd.ss)nt.push(['<b>'+esc(nd.sr+"–"+nd.ss)+'</b>',L("Sonnenzeit")]);
       let ndrv="";if(nd.drive&&nd.drive.min){const fi=arr(nd.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=nd.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
@@ -217,10 +217,10 @@ const ncLabel=it=>it.k==="start"?L("Drehbeginn"):it.k==="lunch"?"Lunch":it.k==="
 /* still shown: its step not quittiert yet and its «bis» not passed */
 function ncActive(d){const now=Date.now(),st=k=>typeof scState==="function"?scState(d,k):0;
   return arr(window.NOWCAST[d]).filter(it=>{if(!it||!it.t)return false;
-    if(it.bis){const day=arr(S.days).find(y=>y&&y.date===d),fh=(dayItems(day,"1").map(i=>String(i.t||"").slice(0,5)).find(z=>/^\d\d:\d\d$/.test(z)))||"",
+    if(it.bis){const day=dayOf(d),fh=(dayItems(day,"1").map(i=>String(i.t||"").slice(0,5)).find(z=>/^\d\d:\d\d$/.test(z)))||"",
         t0=it.t?dayMs(d,it.t,fh>="12:00"?dayMs(d,fh):0):0,b=dayMs(d,it.bis,t0);   /* a night shoot: «00:30» is after midnight (as the rows of the day); «bis 01:00» after a forecast at 23:00 is the next day */   /* «bis 01:00» after a forecast at 23:00 is the next day */if(b&&b<=now)return false}
     if(it.k==="x")return true;if(it.k==="wrap")return st("wrap")!==2;if(it.k==="lunch")return st("lunch")===0;
-    if(it.k==="start"){const rows=arr((((arr(S.dispos).find(y=>y&&y.date===d)||{}).cs||{}).order||{}).rows);return !rows.some(r=>r&&r.sc&&st(String(r.sc))>0)}
+    if(it.k==="start"){const rows=arr((((dispoOf(d)||{}).cs||{}).order||{}).rows);return !rows.some(r=>r&&r.sc&&st(String(r.sc))>0)}
     return st(it.k)===0})}
 /* the forecasts in one compact line above the cast: «Prognose Lunch 13:15 · Drehschluss 19:30» */
 const ncLine=d=>{const l=ncActive(d);return l.length?'<div class="tnowfc"><span class="tnk">'+esc(L("Prognose"))+'</span> '+l.map(it=>'<span class="tnfc">'+esc(ncLabel(it))+' <b>'+esc(it.t)+'</b>'+(it.n&&it.k!=="x"?' <small>'+esc(it.n)+'</small>':'')+'</span>').join('<i class="tnsep">·</i>')+'</div>':""};
@@ -232,7 +232,7 @@ window.ncText=ncText;
 async function ncStore(d,ok){const {F,db}=await fb(),ref=F.doc(db,"nowcast",ncDocId(d));
   if(ok.length)await F.setDoc(ref,{c:await ownEnc({items:ok}),at:F.serverTimestamp()});else await F.deleteDoc(ref);
   window.NOWCAST[d]=ok;try{localStorage.setItem("nowcast:v1",JSON.stringify({d,items:ok}))}catch(_){}}
-function ncDialog(){const d=ncDay(),dp=arr(S.dispos).find(y=>y&&y.date===d),rows=csRows(dp&&dp.cs),keys=csKeys(rows);
+function ncDialog(){const d=ncDay(),dp=dispoOf(d),rows=csRows(dp&&dp.cs),keys=csKeys(rows);
   const opts=[["start",L("Drehbeginn")],["lunch","Lunch"],["wrap",L("Drehschluss")]].concat(rows.map((r,i)=>r.sc?[String(r.sc),L("Szene")+" "+r.sc]:null).filter(Boolean)).concat([["x",L("Anderes")]]);
   void keys;let items=arr(window.NOWCAST[d]).map(x=>Object.assign({},x));if(!items.length)items=[{k:"lunch",t:""}];
   const row=(it,i)=>'<div class="ncrow" data-nci="'+i+'"><select data-ncf="k" aria-label="'+esc(L("Was"))+'">'+opts.map(([v,t])=>'<option value="'+esc(v)+'"'+(it.k===v?' selected':'')+'>'+esc(t)+'</option>').join("")+'</select>'+
@@ -284,8 +284,8 @@ document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.match
 /* «Jetzt» of one unit – the same for the 1st and the 2nd Unit (Today, callsheet, side box): the step running now (scene with place and set,
    since when, scenes in parallel and the next one; or Setup / Lunch), Maske / Kostüm now, opened the description and the cast.
    null: this unit is not shooting now (before its start, after its wrap, at night). The 2nd Unit: its own callsheet part (csU2Dispo) */
-function nowUnit(t,u){const x1=(S.dispos||[]).find(y=>y&&y.date===t);if(!x1||!x1.cs)return null;
-  let x=x1;if(u==="2"){const day=arr(S.days).find(d=>d&&d.date===t);x=typeof window.csU2Dispo==="function"?window.csU2Dispo(x1,day):null;if(!x)return null}
+function nowUnit(t,u){const x1=dispoOf(t);if(!x1||!x1.cs)return null;
+  let x=x1;if(u==="2"){const day=dayOf(t);x=typeof window.csU2Dispo==="function"?window.csU2Dispo(x1,day):null;if(!x)return null}
   const c0=x.cs||{},ns=csNowScene(x);if(!ns||/^wrap(_u\d)?$/.test(String(ns.ev||"")))return null;
   const K=sc=>unitKey(sc,u);
   const key=ns.ev||K(ns.sc),ak=typeof scAckId==="function"&&window.SCACK?window.SCACK[scAckId(t,key)]:null,b0=ak&&ak.s===1&&typeof scTimesOk==="function"&&scTimesOk()?(+ak.b||+ak.at):0;
@@ -310,7 +310,7 @@ function nowUnit(t,u){const x1=(S.dispos||[]).find(y=>y&&y.date===t);if(!x1||!x1
 export function nowCardHTML(t,cls,unit,onlyShooting){try{if(typeof csNowScene!=="function"||!(window.nowSee&&window.nowSee()))return "";   /* only with «Jetzt» sehen (admins always) */
     /* the quittances not read yet (first seconds after opening): no «Jetzt» – it would show the first scene of a day that is long done */
     if(window.SCACKON!==false&&!window.SCACKLOADED&&!window.SCACKCACHE&&ME)return "";
-    const day=arr(S.days).find(d=>d&&d.date===t),hasU2=!!dayItems(day,"2").length||!!(((S.dispos||[]).find(y=>y&&y.date===t)||{}).cs||{}).u2;
+    const day=dayOf(t),hasU2=!!dayItems(day,"2").length||!!((dispoOf(t)||{}).cs||{}).u2;
     const units=unit==="2"?["2"]:hasU2?["1","2"]:["1"];
     const B=units.map(u=>{let r=null;try{r=nowUnit(t,u)}catch(err){console.warn("now",u,err)}return r?Object.assign(r,{u}):null}).filter(Boolean);
     const fc=ncLine(t),ed=unit!=="2"&&ncCan()?'<button type="button" class="tnced" data-ncedit '+'aria-label="'+esc(L("Prognose erfassen"))+'" title="'+esc(L("Prognose erfassen"))+'">'+NCICO+'</button>':'';

@@ -1,5 +1,5 @@
 import {isStandalone} from "../a2hs.js";
-import {applyStatic,ddmm,esc,fullName,L,LANG,localISO,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
+import {applyStatic,ddmm,dispoOf,esc,fullName,L,LANG,localISO,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
 import {UNAME,hasU,unitsOn} from "../base/11-schedule-prep.js";
 import {WDL} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -40,7 +40,7 @@ window.menuFor=(date,u)=>{const m=(window.MENUS||{})[date];if(!m)return "";
 setInterval(()=>{if(document.visibilityState==="visible")menusLoad()},120e3);   /* reads at most every 10 min (Firebase quota) */
 /* who eats on a shooting day: crew of the departments called in that day's callsheet (all active crew if there is
    no callsheet yet), plus the cast of the callsheet and the extras; split by diet */
-function dayEaters(d){const c=caterData(),dp=(S.dispos||[]).find(x=>x&&x.date===d.date),fd=x=>fold(x).trim();
+function dayEaters(d){const c=caterData(),dp=dispoOf(d.date),fd=x=>fold(x).trim();
   let crew=c.act,src=dp?"dispo":"crew";
   if(dp&&arr(dp.calls).length){const deps=arr(dp.calls).map(z=>fd(z.dept)).filter(Boolean);const f=c.act.filter(m=>{const dd=fd(crewDeptOf(m));return dd&&deps.some(x=>x.includes(dd)||dd.includes(x))});if(f.length)crew=f}
   const cast=dp?arr(dp.cast).filter(x=>x&&(x.actor||x.role)).length:0,ex=+(String((dp&&dp.extras)||d.extras||0).match(/\d+/)||[0])[0]||0;   /* «10-15» counts 10, not 1015 */

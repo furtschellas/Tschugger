@@ -1,4 +1,4 @@
-import {ariaTip,cap,castChips,dateIn,esc,fmtDate,ieClass,isoAdd,L,locHref,lvButtons,lvClasses,maps,memo,norm,partsHref,prodTZ,S,safeUrl,saveBlob,slug,telNum,todayISO,TX,TXA} from "./10-core.js";
+import {ariaTip,cap,castChips,dateIn,dayOf,dispoOf,esc,fmtDate,ieClass,isoAdd,L,locHref,lvButtons,lvClasses,maps,memo,norm,partsHref,prodTZ,S,safeUrl,saveBlob,slug,telNum,todayISO,TX,TXA} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,hasSelU,icsEsc,nextUnitDay,onlyU,planDays,unitLists,unitsOn,zurichUTC} from "./11-schedule-prep.js";
 import {hm,planFactsHTML,planPdfBtn} from "./12-mycal.js";
 import {CSEXP,CSI,csHm} from "./13a-callsheet.js";
@@ -261,7 +261,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   const t=b.dataset.atttitle||"PDF";window.blkImg(b.dataset.attpdf).then(u=>window.pdfView(u,t,t.replace(/[\\/:*?"<>|]+/g," ").trim()+".pdf")).catch(()=>showMsg(L("PDF nicht verfügbar (offline?)."),4000))});
 const setfpHTML=date=>attachHTML(null,date);
 /* one hour after the wrap of a shooting day the callsheet of the next shooting day (if there is one); a wrap after midnight counts for the next morning */
-function csDayAfterWrap(t,pick,by,now){const td=S.days.find(d=>d.date===t)||{},x0=by[t]||{},tm=(x0.cs&&x0.cs.times)||{};
+function csDayAfterWrap(t,pick,by,now){const td=dayOf(t)||{},x0=by[t]||{},tm=(x0.cs&&x0.cs.times)||{};
   /* «19.30» counts like «19:30»; a wrap after midnight is on the next calendar day (also right on the day the clocks change) */
   const w=csHm(tm.wrap||x0.wrap||td.wrap||""),cc=csHm(tm.crewCall||x0.crewCall||td.crewCall||"");const nx=pick.find(d=>d.date>t&&by[d.date]);
   if(!w||!nx||typeof zurichUTC!=="function")return null;const end=zurichUTC(cc&&w<cc?isoAdd(t,1):t,w).getTime();
@@ -274,7 +274,7 @@ export function renderDispo(){
   const PD0=planDays(),PD=S.days.filter(d=>PD0.includes(d)||(d.date&&by[d.date]));
   for(const x of S.dispos)if(x&&x.date&&!S.days.some(d=>d.date===x.date))PD.push({id:"cs-"+x.date,date:x.date,kind:"shoot",label:x.label||"Callsheet",items:[]});
   PD.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-  if(onlyU()&&!by[S.dday]){const cd=S.days.find(x=>x.date===S.dday);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.dday=nd.date}}
+  if(onlyU()&&!by[S.dday]){const cd=dayOf(S.dday);if(!cd||!hasSelU(cd)){const nd=nextUnitDay();if(nd)S.dday=nd.date}}
   const pick=PD.filter(d=>(d.kind!=="off"&&d.kind!=="travel")||by[d.date]);
   if(!S.dday||!pick.some(d=>d.date===S.dday)){
     S.dday=((pick.find(d=>d.date>=t)||pick[pick.length-1]||{}).date)||null;
@@ -283,14 +283,14 @@ export function renderDispo(){
   }
   let h=dayNav(PD,d=>d.date===S.dday,"data-dday","date",d=>by[d.date]?{cls:" has",mark:" ●"}:d.kind!=="shoot"?{cls:"",mark:""}:{cls:" nodispo",mark:""});
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
-  const day=S.days.find(d=>d.date===S.dday)||PD.find(d=>d.date===S.dday)||{},x=by[S.dday];
+  const day=dayOf(S.dday)||PD.find(d=>d.date===S.dday)||{},x=by[S.dday];
   if(day.kind&&day.kind!=="shoot"&&!x)return h+'<div class="dayhead"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+fmtDate(day.date)+'</span>'+UNITBAR+'</div></div></div><div class="offday"><b>'+(day.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(day,"info"))+'</div>';
   if(!x){
     /* no callsheet yet: the day from the schedule (facts and a short list of the scenes), with the note that the callsheet follows */
     /* every chosen unit of this day its own list (1st, 2nd, 3rd) – the 2nd unit was missing here */
     const scl=l=>arr(l).filter(i=>i&&i.sc).map(i=>({t:i.t||"",sc:i.sc,ie:i.ie||"",set:i.set||"",dur:i.dur||"",pgs:i.pg||""}));
     /* the 2nd Unit with its own planning (sheet): its whole detailed order (setups, camera setups in their scene, lunch, wrap), completed with the Drehplan */
-    const u2s=u=>u==="2"&&day.unit2&&day.unit2.src==="2nd"&&typeof window.u2RowsOf==="function"?window.u2RowsOf(day,((S.dispos||[]).find(x=>x&&x.date===day.date)||{}).cs):null;
+    const u2s=u=>u==="2"&&day.unit2&&day.unit2.src==="2nd"&&typeof window.u2RowsOf==="function"?window.u2RowsOf(day,(dispoOf(day.date)||{}).cs):null;
     const ul=unitLists(day).filter(([u,l])=>S.pu[u]&&scl(l).length).map(([u,l])=>[u,u2s(u)||scl(l),!!u2s(u)]),scn=ul.length?ul[0][1]:[];
     return h+'<div class="dayhead csnoday"><div><div class="dtitle"><h2>'+esc(day.label||"")+'</h2></div><div class="date drow"><span>'+(day.date?fmtDate(day.date):'')+'</span>'+UNITBAR+'</div></div>'+
       (typeof planFactsHTML==="function"?planFactsHTML(day,typeof planPdfBtn==="function"?planPdfBtn(day):""):"")+'</div>'+

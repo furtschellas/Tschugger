@@ -1,4 +1,4 @@
-import {ackFrom,esc,hash36,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
+import {ackFrom,dayOf,dispoOf,esc,hash36,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
 import {dayMs,nameHit} from "../base/11-schedule-prep.js";
 import {hm,myIdentity,rideId} from "../base/12-mycal.js";
 import {csAfter,csMe} from "../base/13a-callsheet.js";
@@ -292,7 +292,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){const d=document.ge
 /* Meine Termine for the role «Komparsen» (Extras, Statisten): per shooting day one appointment per group – Call to On set, Kostüm / Maske below,
    the Call can be ticked right there (same picker «Wie viele sind da?») */
 window.xqEvents=t=>{const out=[];if(!roleIs(ROLE_X))return out;
-  for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,cc=Object.assign({},c,{_date:dp.date}),d=arr(S.days).find(x=>x.date===dp.date)||{};
+  for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,cc=Object.assign({},c,{_date:dp.date}),d=dayOf(dp.date)||{};
     const {where,map}=flowWhere(c,true);
     for(const r of arr(c.extras)){const ct=cqHm(r.call),ot=cqHm(r.onset);if(!ct&&!ot)continue;
       const wm=[[L("Kostüm"),r.wardrobe],[L("Maske"),r.makeup]].filter(x=>String(x[1]||"").trim()).map(x=>x[0]+" "+String(x[1]).trim()).join(" · ");
@@ -303,7 +303,7 @@ window.xqEvents=t=>{const out=[];if(!roleIs(ROLE_X))return out;
 /* the app role is «Kostüm» (Garderobe, Costume …): every Kostüm appointment of the cast – the callsheet names nobody in the Kostüm column */
 const cmRoleW=()=>roleIs(ROLE_W);
 window.cmEvents=(me,t)=>{const out=[];let cm=null;try{cm=typeof csMe==="function"?csMe():null}catch(_){}const rw=cmRoleW();if(!cm&&!rw)return out;
-  for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,d=arr(S.days).find(x=>x.date===dp.date)||{};
+  for(const dp of arr(S.dispos)){if(!dp||!dp.cs||dp.date<t)continue;const c=dp.cs,d=dayOf(dp.date)||{};
     const {where,map}=flowWhere(c,false);
     for(const r of arr(c.cast))for(const k of ["w","m"]){const v=k==="w"?r.wardrobe:r.makeup;
       for(const p of cmParse(v,c)){const mine=p.who?!!(cm&&cm.hit(p.who)):k==="w"&&rw,actor=r.actor&&cm&&cm.hit(r.actor);if(!mine&&!actor)continue;
@@ -397,7 +397,7 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-ridedone]"))re
 /* the callsheet greys a ride 20 minutes after it was done – and follows «jetzt hier» and «Jetzt» in my day: draw again when one changes */
 {let OLDN=-1;setInterval(()=>{if(S.tab!=="dispo")return;const n=Object.values(window.RIDEACK||{}).filter(x=>x&&x.s!==1&&Date.now()-(+x.at||0)>20*60e3).length;let nk=null;try{const C=typeof CSCUR!=="undefined"&&CSCUR.c;if(C&&window.CSNOWK!=null){const l=csNowLoc(C,CSCUR.date,csLocs(C));nk=l?l.no+'|'+l.name:''}}catch(_){}
   /* «Jetzt» of the day that is shown (not of today – else a callsheet of another day was redrawn every minute) */
-  let ns=null;try{if(window.CSNOWSC!=null&&typeof csNowScene==="function"&&typeof CSCUR!=="undefined"){const dx=(S.dispos||[]).find(y=>y&&y.date===CSCUR.date),r=dx?csNowScene(dx):null;ns=r?(r.ev||String(r.sc)):""}}catch(_){}
+  let ns=null;try{if(window.CSNOWSC!=null&&typeof csNowScene==="function"&&typeof CSCUR!=="undefined"){const dx=dispoOf(CSCUR.date),r=dx?csNowScene(dx):null;ns=r?(r.ev||String(r.sc)):""}}catch(_){}
   if((OLDN>=0&&n!==OLDN)||(nk!=null&&nk!==window.CSNOWK)||(ns!=null&&ns!==window.CSNOWSC))flowRedraw();OLDN=n},60e3)}
 /* links inside clickable callsheet headers (L-codes, addresses): open the link without toggling or triggering the surrounding element */
 document.addEventListener("click",e=>{const a=e.target&&e.target.closest&&e.target.closest("a[data-nobub]");if(a)e.stopPropagation()},true);

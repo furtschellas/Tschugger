@@ -1,4 +1,4 @@
-import {esc,hmAny,L,LANG,mapUrl,S,safeUrl,telNum} from "./10-core.js";
+import {dispoOf,esc,hmAny,L,LANG,mapUrl,S,safeUrl,telNum} from "./10-core.js";
 import {nameHit} from "./11-schedule-prep.js";
 import {myIdentity,rideId,rideMap} from "./12-mycal.js";
 import {CSCUR,csSceneLoc} from "./13b-cs-now.js";
@@ -110,7 +110,7 @@ export function csDriverByPhone(ph){const k=String(ph||"").replace(/\D/g,"").sli
   for(const d of arr(S.dispos)){const t=String(d&&d.cs&&d.cs.drivers||"");for(const x of t.split(/\s*[|\n;]\s*/)){const m=x.match(CSPH);if(m&&m[0].replace(/\D/g,"").slice(-9)===k){const n=x.replace(m[0],"").replace(/o\.\s*p\.\s*D.*$/i,"").trim();if(n)return n}}}
   for(const g of arr(S.crew))for(const p of arr(g.people))if(String(p.phone||"").replace(/\D/g,"").slice(-9)===k)return p.name||"";return ""}
 /* a ride «07:40 Hotel → 07:55 Base»: the destination opens in Google Maps (its own map link from the callsheet, else its address / name) */
-export function csRouteH(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let rt=esc(t);try{const to=String(r.to||"").replace(/https?:\/\/\S+/g,"").trim(),dp=arr(S.dispos).find(x=>x&&x.date===date),u=to&&typeof rideMap==="function"?rideMap(r.to,dp,true):"",su=u?safeUrl(u):"";
+export function csRouteH(date,r){const t=csRoute(r.from,r.t1,r.to,r.t2);let rt=esc(t);try{const to=String(r.to||"").replace(/https?:\/\/\S+/g,"").trim(),dp=dispoOf(date),u=to&&typeof rideMap==="function"?rideMap(r.to,dp,true):"",su=u?safeUrl(u):"";
     if(su&&su!=="#"){const a=[r.t1,String(r.from||"").replace(/https?:\/\/\S+/g,"").trim()].filter(Boolean).join(" "),b=[r.t2,to].filter(Boolean).join(" ");
       rt=(a?esc(a)+" → ":"")+'<a class="rideto" href="'+esc(su)+'" target="_blank" rel="noopener" data-nobub title="'+esc(L("Route in Google Maps"))+'">'+esc(b)+'</a>'}}catch(_){}
   return rt}

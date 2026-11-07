@@ -3,7 +3,7 @@
    every «#view» rule to «.sbview» too). Topics that are whole pages (Smartphone-Vorschau, User, Access, App-Einstellungen) are the app itself in a
    frame: fully usable, looking the same – each frame is a second copy of the app (its own live data), so only chosen ones are loaded.
    Setting: localStorage «sbx» = «now.mine|phone» (left|right, the order of the topics), kept with the other notices of the profile (prefs x). */
-import {dayItems,esc,isoDM,L,S,todayISO,unitKey} from "../base/10-core.js";
+import {dayItems,dispoOf,esc,isoDM,L,S,todayISO,unitKey} from "../base/10-core.js";
 import {csHm,csMe,csMyRides,csRideReal,csTile} from "../base/13a-callsheet.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
@@ -50,7 +50,7 @@ const head=(k,t)=>'<h3 class="sbh" title="'+esc(L("Zum Verschieben ziehen"))+'">
 /* a topic without content now (no callsheet yet …): only its head, so it can still be taken out */
 const sec=(k,t,h)=>'<section class="sbsec'+(h?'':' sbempty')+'">'+head(k,t)+(h||'<p class="sbnone">'+esc(L("Zurzeit nichts"))+'</p>')+'</section>';
 const dayNow=()=>{try{return todayDay()}catch(_){return null}};
-const dpOf=d=>d?arr(S.dispos).find(x=>x&&x.date===d.date&&x.cs)||null:null;
+const dpOf=d=>d?dispoOf(d.date,1)||null:null;
 /* «Gerade aktiv»: drawn here from the «last seen» marks (no second copy of the app in a frame); read again at most every 90 s */
 const ACT={at:0,list:null,err:"",busy:false};
 async function actLoad(){if(ACT.busy)return;ACT.busy=true;
@@ -84,7 +84,7 @@ const TOP={
     return rs.map(r=>'<div class="sbr"><b>'+esc(csHm(r.t1)||r.t1||"")+'</b> '+esc(r.from||"")+' → '+esc(r.to||"")+(r.t2?' <small>'+esc(r.t2)+'</small>':'')+'<small class="sbrv">'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small></div>').join("")},
   next:()=>{const d=dayNow(),t=todayISO();const nd=arr(S.days).find(x=>x&&x.kind==="shoot"&&x.date>(d&&d.date>t?d.date:t));if(!nd)return"";
     const u20=nd.unit2&&nd.unit2.hours?String(nd.unit2.hours):"";const fi=arr(nd.items).find(i=>i&&i.sc);
-    let mu=null;try{const ndp=arr(S.dispos).find(x=>x&&x.date===nd.date&&x.cs);if(ndp)mu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
+    let mu=null;try{const ndp=dispoOf(nd.date,1);if(ndp)mu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
     const u2=u20&&(!mu||mu.includes("2"))?u20:"",h1=!u20||!mu||mu.includes("1");
     return '<div class="sbnx"><b>'+esc(nd.short||nd.label||"")+'</b> '+esc(isoDM(nd.date))+'</div>'+(nd.hours&&h1?'<div class="sbnx">'+esc(L("Drehzeit"))+(u20?' 1st Unit':'')+': '+esc(nd.hours)+'</div>':'')+(u2?'<div class="sbnx">'+esc(L("Drehzeit"))+' 2nd Unit: '+esc(u2)+'</div>':'')+(fi?'<div class="sbnx">'+esc(L("Erste Szene"))+': <b>'+esc(String(fi.sc))+'</b> '+esc(fi.set||"")+'</div>':'')},
   wx:()=>{const d=dayNow();if(!d)return"";let h="";try{h=wxTile(d)}catch(_){}return h?'<div class="ttiles">'+h+'</div>':""}

@@ -110,6 +110,16 @@ export function saveBlob(blob,name){const u=URL.createObjectURL(blob),a=document
 export const clockHM=d=>pad2(d.getHours())+":"+pad2(d.getMinutes());   /* «07:05» of a Date (local time) */
 export const msHM=ms=>ms?clockHM(new Date(+ms)):"";
 /* short checksum of a text (djb2, base 36) – ride ids, push ids, quittance markers, signatures; the server (late_push, scene_sheet) builds the same */
+/* ---------- shared routines (one place for what was written many times) ---------- */
+/* the Drehplan day / the callsheet of a date (needCs: only a callsheet with its content) */
+export function dayOf(date){return arr(S.days).find(d=>d&&d.date===date)}
+export function dispoOf(date,needCs){return arr(S.dispos).find(x=>x&&x.date===date&&(!needCs||x.cs))}
+/* «07:30» → minutes since midnight (no normalising: «24:30» → 1470); minutes → «07:30» (within the day) */
+export const hmMin=t=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})/);return m?+m[1]*60+(+m[2]):NaN};
+export const minHM=m=>{m=((Math.round(m)%1440)+1440)%1440;return pad2(Math.floor(m/60))+":"+pad2(m%60)};
+/* reading the device storage: private mode / blocked storage throw – then the default */
+export function lsGet(k,def=""){try{const v=localStorage.getItem(k);return v==null||v===""?def:v}catch(_){return def}}
+export function lsJSON(k,def=null){try{const v=JSON.parse(localStorage.getItem(k)||"null");return v==null?def:v}catch(_){return def}}
 /* «2026-11-07» → «07.11.2026» */
 export const isoDMY=d=>String(d??"").split("-").reverse().join(".");
 export function hash36(s){s=String(s??"");let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}   /* «07:05» of a time in milliseconds, "" without */
@@ -178,7 +188,7 @@ export function castChips(ids){
   const m=(S.meta&&S.meta.cast)||{};
   if(!ids||!ids.length)return"";
   /* on a shooting day: where each actor is (display only) – P/UP running, Call/Kostüm/Maske, Base done / On set */
-  let lk=()=>0;try{const d=window.__mctx&&window.__mctx.date,dp=d&&window.cqLook&&arr(S.dispos).find(x=>x&&x.date===d&&x.cs),c=dp&&dp.cs;
+  let lk=()=>0;try{const d=window.__mctx&&window.__mctx.date,dp=d&&window.cqLook&&dispoOf(d,1),c=dp&&dp.cs;
     if(c){if(!c._date)c._date=d;const cu=window.__mctx.u==='2'&&window.cqU2?window.cqU2(c):null,cx=cu||c;   /* the 2nd Unit: its own cast rows */
       lk=i=>{try{const r=castRow(cx,i);return r?window.cqLook(cx,r):0}catch(_){return 0}}}}catch(_){}
   return '<div class="cast">'+ids.map(i=>{const s=lk(i);return '<span'+(s?' class="cqlk'+s+'"':'')+'><i>'+esc(i)+'</i>'+esc(m[i]||"")+'</span>'}).join("")+'</div>';
@@ -252,12 +262,12 @@ export function camFold(items){const l=arr(items),txt=i=>String((typeof TX==="fu
 export const lateFn=(n,...a)=>{try{const f=window[n];return typeof f==="function"?f(...a):null}catch(_){return null}};
 /* «now» of the unit of the rows drawn (the 2nd Unit: its own callsheet part – before, its rows got the frame of the 1st Unit's scene) */
 function nowOfUnit(c0){const u=String(c0&&c0.u||"1");if(u==="1")return csNowScene();if(u!=="2"||typeof window.csU2Dispo!=="function")return null;
-  const dp=arr(S.dispos).find(x=>x&&x.date===c0.date&&x.cs),day=arr(S.days).find(d=>d&&d.date===c0.date);const x=dp&&window.csU2Dispo(dp,day);return x?csNowScene(x):null}
+  const dp=dispoOf(c0.date,1),day=dayOf(c0.date);const x=dp&&window.csU2Dispo(dp,day);return x?csNowScene(x):null}
 export function itemHTML(it){
   if(!it.sc){
     const mn=/\b(lunch|mittag|dîner|pranzo)\b/i.test(String(it.n||""))&&window.menuFor&&window.__mctx?window.menuFor(window.__mctx.date,window.__mctx.u):"";
     /* lunch and wrap: quittiert like the scenes (status right) */
-    const ek=typeof scRowKeys==="function"&&window.__mctx&&window.__mctx.date?(()=>{const c=window.__mctx,dy=(S.days||[]).find(x=>x.date===c.date);if(!dy)return scEvKey(it.n);
+    const ek=typeof scRowKeys==="function"&&window.__mctx&&window.__mctx.date?(()=>{const c=window.__mctx,dy=dayOf(c.date);if(!dy)return scEvKey(it.n);
       const l=dayItems(dy,c.u);let i=l.indexOf(it);if(i<0)i=l.findIndex(x=>!x.sc&&x.t===it.t&&x.n===it.n);const k0=i<0?scEvKey(it.n):scRowKeys(l,x=>x.n)[i];return k0&&c.u&&c.u!=="1"?k0+"_u"+c.u:k0})():"",   /* 2nd/3rd unit: own lunch, wrap and setups */eb=ek&&typeof scAckBtn==="function"?scAckBtn(window.__mctx.date,ek,window.__mctx.u||"1"):"";
     /* the pink frame of «jetzt» also on setup, lunch and wrap when that is the step now */
     let evNow=false;try{const c0=window.__mctx;if(ek&&c0&&!c0.cs&&c0.date===(typeof csShootDay==="function"?csShootDay():todayISO())&&typeof csNowScene==="function"){const ns=nowOfUnit(c0);evNow=!!ns&&!!ns.ev&&String(ns.ev).replace(/_u\d$/,"")===String(ek).replace(/_u\d$/,"")}}catch(_){}
@@ -296,7 +306,7 @@ export function pickDay(list){
   const t=(typeof csShootDay==="function"&&csShootDay())||todayISO();   /* after midnight of a night shoot: still that day */
   let next=list.find(d=>d.date>=t);
   /* one hour after the wrap of today: the next day of the plan */
-  if(next&&next.date===t){try{const x=(S.dispos||[]).find(y=>y&&y.date===t)||{},tm=(x.cs&&x.cs.times)||{},w=hmAny(tm.wrap||x.wrap||next.wrap||""),cc=hmAny(tm.crewCall||x.crewCall||next.crewCall||"");
+  if(next&&next.date===t){try{const x=dispoOf(t)||{},tm=(x.cs&&x.cs.times)||{},w=hmAny(tm.wrap||x.wrap||next.wrap||""),cc=hmAny(tm.crewCall||x.crewCall||next.crewCall||"");
     const nx=list.find(d=>d.date>t);if(w&&nx&&typeof zurichUTC==="function"&&Date.now()>zurichUTC(cc&&w<cc?isoAdd(t,1):t,w).getTime()+3600e3)next=nx}catch(_){}}
   S.day=(next||list[list.length-1]||{}).id||null;
 }

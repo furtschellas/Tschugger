@@ -47,7 +47,7 @@ export async function admLoad(){
   if(can("users.requests")){try{const r=await F.getDocs(F.collection(db,"requests"));ADM.req=r.docs.map(d=>Object.assign({id:d.id},d.data()));ADM.reqErr=""}catch(err){ADM.req=[];ADM.reqErr=(err&&err.code)||String(err)}}else{ADM.req=[];ADM.reqErr=""}
   {const b=document.getElementById("admBtn");if(b){b.classList.toggle("hasreq",ADM.req.length>0);b.dataset.n=ADM.req.length||""}}
   ADM.adm=a.docs.map(d=>d.id);ADM.inv=i.docs.map(d=>Object.assign({id:d.id},d.data()));{const cx={};ct.docs.forEach(d=>{cx[d.id]=d.data()||{}});   /* phone and contact e-mail from contacts (an older copy in members until it moved) */
-    ADM.mem=m.docs.map(d=>{const x=Object.assign({uid:d.id},d.data()),c=cx[d.id];if(c){x.phone=c.phone||x.phone||"";x.contactEmail=c.contactEmail||x.contactEmail||""}return x})}ADM.at=Date.now();admIndex();ADM.loaded=true;render();syncBdays();gastSync();
+    ADM.mem=m.docs.map(d=>{const x=Object.assign({uid:d.id},d.data()),c=cx[d.id];if(c){x.phone=c.phone||x.phone||"";x.contactEmail=c.contactEmail||x.contactEmail||""}return x})}ADM.at=Date.now();admIndex();ADM.loaded=true;if(typeof window.rolesUnfix==="function"&&!ADM.paccEdit)window.rolesUnfix();render();syncBdays();gastSync();
 }
 export function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)for(const p of (g.people||[])){const e=lc(p.email);if(!e||!/@/.test(e)||seen.has(e))continue;seen.add(e);out.push({email:e,name:p.name||"",role:p.role||""})}return out}
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */

@@ -1,4 +1,4 @@
-import {dayBlockOK,esc,isoDM,L,MEMO,mkDialog,myBlocks,norm,S,saveBtn,saveErr,todayISO} from "../base/10-core.js";
+import {dayBlockOK,dayOf,esc,isoDM,L,MEMO,mkDialog,myBlocks,norm,S,saveBtn,saveErr,todayISO} from "../base/10-core.js";
 import {WDL} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
@@ -95,11 +95,11 @@ function cdDispos(dispos0,days){
 /* the date whose documents (Sides, Gefährdungsbeurteilung, Setfloorpläne) belong to a day now: they go with the callsheet,
    without a callsheet with the content of the day; null = the documents of this day went elsewhere */
 window.cdDocDate=date=>{if(!S.days0)return date;const ds=arr(S.dispos),x=ds.find(c=>c.date===date);if(x)return x.cdFrom||date;
-  if(ds.some(c=>c.cdFrom===date))return null;const d=arr(S.days).find(y=>y.date===date);if(d&&d.cdSrc)return d.cdSrc;
+  if(ds.some(c=>c.cdFrom===date))return null;const d=dayOf(date);if(d&&d.cdSrc)return d.cdSrc;
   return arr(S.days).some(y=>y.cdSrc===date&&y.date!==date)?null:date};
 /* check: every callsheet on a day whose scenes it has (dates where it does not fit, e.g. «24.10.») */
 function cdCsCheck(){const out=[];for(const x of arr(S.dispos)){const ks=arr(x.scenes).map(r=>cdKey(r&&r.sc)).filter(Boolean);if(!ks.length)continue;
-  const d=arr(S.days).find(y=>y.date===x.date),dk=cdDayKeys(d);if(ks.filter(k=>dk.has(k)).length<Math.ceil(ks.length/2))out.push(cdDD(x.date))}return out}
+  const d=dayOf(x.date),dk=cdDayKeys(d);if(ks.filter(k=>dk.has(k)).length<Math.ceil(ks.length/2))out.push(cdDD(x.date))}return out}
 window.cdCsCheck=cdCsCheck;
 /* the changes: one encrypted document (coverday/state), live for the crew */
 export let CDSUBS=null;
@@ -170,7 +170,7 @@ async function cdPush(body,date){if(!can("push.send")||window.PUSHEN===false)ret
   const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});if(typeof bcDeliver==="function")await bcDeliver(ref.id);return true}catch(_){return false}}
 /* check after a change was applied or cancelled: the days show what they should, every callsheet on the day with its scenes,
    the reminders of this device are sent again (the server holds back old reminders of other devices on these days until they are updated) */
-function cdVerify(op,on){const bad=[],d=dt=>arr(S.days).find(x=>x.date===dt),d0=dt=>arr(S.days0).find(x=>x.date===dt),sc=(x,u)=>cdScenes(x,u);
+function cdVerify(op,on){const bad=[],d=dt=>dayOf(dt),d0=dt=>arr(S.days0).find(x=>x.date===dt),sc=(x,u)=>cdScenes(x,u);
   const others=cdActive().filter(o=>o.id!==op.id&&(o.a===op.a||o.b===op.a||o.a===op.b||o.b===op.b||o.op==="shift"||op.op==="shift"));
   if(!others.length){
     if(on&&op.op==="swap"){if(sc(d(op.a),op.u)!==(op.snap&&op.snap.b||"")||sc(d(op.b),op.u)!==(op.snap&&op.snap.a||""))bad.push(L("Drehplan")+" "+cdDD(op.a)+" ⇄ "+cdDD(op.b))}

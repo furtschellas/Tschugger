@@ -1,4 +1,4 @@
-import {ariaTip,camFold,dayItems,esc,hash36,I18N,isoAdd,isoDM,isoDMY,isoId,L,LANG,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
+import {ariaTip,camFold,dayItems,dayOf,dispoOf,esc,hash36,I18N,isoAdd,isoDM,isoDMY,isoId,L,LANG,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
 import {csHM} from "../base/13b-cs-now.js";
 import {UNAME,dayMs} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
@@ -131,7 +131,7 @@ async function scaKeep(date,sc){if(!SCA_KINDS.some(([k])=>scaOn(k))||scaZ(date,s
 /* the rows of a unit that can be quittiert: key (scene number or lunch / wrap / setup…, «_u2» in the 2nd unit), kind, planned time (ms) */
 function scaRows(day,u){const its=dayItems(day,u),ks=scRowKeys(its,x=>x.n);let ref=0,prevH="",late=false,scene=false;
   /* the time of a setup in the callsheet (its shooting order), else the one of the Drehplan */
-  let cr=[],ck=[];try{const dp=u==="1"&&arr(S.dispos).find(x=>x&&x.date===day.date&&x.cs);if(dp){cr=arr((dp.cs.order||{}).rows);ck=scRowKeys(cr,r=>r.text||r.syn)}}catch(_){}
+  let cr=[],ck=[];try{const dp=u==="1"&&dispoOf(day.date,1);if(dp){cr=arr((dp.cs.order||{}).rows);ck=scRowKeys(cr,r=>r.text||r.syn)}}catch(_){}
   return its.map((x,i)=>{const k=x.sc?String(x.sc):ks[i];if(!k||(()=>{try{return window.deGone&&window.deGone(x)}catch(_){return false}})())return null;const b=scBase(k),setup=/^setup\d*$/.test(b),first=setup&&!scene;if(x.sc)scene=true;
     const kind=b==="lunch"?"l":b==="wrap"?"w":first?"a":"s";let h=hm(x.t);if(first){let j=ck.indexOf(b);if(j<0&&b==="setup")j=ck.indexOf("setup0");if(j>=0&&hm(cr[j].t))h=hm(cr[j].t)}if(!h)return null;
     /* the night: a row earlier than the one before it (after 12:00) is after midnight – as csRowMins (before: only more than 12 h before the first row) */
@@ -310,7 +310,7 @@ function scAckDialog(date,sc,u){sc=scK(sc,u);const id=scAckId(date,sc),x=scGet(d
     if(ev.target===d||ev.target.closest("[data-scx]"))d.remove()});
   f.e.disabled=cur!==2;f.b.disabled=cur===0;
   f.addEventListener("submit",async ev=>{ev.preventDefault();if(ev.submitter&&ev.submitter.dataset.scwasub)f.dataset.wa="1";else delete f.dataset.wa;/* reference for a time after midnight: the entry itself, else midday of its day (not «now»: a day in the past would move to the next day) */
-    let fh="";try{const dy=(S.days||[]).find(y=>y.date===date);fh=(dayItems(dy,u).map(i=>hm(i.t)).find(Boolean))||""}catch(_){}
+    let fh="";try{const dy=dayOf(date);fh=(dayItems(dy,u).map(i=>hm(i.t)).find(Boolean))||""}catch(_){}
     /* a night shoot (its first row after 12:00): an entry without times takes the late evening as reference – 05:00 is then the next morning */
     const ref=+x.b||+x.at||scMs(date,fh>="12:00"?"23:59":"12:00")||Date.now(),bm=scMsNear(date,f.b.value,ref),em=scMsNear(date,f.e.value,bm||ref);
     if(cur===1&&!scParU(u)){const run=scRunning(date,u,id);if(run&&!/^(lunch|setup\d*)$/.test(scBase(run))&&!(typeof confirmSafe==="function"?confirmSafe:window.confirm.bind(window))(L("{s} läuft noch. Parallel laufen lassen?").replace("{s}",scLabel(run)))){msg.textContent=L("{s} läuft noch – zuerst abschliessen.").replace("{s}",scLabel(run));return}}
@@ -368,7 +368,7 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
   /* several units on a day: one part per unit (1st Unit, 2nd Unit …) */
   const EXP=[];SCLOG.exp=EXP;
   /* one daily log per unit: the 1st unit always, the 2nd/3rd unit when they shoot that day or have quittances */
-  const html=[...days].sort().reverse().map(d=>{const l=SCLOG.list.filter(x=>x.d===d),day=(S.days||[]).find(y=>y.date===d)||{},cs=((S.dispos||[]).find(y=>y&&y.date===d)||{});
+  const html=[...days].sort().reverse().map(d=>{const l=SCLOG.list.filter(x=>x.d===d),day=dayOf(d)||{},cs=(dispoOf(d)||{});
     const hasU=u=>arr((u==="2"?day.unit2:day.unit3)||{}).length||arr(((u==="2"?day.unit2:day.unit3)||{}).items).some(i=>i.sc);
     const us=[...new Set(["1"].concat(l.map(x=>String(x.u||"1")),["2","3"].filter(hasU)))].sort(),dn=SHD.indexOf(d);
     return us.map(u=>{const p=unitRows(d,u,l.filter(x=>String(x.u||"1")===u),day,cs);for(const r of p.rows)EXP.push(Object.assign({dt:dn>=0?"DT "+(dn+1):"",d,u},r));
@@ -397,7 +397,7 @@ function scExpRows(d,u){const un=s=>{const x=document.createElement("textarea");
 /* more about a scene for the export: I/E, set, pages, cast and the description from the Drehplan of that day (and unit) */
 function scInfo(r){const k=scBase(r.k||""),E={ie:"",set:"",pg:"",cast:"",desc:""};
   /* setup and Drehstart: the I/E of the scene that follows (setup: the next scene after its row, Drehstart: the first scene of the day) */
-  if(/^setup\d*$/.test(k)||r.drehstart){const day=(S.days||[]).find(y=>y.date===r.d)||{},its=dayItems(day,r.u);
+  if(/^setup\d*$/.test(k)||r.drehstart){const day=dayOf(r.d)||{},its=dayItems(day,r.u);
     let i=0;if(!r.drehstart){i=scRowKeys(its,x=>String(x.n||"")).indexOf(k);if(i<0)i=0}const nx=its.slice(i).find(x=>x.sc);return Object.assign(E,{ie:nx&&nx.ie||""})}
   if(!k||/^(lunch|wrap)$/.test(k)||typeof schedIndex!=="function")return E;
   let o=null;try{const l=schedIndex()[norm(k)]||[];o=l.find(y=>y.d&&y.d.date===r.d&&String(y.u||"1")===String(r.u||"1"))||l.find(y=>y.d&&y.d.date===r.d)||null}catch(_){}

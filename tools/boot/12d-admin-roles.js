@@ -13,8 +13,14 @@ const permBoxes=sel=>'<div class="perms">'+[...new Set(PERMS.map(x=>x[2]))].map(
     return '<label class="ck'+(lock?' plock':'')+'"><input type="checkbox" name="rp" value="'+k+'"'+((sel||[]).includes(k)?' checked':'')+(lock?' disabled':'')+'> '+esc(permLbl(k,t))+'</label>'}).join("")+'</div>').join("")+'</div>';
 /* roles in order: «Hierarchie» (most permissions first) or alphabetical – the sort button in «Rollen» switches, kept on this device */
 let ROLESORT="h";try{ROLESORT=localStorage.getItem("rolesort")==="a"?"a":"h"}catch(_){}
-export function rolesSorted(){const nm=r=>String(r.name||r.id||"");return (ADM.roles||[]).slice().sort((a,b)=>ROLESORT==="a"?nm(a).localeCompare(nm(b),LANG):(arr(b.perms).length-arr(a.perms).length)||nm(a).localeCompare(nm(b),LANG))}
-window.rolesSorted=rolesSorted;
+/* the order of the roles stays while rights are switched (sorted by the number of rights, a tick moved its row – and the next tap hit
+   another role, which looked like other ticks changing); sorted anew when the list of roles or the sort changes, or the pencil is closed */
+let ROLEFIX=null;export const rolesUnfix=()=>{ROLEFIX=null};
+export function rolesSorted(){const nm=r=>String(r.name||r.id||"");const l=(ADM.roles||[]).slice(),ids=l.map(r=>r.id).sort().join("|");
+  if(ROLEFIX&&ROLEFIX.mode===ROLESORT&&ROLEFIX.ids===ids){const pos=new Map(ROLEFIX.order.map((id,i)=>[id,i]));return l.sort((a,b)=>pos.get(a.id)-pos.get(b.id))}
+  l.sort((a,b)=>ROLESORT==="a"?nm(a).localeCompare(nm(b),LANG):(arr(b.perms).length-arr(a.perms).length)||nm(a).localeCompare(nm(b),LANG));
+  ROLEFIX={mode:ROLESORT,ids,order:l.map(r=>r.id)};return l}
+window.rolesSorted=rolesSorted;window.rolesUnfix=rolesUnfix;
 document.addEventListener("click",e=>{if(!e.target.closest||!e.target.closest("[data-rolesort]"))return;ROLESORT=ROLESORT==="a"?"h":"a";try{localStorage.setItem("rolesort",ROLESORT)}catch(_){}render()});
 export function rolesSec(){
   const cnt=id=>id==="admin"?ADM.adm.length:Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e)).length;
@@ -71,7 +77,7 @@ function permAccessSec(){
         '<details class="paccp" data-sec="paccp-'+k+'"'+(SECS["paccp-"+k]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+w.length+')</summary>'+
         (w.length?'<ul class="paccl">'+w.map(([e,r])=>'<li><span>'+esc(admNameOf(e))+'</span><span class="ust role">'+esc(r)+'</span></li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+'</details></details>'}).join("")+'</div>').join("")+'</div>';
 }
-document.addEventListener("click",e=>{const b=e.target.closest("[data-paccedit]");if(!b)return;e.preventDefault();e.stopPropagation();const k=b.dataset.paccedit;ADM.paccEdit=ADM.paccEdit===k?"":k;if(ADM.paccEdit)SECS["pacc-"+k]=true;render()},true);
+document.addEventListener("click",e=>{const b=e.target.closest("[data-paccedit]");if(!b)return;e.preventDefault();e.stopPropagation();const k=b.dataset.paccedit;ADM.paccEdit=ADM.paccEdit===k?"":k;if(!ADM.paccEdit)rolesUnfix();if(ADM.paccEdit)SECS["pacc-"+k]=true;render()},true);
 /* «Wer hat welchen Zugriff?»: one round button opens or closes all permissions (like the user list) */
 const paccAllBtn=open=>'<button type="button" class="cico uall" data-paccall '+ariaTip(L(open?"Alle zuklappen":"Alle aufklappen"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(open?'<path d="m7 11 5-5 5 5M7 18l5-5 5 5"/>':'<path d="m7 6 5 5 5-5M7 13l5 5 5-5"/>')+'</svg></button>';
 document.addEventListener("click",e=>{const b=e.target.closest("[data-paccall]");if(!b)return;e.preventDefault();

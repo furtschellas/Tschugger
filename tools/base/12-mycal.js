@@ -1,4 +1,4 @@
-import {ariaTip,blockTag,camFold,dayTitle,ddmm,driveMin,esc,fmtDate,hash36,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
+import {ariaTip,blockTag,camFold,dayOf,dayTitle,ddmm,driveMin,esc,fmtDate,hash36,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";
@@ -69,7 +69,7 @@ export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_
   /* shooting days only from the callsheets: the day counts when its callsheet calls my department, lists me by name, or (general crew call) I work on set */
   /* the night after a shooting day: its callsheet still counts (csShootDay – the running night of yesterday until its wrap) */
   const t0=(()=>{try{return typeof csShootDay==="function"?csShootDay():t}catch(_){return t}})(),tf=t0<t?t0:t;
-  for(const dp of S.dispos){if(!dp||dp.date<tf)continue;const d=S.days.find(x=>x.date===dp.date)||{};
+  for(const dp of S.dispos){if(!dp||dp.date<tf)continue;const d=dayOf(dp.date)||{};
     const src=me.src&&me.src!=="user"?me.src:"",myDep=fold(src).split(/[\s/]/)[0];   /* an app account alone is no department */
     const call=myDep?arr(dp.calls).find(z=>fold(z.dept||"").split(/[^a-z0-9]+/).includes(myDep)):null;   /* whole words: «art» is not in «Camera Department» */
     const named=arr(dp.contacts).concat(arr(dp.cast).map(c=>({name:c.actor}))).some(c=>c&&c.name&&iAmIn([c.name],me,people));
@@ -88,7 +88,7 @@ export function myEvents(me){try{if(window.rideEditApply)rideEditApply()}catch(_
     out.push({date:dp.date,t:st,end:en,n:(d.short||dp.label||d.label||"")+" · "+L("Drehtag")+(only2?" · 2nd Unit":both?" · 1st + 2nd Unit":"")+(call&&call.dept?" ("+call.dept+")":""),where:loc,map:(L2[0]||{}).map||"",src:"Callsheet"+(dp.version?" "+dp.version:""),go:d.id||dp.date})}
   /* my rides from the callsheets (driver, passenger, crew transport, travel) */
   try{const cm=typeof csMe==="function"?csMe():null,seen=new Set();if(cm)for(const dp of S.dispos){try{if(!dp||dp.date<tf||!dp.cs)continue;   /* one odd callsheet never hides the rides of the others */
-    const c=dp.cs,d=S.days.find(x=>x.date===dp.date)||{};
+    const c=dp.cs,d=dayOf(dp.date)||{};
     const rides=[...arr(c.transport).filter(r=>r&&(cm.hit(r.driver)||cm.hit(r.passengers))).map(r=>({r,drv:cm.hit(r.driver)})),...arr(c.crewTransport).filter(r=>r&&cm.hit(r.people)).map(r=>({r,crew:true})),...arr(c.travel).filter(r=>r&&cm.hit(r.name)).map(r=>({r,how:r.how}))];
     for(const {r,drv,how,crew} of rides){const st=hm(r.t1);if(!st&&!hm(r.t2))continue;const clean=v=>String(v||"").replace(/https?:\/\/\S+/g,"").trim();
       /* a confirmed ride disappears one hour after its arrival */
@@ -235,7 +235,7 @@ export function renderPlan(){
     if(!shootOk){S.day=null;pickDay(PD);const nx=S.days.find(d=>d.id===S.day);if(PPA.length&&(!nx||PPA[0].date<nx.date))S.day="prep:"+PPA[0].date}
   }
   const ppDay=String(S.day||"").startsWith("prep:")?PPA.find(d=>"prep:"+d.date===S.day):null;
-  const ppChips=PP.map(d=>{const dt=new Date(d.date+"T12:00:00"),off=ppOff(d),rest=ppRest(d),sd=S.days.find(x=>x.date===d.date);
+  const ppChips=PP.map(d=>{const dt=new Date(d.date+"T12:00:00"),off=ppOff(d),rest=ppRest(d),sd=dayOf(d.date);
     /* a day from the shooting schedule (travel / off) keeps its label and colour; the weekly schedule fills in its content */
     if(sd){const k=sd.kind==="travel"?"travp":"free";return '<button data-dt="'+esc(d.date)+'" class="chip off '+k+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(sd.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':"OFF")+'<span class="wds">/'+WD[dt.getDay()].toUpperCase()+'</span><span class="wdl">'+esc(WDL(dt))+'</span></div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}
     return '<button data-dt="'+esc(d.date)+'" class="chip pre'+(rest?" off free":"")+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(rest?'OFF':'<span class="lbl">PREP</span><span class="lbs">PRE</span>')+'<span class="wds">/'+WD[dt.getDay()].toUpperCase()+'</span><span class="wdl">'+esc(WDL(dt))+'</span></div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");

@@ -1,4 +1,4 @@
-import {L,S,ddmm,esc,localISO,mkDialog,xBtn} from "../base/10-core.js";
+import {dayOf,ddmm,dispoOf,esc,L,localISO,mkDialog,S,xBtn} from "../base/10-core.js";
 import {WDL} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
 import {render} from "../base/15-script-tab.js";
@@ -68,10 +68,10 @@ export function wxTile(d){
 window.wxFact=function(d){const w=wxGet(d);if(!w)return "";const dl=w.j&&w.j.daily;if(!dl||!dl.time||!dl.time.length)return "";
   return '<button type="button" class="fact factw" data-wx="'+esc(d.date)+'" title="'+esc(L("Wetterbericht")+" · "+w.p.town)+'">'+WXI(dl.weather_code[0],14)+'<span class="v">'+Math.round(dl.temperature_2m_min[0])+'–'+Math.round(dl.temperature_2m_max[0])+'°'+(dl.precipitation_probability_max[0]!=null?'\u2009'+ICDROP(10)+esc(dl.precipitation_probability_max[0])+'%':'')+'</span></button>'};
 function wxPopup(date){window.WXPOPD=date;
-  const d=(S.days||[]).find(x=>x.date===date);if(!d)return;const w=wxGet(d);if(!w)return;
+  const d=dayOf(date);if(!d)return;const w=wxGet(d);if(!w)return;
   let o=document.getElementById("wxpop");if(!o){o=mkDialog("wxpop");document.body.appendChild(o);
     o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-wxx]"))o.remove()})}
-  const dt=new Date(date+"T12:00:00"),dp=(S.dispos||[]).find(x=>x&&x.date===date);
+  const dt=new Date(date+"T12:00:00"),dp=dispoOf(date);
   let body='<p class="ghint">'+esc(L("Wird geladen …"))+'</p>';
   const j=w.j;if(j&&j.hourly&&j.daily){const h=j.hourly,dl=j.daily;
     const rows=h.time.map((t,i)=>({h:t.slice(11,16),i})).filter(x=>{const hh=+x.h.slice(0,2);return hh>=5&&hh<=23});

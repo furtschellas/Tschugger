@@ -1,4 +1,4 @@
-import {esc,hash36,isoId,L,mkDialog,norm,S,saveBtn,xBtn} from "../base/10-core.js";
+import {dayOf,esc,hash36,isoId,L,mkDialog,norm,S,saveBtn,xBtn} from "../base/10-core.js";
 import {hm,myIdentity} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
@@ -65,7 +65,7 @@ window.deNote=d=>{if(!d)return "";if(window.DESTALE[d.date]&&deCan())return '<p 
   const e=(window.DAYEDIT||{})[d.date];if(!e||window.DESTALE[d.date])return "";const t=e.at?new Date(e.at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"}):"";
   return '<p class="denote">'+esc(L("Vor Ort geändert"))+(t?" · "+esc(t):"")+(e.byName&&!/@/.test(e.byName)?" · "+esc(e.byName):"")+'</p>'};
 /* the mark of one row in the Drehplan */
-window.deMark=it=>{const e=it&&it._de;if(!e)return "";const dd=x=>{const d=arr(S.days).find(y=>y.date===x);return d?(d.short||d.label||x):x};
+window.deMark=it=>{const e=it&&it._de;if(!e)return "";const dd=x=>{const d=dayOf(x);return d?(d.short||d.label||x):x};
   return '<span class="demk">'+esc(e.x?L("heute gestrichen"):e.to?L("verschoben auf")+" "+dd(e.to):e.from?L("verschoben von")+" "+dd(e.from):e.add?L("neu dazu"):e.nt?L("Zeit vor Ort geändert"):"")+'</span>'};
 /* ---------- the dialog ---------- */
 const deHm=hm;   /* «7:05» → «07:05» – the same helper as everywhere (12-mycal hm) */
@@ -91,7 +91,7 @@ function deDialog(date,u){u=u||"1";const others=arr(S.days).filter(x=>x.kind==="
       (it.sc?'<button type="button" class="lnk" data-dex="'+i+'">'+esc(e.x||e.to?L("zurück"):L("streichen"))+'</button>'+(e.x||e.to||e.from||e.add?'':'<select data-demv="'+i+'" aria-label="'+esc(L("verschieben auf"))+'"><option value="">'+esc(L("verschieben auf …"))+'</option>'+others.map(x=>'<option value="'+esc(x.date)+'">'+esc(lbl(x))+'</option>').join("")+'</select>'):'')+'</div></div>'};
   /* scenes to take in: from another shooting day (moved here) or a new one */
   const pool=()=>others.flatMap(x=>uIts(x,u).filter(y=>y.sc&&!deGone(y)).map(y=>({d:x.date,sc:y.sc,lab:lbl(x)+" · "+L("Szene")+" "+y.sc+(y.set?" · "+y.set:"")})));
-  const draw=()=>{dl.innerHTML='<div class="a2box debox">'+xBtn("data-dex2")+'<h3>'+esc(L("Drehtag vor Ort ändern"))+' · '+esc(lbl(arr(S.days).find(x=>x.date===date)||{date}))+(units.length>1?' · '+UN[u]+' Unit':'')+'</h3>'+
+  const draw=()=>{dl.innerHTML='<div class="a2box debox">'+xBtn("data-dex2")+'<h3>'+esc(L("Drehtag vor Ort ändern"))+' · '+esc(lbl(dayOf(date)||{date}))+(units.length>1?' · '+UN[u]+' Unit':'')+'</h3>'+
     (units.length>1?'<div class="deunits" role="group" aria-label="Unit">'+units.map(x=>'<button type="button" class="pillbtn'+(x===u?' on':'')+'" data-deunit="'+x+'" aria-pressed="'+(x===u)+'">'+UN[x]+' Unit</button>').join("")+'</div>':'')+
     '<p class="ghint">'+esc(L("Umordnen, Zeiten ändern, streichen, verschieben oder Szenen dazunehmen. Gilt für alle sofort – der Drehplan aus der Dropbox bleibt unverändert."))+'</p>'+
     '<div class="delist">'+items.map(row).join("")+'</div>'+
@@ -125,7 +125,7 @@ function deDialog(date,u){u=u||"1";const others=arr(S.days).filter(x=>x.kind==="
       b.disabled=true;try{await deSave(date,u,items,moves);dl.remove();showMsg(L("Drehtag geändert – für alle sichtbar."),3500);deAsk(date,deSummary(date,items,u))}catch(err){b.disabled=false;showMsg(/permission/.test(err&&err.code||"")?L("Keine Berechtigung."):L("Fehler:")+" "+(err.message||err),5000)}}});
   dl.addEventListener("change",e=>{const s=e.target;readT();
     if(s.dataset.demv!=null&&s.value){const it=items[+s.dataset.demv];it._de=Object.assign({},it._de,{to:s.value});(moves[s.value]=moves[s.value]||[]).push(Object.assign({},it,{_de:{from:date}}));draw();return}
-    if(s.dataset.depool!=null&&s.value!==""){const p=pool()[+s.value];if(!p)return;const src=arr(S.days).find(x=>x.date===p.d),it=uIts(src,u).find(y=>y.sc===p.sc);if(!it)return;
+    if(s.dataset.depool!=null&&s.value!==""){const p=pool()[+s.value];if(!p)return;const src=dayOf(p.d),it=uIts(src,u).find(y=>y.sc===p.sc);if(!it)return;
       deInsert(items,Object.assign({},it,{_de:{from:p.d}}));(moves["-"+p.d]=moves["-"+p.d]||[]).push(p.sc);draw()}})}
 /* store the rows of one unit of a day (null: that unit back to the Drehplan) – the other units of the day stay as they are; nothing left: deleted */
 /* in a transaction on the newest document: two people changing different units of the same day at the same moment keep both changes */
@@ -149,7 +149,7 @@ async function deSave(date,u,items,moves){
     else{const list=deLoad(k,u);for(const it of v)if(!list.some(y=>y.sc===it.sc&&!deGone(y)))deInsert(list,it);await deStore(k,u,list)}}
   if(typeof window.cdApplyAll==="function")window.cdApplyAll();render()}
 /* what changed, in one line: «D02 vor Ort geändert: Sz. 23 gestrichen · Sz. 24 → D03 · Sz. 90 neu · Reihenfolge/Zeiten» */
-function deSummary(date,items,u){u=u||"1";const d0=deOrig(date),o=uIts(d0,u),lbl=x=>{const d=arr(S.days).find(y=>y.date===x);return d?(d.short||d.label||x):x},sz=L("Sz.");const p=[];
+function deSummary(date,items,u){u=u||"1";const d0=deOrig(date),o=uIts(d0,u),lbl=x=>{const d=dayOf(x);return d?(d.short||d.label||x):x},sz=L("Sz.");const p=[];
   for(const it of items){const e=it._de||{};if(!it.sc)continue;if(e.x)p.push(sz+" "+it.sc+" "+L("gestrichen"));else if(e.to)p.push(sz+" "+it.sc+" → "+lbl(e.to));else if(e.from)p.push(sz+" "+it.sc+" "+L("von")+" "+lbl(e.from));else if(e.add)p.push(sz+" "+it.sc+" "+L("neu"))}
   const ord=x=>x.filter(y=>y.sc&&!deGone(y)&&!(y._de&&(y._de.from||y._de.add))).map(y=>y.sc+"@"+deHm(y.t)).join("|");
   if(ord(items)!==ord(o.filter(y=>items.some(z=>z.sc===y.sc&&!deGone(z)))))p.push(L("Reihenfolge/Zeiten angepasst"));
