@@ -1,5 +1,5 @@
 import {isIOS} from "../a2hs.js";
-import {ddmm,esc,hash36,L,LANG,S,todayISO} from "../base/10-core.js";
+import {ddmm,esc,hash36,L,LANG,lsGet,lsJSON,S,todayISO} from "../base/10-core.js";
 import {dayPlaces,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,hm,myEvents,myIdentity,openMyCal} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -19,13 +19,13 @@ const VAPID_PUB="BEP6-lmT3gVm_ZL1R3qiyBzrntxU6dkKtCEbqanP4KjR9xFTTJNtg8Jm1lxWTs7
 const PUSH_LEADS_RIDE=[[5,"5 Min. vorher"],[10,"10 Min. vorher"],[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"]];
 export const PUSH_LEADS=[[15,"15 Min. vorher"],[30,"30 Min. vorher"],[60,"1 Std. vorher"],[120,"2 Std. vorher"],[180,"3 Std. vorher"],[1440,"1 Tag vorher"]];
 export const PUSH_TYPES=[["my","Meine Termine","mycal"],["shoot","Alle Drehtage","plan"],["prep","Alle Prep-Termine","prep"]];
-export function pushCfg(){let c=null;try{c=JSON.parse(localStorage.getItem("push")||"null")}catch(_){}c=c&&typeof c==="object"?c:{};
+export function pushCfg(){let c=lsJSON("push");c=c&&typeof c==="object"?c:{};
   const nd=c.on===false?false:true;  /* reminders were switched off: change pushes start off too */
   return {hint:c.hint||0,news:Object.assign({plan:nd,cs:nd,prep:nd,script:nd,wrap:nd,late:nd,dayedit:nd},c.news||{}),on:c.on!==false,lead:PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60,leadRide:PUSH_LEADS_RIDE.some(x=>x[0]===c.leadRide)?c.leadRide:(PUSH_LEADS.some(x=>x[0]===c.lead)?c.lead:60),types:Object.assign({my:true,shoot:false,prep:false},c.types||{}),off:c.off&&typeof c.off==="object"&&!Array.isArray(c.off)?c.off:{}}}
 export function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<t)delete c.off[k];store("push",JSON.stringify(c));pushSyncSoon()}
 export const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 export const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
-function pushDev(){let d="";try{d=localStorage.getItem("pushdev")||""}catch(_){}if(!/^[a-z0-9]{10}$/.test(d)){d=Array.from(crypto.getRandomValues(new Uint8Array(10)),x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");try{localStorage.setItem("pushdev",d)}catch(_){}}return d}
+function pushDev(){let d=lsGet("pushdev","");if(!/^[a-z0-9]{10}$/.test(d)){d=Array.from(crypto.getRandomValues(new Uint8Array(10)),x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");try{localStorage.setItem("pushdev",d)}catch(_){}}return d}
 const pushId=s=>hash36(s);
 const hmOf=hm;   /* same as hm() in 12-mycal.js */
 /* all events the device would remind of, by kind; each with a stable id */
@@ -51,7 +51,7 @@ async function pushReg(){return navigator.serviceWorker.getRegistration?((await 
 const u8=s=>{s=s.replace(/-/g,"+").replace(/_/g,"/");s+="===".slice((s.length+3)%4);return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
 /* public push key: the one the Cloudflare Worker reports (after a key change), else the built-in one */
 let VAPIDQ=null;
-function vapidPub(){let k="";try{k=localStorage.getItem("vapidpub")||""}catch(_){}return /^B[A-Za-z0-9_-]{80,}$/.test(k)?k:VAPID_PUB}
+function vapidPub(){let k=lsGet("vapidpub","");return /^B[A-Za-z0-9_-]{80,}$/.test(k)?k:VAPID_PUB}
 async function vapidRefresh(){if(!window.CHATURL)return vapidPub();if(!VAPIDQ)VAPIDQ=fetch(wkUrl("/"),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&/^B[A-Za-z0-9_-]{80,}$/.test(j.vapidPub||""))try{localStorage.setItem("vapidpub",j.vapidPub)}catch(_){}return vapidPub()}).catch(()=>vapidPub());return VAPIDQ}
 const b64uOf=buf=>{const b=new Uint8Array(buf||[]);let s="";for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
 async function pushSub(create){const reg=await pushReg();let sub=await reg.pushManager.getSubscription();const k=await withTimeout(vapidRefresh(),4000,"vapid").catch(()=>vapidPub());
@@ -61,7 +61,7 @@ async function pushSub(create){const reg=await pushReg();let sub=await reg.pushM
 async function pushSync(){
   if(PUSHBUSY){PUSHDIRTY=true;return}   /* a change during a sync: one more sync right after it (it was lost) */
   if(!ME||!ME.uid||!pushOK()||(window.simOn&&window.simOn()))return;PUSHBUSY=true;   /* never while viewing as another person */
-  try{const c=pushCfg(),{F,db}=await fb(),ref=F.doc(db,"push",ME.uid+"_"+pushDev());let last="";try{last=localStorage.getItem("pushlast")||""}catch(_){}
+  try{const c=pushCfg(),{F,db}=await fb(),ref=F.doc(db,"push",ME.uid+"_"+pushDev());let last=lsGet("pushlast","");
     if(!(c.on||newsAny(c))||Notification.permission!=="granted"){if(last){await F.deleteDoc(ref).catch(()=>{});try{localStorage.removeItem("pushlast")}catch(_){}}return}
     const sub=await pushSub(true);if(!sub)return;
     let dept="";try{const me=typeof myIdentity==="function"&&myIdentity();dept=me&&me.src||""}catch(_){}

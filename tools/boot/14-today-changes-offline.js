@@ -1,4 +1,4 @@
-import {ddmm,esc,L,mkDialog,norm,S,todayISO,xBtn} from "../base/10-core.js";
+import {ddmm,esc,L,lsJSON,mkDialog,norm,S,todayISO,xBtn} from "../base/10-core.js";
 import {unitLists} from "../base/11-schedule-prep.js";
 import {WDL,openMyCal} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -32,7 +32,7 @@ function chgSave(l){try{localStorage.setItem("chg:v1",JSON.stringify(l.slice(0,1
 try{if(!localStorage.getItem("chgu2clr:v1")){chgSave(chgLoad().filter(c=>String(c.u||"1")!=="2"));localStorage.setItem("chgu2clr:v1","1")}}catch(_){}
 export function chgDetect(){
   if(!(S.days||[]).length)return;
-  const now=chgSnap();now.v2=1;let old=null;try{old=JSON.parse(localStorage.getItem("snap:v1")||"null")}catch(_){}
+  const now=chgSnap();now.v2=1;let old=lsJSON("snap:v1");
   try{localStorage.setItem("snap:v1",JSON.stringify(now))}catch(_){}
   if(!old||!old.sc)return;
   const skipU2=old.v2!==1;
@@ -74,7 +74,7 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-chgseen]"))ret
 
 /* ---------- 3) offline on set: data key, today's + tomorrow's blocking pictures and the script stay on the device ---------- */
 export const OFF={busy:false};
-export function offState(){try{return JSON.parse(localStorage.getItem("offline:v1")||"null")}catch(_){return null}}
+export function offState(){return lsJSON("offline:v1")}
 /* today (or the next working day) and the day after it */
 /* offline: no photos – only the blocking PDF pages and the floorplans, for all shooting days */
 export const offAuto=()=>{try{return localStorage.getItem("offline")!=="0"}catch(_){return true}};

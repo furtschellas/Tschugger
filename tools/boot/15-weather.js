@@ -1,4 +1,4 @@
-import {dayOf,ddmm,dispoOf,esc,L,localISO,mkDialog,S,xBtn} from "../base/10-core.js";
+import {dayOf,ddmm,dispoOf,esc,L,localISO,lsJSON,mkDialog,S,xBtn} from "../base/10-core.js";
 import {WDL} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
 import {render} from "../base/15-script-tab.js";
@@ -36,7 +36,7 @@ async function wxLoad(d){
   const p=wxPlace(d);if(!p)return null;const key=d.date+"|"+p.town;
   {const t0=localISO(Date.now()-864e5),t1=localISO(Date.now()+15*864e5);if(d.date<t0||d.date>t1)return null}
   if(WX[key]&&(WX[key].busy||Date.now()-WX[key].at<3600e3))return WX[key];
-  let cached=null;try{cached=JSON.parse(localStorage.getItem("wx:"+key)||"null")}catch(_){}
+  let cached=lsJSON("wx:"+key);
   WX[key]=Object.assign({},cached||{},{busy:true,at:Date.now(),p}); /* «at» = this try: after an error the next try waits an hour (no endless reload without reception) */
   try{
     /* the place of a town is kept on the device (one request less every time) */
@@ -57,7 +57,7 @@ async function wxLoad(d){
   return WX[key];
 }
 function wxGet(d){const p=wxPlace(d);if(!p)return null;const w=WX[d.date+"|"+p.town];if(!w||(!w.busy&&Date.now()-w.at>3600e3))wxLoad(d);
-  if(!w||!w.j){let c=null;try{c=JSON.parse(localStorage.getItem("wx:"+d.date+"|"+p.town)||"null")}catch(_){}return c&&c.j?Object.assign({p},c):{p,busy:true}}return w}
+  if(!w||!w.j){let c=lsJSON("wx:"+d.date+"|"+p.town);return c&&c.j?Object.assign({p},c):{p,busy:true}}return w}
 export function wxTile(d){
   const w=wxGet(d);if(!w)return "";const dl=w.j&&w.j.daily;
   if(!dl||!dl.time||!dl.time.length)return '<button type="button" class="ttile twx" data-wx="'+esc(d.date)+'"><b>'+(w.err?"–":"…")+'</b><span>'+esc(L("Wetter"))+' · '+esc(w.p.town)+'</span></button>';

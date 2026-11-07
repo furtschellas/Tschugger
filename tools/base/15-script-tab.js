@@ -1,4 +1,4 @@
-import {$,L,LANG,LOC,S,TX,WD,ddmm,esc,markTerms,memo,norm,pvApply,svClasses,svToggles,todayISO,ufButtons} from "./10-core.js";
+import {$,ddmm,esc,L,LANG,LOC,lsGet,markTerms,memo,norm,pvApply,S,svClasses,svToggles,todayISO,TX,ufButtons,WD} from "./10-core.js";
 import {onlyU,unitLists,unitsOn} from "./11-schedule-prep.js";
 import {addrForItem,srcHTML} from "./13-crew-views.js";
 import {ALLTABS,VIEWS,tabsOn,vok} from "./14-render.js";
@@ -35,7 +35,7 @@ export function renderScript(){
     if(!SCRIPTERR&&!renderScript.wait){renderScript.wait=1;scriptData().then(l=>{renderScript.wait=0;if(!l.length)SCRIPTERR=true;if(S.tab==="script")render()},()=>{renderScript.wait=0;SCRIPTERR=true;if(S.tab==="script")render()})}
     return '<h3 class="dh">'+esc(L("Drehbuch"))+'</h3><div class="empty">'+(SCRIPTERR?esc(L("Drehbuch konnte nicht geladen werden."))+' <button class="copy" data-scretry>'+esc(L("Aktualisieren"))+'</button>':esc(L("Lade"))+' '+esc(L("Drehbuch"))+' …')+'</div>';
   }
-  let last="";try{last=localStorage.getItem("lastsc")||""}catch(_){}
+  let last=lsGet("lastsc","");
   const lx=last&&SCRIPT.find(x=>x.sc===last);
   return '<div class="svwrap '+svClasses()+'"><h3 class="dh">'+esc(L("Drehbuch"))+'</h3>'+(lx?'<button class="lastsc" data-scene="'+esc(lx.sc)+'"><span>'+esc(L("Zuletzt gelesen"))+'</span><b>'+esc(lx.sc)+' · '+spTitle(lx)+'</b><i aria-hidden="true">›</i></button>':'')+
     '<div class="svb svtab">'+ufButtons()+'<span class="svfill"></span>'+svToggles()+'</div>'+

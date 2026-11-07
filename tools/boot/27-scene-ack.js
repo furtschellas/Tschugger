@@ -1,4 +1,4 @@
-import {ariaTip,camFold,dayItems,dayOf,dispoOf,esc,hash36,I18N,isoAdd,isoDM,isoDMY,isoId,L,LANG,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
+import {ariaTip,camFold,dayItems,dayOf,dispoOf,esc,hash36,I18N,isoAdd,isoDM,isoDMY,isoId,L,LANG,lsGet,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
 import {csHM} from "../base/13b-cs-now.js";
 import {UNAME,dayMs} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
@@ -255,7 +255,7 @@ function scWaKind(date,sc,u,v){const bs=scBase(sc);if(bs==="wrap")return "w";if(
   return first&&scWaMode("d",u)!=="n"?"d":"b"}
 /* recipient: per kind (scwt<kind>) a number or a WhatsApp group (its invite link), else the general number (scwan), else choose in WhatsApp.
    A group cannot be opened with the text in it (WhatsApp does not allow that): the text is copied, the group opens, paste and send */
-const scWaGet=k=>{try{return localStorage.getItem(k)||""}catch(_){return ""}};
+const scWaGet=k=>{return lsGet(k,"")};
 function scWaParse(v){v=String(v||"").trim();const g=v.match(/chat\.whatsapp\.com\/(?:invite\/)?([A-Za-z0-9]{10,40})/);if(g)return "g:"+g[1];if(/^g:[A-Za-z0-9]{10,40}$/.test(v))return v;
   const n=v.replace(/[^\d+]/g,"").replace(/^\+/,"").replace(/^00/,"");return n.length>=8?n:""}
 const scWaTarget=(k,u)=>{const r=scWaRole(u);return scWaParse(r&&r.n)||scWaParse(k&&scWaGet("scwt"+k))||scWaParse(scWaGet("scwan"))};
@@ -271,7 +271,7 @@ function scWaOpen(txt,k,u){let how="";
     catch(e1){window.open(url,"_blank","noopener");how="open"}}
   catch(err){how="fehler "+String(err&&err.message||err).slice(0,60);showMsg(L("WhatsApp liess sich nicht öffnen."),4000)}
   try{scDiag(todayISO(),"whatsapp",String(u||"1"),"wa "+(k||"?")+" "+how)}catch(_){}}
-function scWaSec(){if(typeof canPerm!=="function"||!(canPerm("scenes.ack")||canPerm("now.forecast")||canPerm("day.edit")))return "";const m=scWaModes(),n=(()=>{try{return localStorage.getItem("scwan")||""}catch(_){return ""}})();
+function scWaSec(){if(typeof canPerm!=="function"||!(canPerm("scenes.ack")||canPerm("now.forecast")||canPerm("day.edit")))return "";const m=scWaModes(),n=(()=>{return lsGet("scwan","")})();
   return '<section class="psec"><h4>'+esc(L("WhatsApp beim Quittieren"))+'</h4><p class="ghint">'+esc(L("Nach dem Quittieren einer Szene eine kurze Info per WhatsApp – pro Art einstellbar. «Fragen»: nach dem Speichern erscheint ein Knopf. «Direkt»: WhatsApp öffnet sich sofort mit dem fertigen Text; senden tippst du selbst."))+'</p>'+
     '<div class="scwag">'+SCWA_KINDS.map(([k,t,sub])=>'<div class="scwar"><span>'+esc(L(t))+(sub?' <small class="ghint">'+esc(L(sub))+'</small>':'')+'</span><select data-scwam="'+k+'" aria-label="'+esc(L(t))+'">'+[["n","Aus"],["f","Fragen"],["a","Direkt"]].map(([v,x])=>'<option value="'+v+'"'+(m[k]===v?' selected':'')+'>'+esc(L(x))+'</option>').join("")+'</select></div>'+'<input class="scwan scwt" data-scwt="'+k+'" maxlength="80" autocomplete="off" spellcheck="false" value="'+esc(scWaGet("scwt"+k))+'" placeholder="'+esc(L("Empfänger: Nummer oder Gruppenlink (leer = wie unten)"))+'" aria-label="'+esc(L(t)+" – "+L("Empfänger"))+'"'+(m[k]==="n"?' hidden':'')+'>').join("")+'</div>'+
     '<p class="ghint"><b>'+esc(L("Empfänger"))+'</b> – '+esc(L("Pro Art oder hier für alle: eine Nummer (öffnet diesen Chat mit dem Text) oder der Einladungslink einer WhatsApp-Gruppe (WhatsApp → Gruppe → Einladen per Link). Bei einer Gruppe wird der Text kopiert und die Gruppe geöffnet – einfügen und senden. Leer: du wählst den Chat jedes Mal in WhatsApp."))+'</p>'+

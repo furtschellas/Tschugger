@@ -1,5 +1,5 @@
 import {isStandalone} from "../a2hs.js";
-import {applyStatic,ddmm,dispoOf,esc,fullName,L,LANG,localISO,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
+import {applyStatic,ddmm,dispoOf,esc,fullName,L,LANG,localISO,lsGet,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
 import {UNAME,hasU,unitsOn} from "../base/11-schedule-prep.js";
 import {WDL} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -92,7 +92,7 @@ const WTXT={
 export let WELCOME_OPEN=false;
 async function welcomeDone(){
   if(MEMBER&&MEMBER.welcomeAck&&MEMBER.welcomeVer===WELCOME_VER)return true;
-  let loc="";try{loc=localStorage.getItem("welcomeAck")||""}catch(_){}
+  let loc=lsGet("welcomeAck","");
   if(loc&&loc.split("|")[1]===WELCOME_VER)return true;
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().welcomeAck;if(w&&String(w).split("|")[1]===WELCOME_VER){try{localStorage.setItem("welcomeAck",w)}catch(_){}return true}}catch(_){}
   return false;
@@ -119,7 +119,7 @@ const twVer=()=>String(parseInt(((window.DOCS||{}).testwelcome||{}).ver,10)||1);
 const isTester=()=>!!(ME&&!SIMROLE&&!(typeof SIMUSER!=="undefined"&&SIMUSER)&&!isAdmin()&&/test/i.test((window.MYROLENAME||"")+" "+(MYROLE||"")));
 async function twDone(){const v=twVer();
   if(MEMBER&&MEMBER.testAck&&String(MEMBER.testVer||"1")===v)return true;
-  let loc="";try{loc=localStorage.getItem("testAck")||""}catch(_){}
+  let loc=lsGet("testAck","");
   if(loc&&loc.split("|")[1]===v)return true;
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().testAck;if(w&&String(w).split("|")[1]===v){try{localStorage.setItem("testAck",w)}catch(_){}return true}}catch(_){}
   return false}
@@ -148,7 +148,7 @@ function startNote(id,w,ack){const d=mkDialog(id);let done=false;
 window.startNotesReset=()=>{TW_OPEN=false;CSB_OPEN=false;for(const id of ["twelcome","csbeta","news","pushhint","iconhint","scrnews"]){const x=document.getElementById(id);if(x){x.dataset.kill="1";x.remove()}}};
 /* ---- «Neu: Interaktives Callsheet» (BETA): once for everybody who may see the callsheet; text under Einstellungen → Dokumente ---- */
 let CSB_OPEN=false;
-async function csbDone(){let loc="";try{loc=localStorage.getItem("csb")||""}catch(_){}if(loc)return true;
+async function csbDone(){let loc=lsGet("csb","");if(loc)return true;
   try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&prefX(d.data()).csb;if(w){try{localStorage.setItem("csb",w)}catch(_){}return true}}catch(_){}
   return false}
 async function maybeCsBeta(){

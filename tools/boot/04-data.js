@@ -1,4 +1,4 @@
-import {L,MEMO,S} from "../base/10-core.js";
+import {L,lsJSON,MEMO,S} from "../base/10-core.js";
 import {CLEAN,arr,saveCache,scheduleRender} from "../base/20-data-start.js";
 import {DATA_URL} from "./01-config.js";
 import {DATAKEY,LASTSTAMP,MEMBER,b64,fb,isAdmin,setDATAKEY,setLASTSTAMP,withTimeout} from "./03-core-firebase.js";
@@ -98,7 +98,7 @@ window.loadScriptData=async function(){
     return list;
   }catch(err){ /* offline or slow network: use the last copy loaded on this device – not without the right */
     if(/no access/.test(err&&err.message||"")){try{localStorage.removeItem("scriptcache")}catch(_){}throw err}
-    let c=null;try{c=JSON.parse(localStorage.getItem("scriptcache")||"null")}catch(_){}
+    let c=lsJSON("scriptcache");
     if(Array.isArray(c)&&c.length)return c;
     throw err;
   }

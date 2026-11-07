@@ -3,7 +3,7 @@
    every «#view» rule to «.sbview» too). Topics that are whole pages (Smartphone-Vorschau, User, Access, App-Einstellungen) are the app itself in a
    frame: fully usable, looking the same – each frame is a second copy of the app (its own live data), so only chosen ones are loaded.
    Setting: localStorage «sbx» = «now.mine|phone» (left|right, the order of the topics), kept with the other notices of the profile (prefs x). */
-import {dayItems,dispoOf,esc,isoDM,L,S,todayISO,unitKey} from "../base/10-core.js";
+import {dayItems,dispoOf,esc,isoDM,L,lsGet,S,todayISO,unitKey} from "../base/10-core.js";
 import {csHm,csMe,csMyRides,csRideReal,csTile} from "../base/13a-callsheet.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
@@ -33,7 +33,7 @@ export const SBWIDE=1300;
 const INFRAME=(()=>{try{return window.self!==window.top}catch(_){return true}})();
 const FRAMEPG=(()=>{try{return new URLSearchParams(location.search).get("sbx")||""}catch(_){return ""}})();
 /* the setting: two lists of topic keys */
-export function sbxGet(){let v="";try{v=localStorage.getItem("sbx")||""}catch(_){}if(!v)v="now.tiles.mine|order.rides.next";const [a,b]=v.split("|");const ok=k=>SBT.some(t=>t[0]===k);
+export function sbxGet(){let v=lsGet("sbx","");if(!v)v="now.tiles.mine|order.rides.next";const [a,b]=v.split("|");const ok=k=>SBT.some(t=>t[0]===k);
   return {l:String(a||"").split(".").filter(ok),r:String(b||"").split(".").filter(ok)}}
 function sbxSet(x){try{localStorage.setItem("sbx",x.l.join(".")+"|"+x.r.join("."))}catch(_){}savePrefsSoon()}
 

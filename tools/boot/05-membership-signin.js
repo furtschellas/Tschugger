@@ -1,5 +1,5 @@
 import {isIOS,isStandalone} from "../a2hs.js";
-import {$,applyStatic,dlgBtn,esc,fullName,L,LANG,MEMO,mkDialog,S,setLANG} from "../base/10-core.js";
+import {$,applyStatic,dlgBtn,esc,fullName,L,LANG,lsGet,MEMO,mkDialog,S,setLANG} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {setSCRIPT} from "../base/17-scene-reader.js";
@@ -268,7 +268,7 @@ function roleChanged(prev){if(!prev||!ME||isOwner())return;   /* the owner keeps
   const add=[...np].filter(k=>!pp.has(k)),rem=[...pp].filter(k=>!np.has(k));if(was===now||(was===""&&now==="gast"))return;   /* no role → «Gast» (automatic, same rights): no message; only when the role itself changed (new rights of the same role: no message) */
   /* only once per change, also across devices: the shown state is kept with the synced settings */
   let h=0;for(const ch of now+":"+[...np].sort().join(","))h=(h*31+ch.charCodeAt(0))|0;const sig=(h>>>0).toString(36);
-  let seen="";try{seen=localStorage.getItem("rc")||""}catch(_){}if(seen===sig)return;
+  let seen=lsGet("rc","");if(seen===sig)return;
   store("rc",sig);savePrefs();setTimeout(()=>showRoleChange(now,add,rem),2500)}
 function showRoleChange(role,add,rem){if(document.getElementById("rolechg"))return;
   const lbl=k=>{const x=PERMS.find(p=>p[0]===k);return x?permLbl(k,x[1]):k};

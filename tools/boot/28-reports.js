@@ -1,4 +1,4 @@
-import {L,S,esc,safeUrl} from "../base/10-core.js";
+import {esc,L,lsGet,S,safeUrl} from "../base/10-core.js";
 import {VIEWS} from "../base/14-render.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {openGallery} from "../base/18-blocking.js";
@@ -61,7 +61,7 @@ window.reportsSec=only=>{const all=repList();if((!all.length&&!repFolders().leng
       (vis.length&&typeof window.blkImg==="function"?repIco('data-repall="'+REPALL+'"',REP_GAL,L("Alle in der Galerie")):'')+'</div>'+
       (lst.length?'<ul class="audlist">'+lis+'</ul>':'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+'</div></details>'}
   return only==="*"?allBox:only?boxes:boxes+allBox};
-let REPALL="day";try{REPALL=localStorage.getItem("repall")||"day"}catch(_){}
+let REPALL=lsGet("repall","day");
 /* order of [report, index] pairs: by shooting day (oldest first), by department, or newest first */
 function repSort(l,m){const dk=x=>repDay(x[0]).date||"",gk=x=>String(x[0].g||"").toLowerCase(),nk=x=>String(x[0].n);
   return l.slice().sort(m==="dept"?(a,b)=>gk(a).localeCompare(gk(b))||dk(a).localeCompare(dk(b))||nk(a).localeCompare(nk(b)):m==="new"?(a,b)=>dk(b).localeCompare(dk(a))||gk(a).localeCompare(gk(b))||nk(a).localeCompare(nk(b)):(a,b)=>dk(a).localeCompare(dk(b))||gk(a).localeCompare(gk(b))||nk(a).localeCompare(nk(b)))}
@@ -88,7 +88,7 @@ try{window.repPermsSync()}catch(_){}
 
 /* ---------- own topic «Reports» (button in the head between the message envelope and «Mein Konto»):
    sub topics Szenen (scene log), Produktion, Sound, DIT (one per report folder), Alle – navigation like «Mein Konto» ---------- */
-let REPSUB="";try{REPSUB=localStorage.getItem("repsub")||""}catch(_){}
+let REPSUB=lsGet("repsub","");
 /* order: Produktion, Szenen, then the other folders (Sound, DIT …), Alle */
 const repSubs=()=>{const out=[],gs=repGroups(),isP=g=>fold(repTitle(g))==="produktion";
   for(const g of gs.filter(isP))out.push(["g:"+g,repTitle(g)]);

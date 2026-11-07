@@ -1,4 +1,4 @@
-import {L,S,dlgBtn,esc,localISO,mkDialog} from "../base/10-core.js";
+import {dlgBtn,esc,L,localISO,lsGet,mkDialog,S} from "../base/10-core.js";
 import {vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
@@ -16,7 +16,7 @@ import {clogHTML} from "./16-today-view.js";
 const scrNewsKey=sx=>(sx.v||"")+"|"+(sx.at||"");
 function scrNewsDue(){const sx=S.meta&&S.meta.scriptChange;if(!ME||!sx||!sx.at||!vok("script"))return null;
   const at=Date.parse(sx.at);if(!at||Date.now()-at>14*864e5)return null;   /* older than two weeks: no longer news */
-  let seen="";try{seen=localStorage.getItem("scrv")||""}catch(_){}return seen===scrNewsKey(sx)?null:sx}
+  let seen=lsGet("scrv","");return seen===scrNewsKey(sx)?null:sx}
 function scrNewsBusy(){return (typeof ONBOARD!=="undefined"&&ONBOARD)||(typeof WELCOME_OPEN!=="undefined"&&WELCOME_OPEN)||(typeof TOUR!=="undefined"&&TOUR.el)||
   ["news","rolechg","pushhint","scrnews","welcome","gate","twelcome","csbeta","iconhint","tour"].some(id=>{const e=document.getElementById(id);return e&&!e.hidden&&e.offsetParent!==null})}
 export function showScriptNews(sx){

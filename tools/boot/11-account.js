@@ -1,5 +1,5 @@
 import {a2hsDo,isIOS,isStandalone,showA2hs} from "../a2hs.js";
-import {$,applyStatic,dlgBtn,esc,fullName,getTheme,L,LANG,mkDialog,S,saveBtn,setLANG,setTheme,WDS} from "../base/10-core.js";
+import {$,applyStatic,dlgBtn,esc,fullName,getTheme,L,LANG,lsGet,mkDialog,S,saveBtn,setLANG,setTheme,WDS} from "../base/10-core.js";
 import {VIEWS,myTabOrder,tabOrder,tabsOn,vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
@@ -81,7 +81,7 @@ document.addEventListener("click",e=>{const r=e.target.closest&&e.target.closest
   const all=tabOrder(),rest=all.filter(x=>!vis.includes(x));try{localStorage.setItem("mytaborder",JSON.stringify(vis.concat(rest)))}catch(_){}render()});
 /* «Mein Konto» in groups like the app management: Profil (with password/e-mail) · Essen · Benachrichtigungen · App */
 const ACSUBS=[["pro","Profil"],["food","Essen"],["app","App"],["note","Push"]];   /* App before Push */
-export let ACSUB="pro";try{ACSUB=localStorage.getItem("acsub")||"pro"}catch(_){}
+export let ACSUB=lsGet("acsub","pro");
 function acctInner(){
   const raw=acctInnerAll();const box=document.createElement("div");box.innerHTML=raw;
   const grp={};ACSUBS.forEach(([k])=>grp[k]=[]);
@@ -218,7 +218,7 @@ function aboutHTML(){const m=S.meta||{};
    Mein Konto → App: the steps for this device and the switch «Hinweis beim Öffnen zeigen» (iconhint: ""/"on" = show once, "seen", "off"; synced in prefs) */
 const ICONSTEPS=()=>typeof isIOS==="function"&&isIOS()?["Halte das App-Icon auf dem Home-Bildschirm gedrückt → «App entfernen» → «Vom Home-Bildschirm entfernen».","Öffne die App in Safari → Teilen → «Zum Home-Bildschirm».","Deine Anmeldung und deine Einstellungen bleiben erhalten."]:
   ["Android und Computer übernehmen das neue Logo von selbst (manchmal erst nach ein paar Tagen).","Sofort: die App deinstallieren und über «Als App installieren» neu installieren."];
-const iconHint=()=>{try{return localStorage.getItem("iconhint")||""}catch(_){return ""}};
+const iconHint=()=>{return lsGet("iconhint","")};
 function iconSec(){const on=iconHint()!=="off";
   return '<section class="psec"><h4>'+L("App-Symbol erneuern")+'</h4><p class="ghint">'+esc(L("Siehst du auf dem Home-Bildschirm oder in Push-Nachrichten noch das alte Logo (TT)? Das Handy hat das Symbol beim Hinzufügen gespeichert. So kommt das neue Logo:"))+'</p>'+
     '<ol class="a2ol">'+ICONSTEPS().map(x=>'<li>'+esc(L(x))+'</li>').join("")+'</ol>'+

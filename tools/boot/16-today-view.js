@@ -1,4 +1,4 @@
-import {castRow,dayItems,dayOf,ddmm,dispoOf,driveMin,esc,isoAdd,isoDM,isoId,L,LANG,localISO,mapsDir,mkDialog,norm,pad2,S,saveBtn,todayISO,TX,unitKey,xBtn} from "../base/10-core.js";
+import {castRow,dayItems,dayOf,ddmm,dispoOf,driveMin,esc,isoAdd,isoDM,isoId,L,LANG,localISO,lsGet,mapsDir,mkDialog,norm,pad2,S,saveBtn,todayISO,TX,unitKey,xBtn} from "../base/10-core.js";
 import {UNAME,dayMs,hasU,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,evRecent,hm,myEvents,myIdentity,telLinks} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
@@ -24,7 +24,7 @@ window.todayOn=todayOn;   /* the tab bar (base/14-render) asks through window: �
 const TODAY_PARTS=[["now","Jetzt gedreht",()=>!!(window.nowSee&&window.nowSee())],["my","Meine nächsten Termine",()=>vok("mycal")],["mine","Mein Drehtag",()=>true],["time","Zeiten",()=>true],["drive","Anfahrt",()=>vok("plan")],["wx","Wetter",()=>vok("plan")],
   ["loc","Erste Location",()=>vok("plan")],["menu","Mittagessen",()=>true],["scs","Szenen",()=>vok("plan")],["chg","Änderungen",()=>vok("plan")||vok("script")],["off","Offline am Set",()=>vok("blocking")||vok("plan")]];
 /* the person's choice, stored with the on/off value: «menu» = switched off, «+wx» = switched on although the App-Verwaltung offers it «aus» */
-function todayPrefs(){let v="";try{v=localStorage.getItem("today")||""}catch(_){}const i=v.indexOf("|");return new Set(i<0?[]:v.slice(i+1).split(",").filter(Boolean))}
+function todayPrefs(){let v=lsGet("today","");const i=v.indexOf("|");return new Set(i<0?[]:v.slice(i+1).split(",").filter(Boolean))}
 export function todayHidden(){return new Set([...todayPrefs()].filter(k=>k[0]!=="+"))}
 /* App-Verwaltung → Einstellungen → Today: per part «on» (default), «off» (offered, off until the person switches it on) or «no» (not offered) */
 export const todayCfg=k=>{const c=window.TODAYCFG;const v=c&&typeof c==="object"?c[k]:"";return v==="off"||v==="no"?v:"on"};

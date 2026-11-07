@@ -1,4 +1,4 @@
-import {esc,L,LANG,pad2,S,saveBlob} from "../base/10-core.js";
+import {esc,L,LANG,lsGet,pad2,S,saveBlob} from "../base/10-core.js";
 import {fmtStamp,render} from "../base/15-script-tab.js";
 import {ROOT_OWNERS} from "./01-config.js";
 import {ME,fb,isOwner,lc} from "./03-core-firebase.js";
@@ -8,7 +8,7 @@ import {ADM,confirmSafe} from "./12a-admin-core.js";
 /* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */
 const BK={busy:false,msg:"",ok:false};
 export function bkSec(){
-  let last="";try{last=localStorage.getItem("bk:last")||""}catch(_){}
+  let last=lsGet("bk:last","");
   return '<div class="bk">'+
     '<p class="ahint">'+L("Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.")+'</p>'+
     (last?'<p class="ahint">'+L("Letztes Backup auf diesem Gerät")+': '+esc(fmtStamp(last))+'</p>':'')+

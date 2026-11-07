@@ -1,7 +1,7 @@
-import {L,clockHM,pad2} from "../base/10-core.js";
+import {clockHM,L,lsGet,pad2} from "../base/10-core.js";
 /* ---------- phone comfort: font size, offline bar with data time, sticky offsets, swipe between days ---------- */
 /* font size «Normal» / «Gross» (Mein Konto › App › Darstellung): stored on this device, scales the page content */
-export function fsGet(){try{return localStorage.getItem("fsize:v1")||"n"}catch(_){return "n"}}
+export function fsGet(){return lsGet("fsize:v1","n")}
 function fsApply(){document.documentElement.classList.toggle("fs-l",fsGet()==="l")}
 fsApply();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-fsset]");if(!b)return;try{localStorage.setItem("fsize:v1",b.dataset.fsset)}catch(_){}fsApply();
