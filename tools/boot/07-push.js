@@ -1,5 +1,5 @@
 import {isIOS} from "../a2hs.js";
-import {L,LANG,S,ddmm,esc,todayISO} from "../base/10-core.js";
+import {ddmm,esc,hash36,L,LANG,S,todayISO} from "../base/10-core.js";
 import {dayPlaces,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,hm,myEvents,myIdentity,openMyCal} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -26,7 +26,7 @@ export function pushSave(c){const t=todayISO();for(const k in c.off)if(c.off[k]<
 export const pushOK=()=>window.PUSHEN!==false&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 export const pushStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}};
 function pushDev(){let d="";try{d=localStorage.getItem("pushdev")||""}catch(_){}if(!/^[a-z0-9]{10}$/.test(d)){d=Array.from(crypto.getRandomValues(new Uint8Array(10)),x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");try{localStorage.setItem("pushdev",d)}catch(_){}}return d}
-const pushId=s=>{let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)};
+const pushId=s=>hash36(s);
 const hmOf=hm;   /* same as hm() in 12-mycal.js */
 /* all events the device would remind of, by kind; each with a stable id */
 function pushEvents(c){
@@ -195,9 +195,9 @@ function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo|prep|script):(\d
   setTimeout(go,400);return true}
 pushGo(location.hash);
 if(location.hash==="#my"){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}setTimeout(()=>{if(typeof openMyCal==="function")openMyCal()},400)}
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const o=e.data&&e.data.open;if(!o)return;if(pushGo(o))return;if((o==="my"||/#my/.test(o))&&typeof openMyCal==="function")openMyCal()});
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(SBXFRAME)return;   /* a side-box frame: the page itself opens it */const o=e.data&&e.data.open;if(!o)return;if(pushGo(o))return;if((o==="my"||/#my/.test(o))&&typeof openMyCal==="function")openMyCal()});
 /* push while the app is open: also as a pop-up inside the app */
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{const p=e.data&&e.data.push;if(!p)return;
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(SBXFRAME)return;   /* only the page shows the pop-up (not each side-box frame) */const p=e.data&&e.data.push;if(!p)return;
   const o=document.createElement("div");o.className="pushpop";o.setAttribute("role","alertdialog");
   o.innerHTML='<div class="pphd"><span class="ppic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><b>'+esc(p.title||"TSCHUGGER")+'</b><button type="button" class="pushx" aria-label="'+esc(L("Schliessen"))+'">×</button></div>'+(p.body?'<p>'+esc(p.body)+'</p>':'');
   o.addEventListener("click",ev=>{if(!ev.target.closest(".pushx")){if(/^https:\/\//.test(p.url||""))window.open(p.url,"_blank","noopener");else if(/#my/.test(p.url||"")&&typeof openMyCal==="function")openMyCal()}o.classList.add("out");setTimeout(()=>o.remove(),250)});

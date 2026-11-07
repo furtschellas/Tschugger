@@ -1,4 +1,4 @@
-import {ariaTip,camFold,dayItems,esc,I18N,isoAdd,isoDM,isoId,L,LANG,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
+import {ariaTip,camFold,dayItems,esc,hash36,I18N,isoAdd,isoDM,isoDMY,isoId,L,LANG,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
 import {csHM} from "../base/13b-cs-now.js";
 import {UNAME,dayMs} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
@@ -124,7 +124,7 @@ const SCA_KINDS=[["a","Setup vor Drehbeginn"],["s","Szenen und Setup"],["l","Lun
 /* the settings of the unit (2nd Unit: SCENEAUTO2 only, 3rd as the 1st); without a unit: on in one of them */
 const scaA=u=>u==="2"?window.SCENEAUTO2:window.SCENEAUTO;   /* the 2nd Unit only its own setting */
 const scaOn=(k,u)=>{if(u===undefined)return scaOn(k,"1")||scaOn(k,"2");const A=scaA(u);return !!(A&&A[k]&&A[k].on)};
-const scaMark=(date,sc)=>{const s=date+"|"+scAckId(date,sc);let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "zs"+(h>>>0).toString(36)};
+const scaMark=(date,sc)=>{return "zs"+hash36(date+"|"+scAckId(date,sc))};
 const scaZ=(date,sc)=>!!(window.RIDEACK||{})[scaMark(date,sc)];
 async function scaKeep(date,sc){if(!SCA_KINDS.some(([k])=>scaOn(k))||scaZ(date,sc))return;const id=scaMark(date,sc),v={d:date,at:Date.now(),s:1};
   try{await dbWrite("set","rideack/"+id,v);if(window.RIDEACK)window.RIDEACK[id]=v}catch(err){scErr(date,sc,"","keep",err)}}
@@ -300,7 +300,7 @@ function scShareAsk(date,sc,u,v,force){
 /* popup of a quittiert scene: state, begin and end time; «offen» takes the quittance away */
 function scAckDialog(date,sc,u){sc=scK(sc,u);const id=scAckId(date,sc),x=scGet(date,sc)||{},st=scState(date,sc);
   const d=mkDialog("scackdlg",null,{replace:true});let cur=st;
-  d.innerHTML='<div class="a2box scbox"><h3>'+esc(scLabel(sc))+'</h3><p class="ghint">'+esc(date.split("-").reverse().join("."))+(u&&u!=="1"?' · '+esc((typeof UNAME!=="undefined"&&UNAME[u])||u)+' Unit':'')+'</p>'+
+  d.innerHTML='<div class="a2box scbox"><h3>'+esc(scLabel(sc))+'</h3><p class="ghint">'+esc(isoDMY(date))+(u&&u!=="1"?' · '+esc((typeof UNAME!=="undefined"&&UNAME[u])||u)+' Unit':'')+'</p>'+
     '<div class="redst scst" role="group" aria-label="'+esc(L("Status"))+'">'+(scBase(sc)==="wrap"?[[0,"offen"],[2,"Drehschluss"]]:[[0,"offen"],[1,scBase(sc)==="lunch"?"Lunch läuft":"läuft"],[2,"abgeschlossen"]]).map(([v,t])=>'<button type="button" class="scstb" data-scst="'+v+'" aria-pressed="'+(st===v)+'"><span class="scack sk'+v+'">'+((v===1&&scBase(sc)==="lunch"?SC_ICO.lunch:v===2&&scBase(sc)==="wrap"?SC_ICO.wrap:SC_ICO[v])||"")+'</span><span class="scstl">'+esc(L(t))+'</span></button>').join("")+'</div>'+
     '<form data-scform novalidate><div class="redrow"><label>'+esc(L("Beginn"))+'<input type="time" name="b" value="'+esc(scHM(x.b||x.at))+'"></label><label>'+esc(L("Ende"))+'<input type="time" name="e" value="'+esc(scHM(x.e))+'"></label></div>'+
     '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+saveBtn("data-scwasub",L("Speichern")+" + WhatsApp",'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.1A8 8 0 1 1 20 11.5z"/><path d="M9 10.5c.3 1.6 1.9 3.3 3.6 3.8"/></svg>',"scwab")+'<button type="button" class="lnk" data-scx>'+esc(L("Abbrechen"))+'</button></div>'+(st?'<button type="button" class="lnk scdel" data-scdel>'+esc(L("Quittierung löschen"))+'</button>':'')+'</form></div>';
@@ -332,7 +332,7 @@ async function scLogLoad(){SCLOG.busy=true;try{const {F,db}=await fb();const q=a
 window.canSceneLog=()=>typeof isAdmin==="function"&&(isAdmin()||(typeof can==="function"&&can("scenes.log")));
 window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.busy)scLogLoad();return""}
   const dur=ms=>{const m=Math.max(0,Math.round(ms/60000));return m<60?m+"′":Math.floor(m/60)+"h"+pad2(m%60)};
-  const p0=x=>+x.b||+x.at||0,key=x=>x.sc||x.id.split("-").slice(1).join("-"),isEv=k=>{k=scBase(k);return k==="lunch"||k==="wrap"||/^setup\d*$/.test(k)};
+  const p0=x=>+x.b||+x.at||0,key=x=>x.sc||x.id.split("-").slice(1).join("-"),isEv=scIsEv;
   /* the days: every day with quittances and today when it is a shooting day; the newest first */
   const t=todayISO(),days=new Set(SCLOG.list.map(x=>x.d).filter(Boolean));if((S.days||[]).some(d=>d.date===t&&d.kind==="shoot"))days.add(t);
   /* one entry: name, state, planned time; begin, end and duration always (– when not known; running: the counter) */
@@ -372,7 +372,7 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
     const hasU=u=>arr((u==="2"?day.unit2:day.unit3)||{}).length||arr(((u==="2"?day.unit2:day.unit3)||{}).items).some(i=>i.sc);
     const us=[...new Set(["1"].concat(l.map(x=>String(x.u||"1")),["2","3"].filter(hasU)))].sort(),dn=SHD.indexOf(d);
     return us.map(u=>{const p=unitRows(d,u,l.filter(x=>String(x.u||"1")===u),day,cs);for(const r of p.rows)EXP.push(Object.assign({dt:dn>=0?"DT "+(dn+1):"",d,u},r));
-      return '<details class="tstsu"><summary>'+(dn>=0?'<b>DT '+(dn+1)+'</b> · ':'')+esc(String(d).split("-").reverse().join("."))+' · <b class="sclun">'+esc(((typeof UNAME!=="undefined"&&UNAME[u])||u)+' Unit')+'</b> · '+p.n+' '+esc(L("Szenen"))+(p.start&&p.wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(p.wrE-p.start)):'')+'</summary>'+p.html+
+      return '<details class="tstsu"><summary>'+(dn>=0?'<b>DT '+(dn+1)+'</b> · ':'')+esc(isoDMY(d))+' · <b class="sclun">'+esc(((typeof UNAME!=="undefined"&&UNAME[u])||u)+' Unit')+'</b> · '+p.n+' '+esc(L("Szenen"))+(p.start&&p.wrE?' · '+esc(L("Drehzeit"))+' '+esc(dur(p.wrE-p.start)):'')+'</summary>'+p.html+
         '<div class="arb tstbtns sclbtns scld1">'+scIco('data-sclx="pdf|'+d+'|'+u+'"',SCX_PDF,"PDF")+scIco('data-sclx="csv|'+d+'|'+u+'"',SCX_CSV,L("Tabelle")+" (Excel)")+scShBtn()+'</div></details>'}).join("")}).join("");
   return '<details class="tstsec scld" data-lsec="sclog"'+(SCLOG.open?' open':'')+'><summary class="lsum">'+(typeof logHead==="function"?logHead(esc(L("Szenen-Protokoll")),'<span class="tsth">'+SCLOG.list.filter(x=>!isEv(key(x))).length+' '+esc(L("Szenen"))+'</span>',(()=>{const m=Math.max(0,...SCLOG.list.map(x=>+x.at||0))||SCLOG.at||Date.now();const z=new Date(m);return esc(pad2(z.getDate())+"."+pad2(z.getMonth()+1)+". "+scHM(m))})()):esc(L("Szenen-Protokoll")))+'</summary>'+
     '<div class="admins"><p class="ahint">'+esc(L("Beginn, Ende und Dauer jeder quittierten Szene (Drehplan und Callsheet), dazu Setup, Drehstart, Lunch und Wrap."))+'</p>'+
@@ -392,7 +392,7 @@ const scDK=uu=>r=>r.dt+" · "+r.date+(uu?"":" · "+r.unit);
 /* Drehstart and Wrap: no duration in the exports (they are points in time) */
 const scNoDur=r=>!!r.drehstart||scBase(r.k||"")==="wrap";
 function scExpRows(d,u){const un=s=>{const x=document.createElement("textarea");x.innerHTML=String(s||"");return x.value};
-  return (SCLOG.exp||[]).filter(r=>(!d||r.d===d)&&(!u||String(r.u)===u)).sort((a,b)=>a.d.localeCompare(b.d)).map(r=>Object.assign({dt:r.dt,date:r.d.split("-").reverse().join("."),unit:((typeof UNAME!=="undefined"&&UNAME[r.u])||r.u)+" Unit",name:un(r.name),
+  return (SCLOG.exp||[]).filter(r=>(!d||r.d===d)&&(!u||String(r.u)===u)).sort((a,b)=>a.d.localeCompare(b.d)).map(r=>Object.assign({dt:r.dt,date:isoDMY(r.d),unit:((typeof UNAME!=="undefined"&&UNAME[r.u])||r.u)+" Unit",name:un(r.name),
     st:r.st,inv:!!r.drehstart||/^(lunch|wrap)$/.test(scBase(r.k||"")),state:r.st===2?"✓":"",plan:r.plan||"",pmin:r.pdm&&!scNoDur(r)?String(r.pdm):"",b:r.b?scHM(r.b):"",e:r.e?scHM(r.e):"",min:r.b&&r.e&&!scNoDur(r)?String(Math.round((r.e-r.b)/60000)):"",diff:r.b&&r.e&&r.pdm&&!scNoDur(r)?String(Math.round((r.e-r.b)/60000)-r.pdm):""},scInfo(r)))}
 /* more about a scene for the export: I/E, set, pages, cast and the description from the Drehplan of that day (and unit) */
 function scInfo(r){const k=scBase(r.k||""),E={ie:"",set:"",pg:"",cast:"",desc:""};
@@ -442,7 +442,7 @@ document.addEventListener("click",e=>{const g=e.target.closest&&e.target.closest
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-sclx]");if(!b)return;e.preventDefault();const [k,dd,uu]=b.dataset.sclx.split("|"),rows=scExpRows(dd,uu),z0=new Date(),UN0=uu?((typeof UNAME!=="undefined"&&UNAME[uu])||uu)+" Unit":[...new Set(rows.map(r=>r.unit))].join(" + "),
     /* file name like the title (project · scene log · unit, the day when it is one day) with the time of the export, American date */
     stamp=[UN0.replace(/\s*\+\s*/g,"+").replace(/\s+/g,"-"),dd?dd.split("-").slice(1).concat(dd.split("-")[0]).join("-"):"",pad2(z0.getMonth()+1)+"-"+pad2(z0.getDate())+"-"+z0.getFullYear()+"_"+pad2(z0.getHours())+"-"+pad2(z0.getMinutes())].filter(Boolean).join("_"),
-    TITLE=projName()+" · "+L("Szenen-Protokoll")+(UN0?" · "+UN0:"")+(dd?" · "+dd.split("-").reverse().join("."):"");
+    TITLE=projName()+" · "+L("Szenen-Protokoll")+(UN0?" · "+UN0:"")+(dd?" · "+isoDMY(dd):"");
   const cells=r=>[r.name,r.dt,r.date,r.unit,r.state,r.ie,r.pg,r.set,r.plan,r.pmin,r.b,r.e,r.min,r.diff,r.desc];
   if(k==="csv"){const data=rows.map(cells);scXlsx(SCX_HEAD(),data,projFile()+"_Szenen-Protokoll_"+stamp+".xlsx",TITLE,L("Stand")+" "+pad2(z0.getDate())+"."+pad2(z0.getMonth()+1)+"."+z0.getFullYear()+" "+pad2(z0.getHours())+":"+pad2(z0.getMinutes()));return}
   const UN=uu?((typeof UNAME!=="undefined"&&UNAME[uu])||uu)+" Unit":[...new Set(rows.map(r=>r.unit))].join(" + "),HD=[L("Eintrag"),L("Status"),"I/E · "+L("Seiten"),"Set · "+L("Beschreibung")],HD2=[L("Zeit"),L("Dauer")+" (min)",L("Beginn"),L("Ende"),L("Dauer")+" (min)",L("Diff.")+" (min)"],days=[...new Set(rows.map(scDK(uu)))];

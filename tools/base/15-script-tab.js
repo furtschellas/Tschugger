@@ -190,7 +190,7 @@ function renderCore(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
     if(!S.todayWaitT)S.todayWaitT=setTimeout(()=>{if(!VIEWS.today){S.todayGone=true;render()}},6000);return}
   {const v0=$("#view");if(v0&&v0.dataset.wait)delete v0.dataset.wait}
   /* a page that is not available yet (e.g. before sign-in) is remembered and opened as soon as it is */
-  const tOn=tabsOn();if(S.want&&Date.now()-S.wantAt>30000)S.want=null;if(S.want&&VIEWS[S.want]&&(!ALLTABS.includes(S.want)||tOn.includes(S.want))){S.tab=S.want;S.want=null}
+  const tOn=tabsOn();if(S.want&&Date.now()-S.wantAt>30000){S.want=null;S.wantAt=0}if(S.want&&VIEWS[S.want]&&(!ALLTABS.includes(S.want)||tOn.includes(S.want))){S.tab=S.want;S.want=null;S.wantAt=0}   /* wantAt cleared: the next page not ready yet is remembered too */
   if(!VIEWS[S.tab]||(ALLTABS.includes(S.tab)&&!tOn.includes(S.tab))){if(!S.want&&!S.wantAt){S.want=S.tab;S.wantAt=Date.now()}S.tab=tOn[0]}
   const nb=document.querySelectorAll("nav.tabs button[data-tab]");nb.forEach(b=>{b.hidden=!tOn.includes(b.dataset.tab);b.style.order=String(tOn.indexOf(b.dataset.tab))});
   const nin=document.querySelector("nav.tabs .in");if(nin)nin.style.setProperty("--ntabs",tOn.length);

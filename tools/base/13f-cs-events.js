@@ -1,4 +1,4 @@
-import {esc,L,S,safeUrl,saveErr,todayISO,unitKey} from "./10-core.js";
+import {esc,isoDMY,L,S,safeUrl,saveErr,todayISO,unitKey} from "./10-core.js";
 import {rideId} from "./12-mycal.js";
 import {CSI,csA,csAfter,csHm,csOn,csRows} from "./13a-callsheet.js";
 import {CSCUR,csHM,csShootDay} from "./13b-cs-now.js";
@@ -122,7 +122,7 @@ setInterval(()=>{if(typeof S!=="undefined"&&S.tab==="dispo")csCastNow()},60e3);
 csOn("click",async e=>{const b=e.target.closest("[data-rideall]");if(!b||typeof canPerm!=="function"||!canPerm("rides.alldone"))return;e.preventDefault();const date=b.dataset.rideall;
   const x=(S.dispos||[]).find(y=>y&&y.date===date),u=b.dataset.rideu||"";let rs=csA(x&&x.cs&&x.cs.transport);
   if(u&&x&&x.cs&&typeof window.csRidesFor==="function")rs=window.csRidesFor(x.cs,u).transport;   /* the callsheet of one unit: only its rides (and those of both) */if(!rs.length)return;
-  if(!confirmSafe(L("Alle {n} Fahrten vom {d} als erledigt markieren?").replace("{n}",rs.length).replace("{d}",date.split("-").reverse().join("."))))return;
+  if(!confirmSafe(L("Alle {n} Fahrten vom {d} als erledigt markieren?").replace("{n}",rs.length).replace("{d}",isoDMY(date))))return;
   b.disabled=true;try{const {F,db}=await fb();const bt=F.writeBatch(db);const now=Date.now();const ids=[...new Set(rs.map(r=>rideId(date,r)).filter(Boolean))];
     for(const id of ids){bt.set(F.doc(db,"rideack",id),{d:date,at:now,s:2});bt.delete(F.doc(db,"rideack","v"+id))}   /* «on the way» ends too */
     await bt.commit();window.RIDEACK=window.RIDEACK||{};for(const id of ids){window.RIDEACK[id]={d:date,at:now,s:2};delete window.RIDEACK["v"+id]}

@@ -1,5 +1,5 @@
 import {a2hsAuto,a2hsDue,isIOS,showA2hs} from "../a2hs.js";
-import {applyStatic,dlgBtn,esc,getTheme,L,LANG,localISO,mkDialog,S,SBXF,setLANG,setTheme,todayISO} from "../base/10-core.js";
+import {applyStatic,dlgBtn,esc,getTheme,L,LANG,localISO,mkDialog,prodTZ,S,SBXF,setLANG,setTheme,todayISO} from "../base/10-core.js";
 import {myEvents,myIdentity} from "../base/12-mycal.js";
 import {tabsOn,vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -69,7 +69,7 @@ async function chatAsk(q){
   CHAT.msgs.push({r:"u",t:q});CHAT.busy=true;chatKeep();chatPanel();
   try{const {auth}=await fb();const tok=await auth.currentUser.getIdToken();
     const r=await withTimeout(fetch(wkUrl("/chat"),{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},
-      body:JSON.stringify({q,lang:LANG,today:new Date().toLocaleString("de-CH",{weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}),who:(MEMBER&&MEMBER.name||"")+" <"+ME.email+">",
+      body:JSON.stringify({q,lang:LANG,today:new Date().toLocaleString("de-CH",{weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:prodTZ()}),who:(MEMBER&&MEMBER.name||"")+" <"+ME.email+">",
         hist:CHAT.msgs.slice(0,-1).filter(m=>m.r!=="e").slice(-10),ctx:chatCtx()})}),60000,"chat");
     const j=await r.json().catch(()=>({}));
     CHAT.msgs.push(r.ok&&j.a?{r:"a",t:j.a}:{r:"e",t:L("Fehler:")+" "+(j.error||r.status)})}

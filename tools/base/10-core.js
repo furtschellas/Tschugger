@@ -108,7 +108,11 @@ export const mName=m=>fullName(m)||(m&&m.name)||"";
 /* hand a file to the browser as a download (the link is freed again after a minute – some phones read it late) */
 export function saveBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),6e4)}
 export const clockHM=d=>pad2(d.getHours())+":"+pad2(d.getMinutes());   /* «07:05» of a Date (local time) */
-export const msHM=ms=>ms?clockHM(new Date(+ms)):"";   /* «07:05» of a time in milliseconds, "" without */
+export const msHM=ms=>ms?clockHM(new Date(+ms)):"";
+/* short checksum of a text (djb2, base 36) – ride ids, push ids, quittance markers, signatures; the server (late_push, scene_sheet) builds the same */
+/* «2026-11-07» → «07.11.2026» */
+export const isoDMY=d=>String(d??"").split("-").reverse().join(".");
+export function hash36(s){s=String(s??"");let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}   /* «07:05» of a time in milliseconds, "" without */
 /* message when saving failed: no permission, else not possible */
 export const saveErr=e=>/permission/.test((e&&e.code)||"")?L("Keine Berechtigung."):L("Speichern nicht möglich.");
 /* a date «2026-10-29» as «29.10» and as the key of a document «20261029» – one routine each */

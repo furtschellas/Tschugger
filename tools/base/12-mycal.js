@@ -1,4 +1,4 @@
-import {ariaTip,blockTag,camFold,dayTitle,ddmm,driveMin,esc,fmtDate,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
+import {ariaTip,blockTag,camFold,dayTitle,ddmm,driveMin,esc,fmtDate,hash36,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";
@@ -38,7 +38,7 @@ function iAmIn(names,me,people){
 }
 export function hm(t){const m=String(t||"").match(/(\d{1,2}):(\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
 /* a ride of a callsheet: the same id for everyone (date, times, places, vehicle – no names) */
-export function rideId(date,r){if(r&&r._rid)return r._rid;const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}
+export function rideId(date,r){if(r&&r._rid)return r._rid;const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();return "r"+hash36(s)}
 /* map link of a ride's start or destination, from the callsheet: a link in the text of the ride, else the place of the callsheet with that
    name, code (L1, Set 1, Base, P1 …) or kind (Base, Lunch …) – its map link, else its address; else Motivliste, location list (Infos) and the internal
    Google map; links only from these sources (no free Google search by name – a wrong place is worse than none) */
@@ -141,7 +141,7 @@ function renderMy0(){
     if(window.RIDEHID||window.SHOWDONE)h+='<button type="button" class="lnk ridedone" data-ridedone>'+esc(window.SHOWDONE?L("Erledigte Fahrten ausblenden"):L("Erledigte Fahrten anzeigen")+" ("+window.RIDEHID+")")+'</button>';
     let last="";
     MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>';last=e.date}
-      h+='<div class="mci'+(e.dim?' mcdim':'')+'"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb"><button type="button" class="mcn" data-mcgo="'+esc(e.go||"")+'">'+esc(e.n||"")+'</button>'+(e.where?ppWhere(e.where,e.map):'')+(e.to?'<div class="ppl rto">'+esc(L("Ziel"))+': '+(e.toMap?'<a href="'+esc(safeUrl(e.toMap))+'" target="_blank" rel="noopener">'+esc(e.to)+'</a>':esc(e.to))+'</div>':'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.pax?'<div class="ppx">'+esc(L("Mitfahrende"))+': '+esc(e.pax)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+(e.xqh?'<div class="ppx xqm">'+e.xqh+'</div>':'')+(e.cmah?'<div class="ppx cma">'+e.cmah+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+(()=>{/* a ride: its confirmation on the right instead of «in den Kalender» (the calendar stays when there is nothing to confirm) */
+      h+='<div class="mci'+(e.dim?' mcdim':'')+'"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb">'+(e.go?'<button type="button" class="mcn" data-mcgo="'+esc(e.go)+'">'+esc(e.n||"")+'</button>':'<span class="mcn">'+esc(e.n||"")+'</span>')+''+(e.where?ppWhere(e.where,e.map):'')+(e.to?'<div class="ppl rto">'+esc(L("Ziel"))+': '+(e.toMap?'<a href="'+esc(safeUrl(e.toMap))+'" target="_blank" rel="noopener">'+esc(e.to)+'</a>':esc(e.to))+'</div>':'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.pax?'<div class="ppx">'+esc(L("Mitfahrende"))+': '+esc(e.pax)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+(e.xqh?'<div class="ppx xqm">'+e.xqh+'</div>':'')+(e.cmah?'<div class="ppx cma">'+e.cmah+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+(()=>{/* a ride: its confirmation on the right instead of «in den Kalender» (the calendar stays when there is nothing to confirm) */
         if(e.cm&&window.cmBtn){const cb=window.cmBtn(e.cm,e.date,e.n,e.cmk,e.cmo);if(cb)return cb}
         const ack=window.rideAckBtn?window.rideAckBtn(e):'';if(ack)return ack;
         return '<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>'})()+'</div>'})}
@@ -228,7 +228,10 @@ export function renderPlan(){
   const PPA=PP.filter(d=>!ppOff(d));
   const ppSel=String(S.day||"").startsWith("prep:")&&PPA.some(d=>"prep:"+d.date===S.day);
   if(!ppSel){
-    const shootOk=S.day&&PD.some(d=>d.id===S.day);
+    let shootOk=S.day&&PD.some(d=>d.id===S.day);
+    /* a day only the 2nd/3rd Unit shoots, opened from Meine Termine, search, a push or the callsheet: its unit is switched on (before, the plan jumped to today) */
+    if(S.day&&!shootOk){const want=S.days.find(d=>d.id===S.day);if(want&&want.kind==="shoot"){let ch=false;for(const u of ["2","3"])if(hasU(want,u)&&!S.pu[u]){S.pu[u]=true;ch=true}
+      if(ch){try{store("pu",JSON.stringify(S.pu))}catch(_){}return renderPlan()}}}
     if(!shootOk){S.day=null;pickDay(PD);const nx=S.days.find(d=>d.id===S.day);if(PPA.length&&(!nx||PPA[0].date<nx.date))S.day="prep:"+PPA[0].date}
   }
   const ppDay=String(S.day||"").startsWith("prep:")?PPA.find(d=>"prep:"+d.date===S.day):null;

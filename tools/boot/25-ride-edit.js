@@ -1,4 +1,4 @@
-import {ackFrom,dlgBtn,esc,L,MEMO,mkDialog,S,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
+import {ackFrom,dlgBtn,esc,isoDMY,L,MEMO,mkDialog,S,saveBtn,saveErr,todayISO,TX} from "../base/10-core.js";
 import {hm,rideId} from "../base/12-mycal.js";
 import {csAfter,csRoute} from "../base/13a-callsheet.js";
 import {csLocs} from "../base/13c-cs-places.js";
@@ -54,7 +54,7 @@ function rideEditDialog(id){rideEditApply();const f=rideFind(id);if(!f)return;co
     return '<label>'+esc(L("Fahrer:in"))+'<select name="driver" data-redsel><option value=""></option>'+(d1.length?'<optgroup label="'+esc(L("Fahrer des Tages"))+'">'+d1.map(opt).join("")+'</optgroup>':'')+
       (d2.length?'<optgroup label="'+esc(L("Aufnahmeleitung"))+'">'+d2.map(opt).join("")+'</optgroup>':'')+'<option value="'+OTHER+'">'+esc(L("Andere …"))+'</option></select><input name="driver_x" hidden placeholder="'+esc(L("Fahrer:in"))+'"></label>'};
   const d=mkDialog("rededlg",null,{replace:true});
-  d.innerHTML='<div class="a2box redbox"><h3>'+esc(L("Fahrt ändern"))+'</h3><p class="ghint">'+esc(dp.date.split("-").reverse().join(".")+" · "+csRoute(o.from,o.t1,o.to,o.t2))+'</p>'+
+  d.innerHTML='<div class="a2box redbox"><h3>'+esc(L("Fahrt ändern"))+'</h3><p class="ghint">'+esc(isoDMY(dp.date)+" · "+csRoute(o.from,o.t1,o.to,o.t2))+'</p>'+
     (canAck?'<div class="redst" role="group" aria-label="'+esc(L("Status"))+'">'+[0,1,2,3].map(v=>'<button type="button" class="ridest '+rideStepCls(v)+'" data-redst="'+v+'" aria-pressed="'+(rideStep(id)===v)+'" title="'+esc(rideStepTip(v))+'" aria-label="'+esc(rideStepTip(v))+'">'+(rideStepIco(v)||'')+'</button>').join("")+'</div>':'')+
     '<form data-redform novalidate><div class="redrow">'+inp("t1","Abfahrt",hm(r.t1),"time")+sel("from","Von",r.from,places)+'</div>'+
     '<div class="redrow">'+inp("t2","Ankunft",hm(r.t2),"time")+sel("to","Nach",r.to,places)+'</div>'+sel("vehicle","Fahrzeug",r.vehicle,vehicles)+

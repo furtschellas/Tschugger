@@ -100,7 +100,7 @@ const PHK="sbxph";
 const phGet=()=>{try{return Object.assign({follow:true,sim:""},JSON.parse(localStorage.getItem(PHK)||"{}"))}catch(_){return {follow:true,sim:""}}};
 const phSet=v=>{try{localStorage.setItem(PHK,JSON.stringify(v))}catch(_){}};
 function phPost(all){const v=phGet();for(const i of document.querySelectorAll("aside.sbbox .sbphone iframe"))try{
-    const m={sbx:"phone"};if(v.follow)Object.assign(m,{tab:S.tab,day:S.day||null,sub:(S.tab==="admin"&&ADM.sub)||""});if(all)m.sim=v.sim||"";i.contentWindow.postMessage(m,location.origin)}catch(_){}}
+    const m={sbx:"phone"};if(v.follow)Object.assign(m,{tab:S.tab,day:S.day||null,dday:S.dday||null,sub:(S.tab==="admin"&&ADM.sub)||""});if(all)m.sim=v.sim||"";i.contentWindow.postMessage(m,location.origin)}catch(_){}}
 /* the controls above the phone: «wie Hauptseite» and the picker of roles and people (the same list as «Ansicht simulieren») */
 function phBar(){const v=phGet();let pick="";try{if(isAdmin()){if(!ADM.loaded)ensureAdm();pick=typeof window.simPicker==="function"?window.simPicker().replace("data-simpick","data-sbphsim"):""}}catch(_){}
   if(pick&&v.sim)pick=pick.replace('<option value="'+esc(v.sim)+'">','<option value="'+esc(v.sim)+'" selected>');
@@ -115,7 +115,7 @@ if(INFRAME&&FRAMEPG==="phone"){let simV=null;
     try{if(v.startsWith("role:"))simStartRole(v.slice(5),{back:S.tab});else simStart(v,{back:S.tab})}catch(err){console.warn("phone sim",err)}};
   addEventListener("message",e=>{if(e.origin!==location.origin||!e.data||e.data.sbx!=="phone")return;const d=e.data;
     if(d.sim!==undefined)simGo(d.sim);
-    if(d.tab&&(d.tab!==S.tab||(d.day&&d.day!==S.day))){S.tab=d.tab;if(d.day!==undefined&&d.day!==null)S.day=d.day;if(d.tab==="admin"&&d.sub)ADM.sub=d.sub;render()}})}
+    if(d.tab&&(d.tab!==S.tab||(d.day!==undefined&&(d.day||null)!==(S.day||null))||(d.dday!==undefined&&(d.dday||null)!==(S.dday||null)))){S.tab=d.tab;if(d.day!==undefined)S.day=d.day||null;if(d.dday!==undefined)S.dday=d.dday||null;if(d.tab==="admin"&&d.sub)ADM.sub=d.sub;render()}   /* the callsheet day too, and «back to today» (null) */})}
 /* always the phone view: every frame 390 px wide, scaled to the box; the phone 844 px high, a page 70 % of the window */
 /* several topics in one box: the frames share its height (each at least 260 px), so all of them are seen at once */
 function fit(){try{if(typeof csFitTiles==="function")requestAnimationFrame(csFitTiles)}catch(_){}   /* the tiles in the boxes: font fitted to the box */

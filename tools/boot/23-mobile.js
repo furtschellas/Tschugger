@@ -28,7 +28,7 @@ addEventListener("resize",stickyH);setTimeout(stickyH,800);
 {let sx=0,sy=0,st=0,ok=false;
  const scrollsX=el=>{for(let n=el;n&&n!==document.body;n=n.parentElement){if(n.matches&&n.matches(".stripwrap,.csjb,.tblw,input,textarea,select,[data-noswipe],.galstage,.mapbox"))return true;const cs=getComputedStyle(n);if(/(auto|scroll)/.test(cs.overflowX)&&n.scrollWidth>n.clientWidth+2)return true}return false};
  document.addEventListener("touchstart",e=>{ok=false;if(e.touches.length!==1)return;const v=document.getElementById("view");if(!v||!v.contains(e.target)||!v.querySelector(".stripwrap .strip"))return;
-   if(scrollsX(e.target)||document.querySelector(".a2box,#tour,dialog[open]"))return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now();ok=true},{passive:true});
+   if(scrollsX(e.target)||document.querySelector(".a2hs:not([hidden]) .a2box,#tour,dialog[open]"))return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now();ok=true},{passive:true});
  document.addEventListener("touchend",e=>{if(!ok)return;ok=false;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
    if(Date.now()-st>700||Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*0.6)return;
    const ch=[...document.querySelectorAll("#view .stripwrap .strip .chip")].filter(c=>!c.disabled);const i=ch.findIndex(c=>c.getAttribute("aria-selected")==="true");if(i<0)return;

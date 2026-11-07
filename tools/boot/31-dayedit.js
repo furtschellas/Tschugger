@@ -1,4 +1,4 @@
-import {esc,isoId,L,mkDialog,norm,S,saveBtn,xBtn} from "../base/10-core.js";
+import {esc,hash36,isoId,L,mkDialog,norm,S,saveBtn,xBtn} from "../base/10-core.js";
 import {hm,myIdentity} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
@@ -21,7 +21,7 @@ const deDate=id=>id.slice(0,4)+"-"+id.slice(4,6)+"-"+id.slice(6,8);
 export const deCan=()=>{try{return isAdmin()&&can("day.edit")&&!(window.simOn&&window.simOn())}catch(_){return false}};
 window.deCan=deCan;
 /* check sum of the 1st unit of a day in the Drehplan (scene / text and time of every row): a new Drehplan → another sum */
-function deSig(items){const s=arr(items).map(x=>(x.sc?"s"+x.sc:"e"+String(x.n||""))+"@"+String(x.t||"")).join("|");let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
+function deSig(items){const s=arr(items).map(x=>(x.sc?"s"+x.sc:"e"+String(x.n||""))+"@"+String(x.t||"")).join("|");return hash36(s)}
 const deGone=x=>!!(x&&x._de&&(x._de.x||x._de.to));
 window.deGone=deGone;
 /* per unit: the rows of a unit of a day (1st: items, 2nd / 3rd: unit2 / unit3.items) and its entry in a change

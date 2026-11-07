@@ -1,4 +1,4 @@
-import {$,ariaTip,blockList,dlgBtn,esc,L,LANG,mkDialog,mName,msHM,pad2,S,saveBtn,telNum} from "../base/10-core.js";
+import {$,ariaTip,blockList,dlgBtn,esc,isoDMY,L,LANG,mkDialog,mName,msHM,pad2,S,saveBtn,telNum} from "../base/10-core.js";
 import {srcHTML} from "../base/13-crew-views.js";
 import {VIEWS,tabOrder0} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -50,7 +50,7 @@ function userInfo(r){
   const g=(GENDERS.find(x=>x[0]===m.gender)||[])[1];const row=(k,v)=>v?'<div class="udl"><span>'+esc(L(k))+'</span><b>'+v+'</b></div>':'';
   return row("Telefon",m.phone?'<a href="tel:'+esc(telNum(m.phone))+'">'+esc(m.phone)+'</a>':"")+
     row("Kontakt-E-Mail",m.contactEmail&&m.contactEmail!==m.email?'<a href="mailto:'+esc(m.contactEmail)+'">'+esc(m.contactEmail)+'</a>':"")+
-    row("Geburtsdatum",m.birthday?esc(m.birthday.split("-").reverse().join(".")):"")+row("Geschlecht",g?esc(L(g)):"")+row("Essen",esc(dietText(m)))+
+    row("Geburtsdatum",m.birthday?esc(isoDMY(m.birthday)):"")+row("Geschlecht",g?esc(L(g)):"")+row("Essen",esc(dietText(m)))+
     row("Willkommen",esc(m.welcomeAck?L("bestätigt")+" "+fmtD(m.welcomeAck):L("noch nicht bestätigt")))+
     row("Willkommen Test-User",m.testAck?esc(L("bestätigt")+" "+fmtD(m.testAck)):"");
 }
@@ -252,7 +252,7 @@ VIEWS.admin=function(){
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
   const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>{const sh={users:"User",roles:"Access",docs:"Docs",set:"App",log:"Log",test:"Test",cover:"Cover"}[k]||t;if(k==="users")t="User";
     return '<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'"><span class="lgl">'+esc(L(t))+'</span><span class="sml">'+esc(LANG==="de"?sh:L(sh))+'</span></button>'}).join("")+'</nav>':'';
-  let h='<section class="adm"><h2 class="dh">'+L("App-Verwaltung")+'</h2>'+subNav;
+  let h='<section class="adm"><h2 class="pgt pgtop">'+L("App-Verwaltung")+'</h2>'+subNav;
   if(ADM.sub==="set")return h+setSec+'</section>';
   if(ADM.sub==="cover")return h+(window.coverdaySec?window.coverdaySec():"")+'</section>';
   if(ADM.sub==="docs")return h+docsSec()+'</section>';

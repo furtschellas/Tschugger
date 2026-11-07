@@ -1302,7 +1302,6 @@ html[data-theme="light"] body #view .dtiles.cstiles>a.dt.cslunch,html[data-theme
 /* ---------- one page title for every page (Heute, Drehtag 2, Locations, Crewliste, Info, Mein Konto …) ---------- */
 html body #view :is(h2.pgt,.dayhead h2,.dsp-head h2,.myhead h2,.adm>h2.dh){font-family:var(--f-display);font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1.05;margin:0}
 @media (max-width:400px){html body #view :is(h2.pgt,.dayhead h2,.dsp-head h2,.myhead h2,.adm>h2.dh){font-size:24px}}
-html body #view h2.pgtop{margin:4px 0 12px}
 html body #view .today .thead .pgt{font-size:inherit}
 html body #view .today .thead h2.pgt{font-size:26px}
 @media (max-width:400px){html body #view .today .thead h2.pgt{font-size:24px}}
@@ -1355,3 +1354,8 @@ html body #view .aq4 .aqm input{width:4.2em;min-width:0;max-width:4.2em;text-ali
   html body #view .aq4 .aq4r.aq4hr>span:first-child{display:none}
   html body #view .aq4 .aq4u,html body #view .aq4 .aq4h{min-width:0;justify-content:flex-end}
 }
+/* ---------- design pass (all pages): the page title with the same air below the header everywhere, cards with one radius ---------- */
+html body #view h2.pgt.pgtop{margin:18px 0 14px}   /* (more specific than the :is() above, which set margin 0 and won)*/
+html body #view .lc,html body #view .people{border-radius:14px}
+html body #view .people>:first-child{border-top-left-radius:14px;border-top-right-radius:14px}
+html body #view .people>:last-child{border-bottom-left-radius:14px;border-bottom-right-radius:14px}

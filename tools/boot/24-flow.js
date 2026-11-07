@@ -1,4 +1,4 @@
-import {ackFrom,esc,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
+import {ackFrom,esc,hash36,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
 import {dayMs,nameHit} from "../base/11-schedule-prep.js";
 import {hm,myIdentity,rideId} from "../base/12-mycal.js";
 import {csAfter,csMe} from "../base/13a-callsheet.js";
@@ -150,7 +150,7 @@ function cmParse(v,c){const out=[];for(const seg of String(v==null?"":v).split(/
 /* a time from the callsheet: «07:50» or «07.50» (some callsheets write dots) */
 const cqHm=v=>hm(String(v==null?"":v).replace(/(^|[^\d])(\d{1,2})\.(\d{2})(?!\d)/,"$1$2:$3"));
 /* a row of the 2nd Unit (u:"2", see cqU2) has its own ids: the same actor can be in both units on one day */
-const cmId=(date,k,r,t)=>{t=cqHm(t)||t;const s=[date,k,(r&&r.u==="2"?"u2:":"")+String(r&&(r.no||r.role)||"").trim(),t].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "m"+(h>>>0).toString(36)};
+const cmId=(date,k,r,t)=>{t=cqHm(t)||t;const s=[date,k,(r&&r.u==="2"?"u2:":"")+String(r&&(r.no||r.role)||"").trim(),t].join("|").toLowerCase();return "m"+hash36(s)};
 const cmSt=flowSt;
 window.cmSt=cmSt;window.cmId=cmId;window.cmParse=cmParse;
 /* texts of the three states */

@@ -1,4 +1,4 @@
-import {L,S,TX,WD,ariaTip,bdHTML,bdXX,cap,castChips,ddmm,esc,maps,memo,mkDialog,norm,pad2,safeUrl} from "./10-core.js";
+import {ariaTip,bdHTML,bdXX,cap,castChips,ddmm,esc,hash36,L,maps,memo,mkDialog,norm,pad2,S,safeUrl,TX,WD} from "./10-core.js";
 import {UNAME,unitLists} from "./11-schedule-prep.js";
 import {addrForItem} from "./13-crew-views.js";
 import {vok} from "./14-render.js";
@@ -91,8 +91,7 @@ function scParts(s){const t=norm(s).replace(/^0+(?=\d)/,""),m=t.match(/^(\d+[a-z
 /* the gallery opens exactly the pictures the button belongs to (for «186pt1A» only part 1 and the general ones – never the whole folder) */
 export const BLKREG=new Map();let BLKN=0;
 /* stable key: folder name + its pictures (the same gallery always gets the same key – no growing list, no lost buttons) */
-function blkReg(b){let h=5381;for(const m of bmed(b)){const t=String(m.f||m.n||"");for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0}
-  const k="g:"+b.name+"|"+(h>>>0).toString(36)+"|"+bmed(b).length;BLKREG.set(k,b);return k}
+function blkReg(b){const k="g:"+b.name+"|"+hash36(bmed(b).map(m=>String(m.f||m.n||"")).join(""))+"|"+bmed(b).length;BLKREG.set(k,b);return k}
 export function blkFor(sc){const N=scParts(sc);if(!N.t)return[];
   const hit=x=>{const X=scParts(x);if(X.t===N.t)return true;if(!N.k||X.b!==N.b)return false;
     if(N.k==="pt")return !X.k||(X.k==="pt"&&X.n===N.n);return X.k==="sl"&&(!X.n||X.n===N.n)};
