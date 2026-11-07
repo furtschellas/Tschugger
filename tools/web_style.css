@@ -1359,3 +1359,7 @@ html body #view h2.pgt.pgtop{margin:18px 0 14px}   /* (more specific than the :i
 html body #view .lc,html body #view .people{border-radius:14px}
 html body #view .people>:first-child{border-top-left-radius:14px;border-top-right-radius:14px}
 html body #view .people>:last-child{border-bottom-left-radius:14px;border-bottom-right-radius:14px}
+/* App-Verwaltung: the number behind a section title – the same small pill everywhere, right after the title (was mono text, sometimes far right) */
+html body #view .admins>h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+html body #view .admins>h3>.ust{margin:0!important;font-family:var(--f-body,inherit);font-size:12px;font-weight:700;line-height:1;padding:4px 8px;border-radius:999px;background:color-mix(in srgb,var(--ink) 10%,transparent);color:var(--muted);border:0}
+html body #view .admins>h3>.odot{margin:0}
