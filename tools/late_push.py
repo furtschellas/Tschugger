@@ -19,6 +19,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import fsadmin  # noqa: E402
 import coverday  # noqa: E402
+from coverday import fold, pad2, hm, jshash  # noqa: E402  (shared helpers: one copy)
 
 STATE = os.path.join(ROOT, "late.json")
 LATE_MIN = 5
@@ -29,25 +30,6 @@ TITLE = {"de": "Verspätung", "fr": "Retard", "it": "Ritardo", "en": "Delay", "h
 
 
 # ---------- the same helpers as the app (24-flow.js, 12-mycal.js) ----------
-def jshash(s):
-    """the check sum of the app: h = h*33 + char code (UTF-16), 32 bit, base 36"""
-    h = 5381
-    for ch in s:
-        o = ord(ch)
-        units = [o] if o < 0x10000 else [0xD800 + ((o - 0x10000) >> 10), 0xDC00 + ((o - 0x10000) & 0x3FF)]
-        for u in units: h = ((h << 5) + h + u) & 0xFFFFFFFF
-    n, out = h, ""
-    while True:
-        n, r = divmod(n, 36); out = "0123456789abcdefghijklmnopqrstuvwxyz"[r] + out
-        if not n: break
-    return out
-
-
-def fold(t): return "".join(c for c in unicodedata.normalize("NFD", str(t or "")) if not unicodedata.combining(c)).lower()
-def pad2(n): return ("0" + str(n))[-2:]
-def hm(t):
-    m = re.search(r"(\d{1,2}):(\d{2})", str(t or ""))
-    return pad2(int(m.group(1))) + ":" + m.group(2) if m else ""
 def cq_hm(v): return hm(re.sub(r"(^|[^\d])(\d{1,2})\.(\d{2})(?!\d)", r"\1\2:\3", str("" if v is None else v), count=1))
 def cm_id(date, k, r, t):
     t = cq_hm(t) or t

@@ -11,6 +11,26 @@ def truthy(v):   # JavaScript truthiness (an empty object or list is true there)
 
 
 def arr(v): return v if isinstance(v, list) else []
+# ---------- helpers shared by the jobs (late_push, scene_sheet): the same as the app ----------
+def fold(t):
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", str(t or "")) if not unicodedata.combining(c)).lower()
+def pad2(n): return ("0" + str(n))[-2:]
+def hm(t):
+    m = re.search(r"(\d{1,2}):(\d{2})", str(t or ""))
+    return pad2(int(m.group(1))) + ":" + m.group(2) if m else ""
+def jshash(s):
+    """the check sum of the app (hash36): h = h*33 + char code (UTF-16), 32 bit, base 36"""
+    h = 5381
+    for ch in s:
+        o = ord(ch)
+        units = [o] if o < 0x10000 else [0xD800 + ((o - 0x10000) >> 10), 0xDC00 + ((o - 0x10000) & 0x3FF)]
+        for u in units: h = ((h << 5) + h + u) & 0xFFFFFFFF
+    n, out = h, ""
+    while True:
+        n, r = divmod(n, 36); out = "0123456789abcdefghijklmnopqrstuvwxyz"[r] + out
+        if not n: break
+    return out
 def norm(s): return re.sub(r"\s+", "", str(s).lower())
 def dd(d): return ".".join(str(d or "").split("-")[::-1][:2]) + "."
 def js_str(v): return "" if not truthy(v) else str(v)   # String(x||"")

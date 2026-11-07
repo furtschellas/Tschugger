@@ -99,9 +99,11 @@ async function scAckSub(){if(SCSUB||typeof ME==="undefined"||!ME)return;try{cons
 let SCTRY=0,SCERR=0;setTimeout(scAckSub,1500);setInterval(()=>{if(SCSUB)return;if(window.SCACKLOADED&&Date.now()-SCTRY<(SCERR<12?5e3:60e3))return;SCTRY=Date.now();scAckSub()},5e3);   /* as soon as signed in; after an error (e.g. right after sign-in, before the membership is known) again every 5 s for a minute, then every minute */
 /* lunch ends by itself: its begin (manual quittance) + the planned lunch of that unit – each unit has its own lunch row in the Drehplan
    (the duration of the row, else until the next row; 60 min when the Drehplan has none) */
+/* the planned length of a row from its «dur» («1h20», «1:20», «20′», «20m»), in minutes; 0 without (the callers then measure to the next row) – as scene_sheet.p_dur */
+const rowDurMin=it=>{const m=String(it&&it.dur||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′’m]/);return m?(m[3]?+m[3]:(+m[1])*60+(+m[2])):0};
 function scLunchMin(date,u){try{const day=(S.days||[]).find(d=>d.date===date&&d.kind==="shoot");if(!day)return 60;
     const its=dayItems(day,u),i=its.findIndex(x=>!x.sc&&window.scEvKey(x.n)==="lunch");if(i<0)return 60;
-    const it=its[i],m=String(it.dur||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′’m]/);if(m){const v=m[3]?+m[3]:(+m[1])*60+(+m[2]);if(v>0)return v}
+    const it=its[i],v=rowDurMin(it);if(v>0)return v;
     const t0=scMs(date,hm(it.t));if(t0)for(let j=i+1;j<its.length;j++){let t1=scMs(date,hm(its[j].t));if(t1&&t1<=t0&&t0-t1>12*3600e3)t1=scMs(isoAdd(date,1),hm(its[j].t));   /* the next row after midnight */if(t1>t0)return Math.round((t1-t0)/60000)}}catch(_){}
   return 60}
 const scLunchEnd=x=>(+x.b||+x.at||0)+scLunchMin(x.d,String(x.u||"1"))*60000;
@@ -345,7 +347,7 @@ window.sceneLogSec=()=>{if(!canSceneLog())return"";if(!SCLOG.list){if(!SCLOG.bus
     const tx=i=>String(i.n||""),ks=scRowKeys(its,tx);
     /* the plan of an entry in the Drehplan: its time and its planned duration (the duration of the row, else until the next row) */
     const pIx=k=>{const b=scBase(k);let i=ks.indexOf(b);if(i<0)i=its.findIndex(x=>x.sc&&scAckId(d,x.sc)===scAckId(d,b));return i};
-    const pDur=i=>{if(i<0)return 0;const it=its[i],m=String(it.dur||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′’m]/);if(m)return m[3]?+m[3]:(+m[1])*60+(+m[2]);
+    const pDur=i=>{if(i<0)return 0;const it=its[i],dm=rowDurMin(it);if(dm||/^\s*0/.test(String(it.dur||"")))return dm;
       const t0=ms(hm(it.t));if(!t0)return 0;for(let j=i+1;j<its.length;j++){const t1=ms(hm(its[j].t));if(t1>t0)return Math.round((t1-t0)/60000)}return 0};
     const pl=k=>{const i=pIx(k);return i>=0?hm(its[i].t)||"":""},pd=k=>pDur(pIx(k));
     const setup=its.find(i=>!i.sc&&/^\s*set[\s-]?up\b/i.test(tx(i))),firstSc=its.find(i=>i.sc);

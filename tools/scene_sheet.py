@@ -17,6 +17,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import fsadmin  # noqa: E402
 import coverday  # noqa: E402
+from coverday import fold, pad2, hm, jshash  # noqa: E402  (shared helpers: one copy)
 
 TZ = ZoneInfo("Europe/Zurich")
 STATE = os.path.join(ROOT, "sheet.json")   # signature of the last write (actions cache)
@@ -31,12 +32,7 @@ def note(msg): print("::notice title=Szenen-Sheet::" + msg, flush=True)   # read
 
 
 # ---------- the same helpers as the app ----------
-def fold(t): return "".join(c for c in unicodedata.normalize("NFD", str(t or "")) if not unicodedata.combining(c)).lower()
 def norm(s): return re.sub(r"\s+", "", str(s).lower())
-def pad2(n): return ("0" + str(n))[-2:]
-def hm(t):
-    m = re.search(r"(\d{1,2}):(\d{2})", str(t or ""))
-    return pad2(int(m.group(1))) + ":" + m.group(2) if m else ""
 def ack_id(date, sc):
     s = re.sub(r"[^a-z0-9]", "", fold(sc))
     s = re.sub(r"^(dj|d|j|sc|sz|seq|scene|szene)(?=\d)", "", s)
@@ -70,16 +66,7 @@ def items(day, u):
 
 
 # ---------- changes on set within a shooting day (31-dayedit.js deApply): the same check sum, the same rule ----------
-def _jshash(s):
-    h = 5381
-    for ch in s:
-        o = ord(ch)
-        for u in ([o] if o < 0x10000 else [0xD800 + ((o - 0x10000) >> 10), 0xDC00 + ((o - 0x10000) & 0x3FF)]): h = ((h << 5) + h + u) & 0xFFFFFFFF
-    n, out = h, ""
-    while True:
-        n, r = divmod(n, 36); out = "0123456789abcdefghijklmnopqrstuvwxyz"[r] + out
-        if not n: return out
-def de_sig(its): return _jshash("|".join(("s" + str(x["sc"]) if x.get("sc") else "e" + str(x.get("n") or "")) + "@" + str(x.get("t") or "") for x in its if isinstance(x, dict)))
+def de_sig(its): return jshash("|".join(("s" + str(x["sc"]) if x.get("sc") else "e" + str(x.get("n") or "")) + "@" + str(x.get("t") or "") for x in its if isinstance(x, dict)))
 def de_apply(data, edits):
     """the days with the changes on set (per unit, only while the Drehplan of that unit is still the same)"""
     out = []
