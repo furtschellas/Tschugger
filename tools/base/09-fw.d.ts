@@ -8,3 +8,4 @@ export function useEffect(fn: () => void | (() => void), deps?: any[]): void;
 export function useMemo<T>(fn: () => T, deps: any[]): T;
 export function useRef<T>(v?: T): { current: T };
 export function useLayoutEffect(fn: () => void | (() => void), deps?: any[]): void;
+export function toHTML(vnode: any): string;

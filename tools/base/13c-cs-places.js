@@ -6,6 +6,7 @@ import {vok} from "./14-render.js";
 import {fold} from "./15-script-tab.js";
 import {fpFor,schedIndex} from "./17-scene-reader.js";
 import {arr} from "./20-data-start.js";
+import {h,html,toHTML} from "./09-fw.js";
 /* ---------- Callsheet (3/6): places – kinds and codes, location groups, addresses, the shooting order, csLocs ---------- */
 /* code of a kind of place: «W / H / M Extras» → «W/H/M Extras», «Base» */
 export const csKindCode=k=>String(k).replace(/^W\s*\/\s*H\s*\/\s*M/i,"WHM").replace(/\s*\/\s*/g,"/").trim();
@@ -37,8 +38,10 @@ export function csLocGroups(c,ls,date){const sets=ls.filter(l=>!l.kinds),key=l=>
   return out}
 /* position of a set: its map link, else the address the updater found (key «loc:n» = n-th set of the document) */
 export function csSetGeo(c,l){const geo=c.geo||{};for(const m of (l._m||[l])){const g=geo[m.map||"loc:"+(m._ix||m.no)];if(Array.isArray(g))return [m.map||"loc:"+(m._ix||m.no),g]}return [l.map||"loc:"+(l._ix||l.no),null]}
-export function csRadioHTML(t){t=String(t||"").trim();if(!t)return"";const b=t.replace(/^(radio\s*channels?|funk(kanäle)?)\s*:?\s*/i,"");const ch=[];const re=/(\d{1,2})\s*:\s*(.*?)(?=\s+\d{1,2}\s*:|$)/g;let m;while((m=re.exec(b)))ch.push([m[1],m[2].trim()]);
-  return '<div class="csradio2"><span class="csrlab">'+esc(L("Funkkanäle"))+'</span>'+(ch.length>1?ch.map(([n,l])=>'<span class="csrch"><b>'+esc(n)+'</b>'+esc(l||"–")+'</span>').join(""):'<span>'+esc(t)+'</span>')+'</div>'}
+/** the radio channels: one chip per channel («1 AD / AL», «2 Chat» …), else the text as it is @param {{t:string}} p */
+export function CsRadio({t}){const b=t.replace(/^(radio\s*channels?|funk(kanäle)?)\s*:?\s*/i,"");const ch=[];const re=/(\d{1,2})\s*:\s*(.*?)(?=\s+\d{1,2}\s*:|$)/g;let m;while((m=re.exec(b)))ch.push([m[1],m[2].trim()]);
+  return html`<div class="csradio2"><span class="csrlab">${L("Funkkanäle")}</span>${ch.length>1?ch.map(([n,l])=>html`<span class="csrch"><b>${n}</b>${l||"–"}</span>`):html`<span>${t}</span>`}</div>`}
+export function csRadioHTML(t){t=String(t||"").trim();if(!t)return"";return toHTML(h(CsRadio,{t}))}
 export function csMapQ(q){q=String(q||"").trim();return q?mapsQ(q):""}
 export function csLocHref(l,c,date){c=c||CSCUR.c;date=date||CSCUR.date;if(!l)return"";if(l.map)return l.map;let ad="";try{ad=c?csLocAddr(c,l,date):""}catch(_){}return csMapQ(ad)}
 export function csCodeHref(code){const m=String(code||"").match(/^L(\w+)$/);if(!m||!CSCUR.c)return"";return csLocHref(csLocs(CSCUR.c).find(x=>!x.kinds&&String(x.no).trim()===m[1]))}

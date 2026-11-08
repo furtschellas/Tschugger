@@ -7,6 +7,8 @@ import {csA,csL,csSec,csTable,csTx} from "./13a-callsheet.js";
 import {csLocs,csOrderRows} from "./13c-cs-places.js";
 import {vok} from "./14-render.js";
 import {csSetupFirst} from "./20-data-start.js";
+import {h,html,toHTML} from "./09-fw.js";
+import {Raw} from "./10a-ui.js";
 
 const u2hm=v=>{const m=String(v||"").match(/(\d{1,2})[:.](\d{2})/);return m?String(+m[1]).padStart(2,"0")+":"+m[2]:""};
 /* rides of a day with two units: which unit a ride belongs to – «1», «2», or "" (both / not sure: shown with both)
@@ -53,21 +55,19 @@ const csU2Depts=c=>csA(c&&c.depts).filter(r=>r&&String(r.text2||"").trim()).map(
 const u2Rows=(day,c)=>{const u=c&&c.u2&&typeof c.u2==="object"?c.u2:{};return csSetupFirst(u2Rows0(day),u.crewCall||(u.times||{}).crewCall,day&&day.date)};
 /* the 2nd Unit below the 1st on the callsheet: its own callsheet (csU2Dispo – times, places, order, cast, rides, calls «2nd IN», infos «2nd UNIT»)
    drawn with the same parts F as the 1st Unit, in the same order – one way only (before: a second, simpler drawing for missing parts) */
-export function csU2HTML(x,c,day,me,F){F=F||{};const x2=csU2Dispo(x,day);if(!x2)return"";const c2=x2.cs,u=(c&&c.u2&&typeof c.u2==="object")?c.u2:{};
-  const part=(k,...a)=>{if(typeof F[k]!=="function")return"";try{return F[k](...a)||""}catch(err){console.warn("2nd Unit "+k,err);return ""}};   /* one part failing never hides the others */
-  let h='<div class="csu2-head" id="cs-u2"><h2>2nd Unit</h2><span>'+(x.date?fmtDate(x.date):'')+(u.ad?' · 1st AD '+esc(String(u.ad)):'')+'</span></div>';
-  h+=part("tiles").replace('id="cs-zeiten"','id="cs-u2zeiten"');
-  const ct=c2.contact;if(ct&&(ct.name||ct.phone)){const tel=telNum(ct.phone);
-    h+='<div class="cscontact"><span class="csct-in"><b>'+esc(L("Kontakt am Set"))+':</b> '+(tel&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'">'+esc(ct.name||ct.phone)+'</a>':esc(ct.name||""))+(ct.role?' <small>· '+esc(ct.role)+'</small>':'')+'</span></div>'}
-  if(csA(c2.locations).length)h+=part("loc",c2,x,me,{},{}).replace('id="cs-loc"','id="cs-u2loc"').replace('<h3 class="dh">Locations</h3>','<h3 class="dh">Locations · 2nd Unit</h3>');
-  h+=part("order",c2,c2.order||{});
-  h+=part("cast",c2,me,"Cast · 2nd Unit","u2cast","");
-  h+=part("extras",c2,L("Komparsen")+" · 2nd Unit","u2extras","");
-  h+=part("veh",c2);
-  h+=part("trans",c2,x,me,{});
-  h+=part("dept",c2);
-  h+=part("calls",c2);
-  return '<section class="csu2">'+h+'</section>'}
+/** the head of the 2nd Unit part: title, date, its 1st AD @param {{date:string,ad?:string}} p */
+function CsU2Head({date,ad}){return html`<div class="csu2-head" id="cs-u2"><h2>2nd Unit</h2><span>${date?fmtDate(date):""}${ad?" · 1st AD "+String(ad):""}</span></div>`}
+/** contact on set of the 2nd Unit (the name is the call link with the phone right) @param {{ct:any}} p */
+function CsU2Contact({ct}){const tel=telNum(ct.phone);return html`<div class="cscontact"><span class="csct-in"><b>${L("Kontakt am Set")}:</b> ${tel&&vok("phone")?html`<a class="csct" href=${"tel:"+tel}>${ct.name||ct.phone}</a>`:ct.name||""}${ct.role?html` <small>· ${ct.role}</small>`:null}</span></div>`}
+/** the 2nd Unit: its own part below the 1st Unit – each part from the callsheet view (F), one failing never hides the others
+ * @param {{x:any,c:any,day:any,me:any,F:any}} p */
+function CsU2({x,c,day,me,F}){const x2=csU2Dispo(x,day);if(!x2)return null;const c2=x2.cs,u=(c&&c.u2&&typeof c.u2==="object")?c.u2:{};
+  const part=(k,...a)=>{if(typeof F[k]!=="function")return"";try{return F[k](...a)||""}catch(err){console.warn("2nd Unit "+k,err);return ""}};
+  const ct=c2.contact,R=x0=>html`<${Raw} html=${x0}/>`;
+  return html`<section class="csu2"><${CsU2Head} date=${x.date} ad=${u.ad}/>${R(part("tiles").replace('id="cs-zeiten"','id="cs-u2zeiten"'))}${ct&&(ct.name||ct.phone)?html`<${CsU2Contact} ct=${ct}/>`:null}
+    ${csA(c2.locations).length?R(part("loc",c2,x,me,{},{}).replace('id="cs-loc"','id="cs-u2loc"').replace('<h3 class="dh">Locations</h3>','<h3 class="dh">Locations · 2nd Unit</h3>')):null}
+    ${R(part("order",c2,c2.order||{}))}${R(part("cast",c2,me,"Cast · 2nd Unit","u2cast",""))}${R(part("extras",c2,L("Komparsen")+" · 2nd Unit","u2extras",""))}${R(part("veh",c2))}${R(part("trans",c2,x,me,{}))}${R(part("dept",c2))}${R(part("calls",c2))}</section>`}
+export function csU2HTML(x,c,day,me,F){F=F||{};if(!csU2Dispo(x,day))return"";return toHTML(h(CsU2,{x,c,day,me,F}))}
 /* only the 2nd Unit chosen (unit buttons): the callsheet of the 2nd Unit on its own, drawn by the same view as the 1st Unit (renderCS) –
    its times, contact, sets, cast and extras (cqU2), its shooting order (sheet, else callsheet), the calls «2nd IN» and the department infos
    of the 2nd Unit; transport, travel, production infos and notes as on the callsheet. null: no 2nd Unit that day */

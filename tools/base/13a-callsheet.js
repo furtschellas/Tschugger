@@ -6,6 +6,8 @@ import {csDWords} from "./13d-cs-mine.js";
 import {vok} from "./14-render.js";
 import {fold} from "./15-script-tab.js";
 import {arr} from "./20-data-start.js";
+import {h,html,toHTML} from "./09-fw.js";
+import {Raw} from "./10a-ui.js";
 /* ---------- Callsheet (1/6): basics – event helpers, icons, text with phone/links, tables, rides cell, «me» on the callsheet ---------- */
 /* ---------- Callsheet as the production writes it (TBO_Dispo_…pdf): same order as the document ----------
    x.cs = the whole callsheet read in structure by tools/update_from_dropbox.py (CS_SCHEMA). At the top «Mein Tag»:
@@ -82,7 +84,11 @@ export const csTvBtn=k=>{const tbl=csTv()[k]!=="cards";return '<button type="but
 csOn("click",e=>{const b=e.target.closest("[data-cstv]");if(!b)return;e.preventDefault();const k=b.dataset.cstv,m=csTv();m[k]=m[k]==="cards"?"table":"cards";try{localStorage.setItem("cstv:v1",JSON.stringify(m))}catch(_){}
   /* the same kind of list in both units (cs-trans, cs-transu2 …): all of them switch, each with its own button */
   for(const d of document.querySelectorAll('[id="cs-'+k+'"],[id="cs-'+k+'u2"]')){d.classList.toggle("cs-tblmode",m[k]!=="cards");const bb=d.querySelector('[data-cstv="'+k+'"]');if(bb)bb.outerHTML=csTvBtn(k)}});
-export function csSec(title,body,open,cls,id,sumx){if(!body)return"";return '<details class="dsec cssec'+(cls?" "+cls:"")+'"'+(id?' id="cs-'+id+'"':'')+(open?' open':'')+'><summary><h3 class="dh">'+(Array.isArray(title)?'<span class="lg">'+esc(title[0])+'</span><span class="sh">'+esc(title[1])+'</span>':esc(title))+'</h3>'+(sumx||'')+CSEXP+'</summary>'+body+'</details>'}
+/** a folded part of the callsheet: title (or [long, short]), extra summary (counts …) and its content (component or HTML of the string parts)
+ * @param {{title:any,body:any,open?:boolean,cls?:string,id?:string,sumx?:string}} p */
+export function CsSec({title,body,open,cls,id,sumx}){
+  return html`<details class=${"dsec cssec"+(cls?" "+cls:"")} id=${id?"cs-"+id:undefined} open=${!!open}><summary><h3 class="dh">${Array.isArray(title)?html`<span class="lg">${title[0]}</span><span class="sh">${title[1]}</span>`:title}</h3>${typeof sumx==="string"||!sumx?html`<${Raw} html=${sumx||""}/>`:sumx}<${Raw} html=${CSEXP}/></summary>${typeof body==="string"?html`<${Raw} html=${body}/>`:body}</details>`}
+export function csSec(title,body,open,cls,id,sumx){if(!body)return"";return toHTML(h(CsSec,{title,body,open,cls,id,sumx}))}
 /* a table of the callsheet: on the computer a table, on the phone one card per row (title = first columns, the rest as «label value») */
 /* «07:40 - 07:55 15'» → «07:40 · 15′» (start and duration, no end time) */
 /* the minutes behind: with ' / ’ / ′, or a short number not followed by a word («07:30 - 08:00 3 Busse» is no duration) */
@@ -131,13 +137,15 @@ export function csRideCell(date,r){let st=0,id="";try{id=typeof rideId==="functi
   const o=r._orig,chg=o?' <span class="rchg" title="'+esc(L("Original")+": "+[csRoute(o.from,o.t1,o.to,o.t2),o.vehicle,o.driver,o.passengers||o.people].filter(Boolean).join(" · "))+'">'+esc(L("geändert"))+'</span>':'';
   const rt=csRouteH(date,r);
   return {h:el+' '+rt+chg}}
-export function csTable(head,rows,tc,keep){rows=rows.map(r=>r.map(c=>c&&typeof c==="object"?c:csDurT(c)));rows=rows.filter(r=>r.some(c=>csCellTx(c).trim()));if(!rows.length)return"";tc=tc||2;
-  const tbl='<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>'+head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+csCell(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
-  const cards='<div class="cs-cards">'+rows.map(r=>{const tt=r.slice(0,tc).map(c=>c&&typeof c==="object"&&c.h?c:csCellTx(c).trim());
+/** @param {{head:string[],rows:any[][],tc:number,keep?:boolean}} p */
+export function CsTable({head,rows,tc,keep}){const cell=c=>html`<${Raw} html=${csCell(c)}/>`;
+  return html`<div class="tblw cs-tbl"><table class="dtbl"><thead><tr>${head.map(x=>html`<th>${x}</th>`)}</tr></thead><tbody>${rows.map(r=>html`<tr>${r.map(c=>html`<td>${cell(c)}</td>`)}</tr>`)}</tbody></table></div>
+  <div class="cs-cards">${rows.map(r=>{const tt=r.slice(0,tc).map(c=>c&&typeof c==="object"&&c.h?c:csCellTx(c).trim());
     const kv=r.slice(tc).map((c,i)=>[head[i+tc]||"",c]).filter(([,v])=>keep||csCellTx(v).trim());   /* keep: every field in its place (cast cards: two per line) */
-    /* from → to pairs read as one line */
-    return '<div class="cs-card"><div class="cs-ct">'+tt.map((x,i)=>{const v=x&&typeof x==="object"?x.h:csTx(x);return !x?'':i?'<span class="c'+i+'">'+v+'</span>':'<b>'+v+'</b>'}).join(" ")+'</div>'+kv.map(([k,v])=>'<div class="cs-kv">'+(k?'<span class="k">'+esc(k)+'</span>':'')+'<span class="v">'+csCell(v)+'</span></div>').join("")+'</div>'}).join("")+'</div>';
-  return tbl+cards}
+    const parts=[];tt.forEach((x,i)=>{const v=x&&typeof x==="object"?x.h:csTx(x);if(i)parts.push(" ");if(x)parts.push(i?html`<span class=${"c"+i}><${Raw} html=${v}/></span>`:html`<b><${Raw} html=${v}/></b>`)});
+    return html`<div class="cs-card"><div class="cs-ct">${parts}</div>${kv.map(([k,v])=>html`<div class="cs-kv">${k?html`<span class="k">${k}</span>`:null}<span class="v">${cell(v)}</span></div>`)}</div>`})}</div>`}
+export function csTable(head,rows,tc,keep){rows=rows.map(r=>r.map(c=>c&&typeof c==="object"?c:csDurT(c)));rows=rows.filter(r=>r.some(c=>csCellTx(c).trim()));if(!rows.length)return"";tc=tc||2;
+  return toHTML(h(CsTable,{head,rows,tc,keep}))}
 /* who am I on this callsheet: name and department (crew list / app profile) */
 export function csMe(){let me=null;try{me=myIdentity()}catch(_){}if(!me||!me.name)return null;
   const dep=fold(me.src||"").split(/[\s/]/)[0];

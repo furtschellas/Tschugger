@@ -1,6 +1,6 @@
 import {esc,L,LANG,mapsDir,mapUrl,S,safeUrl,telNum} from "./10-core.js";
 import {nmk} from "./11-schedule-prep.js";
-import {CSI,csA,csDurT,csHm,csIDrive,csMyCall,csMyRides,csMyWords,csRideReal,csRows,csS,csSec,csTile,csTx} from "./13a-callsheet.js";
+import {CSI,CsSec,csA,csDurT,csHm,csIDrive,csMyCall,csMyRides,csMyWords,csRideReal,csRows,csS,csSec,csTile,csTx} from "./13a-callsheet.js";
 import {csCallPlace,csLocAddr,csLocs,csMapQ,csPlace,plDe} from "./13c-cs-places.js";
 import {CSMINE} from "./13f-cs-events.js";
 import {vok} from "./14-render.js";
@@ -8,6 +8,8 @@ import {fold} from "./15-script-tab.js";
 import {arr} from "./20-data-start.js";
 import {MYROLE} from "../boot/03-core-firebase.js";
 import {wxTile} from "../boot/15-weather.js";
+import {h,html,toHTML} from "./09-fw.js";
+import {Raw} from "./10a-ui.js";
 /* ---------- Callsheet (4/6): my day – departments, what is open for me, «Mein Drehtag», tiles, jump bar, sums ---------- */
 /* short code of a place for the call list: L1, L2, Base, P1 … */
 export function csShort(p){const n=String(p&&p.name||"");let m=n.match(/^Set\s*(\w+)/i);if(m)return "L"+m[1];if(/base|lunch/i.test(n)||(Array.isArray(p&&p.kinds)&&p.kinds.includes("Base")))return "Base";m=n.match(/park\w*\s*loc\.?\s*(\d+)/i);if(m)return "P"+m[1];m=n.match(/loc\.?\s*(\d+)/i);if(m)return "L"+m[1];return n.split(/[ ,·]/)[0].slice(0,8)}
@@ -88,40 +90,44 @@ function csMine0(c,me){const mine=[];
 export function csLunchPlace(c){const find=cc=>{try{const l=csLocs(cc).find(z=>z.kinds&&z.kinds.includes("Lunch"));if(l&&(l.map||l.name))return {map:l.map||"",name:String(l.name||"Lunch")};
     for(const z of csLocs(cc))for(const i of csA(z.items))if(i&&i.map&&/lunch|mittag/i.test(String(i.label||"")))return {map:i.map,name:String(i.text||i.label)}}catch(_){}return null};
   return find(c)||(c&&c._orig&&c._orig!==c?find(c._orig):null)}
-export function csTilesHTML(x,day,c,me){const t=c.times||{};
-  const tile=csTile;
-  /* Lunch: a link to the lunch place (its map) */
-  const lunch=(()=>{const v=t.lunch;if(!v)return"";const p=csLunchPlace(c),u=p&&(p.map||(p.name?csMapQ(p.name):""));
-    return u?'<a class="dt cslunch" href="'+esc(mapUrl(u))+'" target="_blank" rel="noopener noreferrer" title="'+esc("Lunch · "+(p.name||""))+'"><div class="k">Lunch</div><div class="v">'+esc(v)+'</div></a>':tile("Lunch",v)})();
-  return '<div class="dtiles cstiles" id="cs-zeiten">'+tile("Crew Call",t.crewCall||x.crewCall,true)+tile("Rehearsal",t.rehearsal)+tile("RTS",t.rts||x.shootCall)+lunch+tile("Wrap",t.wrap||x.wrap)+
-    (()=>{const a=c.sunrise||x.sr,b=c.sunset||x.ss;return a&&b?'<div class="dt cssunt"><div class="k">'+esc(L("Sonne"))+'</div><div class="v">'+esc(a)+'<span class="sd">–</span><br>'+esc(b)+'</div></div>':''})()+((wx=>wx?'<div class="dt cswx">'+wx+'</div>':tile(L("Wetter"),[c.weather,c.temp].filter(Boolean).join(" · ")).replace('class="dt"','class="dt wide"'))(typeof wxTile==="function"&&day&&day.date?wxTile(day):""))
-    /* drive to my call place: route from the hotel or from where I am */
-    +(()=>{if(!me)return"";const call=csMyCall(c,me);let pl=null;try{pl=call?csCallPlace(c,me,call):null}catch(_){}/* no sure call place (no call or no ride): the way to the Base of the day, else to location 1 – marked as such */
-      if(!pl){const ls=csLocs(c),b=ls.find(l=>l.kinds&&l.kinds.includes("Base"))||ls.find(l=>!l.kinds);if(!b)return"";let ad="";try{ad=csLocAddr(c,b,x.date)}catch(_){}
-        pl={name:ad||b.name||"",map:b.map||"",fbk:b.kinds?"Base":"L"+String(b.no||"").trim(),fbn:String(b.name||"")}}
-      /* my call place is a side place given by its kind («W / H / M Cast / E», «Base»): the place of the day with that kind – its name, address and map */
-      else if(!pl.map&&!/^Set\s/i.test(String(pl.name||""))){try{const f=v=>fold(String(v||"")).replace(/[^a-z0-9]/g,""),pn=f(pl.name),ls=csLocs(c);
-        const hit=pn&&(ls.find(l=>l.kinds&&(f(l.name)===pn||f(l.no)===pn))||ls.find(l=>l.kinds&&l.kinds.some(k=>{const kk=f(String(k).replace(/ (Cast|Extras)$/,""));return kk.length>2&&pn.includes(kk)})));
-        if(hit){let ad="";try{ad=csLocAddr(c,hit,x.date)}catch(_){}const kj=f(hit.kinds.join(""));const nm=f(hit.name)&&f(hit.name)!==kj&&!hit.kinds.some(k=>f(k)===f(hit.name))?String(hit.name):"";
-          pl=Object.assign({},pl,{name:ad||nm||pl.name,map:hit.map||"",disp:nm||(ad?ad.split(",")[0]:"")})}}catch(_){}}
-      const to=(pl.addr||String(pl.name||"").replace(/^[^:]*:\s*/,"").replace(/^Set\s*\w+\s*·\s*/,"")).trim();if(!to&&!pl.map)return"";
-      /* only a name without address but a map link (e.g. «Tech Parking»): the map link, not a Google search for the name */
-      if(pl.map&&!pl.addr&&!/\d{4}\s+\p{L}/u.test(to)&&pl.disp)return '<a class="dt csdrv" href="'+esc(mapUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+'</div><div class="v">'+esc(plDe(pl.disp).slice(0,18))+' ›</div></a>';if(!to)return '<a class="dt csdrv" href="'+esc(mapUrl(pl.map))+'" target="_blank" rel="noopener noreferrer"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc(L("Karte"))+' ›</div></a>';
-      const from=(day&&day.drive&&day.drive.from)||"Hotel",url=mapsDir(from,to),here=mapsDir("",to);
-      return '<button type="button" class="dt csdrv" data-route="'+esc(JSON.stringify({h:url,c:here,from,to}))+'" title="'+esc(L("Route in Google Maps"))+'"><div class="k">'+esc(L("Anfahrt"))+(pl.fbk?' '+esc(pl.fbk):'')+'</div><div class="v">'+esc((()=>{if(pl.fbk)return pl.fbn.slice(0,18)||L("Route");if(pl.disp)return plDe(pl.disp).slice(0,18);const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})())+' ›</div></button>'})()+'</div>';}
+/** a time tile of the callsheet («Crew Call 07:00»), as csTile @param {{k:string,v:string,big?:boolean,wide?:boolean}} p */
+function CsTile({k,v,big,wide}){return v?html`<div class=${"dt"+(big?" big":"")+(wide?" wide":"")}><div class="k">${k}</div><div class="v">${v}</div></div>`:null}
+/** where I have to go: my call place (or the Base / location 1 of the day) – the route from the hotel or from here */
+function csDrivePlace(x,day,c,me){if(!me)return null;const call=csMyCall(c,me);let pl=null;try{pl=call?csCallPlace(c,me,call):null}catch(_){}
+  if(!pl){const ls=csLocs(c),b=ls.find(l=>l.kinds&&l.kinds.includes("Base"))||ls.find(l=>!l.kinds);if(!b)return null;let ad="";try{ad=csLocAddr(c,b,x.date)}catch(_){}
+    pl={name:ad||b.name||"",map:b.map||"",fbk:b.kinds?"Base":"L"+String(b.no||"").trim(),fbn:String(b.name||"")}}
+  else if(!pl.map&&!/^Set\s/i.test(String(pl.name||""))){try{const f=v=>fold(String(v||"")).replace(/[^a-z0-9]/g,""),pn=f(pl.name),ls=csLocs(c);
+    const hit=pn&&(ls.find(l=>l.kinds&&(f(l.name)===pn||f(l.no)===pn))||ls.find(l=>l.kinds&&l.kinds.some(k=>{const kk=f(String(k).replace(/ (Cast|Extras)$/,""));return kk.length>2&&pn.includes(kk)})));
+    if(hit){let ad="";try{ad=csLocAddr(c,hit,x.date)}catch(_){}const kj=f(hit.kinds.join(""));const nm=f(hit.name)&&f(hit.name)!==kj&&!hit.kinds.some(k=>f(k)===f(hit.name))?String(hit.name):"";
+      pl=Object.assign({},pl,{name:ad||nm||pl.name,map:hit.map||"",disp:nm||(ad?ad.split(",")[0]:"")})}}catch(_){}}
+  return pl}
+/** the drive tile @param {{x:any,day:any,c:any,me:any}} p */
+function CsDrive({x,day,c,me}){const pl=csDrivePlace(x,day,c,me);if(!pl)return null;
+  const to=(pl.addr||String(pl.name||"").replace(/^[^:]*:\s*/,"").replace(/^Set\s*\w+\s*·\s*/,"")).trim();if(!to&&!pl.map)return null;
+  const K=html`<div class="k">${L("Anfahrt")}${pl.fbk?" "+pl.fbk:""}</div>`;
+  if(pl.map&&!pl.addr&&!/\d{4}\s+\p{L}/u.test(to)&&pl.disp)return html`<a class="dt csdrv" href=${mapUrl(pl.map)} target="_blank" rel="noopener noreferrer"><div class="k">${L("Anfahrt")}</div><div class="v">${plDe(pl.disp).slice(0,18)} ›</div></a>`;
+  if(!to)return html`<a class="dt csdrv" href=${mapUrl(pl.map)} target="_blank" rel="noopener noreferrer">${K}<div class="v">${L("Karte")} ›</div></a>`;
+  const from=(day&&day.drive&&day.drive.from)||"Hotel",url=mapsDir(from,to),here=mapsDir("",to);
+  const v=(()=>{if(pl.fbk)return pl.fbn.slice(0,18)||L("Route");if(pl.disp)return plDe(pl.disp).slice(0,18);const nm=String(pl.name||"");return /^Set\s/i.test(nm)?csShort(pl):(nm.replace(/^[^·]*·\s*/,"").replace(/^[^:]*:\s*/,"").trim().slice(0,18)||L("Route"))})();
+  return html`<button type="button" class="dt csdrv" data-route=${JSON.stringify({h:url,c:here,from,to})} title=${L("Route in Google Maps")}>${K}<div class="v">${v} ›</div></button>`}
+/** the tiles of the callsheet: Crew Call … Wrap, lunch (link to its place), sun, weather, drive @param {{x:any,day:any,c:any,me:any}} p */
+export function CsTiles({x,day,c,me}){const t=c.times||{};
+  const lunch=(()=>{const v=t.lunch;if(!v)return null;const p=csLunchPlace(c),u=p&&(p.map||(p.name?csMapQ(p.name):""));
+    return u?html`<a class="dt cslunch" href=${mapUrl(u)} target="_blank" rel="noopener noreferrer" title=${"Lunch · "+(p.name||"")}><div class="k">Lunch</div><div class="v">${v}</div></a>`:html`<${CsTile} k="Lunch" v=${v}/>`})();
+  const a=c.sunrise||x.sr,b=c.sunset||x.ss,wx=typeof wxTile==="function"&&day&&day.date?wxTile(day):"";
+  return html`<div class="dtiles cstiles" id="cs-zeiten"><${CsTile} k="Crew Call" v=${t.crewCall||x.crewCall} big=${true}/><${CsTile} k="Rehearsal" v=${t.rehearsal}/><${CsTile} k="RTS" v=${t.rts||x.shootCall}/>${lunch}<${CsTile} k="Wrap" v=${t.wrap||x.wrap}/>
+    ${a&&b?html`<div class="dt cssunt"><div class="k">${L("Sonne")}</div><div class="v">${a}<span class="sd">–</span><br/>${b}</div></div>`:null}
+    ${wx?html`<div class="dt cswx"><${Raw} html=${wx}/></div>`:html`<${CsTile} k=${L("Wetter")} v=${[c.weather,c.temp].filter(Boolean).join(" · ")} wide=${true}/>`}<${CsDrive} x=${x} day=${day} c=${c} me=${me}/></div>`}
+export function csTilesHTML(x,day,c,me){return toHTML(h(CsTiles,{x,day,c,me}))}
 /* parts of the callsheet (each one a folded section; c = callsheet, x = day of the dispo, me = me, SU = sums of the folded parts, t = times) */
-export function csJumpBar(c,x,me,SU,t){let JB="";
-  {const has=k=>({loc:vok("loc")&&csA(c.locations).length,order:csRows(c).length,cast:csA(c.cast).length,trans:csA(c.transport).length||csA(c.crewTransport).length||csA(c.travel).length,dept:csA(c.depts).some(r=>String(r.text||"").trim()),calls:csA(c.calls).length,att:window.attachCount?window.attachCount(x,x&&x.date):0})[k];
-   const J=[["loc","Locations","pin",L("Orte")],["order",L("Drehfolge"),"film",L("Szenen")],["cast","Cast","cast"],["trans","Transport","car",L("Fahrten")],["dept",L("Infos nach Abteilung"),"dept",L("Infos")],["calls","Calls","calls"],["att",L("Anhänge"),"doc"]].filter(([k])=>has(k));
-   /* icons with a tiny label; the search opens from the magnifier (keeps the bar one line high) */
-   JB='<div class="csjump"><div class="csjb">'+J.map(([k,l,i,sh])=>'<button type="button" data-csj="'+k+'" aria-label="'+esc(l)+'" title="'+esc(l)+'">'+CSI[i]+'<span>'+esc(sh||l)+'</span></button>').join("")+
-     '<button type="button" class="csqb" data-csqb aria-label="'+esc(L("Suchen"))+'" title="'+esc(L("Suchen"))+'">'+CSI.search+'<span>'+esc(L("Suchen"))+'</span></button>'+
-     /* only what concerns me (my name, my scenes as cast, my department) */
-     (me?'<button type="button" class="csmineb" data-csmine aria-pressed="'+(CSMINE?"true":"false")+'" aria-label="'+esc(L("Nur meins"))+'" title="'+esc(L("Nur meins"))+'">'+CSI.me+'<span>'+esc(L("Nur meins"))+'</span></button>':'')+
-     /* the original callsheet: its pages in the app, else the PDF in the Dropbox */
-     (arr(x.pg).length&&typeof window.blkImg==="function"?'<button type="button" data-cspg="'+esc(x.date)+'" aria-label="'+esc(L("Original-Callsheet ansehen"))+'" title="'+esc(L("Original-Callsheet ansehen"))+'">'+CSI.doc+'<span>PDF</span></button>':
-      x.link?'<button type="button" data-cspdf="'+esc(safeUrl(x.link))+'" aria-label="'+esc(L("In Dropbox öffnen"))+'" title="'+esc(L("In Dropbox öffnen"))+'">'+CSI.doc+'<span>PDF</span></button>':'')+'</div><input id="csq" type="search" autocomplete="off"'+(window.CSQV?' value="'+esc(CSQV)+'"':' hidden')+' placeholder="'+esc(L("Suchen: Name, Szene, Fahrzeug …"))+'"></div>'}
-  return JB}
+/** a button of the jump bar: icon and tiny label @param {{k?:string,l:string,i:string,sh?:string,a?:any}} p */
+function CsJb({l,i,sh,a}){return html`<button type="button" ...${a} aria-label=${l} title=${l}><${Raw} html=${CSI[i]}/><span>${sh||l}</span></button>`}
+/** the jump bar (sticky): the parts of the callsheet, search, «only mine», the original callsheet @param {{c:any,x:any,me:any}} p */
+function CsJump({c,x,me}){const has=k=>({loc:vok("loc")&&csA(c.locations).length,order:csRows(c).length,cast:csA(c.cast).length,trans:csA(c.transport).length||csA(c.crewTransport).length||csA(c.travel).length,dept:csA(c.depts).some(r=>String(r.text||"").trim()),calls:csA(c.calls).length,att:window.attachCount?window.attachCount(x,x&&x.date):0})[k];
+  const J=[["loc","Locations","pin",L("Orte")],["order",L("Drehfolge"),"film",L("Szenen")],["cast","Cast","cast"],["trans","Transport","car",L("Fahrten")],["dept",L("Infos nach Abteilung"),"dept",L("Infos")],["calls","Calls","calls"],["att",L("Anhänge"),"doc"]].filter(([k])=>has(k));
+  const pdf=arr(x.pg).length&&typeof window.blkImg==="function"?html`<${CsJb} l=${L("Original-Callsheet ansehen")} i="doc" sh="PDF" a=${{"data-cspg":x.date}}/>`:x.link?html`<${CsJb} l=${L("In Dropbox öffnen")} i="doc" sh="PDF" a=${{"data-cspdf":safeUrl(x.link)}}/>`:null;
+  return html`<div class="csjump"><div class="csjb">${J.map(([k,l,i,sh])=>html`<${CsJb} l=${l} i=${i} sh=${sh} a=${{"data-csj":k}}/>`)}<${CsJb} l=${L("Suchen")} i="search" a=${{class:"csqb","data-csqb":""}}/>${me?html`<${CsJb} l=${L("Nur meins")} i="me" a=${{class:"csmineb","data-csmine":"","aria-pressed":CSMINE?"true":"false"}}/>`:null}${pdf}</div><input id="csq" type="search" autocomplete="off" value=${window.CSQV||undefined} hidden=${!window.CSQV} placeholder=${L("Suchen: Name, Szene, Fahrzeug …")}/></div>`}
+export function csJumpBar(c,x,me,SU,t){return toHTML(h(CsJump,{c,x,me}))}
 export function csSums(c,x){  const SU={};{const sm=a=>{a=a.filter(x=>x&&x[1]!==""&&x[1]!=null&&x[1]!==0);return a.length?'<span class="cscount">'+a.map(([k,v,d])=>'<span'+(d?' class="csdrop"':'')+'><b>'+esc(String(v))+'</b> '+(Array.isArray(k)?'<i class="lg">'+esc(k[0])+'</i><i class="sh">'+esc(k[1])+'</i>':esc(k))+'</span>').join("")+'</span>':''};
     const uniq=l=>new Set(l.map(x=>fold(String(x||"")).trim()).filter(Boolean)).size;
     
@@ -152,9 +158,10 @@ function csCountLine(c,x,me,SU,t){  let csCnt="";{const nCast=csA(c.cast).length
    const parts=T.tot!=null?[["Cast",castV],["Crew",T.crew],[L("Komparsen"),T.ex],[L("Zusatz"),T.zu],["Total",T.tot]]:[["Cast",nCast],["Crew",nCrew],[L("Komparsen"),nEx],["Total",nCast+nCrew+nEx]];
    const pp=parts.filter(x=>x[1]);csCnt=pp.length?'<div class="cscount">'+pp.map(([k,v])=>'<span'+(k===L("Komparsen")||k===L("Zusatz")?' class="csdrop"':'')+'><b>'+(typeof v==="string"&&/</.test(v)?v:esc(String(v)))+'</b> '+esc(k)+'</span>').join("")+'</div>':''}
   return csCnt}
-export function csTeamSec(c,x,me,SU,t){const csCnt=csCountLine(c,x,me,SU,t);let h="";
-  h+=csSec(L("Team des Tages"),csA(c.key).length||c.office||csCnt?'<div class="cskey">'+(c.office?'<div><span class="k">'+esc(L("Produktionsbüro"))+'</span>'+csTx(c.office)+'</div>':'')+csA(c.key).map(k=>{const tel=telNum(k.phone);
-      /* the name is the call link (with the phone right) */
-      return '<div><span class="k">'+esc(k.role||"")+'</span>'+(tel.length>6&&vok("phone")?'<a class="csct" href="tel:'+esc(tel)+'" title="'+esc(k.phone)+'">'+CSI.phone+esc(k.name||k.phone)+'</a>':'<span>'+esc(k.name||"")+(tel&&!vok("phone")?' '+csTx(k.phone):'')+'</span>')+'</div>'}).join("")+'</div>'+
-    csA(c.lists).map(l=>'<p class="cslist"><b>'+esc(l.title||"")+'</b> '+esc(csS(l.names))+'</p>').join(""):"",false,"","team",csCnt);
-  return h}
+/** a person of the day's team: role and name – the name is the call link (with the phone right) @param {{k:any}} p */
+function CsKey({k}){const tel=telNum(k.phone),call=tel.length>6&&vok("phone");
+  return html`<div><span class="k">${k.role||""}</span>${call?html`<a class="csct" href=${"tel:"+tel} title=${k.phone}><${Raw} html=${CSI.phone}/>${k.name||k.phone}</a>`:html`<span>${k.name||""}${tel&&!vok("phone")?html` <${Raw} html=${csTx(k.phone)}/>`:null}</span>`}</div>`}
+export function csTeamSec(c,x,me,SU,t){const csCnt=csCountLine(c,x,me,SU,t);
+  if(!(csA(c.key).length||c.office||csCnt))return "";
+  const body=html`<div class="cskey">${c.office?html`<div><span class="k">${L("Produktionsbüro")}</span><${Raw} html=${csTx(c.office)}/></div>`:null}${csA(c.key).map(k=>html`<${CsKey} k=${k}/>`)}</div>${csA(c.lists).map(l=>html`<p class="cslist"><b>${l.title||""}</b> ${csS(l.names)}</p>`)}`;
+  return toHTML(h(CsSec,{title:L("Team des Tages"),body,open:false,cls:"",id:"team",sumx:csCnt}))}
