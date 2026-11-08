@@ -17,7 +17,7 @@ import {bkSec,upSec} from "./12b-admin-backup.js";
 import {rolesSec,rolesSorted} from "./12d-admin-roles.js";
 import {auditSec,testsSec} from "./17-audit-misc.js";
 import {h,html,toHTML} from "../base/09-fw.js";
-import {Raw} from "../base/10a-ui.js";
+import {Raw,TabNav} from "../base/10a-ui.js";
 /* ---------- App-Verwaltung (Benutzer:innen und Seite) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
 /* owner only: account with a one-time start password, created in a second Firebase instance so the owner stays signed in */
 function genPw(){const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=new Uint32Array(12);crypto.getRandomValues(r);
@@ -158,6 +158,9 @@ function UserList({rows,vis,o}){const allOpen=vis.length&&vis.every(r=>ADM.open.
       <label class="usort">${L("Sortieren")} <select data-usort>${USORTS.map(([k,t])=>html`<option value=${k} selected=${(ADM.sort||"first")===k}>${L(t)}</option>`)}</select></label>
       <button type="button" class="cico uall" data-uall ...${tip(L(allOpen?"Alle zuklappen":"Alle aufklappen"))}><${UIco} d=${allOpen?UICO.fold:UICO.unfold} w=${2.2}/></button></div>
     ${vis.length?html`<div class="ucards">${vis.map(r=>html`<${UserCard} key=${r.email} r=${r} o=${o}/>`)}</div>`:html`<p class="ahint">${L("Keine Treffer.")}</p>`}</div>`}
+/** a group of the app settings: folded (open state kept), title; «Aktualisierung» with the refresh button @param {{k:string,t:string,body:string}} p */
+function SetGroup({k,t,body}){const tt=L("Daten jetzt aktualisieren");
+  return html`<details class="admins asetd setgrp alangs" data-sec=${"set-"+k} open=${SECS["set-"+k]===true}><summary>${L(t)}</summary>${k==="up"?html`<button type="button" class="uprf" data-dorefresh aria-label=${tt} title=${tt}><${UIco} d='<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>' w=${2.2}/></button>`:null}<${Raw} html=${body}/></details>`}
 function userList(rows,vis,o){return toHTML(h(UserList,{rows,vis,o}))}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-auf]");if(b){ADM.uf=b.dataset.auf;render();return}
   const t=e.target.closest("[data-uact]");if(t){const em=t.dataset.uact;const was=ADM.open.has(em)||ADM.edit===em;if(was){ADM.open.delete(em);if(ADM.edit===em)ADM.edit=""}else ADM.open.add(em);ADM.act=em;render();return}
@@ -203,7 +206,7 @@ VIEWS.admin=function(){
   const srcInner=()=>{const x=typeof srcHTML==="function"?srcHTML():"";return x?x.replace(/^<details[^>]*><summary>[\s\S]*?<\/summary>/,'<div class="src srcin">').replace(/<\/details>$/,'</div>'):'<p class="ghint">–</p>'};
   /* Einstellungen: one form (id setform) whose fields sit in collapsible groups – all open by default */
   const sv='<div class="arb">'+saveBtn('form="setform"')+'</div>';
-  const grp=(k,t,body)=>'<details class="admins asetd setgrp alangs" data-sec="set-'+k+'"'+(SECS["set-"+k]===true?' open':'')+'><summary>'+L(t)+'</summary>'+(k==="up"?'<button type="button" class="uprf" data-dorefresh '+ariaTip(L("Daten jetzt aktualisieren"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>':'')+body+'</details>';
+  const grp=(k,t,body)=>toHTML(html`<${SetGroup} k=${k} t=${t} body=${body}/>`);
   /* Szenen-Protokoll → Google Sheet: the link (config/private), whom to share it with, the last state of the workflow */
   /* the shared Google map (link «Karte») in the callsheet map: on/off, its colours, which layers */
   const gmapSet=()=>{const G=window.GMAPSET||{},ls=(S.gmap&&Array.isArray(S.gmap.l))?S.gmap.l:[],off=new Set(G.off||[]);
@@ -252,8 +255,7 @@ VIEWS.admin=function(){
   const SUBS=[];if(can("users.view")||can("users.invite")||can("users.requests")||can("users.edit"))SUBS.push(["users","Benutzerverwaltung"]);if(canRoleEdit()||canRoleAssign()||can("roles.view"))SUBS.push(["roles","Access"]);if(can("settings"))SUBS.push(["docs","Dokumente"]);if(can("coverday.manage"))SUBS.push(["cover","Coverday"]);if(["settings","ack.settings","ack.cast.auto","ack.scene.auto"].some(p=>can(p)))SUBS.push(["set","App"]);if(isAdmin()||can("audit.view"))SUBS.push(["log",isAdmin()||can("audit.view")?"Log/Tests":"Log"]);if(!isAdmin()&&can("data.check"))SUBS.push(["test","Test"]);
   if(!SUBS.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!SUBS.some(x=>x[0]===ADM.sub))ADM.sub=SUBS[0][0];
-  const subNav=SUBS.length>1?'<nav class="asub n'+SUBS.length+'" role="tablist">'+SUBS.map(([k,t])=>{const sh={users:"User",roles:"Access",docs:"Docs",set:"App",log:"Log",test:"Test",cover:"Cover"}[k]||t;if(k==="users")t="User";
-    return '<button type="button" role="tab" data-asub="'+k+'" aria-selected="'+(ADM.sub===k)+'"><span class="lgl">'+esc(L(t))+'</span><span class="sml">'+esc(LANG==="de"?sh:L(sh))+'</span></button>'}).join("")+'</nav>':'';
+  const subNav=SUBS.length>1?toHTML(html`<${TabNav} items=${SUBS.map(([k,t])=>{const sh={users:"User",roles:"Access",docs:"Docs",set:"App",log:"Log",test:"Test",cover:"Cover"}[k]||t;return [k,L(k==="users"?"User":t),LANG==="de"?sh:L(sh)]})} cur=${ADM.sub} attr="data-asub"/>`):'';
   let h='<section class="adm"><h2 class="pgt pgtop">'+L("App-Verwaltung")+'</h2>'+subNav;
   if(ADM.sub==="set")return h+setSec+'</section>';
   if(ADM.sub==="cover")return h+(window.coverdaySec?window.coverdaySec():"")+'</section>';
