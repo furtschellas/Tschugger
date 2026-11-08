@@ -78,4 +78,12 @@ function InfoPage({places,loaded}){
     ${(g.items||[]).map(p=>html`<${Entry} name=${p.name} address=${p.address} href=${p.address?maps(p.name+", "+p.address):""} note=${p.note?TX(p,"note"):""} phone=${p.phone}/>`)}
   </${Section}>`)}`}
 ISLANDS.info=InfoPage;
-ISLANDS.sec=Sections;
+/** a page made by the string parts with one frame (section.adm, section.catpage …): the frame as an element, its parts as Sections
+ * @param {{html:string}} p */
+const SHELLC=new Map();
+export function PageShell({html:src}){let sp=SHELLC.get(src);
+  if(sp===undefined){const t=document.createElement("template");t.innerHTML=src||"";const els=[...t.content.childNodes].filter(n=>n.nodeType===1||(n.nodeType===3&&n.nodeValue.trim()));
+    sp=els.length===1&&els[0].nodeType===1?(()=>{const n=/** @type {Element} */(els[0]),a={};for(const at of n.attributes)a[at.name]=at.value===""?true:at.value;return [n.tagName.toLowerCase(),a,n.innerHTML]})():null;
+    if(SHELLC.size>40)SHELLC.clear();SHELLC.set(src,sp)}
+  return sp?h(sp[0],sp[1],h(Sections,{html:sp[2]})):h(Sections,{html:src})}
+ISLANDS.sec=PageShell;
