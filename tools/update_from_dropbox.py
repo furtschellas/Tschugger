@@ -339,6 +339,8 @@ def _key(e, extra=""):
 def _enc_write(fn, data):
     """binary file encrypted with the crew key (12 bytes iv + AES-GCM)"""
     iv = secrets.token_bytes(12)
+    d = os.path.dirname(fn)
+    if d: os.makedirs(d, exist_ok=True)   # the callsheet pages are made before the blocking part created blk/ (FileNotFoundError: no pages, no PDF)
     open(fn, "wb").write(iv + AESGCM(KEY).encrypt(iv, data, None))
 
 def small_jpeg(data):
