@@ -91,7 +91,7 @@ const TOP={
 };
 
 /* pages drawn directly in the box (read pages without own state): Info, Locations, Crewliste, Meine Termine – the others still in a frame */
-const SBNAT=["info","loc","crew","my"];
+const SBNAT=["info","loc","crew","my","today","plan","dispo","script","reports"];
 const sbNative=t=>!!(t&&typeof t[2]==="string"&&t[2].startsWith("t:")&&SBNAT.includes(t[2].slice(2))&&typeof VIEWS!=="undefined"&&typeof VIEWS[t[2].slice(2)]==="function");
 /* ---------- the two boxes ---------- */
 let BOX={};
