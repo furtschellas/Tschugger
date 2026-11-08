@@ -120,7 +120,7 @@ function GBTN(){if(window.GOOGLEON===false||(isIOS()&&isStandalone()))return '';
 export function showGate(mode,msg,isErr){
   /* a side-box frame never asks for a sign-in (the page itself is signed in): a short note, the frame tries again by itself –
      before, a frame that started before the sign-in had arrived showed the whole login (and looked as if one had to sign in again) */
-  if(SBXF&&mode!=="wait"){try{const g=document.getElementById("gate");if(g)g.hidden=true;const v=document.getElementById("view");if(v&&!S.days.length)v.innerHTML='<p class="sbnone" style="padding:16px">'+esc(L("Wird verbunden …"))+'</p>'}catch(_){}
+  if(SBXF&&mode!=="wait"){try{const g=document.getElementById("gate");if(g)g.hidden=true;const v=document.getElementById("view");if(v&&!S.days.length)v.innerHTML='<p class="ghint" style="padding:16px">'+esc(L("Wird verbunden …"))+'</p>'}catch(_){}
     if(!window.__SBXRL){window.__SBXRL=setTimeout(()=>{window.__SBXRL=0;location.reload()},15000)}return}
   AUTHMODE=mode||AUTHMODE;const g=gateEl();
   const em=ME?esc(ME.email):(g.querySelector("#gem")?esc(g.querySelector("#gem").value):"");
