@@ -1,4 +1,4 @@
-import {html,ISLANDS,useLayoutEffect,useRef} from "./09-fw.js";
+import {h,html,ISLANDS,useLayoutEffect,useRef} from "./09-fw.js";
 import {formsKeep,formsRestore,viewMorph} from "./15-script-tab.js";
 import {L,maps,TX} from "./10-core.js";
 /* ---------- building blocks of the pages as components (framework, 09-fw.js) ----------
@@ -25,9 +25,18 @@ export function Entry({name,href,address,note,phone}){
     ${note?html`<div class="role">${note}</div>`:null}
     ${phone?html`<div class="ct"><span>${phone}</span></div>`:null}</div>`}
 
-/** HTML made by the string parts of the app (shared with pages that have not moved yet), inside a component; no forms in it
+/** HTML made by the string parts of the app (shared with pages that have not moved yet), inside a component – without a wrapper:
+ * each top element of the HTML becomes an element of the component with its own inside as HTML (so CSS like «.ttiles>*» still fits)
  * @param {{html?:string,tag?:string,cls?:string}} p */
-export function Raw({html:h,tag="div",cls}){return h?html`<${tag} class=${"raw"+(cls?" "+cls:"")} dangerouslySetInnerHTML=${{__html:h}}/>`:null}
+const RAWC=new Map();   /* parsed once per HTML; the elements are made new on every drawing (a vnode must never be in two places) */
+export function Raw({html:src,tag,cls}){if(!src)return null;
+  if(tag||cls)return h(tag||"div",{class:cls||undefined,dangerouslySetInnerHTML:{__html:src}});
+  let spec=RAWC.get(src);
+  if(!spec){const t=document.createElement("template");t.innerHTML=src;
+    spec=[...t.content.childNodes].map(n0=>{if(n0.nodeType===3)return n0.nodeValue;if(n0.nodeType!==1)return null;
+      const n=/** @type {Element} */(n0),a={};for(const at of n.attributes)a[at.name]=at.value===""?true:at.value;return [n.tagName.toLowerCase(),a,n.innerHTML]});
+    if(RAWC.size>400)RAWC.clear();RAWC.set(src,spec)}
+  return spec.map((x,i)=>Array.isArray(x)?h(x[0],Object.assign({key:i},x[1],{dangerouslySetInnerHTML:{__html:x[2]}})):x)}
 
 /** HTML of the string parts with forms or open sections in it (crew list: user data of a person …): morphed like the page, so typing,
  * ticks and open parts stay; not touched while someone is typing in it

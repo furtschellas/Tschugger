@@ -158,11 +158,11 @@ function MyEntry({e,i}){
     ${e.go?html`<button type="button" class="mcn" data-mcgo=${e.go}>${e.n||""}</button>`:html`<span class="mcn">${e.n||""}</span>`}
     ${e.where?html`<${Raw} html=${ppWhere(e.where,e.map)}/>`:null}
     ${e.to?html`<div class="ppl rto">${L("Ziel")}: ${e.toMap?html`<a href=${safeUrl(e.toMap)} target="_blank" rel="noopener">${e.to}</a>`:e.to}</div>`:null}
-    ${e.driver?html`<div class="ppx">${L("Fahrer:in")}: <${Raw} tag="span" html=${telLinks(e.driver)}/></div>`:null}
+    ${e.driver?html`<div class="ppx">${L("Fahrer:in")}: <${Raw} html=${telLinks(e.driver)}/></div>`:null}
     ${e.pax?html`<div class="ppx">${L("Mitfahrende")}: ${e.pax}</div>`:null}
     ${e.note?html`<div class="ppx">${e.note}</div>`:null}
-    ${e.xqh?html`<${Raw} cls="ppx xqm" html=${e.xqh}/>`:null}
-    ${e.cmah?html`<${Raw} cls="ppx cma" html=${e.cmah}/>`:null}
+    ${e.xqh?html`<div class="ppx xqm"><${Raw} html=${e.xqh}/></div>`:null}
+    ${e.cmah?html`<div class="ppx cma"><${Raw} html=${e.cmah}/></div>`:null}
     <div class="mcs">${e.src}</div></div>
     <${Raw} html=${(window.ownEvEditBtn?window.ownEvEditBtn(e):"")+(window.pushBell?window.pushBell(e):"")+mcRight(e,i)}/></div>`}
 /** the entries grouped by day (a heading per day)
@@ -270,44 +270,37 @@ export function renderPlan(){
   if(ppDay){let o='';try{if(window.ownDayHTML)o=window.ownDayHTML(ppDay.date)}catch(_){}return h+renderPrePro(ppDay)+o}
   if(!PD.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
   const d=S.days.find(x=>x.id===S.day)||PD[0];if(!d)return h+'<div class="empty">'+L('Noch keine Drehtage.')+'</div>';
-  /* round button: the original schedule PDF, opened at the page of this shooting day */
-  const spBtn=planPdfBtn(d);
-  h+='<div class="dayhead"><div><div class="dtitle"><h2 class="pgt">'+esc(dayTitle(d))+'</h2>'+(d.kind==="shoot"?pvButtons('',UNITBAR)+(window.deBtn?window.deBtn(d):''):'')+'</div><div class="date drow"><span>'+fmtDate(d.date)+(d.date===t?' · '+L('heute'):'')+blockTag(d.date)+'</span>'+(d.kind==="shoot"?'':UNITBAR)+'</div></div>';
-  if(d.kind==="shoot")h+=planFactsHTML(d,spBtn);
-  if(d.kind==="shoot")h+=lateFn("deNote",d)||"";   /* changed on set (31-dayedit.js) */
-  if(TXA(d,"notes").length)h+='<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
-  h+='</div>';
-  try{if(window.ownDayHTML)h+=window.ownDayHTML(d.date)}catch(_){} /* own and Google Calendar appointments of this day */
-  if(d.kind!=="shoot"){
-    h+='<div class="offday"><b>'+(d.kind==="travel"?L("Reisetag"):L("Drehfrei"))+'</b>'+esc(TX(d,"info"))+'</div>';
-    return h;
-  }
+  return h+island("plan",{d,t,pu:S.pu,at:Date.now()})}
+/* ---------- Drehplan as components (framework): head of the day, units, timeline; the rows (scene, cast, ack …) are still itemHTML ---------- */
+/** notes of a day or a unit @param {{list:string[],style?:string}} p */
+function Notes({list,style}){return list.length?html`<div class="notes" style=${style}>${list.map(n=>html`<div class="note">${n}</div>`)}</div>`:null}
+/** the rows of a unit: the context of the day/unit is set while they are drawn (cast chips, acks) @param {{d:any,u:string,items:any[]}} p */
+function Timeline({d,u,items}){window.__mctx={date:d.date,u};try{return html`<ol class="tl">${items.map(it=>html`<${Raw} html=${itemHTML(it)}/>`)}</ol>`}finally{window.__mctx=null}}
+/** one unit beyond the 1st: its facts, notes and rows (2nd unit planning: notes that name a scene go to that scene) @param {{d:any,u:string,heads:boolean}} p */
+function UnitPlan({d,u,heads}){let x=d["unit"+u];
+  if(x.src==="2nd"){const its=x.items.filter(i=>i).map(i=>Object.assign({},i,{xn:[]}));
+    const key=sc=>norm(sc).replace(/^0+/,"");
+    const refs=n=>{const out=new Set(),t=String(n).toLowerCase().replace(/(\d)\s+(pt|sl)/g,"$1$2");for(const m of t.matchAll(/(?:^|[^a-z])(?:sc(?:ene|ène|ena)?\.?\s*|szene\s*|#)0*(\d+(?:(?:pt|sl)\d+|[a-z]\b)?)/g))out.add(m[1]);return out};
+    for(const n of TXA(x,"notes")){const r=refs(n);if(!r.size)continue;for(const i of its){if(!i.sc)continue;const k=key(i.sc),b=k.replace(/pt\d+[a-z]?$/,"");if(r.has(k)||r.has(b))i.xn.push(n)}}
+    x=Object.assign({},x,{items:its,notes:[],notes_fr:[],notes_en:[],notes_it:[],notes_hi:[]})}
+  {const out=camFold(x.items);if(out!==x.items)x=Object.assign({},x,{items:out})}
+  return html`${heads?html`<h3 class=${"uh u"+u}>${UNAME[u]} Unit</h3>`:null}
+    <div class="unitfacts">${[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" Extras"].filter(Boolean).join(" · ")}${x.src==="2nd"?html` <span class="u2src">${L("genaue Reihenfolge laut 2nd-Unit-Planung")}</span>`:null}</div>
+    <${Notes} list=${TXA(x,"notes")} style="margin-top:8px"/><${Timeline} d=${d} u=${u} items=${x.items}/>`}
+/** a day of the Drehplan @param {{d:any,t:string}} p */
+function PlanDay({d,t}){const out=[],shoot=d.kind==="shoot";let own="";try{if(window.ownDayHTML)own=window.ownDayHTML(d.date)}catch(_){}
+  out.push(html`<div class="dayhead"><div><div class="dtitle"><h2 class="pgt">${dayTitle(d)}</h2>${shoot?html`<${Raw} html=${pvButtons("",UNITBAR)+(window.deBtn?window.deBtn(d):"")}/>`:null}</div>
+    <div class="date drow"><span>${fmtDate(d.date)}${d.date===t?" · "+L("heute"):""}<${Raw} html=${blockTag(d.date)}/></span>${shoot?null:html`<${Raw} html=${UNITBAR}/>`}</div></div>
+    ${shoot?html`<${Raw} html=${planFactsHTML(d,planPdfBtn(d))}/><${Raw} html=${lateFn("deNote",d)||""}/>`:null}<${Notes} list=${TXA(d,"notes")}/></div>`);
+  out.push(html`<${Raw} html=${own}/>`);
+  if(!shoot){out.push(html`<div class="offday"><b>${d.kind==="travel"?L("Reisetag"):L("Drehfrei")}</b>${TX(d,"info")}</div>`);return html`${out}`}
   const sel=["1","2","3"].filter(u=>S.pu[u]);
-  if(!sel.length)return h+'<div class="empty">'+L('Bitte mindestens eine Unit wählen.')+'</div>';
-  const shown=sel.filter(u=>u==="1"||hasU(d,u));
-  const heads=shown.length>1;
+  if(!sel.length){out.push(html`<div class="empty">${L("Bitte mindestens eine Unit wählen.")}</div>`);return html`${out}`}
+  const shown=sel.filter(u=>u==="1"||hasU(d,u)),heads=shown.length>1;
   for(const u of sel){
-    window.__mctx={date:d.date,u:u};
-    if(u==="1"){if(heads)h+='<h3 class="uh">1st Unit</h3>';h+='<ol class="tl">'+camFold(d.items||[]).map(itemHTML).join("")+'</ol>';continue}
-    if(hasU(d,u)){
-      let x=d["unit"+u];
-      /* 2nd unit planning: all rows (scenes, rigging, setup, move …); a note that names a scene («Ton für Sc185») is shown at
-         that scene, notes without a scene not */
-      if(x.src==="2nd"){const its=x.items.filter(i=>i).map(i=>Object.assign({},i,{xn:[]}));
-        const key=sc=>norm(sc).replace(/^0+/,"");
-        const refs=n=>{const out=new Set(),t=String(n).toLowerCase().replace(/(\d)\s+(pt|sl)/g,"$1$2");for(const m of t.matchAll(/(?:^|[^a-z])(?:sc(?:ene|ène|ena)?\.?\s*|szene\s*|#)0*(\d+(?:(?:pt|sl)\d+|[a-z]\b)?)/g))out.add(m[1]);return out};
-        for(const n of TXA(x,"notes")){const r=refs(n);if(!r.size)continue;for(const i of its){if(!i.sc)continue;const k=key(i.sc),b=k.replace(/pt\d+[a-z]?$/,"")/* «5pt3» also hears notes on 5, «25sl2» (slideshow) not those on 25 */;if(r.has(k)||r.has(b))i.xn.push(n)}}
-        x=Object.assign({},x,{items:its,notes:[],notes_fr:[],notes_en:[],notes_it:[],notes_hi:[]})}
-      /* camera setups of the 2nd unit (rows «A-1 …», «B-2 …» before or after a scene) go into that scene, before its summary (camFold) */
-      {const out=camFold(x.items);if(out!==x.items)x=Object.assign({},x,{items:out})}
-      if(heads)h+='<h3 class="uh u'+u+'">'+UNAME[u]+' Unit</h3>';
-      h+='<div class="unitfacts">'+[x.hours,x.length,x.pages&&x.pages+" pgs",x.extras&&x.extras+" Extras"].filter(Boolean).map(esc).join(" · ")+
-        (x.src==="2nd"?' <span class="u2src">'+esc(L("genaue Reihenfolge laut 2nd-Unit-Planung"))+'</span>':'')+'</div>';
-      if(TXA(x,"notes").length)h+='<div class="notes" style="margin-top:8px">'+TXA(x,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>';
-      h+='<ol class="tl">'+x.items.map(itemHTML).join("")+'</ol>';
-    }else if(!shown.length)h+='<div class="empty">'+L('Keine '+UNAME[u]+' Unit an diesem Tag.')+'</div>';
-  }
-  window.__mctx=null;   /* the day of the rows only while they are drawn (else cast chips elsewhere showed the state of this day) */
-  const wk=vok("prep")&&S.prepro.find(x=>x.date===d.date);if(wk)h+=renderPrePro(wk,true);
-  return h;
-}
+    if(u==="1"){if(heads)out.push(html`<h3 class="uh">1st Unit</h3>`);out.push(html`<${Timeline} d=${d} u="1" items=${camFold(d.items||[])}/>`);continue}
+    if(hasU(d,u))out.push(html`<${UnitPlan} key=${"u"+u} d=${d} u=${u} heads=${heads}/>`);
+    else if(!shown.length)out.push(html`<div class="empty">${L("Keine "+UNAME[u]+" Unit an diesem Tag.")}</div>`)}
+  const wk=vok("prep")&&S.prepro.find(x=>x.date===d.date);if(wk)out.push(html`<${Raw} html=${renderPrePro(wk,true)}/>`);
+  return html`${out}`}
+ISLANDS.plan=PlanDay;

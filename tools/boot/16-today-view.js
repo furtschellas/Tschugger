@@ -6,7 +6,7 @@ import {csKeys,csMe,csRows,csTile} from "../base/13a-callsheet.js";
 import {csHM,csNowBits,csNowScene,csShootDay} from "../base/13b-cs-now.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
-import {fold,render} from "../base/15-script-tab.js";
+import {fold,island,render} from "../base/15-script-tab.js";
 import {goTo,store} from "../base/16-interaction.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {fmtT} from "./01-config.js";
@@ -16,6 +16,8 @@ import {savePrefsSoon} from "./06-prefs-docs.js";
 import {OFF,chgList,chgSeen,chgSeenGone,dmy,offState,unitItems} from "./14-today-changes-offline.js";
 import {wxTile} from "./15-weather.js";
 import {scAckId} from "./27-scene-ack.js";
+import {html,ISLANDS} from "../base/09-fw.js";
+import {Raw} from "../base/10a-ui.js";
 /* ---------- 1) «Heute»: everything for today (or the next working day) on one page ---------- */
 /* «Today» on/off per person (profile, synced with the view settings) */
 export function todayOn(){try{const v=localStorage.getItem("today")||"";return !(v==="0"||v.startsWith("0|"))}catch(_){return true}}
@@ -90,103 +92,85 @@ VIEWS.today=function(){
     return '<section class="today"><h2 class="pgt">'+L("Heute")+'</h2><p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>'+
       (sc?'<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(sc.unread?' <span class="chgdot">1 '+esc(L("neu"))+'</span>':'')+'</div>'+chgListHTML([sc])+''+
         (sc.unread?'<div class="tacts"><button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button></div>':'')+'</div>':'')+'</section>'}
-  /* after midnight of a night shoot the shooting day is still «today» (until its wrap) – also for «Jetzt» */
-  const sd=typeof csShootDay==="function"?csShootDay():t,isToday=d.date<=t||d.date===sd,   /* the day that was shot until after midnight is still «Heute» until Today moves on */dt=new Date(d.date+"T12:00:00");
-  /* only what the person may see: schedule parts need «Drehplan sehen», callsheet parts «Callsheet sehen» */
-  const canPlan=vok("plan"),canDispo=vok("dispo");
-  const dp=canDispo?(dispoOf(d.date)||null):null;
-  const card=(cls,title,body)=>body?'<div class="tcard '+cls+'"><div class="tch">'+title+'</div>'+body+'</div>':'';
-  const thead='<div class="thead"><h2 class="pgt">'+esc(L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag"))+'</h2><span class="tdate">'+esc((d.short||d.label||"")+" · "+WDL(dt)+" "+ddmm(dt))+'</span></div>';
-  let h='<section class="today">';
+  return island("today",{d,t,at:Date.now()})};
+/* ---------- Today as components (framework): the cards in their order; «Jetzt», the callsheet tiles, «Mein Tag», the menu and the
+   list of changes are still the shared HTML of the callsheet / changes ---------- */
+/** a card of Today: title (with extras) and its content; nothing without content
+ * @param {{cls:string,title:any,children?:any}} p */
+function TCard({cls,title,children}){return html`<div class=${"tcard "+cls}><div class="tch">${title}</div>${children}</div>`}
+/** a time tile («07:00 · Crew Call») @param {{v:string,k:string,cl?:string}} p */
+function Tile({v,k,cl}){return html`<div class=${"ttile"+(cl?" "+cl:"")}><b>${v}</b><span>${k}</span></div>`}
+/** the drive tile: tap → route in Google Maps (from the hotel or from here) @param {{r:any,min:number,km?:number,back?:boolean}} p */
+function DriveTile({r,min,km,back}){return html`<button type="button" class="ttile tdrv" data-route=${JSON.stringify(r)} title=${L("Route in Google Maps")}><b>${driveMin(min)+"′"}${km?html`<small class="tkm"> · ${Math.round(km)} km</small>`:null}</b><span>${L(back?"Rückfahrt":"Anfahrt")} ›</span></button>`}
+const firstLoc=d=>arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));
+function driveDest(d){const fi=firstLoc(d);let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}return dest}
+/** my next events (upcoming and up to 5 h back, as in «Meine Termine») @param {{ev:any[],t:string}} p */
+function MyNext({ev,t}){return html`<${TCard} cls="tmy" title=${html`${L("Meine nächsten Termine")}<button type="button" class="tmyall" data-tomy>${L("Alle")} ›</button>`}>
+  ${ev.length?html`<ul class="tmylist">${ev.map(x=>html`<li><span class="tmd">${x.date===t?L("heute"):dmy(x.date)} <b>${x.t||""}</b></span><span class="tmw"><b>${x.n||""}</b>${x.where?html` <small>· ${String(x.where).split(",")[0]}</small>`:null}${x.driver?html` <small>· ${L("Fahrer:in")}: <${Raw} html=${typeof telLinks==="function"?telLinks(x.driver):esc(x.driver)}/></small>`:null}</span></li>`)}</ul>`:html`<p class="ghint">${L("Keine anstehenden Termine.")}</p>`}</${TCard}>`}
+/** the scenes of the day, one line each @param {{d:any,scs:any[],dp:any}} p */
+function Scenes({d,scs,dp}){return html`<${TCard} cls="tscs" title=${html`${L("Szenen")} <small>${scs.length}</small>`}><ul class="tsclist">${scs.map(([u,it])=>{const cg=window.chgFor(d.date,u,it.sc);
+    const set=String(it.set||"").replace(/^VALAIS\s*[–-]\s*/i,""),ds=String((LANG==="en"?it.d:(it["d_"+LANG]||it.d))||"").trim();
+    return html`<li class=${cg?"chg":undefined} title=${cg||undefined}><span class="tt">${it.t||""}</span><span class="tsc">${it.sc}</span><span class="tset" title=${[set,ds].filter(Boolean).join(" – ")}>${u!=="1"?html`<span class="td-unit">${UNAME[u]}</span> `:null}${set}${ds?html`<span class="tds"> · ${ds}</span>`:null}</span></li>`})}</ul>
+  <button type="button" class="pillbtn" data-goto=${d.id}>${L("Drehplan öffnen")}</button>${dp?html` <button type="button" class="pillbtn" data-todispo=${d.date}>Callsheet</button>`:null}</${TCard}>`}
+/** the tiles of the next shooting day (from noon or lunch on) @param {{d:any,canPlan:boolean}} p */
+function NextDay({d,canPlan}){
+  try{const la=d.kind==="shoot"&&lunchAt(d),noon=zurichUTC(d.date,"12:00").getTime(),from=la?Math.min(la,noon):noon;if(!(canPlan&&d.kind==="shoot"&&Date.now()>=from))return null;
+    const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);if(!nd)return null;
+    const ndt=new Date(nd.date+"T12:00:00"),nt=[],nu2=nd.unit2&&typeof nd.unit2==="object"&&nd.unit2.hours?String(nd.unit2.hours):"";
+    let nmu=null;try{const ndp=dispoOf(nd.date,1);if(ndp&&typeof window.csMyUnits==="function")nmu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
+    const sh1=!nu2||!nmu||nmu.includes("1"),sh2=!!nu2&&(!nmu||nmu.includes("2"));
+    if(nd.hours&&sh1)nt.push([nd.hours,L("Drehzeit")+(nu2?" · 1st Unit":"")]);if(sh2)nt.push([nu2,L("Drehzeit")+" · 2nd Unit"]);if(nd.sr&&nd.ss)nt.push([nd.sr+"–"+nd.ss,L("Sonnenzeit")]);
+    let ndrv=null;if(nd.drive&&nd.drive.min){const dest=driveDest(nd),gm=mapsDir,hotel=nd.drive.from||"Hotel";ndrv=html`<${DriveTile} r=${{h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest}} min=${nd.drive.min} km=${nd.drive.km}/>`}
+    const nwx=tShow("wx")?wxTile(nd):"";
+    if(!(nt.length||ndrv||nwx))return null;
+    return html`<div class="thead tnext"><h3 class="pgt">${L("Nächster Drehtag")}</h3><span class="tdate">${(nd.short||nd.label||"")+" · "+WDL(ndt)+" "+ddmm(ndt)}</span></div><div class="ttiles">${nt.map(([v,k])=>html`<${Tile} v=${v} k=${k}/>`)}${ndrv}<${Raw} html=${nwx}/></div>`}catch(_){return null}}
+/** Today @param {{d:any,t:string}} p */
+function TodayPage({d,t}){
+  const sd=typeof csShootDay==="function"?csShootDay():t,isToday=d.date<=t||d.date===sd,dt=new Date(d.date+"T12:00:00");
+  const canPlan=vok("plan"),canDispo=vok("dispo"),dp=canDispo?(dispoOf(d.date)||null):null,out=[];
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
-  /* for everybody, first of all and only while shooting: the scene being shot now (quittiert in the Drehplan, else by the callsheet times), with its place and how long it runs */
-  /* «Jetzt» in Today: whenever something is shot now (as in the callsheet) – only the person can hide it (Mein Konto), not a default; nothing when no unit shoots */
-  if(todayCfg("now")!=="no"&&!todayPrefs().has("now"))h+=nowCardHTML(sd,"",undefined,true);   /* the shooting day running now – also when Today already shows the next day (shooting longer than planned) */
-  /* my next events, right at the top (upcoming and up to 5 h back, as in «Meine Termine») */
-  try{if(me&&vok("mycal")&&tShow("my")){const ev=myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4);
-    h+='<div class="tcard tmy"><div class="tch">'+esc(L("Meine nächsten Termine"))+'<button type="button" class="tmyall" data-tomy>'+esc(L("Alle"))+' ›</button></div>'+(ev.length?'<ul class="tmylist">'+ev.map(x=>'<li><span class="tmd">'+esc(x.date===t?L("heute"):dmy(x.date))+' <b>'+esc(x.t||"")+'</b></span><span class="tmw"><b>'+esc(x.n||"")+'</b>'+(x.where?' <small>· '+esc(String(x.where).split(",")[0])+'</small>':'')+(x.driver?' <small>· '+esc(L("Fahrer:in"))+': '+(typeof telLinks==="function"?telLinks(x.driver):esc(x.driver))+'</small>':'')+'</span></li>').join("")+'</ul>':'<p class="ghint">'+esc(L("Keine anstehenden Termine."))+'</p>')+'</div>'}}catch(_){}
-  /* today a travel or free day: short note above the next shooting day */
+  if(todayCfg("now")!=="no"&&!todayPrefs().has("now"))out.push(html`<${Raw} html=${nowCardHTML(sd,"",undefined,true)}/>`);
+  try{if(me&&vok("mycal")&&tShow("my"))out.push(html`<${MyNext} ev=${myEvents(me).filter(x=>typeof evRecent!=="function"||evRecent(x)).slice(0,4)} t=${t}/>`)}catch(_){}
   {const td=d.date!==t?(S.days||[]).find(x=>x.date===t&&x.kind!=="shoot"):null;
-    if(td)h+='<div class="tcard tinfo"><div class="tch">'+esc(L("Heute"))+' · '+esc(L(td.label||""))+'</div>'+(TX(td,"info")?'<p class="tsub">'+esc(TX(td,"info"))+'</p>':'')+'</div>'}
-  /* title of the (next) shooting day below my events */
-  h+=thead;
-  /* calls */
+    if(td)out.push(html`<${TCard} cls="tinfo" title=${L("Heute")+" · "+L(td.label||"")}>${TX(td,"info")?html`<p class="tsub">${TX(td,"info")}</p>`:null}</${TCard}>`)}
+  out.push(html`<div class="thead"><h2 class="pgt">${L(isToday?"Heute":d.kind==="shoot"?"Nächster Drehtag":"Nächster Tag")}</h2><span class="tdate">${(d.short||d.label||"")+" · "+WDL(dt)+" "+ddmm(dt)}</span></div>`);
   let myCall="";try{if(me&&dp){const myDep=fold(me.src||"").split(/[\s/]/)[0];const c=myDep?arr(dp.calls).find(z=>fold(z.dept||"").split(/[^a-z0-9]+/).includes(myDep)):null;if(c)myCall=hm(c.t)+" · "+c.dept}}catch(_){}
   const tiles=[],shT=tShow("time");
-  if(shT&&myCall)tiles.push(['<b>'+esc(myCall.split(" · ")[0])+'</b>',L("Mein Call")+" · "+esc(myCall.split(" · ").slice(1).join(" · "))]);
-  if(shT&&dp&&(dp.crewCall||dp.generalCall))tiles.push(['<b>'+esc(dp.crewCall||dp.generalCall)+'</b>',"Crew Call","big"]);
-  if(shT&&dp&&dp.shootCall)tiles.push(['<b>'+esc(dp.shootCall)+'</b>',L("Drehbeginn")]);
-  /* shooting time always (also with a callsheet); with a 2nd unit that day its time as a tile of its own */
+  if(shT&&myCall)tiles.push([myCall.split(" · ")[0],L("Mein Call")+" · "+myCall.split(" · ").slice(1).join(" · ")]);
+  if(shT&&dp&&(dp.crewCall||dp.generalCall))tiles.push([dp.crewCall||dp.generalCall,"Crew Call","big"]);
+  if(shT&&dp&&dp.shootCall)tiles.push([dp.shootCall,L("Drehbeginn")]);
   const u2h=d.unit2&&typeof d.unit2==="object"&&d.unit2.hours?String(d.unit2.hours):"";
-  if(shT&&d.hours&&canPlan)tiles.push(['<b>'+esc(d.hours)+'</b>',L("Drehzeit")+(u2h?" · 1st Unit":"")]);
-  if(shT&&u2h&&canPlan)tiles.push(['<b>'+esc(u2h)+'</b>',L("Drehzeit")+" · 2nd Unit"]);
-  if(shT&&dp&&dp.wrap)tiles.push(['<b>'+esc(dp.wrap)+'</b>',"Wrap"]);
-  if(shT&&d.sr&&d.ss)tiles.push(['<b>'+esc(d.sr+"–"+d.ss)+'</b>',L("Sonnenzeit")]);
-  /* weather: live forecast for the place of the first scene (tap → detailed report); the callsheet text is in the report */
+  if(shT&&d.hours&&canPlan)tiles.push([d.hours,L("Drehzeit")+(u2h?" · 1st Unit":"")]);
+  if(shT&&u2h&&canPlan)tiles.push([u2h,L("Drehzeit")+" · 2nd Unit"]);
+  if(shT&&dp&&dp.wrap)tiles.push([dp.wrap,"Wrap"]);
+  if(shT&&d.sr&&d.ss)tiles.push([d.sr+"–"+d.ss,L("Sonnenzeit")]);
   const wxt=canPlan&&tShow("wx")?wxTile(d):"";
-  /* drive from the crew hotel (+3 min, over 20 min +15 %) and the weather come last */
-  /* tap → route in Google Maps from the crew hotel to the first location */
-  const drv=canPlan&&tShow("drive")&&d.drive&&d.drive.min?(()=>{const fi=arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=d.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
-    /* from lunch on (on the shooting day itself): the drive back to the hotel */
-    const hotel=d.drive.from||"Hotel",la=lunchAt(d),back=la&&Date.now()>=la&&Date.now()<((dayTimes(d)||{}).en||0)+3600e3;
-    const gm=mapsDir;
-    const r=back?{h:gm(dest,hotel),c:gm("",hotel),from:dest,to:hotel,back:1}:{h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest};   /* no origin = current location */
-    return '<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify(r))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(d.drive.min)+"′")+(d.drive.km?'<small class="tkm"> · '+Math.round(d.drive.km)+' km</small>':'')+'</b><span>'+esc(L(back?"Rückfahrt":"Anfahrt"))+' ›</span></button>'})():'';
-  /* my day from the callsheet (call, ride, my department) right below the tiles */
-  /* «my day» from the callsheet: always (my own call, rides and department), also without the callsheet page; the link to it only with access */
-  let mineCard="";try{const dpm=dispoOf(d.date);if(tShow("mine")&&dpm&&dpm.cs&&typeof csMine==="function"){const me2=csMe();const mn=csMine(dpm.cs,me2);const toCs=canDispo&&typeof tabsOn==="function"&&tabsOn().includes("dispo");
-    if(mn.length)mineCard='<div class="tcard tmine"><div class="tch">'+esc(L("Mein"))+' '+esc(dpm.label||d.label||L("Drehtag"))+' <span class="beta">BETA</span>'+(toCs?'<button type="button" class="tmyall" data-tocs="'+esc(d.date)+'">'+esc(L("Alle"))+' ›</button>':'')+'</div>'+mn.join("")+'</div>'}}catch(_){}
-  /* a day with a callsheet: the same tiles as in the callsheet (Crew Call … Wrap, sun, weather, drive) */
+  let drv=null;if(canPlan&&tShow("drive")&&d.drive&&d.drive.min){const dest=driveDest(d),hotel=d.drive.from||"Hotel",la=lunchAt(d),back=!!(la&&Date.now()>=la&&Date.now()<((dayTimes(d)||{}).en||0)+3600e3),gm=mapsDir;
+    const r=back?{h:gm(dest,hotel),c:gm("",hotel),from:dest,to:hotel,back:1}:{h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest};drv=html`<${DriveTile} r=${r} min=${d.drive.min} km=${d.drive.km} back=${back}/>`}
+  let mine=null;try{const dpm=dispoOf(d.date);if(tShow("mine")&&dpm&&dpm.cs&&typeof csMine==="function"){const mn=csMine(dpm.cs,csMe());const toCs=canDispo&&typeof tabsOn==="function"&&tabsOn().includes("dispo");
+    if(mn.length)mine=html`<${TCard} cls="tmine" title=${html`${L("Mein")} ${dpm.label||d.label||L("Drehtag")} <span class="beta">BETA</span>${toCs?html`<button type="button" class="tmyall" data-tocs=${d.date}>${L("Alle")} ›</button>`:null}`}><${Raw} html=${mn.join("")}/></${TCard}>`}}catch(_){}
   const dcs=dispoOf(d.date,1);
-  if(dcs&&shT&&typeof csTilesHTML==="function"){let me3=null;try{me3=csMe()}catch(_){}
-    /* a day with a 2nd Unit: its times as tiles of their own below (Crew Call, RTS, Lunch, Wrap of the 2nd Unit), both labelled */
-    h+='<div class="tcs">'+unitTilesHTML(dcs,d,me3)+'</div>'}
-  else h+=(tiles.length||wxt||drv)?'<div class="ttiles">'+tiles.map(([v,k,cl])=>'<div class="ttile'+(cl?' '+cl:'')+'">'+v+'<span>'+k+'</span></div>').join("")+drv+wxt+'</div>':'';h+=mineCard;
-  /* from noon (or lunch, if earlier) on: the tiles of the next shooting day (times, drive, weather) – shown below the scenes */
-  let nextH="";
-  try{const la=d.kind==="shoot"&&lunchAt(d),noon=zurichUTC(d.date,"12:00").getTime(),from=la?Math.min(la,noon):noon;if(canPlan&&d.kind==="shoot"&&Date.now()>=from){const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);
-    if(nd){const ndt=new Date(nd.date+"T12:00:00"),nt=[];
-      const nu2=nd.unit2&&typeof nd.unit2==="object"&&nd.unit2.hours?String(nd.unit2.hours):"";
-      /* only the unit I am in on that day (its callsheet tells it; both when I am in both or it is not clear yet) */
-      let nmu=null;try{const ndp=dispoOf(nd.date,1);if(ndp&&typeof window.csMyUnits==="function")nmu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
-      const sh1=!nu2||!nmu||nmu.includes("1"),sh2=!!nu2&&(!nmu||nmu.includes("2"));
-      if(nd.hours&&sh1)nt.push(['<b>'+esc(nd.hours)+'</b>',L("Drehzeit")+(nu2?" · 1st Unit":"")]);if(sh2)nt.push(['<b>'+esc(nu2)+'</b>',L("Drehzeit")+" · 2nd Unit"]);if(nd.sr&&nd.ss)nt.push(['<b>'+esc(nd.sr+"–"+nd.ss)+'</b>',L("Sonnenzeit")]);
-      let ndrv="";if(nd.drive&&nd.drive.min){const fi=arr(nd.items).find(i=>i.loc&&!/^tba/i.test(i.loc));let dest=nd.drive.to||"";try{if(fi){const a=addrForItem(fi);if(a&&!/^tba$/i.test(a))dest=a}}catch(_){}
-        const gm=mapsDir,hotel=nd.drive.from||"Hotel";
-        ndrv='<button type="button" class="ttile tdrv" data-route="'+esc(JSON.stringify({h:gm(hotel,dest),c:gm("",dest),from:hotel,to:dest}))+'" title="'+esc(L("Route in Google Maps"))+'"><b>'+esc(driveMin(nd.drive.min)+"′")+(nd.drive.km?'<small class="tkm"> · '+Math.round(nd.drive.km)+' km</small>':'')+'</b><span>'+esc(L("Anfahrt"))+' ›</span></button>'}
-      const nwx=tShow("wx")?wxTile(nd):"";
-      if(nt.length||ndrv||nwx)nextH+='<div class="thead tnext"><h3 class="pgt">'+esc(L("Nächster Drehtag"))+'</h3><span class="tdate">'+esc((nd.short||nd.label||"")+" · "+WDL(ndt)+" "+ddmm(ndt))+'</span></div><div class="ttiles">'+nt.map(([v,k])=>'<div class="ttile">'+v+'<span>'+k+'</span></div>').join("")+ndrv+nwx+'</div>'}}}catch(_){}
-  if(!dp&&canDispo&&d.kind==="shoot")h+='<p class="ghint">'+esc(L("Callsheet folgt"))+'</p>';
-  /* first location + drive */
-  const first=canPlan&&tShow("loc")?arr(d.items).find(i=>i.loc&&!/^tba/i.test(i.loc)):null;
-  if(first){let ad="";try{ad=addrForItem(first)}catch(_){ad=first.loc}
-    h+=card("tloc",esc(L("Erste Location")),'<div class="tbig">'+esc(first.set||first.loc)+'</div>'+(ad&&!/^tba$/i.test(ad)?'<button type="button" class="lnk tlocad" data-route="'+esc(JSON.stringify({h:mapsDir((d.drive&&d.drive.from)||"Hotel",ad),c:mapsDir("",ad),from:(d.drive&&d.drive.from)||"Hotel",to:ad}))+'">'+esc(ad)+'</button>':''))}   /* tap: choose «Vom Hotel» / «Vom aktuellen Standort» */
-  /* menu */
-  if(tShow("menu"))try{const mn=window.menuFor?window.menuFor(d.date,"all"):"";if(mn)h+=card("tmenu",esc(L("Mittagessen")),mn)}catch(_){}
-  /* scenes */
-  /* scenes of the day; in the 2nd/3rd unit a scene that follows itself (same number, several set-ups) is listed once */
-  const scs=[];if(canPlan)for(const [u,its] of unitItems(d))if(u==="1"||hasU(d,u)){let prev="";its.forEach(it=>{if(!it.sc){return}const k=String(it.sc).replace(/\s+/g,"").toLowerCase();if(u!=="1"&&k===prev)return;prev=k;scs.push([u,it])})}
-  if(scs.length&&tShow("scs"))h+=card("tscs",esc(L("Szenen"))+' <small>'+scs.length+'</small>','<ul class="tsclist">'+scs.map(([u,it])=>{const cg=window.chgFor(d.date,u,it.sc);
-    /* one line per scene: time, scene, set and – as far as there is room – the description (cut with «…») */
-    const set=String(it.set||"").replace(/^VALAIS\s*[–-]\s*/i,""),ds=String((LANG==="en"?it.d:(it["d_"+LANG]||it.d))||"").trim();
-    return '<li'+(cg?' class="chg" title="'+esc(cg)+'"':'')+'><span class="tt">'+esc(it.t||"")+'</span><span class="tsc">'+esc(it.sc)+'</span><span class="tset" title="'+esc([set,ds].filter(Boolean).join(" – "))+'">'+(u!=="1"?'<span class="td-unit">'+esc(UNAME[u])+'</span> ':'')+esc(set)+(ds?'<span class="tds"> · '+esc(ds)+'</span>':'')+'</span></li>'}).join("")+'</ul><button type="button" class="pillbtn" data-goto="'+esc(d.id)+'">'+esc(L("Drehplan öffnen"))+'</button>'+(dp?' <button type="button" class="pillbtn" data-todispo="'+esc(d.date)+'">Callsheet</button>':''));
-  h+=nextH;
-  /* my events */
-  /* changes */
-  const cl=canPlan?chgList():[];
-  {const sc=scriptChg();if(sc){cl.push(sc);cl.sort((a,b)=>(b.at||0)-(a.at||0))}}
-  if((canPlan||cl.length)&&tShow("chg"))h+='<div class="tcard tchg"><div class="tch">'+esc(L("Änderungen"))+(cl.some(c=>c.unread)?' <span class="chgdot">'+cl.filter(c=>c.unread).length+' '+esc(L("neu"))+'</span>':'')+'</div>'+
-    (cl.length?chgUnitsHTML(cl)+
-      '<div class="tacts">'+(cl.some(c=>c.unread)?'<button type="button" class="pillbtn" data-chgseen>'+esc(L("Als gelesen markieren"))+'</button>':'')+'</div>'
-      :'<p class="ghint">'+esc(L("Seit deinem letzten Besuch hat sich am Drehplan nichts geändert."))+'</p>')+'</div>';
-  /* offline */
+  if(dcs&&shT&&typeof csTilesHTML==="function"){let me3=null;try{me3=csMe()}catch(_){}out.push(html`<div class="tcs"><${Raw} html=${unitTilesHTML(dcs,d,me3)}/></div>`)}
+  else if(tiles.length||wxt||drv)out.push(html`<div class="ttiles">${tiles.map(([v,k,cl])=>html`<${Tile} v=${v} k=${k} cl=${cl}/>`)}${drv}<${Raw} html=${wxt}/></div>`);
+  out.push(mine);
+  if(!dp&&canDispo&&d.kind==="shoot")out.push(html`<p class="ghint">${L("Callsheet folgt")}</p>`);
+  const first=canPlan&&tShow("loc")?firstLoc(d):null;
+  if(first){let ad="";try{ad=addrForItem(first)}catch(_){ad=first.loc}const from=(d.drive&&d.drive.from)||"Hotel";
+    out.push(html`<${TCard} cls="tloc" title=${L("Erste Location")}><div class="tbig">${first.set||first.loc}</div>${ad&&!/^tba$/i.test(ad)?html`<button type="button" class="lnk tlocad" data-route=${JSON.stringify({h:mapsDir(from,ad),c:mapsDir("",ad),from,to:ad})}>${ad}</button>`:null}</${TCard}>`)}
+  if(tShow("menu"))try{const mn=window.menuFor?window.menuFor(d.date,"all"):"";if(mn)out.push(html`<${TCard} cls="tmenu" title=${L("Mittagessen")}><${Raw} html=${mn}/></${TCard}>`)}catch(_){}
+  const scs=[];if(canPlan)for(const [u,its] of unitItems(d))if(u==="1"||hasU(d,u)){let prev="";its.forEach(it=>{if(!it.sc)return;const k=String(it.sc).replace(/\s+/g,"").toLowerCase();if(u!=="1"&&k===prev)return;prev=k;scs.push([u,it])})}
+  if(scs.length&&tShow("scs"))out.push(html`<${Scenes} d=${d} scs=${scs} dp=${dp}/>`);
+  out.push(html`<${NextDay} d=${d} canPlan=${canPlan}/>`);
+  const cl=canPlan?chgList():[];{const sc=scriptChg();if(sc){cl.push(sc);cl.sort((a,b)=>(b.at||0)-(a.at||0))}}
+  if((canPlan||cl.length)&&tShow("chg")){const nu=cl.filter(c=>c.unread).length;
+    out.push(html`<${TCard} cls="tchg" title=${html`${L("Änderungen")}${nu?html` <span class="chgdot">${nu} ${L("neu")}</span>`:null}`}>${cl.length?html`<${Raw} html=${chgUnitsHTML(cl)}/><div class="tacts">${nu?html`<button type="button" class="pillbtn" data-chgseen>${L("Als gelesen markieren")}</button>`:null}</div>`:html`<p class="ghint">${L("Seit deinem letzten Besuch hat sich am Drehplan nichts geändert.")}</p>`}</${TCard}>`)}
   const st=offState(),on=navigator.onLine!==false;
-  if((vok("blocking")||vok("plan"))&&tShow("off"))h+='<div class="tcard toff"><div class="tch">'+esc(L("Offline am Set"))+(on?'':' <span class="chgdot">'+esc(L("offline"))+'</span>')+'</div>'+
-    (st&&st.v===2?'<p class="tsub">✓ '+esc(L("Gespeichert"))+': '+st.n+' '+esc(L("Seiten"))+' ('+esc(L("Blocking-PDFs und Floorplans, alle Drehtage"))+') · '+esc(L("Stand"))+' '+esc(fmtT(st.at))+'</p>':'')+
-    '<p class="ghint">'+esc(L("Drehplan, Callsheet, Kontakte, Drehbuch, Blocking-PDFs und Floorplans werden für alle Drehtage automatisch auf diesem Gerät gespeichert – Fotos nicht."))+'</p>'+
-    (on?'<button type="button" class="pillbtn" data-offprep'+(OFF.busy?' disabled':'')+'>'+esc(L(OFF.busy?"Wird geladen …":"Jetzt für offline laden"))+'</button>':'')+'</div>';
-  return h+'</section>';
-};
+  if((vok("blocking")||vok("plan"))&&tShow("off"))out.push(html`<${TCard} cls="toff" title=${html`${L("Offline am Set")}${on?null:html` <span class="chgdot">${L("offline")}</span>`}`}>
+    ${st&&st.v===2?html`<p class="tsub">✓ ${L("Gespeichert")}: ${st.n} ${L("Seiten")} (${L("Blocking-PDFs und Floorplans, alle Drehtage")}) · ${L("Stand")} ${fmtT(st.at)}</p>`:null}
+    <p class="ghint">${L("Drehplan, Callsheet, Kontakte, Drehbuch, Blocking-PDFs und Floorplans werden für alle Drehtage automatisch auf diesem Gerät gespeichert – Fotos nicht.")}</p>
+    ${on?html`<button type="button" class="pillbtn" data-offprep disabled=${!!OFF.busy}>${L(OFF.busy?"Wird geladen …":"Jetzt für offline laden")}</button>`:null}</${TCard}>`);
+  return html`<section class="today">${out}</section>`}
+ISLANDS.today=TodayPage;
 
 /* the app opens on «Today» (unless a link asks for another page) */
 

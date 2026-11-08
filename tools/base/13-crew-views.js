@@ -229,7 +229,7 @@ function LocCard({g0,nowSc}){
   const sets=l=>(l.sets||[]).map(x=>(x.ie||"")+": "+(x.scenes||[]).join(", ")).join(" · ");
   const allSc=g.items.flatMap(scOf),st=sceneTexts(allSc),nSc=st.length;
   const dlist=[...new Map(st.map(x=>[x.d.id,x.d])).values()].sort((a,b)=>a.date<b.date?-1:1).map(d=>d.short||d.label).join(" · ");
-  const head=html`<h4>${g.title}<${Raw} tag="span" html=${unitBadges(rawUnits(g0.items.flatMap(scOf)))}/></h4><span class="lcm">${(multi?g.items.length+" "+L("Motive")+" · ":"")+nSc+" "+(nSc===1?L("Szene"):L("Szenen"))+(dlist?" · "+dlist:"")}</span>`;
+  const head=html`<h4>${g.title}<${Raw} html=${unitBadges(rawUnits(g0.items.flatMap(scOf)))}/></h4><span class="lcm">${(multi?g.items.length+" "+L("Motive")+" · ":"")+nSc+" "+(nSc===1?L("Szene"):L("Szenen"))+(dlist?" · "+dlist:"")}</span>`;
   const mapOf=g.items.find(l=>/^https:/.test(l.map||""));
   const ad=g.mixed?html`<div class="adl">${g.items.map(l=>{const a=[l.venue,l.address].filter(Boolean).join(", ");return html`<${MapLine} addr=${a} href=${locHref(l,a)}/>`})}</div>`
     :addr.length?html`<div class="adl"><${MapLine} addr=${addr.join(", ")} href=${locHref(mapOf||g.items[0],addr.join(", "))}/></div>`
