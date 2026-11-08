@@ -46,7 +46,7 @@ if(INFRAME&&FRAMEPG&&FRAMEPG!=="phone"){document.documentElement.classList.add("
 
 /* ---------- the topics drawn here ---------- */
 /* the head of a topic: its title and «−» (takes it out of this box) */
-const head=(k,t)=>'<h3 class="sbh" title="'+esc(L("Zum Verschieben ziehen"))+'"><span>'+esc(L(t))+'</span><button type="button" class="sbdel" data-sbdel="'+k+'" aria-label="'+esc(L("Entfernen")+": "+L(t))+'" title="'+esc(L("Entfernen"))+'">−</button></h3>';
+const head=(k,t)=>'<h3 class="sbh" title="'+esc(L("Zum Verschieben ziehen"))+'"><span data-none="'+esc(L("Zurzeit nichts"))+'">'+esc(L(t))+'</span><button type="button" class="sbdel" data-sbdel="'+k+'" aria-label="'+esc(L("Entfernen")+": "+L(t))+'" title="'+esc(L("Entfernen"))+'">−</button></h3>';
 /* a topic without content now (no callsheet yet …): only its head, so it can still be taken out */
 const sec=(k,t,h)=>'<section class="sbsec'+(h?'':' sbempty')+'">'+head(k,t)+(h||'<p class="sbnone">'+esc(L("Zurzeit nichts"))+'</p>')+'</section>';
 const dayNow=()=>{try{return todayDay()}catch(_){return null}};

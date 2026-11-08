@@ -750,6 +750,7 @@ Object.assign(I18N,{
  "Lunch-Ort":{fr:"Lieu du lunch",it:"Luogo del pranzo",en:"Lunch place"},
  "2nd Unit im Callsheet":{fr:"2nd Unit dans le callsheet",it:"2nd Unit nel callsheet",en:"2nd Unit in the callsheet"},
  "Seitenmenüs":{fr:"Menus latéraux",it:"Menu laterali",en:"Side menus"},
+ "Wird verbunden …":{fr:"Connexion …",it:"Connessione …",en:"Connecting …"},
  "du":{fr:"toi",it:"tu",en:"you",hi:"आप"},
  "Zum Verschieben ziehen":{fr:"Glisser pour déplacer",it:"Trascina per spostare",en:"Drag to move"},
  "Nach unten":{fr:"Vers le bas",it:"Verso il basso",en:"Move down"},

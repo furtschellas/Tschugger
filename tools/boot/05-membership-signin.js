@@ -1,5 +1,5 @@
 import {isIOS,isStandalone} from "../a2hs.js";
-import {$,applyStatic,dlgBtn,esc,fullName,L,LANG,lsGet,MEMO,mkDialog,S,setLANG} from "../base/10-core.js";
+import {$,applyStatic,dlgBtn,esc,fullName,L,LANG,lsGet,MEMO,mkDialog,S,SBXF,setLANG} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {setSCRIPT} from "../base/17-scene-reader.js";
@@ -118,6 +118,10 @@ function ggUpd(){const w=document.querySelector("[data-gglw]"),i=document.getEle
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="gem")ggUpd()});
 function GBTN(){if(window.GOOGLEON===false||(isIOS()&&isStandalone()))return '';return '<div data-gglw hidden><div class="gor"><span>'+L("oder")+'</span></div><button type="button" class="gbtn ggoogle" data-gact="google"><svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>'+L("Mit Google anmelden")+'</button></div>'}
 export function showGate(mode,msg,isErr){
+  /* a side-box frame never asks for a sign-in (the page itself is signed in): a short note, the frame tries again by itself –
+     before, a frame that started before the sign-in had arrived showed the whole login (and looked as if one had to sign in again) */
+  if(SBXF&&mode!=="wait"){try{const g=document.getElementById("gate");if(g)g.hidden=true;const v=document.getElementById("view");if(v&&!S.days.length)v.innerHTML='<p class="sbnone" style="padding:16px">'+esc(L("Wird verbunden …"))+'</p>'}catch(_){}
+    if(!window.__SBXRL){window.__SBXRL=setTimeout(()=>{window.__SBXRL=0;location.reload()},15000)}return}
   AUTHMODE=mode||AUTHMODE;const g=gateEl();
   const em=ME?esc(ME.email):(g.querySelector("#gem")?esc(g.querySelector("#gem").value):"");
   const head=(n=>{const i=n.indexOf(" ");return '<h2>'+(i>0?esc(n.slice(0,i))+' <span>'+esc(n.slice(i+1))+'</span>':esc(n))+'</h2>'})(window.PROJNAME?projName():"Tschugger Tigerblood");
