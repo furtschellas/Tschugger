@@ -16,6 +16,8 @@ import {ADM,SECS,admErr,admIndex,admLoad,assignCrew,batchN,confirmSafe,crewEmail
 import {bkSec,upSec} from "./12b-admin-backup.js";
 import {rolesSec,rolesSorted} from "./12d-admin-roles.js";
 import {auditSec,testsSec} from "./17-audit-misc.js";
+import {h,html,toHTML} from "../base/09-fw.js";
+import {Raw} from "../base/10a-ui.js";
 /* ---------- App-Verwaltung (Benutzer:innen und Seite) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
 /* owner only: account with a one-time start password, created in a second Firebase instance so the owner stays signed in */
 function genPw(){const c="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=new Uint32Array(12);crypto.getRandomValues(r);
@@ -114,49 +116,49 @@ const autoUnits=(g,c1,c2)=>{if(!AQU2())return autoRows(g,c1);
   return '<div class="aq4"><div class="aq4r aq4hr"><span></span><span class="aq4h"><b>1st Unit</b> · '+esc(L("Zugabe"))+' ('+esc(L("Min."))+')</span><span class="aq4h"><b>2nd Unit</b> · '+esc(L("Zugabe"))+' ('+esc(L("Min."))+')</span></div>'+
     AUTOQ[g].map(([k,t])=>{const a=(c1||{})[k]||{},b=(c2||{})[k]||{},tt=L(t);
       return '<div class="aq4r"><span class="aq4t">'+esc(tt)+'</span>'+unit("",k,a,tt,"1st Unit")+unit("2",k,b,tt,"2nd Unit")+'</div>'}).join("")+'</div>'};
-function userList(rows,vis,o){
-  const F=[["all","Alle"],["online","Online"],["act","Aktiv"],["inv","Eingeladen"],["off","Gesperrt"],["adm","Mit Rolle"],["app","App installiert"],["web","Ohne App"]];
-  const chips='<div class="ufil" role="group">'+F.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>'<button type="button" data-auf="'+k+'" aria-pressed="'+(ADM.uf===k)+'">'+L(t)+' <span>'+ADM.cnt[k]+'</span></button>').join("")+'</div>';
-  const card=r=>{
-    const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.open.has(r.email),nm=r.name||cp.name||"";
-    const badge=o.isAdm(r.email)?'<span class="ust adm">'+L(isOwn?"Owner":"Admin")+'</span>':(o.roleOf(r.email)?'<span class="ust role">'+esc(o.roleName(o.roleOf(r.email)))+'</span>':'<span class="ust norole">'+esc(L("Keine Rolle"))+'</span>');
-    const acts=[
-      o.cEd&&(own||!isOwn)?'<button class="cico'+(ADM.edit===r.email?' on':'')+'" data-adm="edit" data-em="'+esc(r.email)+'" '+ariaTip(L(ADM.edit===r.email?"Schliessen":"Bearbeiten"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ADM.edit===r.email?'<path d="M18 6 6 18M6 6l12 12"/>':'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>')+'</svg></button>':'',
-      own&&r.m?'<button data-adm="pwreset" data-em="'+esc(r.email)+'">'+L("Passwort-Link senden")+'</button>':'',
-      own&&!r.m&&!isOwn?'<button data-adm="nomail" data-em="'+esc(r.email)+'">'+L("Ohne Bestätigungs-Mail freischalten")+'</button>':'',
-      own&&!r.m&&!isOwn?'<button data-adm="startpw" data-em="'+esc(r.email)+'" data-nm="'+esc(r.name||"")+'">'+L("Startpasswort erzeugen")+'</button>':'',
-      !r.m&&o.cInv?'<a class="abtnl" href="'+o.mail(r)+'">✉ '+L("Einladungsmail")+'</a>':'',
-      !r.m&&o.cInv?'<button type="button" class="abtnl" data-cwa="'+esc(r.email)+'" data-nm="'+esc(r.name||(crewPerson(r.email)||{}).name||"")+'" data-ph="'+esc((crewPerson(r.email)||{}).phone||"")+'">💬 '+L("Per WhatsApp einladen")+'</button>':'',
-      own&&r.m&&!isOwn?(r.m.active===true?'<button class="warn" data-adm="block" data-uid="'+esc(r.m.uid)+'">'+L("Sperren")+'</button>':'<button data-adm="unblock" data-uid="'+esc(r.m.uid)+'">'+L("Entsperren")+'</button>'):'',
-      isOwn?'':own&&r.m?'<button class="warn" data-adm="remove" data-uid="'+esc(r.m.uid)+'" data-em="'+esc(r.email)+'">'+L("Entfernen")+'</button>':(r.inv&&!r.m&&o.cInv?'<button class="warn" data-adm="uninvite" data-em="'+esc(r.email)+'">'+L("Einladung löschen")+'</button>':'')
-    ].filter(Boolean);
-    const hasActs=true;
-    /* details (function, contact, language, last online, tour, profile) only in the opened card */
-    const det='<div class="udet">'+(cp.role||(r.m&&r.m.func)?'<div class="udl"><span>'+L("Funktion")+'</span><b>'+esc(cp.role||r.m.func)+'</b></div>':'')+
-      '<div class="udl"><span>'+L("E-Mail")+'</span><a class="em" href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'+
-      (r.m&&r.m.lang?'<div class="udl"><span>'+L("Sprache")+'</span><b>'+esc(r.m.lang.toUpperCase())+'</b></div>':'')+
-      (r.m&&r.m?'<div class="udl"><span>'+L("Einführungstour")+'</span><b>'+esc(tourInfo(r.m))+'</b></div>':'')+userInfo(r)+'</div>';
-    return '<div class="ucard'+(r.m&&r.m.active!==true?' blocked':'')+(open?' open':'')+'">'+
-      '<div class="uhd"><span class="uav'+(r.m&&isOnline(r.m)?' on':'')+'" aria-hidden="true">'+esc(initials(nm||r.email))+'</span><div class="umain"><div class="unm"><b>'+esc(nm||r.email)+'</b></div><div class="ubadges">'+o.st(r)+badge+'</div>'+
-      (()=>{const ph=(r.m&&r.m.phone)||cp.phone||"",ce=(r.m&&r.m.contactEmail)||r.email;const ak=String(r.m&&r.m.app||""),dv={ios:"iPhone",android:"Android",desktop:"Computer"}[ak.split("-")[1]]||"";
-          const DV={ios:"iPhone",android:"Android",desktop:"Computer"},devs=Object.values((r.m&&r.m.devs)||{}).map(x=>String(x).split("|")).filter(x=>Date.now()-(+x[1]||0)<30*864e5);
-          const devTxt=devs.length?devs.length+" "+L(devs.length===1?"Gerät":"Geräte"):"",devTip=devs.map(x=>(x[0].startsWith("app-")?"App":"Browser")+" · "+(DV[x[0].split("-")[1]]||"")).join(", ");
-          const bits=[r.m&&seenText(r.m)?'<span class="useen'+(isOnline(r.m)?' on':'')+'">'+esc(seenText(r.m))+'</span>':'',ak?'<span class="uapp'+(ak.startsWith("app-")?' on':'')+'" title="'+esc(L("zuletzt genutzt"))+'">'+esc((ak.startsWith("app-")?L("App installiert"):L("im Browser"))+(dv?" · "+dv:""))+'</span>':'',devTxt?'<span class="udev" title="'+esc(devTip)+'">'+esc(devTxt)+'</span>':''].filter(Boolean);
-          /* phone and e-mail on a line of their own */
-          const con=[ph?'<a href="tel:'+esc(telNum(ph))+'">'+esc(ph)+'</a>':'',ce?'<a href="mailto:'+esc(ce)+'">'+esc(ce)+'</a>':''].filter(Boolean);
-          return (bits.length?'<div class="usub">'+bits.join(' · ')+'</div>':'')+(con.length?'<div class="usub ucon">'+con.join(' · ')+'</div>':'')})()+'</div>'+
-      (hasActs?'<button type="button" class="umore" data-uact="'+esc(r.email)+'" aria-expanded="'+open+'" '+ariaTip(L("Aktionen"))+'><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'</div>'+
-      (own&&ADM.pw&&ADM.pw[r.email]?'<div class="pwrow">'+L("Startpasswort")+': <b class="pwshow2">'+esc(ADM.pw[r.email])+'</b> <button type="button" data-pwshow="'+esc(r.email)+'">'+L("Anzeigen")+'</button></div>':'')+
-      (open?'<div class="ubody">'+det+(o.cEd&&ADM.edit===r.email?editForm(r,true):'')+(acts.length?'<div class="aacts">'+acts.join("")+'</div>':'')+'</div>':'')+
-    '</div>'};
-  const SORTS=[["first","Vorname"],["name","Nachname"],["dept","Abteilung"],["status","Status"],["role","Rolle"],["new","Neueste zuerst"],["seen","Zuletzt online"],["email","E-Mail"]];
-  const sortSel='<label class="usort">'+L("Sortieren")+' <select data-usort>'+SORTS.map(([k,t])=>'<option value="'+k+'"'+((ADM.sort||"first")===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select></label>';
-  const onl=rows.filter(r=>r.m&&isOnline(r.m)).map(r=>r.name||(crewPerson(r.email)||{}).name||r.email);
-  return '<div class="admins ulist"><h3>'+L("Alle Benutzenden")+' <span class="ust">'+rows.length+'</span></h3>'+
-
-    '<input class="search" id="aq" type="search" placeholder="'+esc(L("Name, E-Mail oder Funktion suchen"))+'" value="'+esc(ADM.q)+'">'+'<div class="ubar">'+chips+sortSel+'<button type="button" class="cico uall" data-uall '+ariaTip(L(vis.length&&vis.every(r=>ADM.open.has(r.email))?"Alle zuklappen":"Alle aufklappen"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(vis.length&&vis.every(r=>ADM.open.has(r.email))?'<path d="m7 11 5-5 5 5M7 18l5-5 5 5"/>':'<path d="m7 6 5 5 5-5M7 13l5 5 5-5"/>')+'</svg></button></div>'+
-    (vis.length?'<div class="ucards">'+vis.map(card).join("")+'</div>':'<p class="ahint">'+L("Keine Treffer.")+'</p>')+'</div>';
-}
+/* ---------- the list of the users as components (framework) ---------- */
+const UICO={edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',close:'<path d="M18 6 6 18M6 6l12 12"/>',more:'<path d="m6 9 6 6 6-6"/>',
+  fold:'<path d="m7 11 5-5 5 5M7 18l5-5 5 5"/>',unfold:'<path d="m7 6 5 5 5-5M7 13l5 5 5-5"/>'};
+/** a small symbol (svg path) @param {{d:string,s?:number,w?:number}} p */
+const UIco=({d,s:sz,w})=>html`<svg viewBox="0 0 24 24" width=${sz||16} height=${sz||16} aria-hidden="true" fill="none" stroke="currentColor" stroke-width=${w||2} stroke-linecap="round" stroke-linejoin="round" dangerouslySetInnerHTML=${{__html:d}}></svg>`;
+const tip=t=>({"aria-label":t,title:t});
+/** one person: avatar, name, state and role, last online / app / devices, contact; opened: details, the edit form and the actions
+ * @param {{r:any,o:any}} p */
+function UserCard({r,o}){const own=o.own,isOwn=ADMINS.includes(r.email),cp=crewPerson(r.email)||{},open=ADM.edit===r.email||ADM.open.has(r.email),nm=r.name||cp.name||"",m=r.m,ed=ADM.edit===r.email;
+  const badge=o.isAdm(r.email)?html`<span class="ust adm">${L(isOwn?"Owner":"Admin")}</span>`:(o.roleOf(r.email)?html`<span class="ust role">${o.roleName(o.roleOf(r.email))}</span>`:html`<span class="ust norole">${L("Keine Rolle")}</span>`);
+  const acts=[
+    o.cEd&&(own||!isOwn)?html`<button class=${"cico"+(ed?" on":"")} data-adm="edit" data-em=${r.email} ...${tip(L(ed?"Schliessen":"Bearbeiten"))}><${UIco} d=${ed?UICO.close:UICO.edit}/></button>`:null,
+    own&&m?html`<button data-adm="pwreset" data-em=${r.email}>${L("Passwort-Link senden")}</button>`:null,
+    own&&!m&&!isOwn?html`<button data-adm="nomail" data-em=${r.email}>${L("Ohne Bestätigungs-Mail freischalten")}</button>`:null,
+    own&&!m&&!isOwn?html`<button data-adm="startpw" data-em=${r.email} data-nm=${r.name||""}>${L("Startpasswort erzeugen")}</button>`:null,
+    !m&&o.cInv?html`<a class="abtnl" href=${o.mail(r)}>✉ ${L("Einladungsmail")}</a>`:null,
+    !m&&o.cInv?html`<button type="button" class="abtnl" data-cwa=${r.email} data-nm=${r.name||cp.name||""} data-ph=${cp.phone||""}>💬 ${L("Per WhatsApp einladen")}</button>`:null,
+    own&&m&&!isOwn?(m.active===true?html`<button class="warn" data-adm="block" data-uid=${m.uid}>${L("Sperren")}</button>`:html`<button data-adm="unblock" data-uid=${m.uid}>${L("Entsperren")}</button>`):null,
+    isOwn?null:own&&m?html`<button class="warn" data-adm="remove" data-uid=${m.uid} data-em=${r.email}>${L("Entfernen")}</button>`:(r.inv&&!m&&o.cInv?html`<button class="warn" data-adm="uninvite" data-em=${r.email}>${L("Einladung löschen")}</button>`:null)
+  ].filter(Boolean);
+  const ph=(m&&m.phone)||cp.phone||"",ce=(m&&m.contactEmail)||r.email,ak=String(m&&m.app||""),DV={ios:"iPhone",android:"Android",desktop:"Computer"},dv=DV[ak.split("-")[1]]||"";
+  const devs=Object.values((m&&m.devs)||{}).map(x=>String(x).split("|")).filter(x=>Date.now()-(+x[1]||0)<30*864e5);
+  const devTxt=devs.length?devs.length+" "+L(devs.length===1?"Gerät":"Geräte"):"",devTip=devs.map(x=>(x[0].startsWith("app-")?"App":"Browser")+" · "+(DV[x[0].split("-")[1]]||"")).join(", ");
+  const bits=[m&&seenText(m)?html`<span class=${"useen"+(isOnline(m)?" on":"")}>${seenText(m)}</span>`:null,ak?html`<span class=${"uapp"+(ak.startsWith("app-")?" on":"")} title=${L("zuletzt genutzt")}>${(ak.startsWith("app-")?L("App installiert"):L("im Browser"))+(dv?" · "+dv:"")}</span>`:null,devTxt?html`<span class="udev" title=${devTip}>${devTxt}</span>`:null].filter(Boolean);
+  const con=[ph?html`<a href=${"tel:"+telNum(ph)}>${ph}</a>`:null,ce?html`<a href=${"mailto:"+ce}>${ce}</a>`:null].filter(Boolean);
+  const join=l=>l.flatMap((x,i)=>i?[" · ",x]:[x]);
+  return html`<div class=${"ucard"+(m&&m.active!==true?" blocked":"")+(open?" open":"")}>
+    <div class="uhd"><span class=${"uav"+(m&&isOnline(m)?" on":"")} aria-hidden="true">${initials(nm||r.email)}</span><div class="umain"><div class="unm"><b>${nm||r.email}</b></div><div class="ubadges"><${Raw} html=${o.st(r)}/>${badge}</div>
+      ${bits.length?html`<div class="usub">${join(bits)}</div>`:null}${con.length?html`<div class="usub ucon">${join(con)}</div>`:null}</div>
+      <button type="button" class="umore" data-uact=${r.email} aria-expanded=${String(open)} ...${tip(L("Aktionen"))}><${UIco} d=${UICO.more} s=${18}/></button></div>
+    ${own&&ADM.pw&&ADM.pw[r.email]?html`<div class="pwrow">${L("Startpasswort")}: <b class="pwshow2">${ADM.pw[r.email]}</b> <button type="button" data-pwshow=${r.email}>${L("Anzeigen")}</button></div>`:null}
+    ${open?html`<div class="ubody"><div class="udet">${cp.role||(m&&m.func)?html`<div class="udl"><span>${L("Funktion")}</span><b>${cp.role||m.func}</b></div>`:null}<div class="udl"><span>${L("E-Mail")}</span><a class="em" href=${"mailto:"+r.email}>${r.email}</a></div>${m&&m.lang?html`<div class="udl"><span>${L("Sprache")}</span><b>${m.lang.toUpperCase()}</b></div>`:null}${m?html`<div class="udl"><span>${L("Einführungstour")}</span><b>${tourInfo(m)}</b></div>`:null}<${Raw} html=${userInfo(r)}/></div>${o.cEd&&ed?html`<${Raw} html=${editForm(r,true)}/>`:null}${acts.length?html`<div class="aacts">${acts}</div>`:null}</div>`:null}
+  </div>`}
+const UFIL=[["all","Alle"],["online","Online"],["act","Aktiv"],["inv","Eingeladen"],["off","Gesperrt"],["adm","Mit Rolle"],["app","App installiert"],["web","Ohne App"]];
+const USORTS=[["first","Vorname"],["name","Nachname"],["dept","Abteilung"],["status","Status"],["role","Rolle"],["new","Neueste zuerst"],["seen","Zuletzt online"],["email","E-Mail"]];
+/** all users: search, filters with counts, sorting, fold all; the cards @param {{rows:any[],vis:any[],o:any}} p */
+function UserList({rows,vis,o}){const allOpen=vis.length&&vis.every(r=>ADM.open.has(r.email));
+  return html`<div class="admins ulist"><h3>${L("Alle Benutzenden")} <span class="ust">${rows.length}</span></h3><input class="search" id="aq" type="search" placeholder=${L("Name, E-Mail oder Funktion suchen")} value=${ADM.q}/>
+    <div class="ubar"><div class="ufil" role="group">${UFIL.filter(([k])=>k==="all"||ADM.cnt[k]).map(([k,t])=>html`<button type="button" data-auf=${k} aria-pressed=${String(ADM.uf===k)}>${L(t)} <span>${ADM.cnt[k]}</span></button>`)}</div>
+      <label class="usort">${L("Sortieren")} <select data-usort>${USORTS.map(([k,t])=>html`<option value=${k} selected=${(ADM.sort||"first")===k}>${L(t)}</option>`)}</select></label>
+      <button type="button" class="cico uall" data-uall ...${tip(L(allOpen?"Alle zuklappen":"Alle aufklappen"))}><${UIco} d=${allOpen?UICO.fold:UICO.unfold} w=${2.2}/></button></div>
+    ${vis.length?html`<div class="ucards">${vis.map(r=>html`<${UserCard} key=${r.email} r=${r} o=${o}/>`)}</div>`:html`<p class="ahint">${L("Keine Treffer.")}</p>`}</div>`}
+function userList(rows,vis,o){return toHTML(h(UserList,{rows,vis,o}))}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-auf]");if(b){ADM.uf=b.dataset.auf;render();return}
   const t=e.target.closest("[data-uact]");if(t){const em=t.dataset.uact;const was=ADM.open.has(em)||ADM.edit===em;if(was){ADM.open.delete(em);if(ADM.edit===em)ADM.edit=""}else ADM.open.add(em);ADM.act=em;render();return}
   const all=e.target.closest("[data-uall]");if(all){const ems=[...document.querySelectorAll(".ucards [data-uact]")].map(x=>x.dataset.uact);const anyClosed=ems.some(x=>!ADM.open.has(x));ADM.open=new Set(anyClosed?ems:[]);if(!anyClosed)ADM.edit="";render()}});

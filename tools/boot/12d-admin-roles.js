@@ -6,6 +6,8 @@ import {ADMIN_DEFAULT,ME,MYPERMS,MYROLE,PERMS,VIEWPERMS,can,crewPerson,fb,isAdmi
 import {ADM,SECS,admErr,admIndex,admLoad,confirmSafe} from "./12a-admin-core.js";
 import {canRole,roleGivable,roleLocked,rolePermsOf} from "./12c-admin-users.js";
 import {auditSum} from "./17-audit-misc.js";
+import {html,toHTML} from "../base/09-fw.js";
+import {Raw} from "../base/10a-ui.js";
 /* the name of a person of the App-Verwaltung by e-mail: member, invitation, crew list – one routine */
 const admNameOf=e=>{const m=ADM.mem.find(x=>x.email===e),i=ADM.inv.find(x=>x.id===e),cp=(typeof crewPerson==="function"&&crewPerson(e))||{};return (m&&(mName(m)))||(i&&i.name)||cp.name||e};
 /* ---------- App-Verwaltung (Rollen und Rechte) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
@@ -30,10 +32,6 @@ export function rolesSec(){
   
   const everyone=[...new Set(ADM.mem.map(m=>m.email).concat(ADM.inv.map(i=>i.id)))].filter(e=>e&&!ADMINS.includes(e));
   const ppl=id=>(id==="admin"?ADM.adm.slice():Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e))).sort((a,b)=>admNameOf(a).localeCompare(admNameOf(b),LANG));
-  const pplSec=id=>{const l=ppl(id),can_=canRoleAssign()&&(id==="admin"?isAdmin():roleGivable((ADM.roles||[]).find(x=>x.id===id))),cand=can_?everyone.filter(e=>!l.includes(e)&&canRole(e)).sort((a,b)=>admNameOf(a).localeCompare(admNameOf(b),LANG)):[];
-    return '<details class="arppl" data-sec="rppl-'+esc(id)+'"'+(SECS["rppl-"+id]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+l.length+')</summary>'+
-      (l.length?'<ul class="paccl">'+l.map(e=>'<li><span>'+esc(admNameOf(e))+'</span>'+(can_&&canRole(e)?'<button type="button" class="lnk arpx" data-rpout="'+esc(e)+'" '+ariaTip(L("Aus der Rolle nehmen"))+'>×</button>':'')+'</li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+
-      (cand.length?'<label class="arl arpadd">'+L("Person hinzufügen")+'<select data-rpadd="'+esc(id)+'"><option value="">'+esc(L("Person wählen …"))+'</option>'+cand.map(e=>'<option value="'+esc(e)+'">'+esc(admNameOf(e))+(admNameOf(e)!==e?' · '+esc(e):'')+'</option>').join("")+'</select></label>':'')+'</details>'};
   /* WhatsApp beim Quittieren for this role, per unit: per kind «wie die Person» (her own setting) / aus / fragen / direkt, and a recipient (number or group link) */
   const waBox=id=>{const K=window.SCWA_KINDS||[];if(!K.length||id==="admin")return"";const w=((ADM.roles||[]).find(x=>x.id===id)||{}).wa||{},us=window.UNIT2!==false?["1","2"]:["1"];
     const sel=(u,k,i)=>{const c=String(((w[u]||{}).m||"")[i]||"p");return '<select name="wam'+u+'_'+k+'" aria-label="'+esc(L(K[i][1])+" · "+u+(u==="1"?"st":"nd")+" Unit")+'">'+[["p","Wie die Person"],["n","Aus"],["f","Fragen"],["a","Direkt"]].map(([v,t])=>'<option value="'+v+'"'+(c===v?' selected':'')+'>'+esc(L(t))+'</option>').join("")+'</select>'};
@@ -41,17 +39,33 @@ export function rolesSec(){
       '<div class="arwag" style="--wcols:'+us.length+'"><span></span>'+us.map(u=>'<b>'+(u==="1"?"1st":"2nd")+' Unit</b>').join("")+
       K.map(([k,t],i)=>'<span>'+esc(L(t))+'</span>'+us.map(u=>sel(u,k,i)).join("")).join("")+
       '<span>'+esc(L("Empfänger"))+'</span>'+us.map(u=>'<input name="wan'+u+'" maxlength="80" autocomplete="off" spellcheck="false" value="'+esc((w[u]||{}).n||"")+'" placeholder="'+esc(L("Nummer oder Gruppenlink"))+'" aria-label="'+esc(L("Empfänger")+" · "+(u==="1"?"1st":"2nd")+" Unit")+'">').join("")+'</div></details>'};
-  const row=(id,name,perms,fixedName)=>{const open=ADM.redit===id;
-    return '<div class="arole'+(open?' open':'')+'"><div class="arh"><div class="arn"><b>'+esc(name)+(id==="crew"?' <span class="ust role">'+L("Standard")+'</span>':'')+'</b><small>'+(id==="crew"?L("Wird neuen Benutzer:innen automatisch zugewiesen.")+' ':id==="gast"?L("Wird allen ohne Rolle automatisch zugewiesen.")+' ':'')+(perms.length?perms.length+' '+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+' · '+pplLbl(id)+'</small></div>'+(canRoleEdit()&&!roleLocked(id)&&(isAdmin()||id!==MYROLE)?'<button type="button" class="pillbtn" data-redit="'+esc(id)+'">'+L(open?"Schliessen":"Bearbeiten")+'</button>':'')+'</div>'+pplSec(id)+
-      (open?'<form class="arolef" data-role="'+esc(id)+'">'+(fixedName?'<input type="hidden" name="rn" value="'+esc(name)+'">':'<label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required value="'+esc(name)+'"></label>')+permBoxes(perms)+waBox(id)+
-        '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+''+(id==="crew"?'':id==="admin"?'<button type="button" class="lnk" data-rreset>'+L("Standard wiederherstellen")+'</button>':canRoleAssign()?'<button type="button" class="lnk" data-rdel="'+esc(id)+'">'+L("Rolle löschen")+'</button>':'')+'</div></form>':'')+'</div>'};
-  return '<div class="admins"><h3 class="rolesh">'+L("Rollen")+'<button type="button" class="rsort" data-rolesort '+ariaTip(L(ROLESORT==="a"?"Sortiert: alphabetisch – tippen für Hierarchie (meiste Berechtigungen zuerst)":"Sortiert: Hierarchie (meiste Berechtigungen zuerst) – tippen für alphabetisch"))+'>'+(ROLESORT==="a"?'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l3-10 3 10M5 15h4"/><path d="M14 8h6l-6 10h6"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h11M4 18h6"/></svg>')+'<span>'+esc(L(ROLESORT==="a"?"A–Z":"Hierarchie"))+'</span></button></h3><p class="ahint">'+L("Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person alle Drehdaten, die Crewliste, das Drehbuch und das Blocking, aber keine Verwaltung. Mit Rolle sieht sie nur die Bereiche, die die Rolle erlaubt.")+'</p>'+(window.simPicker?window.simPicker():"")+
-    '<div class="arole fixed"><div class="arh"><div class="arn"><b>'+L("Owner")+'</b><small>'+L("Alles, auch Rollen, Admins, Sperren und Backup")+'</small></div></div></div>'+
-    row("admin",L("Admin"),ADM.adminPerms||ADMIN_DEFAULT,true)+
-    roles.map(ro=>row(ro.id,ro.name||ro.id,arr(ro.perms),false)).join("")+
-    (ADM.redit==="new"?'<form class="arolef new" data-role=""><h4>'+L("Neue Rolle")+'</h4><label class="arl">'+L("Name der Rolle")+'<input name="rn" maxlength="40" required placeholder="'+esc(L("Name der Rolle, z. B. Catering"))+'"></label>'+permBoxes(VIEWPERMS)+'<p class="amsg" role="alert"></p><div class="arb"><button type="submit">'+L("Rolle erstellen")+'</button>'+dlgBtn("lnk",'data-redit="new"',"Abbrechen")+'</div></form>':
-      (canRoleEdit()?'<button type="button" class="abtn" data-redit="new">+ '+L("Neue Rolle")+'</button>':''))+'</div>'+permAccessSec();
+  const ctx={ppl,everyone,pplLbl,waBox};
+  return toHTML(html`<div class="admins"><${RolesHead}/>
+    <div class="arole fixed"><div class="arh"><div class="arn"><b>${L("Owner")}</b><small>${L("Alles, auch Rollen, Admins, Sperren und Backup")}</small></div></div></div>
+    <${RoleRow} id="admin" name=${L("Admin")} perms=${ADM.adminPerms||ADMIN_DEFAULT} fixedName=${true} ctx=${ctx}/>
+    ${roles.map(ro=>html`<${RoleRow} key=${ro.id} id=${ro.id} name=${ro.name||ro.id} perms=${arr(ro.perms)} fixedName=${false} ctx=${ctx}/>`)}
+    ${ADM.redit==="new"?html`<form class="arolef new" data-role=""><h4>${L("Neue Rolle")}</h4><label class="arl">${L("Name der Rolle")}<input name="rn" maxlength="40" required placeholder=${L("Name der Rolle, z. B. Catering")}/></label><${Raw} html=${permBoxes(VIEWPERMS)}/><p class="amsg" role="alert"></p><div class="arb"><button type="submit">${L("Rolle erstellen")}</button><${Raw} html=${dlgBtn("lnk",'data-redit="new"',"Abbrechen")}/></div></form>`
+      :(canRoleEdit()?html`<button type="button" class="abtn" data-redit="new">+ ${L("Neue Rolle")}</button>`:null)}</div>`)+permAccessSec();
 }
+/* ---------- the roles as components (framework) ---------- */
+const RSICO={a:'<path d="M4 18l3-10 3 10M5 15h4"/><path d="M14 8h6l-6 10h6"/>',h:'<path d="M4 6h16M4 12h11M4 18h6"/>'};
+/** title with the sort switch (A–Z / hierarchy), the hint, the quick «view as» picker */
+function RolesHead(){const a=ROLESORT==="a",t=L(a?"Sortiert: alphabetisch – tippen für Hierarchie (meiste Berechtigungen zuerst)":"Sortiert: Hierarchie (meiste Berechtigungen zuerst) – tippen für alphabetisch");
+  return html`<h3 class="rolesh">${L("Rollen")}<button type="button" class="rsort" data-rolesort aria-label=${t} title=${t}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" dangerouslySetInnerHTML=${{__html:a?RSICO.a:RSICO.h}}></svg><span>${L(a?"A–Z":"Hierarchie")}</span></button></h3>
+    <p class="ahint">${L("Eine Rolle bündelt Berechtigungen. Zuweisen kannst du sie in der Benutzerverwaltung bei der Person unter «Rolle». Ohne Rolle sieht eine Person alle Drehdaten, die Crewliste, das Drehbuch und das Blocking, aber keine Verwaltung. Mit Rolle sieht sie nur die Bereiche, die die Rolle erlaubt.")}</p><${Raw} html=${window.simPicker?window.simPicker():""}/>`}
+/** who has this role: folded list, a person added right here (select) or taken out (×) @param {{id:string,ctx:any}} p */
+function RolePeople({id,ctx}){const l=ctx.ppl(id),can_=canRoleAssign()&&(id==="admin"?isAdmin():roleGivable((ADM.roles||[]).find(x=>x.id===id))),cand=can_?ctx.everyone.filter(e=>!l.includes(e)&&canRole(e)).sort((a,b)=>admNameOf(a).localeCompare(admNameOf(b),LANG)):[];
+  const x=L("Aus der Rolle nehmen");
+  return html`<details class="arppl" data-sec=${"rppl-"+id} open=${!!SECS["rppl-"+id]}><summary>${L("Personen")} (${l.length})</summary>
+    ${l.length?html`<ul class="paccl">${l.map(e=>html`<li><span>${admNameOf(e)}</span>${can_&&canRole(e)?html`<button type="button" class="lnk arpx" data-rpout=${e} aria-label=${x} title=${x}>×</button>`:null}</li>`)}</ul>`:html`<p class="ghint">${L("Niemand")}</p>`}
+    ${cand.length?html`<label class="arl arpadd">${L("Person hinzufügen")}<select data-rpadd=${id}><option value="">${L("Person wählen …")}</option>${cand.map(e=>html`<option value=${e}>${admNameOf(e)}${admNameOf(e)!==e?" · "+e:""}</option>`)}</select></label>`:null}</details>`}
+/** one role: name (standard role marked), how many permissions and people, edit; opened: name, permissions, WhatsApp, save / delete
+ * @param {{id:string,name:string,perms:string[],fixedName:boolean,ctx:any}} p */
+function RoleRow({id,name,perms,fixedName,ctx}){const open=ADM.redit===id;
+  return html`<div class=${"arole"+(open?" open":"")}><div class="arh"><div class="arn"><b>${name}${id==="crew"?html` <span class="ust role">${L("Standard")}</span>`:null}</b><small>${(id==="crew"?L("Wird neuen Benutzer:innen automatisch zugewiesen.")+" ":id==="gast"?L("Wird allen ohne Rolle automatisch zugewiesen.")+" ":"")+(perms.length?perms.length+" "+L(perms.length===1?"Berechtigung":"Berechtigungen"):L("Keine Berechtigungen"))+" · "+ctx.pplLbl(id)}</small></div>
+    ${canRoleEdit()&&!roleLocked(id)&&(isAdmin()||id!==MYROLE)?html`<button type="button" class="pillbtn" data-redit=${id}>${L(open?"Schliessen":"Bearbeiten")}</button>`:null}</div><${RolePeople} id=${id} ctx=${ctx}/>
+    ${open?html`<form class="arolef" data-role=${id}>${fixedName?html`<input type="hidden" name="rn" value=${name}/>`:html`<label class="arl">${L("Name der Rolle")}<input name="rn" maxlength="40" required value=${name}/></label>`}<${Raw} html=${permBoxes(perms)+ctx.waBox(id)}/>
+      <p class="amsg" role="alert"></p><div class="arb"><${Raw} html=${saveBtn()}/>${id==="crew"?null:id==="admin"?html`<button type="button" class="lnk" data-rreset>${L("Standard wiederherstellen")}</button>`:canRoleAssign()?html`<button type="button" class="lnk" data-rdel=${id}>${L("Rolle löschen")}</button>`:null}</div></form>`:null}</div>`}
 /* who has which permission: every option can be opened and lists the people (owners, admins, roles; people without a role where allowed) */
 function permAccessSec(){
   
