@@ -1387,3 +1387,4 @@ html body :is(#sbl,#sbr) .sbview .sbnat h2.pgt{display:none}
 .sbbox .sbphc .sbphx{border:0;background:var(--chip,#eee);border-radius:50%;width:26px;height:26px;cursor:pointer;line-height:1}
 .sbtog{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:10px;background:transparent;color:inherit;cursor:pointer}
 .sbtog:hover{background:var(--chip,rgba(0,0,0,.06))}.sbtog[aria-pressed="false"]{opacity:.6}
+.raw{display:contents}

@@ -6,10 +6,12 @@ import {csHM,csNowScene,csShootDay} from "./13b-cs-now.js";
 import {csOrderRows} from "./13c-cs-places.js";
 import {renderCS} from "./13e-cs-sections.js";
 import {vok} from "./14-render.js";
-import {searchBox} from "./15-script-tab.js";
+import {island,searchBox} from "./15-script-tab.js";
 import {blkFor,fpFor,fpLinks} from "./17-scene-reader.js";
 import {openGallery} from "./18-blocking.js";
 import {arr,showMsg} from "./20-data-start.js";
+import {html,ISLANDS} from "./09-fw.js";
+import {Card,MapLine,Raw} from "./10a-ui.js";
 /* day.month. without weekday (any language) */
 const dmShort=iso=>{const [,m,d]=String(iso||'').split('-');return d&&m?d+'.'+m+'.':''};
 /* vCard 3.0 for one crew member, so it can be added to the phone's contacts */
@@ -211,11 +213,43 @@ function locCard(g0){
   let now=false;try{const ns=typeof csNowScene==="function"&&csNowScene();now=!!ns&&allSc.some(x=>norm(x)===norm(ns.sc))}catch(_){}
   const card=cardWrap("card:"+g.key,head,addrHTML,body+fpLinks(fps,[]));return now?card.replace('<div class="lc scd','<div class="lc scd lcnow'):card;
 }
+/* ---------- Locations as components (framework): the cards drawn from the data; the 5-part card and the scene lines are still shared HTML ---------- */
+const scOf=l=>(l.sets||[]).flatMap(x=>x.scenes||[]);
+/** @param {{g0:any,nowSc:string}} p */
+function LocCard({g0,nowSc}){
+  if(g0.s5)return html`<${Raw} html=${s5Card(g0)}/>`;
+  const g=ufOn()?Object.assign({},g0,{items:g0.items.filter(l=>sceneTexts(scOf(l)).length)}):g0;
+  const addr=[g.venue,g.address].filter(Boolean),multi=g.items.length>1;
+  const sets=l=>(l.sets||[]).map(x=>(x.ie||"")+": "+(x.scenes||[]).join(", ")).join(" · ");
+  const allSc=g.items.flatMap(scOf),st=sceneTexts(allSc),nSc=st.length;
+  const dlist=[...new Map(st.map(x=>[x.d.id,x.d])).values()].sort((a,b)=>a.date<b.date?-1:1).map(d=>d.short||d.label).join(" · ");
+  const head=html`<h4>${g.title}<${Raw} tag="span" html=${unitBadges(rawUnits(g0.items.flatMap(scOf)))}/></h4><span class="lcm">${(multi?g.items.length+" "+L("Motive")+" · ":"")+nSc+" "+(nSc===1?L("Szene"):L("Szenen"))+(dlist?" · "+dlist:"")}</span>`;
+  const mapOf=g.items.find(l=>/^https:/.test(l.map||""));
+  const ad=g.mixed?html`<div class="adl">${g.items.map(l=>{const a=[l.venue,l.address].filter(Boolean).join(", ");return html`<${MapLine} addr=${a} href=${locHref(l,a)}/>`})}</div>`
+    :addr.length?html`<div class="adl"><${MapLine} addr=${addr.join(", ")} href=${locHref(mapOf||g.items[0],addr.join(", "))}/></div>`
+    :mapOf?html`<div class="adl"><${MapLine} addr=${L("Ort: TBA")} href=${mapOf.map}/></div>`:html`<div class="adl"><div><span class="addr">${L("Ort: TBA")}</span></div></div>`;
+  const body=multi?html`<div class="mot">${g.items.map(l=>{const a=[l.venue,l.address].filter(Boolean).join(", "),pl=plotHTML(scOf(l));
+      return html`<div><b>${l.name}</b>${g.mixed?html`<span class="addr" style="font-size:13px">${a}</span>`:null}${pl?html`<${Raw} html=${pl}/>`:html`<span class="scs">${sets(l)}</span>`}</div>`})}</div>`
+    :(()=>{const pl=plotHTML(scOf(g.items[0]));return pl?html`<${Raw} html=${pl}/>`:html`<div class="scs">${sets(g.items[0])}</div>`})();
+  const fps=[...new Map(g.items.flatMap(l=>fpFor(l.name,[l.venue,l.address].filter(Boolean).join(", "))).map(f=>[f.url,f])).values()];
+  const k="card:"+g.key,now=!!nowSc&&allSc.some(x=>norm(x)===norm(nowSc));
+  return html`<${Card} k=${k} open=${!!S.openSc[k]} now=${now} head=${head} addr=${ad}>${body}<${Raw} html=${fpLinks(fps,[])}/></${Card}>`}
+/* the list: filtered like before by the words of the search in the text of a card */
+const cardText=g=>locCard(g).replace(/<[^>]+>/g," ").replace(/&(amp|quot|#39|lt|gt);/g,(m,k)=>({amp:"&",quot:'"',"#39":"'",lt:"<",gt:">"})[k]).toLowerCase();
+/** @param {{gs:any[],q:string}} p */
+function LocList({gs,q}){
+  if(!gs.length)return html`<div class="empty">${S.uf["1"]||S.uf["2"]||S.uf["3"]?L("Keine Locations für diese Unit."):L("Bitte mindestens eine Unit wählen.")}</div>`;
+  const terms=String(q||"").toLowerCase().split(/\s+/).filter(Boolean);
+  const vis=terms.length?gs.filter(g=>{const t=cardText(g);return terms.every(x=>t.includes(x))}):gs;
+  let nowSc="";try{const ns=typeof csNowScene==="function"&&csNowScene();nowSc=ns?ns.sc:""}catch(_){}
+  return vis.length?html`${vis.map(g=>html`<${LocCard} key=${g.key||"s5"} g0=${g} nowSc=${nowSc}/>`)}`:html`<div class="empty">${L("Nichts gefunden für")} «${q}»</div>`}
+ISLANDS.locs=LocList;
+export const locGroups=()=>groupLocs().filter(g=>{if(!ufOn())return true;if(g.s5)return g.parts.some(p=>S.uf[p.u]);return sceneTexts(g.items.flatMap(scOf)).length>0});
 export function renderLoc(){
   if(!S.locs.length)return emptyHTML("Motivliste");
-  const gs=groupLocs().filter(g=>{if(!ufOn())return true;if(g.s5)return g.parts.some(p=>S.uf[p.u]);return sceneTexts(g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))).length>0});
+  const gs=locGroups();
   return '<div class="lvwrap '+lvClasses()+'">'+lvButtons((/^https:\/\//.test(window.MAPURL||"")?'<a class="mapbtn" href="'+esc(window.MAPURL)+'" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></svg>Map</a>':'')+'<button class="scall" id="scall" data-scall="1" aria-expanded="false" aria-label="'+L("Alle Szenen auf- oder zuklappen")+'">'+cap(L("Szenen"))+'</button>')+
-    searchBox("lq",S.lq,L("Location, Adresse, Szene …"))+'<div id="lqres">'+locResults(gs)+'</div></div>';
+    searchBox("lq",S.lq,L("Location, Adresse, Szene …"))+'<div id="lqres">'+island("locs",{gs,q:S.lq,o:S.openSc,u:S.uf})+'</div></div>';
 }
 export function locResults(gs){
   return (()=>{

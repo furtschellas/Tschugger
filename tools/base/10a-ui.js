@@ -24,6 +24,19 @@ export function Entry({name,href,address,note,phone}){
     ${note?html`<div class="role">${note}</div>`:null}
     ${phone?html`<div class="ct"><span>${phone}</span></div>`:null}</div>`}
 
+/** HTML made by the string parts of the app (shared with pages that have not moved yet), inside a component; no forms in it
+ * @param {{html?:string,tag?:string,cls?:string}} p */
+export function Raw({html:h,tag="div",cls}){return h?html`<${tag} class=${"raw"+(cls?" "+cls:"")} dangerouslySetInnerHTML=${{__html:h}}/>`:null}
+
+/** a card that opens with a tap on its head (Locations, Szenen …); «open» comes from S.openSc, the tap handler is data-sckey (18-blocking.js)
+ * @param {{k:string,open:boolean,now?:boolean,head:any,addr?:any,children?:any}} p */
+export function Card({k,open,now,head,addr,children}){
+  return html`<div class=${"lc scd"+(open?" open":"")+(now?" lcnow":"")}><button class="lch" data-sckey=${k} aria-expanded=${String(!!open)}>${head}</button>${addr}<div class="scb" hidden=${!open}>${children}</div></div>`}
+
+/** a «Maps» line: the address and the link
+ * @param {{addr:string,href:string}} p */
+export function MapLine({addr,href}){return html`<div><span class="addr">${addr}</span> <a href=${href} target="_blank" rel="noopener noreferrer">Maps</a></div>`}
+
 /* ---------- pages ---------- */
 /** the Info page: the places of the production list by category
  * @param {{places:InfoGroup[],loaded:boolean}} p */

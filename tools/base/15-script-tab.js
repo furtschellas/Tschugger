@@ -183,6 +183,8 @@ window.viewMorph=viewMorph;
    After every drawing each island gets its component (again only when its props changed); the morphing above never touches its inside. */
 const ISLP=new Map();
 export function island(name,props,key){const k=name+":"+(key==null?"":key);ISLP.set(k,props||{});return '<div class="isl" data-island="'+esc(name)+'" data-k="isl:'+esc(k)+'"></div>'}
+/* new props for an island already on the page (a search typed into the page: only that part is drawn again) */
+export function islandSet(name,props,key){island(name,props,key);mountIslands(document)}
 export function mountIslands(root){for(const el of (root||document).querySelectorAll("[data-island]")){const C=ISLANDS[el.dataset.island];if(typeof C!=="function")continue;
   const p=ISLP.get((el.dataset.k||"").slice(4))||{};if(el.__ip===p&&el.firstChild)continue;el.__ip=p;
   try{prender(h(C,p),el)}catch(err){console.warn("island",el.dataset.island,err);el.textContent=L("Diese Ansicht konnte nicht angezeigt werden.")}}}

@@ -1,9 +1,9 @@
 import {$,applyStatic,esc,getTheme,L,LANG,lsGet,lvClasses,MEMO,mkDialog,norm,pvApply,S,safeUrl,setLANG,setSPT,setTheme,SPT,spTheme,svApply,svButtons,svClasses,todayISO} from "./10-core.js";
 import {nextUnitDay,onlyU,ppContact,ppMail} from "./11-schedule-prep.js";
 import {MCNAMES,addToCalendar,myClick} from "./12-mycal.js";
-import {addrForItem,groupLocs,locResults,saveVCard,sceneTexts,ufOn} from "./13-crew-views.js";
+import {addrForItem,groupLocs,locGroups,locResults,saveVCard,sceneTexts,ufOn} from "./13-crew-views.js";
 import {vok} from "./14-render.js";
-import {fitRows,fold,render,scriptResults,setSCRIPTERR} from "./15-script-tab.js";
+import {fitRows,fold,islandSet,render,scriptResults,setSCRIPTERR} from "./15-script-tab.js";
 import {goTab,goTo,scallLabel,setOpen,setUnits,store} from "./16-interaction.js";
 import {BLKREG,blkFor,bmed,findScene,fpFor,fpLinks,pdfBtns,pdfDocs,pdfLbl,sceneFacts,sceneSheet,scriptData,scriptHTML,spTitle,spTod} from "./17-scene-reader.js";
 import {renderSearch} from "./19-search.js";
@@ -179,7 +179,7 @@ function runSearch(id,submit){
   if(!box){render();return}
   try{
     if(id==="sq")box.innerHTML=scriptResults();
-    else{const gs=groupLocs().filter(g=>{if(!ufOn())return true;if(g.s5)return g.parts.some(p=>S.uf[p.u]);return sceneTexts(g.items.flatMap(l=>(l.sets||[]).flatMap(x=>x.scenes||[]))).length>0});box.innerHTML=locResults(gs)}
+    else islandSet("locs",{gs:locGroups(),q:S.lq,o:S.openSc,u:S.uf})
   }catch(err){console.error(err);render();return}
   if(submit){const i=document.getElementById(id);if(i)i.blur();const r=box.getBoundingClientRect();if(r.top<0||r.top>innerHeight*0.6)window.scrollTo({top:window.scrollY+r.top-90,behavior:"smooth"})}
 }
