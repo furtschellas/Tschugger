@@ -1,5 +1,5 @@
 import {isIOS,isStandalone} from "../a2hs.js";
-import {$,applyStatic,dlgBtn,esc,fullName,L,LANG,lsGet,MEMO,mkDialog,S,SBXF,setLANG} from "../base/10-core.js";
+import {$,applyStatic,dlgBtn,esc,fullName,L,LANG,lsDel,lsGet,lsSet,MEMO,mkDialog,S,SBXF,setLANG} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {setSCRIPT} from "../base/17-scene-reader.js";
@@ -19,7 +19,7 @@ import {CDSUBS,setCDSUBS} from "./29-coverday.js";
 /* ---- membership: invited addresses join once (members/{uid}); blocked = active:false ---- */
 /* the result is kept on this device: an offline start keeps the role (otherwise crew lost the shooting schedule without network) */
 const memKey=()=>"mc:v1:"+(ME&&ME.uid);
-function memSave(){try{localStorage.setItem(memKey(),JSON.stringify({r:MYROLE,rn:window.MYROLENAME||"",p:MYPERMS,a:COADMIN,ap:ADMINPERMS,o:ADMINS.includes(lc(ME.email)),m:MEMBER}))}catch(_){}}
+function memSave(){lsSet(memKey(),JSON.stringify({r:MYROLE,rn:window.MYROLENAME||"",p:MYPERMS,a:COADMIN,ap:ADMINPERMS,o:ADMINS.includes(lc(ME.email)),m:MEMBER}))}
 function memRestore(){try{const c=JSON.parse(localStorage.getItem(memKey())||"null");if(!c)return false;setMYROLE(c.r||"");window.MYROLENAME=c.rn||"";setMYPERMS(Array.isArray(c.p)?c.p:[]);setCOADMIN(!!c.a);if(Array.isArray(c.ap))setADMINPERMS(c.ap);if(c.m)setMEMBER(c.m);if(c.o&&!ADMINS.includes(lc(ME.email)))ADMINS.push(lc(ME.email));return true}catch(_){return false}}
 /* one check at a time per person: a second start (verify poll, button, return to the app) waits for the running one */
 let CMQ=null;
@@ -60,7 +60,7 @@ async function checkMember0(){
     if(Array.isArray(pf.intol)&&pf.intol.length)doc.intol=pf.intol.filter(k=>INTOL.some(x=>x[0]===k));
     if(!doc.firstName&&!doc.lastName){const sp=splitName(inv.data().name);if(sp.firstName){doc.firstName=clean(sp.firstName);if(sp.lastName)doc.lastName=clean(sp.lastName)}}
     try{await F.setDoc(ref,doc)}catch(e){notPerm(e);   /* refused: another start of this person created it just now – it is read below */}
-    try{localStorage.removeItem(PENDING_KEY)}catch(_){}
+    lsDel(PENDING_KEY)
     s=await F.getDoc(ref);
   }
   const m=s.data();if(m.active!==true)return ROOT_OWNERS.includes(lc(u.email))?"ok":"blocked";   /* blocked: also admins (the rules refuse them too); only the fixed owner stays */
@@ -230,7 +230,7 @@ function vmStatus(){
 }
 async function sendVerify(u,manual){
   if(!u||VM.busy)return;VM.busy=true;VM.err="";if(AUTHMODE==="verify")showGate("verify");
-  try{const {A}=await fb();await sendMailSafe(A.sendEmailVerification,u);VM.at=Date.now();try{localStorage.setItem(vmKey(u),String(VM.at))}catch(_){}}
+  try{const {A}=await fb();await sendMailSafe(A.sendEmailVerification,u);VM.at=Date.now();lsSet(vmKey(u),String(VM.at))}
   catch(err){console.error("verify mail",err);VM.err=/too-many/.test(err&&err.code||"")?L("Zu viele Versuche – bitte in ein paar Minuten nochmals."):errText(err)}
   finally{VM.busy=false;if(AUTHMODE==="verify")showGate("verify")}
 }

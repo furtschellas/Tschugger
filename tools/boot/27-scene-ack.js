@@ -1,4 +1,4 @@
-import {ariaTip,camFold,dayItems,dayOf,dispoOf,esc,hash36,I18N,isoAdd,isoDM,isoDMY,isoId,L,LANG,lsGet,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
+import {ariaTip,camFold,dayItems,dayOf,dispoOf,esc,hash36,I18N,isoAdd,isoDM,isoDMY,isoId,L,LANG,lsDel,lsGet,lsSet,mkDialog,mName,norm,pad2,S,saveBlob,saveBtn,saveErr,todayISO,TX,unitKey} from "../base/10-core.js";
 import {csHM} from "../base/13b-cs-now.js";
 import {UNAME,dayMs} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
@@ -277,8 +277,8 @@ function scWaSec(){if(typeof canPerm!=="function"||!(canPerm("scenes.ack")||canP
     '<p class="ghint"><b>'+esc(L("Empfänger"))+'</b> – '+esc(L("Pro Art oder hier für alle: eine Nummer (öffnet diesen Chat mit dem Text) oder der Einladungslink einer WhatsApp-Gruppe (WhatsApp → Gruppe → Einladen per Link). Bei einer Gruppe wird der Text kopiert und die Gruppe geöffnet – einfügen und senden. Leer: du wählst den Chat jedes Mal in WhatsApp."))+'</p>'+
     '<input class="scwan" data-scwan maxlength="80" autocomplete="off" spellcheck="false" value="'+esc(n)+'" placeholder="'+esc(L("Nummer oder Gruppenlink, z. B. +41 79 123 45 67"))+'" aria-label="'+esc(L("Empfänger"))+'"></section>'}
 window.scWaSec=scWaSec;
-const scWaSave=()=>{try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}if(typeof savePrefsSoon==="function")savePrefsSoon()};
-document.addEventListener("change",e=>{const s=e.target.closest&&e.target.closest("[data-scwam]");if(s){const m=scWaModes();m[s.dataset.scwam]=s.value;store("scwa",SCWA_KINDS.map(([k])=>m[k]).join(""));try{localStorage.removeItem("scwa:no")}catch(_){}scWaSave();const t=document.querySelector('[data-scwt="'+s.dataset.scwam+'"]');if(t)t.hidden=s.value==="n";return}
+const scWaSave=()=>{lsSet("prefsLocalAt",String(Date.now()));if(typeof savePrefsSoon==="function")savePrefsSoon()};
+document.addEventListener("change",e=>{const s=e.target.closest&&e.target.closest("[data-scwam]");if(s){const m=scWaModes();m[s.dataset.scwam]=s.value;store("scwa",SCWA_KINDS.map(([k])=>m[k]).join(""));lsDel("scwa:no");scWaSave();const t=document.querySelector('[data-scwt="'+s.dataset.scwam+'"]');if(t)t.hidden=s.value==="n";return}
   const n=e.target.closest&&e.target.closest("[data-scwan]");if(n&&!n.dataset.scwt){store("scwan",n.value.trim().slice(0,60));scWaSave();return}
   const w=e.target.closest&&e.target.closest("[data-scwt]");if(w){const v=w.value.trim(),p=scWaParse(v);store("scwt"+w.dataset.scwt,v?(p||v).slice(0,60):"");if(v&&!p)showMsg(L("Weder Nummer noch Gruppenlink erkannt."),4000);scWaSave()}});
 /* bar at the bottom after every quittance (a few seconds): what was saved with its time, «Zeit ändern» (state, begin, end) and – with «Fragen» – WhatsApp */

@@ -1,4 +1,4 @@
-import {ariaTip,blockList,dayItems,ddmm,dlgBtn,esc,fullName,isoAdd,L,mapsQ,mkDialog,pad2,padD,S,safeUrl,telNum,todayISO,TX,tzFor,WD} from "./10-core.js";
+import {ariaTip,blockList,dayItems,ddmm,dlgBtn,esc,fullName,isoAdd,L,mapsQ,mkDialog,noonDate,pad2,padD,S,safeUrl,telNum,todayISO,TX,tzFor,WD} from "./10-core.js";
 import {WDL} from "./12-mycal.js";
 import {addrForItem} from "./13-crew-views.js";
 import {CSI} from "./13a-callsheet.js";
@@ -52,7 +52,7 @@ export function dayNav(PD,isSel,attr,key,extra,pre){
   const bl=blockList(),bOf=d=>bl.length>1&&typeof window.blockOf==="function"?window.blockOf(d.date):null;let pb=null;
   for(const d of PD){
     const b=bOf(d);if(b&&pb&&b.id!==pb.id)h+='<div class="blkdiv" role="separator" aria-label="'+esc(L("Drehblock")+" "+(b.name||b.country||b.id))+'"><span>'+esc(b.name||b.country||b.id)+'</span></div>';if(b)pb=b;
-    const dt=new Date(d.date+"T12:00:00");
+    const dt=noonDate(d.date);
     const lb=d.kind==="shoot"?(d.short||d.label):(d.kind==="travel"?"TRAVEL":"OFF");
     const lbh=d.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':esc(padD(lb));   /* phone: short label */
     const ex=extra?extra(d):{cls:"",mark:""};
@@ -178,7 +178,7 @@ export function ppMail(key){if(!vok("email"))return;
   for(const n of names){const g=groupPeople(n,people);if(g){groups.push(n);for(const p of g.list)if(p.email&&!have.has(p.email)){have.add(p.email);found.push(p)}continue}
     const p=findPerson(n,people.filter(x=>x.email))||findPerson(n,people);
     if(p&&p.email){if(!have.has(p.email)){have.add(p.email);found.push(Object.assign({},p,{asked:n}))}}else if(p)noMail.push(p.name);else missing.push(n)}
-  const dt=new Date(date+"T12:00:00"),when=WDL(dt)+" "+ddmm(dt)+(i.t&&/\d/.test(i.t)?" "+i.t+(i.end?"–"+i.end:""):"");
+  const dt=noonDate(date),when=WDL(dt)+" "+ddmm(dt)+(i.t&&/\d/.test(i.t)?" "+i.t+(i.end?"–"+i.end:""):"");
   const subj="TSCHUGGER Tigerblood – "+(i.n||"Prep")+" – "+when;
   const body=(i.n||"")+"\n"+when+(i.where?"\n"+i.where:"")+(i.map?"\n"+i.map:"");
   const to=found.map(p=>p.email).join(",");

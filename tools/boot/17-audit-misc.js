@@ -1,4 +1,4 @@
-import {ariaTip,esc,fullName,I18N,L,LANG,localISO,msHM,S,todayISO} from "../base/10-core.js";
+import {ariaTip,esc,fullName,I18N,L,LANG,localISO,lsSet,msHM,S,todayISO} from "../base/10-core.js";
 import {CSCUR} from "../base/13b-cs-now.js";
 import {fold,onRender,onRendered,render} from "../base/15-script-tab.js";
 import {fmtDT} from "./01-config.js";
@@ -203,7 +203,7 @@ async function errReport(){try{if(window.__ERRS&&__ERRS.length>50)__ERRS.splice(
     for(const e of list){const m=String(e.m||"").replace(/[\w.+-]+@[\w-]+\.[\w.]+/g,"…").replace(/\+?\d[\d ]{6,}/g,"…").slice(0,200);const k=m+"|"+e.f;
       if(!m||ERRSENT.has(k)||seen.m.includes(k)||ERRN>=5)continue;ERRSENT.add(k);seen.m.push(k);ERRN++;
       await F.addDoc(F.collection(db,"audit"),{by:lc(ME.email),at:F.serverTimestamp(),op:"error",col:"app",id:String(window.APPVER||"").slice(0,40),sum:(m.slice(0,180)+(e.f?" ("+e.f+(e.l?":"+e.l:"")+")":"")+(e.c?" – "+e.c:"")).slice(0,290)})}
-    try{localStorage.setItem("errsent:v1",JSON.stringify({d:today,m:seen.m.slice(-30)}))}catch(_){}}catch(_){}}
+    lsSet("errsent:v1",JSON.stringify({d:today,m:seen.m.slice(-30)}))}catch(_){}}
 setInterval(errReport,30000);setTimeout(errReport,8000);
 /* ---------- the worker in Cloudflare: admins see in Log/Tests when it runs an older version than this app expects ---------- */
 const WK={v:null,at:0};

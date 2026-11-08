@@ -1,4 +1,4 @@
-import {deG,esc,L,LANG,S,saveBtn,SBXF,setSPT,setTheme,telNum} from "../base/10-core.js";
+import {deG,esc,L,LANG,lsSet,S,saveBtn,SBXF,setSPT,setTheme,telNum} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {onStore} from "../base/16-interaction.js";
 import {showMsg} from "../base/20-data-start.js";
@@ -9,7 +9,7 @@ import {ADM,SECS} from "./12a-admin-core.js";
 export const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];export let PREFT=null,PREFAPPLY=false,PREFOK=false;export const PREFX=["rc","scrv","csb","iconhint","scwa","scwan","scwtd","scwtb","scwte","scwtl","scwtm","scwtw","maintseen","sbx"];
 /* the notices of p.x (or the older single fields) */
 export const prefX=p=>{let x={};try{x=JSON.parse(p&&p.x||"{}")||{}}catch(_){}for(const k of PREFX)if(typeof(p&&p[k])==="string"&&x[k]==null)x[k]=p[k];return x};
-onStore(k=>{if(!PREFAPPLY&&PREFKEYS.includes(k)){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}});
+onStore(k=>{if(!PREFAPPLY&&PREFKEYS.includes(k)){lsSet("prefsLocalAt",String(Date.now()));savePrefsSoon()}});
 export function savePrefsSoon(){if(SBXF)return;clearTimeout(PREFT);PREFT=setTimeout(savePrefs,1500)}
 /* a change made just before closing or reloading is saved right away (before, the older copy online won on the next start) */
 const prefsFlush=()=>{if(PREFT){clearTimeout(PREFT);PREFT=null;savePrefs()}};
@@ -33,8 +33,8 @@ export async function savePrefs(){if(SBXF)return;
 function applyPrefs(p){
   if(!p||typeof p!=="object"||INSBX)return;PREFAPPLY=true;
   try{
-    for(const k of PREFKEYS)if(typeof p[k]==="string")try{localStorage.setItem(k,p[k])}catch(_){}
-    {const x=prefX(p);for(const k of PREFX)if(typeof x[k]==="string")try{localStorage.setItem(k,x[k])}catch(_){}}
+    for(const k of PREFKEYS)if(typeof p[k]==="string")lsSet(k,p[k])
+    {const x=prefX(p);for(const k of PREFX)if(typeof x[k]==="string")lsSet(k,x[k])}
     const js=k=>{try{return JSON.parse(p[k])}catch(_){return null}};
     for(const [k,o] of [["pv",S.pv],["sv",S.sv],["lv",S.lv]]){const x=js(k);if(x&&typeof x==="object")for(const i in o)if(typeof x[i]==="boolean")o[i]=x[i]}
     for(const k of ["uf","pu"]){const x=js(k);if(x&&typeof x==="object")S[k]=Object.assign({},S[k],...["1","2","3"].filter(u=>typeof x[u]==="boolean").map(u=>({[u]:x[u]})))}
@@ -133,7 +133,7 @@ const docDef=(k,lang)=>lang==="de"?{subject:DOCDEF[k].subject||"",body:DOCDEF[k]
 /* store one language of one document; German also clears the older language-less fields */
 async function docStore(k,lang,val){const {F,db}=await fb();const part={[lang]:val};if(lang==="de")Object.assign(part,{body:"",subject:""});
   await F.setDoc(F.doc(db,"config","app"),{docs:{[k]:part}},{merge:true});
-  const cur=Object.assign({},(window.DOCS||{})[k]||{},part);window.DOCS=Object.assign({},window.DOCS,{[k]:cur});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}}
+  const cur=Object.assign({},(window.DOCS||{})[k]||{},part);window.DOCS=Object.assign({},window.DOCS,{[k]:cur});lsSet("appdocs",JSON.stringify(window.DOCS))}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-doclang]");if(!b)return;ADM.doclang=b.dataset.doclang;render()});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form.docf");if(!f)return;e.preventDefault();if(!can("settings"))return;
   const k=f.dataset.doc,lang=DOCLANGS.includes(f.dataset.dl)?f.dataset.dl:"de",msg=f.querySelector(".amsg"),btn=f.querySelector("button[type=submit]");btn.disabled=true;msg.className="amsg";msg.textContent="";
@@ -148,7 +148,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-docr
 document.addEventListener("click",async e=>{if(!e.target.closest("[data-twagain]")||!can("settings"))return;e.preventDefault();
   const v=(parseInt(((window.DOCS||{}).testwelcome||{}).ver,10)||1)+1;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{testwelcome:{ver:v}}},{merge:true});
-    window.DOCS=Object.assign({},window.DOCS,{testwelcome:Object.assign({},(window.DOCS||{}).testwelcome,{ver:v})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
+    window.DOCS=Object.assign({},window.DOCS,{testwelcome:Object.assign({},(window.DOCS||{}).testwelcome,{ver:v})});lsSet("appdocs",JSON.stringify(window.DOCS))
     showMsg(L("Wird allen Test-Usern beim nächsten Öffnen nochmals gezeigt."),3500)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
 /* invitation by WhatsApp: opens WhatsApp with the text «Einladung WhatsApp» (to the number of the person when the crew list has it) */
 export function waNum(t){let d=telNum(t);if(d.startsWith("+"))return d.slice(1);if(d.startsWith("00"))return d.slice(2);if(/^0\d{9}$/.test(d))return "41"+d.slice(1);return d}
@@ -163,11 +163,11 @@ export const maintOn=()=>((window.DOCS||{}).maint||{}).on!==false;window.maintOn
 export const maintOnce=()=>((window.DOCS||{}).maint||{}).once===true;
 document.addEventListener("change",async e=>{const c=e.target.closest&&e.target.closest("[data-maintonce]");if(!c||!can("settings"))return;const once=c.checked;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{maint:{once}}},{merge:true});
-    window.DOCS=Object.assign({},window.DOCS,{maint:Object.assign({},(window.DOCS||{}).maint,{once})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
+    window.DOCS=Object.assign({},window.DOCS,{maint:Object.assign({},(window.DOCS||{}).maint,{once})});lsSet("appdocs",JSON.stringify(window.DOCS))
     showMsg(L("Gespeichert."),2500)}catch(err){c.checked=!once;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
 document.addEventListener("change",async e=>{const c=e.target.closest&&e.target.closest("[data-mainton]");if(!c||!can("settings"))return;const on=c.checked;
   try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{docs:{maint:{on}}},{merge:true});
-    window.DOCS=Object.assign({},window.DOCS,{maint:Object.assign({},(window.DOCS||{}).maint,{on})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
+    window.DOCS=Object.assign({},window.DOCS,{maint:Object.assign({},(window.DOCS||{}).maint,{on})});lsSet("appdocs",JSON.stringify(window.DOCS))
     showMsg(L(on?"Wartungshinweis eingeschaltet.":"Wartungshinweis ausgeschaltet."),2500)}catch(err){c.checked=!on;showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
 export function setPREFOK(v){return PREFOK=v}   /* other parts change PREFOK only through this */
 export function setPREFT(v){return PREFT=v}   /* other parts change PREFT only through this */

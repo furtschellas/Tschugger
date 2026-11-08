@@ -1,4 +1,4 @@
-import {dayItems,dayTitle,esc,fmtDate,ieClass,L,maps,mapUrl,S,safeUrl,telNum} from "./10-core.js";
+import {dayItems,dayTitle,esc,fmtDate,ieClass,L,maps,mapUrl,noonDate,S,safeUrl,telNum} from "./10-core.js";
 import {nowCardHTML} from "../boot/16-today-view.js";
 import {UNITBAR,nmk} from "./11-schedule-prep.js";
 import {WDL} from "./12-mycal.js";
@@ -103,7 +103,7 @@ function csMapSec(c,x,me,SU,t){if(window.CSMAPON===false||!vok("csmap"))return""
 /** a person's travel: (other day) · name · how · from → to · place badge · note @param {{c:any,x:any,r:any}} p */
 const TRVU=/(https?:\/\/[^\s<]+)/g,trvClean=v=>String(v||"").replace(TRVU,"").replace(/\s{2,}/g," ").trim();
 function CsTrv({c,x,r}){const other=r.date&&x.date&&r.date!==x.date,urls=[r.from,r.to,r.note].join(" ").match(TRVU)||[];
-  const dlab=()=>{try{const d=new Date(r.date+"T12:00:00");return (typeof WDL==="function"?WDL(d)+" ":"")+r.date.slice(8,10)+"."+r.date.slice(5,7)+"."}catch(_){return r.date}};
+  const dlab=()=>{try{const d=noonDate(r.date);return (typeof WDL==="function"?WDL(d)+" ":"")+r.date.slice(8,10)+"."+r.date.slice(5,7)+"."}catch(_){return r.date}};
   const badge=()=>{let pl=null;try{pl=csPlace(c,trvClean(r.to))}catch(_){}const code=pl?csShort(pl):"";const u=urls[0]||(pl&&pl.map)||"";
     if(!u)return code?html`<${Raw} html=${csPlaceA(code,csCodeHref(code),pl&&pl.name)}/>`:null;
     return html`<a class="csplace" href=${mapUrl(u)} target="_blank" rel="noopener noreferrer" title=${pl&&pl.name||trvClean(r.to)||L("Karte")}>${code||L("Karte")}</a>`};

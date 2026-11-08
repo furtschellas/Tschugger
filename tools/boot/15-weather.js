@@ -1,4 +1,4 @@
-import {dayOf,ddmm,dispoOf,esc,L,localISO,lsJSON,mkDialog,S,xBtn} from "../base/10-core.js";
+import {dayOf,ddmm,dispoOf,esc,L,localISO,lsJSON,lsSet,mkDialog,noonDate,S,xBtn} from "../base/10-core.js";
 import {WDL} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
 import {render} from "../base/15-script-tab.js";
@@ -41,7 +41,7 @@ async function wxLoad(d){
   try{
     /* the place of a town is kept on the device (one request less every time) */
     let ll=p.ll;if(!ll)try{const c=JSON.parse(localStorage.getItem("wxll:"+p.town)||"null");if(Array.isArray(c)&&c.length===2)ll=c}catch(_){}
-    if(!ll){const g=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=de&country=CH&name="+encodeURIComponent(p.town)).then(r=>r.json());const x=g&&g.results&&g.results[0];if(x){ll=[x.latitude,x.longitude];try{localStorage.setItem("wxll:"+p.town,JSON.stringify(ll))}catch(_){}}}
+    if(!ll){const g=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=de&country=CH&name="+encodeURIComponent(p.town)).then(r=>r.json());const x=g&&g.results&&g.results[0];if(x){ll=[x.latitude,x.longitude];lsSet("wxll:"+p.town,JSON.stringify(ll))}}
     if(!ll)throw new Error("no place");
     /* one request for this day and the next two weeks at this place: every day there is then ready at once (kept per day) */
     const t0=d.date<localISO(Date.now())?d.date:localISO(Date.now()),t1=localISO(Date.now()+15*864e5);
@@ -50,7 +50,7 @@ async function wxLoad(d){
       "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunrise,sunset,uv_index_max";
     const all=await fetch(u).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()});
     const now=Date.now();for(const dt of (all.daily&&all.daily.time)||[]){const j=wxSplit(all,dt);if(!j)continue;const k=dt+"|"+p.town;
-      if(k!==key&&WX[k]&&WX[k].busy)continue;WX[k]=Object.assign({},WX[k]||{},{at:now,p:k===key?p:(WX[k]&&WX[k].p)||p,ll,j,busy:false});try{localStorage.setItem("wx:"+k,JSON.stringify({at:now,ll,j}))}catch(_){}}
+      if(k!==key&&WX[k]&&WX[k].busy)continue;WX[k]=Object.assign({},WX[k]||{},{at:now,p:k===key?p:(WX[k]&&WX[k].p)||p,ll,j,busy:false});lsSet("wx:"+k,JSON.stringify({at:now,ll,j}))}
     if(!WX[key].j)throw new Error("no data");
   }catch(err){WX[key]=Object.assign({},WX[key],{busy:false,err:String(err&&err.message||err)})}
   if(S.tab==="today"||S.tab==="plan")render();if(document.getElementById("wxpop")&&window.WXPOPD===d.date)wxPopup(d.date);
@@ -71,7 +71,7 @@ function wxPopup(date){window.WXPOPD=date;
   const d=dayOf(date);if(!d)return;const w=wxGet(d);if(!w)return;
   let o=document.getElementById("wxpop");if(!o){o=mkDialog("wxpop");document.body.appendChild(o);
     o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-wxx]"))o.remove()})}
-  const dt=new Date(date+"T12:00:00"),dp=dispoOf(date);
+  const dt=noonDate(date),dp=dispoOf(date);
   let body='<p class="ghint">'+esc(L("Wird geladen …"))+'</p>';
   const j=w.j;if(j&&j.hourly&&j.daily){const h=j.hourly,dl=j.daily;
     const rows=h.time.map((t,i)=>({h:t.slice(11,16),i})).filter(x=>{const hh=+x.h.slice(0,2);return hh>=5&&hh<=23});

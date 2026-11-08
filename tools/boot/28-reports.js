@@ -1,4 +1,4 @@
-import {esc,L,lsGet,S,safeUrl} from "../base/10-core.js";
+import {esc,L,lsGet,lsSet,S,safeUrl} from "../base/10-core.js";
 import {VIEWS} from "../base/14-render.js";
 import {fold,island,render} from "../base/15-script-tab.js";
 import {openGallery} from "../base/18-blocking.js";
@@ -8,7 +8,7 @@ import {logHead,tstIco} from "./17-audit-misc.js";
 import {SCLOG} from "./27-scene-ack.js";
 import {goTo} from "../base/16-interaction.js";
 import {html,ISLANDS} from "../base/09-fw.js";
-import {Sections} from "../base/10a-ui.js";
+import {Sections,TabNav} from "../base/10a-ui.js";
 /* ---------- Einstellungen → Logs → «Reports»: the PDFs of the Dropbox folder «3D/20_Reports» (production, DIT, sound …), one group per sub folder.
    Every report: the gallery (pages as pictures, like the floorplans), the file in the Dropbox and the PDF. Who sees a group: the permission
    «Reports: <folder>» (one per sub folder, in the roles under «Reports»); admins and the owner see all ---------- */
@@ -68,7 +68,7 @@ let REPALL=lsGet("repall","day");
 /* order of [report, index] pairs: by shooting day (oldest first), by department, or newest first */
 function repSort(l,m){const dk=x=>repDay(x[0]).date||"",gk=x=>String(x[0].g||"").toLowerCase(),nk=x=>String(x[0].n);
   return l.slice().sort(m==="dept"?(a,b)=>gk(a).localeCompare(gk(b))||dk(a).localeCompare(dk(b))||nk(a).localeCompare(nk(b)):m==="new"?(a,b)=>dk(b).localeCompare(dk(a))||gk(a).localeCompare(gk(b))||nk(a).localeCompare(nk(b)):(a,b)=>dk(a).localeCompare(dk(b))||gk(a).localeCompare(gk(b))||nk(a).localeCompare(nk(b)))}
-document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repsort]");if(!b)return;e.preventDefault();e.stopPropagation();REPALL=b.dataset.repsort;try{localStorage.setItem("repall",REPALL)}catch(_){}render()},true);
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repsort]");if(!b)return;e.preventDefault();e.stopPropagation();REPALL=b.dataset.repsort;lsSet("repall",REPALL);render()},true);
 /* the gallery with many reports: every page, the caption says shooting day, department and report */
 function repGallery(list,title){const media=[];for(const r of list){const dy=repDay(r),cap=[(dy.dt?"DT "+dy.dt:repFmt(dy.date)),r.g,r.n].filter(Boolean).join(" · ");
     arr(r.f).forEach((p,k)=>media.push({n:cap+(r.f.length>1?" · "+(k+1)+"/"+r.f.length:""),t:"img",f:p,u:r.u}))}
@@ -116,9 +116,9 @@ VIEWS.reports=function(){const subs=repSubs();if(!ME||!subs.length)return '<div 
 /* «Reports» as components (framework): head, the topics as tabs, the boxes of the topic (each one morphed on its own) */
 /** @param {{subs:string[][],cur:string,body:string}} p */
 function RepPage({subs,cur,body}){
-  return html`<section class="mypage reppage"><div class="myhead"><h2 class="pgt">${L("Reports")}</h2></div><nav class=${"asub acsub n"+subs.length} role="tablist">${subs.map(([k,t])=>html`<button type="button" role="tab" data-repsub=${k} aria-selected=${String(cur===k)}>${t==="Produktion"?html`<span class="lgl">${L(t)}</span><span class="sml">Prod</span>`:L(t)}</button>`)}</nav>${body?html`<${Sections} html=${body}/>`:html`<p class="ghint">${L("Noch keine Einträge.")}</p>`}</section>`}
+  return html`<section class="mypage reppage"><div class="myhead"><h2 class="pgt">${L("Reports")}</h2></div><${TabNav} items=${subs.map(([k,t])=>t==="Produktion"?[k,L(t),"Prod"]:[k,L(t)])} cur=${cur} attr="data-repsub" cls="acsub"/>${body?html`<${Sections} html=${body}/>`:html`<p class="ghint">${L("Noch keine Einträge.")}</p>`}</section>`}
 ISLANDS.reports=RepPage;
 window.repSetSub=k=>{if(REPSUB===k)return false;REPSUB=k;return true};window.repSubGet=()=>REPSUB;
-document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repsub]");if(!b)return;REPSUB=b.dataset.repsub;try{localStorage.setItem("repsub",REPSUB)}catch(_){}render();scrollTo(0,0)});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repsub]");if(!b)return;REPSUB=b.dataset.repsub;lsSet("repsub",REPSUB);render();scrollTo(0,0)});
 document.addEventListener("click",e=>{const sm=e.target.closest&&e.target.closest(".reppage details.tstsec>summary");if(!sm)return;
   if(e.target.closest("a,button:not(.tstall),input,select,label"))return;e.preventDefault()},true);

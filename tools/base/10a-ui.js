@@ -60,6 +60,11 @@ export function Sections({html:src}){let l=SECC.get(src);
     if(SECC.size>60)SECC.clear();SECC.set(src,l)}
   return l.map(([k,h0])=>html`<${RawLive} key=${k} html=${h0}/>`)}
 
+/** the tabs of a page (Mein Konto, Reports, App-Verwaltung …): one button per part, the chosen one marked; «attr» is the data attribute of the tap
+ * @param {{items:any[][],cur:string,attr:string,cls?:string}} p   items: [key, label] or [key, long, short] */
+export function TabNav({items,cur,attr,cls}){
+  return html`<nav class=${"asub"+(cls?" "+cls:"")+" n"+items.length} role="tablist">${items.map(([k,t,sh])=>h("button",{type:"button",role:"tab",[attr]:k,"aria-selected":String(cur===k)},sh?html`<span class="lgl">${t}</span><span class="sml">${sh}</span>`:t))}</nav>`}
+
 /** a card that opens with a tap on its head (Locations, Szenen …); «open» comes from S.openSc, the tap handler is data-sckey (18-blocking.js)
  * @param {{k:string,open:boolean,now?:boolean,head:any,addr?:any,children?:any}} p */
 export function Card({k,open,now,head,addr,children}){

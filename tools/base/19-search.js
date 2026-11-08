@@ -1,4 +1,4 @@
-import {$,L,LANG,S,TX,TXA,WD,cap,ddmm,esc,fmtDate,isoAdd,markTerms,memo,norm,todayISO} from "./10-core.js";
+import {$,cap,ddmm,esc,fmtDate,isoAdd,L,LANG,lsSet,markTerms,memo,noonDate,norm,S,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,dayPlaces,hasU,unitLists,unitsOn} from "./11-schedule-prep.js";
 import {openMyCal} from "./12-mycal.js";
 import {addrForItem,fullAddr,groupLocs} from "./13-crew-views.js";
@@ -31,7 +31,7 @@ export function normQ(q){
   return qq;
 }
 const WDALL=[["sonntag","sunday","dimanche","domenica"],["montag","monday","lundi","lunedi"],["dienstag","tuesday","mardi","martedi"],["mittwoch","wednesday","mercredi","mercoledi"],["donnerstag","thursday","jeudi","giovedi"],["freitag","friday","vendredi","venerdi"],["samstag","saturday","samedi","sabato"]];
-export function dayKeys(d){const x=new Date(d.date+"T12:00:00");return nrm([d.short,d.label,x.getDate()+"."+(x.getMonth()+1)+".",ddmm(x),WDALL[x.getDay()].join(" "),WD[x.getDay()]].join(" "))}
+export function dayKeys(d){const x=noonDate(d.date);return nrm([d.short,d.label,x.getDate()+"."+(x.getMonth()+1)+".",ddmm(x),WDALL[x.getDay()].join(" "),WD[x.getDay()]].join(" "))}
 /* roles (characters of the cast list) with the names they go by in the script */
 const GENW=new Set(["mafioso","teenager","aunt","tante","dr","neighbour","nachbar","fisherman","fischer","karate","the","der","die"]);
 function roleList(){return memo("roles",()=>{const c=(S.meta&&S.meta.cast)||{};
@@ -84,7 +84,7 @@ function searchAll(q,mode){
   const isNum=t=>/^\d+[a-z]*$/.test(t)&&!/^\d+(st|nd|rd|th)$/.test(t);
   const digits=x=>String(x||"").replace(/\D/g,"");
   const phoneVars=ph=>{const d=digits(ph);if(!d)return "";const loc=d.startsWith("41")?"0"+d.slice(2):d;return d+" "+loc};
-  const dshort=d=>{const x=new Date(d.date+"T12:00:00");return x.getDate()+"."+(x.getMonth()+1)+". "+ddmm(x)+" "+WD[x.getDay()]};
+  const dshort=d=>{const x=noonDate(d.date);return x.getDate()+"."+(x.getMonth()+1)+". "+ddmm(x)+" "+WD[x.getDay()]};
   const cast=(S.meta&&S.meta.cast)||{};
   /* text terms: substring anywhere; numeric terms: only scene numbers, day codes, dates, phone numbers */
   const qd=terms.every(t=>/^\+?\d+$/.test(t))?terms.join("").replace(/\D/g,""):"";
@@ -94,7 +94,7 @@ function searchAll(q,mode){
   /* only areas the person may see (Drehplan, Locations, Crew, Callsheet) */
   const okPlan=vok("plan"),okLoc=vok("loc"),okCrew=vok("crew"),okDispo=vok("dispo"),okPh=vok("phone"),okEm=vok("email");
   for(const d of (okPlan?S.days:[])){if(!M("day")&&mode!=="text")break;
-    const x=new Date(d.date+"T12:00:00");
+    const x=noonDate(d.date);
     const sc1=(d.items||[]).filter(i=>i.sc).length,sc2=((d.unit2&&d.unit2.items)||[]).filter(i=>i.sc).length,sc3=((d.unit3&&d.unit3.items)||[]).filter(i=>i.sc).length;
     const kindw=d.kind==="shoot"?"drehtag shooting day tournage riprese":d.kind==="off"?"drehfrei frei day off off-day libre libero":"reise reisetag travel voyage viaggio";
     const text=[d.label,d.short,kindw,WDL[x.getDay()].join(" "),WD[x.getDay()],dshort(d),(d.notes||[]).join(" "),TXA(d,"notes").join(" "),d.info,TX(d,"info"),dayPlaces(d).join(" "),sc2?"2nd unit":"",sc3?"3rd unit":"",sc1?"1st unit":""].join(" ");
@@ -157,7 +157,7 @@ $("#sclose").addEventListener("click",closeSearch);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!e.defaultPrevented&&!$("#search").hidden){e.preventDefault();closeSearch()}});   /* one Escape closes one thing */
 let gqT=null;$("#gq").addEventListener("input",()=>{clearTimeout(gqT);gqT=setTimeout(renderSearch,120)});
 $("#gq").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clearTimeout(gqT);renderSearch();const f=document.querySelector("#gres [data-sr]");if(f)f.click()}});
-$("#gmodes").addEventListener("click",e=>{const b=e.target.closest("[data-gm]");if(!b)return;S.gm=b.dataset.gm;try{localStorage.setItem("gm",S.gm)}catch(_){}renderSearch();$("#gq").focus()});
+$("#gmodes").addEventListener("click",e=>{const b=e.target.closest("[data-gm]");if(!b)return;S.gm=b.dataset.gm;lsSet("gm",S.gm);renderSearch();$("#gq").focus()});
 $("#gres").addEventListener("click",e=>{const pk=e.target.closest("[data-gpick]");if(pk){$("#gq").value=pk.dataset.gpick;renderSearch();return}
   const b=e.target.closest("[data-sr]");if(!b)return;const r=SR[+b.dataset.sr];if(!r)return;LASTQ=$("#gq").value;closeSearch();
   let scrollSel=null;

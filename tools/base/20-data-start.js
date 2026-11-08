@@ -1,4 +1,4 @@
-import {$,applyStatic,hmAny,hmMin,MEMO,S} from "./10-core.js";
+import {$,applyStatic,hmAny,hmMin,lsDel,MEMO,S} from "./10-core.js";
 import {render} from "./15-script-tab.js";
 /* ---------- data ---------- */
 export const arr=x=>Array.isArray(x)?x:[];
@@ -46,7 +46,7 @@ export function cancelCache(){clearTimeout(cacheT);cacheT=null;CACHEGEN++}
 window.cancelCache=cancelCache;window.cacheGen=()=>CACHEGEN;
 export function saveCache(){clearTimeout(cacheT);const g=CACHEGEN;cacheT=setTimeout(()=>{if(g!==CACHEGEN)return;try{localStorage.setItem(CACHE_KEY,JSON.stringify({meta:S.meta,days:S.days0||S.days,crew:S.crew,locs:S.locs,places:S.places,dispos:S.dispos0||S.dispos,prepro:S.prepro,gmap:S.gmap||null}));
     /* the stamp of the data only when the data itself was saved – else the next start would take old data for current */
-    if(window.__DSTAMP)localStorage.setItem("dstamp:v1",window.__DSTAMP)}catch(_){try{localStorage.removeItem("dstamp:v1")}catch(_){}}},1500)}
+    if(window.__DSTAMP)localStorage.setItem("dstamp:v1",window.__DSTAMP)}catch(_){lsDel("dstamp:v1")}},1500)}
 export function loadCache(){try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");if(!c||!Array.isArray(c.days))return false;S.meta=c.meta||null;S.gmap=c.gmap||null;for(const k of ["days","crew","locs","places","dispos","prepro"])S[k]=(CLEAN[k]||(x=>x))(arr(c[k]));S.days0=S.days;S.dispos0=S.dispos;if(typeof window.cdApplyAll==="function")window.cdApplyAll();MEMO.clear();return true}catch(_){return false}}
 /* several snapshots arrive together on start: draw once per frame */
 let RQ=0;export function scheduleRender(){if(RQ)return;RQ=1;const go=()=>{if(!RQ)return;RQ=0;render()};requestAnimationFrame(go);setTimeout(go,120)}

@@ -1,4 +1,4 @@
-import {HIT,L,LANG,S,ariaTip,ddmm,dlgBtn,esc,mkDialog,saveBtn,todayISO} from "../base/10-core.js";
+import {ariaTip,ddmm,dlgBtn,esc,HIT,L,LANG,lsSet,mkDialog,noonDate,S,saveBtn,todayISO} from "../base/10-core.js";
 import {mailPeople} from "../base/11-schedule-prep.js";
 import {WDL,myIdentity} from "../base/12-mycal.js";
 import {fold,render} from "../base/15-script-tab.js";
@@ -22,7 +22,7 @@ let OWNSEQ=0;
 async function ownApply(docs,key){const seq=++OWNSEQ;const out=[];for(const d of docs){try{const x=d.data();out.push(Object.assign(await ownDec(key,x.c),{id:d.id,byUid:x.by,gc:x.gc||""}))}catch(_){}}
   if(seq!==OWNSEQ)return;   /* a newer update already arrived */
   const same=OWN.list&&JSON.stringify(OWN.list)===JSON.stringify(out);OWN.list=out;OWN.at=Date.now();if(same)return;
-  try{localStorage.setItem("ownev:v1",JSON.stringify(out))}catch(_){}try{pushSyncSoon()}catch(_){}render()}
+  lsSet("ownev:v1",JSON.stringify(out));try{pushSyncSoon()}catch(_){}render()}
 async function ownLoad(force){
   if(!ME||!ownOn()||OWN.busy)return;
   if(OWNSUB)return;
@@ -59,7 +59,7 @@ function ownPeople(){const seen=new Set();return mailPeople().filter(p=>p.name&&
 function ownAud(ev){if(!ev.roles&&!ev.depts&&!ev.people)return L("Alle");const r=(ev.roles||[]).map(x=>x==="owner"?L("Owner"):x==="admin"?L("Admin"):x===""?L("Keine Rolle"):((OWN.roles||[]).find(y=>y.id===x)||{}).name||x);
   return r.concat((ev.depts||[]).map(x=>HIT(x))).concat((ev.people||[]).map(p=>p.name)).join(", ")}
 function ownListHTML(cur){const t=todayISO(),mine=(OWN.list||[]).filter(ev=>ev.date>=t&&(isAdmin()||(ev.byEmail&&lc(ev.byEmail)===lc(window.simEmail())))).sort((a,b)=>(a.date+(a.t||"")).localeCompare(b.date+(b.t||"")));
-  return '<div class="oelist"><h4>'+esc(L("Hinzugefügte Termine"))+' ('+mine.length+')</h4>'+(mine.length?mine.map(ev=>{const dt=new Date(ev.date+"T12:00:00");
+  return '<div class="oelist"><h4>'+esc(L("Hinzugefügte Termine"))+' ('+mine.length+')</h4>'+(mine.length?mine.map(ev=>{const dt=noonDate(ev.date);
     return '<button type="button" class="oeli'+(ev.id===cur?' on':'')+'" data-oego="'+esc(ev.id)+'"><span class="oeld">'+WDL(dt)+' '+ddmm(dt)+(ev.t?'<br>'+esc(ev.t):'')+'</span><span class="oelb"><b>'+esc(ev.title||"")+'</b><small>'+esc(L("Für"))+': '+esc(ownAud(ev))+(ev.gc?' · '+esc(L("Google Kalender")):'')+'</small></span></button>'}).join(""):'<p class="ghint">'+esc(L("Noch keine kommenden Termine hinzugefügt."))+'</p>')+'</div>'}
 async function ownDialog(id,pre){
   const ev=id?(OWN.list||[]).find(x=>x.id===id):(pre?{title:pre.title,date:pre.date,t:pre.t,end:pre.end,where:pre.where,note:pre.note,gcNew:pre.uid}:null);if(id&&!ev)return;const isNew=!ev||!ev.id;
@@ -125,7 +125,7 @@ async function gcDialog(){
   if(!GC.feed){showMsg(L("Bitte nochmals versuchen."),3000);return}   /* still loading (opened during a load) */
   const items=(GC.feed.items||[]).filter(x=>x.date>=t);
   const d=mkDialog("gcdlg",null,{replace:true});
-  let last="";const rows=items.map((x,i)=>{const dt=new Date(x.date+"T12:00:00");const hd=x.date!==last?'<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>':'';last=x.date;const tk=taken.get(x.uid);
+  let last="";const rows=items.map((x,i)=>{const dt=noonDate(x.date);const hd=x.date!==last?'<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>':'';last=x.date;const tk=taken.get(x.uid);
     return hd+'<div class="gcrow'+(tk?' on':'')+'"><span class="gct">'+esc(x.t||L("ganztags"))+(x.end?'–'+esc(x.end):'')+'</span><span class="gcn"><b>'+esc(x.title||"–")+'</b>'+(x.where?'<br><small>'+esc(x.where)+'</small>':'')+(tk?'<br><small class="gcw">✓ '+esc(L("in der App"))+'</small>':'')+'</span>'+
       (tk?'<button type="button" class="pillbtn" data-gced="'+esc(tk.id)+'">'+esc(L("Bearbeiten"))+'</button>':'<button type="button" class="pillbtn" data-gcadd="'+i+'">'+esc(L("Übernehmen"))+'</button>')+'</div>'}).join("");
   d.innerHTML='<div class="a2box gcbox"><h3>'+esc(L("Google Kalender"))+'</h3><p class="ghint">'+esc(L("Wähle, welche Termine in die App kommen und wer sie sieht. Änderungen im Google Kalender (Zeit, Titel, Ort) werden automatisch nachgeführt; dort gelöschte Termine verschwinden aus der App."))+'</p>'+

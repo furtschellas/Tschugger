@@ -1,4 +1,4 @@
-import {dayBlockOK,dayOf,esc,isoDM,L,MEMO,mkDialog,myBlocks,norm,S,saveBtn,saveErr,todayISO} from "../base/10-core.js";
+import {dayBlockOK,dayOf,esc,isoDM,L,MEMO,mkDialog,myBlocks,noonDate,norm,S,saveBtn,saveErr,todayISO} from "../base/10-core.js";
 import {WDL} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
@@ -30,7 +30,7 @@ const cdContent=d=>{const o={};for(const k in d)if(!CDKEEP.has(k))o[k]=d[k];retu
 const cdScenes=(d,u)=>d?arr(u==="2"?(d.unit2||{}).items:d.items).filter(i=>i&&i.sc).map(i=>norm(i.sc)).join(","):"";
 const cdShootDates=(days,u,from)=>days.filter(d=>d.date>=from&&(u==="2"?arr((d.unit2||{}).items).some(i=>i&&i.sc):d.kind==="shoot")).map(d=>d.date).sort();
 /* the next date for «Nachrücken»: after the last shooting day, not on a weekend */
-function cdNextSlot(after){const x=new Date(after+"T12:00:00");do{x.setDate(x.getDate()+1)}while(x.getDay()===0||x.getDay()===6);return x.toISOString().slice(0,10)}
+function cdNextSlot(after){const x=noonDate(after);do{x.setDate(x.getDate()+1)}while(x.getDay()===0||x.getDay()===6);return x.toISOString().slice(0,10)}
 /* the Drehplan with the changes laid over it (the original stays in S.days0) */
 window.cdDaysT=d=>cdTransform(d);window.cdDisposT=(ds,days)=>cdDispos(ds,days);   /* tests: the same as tools/coverday.py */
 function cdTransform(days0){const ops=cdActive();if(!ops.length)return cdChrono(days0);
@@ -141,9 +141,9 @@ function cdPreview(f){const raw=S.days||S.days0||[],d=dt=>raw.find(x=>x.date===d
   const sl=cdShootDates(raw,u,f.a);if(!sl.length)return {ok:false,t:L("Ab diesem Tag gibt es keine Drehtage.")};sl.push(cdNextSlot(sl[sl.length-1]));
   return {ok:true,t:sl.slice(0,-1).map((dt,i)=>cdDD(dt)+" → "+cdDD(sl[i+1])).join(" · ")}}
 window.coverdaySec=()=>{if(!cdCan())return"";const f=CD.form,raw=S.days||S.days0||[];
-  const opts=(sel,list)=>list.map(dt=>{const d=raw.find(x=>x.date===dt);return '<option value="'+dt+'"'+(sel===dt?' selected':'')+'>'+esc(WDL(new Date(dt+"T12:00:00"))+" "+cdDD(dt)+(d&&d.short?" · "+d.short:d&&d.kind==="off"?" · "+L("frei"):""))+'</option>'}).join("");
+  const opts=(sel,list)=>list.map(dt=>{const d=raw.find(x=>x.date===dt);return '<option value="'+dt+'"'+(sel===dt?' selected':'')+'>'+esc(WDL(noonDate(dt))+" "+cdDD(dt)+(d&&d.short?" · "+d.short:d&&d.kind==="off"?" · "+L("frei"):""))+'</option>'}).join("");
   const days=raw.filter(d=>cdFree(d.date)&&(f.u==="2"?arr((d.unit2||{}).items).some(i=>i.sc):d.kind==="shoot")).map(d=>d.date);
-  const t=todayISO(),last=raw.length?raw[raw.length-1].date:t,targets=[];{const x=new Date(t+"T12:00:00");const end=new Date(last+"T12:00:00");end.setDate(end.getDate()+21);while(x<=end){const dt=x.toISOString().slice(0,10);if(cdFree(dt))targets.push(dt);x.setDate(x.getDate()+1)}}
+  const t=todayISO(),last=raw.length?raw[raw.length-1].date:t,targets=[];{const x=noonDate(t);const end=noonDate(last);end.setDate(end.getDate()+21);while(x<=end){const dt=x.toISOString().slice(0,10);if(cdFree(dt))targets.push(dt);x.setDate(x.getDate()+1)}}
   const pv=cdPreview(f);
   const list=arr(window.CDOPS).filter(o=>o&&o.st!=="off").sort((a,b)=>(+b.at||0)-(+a.at||0)).map(o=>{const rv=cdReview(o),p=rv?cdProposal(o):null;
     /* the new Drehplan already has this change: it is no longer laid over the Drehplan, only listed («via Drehplan geändert») */

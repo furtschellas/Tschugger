@@ -1275,7 +1275,36 @@ async def owner_tests(p, port):
             v = open(await (await dl.value).path(), encoding="utf-8").read()
             check("vCard: Datei mit Name und Telefon", v.startswith("BEGIN:VCARD") and "FN:" + who["name"].replace(",", "\\,") in v and ("TEL" in v) == who["phone"] and v.rstrip().endswith("END:VCARD"))
 
-    for name, part in [('Suche', _p0), ('Drehplan', _p1), ('Meine Termine und Konto', _p2), ('Push an alle', _p3), ('Eigene Termine und Google Kalender', _p4), ('Drehbuch-Version und Today', _p5), ('App allgemein (Knöpfe, Stabilität, App-Icon, Today-Teile)', _p6), ('App-Verwaltung (Access, Tour, Dokumente, Log/Tests)', _p7), ('Push-Seite und vCard', _p8)]:
+    async def _pfw():   # Framework (Komponenten)
+        # every page: each island has its component and content after drawing (no empty part), no error while drawing
+        tabs = await E("tabsOn().concat(['acct']).filter((t,i,a)=>a.indexOf(t)===i)")
+        empty = []
+        for t in tabs:
+            r = await E("""(t=>{S.tab=t;render();const l=[...document.querySelectorAll('#view [data-island]')];
+                return l.filter(x=>!x.firstChild&&x.dataset.island!=='script').map(x=>t+':'+x.dataset.island).concat(document.querySelector('#view .empty')&&/nicht angezeigt/.test(document.querySelector('#view .empty').textContent)?[t+':Fehler']:[])})(%s)""" % json.dumps(t))
+            await pg.wait_for_timeout(150); empty += r
+        check("Framework: jede Seite mit allen Komponenten gezeichnet (keine leeren Teile, keine Zeichen-Fehler)", not empty, empty[:6])
+        # a component draws again only what changed: the same props → the same DOM nodes (nothing replaced)
+        same = await E("""(()=>{S.tab='crew';render();const a=document.querySelector('#view [data-island=crew] .p');render();const b=document.querySelector('#view [data-island=crew] .p');return !!a&&a===b})()""")
+        check("Framework: unveränderte Teile werden beim Neuzeichnen nicht ersetzt (Crewliste)", same)
+        # Raw (HTML of the string parts) without a wrapper: the CSS «a > b» still fits (callsheet tiles directly in .dtiles)
+        rw = await E("""(()=>{S.tab='dispo';render();const t=document.querySelector('#view .dtiles');return t?[...t.children].every(c=>c.classList.contains('dt')||c.classList.contains('dtw')||c.tagName!=='DIV'||!c.classList.contains('raw')):null})()""")
+        check("Framework: übernommenes HTML ohne zusätzliche Hülle (Callsheet-Kacheln)", rw is not False, rw)
+        # typing in a form of a component part survives a new drawing (Mein Konto, profile)
+        typed = await E("""(()=>{S.tab='acct';try{localStorage.setItem('acsub','pro')}catch(_){}render();const i=document.querySelector('#view form[data-af=pf] input[name=al]');if(!i)return null;
+            i.value='Erdnuss-Test';i.dataset.dirty='1';render();const j=document.querySelector('#view form[data-af=pf] input[name=al]');return j?j.value:''})()""")
+        check("Framework: Eingaben in Formularen bleiben beim Neuzeichnen stehen (Mein Konto)", typed in (None, "Erdnuss-Test"), typed)
+        # tabs (TabNav): one tab chosen, a tap switches
+        tn = await E("""(()=>{S.tab='acct';render();const b=[...document.querySelectorAll('#view [data-acsub]')];if(b.length<2)return null;b[1].click();const c=[...document.querySelectorAll('#view [data-acsub]')];
+            return {sel:c.filter(x=>x.getAttribute('aria-selected')==='true').length,second:c[1].getAttribute('aria-selected')}})()""")
+        check("Framework: Reiter (Mein Konto) – genau einer gewählt, Tippen wechselt", tn is None or (tn["sel"] == 1 and tn["second"] == "true"), tn)
+        await E("try{localStorage.setItem('acsub','pro')}catch(_){}")
+        # the string API of the callsheet parts (renderCS, used by tests and other parts) gives the same text as the drawn page
+        cs = await E("""(()=>{const x=S.dispos.find(d=>d&&d.cs);if(!x)return null;S.tab='dispo';S.dday=x.date;render();const day=S.days.find(d=>d.date===x.date)||{};
+            const d=document.createElement('div');d.innerHTML=renderCS(x,day);const a=(d.querySelector('.cstiles')||{}).textContent||'',b=(document.querySelector('#view .cstiles')||{}).textContent||'';return a===b})()""")
+        check("Framework: Callsheet als Text (renderCS) und gezeichnete Seite stimmen überein", cs is not False, cs)
+
+    for name, part in [('Framework', _pfw), ('Suche', _p0), ('Drehplan', _p1), ('Meine Termine und Konto', _p2), ('Push an alle', _p3), ('Eigene Termine und Google Kalender', _p4), ('Drehbuch-Version und Today', _p5), ('App allgemein (Knöpfe, Stabilität, App-Icon, Today-Teile)', _p6), ('App-Verwaltung (Access, Tour, Dokumente, Log/Tests)', _p7), ('Push-Seite und vCard', _p8)]:
         await run_part(name, part, pg)
     # the parts that failed: once more, now their result counts
     again = RETRY_PARTS[:]; RETRY_PARTS.clear()

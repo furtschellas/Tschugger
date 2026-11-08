@@ -1,4 +1,4 @@
-import {castRow,dayItems,dayOf,ddmm,dispoOf,driveMin,esc,isoAdd,isoDM,isoId,L,LANG,localISO,lsGet,mapsDir,mkDialog,norm,pad2,S,saveBtn,todayISO,TX,unitKey,xBtn} from "../base/10-core.js";
+import {castRow,dayItems,dayOf,ddmm,dispoOf,driveMin,esc,isoAdd,isoDM,isoId,L,LANG,localISO,lsGet,lsSet,mapsDir,mkDialog,noonDate,norm,pad2,S,saveBtn,todayISO,TX,unitKey,xBtn} from "../base/10-core.js";
 import {UNAME,dayMs,hasU,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,evRecent,hm,myEvents,myIdentity,telLinks} from "../base/12-mycal.js";
 import {addrForItem} from "../base/13-crew-views.js";
@@ -116,7 +116,7 @@ function Scenes({d,scs,dp}){return html`<${TCard} cls="tscs" title=${html`${L("S
 function NextDay({d,canPlan}){
   try{const la=d.kind==="shoot"&&lunchAt(d),noon=zurichUTC(d.date,"12:00").getTime(),from=la?Math.min(la,noon):noon;if(!(canPlan&&d.kind==="shoot"&&Date.now()>=from))return null;
     const nd=(S.days||[]).find(x=>x.kind==="shoot"&&x.date>d.date);if(!nd)return null;
-    const ndt=new Date(nd.date+"T12:00:00"),nt=[],nu2=nd.unit2&&typeof nd.unit2==="object"&&nd.unit2.hours?String(nd.unit2.hours):"";
+    const ndt=noonDate(nd.date),nt=[],nu2=nd.unit2&&typeof nd.unit2==="object"&&nd.unit2.hours?String(nd.unit2.hours):"";
     let nmu=null;try{const ndp=dispoOf(nd.date,1);if(ndp&&typeof window.csMyUnits==="function")nmu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
     const sh1=!nu2||!nmu||nmu.includes("1"),sh2=!!nu2&&(!nmu||nmu.includes("2"));
     if(nd.hours&&sh1)nt.push([nd.hours,L("Drehzeit")+(nu2?" · 1st Unit":"")]);if(sh2)nt.push([nu2,L("Drehzeit")+" · 2nd Unit"]);if(nd.sr&&nd.ss)nt.push([nd.sr+"–"+nd.ss,L("Sonnenzeit")]);
@@ -126,7 +126,7 @@ function NextDay({d,canPlan}){
     return html`<div class="thead tnext"><h3 class="pgt">${L("Nächster Drehtag")}</h3><span class="tdate">${(nd.short||nd.label||"")+" · "+WDL(ndt)+" "+ddmm(ndt)}</span></div><div class="ttiles">${nt.map(([v,k])=>html`<${Tile} v=${v} k=${k}/>`)}${ndrv}<${Raw} html=${nwx}/></div>`}catch(_){return null}}
 /** Today @param {{d:any,t:string}} p */
 function TodayPage({d,t}){
-  const sd=typeof csShootDay==="function"?csShootDay():t,isToday=d.date<=t||d.date===sd,dt=new Date(d.date+"T12:00:00");
+  const sd=typeof csShootDay==="function"?csShootDay():t,isToday=d.date<=t||d.date===sd,dt=noonDate(d.date);
   const canPlan=vok("plan"),canDispo=vok("dispo"),dp=canDispo?(dispoOf(d.date)||null):null,out=[];
   let me=null;try{me=typeof myIdentity==="function"?myIdentity():null}catch(_){}
   if(todayCfg("now")!=="no"&&!todayPrefs().has("now"))out.push(html`<${Raw} html=${nowCardHTML(sd,"",undefined,true)}/>`);
@@ -190,7 +190,7 @@ let NCSUB=null,NCD="";
 async function ncSub(){const d=ncDay();if(typeof ME==="undefined"||!ME)return;if(NCSUB&&NCD===d)return;try{if(typeof NCSUB==="function")NCSUB()}catch(_){}NCSUB="…";NCD=d;
   /* the whole (small) collection – one document per shooting day; only the day of «Jetzt» is used */
   try{const {F,db}=await fb();NCSUB=F.onSnapshot(F.collection(db,"nowcast"),async q=>{let items=[];try{const x=(q.docs||[]).find(y=>y.id===ncDocId(d));if(x&&x.data().c){const o=await ownDec(await getDataKey(),x.data().c);items=arr(o&&o.items)}}catch(err){console.warn("nowcast",err&&err.message||err);return}
-      const was=JSON.stringify(window.NOWCAST[d]||[]);window.NOWCAST[d]=items;try{localStorage.setItem("nowcast:v1",JSON.stringify({d,items}))}catch(_){}
+      const was=JSON.stringify(window.NOWCAST[d]||[]);window.NOWCAST[d]=items;lsSet("nowcast:v1",JSON.stringify({d,items}))
       if(was!==JSON.stringify(items)&&(S.tab==="today"||S.tab==="dispo"))render()},()=>{NCSUB=null})}catch(_){NCSUB=null}}
 setTimeout(ncSub,1500);setInterval(()=>{if(!NCSUB||NCD!==ncDay())ncSub()},20e3);
 /* sign-out (clearLocal): stop listening and forget the copy of this person */
@@ -215,7 +215,7 @@ window.ncText=ncText;
 /* save the forecasts of a day (none: the document is deleted) */
 async function ncStore(d,ok){const {F,db}=await fb(),ref=F.doc(db,"nowcast",ncDocId(d));
   if(ok.length)await F.setDoc(ref,{c:await ownEnc({items:ok}),at:F.serverTimestamp()});else await F.deleteDoc(ref);
-  window.NOWCAST[d]=ok;try{localStorage.setItem("nowcast:v1",JSON.stringify({d,items:ok}))}catch(_){}}
+  window.NOWCAST[d]=ok;lsSet("nowcast:v1",JSON.stringify({d,items:ok}))}
 function ncDialog(){const d=ncDay(),dp=dispoOf(d),rows=csRows(dp&&dp.cs),keys=csKeys(rows);
   const opts=[["start",L("Drehbeginn")],["lunch","Lunch"],["wrap",L("Drehschluss")]].concat(rows.map((r,i)=>r.sc?[String(r.sc),L("Szene")+" "+r.sc]:null).filter(Boolean)).concat([["x",L("Anderes")]]);
   void keys;let items=arr(window.NOWCAST[d]).map(x=>Object.assign({},x));if(!items.length)items=[{k:"lunch",t:""}];

@@ -57,7 +57,7 @@ import update_from_dropbox as U  # noqa: E402
 import shutil as _sh, subprocess as _sp  # noqa: E402
 if _sh.which("node"):   # a syntax error in one part stops the whole app: check every part on its own (names the file)
     _T = pathlib.Path(__file__).resolve().parent.parent / "tools"
-    _bad = [f.name for f in sorted(list((_T / "boot").glob("*.js")) + list((_T / "base").glob("*.js"))) if _sp.run(["node", "--check", str(f)], capture_output=True).returncode]
+    _bad = [f.name for f in sorted(list((_T / "boot").glob("*.js")) + list((_T / "base").glob("*.js"))) if _sp.run(["node", "--input-type=module", "--check"], input=f.read_bytes(), capture_output=True).returncode]   # as a module (like the build): «node --check file» let a missing «;» through
     check("App-Teile (tools/base, tools/boot) ohne Syntaxfehler", not _bad, _bad)
 # known bug patterns (duplicate keys, unreachable code, look-behind regex that stops older iPhones …) – tests/eslint.json
 _esl = _sh.which("eslint")
@@ -76,6 +76,24 @@ _fs = [_sf("01_Script/261017_Tschugger_Tigerblood_v13 CLEAN.pdf"), _sf("01_Scrip
 import re as _re  # noqa: E402
 _selfwrap = [f"{p.name}:{m.group(1)}" for p in sorted((pathlib.Path(__file__).resolve().parent.parent / "tools").rglob("*.js")) for m in _re.finditer(r"window\.([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>\s*\1\s*\(", p.read_text(errors="ignore"))]
 check("App-Code: keine Funktion ersetzt sich auf window durch sich selbst (Endlosschleife)", not _selfwrap, ", ".join(_selfwrap))
+# framework: a local «h» (string) in a function that also calls h(…) of the framework hides it («h is not a function» – happened in the map part)
+_T2 = pathlib.Path(__file__).resolve().parent.parent / "tools"
+_jsf = [f for f in sorted(list((_T2 / "base").glob("*.js")) + list((_T2 / "boot").glob("*.js"))) if f.name != "09-fw.js"]
+_shadow = []
+for _f in _jsf:
+    _src = _f.read_text(errors="ignore")
+    if "h(" not in _src or not _re.search(r"import \{[^}]*\bh\b[^}]*\} from \"[./]*(base/)?09-fw\.js\"", _src): continue
+    for _m in _re.finditer(r"(?:^|\n)(?:export )?function (\w+)\([^)]*\)\{", _src):
+        _body = _src[_m.end():_m.end() + 6000]; _ends = [i for i in (_body.find(t) for t in ("\n}", "\nfunction ", "\nexport ", "\nconst ", "\nlet ", "\n/*", "\nwindow.", "\ndocument.")) if i >= 0]; _body = _body[:min(_ends) if _ends else len(_body)]
+        if _re.search(r"\blet h=|\bconst h=|[,(]h=[^=>]", _body) and _re.search(r"(?<![\w.$])h\(", _body): _shadow.append(_f.name + ":" + _m.group(1))
+check("Framework: kein lokales «h» verdeckt die Funktion h() der Komponenten", not _shadow, ", ".join(_shadow[:6]))
+# framework: every island drawn on a page has its component, every component is used
+_alljs = "\n".join(f.read_text(errors="ignore") for f in _jsf)
+_isl = set(_re.findall(r'island\("(\w+)"', _alljs)); _reg = set(_re.findall(r'ISLANDS\.(\w+)=', _alljs)) | set(k for m in _re.findall(r'Object\.assign\(ISLANDS,\{([^}]*)\}', _alljs) for k in _re.findall(r'(\w+):', m))
+check("Framework: jede Insel hat ihre Komponente und jede Komponente wird verwendet", _isl <= _reg and not (_reg - _isl), "ohne Komponente: %s · unbenutzt: %s" % (sorted(_isl - _reg), sorted(_reg - _isl)))
+# shared routines: storage writes and day dates go through the core (lsSet/lsDel/noonDate), not new copies
+_raw = [f.name for f in _jsf if f.name != "10-core.js" and _re.search(r'try\{localStorage\.(setItem|removeItem)\([^()]*(\([^()]*\))?[^()]*\)\}catch\(_\)\{\}', f.read_text(errors="ignore"))]
+check("Gemeinsame Routinen: Speichern auf dem Gerät über lsSet/lsDel (keine neuen Kopien)", not _raw, ", ".join(_raw[:6]))
 check("Drehbuch: neueste Version, CLEAN bevorzugt", (U.pick_script(_fs) or {}).get("name", "").endswith("v13 CLEAN.pdf"))
 check("Drehbuch: immer CLEAN – neue Version ohne CLEAN wird nicht genommen", (U.pick_script(_fs + [_sf("01_Script/261101_Tschugger_Tigerblood_v14.pdf")]) or {}).get("name", "").endswith("v13 CLEAN.pdf"))
 check("Drehbuch: sobald die CLEAN-Fassung da ist, wird sie genommen", (U.pick_script(_fs + [_sf("01_Script/261101_Tschugger_Tigerblood_v14.pdf"), _sf("01_Script/261101_Tschugger_Tigerblood_v14 CLEAN.pdf")]) or {}).get("name", "").endswith("v14 CLEAN.pdf"))

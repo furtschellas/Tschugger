@@ -3,7 +3,7 @@
    every «#view» rule to «.sbview» too). Topics that are whole pages (Smartphone-Vorschau, User, Access, App-Einstellungen) are the app itself in a
    frame: fully usable, looking the same – each frame is a second copy of the app (its own live data), so only chosen ones are loaded.
    Setting: localStorage «sbx» = «now.mine|phone» (left|right, the order of the topics), kept with the other notices of the profile (prefs x). */
-import {dayItems,dispoOf,esc,fullName,isoDM,L,lsGet,noneHTML,onEvent,S,todayISO,unitKey} from "../base/10-core.js";
+import {dayItems,dispoOf,esc,fullName,isoDM,L,lsGet,lsSet,noneHTML,onEvent,S,todayISO,unitKey} from "../base/10-core.js";
 import {csHm,csMe,csMyRides,csRideReal,csTile} from "../base/13a-callsheet.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
@@ -36,7 +36,7 @@ const FRAMEPG=(()=>{try{return new URLSearchParams(location.search).get("sbx")||
 /* the setting: two lists of topic keys */
 export function sbxGet(){let v=lsGet("sbx","");if(!v)v="now.tiles.mine|order.rides.next";const [a,b]=v.split("|");const ok=k=>SBT.some(t=>t[0]===k);
   return {l:String(a||"").split(".").filter(ok),r:String(b||"").split(".").filter(ok)}}
-function sbxSet(x){try{localStorage.setItem("sbx",x.l.join(".")+"|"+x.r.join("."))}catch(_){}savePrefsSoon()}
+function sbxSet(x){lsSet("sbx",x.l.join(".")+"|"+x.r.join("."));savePrefsSoon()}
 
 /* ---------- inside a frame of a side box: the chosen page only (no head, no navigation) ---------- */
 if(INFRAME&&FRAMEPG&&FRAMEPG!=="phone"){document.documentElement.classList.add("sbxf");
@@ -126,7 +126,7 @@ function frame(k,pg){const f=document.createElement("div");f.className="sbframe"
 /* ---------- the phone preview: «wie die Hauptseite» (the same page as the page in the middle) and «Ansicht als …» (a role or a person, only in the phone) ---------- */
 const PHK="sbxph";
 const phGet=()=>{try{return Object.assign({follow:true,sim:""},JSON.parse(localStorage.getItem(PHK)||"{}"))}catch(_){return {follow:true,sim:""}}};
-const phSet=v=>{try{localStorage.setItem(PHK,JSON.stringify(v))}catch(_){}};
+const phSet=v=>{lsSet(PHK,JSON.stringify(v))};
 function phPost(all){const v=phGet();for(const i of document.querySelectorAll("aside.sbbox .sbphone iframe"))try{
     const m={sbx:"phone"};if(v.follow)Object.assign(m,{tab:S.tab,day:S.day||null,dday:S.dday||null,sub:(S.tab==="admin"&&ADM.sub)||""});if(all)m.sim=v.sim||"";i.contentWindow.postMessage(m,location.origin)}catch(_){}}
 /* the controls above the phone: «wie Hauptseite» and the picker of roles and people (the same list as «Ansicht simulieren») */
@@ -184,7 +184,7 @@ const sbOff=()=>lsGet("sbxoff","")==="1";
 function sbTog(can){let b=document.getElementById("sbtog");
   if(!can){if(b)b.hidden=true;return}
   if(!b){const r=document.getElementById("refresh");if(!r||!r.parentNode)return;b=document.createElement("button");b.type="button";b.id="sbtog";b.className="sbtog";r.parentNode.insertBefore(b,r);
-    b.addEventListener("click",()=>{try{localStorage.setItem("sbxoff",sbOff()?"0":"1")}catch(_){}savePrefsSoon();draw()})}
+    b.addEventListener("click",()=>{lsSet("sbxoff",sbOff()?"0":"1");savePrefsSoon();draw()})}
   const off=sbOff(),t=L(off?"Seitenmenüs einblenden":"Seitenmenüs ausblenden");b.hidden=false;b.setAttribute("aria-pressed",String(!off));b.title=t;b.setAttribute("aria-label",t);
   b.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 4v16M15.5 4v16" stroke="currentColor" stroke-width="1.8"'+(off?' stroke-dasharray="2 2.4"':'')+'/></svg>'}
 function draw(){if(INFRAME)return;const can=window.innerWidth>=SBWIDE&&!!ME&&sbUse();sbTog(can);const wide=can&&!sbOff();const x=sbxGet();

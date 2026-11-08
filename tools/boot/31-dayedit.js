@@ -1,4 +1,4 @@
-import {dayOf,esc,hash36,isoId,L,minHM,mkDialog,norm,S,saveBtn,xBtn} from "../base/10-core.js";
+import {dayOf,esc,hash36,isoId,L,lsSet,minHM,mkDialog,norm,S,saveBtn,xBtn} from "../base/10-core.js";
 import {hm,myIdentity} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
@@ -51,7 +51,7 @@ let DESUB=null;
 async function deSub(){if(DESUB||typeof ME==="undefined"||!ME)return;DESUB="…";
   try{const {F,db}=await fb();DESUB=F.onSnapshot(F.collection(db,"dayedit"),async q=>{const m={};let key=null;
       for(const x of q.docs||[]){if(!/^\d{8}$/.test(x.id))continue;try{key=key||await getDataKey();const o=await ownDec(key,x.data().c);if(o&&UNITS.some(u=>uEnt(o,u)))m[deDate(x.id)]=o}catch(err){console.warn("dayedit",err&&err.message||err)}}
-      const ch=JSON.stringify(m)!==JSON.stringify(window.DAYEDIT);window.DAYEDIT=m;try{localStorage.setItem("dayedit:v1",JSON.stringify(m))}catch(_){}
+      const ch=JSON.stringify(m)!==JSON.stringify(window.DAYEDIT);window.DAYEDIT=m;lsSet("dayedit:v1",JSON.stringify(m))
       if(ch&&typeof window.cdApplyAll==="function"){window.cdApplyAll();render()}},()=>{DESUB=null})}catch(_){DESUB=null}}
 setTimeout(deSub,1200);setInterval(()=>{if(!DESUB)deSub()},20e3);
 /* sign-out (clearLocal): stop listening and forget the copy of this person */

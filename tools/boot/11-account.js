@@ -1,5 +1,5 @@
 import {a2hsDo,isIOS,isStandalone,showA2hs} from "../a2hs.js";
-import {$,applyStatic,dlgBtn,esc,fullName,getTheme,L,LANG,lsGet,mkDialog,S,saveBtn,setLANG,setTheme,WDS} from "../base/10-core.js";
+import {$,applyStatic,dlgBtn,esc,fullName,getTheme,L,LANG,lsDel,lsGet,lsSet,mkDialog,S,saveBtn,setLANG,setTheme,WDS} from "../base/10-core.js";
 import {VIEWS,myTabOrder,tabOrder,tabsOn,vok} from "../base/14-render.js";
 import {island,render} from "../base/15-script-tab.js";
 import {goTo,store} from "../base/16-interaction.js";
@@ -17,7 +17,7 @@ import {todayCfg,todayOn,tShow} from "./16-today-view.js";
 import {SIMUSER} from "./22-simulate.js";
 import {fsGet} from "./23-mobile.js";
 import {html,ISLANDS} from "../base/09-fw.js";
-import {Raw,RawLive} from "../base/10a-ui.js";
+import {Raw,RawLive,TabNav} from "../base/10a-ui.js";
 /* ---- account sheet: own password, own email, sign out; admin entry ---- */
 export function acctButton(on){
   let b=document.getElementById("acctBtn");
@@ -77,10 +77,10 @@ function navOrderSec(){if(window.MYNAV===false)return"";let t=[];try{t=tabsOn()}
   return '<section class="psec"><h4>'+L("Navigation")+'</h4><p class="ghint">'+L("Reihenfolge der Bereiche unten in der App (auf diesem Gerät). Mit ▲ ▼ verschieben.")+'</p><div class="tbord">'+
     t.map((k,i)=>'<div class="tbrow"><span>'+esc(L(NAVT[k]||k))+'</span><span class="tbmv"><button type="button" data-mynav="'+k+'|up"'+(i?'':' disabled')+' aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-mynav="'+k+'|down"'+(i<t.length-1?'':' disabled')+' aria-label="'+esc(L("Nach unten"))+'">▼</button></span></div>').join("")+'</div>'+
     (own?'<div class="arb"><button type="button" class="pillbtn" data-mynavreset>'+L("Auf Standard zurücksetzen")+'</button></div>':'')+'</section>'}
-document.addEventListener("click",e=>{const r=e.target.closest&&e.target.closest("[data-mynavreset]");if(r){try{localStorage.removeItem("mytaborder")}catch(_){}render();return}
+document.addEventListener("click",e=>{const r=e.target.closest&&e.target.closest("[data-mynavreset]");if(r){lsDel("mytaborder");render();return}
   const b=e.target.closest&&e.target.closest("[data-mynav]");if(!b)return;e.preventDefault();const [k,d]=b.dataset.mynav.split("|");
   const vis=tabsOn(),i=vis.indexOf(k),j=d==="up"?i-1:i+1;if(i<0||j<0||j>=vis.length)return;[vis[i],vis[j]]=[vis[j],vis[i]];
-  const all=tabOrder(),rest=all.filter(x=>!vis.includes(x));try{localStorage.setItem("mytaborder",JSON.stringify(vis.concat(rest)))}catch(_){}render()});
+  const all=tabOrder(),rest=all.filter(x=>!vis.includes(x));lsSet("mytaborder",JSON.stringify(vis.concat(rest)));render()});
 /* «Mein Konto» in groups like the app management: Profil (with password/e-mail) · Essen · Benachrichtigungen · App */
 const ACSUBS=[["pro","Profil"],["food","Essen"],["app","App"],["note","Push"]];   /* App before Push */
 export let ACSUB=lsGet("acsub","pro");
@@ -106,11 +106,11 @@ function acctInner(){
 /* «Mein Konto» as components (framework): head, the groups as tabs, who is signed in, the parts of the group – each part with its forms
    morphed on its own (typing and ticks stay) */
 /** @param {{subs:string[][],cur:string}} p */
-function AcSubNav({subs,cur}){return html`<nav class=${"asub acsub n"+subs.length} role="tablist">${subs.map(([k,t])=>html`<button type="button" role="tab" data-acsub=${k} aria-selected=${String(cur===k)}>${L(t)}</button>`)}</nav>`}
+function AcSubNav({subs,cur}){return html`<${TabNav} items=${subs.map(([k,t])=>[k,L(t)])} cur=${cur} attr="data-acsub" cls="acsub"/>`}
 /** @param {{a:any,cur:string}} p */
 function AcctPage({a,cur}){return html`<section class="mypage acpage"><${Raw} html=${a.head}/><${AcSubNav} subs=${a.subs} cur=${cur}/><${Raw} html=${a.who}/>${a.secs.map((x,i)=>html`<${RawLive} key=${cur+i} html=${x}/>`)}</section>`}
 ISLANDS.acct=AcctPage;
-document.addEventListener("click",e=>{const b=e.target.closest("[data-acsub]");if(!b)return;ACSUB=b.dataset.acsub;try{localStorage.setItem("acsub",ACSUB)}catch(_){}render();scrollTo(0,0)});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-acsub]");if(!b)return;ACSUB=b.dataset.acsub;lsSet("acsub",ACSUB);render();scrollTo(0,0)});
 /* «Mein Konto» is its own page; only the first-start profile (onboarding) stays a dialog */
 VIEWS.acct=function(){if(ME)setTimeout(()=>{const v=document.getElementById("view");if(v&&S.tab==="acct")markNeed(v)},0);return ME?island("acct",{a:acctInner(),cur:ACSUB}):'<div class="empty">'+L("Kein Zugang")+'</div>'};
 let ACCTWIRED=false;setTimeout(()=>wireAcctPage(),0);
@@ -175,7 +175,7 @@ async function onAcctSubmit(e){
       writeOwnBday(upd.name,upd.birthday);
       if(isAdmin())ADM.loaded=false;
       if(upd.lang!==LANG&&WDS[upd.lang]){setLANG(upd.lang);store("lang",LANG);applyStatic();if(FB)FB.auth.languageCode=LANG;render()}
-      if(PARTIAL){try{localStorage.setItem("profPartial:"+u.uid,String(Date.now()))}catch(_){}console.warn("profile: gender/phone/e-mail not saved – Firestore rules not published yet");showMsg(L("Profil gespeichert. Geschlecht, Telefon und E-Mail konnten noch nicht gespeichert werden – die Produktion muss die neuen App-Regeln aktivieren."),9000)}
+      if(PARTIAL){lsSet("profPartial:"+u.uid,String(Date.now()));console.warn("profile: gender/phone/e-mail not saved – Firestore rules not published yet");showMsg(L("Profil gespeichert. Geschlecht, Telefon und E-Mail konnten noch nicht gespeichert werden – die Produktion muss die neuen App-Regeln aktivieren."),9000)}
       if(ONBOARD){ONBOARD=false;document.getElementById("acct").hidden=true;setTimeout(maybeWelcome,300);if(!PARTIAL)showMsg(L("Profil gespeichert."),3000);btn.disabled=false;return}
       msg.classList.add("ok");msg.textContent=L("Profil gespeichert.");btn.disabled=false;return;
     }
@@ -208,7 +208,7 @@ function a2Uninstall(){let d=document.getElementById("a2un");if(d)d.remove();
   d=mkDialog("a2un");
   d.innerHTML='<div class="a2box"><h3>'+esc(L("App deinstallieren"))+'</h3><ol class="a2ol">'+st.map(x=>'<li>'+esc(L(x))+'</li>').join("")+'</ol>'+
     '<p class="ghint">'+esc(L("Dein Konto und deine Einstellungen bleiben erhalten – du kannst die App jederzeit im Browser öffnen oder wieder installieren."))+'</p><div class="a2b">'+dlgBtn("pri",'data-a2unok',"OK")+'</div></div>';
-  d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-a2unok]")){d.remove();try{localStorage.removeItem("a2hs:v1")}catch(_){}window.A2ST=null;render()}});
+  d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-a2unok]")){d.remove();lsDel("a2hs:v1");window.A2ST=null;render()}});
   document.body.appendChild(d)}
 
 /* the app is installed but opened in the browser: point to the installed app once per session
@@ -229,7 +229,7 @@ function iconSec(){const on=iconHint()!=="off";
   return '<section class="psec"><h4>'+L("App-Symbol erneuern")+'</h4><p class="ghint">'+esc(L("Siehst du auf dem Home-Bildschirm oder in Push-Nachrichten noch das alte Logo (TT)? Das Handy hat das Symbol beim Hinzufügen gespeichert. So kommt das neue Logo:"))+'</p>'+
     '<ol class="a2ol">'+ICONSTEPS().map(x=>'<li>'+esc(L(x))+'</li>').join("")+'</ol>'+
     '<label class="ck"><input type="checkbox" data-iconhint'+(on?' checked':'')+'> '+esc(L("Hinweis beim Öffnen zeigen (iPhone, einmal)"))+'</label></section>'}
-document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest("[data-iconhint]");if(!c)return;store("iconhint",c.checked?"on":"off");if(typeof savePrefsSoon==="function"){try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}savePrefsSoon()}});
+document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest("[data-iconhint]");if(!c)return;store("iconhint",c.checked?"on":"off");if(typeof savePrefsSoon==="function"){lsSet("prefsLocalAt",String(Date.now()));savePrefsSoon()}});
 /* once on an iPhone that opens the installed app (only there the old icon can stay), after the other start notes */
 {let shown=false;const iv=setInterval(()=>{if(shown){clearInterval(iv);return}
   if(typeof ME==="undefined"||!ME||typeof PREFOK==="undefined"||!PREFOK)return;
@@ -238,6 +238,6 @@ document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closes
   shown=true;clearInterval(iv);const d=mkDialog("iconhint");
   d.innerHTML='<div class="a2box"><h3>'+esc(L("Neues App-Logo"))+'</h3><p>'+esc(L("Siehst du auf dem Home-Bildschirm oder in Push-Nachrichten noch das alte Logo (TT)? Das Handy hat das Symbol beim Hinzufügen gespeichert. So kommt das neue Logo:"))+'</p><ol class="a2ol">'+ICONSTEPS().map(x=>'<li>'+esc(L(x))+'</li>').join("")+'</ol>'+
     '<p class="ghint">'+esc(L("Diesen Hinweis kannst du unter Mein Konto → App wieder einschalten."))+'</p><div class="a2b">'+dlgBtn("pri",'data-ihok',"Verstanden")+'</div></div>';
-  d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-ihok]")){d.remove();store("iconhint","seen");try{localStorage.setItem("prefsLocalAt",String(Date.now()))}catch(_){}if(typeof savePrefsSoon==="function")savePrefsSoon()}});
+  d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-ihok]")){d.remove();store("iconhint","seen");lsSet("prefsLocalAt",String(Date.now()));if(typeof savePrefsSoon==="function")savePrefsSoon()}});
   document.body.appendChild(d)},3000)}
 export function setACSUB(v){return ACSUB=v}   /* other parts change ACSUB only through this */

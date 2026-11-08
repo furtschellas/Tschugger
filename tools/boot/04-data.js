@@ -1,4 +1,4 @@
-import {emit,L,lsGet,lsJSON,MEMO,S} from "../base/10-core.js";
+import {emit,L,lsDel,lsGet,lsJSON,lsSet,MEMO,S} from "../base/10-core.js";
 import {CLEAN,arr,saveCache,scheduleRender} from "../base/20-data-start.js";
 import {DATA_URL} from "./01-config.js";
 import {DATAKEY,LASTSTAMP,MEMBER,b64,fb,isAdmin,setDATAKEY,setLASTSTAMP,withTimeout} from "./03-core-firebase.js";
@@ -14,10 +14,10 @@ export async function getDataKey(){
   let kv="";
   try{const {F,db}=await fb();const s=await withTimeout(F.getDoc(F.doc(db,"secret","key")),navigator.onLine===false?3000:20000,"key");
     if(!s.exists())throw new Error("no key");
-    kv=String(s.data().k||"").trim().replace(/^["'“”«]+|["'“”»]+$/g,"");try{localStorage.setItem("dk:v1",kv)}catch(_){}}
+    kv=String(s.data().k||"").trim().replace(/^["'“”«]+|["'“”»]+$/g,"");lsSet("dk:v1",kv)}
   catch(err){
     /* refused by the rules (blocked, removed): the key kept on this device must not open new data any more */
-    if(/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){try{localStorage.removeItem("dk:v1")}catch(_){}throw err}
+    if(/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){lsDel("dk:v1");throw err}
     kv=lsGet("dk:v1","");if(!kv)throw err}
   setDATAKEY(await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["encrypt","decrypt"]));
   return DATAKEY;
@@ -29,8 +29,8 @@ async function getAreaKey(area){
   let kv="";
   try{const {F,db}=await fb();const s=await withTimeout(F.getDoc(F.doc(db,"secret","key"+area)),navigator.onLine===false?3000:20000,"key");
     if(!s.exists()){AREAKEYS[area]=undefined;return undefined} /* not yet introduced: the file still uses the crew key */
-    kv=String(s.data().k||"").trim();try{localStorage.setItem("ak:"+area,kv)}catch(_){}}
-  catch(err){if(/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){try{localStorage.removeItem("ak:"+area)}catch(_){}AREAKEYS[area]=null;return null}
+    kv=String(s.data().k||"").trim();lsSet("ak:"+area,kv)}
+  catch(err){if(/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){lsDel("ak:"+area);AREAKEYS[area]=null;return null}
     try{kv=localStorage.getItem("ak:"+area)||""}catch(_){}if(!kv)throw err}   /* network error without a kept key: not «no right» (the data on the device stays) */
   AREAKEYS[area]=await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["decrypt"]);
   return AREAKEYS[area];
@@ -41,7 +41,7 @@ async function decArea(enc,area){
   const iv=b64(enc.iv),ct=b64(enc.ct);
   if(ak)try{return await crypto.subtle.decrypt({name:"AES-GCM",iv},ak,ct)}catch(_){
     /* the area key was changed meanwhile: read it once more */
-    delete AREAKEYS[area];try{localStorage.removeItem("ak:"+area)}catch(_){}
+    delete AREAKEYS[area];lsDel("ak:"+area)
     try{const k2=await getAreaKey(area);if(k2)return await crypto.subtle.decrypt({name:"AES-GCM",iv},k2,ct)}catch(_){}}
   return crypto.subtle.decrypt({name:"AES-GCM",iv},await getDataKey(),ct);
 }
@@ -94,10 +94,10 @@ window.loadScriptData=async function(){
     if(!r.ok)throw new Error("HTTP "+r.status);
     const pt=await decArea(await r.json(),"script");
     const list=(JSON.parse(new TextDecoder().decode(pt)).script)||[];
-    if(list.length)try{localStorage.setItem("scriptcache",JSON.stringify(list))}catch(_){}
+    if(list.length)lsSet("scriptcache",JSON.stringify(list))
     return list;
   }catch(err){ /* offline or slow network: use the last copy loaded on this device – not without the right */
-    if(/no access/.test(err&&err.message||"")){try{localStorage.removeItem("scriptcache")}catch(_){}throw err}
+    if(/no access/.test(err&&err.message||"")){lsDel("scriptcache");throw err}
     let c=lsJSON("scriptcache");
     if(Array.isArray(c)&&c.length)return c;
     throw err;
@@ -117,7 +117,7 @@ async function fetchStamp(){try{const r=await withTimeout(fetch("stamp.json?t="+
   if(j&&j.c){CHECKED=j.c;if(S.meta)S.meta.checkedAt=j.c}return j&&j.s?j:null}catch(_){return null}}
 async function loadOnce(force){
   if(!MEMBER&&!isAdmin())return false;const gen=window.cacheGen?window.cacheGen():0,stale=()=>window.cacheGen&&window.cacheGen()!==gen;   /* signed out meanwhile: nothing applied */
-  if(!force&&LASTSTAMP&&(S.loaded||window.CACHEOK)){const st=await fetchStamp();if(st&&st.s===LASTSTAMP){try{localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}if(!S.loaded){S.loaded=true;scheduleRender()}return true}}
+  if(!force&&LASTSTAMP&&(S.loaded||window.CACHEOK)){const st=await fetchStamp();if(st&&st.s===LASTSTAMP){lsSet("dtime:v1",String(Date.now()));if(!S.loaded){S.loaded=true;scheduleRender()}return true}}
   const enc=await fetchEnc();
   if(!force&&enc.stamp&&enc.stamp===LASTSTAMP&&S.loaded)return true;
   /* new data: the key is asked for again (after a monthly key change the app must not go on writing reminders and own entries with the old one);
@@ -130,7 +130,7 @@ async function loadOnce(force){
   if(stale())return false;
   const data=JSON.parse(new TextDecoder().decode(pt));
   if(!data||!Array.isArray(data.days))throw new Error("data format");
-  setLASTSTAMP(enc.stamp||null);window.__DSTAMP=LASTSTAMP;try{localStorage.setItem("dtime:v1",String(Date.now()))}catch(_){}   /* the stamp is kept only together with the data (saveCache) */applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
+  setLASTSTAMP(enc.stamp||null);window.__DSTAMP=LASTSTAMP;lsSet("dtime:v1",String(Date.now()));   /* the stamp is kept only together with the data (saveCache) */applyData(data);if(CHECKED&&S.meta)S.meta.checkedAt=CHECKED;fetchStamp();scheduleRender();if(typeof pushSyncSoon==="function")pushSyncSoon();return true;
 }
 export function loadErr(err){
   const c=(err&&(err.code||err.name))||"",m=(err&&err.message)||String(err);

@@ -1,4 +1,4 @@
-import {ariaTip,dlgBtn,esc,L,LANG,mName,saveBtn} from "../base/10-core.js";
+import {ariaTip,dlgBtn,esc,L,LANG,lsSet,mName,saveBtn} from "../base/10-core.js";
 import {fold,render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {ADMINS} from "./01-config.js";
@@ -21,7 +21,7 @@ export function rolesSorted(){const nm=r=>String(r.name||r.id||"");const l=(ADM.
   l.sort((a,b)=>ROLESORT==="a"?nm(a).localeCompare(nm(b),LANG):(arr(b.perms).length-arr(a.perms).length)||nm(a).localeCompare(nm(b),LANG));
   ROLEFIX={mode:ROLESORT,ids,order:l.map(r=>r.id)};return l}
 window.rolesSorted=rolesSorted;window.rolesUnfix=rolesUnfix;
-document.addEventListener("click",e=>{if(!e.target.closest||!e.target.closest("[data-rolesort]"))return;ROLESORT=ROLESORT==="a"?"h":"a";try{localStorage.setItem("rolesort",ROLESORT)}catch(_){}render()});
+document.addEventListener("click",e=>{if(!e.target.closest||!e.target.closest("[data-rolesort]"))return;ROLESORT=ROLESORT==="a"?"h":"a";lsSet("rolesort",ROLESORT);render()});
 export function rolesSec(){
   const cnt=id=>id==="admin"?ADM.adm.length:Object.keys(ADM.ur||{}).filter(e=>ADM.ur[e]===id&&!ADM.adm.includes(e)).length;
   const roles=rolesSorted();
@@ -146,6 +146,6 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-rpou
 /* «Wer hat welchen Zugriff?» → Stift: the name of the option (empty = the standard name) */
 document.addEventListener("change",async e=>{const i=e.target.closest&&e.target.closest("input[data-paccname]");if(!i||!can("settings"))return;const k=i.dataset.paccname,x=PERMS.find(p=>p[0]===k);if(!x)return;
   let v=String(i.value||"").trim().slice(0,60);if(v===L(x[1]))v="";
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{permNames:{[k]:v}},{merge:true});window.PERMNAMES=Object.assign({},window.PERMNAMES,{[k]:v});try{localStorage.setItem("apppermnames",JSON.stringify(window.PERMNAMES))}catch(_){}
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{permNames:{[k]:v}},{merge:true});window.PERMNAMES=Object.assign({},window.PERMNAMES,{[k]:v});lsSet("apppermnames",JSON.stringify(window.PERMNAMES))
     showMsg(L("Gespeichert."),2000);render()}catch(err){showMsg(admErr(err),6000)}});
 

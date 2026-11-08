@@ -1,4 +1,4 @@
-import {$,applyStatic,emit,L,MEMO,S} from "../base/10-core.js";
+import {$,applyStatic,emit,L,lsSet,MEMO,S} from "../base/10-core.js";
 import {fmtStamp,lastCheck,render} from "../base/15-script-tab.js";
 import {setSCRIPT} from "../base/17-scene-reader.js";
 import {loadCache,showMsg} from "../base/20-data-start.js";
@@ -63,7 +63,7 @@ if(window.__VSY&&window.CACHEOK)requestAnimationFrame(()=>{try{window.scrollTo(0
        is not taken as «signed out» – wait a few seconds for the stored sign-in before showing the login */
     const T0=Date.now();let waitedIn=false;
     A.onAuthStateChanged(auth,u=>{
-      if(u){try{localStorage.setItem("wasin","1")}catch(_){}}
+      if(u){lsSet("wasin","1")}
       if(!u&&!waitedIn&&Date.now()-T0<8000){let was=false;try{was=localStorage.getItem("wasin")==="1"}catch(_){}
         if(was){waitedIn=true;if(!S.days.length)showGate("wait");setTimeout(()=>{if(!auth.currentUser){try{if(!SBXFRAME)localStorage.removeItem("wasin")}catch(_){}signedOut()}},6000);return}}
       if(!u){signedOut();return}

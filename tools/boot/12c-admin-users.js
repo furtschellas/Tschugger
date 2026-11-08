@@ -1,4 +1,4 @@
-import {$,ariaTip,blockList,dlgBtn,esc,isoDMY,L,LANG,lsGet,mkDialog,mName,msHM,pad2,S,saveBtn,telNum} from "../base/10-core.js";
+import {$,ariaTip,blockList,dlgBtn,esc,isoDMY,L,LANG,lsGet,lsSet,mkDialog,mName,msHM,pad2,S,saveBtn,telNum} from "../base/10-core.js";
 import {srcHTML} from "../base/13-crew-views.js";
 import {VIEWS,tabOrder0} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -162,9 +162,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-auf]");if(
   const all=e.target.closest("[data-uall]");if(all){const ems=[...document.querySelectorAll(".ucards [data-uact]")].map(x=>x.dataset.uact);const anyClosed=ems.some(x=>!ADM.open.has(x));ADM.open=new Set(anyClosed?ems:[]);if(!anyClosed)ADM.edit="";render()}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dorefresh]");if(!b)return;const r=$("#refresh");if(r)r.click()});
 ADM.sort=lsGet("usort","first")
-document.addEventListener("change",e=>{const sl=e.target.closest("select[data-usort]");if(!sl)return;ADM.sort=sl.value;try{localStorage.setItem("usort",ADM.sort)}catch(_){}render()});
+document.addEventListener("change",e=>{const sl=e.target.closest("select[data-usort]");if(!sl)return;ADM.sort=sl.value;lsSet("usort",ADM.sort);render()});
 ADM.sub=lsGet("admsub","users")
-document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;if(b.dataset.asub==="set")for(const k of Object.keys(SECS))if(/^(set-|blk-|blkp-)/.test(k))SECS[k]=false;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;if(b.dataset.asub==="set")for(const k of Object.keys(SECS))if(/^(set-|blk-|blkp-)/.test(k))SECS[k]=false;ADM.sub=b.dataset.asub;lsSet("admsub",ADM.sub);window.scrollTo(0,0);render()});
 VIEWS.admin=function(){
   if(!canAdm())return '<div class="empty">'+L("Für die App-Verwaltung fehlt die Berechtigung.")+'</div>';
   if(ADM.loaded&&!ADM.busy&&!ADM.loading&&Date.now()-(ADM.at||0)>300000){ADM.loading=true;admLoad().catch(()=>{}).finally(()=>{ADM.loading=false})}

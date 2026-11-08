@@ -1,4 +1,4 @@
-import {applyStatic,esc,L,LANG,lsJSON,S,SBXF,setLANG} from "../base/10-core.js";
+import {applyStatic,esc,L,LANG,lsJSON,lsSet,S,SBXF,setLANG} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {store} from "../base/16-interaction.js";
 import {CACHE_KEY,showMsg} from "../base/20-data-start.js";
@@ -35,10 +35,10 @@ export async function wkPost(path,body){const {auth}=await fb();const tok=await 
   return fetch(wkUrl(path),{method:"POST",headers:Object.assign({Authorization:"Bearer "+tok},body!==undefined?{"Content-Type":"application/json"}:{}),body:body!==undefined?JSON.stringify(body):undefined})}
 export async function loadLangs(){
   try{const {F,db}=await fb();const d=await F.getDoc(F.doc(db,"config","app"));window.APPOK=true;   /* read: only then may the settings form be saved (else defaults would overwrite them) */const l=d.exists()&&d.data().langs;
-    if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));try{localStorage.setItem("applangs",JSON.stringify(APPLANGS))}catch(_){}}
+    if(Array.isArray(l)&&l.length){APPLANGS=l.filter(x=>LANGS.some(z=>z[0]===x));lsSet("applangs",JSON.stringify(APPLANGS))}
     cfgPut("UNIT2",d.exists()?d.data().unit2!==false:true,"appunit2");
     {const c=d.exists()?d.data():{};cfgPut("PUBV",{phone:c.phonePublic===true,email:c.emailPublic===true,mycal:c.mycalPublic===true},"apppubv")}
-    {const go=!(d.exists()&&d.data().googleLogin===false);if(window.GOOGLEON!==go){window.GOOGLEON=go;try{localStorage.setItem("appgoogle",go?"1":"0")}catch(_){}try{const g=document.getElementById("gate");if(g&&!g.hidden&&(AUTHMODE==="login"||AUTHMODE==="register")&&!g.querySelector("input:focus"))showGate(AUTHMODE)}catch(_){}}}
+    {const go=!(d.exists()&&d.data().googleLogin===false);if(window.GOOGLEON!==go){window.GOOGLEON=go;lsSet("appgoogle",go?"1":"0");try{const g=document.getElementById("gate");if(g&&!g.hidden&&(AUTHMODE==="login"||AUTHMODE==="register")&&!g.querySelector("input:focus"))showGate(AUTHMODE)}catch(_){}}}
     cfgPut("A2AGAIN",d.exists()&&d.data().a2again===true,"appa2again",false);
     cfgPut("CHGCLR",d.exists()&&+d.data().chgClearAt||0,"appchgclr");   /* «Änderungen» in Today emptied for everybody */
     {const c=d.exists()?d.data():{};const bl=Array.isArray(c.blocks)&&c.blocks.length?c.blocks:null;if(JSON.stringify(bl)!==JSON.stringify(window.BLOCKS)){window.BLOCKS=bl;try{if(window.cdApplyAll)window.cdApplyAll()}catch(_){}try{bl?localStorage.setItem("appblocks",JSON.stringify(bl)):localStorage.removeItem("appblocks")}catch(_){}render()}}
@@ -46,8 +46,8 @@ export async function loadLangs(){
     {const c=d.exists()?d.data():{};cfgPut("APPCHECKKEY",typeof c.appCheckKey==="string"?c.appCheckKey:"","appcheck",false)}   /* App Check: used from the next start */
     cfgPut("PUSHEN",!(d.exists()&&d.data().pushEnabled===false),"apppushon");
     {const c=d.exists()?d.data():{};cfgPut("CHATEN",c.chatEnabled!==false,"appchaton",false);cfgPut("TOUREN",c.tourEnabled!==false,"apptouron",false)}
-    {let cu=String((d.exists()&&d.data().chatUrl)||"");if(cu&&!/^https:\/\//i.test(cu))cu="";   /* only https – the sign-in token goes there */if(window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
-    {const dc=(d.exists()&&d.data().docs)||{};window.DOCS=dc;try{localStorage.setItem("appdocs",JSON.stringify(dc))}catch(_){}}
+    {let cu=String((d.exists()&&d.data().chatUrl)||"");if(cu&&!/^https:\/\//i.test(cu))cu="";   /* only https – the sign-in token goes there */if(window.CHATURL!==cu){window.CHATURL=cu;lsSet("appchat",cu)}}
+    {const dc=(d.exists()&&d.data().docs)||{};window.DOCS=dc;lsSet("appdocs",JSON.stringify(dc))}
     cfgPut("BDAYPUB",d.exists()&&d.data().bdayPublic===true,"appbdaypub");
     cfgPut("TABORDER",d.exists()&&Array.isArray(d.data().tabOrder)?d.data().tabOrder:null,"apptaborder");
     cfgPut("TABSON",d.exists()&&Array.isArray(d.data().tabs)&&d.data().tabs.length?d.data().tabs:null,"apptabs");
@@ -58,7 +58,7 @@ export async function loadLangs(){
     window.CSMAPON=d.exists()?d.data().csMap!==false:true;
     cfgPut("MYNAV",!(d.exists()&&d.data().myNav===false),"appmynav");
     /* App-Verwaltung → Produktion: name of the project, production company and its address (exports, title of the app) */
-    {const g=k=>d.exists()&&typeof d.data()[k]==="string"?d.data()[k]:"";window.PROJNAME=g("projName");window.PRODCO=g("prodCo");window.PRODADDR=g("prodAddr");try{localStorage.setItem("appproj",JSON.stringify([PROJNAME,PRODCO,PRODADDR]))}catch(_){}if(typeof projApply==="function")projApply()}
+    {const g=k=>d.exists()&&typeof d.data()[k]==="string"?d.data()[k]:"";window.PROJNAME=g("projName");window.PRODCO=g("prodCo");window.PRODADDR=g("prodAddr");lsSet("appproj",JSON.stringify([PROJNAME,PRODCO,PRODADDR]));if(typeof projApply==="function")projApply()}
     /* times of the quittances: Drehplan / Callsheet, each on phones (pm, cm) and computers (pd, cd) */
     {const at=(d.exists()&&d.data().ackTimes)||{};window.ACKT={pm:at.pm!==false,pd:at.pd!==false,cm:at.cm!==false,cd:at.cd!==false};for(const k in ACKT)document.documentElement.classList.toggle("nosct"+k,!ACKT[k])}
     /* scenes and rides quittiert (App-Verwaltung → Einstellungen; on unless switched off) */
@@ -82,7 +82,7 @@ export async function loadLangs(){
     window.LOCSHEET=cf("locSheet");
     /* Google map in the callsheet map: on/off, its colours, hidden layers (config/private) */
     {const g=pv.gmap&&typeof pv.gmap==="object"?pv.gmap:{};window.GMAPSET={on:g.on===true,color:g.color!==false,off:Array.isArray(g.off)?g.off.map(String):[]}}window.SCENESHEET=typeof pv.sceneSheet==="string"?pv.sceneSheet:"";window.SHEETSA=typeof pv.sheetSa==="string"?pv.sheetSa:"";window.SHEETST=pv.sceneSheetSt&&typeof pv.sceneSheetSt==="object"?pv.sceneSheetSt:null;
-    {const cu=cf("chatUrl");if(cu&&/^https:\/\//i.test(cu)&&window.CHATURL!==cu){window.CHATURL=cu;try{localStorage.setItem("appchat",cu)}catch(_){}}}
+    {const cu=cf("chatUrl");if(cu&&/^https:\/\//i.test(cu)&&window.CHATURL!==cu){window.CHATURL=cu;lsSet("appchat",cu)}}
     if((window.MAPURL||"")!==cf("mapUrl"))cfgPut("MAPURL",cf("mapUrl"),"appmap");
   }catch(err){console.warn("langs",err)}
   applyLangs();

@@ -1,4 +1,4 @@
-import {dispoOf,esc,hmAny,L,LANG,lsJSON,mapUrl,S,safeUrl,telNum} from "./10-core.js";
+import {dispoOf,esc,hmAny,L,LANG,lsJSON,lsSet,mapUrl,S,safeUrl,telNum} from "./10-core.js";
 import {nameHit} from "./11-schedule-prep.js";
 import {myIdentity,rideId,rideMap} from "./12-mycal.js";
 import {CSCUR,csSceneLoc} from "./13b-cs-now.js";
@@ -81,7 +81,7 @@ export const csS=v=>Array.isArray(v)?v.join(", "):String(v==null?"":v);
 function csTv(){return lsJSON("cstv:v1",{})}
 export const csTvCls=k=>csTv()[k]==="cards"?"":"cs-tblmode";
 export const csTvBtn=k=>{const tbl=csTv()[k]!=="cards";return '<button type="button" class="lnk cstview cstv" data-cstv="'+k+'" title="'+esc(L(tbl?"Als Kacheln":"Als Tabelle"))+'">'+(tbl?CSI.cards:CSI.table)+'<span>'+esc(L(tbl?"Als Kacheln":"Als Tabelle"))+'</span></button>'};
-csOn("click",e=>{const b=e.target.closest("[data-cstv]");if(!b)return;e.preventDefault();const k=b.dataset.cstv,m=csTv();m[k]=m[k]==="cards"?"table":"cards";try{localStorage.setItem("cstv:v1",JSON.stringify(m))}catch(_){}
+csOn("click",e=>{const b=e.target.closest("[data-cstv]");if(!b)return;e.preventDefault();const k=b.dataset.cstv,m=csTv();m[k]=m[k]==="cards"?"table":"cards";lsSet("cstv:v1",JSON.stringify(m))
   /* the same kind of list in both units (cs-trans, cs-transu2 …): all of them switch, each with its own button */
   for(const d of document.querySelectorAll('[id="cs-'+k+'"],[id="cs-'+k+'u2"]')){d.classList.toggle("cs-tblmode",m[k]!=="cards");const bb=d.querySelector('[data-cstv="'+k+'"]');if(bb)bb.outerHTML=csTvBtn(k)}});
 /** a folded part of the callsheet: title (or [long, short]), extra summary (counts …) and its content (component or HTML of the string parts)

@@ -1,5 +1,5 @@
 import {isStandalone} from "../a2hs.js";
-import {applyStatic,ddmm,dispoOf,emit,esc,fullName,L,LANG,localISO,lsGet,lsJSON,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
+import {applyStatic,ddmm,dispoOf,emit,esc,fullName,L,LANG,localISO,lsGet,lsJSON,lsSet,mkDialog,noonDate,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
 import {UNAME,hasU,unitsOn} from "../base/11-schedule-prep.js";
 import {WDL} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -21,7 +21,7 @@ window.MENUS=lsJSON("menus",{});
 export let MENUAT=0,MENUSUB=null,MENUFROM="";
 /* realtime listener on the menus from yesterday on: Firebase sends only changes (no more reading all every few minutes) */
 function menusApply(docs,from){const m={};docs.forEach(d=>{if(d.id>=from)m[d.id]=d.data()});
-  if(JSON.stringify(m)!==JSON.stringify(window.MENUS)){window.MENUS=m;try{localStorage.setItem("menus",JSON.stringify(m))}catch(_){}render()}}
+  if(JSON.stringify(m)!==JSON.stringify(window.MENUS)){window.MENUS=m;lsSet("menus",JSON.stringify(m));render()}}
 async function menusLoad(force){if(!ME)return;const from=localISO(Date.now()-864e5);
   if(MENUSUB&&MENUFROM===from)return;
   if(!force&&!MENUSUB&&Date.now()-MENUAT<600e3)return;MENUAT=Date.now();
@@ -63,7 +63,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-menux]");i
 export function menuSec(){
   const t=todayISO(),days=S.days.filter(d=>d.kind==="shoot"&&d.date>=t);const units=typeof unitsOn==="function"?unitsOn():["1"];
   if(!days.length)return '<p class="ghint">'+L("Keine kommenden Drehtage.")+'</p>';
-  return '<p class="ghint">'+L("Zwei Menüs pro Drehtag und Unit – sie erscheinen im Drehplan und im Callsheet beim Lunch.")+'</p>'+days.map(d=>{const m=(window.MENUS||{})[d.date]||{};const dt=new Date(d.date+"T12:00:00");
+  return '<p class="ghint">'+L("Zwei Menüs pro Drehtag und Unit – sie erscheinen im Drehplan und im Callsheet beim Lunch.")+'</p>'+days.map(d=>{const m=(window.MENUS||{})[d.date]||{};const dt=noonDate(d.date);
     /* units: 1st always; 2nd/3rd when they shoot that day, when a menu was entered for them, or when catering adds them by hand («+ 3rd Unit») */
     const us=["1","2","3"].filter(u=>u==="1"||(typeof hasU==="function"&&hasU(d,u))||m["u"+u+"a"]||m["u"+u+"b"]||MENUX.has(d.date+"|"+u));const multi=us.length>1;
     const addU=["2","3"].filter(u=>!us.includes(u));
@@ -78,7 +78,7 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.matches("form[data
   if(!t.checked&&!f.querySelector('.menuu[data-mu="2"]')){const date=f.dataset.menu;window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],{tog:false},Object.fromEntries([...f.querySelectorAll("input[name^=u]")].map(x=>[x.name,x.value])))});render()}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("form[data-menu]");if(!f)return;e.preventDefault();if(!canMenu())return;
   const date=f.dataset.menu,val={by:ME.email,tog:!!(f.tog&&f.tog.checked),zw:f.zw?String(f.zw.value||"").trim().slice(0,300):""};["1","2","3"].forEach(u=>["a","b"].forEach(k=>{if(f["u"+u+k])val["u"+u+k]=String(f["u"+u+k].value||"").trim().slice(0,300)}));const btn=f.querySelector("button[type=submit]");btn.disabled=true;
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"menus",date),Object.assign({},val,{at:F.serverTimestamp()}));window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],val)});try{localStorage.setItem("menus",JSON.stringify(window.MENUS))}catch(_){}
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"menus",date),Object.assign({},val,{at:F.serverTimestamp()}));window.MENUS=Object.assign({},window.MENUS,{[date]:Object.assign({},(window.MENUS||{})[date],val)});lsSet("menus",JSON.stringify(window.MENUS))
     document.activeElement&&document.activeElement.blur&&document.activeElement.blur();showMsg(L("Menü gespeichert."),2500);render()}
   catch(err){btn.disabled=false;showMsg(/permission/.test((err&&err.code)||"")?L("Keine Berechtigung – bitte zuerst die neuen Firestore-Regeln veröffentlichen (Firebase-Konsole → Firestore → Regeln)."):L("Fehler:")+" "+(err.message||err),8000)}});
 /* ---- welcome note (BETA, no warranty): shown once to every user until confirmed; the confirmation is kept in the profile ---- */
@@ -94,7 +94,7 @@ async function welcomeDone(){
   if(MEMBER&&MEMBER.welcomeAck&&MEMBER.welcomeVer===WELCOME_VER)return true;
   let loc=lsGet("welcomeAck","");
   if(loc&&loc.split("|")[1]===WELCOME_VER)return true;
-  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().welcomeAck;if(w&&String(w).split("|")[1]===WELCOME_VER){try{localStorage.setItem("welcomeAck",w)}catch(_){}return true}}catch(_){}
+  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().welcomeAck;if(w&&String(w).split("|")[1]===WELCOME_VER){lsSet("welcomeAck",w);return true}}catch(_){}
   return false;
 }
 export async function maybeWelcome(){if(SBXF)return;   /* never in a side-box frame (the phone preview showed the welcome note over the app) */
@@ -121,7 +121,7 @@ async function twDone(){const v=twVer();
   if(MEMBER&&MEMBER.testAck&&String(MEMBER.testVer||"1")===v)return true;
   let loc=lsGet("testAck","");
   if(loc&&loc.split("|")[1]===v)return true;
-  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().testAck;if(w&&String(w).split("|")[1]===v){try{localStorage.setItem("testAck",w)}catch(_){}return true}}catch(_){}
+  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&d.data().testAck;if(w&&String(w).split("|")[1]===v){lsSet("testAck",w);return true}}catch(_){}
   return false}
 let TW_OPEN=false;
 async function maybeTestWelcome(){
@@ -149,7 +149,7 @@ window.startNotesReset=()=>{TW_OPEN=false;CSB_OPEN=false;for(const id of ["twelc
 /* ---- «Neu: Interaktives Callsheet» (BETA): once for everybody who may see the callsheet; text under Einstellungen → Dokumente ---- */
 let CSB_OPEN=false;
 async function csbDone(){let loc=lsGet("csb","");if(loc)return true;
-  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&prefX(d.data()).csb;if(w){try{localStorage.setItem("csb",w)}catch(_){}return true}}catch(_){}
+  try{const {F,db}=await fb();const d=await withTimeout(F.getDoc(F.doc(db,"prefs",ME.uid)),8000,"prefs");const w=d.exists()&&prefX(d.data()).csb;if(w){lsSet("csb",w);return true}}catch(_){}
   return false}
 async function maybeCsBeta(){
   const may=ME&&!SIMROLE&&!(typeof SIMUSER!=="undefined"&&SIMUSER)&&typeof vok==="function"&&vok("dispo");

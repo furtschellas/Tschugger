@@ -1,4 +1,4 @@
-import {dispoOf,esc,isoDMY,L,S,safeUrl,saveErr,todayISO,unitKey} from "./10-core.js";
+import {dispoOf,esc,isoDMY,L,lsSet,S,safeUrl,saveErr,todayISO,unitKey} from "./10-core.js";
 import {rideId} from "./12-mycal.js";
 import {CSI,csA,csAfter,csHm,csOn,csRows} from "./13a-callsheet.js";
 import {CSCUR,csHM,csShootDay} from "./13b-cs-now.js";
@@ -39,7 +39,7 @@ csAfter(()=>{const d=typeof CSCUR!=="undefined"&&CSCUR.date||"";if(d&&d!==window
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="csq"){window.CSQV=String(e.target.value||"");const jb=e.target.closest(".csjump"),nx=jb&&jb.nextElementSibling;csFilter(nx&&nx.classList.contains("csview")?nx:null)}});
 csOn("click",e=>{const b=e.target.closest&&e.target.closest("[data-csmine],[data-cspdf]");if(!b)return;
   if(b.dataset.cspdf!=null){window.open(b.dataset.cspdf,"_blank","noopener");return}
-  CSMINE=!CSMINE;try{localStorage.setItem("csmine:v1",CSMINE?"1":"0")}catch(_){}
+  CSMINE=!CSMINE;lsSet("csmine:v1",CSMINE?"1":"0")
   document.querySelectorAll("#view [data-csmine]").forEach(x=>x.setAttribute("aria-pressed",CSMINE?"true":"false"));document.querySelectorAll("#view .csview").forEach(v=>csFilter(v))});
 
 /* open or close all locations */
@@ -99,7 +99,7 @@ csOn("click",e=>{const b=e.target.closest("[data-csmapbig]");if(!b)return;e.prev
 /* cast: role and actor columns on/off (remembered on this device; both shown at first) */
 export function csCols(){try{return new Set(String(localStorage.getItem("cscols:v1")||"").split(",").filter(Boolean))}catch(_){return new Set()}}
 csOn("click",e=>{const b=e.target.closest("[data-cscol]");if(!b)return;e.preventDefault();const k=b.dataset.cscol,h=csCols();if(h.has(k))h.delete(k);else h.add(k);
-  try{localStorage.setItem("cscols:v1",[...h].join(","))}catch(_){}for(const d of document.querySelectorAll("#cs-cast,#cs-u2cast"))d.classList.toggle("hide-"+k,h.has(k));b.setAttribute("aria-pressed",String(!h.has(k)))});
+  lsSet("cscols:v1",[...h].join(","));for(const d of document.querySelectorAll("#cs-cast,#cs-u2cast"))d.classList.toggle("hide-"+k,h.has(k));b.setAttribute("aria-pressed",String(!h.has(k)))});
 
 /* cast of today: a pink frame around the time that is running now (P/UP, call, costume, make-up, base, on set) – in the table and in the cards */
 function csCastNow(){for(const sec of document.querySelectorAll("#cs-cast,#cs-u2cast"))csCastNow1(sec)}

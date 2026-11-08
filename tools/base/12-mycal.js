@@ -1,4 +1,4 @@
-import {ariaTip,blockTag,camFold,dayOf,dayTitle,ddmm,driveMin,emptyBox,esc,fmtDate,hash36,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
+import {ariaTip,blockTag,camFold,dayOf,dayTitle,ddmm,driveMin,emptyBox,esc,fmtDate,hash36,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,noonDate,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";
@@ -168,7 +168,7 @@ function MyEntry({e,i}){
 /** the entries grouped by day (a heading per day)
  * @param {{evs:any[]}} p */
 function MyEvents({evs}){const out=[];let last="";
-  evs.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");out.push(html`<h4 class="mcd" key=${"d"+e.date}>${WDL(dt)} ${ddmm(dt)}</h4>`);last=e.date}
+  evs.forEach((e,i)=>{if(e.date!==last){const dt=noonDate(e.date);out.push(html`<h4 class="mcd" key=${"d"+e.date}>${WDL(dt)} ${ddmm(dt)}</h4>`);last=e.date}
     out.push(html`<${MyEntry} key=${i} e=${e} i=${i}/>`)});
   return html`${out}`}
 ISLANDS.myev=MyEvents;
@@ -192,7 +192,7 @@ function renderPrePro(one,embedded){setPPPEOPLE(null);
   const ppoBtn='<span class="pvb"><button class="pvbtn" data-ppo aria-pressed="'+!!S.ppo+'" '+ariaTip(L("Teilnehmende ein-/ausblenden"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.8.2 5 2 5 4.9"/></svg></button></span>';
   let h=embedded?'<section class="wkemb"><div class="dtitle"><h3 class="wkh">'+HIT('Weekly Schedule')+'</h3>'+ppoBtn+'</div>':'<div class="dayhead"><div><div class="dtitle"><h2>'+HIT('Prep')+'</h2>'+ppoBtn+'</div></div></div>';
   if(S.prepro.length){
-    for(const d of (one?[one]:S.prepro)){const dt=new Date(d.date+"T12:00:00");
+    for(const d of (one?[one]:S.prepro)){const dt=noonDate(d.date);
       h+='<section class="ppday">'+(embedded?'':'<h3 class="ppd">'+WDL(dt)+' '+ddmm(dt)+(d.label?' · '+esc(TX(d,"label")):'')+'</h3>')+
         (d.older?'<p class="ghint ppold">'+esc(L("Aus einer älteren Version der Wochenplanung"))+': '+esc(String(d.older).replace(/\.pdf$/i,""))+'</p>':'')+
         (TXA(d,"notes").length?'<div class="notes">'+TXA(d,"notes").map(n=>'<div class="note">'+esc(n)+'</div>').join("")+'</div>':'')+ppItems(d.items,d.date,'i');
@@ -207,7 +207,7 @@ function renderPrePro(one,embedded){setPPPEOPLE(null);
     if(pm.source)h+='<p class="ppsrc">'+L("Quelle")+': '+esc(Array.isArray(pm.sources)&&pm.sources.length>1?pm.sources.join(" · "):pm.source)+(pm.issued?' · '+L("Stand")+' '+esc(pm.issued):'')+'</p>';
   }else{
     h+='<div class="empty">'+L("Die Wochenplanung für Vorbereitung und Proben folgt, sobald sie in der Dropbox der Produktion verfügbar ist.")+'</div>';
-    for(const d of S.days.filter(d=>first&&d.date<first.date&&d.kind!=="shoot")){const dt=new Date(d.date+"T12:00:00");h+='<div class="offday"><b>'+WD[dt.getDay()]+' '+ddmm(dt)+' · '+esc(d.label||"")+'</b>'+esc(TX(d,"info"))+'</div>'}
+    for(const d of S.days.filter(d=>first&&d.date<first.date&&d.kind!=="shoot")){const dt=noonDate(d.date);h+='<div class="offday"><b>'+WD[dt.getDay()]+' '+ddmm(dt)+' · '+esc(d.label||"")+'</b>'+esc(TX(d,"info"))+'</div>'}
   }
   return h;
 }
@@ -260,7 +260,7 @@ export function renderPlan(){
     if(!shootOk){S.day=null;pickDay(PD);const nx=S.days.find(d=>d.id===S.day);if(PPA.length&&(!nx||PPA[0].date<nx.date))S.day="prep:"+PPA[0].date}
   }
   const ppDay=String(S.day||"").startsWith("prep:")?PPA.find(d=>"prep:"+d.date===S.day):null;
-  const ppChips=PP.map(d=>{const dt=new Date(d.date+"T12:00:00"),off=ppOff(d),rest=ppRest(d),sd=dayOf(d.date);
+  const ppChips=PP.map(d=>{const dt=noonDate(d.date),off=ppOff(d),rest=ppRest(d),sd=dayOf(d.date);
     /* a day from the shooting schedule (travel / off) keeps its label and colour; the weekly schedule fills in its content */
     if(sd){const k=sd.kind==="travel"?"travp":"free";return '<button data-dt="'+esc(d.date)+'" class="chip off '+k+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(sd.kind==="travel"?'<span class="lbl">TRAVEL</span><span class="lbs">TRA</span>':"OFF")+'<span class="wds">/'+WD[dt.getDay()].toUpperCase()+'</span><span class="wdl">'+esc(WDL(dt))+'</span></div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}
     return '<button data-dt="'+esc(d.date)+'" class="chip pre'+(rest?" off free":"")+(d.date===t?" isnow":"")+'" role="tab" data-day="prep:'+esc(d.date)+'" aria-selected="'+(ppDay===d)+'"'+(off?' disabled aria-disabled="true"':'')+'><div class="lb">'+(rest?'OFF':'<span class="lbl">PREP</span><span class="lbs">PRE</span>')+'<span class="wds">/'+WD[dt.getDay()].toUpperCase()+'</span><span class="wdl">'+esc(WDL(dt))+'</span></div><div class="dd">'+pad2(dt.getDate())+'.'+pad2(dt.getMonth()+1)+'</div></button>'}).join("");

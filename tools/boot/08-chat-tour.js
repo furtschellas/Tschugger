@@ -1,5 +1,5 @@
 import {a2hsAuto,a2hsDue,isIOS,showA2hs} from "../a2hs.js";
-import {applyStatic,dlgBtn,esc,getTheme,L,LANG,localISO,lsGet,mkDialog,prodTZ,S,SBXF,setLANG,setTheme,todayISO} from "../base/10-core.js";
+import {applyStatic,dlgBtn,esc,getTheme,L,LANG,localISO,lsGet,lsSet,mkDialog,prodTZ,S,SBXF,setLANG,setTheme,todayISO} from "../base/10-core.js";
 import {myEvents,myIdentity} from "../base/12-mycal.js";
 import {tabsOn,vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -197,7 +197,7 @@ export function a2stCheck(){if(typeof window.a2hsCheck!=="function")return;const
   window.A2ST=Object.assign({},window.A2ST,{busy:true,at:now});window.a2hsCheck().then(v=>{const ch=!window.A2ST||window.A2ST.v!==v;window.A2ST={v,at:Date.now(),busy:false};if(ch)render()}).catch(()=>{window.A2ST={v:"unknown",at:Date.now(),busy:false}})}
 async function tourMark(how){
   store("nv",NEWS_VER);savePrefs(); /* new people get to know the new features in the tour */
-  const at=new Date().toISOString(),v=how+"|"+at;try{localStorage.setItem("tourDone:"+(ME&&ME.uid),v)}catch(_){}store("tour",v);
+  const at=new Date().toISOString(),v=how+"|"+at;lsSet("tourDone:"+(ME&&ME.uid),v);store("tour",v);
   try{if(MEMBER&&ME){const {F,db}=await fb();await F.updateDoc(F.doc(db,"members",ME.uid),{tour:how,tourAt:at});MEMBER.tour=how;MEMBER.tourAt=at}}catch(err){console.warn("tour",err&&err.code||err)}
 }
 /* «Neu in der Crew-App»: shown once to everybody who already used the app (did or skipped the tour) – new people see it in the tour */
@@ -295,7 +295,7 @@ async function tourEnd(how,marked){
 
 /* one-time note about push notifications (existing and new users), with a short setup right in the note */
 /* asked once per device (when push is on but this device has not allowed it yet) */
-const hintDone=()=>{try{return !!localStorage.getItem("pushask:"+(ME&&ME.uid))}catch(_){return false}},hintMark=()=>{try{localStorage.setItem("pushask:"+(ME&&ME.uid),"1")}catch(_){}};
+const hintDone=()=>{try{return !!localStorage.getItem("pushask:"+(ME&&ME.uid))}catch(_){return false}},hintMark=()=>{lsSet("pushask:"+(ME&&ME.uid),"1")};
 function pushHintDue(){if(!ME||window.PUSHEN===false||hintDone())return false;const c=pushCfg();if(!c.on&&c.hint)return false;if(pushOK())return Notification.permission==="default";return isIOS()&&!pushStandalone()}
 function maybePushHint(){
   if(!ME||ONBOARD||WELCOME_OPEN||TOUR.el||document.getElementById("pushhint")||window.PUSHEN===false||hintDone())return;const c=pushCfg();if(!c.on&&c.hint)return;
@@ -320,5 +320,5 @@ export const tourInfo=m=>!m?"":m.tour==="done"?L("Tour gemacht"):m.tour==="skip"
 
 document.addEventListener("click",async e=>{if(!e.target.closest||!e.target.closest("[data-chgclrall]")||!can("settings"))return;e.preventDefault();
   if(!confirmSafe(L("Die Liste «Änderungen» in Today für alle leeren?")))return;const at=Date.now();
-  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{chgClearAt:at},{merge:true});window.CHGCLR=at;try{localStorage.setItem("appchgclr",String(at))}catch(_){}
+  try{const {F,db}=await fb();await F.setDoc(F.doc(db,"config","app"),{chgClearAt:at},{merge:true});window.CHGCLR=at;lsSet("appchgclr",String(at))
     showMsg(L("Änderungsliste für alle geleert."),3000);render()}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});

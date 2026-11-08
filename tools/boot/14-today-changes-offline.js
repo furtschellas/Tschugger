@@ -1,4 +1,4 @@
-import {ddmm,esc,L,lsJSON,mkDialog,norm,S,todayISO,xBtn} from "../base/10-core.js";
+import {ddmm,esc,L,lsJSON,lsSet,mkDialog,noonDate,norm,S,todayISO,xBtn} from "../base/10-core.js";
 import {unitLists} from "../base/11-schedule-prep.js";
 import {WDL,openMyCal} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -11,7 +11,7 @@ import {getDataKey} from "./04-data.js";
 /* =====================================================================
    HEUTE · ÄNDERUNGEN · OFFLINE · PROTOKOLL
    ===================================================================== */
-export const dmy=iso=>{const dt=new Date(iso+"T12:00:00");return WDL(dt).slice(0,2)+", "+ddmm(dt)};
+export const dmy=iso=>{const dt=noonDate(iso);return WDL(dt).slice(0,2)+", "+ddmm(dt)};
 const scKey=x=>norm(x);
 export const unitItems=d=>unitLists(d);   /* the same as the Drehplan (11-schedule-prep) */
 
@@ -27,13 +27,13 @@ function chgSnap(){
   return {sc,dp,at:Date.now()};
 }
 function chgLoad(){return lsJSON("chg:v1",[])}
-function chgSave(l){try{localStorage.setItem("chg:v1",JSON.stringify(l.slice(0,120)))}catch(_){}}
+function chgSave(l){lsSet("chg:v1",JSON.stringify(l.slice(0,120)))}
 /* once on every device: the changes of the 2nd unit leave the list on «Heute» (1st/3rd unit and callsheets stay) */
 try{if(!localStorage.getItem("chgu2clr:v1")){chgSave(chgLoad().filter(c=>String(c.u||"1")!=="2"));localStorage.setItem("chgu2clr:v1","1")}}catch(_){}
 export function chgDetect(){
   if(!(S.days||[]).length)return;
   const now=chgSnap();now.v2=1;let old=lsJSON("snap:v1");
-  try{localStorage.setItem("snap:v1",JSON.stringify(now))}catch(_){}
+  lsSet("snap:v1",JSON.stringify(now))
   if(!old||!old.sc)return;
   const skipU2=old.v2!==1;
   const t=todayISO(),out=[],at=Date.now();
@@ -70,7 +70,7 @@ export function chgList(){const t=todayISO(),now=Date.now(),seen=chgSeen(),clr=+
 /* used by the schedule (itemHTML): mark a changed scene */
 /* change marks in the schedule: switched on/off with the round button «Änderungen» (S.pv.g, CSS .pv-no-g) */
 window.chgFor=(date,u,sc)=>{const k=scKey(sc);const l=chgList().filter(c=>c.date===date&&(c.u||"1")===(u||"1")&&scKey(c.sc)===k);return l.length?l.map(c=>c.txt).join(" · "):""};
-document.addEventListener("click",e=>{if(!e.target.closest("[data-chgseen]"))return;try{localStorage.setItem("chgseen:v1",String(Date.now()))}catch(_){}render()});
+document.addEventListener("click",e=>{if(!e.target.closest("[data-chgseen]"))return;lsSet("chgseen:v1",String(Date.now()));render()});
 
 /* ---------- 3) offline on set: data key, today's + tomorrow's blocking pictures and the script stay on the device ---------- */
 export const OFF={busy:false};
@@ -92,7 +92,7 @@ export async function offlinePrep(force){
     await getDataKey().catch(()=>{});
     for(let i=0;i<list.length;i+=6)await Promise.all(list.slice(i,i+6).map(f=>fetch(blkUrl(f),{cache:"force-cache",signal:(typeof AbortSignal!=="undefined"&&AbortSignal.timeout)?AbortSignal.timeout(30e3):undefined}).then(r=>{if(r.ok)n++;else fail++}).catch(()=>{fail++})));
     try{if(window.loadScriptData)await window.loadScriptData()}catch(_){}
-    try{localStorage.setItem("offline:v1",JSON.stringify({v:2,at:Date.now(),sig,n,fail,fp:arr(S.meta.floorplans).filter(f=>arr(f.pg).length).length}))}catch(_){}
+    lsSet("offline:v1",JSON.stringify({v:2,at:Date.now(),sig,n,fail,fp:arr(S.meta.floorplans).filter(f=>arr(f.pg).length).length}))
   }finally{OFF.busy=false}
   if(force){showMsg(L("Offline bereit")+": "+n+" "+L("Seiten"),4000);render()}
 }

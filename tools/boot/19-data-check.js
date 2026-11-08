@@ -1,4 +1,4 @@
-import {L,LANG,S,TX,esc,todayISO} from "../base/10-core.js";
+import {esc,L,LANG,lsSet,S,todayISO,TX} from "../base/10-core.js";
 import {findPerson,groupPeople,mailPeople,nmk,ppNames} from "../base/11-schedule-prep.js";
 import {hm} from "../base/12-mycal.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
@@ -160,7 +160,7 @@ export async function dckRun(auto){
       w(bad.length||!key?"warn":"ok",L("Selbsttest der App"),(key?"✓ "+L("Schlüssel"):"✗ "+L("Schlüssel"))+" · "+(bad.length?"✗ "+L("Seiten mit Fehler")+": "+bad.join(", "):"✓ "+tabsOn().length+" "+L("Seiten"))+" · "+(sw?"✓ ":"– ")+L("Offline-Speicher")+" · "+(navigator.onLine?"✓ ":"– ")+L("Verbindung"))}
   }catch(err){w("warn",L("Prüfung"),L("Fehler:")+" "+(err&&err.message||err))}
   {const w=500-(Date.now()-t0);if(w>0)await new Promise(r=>setTimeout(r,w))}   /* the progress stays visible at least 0.5 s */
-  DCK.res=out;DCK.at=Date.now();DCK.busy=false;if(!auto)DCK.open=true;try{localStorage.setItem("dck:last",JSON.stringify({res:out,at:DCK.at}))}catch(_){}render();
+  DCK.res=out;DCK.at=Date.now();DCK.busy=false;if(!auto)DCK.open=true;lsSet("dck:last",JSON.stringify({res:out,at:DCK.at}));render();
 }
 window.dataCheckSec=function(flat){if(!dckMay())return "";
   const r=DCK.res||[],nw=r.filter(x=>x.lvl==="warn").length,ni=r.filter(x=>x.lvl==="info").length;
@@ -222,7 +222,7 @@ export async function roleTestRun(auto){
   finally{setSIMROLE(null);setMYPERMS(keep.p);setMYROLE(keep.r);try{const ad=await (async()=>ADM.adminPerms)();setADMINPERMS(isOwner()?ADMIN_DEFAULT.slice():(ad||ADMINPERMS))}catch(_){}
     if(mid){S.tab=here.tab;ADM.sub=here.sub}simRefreshChrome()}
   {const w=500-(Date.now()-t0);if(w>0)await new Promise(r=>setTimeout(r,w))}
-  RTS.res=out;RTS.at=Date.now();RTS.busy=false;RTS.prog=null;if(!auto)RTS.open=true;try{localStorage.setItem("rt:last",JSON.stringify({res:out,at:RTS.at}))}catch(_){}render()}
+  RTS.res=out;RTS.at=Date.now();RTS.busy=false;RTS.prog=null;if(!auto)RTS.open=true;lsSet("rt:last",JSON.stringify({res:out,at:RTS.at}));render()}
 window.roleTestSec=function(){if(!isAdmin()||SIMROLE)return "";const r=RTS.res||[],bad=r.filter(x=>x.issues.length).length;
   const sum=RTS.res?'<span class="tsth">'+(bad?'⚠ '+bad+' '+esc(L(bad===1?"Berechtigungsstufe mit Problemen":"Berechtigungsstufen mit Problemen")):'✓ '+r.length+' '+esc(L("Berechtigungsstufen in Ordnung")))+'</span>':'<span class="tsth">'+esc(L("noch nicht geprüft"))+'</span>',tm=RTS.res&&RTS.at?esc(logWhen(RTS.at)):"";
   return '<details class="tstsec rtsec'+(bad?' bad':'')+'"'+(RTS.open?' open':'')+' data-lsec="rt"><summary class="lsum">'+logHead(esc(L("Berechtigungen testen")),sum,tm,RTS.busy?{pct:RTS.prog||null}:null)+'</summary>'+

@@ -1,10 +1,10 @@
-import {clockHM,L,lsGet,pad2} from "../base/10-core.js";
+import {clockHM,L,lsGet,lsSet,pad2} from "../base/10-core.js";
 /* ---------- phone comfort: font size, offline bar with data time, sticky offsets, swipe between days ---------- */
 /* font size «Normal» / «Gross» (Mein Konto › App › Darstellung): stored on this device, scales the page content */
 export function fsGet(){return lsGet("fsize:v1","n")}
 function fsApply(){document.documentElement.classList.toggle("fs-l",fsGet()==="l")}
 fsApply();
-document.addEventListener("click",e=>{const b=e.target.closest("[data-fsset]");if(!b)return;try{localStorage.setItem("fsize:v1",b.dataset.fsset)}catch(_){}fsApply();
+document.addEventListener("click",e=>{const b=e.target.closest("[data-fsset]");if(!b)return;lsSet("fsize:v1",b.dataset.fsset);fsApply();
   b.parentElement.querySelectorAll("[data-fsset]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
 /* offline: a small bar above the tabs on every page, with the time the data was last confirmed current */
 function offTime(){let t=0;try{t=+localStorage.getItem("dtime:v1")||0}catch(_){}if(!t)return"";const d=new Date(t);

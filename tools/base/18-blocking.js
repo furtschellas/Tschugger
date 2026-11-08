@@ -1,4 +1,4 @@
-import {$,applyStatic,esc,getTheme,L,LANG,lsGet,lvClasses,MEMO,mkDialog,norm,pvApply,S,safeUrl,setLANG,setSPT,setTheme,SPT,spTheme,svApply,svButtons,svClasses,todayISO} from "./10-core.js";
+import {$,applyStatic,esc,getTheme,L,LANG,lsDel,lsGet,lsSet,lvClasses,MEMO,mkDialog,norm,pvApply,S,safeUrl,setLANG,setSPT,setTheme,SPT,spTheme,svApply,svButtons,svClasses,todayISO} from "./10-core.js";
 import {nextUnitDay,onlyU,ppContact,ppMail} from "./11-schedule-prep.js";
 import {MCNAMES,addToCalendar,myClick} from "./12-mycal.js";
 import {addrForItem,groupLocs,locGroups,locResults,saveVCard,sceneTexts,ufOn} from "./13-crew-views.js";
@@ -51,7 +51,7 @@ export function openGallery(b,start,pdf){
   const show=i=>{if(i!==undefined&&!(i>=0&&i<media.length))i=undefined;   /* no such picture (empty list, page past the end): the overview instead of an empty window */
     d.innerHTML=i===undefined?grid():view(i);d.dataset.i=i===undefined?"":String(i);fill()};
   d.addEventListener("click",e=>{if(e.target===d){d.remove();return}
-    const v=e.target.closest("[data-gv]");if(v){gv=v.dataset.gv;try{localStorage.setItem("galview",gv)}catch(_){}show();return}
+    const v=e.target.closest("[data-gv]");if(v){gv=v.dataset.gv;lsSet("galview",gv);show();return}
     const fl=e.target.closest("[data-gfl]");if(fl){gf=fl.dataset.gfl;setF();show();return}
     const t=e.target.closest("[data-gi]");if(t){show(+t.dataset.gi);return}const n=e.target.closest("[data-gnav]");if(n){show(+n.dataset.gnav);return}if(e.target.closest("[data-gback]"))show()});
   d.addEventListener("keydown",e=>{if(d.dataset.i==="")return;const i=+d.dataset.i;if(e.key==="ArrowRight")show((i+1)%media.length);if(e.key==="ArrowLeft")show((i-1+media.length)%media.length)});
@@ -139,13 +139,13 @@ const ACTIONS=[
   ["[data-ppmail]",b=>ppMail(b.dataset.ppmail)],
   ["[data-ppc]",b=>ppContact(b.dataset.ppc)],
   ["[data-ppo]",b=>{S.ppo=!S.ppo;store("ppo",S.ppo?"1":"0");b.setAttribute("aria-pressed",String(S.ppo));document.querySelectorAll(".ppparts").forEach(d=>d.open=S.ppo)}],
-  ["[data-rbtog]",b=>{let on=true;try{on=localStorage.getItem("rbadges")!=="0"}catch(_){}try{localStorage.setItem("rbadges",on?"0":"1")}catch(_){}render()}],
+  ["[data-rbtog]",b=>{let on=true;try{on=localStorage.getItem("rbadges")!=="0"}catch(_){}lsSet("rbadges",on?"0":"1");render()}],
   ["[data-pu]",b=>{const k=b.dataset.pu;setUnits("pu",{[k]:!S.pu[k]},{render:false});
     /* only 2nd unit → the next 2nd unit day; 1st unit switched on → the next 1st unit day */
     if(onlyU()||(k==="1"&&S.pu["1"])){const nd=nextUnitDay();if(nd){S.day=nd.id;S.dday=nd.date}}render()}],
   ["[data-scene]",b=>openScene(b.dataset.scene)],
   ["[data-spmore]",b=>spLoadMore(b)],
-  ["[data-sqm]",b=>{S.sqm=b.dataset.sqm;try{localStorage.setItem("sqm",S.sqm)}catch(_){}document.querySelectorAll("[data-sqm]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));runSearch("sq",false)}],
+  ["[data-sqm]",b=>{S.sqm=b.dataset.sqm;lsSet("sqm",S.sqm);document.querySelectorAll("[data-sqm]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));runSearch("sq",false)}],
   ["[data-sqpick]",b=>{S.sq=b.dataset.sqpick;const i=document.getElementById("sq");if(i)i.value=S.sq;runSearch("sq",false)}],
   ["[data-scretry]",()=>{setSCRIPTERR(false);render()}],
   ["[data-spt]",()=>{const nx=spTheme()==="light"?"dark":"light";setSPT(nx===getTheme()?null:nx);store("spt",SPT||"");svApply()}],
@@ -161,7 +161,7 @@ document.addEventListener("click",e=>{
 });
 /* admins: type a name in «Termine für» (suggestions appear while typing); «Ich» goes back to the own name */
 /* the person chosen in «Termine für» (admins): only until the app is reloaded – after a reload it is me again */
-window.MYPICK="";try{localStorage.removeItem("myname")}catch(_){}
+window.MYPICK="";lsDel("myname")
 function mcPick(v){window.MYPICK=v||"";try{MEMO.clear()}catch(_){}render()}
 document.addEventListener("input",e=>{if(e.target.matches&&e.target.matches("input[data-mcme]")){const v=e.target.value.trim();const hit=MCNAMES.find(n=>n.toLowerCase()===v.toLowerCase());if(hit)mcPick(hit)}});
 document.addEventListener("change",e=>{if(e.target.matches&&e.target.matches("input[data-mcme]")){const v=e.target.value.trim();if(!v){mcPick("");return}const f=fold(v),hits=MCNAMES.filter(n=>fold(n).includes(f));if(hits.length===1)mcPick(hits[0])}});

@@ -1,4 +1,4 @@
-import {ariaTip,ddmm,emptyBox,esc,fullName,HIT,L,LANG,mName,S,WD} from "../base/10-core.js";
+import {ariaTip,ddmm,emptyBox,esc,fullName,HIT,L,LANG,lsSet,mName,noonDate,S,WD} from "../base/10-core.js";
 import {nmk} from "../base/11-schedule-prep.js";
 import {allVCards,saveVcf} from "../base/13-crew-views.js";
 import {VIEWS} from "../base/14-render.js";
@@ -53,7 +53,7 @@ export function crewEmails(){const out=[],seen=new Set();for(const g of S.crew)f
 /* collapsible admin sections in the crew tab; open by default, state remembered per section */
 export const SECS={};try{for(const k of ["cater","bcal"])SECS[k]=localStorage.getItem("sec:"+k)!=="0";SECS.appset=localStorage.getItem("sec:appset")==="1";SECS.catmore=localStorage.getItem("sec:catmore")==="1";SECS.catcard=localStorage.getItem("sec:catcard")==="1";SECS.upsec=localStorage.getItem("sec:upsec")==="1"}catch(_){SECS.cater=SECS.bcal=true}
 const secOpen=(k,title,body)=>'<details class="asec '+k+'" data-sec="'+k+'"'+(SECS[k]!==false?' open':'')+'><summary>'+esc(title)+'</summary><div class="asb">'+body+'</div></details>';
-document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;if(/^(set-|blk-|blkp-)/.test(d.dataset.sec))return;   /* App-Einstellungen and Drehblöcke: always closed when the page is opened again (not remembered) */try{localStorage.setItem("sec:"+d.dataset.sec,d.open?"1":"0")}catch(_){}},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.sec)return;SECS[d.dataset.sec]=d.open;if(/^(set-|blk-|blkp-)/.test(d.dataset.sec))return;   /* App-Einstellungen and Drehblöcke: always closed when the page is opened again (not remembered) */lsSet("sec:"+d.dataset.sec,d.open?"1":"0")},true);
 /* departments that are not fed on set: left out of the catering count */
 const NO_CATER=/^(catering|postprod|verleih)/i;
 export function crewDeptOf(m){
@@ -152,7 +152,7 @@ function bdayHTML(){
   const y0=+ds[0].slice(0,4),y1=+ds[ds.length-1].slice(0,4),first=ds[0],last=ds[ds.length-1];
   const hits=[];for(const x of bdayEntries()){if(!/^\d\d-\d\d$/.test(x.md||""))continue;for(let yy=y0;yy<=y1;yy++){const iso=yy+"-"+x.md;if(iso>=first&&iso<=last)hits.push(Object.assign({},x,{iso}))}}
   hits.sort((a,b)=>a.iso<b.iso?-1:a.iso>b.iso?1:String(a.name).localeCompare(String(b.name)));
-  return secOpen("bcal",L("Geburtstage während des Drehs")+(hits.length?" · "+hits.length:""),(hits.length?hits.map(x=>{const d=new Date(x.iso+"T12:00:00");return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+ddmm(d))+'</span><b>'+esc(x.name)+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>'));
+  return secOpen("bcal",L("Geburtstage während des Drehs")+(hits.length?" · "+hits.length:""),(hits.length?hits.map(x=>{const d=noonDate(x.iso);return '<div class="bl"><span>'+esc(WD[d.getDay()]+" "+ddmm(d))+'</span><b>'+esc(x.name)+'</b></div>'}).join(""):'<p class="ghint">'+esc(L("Keine Geburtstage während des Drehs."))+'</p>'));
 }
 /* birthday list for everyone (when the main admin allows it): bdays/{uid} = {name, md "MM-DD"}; no year, no other data */
 export const PUBB={list:[],loaded:false,loading:false};
@@ -189,7 +189,7 @@ window.crewHead=function(){
   return '<div class="admv">'+(can("crew.food")?togBtn("food","Essen"):"")+(ADM.err?'<span class="admerr">'+L("Daten der Benutzer:innen nicht lesbar")+' ('+esc(ADM.err)+') – '+L("Firestore-Regeln prüfen.")+'</span>':'')+(can("crew.bday")?togBtn("bday","Geburtstage"):"")+(isOwner()||can("users.edit")?togBtn("acct","Kontoinfos"):"")+(!can("crew.vcf")?"":'<button type="button" class="foodtog ico vcall" data-vcall '+ariaTip(L("Alle Kontakte als VCF"))+'><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2.5 17c0-3 2.5-5 5.5-5 1.3 0 2.5.4 3.4 1M15 3v10M11.5 9.5 15 13l3.5-3.5M11 20h9"/></svg><b>VCF</b></button>')+'</div>'+(ADM.loaded?(AV("bday")?bdayHTML():"")+(AV("food")?cateringHTML():""):"");
 };
 document.addEventListener("click",e=>{if(!e.target.closest("[data-vcall]")||!can("crew.vcf"))return;const {text,n}=allVCards();if(!n)return;saveVcf(text,"TSCHUGGER Tigerblood Crew");showMsg(n+" "+L("Kontakte als VCF gespeichert."),4000)});
-document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";if(ADMV[k]&&!ADM.loading&&Date.now()-(ADM.at||0)>60000)ADM.loaded=false;try{localStorage.setItem("admv2:"+k,ADMV[k]?"1":"0")}catch(_){}render()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-admv]");if(!b)return;const k=b.dataset.admv;ADMV[k]=!ADMV[k];ADM.err="";if(ADMV[k]&&!ADM.loading&&Date.now()-(ADM.at||0)>60000)ADM.loaded=false;lsSet("admv2:"+k,ADMV[k]?"1":"0");render()});
 /* main admin: invite a crew member as app user straight from the crew list (shown with «Kontostatus») */
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-cinv]");if(!b||!isOwner())return;e.preventDefault();e.stopPropagation();
   const em=lc(b.dataset.cinv);b.disabled=true;

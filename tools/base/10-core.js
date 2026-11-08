@@ -126,6 +126,10 @@ export const hmMin=t=>{const m=String(t||"").match(/^(\d{1,2}):(\d{2})/);return 
 export const minHM=m=>{m=((Math.round(m)%1440)+1440)%1440;return pad2(Math.floor(m/60))+":"+pad2(m%60)};
 /* reading the device storage: private mode / blocked storage throw – then the default */
 export function lsGet(k,def=""){try{const v=localStorage.getItem(k);return v==null||v===""?def:v}catch(_){return def}}
+export function lsSet(k,v){try{localStorage.setItem(k,v)}catch(_){}}   /* storage full or blocked (private mode): never an error */
+export function lsDel(k){try{localStorage.removeItem(k)}catch(_){}}
+/* a day as a date at noon (no time-zone shift of the day) */
+export const noonDate=iso=>new Date(iso+"T12:00:00");
 export function lsJSON(k,def=null){try{const v=JSON.parse(localStorage.getItem(k)||"null");return v==null?def:v}catch(_){return def}}
 /* «2026-11-07» → «07.11.2026» */
 /* building blocks of the pages (one place for the markup of the same things everywhere) */

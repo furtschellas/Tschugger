@@ -1,4 +1,4 @@
-import {$,ddmm,emit,esc,L,LANG,LOC,lsGet,markTerms,memo,norm,onEvent,pvApply,S,svClasses,svToggles,todayISO,TX,ufButtons,WD} from "./10-core.js";
+import {$,ddmm,emit,esc,L,LANG,LOC,lsGet,markTerms,memo,noonDate,norm,onEvent,pvApply,S,svClasses,svToggles,todayISO,TX,ufButtons,WD} from "./10-core.js";
 import {onlyU,unitLists,unitsOn} from "./11-schedule-prep.js";
 import {addrForItem,srcHTML} from "./13-crew-views.js";
 import {ALLTABS,VIEWS,tabsOn,vok} from "./14-render.js";
@@ -63,7 +63,7 @@ function pickOverview(mode,sched){
   const row=(q,n,c)=>'<button type="button" class="rolerow" data-sqpick="'+esc(q)+'"><span class="rn">'+n+'</span>'+(c?'<span class="rc">'+c+'</span>':'')+'</button>';
   if(mode==="sc"&&SCRIPT)return '<div class="scpick">'+SCRIPT.map(x=>'<button type="button" class="scpk'+((sched[norm(x.sc)]||[]).length?'':' np')+'" data-sqpick="'+esc(x.sc)+'">'+esc(x.sc)+'</button>').join("")+'</div>';
   if(mode==="day"){const ds=S.days.filter(d=>d.kind==="shoot");if(!ds.length)return "";
-    return '<div class="rolegrid">'+ds.map(d=>{const n=unitLists(d).reduce((a,[,its])=>a+its.filter(i=>i.sc).length,0),dt=new Date(d.date+"T12:00:00");
+    return '<div class="rolegrid">'+ds.map(d=>{const n=unitLists(d).reduce((a,[,its])=>a+its.filter(i=>i.sc).length,0),dt=noonDate(d.date);
       return row(String(d.short||d.label),'<i>'+esc(d.short||d.label)+'</i>'+esc(WD[dt.getDay()]+" "+ddmm(dt)),n+' '+esc(L(n===1?"Szene":"Szenen")))}).join("")+'</div>'}
   if(mode==="person"){const m=new Map();for(const dp of S.dispos)for(const c of arr(dp&&dp.cast)){const a=String(c.actor||"").trim();if(a&&!m.has(a))m.set(a,String(c.role||""))}
     if(!m.size)return "";return '<div class="rolegrid">'+[...m].sort((a,b)=>a[0].localeCompare(b[0],LANG)).map(([a,r])=>row(a,esc(a),esc(r))).join("")+'</div>'}

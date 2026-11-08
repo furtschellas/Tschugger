@@ -1,4 +1,4 @@
-import {esc,L,LANG,lsGet,pad2,S,saveBlob} from "../base/10-core.js";
+import {esc,L,LANG,lsGet,lsSet,pad2,S,saveBlob} from "../base/10-core.js";
 import {fmtStamp,render} from "../base/15-script-tab.js";
 import {ROOT_OWNERS} from "./01-config.js";
 import {ME,fb,isOwner,lc} from "./03-core-firebase.js";
@@ -33,7 +33,7 @@ async function bkDownload(){
   const data=await bkCollect();const t=new Date();
   const name="tschugger-backup-"+t.getFullYear()+"-"+pad2(t.getMonth()+1)+"-"+pad2(t.getDate())+"-"+pad2(t.getHours())+pad2(t.getMinutes())+".json";
   saveBlob(new Blob([JSON.stringify(data,null,1)],{type:"application/json"}),name);
-  try{localStorage.setItem("bk:last",t.toISOString())}catch(_){}
+  lsSet("bk:last",t.toISOString())
   return L("Backup gespeichert")+": "+data.members.length+" "+L("Benutzer:innen")+", "+data.invites.length+" "+L("Einladungen")+".";
 }
 async function bkRestore(file){
