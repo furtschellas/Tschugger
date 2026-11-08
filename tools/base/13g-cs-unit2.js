@@ -1,6 +1,6 @@
 /* the 2nd Unit of a callsheet (cs.u2, read apart from the 1st Unit): its own part below the callsheet of the 1st Unit –
    times, contact on set, sets, shooting order, cast, extras, vehicles, calls «2nd IN», department infos (the prevision is kept in the data, shown neither for the 1st Unit) */
-import {camFold,esc,fmtDate,L,mapUrl,norm,safeUrl,telNum} from "./10-core.js";
+import {camFold,esc,fmtDate,hmMin,L,mapUrl,norm,safeUrl,telNum} from "./10-core.js";
 import {nameHit} from "./11-schedule-prep.js";
 import {schedIndex} from "./17-scene-reader.js";
 import {csA,csL,csSec,csTable,csTx} from "./13a-callsheet.js";
@@ -31,7 +31,7 @@ export function csRideUnit(c,r){if(!r)return "";if(r.u==="1"||r.u==="2")return r
   {const t1=u2hm(r.t1),us=new Set();if(t1){for(const [l,u] of [[csA(c.cast).filter(x=>x&&x.u!=="2"),"1"],[csA(c.u2&&c.u2.cast),"2"]])for(const x of l)if(x&&x.actor&&u2hm(x.pickup)===t1&&nameHit(String(x.actor))(who))us.add(u)}
    if(us.size===1)return [...us][0]}
   /* 3. long before the crew call of the later unit (90 min) and the other unit has started: the earlier unit (morning rides of the 2nd Unit) */
-  {const c1=u2hm((c.times||{}).crewCall),c2=u2hm(c.u2&&(c.u2.crewCall||(c.u2.times||{}).crewCall)),t1=u2hm(r.t1),m=v=>+v.slice(0,2)*60+ +v.slice(3);
+  {const c1=u2hm((c.times||{}).crewCall),c2=u2hm(c.u2&&(c.u2.crewCall||(c.u2.times||{}).crewCall)),t1=u2hm(r.t1),m=hmMin;
    if(c1&&c2&&t1&&c1!==c2){const [e,l,eu]=m(c2)<m(c1)?[c2,c1,"2"]:[c1,c2,"1"];if(m(t1)>=m(e)-120&&m(t1)<m(l)-90)return eu}}
   let a=0,b=0;
   for(const p of csUnitPeople(c))if(p.hit(who)){if(p.u==="1")a++;else b++}

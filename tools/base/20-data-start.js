@@ -1,4 +1,4 @@
-import {$,hmAny,MEMO,S,applyStatic} from "./10-core.js";
+import {$,applyStatic,hmAny,hmMin,MEMO,S} from "./10-core.js";
 import {render} from "./15-script-tab.js";
 /* ---------- data ---------- */
 export const arr=x=>Array.isArray(x)?x:[];
@@ -18,7 +18,7 @@ export function csSetupFirst(rows,call,date){rows=arr(rows);const i0=rows.findIn
   if(i0<0||String(date||"")<SETUP_FROM)return rows;
   if(rows.slice(0,i0).some(r=>r&&/^\s*set[\s-]?up\b/i.test(String(r.text||r.syn||""))))return rows;
   const c=hmAny(call),f=hmAny(rows[i0].t);if(!c||!f||c>=f)return rows;
-  const m=(+f.slice(0,2)*60+ +f.slice(3))-(+c.slice(0,2)*60+ +c.slice(3)),at=rows.findIndex(r=>r&&hmAny(r.t)&&hmAny(r.t)>c);
+  const m=hmMin(f)-hmMin(c),at=rows.findIndex(r=>r&&hmAny(r.t)&&hmAny(r.t)>c);
   const out=rows.slice();out.splice(at<0?i0:Math.min(at,i0),0,{t:c,text:"Setup - "+Math.floor(m/60)+"h"+String(m%60).padStart(2,"0")+"m",_auto:1});return out}
 const csSetups=(cs,dt)=>{if(!cs||typeof cs!=="object"||cs._setup)return cs;const o=Object.assign({},cs,{_setup:1});
   if(cs.order&&typeof cs.order==="object")o.order=Object.assign({},cs.order,{rows:csSetupFirst(cs.order.rows,(cs.times||{}).crewCall,dt)});

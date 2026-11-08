@@ -1,4 +1,4 @@
-import {ariaTip,bdHTML,bdXX,cap,castChips,ddmm,esc,hash36,L,maps,memo,mkDialog,norm,pad2,S,safeUrl,TX,WD} from "./10-core.js";
+import {ariaTip,bdHTML,bdXX,cap,castChips,ddmm,esc,hash36,L,maps,memo,minHM,mkDialog,norm,pad2,S,safeUrl,TX,WD} from "./10-core.js";
 import {UNAME,unitLists} from "./11-schedule-prep.js";
 import {addrForItem} from "./13-crew-views.js";
 import {vok} from "./14-render.js";
@@ -62,7 +62,7 @@ export function closeScene(){const s=document.getElementById("scn");if(s){s.hidd
 /* "09:00" + "3h30" -> "12:30" */
 function endTime(t,dur){
   const a=/^(\d{1,2})[:.](\d{2})/.exec(t||""),ds=String(dur||"").trim(),mm=/^(\d+)\s*min$/i.exec(ds),b=/^(\d+)\s*h\s*(\d{1,2})?$/i.exec(ds)||(mm?[0,0,mm[1]]:null);
-  if(!a||!b)return"";const m=(+a[1]*60+ +a[2]+(+b[1]||0)*60+(+b[2]||0))%1440;return pad2(Math.floor(m/60))+":"+pad2(m%60);
+  if(!a||!b)return"";return minHM(+a[1]*60+ +a[2]+(+b[1]||0)*60+(+b[2]||0));
 }
 export function schedIndex(){return memo("scsched",()=>{const m={};for(const d of S.days)for(const [u,its] of unitLists(d))for(const it of its){if(!it.sc)continue;const k=norm(it.sc);(m[k]=m[k]||[]).push({d,u,it})}return m})}
 export function sceneFacts(reqSc,x,list){

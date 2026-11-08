@@ -4,9 +4,10 @@ import fs from "fs";import vm from "vm";import path from "path";import {fileURLT
 /* the app's parts are ES modules: take import/export out to run one part here on its own (as tools/modlink.mjs does for the browser) */
 const unmod=s=>s.replace(/^import \{[^}]*\} from "[^"]+";\n/gm,"").replace(/(^|[;}\s])export (?=(?:async\s+)?function\b|const\b|let\b|var\b|class\b)/gm,"$1");
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
-const helpers=`const pad2=n=>String(n).padStart(2,"0");function hm(t){const m=String(t||"").match(/(\\d{1,2}):(\\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
-function dayOf(date){return (Array.isArray(S.days)?S.days:[]).find(d=>d&&d.date===date)}function dispoOf(date,needCs){return (Array.isArray(S.dispos)?S.dispos:[]).find(x=>x&&x.date===date&&(!needCs||x.cs))}   // from 10-core.js
-function hash36(s){s=String(s??"");let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
+/* the core routines of tools/base/10-core.js the code under test uses (taken from the source: always the same as the app) */
+const CORE_FNS=(()=>{const src=fs.readFileSync(path.join(ROOT,"tools/base/10-core.js"),"utf8");
+  return ["hash36","dayOf","dispoOf","hmMin","minHM"].map(n=>{const m=src.match(new RegExp("^export (?:function "+n+"\\b|const "+n+"=)[^\\n]*","m"));if(!m)throw new Error("core routine missing: "+n);return m[0].replace(/^export /,"")}).join("\n")+"\n"})();
+const helpers=CORE_FNS+`const pad2=n=>String(n).padStart(2,"0");function hm(t){const m=String(t||"").match(/(\\d{1,2}):(\\d{2})/);return m?pad2(+m[1])+":"+m[2]:""}
 const fold=t=>String(t||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase();const arr=x=>Array.isArray(x)?x:[];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));const L=x=>x;const S={tab:""};const ME=null;const csAfter=()=>{};const todayISO=()=>"2031-03-02";
 function rideId(date,r){const s=[date,hm(r.t1),hm(r.t2),String(r.from||"").trim(),String(r.to||"").trim(),String(r.vehicle||"").trim()].join("|").toLowerCase();let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return "r"+(h>>>0).toString(36)}

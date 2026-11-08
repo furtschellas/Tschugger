@@ -1,4 +1,4 @@
-import {dayOf,esc,hash36,isoId,L,mkDialog,norm,S,saveBtn,xBtn} from "../base/10-core.js";
+import {dayOf,esc,hash36,isoId,L,minHM,mkDialog,norm,S,saveBtn,xBtn} from "../base/10-core.js";
 import {hm,myIdentity} from "../base/12-mycal.js";
 import {render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
@@ -70,7 +70,7 @@ window.deMark=it=>{const e=it&&it._de;if(!e)return "";const dd=x=>{const d=dayOf
 /* ---------- the dialog ---------- */
 const deHm=hm;   /* «7:05» → «07:05» – the same helper as everywhere (12-mycal hm) */
 const deMins=v=>{const m=String(v||"").trim().match(/^(\d+)\s*[h:]\s*(\d{1,2})|^(\d+)\s*['′m]?/);return m?(m[3]!=null?+m[3]:+m[1]*60+ +m[2]):0};
-const deAddMin=(t,n)=>{const m=deHm(t).match(/(\d\d):(\d\d)/);if(!m)return t;const x=(+m[1]*60+ +m[2]+n+1440)%1440;return ("0"+Math.floor(x/60)).slice(-2)+":"+("0"+x%60).slice(-2)};
+const deAddMin=(t,n)=>{const m=deHm(t).match(/(\d\d):(\d\d)/);if(!m)return t;return minHM(+m[1]*60+ +m[2]+n)};
 /* the original rows of a day (Drehplan after the Coverday, before any change on set) */
 const deOrig=date=>{const d0=typeof window.cdDaysT==="function"&&S.days0?window.cdDaysT(S.days0).find(x=>x.date===date):arr(S.days0||S.days).find(x=>x.date===date);return d0||null};
 function deLoad(date,u){u=u||"1";const ent=uEnt((window.DAYEDIT||{})[date],u);

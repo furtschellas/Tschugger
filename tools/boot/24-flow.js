@@ -1,4 +1,4 @@
-import {ackFrom,dayOf,dispoOf,esc,hash36,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
+import {ackFrom,dayOf,dispoOf,esc,hash36,hmMin,isoAdd,L,MEMO,mkDialog,mName,pad2,prodTZ,S,todayISO} from "../base/10-core.js";
 import {dayMs,nameHit} from "../base/11-schedule-prep.js";
 import {hm,myIdentity,rideId} from "../base/12-mycal.js";
 import {csAfter,csMe} from "../base/13a-callsheet.js";
@@ -194,7 +194,7 @@ const cqLeft=(at,min)=>Math.max(0,Math.ceil(min-(Date.now()-at)/60000));
 const cqDown=(at,min,tip)=>' <span class="mkd cqcd" data-cqat="'+at+'" data-cqmin="'+min+'" title="'+esc(tip)+'">'+cqLeft(at,min)+'′</span>';
 const cqUp=(at,tip)=>at?' <span class="mkd cqcd" data-cqat="'+at+'" data-cqup="1" title="'+esc(tip)+'">'+Math.max(0,Math.floor((Date.now()-at)/60000))+'′</span>':"";
 const cqClock=at=>{try{return new Date(at).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:typeof prodTZ==="function"?prodTZ():"Europe/Zurich"})}catch(_){return ""}};
-const cqMin=x=>+x.slice(0,2)*60+ +x.slice(3);
+const cqMin=hmMin;   /* «07:30» → 450 (core routine) */
 /* P/UP: driver on site – minutes waiting; on the way – the planned driving time of the pickup ride counting down */
 function cqDrive(m,cur){if(cur===1)return cqUp(m.puAt,L("Fahrer wartet seit"));if(cur!==2||!m.ride)return"";
   const a=cqHm(m.ride.t1),b=cqHm(m.ride.t2);if(!a||!b||!m.puVAt)return"";let min=cqMin(b)-cqMin(a);if(min<=0)min+=1440;if(min>600)return"";
