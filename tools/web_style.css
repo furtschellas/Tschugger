@@ -272,9 +272,12 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 /* ---- polish: Mein Konto as cards, consistent spacing ---- */
 .acpage .psec{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:14px 16px 16px;margin:14px 0}
 .acpage .psec h4{margin:0 0 12px;font-size:15px;font-weight:700;letter-spacing:.01em}
-.acpage>details{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:12px 16px;margin:10px 0}
-.acpage>details>summary{cursor:pointer;font-weight:600}
-.acpage>details[open]>summary{margin-bottom:10px}
+.acpage>details,
+.acpage>.raw>details{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:12px 16px;margin:10px 0}
+.acpage>details>summary,
+.acpage>.raw>details>summary{cursor:pointer;font-weight:600}
+.acpage>details[open]>summary,
+.acpage>.raw>details[open]>summary{margin-bottom:10px}
 .acpage .acwho{margin:6px 0 4px;line-height:1.5}
 .acpage .myhead{margin-bottom:6px}
 .pushsec>label:not(.ck){display:flex;flex-direction:column;gap:5px;margin:12px 0 4px;font-size:13px;color:var(--muted)}
@@ -283,7 +286,7 @@ html[data-theme="light"] .ggoogle{border:1px solid var(--rule)!important}
 .pushlist{margin-top:12px;border-top:1px solid var(--rule);padding-top:8px}
 .acpage .psec .pillbtn{margin-top:4px}
 .acpage .thm{display:flex;gap:8px}.acpage .thm button{flex:1}
-@media (min-width:700px){.acpage .psec,.acpage>details{padding:16px 20px}}
+@media (min-width:700px){.acpage .psec,.acpage>details,.acpage>.raw>details{padding:16px 20px}}
 /* catering card in the crew list (redesigned) */
 .catbox{display:block;border:1px solid var(--rule);border-radius:16px;padding:0;margin:12px 0 16px;background:var(--sheet);overflow:hidden}
 .catbox>summary{list-style:none;cursor:pointer;padding:12px 14px 12px}.catbox>summary::-webkit-details-marker{display:none}

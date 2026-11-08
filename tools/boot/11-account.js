@@ -1,7 +1,7 @@
 import {a2hsDo,isIOS,isStandalone,showA2hs} from "../a2hs.js";
 import {$,applyStatic,dlgBtn,esc,fullName,getTheme,L,LANG,lsGet,mkDialog,S,saveBtn,setLANG,setTheme,WDS} from "../base/10-core.js";
 import {VIEWS,myTabOrder,tabOrder,tabsOn,vok} from "../base/14-render.js";
-import {render} from "../base/15-script-tab.js";
+import {island,render} from "../base/15-script-tab.js";
 import {goTo,store} from "../base/16-interaction.js";
 import {showMsg} from "../base/20-data-start.js";
 import {fmtD} from "./01-config.js";
@@ -16,6 +16,8 @@ import {offAuto} from "./14-today-changes-offline.js";
 import {todayCfg,todayOn,tShow} from "./16-today-view.js";
 import {SIMUSER} from "./22-simulate.js";
 import {fsGet} from "./23-mobile.js";
+import {html,ISLANDS} from "../base/09-fw.js";
+import {Raw,RawLive} from "../base/10a-ui.js";
 /* ---- account sheet: own password, own email, sign out; admin entry ---- */
 export function acctButton(on){
   let b=document.getElementById("acctBtn");
@@ -100,13 +102,17 @@ function acctInner(){
   /* order inside «App»: Darstellung first, App-Icon last */
   {const rank=h=>h.includes('<h4>'+L("Darstellung")+'</h4>')?0:h.includes('<h4>'+L("Sprache")+'</h4>')?0.5:h.includes('<h4>'+L("Einführungstour")+'</h4>')?0.6:h.includes('<h4>'+L("App-Icon und App installieren")+'</h4>')?2:h.includes('<h4>'+L("App-Symbol erneuern")+'</h4>')?2.1:1;grp.app=grp.app.map((h,i)=>[rank(h),i,h]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).map(x=>x[2])}
   const subs=ACSUBS.filter(([k])=>grp[k].length);if(!subs.some(([k])=>k===ACSUB))ACSUB=subs.length?subs[0][0]:"pro";
-  const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-acsub="'+k+'" aria-selected="'+(ACSUB===k)+'">'+esc(L(t))+'</button>').join("")+'</nav>';
-  /* who is signed in: always shown, above the groups */
-  return head.filter(h=>/myhead/.test(h)).join("")+nav+head.filter(h=>/acwho/.test(h)).join("")+grp[ACSUB].join("");
-}
+  return {head:head.filter(h=>/myhead/.test(h)).join(""),who:head.filter(h=>/acwho/.test(h)).join(""),subs,secs:grp[ACSUB]}}
+/* «Mein Konto» as components (framework): head, the groups as tabs, who is signed in, the parts of the group – each part with its forms
+   morphed on its own (typing and ticks stay) */
+/** @param {{subs:string[][],cur:string}} p */
+function AcSubNav({subs,cur}){return html`<nav class=${"asub acsub n"+subs.length} role="tablist">${subs.map(([k,t])=>html`<button type="button" role="tab" data-acsub=${k} aria-selected=${String(cur===k)}>${L(t)}</button>`)}</nav>`}
+/** @param {{a:any,cur:string}} p */
+function AcctPage({a,cur}){return html`<section class="mypage acpage"><${Raw} html=${a.head}/><${AcSubNav} subs=${a.subs} cur=${cur}/><${Raw} html=${a.who}/>${a.secs.map((x,i)=>html`<${RawLive} key=${cur+i} html=${x}/>`)}</section>`}
+ISLANDS.acct=AcctPage;
 document.addEventListener("click",e=>{const b=e.target.closest("[data-acsub]");if(!b)return;ACSUB=b.dataset.acsub;try{localStorage.setItem("acsub",ACSUB)}catch(_){}render();scrollTo(0,0)});
 /* «Mein Konto» is its own page; only the first-start profile (onboarding) stays a dialog */
-VIEWS.acct=function(){if(ME)setTimeout(()=>{const v=document.getElementById("view");if(v&&S.tab==="acct")markNeed(v)},0);return ME?'<section class="mypage acpage">'+acctInner()+'</section>':'<div class="empty">'+L("Kein Zugang")+'</div>'};
+VIEWS.acct=function(){if(ME)setTimeout(()=>{const v=document.getElementById("view");if(v&&S.tab==="acct")markNeed(v)},0);return ME?island("acct",{a:acctInner(),cur:ACSUB}):'<div class="empty">'+L("Kein Zugang")+'</div>'};
 let ACCTWIRED=false;setTimeout(()=>wireAcctPage(),0);
 function wireAcctPage(){if(ACCTWIRED)return;ACCTWIRED=true;
   document.addEventListener("click",e=>{if(e.target.closest(".acpage"))onAcctClick(e)});
