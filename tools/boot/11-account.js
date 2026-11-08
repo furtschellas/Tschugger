@@ -16,7 +16,7 @@ import {offAuto} from "./14-today-changes-offline.js";
 import {todayCfg,todayOn,tShow} from "./16-today-view.js";
 import {SIMUSER} from "./22-simulate.js";
 import {fsGet} from "./23-mobile.js";
-import {html,ISLANDS} from "../base/09-fw.js";
+import {h,html,ISLANDS,toHTML} from "../base/09-fw.js";
 import {Raw,RawLive,TabNav} from "../base/10a-ui.js";
 /* ---- account sheet: own password, own email, sign out; admin entry ---- */
 export function acctButton(on){
@@ -40,43 +40,24 @@ export let ONBOARD=false;
 export function contactFields(m,pre){const cp=(typeof crewPerson==="function"&&ME&&crewPerson(lc(ME.email)))||{};pre=pre||"";
   return '<label>'+L("Telefon")+'<input type="tel" name="'+pre+'ph" autocomplete="tel" inputmode="tel" required placeholder="+41 79 123 45 67" value="'+esc((m&&m.phone)||(!pre&&cp.phone)||"")+'"></label>'+
     '<label>'+L("E-Mail")+'<input type="email" name="'+pre+'ce" autocomplete="email" required value="'+esc((m&&m.contactEmail)||(!pre&&ME&&ME.email)||(m&&m.email)||"")+'"></label>';}
-/* function (job): from the crew list when listed there, otherwise the person enters it in the profile (members.func) */
-function funcField(){const cp=(typeof crewPerson==="function"&&ME&&crewPerson(lc(ME.email)))||{};
-  if(cp.role)return '<div class="pname pfunc"><span>'+L("Funktion")+'</span><b>'+esc(cp.role)+'</b></div>';
-  return '<label>'+L("Funktion")+'<input type="text" name="fu" maxlength="80" autocomplete="organization-title" placeholder="'+esc(L("z. B. Kamera-Assistenz"))+'" value="'+esc((MEMBER&&MEMBER.func)||"")+'"></label>'}
-function nameFields(){
-  const cn=crewNames();
-  if(cn)return '<div class="pname"><span>'+L("Vorname")+'</span><b>'+esc(cn.firstName)+'</b><span>'+L("Nachname")+'</span><b>'+esc(cn.lastName||"–")+'</b></div><p class="ghint">'+L("Aus der Crewliste übernommen.")+'</p>';
-  return '<label>'+L("Vorname")+'<input type="text" name="fn" autocomplete="given-name" required value="'+esc((MEMBER&&MEMBER.firstName)||"")+'"></label><label>'+L("Nachname")+'<input type="text" name="ln" autocomplete="family-name" required value="'+esc((MEMBER&&MEMBER.lastName)||"")+'"></label>';
-}
 export const GENDERS=[["m","Männlich"],["w","Weiblich"],["d","Divers"]];
 export const genderSel=(n,v,req)=>'<select name="'+n+'"'+(req?' required':'')+'><option value="">–</option>'+GENDERS.map(([k,t])=>'<option value="'+k+'"'+(v===k?' selected':'')+'>'+L(t)+'</option>').join("")+'</select>';
-function profileForm(onb){
-  return '<form data-af="pf" novalidate>'+nameFields()+funcField()+contactFields(MEMBER)+'<label>'+L("Sprache der App")+langSel("lg",(MEMBER&&MEMBER.lang)||LANG)+'</label><label>'+L("Geburtsdatum (optional)")+'<input type="date" name="bd" autocomplete="bday" value="'+esc((MEMBER&&MEMBER.birthday)||"")+'"></label><label>'+L("Geschlecht")+genderSel("gd",(MEMBER&&MEMBER.gender)||"",true)+'</label><fieldset class="efood"><legend>'+L("Essen")+'</legend><label>'+L("Ernährung")+dietSel("dt",(MEMBER&&MEMBER.diet)?normDiet(MEMBER).diet:"",true)+'</label><label class="full">'+L("Verträglichkeiten")+'</label>'+intolBoxes("pint",normDiet(MEMBER).intol)+'<label class="full">'+L("Weitere Allergien (optional)")+'<input type="text" name="al" maxlength="200" value="'+esc((MEMBER&&MEMBER.allergies)||"")+'"></label><p class="ghint">'+L("Nur für die Produktion sichtbar.")+'</p></fieldset>'+
-    /* «Mein Drehtag» on Today: also here in the profile (same setting as Mein Konto › App) */
-    (typeof todayOn==="function"&&todayOn()&&todayCfg("mine")!=="no"?'<label class="ck"><input type="checkbox" data-todaypart="mine"'+(tShow("mine")?' checked':'')+'> '+L("«Mein Drehtag» auf Today anzeigen")+'</label>':'')+
-    ''+saveBtn()+'<p class="amsg" role="alert"></p></form>';
-}
-function acctInnerAll(){
-  return '<div class="myhead"><h2 class="pgt">'+L("Mein Konto")+'</h2><button type="button" class="pillbtn" data-ac="signout">'+L("Abmelden")+'</button></div><p class="acwho">'+L("Angemeldet als")+' <b>'+esc(ME.email)+'</b>'+' · '+L("Rolle")+': <b>'+esc(isOwner()?L("Owner"):isAdmin()?L("Admin"):MYROLE?(MYROLE==="crew"?"Crew":MYROLE):L("keine"))+'</b>'+(()=>{let w=(MEMBER&&MEMBER.welcomeAck)||"";if(!w)try{w=(localStorage.getItem("welcomeAck")||"").split("|")[0]}catch(_){}return w?' · '+L("Willkommen bestätigt")+' '+esc(fmtD(w)):''})()+'</p>'+
-    (MEMBER||isAdmin()?'<section class="psec"><h4>'+L("Profil")+'</h4>'+profileForm(false)+'</section>':'')+
-    (ME&&window.PUSHEN!==false?pushSec():'')+'<section class="psec"><h4>'+L("App-Icon und App installieren")+'</h4>'+(()=>{a2stCheck();const st=window.A2ST&&window.A2ST.v;
-      /* installed: only «App deinstallieren» (instructions – a web app cannot remove itself); not installed: only «Als App installieren» */
-      const un='<button type="button" class="pillbtn" data-ac="a2un">'+L("App deinstallieren")+'</button> ';
-      if(st==="standalone")return '<p class="ghint pok">✓ '+L("Du nutzt die App bereits als installierte App.")+'</p>'+un;
-      if(st==="installed")return '<p class="ghint pok">✓ '+L("Die App ist auf diesem Gerät installiert.")+'</p>'+un;
-      return '<p class="ghint">'+(st==="missing"?'<b>'+L("Die App ist auf diesem Gerät nicht installiert.")+'</b> ':!st?L("Prüfe, ob die App installiert ist …")+' ':'')+L("Installiere die Crew-App auf dem Startbildschirm oder Desktop – dann öffnet sie sich wie eine normale App.")+'</p><button type="button" class="pillbtn" data-ac="a2hs">'+L("Als App installieren")+'</button> '})()+'<button type="button" class="pillbtn" data-ac="a2hs" data-more="1">+ '+L("Weiteres Icon erstellen")+'</button>'+'</section>'+iconSec()+(window.scWaSec?window.scWaSec():'')+'<section class="psec"><h4>'+L("Offline-Daten")+'</h4><label class="ck"><input type="checkbox" data-offauto'+(offAuto()?' checked':'')+'> '+L("Offline-Daten immer automatisch laden")+'</label><p class="ghint">'+L("Blocking-PDFs und Floorplans aller Drehtage werden auf diesem Gerät gespeichert (keine Fotos). Ausgeschaltet nur auf Knopfdruck in «Today».")+'</p><button type="button" class="pillbtn" data-offprep>'+L("Jetzt für offline laden")+'</button></section>'+'<section class="psec"><h4>'+L("Startseite «Today»")+'</h4><label class="ck"><input type="checkbox" data-todayon'+(todayOn()?' checked':'')+'> '+L("«Today» anzeigen und die App dort öffnen")+'</label><p class="ghint">'+L("Ausgeschaltet öffnet die App mit dem Drehplan.")+'</p>'+(window.todayPartsHTML?window.todayPartsHTML():'')+'</section>'+(window.TOUREN?'<section class="psec"><h4>'+L("Einführungstour")+'</h4><p class="ghint">'+esc(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?' · '+esc(fmtD(MEMBER.tourAt)):'')+'</p><button type="button" class="pillbtn" data-ac="tour">'+L("Tour starten")+'</button></section>':'')+(typeof chatSec==="function"?chatSec():'')+'<section class="psec"><h4>'+L("Sprache")+'</h4><div class="thm lngset" role="group" aria-label="'+esc(L("Sprache"))+'">'+(typeof APPLANGS!=="undefined"?APPLANGS:["de","fr","it","en"]).map(l=>'<button type="button" data-lang="'+l+'" aria-pressed="'+(LANG===l)+'">'+({de:"Deutsch",fr:"Français",it:"Italiano",en:"English",hi:"हिन्दी"}[l]||l.toUpperCase())+'</button>').join("")+'</div></section>'+'<section class="psec"><h4>'+L("Darstellung")+'</h4><div class="thm" role="group" aria-label="'+L("Darstellung")+'"><button type="button" data-ac="theme" data-thset="dark" aria-pressed="'+(getTheme()==="dark")+'">☾ '+L("Dunkel")+'</button><button type="button" data-ac="theme" data-thset="light" aria-pressed="'+(getTheme()==="light")+'">☀ '+L("Hell")+'</button></div><div class="thm fsz" role="group" aria-label="'+L("Schriftgrösse")+'"><button type="button" data-fsset="n" aria-pressed="'+((typeof fsGet==="function"?fsGet():"n")!=="l")+'"><span style="font-size:13px">Aa</span> '+L("Normal")+'</button><button type="button" data-fsset="l" aria-pressed="'+((typeof fsGet==="function"?fsGet():"n")==="l")+'"><span style="font-size:17px">Aa</span> '+L("Gross")+'</button></div></section>'+
-    (isPwUser()?'':'<p class="ghint">'+L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")+'</p>')+(!isPwUser()?'':'<details><summary>'+L("Passwort ändern")+'</summary><form data-af="pw"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neues Passwort")+'<input type="password" name="pw" autocomplete="new-password" minlength="8" required></label><label>'+L("Passwort wiederholen")+'<input type="password" name="pw2" autocomplete="new-password" minlength="8" required></label>'+saveBtn()+'<p class="amsg" role="alert"></p><button type="button" class="glink" data-ac="pwreset">'+L("Passwort vergessen?")+'</button></form></details>'+
-    '<details><summary>'+L("E-Mail-Adresse ändern")+'</summary><form data-af="em"><label>'+L("Aktuelles Passwort")+'<input type="password" name="cur" autocomplete="current-password" required></label><label>'+L("Neue E-Mail-Adresse")+'<input type="email" name="em" autocomplete="email" required></label>'+saveBtn()+'<p class="amsg" role="alert"></p></form></details>')+
-    '<details><summary>'+L("Auf allen Geräten abmelden")+'</summary><p class="ghint">'+esc(L("Zum Beispiel wenn ein Handy verloren ging: jede Anmeldung bis jetzt endet, auch diese. Danach meldest du dich neu an."))+'</p><button type="button" class="pillbtn" data-ac="signall">'+esc(L("Auf allen Geräten abmelden"))+'</button></details>'+
-    navOrderSec()+(typeof window.sbxSec==="function"?window.sbxSec():"")+aboutHTML();
-}
+/** the profile: names (from the crew list, else typed), function, contact, language, birthday, gender, food, «Mein Drehtag» on Today
+ * the fields keep what is typed (a new drawing changes a field only when its stored value changed) @param {{}} p */
+function ProfileForm(){const m=MEMBER||{},cn=crewNames(),cp=(typeof crewPerson==="function"&&ME&&crewPerson(lc(ME.email)))||{},nd=normDiet(MEMBER);
+  return html`<form data-af="pf" novalidate>
+    ${cn?html`<div class="pname"><span>${L("Vorname")}</span><b>${cn.firstName}</b><span>${L("Nachname")}</span><b>${cn.lastName||"–"}</b></div><p class="ghint">${L("Aus der Crewliste übernommen.")}</p>`
+      :html`<label>${L("Vorname")}<input type="text" name="fn" autocomplete="given-name" required value=${m.firstName||""}/></label><label>${L("Nachname")}<input type="text" name="ln" autocomplete="family-name" required value=${m.lastName||""}/></label>`}
+    ${cp.role?html`<div class="pname pfunc"><span>${L("Funktion")}</span><b>${cp.role}</b></div>`:html`<label>${L("Funktion")}<input type="text" name="fu" maxlength="80" autocomplete="organization-title" placeholder=${L("z. B. Kamera-Assistenz")} value=${m.func||""}/></label>`}
+    <label>${L("Telefon")}<input type="tel" name="ph" autocomplete="tel" inputmode="tel" required placeholder="+41 79 123 45 67" value=${m.phone||cp.phone||""}/></label>
+    <label>${L("E-Mail")}<input type="email" name="ce" autocomplete="email" required value=${m.contactEmail||(ME&&ME.email)||m.email||""}/></label>
+    <label>${L("Sprache der App")}<${Raw} html=${langSel("lg",m.lang||LANG)}/></label><label>${L("Geburtsdatum (optional)")}<input type="date" name="bd" autocomplete="bday" value=${m.birthday||""}/></label><label>${L("Geschlecht")}<${Raw} html=${genderSel("gd",m.gender||"",true)}/></label>
+    <fieldset class="efood"><legend>${L("Essen")}</legend><label>${L("Ernährung")}<${Raw} html=${dietSel("dt",m.diet?nd.diet:"",true)}/></label><label class="full">${L("Verträglichkeiten")}</label><${Raw} html=${intolBoxes("pint",nd.intol)}/><label class="full">${L("Weitere Allergien (optional)")}<input type="text" name="al" maxlength="200" value=${m.allergies||""}/></label><p class="ghint">${L("Nur für die Produktion sichtbar.")}</p></fieldset>
+    ${typeof todayOn==="function"&&todayOn()&&todayCfg("mine")!=="no"?html`<label class="ck"><input type="checkbox" data-todaypart="mine" checked=${tShow("mine")}/> ${L("«Mein Drehtag» auf Today anzeigen")}</label>`:null}
+    <${Raw} html=${saveBtn()}/><p class="amsg" role="alert"></p></form>`}
+function profileForm(onb){return toHTML(h(ProfileForm,{}))}
 /* Mein Konto → App: my own order of the navigation below (▲ ▼), back to the order of the App-Verwaltung */
 const NAVT={today:"Today",plan:"Schedule",dispo:"Callsheet",loc:"Locations",crew:"Crew",script:"Script",info:"Info"};
-function navOrderSec(){if(window.MYNAV===false)return"";let t=[];try{t=tabsOn()}catch(_){}if(t.length<2)return"";const own=!!myTabOrder();
-  return '<section class="psec"><h4>'+L("Navigation")+'</h4><p class="ghint">'+L("Reihenfolge der Bereiche unten in der App (auf diesem Gerät). Mit ▲ ▼ verschieben.")+'</p><div class="tbord">'+
-    t.map((k,i)=>'<div class="tbrow"><span>'+esc(L(NAVT[k]||k))+'</span><span class="tbmv"><button type="button" data-mynav="'+k+'|up"'+(i?'':' disabled')+' aria-label="'+esc(L("Nach oben"))+'">▲</button><button type="button" data-mynav="'+k+'|down"'+(i<t.length-1?'':' disabled')+' aria-label="'+esc(L("Nach unten"))+'">▼</button></span></div>').join("")+'</div>'+
-    (own?'<div class="arb"><button type="button" class="pillbtn" data-mynavreset>'+L("Auf Standard zurücksetzen")+'</button></div>':'')+'</section>'}
 document.addEventListener("click",e=>{const r=e.target.closest&&e.target.closest("[data-mynavreset]");if(r){lsDel("mytaborder");render();return}
   const b=e.target.closest&&e.target.closest("[data-mynav]");if(!b)return;e.preventDefault();const [k,d]=b.dataset.mynav.split("|");
   const vis=tabsOn(),i=vis.indexOf(k),j=d==="up"?i-1:i+1;if(i<0||j<0||j>=vis.length)return;[vis[i],vis[j]]=[vis[j],vis[i]];
@@ -84,35 +65,53 @@ document.addEventListener("click",e=>{const r=e.target.closest&&e.target.closest
 /* «Mein Konto» in groups like the app management: Profil (with password/e-mail) · Essen · Benachrichtigungen · App */
 const ACSUBS=[["pro","Profil"],["food","Essen"],["app","App"],["note","Push"]];   /* App before Push */
 export let ACSUB=lsGet("acsub","pro");
-function acctInner(){
-  const raw=acctInnerAll();const box=document.createElement("div");box.innerHTML=raw;
-  const grp={};ACSUBS.forEach(([k])=>grp[k]=[]);
-  const head=[];
-  const tit=el=>{const h=el.querySelector(":scope>h4");return h?h.textContent.trim():""};
-  const map=new Map([[L("Sprache"),"app"],[L("Profil"),"pro"],[L("Startseite «Today»"),"app"],[L("Offline-Daten"),"app"],[L("App-Icon und App installieren"),"app"],[L("Einführungstour"),"app"],[L("Darstellung"),"app"],[L("Assistent"),"app"]]);
-  [...box.children].forEach(el=>{
-    if(el.classList.contains("myhead")||el.classList.contains("acwho")){head.push(el.outerHTML);return}
-    if(el.matches("section.psec")){const g=el.classList.contains("pushsec")?"note":(map.get(tit(el))||"app");grp[g].push(el.outerHTML);return}
-    grp.pro.push(el.outerHTML)});  /* password / e-mail change belong to the profile */
-  /* «Essen» is the food part of the same profile form (one form, so saving keeps working): shown alone in its own group */
-  const prof=box.querySelector('section.psec form[data-af="pf"]');
-  if(prof){const sec=prof.closest("section.psec");const i=grp.pro.indexOf(sec.outerHTML);
-    const pro=sec.cloneNode(true);pro.classList.add("no-food");if(i>=0)grp.pro[i]=pro.outerHTML;
-    const food=sec.cloneNode(true);food.classList.add("only-food");const h=food.querySelector(":scope>h4");if(h)h.textContent=L("Essen");grp.food.push(food.outerHTML)}
-  /* order inside «App»: Darstellung first, App-Icon last */
-  {const rank=h=>h.includes('<h4>'+L("Darstellung")+'</h4>')?0:h.includes('<h4>'+L("Sprache")+'</h4>')?0.5:h.includes('<h4>'+L("Einführungstour")+'</h4>')?0.6:h.includes('<h4>'+L("App-Icon und App installieren")+'</h4>')?2:h.includes('<h4>'+L("App-Symbol erneuern")+'</h4>')?2.1:1;grp.app=grp.app.map((h,i)=>[rank(h),i,h]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).map(x=>x[2])}
-  const subs=ACSUBS.filter(([k])=>grp[k].length);if(!subs.some(([k])=>k===ACSUB))ACSUB=subs.length?subs[0][0]:"pro";
-  return {head:head.filter(h=>/myhead/.test(h)).join(""),who:head.filter(h=>/acwho/.test(h)).join(""),subs,secs:grp[ACSUB]}}
-/* «Mein Konto» as components (framework): head, the groups as tabs, who is signed in, the parts of the group – each part with its forms
-   morphed on its own (typing and ticks stay) */
-/** @param {{subs:string[][],cur:string}} p */
-function AcSubNav({subs,cur}){return html`<${TabNav} items=${subs.map(([k,t])=>[k,L(t)])} cur=${cur} attr="data-acsub" cls="acsub"/>`}
-/** @param {{a:any,cur:string}} p */
-function AcctPage({a,cur}){return html`<section class="mypage acpage"><${Raw} html=${a.head}/><${AcSubNav} subs=${a.subs} cur=${cur}/><${Raw} html=${a.who}/>${a.secs.map((x,i)=>html`<${RawLive} key=${cur+i} html=${x}/>`)}</section>`}
+/* ---------- «Mein Konto» as components (framework): the parts of each group (Profil · Essen · App · Push), each its own component ---------- */
+/** a part of the account page @param {{t:string,cls?:string,children?:any}} p */
+function PSec({t,cls,children}){return html`<section class=${"psec"+(cls?" "+cls:"")}><h4>${t}</h4>${children}</section>`}
+const PB=(attrs,txt)=>h("button",Object.assign({type:"button",class:"pillbtn"},attrs),txt);
+function AcHead(){return html`<div class="myhead"><h2 class="pgt">${L("Mein Konto")}</h2>${PB({"data-ac":"signout"},L("Abmelden"))}</div>`}
+function AcWho(){let w=(MEMBER&&MEMBER.welcomeAck)||"";if(!w)w=(lsGet("welcomeAck","")).split("|")[0];
+  return html`<p class="acwho">${L("Angemeldet als")} <b>${ME.email}</b> · ${L("Rolle")}: <b>${isOwner()?L("Owner"):isAdmin()?L("Admin"):MYROLE?(MYROLE==="crew"?"Crew":MYROLE):L("keine")}</b>${w?" · "+L("Willkommen bestätigt")+" "+fmtD(w):""}</p>`}
+/** profile (without food) or food only: the same form, so saving keeps working @param {{food:boolean}} p */
+function ProfSec({food}){return html`<${PSec} t=${food?L("Essen"):L("Profil")} cls=${food?"only-food":"no-food"}><${ProfileForm}/></${PSec}>`}
+function InstallSec(){a2stCheck();const st=window.A2ST&&window.A2ST.v,un=html`${PB({"data-ac":"a2un"},L("App deinstallieren"))} `;
+  return html`<${PSec} t=${L("App-Icon und App installieren")}>${st==="standalone"?html`<p class="ghint pok">✓ ${L("Du nutzt die App bereits als installierte App.")}</p>${un}`:st==="installed"?html`<p class="ghint pok">✓ ${L("Die App ist auf diesem Gerät installiert.")}</p>${un}`
+    :html`<p class="ghint">${st==="missing"?html`<b>${L("Die App ist auf diesem Gerät nicht installiert.")}</b> `:!st?L("Prüfe, ob die App installiert ist …")+" ":""}${L("Installiere die Crew-App auf dem Startbildschirm oder Desktop – dann öffnet sie sich wie eine normale App.")}</p>${PB({"data-ac":"a2hs"},L("Als App installieren"))} `}${PB({"data-ac":"a2hs","data-more":"1"},"+ "+L("Weiteres Icon erstellen"))}</${PSec}>`}
+function IconSec(){return html`<${PSec} t=${L("App-Symbol erneuern")}><p class="ghint">${L("Siehst du auf dem Home-Bildschirm oder in Push-Nachrichten noch das alte Logo (TT)? Das Handy hat das Symbol beim Hinzufügen gespeichert. So kommt das neue Logo:")}</p><ol class="a2ol">${ICONSTEPS().map(x=>html`<li>${L(x)}</li>`)}</ol><label class="ck"><input type="checkbox" data-iconhint checked=${iconHint()!=="off"}/> ${L("Hinweis beim Öffnen zeigen (iPhone, einmal)")}</label></${PSec}>`}
+function OfflineSec(){return html`<${PSec} t=${L("Offline-Daten")}><label class="ck"><input type="checkbox" data-offauto checked=${offAuto()}/> ${L("Offline-Daten immer automatisch laden")}</label><p class="ghint">${L("Blocking-PDFs und Floorplans aller Drehtage werden auf diesem Gerät gespeichert (keine Fotos). Ausgeschaltet nur auf Knopfdruck in «Today».")}</p>${PB({"data-offprep":""},L("Jetzt für offline laden"))}</${PSec}>`}
+function TodaySec(){return html`<${PSec} t=${L("Startseite «Today»")}><label class="ck"><input type="checkbox" data-todayon checked=${todayOn()}/> ${L("«Today» anzeigen und die App dort öffnen")}</label><p class="ghint">${L("Ausgeschaltet öffnet die App mit dem Drehplan.")}</p><${RawLive} html=${window.todayPartsHTML?window.todayPartsHTML():""}/></${PSec}>`}
+function TourSec(){return html`<${PSec} t=${L("Einführungstour")}><p class="ghint">${(tourInfo(MEMBER)||L("Tour offen"))+(MEMBER&&MEMBER.tourAt?" · "+fmtD(MEMBER.tourAt):"")}</p>${PB({"data-ac":"tour"},L("Tour starten"))}</${PSec}>`}
+function LangSec(){return html`<${PSec} t=${L("Sprache")}><div class="thm lngset" role="group" aria-label=${L("Sprache")}>${(typeof APPLANGS!=="undefined"?APPLANGS:["de","fr","it","en"]).map(l=>html`<button type="button" data-lang=${l} aria-pressed=${String(LANG===l)}>${({de:"Deutsch",fr:"Français",it:"Italiano",en:"English",hi:"हिन्दी"})[l]||l.toUpperCase()}</button>`)}</div></${PSec}>`}
+function ThemeSec(){const th=getTheme(),fs=typeof fsGet==="function"?fsGet():"n";
+  return html`<${PSec} t=${L("Darstellung")}><div class="thm" role="group" aria-label=${L("Darstellung")}><button type="button" data-ac="theme" data-thset="dark" aria-pressed=${String(th==="dark")}>☾ ${L("Dunkel")}</button><button type="button" data-ac="theme" data-thset="light" aria-pressed=${String(th==="light")}>☀ ${L("Hell")}</button></div><div class="thm fsz" role="group" aria-label=${L("Schriftgrösse")}><button type="button" data-fsset="n" aria-pressed=${String(fs!=="l")}><span style="font-size:13px">Aa</span> ${L("Normal")}</button><button type="button" data-fsset="l" aria-pressed=${String(fs==="l")}><span style="font-size:17px">Aa</span> ${L("Gross")}</button></div></${PSec}>`}
+/** password and e-mail change (sign-in with password), else the note about Google; signing out everywhere */
+function AcSecurity(){const pw=isPwUser(),cur=html`<label>${L("Aktuelles Passwort")}<input type="password" name="cur" autocomplete="current-password" required/></label>`,sv=html`<${Raw} html=${saveBtn()}/><p class="amsg" role="alert"></p>`;
+  return html`${pw?null:html`<p class="ghint">${L("Du bist mit Google angemeldet. Passwort und Adresse verwaltest du in deinem Google-Konto.")}</p>`}
+    ${pw?html`<details><summary>${L("Passwort ändern")}</summary><form data-af="pw">${cur}<label>${L("Neues Passwort")}<input type="password" name="pw" autocomplete="new-password" minlength="8" required/></label><label>${L("Passwort wiederholen")}<input type="password" name="pw2" autocomplete="new-password" minlength="8" required/></label>${sv}<button type="button" class="glink" data-ac="pwreset">${L("Passwort vergessen?")}</button></form></details>
+      <details><summary>${L("E-Mail-Adresse ändern")}</summary><form data-af="em">${cur}<label>${L("Neue E-Mail-Adresse")}<input type="email" name="em" autocomplete="email" required/></label>${sv}</form></details>`:null}
+    <details><summary>${L("Auf allen Geräten abmelden")}</summary><p class="ghint">${L("Zum Beispiel wenn ein Handy verloren ging: jede Anmeldung bis jetzt endet, auch diese. Danach meldest du dich neu an.")}</p>${PB({"data-ac":"signall"},L("Auf allen Geräten abmelden"))}</details>`}
+/** my own order of the navigation below (▲ ▼) */
+function NavOrder(){if(window.MYNAV===false)return null;let t=[];try{t=tabsOn()}catch(_){}if(t.length<2)return null;const own=!!myTabOrder();
+  return html`<${PSec} t=${L("Navigation")}><p class="ghint">${L("Reihenfolge der Bereiche unten in der App (auf diesem Gerät). Mit ▲ ▼ verschieben.")}</p><div class="tbord">${t.map((k,i)=>html`<div class="tbrow"><span>${L(NAVT[k]||k)}</span><span class="tbmv"><button type="button" data-mynav=${k+"|up"} disabled=${!i} aria-label=${L("Nach oben")}>▲</button><button type="button" data-mynav=${k+"|down"} disabled=${i>=t.length-1} aria-label=${L("Nach unten")}>▼</button></span></div>`)}</div>${own?html`<div class="arb">${PB({"data-mynavreset":""},L("Auf Standard zurücksetzen"))}</div>`:null}</${PSec}>`}
+function About(){const m=S.meta||{};return html`<section class="psec about"><h4>${L("Über die App")}</h4><p class="abv">${m.scheduleVersion?html`${m.scheduleVersion}<br/>`:null}${m.scriptVersion&&vok("script")?html`${L("Drehbuch")} ${m.scriptVersion}<br/>`:null}App ${window.APPVER||""}<br/>© <b class="mrk">MrK</b> 2026</p></section>`}
+const RL=x=>x?html`<${RawLive} html=${x}/>`:null;
+/* the parts of each group, in their order (App: Darstellung, Sprache, Tour first, App-Icon last) */
+function acctGroups(){const pro=[],food=[],app=[],note=[];
+  if(MEMBER||isAdmin()){pro.push(html`<${ProfSec} food=${false}/>`);food.push(html`<${ProfSec} food=${true}/>`)}
+  if(ME&&window.PUSHEN!==false){const ps=pushSec();if(ps)note.push(RL(ps))}
+  pro.push(html`<${AcSecurity}/>`);
+  app.push(html`<${ThemeSec}/>`,html`<${LangSec}/>`);if(window.TOUREN)app.push(html`<${TourSec}/>`);
+  if(window.scWaSec)app.push(RL(window.scWaSec()));app.push(html`<${OfflineSec}/>`,html`<${TodaySec}/>`);if(typeof chatSec==="function")app.push(RL(chatSec()));
+  app.push(html`<${NavOrder}/>`);if(typeof window.sbxSec==="function")app.push(RL(window.sbxSec()));app.push(html`<${About}/>`,html`<${InstallSec}/>`,html`<${IconSec}/>`);
+  return {pro,food,app:app.filter(Boolean),note:note.filter(Boolean)}}
+function acctInner(){const g=acctGroups(),subs=ACSUBS.filter(([k])=>g[k].length);if(!subs.some(([k])=>k===ACSUB))ACSUB=subs.length?subs[0][0]:"pro";return {g,subs}}
+/** @param {{cur:string}} p */
+function AcctPage({cur}){const {g,subs}=acctInner();
+  return html`<section class="mypage acpage"><${AcHead}/><${TabNav} items=${subs.map(([k,t])=>[k,L(t)])} cur=${ACSUB} attr="data-acsub" cls="acsub"/><${AcWho}/>${g[ACSUB]}</section>`}
 ISLANDS.acct=AcctPage;
 document.addEventListener("click",e=>{const b=e.target.closest("[data-acsub]");if(!b)return;ACSUB=b.dataset.acsub;lsSet("acsub",ACSUB);render();scrollTo(0,0)});
 /* «Mein Konto» is its own page; only the first-start profile (onboarding) stays a dialog */
-VIEWS.acct=function(){if(ME)setTimeout(()=>{const v=document.getElementById("view");if(v&&S.tab==="acct")markNeed(v)},0);return ME?island("acct",{a:acctInner(),cur:ACSUB}):'<div class="empty">'+L("Kein Zugang")+'</div>'};
+VIEWS.acct=function(){if(ME)setTimeout(()=>{const v=document.getElementById("view");if(v&&S.tab==="acct")markNeed(v)},0);return ME?island("acct",{cur:ACSUB,at:Date.now()}):'<div class="empty">'+L("Kein Zugang")+'</div>'};
 let ACCTWIRED=false;setTimeout(()=>wireAcctPage(),0);
 function wireAcctPage(){if(ACCTWIRED)return;ACCTWIRED=true;
   document.addEventListener("click",e=>{if(e.target.closest(".acpage"))onAcctClick(e)});
@@ -216,19 +215,12 @@ function a2Uninstall(){let d=document.getElementById("a2un");if(d)d.remove();
 setTimeout(async()=>{try{if(typeof isStandalone==="function"&&isStandalone())return;if(sessionStorage.getItem("instHint"))return;
   if(typeof window.a2hsCheck!=="function"||await window.a2hsCheck()!=="installed")return;sessionStorage.setItem("instHint","1");
   if(typeof showMsg==="function")showMsg(L("Die App ist auf diesem Gerät installiert – öffne sie am besten über das App-Icon."),7000)}catch(_){}},4000);
-/* «Über die App» (Mein Konto → App): the same versions as on the start screen and the copyright */
-function aboutHTML(){const m=S.meta||{};
-  return '<section class="psec about"><h4>'+L("Über die App")+'</h4><p class="abv">'+(m.scheduleVersion?esc(m.scheduleVersion)+'<br>':'')+(m.scriptVersion&&vok("script")?esc(L("Drehbuch"))+' '+esc(m.scriptVersion)+'<br>':'')+'App '+esc(window.APPVER||"")+'<br>© <b class="mrk">MrK</b> 2026</p></section>'}
 
 /* ---------- «App-Symbol erneuern»: phones keep the icon of the day the app was added (the first «TT» logo until 16.10.) ----------
    Mein Konto → App: the steps for this device and the switch «Hinweis beim Öffnen zeigen» (iconhint: ""/"on" = show once, "seen", "off"; synced in prefs) */
 const ICONSTEPS=()=>typeof isIOS==="function"&&isIOS()?["Halte das App-Icon auf dem Home-Bildschirm gedrückt → «App entfernen» → «Vom Home-Bildschirm entfernen».","Öffne die App in Safari → Teilen → «Zum Home-Bildschirm».","Deine Anmeldung und deine Einstellungen bleiben erhalten."]:
   ["Android und Computer übernehmen das neue Logo von selbst (manchmal erst nach ein paar Tagen).","Sofort: die App deinstallieren und über «Als App installieren» neu installieren."];
 const iconHint=()=>{return lsGet("iconhint","")};
-function iconSec(){const on=iconHint()!=="off";
-  return '<section class="psec"><h4>'+L("App-Symbol erneuern")+'</h4><p class="ghint">'+esc(L("Siehst du auf dem Home-Bildschirm oder in Push-Nachrichten noch das alte Logo (TT)? Das Handy hat das Symbol beim Hinzufügen gespeichert. So kommt das neue Logo:"))+'</p>'+
-    '<ol class="a2ol">'+ICONSTEPS().map(x=>'<li>'+esc(L(x))+'</li>').join("")+'</ol>'+
-    '<label class="ck"><input type="checkbox" data-iconhint'+(on?' checked':'')+'> '+esc(L("Hinweis beim Öffnen zeigen (iPhone, einmal)"))+'</label></section>'}
 document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest("[data-iconhint]");if(!c)return;store("iconhint",c.checked?"on":"off");if(typeof savePrefsSoon==="function"){lsSet("prefsLocalAt",String(Date.now()));savePrefsSoon()}});
 /* once on an iPhone that opens the installed app (only there the old icon can stay), after the other start notes */
 {let shown=false;const iv=setInterval(()=>{if(shown){clearInterval(iv);return}
