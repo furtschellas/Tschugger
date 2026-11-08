@@ -8,7 +8,8 @@ import {blkRow} from "./18-blocking.js";
 import {SHINT,actorRoles,dayKeys,modeChips,normQ,planRoles,roleBadges,roleOverview,rolesFor} from "./19-search.js";
 import {arr} from "./20-data-start.js";
 import {ME,can,canAdm} from "../boot/03-core-firebase.js";
-import {h,ISLANDS,prender} from "./09-fw.js";
+import {h,html,ISLANDS,prender,toHTML} from "./09-fw.js";
+import {Raw} from "./10a-ui.js";
 /* ---------- script tab: every scene of the screenplay, tap opens the reader ---------- */
 let SCRIPTERR=false;
 /* accent- and case-insensitive text for searching */
@@ -40,7 +41,7 @@ export function renderScript(){
   const lx=last&&SCRIPT.find(x=>x.sc===last);
   return '<div class="svwrap '+svClasses()+'"><h3 class="dh">'+esc(L("Drehbuch"))+'</h3>'+(lx?'<button class="lastsc" data-scene="'+esc(lx.sc)+'"><span>'+esc(L("Zuletzt gelesen"))+'</span><b>'+esc(lx.sc)+' · '+spTitle(lx)+'</b><i aria-hidden="true">›</i></button>':'')+
     '<div class="svb svtab">'+ufButtons()+'<span class="svfill"></span>'+svToggles()+'</div>'+
-    searchBox("sq",S.sq,L("Szene, Motiv, Rolle, Text …"))+modeChips(S.sqm,"data-sqm")+'<div id="scres">'+scriptResults()+'</div></div>';
+    searchBox("sq",S.sq,L("Szene, Motiv, Rolle, Text …"))+modeChips(S.sqm,"data-sqm")+'<div id="scres">'+island("script",scriptProps())+'</div></div>';
 }
 /* search field with a search button; Enter / the keyboard's search key run the search right away */
 export function searchBox(id,val,ph){
@@ -69,25 +70,26 @@ function pickOverview(mode,sched){
   if(mode==="loc"){const m=new Map();for(const k in sched)for(const h of sched[k]){const t=String(h.it.set||"").trim();if(!t)continue;if(!m.has(t))m.set(t,new Set());m.get(t).add(k)}
     if(!m.size)return "";return '<div class="rolegrid">'+[...m].sort((a,b)=>a[0].localeCompare(b[0],LANG)).map(([t,ks])=>row(t,esc(t),ks.size+' '+esc(L(ks.size===1?"Szene":"Szenen")))).join("")+'</div>'}
   return ""}
-export function scriptResults(){
-  const sched=schedIndex(),mode=S.sqm||"all";
-  const terms=(mode==="day"?normQ(S.sq||""):fold(S.sq||"")).split(/\s+/).filter(Boolean);
-  if(!terms.length&&mode!=="all")return (mode==="role"?roleOverview(true,"data-sqpick"):pickOverview(mode,sched))+'<p class="shint">'+esc(L(mode==="person"?"Name der Schauspielerin oder des Schauspielers eingeben (aus den Callsheets).":mode==="text"?"Wörter aus dem Drehbuchtext eingeben.":SHINT[mode]))+'</p>';
+/* the list of the Drehbuch as components (framework): props of the search, the list itself */
+export function scriptProps(){let rb=true;try{rb=localStorage.getItem("rbadges")!=="0"}catch(_){}return {q:S.sq||"",mode:S.sqm||"all",uf:S.uf,rb,n:SCRIPT?SCRIPT.length:0,at:S.meta&&S.meta.updatedAt}}
+/** one scene: number, title, time of day, «not planned», role badges, text snippet; below its facts in the Drehplan (or the blocking row)
+ * @param {{x:any,hits:any[],terms:string[],rIds:string[],rb:boolean}} p */
+function SceneRow({x,hits,terms,rIds,rb}){
+  return html`<li class="scard"><button class="scli" data-scene=${x.sc}><span class="sclin">${x.sc}</span><span class="sclih"><${Raw} html=${spTitle(x)}/></span><${Raw} html=${spTod(x)}/>${hits.length?null:html`<span class="sclid"><i>${L("nicht geplant")}</i></span>`}${rIds.length&&rb?html`<${Raw} html=${roleBadges(x.sc,rIds)}/>`:null}${terms.length&&!rIds.length?html`<${Raw} html=${snippet(x.text,terms)||'<span class="sclsn">'+esc(L("Treffer im Drehplan (Motiv, Cast oder Beschreibung)"))+'</span>'}/>`:null}</button><${Raw} html=${hits.length?factsHTML(hits):blkRow(x.sc)}/></li>`}
+/** the scenes found (always all scenes without a search), the count and the comparison switch for roles @param {{q:string,mode:string,rb:boolean}} p */
+function ScriptList({q,mode,rb}){
+  const sched=schedIndex(),terms=(mode==="day"?normQ(q):fold(q)).split(/\s+/).filter(Boolean);
+  if(!terms.length&&mode!=="all")return html`<${Raw} html=${(mode==="role"?roleOverview(true,"data-sqpick"):pickOverview(mode,sched))}/><p class="shint">${L(mode==="person"?"Name der Schauspielerin oder des Schauspielers eingeben (aus den Callsheets).":mode==="text"?"Wörter aus dem Drehbuchtext eingeben.":SHINT[mode])}</p>`;
   const uo=unitsOn(),sel=uo.filter(u=>S.uf[u]),allU=terms.length||!sel.length||sel.length===uo.length; /* a search always looks through all units */
   const hitsOf=x=>(sched[norm(x.sc)]||[]).filter(h=>allU||sel.includes(h.u));
   const idx=scriptIndex(sched);
   const rows=SCRIPT.filter((x,i)=>(allU||hitsOf(x).length)&&(!terms.length||scriptMatch(x,i,mode,terms,idx,sched)));
   const rIds=mode==="role"?rolesFor(terms).map(r=>r.id):mode==="person"?actorRoles(terms):[];
-  /* own button with a tick: show / hide the comparison with the script for each role («✓ Drehplan und Drehbuch») */
-  let rbOn=true;try{rbOn=localStorage.getItem("rbadges")!=="0"}catch(_){}
-  const cnt='<p class="sccount">'+rows.length+' '+esc(L(rows.length===1?"Szene":"Szenen"))+(rIds.length?' <button type="button" class="pillbtn rbtog" data-rbtog aria-pressed="'+rbOn+'">'+(rbOn?'✓ ':'')+esc(L("Abgleich mit Drehbuch"))+'</button>':'')+'</p>';
-  if(!rows.length)return cnt+'<div class="empty">'+esc(L("Nichts gefunden für"))+' «'+esc(S.sq)+'»</div>';
-  return cnt+'<ul class="sclist">'+rows.map(x=>{   /* always all scenes */
-    const hits=hitsOf(x);
-    return '<li class="scard"><button class="scli" data-scene="'+esc(x.sc)+'"><span class="sclin">'+esc(x.sc)+'</span><span class="sclih">'+spTitle(x)+'</span>'+spTod(x)+
-      (hits.length?'':'<span class="sclid"><i>'+esc(L("nicht geplant"))+'</i></span>')+(rIds.length&&rbOn?roleBadges(x.sc,rIds):'')+(terms.length&&!rIds.length?(snippet(x.text,terms)||'<span class="sclsn">'+esc(L("Treffer im Drehplan (Motiv, Cast oder Beschreibung)"))+'</span>'):'')+'</button>'+(hits.length?factsHTML(hits):blkRow(x.sc))+'</li>';
-  }).join("")+'</ul>';
-}
+  const cnt=html`<p class="sccount">${rows.length} ${L(rows.length===1?"Szene":"Szenen")}${rIds.length?html` <button type="button" class="pillbtn rbtog" data-rbtog aria-pressed=${String(rb)}>${rb?"✓ ":""}${L("Abgleich mit Drehbuch")}</button>`:null}</p>`;
+  if(!rows.length)return html`${cnt}<div class="empty">${L("Nichts gefunden für")} «${q}»</div>`;
+  return html`${cnt}<ul class="sclist">${rows.map(x=>html`<${SceneRow} key=${x.sc} x=${x} hits=${hitsOf(x)} terms=${terms} rIds=${rIds} rb=${rb}/>`)}</ul>`}
+ISLANDS.script=ScriptList;
+export function scriptResults(){return toHTML(h(ScriptList,scriptProps()))}
 export function fmtStamp(iso){try{return new Date(iso).toLocaleString(LOC[LANG],{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}catch(_){return ""}}
 export function lastCheck(m){return m?[m.checkedAt,m.updatedAt].filter(Boolean).sort().pop()||null:null}
 function subT(m){
@@ -188,7 +190,7 @@ window.viewMorph=viewMorph;
    After every drawing each island gets its component (again only when its props changed); the morphing above never touches its inside. */
 const ISLP=new Map();
 /* pages still made as HTML by their own parts: drawn as sections (10a-ui.js: Sections) – each part morphed on its own */
-const SECPAGES=new Set(["script","cater","admin","reports","acct","bcast"]);
+const SECPAGES=new Set(["cater","admin","reports","acct","bcast"]);
 export function island(name,props,key){const k=name+":"+(key==null?"":key);ISLP.set(k,props||{});return '<div class="isl" data-island="'+esc(name)+'" data-k="isl:'+esc(k)+'"></div>'}
 /* new props for an island already on the page (a search typed into the page: only that part is drawn again) */
 export function islandSet(name,props,key){island(name,props,key);mountIslands(document)}

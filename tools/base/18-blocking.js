@@ -3,7 +3,7 @@ import {nextUnitDay,onlyU,ppContact,ppMail} from "./11-schedule-prep.js";
 import {MCNAMES,addToCalendar,myClick} from "./12-mycal.js";
 import {addrForItem,groupLocs,locGroups,locResults,saveVCard,sceneTexts,ufOn} from "./13-crew-views.js";
 import {vok} from "./14-render.js";
-import {fitRows,fold,islandSet,render,scriptResults,setSCRIPTERR} from "./15-script-tab.js";
+import {fitRows,fold,islandSet,render,scriptProps,setSCRIPTERR} from "./15-script-tab.js";
 import {goTab,goTo,scallLabel,setOpen,setUnits,store} from "./16-interaction.js";
 import {BLKREG,blkFor,bmed,findScene,fpFor,fpLinks,pdfBtns,pdfDocs,pdfLbl,sceneFacts,sceneSheet,scriptData,scriptHTML,spTitle,spTod} from "./17-scene-reader.js";
 import {renderSearch} from "./19-search.js";
@@ -178,7 +178,7 @@ function runSearch(id,submit){
   const box=document.getElementById(id==="sq"?"scres":"lqres");
   if(!box){render();return}
   try{
-    if(id==="sq")box.innerHTML=scriptResults();
+    if(id==="sq")islandSet("script",scriptProps());
     else islandSet("locs",{gs:locGroups(),q:S.lq,o:S.openSc,u:S.uf})
   }catch(err){console.error(err);render();return}
   if(submit){const i=document.getElementById(id);if(i)i.blur();const r=box.getBoundingClientRect();if(r.top<0||r.top>innerHeight*0.6)window.scrollTo({top:window.scrollY+r.top-90,behavior:"smooth"})}
