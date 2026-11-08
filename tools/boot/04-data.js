@@ -1,4 +1,4 @@
-import {L,lsJSON,MEMO,S} from "../base/10-core.js";
+import {emit,L,lsJSON,MEMO,S} from "../base/10-core.js";
 import {CLEAN,arr,saveCache,scheduleRender} from "../base/20-data-start.js";
 import {DATA_URL} from "./01-config.js";
 import {DATAKEY,LASTSTAMP,MEMBER,b64,fb,isAdmin,setDATAKEY,setLASTSTAMP,withTimeout} from "./03-core-firebase.js";
@@ -81,7 +81,7 @@ function applyData(d){
   /* keep the contacts already on this device until the contacts file is read again (no flicker) */
   try{const ct=[];prevCrew.forEach((g,gi)=>(g.people||[]).forEach((p,pi)=>{const c={};for(const k in p)if(/^(phone|e?mail|tel|mobil|natel)/i.test(k)&&p[k])c[k]=p[k];if(Object.keys(c).length)ct.push([gi,pi,p.name||"",c])}));
     const hasOwn=S.crew.some(g=>(g.people||[]).some(p=>p.phone||p.email));if(!hasOwn){contactsMerge(S.crew,ct);setTimeout(()=>window.loadContacts(),200)}}catch(_){}
-  MEMO.clear();saveCache();S.loaded=true;
+  MEMO.clear();saveCache();S.loaded=true;emit("data");   /* the core event: parts that show data draw again */
   try{chgDetect()}catch(err){console.warn("changes",err)}
   try{setTimeout(()=>offlinePrep(false),4000)}catch(_){}
 }

@@ -1,4 +1,4 @@
-import {S,SBXF} from "./10-core.js";
+import {emit,onEvent,S,SBXF} from "./10-core.js";
 import {fitAddr,render} from "./15-script-tab.js";
 import {navDialogs} from "../boot/21-back-button.js";
 /* ---------- interaction (one delegated click handler) ---------- */
@@ -25,8 +25,8 @@ window.addEventListener("pagehide",saveView);const RESUME=30*60e3;   /* back aft
 window.goStart=()=>{S.want=null;S.srcOpen=false;S.tab=startTab();S.day=null;S.dday=null;S.openSc={};VS_AT=Date.now();store("tab",S.tab);window.scrollTo(0,0);render()};
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){saveView();HID_AT=Date.now()}else{if(HID_AT&&Date.now()-HID_AT>=RESUME&&!(typeof navDialogs==="function"&&navDialogs().length))goStart();HID_AT=0}});
 /* other parts listen to stored settings with onStore(fn) (e.g. the settings synced to the account) – instead of replacing store */
-const STORE_HOOKS=[];export function onStore(fn){STORE_HOOKS.push(fn)}
-export function store(k,v){if(SBXF)return;try{localStorage.setItem(k,v)}catch(_){}for(const f of STORE_HOOKS)try{f(k,v)}catch(_){}}
+export function onStore(fn){return onEvent("store",fn)}
+export function store(k,v){if(SBXF)return;try{localStorage.setItem(k,v)}catch(_){}emit("store",k,v)}
 
 /* Today «Mein Tag» → the callsheet of that day */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tocs]");if(!b)return;goTab("dispo");S.dday=b.dataset.tocs;render()});

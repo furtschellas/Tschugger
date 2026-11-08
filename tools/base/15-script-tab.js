@@ -1,4 +1,4 @@
-import {$,ddmm,esc,L,LANG,LOC,lsGet,markTerms,memo,norm,pvApply,S,svClasses,svToggles,todayISO,TX,ufButtons,WD} from "./10-core.js";
+import {$,ddmm,emit,esc,L,LANG,LOC,lsGet,markTerms,memo,norm,onEvent,pvApply,S,svClasses,svToggles,todayISO,TX,ufButtons,WD} from "./10-core.js";
 import {onlyU,unitLists,unitsOn} from "./11-schedule-prep.js";
 import {addrForItem,srcHTML} from "./13-crew-views.js";
 import {ALLTABS,VIEWS,tabsOn,vok} from "./14-render.js";
@@ -177,9 +177,9 @@ function viewMorph(v,html){
   const c=document.createComment("");v.appendChild(c);v.removeChild(c)}
 window.viewMorph=viewMorph;
 /* other parts hook into every drawing with onRender(fn) (before) / onRendered(fn) (after) – instead of replacing render */
-const RENDER_PRE=[],RENDER_POST=[];export function onRender(fn){RENDER_PRE.push(fn)}export function onRendered(fn){RENDER_POST.push(fn)}
+export function onRender(fn){return onEvent("render:before",fn)}export function onRendered(fn){return onEvent("render:after",fn)}   /* through the events of the core */
 export function render(){window.__mctx=null;   /* a drawing that stopped half-way must not leave the context of its day for the next */
-  for(const f of RENDER_PRE)try{f()}catch(err){console.warn("render hook",err)}const x=renderCore();for(const f of RENDER_POST)try{f()}catch(err){console.warn("render hook",err)}return x}
+  emit("render:before");const x=renderCore();emit("render:after");return x}
 function renderCore(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   {const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|search)$/.test(ae.type)&&ae.closest("#view form")){S.rpend=true;return}} /* never wipe a form someone is typing in – catch up when the field is left */
   S.rpend=false;

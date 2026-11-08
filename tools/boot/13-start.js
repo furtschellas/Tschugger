@@ -1,4 +1,4 @@
-import {$,L,MEMO,S,applyStatic} from "../base/10-core.js";
+import {$,applyStatic,emit,L,MEMO,S} from "../base/10-core.js";
 import {fmtStamp,lastCheck,render} from "../base/15-script-tab.js";
 import {setSCRIPT} from "../base/17-scene-reader.js";
 import {loadCache,showMsg} from "../base/20-data-start.js";
@@ -98,7 +98,7 @@ if(window.__VSY&&window.CACHEOK)requestAnimationFrame(()=>{try{window.scrollTo(0
 
 /* Hindi (हिन्दी): texts of the app; missing ones fall back to English. Main topics and titles are translated only in Hindi */
 /* signed out (also: no stored sign-in any more at the start, e.g. account blocked or deleted): everything of the person leaves this device */
-function signedOut(){window.__STARTED=null;
+function signedOut(){window.__STARTED=null;try{emit("auth",null)}catch(_){}
   /* a side-box frame: the page itself decides about signing out – the frame only waits for the sign-in of the page (never clears the device) */
   if(SBXFRAME){setME(null);if(!signedOut.w){signedOut.w=setTimeout(()=>{signedOut.w=0;location.reload()},15000)}return}
   /* the session ended from outside (password changed elsewhere, revoked): its push reminders leave this device too */

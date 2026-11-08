@@ -110,6 +110,13 @@ export function saveBlob(blob,name){const u=URL.createObjectURL(blob),a=document
 export const clockHM=d=>pad2(d.getHours())+":"+pad2(d.getMinutes());   /* «07:05» of a Date (local time) */
 export const msHM=ms=>ms?clockHM(new Date(+ms)):"";
 /* short checksum of a text (djb2, base 36) – ride ids, push ids, quittance markers, signatures; the server (late_push, scene_sheet) builds the same */
+/* ---------- the core of the app: events (one place where parts of the app tell each other what happened) ----------
+   onEvent(name, fn) → a function that stops listening; emit(name, …data) calls every listener (one failing never stops the others).
+   Events: "render:before" / "render:after" (a page drawn), "store" (a setting of the device saved: key, value),
+   "data" (the data of the production loaded or changed), "auth" (signed in: user / signed out: null) */
+const BUS=new Map();
+export function onEvent(ev,fn){if(typeof fn!=="function")return()=>{};if(!BUS.has(ev))BUS.set(ev,new Set());BUS.get(ev).add(fn);return()=>{const l=BUS.get(ev);if(l)l.delete(fn)}}
+export function emit(ev,...a){const l=BUS.get(ev);if(!l)return;for(const f of [...l])try{f(...a)}catch(err){console.warn("event "+ev,err)}}
 /* ---------- shared routines (one place for what was written many times) ---------- */
 /* the Drehplan day / the callsheet of a date (needCs: only a callsheet with its content) */
 export function dayOf(date){return arr(S.days).find(d=>d&&d.date===date)}

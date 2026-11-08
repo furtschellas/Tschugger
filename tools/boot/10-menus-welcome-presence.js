@@ -1,5 +1,5 @@
 import {isStandalone} from "../a2hs.js";
-import {applyStatic,ddmm,dispoOf,esc,fullName,L,LANG,localISO,lsGet,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
+import {applyStatic,ddmm,dispoOf,emit,esc,fullName,L,LANG,localISO,lsGet,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
 import {UNAME,hasU,unitsOn} from "../base/11-schedule-prep.js";
 import {WDL} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -230,7 +230,7 @@ export async function afterSignIn(u){
   if(ME!==u)return;
   if(st!=="ok"&&SBXFRAME){setTimeout(()=>location.reload(),20000);return}   /* a side-box frame: never clears the device – it tries again */
   if(st!=="ok"){window.__STAGE="member "+st;clearLocal();render();showGate(st==="blocked"?"blocked":st==="revoked"?"login":"denied");return}
-  window.__STAGE="done";startSeen();
+  window.__STAGE="done";startSeen();emit("auth",u);
   hideGate();acctButton(true);PUBB.loaded=false;PUBB.list=[];loadPrefs();pushSyncSoon();menusLoad(true);
   const prof=MEMBER||{};
   let hasLocal=false;try{hasLocal=!!localStorage.getItem("lang")}catch(_){}
