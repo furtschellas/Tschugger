@@ -5,6 +5,8 @@ import {showMsg} from "../base/20-data-start.js";
 import {can,fb,ME,withTimeout,wkPost} from "./03-core-firebase.js";
 import {pushSyncSoon} from "./07-push.js";
 import {ADM,SECS} from "./12a-admin-core.js";
+import {h,html,toHTML} from "../base/09-fw.js";
+import {Raw} from "../base/10a-ui.js";
 /* ---- view settings per user: kept on this device and in Firestore (prefs/{uid}), restored on every device and after a restart ---- */
 export const PREFKEYS=["theme","pv","sv","lv","spt","uf","pu","welcomeAck","push","chat","tour","today","offline","nv"];export let PREFT=null,PREFAPPLY=false,PREFOK=false;export const PREFX=["rc","scrv","csb","iconhint","scwa","scwan","scwtd","scwtb","scwte","scwtl","scwtm","scwtw","maintseen","sbx"];
 /* the notices of p.x (or the older single fields) */
@@ -118,17 +120,20 @@ export function docGet(k,v,lang){v=v||{};lang=lang||v.lang||LANG;const r=docRaw(
   const g=t=>lang==="de"&&typeof deG==="function"?deG(t):t;
   return {subject:g(fill(r.subject)),body:g(fill(r.body))}}
 export const mailto=(em,k,v)=>{const d=docGet(k,Object.assign({email:em},v));return "mailto:"+encodeURIComponent(em)+"?subject="+encodeURIComponent(d.subject)+"&body="+encodeURIComponent(d.body)};
-export function docsSec(){
-  const dl=DOCLANGS.includes(ADM.doclang)?ADM.doclang:(DOCLANGS.includes(LANG)?LANG:"de");
-  return '<div class="admins docs"><h3>'+L("Dokumente")+'</h3><p class="ahint">'+L("Alle Texte, die die App verschickt oder anzeigt. Platzhalter: {vorname} {name} {email} {app} {passwort} {disclaimer}. Du bearbeitest jeweils nur die gewählte Sprache; ohne eigenen Text gilt die Standardfassung.")+'</p>'+
-    '<div class="smodes doclangs" role="group">'+DOCLANGS.map(l=>'<button type="button" data-doclang="'+l+'" aria-pressed="'+(l===dl)+'">'+l.toUpperCase()+'</button>').join("")+'</div>'+
-    Object.keys(DOCDEF).map(k=>{const d=DOCDEF[k],r=docRaw(k,dl);
-      return '<details class="docd" data-sec="doc-'+k+'"'+(SECS["doc-"+k]?' open':'')+'><summary><b>'+esc(L(d.t))+'</b>'+(r.custom?' <span class="ust role">'+L("angepasst")+'</span>':'')+'</summary>'+
-        '<form class="docf" data-doc="'+k+'" data-dl="'+dl+'"><p class="ahint">'+esc(L(d.use))+'</p>'+(k==="maint"?'<label class="ck docon"><input type="checkbox" data-mainton'+(maintOn()?' checked':'')+'> '+esc(L("Wartungshinweis eingeschaltet (für alle)"))+'</label><label class="ck docon"><input type="checkbox" data-maintonce'+(maintOnce()?' checked':'')+'> '+esc(L("Jeder Person nur einmal anzeigen (neuer Text: wieder einmal)"))+'</label>':'')+(d.subject!==undefined?'<label>'+L(k==="welcome"||k==="testwelcome"||k==="maint"?"Titel":"Betreff")+'<input name="ds" maxlength="200" value="'+esc(r.subject)+'"></label>':'')+
-        '<label>'+L("Text")+'<textarea name="db" rows="'+(k==="disclaimer"?5:12)+'">'+esc(r.body)+'</textarea></label>'+
-        '<p class="amsg" role="alert"></p><div class="arb">'+saveBtn()+(r.custom?'<button type="button" class="lnk" data-docreset="'+k+'" data-dl="'+dl+'">'+L("Standard wiederherstellen")+'</button>':'')+(k==="testwelcome"?'<button type="button" class="lnk" data-twagain>'+L("Allen Test-Usern nochmals zeigen")+'</button>':'')+(k!=="welcome"&&k!=="disclaimer"&&k!=="testwelcome"&&k!=="invitewa"&&k!=="maint"&&ME?'<a class="lnk" href="'+esc(mailto(ME.email,k,{vorname:"Test",name:"Test Person",passwort:"Abc123xyz",lang:dl}))+'">'+L("Test an mich")+'</a>':'')+'</div></form></details>'}).join("")+
-    '<p class="ahint">'+L("Bestätigungs-Mail, Passwort-Zurücksetzen und Anmelde-Link verschickt Firebase. Deren Texte änderst du in der Firebase-Konsole unter Authentication → Templates.")+'</p></div>';
-}
+/* ---------- «Dokumente» as components (framework): the language, one folded form per text (subject, text, save / standard / test) ---------- */
+/** @param {{k:string,dl:string}} p */
+function DocForm({k,dl}){const d=DOCDEF[k],r=docRaw(k,dl),noTest=["welcome","disclaimer","testwelcome","invitewa","maint"].includes(k);
+  return html`<details class="docd" data-sec=${"doc-"+k} open=${!!SECS["doc-"+k]}><summary><b>${L(d.t)}</b>${r.custom?html` <span class="ust role">${L("angepasst")}</span>`:null}</summary>
+    <form class="docf" data-doc=${k} data-dl=${dl}><p class="ahint">${L(d.use)}</p>
+      ${k==="maint"?html`<label class="ck docon"><input type="checkbox" data-mainton checked=${maintOn()}/> ${L("Wartungshinweis eingeschaltet (für alle)")}</label><label class="ck docon"><input type="checkbox" data-maintonce checked=${maintOnce()}/> ${L("Jeder Person nur einmal anzeigen (neuer Text: wieder einmal)")}</label>`:null}
+      ${d.subject!==undefined?html`<label>${L(k==="welcome"||k==="testwelcome"||k==="maint"?"Titel":"Betreff")}<input name="ds" maxlength="200" value=${r.subject}/></label>`:null}
+      <label>${L("Text")}<textarea name="db" rows=${k==="disclaimer"?5:12} value=${r.body}></textarea></label>
+      <p class="amsg" role="alert"></p><div class="arb"><${Raw} html=${saveBtn()}/>${r.custom?html`<button type="button" class="lnk" data-docreset=${k} data-dl=${dl}>${L("Standard wiederherstellen")}</button>`:null}${k==="testwelcome"?html`<button type="button" class="lnk" data-twagain>${L("Allen Test-Usern nochmals zeigen")}</button>`:null}${!noTest&&ME?html`<a class="lnk" href=${mailto(ME.email,k,{vorname:"Test",name:"Test Person",passwort:"Abc123xyz",lang:dl})}>${L("Test an mich")}</a>`:null}</div></form></details>`}
+function DocsSec(){const dl=DOCLANGS.includes(ADM.doclang)?ADM.doclang:(DOCLANGS.includes(LANG)?LANG:"de");
+  return html`<div class="admins docs"><h3>${L("Dokumente")}</h3><p class="ahint">${L("Alle Texte, die die App verschickt oder anzeigt. Platzhalter: {vorname} {name} {email} {app} {passwort} {disclaimer}. Du bearbeitest jeweils nur die gewählte Sprache; ohne eigenen Text gilt die Standardfassung.")}</p>
+    <div class="smodes doclangs" role="group">${DOCLANGS.map(l=>html`<button type="button" data-doclang=${l} aria-pressed=${String(l===dl)}>${l.toUpperCase()}</button>`)}</div>${Object.keys(DOCDEF).map(k=>html`<${DocForm} k=${k} dl=${dl}/>`)}
+    <p class="ahint">${L("Bestätigungs-Mail, Passwort-Zurücksetzen und Anmelde-Link verschickt Firebase. Deren Texte änderst du in der Firebase-Konsole unter Authentication → Templates.")}</p></div>`}
+export function docsSec(){return toHTML(h(DocsSec,{}))}
 const docDef=(k,lang)=>lang==="de"?{subject:DOCDEF[k].subject||"",body:DOCDEF[k].body||""}:Object.assign({subject:DOCDEF[k].subject||"",body:DOCDEF[k].body||""},(DOCI18N[k]||{})[lang]||(DOCI18N[k]||{}).en||{});
 /* store one language of one document; German also clears the older language-less fields */
 async function docStore(k,lang,val){const {F,db}=await fb();const part={[lang]:val};if(lang==="de")Object.assign(part,{body:"",subject:""});

@@ -11,6 +11,8 @@ import {ADM} from "./12a-admin-core.js";
 import {dmy} from "./14-today-changes-offline.js";
 import {DCK,RTS,dckMay,dckRun,roleTestRun} from "./19-data-check.js";
 import {SIMUSER} from "./22-simulate.js";
+import {h,html,toHTML} from "../base/09-fw.js";
+import {Raw} from "../base/10a-ui.js";
 /* ---------- 11) Protokoll: who changed what in the administration (roles, users, menus, settings, messages) ---------- */
 const AUDIT_COLS=["roles","userroles","admins","owners","invites","members","menus","config","broadcasts","starts","requests","sceneack","coverday"];
 export function auditSum(col,data,op){
@@ -156,19 +158,22 @@ function tstGroupsHTML(suite,cs){
   const ord=k=>{const i=TST_THEMES.findIndex(x=>x[0]===k);return i<0?99:i};
   return [...groups].sort((a,b)=>a[1].every(r=>r.ok)-b[1].every(r=>r.ok)||ord(a[0])-ord(b[0])).map(([k,l])=>{const bad=l.filter(r=>!r.ok).length,key="tg:"+suite+":"+k;
     return '<details class="tstsu tstgrp'+(bad?' bad':'')+'" data-su="'+esc(key)+'"'+(bad?' open':logSu(key))+'><summary>'+(bad?'✗ ':'✓ ')+esc(L(k))+' · '+(bad?(l.length-bad)+'/'+l.length:l.length)+'</summary><ul class="tstl">'+l.sort((a,b)=>a.ok-b.ok).map(li).join("")+'</ul></details>'}).join("")}
+/* ---------- «Automatische Tests» as components (framework): head with progress, the suites with their checks, run / reload ---------- */
+/** @param {{d:any}} p */
+function TestsBox({d}){const when=fmtDT(d.at||0),g=ghProgress();
+  const suites=Array.isArray(d.suites)&&d.suites.length?d.suites:[{name:"",ok:d.ok,n:d.n,fail:d.fail,checks:d.checks||[]}];
+  const head=d.crash?"✗ "+L("Tests abgebrochen"):d.ok?"✓ "+L("{n} von {n} bestanden").split("{n}").join(d.n):"✗ "+L("{f} von {n} fehlgeschlagen").replace("{f}",d.fail).replace("{n}",d.n);
+  const sum=logHead(esc(L("Automatische Tests")),g?'<span class="tsth">'+esc(L("Tests laufen"))+" · "+esc(g.label)+" · "+g.pct+' %</span>':'<span class="tsth">'+esc(head)+"</span>",esc(when)+(d.sha&&typeof isAdmin==="function"&&isAdmin()?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+"</a>":""),g);
+  const run=window.CHATURL&&isAdmin()?tstIco("data-tstrun",TST_RUN,TST.run||g?"Tests laufen …":"Tests jetzt starten",TST.run,g?{pct:g.pct}:TST.run?{pct:null}:null):"";
+  return html`<details class=${"tstsec"+(d.ok?"":" bad")} open=${!!TST.open} data-lsec="tst"><summary class="lsum"><${Raw} html=${sum}/></summary>
+    <p class="ghint">${L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht.")}</p>
+    ${suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok),body=html`<${Raw} html=${tstGroupsHTML(su.name,cs)}/>`;
+      return su.name?html`<details class=${"tstsu"+(su.ok?"":" bad")} data-su=${su.name} open=${!!TST.su[su.name]}><summary>${(su.ok?"✓ ":"✗ ")+L(su.name)+" · "+(su.crash?L("abgebrochen"):su.ok?su.n:(su.n-su.fail)+"/"+su.n)}</summary>${body}</details>`:body})}
+    <div class="arb tstbtns"><${Raw} html=${run+tstIco("data-tstre",TST_LOAD,"Resultate neu laden")}/></div>${TST.msg?html`<p class="ghint">${TST.msg}</p>`:null}</details>`}
 export function testsSec(){
   if(!TST.d){testsLoad();return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("Lade …")))+'</summary></details>'}
   const d=TST.d;if(d.none)return '<details class="tstsec"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),esc(L("noch keine Resultate")))+'</summary></details>';
-  const when=fmtDT(d.at||0);
-  const suites=Array.isArray(d.suites)&&d.suites.length?d.suites:[{name:"",ok:d.ok,n:d.n,fail:d.fail,checks:d.checks||[]}];
-  const head=d.crash?'✗ '+L("Tests abgebrochen"):d.ok?'✓ '+L("{n} von {n} bestanden").split("{n}").join(d.n):'✗ '+L("{f} von {n} fehlgeschlagen").replace("{f}",d.fail).replace("{n}",d.n);
-  return '<details class="tstsec'+(d.ok?'':' bad')+'"'+(TST.open?' open':'')+' data-lsec="tst"><summary class="lsum">'+logHead(esc(L("Automatische Tests")),(()=>{const g=ghProgress();return g?'<span class="tsth">'+esc(L("Tests laufen"))+' · '+esc(g.label)+' · '+g.pct+' %</span>':'<span class="tsth">'+esc(head)+'</span>'})(),esc(when)+(d.sha&&typeof isAdmin==="function"&&isAdmin()?' · <a href="https://github.com/furtschellas/Tschugger/commit/'+esc(d.sha)+'" target="_blank" rel="noopener noreferrer">'+esc(d.sha)+'</a>':''),ghProgress())+'</summary>'+
-    '<p class="ghint">'+esc(L("Vor jeder Veröffentlichung von neuem Code prüft GitHub die Hintergrund-Abläufe, die App mit sechs Rollen auf Handy und Desktop, die Funktionen und die Firestore-Regeln. Schlägt ein Test fehl, wird nicht veröffentlicht."))+'</p>'+
-    suites.map(su=>{const cs=(su.checks||[]).slice().sort((a,b)=>a.ok-b.ok);
-      return (su.name?'<details class="tstsu'+(su.ok?'':' bad')+'" data-su="'+esc(su.name)+'"'+(TST.su[su.name]?' open':'')+'><summary>'+(su.ok?'✓ ':'✗ ')+esc(L(su.name))+' · '+(su.crash?esc(L("abgebrochen")):su.ok?su.n:(su.n-su.fail)+'/'+su.n)+'</summary>':'')+
-        tstGroupsHTML(su.name,cs)+(su.name?'</details>':'')}).join("")+
-    '<div class="arb tstbtns">'+(window.CHATURL&&isAdmin()?tstIco("data-tstrun",TST_RUN,TST.run||ghProgress()?"Tests laufen …":"Tests jetzt starten",TST.run,(()=>{const g=ghProgress();return g?{pct:g.pct}:TST.run?{pct:null}:null})()):'')+tstIco("data-tstre",TST_LOAD,"Resultate neu laden")+'</div>'+(TST.msg?'<p class="ghint">'+esc(TST.msg)+'</p>':'')+'</details>';
-}
+  return toHTML(h(TestsBox,{d}))}
 document.addEventListener("click",e=>{if(e.target.closest("[data-tstre]")){TST.d=null;render()}});
 
 /* open/close everything in the test box; start the tests by hand (through the worker: GitHub «Website veröffentlichen» with all tests) */
