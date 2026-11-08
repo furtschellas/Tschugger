@@ -90,14 +90,21 @@ export function editForm(r,withRole){
     (m&&m.uid&&can("users.edit")&&!(ME&&m.uid===ME.uid)?'<p><button type="button" class="pillbtn" data-signall="'+esc(m.uid)+'" data-nm="'+esc(mName(m)||r.email)+'">'+esc(L("Auf allen Geräten abmelden"))+'</button></p>':'')+
     ''+saveBtn()+'</form>';
 }
-function reqSec(){
-  const r=(ADM.req||[]).slice().sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),LANG));
-  return '<div class="admins areq" id="areq"><h3>'+L("Anfragen von Benutzer:innen")+' <span class="ust '+(r.length?'adm':'')+'">'+r.length+'</span></h3>'+
-    (ADM.reqErr?'<p class="admerr">'+L("Anfragen nicht lesbar")+' ('+esc(ADM.reqErr)+') – '+L("Firestore-Regeln prüfen.")+'</p>':
-     r.length?'<p class="ahint">'+L("Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».")+'</p>':'<p class="ahint">'+L("Keine offenen Anfragen.")+'</p>')+
-    r.map(q=>'<div class="arow"><span><b>'+esc(q.name||"")+'</b> · '+esc(q.id)+(q.role?'<br><small>'+esc(q.role)+'</small>':'')+(q.note?'<br><small>«'+esc(q.note)+'»</small>':'')+'</span>'+
-      (can("users.requests")?'<button data-adm="reqok" data-em="'+esc(q.id)+'">'+L("Freischalten")+'</button><button data-adm="reqno" data-em="'+esc(q.id)+'">'+L("Ablehnen")+'</button>':'')+'</div>').join("")+'</div>';
-}
+/** requests of people not on the list: name, address, job, note; «Freischalten» invites them, «Ablehnen» @param {{}} p */
+function ReqSec(){const r=(ADM.req||[]).slice().sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),LANG));
+  return html`<div class="admins areq" id="areq"><h3>${L("Anfragen von Benutzer:innen")} <span class=${"ust "+(r.length?"adm":"")}>${r.length}</span></h3>
+    ${ADM.reqErr?html`<p class="admerr">${L("Anfragen nicht lesbar")} (${ADM.reqErr}) – ${L("Firestore-Regeln prüfen.")}</p>`:html`<p class="ahint">${r.length?L("Diese Personen sind nicht auf der Liste und bitten um Zugang. «Freischalten» lädt sie ein; sie tippen danach auf «Aktualisieren».")
+      :L("Keine offenen Anfragen.")}</p>`}
+    ${r.map(q=>html`<div class="arow"><span><b>${q.name||""}</b> · ${q.id}${q.role?html`<br/><small>${q.role}</small>`:null}${q.note?html`<br/><small>«${q.note}»</small>`:null}</span>${can("users.requests")?html`<button data-adm="reqok" data-em=${q.id}>${L("Freischalten")}</button><button data-adm="reqno" data-em=${q.id}>${L("Ablehnen")}</button>`:null}</div>`)}</div>`}
+/** who is online right now @param {{onl:any[]}} p */
+function ActiveNow({onl}){return html`<div class="admins uact"><h3><span class="odot" aria-hidden="true"></span>${L("Gerade aktiv")} <span class="ust">${onl.length}</span></h3>${onl.length?html`<div class="uactl">${onl.map(r=>{const nm=r.name||(crewPerson(r.email)||{}).name||r.email;return html`<span class="uactp"><span class="uav on" aria-hidden="true">${initials(nm)}</span>${nm}</span>`})}</div>`:html`<p class="ghint">${L("Gerade ist niemand aktiv.")}</p>`}</div>`}
+/** invite: an address (and a name), or all addresses of the crew list not invited yet @param {{n:number}} p */
+function InviteSec({n}){return html`<div class="admins"><h3>${L("Benutzer:innen einladen")}</h3><p class="ahint">${L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")}</p>
+  <form class="aform" data-adm="add"><input name="em" type="email" placeholder=${L("E-Mail-Adresse")} required/><input name="nm" type="text" placeholder=${L("Name (optional)")}/><button type="submit">${L("Einladen")}</button></form>${n?html`<button class="abtn" data-adm="crew">${L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",n)}</button>`:null}</div>`}
+/** the owner and the admins (only the owner sees it) @param {{rows:any[]}} p */
+function AdminsSec({rows}){return html`<div class="admins"><h3>${L("Administrator:innen")}</h3><p class="ahint">${L("Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins und andere Rollen weist du unten bei der Person unter «Rolle» zu.")}</p>
+  <div class="arow"><span>${ADMINS[0]}</span><span class="ust ok">${L("Owner")}</span></div>${ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>html`<div class="arow"><span>${n||e}</span><button data-adm="rmadmin" data-em=${e}>${L("Entfernen")}</button></div>`)}</div>`}
+function reqSec(){return toHTML(h(ReqSec,{}))}
 /* user list: one compact card per person, filter chips with counts, actions folded away */
 /* automatic quittances (App-Verwaltung → Einstellungen → Quittieren): per step a switch and the Zugabe in minutes – config/app castAuto, sceneAuto {k: {on, min}}
    (the steps as in 24-flow.js CQA_STEPS and 27-scene-ack.js SCA_KINDS) */
@@ -199,10 +206,7 @@ VIEWS.admin=function(){
   const site=location.origin+location.pathname;
   const mail=r=>mailto(r.email,"invite",{vorname:String(r.name||(crewPerson(r.email)||{}).name||"").split(/\s+/)[0],name:r.name||""});
   const own=isOwner();const isAdm=e=>ADMINS.includes(e)||ADM.adm.includes(e);
-  const admSec=own?'<div class="admins"><h3>'+L("Administrator:innen")+'</h3><p class="ahint">'+L("Administrator:innen können Leute einladen und sehen in der Crew Essen und Geburtstage. Sperren und Entfernen kannst nur du. Admins und andere Rollen weist du unten bei der Person unter «Rolle» zu.")+'</p>'+
-    '<div class="arow"><span>'+esc(ADMINS[0])+'</span><span class="ust ok">'+L("Owner")+'</span></div>'+
-    ADM.adm.map(e=>[e,((rows.find(r=>r.email===e)||{}).name)||(crewPerson(e)||{}).name||""]).sort((a,b)=>(a[1]||a[0]).localeCompare(b[1]||b[0],LANG)).map(([e,n])=>'<div class="arow"><span>'+esc(n||e)+'</span><button data-adm="rmadmin" data-em="'+esc(e)+'">'+L("Entfernen")+'</button></div>').join("")+
-    '</div>':'';
+  const admSec=own?toHTML(html`<${AdminsSec} rows=${rows}/>`):'';
   const srcInner=()=>{const x=typeof srcHTML==="function"?srcHTML():"";return x?x.replace(/^<details[^>]*><summary>[\s\S]*?<\/summary>/,'<div class="src srcin">').replace(/<\/details>$/,'</div>'):'<p class="ghint">–</p>'};
   /* Einstellungen: one form (id setform) whose fields sit in collapsible groups – all open by default */
   const sv='<div class="arb">'+saveBtn('form="setform"')+'</div>';
@@ -267,11 +271,8 @@ VIEWS.admin=function(){
   const cInv=can("users.invite"),cView=can("users.view")||can("users.edit"),cEd=can("users.edit");
   /* order: requests, who is online right now, the people, inviting, admins at the end */
   const onl=rows.filter(r=>r.m&&isOnline(r.m));
-  const actSec=!cView?'':'<div class="admins uact"><h3><span class="odot" aria-hidden="true"></span>'+L("Gerade aktiv")+' <span class="ust">'+onl.length+'</span></h3>'+(onl.length?'<div class="uactl">'+onl.map(r=>{const nm=r.name||(crewPerson(r.email)||{}).name||r.email;return '<span class="uactp"><span class="uav on" aria-hidden="true">'+esc(initials(nm))+'</span>'+esc(nm)+'</span>'}).join("")+'</div>':'<p class="ghint">'+L("Gerade ist niemand aktiv.")+'</p>')+'</div>';
-  h+=(can("users.requests")?reqSec():'')+actSec+(!cView?'':userList(rows,vis,{own,cInv,cEd,isAdm,roleOf,roleName,roleSel,st,mail}))+(!cInv?'':
-    '<div class="admins"><h3>'+L("Benutzer:innen einladen")+'</h3><p class="ahint">'+L("Nur eingeladene Adressen können ein Konto erstellen (E-Mail/Passwort oder Google). Gesperrte oder entfernte Personen kommen sofort nicht mehr in die App. Passwort und E-Mail-Adresse verwaltet jede Person selbst.")+'</p>'+
-    '<form class="aform" data-adm="add"><input name="em" type="email" placeholder="'+esc(L("E-Mail-Adresse"))+'" required><input name="nm" type="text" placeholder="'+esc(L("Name (optional)"))+'"><button type="submit">'+L("Einladen")+'</button></form>'+
-    (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>')+admSec+'</section>';
+  const actSec=!cView?'':toHTML(html`<${ActiveNow} onl=${onl}/>`);
+  h+=(can("users.requests")?reqSec():'')+actSec+(!cView?'':userList(rows,vis,{own,cInv,cEd,isAdm,roleOf,roleName,roleSel,st,mail}))+(!cInv?'':toHTML(html`<${InviteSec} n=${newCrew.length}/>`))+admSec+'</section>';
   return h;
 };
 VIEWS.admin.real=true;

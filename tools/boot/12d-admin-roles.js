@@ -76,21 +76,24 @@ function permAccessSec(){
       if(id)return rp(id).includes(k)?[e,((ADM.roles||[]).find(x=>x.id===id)||{}).name||id]:null;const pk=noRoleOK(k);return pk&&window.PUBV&&window.PUBV[pk]?[e,L("Keine Rolle")]:null}).filter(Boolean)
     .sort((a,b)=>admNameOf(a[0]).localeCompare(admNameOf(b[0]),LANG));
   const allOpen=PERMS.every(([k])=>SECS["pacc-"+k]);
-  return '<div class="admins pacc"><h3>'+L("Wer hat welchen Zugriff?")+'</h3><p class="ahint">'+L("Tippe auf eine Berechtigung, um zu sehen, wer sie hat – und über welche Rolle.")+'</p>'+
-    '<div class="ubar">'+paccAllBtn(allOpen)+'</div>'+
-    [...new Set(PERMS.map(x=>x[2]))].map(g=>'<div class="pgrp paccgrp"><h5 class="paccg">'+esc(L(g))+'</h5>'+PERMS.filter(x=>x[2]===g).map(([k,t])=>{const w=who(k);
+  return toHTML(html`<div class="admins pacc"><h3>${L("Wer hat welchen Zugriff?")}</h3><p class="ahint">${L("Tippe auf eine Berechtigung, um zu sehen, wer sie hat – und über welche Rolle.")}</p><div class="ubar"><${Raw} html=${paccAllBtn(allOpen)}/></div>
+    ${[...new Set(PERMS.map(x=>x[2]))].map(g=>html`<div class="pgrp paccgrp"><h5 class="paccg">${L(g)}</h5>${PERMS.filter(x=>x[2]===g).map(([k,t])=>{
       /* roles first – switch the permission on or off for a role right here; the people below, to open */
-      const rl=[['owner',L("Owner"),true,false]].concat([['admin',L("Admin"),aperm.includes(k),isOwner()&&k!=="settings"]])
+      const rl=[["owner",L("Owner"),true,false]].concat([["admin",L("Admin"),aperm.includes(k),isOwner()&&k!=="settings"]])
         .concat(rolesSorted().map(r=>[r.id,r.name||r.id,arr(r.perms).includes(k),canRoleEdit()&&!roleLocked(r.id)&&(k!=="settings"||isOwner())&&(isAdmin()||(r.id!==MYROLE&&MYPERMS.includes(k)))]));
-      const nr=noRoleOK(k);if(nr)rl.push(['',L("Keine Rolle"),!!(window.PUBV&&window.PUBV[nr]),false]);
-      const edit=ADM.paccEdit===k,canEd=rl.some(x=>x[3]);
-      return '<details class="paccd" data-sec="pacc-'+k+'"'+(SECS["pacc-"+k]||edit?' open':'')+'><summary><span>'+esc(permLbl(k,t))+'</span>'+(canEd?'<button type="button" class="paccpen'+(edit?' on':'')+'" data-paccedit="'+k+'" '+ariaTip(L("Rollen ändern"))+'><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>':'')+'<b class="pacn">'+w.length+'</b></summary>'+
-        (edit&&can("settings")?'<label class="arl paccname">'+esc(L("Name der Option"))+'<input data-paccname="'+k+'" maxlength="60" value="'+esc(permLbl(k,t))+'" placeholder="'+esc(L(t))+'"></label>':'')+
-        (edit?'<div class="paccr">'+rl.map(([id,n,on,ed])=>'<label class="ck paccrole'+(ed?'':' plock')+'"><input type="checkbox" data-pacc="'+esc(id)+'" data-perm="'+k+'"'+(on?' checked':'')+(ed?'':' disabled')+'> '+esc(n)+'</label>').join("")+'</div>'
-          :'<div class="paccr">'+(rl.filter(x=>x[2]).map(x=>'<span class="ust role">'+esc(x[1])+'</span>').join("")||'<span class="ghint">'+esc(L("Keine Rolle"))+'</span>')+'</div>')+
-        '<details class="paccp" data-sec="paccp-'+k+'"'+(SECS["paccp-"+k]?' open':'')+'><summary>'+esc(L("Personen"))+' ('+w.length+')</summary>'+
-        (w.length?'<ul class="paccl">'+w.map(([e,r])=>'<li><span>'+esc(admNameOf(e))+'</span><span class="ust role">'+esc(r)+'</span></li>').join("")+'</ul>':'<p class="ghint">'+L("Niemand")+'</p>')+'</details></details>'}).join("")+'</div>').join("")+'</div>';
+      const nr=noRoleOK(k);if(nr)rl.push(["",L("Keine Rolle"),!!(window.PUBV&&window.PUBV[nr]),false]);
+      return html`<${PermAccess} k=${k} t=${t} w=${who(k)} rl=${rl}/>`})}</div>`)}</div>`);
 }
+/* ---------- «Wer hat welchen Zugriff?» as components (framework) ---------- */
+const PENICO='<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>';
+/** one permission: name, the pen (switch it for the roles here), how many have it; the roles (ticks while editing) and the people
+ * @param {{k:string,t:string,w:any[],rl:any[]}} p */
+function PermAccess({k,t,w,rl}){const edit=ADM.paccEdit===k,canEd=rl.some(x=>x[3]),tt=L("Rollen ändern");
+  return html`<details class="paccd" data-sec=${"pacc-"+k} open=${!!(SECS["pacc-"+k]||edit)}><summary><span>${permLbl(k,t)}</span>${canEd?html`<button type="button" class=${"paccpen"+(edit?" on":"")} data-paccedit=${k} aria-label=${tt} title=${tt}><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" dangerouslySetInnerHTML=${{__html:PENICO}}></svg></button>`:null}<b class="pacn">${w.length}</b></summary>
+    ${edit&&can("settings")?html`<label class="arl paccname">${L("Name der Option")}<input data-paccname=${k} maxlength="60" value=${permLbl(k,t)} placeholder=${L(t)}/></label>`:null}
+    ${edit?html`<div class="paccr">${rl.map(([id,n,on,ed])=>html`<label class=${"ck paccrole"+(ed?"":" plock")}><input type="checkbox" data-pacc=${id} data-perm=${k} checked=${!!on} disabled=${!ed}/> ${n}</label>`)}</div>`
+      :html`<div class="paccr">${rl.filter(x=>x[2]).length?rl.filter(x=>x[2]).map(x=>html`<span class="ust role">${x[1]}</span>`):html`<span class="ghint">${L("Keine Rolle")}</span>`}</div>`}
+    <details class="paccp" data-sec=${"paccp-"+k} open=${!!SECS["paccp-"+k]}><summary>${L("Personen")} (${w.length})</summary>${w.length?html`<ul class="paccl">${w.map(([e,r])=>html`<li><span>${admNameOf(e)}</span><span class="ust role">${r}</span></li>`)}</ul>`:html`<p class="ghint">${L("Niemand")}</p>`}</details></details>`}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-paccedit]");if(!b)return;e.preventDefault();e.stopPropagation();const k=b.dataset.paccedit;ADM.paccEdit=ADM.paccEdit===k?"":k;if(!ADM.paccEdit)rolesUnfix();if(ADM.paccEdit)SECS["pacc-"+k]=true;render()},true);
 /* «Wer hat welchen Zugriff?»: one round button opens or closes all permissions (like the user list) */
 const paccAllBtn=open=>'<button type="button" class="cico uall" data-paccall '+ariaTip(L(open?"Alle zuklappen":"Alle aufklappen"))+'><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+(open?'<path d="m7 11 5-5 5 5M7 18l5-5 5 5"/>':'<path d="m7 6 5 5 5-5M7 13l5 5 5-5"/>')+'</svg></button>';

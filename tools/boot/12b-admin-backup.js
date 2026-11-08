@@ -4,19 +4,16 @@ import {ROOT_OWNERS} from "./01-config.js";
 import {ME,fb,isOwner,lc} from "./03-core-firebase.js";
 import {errText} from "./05-membership-signin.js";
 import {ADM,confirmSafe} from "./12a-admin-core.js";
+import {h,html,toHTML} from "../base/09-fw.js";
 /* ---------- App-Verwaltung (Backup und Aktualisierung) – part of the former 12-admin.js; loaded only when the App-Verwaltung is opened (admin.js) ---------- */
 /* ---- backup (main admin only): users, invites, admins, settings, birthdays as one JSON file ---- */
 const BK={busy:false,msg:"",ok:false};
-export function bkSec(){
-  let last=lsGet("bk:last","");
-  return '<div class="bk">'+
-    '<p class="ahint">'+L("Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.")+'</p>'+
-    (last?'<p class="ahint">'+L("Letztes Backup auf diesem Gerät")+': '+esc(fmtStamp(last))+'</p>':'')+
-    '<div class="bkb"><button type="button" class="abtn" data-bk="dl"'+(BK.busy?' disabled':'')+'>'+L("Backup herunterladen")+'</button>'+
-    '<label class="abtn bkup">'+L("Backup wiederherstellen")+'<input type="file" accept="application/json,.json" data-bk="up" hidden></label></div>'+
-    '<p class="ahint">'+L("Beim Wiederherstellen werden die Einträge aus der Datei ergänzt oder überschrieben. Nichts wird gelöscht.")+'</p>'+
-    (BK.msg?'<p class="amsg'+(BK.ok?' ok':'')+'" role="status">'+esc(BK.msg)+'</p>':'')+'</div>';
-}
+/** backup: what it keeps, the last backup on this device, download / restore, the message @param {{}} p */
+function BkSec(){const last=lsGet("bk:last","");
+  return html`<div class="bk"><p class="ahint">${L("Sichert Benutzer:innen, Einladungen, Administrator:innen, Einstellungen der App und Geburtstage als Datei. Die Drehdaten selbst kommen aus der Dropbox und brauchen kein Backup.")}</p>${last?html`<p class="ahint">${L("Letztes Backup auf diesem Gerät")}: ${fmtStamp(last)}</p>`:null}
+    <div class="bkb"><button type="button" class="abtn" data-bk="dl" disabled=${!!BK.busy}>${L("Backup herunterladen")}</button><label class="abtn bkup">${L("Backup wiederherstellen")}<input type="file" accept="application/json,.json" data-bk="up" hidden/></label></div>
+    <p class="ahint">${L("Beim Wiederherstellen werden die Einträge aus der Datei ergänzt oder überschrieben. Nichts wird gelöscht.")}</p>${BK.msg?html`<p class=${"amsg"+(BK.ok?" ok":"")} role="status">${BK.msg}</p>`:null}</div>`}
+export function bkSec(){return toHTML(h(BkSec,{}))}
 async function bkCollect(){
   const {F,db}=await fb();
   const col=async n=>{const q=await F.getDocs(F.collection(db,n));return q.docs.map(d=>({id:d.id,data:d.data()}))};

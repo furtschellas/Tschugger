@@ -9,6 +9,7 @@ import {ADMIN_DEFAULT,DIETS,INTOL,ME,VIEWPERMS,can,crewPerson,dietText,fb,isAdmi
 import {getDataKey} from "./04-data.js";
 import {mailto} from "./06-prefs-docs.js";
 import {menuSec} from "./10-menus-welcome-presence.js";
+import {h,html,toHTML} from "../base/09-fw.js";
 /* the shown name of a member: profile name, else the crew list, else the e-mail (or the given fallback) – one routine */
 export const memName=(m,fb)=>mName(m)||(crewPerson(m.email)||{}).name||(fb===undefined?m.email:fb);
 /* global editForm */   // from the App-Verwaltung (admin.js, loaded on demand)
@@ -75,17 +76,19 @@ function caterData0(){
   const allergy=special.filter(alg);
   return {act,special,groups,allergy,nm,alg};
 }
-function caterSummary(c){
-  return '<p class="catsum"><b>'+c.act.length+'</b> '+esc(L("Personen"))+' · <b>'+(c.act.length-c.special.length)+'</b> '+esc(L("ohne Sonderwünsche"))+' · <b>'+c.special.length+'</b> '+esc(L("mit Sonderwünschen"))+'</p>'+
-    (c.groups.length||c.allergy.length||c.act.length?'<div class="catchips">'+(c.act.length-c.special.length?'<span class="catchip reg"><b>'+(c.act.length-c.special.length)+'</b> '+esc(L("Regulär"))+'</span>':'')+c.groups.map(([t,l])=>'<span class="catchip"><b>'+l.length+'</b> '+esc(t)+'</span>').join("")+(c.allergy.length?'<span class="catchip warn"><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</span>':'')+'</div>':'');
-}
-function caterOverview(c){
-  const dep=m=>crewDeptOf(m)||"–";const regl=c.act.filter(m=>!c.special.includes(m));
-  let h='<div class="catgrid">'+(regl.length?'<div class="catcard reg"><h4><b>'+regl.length+'</b> '+esc(L("Regulär"))+'</h4><div class="catn">'+regl.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join("<br>")+'</div></div>':'')+c.groups.map(([t,l])=>'<div class="catcard"><h4><b>'+l.length+'</b> '+esc(t)+'</h4><div class="catn">'+l.map(m=>esc(c.nm(m))).sort((a,b)=>a.localeCompare(b,LANG)).join("<br>")+'</div></div>').join("")+
-    (c.allergy.length?'<div class="catcard warn"><h4><b>'+c.allergy.length+'</b> '+esc(L("Weitere Allergien"))+'</h4><div class="catn">'+c.allergy.map(m=>'<b>'+esc(c.nm(m))+'</b>: '+esc(c.alg(m))).join("<br>")+'</div></div>':'')+'</div>';
-  if(c.special.length)h+='<h3 class="cath3">'+esc(L("Alle Sonderwünsche"))+'</h3><div class="cattbl">'+c.special.slice().sort((a,b)=>c.nm(a).localeCompare(c.nm(b),LANG)).map(m=>'<div class="catrow"><div><b>'+esc(c.nm(m))+'</b><span class="catdep">'+esc(HIT(dep(m)))+'</span></div><div>'+esc(dietText(m))+'</div></div>').join("")+'</div>';
-  return h;
-}
+/* catering as components (framework): the sums with chips, the cards per diet and the table of all special wishes */
+/** @param {{c:any}} p */
+function CaterSummary({c}){const reg=c.act.length-c.special.length;
+  return html`<p class="catsum"><b>${c.act.length}</b> ${L("Personen")} · <b>${reg}</b> ${L("ohne Sonderwünsche")} · <b>${c.special.length}</b> ${L("mit Sonderwünschen")}</p>
+    ${c.groups.length||c.allergy.length||c.act.length?html`<div class="catchips">${reg?html`<span class="catchip reg"><b>${reg}</b> ${L("Regulär")}</span>`:null}${c.groups.map(([t,l])=>html`<span class="catchip"><b>${l.length}</b> ${t}</span>`)}${c.allergy.length?html`<span class="catchip warn"><b>${c.allergy.length}</b> ${L("Weitere Allergien")}</span>`:null}</div>`:null}`}
+const brJoin=l=>l.flatMap((x,i)=>i?[html`<br/>`,x]:[x]);
+/** @param {{c:any}} p */
+function CaterOverview({c}){const dep=m=>crewDeptOf(m)||"–",regl=c.act.filter(m=>!c.special.includes(m)),names=l=>brJoin(l.map(m=>c.nm(m)).sort((a,b)=>a.localeCompare(b,LANG)));
+  return html`<div class="catgrid">${regl.length?html`<div class="catcard reg"><h4><b>${regl.length}</b> ${L("Regulär")}</h4><div class="catn">${names(regl)}</div></div>`:null}${c.groups.map(([t,l])=>html`<div class="catcard"><h4><b>${l.length}</b> ${t}</h4><div class="catn">${names(l)}</div></div>`)}
+    ${c.allergy.length?html`<div class="catcard warn"><h4><b>${c.allergy.length}</b> ${L("Weitere Allergien")}</h4><div class="catn">${brJoin(c.allergy.map(m=>html`<b>${c.nm(m)}</b>: ${c.alg(m)}`))}</div></div>`:null}</div>
+    ${c.special.length?html`<h3 class="cath3">${L("Alle Sonderwünsche")}</h3><div class="cattbl">${c.special.slice().sort((a,b)=>c.nm(a).localeCompare(c.nm(b),LANG)).map(m=>html`<div class="catrow"><div><b>${c.nm(m)}</b><span class="catdep">${HIT(dep(m))}</span></div><div>${dietText(m)}</div></div>`)}</div>`:null}`}
+function caterSummary(c){return toHTML(h(CaterSummary,{c}))}
+function caterOverview(c){return toHTML(h(CaterOverview,{c}))}
 function cateringHTML(){
   const c=caterData();if(!c.act.length)return"";
   const reg=c.act.length-c.special.length;
