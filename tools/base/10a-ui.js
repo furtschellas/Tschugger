@@ -1,4 +1,5 @@
-import {html,ISLANDS} from "./09-fw.js";
+import {html,ISLANDS,useLayoutEffect,useRef} from "./09-fw.js";
+import {formsKeep,formsRestore,viewMorph} from "./15-script-tab.js";
 import {L,maps,TX} from "./10-core.js";
 /* ---------- building blocks of the pages as components (framework, 09-fw.js) ----------
    the same markup and classes as the string parts of the app, so both look the same while the pages move one by one */
@@ -27,6 +28,16 @@ export function Entry({name,href,address,note,phone}){
 /** HTML made by the string parts of the app (shared with pages that have not moved yet), inside a component; no forms in it
  * @param {{html?:string,tag?:string,cls?:string}} p */
 export function Raw({html:h,tag="div",cls}){return h?html`<${tag} class=${"raw"+(cls?" "+cls:"")} dangerouslySetInnerHTML=${{__html:h}}/>`:null}
+
+/** HTML of the string parts with forms or open sections in it (crew list: user data of a person …): morphed like the page, so typing,
+ * ticks and open parts stay; not touched while someone is typing in it
+ * @param {{html?:string,cls?:string}} p */
+export function RawLive({html:h,cls}){const r=useRef(null);
+  useLayoutEffect(()=>{const el=r.current;if(!el||el.__h===h)return;
+    if(el.__h===undefined){el.innerHTML=h||"";el.__h=h;return}
+    const ae=document.activeElement;if(ae&&el.contains(ae)&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return;
+    const k=formsKeep(el);viewMorph(el,h||"");formsRestore(el,k);el.__h=h});
+  return html`<div class=${"raw"+(cls?" "+cls:"")} ref=${r}></div>`}
 
 /** a card that opens with a tap on its head (Locations, Szenen …); «open» comes from S.openSc, the tap handler is data-sckey (18-blocking.js)
  * @param {{k:string,open:boolean,now?:boolean,head:any,addr?:any,children?:any}} p */

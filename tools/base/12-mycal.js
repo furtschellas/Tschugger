@@ -5,11 +5,13 @@ import {csMe} from "./13a-callsheet.js";
 import {csLocs,csPlace} from "./13c-cs-places.js";
 import {csShort} from "./13d-cs-mine.js";
 import {perm,vok} from "./14-render.js";
-import {fold,render} from "./15-script-tab.js";
+import {fold,island,render} from "./15-script-tab.js";
 import {goTo,store} from "./16-interaction.js";
 import {arr} from "./20-data-start.js";
 import {ME,MEMBER} from "../boot/03-core-firebase.js";
 import {ADM,ensureAdm} from "../boot/12a-admin-core.js";
+import {html,ISLANDS} from "./09-fw.js";
+import {Raw} from "./10a-ui.js";
 /* ---------- «Meine Termine»: every event of all documents (shooting schedule, callsheets, weekly schedule, transport) the signed-in person takes part in ---------- */
 const NOSET=/^(postprod|verleih|buchhalt|autor|casting)/i;
 const myAdmin=()=>{try{return typeof window.canPerm!=="function"||window.canPerm("mycal.all")}catch(_){return false}};
@@ -139,14 +141,37 @@ function renderMy0(){
     if(!MYEV.length)h+='<p class="ghint">'+esc(L("Keine kommenden Termine gefunden."))+'</p>';
     /* executed rides are hidden one hour after arrival – here they can be shown again */
     if(window.RIDEHID||window.SHOWDONE)h+='<button type="button" class="lnk ridedone" data-ridedone>'+esc(window.SHOWDONE?L("Erledigte Fahrten ausblenden"):L("Erledigte Fahrten anzeigen")+" ("+window.RIDEHID+")")+'</button>';
-    let last="";
-    MYEV.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");h+='<h4 class="mcd">'+WDL(dt)+' '+ddmm(dt)+'</h4>';last=e.date}
-      h+='<div class="mci'+(e.dim?' mcdim':'')+'"><div class="ppt">'+esc(e.t||"")+(e.end?'<br>'+esc(e.end):'')+'</div><div class="ppb">'+(e.go?'<button type="button" class="mcn" data-mcgo="'+esc(e.go)+'">'+esc(e.n||"")+'</button>':'<span class="mcn">'+esc(e.n||"")+'</span>')+''+(e.where?ppWhere(e.where,e.map):'')+(e.to?'<div class="ppl rto">'+esc(L("Ziel"))+': '+(e.toMap?'<a href="'+esc(safeUrl(e.toMap))+'" target="_blank" rel="noopener">'+esc(e.to)+'</a>':esc(e.to))+'</div>':'')+(e.driver?'<div class="ppx">'+esc(L("Fahrer:in"))+': '+telLinks(e.driver)+'</div>':'')+(e.pax?'<div class="ppx">'+esc(L("Mitfahrende"))+': '+esc(e.pax)+'</div>':'')+(e.note?'<div class="ppx">'+esc(e.note)+'</div>':'')+(e.xqh?'<div class="ppx xqm">'+e.xqh+'</div>':'')+(e.cmah?'<div class="ppx cma">'+e.cmah+'</div>':'')+'<div class="mcs">'+esc(e.src)+'</div></div>'+(window.ownEvEditBtn?window.ownEvEditBtn(e):'')+(window.pushBell?window.pushBell(e):'')+(()=>{/* a ride: its confirmation on the right instead of «in den Kalender» (the calendar stays when there is nothing to confirm) */
-        if(e.cm&&window.cmBtn){const cb=window.cmBtn(e.cm,e.date,e.n,e.cmk,e.cmo);if(cb)return cb}
-        const ack=window.rideAckBtn?window.rideAckBtn(e):'';if(ack)return ack;
-        return '<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>'})()+'</div>'})}
+    h+=island("myev",{evs:MYEV,sd:!!window.SHOWDONE})}
   return h+'</section>';
 }
+/* ---------- Meine Termine as components (framework): the list of the days and their entries; buttons of other parts (calendar, ride ack,
+   push bell, own events) are still their shared HTML ---------- */
+const CALSVG='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>';
+/** the button on the right: a camera/crew mark, a ride to confirm, otherwise «in den Kalender» */
+function mcRight(e,i){if(e.cm&&window.cmBtn){const cb=window.cmBtn(e.cm,e.date,e.n,e.cmk,e.cmo);if(cb)return cb}
+  const ack=window.rideAckBtn?window.rideAckBtn(e):'';if(ack)return ack;
+  return '<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'">'+CALSVG+'</button>'}
+/** one entry of a day
+ * @param {{e:any,i:number}} p */
+function MyEntry({e,i}){
+  return html`<div class=${"mci"+(e.dim?" mcdim":"")}><div class="ppt">${e.t||""}${e.end?html`<br/>${e.end}`:null}</div><div class="ppb">
+    ${e.go?html`<button type="button" class="mcn" data-mcgo=${e.go}>${e.n||""}</button>`:html`<span class="mcn">${e.n||""}</span>`}
+    ${e.where?html`<${Raw} html=${ppWhere(e.where,e.map)}/>`:null}
+    ${e.to?html`<div class="ppl rto">${L("Ziel")}: ${e.toMap?html`<a href=${safeUrl(e.toMap)} target="_blank" rel="noopener">${e.to}</a>`:e.to}</div>`:null}
+    ${e.driver?html`<div class="ppx">${L("Fahrer:in")}: <${Raw} tag="span" html=${telLinks(e.driver)}/></div>`:null}
+    ${e.pax?html`<div class="ppx">${L("Mitfahrende")}: ${e.pax}</div>`:null}
+    ${e.note?html`<div class="ppx">${e.note}</div>`:null}
+    ${e.xqh?html`<${Raw} cls="ppx xqm" html=${e.xqh}/>`:null}
+    ${e.cmah?html`<${Raw} cls="ppx cma" html=${e.cmah}/>`:null}
+    <div class="mcs">${e.src}</div></div>
+    <${Raw} html=${(window.ownEvEditBtn?window.ownEvEditBtn(e):"")+(window.pushBell?window.pushBell(e):"")+mcRight(e,i)}/></div>`}
+/** the entries grouped by day (a heading per day)
+ * @param {{evs:any[]}} p */
+function MyEvents({evs}){const out=[];let last="";
+  evs.forEach((e,i)=>{if(e.date!==last){const dt=new Date(e.date+"T12:00:00");out.push(html`<h4 class="mcd" key=${"d"+e.date}>${WDL(dt)} ${ddmm(dt)}</h4>`);last=e.date}
+    out.push(html`<${MyEntry} key=${i} e=${e} i=${i}/>`)});
+  return html`${out}`}
+ISLANDS.myev=MyEvents;
 export function openMyCal(){goTo({tab:"my"})}
 export function myClick(e){
   const g=e.target.closest("[data-mcgo]");if(g&&g.dataset.mcgo){goTo({tab:"plan",day:g.dataset.mcgo});return true}

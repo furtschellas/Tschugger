@@ -11,7 +11,7 @@ import {blkFor,fpFor,fpLinks} from "./17-scene-reader.js";
 import {openGallery} from "./18-blocking.js";
 import {arr,showMsg} from "./20-data-start.js";
 import {html,ISLANDS} from "./09-fw.js";
-import {Card,MapLine,Raw} from "./10a-ui.js";
+import {Card,MapLine,Raw,RawLive,Section} from "./10a-ui.js";
 /* day.month. without weekday (any language) */
 const dmShort=iso=>{const [,m,d]=String(iso||'').split('-');return d&&m?d+'.'+m+'.':''};
 /* vCard 3.0 for one crew member, so it can be added to the phone's contacts */
@@ -59,30 +59,36 @@ export function renderCrew(){
   const q=S.q.trim().toLowerCase();
   let h='<input class="search" id="q" type="search" placeholder="'+L("Crew suchen")+'" value="'+esc(S.q)+'" aria-label="'+esc(L("Crew durchsuchen"))+'">';
   if(typeof window.crewHead==="function")h+=window.crewHead();
-  let n=0;
-  for(const g of S.crew){
-    const ppl=(g.people||[]).filter(p=>!q||[p.name,p.role,TX(p,"role"),g.dept,TX(g,"dept")].join(" ").toLowerCase().includes(q));
-    if(!ppl.length)continue;n+=ppl.length;
-    const gi=S.crew.indexOf(g);
-    h+='<section class="dept"><h3 class="dh">'+esc(TX(g,"dept"))+'</h3><div class="people">'+ppl.map(p=>{
-      /* vCard only on the website: the Claude viewer cannot save .vcf files, so there the copy button stays */
-      let ct='';const web=typeof window.crewHead==="function";const vc=!web?'':(p.phone||p.email)?'<button class="copy vcbtn" data-vc="'+gi+':'+g.people.indexOf(p)+'" '+ariaTip(L("Kontakt ins Telefon übernehmen"))+'><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard</button>':'';
-      /* wide screens: vCard after the job title; phones: next to the phone number */
-      const vcW=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-wide"'),vcN=vc.replace('class="copy vcbtn"','class="copy vcbtn vc-narrow"');
-      const showP=vok("phone"),showE=vok("email");const vcW0=vcW;
-      /* phone / e-mail missing in the crew list: taken from the person's app profile (marked) */
-      const fx=(!p.phone||!p.email)&&typeof window.crewFill==="function"?window.crewFill(p):null;const fromApp='<span class="fromapp" title="'+esc(L("aus dem App-Profil"))+'">App</span>';
-      if(fx&&fx.phone&&!p.phone&&showP)ct+='<a href="tel:'+esc(String(fx.phone).replace(/\s/g,""))+'"><span>'+esc(fx.phone)+'</span></a>'+fromApp;
-      if(fx&&fx.email&&!p.email&&showE)ct+='<a class="em" href="mailto:'+esc(fx.email)+'">'+esc(fx.email)+'</a>'+fromApp;
-      if(p.phone&&showP)ct+='<a href="tel:'+esc(String(p.phone).replace(/\s/g,""))+'"><span>'+esc(p.phone)+'</span></a>'+(web?vcN:'<button class="copy" data-copy="'+esc(p.phone)+'">'+L("Kopieren")+'</button>');
-      if(p.email&&showE)ct+='<span class="em">'+esc(p.email)+'</span>'+(p.phone&&showP||!showP?'':vcN);
-      if(p.note)ct+='<span>'+esc(p.note)+'</span>';
-      return '<div class="p"><div class="hd"><span class="nm">'+esc(p.name)+'</span><span class="role">'+esc(TX(p,"role"))+'</span>'+(showP?vcW0:'')+'</div>'+(ct?'<div class="ct">'+ct+'</div>':'')+(typeof window.crewExtra==="function"?window.crewExtra(p):"")+'</div>';
-    }).join("")+'</div></section>';
-  }
-  if(!n)h+='<div class="empty">'+L('Niemand gefunden für')+' «'+esc(S.q)+'».</div>';
-  return h;
+  return h+island("crew",{crew:S.crew,q,qv:S.q,showP:vok("phone"),showE:vok("email"),web:typeof window.crewHead==="function",at:Date.now()});
 }
+/* ---------- Crewliste as components (framework) ---------- */
+const VCSVG='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg>vCard';
+/** the vCard button (website only: the Claude viewer cannot save .vcf files) – wide screens after the job, phones next to the number
+ * @param {{vc:string,wide:boolean}} p */
+function VcBtn({vc,wide}){return html`<button class=${"copy vcbtn "+(wide?"vc-wide":"vc-narrow")} data-vc=${vc} aria-label=${L("Kontakt ins Telefon übernehmen")} title=${L("Kontakt ins Telefon übernehmen")} dangerouslySetInnerHTML=${{__html:VCSVG}}></button>`}
+const telHref=t=>"tel:"+String(t).replace(/\s/g,"");
+/** one person: name, job, phone / e-mail (from the app profile when the crew list has none, marked «App»), the admin parts
+ * @param {{p:any,vc:string,showP:boolean,showE:boolean,web:boolean}} x */
+function Person({p,vc,showP,showE,web}){
+  const hasVc=web&&!!(p.phone||p.email);
+  const fx=(!p.phone||!p.email)&&typeof window.crewFill==="function"?window.crewFill(p):null;
+  const fromApp=html`<span class="fromapp" title=${L("aus dem App-Profil")}>App</span>`,ct=[];
+  if(fx&&fx.phone&&!p.phone&&showP)ct.push(html`<a href=${telHref(fx.phone)}><span>${fx.phone}</span></a>`,fromApp);
+  if(fx&&fx.email&&!p.email&&showE)ct.push(html`<a class="em" href=${"mailto:"+fx.email}>${fx.email}</a>`,fromApp);
+  if(p.phone&&showP)ct.push(html`<a href=${telHref(p.phone)}><span>${p.phone}</span></a>`,web?(hasVc?html`<${VcBtn} vc=${vc} wide=${false}/>`:null):html`<button class="copy" data-copy=${p.phone}>${L("Kopieren")}</button>`);
+  if(p.email&&showE){ct.push(html`<span class="em">${p.email}</span>`);if(!(p.phone&&showP||!showP)&&hasVc)ct.push(html`<${VcBtn} vc=${vc} wide=${false}/>`)}
+  if(p.note)ct.push(html`<span>${p.note}</span>`);
+  const ex=typeof window.crewExtra==="function"?window.crewExtra(p):"";
+  return html`<div class="p"><div class="hd"><span class="nm">${p.name}</span><span class="role">${TX(p,"role")}</span>${showP&&hasVc?html`<${VcBtn} vc=${vc} wide=${true}/>`:null}</div>
+    ${ct.length?html`<div class="ct">${ct}</div>`:null}${ex?html`<${RawLive} html=${ex}/>`:null}</div>`}
+/** the crew by department, filtered by the search
+ * @param {{crew:any[],q:string,qv:string,showP:boolean,showE:boolean,web:boolean}} x */
+function CrewList({crew,q,qv,showP,showE,web}){let n=0;
+  const secs=crew.map((g,gi)=>{const ppl=(g.people||[]).filter(p=>!q||[p.name,p.role,TX(p,"role"),g.dept,TX(g,"dept")].join(" ").toLowerCase().includes(q));
+    if(!ppl.length)return null;n+=ppl.length;
+    return html`<${Section} key=${"g"+gi} title=${TX(g,"dept")}>${ppl.map(p=>html`<${Person} key=${gi+":"+g.people.indexOf(p)} p=${p} vc=${gi+":"+g.people.indexOf(p)} showP=${showP} showE=${showE} web=${web}/>`)}</${Section}>`});
+  return html`${secs}${!n?html`<div class="empty">${L("Niemand gefunden für")} «${qv}».</div>`:null}`}
+ISLANDS.crew=CrewList;
 const addrKey=l=>norm(String(l.address||"").replace(/[–-]/g,"").replace(/strasse/gi,"str").replace(/[.,]/g,""));
 const isS5=sc=>/^5(pt\d+|)$/.test(norm(sc))||norm(sc)==="185";
 function scene5Parts(){

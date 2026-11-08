@@ -7,7 +7,7 @@ import {dayItems,dispoOf,esc,fullName,isoDM,L,lsGet,noneHTML,onEvent,S,todayISO,
 import {csHm,csMe,csMyRides,csRideReal,csTile} from "../base/13a-callsheet.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
-import {mountIslands,onRendered,render,viewMorph} from "../base/15-script-tab.js";
+import {island,mountIslands,onRendered,render,viewMorph} from "../base/15-script-tab.js";
 import {arr} from "../base/20-data-start.js";
 import {ME,MEMBER,can,fb,isAdmin} from "./03-core-firebase.js";
 import {appKind,seenMs} from "./10-menus-welcome-presence.js";
@@ -15,6 +15,7 @@ import {savePrefsSoon} from "./06-prefs-docs.js";
 import {ADM,ensureAdm} from "./12a-admin-core.js";
 import {wxTile} from "./15-weather.js";
 import {nowCardHTML,todayDay,unitTilesHTML} from "./16-today-view.js";
+import {html,ISLANDS} from "../base/09-fw.js";
 
 /* [key, title, frame page (whole app in a frame) or "", may this person see it] */
 /* frame pages: «t:tab» a page of the app, «a:sub» a part of the App-Verwaltung, «…:selector» only that part of the page; always the phone view (390 px, scaled) */
@@ -66,27 +67,43 @@ async function actLoad(){if(ACT.busy)return;ACT.busy=true;
     ACT.err=""}
   catch(err){ACT.err=String(err&&err.code||"x")}finally{ACT.at=Date.now();ACT.busy=false;soon()}}
 const ago=t=>{const m=Math.round((Date.now()-t)/60e3);return m<1?L("gerade eben"):L("vor {n} Min.").replace("{n}",m)};
+/* ---------- topics as components (framework) ---------- */
+/** @param {{list:{n:string,d:string,t:number}[]}} p */
+function Active({list}){return html`<div class="sbact"><div class="sbacn">${list.length} ${L("online")}</div>${list.map(p=>html`<div class="sbap" key=${p.n}><span class="sbdot" aria-hidden="true"></span><b>${p.n}</b><small>${p.d} · ${ago(p.t)}</small></div>`)}</div>`}
+/** one row of the shooting order: time, scene and set (or an event); done / running from the scene ack
+ * @param {{i:any,st:number}} p */
+function OrderRow({i,st}){return html`<div class=${"sbo"+(st===2?" done":st===1?" run":"")}><i>${i.t||""}</i>${i.sc?html`<b>${String(i.sc)}</b> <span>${i.set||""}</span>`:html`<span class="sbev">${i.n||""}</span>`}</div>`}
+/** @param {{d:any,u2:any[]}} p */
+function Order({d,u2}){const st=(sc,u)=>sc&&typeof scState==="function"?scState(d.date,unitKey(sc,u)):0;
+  const list=(its,u)=>arr(its).filter(i=>i&&(i.sc||i.n)).map(i=>html`<${OrderRow} i=${i} st=${st(i.sc,u)}/>`);
+  return html`${u2.length?html`<div class="tuh tu1">1st Unit</div>`:null}${list(d.items,"1")}${u2.length?html`<div class="tuh tu2">2nd Unit</div>${list(u2,"2")}`:null}`}
+/** @param {{rs:any[]}} p */
+function Rides({rs}){return html`${rs.map(r=>html`<div class="sbr"><b>${csHm(r.t1)||r.t1||""}</b> ${r.from||""} → ${r.to||""}${r.t2?html` <small>${r.t2}</small>`:null}<small class="sbrv">${[r.vehicle,r.driver].filter(Boolean).join(" · ")}</small></div>`)}`}
+/** @param {{nd:any,h1:boolean,u20:string,u2:string,fi:any}} p */
+function Next({nd,h1,u20,u2,fi}){return html`<div class="sbnx"><b>${nd.short||nd.label||""}</b> ${isoDM(nd.date)}</div>
+  ${nd.hours&&h1?html`<div class="sbnx">${L("Drehzeit")}${u20?" 1st Unit":""}: ${nd.hours}</div>`:null}
+  ${u2?html`<div class="sbnx">${L("Drehzeit")} 2nd Unit: ${u2}</div>`:null}
+  ${fi?html`<div class="sbnx">${L("Erste Szene")}: <b>${String(fi.sc)}</b> ${fi.set||""}</div>`:null}`}
+Object.assign(ISLANDS,{sbActive:Active,sbOrder:Order,sbRides:Rides,sbNext:Next});
 const TOP={
   /* «Ansicht simulieren»: the quick picker of the App-Verwaltung (roles and people) – the view as that role or person opens in the page itself */
   sim:()=>{if(!ADM.loaded){try{ensureAdm()}catch(_){}setTimeout(soon,1500);return noneHTML("Wird geladen …")}
     const h=typeof window.simPicker==="function"?window.simPicker():"";return h||'<p class="sbnone">'+esc(L("Ansicht als"))+' …</p>'},
   active:()=>{if(Date.now()-ACT.at>90e3)setTimeout(actLoad,0);if(!ACT.list)return ACT.err?noneHTML("Zurzeit nicht lesbar"):"";
     if(!ACT.list.length)return noneHTML("Gerade ist niemand aktiv.");
-    return '<div class="sbact"><div class="sbacn">'+ACT.list.length+' '+esc(L("online"))+'</div>'+ACT.list.map(p=>'<div class="sbap"><span class="sbdot" aria-hidden="true"></span><b>'+esc(p.n)+'</b><small>'+esc(p.d)+' · '+esc(ago(p.t))+'</small></div>').join("")+'</div>'},
+    return island("sbActive",{list:ACT.list,m:Math.floor(Date.now()/60e3)})},   /* m: «vor n Min.» moves on every minute */
   now:()=>{const h=nowCardHTML(typeof csShootDay==="function"?csShootDay():todayISO(),"",undefined,true);   /* the night after midnight too; only while shooting (as Today) */return h?'<div class="sbnow">'+h+'</div>':""},
   mine:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}const mn=me?csMine(dp.cs,me):[];return mn.length?'<div class="tcard tmine">'+mn.join("")+'</div>':""},
   tiles:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}return '<div class="tcs">'+unitTilesHTML(dp,d,me)+'</div>'},   /* the same tiles as Today */
-  order:()=>{const d=dayNow();if(!d||d.kind!=="shoot")return"";const st=(sc,u)=>typeof scState==="function"?scState(d.date,unitKey(sc,u)):0;   /* the state of the unit of the row (2nd Unit: «90_u2») */
-    const list=(its,u)=>arr(its).filter(i=>i&&(i.sc||i.n)).map(i=>'<div class="sbo'+(i.sc&&st(i.sc,u)===2?' done':i.sc&&st(i.sc,u)===1?' run':'')+'"><i>'+esc(i.t||"")+'</i>'+(i.sc?'<b>'+esc(String(i.sc))+'</b> <span>'+esc(i.set||"")+'</span>':'<span class="sbev">'+esc(i.n||"")+'</span>')+'</div>').join("");
-    const u2=dayItems(d,"2");return (u2.length?'<div class="tuh tu1">1st Unit</div>':'')+list(d.items,"1")+(u2.length?'<div class="tuh tu2">2nd Unit</div>'+list(u2,"2"):'')},
+  order:()=>{const d=dayNow();if(!d||d.kind!=="shoot")return"";const u2=dayItems(d,"2");return island("sbOrder",{d,u2,at:Date.now()})},
   rides:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}if(!me)return"";
     const rs=csMyRides(dp.cs,me).filter(csRideReal).sort((a,b)=>(csHm(a.t1)||"99").localeCompare(csHm(b.t1)||"99"));
-    return rs.map(r=>'<div class="sbr"><b>'+esc(csHm(r.t1)||r.t1||"")+'</b> '+esc(r.from||"")+' → '+esc(r.to||"")+(r.t2?' <small>'+esc(r.t2)+'</small>':'')+'<small class="sbrv">'+esc([r.vehicle,r.driver].filter(Boolean).join(" · "))+'</small></div>').join("")},
+    return rs.length?island("sbRides",{rs}):""},
   next:()=>{const d=dayNow(),t=todayISO();const nd=arr(S.days).find(x=>x&&x.kind==="shoot"&&x.date>(d&&d.date>t?d.date:t));if(!nd)return"";
     const u20=nd.unit2&&nd.unit2.hours?String(nd.unit2.hours):"";const fi=arr(nd.items).find(i=>i&&i.sc);
     let mu=null;try{const ndp=dispoOf(nd.date,1);if(ndp)mu=window.csMyUnits(ndp.cs,csMe())}catch(_){}
     const u2=u20&&(!mu||mu.includes("2"))?u20:"",h1=!u20||!mu||mu.includes("1");
-    return '<div class="sbnx"><b>'+esc(nd.short||nd.label||"")+'</b> '+esc(isoDM(nd.date))+'</div>'+(nd.hours&&h1?'<div class="sbnx">'+esc(L("Drehzeit"))+(u20?' 1st Unit':'')+': '+esc(nd.hours)+'</div>':'')+(u2?'<div class="sbnx">'+esc(L("Drehzeit"))+' 2nd Unit: '+esc(u2)+'</div>':'')+(fi?'<div class="sbnx">'+esc(L("Erste Szene"))+': <b>'+esc(String(fi.sc))+'</b> '+esc(fi.set||"")+'</div>':'')},
+    return island("sbNext",{nd,h1,u20,u2,fi})},
   wx:()=>{const d=dayNow();if(!d)return"";let h="";try{h=wxTile(d)}catch(_){}return h?'<div class="ttiles">'+h+'</div>':""}
 };
 
@@ -190,7 +207,7 @@ function draw(){if(INFRAME)return;const can=window.innerWidth>=SBWIDE&&!!ME&&sbU
       if(k==="phone"){let c=el.querySelector(".sbphcw");if(!c){c=document.createElement("div");c.className="sbphcw";const fr=el.querySelector(".sbframe");fr.parentNode.insertBefore(c,fr)}
         if(!c.contains(document.activeElement)){const h=phBar();if(c.__h!==h){c.__h=h;c.innerHTML=h}}}
       if(root.children[i]!==el)root.insertBefore(el,root.children[i]||null);
-      if(!t[2]){let h="";try{h=sec(k,t[1],TOP[k]())}catch(err){h=sec(k,t[1],"")}if(el.__h!==h){el.__h=h;el.innerHTML=h}}});
+      if(!t[2]){let h="";try{h=sec(k,t[1],TOP[k]())}catch(err){h=sec(k,t[1],"")}if(el.__h!==h){el.__h=h;if(el.firstChild)viewMorph(el,h);else el.innerHTML=h}mountIslands(el)}});
     /* below: «+» – a pull-down with the topics not shown yet (in neither box) */
     {const used=x.l.concat(x.r),free=SBT.filter(t=>sbCan(t[0])&&!used.includes(t[0])),ad=a.querySelector(".sbadd"),open=ad.dataset.open==="1";
       const h=free.length?'<button type="button" class="sbplus" data-sbplus="'+side+'" aria-expanded="'+open+'" aria-label="'+esc(L("Thema hinzufügen"))+'" title="'+esc(L("Thema hinzufügen"))+'">+</button>'+

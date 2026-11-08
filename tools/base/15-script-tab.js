@@ -139,6 +139,11 @@ window.addEventListener("resize",()=>{clearTimeout(window.__fnT);window.__fnT=se
    focus, running maps and pictures stay; much less work after a tap). Same result as replacing everything: attributes, texts and form values
    follow the new page exactly – except the field someone is typing in. Fallback: replace everything (error, or localStorage «morph»=0) ---------- */
 const MORPHOFF=(()=>{try{return localStorage.getItem("morph")==="0"}catch(_){return false}})();
+/* what someone has typed or ticked in the open forms of a part of the page – kept over a new drawing of it (the page, a component) */
+const fkey=f=>[f.className,f.dataset.role,f.dataset.af,f.dataset.adm,f.dataset.em].map(x=>x||"").join("|");
+export function formsKeep(root){const keep={};root.querySelectorAll("form").forEach(f=>{const vals=[];f.querySelectorAll("input,select,textarea").forEach(el=>{if(el.type==="file"||el.type==="hidden"||el.type==="submit")return;vals.push([el.name,el.value,el.type==="checkbox"||el.type==="radio"?el.checked:null,el.dataset.dirty==="1"])});keep[fkey(f)]=vals});return keep}
+export function formsRestore(root,keep){root.querySelectorAll("form").forEach(f=>{const vals=keep[fkey(f)];if(!vals)return;const els=[...f.querySelectorAll("input,select,textarea")].filter(el=>!(el.type==="file"||el.type==="hidden"||el.type==="submit"));
+    vals.forEach((x,i)=>{const el=els[i];if(!el||el.name!==x[0]||!x[3])return;if(x[2]!==null)el.checked=x[2];else el.value=x[1];el.dataset.dirty="1"})})}
 export function viewMorph(v,html){
   if(MORPHOFF){v.innerHTML=html;return}
   const t=document.createElement("template");t.innerHTML=html;const nw=t.content;
@@ -218,11 +223,9 @@ function renderCore(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   try{html=VIEWS[S.tab]()+(S.tab==="admin"?"":srcHTML())}
   catch(err){console.error(err);html='<div class="empty">'+esc(L("Diese Ansicht konnte nicht angezeigt werden."))+'<br><small>'+esc(err&&err.message||err)+'</small></div>'}
   /* keep what someone has typed or ticked in an open form when the page re-renders (data refresh, list reload) */
-  const fkey=f=>[f.className,f.dataset.role,f.dataset.af,f.dataset.adm,f.dataset.em].map(x=>x||"").join("|");
-  const keep={};v.querySelectorAll("form").forEach(f=>{const vals=[];f.querySelectorAll("input,select,textarea").forEach(el=>{if(el.type==="file"||el.type==="hidden"||el.type==="submit")return;vals.push([el.name,el.value,el.type==="checkbox"||el.type==="radio"?el.checked:null,el.dataset.dirty==="1"])});keep[fkey(f)]=vals});
+  const keep=formsKeep(v);
   viewMorph(v,html);
-  v.querySelectorAll("form").forEach(f=>{const vals=keep[fkey(f)];if(!vals)return;const els=[...f.querySelectorAll("input,select,textarea")].filter(el=>!(el.type==="file"||el.type==="hidden"||el.type==="submit"));
-    vals.forEach((x,i)=>{const el=els[i];if(!el||el.name!==x[0]||!x[3])return;if(x[2]!==null)el.checked=x[2];else el.value=x[1];el.dataset.dirty="1"})});
+  formsRestore(v,keep);
   if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   scallLabel();
   {const sel=v.querySelector('.chip[aria-selected="true"]'),st=v.querySelector(".strip.in"),tdy=todayISO();
