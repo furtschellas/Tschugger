@@ -6,7 +6,7 @@ import {csLocs,csPlace} from "./13c-cs-places.js";
 import {csShort} from "./13d-cs-mine.js";
 import {perm,vok} from "./14-render.js";
 import {fold,render} from "./15-script-tab.js";
-import {store} from "./16-interaction.js";
+import {goTo,store} from "./16-interaction.js";
 import {arr} from "./20-data-start.js";
 import {ME,MEMBER} from "../boot/03-core-firebase.js";
 import {ADM,ensureAdm} from "../boot/12a-admin-core.js";
@@ -147,9 +147,9 @@ function renderMy0(){
         return '<button type="button" class="calbtn" data-mcics="'+i+'" aria-label="'+esc(L("In den Kalender"))+'"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>'})()+'</div>'})}
   return h+'</section>';
 }
-export function openMyCal(){S.tab="my";S.srcOpen=false;window.scrollTo(0,0);render()}
+export function openMyCal(){goTo({tab:"my"})}
 export function myClick(e){
-  const g=e.target.closest("[data-mcgo]");if(g&&g.dataset.mcgo){S.tab="plan";S.day=g.dataset.mcgo;store("tab","plan");render();window.scrollTo(0,0);return true}
+  const g=e.target.closest("[data-mcgo]");if(g&&g.dataset.mcgo){goTo({tab:"plan",day:g.dataset.mcgo});return true}
   const c=e.target.closest("[data-mcics]");if(c){const ev=MYEV[+c.dataset.mcics];saveIcs(myIcs([ev]),(ev.date+"_"+ev.n).replace(/[^\w\-. ]+/g,"").replace(/\s+/g,"_").slice(0,60)+".ics");return true}
   if(e.target.closest("[data-mcall]")){saveIcs(myIcs(MYEV),"Tschugger_Meine_Termine.ics");return true}
   return false;

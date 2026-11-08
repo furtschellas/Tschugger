@@ -8,6 +8,10 @@ export function setOpen(btn,open){
   if(open)try{fitAddr(c)}catch(_){}
 }
 export function scallLabel(){const b=document.getElementById("scall");if(!b)return;const ks=[...document.querySelectorAll("[data-sckey]")].map(x=>x.dataset.sckey);const all=ks.length>0&&ks.every(k=>S.openSc[k]);b.setAttribute("aria-expanded",all);b.classList.toggle("on",all)}
+/* the one way to open a page (and day): from Meine Termine, a push, the assistant, the tour … – the core event «view» tells the parts
+   (side menus, phone preview) what is shown; a day only the 2nd/3rd Unit shoots switches its unit on in the Drehplan */
+export function goTo(o){o=o||{};S.want=null;S.srcOpen=false;if(o.tab)S.tab=o.tab;if(o.day!==undefined)S.day=o.day;if(o.dday!==undefined)S.dday=o.dday;
+  try{store("tab",S.tab)}catch(_){}emit("view",{tab:S.tab,day:S.day,dday:S.dday});if(o.scroll!==false)window.scrollTo(0,0);render()}
 /* tapping the tab you are already on jumps back to today; switching tabs keeps the last chosen day */
 export function goTab(tab){S.want=null;const again=S.tab===tab,from=S.tab;S.tab=tab;S.srcOpen=false;if(again&&tab==="plan")S.day=null;
   /* Drehplan ↔ Callsheet: the same day on both sides; otherwise the callsheet opens at the current day */

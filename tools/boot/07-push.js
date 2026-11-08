@@ -4,7 +4,7 @@ import {dayPlaces,zurichUTC} from "../base/11-schedule-prep.js";
 import {WDL,hm,myEvents,myIdentity,openMyCal} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
-import {store} from "../base/16-interaction.js";
+import {goTo,store} from "../base/16-interaction.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {fmtDT} from "./01-config.js";
 import {can,fb,isAdmin,isOwner,lc,ME,MYROLE,SBXFRAME,ownEnc,withTimeout,wkPost,wkUrl} from "./03-core-firebase.js";
@@ -190,8 +190,7 @@ function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo|prep|script):(\d
     setTimeout(go,400);return true}
   let n=0;const go=()=>{ /* wait for the data (up to 6 s), so a new shooting day is found */
     const has=(S.days||[]).some(d=>d.id===m[2]||d.date===m[2]);if(m[1]==="plan"&&!has&&n++<15){setTimeout(go,400);return}
-    S.want=null;S.srcOpen=false;if(m[1]==="dispo"){S.tab="dispo";S.dday=m[2]}else{S.tab="plan";S.day=m[1]==="prep"||!has?"prep:"+m[2]:m[2]}
-    try{store("tab",S.tab)}catch(_){}window.scrollTo(0,0);render()};
+    if(m[1]==="dispo")goTo({tab:"dispo",dday:m[2]});else goTo({tab:"plan",day:m[1]==="prep"||!has?"prep:"+m[2]:m[2]})};
   setTimeout(go,400);return true}
 pushGo(location.hash);
 if(location.hash==="#my"){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}setTimeout(()=>{if(typeof openMyCal==="function")openMyCal()},400)}
