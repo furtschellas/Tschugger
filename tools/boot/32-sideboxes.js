@@ -90,6 +90,9 @@ const TOP={
   wx:()=>{const d=dayNow();if(!d)return"";let h="";try{h=wxTile(d)}catch(_){}return h?'<div class="ttiles">'+h+'</div>':""}
 };
 
+/* pages drawn directly in the box (read pages without own state): Info, Locations, Crewliste, Meine Termine – the others still in a frame */
+const SBNAT=["info","loc","crew","my"];
+const sbNative=t=>!!(t&&typeof t[2]==="string"&&t[2].startsWith("t:")&&SBNAT.includes(t[2].slice(2))&&typeof VIEWS!=="undefined"&&typeof VIEWS[t[2].slice(2)]==="function");
 /* ---------- the two boxes ---------- */
 let BOX={};
 function frame(k,pg){const f=document.createElement("div");f.className="sbframe"+(pg==="phone"?" sbphone":"");
@@ -150,7 +153,13 @@ function draw(){if(INFRAME)return;const wide=window.innerWidth>=SBWIDE&&!!ME&&sb
     /* one part per topic (kept: a frame is never loaded twice), in the chosen order */
     for(const el of [...root.children])if(!keys.includes(el.dataset.sbt))el.remove();
     keys.forEach((k,i)=>{const t=SBT.find(y=>y[0]===k);let el=root.querySelector(':scope>[data-sbt="'+k+'"]');
-      if(!el){el=document.createElement("div");el.dataset.sbt=k;if(t[2]){el.innerHTML='<section class="sbsec">'+head(k,t[1])+'</section>';el.firstChild.appendChild(frame(k,t[2]))}}
+      const nat=sbNative(t);
+      if(el&&!!el.__nat!==!!nat){el.remove();el=null}   /* switched between drawn here and frame */
+      if(!el){el=document.createElement("div");el.dataset.sbt=k;el.__nat=nat;if(t[2]&&!nat){el.innerHTML='<section class="sbsec">'+head(k,t[1])+'</section>';el.firstChild.appendChild(frame(k,t[2]))}}
+      /* a page drawn right here (no second copy of the app in a frame: no own sign-in, no restart, much less memory) – kept while one types in it */
+      if(nat&&!el.contains(document.activeElement)){const tb=t[2].slice(2);let body="";
+        if(tb===S.tab)body='<p class="sbnone">'+esc(L("Wird in der Mitte angezeigt."))+'</p>';else try{body='<div class="sbnat">'+VIEWS[tb]()+'</div>'}catch(err){console.warn("sidebox page",tb,err);body='<p class="sbnone">'+esc(L("Zurzeit nicht lesbar"))+'</p>'}
+        const h='<section class="sbsec">'+head(k,t[1])+body+'</section>';if(el.__h!==h){el.__h=h;el.innerHTML=h}}
       /* the phone: its controls above it (kept while a choice is open) */
       if(k==="phone"){let c=el.querySelector(".sbphcw");if(!c){c=document.createElement("div");c.className="sbphcw";const fr=el.querySelector(".sbframe");fr.parentNode.insertBefore(c,fr)}
         if(!c.contains(document.activeElement)){const h=phBar();if(c.__h!==h){c.__h=h;c.innerHTML=h}}}

@@ -751,6 +751,7 @@ Object.assign(I18N,{
  "2nd Unit im Callsheet":{fr:"2nd Unit dans le callsheet",it:"2nd Unit nel callsheet",en:"2nd Unit in the callsheet"},
  "Seitenmenüs":{fr:"Menus latéraux",it:"Menu laterali",en:"Side menus"},
  "Wird verbunden …":{fr:"Connexion …",it:"Connessione …",en:"Connecting …"},
+ "Wird in der Mitte angezeigt.":{fr:"Affiché au centre.",it:"Mostrato al centro.",en:"Shown in the middle."},
  "du":{fr:"toi",it:"tu",en:"you",hi:"आप"},
  "Zum Verschieben ziehen":{fr:"Glisser pour déplacer",it:"Trascina per spostare",en:"Drag to move"},
  "Nach unten":{fr:"Vers le bas",it:"Verso il basso",en:"Move down"},

@@ -1376,3 +1376,6 @@ html body :is(#sbl,#sbr) .sbview .sbframe{border-radius:10px;overflow:hidden}
 html body :is(#sbl,#sbr) .sbview .sbsec>.tcard,html body :is(#sbl,#sbr) .sbview .sbsec .tcs>.tcard{margin:0}
 html body :is(#sbl,#sbr) .sbview .sbadd{margin:2px 0 12px;justify-content:center}
 html[data-theme="light"] body aside.sbbox .sbview .sbsec{background:#fff}
+/* a page drawn in a side box: its own scroll area (a long crew list does not shrink the whole box) */
+html body :is(#sbl,#sbr) .sbview .sbnat{max-height:62vh;overflow:auto;overscroll-behavior:contain;margin:0 -4px;padding:0 4px}
+html body :is(#sbl,#sbr) .sbview .sbnat h2.pgt{display:none}
