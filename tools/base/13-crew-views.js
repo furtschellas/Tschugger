@@ -335,16 +335,6 @@ export function renderDispo(){
   h+=attachHTML(x,x.date)+sidesHTML(x.date)+raHTML(x.date);
   return h;
 }
-export function renderInfo(){
-  if(!S.places.length)return emptyHTML("Infos");
-  let h='';
-  for(const g of S.places){
-    h+='<section class="dept"><h3 class="dh">'+esc(TX(g,"cat"))+'</h3><div class="people">'+(g.items||[]).map(p=>
-      '<div class="p"><div class="nm">'+esc(p.name)+'</div>'+(p.address?'<div class="role"><a href="'+maps(p.name+", "+p.address)+'" target="_blank" rel="noopener noreferrer">'+esc(p.address)+'</a></div>':'')+(p.note?'<div class="role">'+esc(TX(p,"note"))+'</div>':'')+(p.phone?'<div class="ct"><span>'+esc(p.phone)+'</span></div>':'')+'</div>'
-    ).join("")+'</div></section>';
-  }
-  return h;
-}
 export function emptyHTML(what){
   return '<div class="empty">'+(S.loaded?L(what)+' '+L('ist noch leer. Die Daten kommen automatisch aus der Dropbox der Produktion.'):L('Lade')+' '+L(what)+' …')+'</div>';
 }

@@ -1,4 +1,4 @@
-import {dispoOf,esc,hmAny,L,LANG,mapUrl,S,safeUrl,telNum} from "./10-core.js";
+import {dispoOf,esc,hmAny,L,LANG,lsJSON,mapUrl,S,safeUrl,telNum} from "./10-core.js";
 import {nameHit} from "./11-schedule-prep.js";
 import {myIdentity,rideId,rideMap} from "./12-mycal.js";
 import {CSCUR,csSceneLoc} from "./13b-cs-now.js";
@@ -76,7 +76,7 @@ export const csRoute=(f,t1,to,t2)=>[[t1,f].filter(Boolean).join(" "),[t2,to].fil
 export const csS=v=>Array.isArray(v)?v.join(", "):String(v==null?"":v);
 /* a part of the callsheet: open or folded */
 /* rides on the desktop: as a table (default) or as tiles, remembered on this device per part */
-function csTv(){try{return JSON.parse(localStorage.getItem("cstv:v1")||"{}")||{}}catch(_){return {}}}
+function csTv(){return lsJSON("cstv:v1",{})}
 export const csTvCls=k=>csTv()[k]==="cards"?"":"cs-tblmode";
 export const csTvBtn=k=>{const tbl=csTv()[k]!=="cards";return '<button type="button" class="lnk cstview cstv" data-cstv="'+k+'" title="'+esc(L(tbl?"Als Kacheln":"Als Tabelle"))+'">'+(tbl?CSI.cards:CSI.table)+'<span>'+esc(L(tbl?"Als Kacheln":"Als Tabelle"))+'</span></button>'};
 csOn("click",e=>{const b=e.target.closest("[data-cstv]");if(!b)return;e.preventDefault();const k=b.dataset.cstv,m=csTv();m[k]=m[k]==="cards"?"table":"cards";try{localStorage.setItem("cstv:v1",JSON.stringify(m))}catch(_){}

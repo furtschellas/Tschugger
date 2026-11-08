@@ -1,4 +1,4 @@
-import {ariaTip,blockTag,camFold,dayOf,dayTitle,ddmm,driveMin,esc,fmtDate,hash36,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
+import {ariaTip,blockTag,camFold,dayOf,dayTitle,ddmm,driveMin,emptyBox,esc,fmtDate,hash36,HIT,isoAdd,itemHTML,L,LANG,lateFn,mapsDir,mapsQ,mName,norm,pad2,pickDay,pvButtons,S,safeUrl,saveBlob,todayISO,TX,TXA,WD} from "./10-core.js";
 import {UNAME,UNITBAR,dayNav,dayPlaces,findPerson,groupPeople,hasSelU,hasU,mailPeople,makeICS,nextUnitDay,nmk,onlyU,planDays,ppItems,ppNames,ppParts,ppWhere,setPPPEOPLE,zurichUTC} from "./11-schedule-prep.js";
 import {addrForItem,emptyHTML} from "./13-crew-views.js";
 import {csMe} from "./13a-callsheet.js";
@@ -126,7 +126,7 @@ export function evRecent(e){const ok=x=>/^\d\d:\d\d$/.test(x||"");if(!ok(e.t)&&!
 /* the person chosen in «Termine für» counts only while Meine Termine is drawn – Today, the callsheet, push and the assistant are always me */
 export function renderMy(){window.PICKON=true;try{return renderMy0()}finally{window.PICKON=false}}
 function renderMy0(){
-  if(!vok("mycal"))return '<div class="empty">'+esc(L("Kein Zugang"))+'</div>';
+  if(!vok("mycal"))return emptyBox("Kein Zugang");
   const me=myIdentity();const people=mailPeople().filter(x=>x.src&&x.src!=="user");
   const names=[...new Set(people.map(p=>p.name))].sort((a,c)=>a.localeCompare(c,LANG));
   MCNAMES=names;

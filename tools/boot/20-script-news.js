@@ -1,7 +1,7 @@
 import {dlgBtn,esc,L,localISO,lsGet,mkDialog,S} from "../base/10-core.js";
 import {vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
-import {store} from "../base/16-interaction.js";
+import {goTo,store} from "../base/16-interaction.js";
 import {arr} from "../base/20-data-start.js";
 import {ME} from "./03-core-firebase.js";
 import {savePrefsSoon} from "./06-prefs-docs.js";
@@ -29,7 +29,7 @@ export function showScriptNews(sx){
     (sx.log?'<details class="scrlog"><summary>'+esc(L("Ganzes Changelog"))+'</summary>'+clogHTML(sx.log)+'</details>':'')+
     '<div class="a2b"><button type="button" data-scrn="open">'+esc(L("Drehbuch öffnen"))+'</button>'+dlgBtn("pri",'data-scrn="ok"',"OK")+'</div></div>';
   d.addEventListener("click",e=>{const b=e.target.closest("[data-scrn]");if(e.target.closest("[data-scene]")){d.remove();return}if(!b)return;d.remove();
-    if(b.dataset.scrn==="open"){S.tab="script";try{store("tab","script")}catch(_){}window.scrollTo(0,0);render()}});
+    if(b.dataset.scrn==="open")goTo({tab:"script"})});
   document.body.appendChild(d)}
 window.maybeScriptNews=function(){if(window.__scrNewsOff)return;const sx=scrNewsDue();if(sx&&!scrNewsBusy())showScriptNews(sx)};
 setInterval(()=>{try{window.maybeScriptNews()}catch(_){}},4000);

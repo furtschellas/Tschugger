@@ -184,9 +184,9 @@ function pushGo(h){const m=String(h||"").match(/#go=(plan|dispo|prep|script):(\d
   /* new script version: jump to the changes in Today (or, if Today does not show them, the message with the changelog) */
   if(m[1]==="script"){let n=0;const go=()=>{const sx=S.meta&&S.meta.scriptChange;if(!sx&&n++<15){setTimeout(go,400);return}
       const inToday=typeof todayOn==="function"&&todayOn()&&(typeof tShow!=="function"||tShow("chg"))&&typeof scriptChg==="function"&&!!scriptChg();
-      if(inToday){S.tab="today";try{store("tab","today")}catch(_){}render();const c=document.querySelector("#view .tchg");if(c){c.classList.add("tjump");c.scrollIntoView({block:"start",behavior:"smooth"});setTimeout(()=>c.classList.remove("tjump"),2500)}}
+      if(inToday){goTo({tab:"today",scroll:false});const c=document.querySelector("#view .tchg");if(c){c.classList.add("tjump");c.scrollIntoView({block:"start",behavior:"smooth"});setTimeout(()=>c.classList.remove("tjump"),2500)}}
       else if(sx&&vok("script")&&typeof showScriptNews==="function"){document.querySelectorAll("#scrnews").forEach(x=>x.remove());showScriptNews(sx)}
-      else{S.tab=vok("script")?"script":"today";render()}};
+      else goTo({tab:vok("script")?"script":"today",scroll:false})};
     setTimeout(go,400);return true}
   let n=0;const go=()=>{ /* wait for the data (up to 6 s), so a new shooting day is found */
     const has=(S.days||[]).some(d=>d.id===m[2]||d.date===m[2]);if(m[1]==="plan"&&!has&&n++<15){setTimeout(go,400);return}

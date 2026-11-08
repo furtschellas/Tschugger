@@ -1,4 +1,4 @@
-import {deG,esc,L,LANG,S,saveBtn,SBXF,setSPT,setTheme} from "../base/10-core.js";
+import {deG,esc,L,LANG,S,saveBtn,SBXF,setSPT,setTheme,telNum} from "../base/10-core.js";
 import {render} from "../base/15-script-tab.js";
 import {onStore} from "../base/16-interaction.js";
 import {showMsg} from "../base/20-data-start.js";
@@ -151,7 +151,7 @@ document.addEventListener("click",async e=>{if(!e.target.closest("[data-twagain]
     window.DOCS=Object.assign({},window.DOCS,{testwelcome:Object.assign({},(window.DOCS||{}).testwelcome,{ver:v})});try{localStorage.setItem("appdocs",JSON.stringify(window.DOCS))}catch(_){}
     showMsg(L("Wird allen Test-Usern beim nächsten Öffnen nochmals gezeigt."),3500)}catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}});
 /* invitation by WhatsApp: opens WhatsApp with the text «Einladung WhatsApp» (to the number of the person when the crew list has it) */
-export function waNum(t){let d=String(t||"").replace(/[^\d+]/g,"");if(d.startsWith("+"))return d.slice(1);if(d.startsWith("00"))return d.slice(2);if(/^0\d{9}$/.test(d))return "41"+d.slice(1);return d}
+export function waNum(t){let d=telNum(t);if(d.startsWith("+"))return d.slice(1);if(d.startsWith("00"))return d.slice(2);if(/^0\d{9}$/.test(d))return "41"+d.slice(1);return d}
 function waInvite(em,name,phone){const d=docGet("invitewa",{email:em,vorname:String(name||"").split(/\s+/)[0],name:name||""});const n=waNum(phone);
   return "https://wa.me/"+(n.length>=8?n:"")+"?text="+encodeURIComponent(d.body)}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-cwa]");if(!b||!can("users.invite"))return;   /* the same right that shows the button */e.preventDefault();e.stopPropagation();

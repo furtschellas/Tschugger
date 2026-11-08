@@ -3,7 +3,7 @@ import {unitLists} from "../base/11-schedule-prep.js";
 import {WDL,openMyCal} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
-import {store} from "../base/16-interaction.js";
+import {goTo,store} from "../base/16-interaction.js";
 import {bmed} from "../base/17-scene-reader.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {ME} from "./03-core-firebase.js";
@@ -26,7 +26,7 @@ function chgSnap(){
   for(const x of S.dispos||[]){if(!x||!x.date||x.date<t)continue;dp[x.date]={call:String(x.crewCall||x.generalCall||""),wrap:String(x.wrap||""),v:String(x.version||"")}}
   return {sc,dp,at:Date.now()};
 }
-function chgLoad(){try{return JSON.parse(localStorage.getItem("chg:v1")||"[]")||[]}catch(_){return []}}
+function chgLoad(){return lsJSON("chg:v1",[])}
 function chgSave(l){try{localStorage.setItem("chg:v1",JSON.stringify(l.slice(0,120)))}catch(_){}}
 /* once on every device: the changes of the 2nd unit leave the list on «Heute» (1st/3rd unit and callsheets stay) */
 try{if(!localStorage.getItem("chgu2clr:v1")){chgSave(chgLoad().filter(c=>String(c.u||"1")!=="2"));localStorage.setItem("chgu2clr:v1","1")}}catch(_){}
@@ -105,6 +105,6 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-route]");i
     '<a class="pillbtn rtpill" href="'+esc(r.c)+'" target="_blank" rel="noopener noreferrer" data-rtx><b>'+esc(L("Vom aktuellen Standort"))+'</b></a></div></div>';
   document.body.appendChild(o);o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest("[data-rtx]"))setTimeout(()=>o.remove(),50)})});
 document.addEventListener("change",e=>{const c=e.target.closest("[data-offauto]");if(!c)return;store("offline",c.checked?"1":"0");if(c.checked)offlinePrep(false);render()});
-document.addEventListener("click",e=>{if(!e.target.closest("[data-tomy]"))return;if(typeof openMyCal==="function")openMyCal();else{S.tab="my";render();scrollTo(0,0)}});
+document.addEventListener("click",e=>{if(!e.target.closest("[data-tomy]"))return;goTo({tab:"my"})});
 window.addEventListener("online",()=>{if(S.tab==="today")render()});window.addEventListener("offline",()=>{if(S.tab==="today")render()});
 

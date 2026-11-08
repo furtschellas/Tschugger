@@ -1,4 +1,4 @@
-import {ariaTip,ddmm,esc,fullName,HIT,L,LANG,mName,S,WD} from "../base/10-core.js";
+import {ariaTip,ddmm,emptyBox,esc,fullName,HIT,L,LANG,mName,S,WD} from "../base/10-core.js";
 import {nmk} from "../base/11-schedule-prep.js";
 import {allVCards,saveVcf} from "../base/13-crew-views.js";
 import {VIEWS} from "../base/14-render.js";
@@ -266,4 +266,4 @@ export function confirmSafe(t){try{return window.confirm(t)}catch(_){return true
 let ADMUI=null;
 window.loadAdminUI=()=>{if(typeof editForm==="function")return Promise.resolve();if(ADMUI)return ADMUI;
   ADMUI=new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="admin.js?v=__ADMINJS_VER__";sc.onload=()=>{ok();try{render()}catch(_){}};sc.onerror=()=>{ADMUI=null;no(new Error("admin.js"))};document.head.appendChild(sc)});return ADMUI};
-if(typeof VIEWS.admin!=="function")VIEWS.admin=()=>{window.loadAdminUI().catch(()=>showMsg(L("App-Verwaltung konnte nicht geladen werden (offline?)."),5000));return '<div class="empty">'+esc(L("Lade …"))+'</div>'};
+if(typeof VIEWS.admin!=="function")VIEWS.admin=()=>{window.loadAdminUI().catch(()=>showMsg(L("App-Verwaltung konnte nicht geladen werden (offline?)."),5000));return emptyBox("Lade …")};

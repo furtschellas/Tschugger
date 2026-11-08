@@ -1,5 +1,5 @@
 import {isStandalone} from "../a2hs.js";
-import {applyStatic,ddmm,dispoOf,emit,esc,fullName,L,LANG,localISO,lsGet,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
+import {applyStatic,ddmm,dispoOf,emit,esc,fullName,L,LANG,localISO,lsGet,lsJSON,mkDialog,S,saveBtn,SBXF,setLANG,todayISO,WDS} from "../base/10-core.js";
 import {UNAME,hasU,unitsOn} from "../base/11-schedule-prep.js";
 import {WDL} from "../base/12-mycal.js";
 import {vok} from "../base/14-render.js";
@@ -17,7 +17,7 @@ import {ADM,PUBB,admLoad,caterData,crewDeptOf} from "./12a-admin-core.js";
 import {SIMUSER} from "./22-simulate.js";
 /* ---- lunch menus: catering enters a menu per shooting day and unit (permission «Menüs eingeben»);
    the schedule shows it at «Lunch» of that day and unit ---- */
-window.MENUS={};try{window.MENUS=JSON.parse(localStorage.getItem("menus")||"{}")||{}}catch(_){}
+window.MENUS=lsJSON("menus",{});
 export let MENUAT=0,MENUSUB=null,MENUFROM="";
 /* realtime listener on the menus from yesterday on: Firebase sends only changes (no more reading all every few minutes) */
 function menusApply(docs,from){const m={};docs.forEach(d=>{if(d.id>=from)m[d.id]=d.data()});

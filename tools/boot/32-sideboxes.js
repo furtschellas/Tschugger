@@ -3,11 +3,11 @@
    every «#view» rule to «.sbview» too). Topics that are whole pages (Smartphone-Vorschau, User, Access, App-Einstellungen) are the app itself in a
    frame: fully usable, looking the same – each frame is a second copy of the app (its own live data), so only chosen ones are loaded.
    Setting: localStorage «sbx» = «now.mine|phone» (left|right, the order of the topics), kept with the other notices of the profile (prefs x). */
-import {dayItems,dispoOf,esc,isoDM,L,lsGet,onEvent,S,todayISO,unitKey} from "../base/10-core.js";
+import {dayItems,dispoOf,esc,fullName,isoDM,L,lsGet,noneHTML,onEvent,S,todayISO,unitKey} from "../base/10-core.js";
 import {csHm,csMe,csMyRides,csRideReal,csTile} from "../base/13a-callsheet.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
-import {onRendered,render} from "../base/15-script-tab.js";
+import {mountIslands,onRendered,render,viewMorph} from "../base/15-script-tab.js";
 import {arr} from "../base/20-data-start.js";
 import {ME,MEMBER,can,fb,isAdmin} from "./03-core-firebase.js";
 import {appKind,seenMs} from "./10-menus-welcome-presence.js";
@@ -48,7 +48,7 @@ if(INFRAME&&FRAMEPG&&FRAMEPG!=="phone"){document.documentElement.classList.add("
 /* the head of a topic: its title and «−» (takes it out of this box) */
 const head=(k,t)=>'<h3 class="sbh" title="'+esc(L("Zum Verschieben ziehen"))+'"><span data-none="'+esc(L("Zurzeit nichts"))+'">'+esc(L(t))+'</span><button type="button" class="sbdel" data-sbdel="'+k+'" aria-label="'+esc(L("Entfernen")+": "+L(t))+'" title="'+esc(L("Entfernen"))+'">−</button></h3>';
 /* a topic without content now (no callsheet yet …): only its head, so it can still be taken out */
-const sec=(k,t,h)=>'<section class="sbsec'+(h?'':' sbempty')+'">'+head(k,t)+(h||'<p class="sbnone">'+esc(L("Zurzeit nichts"))+'</p>')+'</section>';
+const sec=(k,t,h)=>'<section class="sbsec'+(h?'':' sbempty')+'">'+head(k,t)+(h||noneHTML("Zurzeit nichts"))+'</section>';
 const dayNow=()=>{try{return todayDay()}catch(_){return null}};
 const dpOf=d=>d?dispoOf(d.date,1)||null:null;
 /* «Gerade aktiv»: drawn here from the «last seen» marks (no second copy of the app in a frame); read again at most every 90 s */
@@ -57,21 +57,21 @@ async function actLoad(){if(ACT.busy)return;ACT.busy=true;
   try{const {F,db}=await fb(),since=new Date(Date.now()-4*60e3);
     const s=await F.getDocs(F.query(F.collection(db,"members"),F.where("lastSeen",">=",since)));
     ACT.list=s.docs.map(d=>d.data()).filter(m=>m&&m.active===true&&Date.now()-seenMs(m)<4*60e3)
-      .map(m=>({n:String(m.name||[m.firstName,m.lastName].filter(Boolean).join(" ")||m.email||"?"),d:/^app-/.test(m.app||"")?"App":/desktop/.test(m.app||"")?"Web · Computer":"Web · Handy",t:seenMs(m)}))
+      .map(m=>({n:String(m.name||fullName(m)||m.email||"?"),d:/^app-/.test(m.app||"")?"App":/desktop/.test(m.app||"")?"Web · Computer":"Web · Handy",t:seenMs(m)}))
       .sort((a,b)=>a.n.localeCompare(b.n));
     /* you yourself: always in the list while this page is open (owners and admins without an active member entry leave no «last seen» mark) */
     const selfIn=!!ME&&s.docs.some(d=>{const m=d.data()||{};return d.id===ME.uid&&m.active===true&&Date.now()-seenMs(m)<4*60e3});
-    if(ME&&!selfIn){const k=appKind(),nm=(MEMBER&&(MEMBER.name||[MEMBER.firstName,MEMBER.lastName].filter(Boolean).join(" ")))||ME.displayName||ME.email||"?";
+    if(ME&&!selfIn){const k=appKind(),nm=(MEMBER&&(MEMBER.name||fullName(MEMBER)))||ME.displayName||ME.email||"?";
       ACT.list.unshift({n:String(nm)+" ("+L("du")+")",d:/^app-/.test(k)?"App":/desktop/.test(k)?"Web · Computer":"Web · Handy",t:Date.now()})}
     ACT.err=""}
   catch(err){ACT.err=String(err&&err.code||"x")}finally{ACT.at=Date.now();ACT.busy=false;soon()}}
 const ago=t=>{const m=Math.round((Date.now()-t)/60e3);return m<1?L("gerade eben"):L("vor {n} Min.").replace("{n}",m)};
 const TOP={
   /* «Ansicht simulieren»: the quick picker of the App-Verwaltung (roles and people) – the view as that role or person opens in the page itself */
-  sim:()=>{if(!ADM.loaded){try{ensureAdm()}catch(_){}setTimeout(soon,1500);return '<p class="sbnone">'+esc(L("Wird geladen …"))+'</p>'}
+  sim:()=>{if(!ADM.loaded){try{ensureAdm()}catch(_){}setTimeout(soon,1500);return noneHTML("Wird geladen …")}
     const h=typeof window.simPicker==="function"?window.simPicker():"";return h||'<p class="sbnone">'+esc(L("Ansicht als"))+' …</p>'},
-  active:()=>{if(Date.now()-ACT.at>90e3)setTimeout(actLoad,0);if(!ACT.list)return ACT.err?'<p class="sbnone">'+esc(L("Zurzeit nicht lesbar"))+'</p>':"";
-    if(!ACT.list.length)return '<p class="sbnone">'+esc(L("Gerade ist niemand aktiv."))+'</p>';
+  active:()=>{if(Date.now()-ACT.at>90e3)setTimeout(actLoad,0);if(!ACT.list)return ACT.err?noneHTML("Zurzeit nicht lesbar"):"";
+    if(!ACT.list.length)return noneHTML("Gerade ist niemand aktiv.");
     return '<div class="sbact"><div class="sbacn">'+ACT.list.length+' '+esc(L("online"))+'</div>'+ACT.list.map(p=>'<div class="sbap"><span class="sbdot" aria-hidden="true"></span><b>'+esc(p.n)+'</b><small>'+esc(p.d)+' · '+esc(ago(p.t))+'</small></div>').join("")+'</div>'},
   now:()=>{const h=nowCardHTML(typeof csShootDay==="function"?csShootDay():todayISO(),"",undefined,true);   /* the night after midnight too; only while shooting (as Today) */return h?'<div class="sbnow">'+h+'</div>':""},
   mine:()=>{const d=dayNow(),dp=dpOf(d);if(!dp)return"";let me=null;try{me=csMe()}catch(_){}const mn=me?csMine(dp.cs,me):[];return mn.length?'<div class="tcard tmine">'+mn.join("")+'</div>':""},
@@ -92,7 +92,15 @@ const TOP={
 
 /* pages drawn directly in the box (read pages without own state): Info, Locations, Crewliste, Meine Termine – the others still in a frame */
 const SBNAT=["info","loc","crew","my","today","plan","dispo","script","reports"];
-const sbNative=t=>!!(t&&typeof t[2]==="string"&&t[2].startsWith("t:")&&SBNAT.includes(t[2].slice(2))&&typeof VIEWS!=="undefined"&&typeof VIEWS[t[2].slice(2)]==="function");
+const sbNative=t=>!!(t&&typeof t[2]==="string"&&((t[2].startsWith("t:")&&SBNAT.includes(t[2].slice(2))&&typeof VIEWS!=="undefined"&&typeof VIEWS[t[2].slice(2)]==="function")||t[2].startsWith("a:")));
+/* a part of the App-Verwaltung drawn here (no frame): the page of that part, only the chosen piece of it; the admin code loads first */
+function sbAdmin(pg){const [,sub,...rest]=pg.split(":"),only=rest.join(":");
+  if(!(typeof VIEWS!=="undefined"&&VIEWS.admin&&VIEWS.admin.real)){if(window.loadAdminUI&&!sbAdmin.w){sbAdmin.w=1;window.loadAdminUI().then(()=>{sbAdmin.w=0;soon()}).catch(()=>{sbAdmin.w=0})}return noneHTML("Lade …")}
+  if(S.tab==="admin"&&ADM.sub===sub&&!only)return noneHTML("Wird in der Mitte angezeigt.");
+  const keep=ADM.sub;let h="";try{ADM.sub=sub;h=VIEWS.admin()}finally{ADM.sub=keep}
+  const d=document.createElement("div");d.innerHTML=h;d.querySelectorAll(".asub").forEach(x=>x.remove());
+  if(only){const pcs=[...d.querySelectorAll(only)];return pcs.length?pcs.map(x=>x.outerHTML).join(""):noneHTML("Zurzeit nichts")}
+  return d.innerHTML}
 /* ---------- the two boxes ---------- */
 let BOX={};
 function frame(k,pg){const f=document.createElement("div");f.className="sbframe"+(pg==="phone"?" sbphone":"");
@@ -105,11 +113,20 @@ const phSet=v=>{try{localStorage.setItem(PHK,JSON.stringify(v))}catch(_){}};
 function phPost(all){const v=phGet();for(const i of document.querySelectorAll("aside.sbbox .sbphone iframe"))try{
     const m={sbx:"phone"};if(v.follow)Object.assign(m,{tab:S.tab,day:S.day||null,dday:S.dday||null,sub:(S.tab==="admin"&&ADM.sub)||""});if(all)m.sim=v.sim||"";i.contentWindow.postMessage(m,location.origin)}catch(_){}}
 /* the controls above the phone: «wie Hauptseite» and the picker of roles and people (the same list as «Ansicht simulieren») */
-function phBar(){const v=phGet();let pick="";try{if(isAdmin()){if(!ADM.loaded)ensureAdm();pick=typeof window.simPicker==="function"?window.simPicker().replace("data-simpick","data-sbphsim"):""}}catch(_){}
-  if(pick&&v.sim)pick=pick.replace('<option value="'+esc(v.sim)+'">','<option value="'+esc(v.sim)+'" selected>');
-  return '<div class="sbphc"><label class="ck"><input type="checkbox" data-sbphf'+(v.follow?' checked':'')+'> '+esc(L("wie Hauptseite"))+'</label>'+(pick?pick.replace('<option value="">','<option value="">'+esc(L("eigene Ansicht"))+'</option><option value="" disabled>'):'')+'</div>'}
+/* «wie Hauptseite» and «Anzeigen als»: a role or a user (two lists side by side; one choice at a time) */
+function phBar(){const v=phGet();let sel="";
+  try{if(isAdmin()&&typeof window.simLists==="function"){if(!ADM.loaded&&!phBar.w){phBar.w=1;try{ensureAdm()}catch(_){}let n=0;const t=setInterval(()=>{if(ADM.loaded||++n>60){clearInterval(t);phBar.w=0;soon()}},500)}
+    const {roles,ppl,inv}=window.simLists(),cur=v.sim||"",isR=cur.startsWith("role:");
+    const opt=([val,n])=>'<option value="'+esc(val)+'"'+(val===cur?' selected':'')+'>'+esc(n)+'</option>';
+    sel='<div class="sbphas"><span>'+esc(L("Anzeigen als"))+'</span>'+
+      '<select data-sbphsim aria-label="'+esc(L("Rolle"))+'"><option value="">'+esc(L("Rolle …"))+'</option>'+roles.map(opt).join("").replace('value="role:" selected','value="role:"'+(cur==="role:"?' selected':''))+'</select>'+
+      '<select data-sbphsim aria-label="'+esc(L("User"))+'"><option value="">'+esc(ADM.loaded?L("User …"):L("Lade …"))+'</option>'+
+        (ppl.length?'<optgroup label="'+esc(L("Personen"))+'">'+ppl.map(opt).join("")+'</optgroup>':'')+(inv.length?'<optgroup label="'+esc(L("Noch ohne Konto"))+'">'+inv.map(opt).join("")+'</optgroup>':'')+'</select>'+
+      (cur?'<button type="button" class="sbphx" data-sbphx title="'+esc(L("eigene Ansicht"))+'" aria-label="'+esc(L("eigene Ansicht"))+'">×</button>':'')+'</div>'}}catch(_){}
+  return '<div class="sbphc"><label class="ck"><input type="checkbox" data-sbphf'+(v.follow?' checked':'')+'> '+esc(L("wie Hauptseite"))+'</label>'+sel+'</div>'}
 document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest("[data-sbphf]");if(c){const v=phGet();v.follow=c.checked;phSet(v);phPost(false);return}
-  const sl=e.target.closest&&e.target.closest("[data-sbphsim]");if(sl){const v=phGet();v.sim=sl.value||"";phSet(v);phPost(true)}});
+  const sl=e.target.closest&&e.target.closest("[data-sbphsim]");if(sl){const v=phGet();v.sim=sl.value||"";phSet(v);phPost(true);soon()}});
+document.addEventListener("click",e=>{if(!(e.target.closest&&e.target.closest("[data-sbphx]")))return;const v=phGet();v.sim="";phSet(v);phPost(true);soon()});
 if(!INFRAME)onRendered(()=>{if(phGet().follow)phPost(false)});
 /* inside the phone frame: follow the page, simulate a role or a person (only in this frame – the page itself stays as it is) */
 if(INFRAME&&FRAMEPG==="phone"){let simV=null;
@@ -145,7 +162,15 @@ function fit(){try{if(typeof csFitTiles==="function")requestAnimationFrame(csFit
     const need=v.scrollHeight*zw;if(need>H){const z=Math.max(.5,zw*(H-8)/need);v.style.zoom=z;if(a.scrollHeight>H+1)v.style.zoom=Math.max(.5,z*(H-8)/a.scrollHeight)}}}
 /* who may use the side boxes: Owner, Admins and the roles with «Seitenmenüs nutzen» (App-Verwaltung → Access) */
 const sbUse=()=>{try{return isAdmin()||can("sidebox.use")}catch(_){return false}};
-function draw(){if(INFRAME)return;const wide=window.innerWidth>=SBWIDE&&!!ME&&sbUse();const x=sbxGet();
+/* all side menus in and out together: the button in the head (only where side menus can be shown); kept on this device */
+const sbOff=()=>lsGet("sbxoff","")==="1";
+function sbTog(can){let b=document.getElementById("sbtog");
+  if(!can){if(b)b.hidden=true;return}
+  if(!b){const r=document.getElementById("refresh");if(!r||!r.parentNode)return;b=document.createElement("button");b.type="button";b.id="sbtog";b.className="sbtog";r.parentNode.insertBefore(b,r);
+    b.addEventListener("click",()=>{try{localStorage.setItem("sbxoff",sbOff()?"0":"1")}catch(_){}savePrefsSoon();draw()})}
+  const off=sbOff(),t=L(off?"Seitenmenüs einblenden":"Seitenmenüs ausblenden");b.hidden=false;b.setAttribute("aria-pressed",String(!off));b.title=t;b.setAttribute("aria-label",t);
+  b.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 4v16M15.5 4v16" stroke="currentColor" stroke-width="1.8"'+(off?' stroke-dasharray="2 2.4"':'')+'/></svg>'}
+function draw(){if(INFRAME)return;const can=window.innerWidth>=SBWIDE&&!!ME&&sbUse();sbTog(can);const wide=can&&!sbOff();const x=sbxGet();
   for(const side of ["l","r"]){const keys=wide?x[side].filter(sbCan):[];let a=document.getElementById("sb"+side);
     if(!wide){if(a)a.hidden=true;continue}
     if(!a){a=document.createElement("aside");a.id="sb"+side;a.className="sbbox";a.innerHTML='<div class="sbview"><div class="today"></div><div class="sbadd"></div></div>';document.body.appendChild(a)}
@@ -157,9 +182,10 @@ function draw(){if(INFRAME)return;const wide=window.innerWidth>=SBWIDE&&!!ME&&sb
       if(el&&!!el.__nat!==!!nat){el.remove();el=null}   /* switched between drawn here and frame */
       if(!el){el=document.createElement("div");el.dataset.sbt=k;el.__nat=nat;if(t[2]&&!nat){el.innerHTML='<section class="sbsec">'+head(k,t[1])+'</section>';el.firstChild.appendChild(frame(k,t[2]))}}
       /* a page drawn right here (no second copy of the app in a frame: no own sign-in, no restart, much less memory) – kept while one types in it */
-      if(nat&&!el.contains(document.activeElement)){const tb=t[2].slice(2);let body="";
-        if(tb===S.tab)body='<p class="sbnone">'+esc(L("Wird in der Mitte angezeigt."))+'</p>';else try{body='<div class="sbnat">'+VIEWS[tb]()+'</div>'}catch(err){console.warn("sidebox page",tb,err);body='<p class="sbnone">'+esc(L("Zurzeit nicht lesbar"))+'</p>'}
-        const h='<section class="sbsec">'+head(k,t[1])+body+'</section>';if(el.__h!==h){el.__h=h;el.innerHTML=h}}
+      if(nat&&!el.contains(document.activeElement)){const tb=t[2].slice(2);let body="";el.__adm=t[2].startsWith("a:");
+        if(el.__adm)try{body='<div class="sbnat sbadm">'+sbAdmin(t[2])+'</div>'}catch(err){console.warn("sidebox admin",err);body=noneHTML("Zurzeit nicht lesbar")}
+        else if(tb===S.tab)body=noneHTML("Wird in der Mitte angezeigt.");else try{body='<div class="sbnat">'+VIEWS[tb]()+'</div>'}catch(err){console.warn("sidebox page",tb,err);body=noneHTML("Zurzeit nicht lesbar")}
+        const h='<section class="sbsec">'+head(k,t[1])+body+'</section>';if(el.__h!==h){el.__h=h;if(el.firstChild)viewMorph(el,h);else el.innerHTML=h}mountIslands(el)}   /* morphed: open sections and ticks stay */
       /* the phone: its controls above it (kept while a choice is open) */
       if(k==="phone"){let c=el.querySelector(".sbphcw");if(!c){c=document.createElement("div");c.className="sbphcw";const fr=el.querySelector(".sbframe");fr.parentNode.insertBefore(c,fr)}
         if(!c.contains(document.activeElement)){const h=phBar();if(c.__h!==h){c.__h=h;c.innerHTML=h}}}

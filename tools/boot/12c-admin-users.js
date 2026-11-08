@@ -1,4 +1,4 @@
-import {$,ariaTip,blockList,dlgBtn,esc,isoDMY,L,LANG,mkDialog,mName,msHM,pad2,S,saveBtn,telNum} from "../base/10-core.js";
+import {$,ariaTip,blockList,dlgBtn,esc,isoDMY,L,LANG,lsGet,mkDialog,mName,msHM,pad2,S,saveBtn,telNum} from "../base/10-core.js";
 import {srcHTML} from "../base/13-crew-views.js";
 import {VIEWS,tabOrder0} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
@@ -161,9 +161,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-auf]");if(
   const t=e.target.closest("[data-uact]");if(t){const em=t.dataset.uact;const was=ADM.open.has(em)||ADM.edit===em;if(was){ADM.open.delete(em);if(ADM.edit===em)ADM.edit=""}else ADM.open.add(em);ADM.act=em;render();return}
   const all=e.target.closest("[data-uall]");if(all){const ems=[...document.querySelectorAll(".ucards [data-uact]")].map(x=>x.dataset.uact);const anyClosed=ems.some(x=>!ADM.open.has(x));ADM.open=new Set(anyClosed?ems:[]);if(!anyClosed)ADM.edit="";render()}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dorefresh]");if(!b)return;const r=$("#refresh");if(r)r.click()});
-try{ADM.sort=localStorage.getItem("usort")||"first"}catch(_){ADM.sort="first"}
+ADM.sort=lsGet("usort","first")
 document.addEventListener("change",e=>{const sl=e.target.closest("select[data-usort]");if(!sl)return;ADM.sort=sl.value;try{localStorage.setItem("usort",ADM.sort)}catch(_){}render()});
-try{ADM.sub=localStorage.getItem("admsub")||"users"}catch(_){ADM.sub="users"}
+ADM.sub=lsGet("admsub","users")
 document.addEventListener("click",e=>{const b=e.target.closest("[data-asub]");if(!b)return;if(b.dataset.asub==="set")for(const k of Object.keys(SECS))if(/^(set-|blk-|blkp-)/.test(k))SECS[k]=false;ADM.sub=b.dataset.asub;try{localStorage.setItem("admsub",ADM.sub)}catch(_){}window.scrollTo(0,0);render()});
 VIEWS.admin=function(){
   if(!canAdm())return '<div class="empty">'+L("Für die App-Verwaltung fehlt die Berechtigung.")+'</div>';
@@ -270,6 +270,7 @@ VIEWS.admin=function(){
     (newCrew.length?'<button class="abtn" data-adm="crew">'+esc(L("Alle {n} Adressen aus der Crewliste einladen").replace("{n}",newCrew.length))+'</button>':'')+'</div>')+admSec+'</section>';
   return h;
 };
+VIEWS.admin.real=true;
 document.addEventListener("input",e=>{if(e.target.id==="aq"){ADM.q=e.target.value;const p=e.target.selectionStart;render();const i=$("#aq");if(i){i.focus();i.setSelectionRange(p,p)}}});
 document.addEventListener("submit",async e=>{
   const sf=e.target.closest('[data-adm="save"]');if(sf){e.preventDefault();if(!can("users.edit"))return;

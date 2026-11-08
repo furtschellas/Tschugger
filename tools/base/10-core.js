@@ -128,6 +128,9 @@ export const minHM=m=>{m=((Math.round(m)%1440)+1440)%1440;return pad2(Math.floor
 export function lsGet(k,def=""){try{const v=localStorage.getItem(k);return v==null||v===""?def:v}catch(_){return def}}
 export function lsJSON(k,def=null){try{const v=JSON.parse(localStorage.getItem(k)||"null");return v==null?def:v}catch(_){return def}}
 /* «2026-11-07» → «07.11.2026» */
+/* building blocks of the pages (one place for the markup of the same things everywhere) */
+export const emptyBox=t=>'<div class="empty">'+esc(L(t))+'</div>';
+export const noneHTML=t=>'<p class="sbnone">'+esc(L(t))+'</p>';
 export const isoDMY=d=>String(d??"").split("-").reverse().join(".");
 export function hash36(s){s=String(s??"");let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}   /* «07:05» of a time in milliseconds, "" without */
 /* message when saving failed: no permission, else not possible */

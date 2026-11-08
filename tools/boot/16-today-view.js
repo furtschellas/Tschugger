@@ -7,7 +7,7 @@ import {csHM,csNowBits,csNowScene,csShootDay} from "../base/13b-cs-now.js";
 import {csMine,csTilesHTML} from "../base/13d-cs-mine.js";
 import {VIEWS,tabsOn,vok} from "../base/14-render.js";
 import {fold,render} from "../base/15-script-tab.js";
-import {store} from "../base/16-interaction.js";
+import {goTo,store} from "../base/16-interaction.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {fmtT} from "./01-config.js";
 import {ME,can,fb,ownDec,ownEnc} from "./03-core-firebase.js";
@@ -190,7 +190,7 @@ VIEWS.today=function(){
 
 /* the app opens on «Today» (unless a link asks for another page) */
 
-document.addEventListener("click",e=>{if(!e.target.closest("[data-tscript]")||!vok("script"))return;S.tab="script";try{store("tab","script")}catch(_){}window.scrollTo(0,0);render()});
+document.addEventListener("click",e=>{if(!e.target.closest("[data-tscript]")||!vok("script"))return;goTo({tab:"script"})});
 /* «Jetzt»: the scene being shot now (quittiert, else by the callsheet times) with its place and how long it runs – Today and the callsheet of today */
 /* the card: one line «Jetzt · scene, place, set (since)» and – while someone is in Maske / Kostüm – one line with their cast numbers
    (on the phone only the numbers, on wider screens with the role); a tap opens it: description and cast of the scene, roles written out */

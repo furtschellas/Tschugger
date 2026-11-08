@@ -1,10 +1,10 @@
-import {$,applyStatic,esc,getTheme,L,LANG,lvClasses,MEMO,mkDialog,norm,pvApply,S,safeUrl,setLANG,setSPT,setTheme,SPT,spTheme,svApply,svButtons,svClasses,todayISO} from "./10-core.js";
+import {$,applyStatic,esc,getTheme,L,LANG,lsGet,lvClasses,MEMO,mkDialog,norm,pvApply,S,safeUrl,setLANG,setSPT,setTheme,SPT,spTheme,svApply,svButtons,svClasses,todayISO} from "./10-core.js";
 import {nextUnitDay,onlyU,ppContact,ppMail} from "./11-schedule-prep.js";
 import {MCNAMES,addToCalendar,myClick} from "./12-mycal.js";
 import {addrForItem,groupLocs,locResults,saveVCard,sceneTexts,ufOn} from "./13-crew-views.js";
 import {vok} from "./14-render.js";
 import {fitRows,fold,render,scriptResults,setSCRIPTERR} from "./15-script-tab.js";
-import {goTab,scallLabel,setOpen,store} from "./16-interaction.js";
+import {goTab,goTo,scallLabel,setOpen,setUnits,store} from "./16-interaction.js";
 import {BLKREG,blkFor,bmed,findScene,fpFor,fpLinks,pdfBtns,pdfDocs,pdfLbl,sceneFacts,sceneSheet,scriptData,scriptHTML,spTitle,spTod} from "./17-scene-reader.js";
 import {renderSearch} from "./19-search.js";
 import {arr} from "./20-data-start.js";
@@ -31,7 +31,7 @@ export function openGallery(b,start,pdf){
   let d=mkDialog("blkgal",null,{replace:true});if(pdf)d.classList.add("galpdf");   /* PDF pages: the whole screen, narrow margins */
   const all=pdf?bmed(b).filter(m=>m.g==="pdf"&&String(m.n).split(" · ")[0]===pdf):bmed(b),title=pdf?L("Auflösung")+" "+pdfLbl(pdf):(b.title||(L("Blocking")+" · "+L("Szene")+" "+arr(b.sc).join(" / ")));
   /* view options: size (small / large / list), filter (all / photos / videos); size is remembered */
-  let gv="m",gf="all";try{gv=localStorage.getItem("galview")||"m"}catch(_){}
+  let gv=lsGet("galview","m"),gf="all";
   let media=all;const setF=()=>{media=all.filter(m=>gf==="all"||(gf==="vid")===(m.t==="vid"))};
   /* groups: own blocking photos, scene photos from the shot breakdown, pages of the blocking PDFs, pictures of the set (3D / location) */
   const GLBL={"":"Blocking","s":"Auflösung","pdf":"Blocking-PDF","loc":"Motiv & 3D","recce":"Recce"};const multiG=new Set(all.map(m=>m.g||"")).size>1;
@@ -128,11 +128,11 @@ const ACTIONS=[
   ["[data-lang]",b=>{setLANG(b.dataset.lang);store("lang",LANG);applyStatic();render();if(!$("#search").hidden)renderSearch()}],
   ["[data-sckey]",b=>{setOpen(b,!S.openSc[b.dataset.sckey]);scallLabel()}],
   ["[data-scall]",()=>{const bs=[...document.querySelectorAll("[data-sckey]")];const open=!bs.every(x=>S.openSc[x.dataset.sckey]);bs.forEach(x=>setOpen(x,open));scallLabel()}],
-  ["[data-uf]",b=>{S.uf=Object.assign({},S.uf,{[b.dataset.uf]:!S.uf[b.dataset.uf]});store("uf",JSON.stringify(S.uf));render()}],
+  ["[data-uf]",b=>setUnits("uf",{[b.dataset.uf]:!S.uf[b.dataset.uf]})],
   ["[data-vc]",b=>{const [gi,pi]=b.dataset.vc.split(":").map(Number);const g=S.crew[gi],p=g&&g.people&&g.people[pi];if(p)saveVCard(p,g)}],
   ["[data-copy]",b=>{const txt=b.dataset.copy;const ok=()=>{b.textContent=L("Kopiert");setTimeout(()=>b.textContent=L("Kopieren"),1500)};try{navigator.clipboard.writeText(txt).then(ok,()=>{b.textContent=txt})}catch(_){b.textContent=txt}}],
   ["[data-tab]",b=>{goTab(b.dataset.tab);render()}],
-  ["[data-todispo]",b=>{S.dday=b.dataset.todispo;S.tab="dispo";window.scrollTo(0,0);render()}],
+  ["[data-todispo]",b=>goTo({tab:"dispo",dday:b.dataset.todispo})],
   ["[data-dday]",b=>{S.dday=b.dataset.dday;render()}],
   ["[data-day]",b=>{S.day=b.dataset.day;render()}],
   ["[data-cal]",b=>addToCalendar(b.dataset.cal)],
@@ -140,7 +140,7 @@ const ACTIONS=[
   ["[data-ppc]",b=>ppContact(b.dataset.ppc)],
   ["[data-ppo]",b=>{S.ppo=!S.ppo;store("ppo",S.ppo?"1":"0");b.setAttribute("aria-pressed",String(S.ppo));document.querySelectorAll(".ppparts").forEach(d=>d.open=S.ppo)}],
   ["[data-rbtog]",b=>{let on=true;try{on=localStorage.getItem("rbadges")!=="0"}catch(_){}try{localStorage.setItem("rbadges",on?"0":"1")}catch(_){}render()}],
-  ["[data-pu]",b=>{const k=b.dataset.pu;S.pu=Object.assign({},S.pu,{[k]:!S.pu[k]});store("pu",JSON.stringify(S.pu));
+  ["[data-pu]",b=>{const k=b.dataset.pu;setUnits("pu",{[k]:!S.pu[k]},{render:false});
     /* only 2nd unit → the next 2nd unit day; 1st unit switched on → the next 1st unit day */
     if(onlyU()||(k==="1"&&S.pu["1"])){const nd=nextUnitDay();if(nd){S.day=nd.id;S.dday=nd.date}}render()}],
   ["[data-scene]",b=>openScene(b.dataset.scene)],
@@ -152,7 +152,7 @@ const ACTIONS=[
   ["[data-lv]",b=>{const k=b.dataset.lv;S.lv=Object.assign({},S.lv,{[k]:!S.lv[k]});store("lv",JSON.stringify(S.lv));document.querySelectorAll(".lvwrap").forEach(w=>w.className="lvwrap "+lvClasses());document.querySelectorAll("[data-lv]").forEach(x=>x.setAttribute("aria-pressed",String(S.lv[x.dataset.lv])))}],
   ["[data-sv]",b=>{const k=b.dataset.sv;S.sv=Object.assign({},S.sv,{[k]:!S.sv[k]});store("sv",JSON.stringify(S.sv));svApply()}],
   ["[data-pv]",b=>{const k=b.dataset.pv;S.pv=Object.assign({},S.pv,{[k]:!S.pv[k]});store("pv",JSON.stringify(S.pv));pvApply()}],
-  ["[data-goto]",b=>{S.day=b.dataset.goto;S.tab="plan";S.pu={"1":true,"2":true,"3":true};window.scrollTo(0,0);render()}],
+  ["[data-goto]",b=>goTo({tab:"plan",day:b.dataset.goto,pu:{"1":true,"2":true,"3":true}})],
 ];
 document.addEventListener("click",e=>{
   if(e.target.closest("#search"))return; /* search overlay has its own handler */

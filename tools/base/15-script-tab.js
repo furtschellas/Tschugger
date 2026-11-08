@@ -8,6 +8,7 @@ import {blkRow} from "./18-blocking.js";
 import {SHINT,actorRoles,dayKeys,modeChips,normQ,planRoles,roleBadges,roleOverview,rolesFor} from "./19-search.js";
 import {arr} from "./20-data-start.js";
 import {ME,can,canAdm} from "../boot/03-core-firebase.js";
+import {h,ISLANDS,prender} from "./09-fw.js";
 /* ---------- script tab: every scene of the screenplay, tap opens the reader ---------- */
 let SCRIPTERR=false;
 /* accent- and case-insensitive text for searching */
@@ -138,7 +139,7 @@ window.addEventListener("resize",()=>{clearTimeout(window.__fnT);window.__fnT=se
    focus, running maps and pictures stay; much less work after a tap). Same result as replacing everything: attributes, texts and form values
    follow the new page exactly – except the field someone is typing in. Fallback: replace everything (error, or localStorage «morph»=0) ---------- */
 const MORPHOFF=(()=>{try{return localStorage.getItem("morph")==="0"}catch(_){return false}})();
-function viewMorph(v,html){
+export function viewMorph(v,html){
   if(MORPHOFF){v.innerHTML=html;return}
   const t=document.createElement("template");t.innerHTML=html;const nw=t.content;
   const same=(a,b)=>a.nodeType===b.nodeType&&(a.nodeType!==1||(a.tagName===b.tagName&&(a.id||"")===(b.id||"")&&(a.getAttribute("data-k")||"")===(b.getAttribute("data-k")||"")));
@@ -154,6 +155,7 @@ function viewMorph(v,html){
     for(const at of [...a.attributes])if(!b.hasAttribute(at.name)&&!(dt&&at.name==="open"))a.removeAttribute(at.name);
     for(const at of [...b.attributes])if(a.getAttribute(at.name)!==at.value&&!(dt&&at.name==="open"))a.setAttribute(at.name,at.value);
     if(tg==="TEXTAREA"){if(!act&&a.value!==b.value)a.value=b.value;return a}
+    if(a.hasAttribute("data-island"))return a;   /* a component (framework) draws its own inside */
     kids(a,b);
     /* a tick or a choice made by hand stays on a new drawing while the page itself still draws it as before (an unsaved form –
        before, every drawing of the page reset the ticks: «the ticks jump around»); a change of the page itself (saved, other item) applies */
@@ -176,6 +178,15 @@ function viewMorph(v,html){
   /* the page itself may be unchanged at the top: tell the watchers of #view (filters, «jetzt», jump bar …) that it was drawn */
   const c=document.createComment("");v.appendChild(c);v.removeChild(c)}
 window.viewMorph=viewMorph;
+/* ---------- islands: a part of a page drawn by a component of the framework (09-fw.js) ----------
+   in the HTML of a page: island("name",props[,key]); the component: ISLANDS.name=function(props){return html`…`}.
+   After every drawing each island gets its component (again only when its props changed); the morphing above never touches its inside. */
+const ISLP=new Map();
+export function island(name,props,key){const k=name+":"+(key==null?"":key);ISLP.set(k,props||{});return '<div class="isl" data-island="'+esc(name)+'" data-k="isl:'+esc(k)+'"></div>'}
+export function mountIslands(root){for(const el of (root||document).querySelectorAll("[data-island]")){const C=ISLANDS[el.dataset.island];if(typeof C!=="function")continue;
+  const p=ISLP.get((el.dataset.k||"").slice(4))||{};if(el.__ip===p&&el.firstChild)continue;el.__ip=p;
+  try{prender(h(C,p),el)}catch(err){console.warn("island",el.dataset.island,err);el.textContent=L("Diese Ansicht konnte nicht angezeigt werden.")}}}
+onEvent("render:after",()=>mountIslands(document.getElementById("view")));
 /* other parts hook into every drawing with onRender(fn) (before) / onRendered(fn) (after) – instead of replacing render */
 export function onRender(fn){return onEvent("render:before",fn)}export function onRendered(fn){return onEvent("render:after",fn)}   /* through the events of the core */
 export function render(){window.__mctx=null;   /* a drawing that stopped half-way must not leave the context of its day for the next */

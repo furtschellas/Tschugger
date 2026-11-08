@@ -53,13 +53,15 @@ function simStartRole(id,re){if(!simRoleCan(id))return;
   if(typeof ME==="undefined"||!ME||!isAdmin())return;if(typeof roleOf!=="function"){if(window.loadAdminUI)window.loadAdminUI().catch(()=>{});return}if(!ADM.loaded){if(typeof ensureAdm==="function")ensureAdm();return}
   clearInterval(iv);const re={back:v.tab||"admin"};if(v.e)simStart(v.e,re);else if(typeof v.r==="string")simStartRole(v.r,re);if(!SIMUSER)simKeep(null)},500)}
 /* quick picker «Ansicht als …» (roles and people) for the admin pages */
-window.simPicker=()=>{if(!isAdmin()||SIMROLE||SIMUSER)return "";
+/* the lists to pick from (roles, people with an account, invited people) – the picker here and the phone preview of the side menus */
+window.simLists=()=>{
   const roles=[["role:",L("Keine Rolle")]].concat(isOwner()?[["role:admin",L("Admin")]]:[],(window.rolesSorted?rolesSorted():(ADM.roles||[])).map(r=>["role:"+r.id,r.name||r.id]));
   const ppl=[];const seen=new Set();for(const m of (ADM.mem||[])){const em=lc(m.email||"");if(!em||seen.has(em)||!simCan(em))continue;seen.add(em);ppl.push([em,fullName(m)||em])}
   /* invited people without an account yet too (before, only people with an account could be picked here) */
   /* in their own group «Noch ohne Konto» (the remark after each name broke the lines of the phone's list) */
   const inv=[];for(const i of (ADM.inv||[])){const em=lc(i.id||"");if(!em||seen.has(em)||!simCan(em))continue;seen.add(em);inv.push([em,i.name||em])}inv.sort((a,b)=>a[1].localeCompare(b[1],LANG));
-  ppl.sort((a,b)=>a[1].localeCompare(b[1],LANG));
+  ppl.sort((a,b)=>a[1].localeCompare(b[1],LANG));return {roles,ppl,inv}};
+window.simPicker=()=>{if(!isAdmin()||SIMROLE||SIMUSER)return "";const {roles,ppl,inv}=window.simLists();
   return '<div class="simpick"><label>'+esc(L("Ansicht simulieren"))+' <select data-simpick><option value="">'+esc(L("Rolle oder Person wählen …"))+'</option><optgroup label="'+esc(L("Rollen"))+'">'+roles.map(([v,n])=>'<option value="'+esc(v)+'">'+esc(n)+'</option>').join("")+'</optgroup>'+
     (ppl.length?'<optgroup label="'+esc(L("Personen"))+'">'+ppl.map(([v,n])=>'<option value="'+esc(v)+'">'+esc(n)+'</option>').join("")+'</optgroup>':'')+
     (inv.length?'<optgroup label="'+esc(L("Noch ohne Konto"))+'">'+inv.map(([v,n])=>'<option value="'+esc(v)+'">'+esc(n)+'</option>').join("")+'</optgroup>':'')+'</select></label></div>'};

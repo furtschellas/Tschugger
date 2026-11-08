@@ -6,6 +6,7 @@ import {arr,showMsg} from "../base/20-data-start.js";
 import {ME,MYPERMS,PERMS,can,isAdmin,isOwner} from "./03-core-firebase.js";
 import {logHead,tstIco} from "./17-audit-misc.js";
 import {SCLOG} from "./27-scene-ack.js";
+import {goTo} from "../base/16-interaction.js";
 /* ---------- Einstellungen → Logs → «Reports»: the PDFs of the Dropbox folder «3D/20_Reports» (production, DIT, sound …), one group per sub folder.
    Every report: the gallery (pages as pictures, like the floorplans), the file in the Dropbox and the PDF. Who sees a group: the permission
    «Reports: <folder>» (one per sub folder, in the roles under «Reports»); admins and the owner see all ---------- */
@@ -99,7 +100,7 @@ window.repOn=()=>!!ME&&repSubs().length>0;
 window.repButton=()=>{let b=document.getElementById("repBtn");const a=document.getElementById("acctBtn");if(!a)return;
   if(!b){b=document.createElement("button");b.id="repBtn";b.className="refresh";b.type="button";
     b.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 17v-3M12 17v-6M15 17v-4"/></svg>';
-    a.parentNode.insertBefore(b,a);b.addEventListener("click",()=>{S.tab="reports";S.srcOpen=false;window.scrollTo(0,0);render()})}
+    a.parentNode.insertBefore(b,a);b.addEventListener("click",()=>goTo({tab:"reports"}))}
   b.setAttribute("aria-label",L("Reports"));b.title=L("Reports");let on=false;try{on=repOn()}catch(_){}b.hidden=!on;
   if(!on&&S.tab==="reports"){S.tab="today";render()}};
 setInterval(()=>{try{repButton()}catch(_){}},5000);

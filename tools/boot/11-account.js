@@ -2,7 +2,7 @@ import {a2hsDo,isIOS,isStandalone,showA2hs} from "../a2hs.js";
 import {$,applyStatic,dlgBtn,esc,fullName,getTheme,L,LANG,lsGet,mkDialog,S,saveBtn,setLANG,setTheme,WDS} from "../base/10-core.js";
 import {VIEWS,myTabOrder,tabOrder,tabsOn,vok} from "../base/14-render.js";
 import {render} from "../base/15-script-tab.js";
-import {store} from "../base/16-interaction.js";
+import {goTo,store} from "../base/16-interaction.js";
 import {showMsg} from "../base/20-data-start.js";
 import {fmtD} from "./01-config.js";
 import {APPLANGS,FB,ME,MEMBER,MYROLE,SBXFRAME,can,canAdm,clean,crewPerson,dietSel,fb,intolBoxes,isAdmin,isOwner,langSel,lc,normDiet,readBoxes,setME,setMEMBER,setMYPERMS} from "./03-core-firebase.js";
@@ -27,7 +27,7 @@ export function acctButton(on){
   let g=document.getElementById("admBtn");
   if(!g){g=document.createElement("button");g.id="admBtn";g.className="refresh";g.type="button";
     g.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="reqdot" aria-hidden="true"></span>';
-    const r=$("#refresh");r.parentNode.insertBefore(g,r);g.addEventListener("click",()=>{S.tab="admin";S.srcOpen=false;window.scrollTo(0,0);render()})}
+    const r=$("#refresh");r.parentNode.insertBefore(g,r);g.addEventListener("click",()=>goTo({tab:"admin"}))}
   g.setAttribute("aria-label",L("App-Verwaltung"));g.title=L("App-Verwaltung");g.hidden=!(on&&canAdm());
   {const r=$("#refresh");if(r)r.classList.toggle("admhide",!!(on&&(isOwner()||can("settings"))))} /* admins find «Aktualisieren» in App-Verwaltung → Einstellungen */
   if(on&&can("users.requests"))checkRequests();
@@ -123,7 +123,7 @@ export function showAcct(needProfile){
       s.addEventListener("click",onAcctClick);s.addEventListener("submit",onAcctSubmit)}
     s.innerHTML='<div class="a2box acbox"><h3>'+L("Willkommen!")+'</h3><p>'+L("Bitte fülle vor dem ersten Start dein Profil aus.")+'</p><p class="ghint">'+esc(ME.email)+'</p>'+profileForm(true)+'<div class="a2b"><button class="lnk" data-ac="signout">'+L("Abmelden")+'</button></div></div>';s.hidden=false;markNeed(s);return}
   ACSUB="pro";   /* «Mein Konto» always opens on the profile */
-  wireAcctPage();S.tab="acct";S.srcOpen=false;window.scrollTo(0,0);render();
+  wireAcctPage();goTo({tab:"acct"});
 }
 async function onAcctClick(e){
   const s=document.getElementById("acct")||{};if(e.target===s){if(!ONBOARD)s.hidden=true;return}
@@ -136,7 +136,7 @@ async function onAcctClick(e){
   else if(b.dataset.ac==="pwreset"){const msg=b.closest("form").querySelector(".amsg");msg.className="amsg";msg.textContent="";b.disabled=true;
     try{const {A,auth}=await fb();await sendMailSafe((x,set)=>A.sendPasswordResetEmail(auth,x,set),auth.currentUser.email);msg.classList.add("ok");msg.textContent=L("Link zum Zurücksetzen gesendet an")+" "+auth.currentUser.email+". "+L("Schau auch im Spam-Ordner nach.")}
     catch(err){console.error(err);msg.textContent=errText(err)}b.disabled=false}
-  else if(b.dataset.ac==="admin"){s.hidden=true;S.tab="admin";window.scrollTo(0,0);render()}
+  else if(b.dataset.ac==="admin"){s.hidden=true;goTo({tab:"admin"})}
   else if(b.dataset.ac==="signout"){b.disabled=true;s.hidden=true;await window.acctSignOut()}
   /* every device of this person (also this one): signed in before now = signed out (rules) */
   else if(b.dataset.ac==="signall"){if(!confirmSafe(L("Auf allen Geräten abmelden – auch auf diesem? Danach meldest du dich neu an.")))return;b.disabled=true;

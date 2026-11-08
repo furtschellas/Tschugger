@@ -1379,3 +1379,11 @@ html[data-theme="light"] body aside.sbbox .sbview .sbsec{background:#fff}
 /* a page drawn in a side box: its own scroll area (a long crew list does not shrink the whole box) */
 html body :is(#sbl,#sbr) .sbview .sbnat{max-height:62vh;overflow:auto;overscroll-behavior:contain;margin:0 -4px;padding:0 4px}
 html body :is(#sbl,#sbr) .sbview .sbnat h2.pgt{display:none}
+
+/* phone preview: «Anzeigen als» role | user side by side */
+.sbbox .sbphc .sbphas{display:grid;grid-template-columns:auto 1fr 1fr auto;align-items:center;gap:6px}
+.sbbox .sbphc .sbphas>span{font-weight:600;white-space:nowrap}
+.sbbox .sbphc .sbphas select{min-width:0}
+.sbbox .sbphc .sbphx{border:0;background:var(--chip,#eee);border-radius:50%;width:26px;height:26px;cursor:pointer;line-height:1}
+.sbtog{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:10px;background:transparent;color:inherit;cursor:pointer}
+.sbtog:hover{background:var(--chip,rgba(0,0,0,.06))}.sbtog[aria-pressed="false"]{opacity:.6}

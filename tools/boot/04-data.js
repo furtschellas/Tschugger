@@ -1,4 +1,4 @@
-import {emit,L,lsJSON,MEMO,S} from "../base/10-core.js";
+import {emit,L,lsGet,lsJSON,MEMO,S} from "../base/10-core.js";
 import {CLEAN,arr,saveCache,scheduleRender} from "../base/20-data-start.js";
 import {DATA_URL} from "./01-config.js";
 import {DATAKEY,LASTSTAMP,MEMBER,b64,fb,isAdmin,setDATAKEY,setLASTSTAMP,withTimeout} from "./03-core-firebase.js";
@@ -18,7 +18,7 @@ export async function getDataKey(){
   catch(err){
     /* refused by the rules (blocked, removed): the key kept on this device must not open new data any more */
     if(/permission/i.test((err&&err.code||"")+" "+(err&&err.message||""))){try{localStorage.removeItem("dk:v1")}catch(_){}throw err}
-    try{kv=localStorage.getItem("dk:v1")||""}catch(_){}if(!kv)throw err}
+    kv=lsGet("dk:v1","");if(!kv)throw err}
   setDATAKEY(await crypto.subtle.importKey("raw",b64(kv),{name:"AES-GCM"},false,["encrypt","decrypt"]));
   return DATAKEY;
 }
