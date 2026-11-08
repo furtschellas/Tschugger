@@ -1,6 +1,6 @@
 import {h,html,ISLANDS,useLayoutEffect,useRef} from "./09-fw.js";
 import {formsKeep,formsRestore,viewMorph} from "./15-script-tab.js";
-import {L,maps,TX} from "./10-core.js";
+import {esc,L,maps,TX} from "./10-core.js";
 /* ---------- building blocks of the pages as components (framework, 09-fw.js) ----------
    the same markup and classes as the string parts of the app, so both look the same while the pages move one by one */
 
@@ -48,6 +48,18 @@ export function RawLive({html:h,cls}){const r=useRef(null);
     const k=formsKeep(el);viewMorph(el,h||"");formsRestore(el,k);el.__h=h});
   return html`<div class=${"raw"+(cls?" "+cls:"")} ref=${r}></div>`}
 
+/** a page made by the string parts, as its sections: each top element (a section, a part) its own component that is morphed on its own –
+ * a change redraws only the sections that changed; open parts, ticks and typing stay (as with the whole page before)
+ * @param {{html:string}} p */
+const SECC=new Map();
+export function Sections({html:src}){let l=SECC.get(src);
+  if(!l){const t=document.createElement("template");t.innerHTML=src||"";const seen={};
+    l=[...t.content.childNodes].filter(n=>n.nodeType===1||(n.nodeType===3&&n.nodeValue.trim())).map(n0=>{const n=/** @type {Element} */(n0);
+      const k0=n.nodeType===1?(n.id||n.getAttribute("data-k")||n.tagName+"."+(n.getAttribute("class")||"")):"#t";seen[k0]=(seen[k0]||0)+1;
+      return [k0+"~"+seen[k0],n.nodeType===1?n.outerHTML:esc(n.nodeValue)]});
+    if(SECC.size>60)SECC.clear();SECC.set(src,l)}
+  return l.map(([k,h0])=>html`<${RawLive} key=${k} html=${h0}/>`)}
+
 /** a card that opens with a tap on its head (Locations, Szenen …); «open» comes from S.openSc, the tap handler is data-sckey (18-blocking.js)
  * @param {{k:string,open:boolean,now?:boolean,head:any,addr?:any,children?:any}} p */
 export function Card({k,open,now,head,addr,children}){
@@ -66,3 +78,4 @@ function InfoPage({places,loaded}){
     ${(g.items||[]).map(p=>html`<${Entry} name=${p.name} address=${p.address} href=${p.address?maps(p.name+", "+p.address):""} note=${p.note?TX(p,"note"):""} phone=${p.phone}/>`)}
   </${Section}>`)}`}
 ISLANDS.info=InfoPage;
+ISLANDS.sec=Sections;

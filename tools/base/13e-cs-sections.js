@@ -11,6 +11,8 @@ import {vok} from "./14-render.js";
 import {csRideUnit,csRidesFor,csU2HTML} from "./13g-cs-unit2.js";
 import {fold} from "./15-script-tab.js";
 import {RIDE_ICO} from "../boot/24-flow.js";
+import {ISLANDS} from "./09-fw.js";
+import {Sections} from "./10a-ui.js";
 /* ---------- Callsheet (5/6): the sections (locations, map, travel, calls) and renderCS ---------- */
 /* ---------- Locations: one box per location (sets at the same address together, bases with their icons) ---------- */
 /* code of a location: L1, «L1·L2» for sets at one address, the kinds of a base */
@@ -226,3 +228,6 @@ export function renderCS(x,day){const c0=x.cs||{};if(x.date)c0._date=x.date;
   /* on the shooting day: once per visit straight to the running row */
   if(x.date===csShootDay()){window.__csScr=window.__csScr||{};if(!window.__csScr[x.date]){window.__csScr[x.date]=1;setTimeout(()=>{const n=document.querySelector(".csview .csorder li.now");if(n)n.scrollIntoView({block:"center",behavior:"smooth"})},400)}}
   return JB+'<div class="csview">'+h+'</div>'}
+/* the callsheet as components (framework): each part of the day (head, tiles, Mein Tag, team, locations, map, order, cast …) its own,
+   drawn again only when it changed (13-crew-views.js: renderDispo puts the parts into the island) */
+ISLANDS.cs=Sections;

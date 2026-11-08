@@ -1043,7 +1043,8 @@ async def owner_tests(p, port):
         # a callsheet is shown even when the Drehplan has that day as free or not at all (changed plan)
         cso = await E("""(()=>{if(typeof renderDispo!=='function')return null;const kd=S.dispos,kdd=S.dday,ks=S.days;const off=(S.days.find(d=>d.kind==='off')||{}).date;
           const cs={date:'2099-01-02',cs:{times:{crewCall:'07:00'},locations:[],order:{rows:[]}}};S.dispos=kd.concat([cs].concat(off?[{date:off,cs:{times:{crewCall:'06:30'},locations:[],order:{rows:[]}}}]:[]));
-          S.dday='2099-01-02';const a=renderDispo();S.dday=off||'2099-01-02';const b=renderDispo();S.dispos=kd;S.dday=kdd;
+          const tb=S.tab;S.tab='dispo';const V=()=>{render();return document.getElementById('view').innerHTML};   /* drawn: the callsheet parts are components */
+          S.dday='2099-01-02';const a=V();S.dday=off||'2099-01-02';const b=V();S.dispos=kd;S.dday=kdd;S.tab=tb;render();
           return {nav:a.includes('data-dday="2099-01-02"'),shown:a.includes('07:00'),off:!off||b.includes('06:30')}})()""")
         check("Callsheet erscheint auch, wenn der Drehplan den Tag frei hat oder nicht kennt", cso is None or cso == {"nav": True, "shown": True, "off": True}, cso)
         # App-Verwaltung → Today: «aus» = offered but off until switched on, «nicht angeboten» = not in the list and never shown

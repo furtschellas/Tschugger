@@ -342,7 +342,9 @@ export function renderDispo(){
   if(x.cs&&typeof x.cs==="object"&&typeof renderCS==="function"){/* Anhänge, Sides and risk assessments inside the callsheet: the same look as its other parts */
     /* only the 2nd Unit chosen: its callsheet on its own, in the same view */
     const xr=(onlyU()&&S.pu["2"]&&typeof window.csU2Dispo==="function"&&window.csU2Dispo(x,day))||x;
-    const r=renderCS(xr,day),ex=attachHTML(x,x.date)+sidesHTML(x.date)+raHTML(x.date);h+=r.endsWith("</div>")?r.slice(0,-6)+ex+"</div>":r+ex;
+    const r=renderCS(xr,day),ex=attachHTML(x,x.date)+sidesHTML(x.date)+raHTML(x.date),CV='<div class="csview">',ci=r.indexOf(CV);
+    /* the parts of the callsheet as components (each drawn again only when it changed) */
+    h+=ci>=0&&r.endsWith("</div>")?r.slice(0,ci)+CV+island("cs",{html:r.slice(ci+CV.length,-6)+ex})+"</div>":r.endsWith("</div>")?r.slice(0,-6)+ex+"</div>":r+ex;
     return h}
   const tile=(k,v,big)=>v?'<div class="dt'+(big?' big':'')+'"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>':'';
   h+='<div class="dsp-head"><div><h2>'+esc(x.label||day.label||"Callsheet")+'</h2><div class="date drow"><span>'+fmtDate(x.date)+(x.version?' · '+esc(x.version):'')+'</span>'+UNITBAR+'</div></div></div>';

@@ -187,6 +187,8 @@ window.viewMorph=viewMorph;
    in the HTML of a page: island("name",props[,key]); the component: ISLANDS.name=function(props){return html`…`}.
    After every drawing each island gets its component (again only when its props changed); the morphing above never touches its inside. */
 const ISLP=new Map();
+/* pages still made as HTML by their own parts: drawn as sections (10a-ui.js: Sections) – each part morphed on its own */
+const SECPAGES=new Set(["script","cater","admin","reports","acct","bcast"]);
 export function island(name,props,key){const k=name+":"+(key==null?"":key);ISLP.set(k,props||{});return '<div class="isl" data-island="'+esc(name)+'" data-k="isl:'+esc(k)+'"></div>'}
 /* new props for an island already on the page (a search typed into the page: only that part is drawn again) */
 export function islandSet(name,props,key){island(name,props,key);mountIslands(document)}
@@ -220,11 +222,11 @@ function renderCore(){try{if(window.rideEditApply)rideEditApply()}catch(_){}
   const v=$("#view");
   const focusQ=document.activeElement&&document.activeElement.id==="q";
   let html;
-  try{html=VIEWS[S.tab]()+(S.tab==="admin"?"":srcHTML())}
+  try{const pg=VIEWS[S.tab]();html=(SECPAGES.has(S.tab)?island("sec",{html:pg},S.tab):pg)+(S.tab==="admin"?"":srcHTML())}
   catch(err){console.error(err);html='<div class="empty">'+esc(L("Diese Ansicht konnte nicht angezeigt werden."))+'<br><small>'+esc(err&&err.message||err)+'</small></div>'}
   /* keep what someone has typed or ticked in an open form when the page re-renders (data refresh, list reload) */
   const keep=formsKeep(v);
-  viewMorph(v,html);
+  viewMorph(v,html);mountIslands(v);   /* the components right away: what follows (forms, fitting, labels) sees their content */
   formsRestore(v,keep);
   if(focusQ){const q=$("#q");if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
   scallLabel();
