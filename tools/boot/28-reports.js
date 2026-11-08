@@ -1,12 +1,14 @@
 import {esc,L,lsGet,S,safeUrl} from "../base/10-core.js";
 import {VIEWS} from "../base/14-render.js";
-import {fold,render} from "../base/15-script-tab.js";
+import {fold,island,render} from "../base/15-script-tab.js";
 import {openGallery} from "../base/18-blocking.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {ME,MYPERMS,PERMS,can,isAdmin,isOwner} from "./03-core-firebase.js";
 import {logHead,tstIco} from "./17-audit-misc.js";
 import {SCLOG} from "./27-scene-ack.js";
 import {goTo} from "../base/16-interaction.js";
+import {html,ISLANDS} from "../base/09-fw.js";
+import {Sections} from "../base/10a-ui.js";
 /* ---------- Einstellungen → Logs → «Reports»: the PDFs of the Dropbox folder «3D/20_Reports» (production, DIT, sound …), one group per sub folder.
    Every report: the gallery (pages as pictures, like the floorplans), the file in the Dropbox and the PDF. Who sees a group: the permission
    «Reports: <folder>» (one per sub folder, in the roles under «Reports»); admins and the owner see all ---------- */
@@ -106,12 +108,16 @@ window.repButton=()=>{let b=document.getElementById("repBtn");const a=document.g
 setInterval(()=>{try{repButton()}catch(_){}},5000);
 VIEWS.reports=function(){const subs=repSubs();if(!ME||!subs.length)return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!subs.some(([k])=>k===REPSUB))REPSUB=subs[0][0];
-  const nav='<nav class="asub acsub n'+subs.length+'" role="tablist">'+subs.map(([k,t])=>'<button type="button" role="tab" data-repsub="'+esc(k)+'" aria-selected="'+(REPSUB===k)+'">'+(t==="Produktion"?'<span class="lgl">'+esc(L(t))+'</span><span class="sml">Prod</span>':esc(L(t)))+'</button>').join("")+'</nav>';
   let body="";if(REPSUB==="scenes"){SCLOG.open=true;body=typeof sceneLogSec==="function"?sceneLogSec():""}
   else if(REPSUB==="all")body=reportsSec("*");else body=reportsSec(REPSUB.slice(2));
   /* in the topic «Reports» every box is always open: no folding (summary and expand button without function) */
   body=String(body||"").replace(/<details (class=.tstsec)/g,"<details open $1");
-  return '<section class="mypage reppage"><div class="myhead"><h2 class="pgt">'+esc(L("Reports"))+'</h2></div>'+nav+(body||'<p class="ghint">'+esc(L("Noch keine Einträge."))+'</p>')+'</section>'};
+  return island("reports",{subs,cur:REPSUB,body})};
+/* «Reports» as components (framework): head, the topics as tabs, the boxes of the topic (each one morphed on its own) */
+/** @param {{subs:string[][],cur:string,body:string}} p */
+function RepPage({subs,cur,body}){
+  return html`<section class="mypage reppage"><div class="myhead"><h2 class="pgt">${L("Reports")}</h2></div><nav class=${"asub acsub n"+subs.length} role="tablist">${subs.map(([k,t])=>html`<button type="button" role="tab" data-repsub=${k} aria-selected=${String(cur===k)}>${t==="Produktion"?html`<span class="lgl">${L(t)}</span><span class="sml">Prod</span>`:L(t)}</button>`)}</nav>${body?html`<${Sections} html=${body}/>`:html`<p class="ghint">${L("Noch keine Einträge.")}</p>`}</section>`}
+ISLANDS.reports=RepPage;
 window.repSetSub=k=>{if(REPSUB===k)return false;REPSUB=k;return true};window.repSubGet=()=>REPSUB;
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-repsub]");if(!b)return;REPSUB=b.dataset.repsub;try{localStorage.setItem("repsub",REPSUB)}catch(_){}render();scrollTo(0,0)});
 document.addEventListener("click",e=>{const sm=e.target.closest&&e.target.closest(".reppage details.tstsec>summary");if(!sm)return;

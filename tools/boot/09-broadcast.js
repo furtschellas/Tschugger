@@ -1,6 +1,6 @@
 import {esc,HIT,L,mName,S,telNum} from "../base/10-core.js";
 import {VIEWS} from "../base/14-render.js";
-import {render} from "../base/15-script-tab.js";
+import {island,render} from "../base/15-script-tab.js";
 import {arr,showMsg} from "../base/20-data-start.js";
 import {ADMINS,fmtD,fmtT} from "./01-config.js";
 import {can,fb,isAdmin,lc,ME,ownDec,ownEnc,rolesList,withTimeout,wkUrl} from "./03-core-firebase.js";
@@ -8,6 +8,8 @@ import {getDataKey} from "./04-data.js";
 import {waNum} from "./06-prefs-docs.js";
 import {ADM,confirmSafe,ensureAdm} from "./12a-admin-core.js";
 import {goTo} from "../base/16-interaction.js";
+import {html,ISLANDS} from "../base/09-fw.js";
+import {Raw} from "../base/10a-ui.js";
 /* ---- push message to everybody (or selected roles / departments), sent right away: permission «push.send».
    The message is stored encrypted in broadcasts/{id}; the Cloudflare Worker starts the sending run at once ---- */
 const BC={roles:null,sel:{roles:[],depts:[]},mode:"all",busy:false,msg:"",ok:false};
@@ -103,21 +105,26 @@ document.addEventListener("click",async e=>{const bt=e.target.closest("[data-bcr
     const {F,db}=await fb();const ref=await F.addDoc(F.collection(db,"broadcasts"),{c:enc,at:F.serverTimestamp()});showMsg(await bcDeliver(ref.id),5000);BC.hist=null}
   catch(err){showMsg(L("Fehler:")+" "+(err.message||err),6000)}BC.busy=false;render()});
 /* the role lists are read for everybody who may send (not only admins): SMS, WhatsApp and e-mail pick the people by role on this device */
+/* «Nachrichten» as components (framework): the form (title, text, recipients, channels), the WhatsApp / device parts and the history */
+/** a tick of a role or department @param {{k:string,v:string,t:string}} p */
+function BcCk({k,v,t}){return html`<label class="ck"><input type="checkbox" data-bcsel=${k} value=${v} checked=${BC.sel[k].includes(v)}/> ${t}</label>`}
+/** the form @param {{roles:any[]}} p */
+function BcForm({roles}){const ch=BC.ch||{push:true};
+  return html`<form class="bcform" data-bc novalidate><label>${L("Titel")}<input name="bt" maxlength="60" required placeholder=${L("z. B. Drehplan geändert")}/></label>
+    <label>${L("Nachricht")}<textarea name="bb" rows="4" maxlength="300" required placeholder=${L("Kurz und klar, max. 300 Zeichen")}></textarea></label>
+    <fieldset class="efood"><legend>${L("Empfänger")}</legend><label class="ck"><input type="radio" name="bm" value="all" checked=${BC.mode==="all"}/> ${L("Alle")}</label><label class="ck"><input type="radio" name="bm" value="sel" checked=${BC.mode==="sel"}/> ${L("Auswahl nach Rolle und/oder Abteilung")}</label>
+      ${BC.mode==="sel"?html`<p class="ahint"><b>${L("Rollen")}</b></p><div class="bcchk">${roles.map(r=>html`<${BcCk} k="roles" v=${r.id} t=${r.name}/>`)}</div><p class="ahint"><b>${L("Abteilungen")}</b></p><div class="bcchk">${bcDepts().map(d=>html`<${BcCk} k="depts" v=${d} t=${HIT(d)}/>`)}</div><p class="ghint">${L("Wer zu einer gewählten Rolle ODER Abteilung gehört, bekommt die Nachricht.")}</p>`:null}</fieldset>
+    <fieldset class="efood bcch"><legend>${L("Senden als")}</legend><div class="bcchk">${[["bp","push","Push"],["bw","wa","WhatsApp"],["bs","sms","SMS"],["be","mail","E-Mail"]].map(([n,k,t])=>html`<label class="ck"><input type="checkbox" name=${n} checked=${!!ch[k]}/> ${L(t)}</label>`)}</div><p class="ghint">${L("Push geht sofort an alle mit eingeschalteten Push-Nachrichten. WhatsApp, SMS und E-Mail öffnen die jeweilige App auf deinem Gerät – nur an die oben gewählten Empfänger.")}</p></fieldset>
+    <div class="arb"><button type="submit" disabled=${!!BC.busy}>${L("Jetzt senden")}</button></div><p class=${"amsg"+(BC.ok?" ok":"")} role="status">${BC.msg}</p></form>`}
+/** @param {{roles:any[]}} p */
+function BcPage({roles}){return html`<section class="mypage bcpage"><h2 class="pgt">${L("Push-Nachricht senden")}</h2><p class="ghint">${L("Geht sofort als Push-Nachricht an alle, die Push-Nachrichten eingeschaltet haben.")}</p><${BcForm} roles=${roles}/>
+  <${Raw} html=${bcWaHTML()+bcDevHTML()}/><div class="bchh"><h3 class="cath3">${L("Verlauf")}</h3>${isAdmin()&&BC.hist&&BC.hist.length?html`<button type="button" class="pillbtn bcclr" data-bcclr>${L("Verlauf leeren")}</button>`:null}</div><${Raw} html=${bcHistHTML()}/></section>`}
+ISLANDS.bcast=BcPage;
 VIEWS.bcast=function(){try{if(typeof ensureAdm==="function")ensureAdm()}catch(_){}
   if(!ME||!can("push.send"))return '<div class="empty">'+L("Kein Zugang")+'</div>';
   if(!BC.roles)bcLoadRoles();
   const roles=[{id:"owner",name:L("Owner")},{id:"admin",name:L("Admin")}].concat(BC.roles||[]).concat([{id:"",name:L("Keine Rolle")}]);
-  const ck=(k,v,t)=>'<label class="ck"><input type="checkbox" data-bcsel="'+k+'" value="'+esc(v)+'"'+(BC.sel[k].includes(v)?' checked':'')+'> '+esc(t)+'</label>';
-  return '<section class="mypage bcpage"><h2 class="pgt">'+L("Push-Nachricht senden")+'</h2><p class="ghint">'+L("Geht sofort als Push-Nachricht an alle, die Push-Nachrichten eingeschaltet haben.")+'</p>'+
-    '<form class="bcform" data-bc novalidate><label>'+L("Titel")+'<input name="bt" maxlength="60" required placeholder="'+esc(L("z. B. Drehplan geändert"))+'"></label>'+
-    '<label>'+L("Nachricht")+'<textarea name="bb" rows="4" maxlength="300" required placeholder="'+esc(L("Kurz und klar, max. 300 Zeichen"))+'"></textarea></label>'+
-    '<fieldset class="efood"><legend>'+L("Empfänger")+'</legend><label class="ck"><input type="radio" name="bm" value="all"'+(BC.mode==="all"?' checked':'')+'> '+L("Alle")+'</label><label class="ck"><input type="radio" name="bm" value="sel"'+(BC.mode==="sel"?' checked':'')+'> '+L("Auswahl nach Rolle und/oder Abteilung")+'</label>'+
-      (BC.mode==="sel"?'<p class="ahint"><b>'+L("Rollen")+'</b></p><div class="bcchk">'+roles.map(r=>ck("roles",r.id,r.name)).join("")+'</div><p class="ahint"><b>'+L("Abteilungen")+'</b></p><div class="bcchk">'+bcDepts().map(d=>ck("depts",d,HIT(d))).join("")+'</div><p class="ghint">'+L("Wer zu einer gewählten Rolle ODER Abteilung gehört, bekommt die Nachricht.")+'</p>':'')+'</fieldset>'+
-    '<fieldset class="efood bcch"><legend>'+L("Senden als")+'</legend><div class="bcchk">'+
-      [["bp","push","Push"],["bw","wa","WhatsApp"],["bs","sms","SMS"],["be","mail","E-Mail"]].map(([n,k,t])=>'<label class="ck"><input type="checkbox" name="'+n+'"'+((BC.ch||{push:true})[k]?' checked':'')+'> '+esc(L(t))+'</label>').join("")+
-      '</div><p class="ghint">'+L("Push geht sofort an alle mit eingeschalteten Push-Nachrichten. WhatsApp, SMS und E-Mail öffnen die jeweilige App auf deinem Gerät – nur an die oben gewählten Empfänger.")+'</p></fieldset>'+
-    '<div class="arb"><button type="submit"'+(BC.busy?' disabled':'')+'>'+L("Jetzt senden")+'</button></div><p class="amsg'+(BC.ok?' ok':'')+'" role="status">'+esc(BC.msg)+'</p></form>'+
-    bcWaHTML()+bcDevHTML()+'<div class="bchh"><h3 class="cath3">'+L("Verlauf")+'</h3>'+(isAdmin()&&BC.hist&&BC.hist.length?'<button type="button" class="pillbtn bcclr" data-bcclr>'+L("Verlauf leeren")+'</button>':'')+'</div>'+bcHistHTML()+'</section>';
+  return island("bcast",{roles,at:Date.now()});
 };
 document.addEventListener("change",e=>{const t=e.target;if(t.matches("[data-bc] input[name=bm]")){BC.mode=t.value;const f=t.form;const keep={bt:f.bt.value,bb:f.bb.value};render();const g=document.querySelector("[data-bc]");if(g){g.bt.value=keep.bt;g.bb.value=keep.bb}}
   else if(t.matches("[data-bcsel]")){const k=t.dataset.bcsel;BC.sel[k]=BC.sel[k].filter(x=>x!==t.value);if(t.checked)BC.sel[k].push(t.value)}});

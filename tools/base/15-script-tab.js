@@ -190,7 +190,7 @@ window.viewMorph=viewMorph;
    After every drawing each island gets its component (again only when its props changed); the morphing above never touches its inside. */
 const ISLP=new Map();
 /* pages still made as HTML by their own parts: drawn as sections (10a-ui.js: Sections) – each part morphed on its own */
-const SECPAGES=new Set(["cater","admin","reports","bcast"]);
+const SECPAGES=new Set(["cater","admin"]);
 export function island(name,props,key){const k=name+":"+(key==null?"":key);ISLP.set(k,props||{});return '<div class="isl" data-island="'+esc(name)+'" data-k="isl:'+esc(k)+'"></div>'}
 /* new props for an island already on the page (a search typed into the page: only that part is drawn again) */
 export function islandSet(name,props,key){island(name,props,key);mountIslands(document)}
